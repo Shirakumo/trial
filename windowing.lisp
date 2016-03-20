@@ -18,12 +18,12 @@
 (define-initializer (main setup)
   (setf *main-window* main)
   (setf *event-loop* event-loop)
-  (start event-loop)
+  (deeds:start event-loop)
   (q+:resize main 1024 768)
   (setf (q+:window-title main) "Trial"))
 
 (define-finalizer (main teardown)
-  (stop event-loop))
+  (deeds:stop event-loop))
 
 (define-subwidget (main timer) (q+:make-qtimer main)
   (setf (q+:single-shot timer) T)
