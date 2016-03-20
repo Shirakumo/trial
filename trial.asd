@@ -15,7 +15,8 @@
   :serial T
   :components ((:file "package")
                (:file "event-loop")
-               (:file "windowing"))
+               (:file "windowing")
+               (:file "game-object"))
   :depends-on (:qtools
                :qtcore
                :qtgui
