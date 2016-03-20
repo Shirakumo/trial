@@ -25,5 +25,5 @@
   (:default-initargs
    :name (error "NAME required.")))
 
-(defmethod matches ((a entity) (b symbol))
-  (eql (name a) b))
+(defmethod matches ((a named-entity) b)
+  (matches (name a) b))
