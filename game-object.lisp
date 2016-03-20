@@ -15,7 +15,7 @@
   (:default-initargs :path (error "Must define a file path.")))
 
 (defmethod initialize-instance :after ((obj game-object) &key)
-  (setf (image obj) (load-image-buffer "data/" (path obj))))
+  (setf (image obj) (load-image-buffer (path obj))))
 
 (defmethod finalize ((obj game-object))
   (finalize (image obj))
@@ -41,17 +41,3 @@
       (gl:color 1 1 1)
       (gl:vertex -50 50))
     (gl:pop-matrix)))
-
-(defun load-image-buffer (folder file-name)
-  (let ((file-path (uiop:native-namestring
-                    (asdf:system-relative-pathname
-                     :trial (merge-pathnames folder file-name)))))
-    (unless (probe-file file-path) (error "Invalid file path '~a'." file-path))
-    (with-finalizing ((image (q+:make-qimage file-path (pathname-type (pathname file-path))))
-                      (format (q+:make-qglframebufferobjectformat)))
-      (when (q+:is-null image) (error "Invalid file '~a'." file-path))
-      (setf (q+:attachment format) (q+:qglframebufferobject.combined-depth-stencil))
-      (let ((buffer (q+:make-qglframebufferobject (q+:width image) (q+:height image) format)))
-        (with-finalizing ((painter (q+:make-qpainter buffer)))
-          (q+:draw-image painter 0 0 image)
-          buffer)))))
