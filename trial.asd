@@ -27,4 +27,6 @@
                :qtgui
                :qtopengl
                :cl-opengl
-               :verbose))
+               :verbose
+               :closer-mop
+               :trivial-garbage))

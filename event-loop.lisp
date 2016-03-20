@@ -23,6 +23,9 @@
         do (push handler handlers))
   (setf (handlers container) handlers))
 
+(defmethod add-handler ((source handler-container) (container handler-container))
+  (add-handler (handlers source) container))
+
 (defmethod remove-handler (handler (container handler-container))
   (setf (handlers container)
         (remove handler (handlers container) :test #'matches)))
@@ -33,13 +36,14 @@
         collect handler into cleaned-handlers
         finally (setf (handlers container) cleaned-handlers)))
 
+(defmethod remove-handler ((source handler-container) (container handler-container))
+  (remove-handler (handlers source) container))
+
 (defclass event-loop (handler-container)
   ((queue :initform (make-array 0 :initial-element NIL :adjustable T :fill-pointer T) :reader queue)))
 
-(defvar *event-loop* (make-instance 'event-loop))
-
-(defun issue (event-type &rest args)
-  (vector-push-extend (apply #'make-instance event-type args) (queue *event-loop*)))
+(defun issue (loop event-type &rest args)
+  (vector-push-extend (apply #'make-instance event-type args) (queue loop)))
 
 (defun process (loop)
   (loop for i from 0
@@ -79,26 +83,36 @@
                   ',class)))
 
 (defclass subject-class (standard-class handler-container)
-  ((effective-handlers :initform NIL :accessor effective-handlers)))
+  ((effective-handlers :initform NIL :accessor effective-handlers)
+   (instances :initform () :accessor instances)))
 
-(defmethod c2mop:validate-superclass ((class subject-class) (superclass t))
+(defmethod c2mop:validate-superclass ((class subject-class) (super t))
   NIL)
 
-(defmethod c2mop:validate-superclass ((class standard-class) (superclass subject-class))
+(defmethod c2mop:validate-superclass ((class standard-class) (super subject-class))
   T)
 
-(defmethod c2mop:validate-superclass ((class subject-class) (superclass standard-class))
+(defmethod c2mop:validate-superclass ((class subject-class) (super standard-class))
   T)
 
-(defmethod c2mop:validate-superclass ((class subject-class) (superclass subject-class))
+(defmethod c2mop:validate-superclass ((class subject-class) (super subject-class))
   T)
 
 (defun cascade-option-changes (class)
-  (loop with effective-handlers = ()
+  ;; Recompute effective handlers
+  (loop with effective-handlers = (handlers class)
         for super in (c2mop:class-direct-superclasses class)
         when (c2mop:subclassp super 'subject-class)
         do (dolist (handler (effective-handlers super))
-             (pushnew handler effective-handlers :test #'matches)))
+             (pushnew handler effective-handlers :test #'matches))
+        finally (setf (effective-handlers class) effective-handlers))
+  ;; Update instances
+  (loop for pointer in (instances class)
+        for value = (tg:weak-pointer-value pointer)
+        when value
+        collect (reinitialize-instance value) into instances
+        finally (setf (instances class) instances))
+  ;; Propagate
   (loop for sub-class in (c2mop:class-direct-subclasses class)
         when (and (c2mop:subclassp sub-class 'subject-class)
                   (c2mop:class-finalized-p sub-class))
@@ -110,17 +124,53 @@
       (c2mop:finalize-inheritance super)))
   (cascade-option-changes class))
 
-(defmethod )
+(defmethod add-handler :after (handler (class subject-class))
+  (cascade-option-changes class))
+
+(defmethod remove-handler :after (handler (class subject-class))
+  (cascade-option-changes class))
 
 (defclass subject (handler-container)
-  ()
+  ((loops :initarg :loops :accessor loops))
+  (:default-initargs
+   :loops ())
   (:metaclass subject-class))
+
+(defmethod initialize-instance :after ((subject subject) &key)
+  (push (tg:make-weak-pointer subject) (instances (class-of subject)))
+  (regenerate-handlers subject))
+
+(defmethod reinitialize-instance :after ((subject subject) &key)
+  (regenerate-handlers subject))
+
+(defmethod regenerate-handlers ((subject subject))
+  (dolist (loop (loops subject))
+    (remove-handler subject loop))
+  (loop for handler in (handlers (class-of subject))
+        collect (make-instance
+                 'handler
+                 :container subject
+                 :name (name handler)
+                 :event-type (event-type handler)
+                 :delivery-function (delivery-function handler)) into handlers
+        finally (setf (handlers subject) handlers))
+  (dolist (loop (loops subject))
+    (add-handler subject loop)))
 
 (defmethod add-handler (handler (class symbol))
   (add-handler handler (find-class class)))
 
 (defmethod remove-handler (handler (class symbol))
   (remove-handler handler (find-class class)))
+
+(defmacro define-subject (name direct-superclasses direct-slots &optional options)
+  (unless (find-if (lambda (c) (c2mop:subclassp c 'subject)) direct-superclasses)
+    (push 'subject direct-superclasses))
+  (unless (find :metaclass options :key #'first)
+    (push '(:metaclass subject-class) options))
+  `(defclass ,name ,direct-superclasses
+     ,direct-slots
+     ,@options))
 
 (defclass event ()
   ())
