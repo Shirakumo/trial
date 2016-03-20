@@ -23,7 +23,7 @@
 
 (defmacro define-handler ((name event-type) args &body body)
   `(deeds:define-handler (,name ,event-type) ,args
-     :class 'locally-blocking-handler
+     :class 'deeds:locally-blocking-handler
      :loop *event-loop*
      ,@body))
 
