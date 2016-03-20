@@ -42,7 +42,7 @@
                                            internal-time-units-per-second))
                                1000))))))
 
-(define-override (main initialize-gl) ()
+(define-override (main "initializeGL" initialize-gl) ()
   (push (make-instance 'game-object :path "test.jpg") (objects main)))
 
 (define-override (main paint-event) (ev)
