@@ -20,4 +20,5 @@
                :qtcore
                :qtgui
                :qtopengl
-               :deeds))
+               :deeds
+               :cl-opengl))

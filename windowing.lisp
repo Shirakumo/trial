@@ -4,12 +4,13 @@
 (defparameter *fps* 1/30)
 (defvar *main-window* NIL)
 
-(define-widget main (QWidget)
-  ())
+(define-widget main (QGLWidget)
+  ((angle :initform 0)
+   (angle-delta :initform 1)))
 
 (define-initializer (main setup)
   (setf *main-window* main)
-  (q+:resize main 1024 768)
+  (setf (q+:fixed-size main) (values 1024 768))
   (setf (q+:window-title main) "Trial"))
 
 (define-finalizer (main teardown)
@@ -25,6 +26,7 @@
   (declare (connected timer (timeout)))
   (let ((start (get-internal-real-time)))
     (with-simple-restart (abort "Abort the update and continue.")
+      (incf (slot-value main 'angle) (slot-value main 'angle-delta))
       #| Update calls here |#)
     (q+:repaint main)
     (q+:start timer 
@@ -33,15 +35,27 @@
                                1000))))))
 
 (define-override (main paint-event) (ev)
+  (declare (ignore ev))
   (with-simple-restart (abort "Abort the drawing and continue.")
     (with-finalizing ((painter (q+:make-qpainter main))
                       (bgbrush (q+:make-qbrush background)))
-      (setf (q+:render-hint painter) (q+:qpainter.antialiasing)
-            (q+:render-hint painter) (q+:qpainter.text-antialiasing)
-            (q+:render-hint painter) (q+:qpainter.smooth-pixmap-transform)
-            (q+:render-hint painter) (q+:qpainter.high-quality-antialiasing)
-            (q+:style (q+:background painter)) (q+:qt.solid-pattern)
-            (q+:color (q+:background painter)) (q+:qt.black)
-            (q+:style (q+:brush painter)) (q+:qt.solid-pattern))
       (q+:fill-rect painter (q+:rect main) bgbrush)
-      #| Paint calls here |#)))
+      #| Paint calls here |#
+
+      (q+:begin-native-painting painter)
+      
+      (gl:push-matrix)
+      (gl:translate 250 250 0)
+      (gl:rotate angle 0 0 1)
+      (gl:with-primitives :quads
+        (gl:color 1 0 0)
+        (gl:vertex -50 -50)
+        (gl:color 0 1 0)
+        (gl:vertex 50 -50)
+        (gl:color 0 0 1)
+        (gl:vertex 50 50)
+        (gl:color 1 1 1)
+        (gl:vertex -50 50))
+      (gl:pop-matrix)
+      
+      (q+:end-native-painting painter))))
