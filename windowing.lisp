@@ -59,7 +59,6 @@
       (gl:pop-matrix)
       
       (q+:end-native-painting painter))))
-      #| Paint calls here |#)))
 
 (defun main ()
   (unless *event-loop*
