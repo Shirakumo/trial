@@ -26,18 +26,13 @@
   (incf (slot-value obj 'angle) (slot-value obj 'angle-delta)))
 
 (defmethod draw ((obj game-object) &key)
-  (let ((image (image obj)))
-    
+  (let ((image (q+:texture (image obj)))
+        (size (q+:size (image obj))))
     (gl:push-matrix)
     (gl:translate 250 250 0)
     (gl:rotate (slot-value obj 'angle) 0 0 1)
-    (gl:with-primitives :quads
-      (gl:color 1 0 0)
-      (gl:vertex -50 -50)
-      (gl:color 0 1 0)
-      (gl:vertex 50 -50)
-      (gl:color 0 0 1)
-      (gl:vertex 50 50)
-      (gl:color 1 1 1)
-      (gl:vertex -50 50))
+    (q+:draw-texture *main-window*
+                     (q+:make-qpointf (- (/ (q+:width size) 2))
+                                      (- (/ (q+:height size) 2)))
+                     image)
     (gl:pop-matrix)))
