@@ -13,7 +13,9 @@
   :description "Trial run for the upcoming Ludum Dare 35"
   :homepage "https://github.com/Shirakumo/trial"
   :serial T
-  :components ((:file "package"))
+  :components ((:file "package")
+               (:file "event-loop")
+               (:file "windowing"))
   :depends-on (:qtools
                :qtcore
                :qtgui
