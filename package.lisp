@@ -8,3 +8,4 @@
 (defpackage #:trial
   (:nicknames #:org.shirakumo.fraf.trial)
   (:use #:cl+qt))
+(in-package #:trial)
