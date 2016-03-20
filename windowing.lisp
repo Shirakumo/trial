@@ -6,15 +6,18 @@
 
 (define-widget main (QGLWidget)
   ((angle :initform 0)
-   (angle-delta :initform 1)))
+   (angle-delta :initform 1)
+   (event-loop :initform (make-instance 'synchronous-event-loop) :reader event-loop)))
 
 (define-initializer (main setup)
   (setf *main-window* main)
-  (setf (q+:fixed-size main) (values 1024 768))
+  (setf *event-loop* event-loop)
+  (start event-loop)
+  (q+:resize main 1024 768)
   (setf (q+:window-title main) "Trial"))
 
 (define-finalizer (main teardown)
-  (setf *main-window* NIL))
+  (stop event-loop))
 
 (define-subwidget (main timer) (q+:make-qtimer main)
   (setf (q+:single-shot timer) T)
@@ -27,7 +30,7 @@
   (let ((start (get-internal-real-time)))
     (with-simple-restart (abort "Abort the update and continue.")
       (incf (slot-value main 'angle) (slot-value main 'angle-delta))
-      #| Update calls here |#)
+      (process event-loop))
     (q+:repaint main)
     (q+:start timer 
               (round (max 0 (* (- *fps* (/ (- (get-internal-real-time) start)
@@ -61,9 +64,4 @@
       (q+:end-native-painting painter))))
 
 (defun main ()
-  (unless *event-loop*
-    (setf *event-loop* (make-instance 'synchronous-event-loop)))
-  (unwind-protect
-       (with-main-window (window 'main #-darwin :main-thread #-darwin NIL)
-         (start *event-loop*))
-    (stop *event-loop*)))
+  (with-main-window (window 'main #-darwin :main-thread #-darwin NIL)))
