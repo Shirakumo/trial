@@ -7,5 +7,5 @@
 (in-package #:cl-user)
 (defpackage #:trial
   (:nicknames #:org.shirakumo.fraf.trial)
-  (:use #:cl+qt))
+  (:use #:cl+qt #:3d-vectors))
 (in-package #:trial)

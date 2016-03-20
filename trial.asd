@@ -20,6 +20,7 @@
                (:file "input")
                (:file "game-object"))
   :depends-on (:alexandria
+               :3d-vectors
                :qtools
                :qtcore
                :qtgui
