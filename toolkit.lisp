@@ -7,8 +7,13 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
+(defun resource-pathname (pathname)
+  (if (eql :absolute (first (pathname-directory pathname)))
+      pathname
+      (asdf:system-relative-pathname :trial (merge-pathnames "data/" pathname))))
+
 (defun load-image-buffer (image)
-  (let ((file (asdf:system-relative-pathname :trial (merge-pathnames "data/" image))))
+  (let ((file (resource-pathname image)))
     (unless (probe-file file)
       (error "Invalid file path ~s." file))
     (with-finalizing ((image (q+:make-qimage (uiop:native-namestring file)))
