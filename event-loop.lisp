@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defvar *event-loop*)
+(defvar *event-loop* NIL)
 
 (defclass synchronous-event-loop (deeds:event-loop)
   ())

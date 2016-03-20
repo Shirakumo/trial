@@ -59,3 +59,12 @@
       (gl:pop-matrix)
       
       (q+:end-native-painting painter))))
+      #| Paint calls here |#)))
+
+(defun main ()
+  (unless *event-loop*
+    (setf *event-loop* (make-instance 'synchronous-event-loop)))
+  (unwind-protect
+       (with-main-window (window 'main #-darwin :main-thread #-darwin NIL)
+         (start *event-loop*))
+    (stop *event-loop*)))
