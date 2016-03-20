@@ -16,8 +16,7 @@
 (define-initializer (main setup)
   (setf *main-window* main)
   (q+:resize main 1024 768)
-  (setf (q+:window-title main) "Trial")
-  (push (make-instance 'game-object :path "test.jpg") (objects main)))
+  (setf (q+:window-title main) "Trial"))
 
 (define-finalizer (main teardown)
   (loop for obj in (objects main)
@@ -42,6 +41,9 @@
               (round (max 0 (* (- *fps* (/ (- (get-internal-real-time) start)
                                            internal-time-units-per-second))
                                1000))))))
+
+(define-override (main initialize-gl) ()
+  (push (make-instance 'game-object :path "test.jpg") (objects main)))
 
 (define-override (main paint-event) (ev)
   (declare (ignore ev))
