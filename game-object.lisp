@@ -10,12 +10,12 @@
 (defclass game-object ()
   ((angle :initform 0)
    (angle-delta :initform 1)
-   (file-path :initarg :path :initform NIL :accessor path)
+   (path :initarg :path :initform NIL :accessor path)
    (image :initform NIL :accessor image))
   (:default-initargs :path (error "Must define a file path.")))
 
 (defmethod initialize-instance :after ((obj game-object) &key)
-  (setf (image obj) (load-image-buffer "data" (path obj))))
+  (setf (image obj) (load-image-buffer "data/" (path obj))))
 
 (defmethod finalize ((obj game-object))
   (finalize (image obj))
@@ -45,9 +45,7 @@
 (defun load-image-buffer (folder file-name)
   (let ((file-path (uiop:native-namestring
                     (asdf:system-relative-pathname
-                     :trial (if (and folder (< 0 (length folder)))
-                                (format NIL "~a/~a" folder file-name)
-                                file-name)))))
+                     :trial (merge-pathnames folder file-name)))))
     (unless (probe-file file-path) (error "Invalid file path '~a'." file-path))
     (with-finalizing ((image (q+:make-qimage file-path (pathname-type (pathname file-path))))
                       (format (q+:make-qglframebufferobjectformat)))
