@@ -21,4 +21,5 @@
                :qtgui
                :qtopengl
                :deeds
-               :cl-opengl))
+               :cl-opengl
+               :verbose))
