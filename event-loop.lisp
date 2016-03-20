@@ -32,6 +32,12 @@
      ,direct-slots
      ,@options))
 
+(defun register-handler (handler)
+  (deeds:register-handler handler *event-loop*))
+
+(defun deregister-handler (handler)
+  (deeds:deregister-handler handler *event-loop*))
+
 (defun issue (event-type &rest args)
   (deeds:issue (apply #'make-instance event-type args) *event-loop*))
 
