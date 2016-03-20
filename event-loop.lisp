@@ -6,10 +6,10 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defvar *event-loop* NIL)
-
 (defclass synchronous-event-loop (deeds:compiled-event-loop)
   ((queue :initform (make-array 0 :element-type 'deeds:event :adjustable T :fill-pointer T) :reader queue)))
+
+(defvar *event-loop* (make-instance 'synchronous-event-loop))
 
 (defmethod deeds:issue ((event deeds:event) (loop synchronous-event-loop))
   (vector-push-extend event (queue loop)))
