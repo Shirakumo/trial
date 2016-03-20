@@ -143,12 +143,11 @@
 
 (defvar *button-table*
   (alexandria:alist-hash-table
-   '((#x00000000 . :NoButton)
-     (#x00000001 . :Left)
-     (#x00000002 . :Right)
-     (#x00000004 . :Middle)
-     (#x00000008 . :X1)
-     (#x00000010 . :X2))
+   '((#x00000001 . :left)
+     (#x00000002 . :right)
+     (#x00000004 . :middle)
+     (#x00000008 . :x1)
+     (#x00000010 . :x2))
    :test 'eql))
 
 (defun qt-key->symbol (enum)
