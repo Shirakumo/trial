@@ -32,6 +32,7 @@
   (let ((start (get-internal-real-time)))
     (with-simple-restart (abort "Abort the update and continue.")
       (incf (slot-value main 'angle) (slot-value main 'angle-delta))
+      (issue 'tick)
       (process *event-loop*))
     (q+:repaint main)
     (q+:start timer 
@@ -66,7 +67,7 @@
       (q+:end-native-painting painter))))
 
 (defun main ()
-  (start *event-loop*)
+  (deeds:start *event-loop*)
   (unwind-protect
        (with-main-window (window 'main #-darwin :main-thread #-darwin NIL))
-    (stop *event-loop*)))
+    (deeds:stop *event-loop*)))

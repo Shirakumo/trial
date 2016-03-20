@@ -38,7 +38,7 @@
 (defun process (loop)
   (loop for i from 0
         while (< i (length (queue loop)))
-        do (handle (aref (queue loop) i) loop)
+        do (deeds:handle (aref (queue loop) i) loop)
            (setf (aref (queue loop) i) NIL))
   (setf (fill-pointer (queue loop)) 0))
 
