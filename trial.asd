@@ -15,6 +15,7 @@
   :serial T
   :components ((:file "package")
                (:file "toolkit")
+               (:file "entity")
                (:file "event-loop")
                (:file "windowing")
                (:file "input")
