@@ -43,7 +43,7 @@
                                1000))))))
 
 (define-override (main "initializeGL" initialize-gl) ()
-  (push (make-instance 'game-object :path "test.jpg") (objects main)))
+  (push (make-instance 'game-object :path "cat.png") (objects main)))
 
 (define-override (main paint-event) (ev)
   (declare (ignore ev))
