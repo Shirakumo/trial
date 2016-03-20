@@ -162,10 +162,10 @@
              (qt::enum (qt:enum-value enum)))
            *button-table*))
 
-(define-event input-event (trial-event)
+(defclass input-event (event)
   ())
 
-(define-event keyboard-event (input-event)
+(defclass keyboard-event (input-event)
   ((key :initarg :key :reader key))
   (:default-initargs
    :key (error "KEY required.")))
@@ -174,13 +174,13 @@
   (print-unreadable-object (event stream :type T)
     (format stream "~a" (key event))))
 
-(define-event key-press (keyboard-event)
+(defclass key-press (keyboard-event)
   ())
 
-(define-event key-release (keyboard-event)
+(defclass key-release (keyboard-event)
   ())
 
-(define-event mouse-event (input-event)
+(defclass mouse-event (input-event)
   ((button :initarg :button :reader button))
   (:default-initargs
    :button (error "BUTTON required.")))
@@ -189,13 +189,13 @@
   (print-unreadable-object (event stream :type T)
     (format stream "~a" (button event))))
 
-(define-event mouse-button-press (mouse-event)
+(defclass mouse-button-press (mouse-event)
   ())
 
-(define-event mouse-button-release (mouse-event)
+(defclass mouse-button-release (mouse-event)
   ())
 
-(define-event mouse-move (input-event)
+(defclass mouse-move (input-event)
   ((old-pos :initarg :old-pos :reader old-pos)
    (new-pos :initarg :new-pos :reader new-pos))
   (:default-initargs

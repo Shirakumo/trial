@@ -26,6 +26,5 @@
                :qtcore
                :qtgui
                :qtopengl
-               :deeds
                :cl-opengl
                :verbose))
