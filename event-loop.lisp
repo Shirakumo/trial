@@ -47,35 +47,3 @@
 
 (define-event tick (trial-event)
   ())
-
-(define-event input-event (trial-event)
-  ())
-
-(define-event keyboard-event (input-event)
-  ((key :initarg :key :reader key))
-  (:default-initargs
-   :key (error "KEY required.")))
-
-(define-event key-press (keyboard-event)
-  ())
-
-(define-event key-release (keyboard-event)
-  ())
-
-(define-event mouse-event (input-event)
-  ((button :initarg :button :reader button))
-  (:default-initargs
-   :button (error "BUTTON required.")))
-
-(define-event mouse-button-pressed (mouse-event)
-  ())
-
-(define-event mouse-button-released (mouse-event)
-  ())
-
-(define-event mouse-move-event (input-event)
-  ((old-pos :initarg :old-pos :reader old-pos)
-   (new-pos :initarg :new-pos :reader new-pos))
-  (:default-initargs
-   :old-pos (error "OLD-POS required.")
-   :new-pos (error "NEW-POS required.")))

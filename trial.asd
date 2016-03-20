@@ -16,6 +16,7 @@
   :components ((:file "package")
                (:file "event-loop")
                (:file "windowing")
+               (:file "input")
                (:file "game-object"))
   :depends-on (:qtools
                :qtcore
