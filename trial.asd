@@ -17,4 +17,5 @@
   :depends-on (:qtools
                :qtcore
                :qtgui
-               :qtopengl))
+               :qtopengl
+               :deeds))
