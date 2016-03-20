@@ -14,11 +14,13 @@
   :homepage "https://github.com/Shirakumo/trial"
   :serial T
   :components ((:file "package")
+               (:file "toolkit")
                (:file "event-loop")
                (:file "windowing")
                (:file "input")
                (:file "game-object"))
-  :depends-on (:qtools
+  :depends-on (:alexandria
+               :qtools
                :qtcore
                :qtgui
                :qtopengl
