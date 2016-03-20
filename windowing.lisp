@@ -11,15 +11,17 @@
 (defvar *main-window* NIL)
 
 (define-widget main (QGLWidget)
-  ((angle :initform 0)
-   (angle-delta :initform 1)))
+  ((game-objects :initform NIL :accessor objects)))
 
 (define-initializer (main setup)
   (setf *main-window* main)
   (q+:resize main 1024 768)
-  (setf (q+:window-title main) "Trial"))
+  (setf (q+:window-title main) "Trial")
+  (push (make-instance 'game-object :path "test.jpg") (objects main)))
 
-(define-finalizer (main teardown))
+(define-finalizer (main teardown)
+  (loop for obj in (objects main)
+        do (finalize obj)))
 
 (define-subwidget (main timer) (q+:make-qtimer main)
   (setf (q+:single-shot timer) T)
@@ -31,9 +33,10 @@
   (declare (connected timer (timeout)))
   (let ((start (get-internal-real-time)))
     (with-simple-restart (abort "Abort the update and continue.")
-      (incf (slot-value main 'angle) (slot-value main 'angle-delta))
       (issue 'tick)
-      (process *event-loop*))
+      (process *event-loop*)
+      (loop for obj in (objects main) ;; remove this later as it will be handled through *event-loop*
+            do (update obj)))
     (q+:repaint main)
     (q+:start timer 
               (round (max 0 (* (- *fps* (/ (- (get-internal-real-time) start)
@@ -46,23 +49,11 @@
     (with-finalizing ((painter (q+:make-qpainter main))
                       (bgbrush (q+:make-qbrush background)))
       (q+:fill-rect painter (q+:rect main) bgbrush)
-      #| Paint calls here |#
 
       (q+:begin-native-painting painter)
-      
-      (gl:push-matrix)
-      (gl:translate 250 250 0)
-      (gl:rotate angle 0 0 1)
-      (gl:with-primitives :quads
-        (gl:color 1 0 0)
-        (gl:vertex -50 -50)
-        (gl:color 0 1 0)
-        (gl:vertex 50 -50)
-        (gl:color 0 0 1)
-        (gl:vertex 50 50)
-        (gl:color 1 1 1)
-        (gl:vertex -50 50))
-      (gl:pop-matrix)
+
+      (loop for obj in (objects main)
+            do (draw obj))
       
       (q+:end-native-painting painter))))
 
