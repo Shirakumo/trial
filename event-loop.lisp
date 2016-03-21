@@ -170,7 +170,7 @@
 (defmethod remove-handler (handler (class symbol))
   (remove-handler handler (find-class class)))
 
-(defmacro define-subject (name direct-superclasses direct-slots &optional options)
+(defmacro define-subject (name direct-superclasses direct-slots &rest options)
   (unless (find-if (lambda (c) (c2mop:subclassp c 'subject)) direct-superclasses)
     (push 'subject direct-superclasses))
   (unless (find :metaclass options :key #'first)
