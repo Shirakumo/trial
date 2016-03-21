@@ -41,11 +41,9 @@
   (let ((texture (texture obj)))
     (when texture
       (let ((size (q+:size texture)))
-        (q+:draw-texture
-         *main-window*
-         (q+:make-qpointf (- (/ (q+:width size) 2))
-                          (- (/ (q+:height size) 2)))
-         (q+:texture texture))))))
+        (with-finalizing ((point (q+:make-qpointf (- (/ (q+:width size) 2))
+                                                  (- (/ (q+:height size) 2)))))
+          (q+:draw-texture *main-window* point (q+:texture texture)))))))
 
 (define-subject located-subject ()
   ((location :initform (vec 0 0 0) :accessor location)))
