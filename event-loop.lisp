@@ -84,25 +84,14 @@
                    :event-type ',event-type
                    :container ',class
                    :delivery-function (lambda (,class ,event)
+                                        (declare (ignorable ,class ,event))
                                         (with-slots ,args ,event
                                           ,@body)))
                   ',class)))
 
-(defclass subject-class (standard-class handler-container)
+(defclass subject-class (qtools:finalizable-class handler-container)
   ((effective-handlers :initform NIL :accessor effective-handlers)
    (instances :initform () :accessor instances)))
-
-(defmethod c2mop:validate-superclass ((class subject-class) (super t))
-  NIL)
-
-(defmethod c2mop:validate-superclass ((class standard-class) (super subject-class))
-  T)
-
-(defmethod c2mop:validate-superclass ((class subject-class) (super standard-class))
-  T)
-
-(defmethod c2mop:validate-superclass ((class subject-class) (super subject-class))
-  T)
 
 (defun cascade-option-changes (class)
   ;; Recompute effective handlers
@@ -137,7 +126,7 @@
 (defmethod remove-handler :after (handler (class subject-class))
   (cascade-option-changes class))
 
-(defclass subject (handler-container)
+(defclass subject (finalizable handler-container)
   ((loops :initarg :loops :accessor loops))
   (:default-initargs
    :loops ())
