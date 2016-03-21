@@ -17,6 +17,7 @@
                (:file "toolkit")
                (:file "entity")
                (:file "event-loop")
+               (:file "scene")
                (:file "windowing")
                (:file "input")
                (:file "game-object"))
