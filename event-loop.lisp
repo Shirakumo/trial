@@ -116,7 +116,8 @@
   (loop for pointer in (instances class)
         for value = (tg:weak-pointer-value pointer)
         when value
-        collect (reinitialize-instance value) into instances
+        collect (prog1 pointer
+                  (reinitialize-instance value)) into instances
         finally (setf (instances class) instances))
   ;; Propagate
   (loop for sub-class in (c2mop:class-direct-subclasses class)
