@@ -15,26 +15,28 @@
 
 (defmethod add-handler (handler (container handler-container))
   (setf (handlers container)
-        (cons handler (remove handler (handlers container) :test #'matches))))
+        (cons handler (delete handler (handlers container) :test #'matches))))
 
 (defmethod add-handler ((handlers list) (container handler-container))
-  (loop for handler in (handlers container)
-        unless (find handler handlers :test #'matches)
-        do (push handler handlers))
-  (setf (handlers container) handlers))
+  (let ((handlers (copy-list handlers)))
+    (loop for cons on (handlers container)
+          for handler = (find (car cons) handlers :test #'matches)
+          do (when handler
+               (setf (car cons) handler)
+               (setf handlers (delete handler handlers))))
+    (setf (handlers container) (nconc handlers (handlers container)))))
 
 (defmethod add-handler ((source handler-container) (container handler-container))
   (add-handler (handlers source) container))
 
 (defmethod remove-handler (handler (container handler-container))
   (setf (handlers container)
-        (remove handler (handlers container) :test #'matches)))
+        (delete handler (handlers container) :test #'matches)))
 
 (defmethod remove-handler ((handlers list) (container handler-container))
-  (loop for handler in (handlers container)
-        unless (find handler handlers :test #'matches)
-        collect handler into cleaned-handlers
-        finally (setf (handlers container) cleaned-handlers)))
+  (setf (handlers container) (delete-if (lambda (el)
+                                          (find el handlers :test #'matches))
+                                        (handlers container))))
 
 (defmethod remove-handler ((source handler-container) (container handler-container))
   (remove-handler (handlers source) container))
