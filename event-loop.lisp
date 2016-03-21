@@ -164,9 +164,10 @@
     (push 'subject direct-superclasses))
   (unless (find :metaclass options :key #'first)
     (push '(:metaclass subject-class) options))
-  `(defclass ,name ,direct-superclasses
-     ,direct-slots
-     ,@options))
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (defclass ,name ,direct-superclasses
+       ,direct-slots
+       ,@options)))
 
 (defclass event ()
   ())
