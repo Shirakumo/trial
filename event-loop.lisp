@@ -126,7 +126,7 @@
 (defmethod remove-handler :after (handler (class subject-class))
   (cascade-option-changes class))
 
-(defclass subject (finalizable handler-container)
+(defclass subject (entity finalizable handler-container)
   ((loops :initarg :loops :accessor loops))
   (:default-initargs
    :loops ())
