@@ -7,6 +7,8 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
+;; Textured Subject
+
 (define-subject textured-subject ()
   ((texture :initform NIL :accessor texture :finalized T)))
 
@@ -45,6 +47,8 @@
                                                   (- (/ (q+:height size) 2)))))
           (q+:draw-texture *main-window* point (q+:texture texture)))))))
 
+;; Located Subject
+
 (define-subject located-subject ()
   ((location :initform (vec 0 0 0) :accessor location)))
 
@@ -55,17 +59,25 @@
     (call-next-method)
     (gl:pop-matrix)))
 
-(define-subject oriented-subject ()
-  ((orientation :initform (vec 0 0 0) :accessor orientation)))
+;; Oriented Subject
 
-(define-subject cat (located-subject textured-subject)
-  ((angle :initform 0)
-   (angle-delta :initform 1)
+(define-subject oriented-subject ()
+  ((orientation :initform (vec 0 0 1) :accessor orientation)
+   (angle :initform 0 :accessor angle)))
+
+(defmethod draw ((obj oriented-subject))
+  (let ((vector (orientation obj)))
+    (gl:rotate (slot-value obj 'angle) (vx vector) (vy vector) (vz vector)))
+  (call-next-method))
+
+;; Cat (the test subject)
+
+(define-subject cat (located-subject oriented-subject textured-subject)
+  ((angle-delta :initform 1)
    (velocity :initform (vec 0 0 0) :accessor velocity))
   (:default-initargs :texture "cat.png"))
 
 (defmethod draw ((cat cat))
-  (gl:rotate (slot-value cat 'angle) 0 0 1)
   (call-next-method))
 
 (define-handler (cat update tick) (ev)
