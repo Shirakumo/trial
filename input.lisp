@@ -208,22 +208,22 @@
 
 (define-override (main key-press-event) (ev)
   (let ((key (qt-key->symbol (q+:key ev))))
-    (when key (issue 'key-press :key key))))
+    (when key (issue (scene main) 'key-press :key key))))
 
 (define-override (main key-release-event) (ev)
   (let ((key (qt-key->symbol (q+:key ev))))
-    (when key (issue 'key-release :key key))))
+    (when key (issue (scene main) 'key-release :key key))))
 
 (define-override (main mouse-press-event) (ev)
   (let ((button (qt-button->symbol (q+:button ev))))
-    (when button (issue 'mouse-button-press :button button))))
+    (when button (issue (scene main) 'mouse-button-press :button button))))
 
 (define-override (main mouse-release-event) (ev)
   (let ((button (qt-button->symbol (q+:button ev))))
-    (when button (issue 'mouse-button-release :button button))))
+    (when button (issue (scene main) 'mouse-button-release :button button))))
 
 (defvar *previous-mouse-position* NIL)
 (define-override (main mouse-move-event) (ev)
   (let ((new (vec (q+:x (q+:pos-f ev)) (q+:y (q+:pos-f ev)) 0)))
-    (issue 'mouse-move :old-pos (or *previous-mouse-position* new) :new-pos new)
+    (issue (scene main) 'mouse-move :old-pos (or *previous-mouse-position* new) :new-pos new)
     (setf *previous-mouse-position* new)))

@@ -11,16 +11,12 @@
 (defvar *main-window* NIL)
 
 (define-widget main (QGLWidget)
-  ((game-objects :initform NIL :accessor objects)))
+  ((scene :initform (make-instance 'scene) :accessor scene :finalized T)))
 
 (define-initializer (main setup)
   (setf *main-window* main)
   (q+:resize main 1024 768)
   (setf (q+:window-title main) "Trial"))
-
-(define-finalizer (main teardown)
-  (loop for obj in (objects main)
-        do (finalize obj)))
 
 (define-subwidget (main timer) (q+:make-qtimer main)
   (setf (q+:single-shot timer) T)
@@ -32,10 +28,8 @@
   (declare (connected timer (timeout)))
   (let ((start (get-internal-real-time)))
     (with-simple-restart (abort "Abort the update and continue.")
-      (issue 'tick)
-      (process *event-loop*)
-      (loop for obj in (objects main) ;; remove this later as it will be handled through *event-loop*
-            do (update obj)))
+      (issue scene 'tick)
+      (process scene))
     (q+:repaint main)
     (q+:start timer 
               (round (max 0 (* (- *fps* (/ (- (get-internal-real-time) start)
@@ -43,8 +37,9 @@
                                1000))))))
 
 (define-override (main "initializeGL" initialize-gl) ()
-  (push (make-instance 'game-object :path "cat.png") (objects main)))
+  (add-subject (make-instance 'game-object :path "cat.png") scene))
 
+;; FIXME: Use paintGL
 (define-override (main paint-event) (ev)
   (declare (ignore ev))
   (with-simple-restart (abort "Abort the drawing and continue.")
@@ -54,13 +49,9 @@
 
       (q+:begin-native-painting painter)
 
-      (loop for obj in (objects main)
-            do (draw obj))
+      (draw scene)
       
       (q+:end-native-painting painter))))
 
 (defun main ()
-  (deeds:start *event-loop*)
-  (unwind-protect
-       (with-main-window (window 'main #-darwin :main-thread #-darwin NIL))
-    (deeds:stop *event-loop*)))
+  (with-main-window (window 'main #-darwin :main-thread #-darwin NIL)))
