@@ -7,45 +7,83 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(define-subject game-object ()
-  ((angle :initform 0)
-   (angle-delta :initform 1)
-   (location :initform (vec 250 250 0) :accessor location)
-   (velocity :initform (vec 0 0 0) :accessor velocity)
-   (path :initarg :path :initform NIL :accessor path)
-   (image :initform NIL :accessor image :finalized T))
-  (:default-initargs :path (error "Must define a file path.")))
+(define-subject textured-subject ()
+  ((texture :initform NIL :accessor texture :finalized T)))
 
-(defmethod initialize-instance :after ((obj game-object) &key)
-  (setf (image obj) (load-image-buffer (path obj))))
+(defmethod initialize-instance :after ((subject textured-subject) &key (texture NIL t-p) &allow-other-keys)
+  (when t-p (setf (texture subject) texture)))
 
-(defmethod draw ((obj game-object))
-  (let ((image (q+:texture (image obj)))
-        (size (q+:size (image obj)))
-        (location (location obj)))
+(defmethod reinitialize-instance :after ((subject textured-subject) &key (texture NIL t-p) &allow-other-keys)
+  (when t-p (setf (texture subject) texture)))
+
+(defmethod (setf texture) :around (texture (subject textured-subject))
+  (let ((prev (finalize (texture subject))))
+    (call-next-method)
+    (finalize prev)))
+
+(defmethod (setf texture) (texture (subject textured-subject))
+  (setf (slot-value subject 'texture)
+        (qtypecase texture
+          (QImage (image->framebuffer texture))
+          (QGLFramebufferObject texture)
+          (T (error "Don't know how to use ~a as a texture for ~a." texture subject)))))
+
+(defmethod (setf texture) ((path pathname) (subject textured-subject))
+  (setf (texture subject) (load-image-buffer (resource-pathname path))))
+
+(defmethod (setf texture) ((path string) (subject textured-subject))
+  (setf (texture subject) (uiop:parse-native-namestring path)))
+
+(defmethod (setf texture) ((null null) (subject textured-subject))
+  (setf (slot-value subject 'texture) NIL))
+
+(defmethod draw ((obj textured-subject))
+  (let ((texture (texture obj)))
+    (when texture
+      (let ((size (q+:size texture)))
+        (q+:draw-texture
+         *main-window*
+         (q+:make-qpointf (- (/ (q+:width size) 2))
+                          (- (/ (q+:height size) 2)))
+         (q+:texture texture))))))
+
+(define-subject located-subject ()
+  ((location :initform (vec 0 0 0) :accessor location)))
+
+(defmethod draw :around ((obj located-subject))
+  (let ((pos (location obj)))
     (gl:push-matrix)
-    (gl:translate (vx location) (vy location) 0)
-    (gl:rotate (slot-value obj 'angle) 0 0 1)
-    (q+:draw-texture *main-window*
-                     (q+:make-qpointf (- (/ (q+:width size) 2))
-                                      (- (/ (q+:height size) 2)))
-                     image)
+    (gl:translate (vx pos) (vy pos) (vz pos))
+    (call-next-method)
     (gl:pop-matrix)))
 
-(define-handler (game-object update tick) (ev)
-  (incf (slot-value game-object 'angle) (slot-value game-object 'angle-delta))
-  (nv+ (location game-object) (velocity game-object)))
+(define-subject oriented-subject ()
+  ((orientation :initform (vec 0 0 0) :accessor orientation)))
 
-(define-handler (game-object catty-go key-press) (ev key)
-  (case key
-    (:left (setf (vx (velocity game-object)) -5))
-    (:right (setf (vx (velocity game-object)) 5))
-    (:up (setf (vy (velocity game-object)) -5))
-    (:down (setf (vy (velocity game-object)) 5))))
+(define-subject cat (located-subject textured-subject)
+  ((angle :initform 0)
+   (angle-delta :initform 1)
+   (velocity :initform (vec 0 0 0) :accessor velocity))
+  (:default-initargs :texture "cat.png"))
 
-(define-handler (game-object catty-stop key-release) (ev key)
+(defmethod draw ((cat cat))
+  (gl:rotate (slot-value cat 'angle) 0 0 1)
+  (call-next-method))
+
+(define-handler (cat update tick) (ev)
+  (incf (slot-value cat 'angle) (slot-value cat 'angle-delta))
+  (nv+ (location cat) (velocity cat)))
+
+(define-handler (cat catty-go key-press) (ev key)
   (case key
-    (:left (setf (vx (velocity game-object)) 0))
-    (:right (setf (vx (velocity game-object)) 0))
-    (:up (setf (vy (velocity game-object)) 0))
-    (:down (setf (vy (velocity game-object)) 0))))
+    (:left (setf (vx (velocity cat)) -5))
+    (:right (setf (vx (velocity cat)) 5))
+    (:up (setf (vy (velocity cat)) -5))
+    (:down (setf (vy (velocity cat)) 5))))
+
+(define-handler (cat catty-stop key-release) (ev key)
+  (case key
+    (:left (setf (vx (velocity cat)) 0))
+    (:right (setf (vx (velocity cat)) 0))
+    (:up (setf (vy (velocity cat)) 0))
+    (:down (setf (vy (velocity cat)) 0))))

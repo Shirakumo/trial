@@ -37,7 +37,7 @@
                                1000))))))
 
 (define-override (main "initializeGL" initialize-gl) ()
-  (add-subject (make-instance 'game-object :path "cat.png") scene))
+  (add-subject (make-instance 'cat) scene))
 
 ;; FIXME: Use paintGL
 (define-override (main paint-event) (ev)
