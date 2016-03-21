@@ -73,7 +73,8 @@
 ;; Cat (the test subject)
 
 (define-subject cat (located-subject oriented-subject textured-subject)
-  ((angle-delta :initform 1)
+  ((angle-delta :initform 1 :accessor angle-delta)
+   (orientation-delta :initform (vec 1 2 3) :access orientation-delta)
    (velocity :initform (vec 0 0 0) :accessor velocity))
   (:default-initargs :texture "cat.png"))
 
@@ -81,7 +82,8 @@
   (call-next-method))
 
 (define-handler (cat update tick) (ev)
-  (incf (slot-value cat 'angle) (slot-value cat 'angle-delta))
+  (incf (angle cat) (angle-delta) cat)
+  (nv+ (orientation cat) (orientation-delta cat))
   (nv+ (location cat) (velocity cat)))
 
 (define-handler (cat catty-go key-press) (ev key)
