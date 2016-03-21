@@ -45,7 +45,11 @@
   ((queue :initform (make-array 0 :initial-element NIL :adjustable T :fill-pointer T) :reader queue)))
 
 (defun issue (loop event-type &rest args)
-  (vector-push-extend (apply #'make-instance event-type args) (queue loop)))
+  (let ((event (etypecase event-type
+                 (event event-type)
+                 ((or class symbol)
+                  (apply #'make-instance event-type args)))))
+    (vector-push-extend event (queue loop))))
 
 (defun process (loop)
   (loop for i from 0
