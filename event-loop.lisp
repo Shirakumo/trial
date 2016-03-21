@@ -60,7 +60,7 @@
 
 (defmethod handle (event (loop event-loop))
   (dolist (handler (handlers loop))
-    (handle handler event)))
+    (handle event handler)))
 
 (defclass handler (named-entity)
   ((event-type :initarg :event-type :accessor event-type)
