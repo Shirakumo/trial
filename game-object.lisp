@@ -37,13 +37,19 @@
 (defmethod (setf texture) ((null null) (subject textured-subject))
   (setf (slot-value subject 'texture) NIL))
 
+(defmethod draw :around ((obj textured-subject))
+  (when (texture obj)
+    (call-next-method)))
+
 (defmethod draw ((obj textured-subject))
   (let ((texture (texture obj)))
-    (when texture
-      (let ((size (q+:size texture)))
-        (with-finalizing ((point (q+:make-qpointf (- (/ (q+:width size) 2))
-                                                  (- (/ (q+:height size) 2)))))
-          (q+:draw-texture *main-window* point (q+:texture texture)))))))
+    (let ((size (q+:size texture)))
+      (with-finalizing ((point (q+:make-qpointf (- (/ (q+:width size) 2))
+                                                (- (/ (q+:height size) 2)))))
+        (q+:draw-texture *main-window* point (q+:texture texture))))))
+
+(defmethod bind-texture ((obj textured-subject))
+  (gl:bind-texture :texture-2d (q+:texture (texture obj))))
 
 (define-subject located-subject ()
   ((location :initform (vec 0 0 0) :accessor location)))
