@@ -27,7 +27,6 @@
                :qtcore
                :qtgui
                :qtopengl
-               :cl-glu
                :cl-opengl
                :verbose
                :closer-mop
