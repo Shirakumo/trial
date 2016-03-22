@@ -33,3 +33,10 @@
 (defun load-image-buffer (image)
   (with-finalizing ((image (file->image image)))
     (image->framebuffer image)))
+
+(qt::def-unmarshal (variable "GLuint" type)
+  (cffi:mem-ref variable :uint))
+
+;; THIS IS BROKEN. FIX
+(qt::defmarshal (value (:|GLuint|) :around NIL :type integer)
+  (cffi:make-pointer value))
