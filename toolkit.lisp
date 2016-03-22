@@ -32,20 +32,3 @@
 (defun load-image-buffer (image)
   (with-finalizing ((image (file->image image)))
     (image->framebuffer image)))
-
-(defun make-matrix (width height)
-  (make-array (* width height) :initial-element 0))
-
-(defun matrix-el (matrix x y width)
-  (elt matrix (+ x (* y width))))
-
-(defun set-matrix-el (matrix x y width new-value)
-  (unless (null matrix)
-    (setf (elt matrix (+ x (* y width))) new-value))
-  new-value)
-
-(defsetf matrix-el set-matrix-el)
-
-(defun cot (x)
-  "Cotangent"
-  (tan (- (/ PI 2) x)))

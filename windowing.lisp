@@ -56,7 +56,7 @@
     (gl:ortho 0 width 0 height -1 1)
     (gl:matrix-mode :modelview)
     (gl:load-identity)
-    (gl:mult-matrix (perspective-matrix 45 (/ width (max 1 height)) 0.1 100))))
+    (set-perspective 45 (/ width (max 1 height)) 0.1 100)))
 
 (define-override (main "paintGL" paint-gl) ()
   (with-simple-restart (abort "Abort the drawing and continue.")
@@ -66,13 +66,8 @@
 (defun main ()
   (with-main-window (window 'main #-darwin :main-thread #-darwin NIL)))
 
-(defun perspective-matrix (fovy aspect z-near z-far)
-  "This is an implementation of the perspective matrix generation from gluPerspective."
-  (let ((projection (make-matrix 4 4))
-        (f (cot (/ fovy 2))))
-    (setf (matrix-el projection 0 0 4) (/ f aspect)
-          (matrix-el projection 1 1 4) f
-          (matrix-el projection 2 2 4) (/ (+ z-far z-near) (- z-near z-far))
-          (matrix-el projection 3 2 4) (/ (* 2 z-far z-near) (- z-near z-far))
-          (matrix-el projection 2 3 4) -1)
-    projection))
+(defun set-perspective (fovy aspect z-near z-far)
+  ;; http://nehe.gamedev.net/article/replacement_for_gluperspective/21002/
+  (let* ((fh (* (tan (* (/ fovy 360) PI)) z-near))
+         (fw (* fh aspect)))
+    (gl:frustum (- fw) fw (- fh) fh z-near z-far)))
