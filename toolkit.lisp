@@ -16,6 +16,7 @@
 (defun image->framebuffer (image)
   (with-finalizing ((format (q+:make-qglframebufferobjectformat)))
     (setf (q+:attachment format) (q+:qglframebufferobject.combined-depth-stencil))
+    (setf (q+:mipmap format) T)
     (let ((buffer (q+:make-qglframebufferobject (q+:size image) format)))
       (with-finalizing ((painter (q+:make-qpainter buffer)))
         (q+:draw-image painter 0 0 image)
