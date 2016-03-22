@@ -91,10 +91,6 @@
   (gl:tex-coord 0 1)
   (gl:vertex -1 1 -1)
   (gl:end)
-  
-  (gl:push-matrix)
-  (call-next-method)
-  (gl:pop-matrix)
   (gl:load-identity))
 
 (define-handler (cat update tick) (ev)
