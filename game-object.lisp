@@ -7,8 +7,6 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-;; Textured Subject
-
 (define-subject textured-subject ()
   ((texture :initform NIL :accessor texture :finalized T)))
 
@@ -47,19 +45,13 @@
                                                   (- (/ (q+:height size) 2)))))
           (q+:draw-texture *main-window* point (q+:texture texture)))))))
 
-;; Located Subject
-
 (define-subject located-subject ()
   ((location :initform (vec 0 0 0) :accessor location)))
 
 (defmethod draw :around ((obj located-subject))
   (let ((pos (location obj)))
-    (gl:push-matrix)
     (gl:translate (vx pos) (vy pos) (vz pos))
-    (call-next-method)
-    (gl:pop-matrix)))
-
-;; Oriented Subject
+    (call-next-method)))
 
 (define-subject oriented-subject ()
   ((orientation :initform (vec 0 0 1) :accessor orientation)
@@ -70,16 +62,21 @@
     (gl:rotate (slot-value obj 'angle) (vx vector) (vy vector) (vz vector)))
   (call-next-method))
 
-;; Cat (the test subject)
-
 (define-subject cat (located-subject oriented-subject textured-subject)
   ((angle-delta :initform 1 :accessor angle-delta)
-   (orientation-delta :initform (vec 1 2 3) :accessor orientation-delta)
+   (orientation-delta :initform (vec 0 0 0) :accessor orientation-delta)
    (velocity :initform (vec 0 0 0) :accessor velocity))
   (:default-initargs :texture "cat.png"))
 
+(defmethod initialize-instance :after ((cat cat) &key)
+  (setf (location cat) (vec 100 100 0)))
+
 (defmethod draw ((cat cat))
-  (call-next-method))
+  (gl:matrix-mode :modelview)
+  (gl:push-matrix)
+  (call-next-method)
+  (gl:pop-matrix)
+  (gl:load-identity))
 
 (define-handler (cat update tick) (ev)
   (incf (angle cat) (angle-delta cat))
@@ -90,8 +87,8 @@
   (case key
     (:left (setf (vx (velocity cat)) -5))
     (:right (setf (vx (velocity cat)) 5))
-    (:up (setf (vy (velocity cat)) -5))
-    (:down (setf (vy (velocity cat)) 5))))
+    (:up (setf (vy (velocity cat)) 5))
+    (:down (setf (vy (velocity cat)) -5))))
 
 (define-handler (cat catty-stop key-release) (ev key)
   (case key
