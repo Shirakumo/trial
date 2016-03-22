@@ -61,7 +61,8 @@
 (define-override (main "paintGL" paint-gl) ()
   (with-simple-restart (abort "Abort the drawing and continue.")
     (gl:clear :color-buffer-bit :depth-buffer-bit)
-    (draw scene)))
+    (draw scene)
+    (gl:flush)))
 
 (defun main ()
   (with-main-window (window 'main #-darwin :main-thread #-darwin NIL)))

@@ -42,11 +42,11 @@
     (call-next-method)))
 
 (defmethod draw ((obj textured-subject))
-  (let ((texture (texture obj)))
-    (let ((size (q+:size texture)))
-      (with-finalizing ((point (q+:make-qpointf (- (/ (q+:width size) 2))
-                                                (- (/ (q+:height size) 2)))))
-        (q+:draw-texture *main-window* point (q+:texture texture))))))
+  (let* ((texture (texture obj))
+         (size (q+:size texture)))
+    (with-finalizing ((point (q+:make-qpointf (- (/ (q+:width size) 2))
+                                              (- (/ (q+:height size) 2)))))
+      (q+:draw-texture *main-window* point (q+:texture texture)))))
 
 (defmethod bind-texture ((obj textured-subject))
   (gl:bind-texture :texture-2d (q+:texture (texture obj))))
@@ -79,6 +79,19 @@
 
 (defmethod draw ((cat cat))
   (gl:matrix-mode :modelview)
+  
+  (bind-texture cat)
+  (gl:begin :quads)
+  (gl:tex-coord 0 0)
+  (gl:vertex -1 1 1)
+  (gl:tex-coord 1 0)
+  (gl:vertex 1 1 1)
+  (gl:tex-coord 0 0)
+  (gl:vertex 1 1 -1)
+  (gl:tex-coord 0 1)
+  (gl:vertex -1 1 -1)
+  (gl:end)
+  
   (gl:push-matrix)
   (call-next-method)
   (gl:pop-matrix)
