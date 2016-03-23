@@ -54,7 +54,7 @@
     (gl:matrix-mode :projection)
     (gl:load-identity)
     (gl:ortho 0 width 0 height -1 1)
-    (set-perspective 45 (/ width (max 1 height)) 0.1 100)
+    (set-perspective 45 (/ width (max 1 height)) 0.1 1000)
     (gl:matrix-mode :modelview)
     (gl:load-identity)
     (gl:viewport 0 0 width height)))
