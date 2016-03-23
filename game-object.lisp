@@ -26,12 +26,7 @@
         (qtypecase texture
           (QImage (image->framebuffer texture))
           (QGLFramebufferObject texture)
-          (T (error "Don't know how to use ~a as a texture for ~a." texture subject))))
-  (bind-texture subject)
-  (gl:tex-parameter :texture-2d :texture-min-filter :linear)
-  (gl:tex-parameter :texture-2d :texture-mag-filter :linear)
-  (gl:tex-parameter :texture-2d :texture-wrap-s :clamp)
-  (gl:tex-parameter :texture-2d :texture-wrap-t :clamp))
+          (T (error "Don't know how to use ~a as a texture for ~a." texture subject)))))
 
 (defmethod (setf texture) ((path pathname) (subject textured-subject))
   (setf (texture subject) (load-image-buffer (resource-pathname path))))
@@ -47,7 +42,11 @@
     (call-next-method)))
 
 (defmethod bind-texture ((obj textured-subject))
-  (gl:bind-texture :texture-2d (q+:texture (texture obj))))
+  (gl:bind-texture :texture-2d (q+:texture (texture obj)))
+  (gl:tex-parameter :texture-2d :texture-min-filter :linear)
+  (gl:tex-parameter :texture-2d :texture-mag-filter :linear)
+  (gl:tex-parameter :texture-2d :texture-wrap-s :clamp)
+  (gl:tex-parameter :texture-2d :texture-wrap-t :clamp))
 
 (define-subject located-subject ()
   ((location :initform (vec 0 0 0) :accessor location)))
