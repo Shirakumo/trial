@@ -73,7 +73,20 @@
       (gl:rotate angle (vx axis) (vy axis) (vz axis))
       (call-next-method))))
 
-(define-subject cat (located-subject oriented-subject textured-subject)
+(define-subject rotated-subject ()
+  ((axis :initarg :axis :accessor axis)
+   (angle :initarg :angle :accessor angle))
+  (:default-initargs
+   :axis (vec 0 1 0)
+   :angle 0))
+
+(defmethod draw :around ((obj rotated-subject))
+  (gl:with-pushed-matrix
+    (let ((axis (axis obj)))
+      (gl:rotate (angle obj) (vx axis) (vy axis) (vz axis))
+      (call-next-method))))
+
+(define-subject cat (located-subject rotated-subject textured-subject)
   ((angle-delta :initform 1 :accessor angle-delta)
    (velocity :initform (vec 0 0 0) :accessor velocity))
   (:default-initargs
