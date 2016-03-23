@@ -97,7 +97,7 @@
   (gl:enable :texture-2d)
   
   (bind-texture cat)
-  (gl:with-primitives (:quads)
+  (gl:with-primitives :quads
     (gl:color 1 1 1)
     (gl:tex-coord 1 1) (gl:vertex -1 1 1)
     (gl:tex-coord 1 0) (gl:vertex 1 1 1)
