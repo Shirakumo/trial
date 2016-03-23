@@ -132,15 +132,15 @@
   (case key
     (:left (setf (vx (velocity cat)) -5))
     (:right (setf (vx (velocity cat)) 5))
-    (:up (setf (vy (velocity cat)) 5))
-    (:down (setf (vy (velocity cat)) -5))))
+    (:up (setf (vz (velocity cat)) 5))
+    (:down (setf (vz (velocity cat)) -5))))
 
 (define-handler (cat catty-stop key-release) (ev key)
   (case key
     (:left (setf (vx (velocity cat)) 0))
     (:right (setf (vx (velocity cat)) 0))
-    (:up (setf (vy (velocity cat)) 0))
-    (:down (setf (vy (velocity cat)) 0))))
+    (:up (setf (vz (velocity cat)) 0))
+    (:down (setf (vz (velocity cat)) 0))))
 
 (define-subject camera (located-subject oriented-subject)
   ((target :initform (vec 0 0 0) :accessor target)))
