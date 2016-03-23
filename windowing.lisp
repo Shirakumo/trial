@@ -53,7 +53,6 @@
   (with-simple-restart (abort "Abort the resize and continue.")
     (gl:matrix-mode :projection)
     (gl:load-identity)
-    (gl:ortho 0 width 0 height -1 1)
     (set-perspective 45 (/ width (max 1 height)) 0.1 1000)
     (gl:matrix-mode :modelview)
     (gl:load-identity)
@@ -63,6 +62,8 @@
   (with-simple-restart (abort "Abort the drawing and continue.")
     (gl:clear :color-buffer :depth-buffer)
     (gl:load-identity)
+    ;; FIXME: Move into camera code
+    (gl:translate 0 0 -10)
     (draw scene)
     (gl:flush)))
 
