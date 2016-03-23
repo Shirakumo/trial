@@ -49,27 +49,29 @@
   (gl:tex-parameter :texture-2d :texture-wrap-t :clamp))
 
 (define-subject located-subject ()
-  ((location :initform (vec 0 0 0) :accessor location)))
+  ((location :initarg :location :accessor location))
+  (:default-initargs
+   :location (vec 0 0 0)))
 
 (defmethod draw :around ((obj located-subject))
-  (let ((pos (location obj)))
-    (gl:translate (vx pos) (vy pos) (vz pos))
-    (call-next-method)))
+  (gl:with-pushed-matrix
+    (let ((location (location obj)))
+      (gl:translate (vx location) (vy location) (vz location))
+      (call-next-method))))
 
 (define-subject oriented-subject ()
-  ((right :initform (vec 1 0 0) :accessor right)
-   (up :initform (vec 0 1 0) :accessor up)
-   (direction :initform (vec 0 0 1) :accessor direction)
-   (angle :initform 0 :accessor angle)))
-
-(defmethod initialize-instance :after ((obj oriented-subject) &key)
-  (setf (right obj) (nvunit (vc (up obj) (direction obj)))
-        (up obj) (vc (direction obj) (right obj))))
+  ((orientation :initarg :orientation :accessor orientation)
+   (up :initarg :up :accessor up))
+  (:default-initargs
+   :orientation (vec 1 0 0)
+   :up (vec 0 1 0)))
 
 (defmethod draw :around ((obj oriented-subject))
-  (let ((vector (up obj)))
-    (gl:rotate (slot-value obj 'angle) (vx vector) (vy vector) (vz vector)))
-  (call-next-method))
+  (gl:with-pushed-matrix
+    (let ((axis (vc (up obj) (orientation obj)))
+          (angle (acos (v. (up obj) (orientation obj)))))
+      (gl:rotate angle (vx axis) (vy axis) (vz axis))
+      (call-next-method))))
 
 (define-subject cat (located-subject oriented-subject textured-subject)
   ((angle-delta :initform 1 :accessor angle-delta)
