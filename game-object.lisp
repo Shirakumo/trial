@@ -74,10 +74,9 @@
 (define-subject cat (located-subject oriented-subject textured-subject)
   ((angle-delta :initform 1 :accessor angle-delta)
    (velocity :initform (vec 0 0 0) :accessor velocity))
-  (:default-initargs :texture "cat.png"))
-
-(defmethod initialize-instance :after ((cat cat) &key)
-  (setf (location cat) (vec 0 0 0)))
+  (:default-initargs
+   :texture "cat.png"
+   :location (vec 0 0 0)))
 
 (defmethod draw ((cat cat))
   (gl:enable :texture-2d)
