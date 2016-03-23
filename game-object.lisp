@@ -26,7 +26,12 @@
         (qtypecase texture
           (QImage (image->framebuffer texture))
           (QGLFramebufferObject texture)
-          (T (error "Don't know how to use ~a as a texture for ~a." texture subject)))))
+          (T (error "Don't know how to use ~a as a texture for ~a." texture subject))))
+  (bind-texture subject)
+  (gl:tex-parameter :texture-2d :texture-min-filter :linear)
+  (gl:tex-parameter :texture-2d :texture-mag-filter :linear)
+  (gl:tex-parameter :texture-2d :texture-wrap-s :clamp)
+  (gl:tex-parameter :texture-2d :texture-wrap-t :clamp))
 
 (defmethod (setf texture) ((path pathname) (subject textured-subject))
   (setf (texture subject) (load-image-buffer (resource-pathname path))))
@@ -41,13 +46,6 @@
   (when (texture obj)
     (call-next-method)))
 
-(defmethod draw ((obj textured-subject))
-  (let* ((texture (texture obj))
-         (size (q+:size texture)))
-    (with-finalizing ((point (q+:make-qpointf (- (/ (q+:width size) 2))
-                                              (- (/ (q+:height size) 2)))))
-      (q+:draw-texture *main-window* point (q+:texture texture)))))
-
 (defmethod bind-texture ((obj textured-subject))
   (gl:bind-texture :texture-2d (q+:texture (texture obj))))
 
@@ -60,42 +58,62 @@
     (call-next-method)))
 
 (define-subject oriented-subject ()
-  ((orientation :initform (vec 0 0 1) :accessor orientation)
+  ((right :initform (vec 1 0 0) :accessor right)
+   (up :initform (vec 0 1 0) :accessor up)
+   (direction :initform (vec 0 0 1) :accessor direction)
    (angle :initform 0 :accessor angle)))
 
-(defmethod draw ((obj oriented-subject))
-  (let ((vector (orientation obj)))
+(defmethod initialize-instance :after ((obj oriented-subject) &key)
+  (setf (right obj) (normalize (cross (up obj) (direction obj)))
+        (up obj) (cross (direction obj) (right obj))))
+
+(defmethod draw :around ((obj oriented-subject))
+  (let ((vector (up obj)))
     (gl:rotate (slot-value obj 'angle) (vx vector) (vy vector) (vz vector)))
   (call-next-method))
 
 (define-subject cat (located-subject oriented-subject textured-subject)
   ((angle-delta :initform 1 :accessor angle-delta)
-   (orientation-delta :initform (vec 0 0 0) :accessor orientation-delta)
    (velocity :initform (vec 0 0 0) :accessor velocity))
   (:default-initargs :texture "cat.png"))
 
 (defmethod initialize-instance :after ((cat cat) &key)
-  (setf (location cat) (vec 100 100 0)))
+  (setf (location cat) (vec 0 0 0)))
 
 (defmethod draw ((cat cat))
-  (gl:matrix-mode :modelview)
+  (gl:enable :texture-2d)
   
   (bind-texture cat)
   (gl:begin :quads)
-  (gl:tex-coord 0 0)
-  (gl:vertex -1 1 1)
-  (gl:tex-coord 1 0)
-  (gl:vertex 1 1 1)
-  (gl:tex-coord 0 0)
-  (gl:vertex 1 1 -1)
-  (gl:tex-coord 0 1)
-  (gl:vertex -1 1 -1)
-  (gl:end)
-  (gl:load-identity))
+  (gl:color 1 1 1)
+  (gl:tex-coord 1 1) (gl:vertex -1 1 1)
+  (gl:tex-coord 1 0) (gl:vertex 1 1 1)
+  (gl:tex-coord 0 0) (gl:vertex 1 1 -1)
+  (gl:tex-coord 0 1) (gl:vertex -1 1 -1)
+  
+  (gl:tex-coord 1 0) (gl:vertex -1 -1 1)
+  (gl:tex-coord 0 0) (gl:vertex -1 -1 -1)
+  (gl:tex-coord 0 1) (gl:vertex 1 -1 -1)
+  (gl:tex-coord 1 1) (gl:vertex 1 -1 1)
+  
+  (gl:tex-coord 1 0) (gl:vertex -1 1 1)
+  (gl:tex-coord 0 0) (gl:vertex -1 -1 1)
+  (gl:tex-coord 1 0.3) (gl:vertex 1 1 1)
+  
+  (gl:tex-coord 0 0.3) (gl:vertex 1 -1 1)
+  
+  (gl:tex-coord 1 0.5) (gl:vertex 1 1 -1)
+  (gl:tex-coord 0 0.5) (gl:vertex 1 -1 -1)
+  
+  (gl:tex-coord 1 0.75) (gl:vertex -1 1 -1)
+  (gl:tex-coord 0 0.75) (gl:vertex -1 -1 -1)
+  
+  (gl:tex-coord 1 0.95) (gl:vertex -1 1 1)
+  (gl:tex-coord 0 0.95) (gl:vertex -1 -1 1)
+  (gl:end))
 
 (define-handler (cat update tick) (ev)
   (incf (angle cat) (angle-delta cat))
-  (nv+ (orientation cat) (orientation-delta cat))
   (nv+ (location cat) (velocity cat)))
 
 (define-handler (cat catty-go key-press) (ev key)
@@ -111,3 +129,42 @@
     (:right (setf (vx (velocity cat)) 0))
     (:up (setf (vy (velocity cat)) 0))
     (:down (setf (vy (velocity cat)) 0))))
+
+(define-subject camera (located-subject oriented-subject)
+  ((target :initform (vec 0 0 0) :accessor target)))
+
+(defmethod initialize-instance :after ((camera camera) &key)
+  (setf (location camera) (vec 0 0 3)
+        (direction camera) (normalize (v- (location camera) (target camera)))))
+
+(defun normalize (vector)
+  (let ((length (sqrt (+ (* (vx vector) (vx vector))
+                         (* (vy vector) (vy vector))
+                         (* (vz vector) (vz vector))))))
+    (if (/= length 0)
+        (vec (/ (vx vector) length)
+             (/ (vy vector) length)
+             (/ (vz vector) length))
+        vector)))
+
+(defun cross (vector-a vector-b)
+  (let ((ax (vx vector-a)) (ay (vy vector-a)) (az (vz vector-a))
+        (bx (vx vector-b)) (by (vy vector-b)) (bz (vz vector-b))))
+  (vec (- (* ay bz) (* az by))
+       (- (* az bx) (* ax bz))
+       (- (* ax by) (* ay bx))))
+
+(defun lookat (target up)
+  (let* ((forward (normalize target))
+         (side (normalize (v* up forward)))
+         (up (v* forward side))
+         (matrix (make-array (* 3 3))))
+    (setf (elt matrix 0) (vx side) ;; first row
+          (elt matrix 1) (vy side)
+          (elt matrix 2) (vz side)
+          (elt matrix 3) (vx up)   ;; second row
+          (elt matrix 4) (vy up)
+          (elt matrix 5) (vz up)
+          (elt matrix 6) (vx forward) ;; third row
+          (elt matrix 7) (vy forward)
+          (elt matrix 8) (vz forward))))
