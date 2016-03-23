@@ -63,8 +63,8 @@
    (angle :initform 0 :accessor angle)))
 
 (defmethod initialize-instance :after ((obj oriented-subject) &key)
-  (setf (right obj) (normalize (cross (up obj) (direction obj)))
-        (up obj) (cross (direction obj) (right obj))))
+  (setf (right obj) (nvunit (vc (up obj) (direction obj)))
+        (up obj) (vc (direction obj) (right obj))))
 
 (defmethod draw :around ((obj oriented-subject))
   (let ((vector (up obj)))
@@ -133,28 +133,11 @@
 
 (defmethod initialize-instance :after ((camera camera) &key)
   (setf (location camera) (vec 0 0 3)
-        (direction camera) (normalize (v- (location camera) (target camera)))))
-
-(defun normalize (vector)
-  (let ((length (sqrt (+ (* (vx vector) (vx vector))
-                         (* (vy vector) (vy vector))
-                         (* (vz vector) (vz vector))))))
-    (if (/= length 0)
-        (vec (/ (vx vector) length)
-             (/ (vy vector) length)
-             (/ (vz vector) length))
-        vector)))
-
-(defun cross (vector-a vector-b)
-  (let ((ax (vx vector-a)) (ay (vy vector-a)) (az (vz vector-a))
-        (bx (vx vector-b)) (by (vy vector-b)) (bz (vz vector-b))))
-  (vec (- (* ay bz) (* az by))
-       (- (* az bx) (* ax bz))
-       (- (* ax by) (* ay bx))))
+        (direction camera) (nvunit (v- (location camera) (target camera)))))
 
 (defun lookat (target up)
-  (let* ((forward (normalize target))
-         (side (normalize (v* up forward)))
+  (let* ((forward (vunit target))
+         (side (vunit (v* up forward)))
          (up (v* forward side))
          (matrix (make-array (* 3 3))))
     (setf (elt matrix 0) (vx side) ;; first row
