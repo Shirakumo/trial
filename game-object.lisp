@@ -99,30 +99,35 @@
   (bind-texture cat)
   (gl:with-primitives :quads
     (gl:color 1 1 1)
-    (gl:tex-coord 1 1) (gl:vertex -1 1 1)
-    (gl:tex-coord 1 0) (gl:vertex 1 1 1)
-    (gl:tex-coord 0 0) (gl:vertex 1 1 -1)
-    (gl:tex-coord 0 1) (gl:vertex -1 1 -1)
+    (gl:tex-coord 1 1) (gl:vertex -1  1  1)
+    (gl:tex-coord 1 0) (gl:vertex  1  1  1)
+    (gl:tex-coord 0 0) (gl:vertex  1  1 -1)
+    (gl:tex-coord 0 1) (gl:vertex -1  1 -1)
     
-    (gl:tex-coord 1 0) (gl:vertex -1 -1 1)
+    (gl:tex-coord 1 0) (gl:vertex -1 -1  1)
     (gl:tex-coord 0 0) (gl:vertex -1 -1 -1)
-    (gl:tex-coord 0 1) (gl:vertex 1 -1 -1)
-    (gl:tex-coord 1 1) (gl:vertex 1 -1 1)
-    
-    (gl:tex-coord 1 0) (gl:vertex -1 1 1)
-    (gl:tex-coord 0 0) (gl:vertex -1 -1 1)
-    (gl:tex-coord 1 0.3) (gl:vertex 1 1 1)
-    
-    (gl:tex-coord 0 0.3) (gl:vertex 1 -1 1)
-    
-    (gl:tex-coord 1 0.5) (gl:vertex 1 1 -1)
-    (gl:tex-coord 0 0.5) (gl:vertex 1 -1 -1)
-    
-    (gl:tex-coord 1 0.75) (gl:vertex -1 1 -1)
-    (gl:tex-coord 0 0.75) (gl:vertex -1 -1 -1)
-    
-    (gl:tex-coord 1 0.95) (gl:vertex -1 1 1)
-    (gl:tex-coord 0 0.95) (gl:vertex -1 -1 1)))
+    (gl:tex-coord 0 1) (gl:vertex  1 -1 -1)
+    (gl:tex-coord 1 1) (gl:vertex  1 -1  1)
+
+    (gl:tex-coord 1 0) (gl:vertex -1 -1  1)
+    (gl:tex-coord 0 0) (gl:vertex -1  1  1)
+    (gl:tex-coord 0 1) (gl:vertex  1  1  1)
+    (gl:tex-coord 1 1) (gl:vertex  1 -1  1)
+
+    (gl:tex-coord 1 0) (gl:vertex -1 -1 -1)
+    (gl:tex-coord 0 0) (gl:vertex -1  1 -1)
+    (gl:tex-coord 0 1) (gl:vertex  1  1 -1)
+    (gl:tex-coord 1 1) (gl:vertex  1 -1 -1)
+
+    (gl:tex-coord 1 0) (gl:vertex  1 -1 -1)
+    (gl:tex-coord 0 0) (gl:vertex  1  1 -1)
+    (gl:tex-coord 0 1) (gl:vertex  1  1  1)
+    (gl:tex-coord 1 1) (gl:vertex  1 -1  1)
+
+    (gl:tex-coord 1 0) (gl:vertex -1 -1 -1)
+    (gl:tex-coord 0 0) (gl:vertex -1  1 -1)
+    (gl:tex-coord 0 1) (gl:vertex -1  1  1)
+    (gl:tex-coord 1 1) (gl:vertex -1 -1  1)))
 
 (define-handler (cat update tick) (ev)
   (incf (angle cat) (angle-delta cat))
