@@ -23,6 +23,7 @@
         buffer))))
 
 (defun file->image (file)
+  (v:info :trial.toolkit "Loading image ~s" file)
   (unless (probe-file file)
     (error "Invalid file path ~s." file))
   (let ((image (q+:make-qimage (uiop:native-namestring file))))
