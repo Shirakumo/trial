@@ -49,6 +49,7 @@
   (gl:cull-face :back)
   (gl:enable :cull-face)
   (gl:hint :perspective-correction-hint :nicest)
+  (gl:enable :texture-2d)
   (add-subject (make-instance 'cat) scene))
 
 (define-override (main "resizeGL" resize-gl) (width height)
@@ -65,7 +66,7 @@
     (gl:clear :color-buffer :depth-buffer)
     (gl:load-identity)
     ;; FIXME: Move into camera code
-    (gl:translate 0 0 -50)
+    (gl:translate 0 0 -40)
     (draw scene)
     (gl:flush)))
 
