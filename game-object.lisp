@@ -86,48 +86,12 @@
       (gl:rotate (angle obj) (vx axis) (vy axis) (vz axis))
       (call-next-method))))
 
-(define-subject cat (located-subject rotated-subject textured-subject)
+(define-subject cat (located-subject rotated-subject mesh-subject)
   ((angle-delta :initform 1 :accessor angle-delta)
    (velocity :initform (vec 0 0 0) :accessor velocity))
   (:default-initargs
-   :texture "cat.png"
+   :mesh "cube.obj"
    :location (vec 0 0 0)))
-
-(defmethod draw ((cat cat))
-  (gl:enable :texture-2d)
-  
-  (bind-texture cat)
-  (gl:with-primitives :quads
-    (gl:color 1 1 1)
-    (gl:tex-coord 1 1) (gl:vertex -1  1  1)
-    (gl:tex-coord 1 0) (gl:vertex  1  1  1)
-    (gl:tex-coord 0 0) (gl:vertex  1  1 -1)
-    (gl:tex-coord 0 1) (gl:vertex -1  1 -1)
-    
-    (gl:tex-coord 1 0) (gl:vertex -1 -1  1)
-    (gl:tex-coord 0 0) (gl:vertex -1 -1 -1)
-    (gl:tex-coord 0 1) (gl:vertex  1 -1 -1)
-    (gl:tex-coord 1 1) (gl:vertex  1 -1  1)
-
-    (gl:tex-coord 1 0) (gl:vertex -1 -1  1)
-    (gl:tex-coord 0 0) (gl:vertex -1  1  1)
-    (gl:tex-coord 0 1) (gl:vertex  1  1  1)
-    (gl:tex-coord 1 1) (gl:vertex  1 -1  1)
-
-    (gl:tex-coord 1 0) (gl:vertex -1 -1 -1)
-    (gl:tex-coord 0 0) (gl:vertex -1  1 -1)
-    (gl:tex-coord 0 1) (gl:vertex  1  1 -1)
-    (gl:tex-coord 1 1) (gl:vertex  1 -1 -1)
-
-    (gl:tex-coord 1 0) (gl:vertex  1 -1 -1)
-    (gl:tex-coord 0 0) (gl:vertex  1  1 -1)
-    (gl:tex-coord 0 1) (gl:vertex  1  1  1)
-    (gl:tex-coord 1 1) (gl:vertex  1 -1  1)
-
-    (gl:tex-coord 1 0) (gl:vertex -1 -1 -1)
-    (gl:tex-coord 0 0) (gl:vertex -1  1 -1)
-    (gl:tex-coord 0 1) (gl:vertex -1  1  1)
-    (gl:tex-coord 1 1) (gl:vertex -1 -1  1)))
 
 (define-handler (cat update tick) (ev)
   (incf (angle cat) (angle-delta cat))

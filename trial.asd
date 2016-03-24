@@ -20,14 +20,16 @@
                (:file "scene")
                (:file "windowing")
                (:file "input")
+               (:file "mesh")
                (:file "game-object"))
   :depends-on (:alexandria
                :3d-vectors
+               :verbose
                :qtools
                :qtcore
                :qtgui
                :qtopengl
                :cl-opengl
-               :verbose
                :closer-mop
-               :trivial-garbage))
+               :trivial-garbage
+               :wavefront-loader))
