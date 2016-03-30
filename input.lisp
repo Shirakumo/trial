@@ -26,12 +26,12 @@
   ())
 
 (define-override (main key-press-event) (ev)
-  (let ((key (qt-key->symbol (q+:key ev))))
-    (when key (issue (scene main) 'key-press :key key))))
+  (issue (scene main) 'key-press
+         :key (qt-key->symbol (q+:key ev))))
 
 (define-override (main key-release-event) (ev)
-  (let ((key (qt-key->symbol (q+:key ev))))
-    (when key (issue (scene main) 'key-release :key key))))
+  (issue (scene main) 'key-release
+         :key (qt-key->symbol (q+:key ev))))
 
 (defclass mouse-event (input-event)
   ())
@@ -63,17 +63,19 @@
     (format stream "~a => ~a" (old-pos event) (new-pos event))))
 
 (define-override (main mouse-press-event) (ev)
-  (let ((button (qt-button->symbol (q+:button ev))))
-    (when button (issue (scene main) 'mouse-press :button button))))
+  (issue (scene main) 'mouse-press
+         :button (qt-button->symbol (q+:button ev))))
 
 (define-override (main mouse-release-event) (ev)
-  (let ((button (qt-button->symbol (q+:button ev))))
-    (when button (issue (scene main) 'mouse-release :button button))))
+  (issue (scene main) 'mouse-release
+         :button (qt-button->symbol (q+:button ev))))
 
 (defvar *previous-mouse-position* NIL)
 (define-override (main mouse-move-event) (ev)
   (let ((new (vec (q+:x (q+:pos-f ev)) (q+:y (q+:pos-f ev)) 0)))
-    (issue (scene main) 'mouse-move :old-pos (or *previous-mouse-position* new) :new-pos new)
+    (issue (scene main) 'mouse-move
+           :old-pos (or *previous-mouse-position* new)
+           :new-pos new)
     (setf *previous-mouse-position* new)))
 
 (defclass gamepad-event (input-event)
@@ -107,19 +109,29 @@
    :new-pos (error "NEW-POS required.")))
 
 (defun cl-gamepad:device-attached (device)
-  (issue (scene *main*) 'gamepad-attach :device device))
+  (issue (scene *main*) 'gamepad-attach
+         :device device))
 
 (defun cl-gamepad:device-removed (device)
-  (issue (scene *main*) 'gamepad-remove :device device))
+  (issue (scene *main*) 'gamepad-remove
+         :device device))
 
 (defun cl-gamepad:button-pressed (button time device)
   (declare (ignore time))
-  (issue (scene *main*) 'gamepad-press :button button :device device))
+  (issue (scene *main*) 'gamepad-press
+         :button (gamepad-button->symbol device button)
+         :device device))
 
 (defun cl-gamepad:button-released (button time device)
   (declare (ignore time))
-  (issue (scene *main*) 'gamepad-release :button button :device device))
+  (issue (scene *main*) 'gamepad-release
+         :button (gamepad-button->symbol device button)
+         :device device))
 
 (defun cl-gamepad:axis-moved (axis last-value value time device)
   (declare (ignore time))
-  (issue (scene *main*) 'gamepad-move :axis axis :old-pos last-value :new-pos value :device device))
+  (issue (scene *main*) 'gamepad-move
+         :axis (gamepad-axis->symbol device axis)
+         :old-pos last-value
+         :new-pos value
+         :device device))

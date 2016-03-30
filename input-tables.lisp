@@ -141,7 +141,7 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
      (#x0000005a . :z))
    :test 'eql))
 
-(defvar *button-table*
+(defparameter *mouse-button-table*
   (alexandria:alist-hash-table
    '((#x00000001 . :left)
      (#x00000002 . :right)
@@ -150,86 +150,86 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
      (#x00000010 . :x2))
    :test 'eql))
 
-(defvar *gamepad-device-table*
+(defparameter *gamepad-device-table*
   (alexandria:alist-hash-table
    '(((1356 . 616) . :dualshock3))
    :test 'equal))
 
-(defvar *gamepad-axis-table*
+(defparameter *gamepad-axis-table*
   (alexandria:alist-hash-table
-   `(:dualshock3
-     ,(alexandria:alist-hash-table
-       '(( 0 . :left-h)
-         ( 1 . :left-v)
-         ( 2 . :right-h)
-         ( 3 . :right-v)
-         ( 8 . :dpad-up)
-         ( 9 . :dpad-right)
-         (10 . :dpad-down)
-         (11 . :dpad-left)
-         (12 . :l2)
-         (13 . :r2)
-         (14 . :l1)
-         (15 . :r1)
-         (16 . :triangle)
-         (17 . :circle)
-         (18 . :cross)
-         (19 . :square)
-         (23 . :axis-x)
-         (24 . :axis-z)
-         (25 . :axis-y)
-         (26 . :axis-r))
-       :test 'eql))
+   `((:dualshock3
+      ,(alexandria:alist-hash-table
+        '(( 0 . :left-h)
+          ( 1 . :left-v)
+          ( 2 . :right-h)
+          ( 3 . :right-v)
+          ( 8 . :dpad-up)
+          ( 9 . :dpad-right)
+          (10 . :dpad-down)
+          (11 . :dpad-left)
+          (12 . :l2)
+          (13 . :r2)
+          (14 . :l1)
+          (15 . :r1)
+          (16 . :triangle)
+          (17 . :circle)
+          (18 . :cross)
+          (19 . :square)
+          (23 . :axis-x)
+          (24 . :axis-z)
+          (25 . :axis-y)
+          (26 . :axis-r))
+        :test 'eql)))
    :test 'eql))
 
-(defvar *gamepad-button-table*
-  (alexandria:alis-hash-table
-   `(:dualshock3
-     ,(alexandria:alist-hash-table
-       '(( 0 . :select)
-         ( 1 . :left)
-         ( 2 . :right)
-         ( 3 . :start)
-         ( 4 . :dpad-up)
-         ( 5 . :dpad-right)
-         ( 6 . :dpad-down)
-         ( 7 . :dpad-left)
-         ( 8 . :l2)
-         ( 9 . :r2)
-         (10 . :l1)
-         (11 . :r1)
-         (12 . :triangle)
-         (13 . :circle)
-         (14 . :cross)
-         (15 . :square)
-         (16 . :home))
-       :test 'eql))
+(defparameter *gamepad-button-table*
+  (alexandria:alist-hash-table
+   `((:dualshock3
+      ,(alexandria:alist-hash-table
+        '(( 0 . :select)
+          ( 1 . :left)
+          ( 2 . :right)
+          ( 3 . :start)
+          ( 4 . :dpad-up)
+          ( 5 . :dpad-right)
+          ( 6 . :dpad-down)
+          ( 7 . :dpad-left)
+          ( 8 . :l2)
+          ( 9 . :r2)
+          (10 . :l1)
+          (11 . :r1)
+          (12 . :triangle)
+          (13 . :circle)
+          (14 . :cross)
+          (15 . :square)
+          (16 . :home))
+        :test 'eql)))
    :test 'eql))
 
 (defun qt-key->symbol (enum)
-  (gethash (etypecase enum
-             (integer enum)
-             (qt::enum (qt:enum-value enum)))
-           *key-table*))
+  (let ((key (etypecase enum
+               (integer enum)
+               (qt::enum (qt:enum-value enum)))))
+    (or (gethash key *key-table*)
+        key)))
 
 (defun qt-button->symbol (enum)
-  (gethash (etypecase enum
-             (integer enum)
-             (qt::enum (qt:enum-value enum)))
-           *button-table*))
+  (let ((button (etypecase enum
+                  (integer enum)
+                  (qt::enum (qt:enum-value enum)))))
+    (or (gethash button *mouse-button-table*)
+        button)))
 
 (defun gamepad-axis->symbol (device axis)
   (let ((device (gethash (cons (cl-gamepad:vendor device)
-                               (gl-gamepad:product device))
+                               (cl-gamepad:product device))
                          *gamepad-device-table*)))
-    (or (when device
-          (gethash axis (gethash device *gamepad-button-table*)))
+    (or (when device (gethash axis (gethash device *gamepad-button-table*)))
         axis)))
 
-(defun gamepad-button->symbol (device axis)
+(defun gamepad-button->symbol (device button)
   (let ((device (gethash (cons (cl-gamepad:vendor device)
-                               (gl-gamepad:product device))
+                               (cl-gamepad:product device))
                          *gamepad-device-table*)))
-    (or (when device
-          (gethash axis (gethash device *gamepad-button-table*)))
-        axis)))
+    (or (when device (gethash button (gethash device *gamepad-button-table*)))
+        button)))
