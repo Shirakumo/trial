@@ -19,6 +19,7 @@
                (:file "event-loop")
                (:file "scene")
                (:file "windowing")
+               (:file "input-tables")
                (:file "input")
                (:file "mesh")
                (:file "game-object"))
