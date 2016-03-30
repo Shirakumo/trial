@@ -7,6 +7,17 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
+(progn
+  (defparameter *fps* 30)
+  (defparameter *max-steptime* (float (/ 1000 *fps*)))
+  (defparameter *relative-time* (float (/ internal-time-units-per-second 1000))))
+
+(defun pause-miliseconds (start)
+  (let* ((duration (- (get-internal-real-time) start))
+         (secs (/ duration *relative-time*))
+         (remainder (- *max-steptime* secs)))
+    (max 0 remainder)))
+
 (defun resource-pathname (pathname)
   (let ((pathname (pathname pathname)))
     (if (eql :absolute (first (pathname-directory pathname)))

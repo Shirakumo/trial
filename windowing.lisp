@@ -7,7 +7,6 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(defparameter *fps* 1/30)
 (defvar *main-window* NIL)
 
 (define-widget main (QGLWidget)
@@ -19,8 +18,7 @@
   (setf (q+:window-title main) "Trial"))
 
 (define-subwidget (main timer) (q+:make-qtimer main)
-  (setf (q+:single-shot timer) T)
-  (q+:start timer (round *fps*)))
+  (setf (q+:single-shot timer) T))
 
 (define-subwidget (main background) (q+:make-qcolor 0 0 0))
 
@@ -31,10 +29,10 @@
       (issue scene 'tick)
       (process scene))
     (q+:update main)
-    (q+:start timer 
-              (round (max 0 (* (- *fps* (/ (- (get-internal-real-time) start)
-                                           internal-time-units-per-second))
-                               1000))))))
+    (let ((pause (round (pause-miliseconds start))))
+      (if (= 0 pause)
+          (q+:update main)
+          (q+:start timer pause)))))
 
 (define-override (main "initializeGL" initialize-gl) ()
   (q+:qgl-clear-color main background)
