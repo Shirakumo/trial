@@ -26,6 +26,9 @@
   (declare (connected timer (timeout)))
   (let ((start (get-internal-real-time)))
     (with-simple-restart (abort "Abort the update and continue.")
+      ;; FIXME: Move this to a more appropriate place where it isn't called so frequently.
+      (cl-gamepad:detect-devices)
+      (cl-gamepad:process-events)
       (issue scene 'tick)
       (process scene))
     (q+:update main)
