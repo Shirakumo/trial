@@ -180,22 +180,33 @@
 (defclass key-release (keyboard-event)
   ())
 
+(define-override (main key-press-event) (ev)
+  (let ((key (qt-key->symbol (q+:key ev))))
+    (when key (issue (scene main) 'key-press :key key))))
+
+(define-override (main key-release-event) (ev)
+  (let ((key (qt-key->symbol (q+:key ev))))
+    (when key (issue (scene main) 'key-release :key key))))
+
 (defclass mouse-event (input-event)
+  ())
+
+(defclass mouse-button-event (input-event)
   ((button :initarg :button :reader button))
   (:default-initargs
    :button (error "BUTTON required.")))
 
-(defmethod print-object ((event mouse-event) stream)
+(defmethod print-object ((event mouse-button-event) stream)
   (print-unreadable-object (event stream :type T)
     (format stream "~a" (button event))))
 
-(defclass mouse-button-press (mouse-event)
+(defclass mouse-press (mouse-button-event)
   ())
 
-(defclass mouse-button-release (mouse-event)
+(defclass mouse-release (mouse-button-event)
   ())
 
-(defclass mouse-move (input-event)
+(defclass mouse-move (mouse-event)
   ((old-pos :initarg :old-pos :reader old-pos)
    (new-pos :initarg :new-pos :reader new-pos))
   (:default-initargs
@@ -206,21 +217,13 @@
   (print-unreadable-object (event stream :type T)
     (format stream "~a => ~a" (old-pos event) (new-pos event))))
 
-(define-override (main key-press-event) (ev)
-  (let ((key (qt-key->symbol (q+:key ev))))
-    (when key (issue (scene main) 'key-press :key key))))
-
-(define-override (main key-release-event) (ev)
-  (let ((key (qt-key->symbol (q+:key ev))))
-    (when key (issue (scene main) 'key-release :key key))))
-
 (define-override (main mouse-press-event) (ev)
   (let ((button (qt-button->symbol (q+:button ev))))
-    (when button (issue (scene main) 'mouse-button-press :button button))))
+    (when button (issue (scene main) 'mouse-press :button button))))
 
 (define-override (main mouse-release-event) (ev)
   (let ((button (qt-button->symbol (q+:button ev))))
-    (when button (issue (scene main) 'mouse-button-release :button button))))
+    (when button (issue (scene main) 'mouse-release :button button))))
 
 (defvar *previous-mouse-position* NIL)
 (define-override (main mouse-move-event) (ev)
