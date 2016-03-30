@@ -15,7 +15,8 @@
 
 (defmethod add-handler (handler (container handler-container))
   (setf (handlers container)
-        (cons handler (delete handler (handlers container) :test #'matches))))
+        (sort (cons handler (delete handler (handlers container) :test #'matches))
+              #'> :key #'priority)))
 
 (defmethod add-handler ((handlers list) (container handler-container))
   (let ((handlers (copy-list handlers)))
@@ -24,7 +25,7 @@
           do (when handler
                (setf (car cons) handler)
                (setf handlers (delete handler handlers))))
-    (setf (handlers container) (nconc handlers (handlers container)))))
+    (setf (handlers container) (sort (nconc handlers (handlers container)) #'> :key #'priority))))
 
 (defmethod add-handler ((source handler-container) (container handler-container))
   (add-handler (handlers source) container))
@@ -65,17 +66,19 @@
 (defclass handler (named-entity)
   ((event-type :initarg :event-type :accessor event-type)
    (container :initarg :container :accessor container)
-   (delivery-function :initarg :delivery-function :accessor delivery-function))
+   (delivery-function :initarg :delivery-function :accessor delivery-function)
+   (priority :initarg :priority :accessor priority))
   (:default-initargs
    :event-type (error "EVENT-TYPE required.")
    :container (error "CONTAINER required.")
-   :delivery-function (error "DELIVERY-FUNCTION needed.")))
+   :delivery-function (error "DELIVERY-FUNCTION needed.")
+   :priority 0))
 
 (defmethod handle (event (handler handler))
   (when (typep event (event-type handler))
     (funcall (delivery-function handler) (container handler) event)))
 
-(defmacro define-handler ((class name event-type) args &body body)
+(defmacro define-handler ((class name event-type &optional (priority 0)) args &body body)
   (let ((event (first args))
         (args (rest args)))
     `(add-handler (make-instance
@@ -83,6 +86,7 @@
                    :name ',name
                    :event-type ',event-type
                    :container ',class
+                   :priority ,priority
                    :delivery-function (lambda (,class ,event)
                                         (declare (ignorable ,class ,event))
                                         (with-slots ,args ,event
@@ -148,6 +152,7 @@
                  :container subject
                  :name (name handler)
                  :event-type (event-type handler)
+                 :priority (priority handler)
                  :delivery-function (delivery-function handler)) into handlers
         finally (setf (handlers subject) handlers))
   (dolist (loop (loops subject))
