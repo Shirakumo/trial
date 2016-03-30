@@ -230,3 +230,51 @@
   (let ((new (vec (q+:x (q+:pos-f ev)) (q+:y (q+:pos-f ev)) 0)))
     (issue (scene main) 'mouse-move :old-pos (or *previous-mouse-position* new) :new-pos new)
     (setf *previous-mouse-position* new)))
+
+(defclass gamepad-event (input-event)
+  ((device :initarg :device :reader device))
+  (:default-initargs
+   :device (error "DEVICE required.")))
+
+(defclass gamepad-attach (gamepad-event)
+  ())
+
+(defclass gamepad-remove (gamepad-event)
+  ())
+
+(defclass gamepad-press (gamepad-event)
+  ((button :initarg :button :reader button))
+  (:default-initargs
+   :button (error "BUTTON required.")))
+
+(defclass gamepad-release (gamepad-event)
+  ((button :initarg :button :reader button))
+  (:default-initargs
+   :button (error "BUTTON required.")))
+
+(defclass gamepad-move (gamepad-event)
+  ((axis :initarg :axis :reader axis)
+   (old-pos :initarg :old-pos :reader old-pos)
+   (new-pos :initarg :new-pos :reader new-pos))
+  (:default-initargs
+   :axis (error "AXIS required.")
+   :old-pos (error "OLD-POS required.")
+   :new-pos (error "NEW-POS required.")))
+
+(defun cl-gamepad:device-attached (device)
+  (issue (scene *main*) 'gamepad-attach :device device))
+
+(defun cl-gamepad:device-removed (device)
+  (issue (scene *main*) 'gamepad-remove :device device))
+
+(defun cl-gamepad:button-pressed (button time device)
+  (declare (ignore time))
+  (issue (scene *main*) 'gamepad-press :button button :device device))
+
+(defun cl-gamepad:button-released (button time device)
+  (declare (ignore time))
+  (issue (scene *main*) 'gamepad-release :button button :device device))
+
+(defun cl-gamepad:axis-moved (axis last-value value time device)
+  (declare (ignore time))
+  (issue (scene *main*) 'gamepad-move :axis axis :old-pos last-value :new-pos value :device device))

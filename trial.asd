@@ -32,4 +32,5 @@
                :cl-opengl
                :closer-mop
                :trivial-garbage
-               :wavefront-loader))
+               :wavefront-loader
+               :cl-gamepad))
