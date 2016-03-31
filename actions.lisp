@@ -9,35 +9,38 @@
 
 (defvar *mappings* (make-hash-table :test 'eql))
 
-(defun mappings (event-type)
-  (gethash event-type *mappings*))
+(defun mapping (name)
+  (gethash name *mappings*))
 
-(defun (setf mappings) (mappings event-type)
-  (setf (gethash event-type *mappings*) mappings))
+(defun (setf mapping) (mapping name)
+  (setf (gethash name *mappings*) mapping))
 
-(defun remove-mappings (event-type)
-  (remhash event-type *mappings*))
+(defun remove-mapping (name)
+  (remhash name *mappings*))
 
-(defun add-mapping (event-type name function)
-  (let ((cons (find name (mappings event-type) :key #'car)))
-    (if cons
-        (setf (cdr cons) function)
-        (push (cons name function) (mappings event-type))))
-  (list event-type name))
-
-(defun remove-mapping (event-type name)
-  (setf (mappings event-type) (remove name (mappings event-type) :key #'car)))
-
-(defmacro define-mapping ((event-type name) args test &body body)
+(defmacro define-mapping ((name event-type) args &body body)
   (let ((ev (or (first args) (gensym "EVENT"))))
-    `(add-mapping ',event-type ',name
-                  (lambda (,ev)
-                    (with-slots ,(rest args) ,ev
-                      (when ,test
-                        ,@body))))))
+    `(setf (mapping ',name)
+           (lambda (,ev)
+             (when (typep ,ev ',event-type)
+               (with-slots ,(rest args) ,ev
+                 ,@body))))))
 
+(defmacro define-simple-mapping (name from to &body tests)
+  (let ((ev (gensym "EVENT"))
+        (to (enlist to)))
+    `(setf (mapping ',name)
+           (lambda (,ev)
+             (when (typep ,ev ',from)
+               (with-all-slots-bound (,ev ,from)
+                 (when (and ,@tests)
+                   (make-instance ',(first to) ,@(rest to)))))))))
+
+;; Currently this system is very unoptimised as it has to
+;; loop through all potential mappers every time. Optimisation
+;; could be done by separating out the event-type test somehow.
 (defun map-event (event loop)
-  (loop for (name . function) in (mappings (type-of event))
+  (loop for function being the hash-values of *mappings*
         for result = (funcall function event)
         when result (issue loop result)))
 
@@ -48,13 +51,11 @@
   (destructuring-bind (name &key (superclasses '(action))) (enlist name)
     (flet ((compile-mapping (mapping)
              (destructuring-bind (type &rest tests) mapping
-               (let ((ev (gensym "EVENT")))
-                 `(add-mapping ',type ',name
-                               (lambda (,ev)
-                                 (with-all-slots-bound (,ev ,type)
-                                   (and ,@tests))))))))
+               (let ((ev (gensym "EVENT"))
+                     (mapping (intern (format NIL "~a-~a" name type))))
+                 `(define-simple-mapping ',mapping ,type ,name
+                    ,@tests)))))
       `(progn
          (defclass ,name ,superclasses
            ())
-         (remove-mappings ',name)
          ,@(mapcar #'compile-mapping mappings)))))
