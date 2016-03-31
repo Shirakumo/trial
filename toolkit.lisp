@@ -47,3 +47,9 @@
 (defun load-image-buffer (image)
   (with-finalizing ((image (file->image image)))
     (image->framebuffer image)))
+
+(defun enlist (item &rest items)
+  (if (listp item) item (list* item items)))
+
+(defun unlist (item)
+  (if (listp item) (first item) item))
