@@ -171,10 +171,10 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
           (13 . :r2)
           (14 . :l1)
           (15 . :r1)
-          (16 . :triangle)
-          (17 . :circle)
-          (18 . :cross)
-          (19 . :square)
+          (16 . :y) ; triangle
+          (17 . :b) ; circle
+          (18 . :a) ; cross
+          (19 . :x) ; square
           (23 . :axis-x)
           (24 . :axis-z)
           (25 . :axis-y)
@@ -198,10 +198,10 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
           ( 9 . :r2)
           (10 . :l1)
           (11 . :r1)
-          (12 . :triangle)
-          (13 . :circle)
-          (14 . :cross)
-          (15 . :square)
+          (12 . :y) ; triangle
+          (13 . :b) ; circle
+          (14 . :a) ; cross
+          (15 . :x) ; square
           (16 . :home))
         :test 'eql)))
    :test 'eql))
