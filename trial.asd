@@ -21,6 +21,7 @@
                (:file "windowing")
                (:file "input-tables")
                (:file "input")
+               (:file "actions")
                (:file "mesh")
                (:file "game-object"))
   :depends-on (:alexandria

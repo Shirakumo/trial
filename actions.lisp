@@ -26,7 +26,7 @@
                (with-slots ,(rest args) ,ev
                  ,@body))))))
 
-(defmacro define-simple-mapping (name from to &body tests)
+(defmacro define-simple-mapping (name (from to) &body tests)
   (let ((ev (gensym "EVENT"))
         (to (enlist to)))
     `(setf (mapping ',name)
@@ -42,7 +42,7 @@
 (defun map-event (event loop)
   (loop for function being the hash-values of *mappings*
         for result = (funcall function event)
-        when result (issue loop result)))
+        do (when result (issue loop result))))
 
 (defclass action (event)
   ())
@@ -51,9 +51,8 @@
   (destructuring-bind (name &key (superclasses '(action))) (enlist name)
     (flet ((compile-mapping (mapping)
              (destructuring-bind (type &rest tests) mapping
-               (let ((ev (gensym "EVENT"))
-                     (mapping (intern (format NIL "~a-~a" name type))))
-                 `(define-simple-mapping ',mapping ,type ,name
+               (let ((mapping (intern (format NIL "~a-~a" name type))))
+                 `(define-simple-mapping ',mapping (,type ,name)
                     ,@tests)))))
       `(progn
          (defclass ,name ,superclasses
