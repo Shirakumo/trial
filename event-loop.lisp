@@ -81,7 +81,7 @@
   (when (typep event (event-type handler))
     (funcall (delivery-function handler) (container handler) event)))
 
-(defmacro define-handler ((class name event-type &optional (priority 0)) args &body body)
+(defmacro define-handler ((class name &optional (event-type name) (priority 0)) args &body body)
   (let ((event (first args))
         (args (rest args)))
     `(add-handler (make-instance

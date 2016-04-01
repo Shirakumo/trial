@@ -11,11 +11,11 @@
   ;; Has to be a double to avoid bignums after ~3.8 hours of runtime.
   ((tickcount :initform 0.0d0 :accessor tickcount)))
 
-(define-handler (controller devices tick 100) (ev)
+(define-handler (controller tick tick 100) (ev)
   (incf (tickcount controller))
   (when (mod (tickcount controller) *fps*)
     (cl-gamepad:detect-devices))
   (cl-gamepad:process-events))
 
-(define-handler (controller devices T 100) (ev)
-  (map-event event *loop*))
+(define-handler (controller mapping T 100) (ev)
+  (map-event ev *loop*))
