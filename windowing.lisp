@@ -26,9 +26,6 @@
   (declare (connected timer (timeout)))
   (let ((start (get-internal-real-time)))
     (with-simple-restart (abort "Abort the update and continue.")
-      ;; FIXME: Move this to a more appropriate place where it isn't called so frequently.
-      (cl-gamepad:detect-devices)
-      (cl-gamepad:process-events)
       (issue scene 'tick)
       (process scene))
     (q+:update main)
@@ -48,7 +45,7 @@
   (gl:front-face :ccw)
   (gl:cull-face :back)
   (gl:hint :perspective-correction-hint :nicest)
-  (add-subject (make-instance 'cat) scene))
+  (setup-scene scene))
 
 (define-override (main "resizeGL" resize-gl) (width height)
   (with-simple-restart (abort "Abort the resize and continue.")
@@ -77,3 +74,6 @@
   (let* ((fh (* (tan (* (/ fovy 360) PI)) z-near))
          (fw (* fh aspect)))
     (gl:frustum (- fw) fw (- fh) fh z-near z-far)))
+
+(defun setup-scene (scene)
+  (add-subject (make-instance 'cat) scene))
