@@ -18,7 +18,8 @@
   (setf (q+:window-title main) "Trial"))
 
 (define-subwidget (main timer) (q+:make-qtimer main)
-  (setf (q+:single-shot timer) T))
+  (setf (q+:single-shot timer) T)
+  (q+:start timer 0))
 
 (define-subwidget (main background) (q+:make-qcolor 0 0 0))
 
