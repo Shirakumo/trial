@@ -21,7 +21,7 @@
                (:file "windowing")
                (:file "input-tables")
                (:file "input")
-               (:file "actions")
+               (:file "mapping")
                (:file "controller")
                (:file "mesh")
                (:file "game-object")
