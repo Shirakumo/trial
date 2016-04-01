@@ -80,37 +80,6 @@
    :axis (vec 0 1 0)
    :angle 0))
 
-(defmethod draw :around ((obj rotated-subject))
-  (gl:with-pushed-matrix
-    (let ((axis (axis obj)))
-      (gl:rotate (angle obj) (vx axis) (vy axis) (vz axis))
-      (call-next-method))))
-
-(define-subject cat (located-subject rotated-subject mesh-subject)
-  ((angle-delta :initform 1 :accessor angle-delta)
-   (velocity :initform (vec 0 0 0) :accessor velocity))
-  (:default-initargs
-   :mesh "cube.obj"
-   :location (vec 0 0 0)))
-
-(define-handler (cat update tick) (ev)
-  (incf (angle cat) (angle-delta cat))
-  (nv+ (location cat) (velocity cat)))
-
-(define-handler (cat catty-go key-press) (ev key)
-  (case key
-    (:left (setf (vx (velocity cat)) -5))
-    (:right (setf (vx (velocity cat)) 5))
-    (:up (setf (vz (velocity cat)) 5))
-    (:down (setf (vz (velocity cat)) -5))))
-
-(define-handler (cat catty-stop key-release) (ev key)
-  (case key
-    (:left (setf (vx (velocity cat)) 0))
-    (:right (setf (vx (velocity cat)) 0))
-    (:up (setf (vz (velocity cat)) 0))
-    (:down (setf (vz (velocity cat)) 0))))
-
 (define-subject camera (located-subject oriented-subject)
   ((target :initform (vec 0 0 0) :accessor target)))
 
