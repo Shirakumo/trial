@@ -6,6 +6,8 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(defvar *loop*)
+
 (defgeneric add-handler (handler handler-container))
 (defgeneric remove-handler (handler handler-container))
 (defgeneric handle (event handler))
@@ -60,8 +62,9 @@
   (setf (fill-pointer (queue loop)) 0))
 
 (defmethod handle (event (loop event-loop))
-  (dolist (handler (handlers loop))
-    (handle event handler)))
+  (let ((*loop* loop))
+    (dolist (handler (handlers loop))
+      (handle event handler))))
 
 (defclass handler (named-entity)
   ((event-type :initarg :event-type :accessor event-type)
