@@ -24,7 +24,7 @@
                (:file "mapping")
                (:file "controller")
                (:file "mesh")
-               (:file "game-object")
+               (:file "subjects")
                (:file "camera")
                (:file "player"))
   :depends-on (:alexandria
