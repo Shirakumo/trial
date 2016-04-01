@@ -25,6 +25,7 @@
                (:file "controller")
                (:file "mesh")
                (:file "game-object")
+               (:file "camera")
                (:file "player"))
   :depends-on (:alexandria
                :3d-vectors
