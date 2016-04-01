@@ -23,7 +23,6 @@
                (:file "input")
                (:file "mapping")
                (:file "controller")
-               (:file "mesh")
                (:file "subjects")
                (:file "camera")
                (:file "player"))
