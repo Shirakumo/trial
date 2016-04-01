@@ -22,6 +22,7 @@
                (:file "input-tables")
                (:file "input")
                (:file "actions")
+               (:file "controller")
                (:file "mesh")
                (:file "game-object"))
   :depends-on (:alexandria

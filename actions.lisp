@@ -83,6 +83,3 @@
   (key-press (eql key :s))
   (gamepad-move (eql axis :left-v) (< new-pos -0.2))
   (gamepad-press (eql button :dpad-down)))
-
-(defmethod handle :before (event (loop event-loop))
-  (map-event event loop))

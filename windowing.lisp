@@ -76,4 +76,5 @@
     (gl:frustum (- fw) fw (- fh) fh z-near z-far)))
 
 (defun setup-scene (scene)
+  (add-subject (make-instance 'controller) scene)
   (add-subject (make-instance 'cat) scene))
