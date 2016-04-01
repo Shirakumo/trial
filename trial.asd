@@ -24,7 +24,8 @@
                (:file "actions")
                (:file "controller")
                (:file "mesh")
-               (:file "game-object"))
+               (:file "game-object")
+               (:file "player"))
   :depends-on (:alexandria
                :3d-vectors
                :verbose

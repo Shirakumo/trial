@@ -78,4 +78,4 @@
 
 (defun setup-scene (scene)
   (add-subject (make-instance 'controller) scene)
-  (add-subject (make-instance 'cat) scene))
+  (add-subject (make-instance 'player) scene))
