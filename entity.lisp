@@ -14,6 +14,8 @@
 (defclass entity ()
   ())
 
+(defmethod draw ((entity entity)))
+
 (defmethod matches ((a entity) b)
   (eql a b))
 
