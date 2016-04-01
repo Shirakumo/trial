@@ -18,13 +18,13 @@
                (:file "entity")
                (:file "event-loop")
                (:file "scene")
+               (:file "subjects")
+               (:file "camera")
                (:file "windowing")
                (:file "input-tables")
                (:file "input")
                (:file "mapping")
                (:file "controller")
-               (:file "subjects")
-               (:file "camera")
                (:file "player"))
   :depends-on (:alexandria
                :3d-vectors
