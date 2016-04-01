@@ -53,7 +53,7 @@
              (remhash k *mappings*))))
 
 (defmacro define-action (name &body mappings)
-  (destructuring-bind (name &key (superclasses '(action))) (enlist name)
+  (destructuring-bind (name &optional (superclasses '(action))) (enlist name)
     (flet ((compile-mapping (mapping)
              (destructuring-bind (type &rest tests) mapping
                `(define-simple-mapping (,name ,type) (,type ,name)
@@ -64,22 +64,46 @@
          (remove-action-mappings ',name)
          ,@(mapcar #'compile-mapping mappings)))))
 
-(define-action move-left
+(define-action player-action)
+
+(define-action (movement (player-action)))
+
+(define-action (start-left (movement))
   (key-press (eql key :a))
-  (gamepad-move (eql axis :left-h) (< new-pos -0.2))
-  (gamepad-press (eql button :dpad-left)))
+  (gamepad-press (eql button :dpad-left))
+  (gamepad-move (eql axis :left-h) (< new-pos -0.2 old-pos)))
 
-(define-action move-right
+(define-action (start-right (movement))
   (key-press (eql key :d))
-  (gamepad-move (eql axis :left-h) (< 0.2 new-pos))
-  (gamepad-press (eql button :dpad-right)))
+  (gamepad-press (eql button :dpad-right))
+  (gamepad-move (eql axis :left-h) (< old-pos 0.2 new-pos)))
 
-(define-action move-up
+(define-action (start-up (movement))
   (key-press (eql key :w))
-  (gamepad-move (eql axis :left-v) (< 0.2 new-pos))
-  (gamepad-press (eql button :dpad-up)))
+  (gamepad-press (eql button :dpad-up))
+  (gamepad-move (eql axis :left-v) (< old-pos 0.2 new-pos)))
 
-(define-action move-down
+(define-action (start-down (movement))
   (key-press (eql key :s))
-  (gamepad-move (eql axis :left-v) (< new-pos -0.2))
-  (gamepad-press (eql button :dpad-down)))
+  (gamepad-press (eql button :dpad-down))
+  (gamepad-move (eql axis :left-v) (< new-pos -0.2 old-pos)))
+
+(define-action (stop-left (movement))
+  (key-release (eql key :a))
+  (gamepad-release (eql button :dpad-left))
+  (gamepad-move (eql axis :left-h) (< old-pos -0.2 new-pos)))
+
+(define-action (stop-right (movement))
+  (key-release (eql key :d))
+  (gamepad-release (eql button :dpad-right))
+  (gamepad-move (eql axis :left-h) (< new-pos 0.2 old-pos)))
+
+(define-action (stop-up (movement))
+  (key-release (eql key :w))
+  (gamepad-release (eql button :dpad-up))
+  (gamepad-move (eql axis :left-v) (< new-pos 0.2 old-pos)))
+
+(define-action (stop-down (movement))
+  (key-release (eql key :s))
+  (gamepad-release (eql button :dpad-down))
+  (gamepad-move (eql axis :left-v) (< old-pos -0.2 new-pos)))
