@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(defvar *mappings* (make-hash-table :test 'eql))
+(defvar *mappings* (make-hash-table :test 'equal))
 
 (defun mapping (name)
   (gethash name *mappings*))
@@ -47,14 +47,39 @@
 (defclass action (event)
   ())
 
+(defun remove-action-mappings (action)
+  (loop for k being the hash-keys of *mappings*
+        do (when (and (consp k) (eql (car k) action))
+             (remhash k *mappings*))))
+
 (defmacro define-action (name &body mappings)
   (destructuring-bind (name &key (superclasses '(action))) (enlist name)
     (flet ((compile-mapping (mapping)
              (destructuring-bind (type &rest tests) mapping
-               (let ((mapping (intern (format NIL "~a-~a" name type))))
-                 `(define-simple-mapping ',mapping (,type ,name)
-                    ,@tests)))))
+               `(define-simple-mapping (,name ,type) (,type ,name)
+                  ,@tests))))
       `(progn
          (defclass ,name ,superclasses
            ())
+         (remove-action-mappings ',name)
          ,@(mapcar #'compile-mapping mappings)))))
+
+(define-action move-left
+  (key-press (eql key :a))
+  (gamepad-move (eql axis :left-h) (< new-pos -0.2))
+  (gamepad-press (eql button :dpad-left)))
+
+(define-action move-right
+  (key-press (eql key :d))
+  (gamepad-move (eql axis :left-h) (< 0.2 new-pos))
+  (gamepad-press (eql button :dpad-right)))
+
+(define-action move-up
+  (key-press (eql key :w))
+  (gamepad-move (eql axis :left-v) (< 0.2 new-pos))
+  (gamepad-press (eql button :dpad-up)))
+
+(define-action move-down
+  (key-press (eql key :s))
+  (gamepad-move (eql axis :left-v) (< new-pos -0.2))
+  (gamepad-press (eql button :dpad-down)))
