@@ -7,6 +7,8 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defgeneric matches (a b))
+(defgeneric draw (thing))
+(defgeneric draw-hud (thing))
 
 (defmethod matches (a b)
   (equal a b))
@@ -15,6 +17,7 @@
   ())
 
 (defmethod draw ((entity entity)))
+(defmethod draw-hud ((entity entity)))
 
 (defmethod matches ((a entity) b)
   (eql a b))

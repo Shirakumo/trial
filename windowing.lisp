@@ -86,9 +86,7 @@
     (gl:load-identity)
     (gl:disable :cull-face)
     (gl:clear :depth-buffer)
-
-    (q+:render-text main 20 20 (format NIL "Pause: ~a" last-pause))
-
+    (draw-hud scene)
     (gl:matrix-mode :projection)
     (gl:pop-matrix)
     (gl:matrix-mode :modelview)

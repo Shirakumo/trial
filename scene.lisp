@@ -22,3 +22,6 @@
 
 (defmethod draw ((scene scene))
   (mapc #'draw (subjects scene)))
+
+(defmethod draw-hud ((scene scene))
+  (mapc #'draw-hud (subjects scene)))
