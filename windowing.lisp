@@ -24,10 +24,14 @@
   (:constructor (make-gl-format)))
 
 (define-initializer (main setup)
+  (v:info :trial "GENESIS")
   (setf *main-window* main)
   (q+:resize main 1024 768)
   (setf (q+:auto-buffer-swap main) NIL)
   (setf (q+:window-title main) "Trial"))
+
+(define-finalizer (main teardown)
+  (v:info :trial "RAPTURE"))
 
 (define-subwidget (main background) (q+:make-qcolor 0 0 0))
 
