@@ -23,7 +23,7 @@
 
 (define-subwidget (main background) (q+:make-qcolor 0 0 0))
 
-(define-slot (main update) ()
+(define-slot (main update main-tick) ()
   (declare (connected timer (timeout)))
   (let ((start (get-internal-real-time)))
     (with-simple-restart (abort "Abort the update and continue.")
@@ -32,7 +32,7 @@
     (q+:update main)
     (let ((pause (round (pause-miliseconds start))))
       (if (= 0 pause)
-          (q+:update main)
+          (main-tick)
           (q+:start timer pause)))))
 
 (define-override (main "initializeGL" initialize-gl) ()
