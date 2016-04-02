@@ -13,30 +13,6 @@
         pathname
         (asdf:system-relative-pathname :trial (merge-pathnames "data/" pathname)))))
 
-(defun image->framebuffer (image)
-  (gl:disable :cull-face)
-  (with-finalizing ((format (q+:make-qglframebufferobjectformat)))
-    (setf (q+:attachment format) (q+:qglframebufferobject.combined-depth-stencil))
-    (setf (q+:mipmap format) T)
-    (let ((buffer (q+:make-qglframebufferobject (q+:size image) format)))
-      (with-finalizing ((painter (q+:make-qpainter buffer)))
-        (q+:draw-image painter 0 0 image)
-        (gl:enable :cull-face)
-        buffer))))
-
-(defun file->image (file)
-  (v:info :trial.toolkit "Loading image ~s" file)
-  (unless (probe-file file)
-    (error "Invalid file path ~s." file))
-  (let ((image (q+:make-qimage (uiop:native-namestring file))))
-    (when (q+:is-null image)
-      (error "Invalid file ~s." file))
-    image))
-
-(defun load-image-buffer (image)
-  (with-finalizing ((image (file->image image)))
-    (image->framebuffer image)))
-
 (defun enlist (item &rest items)
   (if (listp item) item (list* item items)))
 

@@ -37,4 +37,5 @@
                :closer-mop
                :trivial-garbage
                :wavefront-loader
-               :cl-gamepad))
+               :cl-gamepad
+               :pathname-utils))
