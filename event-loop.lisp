@@ -77,6 +77,10 @@
    :delivery-function (error "DELIVERY-FUNCTION needed.")
    :priority 0))
 
+(defmethod matches ((a handler) (b handler))
+  (and (eq (container a) (container b))
+       (eql (name a) (name b))))
+
 (defmethod handle (event (handler handler))
   (when (typep event (event-type handler))
     (funcall (delivery-function handler) (container handler) event)))
