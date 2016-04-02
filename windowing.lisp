@@ -9,8 +9,20 @@
 
 (defvar *main-window* NIL)
 
+(defun make-gl-format ()
+  (let ((format (q+:make-qglformat)))
+    (setf (q+:alpha format) T)
+    (setf (q+:depth format) T)
+    (setf (q+:direct-rendering format) T)
+    (setf (q+:double-buffer format) T)
+    (setf (q+:rgba format) T)
+    (setf (q+:stencil format) T)
+    format))
+
 (define-widget main (QGLWidget)
-  ((scene :initform (make-instance 'scene) :accessor scene :finalized T)))
+  ((scene :initform (make-instance 'scene) :accessor scene :finalized T)
+   (last-pause :initform 0 :accessor last-pause))
+  (:constructor (make-gl-format)))
 
 (define-initializer (main setup)
   (setf *main-window* main)
@@ -31,6 +43,7 @@
       (process scene))
     (q+:update main)
     (let ((pause (round (pause-miliseconds start))))
+      (setf last-pause pause)
       (if (= 0 pause)
           (main-tick)
           (q+:start timer pause)))))
@@ -49,13 +62,12 @@
   (setup-scene scene))
 
 (define-override (main "resizeGL" resize-gl) (width height)
-  (with-simple-restart (abort "Abort the resize and continue.")
-    (gl:matrix-mode :projection)
-    (gl:load-identity)
-    (set-perspective 45 (/ width (max 1 height)) 0.01 1000.0)
-    (gl:matrix-mode :modelview)
-    (gl:load-identity)
-    (gl:viewport 0 0 width height)))
+  (gl:matrix-mode :projection)
+  (gl:load-identity)
+  (set-perspective 45 (/ width (max 1 height)) 0.01 1000.0)
+  (gl:matrix-mode :modelview)
+  (gl:load-identity)
+  (gl:viewport 0 0 width height))
 
 (define-override (main "paintGL" paint-gl) ()
   (with-simple-restart (abort "Abort the drawing and continue.")
@@ -65,6 +77,21 @@
     ;; FIXME: Move into camera code
     (gl:translate 0 -30 -200)
     (draw scene)
+    ;; HUD
+    (gl:matrix-mode :projection)
+    (gl:push-matrix)
+    (gl:load-identity)
+    (gl:ortho 0 (q+:width main) (q+:height main) 0 -1 10)
+    (gl:matrix-mode :modelview)
+    (gl:load-identity)
+    (gl:disable :cull-face)
+    (gl:clear :depth-buffer)
+
+    (q+:render-text main 20 20 (format NIL "Pause: ~a" last-pause))
+
+    (gl:matrix-mode :projection)
+    (gl:pop-matrix)
+    (gl:matrix-mode :modelview)
     (gl:flush)))
 
 (defun main ()
