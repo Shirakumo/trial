@@ -30,5 +30,9 @@
   (:default-initargs
    :name (error "NAME required.")))
 
+(defmethod print-object ((entity named-entity) stream)
+  (print-unreadable-object (entity stream :type T)
+    (format stream "~s" (name entity))))
+
 (defmethod matches ((a named-entity) b)
   (matches (name a) b))
