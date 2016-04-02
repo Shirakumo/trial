@@ -20,8 +20,7 @@
     format))
 
 (define-widget main (QGLWidget)
-  ((scene :initform (make-instance 'scene) :accessor scene :finalized T)
-   (last-pause :initform 0 :accessor last-pause))
+  ((scene :initform (make-instance 'scene) :accessor scene :finalized T))
   (:constructor (make-gl-format)))
 
 (define-initializer (main setup)
@@ -29,24 +28,7 @@
   (q+:resize main 1024 768)
   (setf (q+:window-title main) "Trial"))
 
-(define-subwidget (main timer) (q+:make-qtimer main)
-  (setf (q+:single-shot timer) T)
-  (q+:start timer 0))
-
 (define-subwidget (main background) (q+:make-qcolor 0 0 0))
-
-(define-slot (main update main-tick) ()
-  (declare (connected timer (timeout)))
-  (let ((start (get-internal-real-time)))
-    (with-simple-restart (abort "Abort the update and continue.")
-      (issue scene 'tick)
-      (process scene))
-    (q+:update main)
-    (let ((pause (round (pause-miliseconds start))))
-      (setf last-pause pause)
-      (if (= 0 pause)
-          (main-tick)
-          (q+:start timer pause)))))
 
 (define-override (main "initializeGL" initialize-gl) ()
   (q+:qgl-clear-color main background)
