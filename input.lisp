@@ -26,12 +26,14 @@
   ())
 
 (define-override (main key-press-event) (ev)
-  (issue (scene main) 'key-press
-         :key (qt-key->symbol (q+:key ev))))
+  (unless (q+:is-auto-repeat ev)
+    (issue (scene main) 'key-press
+           :key (qt-key->symbol (q+:key ev)))))
 
 (define-override (main key-release-event) (ev)
-  (issue (scene main) 'key-release
-         :key (qt-key->symbol (q+:key ev))))
+  (unless (q+:is-auto-repeat ev)
+    (issue (scene main) 'key-release
+           :key (qt-key->symbol (q+:key ev)))))
 
 (defclass mouse-event (input-event)
   ())
