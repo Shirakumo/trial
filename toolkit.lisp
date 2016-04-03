@@ -7,12 +7,6 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(defun resource-pathname (pathname)
-  (let ((pathname (pathname pathname)))
-    (if (eql :absolute (first (pathname-directory pathname)))
-        pathname
-        (asdf:system-relative-pathname :trial (merge-pathnames "data/" pathname)))))
-
 (defun enlist (item &rest items)
   (if (listp item) item (list* item items)))
 

@@ -21,18 +21,18 @@
     (call-next-method)
     (finalize prev)))
 
-(defmethod (setf texture) (texture (subject textured-subject))
-  (setf (slot-value subject 'texture)
+(defmethod (setf texture) ((texture integer) (subject textured-subject))
+  (setf (slot-value subject 'texture) texture))
+
+(defmethod (setf texture) ((texture qobject) (subject textured-subject))
+  (setf (texture subject)
         (qtypecase texture
-          (QImage (image->framebuffer texture))
-          (QGLFramebufferObject texture)
+          (QImage (q+:texture (image->framebuffer texture)))
+          (QGLFramebufferObject (q+:texture texture))
           (T (error "Don't know how to use ~a as a texture for ~a." texture subject)))))
 
-(defmethod (setf texture) ((path pathname) (subject textured-subject))
-  (setf (texture subject) (load-image-buffer (resource-pathname path))))
-
-(defmethod (setf texture) ((path string) (subject textured-subject))
-  (setf (texture subject) (uiop:parse-native-namestring path)))
+(defmethod (setf texture) (thing (subject textured-subject))
+  (setf (texture subject) (content (asset thing 'texture))))
 
 (defmethod (setf texture) ((null null) (subject textured-subject))
   (setf (slot-value subject 'texture) NIL))
@@ -42,7 +42,7 @@
     (call-next-method)))
 
 (defmethod bind-texture ((obj textured-subject))
-  (gl:bind-texture :texture-2d (q+:texture (texture obj)))
+  (gl:bind-texture :texture-2d (texture obj))
   (gl:tex-parameter :texture-2d :texture-min-filter :linear)
   (gl:tex-parameter :texture-2d :texture-mag-filter :linear)
   (gl:tex-parameter :texture-2d :texture-wrap-s :clamp)
@@ -81,8 +81,7 @@
    :angle 0))
 
 (define-subject mesh-subject ()
-  ((mesh :initform NIL :accessor mesh)
-   (textures :initform () :accessor textures :finalized T)))
+  ((mesh :initform NIL :accessor mesh)))
 
 (defmethod initialize-instance :after ((subject mesh-subject) &key (mesh NIL t-p) &allow-other-keys)
   (when t-p (setf (mesh subject) mesh)))
@@ -90,27 +89,11 @@
 (defmethod reinitialize-instance :after ((subject mesh-subject) &key (mesh NIL t-p) &allow-other-keys)
   (when t-p (setf (mesh subject) mesh)))
 
-(defmethod (setf mesh) ((path pathname) (subject mesh-subject))
-  (setf (mesh subject) (elt (wavefront-loader::load-obj (resource-pathname path)) 0))
-  (prepare subject))
-
-(defmethod (setf mesh) ((path string) (subject mesh-subject))
-  (setf (mesh subject) (uiop:parse-native-namestring path)))
+(defmethod (setf mesh) (thing (subject mesh-subject))
+  (setf (slot-value subject 'mesh) (content (asset thing 'model) 0)))
 
 (defmethod (setf mesh) ((null null) (subject mesh-subject))
   (setf (slot-value subject 'mesh) NIL))
-
-(defmethod prepare ((subject mesh-subject))
-  (let ((diffuse (wavefront-loader::diffuse
-                  (wavefront-loader::material
-                   (mesh subject)))))
-    (when (typep diffuse 'pathname)
-      (let ((buffer (load-image-buffer diffuse)))
-        (setf (wavefront-loader::diffuse
-               (wavefront-loader::material
-                (mesh subject)))
-              (q+:texture buffer))
-        (push buffer (textures subject))))))
 
 (defmethod draw ((subject mesh-subject))
   (wavefront-loader::draw (mesh subject)))

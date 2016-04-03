@@ -98,4 +98,6 @@
 
 (defun main ()
   (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
-  (with-main-window (window 'main #-darwin :main-thread #-darwin NIL)))
+  (unwind-protect
+       (with-main-window (window 'main #-darwin :main-thread #-darwin NIL))
+    (clear-assets)))
