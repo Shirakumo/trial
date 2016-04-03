@@ -95,7 +95,6 @@
   (add-subject (make-instance 'player) scene)
   (add-subject (make-instance 'controller) scene))
 
-
 (defun main ()
   (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
   (unwind-protect
