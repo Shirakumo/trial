@@ -7,6 +7,16 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
+(defparameter *time-units* #+sbcl 1000000
+              #-sbcl internal-time-units-per-second)
+
+(declaim (inline current-time))
+(defun current-time ()
+  #+sbcl (let ((usec (nth-value 1 (sb-ext:get-time-of-day))))
+           (declare (type (unsigned-byte 31) usec))
+           usec)
+  #-sbcl (get-internal-real-time))
+
 (defun enlist (item &rest items)
   (if (listp item) item (list* item items)))
 

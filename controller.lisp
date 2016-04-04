@@ -7,9 +7,6 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(defparameter *time-units* #+sbcl 1000000
-              #-sbcl internal-time-units-per-second)
-
 (define-subject controller ()
   (;; Has to be a double to avoid bignums after ~3.8 hours of runtime.
    (tickcount :initform 0.0d0 :accessor tickcount)
@@ -33,13 +30,6 @@
                (v:warn :trial.controller "Update loop did not exit gracefully.")
                (bt:destroy-thread thread)
                (return)))))
-
-(declaim (inline current-time))
-(defun current-time ()
-  #+sbcl (let ((usec (nth-value 1 (sb-ext:get-time-of-day))))
-           (declare (type (unsigned-byte 31) usec))
-           usec)
-  #-sbcl (get-internal-real-time))
 
 (defun pause-time (fps start)
   (let* ((duration (- (current-time) start))
