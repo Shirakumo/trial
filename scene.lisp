@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass scene (entity event-loop)
+(defclass scene (entity event-loop flare:scene)
   ((subjects :initform () :accessor subjects)))
 
 (defmethod add-subject ((subject subject) (scene scene))

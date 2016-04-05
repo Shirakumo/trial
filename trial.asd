@@ -39,4 +39,5 @@
                :trivial-garbage
                :wavefront-loader
                :cl-gamepad
-               :pathname-utils))
+               :pathname-utils
+               :flare))
