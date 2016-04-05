@@ -92,8 +92,8 @@
     (gl:frustum (- fw) fw (- fh) fh z-near z-far)))
 
 (defun setup-scene (scene)
-  (add-subject (make-instance 'player) scene)
-  (add-subject (make-instance 'controller) scene))
+  (enter (make-instance 'player) scene)
+  (enter (make-instance 'controller) scene))
 
 (defun main ()
   (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))

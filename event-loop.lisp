@@ -171,10 +171,10 @@
 (defmethod remove-handler (handler (class symbol))
   (remove-handler handler (find-class class)))
 
-(defmethod add-subject :after ((subject subject) (loop event-loop))
+(defmethod enter :after ((subject subject) (loop event-loop))
   (push loop (loops subject)))
 
-(defmethod remove-subject :after ((subject subject) (loop event-loop))
+(defmethod leave :after ((subject subject) (loop event-loop))
   (setf (loops subject) (delete loop (loops subject))))
 
 (defmacro define-subject (name direct-superclasses direct-slots &rest options)

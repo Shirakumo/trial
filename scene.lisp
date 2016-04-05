@@ -7,15 +7,13 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass scene (entity event-loop flare:scene)
-  ((subjects :initform () :accessor subjects)))
+  ())
 
-(defmethod add-subject ((subject subject) (scene scene))
-  (add-handler subject scene)
-  (push subject (subjects scene)))
+(defmethod enter :after ((subject subject) (scene scene))
+  (add-handler subject scene))
 
-(defmethod remove-subject ((subject subject) (scene scene))
-  (remove-handler subject scene)
-  (setf (subjects scene) (delete subject (subjects scene))))
+(defmethod leave :after ((subject subject) (scene scene))
+  (remove-handler subject scene))
 
 (defmethod finalize ((scene scene))
   (mapc #'finalize (subjects scene)))
