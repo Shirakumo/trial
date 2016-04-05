@@ -152,7 +152,9 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
 
 (defparameter *gamepad-device-table*
   (alexandria:alist-hash-table
-   '(((1356 . 616) . :dualshock3))
+   '(((1356 . 616) . :dualshock3)
+     ((1133 . 49693) . :xbox360) ;; logitech-f310
+     ((10462 . 4604) . :xbox360))
    :test 'equal))
 
 (defparameter *gamepad-axis-table*
@@ -179,7 +181,17 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
           (24 . :axis-z)
           (25 . :axis-y)
           (26 . :axis-r))
-        :test 'eql)))
+        :test 'eql))
+     (:xbox360
+      ,(alexandria:alist-hash-table
+        '(( 0 . :left-h)
+          ( 1 . :left-v)
+          ( 2 . :l2)
+          ( 3 . :right-h)
+          ( 4 . :right-v)
+          ( 5 . :r2)
+          ( 6 . :dpad-h)
+          ( 7 . :dpad-v)))))
    :test 'eql))
 
 (defparameter *gamepad-button-table*
@@ -203,7 +215,20 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
           (14 . :a) ; cross
           (15 . :x) ; square
           (16 . :home))
-        :test 'eql)))
+        :test 'eql))
+     (:xbox360
+      ,(alexandria:alist-hash-table
+        '(( 0 . :a)
+          ( 1 . :b)
+          ( 2 . :x)
+          ( 3 . :y)
+          ( 4 . :l1)
+          ( 5 . :r1)
+          ( 6 . :select)
+          ( 7 . :start)
+          ( 8 . :home)
+          ( 9 . :left)
+          (10 . :right)))))
    :test 'eql))
 
 (defun qt-key->symbol (enum)
