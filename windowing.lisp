@@ -57,47 +57,12 @@
 (define-override (main "resizeGL" resize-gl) (width height)
   (issue scene 'resize :width width :height height))
 
-(defmethod resize ((main main) width height)
-  (gl:matrix-mode :projection)
-  (gl:load-identity)
-  (set-perspective 45 (/ width (max 1 height)) 0.01 1000.0)
-  (gl:matrix-mode :modelview)
-  (gl:load-identity)
-  (gl:viewport 0 0 width height))
-
-(defmethod draw ((main main))
-  (gl:clear :color-buffer :depth-buffer)
-  (gl:load-identity)
-  (gl:enable :depth-test :blend :cull-face :texture-2d)
-  ;; FIXME: Move into camera code
-  (gl:translate 0 -30 -200)
-  (draw (scene main)))
-
-(defmethod draw-hud ((main main))
-  (gl:matrix-mode :projection)
-  (gl:push-matrix)
-  (gl:load-identity)
-  (gl:ortho 0 (q+:width main) (q+:height main) 0 -1 10)
-  (gl:matrix-mode :modelview)
-  (gl:load-identity)
-  (gl:disable :cull-face)
-  (gl:clear :depth-buffer)
-  (draw-hud (scene main))
-  (gl:matrix-mode :projection)
-  (gl:pop-matrix)
-  (gl:matrix-mode :modelview))
-
-(defun set-perspective (fovy aspect z-near z-far)
-  ;; http://nehe.gamedev.net/article/replacement_for_gluperspective/21002/
-  (let* ((fh (* (tan (* (/ fovy 360) PI)) z-near))
-         (fw (* fh aspect)))
-    (gl:frustum (- fw) fw (- fh) fh z-near z-far)))
-
 (defun setup-scene (scene)
   (enter (make-instance 'player) scene)
   (enter (make-instance 'controller) scene))
 
 (defun main ()
+  (v:output-here)
   (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
   (unwind-protect
        (with-main-window (window 'main #-darwin :main-thread #-darwin NIL))

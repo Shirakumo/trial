@@ -12,7 +12,10 @@
    (tickcount :initform 0.0d0 :accessor tickcount)
    (update-thread :initform NIL :accessor update-thread)
    (last-pause :initform 0 :accessor last-pause)
-   (fps :initform 30.0f0 :accessor fps)))
+   (fps :initarg :fps :accessor fps))
+  (:default-initargs
+   :name :controller
+   :fps 30.0f0))
 
 (defmethod initialize-instance :after ((controller controller) &key)
   (setf (update-thread controller)
@@ -56,22 +59,51 @@
                          (dolist (scene (loops controller))
                            (issue scene 'tick)
                            (process scene))
-                         (draw main)
-                         (draw-hud main)
-                         (q+:swap-buffers main)))))))
+                         (render main)))))))
   (v:debug :trial.controller "Exiting update-loop."))
 
 (define-handler (controller resize resize) (ev width height)
-  (resize *main-window* width height))
+  (gl:matrix-mode :projection)
+  (gl:load-identity)
+  (perspective-view 45 (/ width (max 1 height)) 0.01 1000.0)
+  (gl:matrix-mode :modelview)
+  (gl:load-identity)
+  (gl:viewport 0 0 width height))
 
 (define-handler (controller tick tick 100) (ev)
   (incf (tickcount controller))
-  (when (mod (tickcount controller) (fps controller))
+  (when (= 0 (mod (tickcount controller) (fps controller)))
     (cl-gamepad:detect-devices))
   (cl-gamepad:process-events))
 
 (define-handler (controller mapping T 100) (ev)
   (map-event ev *loop*))
 
-(defmethod draw-hud ((controller controller))
-  (q+:render-text *main-window* 20 20 (format NIL "Pause: ~a" (last-pause controller))))
+(defun render (main)
+  (gl:clear :color-buffer :depth-buffer)
+  (gl:load-identity)
+  (gl:enable :depth-test :blend :cull-face :texture-2d)
+  ;; FIXME: Move into camera code
+  (gl:translate 0 -30 -200)
+  (paint (scene main) main)
+
+  (gl:matrix-mode :projection)
+  (gl:with-pushed-matrix
+    (gl:load-identity)
+    (gl:ortho 0 (q+:width main) (q+:height main) 0 -1 10)
+    (gl:matrix-mode :modelview)
+    (gl:load-identity)
+    (gl:disable :cull-face)
+    (gl:clear :depth-buffer)
+
+    ;;(q+:render-text *main-window* 20 20 (format NIL "Pause: ~a" (last-pause controller)))
+    
+    (gl:matrix-mode :projection))
+  (gl:matrix-mode :modelview)  
+  (q+:swap-buffers main))
+
+(defun perspective-view (fovy aspect z-near z-far)
+  ;; http://nehe.gamedev.net/article/replacement_for_gluperspective/21002/
+  (let* ((fh (* (tan (* (/ fovy 360) PI)) z-near))
+         (fw (* fh aspect)))
+    (gl:frustum (- fw) fw (- fh) fh z-near z-far)))
