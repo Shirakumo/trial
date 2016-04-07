@@ -152,9 +152,10 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
 
 (defparameter *gamepad-device-table*
   (alexandria:alist-hash-table
-   '(((1356 . 616) . :dualshock3)
-     ((1133 . 49693) . :xbox360) ;; logitech-f310
-     ((10462 . 4604) . :xbox360))
+   '(((1118 . 654) . :xbox360)
+     ((1133 . 49693) . :logitech-f310)
+     ((1356 . 616) . :dualshock3)
+     ((10462 . 4604) . :steamcontroller))
    :test 'equal))
 
 (defparameter *gamepad-axis-table*
@@ -246,15 +247,17 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
         button)))
 
 (defun gamepad-axis->symbol (device axis)
-  (let ((device (gethash (cons (cl-gamepad:vendor device)
-                               (cl-gamepad:product device))
-                         *gamepad-device-table*)))
+  (let ((device (or (gethash (cons (cl-gamepad:vendor device)
+                                   (cl-gamepad:product device))
+                             *gamepad-device-table*)
+                    :xbox360)))
     (or (when device (gethash axis (gethash device *gamepad-button-table*)))
         axis)))
 
 (defun gamepad-button->symbol (device button)
-  (let ((device (gethash (cons (cl-gamepad:vendor device)
-                               (cl-gamepad:product device))
-                         *gamepad-device-table*)))
+  (let ((device (or (gethash (cons (cl-gamepad:vendor device)
+                                   (cl-gamepad:product device))
+                             *gamepad-device-table*)
+                    :xbox360)))
     (or (when device (gethash button (gethash device *gamepad-button-table*)))
         button)))
