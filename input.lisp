@@ -111,28 +111,30 @@
    :new-pos (error "NEW-POS required.")))
 
 (defun cl-gamepad:device-attached (device)
-  (issue (scene *main*) 'gamepad-attach
+  (v:info :trial.input "Attached ~s" (cl-gamepad:print-device device NIL))
+  (issue (scene *main-window*) 'gamepad-attach
          :device device))
 
 (defun cl-gamepad:device-removed (device)
-  (issue (scene *main*) 'gamepad-remove
+  (v:info :trial.input "Removed ~s" (cl-gamepad:print-device device NIL))
+  (issue (scene *main-window*) 'gamepad-remove
          :device device))
 
 (defun cl-gamepad:button-pressed (button time device)
   (declare (ignore time))
-  (issue (scene *main*) 'gamepad-press
+  (issue (scene *main-window*) 'gamepad-press
          :button (gamepad-button->symbol device button)
          :device device))
 
 (defun cl-gamepad:button-released (button time device)
   (declare (ignore time))
-  (issue (scene *main*) 'gamepad-release
+  (issue (scene *main-window*) 'gamepad-release
          :button (gamepad-button->symbol device button)
          :device device))
 
 (defun cl-gamepad:axis-moved (axis last-value value time device)
   (declare (ignore time))
-  (issue (scene *main*) 'gamepad-move
+  (issue (scene *main-window*) 'gamepad-move
          :axis (gamepad-axis->symbol device axis)
          :old-pos last-value
          :new-pos value

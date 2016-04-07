@@ -1,7 +1,7 @@
 #|
-This file is a part of trial
-(c) 2016 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
-Author: Nicolas Hafner <shinmera@tymoon.eu>
+ This file is a part of trial
+ (c) 2016 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
+ Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
 (in-package #:org.shirakumo.fraf.trial)
@@ -163,6 +163,8 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
 ;; :left-v      -- Left analog stick, vertical movement
 ;; :right-h     -- Right analog stick, horizontal movement
 ;; :right-v     -- Right analog stick, vertical movement
+;; :dpad-h      -- Directional pad, horizontal movement
+;; :dpad-v      -- Directional pad, vertical movement
 ;; :dpad-up     -- Directional pad up
 ;; :dpad-right  -- Directional pad right
 ;; :dpad-down   -- Directional pad down
@@ -189,75 +191,77 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
 (defparameter *gamepad-axis-table*
   (alexandria:alist-hash-table
    `((:dualshock3
-      ,(alexandria:alist-hash-table
-        '(( 0 . :left-h)
-          ( 1 . :left-v)
-          ( 2 . :right-h)
-          ( 3 . :right-v)
-          ( 8 . :dpad-up)
-          ( 9 . :dpad-right)
-          (10 . :dpad-down)
-          (11 . :dpad-left)
-          (12 . :l2)
-          (13 . :r2)
-          (14 . :l1)
-          (15 . :r1)
-          (16 . :y) ; triangle
-          (17 . :b) ; circle
-          (18 . :a) ; cross
-          (19 . :x) ; square
-          (23 . :axis-x)
-          (24 . :axis-z)
-          (25 . :axis-y)
-          (26 . :axis-r))
-        :test 'eql))
+      .,(alexandria:alist-hash-table
+         '(( 0 . :left-h)
+           ( 1 . :left-v)
+           ( 2 . :right-h)
+           ( 3 . :right-v)
+           ( 8 . :dpad-up)
+           ( 9 . :dpad-right)
+           (10 . :dpad-down)
+           (11 . :dpad-left)
+           (12 . :l2)
+           (13 . :r2)
+           (14 . :l1)
+           (15 . :r1)
+           (16 . :y) ; triangle
+           (17 . :b) ; circle
+           (18 . :a) ; cross
+           (19 . :x) ; square
+           (23 . :axis-x)
+           (24 . :axis-z)
+           (25 . :axis-y)
+           (26 . :axis-r))
+         :test 'eql))
      (:xbox360
-      ,(alexandria:alist-hash-table
-        '(( 0 . :left-h)
-          ( 1 . :left-v)
-          ( 2 . :l2)
-          ( 3 . :right-h)
-          ( 4 . :right-v)
-          ( 5 . :r2)
-          ( 6 . :dpad-h)
-          ( 7 . :dpad-v)))))
+      .,(alexandria:alist-hash-table
+         '(( 0 . :left-h)
+           ( 1 . :left-v)
+           ( 2 . :l2)
+           ( 3 . :right-h)
+           ( 4 . :right-v)
+           ( 5 . :r2)
+           ( 6 . :dpad-h)
+           ( 7 . :dpad-v))
+         :test 'eql)))
    :test 'eql))
 
 (defparameter *gamepad-button-table*
   (alexandria:alist-hash-table
    `((:dualshock3
-      ,(alexandria:alist-hash-table
-        '(( 0 . :select)
-          ( 1 . :left)
-          ( 2 . :right)
-          ( 3 . :start)
-          ( 4 . :dpad-up)
-          ( 5 . :dpad-right)
-          ( 6 . :dpad-down)
-          ( 7 . :dpad-left)
-          ( 8 . :l2)
-          ( 9 . :r2)
-          (10 . :l1)
-          (11 . :r1)
-          (12 . :y) ; triangle
-          (13 . :b) ; circle
-          (14 . :a) ; cross
-          (15 . :x) ; square
-          (16 . :home))
-        :test 'eql))
+      .,(alexandria:alist-hash-table
+         '(( 0 . :select)
+           ( 1 . :left)
+           ( 2 . :right)
+           ( 3 . :start)
+           ( 4 . :dpad-up)
+           ( 5 . :dpad-right)
+           ( 6 . :dpad-down)
+           ( 7 . :dpad-left)
+           ( 8 . :l2)
+           ( 9 . :r2)
+           (10 . :l1)
+           (11 . :r1)
+           (12 . :y) ; triangle
+           (13 . :b) ; circle
+           (14 . :a) ; cross
+           (15 . :x) ; square
+           (16 . :home))
+         :test 'eql))
      (:xbox360
-      ,(alexandria:alist-hash-table
-        '(( 0 . :a)
-          ( 1 . :b)
-          ( 2 . :x)
-          ( 3 . :y)
-          ( 4 . :l1)
-          ( 5 . :r1)
-          ( 6 . :select)
-          ( 7 . :start)
-          ( 8 . :home)
-          ( 9 . :left)
-          (10 . :right)))))
+      .,(alexandria:alist-hash-table
+         '(( 0 . :a)
+           ( 1 . :b)
+           ( 2 . :x)
+           ( 3 . :y)
+           ( 4 . :l1)
+           ( 5 . :r1)
+           ( 6 . :select)
+           ( 7 . :start)
+           ( 8 . :home)
+           ( 9 . :left)
+           (10 . :right))
+         :test 'eql)))
    :test 'eql))
 
 (defun qt-key->symbol (enum)
@@ -279,7 +283,7 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
                                    (cl-gamepad:product device))
                              *gamepad-device-table*)
                     :xbox360)))
-    (or (when device (gethash axis (gethash device *gamepad-button-table*)))
+    (or (gethash axis (gethash device *gamepad-axis-table*))
         axis)))
 
 (defun gamepad-button->symbol (device button)
@@ -287,5 +291,5 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
                                    (cl-gamepad:product device))
                              *gamepad-device-table*)
                     :xbox360)))
-    (or (when device (gethash button (gethash device *gamepad-button-table*)))
+    (or (gethash button (gethash device *gamepad-button-table*))
         button)))

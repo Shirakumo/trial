@@ -31,7 +31,8 @@
   (setf (q+:window-title main) "Trial"))
 
 (define-finalizer (main teardown)
-  (v:info :trial "RAPTURE"))
+  (v:info :trial "RAPTURE")
+  (cl-gamepad:shutdown))
 
 (define-subwidget (main background) (q+:make-qcolor 0 0 0))
 
@@ -46,6 +47,7 @@
   (gl:front-face :ccw)
   (gl:cull-face :back)
   (gl:hint :perspective-correction-hint :nicest)
+  (cl-gamepad:init)
   (setup-scene scene))
 
 (defclass resize (event)
