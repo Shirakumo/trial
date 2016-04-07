@@ -58,8 +58,10 @@
                        (with-frame-pause ((fps controller))
                          (dolist (scene (loops controller))
                            (issue scene 'tick)
-                           (process scene))
-                         (render main)))))))
+                           (process scene)
+                           (render scene main))
+                         (render-hud controller main)
+                         (q+:swap-buffers main)))))))
   (v:debug :trial.controller "Exiting update-loop."))
 
 (define-handler (controller resize resize) (ev width height)
@@ -79,14 +81,15 @@
 (define-handler (controller mapping T 100) (ev)
   (map-event ev *loop*))
 
-(defun render (main)
+(defun render (scene main)
   (gl:clear :color-buffer :depth-buffer)
   (gl:load-identity)
   (gl:enable :depth-test :blend :cull-face :texture-2d)
   ;; FIXME: Move into camera code
   (gl:translate 0 -30 -200)
-  (paint (scene main) main)
+  (paint scene main))
 
+(defun render-hud (controller main)
   (gl:matrix-mode :projection)
   (gl:with-pushed-matrix
     (gl:load-identity)
@@ -96,11 +99,10 @@
     (gl:disable :cull-face)
     (gl:clear :depth-buffer)
 
-    ;;(q+:render-text *main-window* 20 20 (format NIL "Pause: ~a" (last-pause controller)))
+    (q+:render-text main 20 20 (format NIL "Pause: ~a" (last-pause controller)))
     
     (gl:matrix-mode :projection))
-  (gl:matrix-mode :modelview)  
-  (q+:swap-buffers main))
+  (gl:matrix-mode :modelview))
 
 (defun perspective-view (fovy aspect z-near z-far)
   ;; http://nehe.gamedev.net/article/replacement_for_gluperspective/21002/
