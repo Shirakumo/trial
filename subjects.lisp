@@ -37,7 +37,7 @@
 (defmethod (setf texture) ((null null) (subject textured-subject))
   (setf (slot-value subject 'texture) NIL))
 
-(defmethod draw :around ((obj textured-subject))
+(defmethod paint :around ((obj textured-subject) target)
   (when (texture obj)
     (call-next-method)))
 
@@ -53,7 +53,7 @@
   (:default-initargs
    :location (vec 0 0 0)))
 
-(defmethod draw :around ((obj located-subject))
+(defmethod paint :around ((obj located-subject) (target main))
   (gl:with-pushed-matrix
     (let ((location (location obj)))
       (gl:translate (vx location) (vy location) (vz location))
@@ -66,7 +66,7 @@
    :orientation (vec 1 0 0)
    :up (vec 0 1 0)))
 
-(defmethod draw :around ((obj oriented-subject))
+(defmethod paint :around ((obj oriented-subject) (target main))
   (gl:with-pushed-matrix
     (let ((axis (vc (up obj) (orientation obj)))
           (angle (acos (v. (up obj) (orientation obj)))))
@@ -95,5 +95,5 @@
 (defmethod (setf mesh) ((null null) (subject mesh-subject))
   (setf (slot-value subject 'mesh) NIL))
 
-(defmethod draw ((subject mesh-subject))
+(defmethod paint ((subject mesh-subject) (target main))
   (wavefront-loader::draw (mesh subject)))

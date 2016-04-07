@@ -66,7 +66,7 @@
     (dolist (handler (handlers loop))
       (handle event handler))))
 
-(defclass handler (named-entity)
+(defclass handler (entity)
   ((event-type :initarg :event-type :accessor event-type)
    (container :initarg :container :accessor container)
    (delivery-function :initarg :delivery-function :accessor delivery-function)

@@ -7,32 +7,16 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defgeneric matches (a b))
-(defgeneric draw (thing))
-(defgeneric draw-hud (thing))
 
 (defmethod matches (a b)
   (equal a b))
 
-(defclass entity ()
+(defclass entity (unit)
   ())
 
-(defmethod draw ((entity entity)))
-(defmethod draw-hud ((entity entity)))
-
 (defmethod matches ((a entity) b)
-  (eql a b))
+  (or (eql a b)
+      (matches (name a) b)))
 
 (defmethod matches (a (b entity))
   (matches b a))
-
-(defclass named-entity (entity)
-  ((name :initarg :name :reader name))
-  (:default-initargs
-   :name (error "NAME required.")))
-
-(defmethod print-object ((entity named-entity) stream)
-  (print-unreadable-object (entity stream :type T)
-    (format stream "~s" (name entity))))
-
-(defmethod matches ((a named-entity) b)
-  (matches (name a) b))

@@ -14,12 +14,3 @@
 
 (defmethod leave :after ((subject subject) (scene scene))
   (remove-handler subject scene))
-
-(defmethod finalize ((scene scene))
-  (mapc #'finalize (subjects scene)))
-
-(defmethod draw ((scene scene))
-  (mapc #'draw (subjects scene)))
-
-(defmethod draw-hud ((scene scene))
-  (mapc #'draw-hud (subjects scene)))

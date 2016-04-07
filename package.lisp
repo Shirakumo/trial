@@ -8,5 +8,6 @@
 (defpackage #:trial
   (:nicknames #:org.shirakumo.fraf.trial)
   (:use #:cl+qt #:3d-vectors #:flare)
+  (:shadowing-import-from #:flare #:slot)
   (:shadow #:scene #:entity))
 (in-package #:trial)
