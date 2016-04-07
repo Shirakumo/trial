@@ -130,7 +130,7 @@
 (defmethod restore ((asset image))
   (let ((image (q+:make-qimage (uiop:native-namestring (file asset)))))
     (when (q+:is-null image)
-      (error "Invalid file ~s." file))
+      (error "Invalid file ~s." (file asset)))
     (setf (data asset) image)))
 
 (defclass texture (image)
