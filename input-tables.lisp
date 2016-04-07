@@ -158,6 +158,34 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
      ((10462 . 4604) . :steamcontroller))
    :test 'equal))
 
+;;; General name mapping conventions:
+;; :left-h      -- Left analog stick, horizontal movement
+;; :left-v      -- Left analog stick, vertical movement
+;; :right-h     -- Right analog stick, horizontal movement
+;; :right-v     -- Right analog stick, vertical movement
+;; :dpad-up     -- Directional pad up
+;; :dpad-right  -- Directional pad right
+;; :dpad-down   -- Directional pad down
+;; :dpad-left   -- Directional pad left
+;; :l1          -- Left upper trigger or bumper
+;; :l2          -- Left lower trigger or bumper
+;; :r1          -- Right upper trigger or bumper
+;; :r2          -- Right lower trigger or bumper
+;; :y           -- Upper button (Y on Xbox pads)
+;; :b           -- Right button (B on Xbox pads)
+;; :a           -- Lower button (A on Xbox pads)
+;; :x           -- Left button  (X on Xbox pads)
+;; :left        -- Left analog stick click
+;; :right       -- Right analog stick click
+;; :select      -- Left menu button
+;; :home        -- Middle menu button
+;; :start       -- Right menu button
+;;
+;; Gamepads with special hardware may have additional axes
+;; and buttons and thus additional names. If you wish to
+;; use those, see the respective mapping table for the
+;; device.
+
 (defparameter *gamepad-axis-table*
   (alexandria:alist-hash-table
    `((:dualshock3
