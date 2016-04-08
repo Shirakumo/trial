@@ -15,9 +15,13 @@
 (define-subwidget (editor area) (q+:make-qmdiarea editor)
   (setf (q+:central-widget editor) area))
 
-(define-subwidget (editor game-window) (q+:make-qmdisubwindow editor)
-  (setf (q+:widget game-window) main)
-  (q+:add-sub-window area game-window))
+(define-subwidget (editor game-view) (q+:make-qmdisubwindow editor)
+  (setf (q+:widget game-view) main)
+  (setf (q+:window-title game-view) "Game View")
+  (q+:add-sub-window area game-view))
+
+(define-initializer (editor setup)
+  (setf (q+:window-title editor) "Trial Editor"))
 
 (define-finalizer (editor teardown)
   (setf (parent main) NIL))
@@ -39,7 +43,6 @@
   (:item "Asset Browser")
   (:item "Object Tree")
   (:item "Game View"
-         (setf (q+:visible game-window)
-               (not (q+:is-visible game-window))))
+         (setf (q+:visible game-view) (not (q+:is-visible game-view))))
   (:item "Event Viewer")
   (:item "Console"))
