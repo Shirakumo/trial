@@ -26,10 +26,10 @@
 (define-initializer (main setup)
   (v:info :trial "GENESIS")
   (setf *main-window* main)
-  (q+:resize main 1024 768)
   (setf (q+:auto-buffer-swap main) NIL)
   (setf (q+:window-title main) "Trial")
   (setf (q+:minimum-size main) (values 300 200))
+  (setf (q+:fixed-size main) (values 1024 768))
   (setf (q+:focus-policy main) (q+:qt.strong-focus)))
 
 (define-finalizer (main teardown)
