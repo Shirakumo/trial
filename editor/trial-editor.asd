@@ -23,5 +23,5 @@
                :qtgui
                :closer-mop
                :pathname-utils
-               :cl-ppcre
-               :trivial-gray-streams))
+               :qtools-ui-options
+               :qtools-ui-repl))

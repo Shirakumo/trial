@@ -10,4 +10,7 @@
   (:use #:cl+qt #:3d-vectors #:flare)
   (:shadowing-import-from #:flare #:slot)
   (:shadow #:scene #:entity))
-(in-package #:trial)
+
+(defpackage #:trial-user
+  (:nicknames #:org.shirakumo.fraf.trial.user)
+  (:use #:trial))

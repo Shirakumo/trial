@@ -134,16 +134,7 @@
       (setf result (cons :failure err)))))
 
 (defun eval-in-scene (scene form &optional bindings)
-  (let ((event (make-instance 'evaluate :form form
-                                        :bindings (append `((*terminal-io* ,*terminal-io*)
-                                                            (*standard-input* ,*standard-input*)
-                                                            (*standard-output* ,*standard-output*)
-                                                            (*error-output* ,*error-output*)
-                                                            (*query-io* ,*query-io*)
-                                                            (*trace-output* ,*trace-output*)
-                                                            (*debug-io* ,*debug-io*)
-                                                            (*package* ,*package*))
-                                                          bindings))))
+  (let ((event (make-instance 'evaluate :form form :bindings bindings)))
     (issue scene event)
     (values-list
      (loop for result = (result event)
