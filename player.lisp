@@ -12,7 +12,8 @@
   (:default-initargs
    :mesh "cube.obj"
    :velocity (vec 0 0 0)
-   :location (vec 0 0 0)))
+   :location (vec 0 0 0)
+   :name :player))
 
 (define-handler (player tick) (ev)
   (nv+ (location player) (velocity player)))
