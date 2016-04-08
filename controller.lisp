@@ -84,32 +84,6 @@
 (define-handler (controller launch-editor) (ev)
   (signal! *main-window* (launch-editor)))
 
-(defclass evaluate (event)
-  ((form :initarg :form :reader form)
-   (bindings :initarg :bindings :reader bindings)
-   (result :initform NIL :accessor result))
-  (:default-initargs
-   :form (error "FORM required.")
-   :bindings `((*terminal-io* ,*terminal-io*)
-               (*standard-input* ,*standard-input*)
-               (*standard-output* ,*standard-output*)
-               (*error-output* ,*error-output*)
-               (*query-io* ,*query-io*)
-               (*trace-output* ,*trace-output*)
-               (*debug-io* ,*debug-io*)
-               (*package* ,*package*))))
-
-(define-handler (controller evaluate) (ev form bindings result)
-  (handler-case
-      (handler-bind ((error (lambda (err)
-                              (v:error :trial.controller "Error attempting to process evaluate event: ~a" err)
-                              (v:debug :trial.controller err))))
-        (progv (mapcar #'first bindings)
-            (mapcar #'second bindings)
-          (setf result (cons :success (multiple-value-list (funcall (compile form)))))))
-    (error (err)
-      (setf result (cons :failure err)))))
-
 (defun render (scene main)
   (gl:clear :color-buffer :depth-buffer)
   (gl:load-identity)
@@ -138,3 +112,42 @@
   (let* ((fh (* (tan (* (/ fovy 360) PI)) z-near))
          (fw (* fh aspect)))
     (gl:frustum (- fw) fw (- fh) fh z-near z-far)))
+
+
+(defclass evaluate (event)
+  ((form :initarg :form :reader form)
+   (bindings :initarg :bindings :reader bindings)
+   (result :initform NIL :accessor result))
+  (:default-initargs
+   :form (error "FORM required.")
+   :bindings ()))
+
+(define-handler (controller evaluate) (ev form bindings result)
+  (handler-case
+      (handler-bind ((error (lambda (err)
+                              (v:error :trial.controller "Error attempting to process evaluate event: ~a" err)
+                              (v:debug :trial.controller err))))
+        (progv (mapcar #'first bindings)
+            (mapcar #'second bindings)
+          (setf result (cons :success (multiple-value-list (funcall (compile NIL `(lambda () ,form))))))))
+    (error (err)
+      (setf result (cons :failure err)))))
+
+(defun eval-in-scene (scene form &optional bindings)
+  (let ((event (make-instance 'evaluate :form form
+                                        :bindings (append `((*terminal-io* ,*terminal-io*)
+                                                            (*standard-input* ,*standard-input*)
+                                                            (*standard-output* ,*standard-output*)
+                                                            (*error-output* ,*error-output*)
+                                                            (*query-io* ,*query-io*)
+                                                            (*trace-output* ,*trace-output*)
+                                                            (*debug-io* ,*debug-io*)
+                                                            (*package* ,*package*))
+                                                          bindings))))
+    (issue scene event)
+    (values-list
+     (loop for result = (result event)
+           do (sleep 0.01)
+              (case (car result)
+                (:failure (error (cdr result)))
+                (:success (return (cdr result))))))))
