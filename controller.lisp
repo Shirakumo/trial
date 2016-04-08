@@ -128,7 +128,7 @@
     (gl:disable :cull-face)
     (gl:clear :depth-buffer)
 
-    (q+:render-text main 20 20 (format NIL "Pause: ~a" (last-pause controller)))
+    (q+:render-text main 20 20 (format NIL "Pause: ~,10f" (last-pause controller)))
     
     (gl:matrix-mode :projection))
   (gl:matrix-mode :modelview))
