@@ -84,6 +84,31 @@
 (define-handler (controller launch-editor) (ev)
   (signal! *main-window* (launch-editor)))
 
+(defclass evaluate (event)
+  ((form :initarg :form :reader form)
+   (bindings :initarg :bindings :reader bindings)
+   (result :initform NIL :accessor result))
+  (:default-initargs
+   :form (error "FORM required.")
+   :bindings `((*terminal-io* . ,*terminal-io*)
+               (*standard-input* . ,*standard-input*)
+               (*standard-output* . ,*standard-output*)
+               (*error-output* . ,*error-output*)
+               (*query-io* . ,*query-io*)
+               (*trace-output* . ,*trace-output*)
+               (*debug-io* . ,*debug-io*))))
+
+(define-handler (controller evaluate) (ev form bindings result)
+  (handler-case
+      (handler-bind ((error (lambda (err)
+                              (v:error :trial.controller "Error attempting to process evaluate event: ~a" err)
+                              (v:debug :trial.controller err))))
+        (progv (mapcar #'first bindings)
+            (mapcar #'second bindings)
+          (setf result (cons :success (multiple-value-list (funcall (compile form)))))))
+    (error (err)
+      (setf result (cons :failure err)))))
+
 (defun render (scene main)
   (gl:clear :color-buffer :depth-buffer)
   (gl:load-identity)
