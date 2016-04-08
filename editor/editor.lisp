@@ -20,6 +20,11 @@
   (setf (q+:window-title game-view) "Game View")
   (q+:add-sub-window area game-view))
 
+(define-subwidget (editor console) (q+:make-qmdisubwindow editor)
+  (setf (q+:widget console) (make-instance 'trial-editor-console:console :main main))
+  (setf (q+:window-title console) "Console")
+  (q+:add-sub-window area console))
+
 (define-initializer (editor setup)
   (setf (q+:window-title editor) "Trial Editor"))
 
@@ -45,4 +50,5 @@
   (:item "Game View"
          (setf (q+:visible game-view) (not (q+:is-visible game-view))))
   (:item "Event Viewer")
-  (:item "Console"))
+  (:item "Console"
+         (setf (q+:visible console) (not (q+:is-visible console)))))

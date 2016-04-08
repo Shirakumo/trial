@@ -29,7 +29,8 @@
                (:file "controller")
                (:file "player")
                (:module "editor"
-                :components ((:file "editor"))))
+                :components ((:file "console")
+                             (:file "editor"))))
   :depends-on (:alexandria
                :3d-vectors
                :verbose
@@ -43,4 +44,6 @@
                :wavefront-loader
                :cl-gamepad
                :pathname-utils
-               :flare))
+               :flare
+               :cl-ppcre
+               :trivial-gray-streams))
