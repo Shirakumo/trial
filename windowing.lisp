@@ -61,7 +61,7 @@
   (enter (make-instance 'player) scene)
   (enter (make-instance 'controller) scene))
 
-(defun main ()
+(defun launch ()
   (v:output-here)
   (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
   (unwind-protect
