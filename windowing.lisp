@@ -59,6 +59,12 @@
 (define-override (main "resizeGL" resize-gl) (width height)
   (issue scene 'resize :width width :height height))
 
+(define-signal (main launch-editor) ())
+
+(define-slot (main launch-editor) ()
+  (declare (connected main (launch-editor)))
+  (q+:show (make-instance 'editor :main main)))
+
 (defun setup-scene (scene)
   (enter (make-instance 'player) scene)
   (enter (make-instance 'controller) scene))

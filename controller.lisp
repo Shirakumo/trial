@@ -81,6 +81,9 @@
 (define-handler (controller mapping T 100) (ev)
   (map-event ev *loop*))
 
+(define-handler (controller launch-editor) (ev)
+  (signal! *main-window* (launch-editor)))
+
 (defun render (scene main)
   (gl:clear :color-buffer :depth-buffer)
   (gl:load-identity)

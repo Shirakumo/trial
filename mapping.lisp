@@ -64,6 +64,11 @@
          (remove-action-mappings ',name)
          ,@(mapcar #'compile-mapping mappings)))))
 
+(define-action system-action)
+
+(define-action (launch-editor (system-action))
+  (key-press (eql key :section)))
+
 (define-action player-action)
 
 (define-action (movement (player-action)))
