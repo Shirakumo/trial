@@ -96,7 +96,8 @@
                (*error-output* . ,*error-output*)
                (*query-io* . ,*query-io*)
                (*trace-output* . ,*trace-output*)
-               (*debug-io* . ,*debug-io*))))
+               (*debug-io* . ,*debug-io*)
+               (*package* . ,*package*))))
 
 (define-handler (controller evaluate) (ev form bindings result)
   (handler-case
