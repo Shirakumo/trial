@@ -35,7 +35,7 @@
                (return)))))
 
 (defun pause-time (fps start)
-  (let* ((duration (- (current-time) start))
+  (let* ((duration (max 0 (- (current-time) start)))
          (remainder (- (/ fps) (/ duration *time-units*))))
     (max 0 remainder)))
 
