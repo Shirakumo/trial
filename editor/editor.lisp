@@ -4,7 +4,11 @@
  Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
-(in-package #:org.shirakumo.fraf.trial)
+(defpackage #:trial-editor
+  (:nicknames #:org.shirakumo.fraf.trial.editor)
+  (:use #:cl+qt)
+  (:export #:editor #:launch))
+(in-package #:org.shirakumo.fraf.trial.editor)
 (in-readtable :qtools)
 
 (define-widget editor (QMainWindow)
@@ -52,3 +56,6 @@
   (:item "Event Viewer")
   (:item "Console"
          (setf (q+:visible console) (not (q+:is-visible console)))))
+
+(defun launch (main)
+  (q+:show (make-instance 'editor :main main)))

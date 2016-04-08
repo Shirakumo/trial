@@ -63,7 +63,8 @@
 
 (define-slot (main launch-editor) ()
   (declare (connected main (launch-editor)))
-  (q+:show (make-instance 'editor :main main)))
+  (when (find-package '#:org.shirakumo.fraf.trial.editor)
+    (funcall (find-symbol (string '#:launch) '#:org.shirakumo.fraf.trial.editor) main)))
 
 (defun setup-scene (scene)
   (enter (make-instance 'player) scene)
