@@ -27,7 +27,8 @@
                (:file "input")
                (:file "mapping")
                (:file "controller")
-               (:file "player"))
+               (:file "player")
+               (:file "editor"))
   :depends-on (:alexandria
                :3d-vectors
                :verbose
