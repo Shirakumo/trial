@@ -90,14 +90,14 @@
    (result :initform NIL :accessor result))
   (:default-initargs
    :form (error "FORM required.")
-   :bindings `((*terminal-io* . ,*terminal-io*)
-               (*standard-input* . ,*standard-input*)
-               (*standard-output* . ,*standard-output*)
-               (*error-output* . ,*error-output*)
-               (*query-io* . ,*query-io*)
-               (*trace-output* . ,*trace-output*)
-               (*debug-io* . ,*debug-io*)
-               (*package* . ,*package*))))
+   :bindings `((*terminal-io* ,*terminal-io*)
+               (*standard-input* ,*standard-input*)
+               (*standard-output* ,*standard-output*)
+               (*error-output* ,*error-output*)
+               (*query-io* ,*query-io*)
+               (*trace-output* ,*trace-output*)
+               (*debug-io* ,*debug-io*)
+               (*package* ,*package*))))
 
 (define-handler (controller evaluate) (ev form bindings result)
   (handler-case
