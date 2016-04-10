@@ -138,7 +138,7 @@
 
 (defmethod restore ((asset texture))
   (call-next-method)
-  (q+:make-current *main-window*)
+  
   (gl:disable :cull-face)
   (with-finalizing ((format (q+:make-qglframebufferobjectformat))
                     (image (data asset)))

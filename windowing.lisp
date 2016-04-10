@@ -31,7 +31,8 @@
   (setf (q+:window-title main) "Trial")
   (setf (q+:minimum-size main) (values 300 200))
   (setf (q+:fixed-size main) (values 1024 768))
-  (setf (q+:focus-policy main) (q+:qt.strong-focus)))
+  (setf (q+:focus-policy main) (q+:qt.strong-focus))
+  (enter (make-instance 'controller) scene))
 
 (define-finalizer (main teardown)
   (v:info :trial "RAPTURE")
@@ -40,25 +41,16 @@
 (define-subwidget (main background) (q+:make-qcolor 0 0 0))
 
 (define-override (main "initializeGL" initialize-gl) ()
-  (q+:qgl-clear-color main background)
-  (gl:enable :depth-test :blend :cull-face :texture-2d)
-  (gl:depth-mask T)
-  (gl:depth-func :lequal)
-  (gl:clear-depth 1.0)
-  (gl:blend-func :src-alpha :one-minus-src-alpha)
-  (gl:shade-model :smooth)
-  (gl:front-face :ccw)
-  (gl:cull-face :back)
-  (gl:hint :perspective-correction-hint :nicest)
-  (cl-gamepad:init)
-  (setup-scene scene))
+  )
 
 (defclass resize (event)
   ((width :initarg :width :reader width)
    (height :initarg :height :reader height)))
 
-(define-override (main "resizeGL" resize-gl) (width height)
-  (issue scene 'resize :width width :height height))
+(define-override (main resize-event) (ev)
+  (issue scene 'resize :width (q+:width (q+:size ev)) :height (q+:height (q+:size ev))))
+
+(define-override (main paint-event) (ev))
 
 (define-signal (main launch-editor) ())
 
@@ -86,8 +78,11 @@
                 (:success (return (cdr result))))))))
 
 (defun setup-scene (scene)
-  (enter (make-instance 'player) scene)
-  (enter (make-instance 'controller) scene))
+  (dotimes (i 1000)
+    (enter (make-instance 'player :location (vec (- (random 100) 50)
+                                                 (- (random 100) 50)
+                                                 (- (random 100) 50))) scene))
+  )
 
 (defun launch ()
   (v:output-here)

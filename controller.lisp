@@ -50,8 +50,22 @@
 
 (defun update-loop (controller)
   (let ((main *main-window*))
+    (q+:make-current main)
+
+    (q+:qgl-clear-color main (q+:make-qcolor 0 0 0))
+    (gl:enable :depth-test :blend :cull-face :texture-2d)
+    (gl:depth-mask T)
+    (gl:depth-func :lequal)
+    (gl:clear-depth 1.0)
+    (gl:blend-func :src-alpha :one-minus-src-alpha)
+    (gl:shade-model :smooth)
+    (gl:front-face :ccw)
+    (gl:cull-face :back)
+    (gl:hint :perspective-correction-hint :nicest)
+    (cl-gamepad:init)
+    (setup-scene (scene main))
+    
     (with-slots-bound (controller controller)
-      (q+:make-current main)
       (loop while (update-thread controller)
             do (with-simple-restart (abort "Abort the update and retry.")
                  (setf (last-pause controller)
