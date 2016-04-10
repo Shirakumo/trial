@@ -111,27 +111,35 @@
     (gl:frustum (- fw) fw (- fh) fh z-near z-far)))
 
 
-(defclass evaluate (event)
-  ((form :initarg :form :reader form)
+(defclass execute (event)
+  ((func :initarg :func :reader func)
    (bindings :initarg :bindings :reader bindings)
    (result :initform NIL :accessor result))
   (:default-initargs
-   :form (error "FORM required.")
+   :func (error "FORM required.")
    :bindings ()))
 
-(define-handler (controller evaluate) (ev form bindings result)
-  (handler-case
-      (handler-bind ((error (lambda (err)
-                              (v:error :trial.controller "Error attempting to process evaluate event: ~a" err)
-                              (v:debug :trial.controller err))))
-        (progv (mapcar #'first bindings)
-            (mapcar #'second bindings)
-          (setf result (cons :success (multiple-value-list (funcall (compile NIL `(lambda () ,form))))))))
-    (error (err)
-      (setf result (cons :failure err)))))
+(defmethod execute :around ((execute execute))
+  (with-slots (bindings result) execute
+    (handler-case
+        (handler-bind ((error (lambda (err)
+                                (v:error :trial.controller "Error attempting to process execute event: ~a" err)
+                                (v:debug :trial.controller err))))
+          (progv (mapcar #'first bindings)
+              (mapcar #'second bindings)
+            (setf result (cons :success (multiple-value-list
+                                         (call-next-method))))))
+      (error (err)
+        (setf result (cons :failure err))))))
 
-(defun eval-in-scene (scene form &optional bindings)
-  (let ((event (make-instance 'evaluate :form form :bindings bindings)))
+(defmethod execute ((execute execute))
+  (funcall (func execute)))
+
+(define-handler (controller execute) (ev)
+  (execute ev))
+
+(defun funcall-in-scene (scene func &optional bindings)
+  (let ((event (make-instance 'execute :func func :bindings bindings)))
     (issue scene event)
     (values-list
      (loop for result = (result event)
