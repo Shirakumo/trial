@@ -20,7 +20,8 @@
     format))
 
 (define-widget main (QGLWidget)
-  ((scene :initform (make-instance 'scene) :accessor scene :finalized T))
+  ((scene :initform (make-instance 'scene) :accessor scene :finalized T)
+   (execute-queue :initform (make-array 0 :adjustable T :fill-pointer T) :accessor execute-queue))
   (:constructor (make-gl-format)))
 
 (define-initializer (main setup)
@@ -65,6 +66,24 @@
   (declare (connected main (launch-editor)))
   (when (find-package '#:org.shirakumo.fraf.trial.editor)
     (funcall (find-symbol (string '#:launch) '#:org.shirakumo.fraf.trial.editor) main)))
+
+(define-signal (main execute) ())
+
+(define-slot (main execute) ()
+  (declare (connected main (execute)))
+  (loop for ev across execute-queue
+        do (execute ev)
+        finally (setf (fill-pointer execute-queue) 0)))
+
+(defun funcall-in-gui (main func &optional bindings)
+  (let ((event (make-instance 'execute :func func :bindings bindings)))
+    (vector-push-extend event (execute-queue main))
+    (values-list
+     (loop for result = (result event)
+           do (sleep 0.01)
+              (case (car result)
+                (:failure (error (cdr result)))
+                (:success (return (cdr result))))))))
 
 (defun setup-scene (scene)
   (enter (make-instance 'player) scene)
