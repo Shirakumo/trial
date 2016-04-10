@@ -13,4 +13,4 @@
 
 (defpackage #:trial-user
   (:nicknames #:org.shirakumo.fraf.trial.user)
-  (:use #:trial))
+  (:use #:cl+qt #:trial))
