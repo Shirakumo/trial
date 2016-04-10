@@ -22,3 +22,17 @@
 
 (defun unlist (item)
   (if (listp item) (first item) item))
+
+(defmacro with-primitives (primitive &body body)
+  (let ((prim (gensym "PRIMITIVE")))
+    `(let ((,prim ,primitive))
+       (gl:begin ,prim)
+       (unwind-protect
+            (progn ,@body)
+         (gl:end ,prim)))))
+
+(defmacro with-pushed-matrix (&body body)
+  `(progn (gl:push-matrix)
+          (unwind-protect
+               (progn ,@body)
+            (gl:pop-matrix))))

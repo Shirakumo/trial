@@ -54,7 +54,7 @@
    :location (vec 0 0 0)))
 
 (defmethod paint :around ((obj located-subject) (target main))
-  (gl:with-pushed-matrix
+  (with-pushed-matrix
     (let ((location (location obj)))
       (gl:translate (vx location) (vy location) (vz location))
       (call-next-method))))
@@ -67,7 +67,7 @@
    :up (vec 0 1 0)))
 
 (defmethod paint :around ((obj oriented-subject) (target main))
-  (gl:with-pushed-matrix
+  (with-pushed-matrix
     (let ((axis (vc (up obj) (orientation obj)))
           (angle (acos (v. (up obj) (orientation obj)))))
       (gl:rotate angle (vx axis) (vy axis) (vz axis))

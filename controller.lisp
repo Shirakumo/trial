@@ -93,8 +93,7 @@
   (paint scene main))
 
 (defun render-hud (controller main)
-  (gl:matrix-mode :projection)
-  (gl:with-pushed-matrix
+  (gl:with-pushed-matrix* (:projection)
     (gl:load-identity)
     (gl:ortho 0 (q+:width main) (q+:height main) 0 -1 10)
     (gl:matrix-mode :modelview)
@@ -102,9 +101,7 @@
     (gl:disable :cull-face)
     (gl:clear :depth-buffer)
 
-    (q+:render-text main 20 20 (format NIL "Pause: ~,10f" (last-pause controller)))
-    
-    (gl:matrix-mode :projection))
+    (q+:render-text main 20 20 (format NIL "Pause: ~,10f" (last-pause controller))))
   (gl:matrix-mode :modelview))
 
 (defun perspective-view (fovy aspect z-near z-far)

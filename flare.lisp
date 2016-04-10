@@ -14,6 +14,6 @@
   (finalize (objects container)))
 
 (defmethod call-with-translation (func (target main) (vec vec))
-  (gl:with-pushed-matrix
+  (with-pushed-matrix
     (gl:translate (vx vec) (vy vec) (vz vec))
     (funcall func)))
