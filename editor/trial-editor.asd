@@ -13,9 +13,9 @@
   :description "Editor component for the Trial engine"
   :homepage "https://github.com/Shirakumo/trial"
   :serial T
-  :components ((:file "editor")
-               (:file "console")
-               (:file "inspector"))
+  :components ((:file "console")
+               (:file "inspector")
+               (:file "editor"))
   :depends-on (:trial
                :verbose
                :qtools
@@ -24,4 +24,5 @@
                :closer-mop
                :pathname-utils
                :qtools-ui-options
-               :qtools-ui-repl))
+               :qtools-ui-repl
+               :qtools-ui-debugger))
