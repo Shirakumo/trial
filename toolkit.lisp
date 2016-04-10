@@ -24,12 +24,11 @@
   (if (listp item) (first item) item))
 
 (defmacro with-primitives (primitive &body body)
-  (let ((prim (gensym "PRIMITIVE")))
-    `(let ((,prim ,primitive))
-       (gl:begin ,prim)
-       (unwind-protect
-            (progn ,@body)
-         (gl:end ,prim)))))
+  `(progn
+     (gl:begin ,primitive)
+     (unwind-protect
+          (progn ,@body)
+       (gl:end))))
 
 (defmacro with-pushed-matrix (&body body)
   `(progn (gl:push-matrix)
