@@ -20,9 +20,12 @@
     format))
 
 (define-widget main (QGLWidget)
-  ((scene :initform (make-instance 'scene) :accessor scene :finalized T)
+  ((scene :initform (make-instance 'scene) :accessor scene :finalized NIL)
+   (controller :accessor controller :finalized NIL)
    (execute-queue :initform (make-array 0 :adjustable T :fill-pointer T) :accessor execute-queue))
   (:constructor (make-gl-format)))
+
+(define-subwidget (main background) (q+:make-qcolor 0 0 0))
 
 (define-initializer (main setup)
   (v:info :trial "GENESIS")
@@ -32,13 +35,16 @@
   (setf (q+:minimum-size main) (values 300 200))
   (setf (q+:fixed-size main) (values 1024 768))
   (setf (q+:focus-policy main) (q+:qt.strong-focus))
-  (enter (make-instance 'controller) scene))
+  (setf scene (make-instance 'scene))
+  (setf controller (make-instance 'controller))
+  (enter controller scene))
 
 (define-finalizer (main teardown)
   (v:info :trial "RAPTURE")
-  (cl-gamepad:shutdown))
-
-(define-subwidget (main background) (q+:make-qcolor 0 0 0))
+  (cl-gamepad:shutdown)
+  (finalize controller)
+  (q+:make-current main)
+  (finalize scene))
 
 ;;; REASON FOR THE FOLLOWING TWO OVERRIDES:
 ;; The rendering in this engine works as follows.

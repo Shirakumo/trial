@@ -25,14 +25,15 @@
 
 (defmethod finalize ((controller controller))
   (let ((thread (update-thread controller)))
-    (setf (update-thread controller) NIL)
-    (loop for i from 0
-          while (bt:thread-alive-p thread)
-          do (sleep 0.1)
-             (when (< 10 i)
-               (v:warn :trial.controller "Update loop did not exit gracefully.")
-               (bt:destroy-thread thread)
-               (return)))))
+    (when thread
+      (setf (update-thread controller) NIL)
+      (loop for i from 0
+            while (bt:thread-alive-p thread)
+            do (sleep 0.1)
+               (when (< 10 i)
+                 (v:warn :trial.controller "Update loop did not exit gracefully.")
+                 (bt:destroy-thread thread)
+                 (return))))))
 
 (defun pause-time (fps start)
   (let* ((duration (max 0 (- (current-time) start)))
@@ -66,7 +67,8 @@
                            (process scene)
                            (render scene main))
                          (render-hud controller main)
-                         (q+:swap-buffers main)))))))
+                         (q+:swap-buffers main))))))
+    (q+:done-current main))
   (v:debug :trial.controller "Exiting update-loop."))
 
 (defun setup-rendering (main)
