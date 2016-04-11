@@ -15,6 +15,8 @@
   :serial T
   :components ((:file "console")
                (:file "inspector")
+               (:file "object-tree")
+               (:file "asset-browser")
                (:file "editor"))
   :depends-on (:trial
                :verbose

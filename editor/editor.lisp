@@ -53,7 +53,6 @@
   (:item "Object Tree")
   (:item "Game View"
          (setf (q+:visible game-view) (not (q+:is-visible game-view))))
-  (:item "Event Viewer")
   (:item "Console"
          (setf (q+:visible console) (not (q+:is-visible console)))))
 
