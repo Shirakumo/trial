@@ -76,8 +76,10 @@
   (v:debug :trial.controller "Exiting update-loop."))
 
 (defun setup-rendering (main)
+  (v:info :trial.controller "GL capable of ~a buffer~:p with ~a sample~:p."
+          (gl:get-integer :sample-buffers)
+          (gl:get-integer :samples))
   (q+:qgl-clear-color main (slot-value main 'background))
-  (gl:enable :depth-test :blend :cull-face :texture-2d :line-smooth :polygon-smooth)
   (gl:depth-mask T)
   (gl:depth-func :lequal)
   (gl:clear-depth 1.0)
@@ -91,7 +93,8 @@
 
 (defun render (scene main)
   (gl:clear :color-buffer :depth-buffer)
-  (gl:enable :depth-test :blend :cull-face :texture-2d)
+  (gl:enable :depth-test :blend :cull-face :texture-2d
+             :multisample :line-smooth :polygon-smooth)
   (with-pushed-matrix
     (paint scene main))
   (gl:load-identity))
