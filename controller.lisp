@@ -30,10 +30,14 @@
       (loop for i from 0
             while (bt:thread-alive-p thread)
             do (sleep 0.1)
-               (when (< 10 i)
-                 (v:warn :trial.controller "Update loop did not exit gracefully.")
-                 (bt:destroy-thread thread)
-                 (return))))))
+               (with-simple-restart (continue "Continue waiting.")
+                 (when (= 10 i)
+                   (restart-case
+                       (error "Update thread did not exit after 1s.")
+                     (abort ()
+                       :report "Kill the thread and exit, risking corrupting the image."
+                       (bt:destroy-thread thread)
+                       (return)))))))))
 
 (defun pause-time (fps start)
   (let* ((duration (max 0 (- (current-time) start)))
