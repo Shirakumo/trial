@@ -77,7 +77,7 @@
 
 (defun setup-rendering (main)
   (q+:qgl-clear-color main (slot-value main 'background))
-  (gl:enable :depth-test :blend :cull-face :texture-2d)
+  (gl:enable :depth-test :blend :cull-face :texture-2d :line-smooth :polygon-smooth)
   (gl:depth-mask T)
   (gl:depth-func :lequal)
   (gl:clear-depth 1.0)
@@ -85,7 +85,9 @@
   (gl:shade-model :smooth)
   (gl:front-face :ccw)
   (gl:cull-face :back)
-  (gl:hint :perspective-correction-hint :nicest))
+  (gl:hint :perspective-correction-hint :nicest)
+  (gl:hint :line-smooth-hint :nicest)
+  (gl:hint :polygon-smooth-hint :nicest))
 
 (defun render (scene main)
   (gl:clear :color-buffer :depth-buffer)
