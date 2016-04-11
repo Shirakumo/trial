@@ -99,3 +99,34 @@
 
 (defmethod paint ((subject mesh-subject) (target main))
   (wavefront-loader::draw (mesh subject)))
+
+(define-subject space-axes ()
+  ((size :initarg :size :accessor size)
+   (grid :initarg :grid :accessor grid))
+  (:default-initargs
+   :size 10
+   :grid 10))
+
+(defmethod paint ((subject space-axes) (target main))
+  (let* ((s (size subject))
+         (g (* (/ (grid subject) 2) s)))
+    (gl:line-width 1.0)
+    (gl:color 0.3 0.3 0.3)
+    (with-primitives :lines
+      (loop for i from (- g) to g by s
+            do (gl:vertex (- g) 0.0 i)
+               (gl:vertex g 0.0 i)
+               (gl:vertex i 0.0 (- g))
+               (gl:vertex i 0.0 g)))
+    (gl:line-width 2.0)
+    (with-primitives :lines
+      (gl:color 1.0 0 0)
+      (gl:vertex 0 0 0)
+      (gl:vertex s 0 0)
+      (gl:color 0 1.0 0)
+      (gl:vertex 0 0 0)
+      (gl:vertex 0 s 0)
+      (gl:color 0 0 1.0)
+      (gl:vertex 0 0 0)
+      (gl:vertex 0 0 s)))
+  (gl:color 1.0 1.0 1.0))

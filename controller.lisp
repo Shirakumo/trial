@@ -111,10 +111,7 @@
 
 ;; FIXME: proper LOADing of a map
 (defun setup-scene (scene)
-  (dotimes (i 1000)
-    (enter (make-instance 'player :location (vec (- (random 100) 50)
-                                                 (- (random 100) 50)
-                                                 (- (random 100) 50))) scene)))
+  (enter (make-instance 'space-axes) scene))
 
 (define-handler (controller resize resize) (ev width height)
   (gl:matrix-mode :projection)
