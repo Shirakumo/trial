@@ -89,11 +89,10 @@
 
 (defun render (scene main)
   (gl:clear :color-buffer :depth-buffer)
-  (gl:load-identity)
   (gl:enable :depth-test :blend :cull-face :texture-2d)
-  ;; FIXME: Move into camera code
-  (gl:translate 0 -30 -200)
-  (paint scene main))
+  (with-pushed-matrix
+    (paint scene main))
+  (gl:load-identity))
 
 (defun render-hud (controller main)
   (gl:with-pushed-matrix* (:projection)
