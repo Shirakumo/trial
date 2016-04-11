@@ -92,15 +92,16 @@
         do (execute ev)
         finally (setf (fill-pointer execute-queue) 0)))
 
-(defun funcall-in-gui (main func &optional bindings)
+(defun funcall-in-gui (main func &key bindings (want-results T))
   (let ((event (make-instance 'execute :func func :bindings bindings)))
     (vector-push-extend event (execute-queue main))
-    (values-list
-     (loop for result = (result event)
-           do (sleep 0.01)
-              (case (car result)
-                (:failure (error (cdr result)))
-                (:success (return (cdr result))))))))
+    (when want-results
+      (values-list
+       (loop for result = (result event)
+             do (sleep 0.01)
+                (case (car result)
+                  (:failure (error (cdr result)))
+                  (:success (return (cdr result)))))))))
 
 (defun launch ()
   (v:output-here)

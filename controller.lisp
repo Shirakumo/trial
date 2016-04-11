@@ -163,12 +163,13 @@
 (define-handler (controller execute) (ev)
   (execute ev))
 
-(defun funcall-in-scene (scene func &optional bindings)
+(defun funcall-in-scene (scene func &key bindings (want-results T))
   (let ((event (make-instance 'execute :func func :bindings bindings)))
     (issue scene event)
-    (values-list
-     (loop for result = (result event)
-           do (sleep 0.01)
-              (case (car result)
-                (:failure (error (cdr result)))
-                (:success (return (cdr result))))))))
+    (when want-results
+      (values-list
+       (loop for result = (result event)
+             do (sleep 0.01)
+                (case (car result)
+                  (:failure (error (cdr result)))
+                  (:success (return (cdr result)))))))))

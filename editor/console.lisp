@@ -32,7 +32,7 @@
                    (trial::funcall-in-scene
                     (trial::scene (main console))
                     (wrap-eval-func string)
-                    (make-bindings console))
+                    :bindings (make-bindings console))
                  (setf *package* package)
                  (case type
                    (:success (list type data package))
