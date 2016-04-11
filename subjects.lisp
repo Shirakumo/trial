@@ -98,7 +98,7 @@
   (setf (slot-value subject 'mesh) NIL))
 
 (defmethod paint ((subject mesh-subject) (target main))
-  (wavefront-loader::draw (mesh subject)))
+  (wavefront-loader:draw (mesh subject)))
 
 (define-subject space-axes ()
   ((size :initarg :size :accessor size)

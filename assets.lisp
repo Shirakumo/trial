@@ -164,10 +164,10 @@
    :allowed-types '(obj)))
 
 (defmethod restore ((asset model))
-  (setf (data asset) (wavefront-loader::load-obj (file asset)))
+  (setf (data asset) (wavefront-loader:load-obj (file asset)))
   (loop for obj across (data asset)
-        for diffuse = (wavefront-loader::diffuse (wavefront-loader::material obj))
+        for diffuse = (wavefront-loader:diffuse (wavefront-loader:material obj))
         do (when (typep diffuse 'pathname)
              (let ((texture (asset diffuse 'texture)))
-               (setf (wavefront-loader::diffuse (wavefront-loader::material obj))
+               (setf (wavefront-loader:diffuse (wavefront-loader:material obj))
                      (content texture))))))
