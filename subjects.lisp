@@ -39,7 +39,9 @@
 
 (defmethod paint :around ((obj textured-subject) target)
   (when (texture obj)
-    (call-next-method)))
+    (bind-texture obj)
+    (call-next-method)
+    (gl:bind-texture :texture-2d 0)))
 
 (defmethod bind-texture ((obj textured-subject))
   (gl:bind-texture :texture-2d (texture obj))
