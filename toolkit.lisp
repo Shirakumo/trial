@@ -35,3 +35,10 @@
           (unwind-protect
                (progn ,@body)
             (gl:pop-matrix))))
+
+(defun matrix-4x4 (&rest elements)
+  (let ((m (make-array '(4 4) :element-type 'single-float :initial-element 0.0f0)))
+    (loop for x in elements
+          for i from 0
+          do (setf (row-major-aref m i) x))
+    m))
