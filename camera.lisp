@@ -7,24 +7,33 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(define-subject camera (located-subject oriented-subject)
-  ((target :initform (vec 0 0 0) :accessor target)))
+(define-subject camera (located-subject)
+  ((target :initarg :target :accessor target)
+   (up :initarg :up :accessor up))
+  (:default-initargs
+   :target (vec 0 0 0)
+   :up (vec 0 1 0)
+   :location (vec 0 30 200)))
 
-(defmethod initialize-instance :after ((camera camera) &key)
-  (setf (location camera) (vec 0 0 3)
-        (direction camera) (nvunit (v- (location camera) (target camera)))))
+(define-handler (camera tick) (ev)
+  (look-at (location camera) (target camera) (up camera)))
 
-(defun lookat (target up)
-  (let* ((forward (vunit target))
-         (side (vunit (v* up forward)))
-         (up (v* forward side))
-         (matrix (make-array (* 3 3))))
-    (setf (elt matrix 0) (vx side) ;; first row
-          (elt matrix 1) (vy side)
-          (elt matrix 2) (vz side)
-          (elt matrix 3) (vx up)   ;; second row
-          (elt matrix 4) (vy up)
-          (elt matrix 5) (vz up)
-          (elt matrix 6) (vx forward) ;; third row
-          (elt matrix 7) (vy forward)
-          (elt matrix 8) (vz forward))))
+(defun look-at (eye target up)
+  (let* ((z (nvunit (v- eye target)))
+         (x (nvunit (vc up z)))
+         (y (nvunit (vc z x))))
+    (gl:mult-matrix
+     (matrix-4x4
+      (vx x) (vx y) (vx z) 0.0f0
+      (vy x) (vy y) (vy z) 0.0f0
+      (vz x) (vz y) (vz z) 0.0f0
+      (- (vx eye)) (- (vy eye)) (- (vz eye)) 1.0f0))))
+
+(define-subject tracking-camera (camera)
+  ()
+  (:default-initargs
+   :target NIL))
+
+(define-handler (tracking-camera tick) (ev)
+  (when (target tracking-camera)
+    (look-at (location tracking-camera) (location (target tracking-camera)) (up tracking-camera))))
