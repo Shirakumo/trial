@@ -52,17 +52,8 @@
   (let ((main *main-window*))
     (q+:make-current main)
 
-    (q+:qgl-clear-color main (q+:make-qcolor 0 0 0))
-    (gl:enable :depth-test :blend :cull-face :texture-2d)
-    (gl:depth-mask T)
-    (gl:depth-func :lequal)
-    (gl:clear-depth 1.0)
-    (gl:blend-func :src-alpha :one-minus-src-alpha)
-    (gl:shade-model :smooth)
-    (gl:front-face :ccw)
-    (gl:cull-face :back)
-    (gl:hint :perspective-correction-hint :nicest)
     (cl-gamepad:init)
+    (setup-rendering main)
     (setup-scene (scene main))
     
     (with-slots-bound (controller controller)
@@ -78,25 +69,17 @@
                          (q+:swap-buffers main)))))))
   (v:debug :trial.controller "Exiting update-loop."))
 
-(define-handler (controller resize resize) (ev width height)
-  (gl:matrix-mode :projection)
-  (gl:load-identity)
-  (perspective-view 45 (/ width (max 1 height)) 0.01 1000.0)
-  (gl:matrix-mode :modelview)
-  (gl:load-identity)
-  (gl:viewport 0 0 width height))
-
-(define-handler (controller tick tick 100) (ev)
-  (incf (tickcount controller))
-  (when (= 0 (mod (tickcount controller) (fps controller)))
-    (cl-gamepad:detect-devices))
-  (cl-gamepad:process-events))
-
-(define-handler (controller mapping T 100) (ev)
-  (map-event ev *loop*))
-
-(define-handler (controller launch-editor) (ev)
-  (signal! *main-window* (launch-editor)))
+(defun setup-rendering (main)
+  (q+:qgl-clear-color main (slot-value main 'background))
+  (gl:enable :depth-test :blend :cull-face :texture-2d)
+  (gl:depth-mask T)
+  (gl:depth-func :lequal)
+  (gl:clear-depth 1.0)
+  (gl:blend-func :src-alpha :one-minus-src-alpha)
+  (gl:shade-model :smooth)
+  (gl:front-face :ccw)
+  (gl:cull-face :back)
+  (gl:hint :perspective-correction-hint :nicest))
 
 (defun render (scene main)
   (gl:clear :color-buffer :depth-buffer)
@@ -124,6 +107,32 @@
          (fw (* fh aspect)))
     (gl:frustum (- fw) fw (- fh) fh z-near z-far)))
 
+;; FIXME: proper LOADing of a map
+(defun setup-scene (scene)
+  (dotimes (i 1000)
+    (enter (make-instance 'player :location (vec (- (random 100) 50)
+                                                 (- (random 100) 50)
+                                                 (- (random 100) 50))) scene)))
+
+(define-handler (controller resize resize) (ev width height)
+  (gl:matrix-mode :projection)
+  (gl:load-identity)
+  (perspective-view 45 (/ width (max 1 height)) 0.01 1000.0)
+  (gl:matrix-mode :modelview)
+  (gl:load-identity)
+  (gl:viewport 0 0 width height))
+
+(define-handler (controller tick tick 100) (ev)
+  (incf (tickcount controller))
+  (when (= 0 (mod (tickcount controller) (fps controller)))
+    (cl-gamepad:detect-devices))
+  (cl-gamepad:process-events))
+
+(define-handler (controller mapping T 100) (ev)
+  (map-event ev *loop*))
+
+(define-handler (controller launch-editor) (ev)
+  (signal! *main-window* (launch-editor)))
 
 (defclass execute (event)
   ((func :initarg :func :reader func)

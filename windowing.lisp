@@ -40,8 +40,24 @@
 
 (define-subwidget (main background) (q+:make-qcolor 0 0 0))
 
-(define-override (main "initializeGL" initialize-gl) ()
-  )
+;;; REASON FOR THE FOLLOWING TWO OVERRIDES:
+;; The rendering in this engine works as follows.
+;; There is a main thread that controls the Qt windows and a separate thread that handles
+;; the game updating and GL rendering. Now, OpenGL has a context, that can only ever be
+;; used from one thread at once. If we want to draw from another thread, we first need to
+;; make the context current to that thread. As such, in order to start drawing in our
+;; rendering thread, we need to make the context current there. Unfortunately for us, the
+;; QGLWidget offers some convenience methods called initializeGL, resizeGL, and paintGL,
+;; which are always called from the main thread, and /automatically/ acquire the context.
+;; As such, if one of these methods is called by Qt, it fucks up our rendering thread as
+;; it steals the GL context out from under its feet. Since we don't need these methods
+;; and they're actually actively harmful, we need to prevent Qt from ever calling them.
+;;
+;; That's why the following two overrides exist. The resize-event merely issues a new
+;; event to the scene, which will then trigger the actual resizing in the controller's
+;; handler. The paint-event override does absolutely nothing, which is fine because we
+;; do all the drawing and buffer swapping in the rendering thread anyway, and doing this
+;; prevents the calling of paintGL.
 
 (defclass resize (event)
   ((width :initarg :width :reader width)
@@ -51,6 +67,9 @@
   (issue scene 'resize :width (q+:width (q+:size ev)) :height (q+:height (q+:size ev))))
 
 (define-override (main paint-event) (ev))
+
+;; We need to do this with a signal because the editor has to be launched through the
+;; GUI thread.
 
 (define-signal (main launch-editor) ())
 
@@ -76,13 +95,6 @@
               (case (car result)
                 (:failure (error (cdr result)))
                 (:success (return (cdr result))))))))
-
-(defun setup-scene (scene)
-  (dotimes (i 1000)
-    (enter (make-instance 'player :location (vec (- (random 100) 50)
-                                                 (- (random 100) 50)
-                                                 (- (random 100) 50))) scene))
-  )
 
 (defun launch ()
   (v:output-here)
