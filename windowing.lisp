@@ -17,6 +17,8 @@
     (setf (q+:double-buffer format) T)
     (setf (q+:rgba format) T)
     (setf (q+:stencil format) T)
+    (setf (q+:sample-buffers format) T)
+    (setf (q+:samples format) 2)
     format))
 
 (define-widget main (QGLWidget)
