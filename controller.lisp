@@ -146,7 +146,7 @@
 (define-handler (controller pack) (ev)
   (let ((scene (first (loops controller))))
     (apply #'pack (resource-pathname "quicksave.sav")
-           (flare-indexed-set:coerce-set scene 'list))))
+           (flare-indexed-set:coerce-set (objects scene) 'list))))
 
 (define-handler (controller unpack) (ev)
   ;; Remove old state?
