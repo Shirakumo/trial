@@ -143,6 +143,16 @@
 (define-handler (controller launch-editor) (ev)
   (signal! *main-window* (launch-editor)))
 
+(define-handler (controller pack) (ev)
+  (let ((scene (first (loops controller))))
+    (apply #'pack (resource-pathname "quicksave.sav")
+           (flare-indexed-set:coerce-set scene 'list))))
+
+(define-handler (controller unpack) (ev)
+  ;; Remove old state?
+  (dolist (scene (loops controller))
+    (unnpack (resource-pathname "quicksave.sav") scene)))
+
 (defclass execute (event)
   ((func :initarg :func :reader func)
    (bindings :initarg :bindings :reader bindings)

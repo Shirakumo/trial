@@ -68,6 +68,12 @@
 (define-action launch-editor (system-action)
   (key-press (eql key :section)))
 
+(define-action pack (system-action)
+  (key-press (eql key :f2)))
+
+(define-action unpack (system-action)
+  (key-press (eql key :f3)))
+
 (define-action player-action ())
 
 (define-action movement (player-action))
