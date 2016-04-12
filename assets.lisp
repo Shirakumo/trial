@@ -101,8 +101,10 @@
            asset (pathname-type file))))
 
 (defmethod print-object ((asset file-asset) stream)
-  (print-unreadable-object (asset stream :type T)
-    (format stream "~s ~s" (state asset) (file asset))))
+  (if *print-readably*
+      (print (make-load-form asset) stream)
+      (print-unreadable-object (asset stream :type T)
+        (format stream "~s ~s" (state asset) (file asset)))))
 
 (defmethod asset :around ((pathname pathname) type)
   (call-next-method (resource-pathname pathname) type))
