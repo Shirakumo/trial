@@ -34,7 +34,7 @@
 (defgeneric save (savable)
   (:method-combination append))
 
-(defmethod save (thing)
+(defmethod save append (thing)
   ())
 
 (defmethod save :around (thing)

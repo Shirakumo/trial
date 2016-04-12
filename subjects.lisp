@@ -40,7 +40,7 @@
   (gl:tex-parameter :texture-2d :texture-wrap-s :clamp)
   (gl:tex-parameter :texture-2d :texture-wrap-t :clamp))
 
-(defmethod save ((subject textured-subject))
+(defmethod save append ((subject textured-subject))
   `(:texture ,(texture subject)))
 
 (define-subject located-subject ()
@@ -54,7 +54,7 @@
       (gl:translate (vx location) (vy location) (vz location))
       (call-next-method))))
 
-(defmethod save ((subject located-subject))
+(defmethod save append ((subject located-subject))
   `(:location ,(location subject)))
 
 (define-subject oriented-subject ()
@@ -71,7 +71,7 @@
       (gl:rotate angle (vx axis) (vy axis) (vz axis))
       (call-next-method))))
 
-(defmethod save ((subject oriented-subject))
+(defmethod save append ((subject oriented-subject))
   `(:orientation ,(orientation subject)
     :up ,(up subject)))
 
@@ -82,7 +82,7 @@
    :axis (vec 0 1 0)
    :angle 0))
 
-(defmethod save ((subject rotated-subject))
+(defmethod save append ((subject rotated-subject))
   `(:axis ,(axis subject)
     :angle ,(angle subject)))
 
@@ -105,7 +105,7 @@
   (loop for mesh across (content (mesh subject))
         do (wavefront-loader:draw mesh)))
 
-(defmethod save ((subject mesh-subject))
+(defmethod save append ((subject mesh-subject))
   `(:mesh ,(mesh subject)))
 
 (define-subject space-axes ()
@@ -139,6 +139,6 @@
       (gl:vertex 0 0 s)))
   (gl:color 1.0 1.0 1.0))
 
-(defmethod save ((subject space-axes))
+(defmethod save append ((subject space-axes))
   `(:size ,(size subject)
     :grid ,(grid subject)))
