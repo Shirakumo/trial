@@ -15,6 +15,7 @@
   :serial T
   :components ((:file "package")
                (:file "toolkit")
+               (:file "storage")
                (:file "assets")
                (:file "entity")
                (:file "event-loop")

@@ -21,18 +21,8 @@
     (call-next-method)
     (finalize prev)))
 
-(defmethod (setf texture) ((texture integer) (subject textured-subject))
-  (setf (slot-value subject 'texture) texture))
-
-(defmethod (setf texture) ((texture qobject) (subject textured-subject))
-  (setf (texture subject)
-        (qtypecase texture
-          (QImage (q+:texture (image->framebuffer texture)))
-          (QGLFramebufferObject (q+:texture texture))
-          (T (error "Don't know how to use ~a as a texture for ~a." texture subject)))))
-
 (defmethod (setf texture) (thing (subject textured-subject))
-  (setf (texture subject) (content (asset thing 'texture))))
+  (setf (slot-value subject 'texture) (asset thing 'texture)))
 
 (defmethod (setf texture) ((null null) (subject textured-subject))
   (setf (slot-value subject 'texture) NIL))
@@ -44,11 +34,14 @@
     (gl:bind-texture :texture-2d 0)))
 
 (defmethod bind-texture ((obj textured-subject))
-  (gl:bind-texture :texture-2d (texture obj))
+  (gl:bind-texture :texture-2d (content (texture obj)))
   (gl:tex-parameter :texture-2d :texture-min-filter :linear)
   (gl:tex-parameter :texture-2d :texture-mag-filter :linear)
   (gl:tex-parameter :texture-2d :texture-wrap-s :clamp)
   (gl:tex-parameter :texture-2d :texture-wrap-t :clamp))
+
+(defmethod save ((subject textured-subject))
+  `(:texture ,(texture subject)))
 
 (define-subject located-subject ()
   ((location :initarg :location :accessor location))
@@ -60,6 +53,9 @@
     (let ((location (location obj)))
       (gl:translate (vx location) (vy location) (vz location))
       (call-next-method))))
+
+(defmethod save ((subject located-subject))
+  `(:location ,(location subject)))
 
 (define-subject oriented-subject ()
   ((orientation :initarg :orientation :accessor orientation)
@@ -75,12 +71,20 @@
       (gl:rotate angle (vx axis) (vy axis) (vz axis))
       (call-next-method))))
 
+(defmethod save ((subject oriented-subject))
+  `(:orientation ,(orientation subject)
+    :up ,(up subject)))
+
 (define-subject rotated-subject ()
   ((axis :initarg :axis :accessor axis)
    (angle :initarg :angle :accessor angle))
   (:default-initargs
    :axis (vec 0 1 0)
    :angle 0))
+
+(defmethod save ((subject rotated-subject))
+  `(:axis ,(axis subject)
+    :angle ,(angle subject)))
 
 (define-subject mesh-subject ()
   ((mesh :initform NIL :accessor mesh)))
@@ -92,13 +96,17 @@
   (when t-p (setf (mesh subject) mesh)))
 
 (defmethod (setf mesh) (thing (subject mesh-subject))
-  (setf (slot-value subject 'mesh) (content (asset thing 'model) 0)))
+  (setf (slot-value subject 'mesh) (asset thing 'model)))
 
 (defmethod (setf mesh) ((null null) (subject mesh-subject))
   (setf (slot-value subject 'mesh) NIL))
 
 (defmethod paint ((subject mesh-subject) (target main))
-  (wavefront-loader:draw (mesh subject)))
+  (loop for mesh across (content (mesh subject))
+        do (wavefront-loader:draw mesh)))
+
+(defmethod save ((subject mesh-subject))
+  `(:mesh ,(mesh subject)))
 
 (define-subject space-axes ()
   ((size :initarg :size :accessor size)
@@ -130,3 +138,7 @@
       (gl:vertex 0 0 0)
       (gl:vertex 0 0 s)))
   (gl:color 1.0 1.0 1.0))
+
+(defmethod save ((subject space-axes))
+  `(:size ,(size subject)
+    :grid ,(grid subject)))

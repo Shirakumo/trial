@@ -122,6 +122,10 @@
   (unless (probe-file (file asset))
     (error "Invalid file path ~s." (file asset))))
 
+(defmethod make-load-form ((asset file-asset) &optional env)
+  (declare (ignore env))
+  `(asset ,(file asset) ',(class-name (class-of asset))))
+
 (defclass image (file-asset)
   ()
   (:default-initargs
