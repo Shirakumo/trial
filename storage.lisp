@@ -11,16 +11,18 @@
 (defvar *pack-compile* T)
 
 (defun save-to-stream (stream object)
-  (write object :stream stream
-                :array T
-                :base 10
-                :case :downcase
-                :circle T
-                :escape T
-                :gensym T
-                :pretty T
-                :radix NIL
-                :readably T))
+  (when object
+    (write object :stream stream
+                  :array T
+                  :base 10
+                  :case :downcase
+                  :circle T
+                  :escape T
+                  :gensym T
+                  :pretty T
+                  :radix NIL
+                  :readably T)
+    (terpri stream)))
 
 (defun ins (class-name &rest args)
   (enter (apply #'make-instance class-name args) *unpack-target*))
