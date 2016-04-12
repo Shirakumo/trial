@@ -8,6 +8,7 @@
 (in-readtable :qtools)
 
 (defvar *unpack-target*)
+(defvar *pack-compile* T)
 
 (defun save-to-stream (stream object)
   (write object :stream stream
@@ -50,15 +51,20 @@
   (apply #'pack (uiop:parse-native-namestring to) objects))
 
 (defmethod pack ((to pathname) &rest objects)
-  (let ((temp (make-pathname :type "tmp.lisp" :defaults to)))
+  (let ((temp (make-pathname :name (format NIL "~a-~a"
+                                           (pathname-name to) (get-universal-time))
+                             :type "tmp.lisp" :defaults to)))
     (with-open-file (stream temp :direction :output
                                  :if-exists :rename
                                  :if-does-not-exist :create)
       (save-to-stream stream `(in-package '#:trial-user))
       (apply #'pack stream objects))
-    (unwind-protect
-         (compile-file temp :output-file to)
-      (ignore-errors (delete-file temp)))))
+    (cond (*pack-compile*
+           (unwind-protect
+                (compile-file temp :output-file to)
+             (ignore-errors (delete-file temp))))
+          (T
+           (rename-file temp to)))))
 
 (defmethod pack ((to stream) &rest objects)
   (dolist (object objects)
