@@ -21,11 +21,14 @@
     (call-next-method)
     (finalize prev)))
 
-(defmethod (setf texture) (thing (subject textured-subject))
-  (setf (slot-value subject 'texture) (asset thing 'texture)))
+(defmethod (setf texture) ((asset asset) (subject textured-subject))
+  (setf (slot-value subject 'texture) asset))
 
 (defmethod (setf texture) ((null null) (subject textured-subject))
   (setf (slot-value subject 'texture) NIL))
+
+(defmethod (setf texture) (thing (subject textured-subject))
+  (setf (texture subject) (asset thing 'texture)))
 
 (defmethod paint :around ((obj textured-subject) target)
   (when (texture obj)
@@ -95,11 +98,14 @@
 (defmethod reinitialize-instance :after ((subject mesh-subject) &key (mesh NIL t-p) &allow-other-keys)
   (when t-p (setf (mesh subject) mesh)))
 
-(defmethod (setf mesh) (thing (subject mesh-subject))
-  (setf (slot-value subject 'mesh) (asset thing 'model)))
+(defmethod (setf mesh) ((asset asset) (subject mesh-subject))
+  (setf (slot-value subject 'mesh) asset))
 
 (defmethod (setf mesh) ((null null) (subject mesh-subject))
   (setf (slot-value subject 'mesh) NIL))
+
+(defmethod (setf mesh) (thing (subject mesh-subject))
+  (setf (mesh subject) (asset thing 'model)))
 
 (defmethod paint ((subject mesh-subject) (target main))
   (loop for mesh across (content (mesh subject))

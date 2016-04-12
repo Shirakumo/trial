@@ -36,6 +36,9 @@
   (print-unreadable-object (asset stream :type T)
     (format stream "~s" (state asset))))
 
+(defmethod asset ((asset asset) type)
+  asset)
+
 (defmethod asset :around (id type)
   (or (gethash id *assets*)
       (setf (gethash id *assets*)
