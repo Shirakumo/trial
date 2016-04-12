@@ -51,14 +51,14 @@
   (apply #'pack (uiop:parse-native-namestring to) objects))
 
 (defmethod pack ((to pathname) &rest objects)
-  (let ((temp (make-pathname :name (format NIL "~a-~a"
+  (let ((temp (make-pathname :name (format NIL "~a-~a.tmp"
                                            (pathname-name to) (get-universal-time))
-                             :type "tmp.lisp" :defaults to)))
+                             :type "lisp" :defaults to)))
     (v:info :trial.storage "Packing to ~a ..." (uiop:native-namestring temp))
     (with-open-file (stream temp :direction :output
                                  :if-exists :rename
                                  :if-does-not-exist :create)
-      (save-to-stream stream `(in-package '#:trial-user))
+      (save-to-stream stream `(in-package #:trial-user))
       (apply #'pack stream objects))
     (cond (*pack-compile*
            (v:info :trial.storage "Compiling to ~a ..." (uiop:native-namestring to))
