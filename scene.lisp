@@ -14,3 +14,9 @@
 
 (defmethod leave :after ((subject subject) (scene scene))
   (remove-handler subject scene))
+
+(defmethod save-form ((scene scene))
+  (let ((form `(progn)))
+    (flare-indexed-set:do-set (entity (objects scene) (nreverse form))
+      (let ((inner (save-form entity)))
+        (when inner (push inner form))))))

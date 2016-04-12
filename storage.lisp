@@ -8,9 +8,9 @@
 (in-readtable :qtools)
 
 (defvar *unpack-target*)
-(defvar *pack-compile* T)
+(defvar *pack-compile* NIL)
 
-(defun save-to-stream (stream object)
+(defun pack-to-stream (stream object)
   (when object
     (write object :stream stream
                   :array T
@@ -33,19 +33,18 @@
 (defclass savable ()
   ())
 
-(defgeneric save (savable)
+(defgeneric save-form-args (savable)
   (:method-combination append))
 
-(defmethod save append (thing)
+(defmethod save-form-args append (thing)
   ())
 
-(defmethod save :around (thing)
-  (when (typep thing 'savable)
-    (call-next-method)))
+(defmethod save-form (thing)
+  ())
 
-(defmethod save :around ((savable savable))
+(defmethod save-form ((savable savable))
   `(ins ',(class-name (class-of savable))
-        ,@(call-next-method)))
+        ,@(save-form-args savable)))
 
 (defgeneric pack (to &rest objects))
 
@@ -60,7 +59,7 @@
     (with-open-file (stream temp :direction :output
                                  :if-exists :rename
                                  :if-does-not-exist :create)
-      (save-to-stream stream `(in-package #:trial-user))
+      (pack-to-stream stream `(in-package #:trial-user))
       (apply #'pack stream objects))
     (cond (*pack-compile*
            (v:info :trial.storage "Compiling to ~a ..." (uiop:native-namestring to))
@@ -72,7 +71,7 @@
 
 (defmethod pack ((to stream) &rest objects)
   (dolist (object objects)
-    (save-to-stream to (save object))))
+    (pack-to-stream to (save-form object))))
 
 (defgeneric unpack (from into))
 
