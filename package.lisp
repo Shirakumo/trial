@@ -184,7 +184,8 @@
    #:unlist
    #:with-primitives
    #:with-pushed-matrix
-   #:matrix-4x4)
+   #:matrix-4x4
+   #:one-of)
   ;; windowing.lisp
   (:export
    #:*main-window*

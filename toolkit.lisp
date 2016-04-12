@@ -42,3 +42,12 @@
           for i from 0
           do (setf (row-major-aref m i) x))
     m))
+
+(defun one-of (thing &rest options)
+  (find thing options))
+
+(define-compiler-macro one-of (thing &rest options)
+  (let ((thing-var (gensym "THING")))
+    `(let ((,thing-var ,thing))
+       (or ,@(loop for option in options
+                   collect `(eql ,thing-var ,option))))))
