@@ -151,7 +151,7 @@
 (define-handler (controller unpack) (ev)
   ;; Remove old state?
   (dolist (scene (loops controller))
-    (unnpack (resource-pathname "quicksave.sav") scene)))
+    (unpack (resource-pathname "quicksave.sav") scene)))
 
 (defclass execute (event)
   ((func :initarg :func :reader func)
