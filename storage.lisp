@@ -55,19 +55,21 @@
   (let ((temp (make-pathname :name (format NIL "~a-~a.tmp"
                                            (pathname-name to) (get-universal-time))
                              :type "lisp" :defaults to)))
-    (v:info :trial.storage "Packing to ~a ..." (uiop:native-namestring temp))
+    (v:debug :trial.storage "Packing to ~a ..." (uiop:native-namestring temp))
     (with-open-file (stream temp :direction :output
                                  :if-exists :rename
                                  :if-does-not-exist :create)
       (pack-to-stream stream `(in-package #:trial-user))
       (apply #'pack stream objects))
     (cond (*pack-compile*
-           (v:info :trial.storage "Compiling to ~a ..." (uiop:native-namestring to))
+           (v:debug :trial.storage "Compiling to ~a ..." (uiop:native-namestring to))
            (unwind-protect
-                (compile-file temp :output-file to)
+                (compile-file temp :output-file to :verbose NIL :print NIL)
              (ignore-errors (delete-file temp))))
           (T
-           (rename-file temp to)))))
+           (rename-file temp to)))
+    (v:info :trial.storage "Packed to ~a." (uiop:native-namestring to)))
+  to)
 
 (defmethod pack ((to stream) &rest objects)
   (dolist (object objects)
@@ -80,5 +82,6 @@
 
 (defmethod unpack ((from pathname) into)
   (let ((*unpack-target* into))
-    (v:info :trial.storage "Unpacking ~a to ~a" (uiop:native-namestring from) into)
-    (load from)))
+    (v:debug :trial.storage "Unpacking ~a to ~a" (uiop:native-namestring from) into)
+    (load from)
+    (v:info :trial.storage "Unpacked ~a" (uiop:native-namestring from))))
