@@ -121,7 +121,7 @@
 (defun setup-scene (scene)
   (enter (make-instance 'space-axes) scene)
   (enter (make-instance 'player) scene)
-  (enter (make-instance 'tracking-camera :target (unit :player scene)) scene))
+  (enter (make-instance 'following-camera :target (unit :player scene)) scene))
 
 (define-handler (controller resize resize) (ev width height)
   (gl:matrix-mode :projection)

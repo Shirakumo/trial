@@ -29,11 +29,25 @@
       (vz x) (vz y) (vz z) 0.0f0
       (- (vx eye)) (- (vy eye)) (- (vz eye)) 1.0f0))))
 
-(define-subject tracking-camera (camera)
+(define-subject pivot-camera (camera)
   ()
   (:default-initargs
    :target NIL))
 
-(define-handler (tracking-camera tick) (ev)
-  (when (target tracking-camera)
-    (look-at (location tracking-camera) (location (target tracking-camera)) (up tracking-camera))))
+(define-handler (pivot-camera tick) (ev)
+  (when (target pivot-camera)
+    (look-at (location pivot-camera)
+             (location (target pivot-camera))
+             (up pivot-camera))))
+
+(define-subject following-camera (camera)
+  ()
+  (:default-initargs
+   :target NIL))
+
+(define-handler (following-camera tick) (ev)
+  (when (target following-camera)
+    (look-at (v+ (location following-camera)
+                 (location (target following-camera)))
+             (location (target following-camera))
+             (up following-camera))))
