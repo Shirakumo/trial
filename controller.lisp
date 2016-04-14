@@ -111,7 +111,12 @@
     (gl:disable :cull-face)
     (gl:clear :depth-buffer)
 
-    (q+:render-text main 20 20 (format NIL "Pause: ~,10f" (last-pause controller))))
+    (with-finalizing ((font (q+:make-qfont "Consolas, Monospace")))
+      (q+:render-text main 20 30 (format NIL "Pause: ~,10f" (last-pause controller)) font)
+      (q+:render-text main 20 50 (format NIL "Time:  ~2,'0d:~6,3,,,'0f"
+                                         (floor (/ (round (clock (scene main))) 60))
+                                         (mod (clock (scene main)) 60))
+                      font)))
   (gl:matrix-mode :modelview))
 
 (defun perspective-view (fovy aspect z-near z-far)
