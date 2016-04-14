@@ -15,7 +15,7 @@
    :up (vec 0 1 0)
    :location (vec 0 30 200)))
 
-(define-handler (camera tick) (ev)
+(define-handler (camera tick tick -100) (ev)
   (look-at (location camera) (target camera) (up camera)))
 
 (defun look-at (eye target up)
@@ -34,7 +34,7 @@
   (:default-initargs
    :target NIL))
 
-(define-handler (pivot-camera tick) (ev)
+(define-handler (pivot-camera tick tick -100) (ev)
   (when (target pivot-camera)
     (look-at (location pivot-camera)
              (location (target pivot-camera))
@@ -45,7 +45,7 @@
   (:default-initargs
    :target NIL))
 
-(define-handler (following-camera tick) (ev)
+(define-handler (following-camera tick tick -100) (ev)
   (when (target following-camera)
     (look-at (v+ (location following-camera)
                  (location (target following-camera)))
