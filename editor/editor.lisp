@@ -11,6 +11,34 @@
 (in-package #:org.shirakumo.fraf.trial.editor)
 (in-readtable :qtools)
 
+(define-widget status-label (QLabel)
+  ())
+
+(define-initializer (status-label setup)
+  (update status-label))
+
+(defmethod update :around ((label status-label))
+  (setf (q+:text label) (call-next-method)))
+
+(define-widget memory-label (QLabel status-label)
+  ())
+
+(defmethod update ((label memory-label))
+  (format NIL "Memory: ~,2f / ~,2f mb (~d%)"
+          (/ (sb-kernel:dynamic-usage) 1024 1024)
+          (/ (sb-ext:dynamic-space-size) 1024 1024)
+          (round (* 100 (/ (sb-kernel:dynamic-usage) (sb-ext:dynamic-space-size))))))
+
+(define-widget scene-label (QLabel status-label)
+  ((main :initarg :main :accessor main)))
+
+(defmethod update ((label scene-label))
+  (let ((scene (trial:scene (main label))))
+    (format NIL "Scene: ~a ~2,'0d:~6,3,,,'0f"
+            (if (flare:running scene) :running :stopped)
+            (floor (/ (round (flare:clock scene)) 60))
+            (mod (flare:clock scene) 60))))
+
 (define-widget editor (QMainWindow)
   ((main :initarg :main :accessor main))
   (:default-initargs
@@ -29,11 +57,29 @@
   (setf (q+:window-title console) "Console")
   (q+:add-sub-window area console))
 
+(define-subwidget (editor status-memory) (make-instance 'memory-label))
+
+(define-subwidget (editor status-scene) (make-instance 'scene-label :main main))
+
+(define-subwidget (editor status) (q+:make-qstatusbar editor)
+  (setf (q+:status-bar editor) status)
+  (q+:add-widget status status-memory)
+  (q+:add-widget status status-scene))
+
+(define-subwidget (editor updater) (q+:make-qtimer editor)
+  (setf (q+:single-shot updater) NIL)
+  (q+:start updater 500))
+
 (define-initializer (editor setup)
   (setf (q+:window-title editor) "Trial Editor"))
 
 (define-finalizer (editor teardown)
   (setf (parent main) NIL))
+
+(define-slot (editor update) ()
+  (declare (connected updater (timeout)))
+  (update status-memory)
+  (update status-scene))
 
 (define-menu (editor File)
   (:item ("Open..." (ctrl o)))
