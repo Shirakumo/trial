@@ -23,11 +23,24 @@
 (define-widget memory-label (QLabel status-label)
   ())
 
+(defun allocated-mbs ()
+  #+sbcl (/ (sb-kernel:dynamic-usage) 1024 1024)
+  #-sbcl :unknown)
+
+(defun available-mbs ()
+  #+sbcl (/ (sb-ext:dynamic-space-size) 1024 1024)
+  #-sbcl :unknown)
+
+(defun mem-percentage ()
+  (let ((allocated (allocated-mbs))
+        (available (available-mbs)))
+    (if (and (numberp allocated) (numberp available))
+        (round (* 100 (/ (allocated-mbs) (available-mbs))))
+        :unknown)))
+
 (defmethod update ((label memory-label))
   (format NIL "Memory: ~,2f / ~,2f mb (~d%)"
-          (/ (sb-kernel:dynamic-usage) 1024 1024)
-          (/ (sb-ext:dynamic-space-size) 1024 1024)
-          (round (* 100 (/ (sb-kernel:dynamic-usage) (sb-ext:dynamic-space-size))))))
+          (allocated-mbs) (available-mbs) (mem-percentage)))
 
 (define-widget scene-label (QLabel status-label)
   ((main :initarg :main :accessor main)))
