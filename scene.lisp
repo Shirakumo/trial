@@ -20,3 +20,13 @@
     (flare-indexed-set:do-set (entity (objects scene) (nreverse form))
       (let ((inner (save-form entity)))
         (when inner (push inner form))))))
+
+;; Since we have a tick event, we don't want to dupe that here.
+;; animations and clock update are already handled by the method
+;; combination, but defining a noop primary method prevents update
+;; from being called on the children.
+(defmethod update ((scene scene)))
+
+;; But we still need to call it in tick.
+(defmethod handle :before ((event tick) (scene scene))
+  (update scene))
