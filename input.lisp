@@ -40,7 +40,7 @@
   (:default-initargs
    :pos (error "POS required.")))
 
-(defclass mouse-button-event (input-event)
+(defclass mouse-button-event (mouse-event)
   ((button :initarg :button :reader button))
   (:default-initargs
    :button (error "BUTTON required.")))
