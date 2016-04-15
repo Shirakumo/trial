@@ -32,6 +32,7 @@
 (define-initializer (main setup)
   (v:info :trial "GENESIS")
   (setf *main* main)
+  (setf (q+:updates-enabled main) NIL)
   (setf (q+:auto-buffer-swap main) NIL)
   (setf (q+:window-title main) "Trial")
   (setf (q+:minimum-size main) (values 300 200))
@@ -47,7 +48,8 @@
   (cl-gamepad:shutdown)
   (finalize controller)
   (acquire-context main)
-  (finalize scene))
+  (finalize scene)
+  (clear-assets))
 
 ;;; REASON FOR THE FOLLOWING TWO OVERRIDES:
 ;; The rendering in this engine works as follows.
@@ -109,9 +111,7 @@
 (defun launch ()
   (v:output-here)
   (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
-  (unwind-protect
-       (with-main-window (window 'main #-darwin :main-thread #-darwin NIL))
-    (clear-assets)))
+  (with-main-window (window 'main #-darwin :main-thread #-darwin NIL)))
 
 (defmethod width ((object qobject))
   (q+:width object))
