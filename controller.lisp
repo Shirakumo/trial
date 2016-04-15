@@ -159,6 +159,7 @@
   (enter (make-instance 'following-camera :name :camera :target (unit :player scene)) scene))
 
 (define-handler (controller resize resize) (ev width height)
+  (v:info :trial.controller "Resizing to ~ax~a" width height)
   (gl:matrix-mode :projection)
   (gl:load-identity)
   (perspective-view (fov controller) (/ width (max 1 height)) 0.01 1000.0)
