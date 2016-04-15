@@ -46,15 +46,20 @@
   ())
 
 (defmethod render (scene (buffer selection-buffer))
+  (gl:clear-color 0.0 0.0 0.0 0.0)
   (gl:clear :color-buffer :depth-buffer)
   ;; Disable blending and textures to ensure we have just 32bit colours.
-  (gl:disable :blend :texture-2d)
-  (gl:enable :depth-test :cull-face :multisample :line-smooth :polygon-smooth)
+  (gl:disable :blend :texture-2d :multisample)
+  (gl:enable :depth-test :cull-face)
   (with-pushed-matrix
+    ;; FIXME: Multiple cameras? Camera not named this?
+    (handle (make-instance 'tick) (unit :camera scene))
     (paint scene buffer)))
 
 (defmethod paint :around (thing (buffer selection-buffer))
-  (when (typep thing 'selectable-subject)
+  ;; FIXME: Nested structures?
+  (when (or (typep thing 'selectable-subject)
+            (typep thing 'scene))
     (call-next-method)))
 
 (defmethod object-at-point ((buffer selection-buffer) x y)
