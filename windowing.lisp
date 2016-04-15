@@ -21,7 +21,7 @@
     (setf (q+:samples format) 2)
     format))
 
-(define-widget main (QGLWidget)
+(define-widget main (QGLWidget context)
   ((scene :initform (make-instance 'scene) :accessor scene :finalized NIL)
    (controller :accessor controller :finalized NIL)
    (execute-queue :initform (make-array 0 :adjustable T :fill-pointer T) :accessor execute-queue))
@@ -38,6 +38,7 @@
   (setf (q+:fixed-size main) (values 1024 768))
   (setf (q+:focus-policy main) (q+:qt.strong-focus))
   (setf scene (make-instance 'scene))
+  (release-context main)
   (setf controller (make-instance 'controller))
   (enter controller scene))
 
@@ -45,7 +46,7 @@
   (v:info :trial "RAPTURE")
   (cl-gamepad:shutdown)
   (finalize controller)
-  (q+:make-current main)
+  (acquire-context main)
   (finalize scene))
 
 ;;; REASON FOR THE FOLLOWING TWO OVERRIDES:

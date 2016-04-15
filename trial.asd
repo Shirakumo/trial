@@ -16,6 +16,7 @@
   :components ((:file "package")
                (:file "toolkit")
                (:file "framebuffer")
+               (:file "context")
                (:file "storage")
                (:file "assets")
                (:file "entity")
@@ -41,6 +42,7 @@
                :cl-opengl
                :closer-mop
                :trivial-garbage
+               :bordeaux-threads
                :wavefront-loader
                :cl-gamepad
                :pathname-utils
