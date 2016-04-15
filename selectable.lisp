@@ -36,8 +36,9 @@
        id))))
 
 (defun register-object-color (object &optional id)
-  (setf (gethash (ensure-color (or id (incf *color-id-counter*))) *color-id-map*) object)
-  id)
+  (let ((id (ensure-color (or id (incf *color-id-counter*)))))
+    (setf (gethash id *color-id-map*) object)
+    id))
 
 (defun color->object (id)
   (gethash (ensure-color id) *color-id-map*))
