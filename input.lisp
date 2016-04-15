@@ -27,13 +27,15 @@
 
 (define-override (main key-press-event) (ev)
   (unless (q+:is-auto-repeat ev)
-    (issue (scene main) 'key-press
-           :key (qt-key->symbol (q+:key ev)))))
+    (let ((key (qt-key->symbol (q+:key ev))))
+      (v:debug :trial.input "Key pressed: ~a" key)
+      (issue (scene main) 'key-press :key key))))
 
 (define-override (main key-release-event) (ev)
   (unless (q+:is-auto-repeat ev)
-    (issue (scene main) 'key-release
-           :key (qt-key->symbol (q+:key ev)))))
+    (let ((key (qt-key->symbol (q+:key ev))))
+      (v:debug :trial.input "Key release: ~a" key)
+      (issue (scene main) 'key-release :key key))))
 
 (defclass mouse-event (input-event)
   ((pos :initarg :pos :reader pos))
