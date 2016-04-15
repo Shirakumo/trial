@@ -51,7 +51,7 @@
   (:default-initargs
    :location (vec 0 0 0)))
 
-(defmethod paint :around ((obj located-subject) (target main))
+(defmethod paint :around ((obj located-subject) target)
   (with-pushed-matrix
     (let ((location (location obj)))
       (gl:translate (vx location) (vy location) (vz location))
@@ -67,7 +67,7 @@
    :orientation (vec 1 0 0)
    :up (vec 0 1 0)))
 
-(defmethod paint :around ((obj oriented-subject) (target main))
+(defmethod paint :around ((obj oriented-subject) target)
   (with-pushed-matrix
     (let ((axis (vc (up obj) (orientation obj)))
           (angle (acos (v. (up obj) (orientation obj)))))
@@ -107,7 +107,7 @@
 (defmethod (setf mesh) (thing (subject mesh-subject))
   (setf (mesh subject) (asset thing 'model)))
 
-(defmethod paint ((subject mesh-subject) (target main))
+(defmethod paint ((subject mesh-subject) target)
   (loop for mesh across (content (mesh subject))
         do (wavefront-loader:draw mesh)))
 
@@ -121,7 +121,7 @@
    :size 10
    :grid 10))
 
-(defmethod paint ((subject space-axes) (target main))
+(defmethod paint ((subject space-axes) target)
   (let* ((s (size subject))
          (g (* (/ (grid subject) 2) s)))
     (gl:line-width 1.0)
