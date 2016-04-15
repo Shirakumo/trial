@@ -15,6 +15,7 @@
   :serial T
   :components ((:file "package")
                (:file "toolkit")
+               (:file "framebuffer")
                (:file "storage")
                (:file "assets")
                (:file "entity")
