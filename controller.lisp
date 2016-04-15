@@ -157,7 +157,7 @@
 
 (defmethod (setf fov) :after (fov (controller controller))
   ;; Trigger resize to update FOV
-  (issue (loops controller) 'resize
+  (issue (first (loops controller)) 'resize
          :width (width *main*)
          :height (height *main*)))
 
