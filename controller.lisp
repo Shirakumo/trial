@@ -12,10 +12,12 @@
    (tickcount :initform 0.0d0 :accessor tickcount)
    (update-thread :initform NIL :accessor update-thread)
    (last-pause :initform 0 :accessor last-pause)
-   (fps :initarg :fps :accessor fps))
+   (fps :initarg :fps :accessor fps)
+   (selection :initarg :selection :accessor selection))
   (:default-initargs
    :name :controller
-   :fps 30.0f0))
+   :fps 30.0f0
+   :selection NIL))
 
 (defmethod initialize-instance :after ((controller controller) &key)
   (setf (update-thread controller)
@@ -62,6 +64,10 @@
     (setup-rendering main)
     (setup-scene scene)
     (start scene)
+
+    (setf (selection controller)
+          (make-instance 'selection-buffer :width (q+:width main)
+                                           :height (q+:height main)))
     
     (with-slots-bound (controller controller)
       (unwind-protect
@@ -78,11 +84,17 @@
       (q+:done-current main)))
   (v:debug :trial.controller "Exiting update-loop."))
 
+(define-handler (controller mouse-release) (ev pos)
+  (let* ((buffer (selection controller))
+         (x (round (vx pos)))
+         (y (- (height buffer) (round (vy pos)))))
+    (render (first (loops controller)) buffer)
+    (v:info :test "CLICK: ~a/~a => ~a" x y (object-at-point buffer x y))))
+
 (defun setup-rendering (main)
   (v:info :trial.controller "GL capable of ~a buffer~:p with ~a sample~:p."
           (gl:get-integer :sample-buffers)
           (gl:get-integer :samples))
-  (q+:qgl-clear-color main (slot-value main 'background))
   (gl:depth-mask T)
   (gl:depth-func :lequal)
   (gl:clear-depth 1.0)
@@ -95,6 +107,7 @@
   (gl:hint :polygon-smooth-hint :nicest))
 
 (defmethod render (scene (main main))
+  (q+:qgl-clear-color main (slot-value main 'background))
   (gl:clear :color-buffer :depth-buffer)
   (gl:enable :depth-test :blend :cull-face :texture-2d
              :multisample :line-smooth :polygon-smooth)
@@ -128,8 +141,8 @@
 ;; FIXME: proper LOADing of a map
 (defun setup-scene (scene)
   (enter (make-instance 'space-axes) scene)
-  (enter (make-instance 'player) scene)
-  (enter (make-instance 'following-camera :target (unit :player scene)) scene))
+  (enter (make-instance 'player :color-id '(255 0 0 255)) scene)
+  (enter (make-instance 'following-camera :name :camera :target (unit :player scene)) scene))
 
 (define-handler (controller resize resize) (ev width height)
   (gl:matrix-mode :projection)
@@ -137,7 +150,8 @@
   (perspective-view 45 (/ width (max 1 height)) 0.01 1000.0)
   (gl:matrix-mode :modelview)
   (gl:load-identity)
-  (gl:viewport 0 0 width height))
+  (gl:viewport 0 0 width height)
+  (reinitialize-instance (selection controller) :width width :height height))
 
 (define-handler (controller tick tick 100) (ev)
   (incf (tickcount controller))
