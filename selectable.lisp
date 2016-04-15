@@ -73,11 +73,10 @@
    :color-id NIL))
 
 (defmethod initialize-instance :after ((subject selectable-subject) &key)
-  (setf (color-id subject) (ensure-color (color-id subject)))
-  (register-object-color subject (color-id subject)))
+  (setf (color-id subject) (register-object-color subject (color-id subject))))
 
 (defmethod paint :before ((subject selectable-subject) (buffer selection-buffer))
-  (gl:color (ldb (byte 8 24) (color-id subject))
-            (ldb (byte 8 16) (color-id subject))
-            (ldb (byte 8  8) (color-id subject))
-            (ldb (byte 8  0) (color-id subject))))
+  (gl:color (/ (ldb (byte 8 24) (color-id subject)) 255)
+            (/ (ldb (byte 8 16) (color-id subject)) 255)
+            (/ (ldb (byte 8  8) (color-id subject)) 255)
+            (/ (ldb (byte 8  0) (color-id subject)) 255)))
