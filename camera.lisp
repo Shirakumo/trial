@@ -27,7 +27,8 @@
       (vx x) (vx y) (vx z) 0.0f0
       (vy x) (vy y) (vy z) 0.0f0
       (vz x) (vz y) (vz z) 0.0f0
-      (- (vx eye)) (- (vy eye)) (- (vz eye)) 1.0f0))))
+       0.0f0  0.0f0  0.0f0 1.0f0))
+    (gl:translate (- (vx eye)) (- (vy eye)) (- (vz eye)))))
 
 (define-subject pivot-camera (camera)
   ()
