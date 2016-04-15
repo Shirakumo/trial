@@ -7,12 +7,6 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(define-finalizable framebuffer ()
-  ((buffer-object :initarg :buffer-object :accessor buffer-object :finalized T)
-   (buffer-format :initform NIL :accessor buffer-format :finalized T))
-  (:default-initargs
-   :buffer-object NIL))
-
 (defun attachment-value (attachment)
   (ecase attachment
     ((:depth-stencil :depth-and-stencil :combined-depth-stencil)
@@ -21,6 +15,12 @@
      (q+:qglframebufferobject.depth))
     ((:none :no-attachment NIL)
      (q+:qglframebufferobject.no-attachment))))
+
+(define-finalizable framebuffer ()
+  ((buffer-object :initarg :buffer-object :accessor buffer-object :finalized T)
+   (buffer-format :initform NIL :accessor buffer-format :finalized T))
+  (:default-initargs
+   :buffer-object NIL))
 
 (defmethod initialize-instance :after ((buffer framebuffer) &key width height mipmap (samples 0)
                                                                  (attachment :combined-depth-stencil)
@@ -65,3 +65,9 @@
 (defmacro with-framebuffer-bound ((buffer) &body body)
   `(call-with-framebuffer-bound
     (lambda () ,@body) ,buffer))
+
+(defmethod width ((buffer framebuffer))
+  (q+:width (buffer-object buffer)))
+
+(defmethod height ((buffer framebuffer))
+  (q+:height (buffer-object buffer)))
