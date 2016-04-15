@@ -79,7 +79,7 @@
                               (with-frame-pause ((fps controller))
                                 (issue scene 'tick)
                                 (process scene)
-                                (render scene main)
+                                (render controller main)
                                 (render-hud controller main)
                                 (q+:swap-buffers main))))))
         (stop scene))))
@@ -107,14 +107,20 @@
   (gl:hint :line-smooth-hint :nicest)
   (gl:hint :polygon-smooth-hint :nicest))
 
-(defmethod render (scene (main main))
+(defmethod render ((controller controller) (main main))
   (q+:qgl-clear-color main (slot-value main 'background))
-  (gl:clear :color-buffer :depth-buffer)
-  (gl:enable :depth-test :blend :cull-face :texture-2d
-             :multisample :line-smooth :polygon-smooth)
-  (with-pushed-matrix
-    (paint scene main))
-  (gl:load-identity))
+  (let ((width (width main)) (height (height main)))
+    (gl:clear :color-buffer :depth-buffer)
+    (gl:enable :depth-test :blend :cull-face :texture-2d
+               :multisample :line-smooth :polygon-smooth)
+    (gl:matrix-mode :projection)
+    (gl:load-identity)
+    (perspective-view (fov controller) (/ width (max 1 height)) 0.01 1000.0)
+    (gl:matrix-mode :modelview)
+    (gl:viewport 0 0 width height)
+    (with-pushed-matrix
+      (paint (first (loops controller)) main))
+    (gl:load-identity)))
 
 (defun render-hud (controller main)
   (gl:with-pushed-matrix* (:projection)
@@ -160,19 +166,7 @@
 
 (define-handler (controller resize resize) (ev width height)
   (v:info :trial.controller "Resizing to ~ax~a" width height)
-  (gl:matrix-mode :projection)
-  (gl:load-identity)
-  (perspective-view (fov controller) (/ width (max 1 height)) 0.01 1000.0)
-  (gl:matrix-mode :modelview)
-  (gl:load-identity)
-  (gl:viewport 0 0 width height)
   (reinitialize-instance (selection controller) :width width :height height))
-
-(defmethod (setf fov) :after (fov (controller controller))
-  ;; Trigger resize to update FOV
-  (issue (first (loops controller)) 'resize
-         :width (width *main*)
-         :height (height *main*)))
 
 (define-handler (controller tick tick 100) (ev)
   (incf (tickcount controller))
