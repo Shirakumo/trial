@@ -84,7 +84,7 @@
                               (q+:swap-buffers main))))))
       (stop scene)
       (q+:done-current main)))
-  (v:debug :trial.controller "Exiting update-loop."))
+  (v:info :trial.controller "Exiting update-loop."))
 
 (define-handler (controller mouse-release) (ev pos)
   (let* ((buffer (selection controller))
@@ -126,6 +126,19 @@
     (gl:disable :cull-face)
     (gl:clear :depth-buffer)
 
+    ;; ;; Debugging the selection
+    ;; (gl:bind-texture :texture-2d (texture (selection controller)))
+    ;; (with-primitives :quads
+    ;;   (gl:tex-coord 1 1)
+    ;;   (gl:vertex (width main) 0)
+    ;;   (gl:tex-coord 0 1)
+    ;;   (gl:vertex 0 0)
+    ;;   (gl:tex-coord 0 0)
+    ;;   (gl:vertex 0 (height main))
+    ;;   (gl:tex-coord 1 0)
+    ;;   (gl:vertex (width main) (height main)))
+    ;; (gl:bind-texture :texture-2d 0)
+
     (with-finalizing ((font (q+:make-qfont "Consolas, Monospace")))
       (q+:render-text main 20 30 (format NIL "Pause: ~,10f" (last-pause controller)) font)
       (q+:render-text main 20 50 (format NIL "Time:  ~2,'0d:~6,3,,,'0f"
@@ -143,7 +156,7 @@
 ;; FIXME: proper LOADing of a map
 (defun setup-scene (scene)
   (enter (make-instance 'space-axes) scene)
-  (enter (make-instance 'player :color-id '(255 0 0 255)) scene)
+  (enter (make-instance 'player) scene)
   (enter (make-instance 'following-camera :name :camera :target (unit :player scene)) scene))
 
 (define-handler (controller resize resize) (ev width height)
