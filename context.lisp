@@ -11,11 +11,12 @@
   ((current-thread :initform (bt:current-thread) :accessor current-thread)))
 
 (defmethod acquire-context ((context context))
-  (if (not (null (current-thread context)))
-      (v:warn :trial.context "Acquiring context ~a in ~a while already acquired in ~a."
-              context (bt:current-thread) (current-thread context))
+  (if (or (null (current-thread context))
+          (eql (current-thread context) (bt:current-thread)))
       (v:debug :trial.context "Acquiring context ~a in ~a"
-               context (bt:current-thread)))
+               context (bt:current-thread))
+      (v:warn :trial.context "Acquiring context ~a in ~a while already acquired in ~a."
+              context (bt:current-thread) (current-thread context)))
   (q+:make-current context)
   (setf (current-thread context) (bt:current-thread)))
 
