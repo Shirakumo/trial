@@ -36,7 +36,9 @@
            :key (qt-key->symbol (q+:key ev)))))
 
 (defclass mouse-event (input-event)
-  ())
+  ((pos :initarg :pos :reader pos))
+  (:default-initargs
+   :pos (error "POS required.")))
 
 (defclass mouse-button-event (input-event)
   ((button :initarg :button :reader button))
@@ -54,11 +56,9 @@
   ())
 
 (defclass mouse-move (mouse-event)
-  ((old-pos :initarg :old-pos :reader old-pos)
-   (new-pos :initarg :new-pos :reader new-pos))
+  ((old-pos :initarg :old-pos :reader old-pos))
   (:default-initargs
-   :old-pos (error "OLD-POS required.")
-   :new-pos (error "NEW-POS required.")))
+   :old-pos (error "OLD-POS required.")))
 
 (defmethod print-object ((event mouse-move) stream)
   (print-unreadable-object (event stream :type T)
@@ -66,19 +66,21 @@
 
 (define-override (main mouse-press-event) (ev)
   (issue (scene main) 'mouse-press
-         :button (qt-button->symbol (q+:button ev))))
+         :button (qt-button->symbol (q+:button ev))
+         :pos (vec (q+:x (q+:pos-f ev)) (q+:y (q+:pos-f ev)) 0)))
 
 (define-override (main mouse-release-event) (ev)
   (issue (scene main) 'mouse-release
-         :button (qt-button->symbol (q+:button ev))))
+         :button (qt-button->symbol (q+:button ev))
+         :pos (vec (q+:x (q+:pos-f ev)) (q+:y (q+:pos-f ev)) 0)))
 
 (defvar *previous-mouse-position* NIL)
 (define-override (main mouse-move-event) (ev)
-  (let ((new (vec (q+:x (q+:pos-f ev)) (q+:y (q+:pos-f ev)) 0)))
+  (let ((pos (vec (q+:x (q+:pos-f ev)) (q+:y (q+:pos-f ev)) 0)))
     (issue (scene main) 'mouse-move
-           :old-pos (or *previous-mouse-position* new)
-           :new-pos new)
-    (setf *previous-mouse-position* new)))
+           :old-pos (or *previous-mouse-position* pos)
+           :pos pos)
+    (setf *previous-mouse-position* pos)))
 
 (defclass gamepad-event (input-event)
   ((device :initarg :device :reader device))
@@ -104,11 +106,11 @@
 (defclass gamepad-move (gamepad-event)
   ((axis :initarg :axis :reader axis)
    (old-pos :initarg :old-pos :reader old-pos)
-   (new-pos :initarg :new-pos :reader new-pos))
+   (pos :initarg :pos :reader pos))
   (:default-initargs
    :axis (error "AXIS required.")
    :old-pos (error "OLD-POS required.")
-   :new-pos (error "NEW-POS required.")))
+   :pos (error "POS required.")))
 
 (defun cl-gamepad:device-attached (device)
   (v:info :trial.input "Attached ~s" (cl-gamepad:print-device device NIL))
@@ -137,5 +139,5 @@
   (issue (scene *main-window*) 'gamepad-move
          :axis (gamepad-axis->symbol device axis)
          :old-pos last-value
-         :new-pos value
+         :pos value
          :device device))

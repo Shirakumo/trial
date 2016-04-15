@@ -108,7 +108,7 @@
    #:mouse-release
    #:mouse-move
    #:old-pos
-   #:new-pos
+   #:pos
    #:gamepad-event
    #:device
    #:gamepad-attach
@@ -120,7 +120,7 @@
    #:gamepad-move
    #:axis
    #:old-pos
-   #:new-pos)
+   #:pos)
   ;; mapping.lisp
   (:export
    #:mapping
