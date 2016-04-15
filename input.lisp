@@ -62,7 +62,7 @@
 
 (defmethod print-object ((event mouse-move) stream)
   (print-unreadable-object (event stream :type T)
-    (format stream "~a => ~a" (old-pos event) (new-pos event))))
+    (format stream "~a => ~a" (old-pos event) (pos event))))
 
 (define-override (main mouse-press-event) (ev)
   (issue (scene main) 'mouse-press
