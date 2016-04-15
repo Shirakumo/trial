@@ -44,6 +44,10 @@
 (defmethod remove-handler ((source handler-container) (container handler-container))
   (remove-handler (handlers source) container))
 
+(defmethod handle (event (container handler-container))
+  (dolist (handler (handlers container))
+    (handle event handler)))
+
 (defclass event-loop (handler-container)
   ((queue :initform (make-array 0 :initial-element NIL :adjustable T :fill-pointer T) :reader queue)))
 
@@ -63,8 +67,7 @@
 
 (defmethod handle (event (loop event-loop))
   (let ((*loop* loop))
-    (dolist (handler (handlers loop))
-      (handle event handler))))
+    (call-next-method)))
 
 (defclass handler (entity)
   ((event-type :initarg :event-type :accessor event-type)
