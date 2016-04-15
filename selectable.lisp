@@ -35,6 +35,9 @@
        (setf (ldb (byte 8 24) id) (aref color 0))
        id))))
 
+;; FIXME: To fix the 2^32 limit issue, upon finalization used IDs should
+;; be put onto a free queue (or something), which can be popped from
+;; once the counter limit is reached.
 (defun register-object-color (object &optional id)
   (let ((id (ensure-color (or id (incf *color-id-counter*)))))
     (setf (gethash id *color-id-map*) object)
