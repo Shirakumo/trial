@@ -7,6 +7,8 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
+(defmethod paint (thing target))
+
 (defmethod finalize ((set flare-indexed-set:indexed-set))
   (flare-indexed-set:map-set #'finalize set))
 
