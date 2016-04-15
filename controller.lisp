@@ -188,6 +188,12 @@
   (dolist (scene (loops controller))
     (unpack (resource-pathname "quicksave.sav") scene)))
 
+(defclass acquire-context (event)
+  ())
+
+(define-handler (controller acquire-context) (ev)
+  (acquire-context *main*))
+
 (defclass execute (event)
   ((func :initarg :func :reader func)
    (bindings :initarg :bindings :reader bindings)

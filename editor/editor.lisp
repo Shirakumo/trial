@@ -62,6 +62,7 @@
 
 (define-subwidget (editor game-view) (q+:make-qmdisubwindow editor)
   (setf (q+:widget game-view) main)
+  (setf (parent main) game-view)
   (setf (q+:window-title game-view) "Game View")
   (q+:add-sub-window area game-view))
 

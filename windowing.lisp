@@ -118,3 +118,6 @@
 
 (defmethod height ((object qobject))
   (q+:height object))
+
+(defmethod (setf parent) :after (parent (main main))
+  (issue (scene main) 'acquire-context))
