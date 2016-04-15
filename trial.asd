@@ -25,6 +25,7 @@
                (:file "flare")
                (:file "subjects")
                (:file "camera")
+               (:file "selectable")
                (:file "input-tables")
                (:file "input")
                (:file "mapping")
