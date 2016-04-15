@@ -139,7 +139,7 @@
     ;;   (gl:vertex (width main) (height main)))
     ;; (gl:bind-texture :texture-2d 0)
 
-    (with-finalizing ((font (q+:make-qfont "Consolas, Monospace")))
+    (let ((font (content (asset "Consolas, Monospace" 'font))))
       (q+:render-text main 20 30 (format NIL "Pause: ~,10f" (last-pause controller)) font)
       (q+:render-text main 20 50 (format NIL "Time:  ~2,'0d:~6,3,,,'0f"
                                          (floor (/ (round (clock (scene main))) 60))

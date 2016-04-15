@@ -91,6 +91,26 @@
   (finalize (data asset))
   (setf (data asset) NIL))
 
+(defclass named-asset (asset)
+  ((name :initarg :name :accessor name))
+  (:default-initargs
+   :name (error "NAME required.")))
+
+(defmethod print-object ((asset named-asset) stream)
+  (print-unreadable-object (asset stream :type T)
+    (format stream "~s ~s" (state asset) (name asset))))
+
+(defmethod asset ((name string) (type symbol))
+  (make-instance type :name name))
+
+(defclass font (named-asset)
+  ((size :initarg :size :accessor size))
+  (:default-initargs
+   :size 12))
+
+(defmethod restore ((asset font))
+  (setf (data asset) (q+:make-qfont (name asset) (size asset))))
+
 (defclass file-asset (asset)
   ((file :initarg :file :accessor file)
    (allowed-types :initarg :allowed-types :accessor allowed-types))
@@ -115,7 +135,7 @@
 (defmethod asset ((pathname pathname) type)
   (make-instance type :file pathname))
 
-(defmethod asset ((string string) (type symbol))
+(defmethod asset :around ((string string) (type symbol))
   (if (subtypep type 'file-asset)
       (asset (uiop:parse-native-namestring string) type)
       (call-next-method)))
