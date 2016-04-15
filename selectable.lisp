@@ -35,8 +35,8 @@
        (setf (ldb (byte 8 24) id) (aref color 0))
        id))))
 
-(defun register-object-color (object &optional (id (incf *color-id-counter*)))
-  (setf (gethash (ensure-color id) *color-id-map*) object)
+(defun register-object-color (object &optional id)
+  (setf (gethash (ensure-color (or id (incf *color-id-counter*))) *color-id-map*) object)
   id)
 
 (defun color->object (id)
