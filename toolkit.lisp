@@ -51,3 +51,10 @@
     `(let ((,thing-var ,thing))
        (or ,@(loop for option in options
                    collect `(eql ,thing-var ,option))))))
+
+(defmethod make-painter (target)
+  (q+:make-qpainter target))
+
+(defmacro with-painter ((painter target) &body body)
+  `(with-finalizing ((,painter (make-painter ,target)))
+     ,@body))

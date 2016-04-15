@@ -74,3 +74,6 @@
 
 (defmethod texture ((buffer framebuffer))
   (q+:texture (buffer-object buffer)))
+
+(defmethod make-painter ((buffer framebuffer))
+  (q+:make-qpainter (buffer-object buffer)))
