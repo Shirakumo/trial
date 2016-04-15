@@ -13,10 +13,12 @@
    (update-thread :initform NIL :accessor update-thread)
    (last-pause :initform 0 :accessor last-pause)
    (fps :initarg :fps :accessor fps)
+   (fov :initarg :fov :accessor fov)
    (selection :initarg :selection :accessor selection))
   (:default-initargs
    :name :controller
    :fps 30.0f0
+   :fov 45
    :selection NIL))
 
 (defmethod initialize-instance :after ((controller controller) &key)
@@ -147,11 +149,17 @@
 (define-handler (controller resize resize) (ev width height)
   (gl:matrix-mode :projection)
   (gl:load-identity)
-  (perspective-view 45 (/ width (max 1 height)) 0.01 1000.0)
+  (perspective-view (fov controller) (/ width (max 1 height)) 0.01 1000.0)
   (gl:matrix-mode :modelview)
   (gl:load-identity)
   (gl:viewport 0 0 width height)
   (reinitialize-instance (selection controller) :width width :height height))
+
+(defmethod (setf fov) :after (fov (controller controller))
+  ;; Trigger resize to update FOV
+  (issue (loops controller) 'resize
+         :width (width *main*)
+         :height (height *main*)))
 
 (define-handler (controller tick tick 100) (ev)
   (incf (tickcount controller))

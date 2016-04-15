@@ -111,3 +111,9 @@
   (unwind-protect
        (with-main-window (window 'main #-darwin :main-thread #-darwin NIL))
     (clear-assets)))
+
+(defmethod width ((object qobject))
+  (q+:width object))
+
+(defmethod height ((object qobject))
+  (q+:height object))
