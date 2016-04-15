@@ -94,7 +94,7 @@
   (gl:hint :line-smooth-hint :nicest)
   (gl:hint :polygon-smooth-hint :nicest))
 
-(defun render (scene main)
+(defmethod render (scene (main main))
   (gl:clear :color-buffer :depth-buffer)
   (gl:enable :depth-test :blend :cull-face :texture-2d
              :multisample :line-smooth :polygon-smooth)
