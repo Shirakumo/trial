@@ -14,7 +14,7 @@
    (last-pause :initform 0 :accessor last-pause)
    (fps :initarg :fps :accessor fps)
    (fov :initarg :fov :accessor fov)
-   (selection :initarg :selection :accessor selection))
+   (selection :initarg :selection :accessor selection :finalized T))
   (:default-initargs
    :name :controller
    :fps 30.0f0
