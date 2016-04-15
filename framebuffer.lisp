@@ -71,3 +71,6 @@
 
 (defmethod height ((buffer framebuffer))
   (q+:height (buffer-object buffer)))
+
+(defmethod texture ((buffer framebuffer))
+  (q+:texture (buffer-object buffer)))
