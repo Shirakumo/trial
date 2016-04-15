@@ -114,29 +114,29 @@
 
 (defun cl-gamepad:device-attached (device)
   (v:info :trial.input "Attached ~s" (cl-gamepad:print-device device NIL))
-  (issue (scene *main-window*) 'gamepad-attach
+  (issue (scene *main*) 'gamepad-attach
          :device device))
 
 (defun cl-gamepad:device-removed (device)
   (v:info :trial.input "Removed ~s" (cl-gamepad:print-device device NIL))
-  (issue (scene *main-window*) 'gamepad-remove
+  (issue (scene *main*) 'gamepad-remove
          :device device))
 
 (defun cl-gamepad:button-pressed (button time device)
   (declare (ignore time))
-  (issue (scene *main-window*) 'gamepad-press
+  (issue (scene *main*) 'gamepad-press
          :button (gamepad-button->symbol device button)
          :device device))
 
 (defun cl-gamepad:button-released (button time device)
   (declare (ignore time))
-  (issue (scene *main-window*) 'gamepad-release
+  (issue (scene *main*) 'gamepad-release
          :button (gamepad-button->symbol device button)
          :device device))
 
 (defun cl-gamepad:axis-moved (axis last-value value time device)
   (declare (ignore time))
-  (issue (scene *main-window*) 'gamepad-move
+  (issue (scene *main*) 'gamepad-move
          :axis (gamepad-axis->symbol device axis)
          :old-pos last-value
          :pos value

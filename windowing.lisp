@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(defvar *main-window* NIL)
+(defvar *main* NIL)
 
 (defun make-gl-format ()
   (let ((format (q+:make-qglformat)))
@@ -31,7 +31,7 @@
 
 (define-initializer (main setup)
   (v:info :trial "GENESIS")
-  (setf *main-window* main)
+  (setf *main* main)
   (setf (q+:auto-buffer-swap main) NIL)
   (setf (q+:window-title main) "Trial")
   (setf (q+:minimum-size main) (values 300 200))

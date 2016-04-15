@@ -56,7 +56,7 @@
          ,pause))))
 
 (defun update-loop (controller)
-  (let* ((main *main-window*)
+  (let* ((main *main*)
          (scene (scene main)))
     (q+:make-current main)
 
@@ -163,7 +163,7 @@
   (map-event ev *loop*))
 
 (define-handler (controller launch-editor) (ev)
-  (signal! *main-window* (launch-editor)))
+  (signal! *main* (launch-editor)))
 
 (define-handler (controller pack) (ev)
   (pack (resource-pathname "quicksave.sav") (first (loops controller))))

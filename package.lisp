@@ -188,7 +188,7 @@
    #:one-of)
   ;; windowing.lisp
   (:export
-   #:*main-window*
+   #:*main*
    #:main
    #:scene
    #:controller
