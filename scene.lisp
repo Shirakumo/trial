@@ -9,13 +9,24 @@
 (defclass scene (flare:scene event-loop entity)
   ())
 
+(defclass scene-event (event)
+  ((scene :initarg :scene :accessor scene)))
+
+(defclass enter (scene-event)
+  ((subject :initarg :subject :accessor subject)))
+
+(defclass leave (scene-event)
+  ((subject :initarg :subject :accessor subject)))
+
 (defmethod enter :after ((subject subject) (scene scene))
   (setf (alive-p subject) T)
-  (add-handler subject scene))
+  (add-handler subject scene)
+  (issue scene 'enter :scene scene :subject subject))
 
 (defmethod leave :after ((subject subject) (scene scene))
   (setf (alive-p subject) NIL)
-  (remove-handler subject scene))
+  (remove-handler subject scene)
+  (issue scene 'leave :scene scene :subject subject))
 
 (defmethod save-form ((scene scene))
   (let ((form `(progn)))

@@ -148,7 +148,12 @@
    #:player)
   ;; scene.lisp
   (:export
-   #:scene)
+   #:scene
+   #:scene-event
+   #:scene
+   #:enter
+   #:subject
+   #:leave)
   ;; sprite.lisp
   (:export
    #:sprite-animation
