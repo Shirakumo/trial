@@ -208,3 +208,9 @@
 (defmethod save-form-args append ((subject space-axes))
   `(:size ,(size subject)
     :grid ,(grid subject)))
+
+(define-subject clocked-subject (clock)
+  ())
+
+(define-handler (clocked-subject advance-time tick) (ev)
+  (update clocked-subject))

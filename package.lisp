@@ -177,7 +177,8 @@
    #:mesh
    #:space-axes
    #:size
-   #:grid)
+   #:grid
+   #:clocked-subject)
   ;; toolkit.lisp
   (:export
    #:*time-units*
