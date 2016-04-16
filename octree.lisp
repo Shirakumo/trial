@@ -52,9 +52,8 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
                  (unless set-p
                    (push object new-objects))))
       (setf (objects octree) new-objects)
-
-        ;; Create the child nodes
-
+      
+      ;; Create the child nodes
       (dotimes (i 8)
         (let ((sub-box (elt octant i)))
           (when (elt child-objects i)

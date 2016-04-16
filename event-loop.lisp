@@ -104,8 +104,7 @@
                   ',class)))
 
 (defclass subject-class (qtools:finalizable-class handler-container)
-  ((alive-p :initform NIL :accessor alive-p)
-   (effective-handlers :initform NIL :accessor effective-handlers)
+  ((effective-handlers :initform NIL :accessor effective-handlers)
    (instances :initform () :accessor instances)))
 
 (defun cascade-option-changes (class)
@@ -142,7 +141,8 @@
   (cascade-option-changes class))
 
 (defclass subject (entity finalizable handler-container)
-  ((loops :initarg :loops :accessor loops))
+  ((alive-p :initform NIL :accessor alive-p)
+   (loops :initarg :loops :accessor loops))
   (:default-initargs
    :loops ())
   (:metaclass subject-class))

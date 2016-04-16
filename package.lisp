@@ -179,8 +179,14 @@
    #:location
    #:pivoted-subject
    #:pivot
-   #:oriented-subejct
+   #:oriented-subject
    #:orientation
+   #:bound-subject
+   #:contains
+   #:intersects
+   #:intersection-subject
+   #:collidable-subject
+   #:handle-collision
    #:up
    #:rotated-subject
    #:axis
