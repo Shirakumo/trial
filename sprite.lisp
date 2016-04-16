@@ -36,7 +36,7 @@
         (gl:tex-coord 0 frame-end)
         (gl:vertex 0 height)))))
 
-(define-subject sprite-subject ()
+(define-subject sprite-subject (clocked-subject)
   ((animations :initform (make-hash-table :test 'eql) :accessor animations)
    (animation :initform NIL :accessor animation)))
 
@@ -56,6 +56,9 @@
 (defmethod (setf animation) ((value symbol) (subject sprite-subject))
   (setf (animation subject) (or (gethash value (animations subject))
                                 (error "No such animation ~s on ~a" value subject))))
+
+(defmethod enter :after ((subject sprite-subject) scene)
+  (start subject))
 
 (define-handler (sprite-subject advance-frame tick) (ev)
   (with-slots (animations animation) sprite-subject
