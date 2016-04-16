@@ -187,6 +187,7 @@
    #:oriented-subject
    #:orientation
    #:bound-subject
+   #:bounds
    #:contains
    #:intersects
    #:intersection-subject
