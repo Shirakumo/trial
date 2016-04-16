@@ -113,7 +113,7 @@
         for super in (c2mop:class-direct-superclasses class)
         do (when (typep super 'subject-class)
              (dolist (handler (effective-handlers super))
-               (pushnew handler effective-handlers :test #'matches)))
+               (pushnew handler effective-handlers :key #'name)))
         finally (setf (effective-handlers class) effective-handlers))
   ;; Update instances
   (loop for pointer in (instances class)
