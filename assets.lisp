@@ -168,6 +168,9 @@
   (let* ((image (data asset))
          (buffer (q+:qglwidget-convert-to-glformat image))
          (texture (gl:gen-texture)))
+    (when (< (gl:get* :max-texture-size) (max (q+:width buffer) (q+:height buffer)))
+      (error "Hardware cannot support a texture of size ~ax~a."
+             (q+:width buffer) (q+:height buffer)))
     (gl:bind-texture :texture-2d texture)
     (gl:tex-image-2d :texture-2d 0 :rgba (q+:width buffer) (q+:height buffer) 0 :rgba :unsigned-byte (q+:bits buffer))
     (gl:bind-texture :texture-2d 0)
