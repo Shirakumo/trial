@@ -37,7 +37,8 @@
    #:target
    #:up
    #:look-at
-   #:tracking-camera)
+   #:pivot-camera
+   #:following-camera)
   ;; controller.lisp
   (:export
    #:controller
