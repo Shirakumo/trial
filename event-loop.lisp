@@ -111,9 +111,9 @@
   ;; Recompute effective handlers
   (loop with effective-handlers = (handlers class)
         for super in (c2mop:class-direct-superclasses class)
-        when (c2mop:subclassp super 'subject-class)
-        do (dolist (handler (effective-handlers super))
-             (pushnew handler effective-handlers :test #'matches))
+        do (when (typep super 'subject-class)
+             (dolist (handler (effective-handlers super))
+               (pushnew handler effective-handlers :test #'matches)))
         finally (setf (effective-handlers class) effective-handlers))
   ;; Update instances
   (loop for pointer in (instances class)
@@ -124,7 +124,7 @@
         finally (setf (instances class) instances))
   ;; Propagate
   (loop for sub-class in (c2mop:class-direct-subclasses class)
-        when (and (c2mop:subclassp sub-class 'subject-class)
+        when (and (typep sub-class 'subject-class)
                   (c2mop:class-finalized-p sub-class))
         do (cascade-option-changes sub-class)))
 
