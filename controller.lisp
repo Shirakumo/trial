@@ -93,9 +93,10 @@
     (v:info :test "CLICK: ~a/~a => ~a" x y (object-at-point buffer x y))))
 
 (defun setup-rendering (main)
-  (v:info :trial.controller "GL capable of ~a buffer~:p with ~a sample~:p."
+  (v:info :trial.controller "GL capable of ~a buffer~:p with ~a sample~:p, and a max texture size of ~a."
           (gl:get-integer :sample-buffers)
-          (gl:get-integer :samples))
+          (gl:get-integer :samples)
+          (gl:get* :max-texture-size))
   (gl:depth-mask T)
   (gl:depth-func :lequal)
   (gl:clear-depth 1.0)
