@@ -157,7 +157,7 @@
 (defmethod regenerate-handlers ((subject subject))
   (dolist (loop (loops subject))
     (remove-handler subject loop))
-  (loop for handler in (handlers (class-of subject))
+  (loop for handler in (effective-handlers (class-of subject))
         collect (make-instance
                  'handler
                  :container subject
