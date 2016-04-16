@@ -44,7 +44,7 @@
   (loop for animation in animations
         do (destructuring-bind (name duration frames &key next texture (width width) (height height)) animation
              (setf (gethash name (animations subject))
-                   (make-instance 'animation
+                   (make-instance 'sprite-animation
                                   :duration duration
                                   :frames frames
                                   :texture texture
