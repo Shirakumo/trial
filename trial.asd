@@ -25,6 +25,7 @@
                (:file "windowing")
                (:file "flare")
                (:file "subjects")
+               (:file "sprite")
                (:file "octree")
                (:file "camera")
                (:file "selectable")
