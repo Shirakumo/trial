@@ -104,7 +104,8 @@
                   ',class)))
 
 (defclass subject-class (qtools:finalizable-class handler-container)
-  ((effective-handlers :initform NIL :accessor effective-handlers)
+  ((alive-p :initform NIL :accessor alive-p)
+   (effective-handlers :initform NIL :accessor effective-handlers)
    (instances :initform () :accessor instances)))
 
 (defun cascade-option-changes (class)

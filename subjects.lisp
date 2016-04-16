@@ -60,6 +60,52 @@
 (defmethod save-form-args append ((subject located-subject))
   `(:location ,(location subject)))
 
+(define-subject bound-subject (located-subject)
+  ((bounds :initarg :bounds :accessor bounds))
+  (:default-initargs
+   :bounds (vec 0 0 0)))
+
+(defmethod contains ((this bound-subject) (other bound-subject))
+  (let* ((this-min (location this))
+         (other-min (location other))
+         (this-max (v+ (bounds this) this-min))
+         (other-max (v+ (bounds other) other-min)))
+    (and (v<= this-min other-min) (v<= other-max this-max))))
+
+(defmethod intersects ((this bound-subject) (other bound-subject))
+  (let* ((this-min (location this))
+         (other-min (location other))
+         (this-max (v+ (bounds this) this-min))
+         (other-max (v+ (bounds other) other-min)))
+    ;; TODO: Make this better. It's essentially the same thing twice.
+    (cond ((and (v<= this-min other-min) (v<= other-min this-max))
+           (make-instance 'intersection-subject
+                          :location other-min
+                          :bounds (v+ other-min this-max)
+                          :first-object this
+                          :second-object other))
+          ((and (v<= other-min this-min) (v<= this-min other-max))
+           (make-instance 'intersection-subject
+                          :location this-min
+                          :bounds (v+ this-min other-max)
+                          :first-object other
+                          :second-object this)))))
+
+(define-subject intersection-subject (bound-subject)
+  ((first-object :initarg :first-object :accessor first-object)
+   (second-object :initarg :second-object :accessor second-object)
+   (distance :initarg :distance :accessor distance)
+   (normal :initarg :normal :accessor normal)
+   (ray :initarg :ray :accessor ray))
+  (:default-initargs
+   :distance most-positive-single-float
+   :normal (vec 0 0 0)))
+
+(define-subject collidable-subject (bound-subject)
+  ((old-location :initform NIL :accessor old-location)))
+
+(defmethod handle-collision ((subject collidable-subject) intersection))
+
 (define-subject oriented-subject ()
   ((orientation :initarg :orientation :accessor orientation)
    (up :initarg :up :accessor up))

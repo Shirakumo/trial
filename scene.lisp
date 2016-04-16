@@ -10,9 +10,11 @@
   ())
 
 (defmethod enter :after ((subject subject) (scene scene))
+  (setf (alive-p subject) T)
   (add-handler subject scene))
 
 (defmethod leave :after ((subject subject) (scene scene))
+  (setf (alive-p subject) NIL)
   (remove-handler subject scene))
 
 (defmethod save-form ((scene scene))
