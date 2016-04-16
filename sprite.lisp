@@ -26,6 +26,7 @@
           (frame-start (- 1 (/ (1+ frame) frames)))
           (width (or width (q+:width (data (texture subject)))))
           (height (or height (/ (q+:height (data (texture subject))) frames))))
+      (gl:disable :cull-face)
       (with-primitives :quads
         (gl:tex-coord 0 frame-start)
         (gl:vertex 0 0)
@@ -34,7 +35,8 @@
         (gl:tex-coord 1 frame-end)
         (gl:vertex width height)
         (gl:tex-coord 0 frame-end)
-        (gl:vertex 0 height)))))
+        (gl:vertex 0 height))
+      (gl:enable :cull-face))))
 
 (define-subject sprite-subject (clocked-subject)
   ((animations :initform (make-hash-table :test 'eql) :accessor animations)
