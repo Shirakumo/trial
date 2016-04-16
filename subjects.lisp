@@ -60,6 +60,20 @@
 (defmethod save-form-args append ((subject located-subject))
   `(:location ,(location subject)))
 
+(define-subject pivoted-subject ()
+  ((pivot :initarg :pivot :accessor pivot))
+  (:default-initargs
+   :pivot (vec 0 0 0)))
+
+(defmethod paint :around ((obj pivoted-subject) target)
+  (with-pushed-matrix
+    (let ((pivot (pivot obj)))
+      (gl:translate (vx pivot) (vy pivot) (vz pivot))
+      (call-next-method))))
+
+(defmethod save-form-args append ((subject pivoted-subject))
+  `(:pivot ,(pivot subject)))
+
 (define-subject bound-subject (located-subject)
   ((bounds :initarg :bounds :accessor bounds))
   (:default-initargs

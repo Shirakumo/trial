@@ -165,6 +165,8 @@
    #:bind-texture
    #:located-subject
    #:location
+   #:pivoted-subject
+   #:pivot
    #:oriented-subejct
    #:orientation
    #:up
