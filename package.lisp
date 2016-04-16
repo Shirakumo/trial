@@ -149,6 +149,18 @@
   ;; scene.lisp
   (:export
    #:scene)
+  ;; sprite.lisp
+  (:export
+   #:sprite-animation
+   #:duration
+   #:frames
+   #:frame
+   #:next
+   #:width
+   #:height
+   #:sprite-subject
+   #:animations
+   #:animation)
   ;; storage.lisp
   (:export
    #:*unpack-target*
