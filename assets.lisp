@@ -7,6 +7,9 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
+;; FIXME: How do we access extra information that is not the straight-up content?
+;;        stuff like dimensions of a texture or mesh material or whatever?
+
 (defvar *assets* (make-hash-table :test 'equal))
 (defvar *root* (asdf:system-source-directory :trial))
 
