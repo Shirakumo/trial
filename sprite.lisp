@@ -22,8 +22,8 @@
 
 (defmethod paint ((subject sprite-animation) target)
   (with-slots (width height frames frame) subject
-    (let ((frame-start (/ frame frames))
-          (frame-end (/ (1+ frame) frames))
+    (let ((frame-end (- 1 (/ frame frames)))
+          (frame-start (- 1 (/ (1+ frame) frames)))
           (width (or width (q+:width (data (texture subject)))))
           (height (or height (/ (q+:height (data (texture subject))) frames))))
       (with-primitives :quads
