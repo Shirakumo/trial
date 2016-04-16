@@ -20,17 +20,17 @@
    :frame 0
    :next NIL))
 
-(defmethod draw ((subject sprite-animation) target)
+(defmethod paint ((subject sprite-animation) target)
   (with-slots (width height frames frame) subject
     (let ((frame-start (/ frame frames))
-          (frame-end (/ (1+ frame) (/ frames)))
+          (frame-end (/ (1+ frame) frames))
           (width (or width (q+:width (data (texture subject)))))
           (height (or height (/ (q+:height (data (texture subject))) frames))))
       (with-primitives :quads
         (gl:tex-coord 0 frame-start)
-        (gl:vertex 0 0 0)
+        (gl:vertex 0 0)
         (gl:tex-coord 1 frame-start)
-        (gl:vertex width 0 0)
+        (gl:vertex width 0)
         (gl:tex-coord 1 frame-end)
         (gl:vertex width height)
         (gl:tex-coord 0 frame-end)
@@ -71,7 +71,7 @@
           (setf animation (gethash (next animation) animations))))
       (setf (frame animation) frame))))
 
-(defmethod draw ((subject sprite-subject) target)
-  (draw (animation subject) target))
+(defmethod paint ((subject sprite-subject) target)
+  (paint (animation subject) target))
 
 
