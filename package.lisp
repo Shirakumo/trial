@@ -13,8 +13,7 @@
   ;; assets.lisp
   (:export
    #:*assets*
-   #:*standalone*
-   #:root
+   #:*root*
    #:resource-pathname
    #:clear-assets
    #:asset

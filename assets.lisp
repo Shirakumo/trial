@@ -8,19 +8,14 @@
 (in-readtable :qtools)
 
 (defvar *assets* (make-hash-table :test 'equal))
-(defvar *standalone* NIL)
-
-(defun root ()
-  (if *standalone*
-      (uiop:argv0)
-      (asdf:system-source-directory :trial)))
+(defvar *root* (asdf:system-source-directory :trial))
 
 (defun resource-pathname (pathname)
   (let ((pathname (pathname pathname)))
     (pathname-utils:normalize-pathname
      (merge-pathnames
       (if (pathname-utils:absolute-p pathname) pathname (merge-pathnames "data/" pathname))
-      (root)))))
+      *root*))))
 
 (defun clear-assets ()
   (loop for k being the hash-keys of *assets*
