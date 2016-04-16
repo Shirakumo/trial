@@ -130,7 +130,7 @@
 (defmethod paint :around ((obj oriented-subject) target)
   (with-pushed-matrix
     (let ((axis (vc (up obj) (orientation obj)))
-          (angle (acos (v. (up obj) (orientation obj)))))
+          (angle (* 180 (/ (acos (v. (up obj) (orientation obj))) PI))))
       (gl:rotate angle (vx axis) (vy axis) (vz axis))
       (call-next-method))))
 
@@ -144,6 +144,12 @@
   (:default-initargs
    :axis (vec 0 1 0)
    :angle 0))
+
+(defmethod paint :around ((obj rotated-subject) target)
+  (with-pushed-matrix
+    (let ((axis (axis obj)))
+      (gl:rotate (angle obj) (vx axis) (vy axis) (vz axis))
+      (call-next-method))))
 
 (defmethod save-form-args append ((subject rotated-subject))
   `(:axis ,(axis subject)
