@@ -29,8 +29,20 @@
    #:allowed-types
    #:image
    #:texture
+   #:target
+   #:filter
+   #:wrapping
    #:sound
-   #:model)
+   #:model
+   #:shader
+   #:shader-type
+   #:shader-program
+   #:shaders
+   #:gl-buffer
+   #:buffer-type
+   #:element-type
+   #:buffer-data
+   #:data-usage)
   ;; camera.lisp
   (:export
    #:camera

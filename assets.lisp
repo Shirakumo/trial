@@ -215,3 +215,104 @@
              (let ((texture (asset diffuse 'texture)))
                (setf (wavefront-loader:diffuse (wavefront-loader:material obj))
                      (content texture))))))
+
+(defclass shader (file-asset)
+  ((shader-type :initarg :shader-type :reader shader-type))
+  (:default-initargs
+   :shader-type NIL
+   :allowed-types '(glsl vert tesc tese geom frag comp)))
+
+(defun pathname->shader-type (pathname)
+  (or (cdr (assoc (pathname-type pathname)
+                  `((glsl . :vertex-shader)
+                    (vert . :vertex-shader)
+                    (tesc . :tess-control-shader)
+                    (tese . :tess-evaluation-shader)
+                    (geom . :geometry-shader)
+                    (frag . :fragment-shader)
+                    (comp . :compute-shader)) :test #'string-equal))
+      (error "Don't know how to convert ~s to shader type." pathname)))
+
+(defmethod initialize-instance :before ((asset shader) &key shader-type)
+  (when shader-type (check-gl-shader-type shader-type)))
+
+(defmethod initialize-instance :after ((asset shader) &key)
+  (unless (shader-type asset)
+    (setf (slot-value asset 'shader-type) (pathname->shader-type (file asset)))))
+
+(defmethod restore ((asset shader))
+  (let ((shader (gl:create-shader (shader-type asset))))
+    (gl:shader-source shader (alexandria:read-file-into-string (file asset)))
+    (handler-case
+        (gl:compile-shader shader)
+      (error (err)
+        (v:error :trial.asset err)
+        (error "Failed to compile ~a: ~a" asset (gl:get-shader-info-log shader))))
+    (setf (data asset) shader)))
+
+(defmethod finalize ((asset shader))
+  (gl:delete-shader (data asset)))
+
+(defclass shader-program (named-asset)
+  ((shaders :initarg :shaders :accessor shaders)))
+
+(defmethod restore ((asset shader-program))
+  (let ((program (gl:create-program)))
+    (dolist (shader (shaders asset))
+      (gl:attach-shader program (content (asset shader 'shader))))
+    (gl:link-program program)
+    (setf (data asset) program)))
+
+(defmethod finalize ((asset shader-program))
+  (gl:delete-program asset))
+
+(defclass gl-buffer (named-asset)
+  ((buffer-type :initarg :buffer-type :accessor buffer-type)
+   (element-type :initarg :element-type :accessor element-type)
+   (buffer-data :initarg :buffer-data :accessor buffer-data)
+   (data-usage :initarg :data-usage :accessor data-usage))
+  (:default-initargs
+   :buffer-type :array-buffer
+   :element-type :float
+   :data-usage :static-draw))
+
+(defmethod initialize-instance :before ((asset gl-buffer) &key buffer-type element-type data-usage)
+  ;; FIXME: automatically determine element-type from buffer-data if not specified
+  (check-gl-buffer-type buffer-type)
+  (check-gl-array-element-type element-type)
+  (check-gl-buffer-data-usage data-usage))
+
+(defmethod restore ((asset gl-buffer))
+  (with-slots-bound (asset gl-buffer)
+    (let ((buffer (gl:gen-buffer))
+          (array (gl:alloc-gl-array element-type (length buffer-data))))
+      (gl:bind-buffer buffer-type buffer)
+      (loop for i from 0
+            for el across buffer-data
+            do (setf (gl:glaref array i) el))
+      (gl:buffer-data buffer-type data-usage array)
+      (gl:free-gl-array array)
+      (gl:bind-buffer buffer-type 0)
+      (setf (data asset) buffer))))
+
+(defmethod finalize ((asset gl-buffer))
+  (gl:delete-buffers (list (data asset))))
+
+(defmethod (setf buffer-data) :after (data (asset gl-buffer))
+  ;; Recreate
+  (let ((old (data asset)))
+    (restore asset)
+    (gl:delete-buffers (list old))))
+
+(defclass vertex-array (named-asset)
+  (()))
+
+(defmethod restore ((asset vertex-array))
+  (let ((vao (gl:gen-vertex-array)))
+    (gl:bind-vertex-array vao)
+    ;; FIXME: actually figure out how to generalise this mess
+    ;;        and implement it properly.
+    ))
+
+(defmethod finalize ((asset vertex-array))
+  (gl:delete-vertex-arrays (list (data asset))))
