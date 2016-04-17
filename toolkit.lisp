@@ -59,7 +59,34 @@
   `(with-finalizing ((,painter (make-painter ,target)))
      ,@body))
 
-(defun check-texture-size (width height)
+(defun check-gl-texture-size (width height)
   (when (< (gl:get* :max-texture-size) (max width height))
     (error "Hardware cannot support a texture of size ~ax~a."
            width height)))
+
+(defun check-gl-texture-target (target)
+  (ecase target ((:texture-2d :texture-cube-map))))
+
+(defun check-gl-shader-type (shader-type)
+  (ecase shader-type ((:compute-shader :vertex-shader
+                       :geometry-shader :fragment-shader
+                       :tess-control-shader :tess-evaluation-shader))))
+
+(defun check-gl-buffer-type (buffer-type)
+  (ecase buffer-type ((:array-buffer :atomic-counter-buffer
+                       :copy-read-buffer :copy-write-buffer
+                       :dispatch-indirect-buffer :draw-indirect-buffer
+                       :element-array-buffer :pixel-pack-buffer
+                       :pixel-unpack-buffer :query-buffer
+                       :shader-storage-buffer :texture-buffer
+                       :transform-feedback-buffer :uniform-buffer))))
+
+(defun check-gl-array-element-type (element-type)
+  (ecase element-type ((:double :float :int :uint :char))))
+
+(defun check-gl-buffer-data-usage (data-usage)
+  (ecase data-usage ((:stream-draw :stream-read
+                      :stream-copy :static-draw
+                      :static-read :static-copy
+                      :dynamic-draw :dynamic-read
+                      :dynamic-copy))))

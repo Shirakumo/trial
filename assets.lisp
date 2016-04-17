@@ -157,8 +157,7 @@
    :wrapping :clamp-to-edge))
 
 (defmethod initialize-instance :before ((texture texture) &key target)
-  (ecase target
-    ((:texture-2d :texture-cube-map))))
+  (check-gl-texture-target))
 
 (defmethod restore ((asset texture))
   (call-next-method)
@@ -166,7 +165,7 @@
     (let* ((image (data asset))
            (buffer (q+:qglwidget-convert-to-glformat image))
            (texture (gl:gen-texture)))
-      (check-texture-size (q+:width buffer) (q+:height buffer))
+      (check-gl-texture-size (q+:width buffer) (q+:height buffer))
       (gl:bind-texture target texture)
       (ecase target
         (:texture-2d
