@@ -78,11 +78,16 @@
          (other-max (v+ (bounds other) other-min)))
     (and (v<= this-min other-min) (v<= other-max this-max))))
 
-(defmethod intersects ((this bound-subject) (other bound-subject))
+(defmethod intersects ((this bound-subject) (other bound-subject) &key ignore-y)
   (let* ((this-min (location this))
          (other-min (location other))
          (this-max (v+ (bounds this) this-min))
          (other-max (v+ (bounds other) other-min)))
+    (when ignore-y
+      (setf (vy this-min) 0
+            (vy other-min) 0
+            (vy this-max) 1
+            (vy other-max) 1))
     ;; TODO: Make this better. It's essentially the same thing twice.
     (cond ((and (v<= this-min other-min) (v<= other-min this-max))
            (make-instance 'intersection-subject
