@@ -159,28 +159,35 @@
 
 (defmethod initialize-instance :before ((texture texture) &key target)
   (ecase target
-    ((:texture-2d
-      :texture-cube-map-positive-x :texture-cube-map-negative-x
-      :texture-cube-map-positive-y :texture-cube-map-negative-y
-      :texture-cube-map-positive-z :texture-cube-map-negative-z))))
+    ((:texture-2d :texture-cube-map))))
 
 (defmethod restore ((asset texture))
   (call-next-method)
   (with-slots (target filter wrapping) asset
     (let* ((image (data asset))
            (buffer (q+:qglwidget-convert-to-glformat image))
-           (texture (gl:gen-texture))
-           (textarget (if (eql target :texture-2d) :texture-2d :texture-cube-map)))
+           (texture (gl:gen-texture)))
       (check-texture-size (q+:width buffer) (q+:height buffer))
-      (gl:bind-texture textarget texture)
-      (gl:tex-image-2d target 0 :rgba (q+:width buffer) (q+:height buffer) 0 :rgba :unsigned-byte (q+:bits buffer))
-      (gl:tex-parameter textarget :texture-min-filter filter)
-      (gl:tex-parameter textarget :texture-mag-filter filter)
-      (gl:tex-parameter textarget :texture-wrap-s wrapping)
-      (gl:tex-parameter textarget :texture-wrap-t wrapping)
+      (gl:bind-texture target texture)
+      (ecase target
+        (:texture-2d
+         (gl:tex-image-2d target 0 :rgba (q+:width buffer) (q+:height buffer) 0 :rgba :unsigned-byte (q+:bits buffer)))
+        (:texture-cube-map
+         (loop with width = (q+:width buffer)
+               with height = (/ (q+:height buffer) 6)
+               for target in '(:texture-cube-map-positive-x :texture-cube-map-negative-x
+                               :texture-cube-map-positive-y :texture-cube-map-negative-y
+                               :texture-cube-map-positive-z :texture-cube-map-negative-z)
+               for index from 0
+               do (gl:tex-image-2d target 0 :rgba width height 0 :rgba :unsigned-byte
+                                   (cffi:mem-aptr (q+:bits buffer) :char (* width height index))))))
+      (gl:tex-parameter target :texture-min-filter filter)
+      (gl:tex-parameter target :texture-mag-filter filter)
+      (gl:tex-parameter target :texture-wrap-s wrapping)
+      (gl:tex-parameter target :texture-wrap-t wrapping)
       (unless (eql target :texture-2d)
-        (gl:tex-parameter textarget :texture-wrap-r wrapping))
-      (gl:bind-texture textarget 0)
+        (gl:tex-parameter target :texture-wrap-r wrapping))
+      (gl:bind-texture target 0)
       (setf (data asset) texture)
       (finalize image)
       (finalize buffer))))
