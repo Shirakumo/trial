@@ -97,6 +97,51 @@
                           :first-object other
                           :second-object this)))))
 
+(defmethod paint ((subject bound-subject) target)
+  (let* ((size (bounds subject))
+         (near (vec 0 0 (- (/ (vz size) 2))))
+         (far (v+ near (bounds subject))))
+    (gl:line-width 1.0)
+    (gl:color 0.0 0.8 0.0)
+    (gl:disable :cull-face)
+    (gl:polygon-mode :front-and-back :line)
+    (gl:push-matrix)
+    (with-primitives :quads
+      (gl:vertex (vx near) (vy near) (vz near))
+      (gl:vertex (vx far) (vy near) (vz near))
+      (gl:vertex (vx far) (vy far) (vz near))
+      (gl:vertex (vx near) (vy far) (vz near))
+
+      (gl:vertex (vx near) (vy near) (vz far))
+      (gl:vertex (vx far) (vy near) (vz far))
+      (gl:vertex (vx far) (vy far) (vz far))
+      (gl:vertex (vx near) (vy far) (vz far))
+      
+      (gl:vertex (vx near) (vy near) (vz near))
+      (gl:vertex (vx near) (vy far) (vz near))
+      (gl:vertex (vx near) (vy far) (vz far))
+      (gl:vertex (vx near) (vy near) (vz far))
+      
+      (gl:vertex (vx far) (vy near) (vz near))
+      (gl:vertex (vx far) (vy far) (vz near))
+      (gl:vertex (vx far) (vy far) (vz far))
+      (gl:vertex (vx far) (vy near) (vz far))
+      
+      (gl:vertex (vx near) (vy near) (vz near))
+      (gl:vertex (vx far) (vy near) (vz near))
+      (gl:vertex (vx far) (vy near) (vz far))
+      (gl:vertex (vx near) (vy near) (vz far))
+      
+      (gl:vertex (vx near) (vy far) (vz near))
+      (gl:vertex (vx far) (vy far) (vz near))
+      (gl:vertex (vx far) (vy far) (vz far))
+      (gl:vertex (vx near) (vy far) (vz far)))
+    (gl:pop-matrix)
+    (gl:enable :cull-face)
+    (gl:polygon-mode :front-and-back :fill))
+  (gl:color 1.0 1.0 1.0)
+  (call-next-method))
+
 (define-subject intersection-subject (bound-subject)
   ((first-object :initarg :first-object :accessor first-object)
    (second-object :initarg :second-object :accessor second-object)

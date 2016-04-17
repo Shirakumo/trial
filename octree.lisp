@@ -12,7 +12,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   ((parent :initarg :parent :accessor parent)
    (treshold :initarg :treshold :accessor treshold)
    (active-children :initform 0 :accessor active-children) ;; for later optimization
-   (children :initform (make-array 8 :fill-pointer 0) :accessor children)
+   (children :initform (make-array 8 :initial-element NIL) :accessor children)
    (built-p :initform NIL :accessor built-p)
    (life :initform -1 :accessor life)
    (life-span :initform 8 :accessor life-span)
@@ -31,13 +31,10 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 (defmethod build-tree ((octree octree))
   (when (and (< (treshold octree) (length (objects octree)))
              (v< 1 (bounds octree)))
-    (let* ((half (v/ (bounds octree) 2))
-           (location (location octree))
-           (center (v+ location half))
-           (octant (sub-octant octree))
-           (child-objects (make-array 8 :initial-element NIL))
-           (cur-objects (objects octree))
-           (new-objects NIL))
+    (let ((octant (sub-octant octree))
+          (child-objects (make-array 8 :initial-element NIL))
+          (cur-objects (objects octree))
+          (new-objects NIL))
       ;; Find who belongs where
       (loop while cur-objects
             do (let ((object (pop cur-objects))
@@ -48,7 +45,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
                        (when(contains sub-box object)
                          (push object (elt child-objects i))
                          (setf set-p T)
-                         (break)))))
+                         (return)))))
                  (unless set-p
                    (push object new-objects))))
       (setf (objects octree) new-objects)
@@ -99,7 +96,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
                                 (logior (active-children octree)
                                         (ash 1 i))))))
                  (setf found T)
-                 (break))))
+                 (return))))
            (unless found
              (push object (objects octree)))))
         (T ;; It's out of bounds or intersects. Just ignore? I don't know.
@@ -124,6 +121,13 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
       (loop for child across (children octree)
             do (when child
                  (nconc isects (intersections child local-objs)))))))
+
+(defmethod paint ((octree octree) target)
+  (when (< 0 (active-children octree))
+    (dotimes (i 8)
+      (let ((child (elt (children octree) i)))
+        (when child (paint child target)))))
+  (call-next-method))
 
 (defmethod sub-octant ((octree octree))
   (let* ((half (v/ (bounds octree) 2))

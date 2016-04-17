@@ -8,8 +8,8 @@
 
 (defclass scene (flare:scene event-loop entity)
   ((octree :initform (make-instance 'octree
-                                    :bounds (vec 100 100 100)
-                                    :location (vec 0 0 0))
+                                    :bounds (vec 1000 1000 1000)
+                                    :location (vec -500 -500 -500))
            :accessor octree)))
 
 (defclass scene-event (event)
@@ -22,7 +22,7 @@
   ((subject :initarg :subject :accessor subject)))
 
 (defmethod enter :after ((subject collidable-subject) (scene scene))
-  (insert-object (octree scene) subject))
+  (add-object (octree scene) subject))
 
 (defmethod enter :after ((subject subject) (scene scene))
   (setf (alive-p subject) T)
@@ -34,6 +34,10 @@
   (remove-handler subject scene)
   (issue scene 'leave :scene scene :subject subject))
 
+(defmethod paint ((scene scene) target)
+  (paint (octree scene) target)
+  (call-next-method))
+
 (defmethod save-form ((scene scene))
   (let ((form `(progn)))
     (flare-indexed-set:do-set (entity (objects scene) (nreverse form))
@@ -44,7 +48,8 @@
 ;; animations and clock update are already handled by the method
 ;; combination, but defining a noop primary method prevents update
 ;; from being called on the children.
-(defmethod update ((scene scene)))
+(defmethod update ((scene scene))
+  (update-cycle (octree scene)))
 
 ;; But we still need to call it in tick.
 (defmethod handle :before ((event tick) (scene scene))
