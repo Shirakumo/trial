@@ -74,6 +74,9 @@
 (define-action unpack (system-action)
   (key-press (eql key :f3)))
 
+(define-action reload-assets (system-action)
+  (key-press (eql key :f5)))
+
 (define-action player-action ())
 
 (define-action movement (player-action))

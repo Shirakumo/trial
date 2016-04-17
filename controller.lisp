@@ -189,6 +189,11 @@
   (dolist (scene (loops controller))
     (unpack (resource-pathname "quicksave.sav") scene)))
 
+(define-handler (controller reload-assets reload-assets 99) (ev)
+  (loop for k being the hash-values of *assets*
+        do (offload k)
+           (restore k)))
+
 (defclass acquire-context (event)
   ())
 
