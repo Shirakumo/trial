@@ -203,6 +203,8 @@
    #:orientation
    #:bound-subject
    #:bounds
+   #:min-bound
+   #:max-bound
    #:contains
    #:intersects
    #:intersection-subject

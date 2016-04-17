@@ -8,7 +8,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 
 (defparameter *max-octree-life-span* 64)
 
-(define-subject octree (bound-subject)
+(define-subject octree (bound-subject pivoted-subject)
   ((parent :initarg :parent :accessor parent)
    (treshold :initarg :treshold :accessor treshold)
    (active-children :initform 0 :accessor active-children) ;; for later optimization
@@ -22,6 +22,11 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   (:default-initargs
    :parent NIL
    :treshold 4))
+
+(defmethod initialize-instance :after ((octree octree) &key)
+  (when (v= 0 (pivot octree))
+    (let ((size (v/ (bounds octree) 2)))
+      (setf (pivot octree) (v- 0 (vec (vx size) 0 (vz size)))))))
 
 (defmethod add-object ((octree octree) (object collidable-subject))
   (unless (null octree)
@@ -131,31 +136,31 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 
 (defmethod sub-octant ((octree octree))
   (let* ((half (v/ (bounds octree) 2))
-         (location (location octree))
-         (center (v+ location half))
+         (quarter (v/ half 2))
+         (three-quarter (v+ half quarter))
          (octant (make-array 8 :fill-pointer 0)))
     ;; All the regions for each sub-octant
-    (vector-push (make-instance 'bound-subject :location location :bounds half) octant)
+    (vector-push (make-instance 'bound-subject :location quarter :bounds half) octant)
     (vector-push (make-instance 'bound-subject
-                                :location (vec (vx center) (vy location) (vz location))
+                                :location (vec (vx three-quarter) (vy quarter) (vz quarter))
                                 :bounds half) octant)
     (vector-push (make-instance 'bound-subject
-                                :location (vec (vx location) (vy center) (vz location))
+                                :location (vec (vx quarter) (vy three-quarter) (vz quarter))
                                 :bounds half) octant)
     (vector-push (make-instance 'bound-subject
-                                :location (vec (vx location) (vy location) (vz center))
+                                :location (vec (vx quarter) (vy quarter) (vz three-quarter))
                                 :bounds half) octant)
     (vector-push (make-instance 'bound-subject
-                                :location (vec (vx center) (vy center) (vz location))
+                                :location (vec (vx three-quarter) (vy three-quarter) (vz quarter))
                                 :bounds half) octant)
     (vector-push (make-instance 'bound-subject
-                                :location (vec (vx center) (vy location) (vz center))
+                                :location (vec (vx three-quarter) (vy quarter) (vz three-quarter))
                                 :bounds half) octant)
     (vector-push (make-instance 'bound-subject
-                                :location (vec (vx center) (vy center) (vz center))
+                                :location (vec (vx three-quarter) (vy three-quarter) (vz three-quarter))
                                 :bounds half) octant)
     (vector-push (make-instance 'bound-subject
-                                :location (vec (vx location) (vy center) (vz center))
+                                :location (vec (vx quarter) (vy three-quarter) (vz three-quarter))
                                 :bounds half) octant)
     octant))
 
