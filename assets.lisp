@@ -9,6 +9,8 @@
 
 ;; FIXME: How do we access extra information that is not the straight-up content?
 ;;        stuff like dimensions of a texture or mesh material or whatever?
+;; FIXME: A better system to distinguish which assets are actually different
+;;        if initialisation arguments are involved and some-such.
 
 (defvar *assets* (make-hash-table :test 'equal))
 (defvar *root* (asdf:system-source-directory :trial))
@@ -25,9 +27,11 @@
         do (remove-asset k)))
 
 (defclass asset ()
-  ((state :initarg :state :accessor state)
+  ((id :initarg :id :accessor id)
+   (state :initarg :state :accessor state)
    (data :initarg :data :accessor data))
   (:default-initargs
+   :id (error "ID required.")
    :state :offloaded))
 
 (defmethod print-object ((asset asset) stream)
@@ -37,10 +41,15 @@
 (defmethod initialize-instance :after ((asset asset) &key)
   (setf (gethash (id asset) *assets*) asset))
 
-(defmethod asset ((asset asset) type)
+(defmethod asset (id type &rest args)
+  (apply #'make-instance type :id id args))
+
+(defmethod asset ((asset asset) type &rest args)
+  (declare (ignore args))
   asset)
 
-(defmethod asset :around (id type)
+(defmethod asset :around (id type &rest args)
+  (declare (ignore args))
   (or (gethash id *assets*)
       (call-next-method)))
 
@@ -92,12 +101,7 @@
   (setf (data asset) NIL))
 
 (defclass named-asset (asset)
-  ((name :initarg :name :accessor name :reader id))
-  (:default-initargs
-   :name (error "NAME required.")))
-
-(defmethod asset ((name string) (type symbol))
-  (make-instance type :name name))
+  ((id :initarg :id :accessor id :accessor name)))
 
 (defclass font (named-asset)
   ((size :initarg :size :accessor size))
@@ -108,7 +112,7 @@
   (setf (data asset) (q+:make-qfont (name asset) (size asset))))
 
 (defclass file-asset (asset)
-  ((file :initarg :file :accessor file :reader id)
+  ((id :initarg :id :accessor file :accessor id)
    (allowed-types :initarg :allowed-types :accessor allowed-types))
   (:default-initargs
    :file (error "FILE required.")))
@@ -121,9 +125,6 @@
 
 (defmethod asset :around ((pathname pathname) type)
   (call-next-method (resource-pathname pathname) type))
-
-(defmethod asset ((pathname pathname) type)
-  (make-instance type :file pathname))
 
 (defmethod asset :around ((string string) (type symbol))
   (if (subtypep type 'file-asset)
