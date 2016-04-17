@@ -166,6 +166,9 @@
    #:enter
    #:subject
    #:leave)
+  ;; skybox.lisp
+  (:export
+   #:skybox)
   ;; sprite.lisp
   (:export
    #:sprite-animation
