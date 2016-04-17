@@ -21,7 +21,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
    (ready-p :initform NIL :accessor ready-p))
   (:default-initargs
    :parent NIL
-   :treshold 1))
+   :treshold 4))
 
 (defmethod add-object ((octree octree) (object collidable-subject))
   (unless (null octree)
@@ -73,7 +73,8 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
             (ready-p octree) T))))
 
 (defmethod insert-object ((octree octree) (object collidable-subject))
-  (cond ((or (and (<= (objects octree) treshold) (/= 0 (active-children octree)))
+  (cond ((or (and (<= (length (objects octree)) (treshold octree))
+                  (/= 0 (active-children octree)))
              (v<= (bounds object) 1))
          (push object (objects octree)))
         ((contains octree object)
@@ -97,11 +98,12 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
                           (setf (active-children octree)
                                 (logior (active-children octree)
                                         (ash 1 i))))))
-                 (setf found T))))
+                 (setf found T)
+                 (break))))
            (unless found
-             (push object (objects octree)))
-           (T ;; It's out of bounds or intersects. Just ignore? I don't know.
-            (build-tree octree)))))) ;; Rebuild just in case.
+             (push object (objects octree)))))
+        (T ;; It's out of bounds or intersects. Just ignore? I don't know.
+         (build-tree octree)))) ;; Rebuild just in case.
 
 (defmethod intersections ((octree octree) &optional parent-objects)
   (let ((isects NIL) (local-objs (copy-list (objects octree))))
@@ -216,6 +218,3 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
       (loop for intersection in (intersections octree)
             do (handle-collision (first-object intersection) intersection)
                (handle-collision (second-object intersection) intersection)))))
-
-(defun test-octree ()
-  (make-instance 'octree))

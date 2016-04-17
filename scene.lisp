@@ -7,7 +7,10 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass scene (flare:scene event-loop entity)
-  ())
+  ((octree :initform (make-instance 'octree
+                                    :bounds (vec 100 100 100)
+                                    :location (vec 0 0 0))
+           :accessor octree)))
 
 (defclass scene-event (event)
   ((scene :initarg :scene :accessor scene)))
@@ -17,6 +20,9 @@
 
 (defclass leave (scene-event)
   ((subject :initarg :subject :accessor subject)))
+
+(defmethod enter :after ((subject collidable-subject) (scene scene))
+  (insert-object (octree scene) subject))
 
 (defmethod enter :after ((subject subject) (scene scene))
   (setf (alive-p subject) T)
