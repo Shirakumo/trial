@@ -16,11 +16,6 @@
 (defmethod reinitialize-instance :after ((subject textured-subject) &key (texture NIL t-p) &allow-other-keys)
   (when t-p (setf (texture subject) texture)))
 
-(defmethod (setf texture) :around ((texture texture) (subject textured-subject))
-  (let ((prev (texture subject)))
-    (call-next-method)
-    (offload prev)))
-
 (defmethod (setf texture) ((texture texture) (subject textured-subject))
   (setf (slot-value subject 'texture) texture))
 
