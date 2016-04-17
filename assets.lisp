@@ -161,19 +161,34 @@
     (setf (data asset) image)))
 
 (defclass texture (image)
-  ())
+  ((target :initarg :target :reader target))
+  (:default-initargs
+   :target :texture-2d))
+
+(defmethod initialize-instance :before ((texture texture) &key target)
+  (ecase target
+    ((:texture-2d
+      :texture-cube-map-positive-x :texture-cube-map-negative-x
+      :texture-cube-map-positive-y :texture-cube-map-negative-y
+      :texture-cube-map-positive-z :texture-cube-map-negative-z))))
 
 (defmethod restore ((asset texture))
   (call-next-method)
   (let* ((image (data asset))
          (buffer (q+:qglwidget-convert-to-glformat image))
-         (texture (gl:gen-texture)))
+         (texture (gl:gen-texture))
+         (textarget (if (eql (target texture) :texture-2d) :texture-2d :texture-cube-map)))
     (when (< (gl:get* :max-texture-size) (max (q+:width buffer) (q+:height buffer)))
       (error "Hardware cannot support a texture of size ~ax~a."
              (q+:width buffer) (q+:height buffer)))
-    (gl:bind-texture :texture-2d texture)
-    (gl:tex-image-2d :texture-2d 0 :rgba (q+:width buffer) (q+:height buffer) 0 :rgba :unsigned-byte (q+:bits buffer))
-    (gl:bind-texture :texture-2d 0)
+    (gl:bind-texture textarget texture)
+    (gl:tex-image-2d (target texture) 0 :rgba (q+:width buffer) (q+:height buffer) 0 :rgba :unsigned-byte (q+:bits buffer))
+    (gl:tex-parameter textarget :texture-min-filter :linear)
+    (gl:tex-parameter textarget :texture-mag-filter :linear)
+    (gl:tex-parameter textarget :texture-wrap-s :clamp-to-edge)
+    (gl:tex-parameter textarget :texture-wrap-t :clamp-to-edge)
+    (gl:tex-parameter textarget :texture-wrap-r :clamp-to-edge)
+    (gl:bind-texture textarget 0)
     (setf (data asset) texture)
     (finalize image)
     (finalize buffer)))

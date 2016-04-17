@@ -37,11 +37,7 @@
     (gl:bind-texture :texture-2d 0)))
 
 (defmethod bind-texture ((obj textured-subject))
-  (gl:bind-texture :texture-2d (content (texture obj)))
-  (gl:tex-parameter :texture-2d :texture-min-filter :linear)
-  (gl:tex-parameter :texture-2d :texture-mag-filter :linear)
-  (gl:tex-parameter :texture-2d :texture-wrap-s :clamp)
-  (gl:tex-parameter :texture-2d :texture-wrap-t :clamp))
+  (gl:bind-texture :texture-2d (content (texture obj))))
 
 (defmethod save-form-args append ((subject textured-subject))
   `(:texture ,(texture subject)))
