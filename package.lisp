@@ -214,7 +214,9 @@
    #:space-axes
    #:size
    #:grid
-   #:clocked-subject)
+   #:clocked-subject
+   #:shader-subject
+   #:shader-program)
   ;; toolkit.lisp
   (:export
    #:*time-units*

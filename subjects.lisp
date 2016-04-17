@@ -216,3 +216,31 @@
 (defmethod save-form-args append ((subject clocked-subject))
   `(:clock ,(clock subject)
     :running ,(running subject)))
+
+(define-subject shader-subject ()
+  ((shader-program :accessor shader-program)))
+
+(defmethod initialize-instance :after ((subject shader-subject) &key shader-program)
+  (setf (shader-program subject) shader-program))
+
+(defmethod initialize-instance :after ((subject shader-subject) &key (shader-program NIL s-p))
+  (when s-p (setf (shader-program subject) shader-program)))
+
+(defmethod (setf shader-program) ((program shader-program) (subject shader-subject))
+  (setf (slot-value subject 'shader-program) program))
+
+(defmethod (setf shader-program) ((null null) (subject shader-subject))
+  (setf (slot-value subject 'shader-program) NIL))
+
+(defmethod (setf shader-program) (name (subject shader-subject))
+  (setf (shader-program subject) (asset name 'shader-program)))
+
+(defmethod (setf shader-program) ((id list) (subject shader-subject))
+  (setf (shader-program subject) (apply #'asset (first id) 'shader-program (rest id))))
+
+(defmethod paint :around ((subject shader-subject) target)
+  (when (shader-program subject)
+    (gl:use-program (shader-program subject)))
+  (unwind-protect
+       (call-next-method)
+    (gl:use-program 0)))
