@@ -32,15 +32,17 @@
 
 (defmethod print-object ((asset asset) stream)
   (print-unreadable-object (asset stream :type T)
-    (format stream "~s" (state asset))))
+    (format stream "~a ~s" (id asset) (state asset))))
+
+(defmethod initialize-instance :after ((asset asset) &key)
+  (setf (gethash (id asset) *assets*) asset))
 
 (defmethod asset ((asset asset) type)
   asset)
 
 (defmethod asset :around (id type)
   (or (gethash id *assets*)
-      (setf (gethash id *assets*)
-            (call-next-method))))
+      (call-next-method)))
 
 (defmethod remove-asset (id)
   (let ((asset (gethash id *assets*)))
@@ -90,13 +92,9 @@
   (setf (data asset) NIL))
 
 (defclass named-asset (asset)
-  ((name :initarg :name :accessor name))
+  ((name :initarg :name :accessor name :reader id))
   (:default-initargs
    :name (error "NAME required.")))
-
-(defmethod print-object ((asset named-asset) stream)
-  (print-unreadable-object (asset stream :type T)
-    (format stream "~s ~s" (state asset) (name asset))))
 
 (defmethod asset ((name string) (type symbol))
   (make-instance type :name name))
@@ -110,7 +108,7 @@
   (setf (data asset) (q+:make-qfont (name asset) (size asset))))
 
 (defclass file-asset (asset)
-  ((file :initarg :file :accessor file)
+  ((file :initarg :file :accessor file :reader id)
    (allowed-types :initarg :allowed-types :accessor allowed-types))
   (:default-initargs
    :file (error "FILE required.")))
@@ -120,12 +118,6 @@
               (find (pathname-type file) allowed-types :test #'string-equal))
     (error "~a does not know how to handle a file of type ~a."
            asset (pathname-type file))))
-
-(defmethod print-object ((asset file-asset) stream)
-  (if *print-readably*
-      (print (make-load-form asset) stream)
-      (print-unreadable-object (asset stream :type T)
-        (format stream "~s ~s" (state asset) (file asset)))))
 
 (defmethod asset :around ((pathname pathname) type)
   (call-next-method (resource-pathname pathname) type))
@@ -144,10 +136,6 @@
 (defmethod restore :before ((asset file-asset))
   (unless (probe-file (file asset))
     (error "Invalid file path ~s." (file asset))))
-
-(defmethod make-load-form ((asset file-asset) &optional env)
-  (declare (ignore env))
-  `(asset ,(file asset) ',(class-name (class-of asset))))
 
 (defclass image (file-asset)
   ()
