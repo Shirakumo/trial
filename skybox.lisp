@@ -16,6 +16,9 @@
 (defmethod (setf texture) (thing (skybox skybox))
   (setf (texture skybox) (asset thing 'texture :target :texture-cube-map)))
 
+(defmethod (setf texture) ((args list) (skybox skybox))
+  (setf (texture skybox) (apply #'asset (first args) 'texture :target :texture-cube-map (rest args))))
+
 (defmethod paint ((skybox skybox) target)
   (gl:disable :depth-test)
   (with-primitives :quads
