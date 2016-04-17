@@ -25,6 +25,9 @@
 (defmethod (setf texture) (thing (subject textured-subject))
   (setf (texture subject) (asset thing 'texture)))
 
+(defmethod (setf texture) ((id list) (subject textured-subject))
+  (setf (texture subject) (apply #'asset (first id) 'texture (rest id))))
+
 (defmethod paint :around ((obj textured-subject) target)
   (let ((tex (texture obj)))
     (when tex
