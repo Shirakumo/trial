@@ -13,8 +13,8 @@
    :texture "skybox.png"
    :shader-program '(skybox :shaders ("skybox.vert" "skybox.frag"))))
 
-(defmethod (setf texture) (thing (subject textured-subject))
-  (setf (texture subject) (asset thing 'texture :target :texture-cube-map)))
+(defmethod (setf texture) (thing (skybox skybox))
+  (setf (texture skybox) (asset thing 'texture :target :texture-cube-map)))
 
 (defmethod paint ((skybox skybox) target)
   (gl:disable :depth-test)
