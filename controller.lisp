@@ -194,6 +194,15 @@
         do (offload k)
            (restore k)))
 
+(define-handler (controller reload-scene reload-scene 99) (ev)
+  ;; gross!
+  (let ((scene (first (loops controller))))
+    (dolist (obj (flare-indexed-set:coerce-set (objects scene) 'list))
+      (unless (eql obj controller)
+        (leave obj scene)
+        (finalize obj)))
+    (setup-scene scene)))
+
 (defclass acquire-context (event)
   ())
 

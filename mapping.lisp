@@ -77,6 +77,9 @@
 (define-action reload-assets (system-action)
   (key-press (eql key :f5)))
 
+(define-action reload-scene (system-action)
+  (key-press (eql key :f6)))
+
 (define-action player-action ())
 
 (define-action movement (player-action))
