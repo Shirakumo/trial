@@ -161,9 +161,10 @@
 
 ;; FIXME: proper LOADing of a map
 (defun setup-scene (scene)
+  (enter (make-instance 'skybox) scene)
   (enter (make-instance 'space-axes) scene)
   (enter (make-instance 'player) scene)
-  (enter (make-instance 'following-camera :name :camera :target (unit :player scene)) scene))
+  (enter (make-instance 'pivot-camera :name :camera :target (unit :player scene)) scene))
 
 (define-handler (controller resize resize) (ev width height)
   (v:info :trial.controller "Resizing to ~ax~a" width height)

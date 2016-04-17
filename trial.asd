@@ -26,6 +26,7 @@
                (:file "subjects")
                (:file "scene")
                (:file "sprite")
+               (:file "skybox")
                (:file "octree")
                (:file "camera")
                (:file "selectable")
