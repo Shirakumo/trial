@@ -220,17 +220,23 @@
   ((shader-type :initarg :shader-type :reader shader-type))
   (:default-initargs
    :shader-type NIL
-   :allowed-types '(glsl vert tesc tese geom frag comp)))
+   :allowed-types '(glsl vert tesc tese geom frag comp vs fs cs gs tcs tes)))
 
 (defun pathname->shader-type (pathname)
   (or (cdr (assoc (pathname-type pathname)
                   `((glsl . :vertex-shader)
-                    (vert . :vertex-shader)
                     (tesc . :tess-control-shader)
                     (tese . :tess-evaluation-shader)
+                    (vert . :vertex-shader)
                     (geom . :geometry-shader)
                     (frag . :fragment-shader)
-                    (comp . :compute-shader)) :test #'string-equal))
+                    (comp . :compute-shader)
+                    (tcs . :tess-control-shader)
+                    (tes . :tess-evaluation-shader)
+                    (vs . :vertex-shader)
+                    (gs . :geometry-shader)
+                    (fs . :fragment-shader)
+                    (cs . :compute-shader)) :test #'string-equal))
       (error "Don't know how to convert ~s to shader type." pathname)))
 
 (defmethod initialize-instance :before ((asset shader) &key shader-type)
