@@ -113,22 +113,20 @@
 
 (defclass file-asset (asset)
   ((id :initarg :id :accessor file :accessor id)
-   (allowed-types :initarg :allowed-types :accessor allowed-types))
-  (:default-initargs
-   :file (error "FILE required.")))
+   (allowed-types :initarg :allowed-types :accessor allowed-types)))
 
-(defmethod initialize-instance :before ((asset file-asset) &key file allowed-types)
+(defmethod initialize-instance :before ((asset file-asset) &key id allowed-types)
   (unless (or (eql allowed-types T)
-              (find (pathname-type file) allowed-types :test #'string-equal))
+              (find (pathname-type id) allowed-types :test #'string-equal))
     (error "~a does not know how to handle a file of type ~a."
-           asset (pathname-type file))))
+           asset (pathname-type id))))
 
-(defmethod asset :around ((pathname pathname) type)
-  (call-next-method (resource-pathname pathname) type))
+(defmethod asset :around ((pathname pathname) type &rest args)
+  (apply #'call-next-method (resource-pathname pathname) type args))
 
-(defmethod asset :around ((string string) (type symbol))
+(defmethod asset :around ((string string) (type symbol) &rest args)
   (if (subtypep type 'file-asset)
-      (asset (uiop:parse-native-namestring string) type)
+      (apply #'asset (uiop:parse-native-namestring string) type args)
       (call-next-method)))
 
 (defmethod remove-asset ((pathname pathname))
