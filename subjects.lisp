@@ -26,13 +26,11 @@
   (setf (texture subject) (asset thing 'texture)))
 
 (defmethod paint :around ((obj textured-subject) target)
-  (when (texture obj)
-    (bind-texture obj)
-    (call-next-method)
-    (gl:bind-texture :texture-2d 0)))
-
-(defmethod bind-texture ((obj textured-subject))
-  (gl:bind-texture :texture-2d (content (texture obj))))
+  (let ((tex (texture obj)))
+    (when tex
+      (gl:bind-texture (target tex) (content tex))
+      (call-next-method)
+      (gl:bind-texture (target tex) 0))))
 
 (defmethod save-form-args append ((subject textured-subject))
   `(:texture ,(texture subject)))
