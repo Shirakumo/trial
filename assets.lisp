@@ -149,9 +149,13 @@
     (setf (data asset) image)))
 
 (defclass texture (image)
-  ((target :initarg :target :reader target))
+  ((target :initarg :target :reader target)
+   (filter :initarg :filter :reader filter)
+   (wrapping :initarg :wrapping :reader wrapping))
   (:default-initargs
-   :target :texture-2d))
+   :target :texture-2d
+   :filter :linear
+   :wrapping :clamp-to-edge))
 
 (defmethod initialize-instance :before ((texture texture) &key target)
   (ecase target
@@ -162,24 +166,24 @@
 
 (defmethod restore ((asset texture))
   (call-next-method)
-  (let* ((image (data asset))
-         (buffer (q+:qglwidget-convert-to-glformat image))
-         (texture (gl:gen-texture))
-         (textarget (if (eql (target texture) :texture-2d) :texture-2d :texture-cube-map)))
-    (when (< (gl:get* :max-texture-size) (max (q+:width buffer) (q+:height buffer)))
-      (error "Hardware cannot support a texture of size ~ax~a."
-             (q+:width buffer) (q+:height buffer)))
-    (gl:bind-texture textarget texture)
-    (gl:tex-image-2d (target texture) 0 :rgba (q+:width buffer) (q+:height buffer) 0 :rgba :unsigned-byte (q+:bits buffer))
-    (gl:tex-parameter textarget :texture-min-filter :linear)
-    (gl:tex-parameter textarget :texture-mag-filter :linear)
-    (gl:tex-parameter textarget :texture-wrap-s :clamp-to-edge)
-    (gl:tex-parameter textarget :texture-wrap-t :clamp-to-edge)
-    (gl:tex-parameter textarget :texture-wrap-r :clamp-to-edge)
-    (gl:bind-texture textarget 0)
-    (setf (data asset) texture)
-    (finalize image)
-    (finalize buffer)))
+  (with-slots (target filter wrapping) asset
+    (let* ((image (data asset))
+           (buffer (q+:qglwidget-convert-to-glformat image))
+           (texture (gl:gen-texture))
+           (textarget (if (eql target :texture-2d) :texture-2d :texture-cube-map)))
+      (check-texture-size (q+:width buffer) (q+:height buffer))
+      (gl:bind-texture textarget texture)
+      (gl:tex-image-2d target 0 :rgba (q+:width buffer) (q+:height buffer) 0 :rgba :unsigned-byte (q+:bits buffer))
+      (gl:tex-parameter textarget :texture-min-filter filter)
+      (gl:tex-parameter textarget :texture-mag-filter filter)
+      (gl:tex-parameter textarget :texture-wrap-s wrapping)
+      (gl:tex-parameter textarget :texture-wrap-t wrapping)
+      (unless (eql target :texture-2d)
+        (gl:tex-parameter textarget :texture-wrap-r wrapping))
+      (gl:bind-texture textarget 0)
+      (setf (data asset) texture)
+      (finalize image)
+      (finalize buffer))))
 
 (defmethod content ((asset texture) &optional offset)
   (declare (ignore offset))

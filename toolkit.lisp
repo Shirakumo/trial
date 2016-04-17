@@ -58,3 +58,8 @@
 (defmacro with-painter ((painter target) &body body)
   `(with-finalizing ((,painter (make-painter ,target)))
      ,@body))
+
+(defun check-texture-size (width height)
+  (when (< (gl:get* :max-texture-size) (max width height))
+    (error "Hardware cannot support a texture of size ~ax~a."
+           width height)))
