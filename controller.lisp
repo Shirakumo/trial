@@ -18,7 +18,7 @@
   (:default-initargs
    :name :controller
    :fps 30.0f0
-   :fov 45
+   :fov 75
    :selection NIL))
 
 (defmethod initialize-instance :after ((controller controller) &key)
@@ -116,7 +116,7 @@
                :multisample :line-smooth :polygon-smooth)
     (gl:matrix-mode :projection)
     (gl:load-identity)
-    (perspective-view (fov controller) (/ width (max 1 height)) 0.01 1000.0)
+    (perspective-view (fov controller) (/ width (max 1 height)) 0.01 100000.0)
     (gl:matrix-mode :modelview)
     (gl:viewport 0 0 width height)
     (with-pushed-matrix
