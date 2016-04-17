@@ -157,7 +157,7 @@
    :wrapping :clamp-to-edge))
 
 (defmethod initialize-instance :before ((texture texture) &key target)
-  (check-gl-texture-target))
+  (check-gl-texture-target target))
 
 (defmethod restore ((asset texture))
   (call-next-method)
@@ -270,7 +270,7 @@
     (setf (data asset) program)))
 
 (defmethod finalize ((asset shader-program))
-  (gl:delete-program asset))
+  (gl:delete-program (data asset)))
 
 (defclass gl-buffer (named-asset)
   ((buffer-type :initarg :buffer-type :accessor buffer-type)

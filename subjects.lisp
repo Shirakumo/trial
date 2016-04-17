@@ -240,7 +240,7 @@
 
 (defmethod paint :around ((subject shader-subject) target)
   (when (shader-program subject)
-    (gl:use-program (shader-program subject)))
+    (gl:use-program (content (shader-program subject))))
   (unwind-protect
        (call-next-method)
     (gl:use-program 0)))
