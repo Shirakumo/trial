@@ -178,7 +178,7 @@
                                :texture-cube-map-positive-z :texture-cube-map-negative-z)
                for index from 0
                do (gl:tex-image-2d target 0 :rgba width height 0 :rgba :unsigned-byte
-                                   (cffi:mem-aptr (q+:bits buffer) :char (* width height index))))))
+                                   (cffi:inc-pointer (q+:bits buffer) (* width height index 4))))))
       (gl:tex-parameter target :texture-min-filter filter)
       (gl:tex-parameter target :texture-mag-filter filter)
       (gl:tex-parameter target :texture-wrap-s wrapping)
