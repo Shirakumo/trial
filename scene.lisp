@@ -9,7 +9,7 @@
 (defclass scene (flare:scene event-loop entity)
   ((octree :initform (make-instance 'octree
                                     :bounds (vec 1000 1000 1000)
-                                    :location (vec -500 -500 -500))
+                                    :location (vec -500 -500 0))
            :accessor octree)))
 
 (defclass scene-event (event)
