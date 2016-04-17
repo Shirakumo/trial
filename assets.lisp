@@ -289,7 +289,7 @@
   (check-gl-buffer-data-usage data-usage))
 
 (defmethod restore ((asset gl-buffer))
-  (with-slots-bound (asset gl-buffer)
+  (with-slots (element-type buffer-data buffer-type data-usage) asset
     (let ((buffer (gl:gen-buffer))
           (array (gl:alloc-gl-array element-type (length buffer-data))))
       (gl:bind-buffer buffer-type buffer)
@@ -311,7 +311,7 @@
     (gl:delete-buffers (list old))))
 
 (defclass vertex-array (named-asset)
-  (()))
+  ())
 
 (defmethod restore ((asset vertex-array))
   (let ((vao (gl:gen-vertex-array)))
