@@ -103,6 +103,19 @@
                                           ,@body)))
                   ',class)))
 
+(defmacro define-generic-handler ((class name &optional (event-type name) (priority 0)) &body options)
+  `(progn
+     (defgeneric ,name (,class event)
+       ,@options)
+     (add-handler (make-instance
+                   'handler
+                   :name ',name
+                   :event-type ',event-type
+                   :container ',class
+                   :priority ,priority
+                   :delivery-function #',name)
+                  ',class)))
+
 (defclass subject-class (qtools:finalizable-class handler-container)
   ((effective-handlers :initform NIL :accessor effective-handlers)
    (instances :initform () :accessor instances)))

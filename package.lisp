@@ -87,6 +87,7 @@
    #:delivery-function
    #:priority
    #:define-handler
+   #:define-generic-handler
    #:subject-class
    #:subject
    #:loops
