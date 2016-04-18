@@ -13,12 +13,10 @@
    (update-thread :initform NIL :accessor update-thread)
    (last-pause :initform 0 :accessor last-pause)
    (fps :initarg :fps :accessor fps)
-   (fov :initarg :fov :accessor fov)
    (selection :initarg :selection :accessor selection :finalized T))
   (:default-initargs
    :name :controller
    :fps 30.0f0
-   :fov 75
    :selection NIL))
 
 (defmethod initialize-instance :after ((controller controller) &key)
@@ -116,12 +114,6 @@
     (gl:enable :blend :cull-face :texture-2d :multisample
                :line-smooth :polygon-smooth
                :depth-test :depth-clamp :alpha-test)
-    (gl:matrix-mode :projection)
-    (gl:load-identity)
-    (perspective-view (fov controller) (/ width (max 1 height)) 0.01 100000.0)
-    (gl:matrix-mode :modelview)
-    (gl:viewport 0 0 width height)
-    
     (with-pushed-matrix
       (paint (first (loops controller)) main))
     (gl:load-identity)))
