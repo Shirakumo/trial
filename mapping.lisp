@@ -123,3 +123,7 @@
   (key-release (one-of key :s :down))
   (gamepad-release (eql button :dpad-down))
   (gamepad-move (one-of axis :left-v :dpad-v) (< pos 0.2 old-pos)))
+
+(define-action action (player-action)
+  (key-press (one-of key :space))
+  (gamepad-press (eql button :a)))
