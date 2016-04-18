@@ -100,6 +100,7 @@
   (gl:depth-mask T)
   (gl:depth-func :lequal)
   (gl:clear-depth 1.0)
+  (gl:alpha-func :greater 0)
   (gl:blend-func :src-alpha :one-minus-src-alpha)
   (gl:shade-model :smooth)
   (gl:front-face :ccw)
@@ -112,13 +113,15 @@
   (q+:qgl-clear-color main (slot-value main 'background))
   (let ((width (width main)) (height (height main)))
     (gl:clear :color-buffer :depth-buffer)
-    (gl:enable :depth-test :blend :cull-face :texture-2d
-               :multisample :line-smooth :polygon-smooth)
+    (gl:enable :blend :cull-face :texture-2d :multisample
+               :line-smooth :polygon-smooth
+               :depth-test :depth-clamp :alpha-test)
     (gl:matrix-mode :projection)
     (gl:load-identity)
     (perspective-view (fov controller) (/ width (max 1 height)) 0.01 100000.0)
     (gl:matrix-mode :modelview)
     (gl:viewport 0 0 width height)
+    
     (with-pushed-matrix
       (paint (first (loops controller)) main))
     (gl:load-identity)))
