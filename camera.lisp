@@ -7,6 +7,12 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
+(defun perspective-view (fovy aspect z-near z-far)
+  ;; http://nehe.gamedev.net/article/replacement_for_gluperspective/21002/
+  (let* ((fh (* (tan (* (/ fovy 360) PI)) z-near))
+         (fw (* fh aspect)))
+    (gl:frustum (- fw) fw (- fh) fh z-near z-far)))
+
 (define-subject camera (located-subject)
   ((target :initarg :target :accessor target)
    (up :initarg :up :accessor up)

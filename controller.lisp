@@ -148,12 +148,6 @@
                       font)))
   (gl:matrix-mode :modelview))
 
-(defun perspective-view (fovy aspect z-near z-far)
-  ;; http://nehe.gamedev.net/article/replacement_for_gluperspective/21002/
-  (let* ((fh (* (tan (* (/ fovy 360) PI)) z-near))
-         (fw (* fh aspect)))
-    (gl:frustum (- fw) fw (- fh) fh z-near z-far)))
-
 ;; FIXME: proper LOADing of a map
 (defun setup-scene (scene)
   (enter (make-instance 'skybox) scene)
