@@ -8,7 +8,7 @@
 (in-readtable :qtools)
 
 (define-subject textured-subject ()
-  ((texture :initform NIL :accessor texture :finalized T)))
+  ((texture :initform NIL :accessor texture)))
 
 (defmethod initialize-instance :after ((subject textured-subject) &key (texture NIL t-p) &allow-other-keys)
   (when t-p (setf (texture subject) texture)))
