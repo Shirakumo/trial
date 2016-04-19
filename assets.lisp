@@ -247,11 +247,30 @@
     (setf (slot-value asset 'shader-type) (pathname->shader-type (file asset)))))
 
 (defmethod restore ((asset shader))
-  (let ((shader (gl:create-shader (shader-type asset))))
-    (gl:shader-source shader (alexandria:read-file-into-string (file asset)))
-    (gl:compile-shader shader)
-    (unless (gl:get-shader shader :compile-status)
-      (error "Failed to compile ~a: ~%~a" asset (gl:get-shader-info-log shader)))
+  (let ((shader (gl:create-shader (shader-type asset)))
+        (source NIL))
+    (tagbody
+     read (setf source (alexandria:read-file-into-string (file asset)))
+     compile
+       (restart-case
+           (progn
+             (gl:shader-source shader source)
+             (gl:compile-shader shader)
+             (unless (gl:get-shader shader :compile-status)
+               (error "Failed to compile ~a: ~%~a" asset (gl:get-shader-info-log shader))))
+         (retry ()
+           :report "Retry loading and compiling the shader."
+           (go read))
+         (use-file (file)
+           :report "Supply a different source file."
+           :interactive input-value
+           (setf (file asset) file))
+         (use-source (value)
+           :report "Supply a different source."
+           :interactive input-source
+           (setf source value)
+           (go compile))))
+    
     (setf (data asset) shader)))
 
 (defmethod finalize ((asset shader))

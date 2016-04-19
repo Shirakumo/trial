@@ -59,6 +59,18 @@
   `(with-finalizing ((,painter (make-painter ,target)))
      ,@body))
 
+(defun input-source (&optional (stream *query-io*))
+  (with-output-to-string (out)
+    (loop for in = (read-line stream NIL NIL)
+          while (and in (string/= in "EOF"))
+          do (write-string in out))))
+
+(defun input-value (&optional (stream *query-io*))
+  (multiple-value-list (eval (read stream))))
+
+(defun input-literal (&optional (stream *query-io*))
+  (read stream))
+
 (defun check-gl-texture-size (width height)
   (when (< (gl:get* :max-texture-size) (max width height))
     (error "Hardware cannot support a texture of size ~ax~a."
