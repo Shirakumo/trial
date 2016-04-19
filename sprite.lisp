@@ -7,52 +7,35 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(define-subject sprite-animation (textured-subject)
+(define-subject sprite-animation (face-subject)
   ((duration :initarg :duration :accessor duration)
    (frames :initarg :frames :accessor frames)
    (frame :initarg :frame :accessor frame)
-   (next :initarg :next :accessor next)
-   (width :initarg :width :accessor width)
-   (height :initarg :height :accessor height))
+   (next :initarg :next :accessor next))
   (:default-initargs
    :duration (error "DURATION required.")
    :frames (error "FRAMES required.")
    :frame 0
    :next NIL))
 
-(defmethod paint ((subject sprite-animation) target)
-  (with-slots (width height frames frame) subject
-    (let ((frame-end (- 1 (/ frame frames)))
-          (frame-start (- 1 (/ (1+ frame) frames)))
-          (width (or width (q+:width (data (texture subject)))))
-          (height (or height (/ (q+:height (data (texture subject))) frames))))
-      (gl:disable :cull-face)
-      (with-primitives :quads
-        (gl:tex-coord 0 frame-start)
-        (gl:vertex 0 0)
-        (gl:tex-coord 1 frame-start)
-        (gl:vertex width 0)
-        (gl:tex-coord 1 frame-end)
-        (gl:vertex width height)
-        (gl:tex-coord 0 frame-end)
-        (gl:vertex 0 height))
-      (gl:enable :cull-face))))
+(defmethod (setf frame) :after (frame (subject sprite-animation))
+  (setf (vy (tex-location subject)) (- 1 (/ (1+ frame) (frames subject))))
+  (setf (vy (tex-bounds subject)) (- 1 (/ frame (frames subject)))))
 
-(define-subject sprite-subject (clocked-subject)
+(define-subject sprite-subject (clocked-subject bound-subject)
   ((animations :initform (make-hash-table :test 'eql) :accessor animations)
    (animation :initform NIL :accessor animation)))
 
-(defmethod initialize-instance :after ((subject sprite-subject) &key animations animation width height)
+(defmethod initialize-instance :after ((subject sprite-subject) &key animations animation bounds)
   (loop for animation in animations
-        do (destructuring-bind (name duration frames &key next texture (width width) (height height)) animation
+        do (destructuring-bind (name duration frames &key next texture (bounds bounds)) animation
              (setf (gethash name (animations subject))
                    (make-instance 'sprite-animation
                                   :duration duration
                                   :frames frames
                                   :texture texture
                                   :next next
-                                  :width width
-                                  :height height))))
+                                  :bounds bounds))))
   (setf (animation subject) (or animation (first (first animations)))))
 
 (defmethod (setf animation) ((value symbol) (subject sprite-subject))

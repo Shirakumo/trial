@@ -177,8 +177,6 @@
    #:frames
    #:frame
    #:next
-   #:width
-   #:height
    #:sprite-subject
    #:animations
    #:animation)
