@@ -67,8 +67,7 @@
   `(:pivot ,(pivot subject)))
 
 (define-subject bound-subject (located-subject)
-  ((bounds :initarg :bounds :accessor bounds)
-   (draw-bounds-p :initform NIL :accessor draw-bounds-p))
+  ((bounds :initarg :bounds :accessor bounds))
   (:default-initargs
    :bounds (vec 0 0 0)))
 
@@ -105,7 +104,8 @@
                           :first-object other
                           :second-object this)))))
 
-(defmethod paint ((subject bound-subject) target)
+#+trial-debug-bound-subject
+(defmethod paint :after ((subject bound-subject) target)
   (when (draw-bounds-p subject)
     (gl:line-width 1.0)
     (gl:color 0.0 0.8 0.0)
@@ -145,8 +145,7 @@
         (gl:vertex (vx min) (vy max) (vz max))))
     (gl:enable :cull-face)
     (gl:polygon-mode :front-and-back :fill)
-    (gl:color 1.0 1.0 1.0))
-  (call-next-method))
+    (gl:color 1.0 1.0 1.0)))
 
 (define-subject intersection-subject (bound-subject)
   ((first-object :initarg :first-object :accessor first-object)
