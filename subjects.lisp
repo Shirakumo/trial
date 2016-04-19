@@ -294,3 +294,24 @@
   (unwind-protect
        (call-next-method)
     (gl:use-program 0)))
+
+(define-subject face-subject (textured-subject bound-subject)
+  ((tex-location :initarg :tex-location :accessor tex-location)
+   (tex-bounds :initarg :tex-bounds :accessor tex-bounds))
+  (:default-initargs
+   :tex-location (vec 0 0 0)
+   :tex-bounds (vec 1 1 0)))
+
+(defmethod paint ((subject face-subject) target)
+  (with-slots ((tl tex-location) (tb tex-bounds) bounds) subject
+    (gl:disable :cull-face)
+    (with-primitives :quads
+      (gl:tex-coord (vx tl) (vy tl))
+      (gl:vertex 0 0)
+      (gl:tex-coord (vx tb) (vy tl))
+      (gl:vertex (vx bounds) 0)
+      (gl:tex-coord (vx tb) (vy tb))
+      (gl:vertex (vx bounds) (vy bounds))
+      (gl:tex-coord (vx tl) (vy tb))
+      (gl:vertex 0 (vy bounds)))
+    (gl:enable :cull-face)))

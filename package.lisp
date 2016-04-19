@@ -222,7 +222,10 @@
    #:grid
    #:clocked-subject
    #:shader-subject
-   #:shader-program)
+   #:shader-program
+   #:face-subject
+   #:tex-location
+   #:tex-bounds)
   ;; toolkit.lisp
   (:export
    #:*time-units*
