@@ -249,11 +249,9 @@
 (defmethod restore ((asset shader))
   (let ((shader (gl:create-shader (shader-type asset))))
     (gl:shader-source shader (alexandria:read-file-into-string (file asset)))
-    (handler-case
-        (gl:compile-shader shader)
-      (error (err)
-        (v:error :trial.asset err)
-        (error "Failed to compile ~a: ~a" asset (gl:get-shader-info-log shader))))
+    (gl:compile-shader shader)
+    (unless (gl:get-shader shader :compile-status)
+      (error "Failed to compile ~a: ~%~a" asset (gl:get-shader-info-log shader)))
     (setf (data asset) shader)))
 
 (defmethod finalize ((asset shader))
@@ -267,6 +265,10 @@
     (dolist (shader (shaders asset))
       (gl:attach-shader program (content (asset shader 'shader))))
     (gl:link-program program)
+    (dolist (shader (shaders asset))
+      (gl:detach-shader program (content (asset shader 'shader))))
+    (unless (gl:get-program program :link-status)
+      (error "Failed to link ~a: ~%~a" asset (gl:get-program-info-log program)))
     (setf (data asset) program)))
 
 (defmethod finalize ((asset shader-program))
