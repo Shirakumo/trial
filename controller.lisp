@@ -127,19 +127,9 @@
     (gl:disable :cull-face)
     (gl:clear :depth-buffer)
 
-    ;; ;; Debugging the selection
-    ;; (gl:bind-texture :texture-2d (texture (selection controller)))
-    ;; (with-primitives :quads
-    ;;   (gl:tex-coord 1 1)
-    ;;   (gl:vertex (width main) 0)
-    ;;   (gl:tex-coord 0 1)
-    ;;   (gl:vertex 0 0)
-    ;;   (gl:tex-coord 0 0)
-    ;;   (gl:vertex 0 (height main))
-    ;;   (gl:tex-coord 1 0)
-    ;;   (gl:vertex (width main) (height main)))
-    ;; (gl:bind-texture :texture-2d 0)
-
+    #+trial-debug-selection-buffer
+    (paint (selection controller) main)
+    
     (let ((font (content (asset "Consolas, Monospace" 'font))))
       (q+:render-text main 20 30 (format NIL "Pause: ~,10f" (last-pause controller)) font)
       (q+:render-text main 20 50 (format NIL "Time:  ~2,'0d:~6,3,,,'0f"

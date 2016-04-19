@@ -66,6 +66,19 @@
             (typep thing 'scene))
     (call-next-method)))
 
+(defmethod paint ((buffer selection-buffer) thing)
+  (gl:bind-texture :texture-2d (texture (selection controller)))
+  (with-primitives :quads
+    (gl:tex-coord 1 1)
+    (gl:vertex (width main) 0)
+    (gl:tex-coord 0 1)
+    (gl:vertex 0 0)
+    (gl:tex-coord 0 0)
+    (gl:vertex 0 (height main))
+    (gl:tex-coord 1 0)
+    (gl:vertex (width main) (height main)))
+  (gl:bind-texture :texture-2d 0))
+
 (defmethod object-at-point ((buffer selection-buffer) x y)
   (with-framebuffer-bound (buffer)
     (color->object (gl:read-pixels x y 1 1 :rgba :unsigned-byte))))
