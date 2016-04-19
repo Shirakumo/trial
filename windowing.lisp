@@ -9,23 +9,13 @@
 
 (defvar *main* NIL)
 
-(defun make-gl-format ()
-  (let ((format (q+:make-qglformat)))
-    (setf (q+:alpha format) T)
-    (setf (q+:depth format) T)
-    (setf (q+:direct-rendering format) T)
-    (setf (q+:double-buffer format) T)
-    (setf (q+:rgba format) T)
-    (setf (q+:stencil format) T)
-    (setf (q+:sample-buffers format) T)
-    (setf (q+:samples format) 2)
-    format))
-
 (define-widget main (QGLWidget context)
   ((scene :initform (make-instance 'scene) :accessor scene :finalized NIL)
    (controller :accessor controller :finalized NIL)
-   (execute-queue :initform (make-array 0 :adjustable T :fill-pointer T) :accessor execute-queue))
-  (:constructor (make-gl-format)))
+   (execute-queue :initform (make-array 0 :adjustable T :fill-pointer T) :accessor execute-queue)))
+
+(defmethod construct ((main main))
+  (new main (context main)))
 
 (define-subwidget (main background) (q+:make-qcolor 0 0 0))
 
