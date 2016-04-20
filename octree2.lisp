@@ -35,7 +35,7 @@
                              ,@body)))
          (T (error "WTF: ~a does not fit at all." vec))))
 
-(defmethod test ((subject located-subject) vec)
+(defmethod test ((subject located-subject) (vec vec))
   (v= (location subject) vec))
 
 (defmethod test ((octree octree2) (vec vec))
