@@ -34,6 +34,22 @@
   (remove-handler subject scene)
   (issue scene 'leave :scene scene :subject subject))
 
+(defmethod enter :after ((container container) (scene scene))
+  (let ((handlers ()))
+    (flare-indexed-set:do-set (thing (objects container))
+      (when (typep thing 'handler-container)
+        (setf handlers (nconc handlers (handlers thing)))))
+    ;; Bulk update
+    (add-handler handlers scene)))
+
+(defmethod leave :after ((container container) (scene scene))
+  (let ((handlers ()))
+    (flare-indexed-set:do-set (thing (objects container))
+      (when (typep thing 'handler-container)
+        (setf handlers (nconc handlers (handlers thing)))))
+    ;; Bulk update
+    (remove-handler handlers scene)))
+
 (defmethod paint ((scene scene) target)
   (paint (octree scene) target)
   (call-next-method))
