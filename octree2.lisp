@@ -1,3 +1,11 @@
+#|
+ This file is a part of trial
+ (c) 2016 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
+ Author: Nicolas Hafner <shinmera@tymoon.eu>
+|#
+
+(in-package #:org.shirakumo.fraf.trial)
+(in-readtable :qtools)
 
 (define-subject octree2 (located-subject)
   ((root :initform NIL :accessor root)
