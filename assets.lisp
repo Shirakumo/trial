@@ -335,14 +335,22 @@
     (gl:delete-buffers (list old))))
 
 (defclass vertex-array (named-asset)
-  ())
+  ((buffers :initarg :buffers :accessor buffers)))
 
 (defmethod restore ((asset vertex-array))
   (let ((vao (gl:gen-vertex-array)))
     (gl:bind-vertex-array vao)
-    ;; FIXME: actually figure out how to generalise this mess
-    ;;        and implement it properly.
-    ))
+    (loop for buffer in (buffers asset)
+          do (destructuring-bind (buffer &key (index 0)
+                                              (size 3)
+                                              (normalized NIL)
+                                              (stride 0))
+                 buffer
+               (let ((buffer (asset buffer 'gl-buffer)))
+                 (gl:bind-buffer (buffer-type buffer) (content buffer))
+                 (gl:enable-vertex-attrib-array index)
+                 (gl:vertex-attrib-pointer index size (element-type buffer) normalized stride (cffi:null-pointer)))))
+    (setf (data asset) vao)))
 
 (defmethod finalize ((asset vertex-array))
   (gl:delete-vertex-arrays (list (data asset))))
