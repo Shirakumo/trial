@@ -96,6 +96,14 @@
    #:tick)
   ;; flare.lisp
   (:export)
+  ;; framebuffer.lisp
+  (:export
+   #:framebuffer
+   #:call-with-framebuffer-bound
+   #:with-framebuffer-bound
+   #:with
+   #:height
+   #:texture)
   ;; input-tables.lisp
   (:export
    #:*key-table*
