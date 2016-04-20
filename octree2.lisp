@@ -10,6 +10,12 @@
    :max-depth 8
    :threshold 8))
 
+(deftype octree-node ()
+  `(vector * 8))
+
+(deftype octree-leaf ()
+  `list)
+
 (defun vec-in-cube-p (vec center size)
   (declare (optimize speed)
            (type vec vec center)
@@ -48,12 +54,12 @@
       (loop with tcenter = (vec 0 0 0)
             with node = (root octree)
             do (etypecase node
-                 (vector
+                 (octree-node
                   (setf size (/ size 2))
                   (%with-matching-octree-node (sub node)
                     (setf center tcenter)
                     (setf node sub)))
-                 (list
+                 (octree-leaf
                   (return (remove-if-not (lambda (el) (test el vec)) node))))))))
 
 (defmethod enter ((el located-subject) (octree octree2))
@@ -83,19 +89,19 @@
                             (push el sub))))))))
       (when (vec-in-cube-p vec center size)
         (etypecase (root octree)
-          (vector
+          (octree-node
            (loop with node = (root octree)
                  do (setf size (/ size 2))
                     (%with-matching-octree-node (sub node)
                       (let ((subval sub))
                         (etypecase subval
-                          (vector
+                          (octree-node
                            (rotatef center tcenter)
                            (setf node subval))
-                          (list
+                          (octree-leaf
                            (setf sub (insert-or-split subval))
                            (return)))))))
-          (list
+          (octree-leaf
            (setf size (/ size 2))
            (setf (root octree) (insert-or-split (root octree)))))))))
 
@@ -108,21 +114,21 @@
              (type vec vec center))
     (when (vec-in-cube-p vec center size)
       (etypecase (root octree)
-        (vector
+        (octree-node
          (loop with tcenter = (vec 0 0 0)
                with node = (root octree)
                do (setf size (/ size 2))
                   (%with-matching-octree-node (sub node)
                     (let ((subval sub))
                       (etypecase subval
-                        (vector
+                        (octree-node
                          (setf center tcenter)
                          (setf node subval))
-                        (list
+                        (octree-leaf
                          (setf sub (delete el subval))
                          ;; FIXME: Clean hook if none left or something
                          (return)))))))
-        (list
+        (octree-leaf
          (setf (root octree) (delete el (the list (root octree)))))))))
 
 (define-handler (octree2 enter) (ev subject)
