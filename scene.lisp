@@ -50,10 +50,6 @@
     ;; Bulk update
     (remove-handler handlers scene)))
 
-(defmethod paint ((scene scene) target)
-  (paint (octree scene) target)
-  (call-next-method))
-
 (defmethod save-form ((scene scene))
   (let ((form `(progn)))
     (flare-indexed-set:do-set (entity (objects scene) (nreverse form))

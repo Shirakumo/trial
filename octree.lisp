@@ -127,13 +127,6 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
             do (when child
                  (nconc isects (intersections child local-objs)))))))
 
-(defmethod paint ((octree octree) target)
-  (when (< 0 (active-children octree))
-    (dotimes (i 8)
-      (let ((child (elt (children octree) i)))
-        (when child (paint child target)))))
-  (call-next-method))
-
 (defmethod sub-octant ((octree octree))
   (let* ((half (v/ (bounds octree) 2))
          (quarter (v/ half 2))
