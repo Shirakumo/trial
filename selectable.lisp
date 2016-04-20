@@ -63,7 +63,7 @@
 (defmethod paint :around (thing (buffer selection-buffer))
   ;; FIXME: Nested structures?
   (when (or (typep thing 'selectable-subject)
-            (typep thing 'scene))
+            (typep thing 'container))
     (call-next-method)))
 
 (defmethod paint ((buffer selection-buffer) thing)
