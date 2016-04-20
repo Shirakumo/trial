@@ -104,6 +104,19 @@
    #:with
    #:height
    #:texture)
+  ;; geometry.lisp
+  (:export
+   #:geometry
+   #:width
+   #:height
+   #:size
+   #:segments
+   #:triangle
+   #:square
+   #:rectangle
+   #:sphere
+   #:cube
+   #:cylinder)
   ;; input-tables.lisp
   (:export
    #:*key-table*

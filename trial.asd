@@ -20,6 +20,7 @@
                (:file "context")
                (:file "storage")
                (:file "assets")
+               (:file "geometry")
                (:file "entity")
                (:file "event-loop")
                (:file "windowing")
