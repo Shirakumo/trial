@@ -315,3 +315,12 @@
       (gl:tex-coord (vx tl) (vy tb))
       (gl:vertex 0 (vy bounds)))
     (gl:enable :cull-face)))
+
+(define-subject colored-subject ()
+  ((color :initarg :color :accessor color))
+  (:default-initargs
+   :color (vec 0.0 0.0 1.0)))
+
+(defmethod paint :before ((subject colored-subject) target)
+  (let ((c (color subject)))
+    (gl:color (vx c) (vy c) (vz c))))

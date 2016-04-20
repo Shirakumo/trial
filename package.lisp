@@ -223,7 +223,9 @@
    #:shader-program
    #:face-subject
    #:tex-location
-   #:tex-bounds)
+   #:tex-bounds
+   #:colored-subject
+   #:color)
   ;; toolkit.lisp
   (:export
    #:*time-units*
