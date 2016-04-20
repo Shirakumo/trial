@@ -9,8 +9,17 @@
 
 ;; FIXME: How do we access extra information that is not the straight-up content?
 ;;        stuff like dimensions of a texture or mesh material or whatever?
+;;        How do we "bind" the asset if it's needed? Spilling the CONTENT everywhere
+;;        seems like a bad idea.
 ;; FIXME: A better system to distinguish which assets are actually different
 ;;        if initialisation arguments are involved and some-such.
+;; FIXME: Different source 'areas' since trial might need to refer to internal
+;;        data assets, but a project using it might have its own folder, etc.
+;; FIXME: Asset cleanup and management should be simplified. How can we "segment"
+;;        loading and offloading assets into a stage? We might need some kind of GC
+;;        mechanism to handle cleanup automatically (maybe using finalizers).
+;;        On the other hand, having the GC manage assets.. might that not potentially
+;;        cause premature offloading?
 
 (defvar *assets* (make-hash-table :test 'equal))
 (defvar *root* (asdf:system-source-directory :trial))
