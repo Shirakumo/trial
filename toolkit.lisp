@@ -71,6 +71,16 @@
 (defun input-literal (&optional (stream *query-io*))
   (read stream))
 
+(defmacro with-retry-restart ((name report &rest report-args) &body body)
+  (let ((tag (gensym "RETRY-TAG"))
+        (stream (gensym "STREAM")))
+    `(tagbody
+        ,tag (restart-case
+                 (progn ,@body)
+               (,name ()
+                 :report (lambda (,stream) (format ,stream ,report ,@report-args))
+                 (go ,tag))))))
+
 (defun check-gl-texture-size (width height)
   (when (< (gl:get* :max-texture-size) (max width height))
     (error "Hardware cannot support a texture of size ~ax~a."

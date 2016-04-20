@@ -73,7 +73,8 @@
 
 (defmethod restore :around ((asset asset))
   (unless (eql (state asset) :restored)
-    (call-next-method))
+    (with-retry-restart (retry "Retry restoring the asset.")
+      (call-next-method)))
   asset)
 
 (defmethod restore :before ((asset asset))
@@ -118,8 +119,8 @@
 (defmethod initialize-instance :before ((asset file-asset) &key id allowed-types)
   (unless (or (eql allowed-types T)
               (find (pathname-type id) allowed-types :test #'string-equal))
-    (error "~a does not know how to handle a file of type ~a."
-           asset (pathname-type id))))
+    (cerror "~a does not know how to handle a file of type ~a."
+            asset (pathname-type id))))
 
 (defmethod asset :around ((pathname pathname) type &rest args)
   (apply #'call-next-method (resource-pathname pathname) type args))
@@ -262,11 +263,13 @@
            :report "Retry loading and compiling the shader."
            (go read))
          (use-file (file)
-           :report "Supply a different source file."
+           :report "Use a different source file, changing the asset's ID."
            :interactive input-value
-           (setf (file asset) file))
+           (remhash (file asset) *assets*)
+           (setf (file asset) file)
+           (setf (gethash file *assets*) asset))
          (use-source (value)
-           :report "Supply a different source."
+           :report "Supply new source code directly."
            :interactive input-source
            (setf source value)
            (go compile))))
