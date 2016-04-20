@@ -7,10 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass scene (flare:scene event-loop entity)
-  ((octree :initform (make-instance 'octree
-                                    :bounds (vec 500 500 500)
-                                    :location (vec 0 0 0))
-           :accessor octree)))
+  ())
 
 (defclass scene-event (event)
   ((scene :initarg :scene :accessor scene)))
@@ -20,9 +17,6 @@
 
 (defclass leave (scene-event)
   ((subject :initarg :subject :accessor subject)))
-
-(defmethod enter :after ((subject collidable-subject) (scene scene))
-  (add-object (octree scene) subject))
 
 (defmethod enter :after ((subject subject) (scene scene))
   (setf (alive-p subject) T)
@@ -60,8 +54,7 @@
 ;; animations and clock update are already handled by the method
 ;; combination, but defining a noop primary method prevents update
 ;; from being called on the children.
-(defmethod update ((scene scene))
-  (update-cycle (octree scene)))
+(defmethod update ((scene scene)))
 
 ;; But we still need to call it in tick.
 (defmethod handle :before ((event tick) (scene scene))

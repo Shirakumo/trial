@@ -28,10 +28,14 @@
     (let ((size (v/ (bounds octree) 2)))
       (setf (pivot octree) (v- 0 (vec (vx size) 0 (vz size)))))))
 
-(defmethod add-object ((octree octree) (object collidable-subject))
+(defmethod enter ((object collidable-subject) (octree octree))
   (unless (null octree)
     (push object (pending-objects octree)))
   object)
+
+(defmethod leave ((object collidable-subject) (octree octree))
+  ;; FIXME
+  )
 
 (defmethod build-tree ((octree octree))
   (when (and (< (treshold octree) (length (objects octree)))
@@ -65,7 +69,7 @@
                                         :parent octree
                                         :treshold (treshold octree))))
               (loop for obj in (elt child-objects i)
-                    do (add-object child obj))
+                    do (enter obj child))
               (build-tree child)
               (setf (elt (children octree) i) child)
               (setf (active-children octree)
@@ -220,3 +224,14 @@
       (loop for intersection in (intersections octree)
             do (handle-collision (first-object intersection) intersection)
                (handle-collision (second-object intersection) intersection)))))
+
+(define-handler (octree tick) (ev)
+  (update-cycle octree))
+
+(define-handler (octree enter) (ev subject)
+  (when (typep subject 'collidable-subject)
+    (enter subject (octree scene))))
+
+(define-handler (octree leave) (ev subject)
+  (when (typep subject 'collidable-subject)
+    (leave subject (octree scene))))
