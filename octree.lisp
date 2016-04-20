@@ -230,8 +230,8 @@
 
 (define-handler (octree enter) (ev subject)
   (when (typep subject 'collidable-subject)
-    (enter subject (octree scene))))
+    (enter subject octree)))
 
 (define-handler (octree leave) (ev subject)
   (when (typep subject 'collidable-subject)
-    (leave subject (octree scene))))
+    (leave subject octree)))
