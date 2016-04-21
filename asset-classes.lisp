@@ -54,7 +54,7 @@
           (use-file (value)
             :report "Enter a new file to use."
             :interactive input-value
-            (setf (file asset) file)
+            (setf (file asset) value)
             (go load)))))
 
 (defclass image (file-asset)
@@ -99,7 +99,7 @@
 (defmethod load-data ((asset texture))
   (with-slots (target filter wrapping) asset
     (let ((image (call-next-method)))
-      (check-gl-texture-size (q+:width buffer) (q+:height buffer))
+      (check-gl-texture-size (q+:width image) (q+:height image))
       (with-finalizing ((buffer (q+:qglwidget-convert-to-glformat image)))
         (finalize image)
         (let ((texture (gl:gen-texture)))
