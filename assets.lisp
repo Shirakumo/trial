@@ -142,3 +142,10 @@
                    (error "No asset of type ~s with name ~s in ~a."
                           type name pool))))
     (restore asset)))
+
+(defmacro define-asset (type (pool name) &body options)
+  `(enter (make-instance
+           ',type
+           :name ',name
+           ,@options)
+          ',pool))
