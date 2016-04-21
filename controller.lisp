@@ -59,28 +59,31 @@
 (defun update-loop (controller)
   (let* ((main *main*)
          (scene (scene main)))
-    (with-context (main)
-      (cl-gamepad:init)
-      (setup-rendering main)
-      (setup-scene scene)
-      (start scene)
+    (acquire-context main :reacquire T :force T)
+    (cl-gamepad:init)
+    (setup-rendering main)
+    (setup-scene scene)
+    (start scene)
 
-      (setf (selection controller)
-            (make-instance 'selection-buffer :width (q+:width main)
-                                             :height (q+:height main)))
-      
-      (with-slots-bound (controller controller)
-        (unwind-protect
-             (loop while (update-thread controller)
-                   do (with-simple-restart (abort "Abort the update and retry.")
-                        (setf (last-pause controller)
-                              (with-frame-pause ((fps controller))
+    (setf (selection controller)
+          (make-instance 'selection-buffer :width (q+:width main)
+                                           :height (q+:height main)))
+    
+    (with-slots-bound (controller controller)
+      (unwind-protect
+           (loop while (update-thread controller)
+                 do (with-simple-restart (abort "Abort the update and retry.")
+                      (setf (last-pause controller)
+                            (with-frame-pause ((fps controller))
+                              ;; Potentially release context every time to allow
+                              ;; other threads to grab it.
+                              (with-context (main)
                                 (issue scene 'tick)
                                 (process scene)
                                 (render controller main)
                                 (render-hud controller main)
-                                (q+:swap-buffers main))))))
-        (stop scene))))
+                                (q+:swap-buffers main)))))))
+      (stop scene)))
   (v:info :trial.controller "Exiting update-loop."))
 
 (define-handler (controller mouse-release) (ev pos)

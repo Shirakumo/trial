@@ -37,7 +37,7 @@
   (v:info :trial "RAPTURE")
   (cl-gamepad:shutdown)
   (finalize controller)
-  (acquire-context main)
+  (acquire-context main :reacquire T :force T)
   (finalize scene)
   (clear-assets))
 
