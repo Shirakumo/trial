@@ -125,6 +125,7 @@
                      ;;        if references to the asset are not maintained. How to fix?
                      (data (get-resource WHICH-POOL-?? 'texture WHICH-NAME-??)))))))
 
+;; FIXME: allow specifying inline shaders
 (defclass shader (file-asset)
   ((shader-type :initarg :shader-type :reader shader-type))
   (:default-initargs
@@ -196,6 +197,7 @@
 (defmethod finalize-data ((asset shader-program) data)
   (gl:delete-program data))
 
+;; FIXME: allow loading from file or non-array type
 (defclass vertex-buffer ()
   ((buffer-type :initarg :buffer-type :accessor buffer-type)
    (element-type :initarg :element-type :accessor element-type)
