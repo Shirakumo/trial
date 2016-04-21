@@ -86,26 +86,26 @@
            (assets pool)))
 
 (defclass asset ()
-  ((name :initarg :name :reader name)
+  ((name :initarg :name :accessor name)
+   (home :initform NIL :accessor home)
    (resource :initform (tg:make-weak-pointer NIL) :accessor resource)
    (resource-type :initarg :resource-type :accessor resource-type))
   (:default-initargs
    :name (error "NAME required.")
+   :home (error "HOME required.")
    :resource-type 'resource))
 
 (defmethod print-object ((asset asset) stream)
   (print-unreadable-object (asset stream :type T)
     (format stream "~s::~a~@[ LOADED~]"
-            (name (pool asset)) (name asset) (data asset))))
+            (name (home asset)) (name asset) (data asset))))
 
-(defmethod initialize-instance :after ((asset asset) &key pool)
-  (let ((pool (pool pool)))
-    (enter asset pool)
-    (setf (pool asset) pool)))
+(defmethod initialize-instance :after ((asset asset) &key home)
+  (enter asset home)
+  (setf (pool asset) home))
 
-(defmethod matches ((a asset) (b asset))
-  (and (eql (type-of a) (type-of b))
-       (string-equal (name a) (name b))))
+(defmethod (setf home) (pool (asset asset))
+  (setf (slot-value asset 'home) (pool pool)))
 
 (defmethod resource ((asset asset))
   (tg:weak-pointer-value (slot-value asset 'resource)))
@@ -116,6 +116,10 @@
 (defmethod data ((asset asset))
   (let ((resource (resource asset)))
     (and resource (data resource))))
+
+(defmethod matches ((a asset) (b asset))
+  (and (eql (type-of a) (type-of b))
+       (string-equal (name a) (name b))))
 
 (defmethod reload ((asset asset))
   (let ((resource (resource asset)))
@@ -150,12 +154,13 @@
                           type name pool))))
     (restore asset)))
 
-(defmacro define-asset (type name pools &body options)
-  (let ((pool (gensym "POOL"))
-        (asset (gensym "ASSET")))
+(defmacro define-asset (type name (home &rest pools) &body options)
+  (let ((asset (gensym "ASSET")))
     `(let ((,asset (make-instance
                     ',type
                     :name ',name
+                    :home ',home
                     ,@options)))
-       (dolist (,pool ',pools ',name)
-         (enter ,asset ,pool)))))
+       ,@(loop for pool in pools
+               collect `(enter ,asset ,pool))
+       ',name)))
