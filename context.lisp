@@ -9,7 +9,8 @@
 
 (defclass context ()
   ((context :initform NIL :reader context)
-   (current-thread :initform (bt:current-thread) :accessor current-thread)))
+   (current-thread :initform (bt:current-thread) :accessor current-thread)
+   (lock :initform (bt:make-lock "Context lock") :reader context-lock)))
 
 (defmethod initialize-instance ((context context) &key (accum NIL)
                                                        (alpha T)
@@ -47,29 +48,39 @@
     (when (next-method-p)
       (call-next-method))))
 
-(defmethod acquire-context ((context context))
-  (if (or (null (current-thread context))
-          (eql (current-thread context) (bt:current-thread)))
-      (v:debug :trial.context "Acquiring context ~a in ~a"
-               context (bt:current-thread))
-      (v:warn :trial.context "Acquiring context ~a in ~a while already acquired in ~a."
-              context (bt:current-thread) (current-thread context)))
-  (q+:make-current (context context))
-  (setf (current-thread context) (bt:current-thread)))
+(defmethod acquire-context ((context context) &key reacquire force)
+  (let ((current (current-thread context))
+        (this (bt:current-thread)))
+    (when (or reacquire (not (eql current this)))
+      (cond (force
+             (v:warn :trial.context "Force acquiring ~a from ~a~@[, stealing it from ~a~]."
+                     context this current))
+            ((not (eql current this))
+             (v:debug :trial.context "Acquiring ~a from ~a."
+                      context this)
+             (acquire-lock-with-starvation-test (context-lock context))))
+      (q+:make-current (context context))
+      (setf (current-thread context) this))))
 
-(defmethod release-context ((context context))
-  (if (eql (current-thread context) (bt:current-thread))
-      (v:debug :trial.context "Releasing context ~a from ~a"
-               context (bt:current-thread))
-      (v:severe :trial.context "Releasing context ~a from thread ~a while acquired in ~a."
-                context (bt:current-thread) (current-thread context)))
-  (q+:done-current (context context))
-  (setf (current-thread context) NIL))
+(defmethod release-context ((context context) &key force)
+  (let ((current (current-thread context))
+        (this (bt:current-thread)))
+    (when (or force (eql current this))
+      (cond (force
+             (v:warn :trial.context "Force releasing ~a from ~a~@[, stealing it from ~a~]."
+                     context this current))
+            ((eql current this)
+             (v:debug :trial.context "Releasing ~a from ~a."
+                      context this)))
+      (bt:release-lock (context-lock context))
+      (setf (current-thread context) NIL))))
 
-(defmacro with-context ((context) &body body)
-  (let ((cont (gensym "CONTEXT")))
-    `(let ((,cont ,context))
-       (acquire-context ,cont)
+(defmacro with-context ((context &key reacquire force) &body body)
+  (let ((cont (gensym "CONTEXT"))
+        (force (gensym "FORCE")))
+    `(let ((,cont ,context)
+           (,forc ,force))
+       (acquire-context ,cont :reacquire ,reacquire :force ,forc)
        (unwind-protect
             (progn ,@body)
-         (release-context ,cont)))))
+         (release-context ,cont :force ,forc)))))

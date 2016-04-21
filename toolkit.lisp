@@ -81,6 +81,24 @@
                  :report (lambda (,stream) (format ,stream ,report ,@report-args))
                  (go ,tag))))))
 
+(defun acquire-lock-with-starvation-test (lock &key (warn-time 10) timeout)
+  (assert (or (null timeout) (< warn-time timeout)))
+  (flet ((do-warn () (v:warn :trial.core "Failed to acquire ~a for ~s seconds. Possible starvation!"
+                             lock warn-time)))
+    #+sbcl (or (sb-thread:grab-mutex lock :timeout warn-time)
+               (do-warn)
+               (when timeout
+                 (sb-thread:grab-mutex lock :timeout (- timeout warn-time))))
+    #-sbcl (loop with start = (get-universal-time)
+                 for time = (- (get-universal-time) start)
+                 thereis (bt:acquire-lock lock NIL)
+                 do (when (and warn-time (< warn-time time))
+                      (setf warn-time NIL)
+                      (do-warn))
+                    (when (and timeout (< timeout time))
+                      (return NIL))
+                    (bt:thread-yield))))
+
 (defun check-gl-texture-size (width height)
   (when (< (gl:get* :max-texture-size) (max width height))
     (error "Hardware cannot support a texture of size ~ax~a."
