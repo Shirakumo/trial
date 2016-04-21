@@ -20,6 +20,7 @@
                (:file "context")
                (:file "storage")
                (:file "assets")
+               (:file "asset-classes")
                (:file "entity")
                (:file "geometry")
                (:file "helpers")

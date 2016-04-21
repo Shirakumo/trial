@@ -81,6 +81,17 @@
                  :report (lambda (,stream) (format ,stream ,report ,@report-args))
                  (go ,tag))))))
 
+(defmacro with-cleanup-on-failure (cleanup-form &body body)
+  (let ((success (gensym "SUCCESS")))
+    `(let ((,success NIL))
+       (unwind-protect
+            (multiple-value-prog1
+                (progn
+                  ,@body)
+              (setf ,success T))
+         (unless ,success
+           ,cleanup-form)))))
+
 (defun acquire-lock-with-starvation-test (lock &key (warn-time 10) timeout)
   (assert (or (null timeout) (< warn-time timeout)))
   (flet ((do-warn () (v:warn :trial.core "Failed to acquire ~a for ~s seconds. Possible starvation!"
@@ -112,7 +123,7 @@
                        :geometry-shader :fragment-shader
                        :tess-control-shader :tess-evaluation-shader))))
 
-(defun check-gl-buffer-type (buffer-type)
+(defun check-vertex-buffer-type (buffer-type)
   (ecase buffer-type ((:array-buffer :atomic-counter-buffer
                        :copy-read-buffer :copy-write-buffer
                        :dispatch-indirect-buffer :draw-indirect-buffer
@@ -121,10 +132,10 @@
                        :shader-storage-buffer :texture-buffer
                        :transform-feedback-buffer :uniform-buffer))))
 
-(defun check-gl-array-element-type (element-type)
+(defun check-vertex-buffer-element-type (element-type)
   (ecase element-type ((:double :float :int :uint :char))))
 
-(defun check-gl-buffer-data-usage (data-usage)
+(defun check-vertex-buffer-data-usage (data-usage)
   (ecase data-usage ((:stream-draw :stream-read
                       :stream-copy :static-draw
                       :static-read :static-copy
