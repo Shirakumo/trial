@@ -97,6 +97,9 @@
                                 (string-equal (name asset) name)))
            (assets pool)))
 
+(defmacro define-pool (name &body options)
+  `(name (make-instance 'pool :name ',name ,@options)))
+
 (defclass asset ()
   ((name :initarg :name :accessor name)
    (home :initform NIL :accessor home)
