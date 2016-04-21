@@ -32,6 +32,7 @@
 (defun remove-pool (name)
   (remhash name *pools*))
 
+(defclass asset () ()) ; forward definition
 (defclass pool ()
   ((name :initarg :name :reader name)
    (base :initarg :base :accessor base)
