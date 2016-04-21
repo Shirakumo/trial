@@ -24,5 +24,5 @@
   :file "skybox.frag")
 
 (define-asset shader-program skybox (trial)
-  :shaders ((trial skybox-vert)
-            (trial skybox-frag)))
+  :shaders '((trial skybox-vert)
+             (trial skybox-frag)))
