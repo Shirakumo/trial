@@ -37,6 +37,9 @@
 (defun remove-pool (name)
   (remhash name *pools*))
 
+(defun pools ()
+  (alexandria:hash-table-values *pools*))
+
 (defclass pool ()
   ((name :initarg :name :reader name)
    (base :initform NIL :accessor base)
