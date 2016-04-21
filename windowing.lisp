@@ -39,7 +39,8 @@
   (finalize controller)
   (acquire-context main :reacquire T :force T)
   (finalize scene)
-  (clear-assets))
+  (dolist (pool (pools))
+    (mapc #'offload (assets pool))))
 
 ;;; REASON FOR THE FOLLOWING TWO OVERRIDES:
 ;; The rendering in this engine works as follows.

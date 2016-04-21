@@ -145,12 +145,13 @@
     #+trial-debug-selection-buffer
     (paint (selection controller) main)
     
-    (let ((font (content (asset "Consolas, Monospace" 'font))))
-      (q+:render-text main 20 30 (format NIL "Pause: ~,10f" (last-pause controller)) font)
+    (let ((font (get-resource 'font :trial :debug-hud)))
+      (q+:render-text main 20 30 (format NIL "Pause: ~,10f" (last-pause controller))
+                      (data font))
       (q+:render-text main 20 50 (format NIL "Time:  ~2,'0d:~6,3,,,'0f"
                                          (floor (/ (round (clock (scene main))) 60))
                                          (mod (clock (scene main)) 60))
-                      font)))
+                      (data font))))
   (gl:matrix-mode :modelview))
 
 ;; FIXME: proper LOADing of a map
@@ -177,17 +178,15 @@
   (signal! *main* (launch-editor)))
 
 (define-handler (controller pack) (ev)
-  (pack (resource-pathname "quicksave.sav") (first (loops controller))))
+  )
 
 (define-handler (controller unpack) (ev)
   ;; Remove old state?
-  (dolist (scene (loops controller))
-    (unpack (resource-pathname "quicksave.sav") scene)))
+  )
 
 (define-handler (controller reload-assets reload-assets 99) (ev)
-  (loop for k being the hash-values of *assets*
-        do (offload k)
-           (restore k)))
+  (dolist (pool (pools))
+    (mapc #'reload (assets pool))))
 
 (define-handler (controller reload-scene reload-scene 99) (ev)
   ;; gross!

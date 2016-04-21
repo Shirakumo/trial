@@ -10,14 +10,8 @@
 (defclass skybox (textured-entity shader-entity)
   ()
   (:default-initargs
-   :texture "skybox.png"
-   :shader-program '(skybox :shaders ("skybox.vert" "skybox.frag"))))
-
-(defmethod (setf texture) (thing (skybox skybox))
-  (setf (texture skybox) (asset thing 'texture :target :texture-cube-map)))
-
-(defmethod (setf texture) ((args list) (skybox skybox))
-  (setf (texture skybox) (apply #'asset (first args) 'texture :target :texture-cube-map (rest args))))
+   :texture '(trial skybox)
+   :shader-program '(trial skybox)))
 
 (defmethod paint ((skybox skybox) target)
   (gl:disable :depth-test)

@@ -184,22 +184,19 @@
 (defmethod reinitialize-instance :after ((entity textured-entity) &key (texture NIL t-p) &allow-other-keys)
   (when t-p (setf (texture entity) texture)))
 
-(defmethod (setf texture) ((texture texture) (entity textured-entity))
-  (setf (slot-value entity 'texture) texture))
+(defmethod (setf texture) ((resource resource) (entity textured-entity))
+  (setf (slot-value entity 'texture) resource))
 
 (defmethod (setf texture) ((null null) (entity textured-entity))
   (setf (slot-value entity 'texture) NIL))
 
-(defmethod (setf texture) (thing (entity textured-entity))
-  (setf (texture entity) (asset thing 'texture)))
-
 (defmethod (setf texture) ((id list) (entity textured-entity))
-  (setf (texture entity) (apply #'asset (first id) 'texture (rest id))))
+  (setf (texture entity) (get-resource 'texture (first id) (second id))))
 
 (defmethod paint :around ((obj textured-entity) target)
   (let ((tex (texture obj)))
     (when tex
-      (gl:bind-texture (target tex) (content tex))
+      (gl:bind-texture (target tex) (data tex))
       (call-next-method)
       (gl:bind-texture (target tex) 0))))
 
@@ -215,17 +212,17 @@
 (defmethod reinitialize-instance :after ((entity mesh-entity) &key (mesh NIL t-p) &allow-other-keys)
   (when t-p (setf (mesh entity) mesh)))
 
-(defmethod (setf mesh) ((asset asset) (entity mesh-entity))
-  (setf (slot-value entity 'mesh) asset))
+(defmethod (setf mesh) ((resource resource) (entity mesh-entity))
+  (setf (slot-value entity 'mesh) resource))
 
 (defmethod (setf mesh) ((null null) (entity mesh-entity))
   (setf (slot-value entity 'mesh) NIL))
 
-(defmethod (setf mesh) (thing (entity mesh-entity))
-  (setf (mesh entity) (asset thing 'model)))
+(defmethod (setf mesh) ((id list) (entity mesh-entity))
+  (setf (mesh entity) (get-resource 'model (first id) (second id))))
 
 (defmethod paint ((entity mesh-entity) target)
-  (loop for mesh across (content (mesh entity))
+  (loop for mesh across (data (mesh entity))
         do (wavefront-loader:draw mesh)))
 
 (defmethod save-form-args append ((entity mesh-entity))
@@ -240,21 +237,18 @@
 (defmethod initialize-instance :after ((entity shader-entity) &key (shader-program NIL s-p))
   (when s-p (setf (shader-program entity) shader-program)))
 
-(defmethod (setf shader-program) ((program shader-program) (entity shader-entity))
-  (setf (slot-value entity 'shader-program) program))
+(defmethod (setf shader-program) ((resource resource) (entity shader-entity))
+  (setf (slot-value entity 'shader-program) resource))
 
 (defmethod (setf shader-program) ((null null) (entity shader-entity))
   (setf (slot-value entity 'shader-program) NIL))
 
-(defmethod (setf shader-program) (name (entity shader-entity))
-  (setf (shader-program entity) (asset name 'shader-program)))
-
 (defmethod (setf shader-program) ((id list) (entity shader-entity))
-  (setf (shader-program entity) (apply #'asset (first id) 'shader-program (rest id))))
+  (setf (shader-program entity) (get-resource 'shader-program (first id) (second id))))
 
 (defmethod paint :around ((entity shader-entity) target)
   (when (shader-program entity)
-    (gl:use-program (content (shader-program entity))))
+    (gl:use-program (data (shader-program entity))))
   (unwind-protect
        (call-next-method)
     (gl:use-program 0)))
