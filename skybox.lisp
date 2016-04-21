@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(define-subject skybox (textured-subject shader-subject)
+(defclass skybox (textured-entity shader-entity)
   ()
   (:default-initargs
    :texture "skybox.png"

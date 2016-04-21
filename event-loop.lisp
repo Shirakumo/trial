@@ -154,8 +154,7 @@
   (cascade-option-changes class))
 
 (defclass subject (entity finalizable handler-container)
-  ((alive-p :initform NIL :accessor alive-p)
-   (loops :initarg :loops :accessor loops))
+  ((loops :initarg :loops :accessor loops))
   (:default-initargs
    :loops ())
   (:metaclass subject-class))

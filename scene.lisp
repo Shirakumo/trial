@@ -13,20 +13,22 @@
   ((scene :initarg :scene :accessor scene)))
 
 (defclass enter (scene-event)
-  ((subject :initarg :subject :accessor subject)))
+  ((entity :initarg :entity :accessor entity)))
 
 (defclass leave (scene-event)
-  ((subject :initarg :subject :accessor subject)))
+  ((entity :initarg :entity :accessor entity)))
 
-(defmethod enter :after ((subject subject) (scene scene))
-  (setf (alive-p subject) T)
-  (add-handler subject scene)
-  (issue scene 'enter :scene scene :subject subject))
+(defmethod enter :after ((entity entity) (scene scene))
+  (issue scene 'enter :scene scene :entity entity))
 
-(defmethod leave :after ((subject subject) (scene scene))
-  (setf (alive-p subject) NIL)
-  (remove-handler subject scene)
-  (issue scene 'leave :scene scene :subject subject))
+(defmethod leave :after ((entity entity) (scene scene))
+  (issue scene 'leave :scene scene :entity entity))
+
+(defmethod enter :after ((container handler-container) (scene scene))
+  (add-handler container scene))
+
+(defmethod leave :after ((container handler-container) (scene scene))
+  (remove-handler container scene))
 
 (defmethod enter :after ((container container) (scene scene))
   (let ((handlers ()))

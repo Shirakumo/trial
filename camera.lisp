@@ -13,7 +13,7 @@
          (fw (* fh aspect)))
     (gl:frustum (- fw) fw (- fh) fh z-near z-far)))
 
-(define-subject camera (located-subject)
+(define-subject camera (located-entity)
   ((target :initarg :target :accessor target)
    (up :initarg :up :accessor up)
    (fov :initarg :fov :accessor fov))

@@ -8,7 +8,7 @@
 
 (defparameter *max-octree-life-span* 64)
 
-(define-subject octree (bound-subject pivoted-subject)
+(define-subject octree (bound-entity pivoted-entity)
   ((parent :initarg :parent :accessor parent)
    (treshold :initarg :treshold :accessor treshold)
    (active-children :initform 0 :accessor active-children) ;; for later optimization
@@ -28,12 +28,12 @@
     (let ((size (v/ (bounds octree) 2)))
       (setf (pivot octree) (v- 0 (vec (vx size) 0 (vz size)))))))
 
-(defmethod enter ((object collidable-subject) (octree octree))
+(defmethod enter ((object collidable-entity) (octree octree))
   (unless (null octree)
     (push object (pending-objects octree)))
   object)
 
-(defmethod leave ((object collidable-subject) (octree octree))
+(defmethod leave ((object collidable-entity) (octree octree))
   ;; FIXME
   )
 
@@ -78,7 +78,7 @@
       (setf (built-p octree) T
             (ready-p octree) T))))
 
-(defmethod insert-object ((octree octree) (object collidable-subject))
+(defmethod insert-object ((octree octree) (object collidable-entity))
   (cond ((or (and (<= (length (objects octree)) (treshold octree))
                   (/= 0 (active-children octree)))
              (v<= (bounds object) 1))
@@ -137,26 +137,26 @@
          (three-quarter (v+ half quarter))
          (octant (make-array 8 :fill-pointer 0)))
     ;; All the regions for each sub-octant
-    (vector-push (make-instance 'bound-subject :location quarter :bounds half) octant)
-    (vector-push (make-instance 'bound-subject
+    (vector-push (make-instance 'bound-entity :location quarter :bounds half) octant)
+    (vector-push (make-instance 'bound-entity
                                 :location (vec (vx three-quarter) (vy quarter) (vz quarter))
                                 :bounds half) octant)
-    (vector-push (make-instance 'bound-subject
+    (vector-push (make-instance 'bound-entity
                                 :location (vec (vx quarter) (vy three-quarter) (vz quarter))
                                 :bounds half) octant)
-    (vector-push (make-instance 'bound-subject
+    (vector-push (make-instance 'bound-entity
                                 :location (vec (vx quarter) (vy quarter) (vz three-quarter))
                                 :bounds half) octant)
-    (vector-push (make-instance 'bound-subject
+    (vector-push (make-instance 'bound-entity
                                 :location (vec (vx three-quarter) (vy three-quarter) (vz quarter))
                                 :bounds half) octant)
-    (vector-push (make-instance 'bound-subject
+    (vector-push (make-instance 'bound-entity
                                 :location (vec (vx three-quarter) (vy quarter) (vz three-quarter))
                                 :bounds half) octant)
-    (vector-push (make-instance 'bound-subject
+    (vector-push (make-instance 'bound-entity
                                 :location (vec (vx three-quarter) (vy three-quarter) (vz three-quarter))
                                 :bounds half) octant)
-    (vector-push (make-instance 'bound-subject
+    (vector-push (make-instance 'bound-entity
                                 :location (vec (vx quarter) (vy three-quarter) (vz three-quarter))
                                 :bounds half) octant)
     octant))
@@ -228,10 +228,10 @@
 (define-handler (octree tick) (ev)
   (update-cycle octree))
 
-(define-handler (octree enter) (ev subject)
-  (when (typep subject 'collidable-subject)
-    (enter subject octree)))
+(define-handler (octree enter) (ev entity)
+  (when (typep entity 'collidable-entity)
+    (enter entity octree)))
 
-(define-handler (octree leave) (ev subject)
-  (when (typep subject 'collidable-subject)
-    (leave subject octree)))
+(define-handler (octree leave) (ev entity)
+  (when (typep entity 'collidable-entity)
+    (leave entity octree)))

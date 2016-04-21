@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(define-subject sprite-animation (face-subject)
+(defclass sprite-animation (face-entity)
   ((duration :initarg :duration :accessor duration)
    (frames :initarg :frames :accessor frames)
    (frame :initarg :frame :accessor frame)
@@ -22,7 +22,7 @@
   (setf (vy (tex-location subject)) (- 1 (/ (1+ frame) (frames subject))))
   (setf (vy (tex-bounds subject)) (- 1 (/ frame (frames subject)))))
 
-(define-subject sprite-subject (clocked-subject bound-subject)
+(define-subject sprite-subject (clocked-subject bound-entity)
   ((animations :initform (make-hash-table :test 'eql) :accessor animations)
    (animation :initform NIL :accessor animation)))
 

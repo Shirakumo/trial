@@ -136,3 +136,30 @@
             for theta = (/ (* 2 PI i) s)
             do (gl:vertex (* w (cos theta)) (- h) (* w (sin theta)))
                (gl:vertex (* w (cos theta))    h  (* w (sin theta)))))))
+
+(defclass space-axes (sized-geometry segmented-geometry)
+  ())
+
+(defmethod paint ((entity space-axes) target)
+  (let* ((s (size entity))
+         (g (* (/ (segments entity) 2) s)))
+    (gl:line-width 1.0)
+    (gl:color 0.3 0.3 0.3)
+    (with-primitives :lines
+      (loop for i from (- g) to g by s
+            do (gl:vertex (- g) 0.0 i)
+               (gl:vertex g 0.0 i)
+               (gl:vertex i 0.0 (- g))
+               (gl:vertex i 0.0 g)))
+    (gl:line-width 2.0)
+    (with-primitives :lines
+      (gl:color 1.0 0 0)
+      (gl:vertex 0 0 0)
+      (gl:vertex s 0 0)
+      (gl:color 0 1.0 0)
+      (gl:vertex 0 0 0)
+      (gl:vertex 0 s 0)
+      (gl:color 0 0 1.0)
+      (gl:vertex 0 0 0)
+      (gl:vertex 0 0 s)))
+  (gl:color 1.0 1.0 1.0))

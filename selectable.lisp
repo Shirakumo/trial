@@ -62,37 +62,37 @@
 
 (defmethod paint :around (thing (buffer selection-buffer))
   ;; FIXME: Nested structures?
-  (when (or (typep thing 'selectable-subject)
+  (when (or (typep thing 'selectable-entity)
             (typep thing 'container))
     (call-next-method)))
 
 (defmethod paint ((buffer selection-buffer) thing)
-  (gl:bind-texture :texture-2d (texture (selection controller)))
+  (gl:bind-texture :texture-2d (texture buffer))
   (with-primitives :quads
     (gl:tex-coord 1 1)
-    (gl:vertex (width main) 0)
+    (gl:vertex (width *main*) 0)
     (gl:tex-coord 0 1)
     (gl:vertex 0 0)
     (gl:tex-coord 0 0)
-    (gl:vertex 0 (height main))
+    (gl:vertex 0 (height *main*))
     (gl:tex-coord 1 0)
-    (gl:vertex (width main) (height main)))
+    (gl:vertex (width *main*) (height *main*)))
   (gl:bind-texture :texture-2d 0))
 
 (defmethod object-at-point ((buffer selection-buffer) x y)
   (with-framebuffer-bound (buffer)
     (color->object (gl:read-pixels x y 1 1 :rgba :unsigned-byte))))
 
-(define-subject selectable-subject ()
+(defclass selectable-entity (entity)
   ((color-id :initarg :color-id :accessor color-id))
   (:default-initargs
    :color-id NIL))
 
-(defmethod initialize-instance :after ((subject selectable-subject) &key)
-  (setf (color-id subject) (register-object-color subject (color-id subject))))
+(defmethod initialize-instance :after ((entity selectable-entity) &key)
+  (setf (color-id entity) (register-object-color entity (color-id entity))))
 
-(defmethod paint :before ((subject selectable-subject) (buffer selection-buffer))
-  (gl:color (/ (ldb (byte 8 24) (color-id subject)) 255)
-            (/ (ldb (byte 8 16) (color-id subject)) 255)
-            (/ (ldb (byte 8  8) (color-id subject)) 255)
-            (/ (ldb (byte 8  0) (color-id subject)) 255)))
+(defmethod paint :before ((entity selectable-entity) (buffer selection-buffer))
+  (gl:color (/ (ldb (byte 8 24) (color-id entity)) 255)
+            (/ (ldb (byte 8 16) (color-id entity)) 255)
+            (/ (ldb (byte 8  8) (color-id entity)) 255)
+            (/ (ldb (byte 8  0) (color-id entity)) 255)))

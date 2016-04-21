@@ -49,7 +49,7 @@
                              ,@body)))
          (T (error "WTF: ~a does not fit at all." vec))))
 
-(defmethod test ((subject located-subject) (vec vec))
+(defmethod test ((subject located-entity) (vec vec))
   (v= (location subject) vec))
 
 (defmethod test ((octree octree2) (vec vec))
@@ -70,7 +70,7 @@
                  (octree-leaf
                   (return (remove-if-not (lambda (el) (test el vec)) node))))))))
 
-(defmethod enter ((el located-subject) (octree octree2))
+(defmethod enter ((el located-entity) (octree octree2))
   (let ((center (location octree))
         (vec (location el))
         (tcenter (vec 0 0 0))
@@ -113,7 +113,7 @@
            (setf size (/ size 2))
            (setf (root octree) (insert-or-split (root octree)))))))))
 
-(defmethod leave ((el located-subject) (octree octree2))
+(defmethod leave ((el located-entity) (octree octree2))
   (let ((center (location octree))
         (size (size octree))
         (vec (location el)))
@@ -139,10 +139,10 @@
         (octree-leaf
          (setf (root octree) (delete el (the list (root octree)))))))))
 
-(define-handler (octree2 enter) (ev subject)
-  (when (typep subject 'collidable-subject)
-    (enter subject octree2)))
+(define-handler (octree2 enter) (ev entity)
+  (when (typep entity 'collidable-entity)
+    (enter entity octree2)))
 
-(define-handler (octree2 leave) (ev subject)
-  (when (typep subject 'collidable-subject)
-    (leave subject octree2)))
+(define-handler (octree2 leave) (ev entity)
+  (when (typep entity 'collidable-entity)
+    (leave entity octree2)))
