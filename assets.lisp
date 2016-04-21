@@ -12,33 +12,31 @@
 ;;        How do we "bind" the asset if it's needed? Spilling the CONTENT everywhere
 ;;        seems like a bad idea.
 
-(defclass resource ()
-  ((data :initarg :data :reader data))
-  (:default-initargs
-   :data (error "DATA required.")
-   :asset (error "ASSET required.")))
-
-(defmethod initialize-instance :after ((resource resource) &key asset data)
-  (tg:finalize resource (lambda () (finalize-data asset data))))
-
 (defvar *pools* (make-hash-table :test 'eql))
+
+;; forward definition
+(defclass asset () ())
+(defclass pool () ())
 
 (defmethod pool (name)
   (gethash (intern (string-upcase name) :KEYWORD) *pools*))
 
-(defmethod pool ((name keyword))
-  (gethash name *pools*))
+(defmethod pool ((name symbol))
+  (if (keywordp name)
+      (gethash name *pools*)
+      (pool (string name))))
 
 (defmethod (setf pool) ((pool pool) name)
   (setf (gethash (intern (string-upcase name) :KEYWORD) *pools*) pool))
 
-(defmethod (setf pool) ((pool pool) (name keyword))
-  (setf (gethash name *pools*) pool))
+(defmethod (setf pool) ((pool pool) (name symbol))
+  (if (keywordp name)
+      (setf (gethash name *pools*) pool)
+      (setf (pool (string name)) pool)))
 
 (defun remove-pool (name)
   (remhash name *pools*))
 
-(defclass asset () ()) ; forward definition
 (defclass pool ()
   ((name :initarg :name :reader name)
    (base :initform NIL :accessor base)
@@ -175,3 +173,12 @@
        ,@(loop for pool in pools
                collect `(enter ,asset ,pool))
        ',name)))
+
+(defclass resource ()
+  ((data :initarg :data :reader data))
+  (:default-initargs
+   :data (error "DATA required.")
+   :asset (error "ASSET required.")))
+
+(defmethod initialize-instance :after ((resource resource) &key asset data)
+  (tg:finalize resource (lambda () (finalize-data asset data))))
