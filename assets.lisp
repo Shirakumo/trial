@@ -73,19 +73,17 @@
              (error "No such pool ~a" pool))
          type name))
 
-(defmethod asset ((pool pool) type name)
+(defmethod asset (type (pool pool) name)
   (find-if (lambda (asset) (and (eql (type-of asset) type)
                                 (eql (name asset) name)))
            (assets pool)))
 
 (defclass asset ()
   ((name :initarg :name :reader name)
-   (pool :initform NIL :reader pool)
    (resource :initform (tg:make-weak-pointer NIL) :accessor resource)
    (resource-type :initarg :resource-type :accessor resource-type))
   (:default-initargs
    :name (error "NAME required.")
-   :pool (error "POOL required.")
    :resource-type 'resource))
 
 (defmethod print-object ((asset asset) stream)
