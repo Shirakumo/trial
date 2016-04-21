@@ -41,7 +41,7 @@
 (defclass asset () ()) ; forward definition
 (defclass pool ()
   ((name :initarg :name :reader name)
-   (base :initarg :base :accessor base)
+   (base :initform NIL :accessor base)
    (assets :initform NIL :accessor assets))
   (:default-initargs
    :name (error "NAME required.")
@@ -52,23 +52,34 @@
     (let ((*package* (find-package '#:empty-package)))
       (format stream "~s ~s" (name pool) (base pool)))))
 
-(defmethod initialize-instance :after ((pool pool) &key)
+(defmethod initialize-instance :after ((pool pool) &key base)
   (let ((prev (pool (name pool))))
     (when prev
       (setf (assets pool) (assets prev))))
-  (setf (pool (name pool)) pool))
+  (setf (pool (name pool)) pool)
+  (setf (base pool) base))
+
+(defmethod (setf base) (thing (pool pool))
+  (error "Cannot set ~s as base on ~a. Must be a pathname-designator."
+         thing pool))
+
+(defmethod (setf base) ((base string) (pool pool))
+  (setf (base pool) (uiop:parse-native-namestring base)))
+
+(defmethod (setf base) ((base pathname) (pool pool))
+  (setf (slot-value pool 'base) (pathname-utils:normalize-pathname base)))
 
 (defmethod pool ((pool pool))
   pool)
 
-(defmethod enter ((asset asset) (pool symbol))
+(defmethod enter ((asset asset) pool)
   (enter asset (pool pool)))
 
 (defmethod enter ((asset asset) (pool pool))
   (leave asset pool)
   (push asset (assets pool)))
 
-(defmethod leave ((asset asset) (pool symbol))
+(defmethod leave ((asset asset) pool)
   (leave asset (pool pool)))
 
 (defmethod leave ((asset asset) (pool pool))
