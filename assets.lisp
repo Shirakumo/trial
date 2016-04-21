@@ -113,11 +113,11 @@
 (defmethod print-object ((asset asset) stream)
   (print-unreadable-object (asset stream :type T)
     (format stream "~s::~a~@[ LOADED~]"
-            (name (home asset)) (name asset) (data asset))))
+            (when (home asset) (name (home asset))) (name asset) (data asset))))
 
 (defmethod initialize-instance :after ((asset asset) &key home)
   (enter asset home)
-  (setf (pool asset) home))
+  (setf (home asset) home))
 
 (defmethod (setf home) (pool (asset asset))
   (setf (slot-value asset 'home) (pool pool)))
