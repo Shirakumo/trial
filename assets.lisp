@@ -23,10 +23,16 @@
 
 (defvar *pools* (make-hash-table :test 'eql))
 
-(defmethod pool ((name symbol))
+(defmethod pool (name)
+  (gethash (intern (string-upcase name) :KEYWORD) *pools*))
+
+(defmethod pool ((name keyword))
   (gethash name *pools*))
 
-(defmethod (setf pool) ((pool pool) (name symbol))
+(defmethod (setf pool) ((pool pool) name)
+  (setf (gethash (intern (string-upcase name) :KEYWORD) *pools*) pool))
+
+(defmethod (setf pool) ((pool pool) (name keyword))
   (setf (gethash name *pools*) pool))
 
 (defun remove-pool (name)
@@ -73,9 +79,10 @@
              (error "No such pool ~a" pool))
          type name))
 
+;; FIXME: Maybe optimise asset access if it turns out to be slow.
 (defmethod asset (type (pool pool) name)
   (find-if (lambda (asset) (and (eql (type-of asset) type)
-                                (eql (name asset) name)))
+                                (string-equal (name asset) name)))
            (assets pool)))
 
 (defclass asset ()
@@ -98,7 +105,7 @@
 
 (defmethod matches ((a asset) (b asset))
   (and (eql (type-of a) (type-of b))
-       (eql (name a) (name b))))
+       (string-equal (name a) (name b))))
 
 (defmethod resource ((asset asset))
   (tg:weak-pointer-value (slot-value asset 'resource)))
