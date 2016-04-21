@@ -150,9 +150,12 @@
                           type name pool))))
     (restore asset)))
 
-(defmacro define-asset (type (pool name) &body options)
-  `(enter (make-instance
-           ',type
-           :name ',name
-           ,@options)
-          ',pool))
+(defmacro define-asset (type name pools &body options)
+  (let ((pool (gensym "POOL"))
+        (asset (gensym "ASSET")))
+    `(let ((,asset (make-instance
+                    ',type
+                    :name ',name
+                    ,@options)))
+       (dolist (,pool ',pools ',name)
+         (enter ,asset ,pool)))))
