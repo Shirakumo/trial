@@ -185,7 +185,7 @@
 (defmethod finalize-data ((asset shader) data)
   (gl:delete-shader data))
 
-(defclass shader-program ()
+(defclass shader-program (asset)
   ((shaders :initarg :shaders :accessor shaders)))
 
 (defmethod load-data ((asset shader-program))
@@ -205,7 +205,7 @@
   (gl:delete-program data))
 
 ;; FIXME: allow loading from file or non-array type
-(defclass vertex-buffer ()
+(defclass vertex-buffer (asset)
   ((buffer-type :initarg :buffer-type :accessor buffer-type)
    (element-type :initarg :element-type :accessor element-type)
    (buffer-data :initarg :buffer-data :accessor buffer-data)
@@ -243,7 +243,7 @@
 (defmethod (setf buffer-data) :after (data (asset vertex-buffer))
   (reload asset))
 
-(defclass vertex-array ()
+(defclass vertex-array (asset)
   ((buffers :initarg :buffers :accessor buffers)))
 
 (defmethod load-data ((asset vertex-array))
