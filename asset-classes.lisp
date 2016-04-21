@@ -26,14 +26,21 @@
    :file (error "FILE required.")))
 
 (defmethod initialize-instance :after ((asset file-asset) &key file)
-  (let ((file (pathname-utils:normalize-pathname
-               (etypecase file
-                 (string (uiop:native-namestring file))
-                 (pathname file)))))
-    (unless (probe-file file)
-      (emit-compilation-note "Defining asset ~a on inexistent file: ~a"
-                             asset file))
-    (setf (file asset) file)))
+  (setf (file asset) file)
+  (unless (probe-file (file asset))
+    (emit-compilation-note "Defining asset ~a on inexistent file: ~a"
+                           asset (file asset))))
+
+(defmethod (setf file) (thing (asset file-asset))
+  (error "Cannot set ~s as file on ~a. Must be a pathname-designator."
+         thing asset))
+
+(defmethod (setf file) ((file string) (asset file-asset))
+  (setf (file asset) (uiop:parse-native-namestring file)))
+
+(defmethod (setf file) ((file pathname) (asset file-asset))
+  (setf (slot-value asset 'file) (pathname-utils:normalize-pathname
+                                  (merge-pathnames file (base (home asset))))))
 
 (defmethod load-data :before ((asset file-asset))
   (unless (probe-file (file asset))
