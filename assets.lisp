@@ -128,8 +128,17 @@
       (finalize-data asset data)
       (setf (resource asset) NIL))))
 
-(defun get-resource (pool type name)
-  (let ((asset (or (asset pool type name)
+(defmethod load-data :around ((asset asset))
+  (restart-case
+      (with-retry-restart (retry "Retry loading the asset's data.")
+        (call-next-method))
+    (use-value (value)
+      :report "Enter the data to use."
+      :interactive input-value
+      value)))
+
+(defun get-resource (type pool name)
+  (let ((asset (or (asset type pool name)
                    (error "No asset of type ~s with name ~s in ~a."
                           type name pool))))
     (restore asset)))
