@@ -176,7 +176,7 @@
                     ,@options)))
        ,@(loop for pool in pools
                collect `(enter ,asset ,pool))
-       ',name)))
+       (name ,asset))))
 
 (defclass resource ()
   ((data :initarg :data :reader data))
