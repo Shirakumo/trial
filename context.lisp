@@ -77,7 +77,7 @@
 
 (defmacro with-context ((context &key reacquire force) &body body)
   (let ((cont (gensym "CONTEXT"))
-        (force (gensym "FORCE")))
+        (forc (gensym "FORCE")))
     `(let ((,cont ,context)
            (,forc ,force))
        (acquire-context ,cont :reacquire ,reacquire :force ,forc)
