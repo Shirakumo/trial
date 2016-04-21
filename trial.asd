@@ -21,6 +21,7 @@
                (:file "storage")
                (:file "assets")
                (:file "asset-classes")
+               (:file "asset-pool")
                (:file "entity")
                (:file "geometry")
                (:file "helpers")
