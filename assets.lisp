@@ -100,7 +100,7 @@
 (defclass asset ()
   ((name :initarg :name :accessor name)
    (home :initform NIL :accessor home)
-   (resource :initform (tg:make-weak-pointer NIL) :accessor resource)
+   (resource :initform NIL :accessor resource)
    (resource-type :initarg :resource-type :accessor resource-type))
   (:default-initargs
    :name (error "NAME required.")
@@ -120,10 +120,11 @@
   (setf (slot-value asset 'home) (pool pool)))
 
 (defmethod resource ((asset asset))
-  (tg:weak-pointer-value (slot-value asset 'resource)))
+  (let ((maybe-pointer (slot-value asset 'resource)))
+    (when maybe-pointer (tg:weak-pointer-value maybe-pointer))))
 
 (defmethod (setf resource) (value (asset asset))
-  (setf (slot-value asset 'resource) (tg:make-weak-pointer value)))
+  (setf (slot-value asset 'resource) (when value (tg:make-weak-pointer value))))
 
 (defmethod data ((asset asset))
   (let ((resource (resource asset)))
