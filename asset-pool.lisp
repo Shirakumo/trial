@@ -14,6 +14,9 @@
   :family "Consolas, Monospace"
   :size 12)
 
+(define-asset texture cat (trial)
+  :file "cat.png")
+
 (define-asset texture skybox (trial)
   :file "skybox.png"
   :target :texture-cube-map)
