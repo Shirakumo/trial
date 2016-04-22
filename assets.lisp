@@ -115,8 +115,9 @@
 
 (defmethod print-object ((asset asset) stream)
   (print-unreadable-object (asset stream :type T)
-    (format stream "~s::~a~@[ LOADED~]"
-            (when (home asset) (name (home asset))) (name asset) (data asset))))
+    (format stream "~a::~a~@[ LOADED~]"
+            (when (home asset) (string-upcase (name (home asset))))
+            (name asset) (data asset))))
 
 (defmethod initialize-instance :after ((asset asset) &key home)
   (enter asset home)
