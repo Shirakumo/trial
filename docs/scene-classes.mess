@@ -1,0 +1,39 @@
+# Trial Scene Class Documentation
+This document describes the various classes in Trial and what their purpose is. You should refer to this if you don't quite know which class you should subclass when implementing a new feature.
+
+Some of these are inherited from Flare and thus already accompany some behaviour from it, that Trial's sources do not explicitly express.
+
+This document only describes classes relevant to drawing and managing of scene objects. It does not include events, assets, or other helper systems.
+
+- CONTAINER
+  A container keeps an indexed-set (FLARE-INDEXED-SET) of objects that it governs over. It allows removing and adding objects through INSERT, WITHDRAW, and CLEAR.
+  
+- COLLECTIVE
+  Collectives are containers with a name-map, so that UNITs within it are accessible easily if desired through UNIT. Units can be added or removed through ENTER and LEAVE.
+  
+- UNIT
+  A unit is the lowest possible thing, which only has two slots it keeps track of: a NAME, and a COLLECTIVE. Units can be entered into collectives, but not displayed.
+  
+- ENTITY
+  An entity is the lowest class for anything that can be put into a scene and potentially be drawn in it. However, it cannot react to events. You should use this class for everything that does not need to process events.
+  
+- GEOMETRY
+  This class is reserved for preset geometric shapes and models that can be drawn to the scene. They are useful as asuperclass for debugging purposes when you need to display an entity in the scene, but don't have a real way to display it yet.
+  
+- HANDLER-CONTAINER
+  Anything that can contain and accept event handlers.
+  
+- EVENT-LOOP
+  A handler container that can be used to queue events with ISSUE and then distribute them to its event-handlers with PROCESS.
+  
+- SUBJECT
+  Subjects are both entities and handler-containers, and require using the SUBJECT-CLASS metaclass (use DEFINE-SUBJECT instead of DEFCLASS). When a subject is entered into a scene, all the handlers it contains are registered with the scene and will thus receive events. You should use this for anything that has to process events (see DEFINE-HANDLER).
+  
+- SCENE
+  The scene is a combination of an event-loop and a collective. Entities should be added or removed from it by ENTER and LEAVE respectively. If the entity is a handler-container, it will also take care of de/registering the handlers on the loop. The system is designed in such a way that multiple scene objects in the same game is a theoretically possible sitaution, but you probably won't ever want to actually have more than one scene object active at a time.
+  
+- CONTROLLER
+  The controller is another object that should only ever exist once. A controller could be set to act on two scenes at once, but for each game instance, there can only ever be one controller, as it manages the main game update and render loop. It's also responsible for processing global events that don't have any specific agent.
+  
+- MAIN
+  This is the "top-level" class that acts as the GL context, represents the display window, and manages the setup and teardown sequences.
