@@ -130,15 +130,15 @@
                       (return NIL))
                     (bt:thread-yield))))
 
-(defun check-gl-texture-size (width height)
+(defun check-texture-size (width height)
   (when (< (gl:get* :max-texture-size) (max width height))
     (error "Hardware cannot support a texture of size ~ax~a."
            width height)))
 
-(defun check-gl-texture-target (target)
+(defun check-texture-target (target)
   (ecase target ((:texture-2d :texture-cube-map))))
 
-(defun check-gl-shader-type (shader-type)
+(defun check-shader-type (shader-type)
   (ecase shader-type ((:compute-shader :vertex-shader
                        :geometry-shader :fragment-shader
                        :tess-control-shader :tess-evaluation-shader))))

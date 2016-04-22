@@ -83,7 +83,7 @@
    :wrapping :clamp-to-edge))
 
 (defmethod initialize-instance :before ((asset texture) &key target)
-  (check-gl-texture-target target))
+  (check-texture-target target))
 
 (defun image-buffer-to-texture (buffer target)
   (ecase target
@@ -102,7 +102,7 @@
 (defmethod load-data ((asset texture))
   (with-slots (target filter wrapping) asset
     (let ((image (call-next-method)))
-      (check-gl-texture-size (q+:width image) (q+:height image))
+      (check-texture-size (q+:width image) (q+:height image))
       (with-finalizing ((buffer (q+:qglwidget-convert-to-glformat image)))
         (finalize image)
         (let ((texture (gl:gen-texture)))
@@ -159,7 +159,7 @@
       (error "Don't know how to convert ~s to shader type." pathname)))
 
 (defmethod initialize-instance :before ((asset shader) &key shader-type)
-  (when shader-type (check-gl-shader-type shader-type)))
+  (when shader-type (check-shader-type shader-type)))
 
 (defmethod initialize-instance :after ((asset shader) &key)
   (unless (shader-type asset)
