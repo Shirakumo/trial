@@ -153,10 +153,11 @@
                                             :asset asset
                                             :data (load-data asset)))))
 
-(defmethod offload :around ((asset asset))
-  (let ((data (data asset)))
-    (when data
-      (finalize-data asset data)
+(defmethod offload ((asset asset))
+  (let ((resource (resource asset)))
+    (when (and resource (data resource))
+      (finalize-data asset (data resource))
+      (setf (slot-value resource 'data) NIL)
       (setf (resource asset) NIL))))
 
 (defmethod load-data :around ((asset asset))
