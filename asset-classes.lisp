@@ -42,7 +42,7 @@
   (:default-initargs
    :file (error "FILE required.")))
 
-(defmethod shared-initialize :after ((asset file-asset) slot-names &key file)
+(defmethod shared-initialize :after ((asset file-asset) slot-names &key (file (file asset)))
   (setf (file asset) file)
   (unless (probe-file (file asset))
     (emit-compilation-note "Defining asset ~a on inexistent file: ~a"
@@ -93,7 +93,7 @@
    :filter :linear
    :wrapping :clamp-to-edge))
 
-(defmethod shared-initialize :before ((asset texture) slot-names &key target)
+(defmethod shared-initialize :before ((asset texture) slot-names &key (target (target asset)))
   (check-texture-target target))
 
 (defun image-buffer-to-texture (buffer target)
@@ -224,7 +224,9 @@
    :element-type :float
    :data-usage :static-draw))
 
-(defmethod shared-initialize :before ((asset vertex-buffer) slot-names &key buffer-type element-type data-usage)
+(defmethod shared-initialize :before ((asset vertex-buffer) slot-names &key (buffer-type (buffer-type asset))
+                                                                            (element-type (element-type asset))
+                                                                            (data-usage (data-usage asset)))
   ;; FIXME: automatically determine element-type from buffer-data if not specified
   (check-vertex-buffer-type buffer-type)
   (check-vertex-buffer-element-type element-type)
