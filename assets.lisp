@@ -145,6 +145,7 @@
 (defmethod reload ((asset asset))
   (let ((resource (resource asset)))
     (cond (resource
+           (finalize-data asset (slot-value resource 'data))
            (setf (slot-value resource 'data) (load-data asset)))
           (T (restore asset))))
   asset)
