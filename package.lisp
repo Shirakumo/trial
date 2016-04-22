@@ -15,6 +15,7 @@
    #:font
    #:size
    #:family
+   #:gl-asset
    #:file-asset
    #:file
    #:image

@@ -26,6 +26,17 @@
 (defmethod finalize-data ((asset font) data)
   (finalize data))
 
+(defclass gl-asset (asset)
+  ())
+
+(defmethod load-data :around ((asset gl-asset))
+  (with-context (*main*)
+    (call-next-method)))
+
+(defmethod finalize-data :around ((asset gl-asset) data)
+  (with-context (*main*)
+    (call-next-method)))
+
 (defclass file-asset (asset)
   ((file :initform NIL :accessor file))
   (:default-initargs
@@ -73,7 +84,7 @@
 (defmethod finalize-data ((asset image) data)
   (finalize data))
 
-(defclass texture (image)
+(defclass texture (image gl-asset)
   ((target :initarg :target :reader target)
    (filter :initarg :filter :reader filter)
    (wrapping :initarg :wrapping :reader wrapping))
@@ -136,7 +147,7 @@
                      (data (get-resource WHICH-POOL-?? 'texture WHICH-NAME-??)))))))
 
 ;; FIXME: allow specifying inline shaders
-(defclass shader (file-asset)
+(defclass shader (file-asset gl-asset)
   ((shader-type :initarg :shader-type :reader shader-type))
   (:default-initargs
    :shader-type NIL))
@@ -180,7 +191,7 @@
 (defmethod finalize-data ((asset shader) data)
   (gl:delete-shader data))
 
-(defclass shader-program (asset)
+(defclass shader-program (gl-asset)
   ((shaders :initarg :shaders :accessor shaders)))
 
 (defmethod (setf shaders) :after (shaders (asset shader-program))
@@ -203,7 +214,7 @@
   (gl:delete-program data))
 
 ;; FIXME: allow loading from file or non-array type
-(defclass vertex-buffer (asset)
+(defclass vertex-buffer (gl-asset)
   ((buffer-type :initarg :buffer-type :accessor buffer-type)
    (element-type :initarg :element-type :accessor element-type)
    (buffer-data :initarg :buffer-data :accessor buffer-data)
@@ -241,7 +252,7 @@
 (defmethod finalize-data ((asset vertex-buffer) data)
   (gl:delete-buffers (list data)))
 
-(defclass vertex-array (asset)
+(defclass vertex-array (gl-asset)
   ((buffers :initarg :buffers :accessor buffers)))
 
 (defmethod (setf buffers) :after (buffers (asset vertex-array))
