@@ -50,8 +50,7 @@
 
 (defmethod print-object ((pool pool) stream)
   (print-unreadable-object (pool stream :type T)
-    (let ((*package* (find-package '#:empty-package)))
-      (format stream "~s ~s" (name pool) (base pool)))))
+    (format stream "~s ~s" (name pool) (base pool))))
 
 (defmethod initialize-instance :after ((pool pool) &key base)
   (let ((prev (pool (name pool))))
@@ -86,10 +85,11 @@
 (defmethod leave ((asset asset) (pool pool))
   (setf (assets pool) (remove asset (assets pool) :test #'matches)))
 
-(defmethod asset ((pool symbol) type name)
-  (asset (or (pool pool)
+(defmethod asset (type (pool symbol) name)
+  (asset type
+         (or (pool pool)
              (error "No such pool ~a" pool))
-         type name))
+         name))
 
 ;; FIXME: Maybe optimise asset access if it turns out to be slow.
 (defmethod asset (type (pool pool) name)
