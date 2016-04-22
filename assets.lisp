@@ -227,16 +227,17 @@
         (v:severe :trial.asset "Data reference to finalized resource of ~a. Expect instability or crashes down the road."
                   asset)
         (cond ((eql resource new)
+               (v:severe :trial.asset "~a has not yet been restored, forcing reload. This might work!"
+                         asset resource)
+               (reload asset)
+               (slot-value resource 'data))
+              ((not new)
+               (v:severe :trial.asset "~a has not yet been restored, injecting ~a and forcing reload. This might work!"
+                         asset resource)
+               (setf (resource asset) resource)
                (reload asset)
                (slot-value resource 'data))
               (new
                (v:severe :trial.asset "~a has already been restored, attempting recovery by copying ~a's data. This will not end well!"
                          asset new)
-               (setf (slot-value resource 'data) (data new))
-               (data resource))
-              (T
-               (v:severe :trial.asset "~a has not yet been restored, injecting ~a and forcing reload. This might work!"
-                         asset resource)
-               (setf (resource asset) resource)
-               (reload asset)
-               (slot-value resource 'data))))))
+               (setf (slot-value resource 'data) (data new)))))))
