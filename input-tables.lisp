@@ -283,6 +283,7 @@
    '(((1118 . 654) . :xbox360)
      ((1133 . 49693) . :logitech-f310)
      ((1356 . 616) . :dualshock3)
+     ((1411 . 8288) . :buffalo-snes)
      ((10462 . 4604) . :steamcontroller))
    :test 'equal))
 
@@ -351,7 +352,11 @@
            ( 5 . :r2)
            ( 6 . :dpad-h)
            ( 7 . :dpad-v))
-         :test 'eql)))
+         :test 'eql))
+     (:buffalo-snes
+      .,(alexandria:alist-hash-table
+         '(( 0 . :dpad-h)
+           ( 1 . :dpad-v)))))
    :test 'eql))
 
 (defparameter *gamepad-button-table*
@@ -389,7 +394,17 @@
            ( 8 . :home)
            ( 9 . :left)
            (10 . :right))
-         :test 'eql)))
+         :test 'eql))
+     (:buffalo-snes
+      .,(alexandria:alist-hash-table
+         '(( 0 . :b)
+           ( 1 . :a)
+           ( 2 . :x)
+           ( 3 . :y)
+           ( 4 . :l1)
+           ( 5 . :r1)
+           ( 6 . :select)
+           ( 7 . :start)))))
    :test 'eql))
 
 (defun qt-key->symbol (enum)
