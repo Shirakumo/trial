@@ -42,6 +42,10 @@
   (setf (slot-value asset 'file) (pathname-utils:normalize-pathname
                                   (merge-pathnames file (base (home asset))))))
 
+(defmethod (setf file) :after ((file pathname) (asset file-asset))
+  (when (resource asset)
+    (reload asset)))
+
 (defmethod load-data :before ((asset file-asset))
   (unless (probe-file (file asset))
     (error "File for asset ~a not found on disk: ~a"
