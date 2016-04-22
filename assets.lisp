@@ -106,12 +106,10 @@
 (defclass asset ()
   ((name :initarg :name :accessor name)
    (home :initform NIL :accessor home)
-   (resource :initform NIL :accessor resource)
-   (resource-type :initarg :resource-type :accessor resource-type))
+   (resource :initform NIL :accessor resource))
   (:default-initargs
    :name (error "NAME required.")
-   :home (error "HOME required.")
-   :resource-type 'resource))
+   :home (error "HOME required.")))
 
 (defmethod print-object ((asset asset) stream)
   (print-unreadable-object (asset stream :type T)
@@ -152,7 +150,7 @@
 
 (defmethod restore ((asset asset))
   (unless (resource asset)
-    (setf (resource asset) (make-instance (resource-type asset)
+    (setf (resource asset) (make-instance 'resource
                                           :asset asset
                                           :data (load-data asset))))
   asset)
