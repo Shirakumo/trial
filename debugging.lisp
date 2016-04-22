@@ -9,6 +9,7 @@
 
 (defvar *debug-features* '(:trial-debug-selection-buffer
                            :trial-debug-bound-subject))
+(defvar *optimize-features* '(:trial-optimize-resource-validity-check))
 
 #+trial-debug-all
 (setf *features* (union *features* *debug-features*))
@@ -16,7 +17,13 @@
 #+trial-debug-none
 (setf *features* (set-difference *features* *debug-features*))
 
-(defun reload-debugged (&rest features)
+#+trial-optimize-all
+(setf *features* (union *features* *optimize-features*))
+
+#+trial-optimize-none
+(setf *features* (set-difference *features* *optimize-features*))
+
+(defun reload-with-features (&rest features)
   (setf *features* (union *features* features))
   (asdf:compile-system :trial :force T :verbose NIL)
   (asdf:load-system :trial :force T :verbose NIL))
