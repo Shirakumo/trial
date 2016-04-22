@@ -48,14 +48,8 @@
            asset (file asset))))
 
 (defmethod load-data :around ((asset file-asset))
-  (tagbody
-   load (restart-case
-            (call-next-method)
-          (use-file (value)
-            :report "Enter a new file to use."
-            :interactive input-value
-            (setf (file asset) value)
-            (go load)))))
+  (with-new-value-restart ((file asset)) (use-file "Enter a new file to use.")
+    (call-next-method)))
 
 (defclass image (file-asset)
   ())
@@ -167,19 +161,11 @@
         (shader (gl:create-shader (shader-type asset))))
     (with-cleanup-on-failure
         (finalize-data asset shader)
-      (tagbody
-       compile
-         (restart-case
-             (progn
-               (gl:shader-source shader source)
-               (gl:compile-shader shader)
-               (unless (gl:get-shader shader :compile-status)
-                 (error "Failed to compile ~a: ~%~a" asset (gl:get-shader-info-log shader))))
-           (use-source (value)
-             :report "Supply new source code directly."
-             :interactive input-source
-             (setf source value)
-             (go compile)))))
+      (with-new-value-restart (source input-source) (use-source "Supply new source code directly.")
+        (gl:shader-source shader source)
+        (gl:compile-shader shader)
+        (unless (gl:get-shader shader :compile-status)
+          (error "Failed to compile ~a: ~%~a" asset (gl:get-shader-info-log shader)))))
     shader))
 
 (defmethod finalize-data ((asset shader) data)

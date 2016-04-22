@@ -73,13 +73,33 @@
 
 (defmacro with-retry-restart ((name report &rest report-args) &body body)
   (let ((tag (gensym "RETRY-TAG"))
+        (return (gensym "RETURN"))
         (stream (gensym "STREAM")))
-    `(tagbody
-        ,tag (restart-case
-                 (progn ,@body)
-               (,name ()
-                 :report (lambda (,stream) (format ,stream ,report ,@report-args))
-                 (go ,tag))))))
+    `(block ,return
+       (tagbody
+          ,tag (restart-case
+                   (return-from ,return
+                     (progn ,@body))
+                 (,name ()
+                   :report (lambda (,stream) (format ,stream ,report ,@report-args))
+                   (go ,tag)))))))
+
+(defmacro with-new-value-restart ((place &optional (input 'input-value))
+                                  (name report &rest report-args) &body body)
+  (let ((tag (gensym "RETRY-TAG"))
+        (return (gensym "RETURN"))
+        (stream (gensym "STREAM"))
+        (value (gensym "VALUE")))
+    `(block ,return
+       (tagbody
+          ,tag (restart-case
+                   (return-from ,return
+                     (progn ,@body))
+                 (,name (,value)
+                   :report (lambda (,stream) (format ,stream ,report ,@report-args))
+                   :interactive ,input
+                   (setf ,place ,value)
+                   (go ,tag)))))))
 
 (defmacro with-cleanup-on-failure (cleanup-form &body body)
   (let ((success (gensym "SUCCESS")))
