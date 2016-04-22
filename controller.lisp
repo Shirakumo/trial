@@ -9,7 +9,7 @@
 
 (define-subject controller ()
   (;; Has to be a double to avoid bignums after ~3.8 hours of runtime.
-   (tickcount :initform 0.0d0 :accessor tickcount)
+   (tick-count :initform 0.0d0 :accessor tick-count)
    (update-thread :initform NIL :accessor update-thread)
    (last-pause :initform 0 :accessor last-pause)
    (fps :initarg :fps :accessor fps)
@@ -167,8 +167,8 @@
   (reinitialize-instance (selection controller) :width width :height height))
 
 (define-handler (controller tick tick 100) (ev)
-  (incf (tickcount controller))
-  (when (= 0 (mod (tickcount controller) (fps controller)))
+  (incf (tick-count controller))
+  (when (= 0 (mod (tick-count controller) (fps controller)))
     (cl-gamepad:detect-devices))
   (cl-gamepad:process-events))
 
