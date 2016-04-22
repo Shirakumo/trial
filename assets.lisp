@@ -199,10 +199,40 @@
        (name ,asset))))
 
 (defclass resource ()
-  ((data :initarg :data :reader data))
+  ((data :initarg :data :reader data)
+   (asset :initarg :asset :reader resource-asset))
   (:default-initargs
    :data (error "DATA required.")
    :asset (error "ASSET required.")))
 
 (defmethod initialize-instance :after ((resource resource) &key asset data)
   (tg:finalize resource (lambda () (finalize-data asset data))))
+
+(defmethod print-object ((resource resource) stream)
+  (print-unreadable-object (resource stream :type T :identity T)
+    (format stream "~a::~a ~s"
+            (name (home (resource-asset resource)))
+            (name (resource-asset resource))
+            (slot-value resource 'data))))
+
+#-trial-optimize-resource-validity-check
+(defmethod data :around ((resource resource))
+  (or (call-next-method)
+      (let* ((asset (resource-asset resource))
+             (new (resource asset)))
+        (v:severe :trial.asset "Data reference to finalized resource of ~a. Expect instability or crashes down the road."
+                  asset)
+        (cond ((eql resource new)
+               (reload asset)
+               (slot-value resource 'data))
+              (new
+               (v:severe :trial.asset "~a has already been restored, attempting recovery by copying ~a's data. This will not end well!"
+                         asset new)
+               (setf (slot-value resource 'data) (data new))
+               (data resource))
+              (T
+               (v:severe :trial.asset "~a has not yet been restored, injecting ~a and forcing reload. This might work!"
+                         asset resource)
+               (setf (resource asset) resource)
+               (reload asset)
+               (slot-value resource 'data))))))
