@@ -63,6 +63,9 @@
   (error "Cannot set ~s as base on ~a. Must be a pathname-designator."
          thing pool))
 
+(defmethod (setf base) ((base symbol) (pool pool))
+  (setf (base pool) (asdf:system-relative-pathname base "data/")))
+
 (defmethod (setf base) ((base string) (pool pool))
   (setf (base pool) (uiop:parse-native-namestring base)))
 
