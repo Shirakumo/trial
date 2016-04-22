@@ -15,7 +15,8 @@
   :size 12)
 
 (define-asset texture skybox (trial)
-  :file "skybox.png")
+  :file "skybox.png"
+  :target :texture-cube-map)
 
 (define-asset shader skybox-vert (trial)
   :file "skybox.vert")
