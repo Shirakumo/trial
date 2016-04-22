@@ -269,7 +269,7 @@
      (#x01001262 . :dead-horn))
    :test 'eql))
 
-(defparameter *mouse-button-table*
+(defparameter *button-table*
   (alexandria:alist-hash-table
    '((#x00000001 . :left)
      (#x00000002 . :right)
@@ -403,7 +403,7 @@
   (let ((button (etypecase enum
                   (integer enum)
                   (qt::enum (qt:enum-value enum)))))
-    (or (gethash button *mouse-button-table*)
+    (or (gethash button *button-table*)
         button)))
 
 (defun gamepad-axis->symbol (device axis)
