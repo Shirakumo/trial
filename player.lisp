@@ -12,6 +12,7 @@
   (:default-initargs
    :velocity (vec 0 0 0)
    :location (vec 0 0 0)
+   :bounds (vec 20 20 0)
    :texture '(trial cat)
    :name :player))
 
