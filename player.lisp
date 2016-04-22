@@ -7,10 +7,9 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(define-subject player (collidable-entity mesh-entity selectable-entity savable)
+(define-subject player (cube collidable-entity selectable-entity savable)
   ((velocity :initarg :velocity :accessor velocity))
   (:default-initargs
-   :mesh "cube.obj"
    :velocity (vec 0 0 0)
    :location (vec 0 0 0)
    :name :player))
