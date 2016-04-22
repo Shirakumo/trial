@@ -130,7 +130,8 @@
     (when maybe-pointer (tg:weak-pointer-value maybe-pointer))))
 
 (defmethod (setf resource) (value (asset asset))
-  (setf (slot-value asset 'resource) (when value (tg:make-weak-pointer value))))
+  (setf (slot-value asset 'resource) (when value (tg:make-weak-pointer value)))
+  value)
 
 (defmethod data ((asset asset))
   (let ((resource (resource asset)))
