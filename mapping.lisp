@@ -68,10 +68,10 @@
 (define-action launch-editor (system-action)
   (key-press (eql key :section)))
 
-(define-action pack (system-action)
+(define-action save-game (system-action)
   (key-press (eql key :f2)))
 
-(define-action unpack (system-action)
+(define-action load-game (system-action)
   (key-press (eql key :f3)))
 
 (define-action reload-assets (system-action)

@@ -178,13 +178,6 @@
 (define-handler (controller launch-editor) (ev)
   (signal! *main* (launch-editor)))
 
-(define-handler (controller pack) (ev)
-  )
-
-(define-handler (controller unpack) (ev)
-  ;; Remove old state?
-  )
-
 (define-handler (controller reload-assets reload-assets 99) (ev)
   (dolist (pool (pools))
     (mapc #'reload (assets pool))))
