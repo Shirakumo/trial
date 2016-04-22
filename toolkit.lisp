@@ -118,8 +118,9 @@
                              lock warn-time)))
     #+sbcl (or (sb-thread:grab-mutex lock :timeout warn-time)
                (do-warn)
-               (when timeout
-                 (sb-thread:grab-mutex lock :timeout (- timeout warn-time))))
+               (if timeout
+                   (sb-thread:grab-mutex lock :timeout (- timeout warn-time))
+                   (sb-thread:grab-mutex lock)))
     #-sbcl (loop with start = (get-universal-time)
                  for time = (- (get-universal-time) start)
                  thereis (bt:acquire-lock lock NIL)
