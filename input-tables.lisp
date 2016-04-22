@@ -278,14 +278,28 @@
      (#x00000010 . :x2))
    :test 'eql))
 
-(defparameter *gamepad-device-table*
-  (alexandria:alist-hash-table
-   '(((1118 . 654) . :xbox360)
-     ((1133 . 49693) . :logitech-f310)
-     ((1356 . 616) . :dualshock3)
-     ((1411 . 8288) . :buffalo-snes)
-     ((10462 . 4604) . :steamcontroller))
-   :test 'equal))
+(defvar *gamepad-device-table* (make-hash-table :test 'equal))
+(defvar *gamepad-axis-table* (make-hash-table :test 'eql))
+(defvar *gamepad-button-table* (make-hash-table :test 'eql))
+
+(defun make-gamepad-table (defs &optional base)
+  (let ((table (make-hash-table :test 'eql)))
+    (when base
+      (maphash (lambda (k v) (setf (gethash k table) v)) base))
+    (dolist (entry defs table)
+      (setf (gethash (first entry) table) (second entry)))))
+
+(defmacro define-gamepad (name (manufacturer id &key inherit) &body options)
+  (let ((name (intern (string name) :keyword))
+        (inherit (when inherit (intern (string name) :keyword))))
+    `(progn
+       (setf (gethash (cons ,manufacturer ,id) *gamepad-device-table*) ,name)
+       (setf (gethash ,name *gamepad-axis-table*)
+             (make-gamepad-table ',(cdr (assoc :axes options))
+                                 (gethash ,inherit *gamepad-axis-table*)))
+       (setf (gethash ,name *gamepad-button-table*)
+             (make-gamepad-table ',(cdr (assoc :buttons options))
+                                 (gethash ,inherit *gamepad-button-table*))))))
 
 ;;; General name mapping conventions:
 ;; :left-h      -- Left analog stick, horizontal movement
@@ -315,97 +329,93 @@
 ;; Gamepads with special hardware may have additional axes
 ;; and buttons and thus additional names. If you wish to
 ;; use those, see the respective mapping table for the
-;; device.
+;; device
 
-(defparameter *gamepad-axis-table*
-  (alexandria:alist-hash-table
-   `((:dualshock3
-      .,(alexandria:alist-hash-table
-         '(( 0 . :left-h)
-           ( 1 . :left-v)
-           ( 2 . :right-h)
-           ( 3 . :right-v)
-           ( 8 . :dpad-up)
-           ( 9 . :dpad-right)
-           (10 . :dpad-down)
-           (11 . :dpad-left)
-           (12 . :l2)
-           (13 . :r2)
-           (14 . :l1)
-           (15 . :r1)
-           (16 . :y) ; triangle
-           (17 . :b) ; circle
-           (18 . :a) ; cross
-           (19 . :x) ; square
-           (23 . :axis-x)
-           (24 . :axis-z)
-           (25 . :axis-y)
-           (26 . :axis-r))
-         :test 'eql))
-     (:xbox360
-      .,(alexandria:alist-hash-table
-         '(( 0 . :left-h)
-           ( 1 . :left-v)
-           ( 2 . :l2)
-           ( 3 . :right-h)
-           ( 4 . :right-v)
-           ( 5 . :r2)
-           ( 6 . :dpad-h)
-           ( 7 . :dpad-v))
-         :test 'eql))
-     (:buffalo-snes
-      .,(alexandria:alist-hash-table
-         '(( 0 . :dpad-h)
-           ( 1 . :dpad-v)))))
-   :test 'eql))
+(define-gamepad xbox-360 (1118 654)
+  (:axes
+   ( 0 :left-h)
+   ( 1 :left-v)
+   ( 2 :l2)
+   ( 3 :right-h)
+   ( 4 :right-v)
+   ( 5 :r2)
+   ( 6 :dpad-h)
+   ( 7 :dpad-v))
+  (:buttons
+   ( 0 :a)
+   ( 1 :b)
+   ( 2 :x)
+   ( 3 :y)
+   ( 4 :l1)
+   ( 5 :r1)
+   ( 6 :select)
+   ( 7 :start)
+   ( 8 :home)
+   ( 9 :left)
+   (10 :right)))
 
-(defparameter *gamepad-button-table*
-  (alexandria:alist-hash-table
-   `((:dualshock3
-      .,(alexandria:alist-hash-table
-         '(( 0 . :select)
-           ( 1 . :left)
-           ( 2 . :right)
-           ( 3 . :start)
-           ( 4 . :dpad-up)
-           ( 5 . :dpad-right)
-           ( 6 . :dpad-down)
-           ( 7 . :dpad-left)
-           ( 8 . :l2)
-           ( 9 . :r2)
-           (10 . :l1)
-           (11 . :r1)
-           (12 . :y) ; triangle
-           (13 . :b) ; circle
-           (14 . :a) ; cross
-           (15 . :x) ; square
-           (16 . :home))
-         :test 'eql))
-     (:xbox360
-      .,(alexandria:alist-hash-table
-         '(( 0 . :a)
-           ( 1 . :b)
-           ( 2 . :x)
-           ( 3 . :y)
-           ( 4 . :l1)
-           ( 5 . :r1)
-           ( 6 . :select)
-           ( 7 . :start)
-           ( 8 . :home)
-           ( 9 . :left)
-           (10 . :right))
-         :test 'eql))
-     (:buffalo-snes
-      .,(alexandria:alist-hash-table
-         '(( 0 . :b)
-           ( 1 . :a)
-           ( 2 . :x)
-           ( 3 . :y)
-           ( 4 . :l1)
-           ( 5 . :r1)
-           ( 6 . :select)
-           ( 7 . :start)))))
-   :test 'eql))
+(define-gamepad logitech-f310 (1133 49693 :inherit xbox-360)
+  (:axes)
+  (:buttons))
+
+(define-gamepad dualshock-3 (1356 616)
+  (:axes
+   ( 0 :left-h)
+   ( 1 :left-v)
+   ( 2 :right-h)
+   ( 3 :right-v)
+   ( 8 :dpad-up)
+   ( 9 :dpad-right)
+   (10 :dpad-down)
+   (11 :dpad-left)
+   (12 :l2)
+   (13 :r2)
+   (14 :l1)
+   (15 :r1)
+   (16 :y) ; triangle
+   (17 :b) ; circle
+   (18 :a) ; cross
+   (19 :x) ; square
+   (23 :axis-x)
+   (24 :axis-z)
+   (25 :axis-y)
+   (26 :axis-r))
+  (:buttons
+   ( 0 :select)
+   ( 1 :left)
+   ( 2 :right)
+   ( 3 :start)
+   ( 4 :dpad-up)
+   ( 5 :dpad-right)
+   ( 6 :dpad-down)
+   ( 7 :dpad-left)
+   ( 8 :l2)
+   ( 9 :r2)
+   (10 :l1)
+   (11 :r1)
+   (12 :y) ; triangle
+   (13 :b) ; circle
+   (14 :a) ; cross
+   (15 :x) ; square
+   (16 :home)))
+
+(define-gamepad buffalo-bsgp801 (1411 8288)
+  (:axes
+   ( 0 :dpad-h)
+   ( 1 :dpad-v))
+  (:buttons
+   ( 0 :b)
+   ( 1 :a)
+   ( 2 :x)
+   ( 3 :y)
+   ( 4 :l1)
+   ( 5 :r1)
+   ( 6 :select)
+   ( 7 :start)))
+
+(define-gamepad steam-controller (10462 4604 :inherit xbox-360)
+  (:axes)
+  (:buttons))
 
 (defun qt-key->symbol (enum)
   (let ((key (etypecase enum

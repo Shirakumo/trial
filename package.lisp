@@ -199,6 +199,7 @@
    #:*gamepad-device-table*
    #:*gamepad-axis-table*
    #:*gamepad-button-table*
+   #:define-gamepad
    #:qt-key->symbol
    #:qt-button->symbol
    #:gamepad-axis->symbol
