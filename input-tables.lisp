@@ -331,13 +331,13 @@
 ;; use those, see the respective mapping table for the
 ;; device
 
-(macrolet ((define-fallback (name (vendor id))
+(macrolet ((define-generic-controller (name (vendor id))
              `(define-gamepad ,name (,vendor ,id)
                 (:axes ,@(loop for i from 0 to 255
                                collect `(,i ,(intern (format NIL "AXIS-~a" i) :keyword))))
                 (:buttons ,@(loop for i from 0 to 255
                                   collect `(,i ,(intern (format NIL "BUTTON-~a" i) :keyword)))))))
-  (define-fallback fallback (0 0)))
+  (define-generic-controller generic (0 0)))
 
 (define-gamepad xbox-360 (1118 654)
   (:axes
@@ -443,7 +443,7 @@
   (let ((device (or (gethash (cons (cl-gamepad:vendor device)
                                    (cl-gamepad:product device))
                              *gamepad-device-table*)
-                    :fallback)))
+                    :generic)))
     (or (gethash axis (gethash device *gamepad-axis-table*))
         axis)))
 
@@ -451,6 +451,6 @@
   (let ((device (or (gethash (cons (cl-gamepad:vendor device)
                                    (cl-gamepad:product device))
                              *gamepad-device-table*)
-                    :fallback)))
+                    :generic)))
     (or (gethash button (gethash device *gamepad-button-table*))
         button)))
