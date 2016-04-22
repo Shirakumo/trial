@@ -194,11 +194,12 @@
   (setf (texture entity) (get-resource 'texture (first id) (second id))))
 
 (defmethod paint :around ((obj textured-entity) target)
-  (let ((tex (texture obj)))
+  (let* ((tex (texture obj))
+         (target (slot-value tex 'target)))
     (when tex
-      (gl:bind-texture (target tex) (data tex))
+      (gl:bind-texture target (data tex))
       (call-next-method)
-      (gl:bind-texture (target tex) 0))))
+      (gl:bind-texture target 0))))
 
 (defmethod save-form-args append ((entity textured-entity))
   `(:texture ,(texture entity)))
