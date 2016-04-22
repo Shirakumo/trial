@@ -131,9 +131,10 @@
                     (bt:thread-yield))))
 
 (defun check-texture-size (width height)
-  (when (< (gl:get* :max-texture-size) (max width height))
-    (error "Hardware cannot support a texture of size ~ax~a."
-           width height)))
+  (let ((max (gl:get* :max-texture-size)))
+    (when (< max (max width height))
+      (error "Hardware cannot support a texture of size ~ax~a, max is ~a."
+             width height max))))
 
 (defun check-texture-target (target)
   (ecase target ((:texture-2d :texture-cube-map))))
