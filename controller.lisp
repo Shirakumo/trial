@@ -59,7 +59,7 @@
 (defun update-loop (controller)
   (let* ((main *main*)
          (scene (scene main)))
-    (acquire-context main :reacquire T :force T)
+    (acquire-context main)
     (cl-gamepad:init)
     (setup-rendering main)
     (setup-scene scene)
@@ -77,13 +77,14 @@
                             (with-frame-pause ((fps controller))
                               ;; Potentially release context every time to allow
                               ;; other threads to grab it.
-                              (with-context (main)
+                              (with-context (main :reentrant T)
                                 (issue scene 'tick)
                                 (process scene)
                                 (render controller main)
                                 (render-hud controller main)
-                                (q+:swap-buffers main)))))))
-      (stop scene)))
+                                (q+:swap-buffers main))))))
+        (release-context main)
+        (stop scene))))
   (v:info :trial.controller "Exiting update-loop."))
 
 (define-handler (controller mouse-release) (ev pos)
@@ -157,7 +158,7 @@
 
 ;; FIXME: proper LOADing of a map
 (defun setup-scene (scene)
-  (enter (make-instance 'skybox) scene)
+  ;;(enter (make-instance 'skybox) scene)
   (enter (make-instance 'space-axes) scene)
   (enter (make-instance 'player) scene)
   (enter (make-instance 'pivot-camera :name :camera :target (unit :player scene)) scene))

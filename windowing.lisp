@@ -37,7 +37,7 @@
   (v:info :trial "RAPTURE")
   (cl-gamepad:shutdown)
   (finalize controller)
-  (acquire-context main :reacquire T :force T)
+  (acquire-context main :force T)
   (finalize scene)
   (dolist (pool (pools))
     (mapc #'offload (assets pool))))
