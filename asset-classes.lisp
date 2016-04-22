@@ -14,6 +14,12 @@
    :size 12
    :family (error "FAMILY required.")))
 
+(defmethod (setf family) :after (family (asset font))
+  (when (resource asset) (reload asset)))
+
+(defmethod (setf size) :after (size (asset font))
+  (when (resource asset) (reload asset)))
+
 (defmethod load-data ((asset font))
   (q+:make-qfont (family asset) (size asset)))
 
@@ -43,8 +49,7 @@
                                   (merge-pathnames file (base (home asset))))))
 
 (defmethod (setf file) :after ((file pathname) (asset file-asset))
-  (when (resource asset)
-    (reload asset)))
+  (when (resource asset) (reload asset)))
 
 (defmethod load-data :before ((asset file-asset))
   (unless (probe-file (file asset))
@@ -178,6 +183,9 @@
 (defclass shader-program (asset)
   ((shaders :initarg :shaders :accessor shaders)))
 
+(defmethod (setf shaders) :after (shaders (asset shader-program))
+  (when (resource asset) (reload asset)))
+
 (defmethod load-data ((asset shader-program))
   (let ((shaders (loop for (pool name) in (shaders asset)
                        collect (get-resource 'shader pool name)))
@@ -212,8 +220,7 @@
   (check-vertex-buffer-data-usage data-usage))
 
 (defmethod (setf buffer-data) :after (data (asset vertex-buffer))
-  (when (resource asset)
-    (reload asset)))
+  (when (resource asset) (reload asset)))
 
 (defmethod load-data ((asset vertex-buffer))
   (with-slots (element-type buffer-data buffer-type data-usage) asset
@@ -236,6 +243,9 @@
 
 (defclass vertex-array (asset)
   ((buffers :initarg :buffers :accessor buffers)))
+
+(defmethod (setf buffers) :after (buffers (asset vertex-array))
+  (when (resource asset) (reload asset)))
 
 (defmethod load-data ((asset vertex-array))
   (let ((array (gl:gen-vertex-array)))
