@@ -111,4 +111,5 @@
   (q+:height object))
 
 (defmethod (setf parent) :after (parent (main main))
+  ;; FIXME: On windows we need to completely recreate the context!
   (issue (scene main) 'acquire-context))
