@@ -42,7 +42,7 @@
   (:default-initargs
    :file (error "FILE required.")))
 
-(defmethod initialize-instance :after ((asset file-asset) &key file)
+(defmethod shared-initialize :after ((asset file-asset) slot-names &key file)
   (setf (file asset) file)
   (unless (probe-file (file asset))
     (emit-compilation-note "Defining asset ~a on inexistent file: ~a"
@@ -93,7 +93,7 @@
    :filter :linear
    :wrapping :clamp-to-edge))
 
-(defmethod initialize-instance :before ((asset texture) &key target)
+(defmethod shared-initialize :before ((asset texture) slot-names &key target)
   (check-texture-target target))
 
 (defun image-buffer-to-texture (buffer target)
@@ -169,10 +169,10 @@
                     (cs . :compute-shader)) :test #'string-equal))
       (error "Don't know how to convert ~s to shader type." pathname)))
 
-(defmethod initialize-instance :before ((asset shader) &key shader-type)
+(defmethod shared-initialize :before ((asset shader) slot-names &key shader-type)
   (when shader-type (check-shader-type shader-type)))
 
-(defmethod initialize-instance :after ((asset shader) &key)
+(defmethod shared-initialize :after ((asset shader) slot-names &key)
   (unless (shader-type asset)
     (setf (slot-value asset 'shader-type) (pathname->shader-type (file asset)))))
 
@@ -224,7 +224,7 @@
    :element-type :float
    :data-usage :static-draw))
 
-(defmethod initialize-instance :before ((asset vertex-buffer) &key buffer-type element-type data-usage)
+(defmethod shared-initialize :before ((asset vertex-buffer) slot-names &key buffer-type element-type data-usage)
   ;; FIXME: automatically determine element-type from buffer-data if not specified
   (check-vertex-buffer-type buffer-type)
   (check-vertex-buffer-element-type element-type)

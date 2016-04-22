@@ -117,15 +117,14 @@
             (when (home asset) (string-upcase (name (home asset))))
             (name asset) (resource asset))))
 
-(defmethod initialize-instance :after ((asset asset) &key home)
-  (enter asset home)
-  (setf (home asset) home))
+(defmethod shared-initialize :after ((asset asset) slot-names &key home)
+  (when home
+    (when (home asset)
+      (leave asset (home asset)))
+    (enter asset home)
+    (setf (home asset) home)))
 
 (defmethod reinitialize-instance :after ((asset asset) &key home)
-  (when home
-    (leave asset (home asset))
-    (setf (home asset) home)
-    (enter asset home))
   (reload asset))
 
 (defmethod (setf home) (pool (asset asset))
@@ -195,16 +194,21 @@
         (and (restore asset)
              (resource asset)))))
 
+(defun update-or-create-asset (type name home pools &rest options)
+  (let ((asset (asset type home name)))
+    (cond (asset
+           ;; Remove from all in case pools changed.
+           (dolist (pool (pools))
+             (leave asset pool))
+           (apply #'reinitialize-instance asset :name name :home home options))
+          (T
+           (setf asset (apply #'make-instance type :name name :home home options))))
+    (loop for pool in pools
+          do (enter asset pool))
+    asset))
+
 (defmacro define-asset (type name (home &rest pools) &body options)
-  (let ((asset (gensym "ASSET")))
-    `(let ((,asset (make-instance
-                    ',type
-                    :name ',name
-                    :home ',home
-                    ,@options)))
-       ,@(loop for pool in pools
-               collect `(enter ,asset ,pool))
-       (name ,asset))))
+  `(name (update-or-create-asset ',type ',name ',home ',pools ,@options)))
 
 (defclass resource ()
   ((data :initarg :data :reader data)
