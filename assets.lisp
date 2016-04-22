@@ -146,20 +146,23 @@
   (let ((resource (resource asset)))
     (cond (resource
            (setf (slot-value resource 'data) (load-data asset)))
-          (T (restore asset)))))
+          (T (restore asset))))
+  asset)
 
 (defmethod restore ((asset asset))
-  (or (resource asset)
-      (setf (resource asset) (make-instance (resource-type asset)
-                                            :asset asset
-                                            :data (load-data asset)))))
+  (unless (resource asset)
+    (setf (resource asset) (make-instance (resource-type asset)
+                                          :asset asset
+                                          :data (load-data asset))))
+  asset)
 
 (defmethod offload ((asset asset))
   (let ((resource (resource asset)))
     (when (and resource (data resource))
       (finalize-data asset (data resource))
       (setf (slot-value resource 'data) NIL)
-      (setf (resource asset) NIL))))
+      (setf (resource asset) NIL)))
+  asset)
 
 (defmethod load-data :around ((asset asset))
   (restart-case
@@ -180,7 +183,9 @@
   (let ((asset (or (asset type pool name)
                    (error "No asset of type ~s with name ~s in ~a."
                           type name pool))))
-    (restore asset)))
+    (or (resource asset)
+        (and (restore asset)
+             (resource asset)))))
 
 (defmacro define-asset (type name (home &rest pools) &body options)
   (let ((asset (gensym "ASSET")))
