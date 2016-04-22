@@ -51,6 +51,9 @@
       (call-next-method))
     (acquire-context context)))
 
+(defmethod finalize :after ((context context))
+  (finalize (context context)))
+
 (defmethod acquire-context ((context context) &key force)
   (let ((current (current-thread context))
         (this (bt:current-thread)))
