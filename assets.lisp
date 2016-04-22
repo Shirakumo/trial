@@ -239,3 +239,11 @@
                (v:severe :trial.asset "~a has already been restored, attempting recovery by copying ~a's data. This will not end well!"
                          asset new)
                (setf (slot-value resource 'data) (data new)))))))
+
+;; Delegate
+(defmethod slot-missing (class (resource resource) slot operation &optional new-value)
+  (ecase operation
+    (setf (setf (slot-value (resource-asset resource) slot) new-value))
+    (slot-makunbound (slot-makunbound (resource-asset resource) slot))
+    (slot-value (slot-value (resource-asset resource) slot))
+    (slot-boundp (slot-boundp (resource-asset resource) slot))))
