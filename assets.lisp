@@ -121,6 +121,13 @@
   (enter asset home)
   (setf (home asset) home))
 
+(defmethod reinitialize-instance :after ((asset asset) &key home)
+  (when home
+    (leave asset (home asset))
+    (setf (home asset) home)
+    (enter asset home))
+  (reload asset))
+
 (defmethod (setf home) (pool (asset asset))
   (setf (slot-value asset 'home) (pool pool)))
 
