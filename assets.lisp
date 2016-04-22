@@ -169,6 +169,12 @@
       :interactive input-value
       value)))
 
+(defmethod load-data :before ((asset asset))
+  (v:info :trial.asset "~a loading data..." asset))
+
+(defmethod finalize-data :before ((asset asset) data)
+  (v:info :trial.asset "~a finalizing data..." asset))
+
 (defun get-resource (type pool name)
   (let ((asset (or (asset type pool name)
                    (error "No asset of type ~s with name ~s in ~a."
