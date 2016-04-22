@@ -211,6 +211,10 @@
   (check-vertex-buffer-element-type element-type)
   (check-vertex-buffer-data-usage data-usage))
 
+(defmethod (setf buffer-data) :after (data (asset vertex-buffer))
+  (when (resource asset)
+    (reload asset)))
+
 (defmethod load-data ((asset vertex-buffer))
   (with-slots (element-type buffer-data buffer-type data-usage) asset
     (let ((buffer (gl:gen-buffer))
@@ -229,9 +233,6 @@
 
 (defmethod finalize-data ((asset vertex-buffer) data)
   (gl:delete-buffers (list data)))
-
-(defmethod (setf buffer-data) :after (data (asset vertex-buffer))
-  (reload asset))
 
 (defclass vertex-array (asset)
   ((buffers :initarg :buffers :accessor buffers)))
