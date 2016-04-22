@@ -26,6 +26,7 @@
                (:file "geometry")
                (:file "helpers")
                (:file "event-loop")
+               (:file "subject")
                (:file "subjects")
                (:file "scene")
                (:file "sprite")
