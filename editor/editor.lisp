@@ -87,8 +87,11 @@
 (define-initializer (editor setup)
   (setf (q+:window-title editor) "Trial Editor"))
 
-(define-finalizer (editor teardown)
-  (setf (parent main) NIL))
+(define-override (editor close-event) (ev)
+  (setf (parent main) NIL)
+  (q+:accept ev)
+  (q+:hide editor)
+  (finalize editor))
 
 (define-slot (editor update) ()
   (declare (connected updater (timeout)))
@@ -101,12 +104,10 @@
   (:item ("Save As..." (ctrl alt s)))
   (:separator)
   (:item "Exit Editor"
-         (q+:close editor)
-         (finalize editor))
+         (q+:close editor))
   (:item "Quit"
-         (q+:close editor)
-         (finalize editor)
-         (q+:close main)))
+         (q+:close main)
+         (q+:close editor)))
 
 (define-menu (editor View)
   (:item "Asset Browser")
