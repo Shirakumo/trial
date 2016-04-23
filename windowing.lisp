@@ -15,7 +15,7 @@
    (execute-queue :initform (make-array 0 :adjustable T :fill-pointer T) :accessor execute-queue)))
 
 (defmethod construct ((main main))
-  (new main (context main)))
+  (new main (glformat main)))
 
 (define-subwidget (main background) (q+:make-qcolor 0 0 0))
 
