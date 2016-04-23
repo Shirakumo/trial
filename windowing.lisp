@@ -17,6 +17,9 @@
 (defmethod construct ((main main))
   (new main (glformat main)))
 
+(defmethod print-object ((main main) stream)
+  (print-unreadable-object (main stream :identity T)))
+
 (define-subwidget (main background) (q+:make-qcolor 0 0 0))
 
 (define-initializer (main setup)
