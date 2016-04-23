@@ -70,9 +70,9 @@
       (cond ((and force current)
              (v:warn :trial.context "~a stealing ~a from ~a." this context current))
             (current
-             (v:info :trial.context "~a waiting to acquire ~a..." this context)
              (bt:with-lock-held ((context-wait-lock context))
-               (incf (context-waiting context)))
+               (incf (context-waiting context))
+               (v:info :trial.context "~a waiting to acquire ~a (~a in queue)..." this context (context-waiting context)))
              (bt:acquire-lock (context-lock context))
              (bt:with-lock-held ((context-wait-lock context))
                (decf (context-waiting context))))
