@@ -169,7 +169,7 @@
          (setf (resource asset) (make-instance 'resource
                                                :asset asset
                                                :data (load-data asset))))
-        ((not (data (resource asset)))
+        ((not (slot-value (resource asset) 'data))
          (setf (data (resource asset)) (load-data asset))))
   asset)
 
