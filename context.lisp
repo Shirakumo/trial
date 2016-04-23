@@ -7,6 +7,8 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
+(defvar *context* NIL)
+
 (defclass context ()
   ((glformat :initform NIL :accessor glformat)
    (glcontext :initform NIL :reader glcontext)
@@ -65,7 +67,6 @@
   (let ((current (current-thread context))
         (this (bt:current-thread)))
     (when (or force (not (eql this current)))
-      (v:info :trial.context "CURRENT: ~a THIS: ~a" current this)
       (cond ((and force current)
              (v:warn :trial.context "~a stealing ~a from ~a." this context current))
             (current
@@ -83,7 +84,8 @@
   (let ((current (current-thread context))
         (this (bt:current-thread)))
     (when (and (eql this current)
-               (or (not reentrant) (< 0 (context-waiting context))))
+               (or (not reentrant) (< 0 (context-waiting context)))
+               (not *context*))
       (v:info :trial.context "~a releasing ~a." this context)
       (setf (current-thread context) NIL)
       (q+:done-current context)
@@ -94,5 +96,6 @@
     `(let ((,cont ,context))
        (acquire-context ,cont :force ,force)
        (unwind-protect
-            (progn ,@body)
+            (let ((*context* ,cont))
+              ,@body)
          (release-context ,cont :reentrant ,reentrant)))))
