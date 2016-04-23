@@ -108,7 +108,7 @@
   ((name :initarg :name :accessor name)
    (home :initform NIL :accessor home)
    (resource :initform NIL :accessor resource)
-   (dependencies :initarg :dependencies :accessor dependencies))
+   (dependencies :initarg :dependencies :initarg :depends-on :accessor dependencies))
   (:default-initargs
    :name (error "NAME required.")
    :home (error "HOME required.")
