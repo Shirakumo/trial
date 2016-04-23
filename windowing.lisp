@@ -131,7 +131,7 @@
     ;; Recreate context, reload all data.
     (if (q+:create (q+:context main))
         (v:info :trial.main "Recreated context successfully.")
-        (v:severe :trail.main "Failed to recreate context!"))
+        (error "Failed to recreate context. Game over."))
     (q+:make-current main)
     (dolist (pool (pools))
       (dolist (asset (assets pool))
