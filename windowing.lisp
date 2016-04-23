@@ -18,7 +18,7 @@
   (new main (glformat main)))
 
 (defmethod print-object ((main main) stream)
-  (print-unreadable-object (main stream :identity T)))
+  (print-unreadable-object (main stream :type T :identity T)))
 
 (define-subwidget (main background) (q+:make-qcolor 0 0 0))
 
