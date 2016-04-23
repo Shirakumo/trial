@@ -107,10 +107,12 @@
 (defclass asset ()
   ((name :initarg :name :accessor name)
    (home :initform NIL :accessor home)
-   (resource :initform NIL :accessor resource))
+   (resource :initform NIL :accessor resource)
+   (dependencies :initarg :dependencies :accessor dependencies))
   (:default-initargs
    :name (error "NAME required.")
-   :home (error "HOME required.")))
+   :home (error "HOME required.")
+   :dependencies NIL))
 
 (defmethod print-object ((asset asset) stream)
   (print-unreadable-object (asset stream :type T)
@@ -189,7 +191,9 @@
       value)))
 
 (defmethod load-data :before ((asset asset))
-  (v:info :trial.asset "~a loading data..." asset))
+  (v:info :trial.asset "~a loading data..." asset)
+  (loop for (type pool name) in (dependencies asset)
+        do (restore (asset type pool name))))
 
 (defmethod finalize-data :before ((asset asset) data)
   (v:info :trial.asset "~a finalizing data..." asset))
