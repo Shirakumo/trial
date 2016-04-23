@@ -87,13 +87,6 @@
         (stop scene))))
   (v:info :trial.controller "Exiting update-loop."))
 
-(define-handler (controller mouse-release) (ev pos)
-  (let* ((buffer (selection controller))
-         (x (round (vx pos)))
-         (y (- (height buffer) (round (vy pos)))))
-    (render (first (loops controller)) buffer)
-    (v:info :test "CLICK: ~a/~a => ~a" x y (object-at-point buffer x y))))
-
 (defun setup-rendering (main)
   (v:info :trial.controller "Running GL~a.~a with ~a buffer~:p / ~a sample~:p, max texture size ~a."
           (gl:get* :major-version)
@@ -192,11 +185,12 @@
         (finalize obj)))
     (setup-scene scene)))
 
-(defclass acquire-context (event)
-  ())
-
-(define-handler (controller acquire-context) (ev)
-  (acquire-context *main*))
+(define-handler (controller mouse-release) (ev pos)
+  (let* ((buffer (selection controller))
+         (x (round (vx pos)))
+         (y (- (height buffer) (round (vy pos)))))
+    (render (first (loops controller)) buffer)
+    (v:info :test "CLICK: ~a/~a => ~a" x y (object-at-point buffer x y))))
 
 (defclass execute (event)
   ((func :initarg :func :reader func)
