@@ -149,8 +149,9 @@
 (defmethod reload ((asset asset))
   (let ((resource (resource asset)))
     (when resource
-      (finalize-data asset (slot-value resource 'data))
-      (setf (slot-value resource 'data) (load-data asset))))
+      (with-simple-restart (abort "Give up reloading the asset.")
+        (finalize-data asset (slot-value resource 'data))
+        (setf (slot-value resource 'data) (load-data asset)))))
   asset)
 
 (defmethod restore ((asset asset))
