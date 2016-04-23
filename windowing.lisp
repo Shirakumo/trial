@@ -113,6 +113,30 @@
 (defmethod height ((object qobject))
   (q+:height object))
 
-(defmethod (setf parent) :after (parent (main main))
-  ;; FIXME: On windows we need to completely recreate the context!
-  (issue (scene main) 'acquire-context))
+(defmethod (setf parent) (parent (main main))
+  ;; This is so complicated because Microsoft® Windows®™©
+  (with-context (main)
+    ;; Hide
+    (q+:hide main)
+    ;; Offload data, destroy the context.
+    (dolist (pool (pools))
+      (dolist (asset (assets pool))
+        (let ((resource (resource asset)))
+          (when resource
+            (finalize-data asset (data resource))
+            (setf (slot-value resource 'data) NIL)))))
+    (q+:reset (q+:context main))
+    ;; Do reparenting.
+    (setf (q+:parent main) parent)
+    ;; Recreate context, reload all data.
+    (if (q+:create (q+:context main))
+        (v:info :trial.main "Recreated context successfully.")
+        (v:severe :trail.main "Failed to recreate context!"))
+    (q+:make-current main)
+    (dolist (pool (pools))
+      (dolist (asset (assets pool))
+        (let ((resource (resource asset)))
+          (when resource
+            (setf (slot-value resource 'data) (load-data asset))))))
+    ;; Make visible again
+    (q+:show main)))
