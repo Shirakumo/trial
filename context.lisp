@@ -75,7 +75,9 @@
                (incf (context-waiting context)))
              (bt:acquire-lock (context-lock context))
              (bt:with-lock-held ((context-wait-lock context))
-               (decf (context-waiting context)))))
+               (decf (context-waiting context))))
+            (T
+             (bt:acquire-lock (context-lock context))))
       (v:info :trial.context "~a acquiring ~a." this context)
       (setf (current-thread context) this)
       (q+:make-current context))))
