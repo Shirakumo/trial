@@ -12,6 +12,7 @@
 ;;        How do we "bind" the asset if it's needed? Spilling the CONTENT everywhere
 ;;        seems like a bad idea.
 
+(defvar *redefining* NIL)
 (defvar *pools* (make-hash-table :test 'eql))
 
 ;; forward definition
@@ -124,7 +125,9 @@
     (enter asset home)
     (setf (home asset) home)))
 
-(defmethod reinitialize-instance :after ((asset asset) &key home)
+(defmethod reinitialize-instance :around ((asset asset) &key)
+  (let ((*redefining* T))
+    (call-next-method))
   (reload asset))
 
 (defmethod (setf home) (pool (asset asset))
@@ -153,6 +156,11 @@
         (finalize-data asset (slot-value resource 'data))
         (setf (slot-value resource 'data) (load-data asset)))))
   asset)
+
+(defmethod reload :around ((asset asset))
+  (if *redefining*
+      (v:debug :trial.asset "Skipping reload of ~a due to redefinition context." asset)
+      (call-next-method)))
 
 (defmethod restore ((asset asset))
   (unless (resource asset)
