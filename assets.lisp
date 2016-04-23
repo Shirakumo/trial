@@ -151,16 +151,16 @@
 
 (defmethod reload ((asset asset))
   (let ((resource (resource asset)))
-    (when resource
-      (with-simple-restart (abort "Give up reloading the asset.")
-        (finalize-data asset (slot-value resource 'data))
-        (setf (slot-value resource 'data) (load-data asset)))))
-  asset)
+    (with-simple-restart (abort "Give up reloading the asset.")
+      (finalize-data asset (slot-value resource 'data))
+      (setf (slot-value resource 'data) (load-data asset)))))
 
 (defmethod reload :around ((asset asset))
-  (if *redefining*
-      (v:debug :trial.asset "Skipping reload of ~a due to redefinition context." asset)
-      (call-next-method)))
+  (when (resource asset)
+    (if *redefining*
+        (v:debug :trial.asset "Skipping reload of ~a due to redefinition context." asset)
+        (call-next-method)))
+  asset)
 
 (defmethod restore ((asset asset))
   (unless (resource asset)

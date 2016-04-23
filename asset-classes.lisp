@@ -29,7 +29,7 @@
 (defclass gl-asset (asset)
   ())
 
-(defmethod reload :around ((asset gl-asset))
+(defmethod reload ((asset gl-asset))
   (with-context (*main*)
     (call-next-method)))
 
