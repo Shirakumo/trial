@@ -153,7 +153,7 @@
   (let ((resource (resource asset)))
     (with-simple-restart (abort "Give up reloading the asset.")
       (finalize-data asset (slot-value resource 'data))
-      (setf (slot-value resource 'data) (load-data asset)))))
+      (setf (data resource) (load-data asset)))))
 
 (defmethod reload :around ((asset asset))
   (when (resource asset)
@@ -163,17 +163,19 @@
   asset)
 
 (defmethod restore ((asset asset))
-  (unless (resource asset)
-    (setf (resource asset) (make-instance 'resource
-                                          :asset asset
-                                          :data (load-data asset))))
+  (cond ((not (resource asset))
+         (setf (resource asset) (make-instance 'resource
+                                               :asset asset
+                                               :data (load-data asset))))
+        ((not (data (resource asset)))
+         (setf (data (resource asset)) (load-data asset))))
   asset)
 
 (defmethod offload ((asset asset))
   (let ((resource (resource asset)))
     (when (and resource (data resource))
       (finalize-data asset (data resource))
-      (setf (slot-value resource 'data) NIL)
+      (setf (data resource) NIL)
       (setf (resource asset) NIL)))
   asset)
 
@@ -220,8 +222,8 @@
   `(name (update-or-create-asset ',type ',name ',home ',pools ,@options)))
 
 (defclass resource ()
-  ((data :initarg :data :reader data)
-   (asset :initarg :asset :reader resource-asset))
+  ((data :initarg :data :accessor data)
+   (asset :initarg :asset :accessor resource-asset))
   (:default-initargs
    :data (error "DATA required.")
    :asset (error "ASSET required.")))
@@ -257,7 +259,7 @@
               (new
                (v:severe :trial.asset "~a has already been restored, attempting recovery by copying ~a's data. This will not end well!"
                          asset new)
-               (setf (slot-value resource 'data) (data new)))))))
+               (setf (data resource) (data new)))))))
 
 ;; Delegate
 (defmethod slot-missing (class (resource resource) slot operation &optional new-value)
