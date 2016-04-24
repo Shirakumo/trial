@@ -102,10 +102,11 @@
                   (:failure (error (cdr result)))
                   (:success (return (cdr result)))))))))
 
-(defun launch ()
+(defun launch (&rest initargs)
   (v:output-here)
-  (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
-  (with-main-window (window 'main #-darwin :main-thread #-darwin NIL)))
+  #+linux (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
+  (with-main-window (window (apply #'make-instance 'main initargs)
+                            #-darwin :main-thread #-darwin NIL)))
 
 (defmethod width ((object qobject))
   (q+:width object))
