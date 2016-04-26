@@ -14,16 +14,14 @@
     (gl:frustum (- fw) fw (- fh) fh z-near z-far)))
 
 (define-subject camera (located-entity)
-  ((target :initarg :target :accessor target)
-   (up :initarg :up :accessor up)
-   (fov :initarg :fov :accessor fov))
+  ((fov :initarg :fov :accessor fov))
   (:default-initargs
-   :target (vec 0 0 0)
-   :up (vec 0 1 0)
-   :location (vec 0 30 200)
-   :fov 75))
+   :fov 75
+   :location (vec 0 30 200)))
 
 (define-generic-handler (camera project-view tick -100))
+
+(defmethod paint :around ((camera camera) target))
 
 (defmethod project-view :before ((camera camera) ev)
   (let ((width (width *main*))
@@ -34,7 +32,14 @@
     (gl:matrix-mode :modelview)
     (gl:viewport 0 0 width height)))
 
-(defmethod project-view ((camera camera) ev)
+(define-subject target-camera (camera)
+  ((target :initarg :target :accessor target)
+   (up :initarg :up :accessor up))
+  (:default-initargs
+   :target (vec 0 0 0)
+   :up (vec 0 1 0)))
+
+(defmethod project-view ((camera target-camera) ev)
   (look-at (location camera) (target camera) (up camera)))
 
 (defun look-at (eye target up)
@@ -49,7 +54,7 @@
        0.0f0  0.0f0  0.0f0 1.0f0))
     (gl:translate (- (vx eye)) (- (vy eye)) (- (vz eye)))))
 
-(define-subject pivot-camera (camera)
+(define-subject pivot-camera (target-camera)
   ()
   (:default-initargs
    :target NIL))
@@ -60,7 +65,7 @@
              (location (target camera))
              (up camera))))
 
-(define-subject following-camera (camera)
+(define-subject following-camera (target-camera)
   ()
   (:default-initargs
    :target NIL))
@@ -71,3 +76,22 @@
                  (location (target camera)))
              (location (target camera))
              (up camera))))
+
+(define-subject fps-camera (camera)
+  ((rotation :initarg :rotation :accessor rotation)
+   (acceleration :initarg :acceleration :accessor acceleration))
+  (:default-initargs
+   :rotation (vec 0 0 0)
+   :acceleration 0.5))
+
+(defmethod project-view ((camera fps-camera) ev)
+  (gl:rotate (vx (rotation camera)) 1.0 0.0 0.0)
+  (gl:rotate (vy (rotation camera)) 0.0 1.0 0.0)
+  (gl:rotate (vz (rotation camera)) 0.0 0.0 1.0)
+  (gl:translate (- (vx (location camera)))
+                (- (vy (location camera)))
+                (- (vz (location camera)))))
+
+(define-handler (fps-camera mouse-move) (ev pos old-pos)
+  (nv+ (rotation fps-camera) (nv* (nvorder (v- pos old-pos) :y :x :z)
+                                  (acceleration fps-camera))))
