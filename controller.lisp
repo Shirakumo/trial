@@ -185,6 +185,10 @@
         (finalize obj)))
     (setup-scene scene)))
 
+(define-handler (controller key-release) (ev key)
+  (when (eql key :escape)
+    (q+:release-mouse *main*)))
+
 (define-handler (controller mouse-release) (ev pos)
   (let* ((buffer (selection controller))
          (x (round (vx pos)))
