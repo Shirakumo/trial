@@ -54,5 +54,6 @@
                :bordeaux-threads
                :wavefront-loader
                :cl-gamepad
+               :cl-monitors
                :pathname-utils
                :flare))

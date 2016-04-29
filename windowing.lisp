@@ -20,6 +20,18 @@
 (defmethod print-object ((main main) stream)
   (print-unreadable-object (main stream :type T :identity T)))
 
+(defmethod initialize-instance :after ((main main) &key resolution fullscreen)
+  (etypecase resolution
+    (null)
+    (list
+     (setf (q+:fixed-size main) (values (first resolution)
+                                        (second resolution))))
+    (cl-monitors:mode
+     (setf (q+:fixed-size main) (values (cl-monitors:width resolution)
+                                        (cl-monitors:height resolution)))))
+  (when fullscreen
+    (q+:show-full-screen main)))
+
 (define-subwidget (main background) (q+:make-qcolor 0 0 0))
 
 (define-initializer (main setup)
