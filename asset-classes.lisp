@@ -90,15 +90,22 @@
 
 (defclass texture (image gl-asset)
   ((target :initarg :target :reader target)
-   (filter :initarg :filter :reader filter)
+   (mag-filter :initarg :mag-filter :reader mag-filter)
+   (anisotropy :initarg :anisotropy :reader anisotropy)
    (wrapping :initarg :wrapping :reader wrapping))
   (:default-initargs
    :target :texture-2d
-   :filter :linear
+   :mag-filter :linear
+   :min-filter :linear
+   :anisotropy NIL
    :wrapping :clamp-to-edge))
 
-(defmethod shared-initialize :before ((asset texture) slot-names &key (target (target asset)))
-  (check-texture-target target))
+(defmethod shared-initialize :before ((asset texture) slot-names &key (target (target asset))
+                                                                      (mag-filter (mag-filter asset))
+                                                                      (min-filter (min-filter asset)))
+  (check-texture-target target)
+  (check-texture-mag-filter mag-filter)
+  (check-texture-min-filter min-filter))
 
 (defun image-buffer-to-texture (buffer target)
   (ecase target
@@ -115,7 +122,7 @@
                                (cffi:inc-pointer (q+:bits buffer) (* width height index 4)))))))
 
 (defmethod load-data ((asset texture))
-  (with-slots (target filter wrapping) asset
+  (with-slots (target mag-filter min-filter anisotropy wrapping) asset
     (let ((image (call-next-method)))
       (check-texture-size (q+:width image) (q+:height image))
       (with-finalizing ((buffer (q+:qglwidget-convert-to-glformat image)))
@@ -125,8 +132,10 @@
           (with-cleanup-on-failure
               (finalize-data asset texture)
             (image-buffer-to-texture buffer target)
-            (gl:tex-parameter target :texture-min-filter filter)
-            (gl:tex-parameter target :texture-mag-filter filter)
+            (gl:tex-parameter target :texture-min-filter min-filter)
+            (gl:tex-parameter target :texture-mag-filter mag-filter)
+            (when anisotropy
+              (gl:tex-parameter target :texture-max-anisotropy-ext anisotropy))
             (gl:tex-parameter target :texture-wrap-s wrapping)
             (gl:tex-parameter target :texture-wrap-t wrapping)
             (unless (eql target :texture-2d)

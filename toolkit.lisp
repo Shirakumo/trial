@@ -140,6 +140,13 @@
 (defun check-texture-target (target)
   (ecase target ((:texture-2d :texture-cube-map))))
 
+(defun check-texture-mag-filter (filter)
+  (ecase filter ((:nearest :linear))))
+
+(defun check-texture-min-filter (filter)
+  (ecase filter ((:nearest :linear :nearest-mipmap-nearest :nearest-mipmap-linear
+                           :linear-mipmap-nearest :linear-mipmap-linear))))
+
 (defun check-shader-type (shader-type)
   (ecase shader-type ((:compute-shader :vertex-shader
                        :geometry-shader :fragment-shader
