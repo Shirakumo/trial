@@ -93,6 +93,7 @@
 (defclass texture (image gl-asset)
   ((target :initarg :target :reader target)
    (mag-filter :initarg :mag-filter :reader mag-filter)
+   (min-filter :initarg :min-filter :reader min-filter)
    (anisotropy :initarg :anisotropy :reader anisotropy)
    (wrapping :initarg :wrapping :reader wrapping))
   (:default-initargs
