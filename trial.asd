@@ -56,4 +56,5 @@
                :cl-gamepad
                :cl-monitors
                :pathname-utils
-               :flare))
+               :flare
+               :qtools-ui-slider))
