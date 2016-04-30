@@ -7,17 +7,19 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
+(defun primary-monitor-modes ()
+  (cl-monitors:modes (find-if #'cl-monitors:primary-p (cl-monitors:detect))))
+
 (define-widget launcher (QDialog)
   ())
 
 (define-subwidget (launcher resolution) (q+:make-qcombobox launcher)
-  (let ((primary (find-if #'cl-monitors:primary-p (cl-monitors:detect))))
-    (dolist (mode (cl-monitors:modes primary))
-      (q+:add-item resolution
-                   (format NIL "~ax~a @ ~a Hz"
-                           (cl-monitors:width mode)
-                           (cl-monitors:height mode)
-                           (cl-monitors:refresh mode))))))
+  (dolist (mode (primary-monitor-modes))
+    (q+:add-item resolution
+                 (format NIL "~ax~a @ ~a Hz"
+                         (cl-monitors:width mode)
+                         (cl-monitors:height mode)
+                         (cl-monitors:refresh mode)))))
 
 (define-subwidget (launcher vsync) (q+:make-qcombobox launcher)
   (q+:add-items vsync '("Off" "Adaptive" "Strict")))
@@ -55,3 +57,23 @@
   (q+:add-row layout "Filtering" filtering)
   (q+:add-row layout "FOV" fov)
   (q+:add-row layout cancel ok))
+
+(defun init-options (launcher)
+  (with-slots-bound (launcher launcher)
+    (let* ((mode (nth (q+:current-index resolution) (primary-monitor-modes)))
+           (vsync (cond ((string= "Off" (q+:current-text vsync)) 0)
+                        ((string= "Adaptive" (q+:current-text vsync)) -1)
+                        ((string= "Strict" (q+:current-text vsync)) (cl-monitors:refresh mode))))
+           (samples (parse-integer (q+:current-text samples)))
+           (filtering (cond ((string= "Nearest" (q+:current-text filtering)) :nearest)
+                            ((string= "Linear" (q+:current-text filtering)) :linear)
+                            ((string= "Bilinear" (q+:current-text filtering)) :linear-mipmap-nearest)
+                            (T :linear-mipmap-linear)))
+           (anisotropic (float (parse-integer (q+:current-text filtering)) 0.0f0)))
+      (list :resolution mode
+            :swap-interval vsync
+            :multisampling (when samples T)
+            :samples samples
+            :filtering filtering
+            :anisotropic anisotropic
+            :fov (qui:value fov)))))
