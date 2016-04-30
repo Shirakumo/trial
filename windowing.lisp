@@ -130,30 +130,26 @@
 (defmethod height ((object qobject))
   (q+:height object))
 
+(defmethod destroy-context :before ((main main))
+  (q+:hide main)
+  (dolist (pool (pools))
+    (dolist (asset (assets pool))
+      (let ((resource (resource asset)))
+        (when resource
+          (finalize-data asset (data resource))
+          (setf (slot-value resource 'data) NIL))))))
+
+(defmethod create-context :after ((main main))
+  (dolist (pool (pools))
+    (dolist (asset (assets pool))
+      (let ((resource (resource asset)))
+        (when resource
+          (setf (slot-value resource 'data) (load-data asset))))))
+  (q+:show main))
+
 (defmethod (setf parent) (parent (main main))
-  ;; This is so complicated because Microsoft® Windows®™©
+  ;; This is so annoying because Microsoft® Windows®™©
   (with-context (main)
-    ;; Hide
-    (q+:hide main)
-    ;; Offload data, destroy the context.
-    (dolist (pool (pools))
-      (dolist (asset (assets pool))
-        (let ((resource (resource asset)))
-          (when resource
-            (finalize-data asset (data resource))
-            (setf (slot-value resource 'data) NIL)))))
-    (q+:reset (q+:context main))
-    ;; Do reparenting.
+    (destroy-context main)
     (setf (q+:parent main) parent)
-    ;; Recreate context, reload all data.
-    (if (q+:create (q+:context main))
-        (v:info :trial.main "Recreated context successfully.")
-        (error "Failed to recreate context. Game over."))
-    (q+:make-current main)
-    (dolist (pool (pools))
-      (dolist (asset (assets pool))
-        (let ((resource (resource asset)))
-          (when resource
-            (setf (slot-value resource 'data) (load-data asset))))))
-    ;; Make visible again
-    (q+:show main)))
+    (create-context main)))

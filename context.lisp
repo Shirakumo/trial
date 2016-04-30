@@ -63,6 +63,24 @@
 (defmethod finalize :after ((context context))
   (finalize (glformat context)))
 
+(defmethod destroy-context :around ((context context))
+  (with-context (context)
+    (call-next-method)))
+
+(defmethod destroy-context ((context context))
+  (v:info :trial.context "Destroying context.")
+  (q+:reset (q+:context context)))
+
+(defmethod create-context :around ((context context))
+  (with-context (context)
+    (call-next-method)))
+
+(defmethod create-context ((context context))
+  (if (q+:create (q+:context context))
+      (v:info :trial.context "Recreated context successfully.")
+      (error "Failed to recreate context. Game over."))
+  (q+:make-current context))
+
 (defmethod acquire-context ((context context) &key force)
   (let ((current (current-thread context))
         (this (bt:current-thread)))
