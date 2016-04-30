@@ -4,6 +4,8 @@
  Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
+;; FIXME: configurable defaults
+
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
