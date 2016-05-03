@@ -173,6 +173,9 @@
          (setf (data (resource asset)) (load-data asset))))
   asset)
 
+(defmethod finalize ((asset asset))
+  (offload asset))
+
 (defmethod offload ((asset asset))
   (let ((resource (resource asset)))
     (when (and resource (data resource))
