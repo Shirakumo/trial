@@ -208,9 +208,7 @@
   (let ((asset (or (asset type pool name)
                    (error "No asset of type ~s with name ~s in ~a."
                           type name pool))))
-    (or (resource asset)
-        (and (restore asset)
-             (resource asset)))))
+    (resource (restore asset))))
 
 (defun update-or-create-asset (type name home pools &rest options)
   (let ((asset (asset type home name)))
