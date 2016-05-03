@@ -21,7 +21,6 @@
                (:file "assets")
                (:file "asset-classes")
                (:file "asset-pool")
-               (:file "framebuffer")
                (:file "entity")
                (:file "geometry")
                (:file "helpers")
