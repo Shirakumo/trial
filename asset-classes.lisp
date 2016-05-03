@@ -295,3 +295,38 @@
 
 (defmethod finalize-data ((asset vertex-array) data)
   (gl:delete-vertex-arrays (list data)))
+
+(defclass framebuffer (gl-asset)
+  ((attachment :initarg :attachment :reader attachment)
+   (width :initarg :width :reader width)
+   (height :initarg :height :reader height)
+   (mipmap :initarg :mipmap :reader mipmap)
+   (samples :initarg :samples :reader samples))
+  (:default-initargs
+   :attachment :depth-stencil
+   :mipmap NIL
+   :samples 0
+   :width (error "WIDTH required.")
+   :height (error "HEIGHT required.")))
+
+(defmethod shared-initialize :before ((asset framebuffer) slots &key attachment)
+  (check-framebuffer-attachment attachment))
+
+(defun framebuffer-attachment-value (attachment)
+  (ecase attachment
+    ((:depth-stencil)
+     (q+:qglframebufferobject.combined-depth-stencil))
+    (:depth
+     (q+:qglframebufferobject.depth))
+    ((NIL)
+     (q+:qglframebufferobject.no-attachment))))
+
+(defmethod load-data ((asset framebuffer))
+  (with-finalizing ((format (q+:make-qglframebufferobjectformat)))
+    (setf (q+:mipmap format) (mipmap framebuffer))
+    (setf (q+:samples format) (samples framebuffer))
+    (setf (q+:attachment format) (framebuffer-attachment-value (attachment framebuffer)))
+    (q+:make-qglframebufferobject (width framebuffer) (height framebuffer) format)))
+
+(defmethod finalize-data ((asset framebuffer) data)
+  (finalize data))

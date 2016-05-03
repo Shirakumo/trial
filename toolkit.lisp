@@ -170,3 +170,6 @@
                       :static-read :static-copy
                       :dynamic-draw :dynamic-read
                       :dynamic-copy))))
+
+(defun check-framebuffer-attachment (attachment)
+  (ecase attachment ((:depth-stencil :depth NIL))))
