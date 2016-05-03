@@ -323,10 +323,10 @@
 
 (defmethod load-data ((asset framebuffer))
   (with-finalizing ((format (q+:make-qglframebufferobjectformat)))
-    (setf (q+:mipmap format) (mipmap framebuffer))
-    (setf (q+:samples format) (samples framebuffer))
-    (setf (q+:attachment format) (framebuffer-attachment-value (attachment framebuffer)))
-    (q+:make-qglframebufferobject (width framebuffer) (height framebuffer) format)))
+    (setf (q+:mipmap format) (mipmap asset))
+    (setf (q+:samples format) (samples asset))
+    (setf (q+:attachment format) (framebuffer-attachment-value (attachment asset)))
+    (q+:make-qglframebufferobject (width asset) (height asset) format)))
 
 (defmethod finalize-data ((asset framebuffer) data)
   (finalize data))

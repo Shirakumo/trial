@@ -50,7 +50,12 @@
   ()
   (:default-initargs
    :width (width *main*)
-   :height (height *main*)))
+   :height (height *main*)
+   :home :trial
+   :name :selection-buffer))
+
+(defmethod initialize-instance :after ((buffer selection-buffer) &key)
+  (restore buffer))
 
 ;; We want to always keep it alive for as long as we exist.
 (defmethod resource ((asset asset))
@@ -61,9 +66,9 @@
 
 (define-handler (selection-buffer mouse-release mouse-release 1000) (ev pos)
   (let* ((x (round (vx pos)))
-         (y (- (height buffer) (round (vy pos)))))
+         (y (- (height selection-buffer) (round (vy pos)))))
     (render *loop* selection-buffer)
-    (v:info :test "CLICK: ~a/~a => ~a" x y (object-at-point buffer x y))))
+    (v:info :test "CLICK: ~a/~a => ~a" x y (object-at-point selection-buffer x y))))
 
 (defmethod render (scene (buffer selection-buffer))
   (unless (and (= (width *main*) (width buffer))
@@ -103,8 +108,10 @@
   (gl:bind-texture :texture-2d 0))
 
 (defmethod object-at-point ((buffer selection-buffer) x y)
-  (with-framebuffer-bound (buffer)
-    (color->object (gl:read-pixels x y 1 1 :rgba :unsigned-byte))))
+  (when (q+:bind (data buffer))
+    (unwind-protect
+         (color->object (gl:read-pixels x y 1 1 :rgba :unsigned-byte))
+      (q+:release (data buffer)))))
 
 (defclass selectable-entity (entity)
   ((color-id :initarg :color-id :accessor color-id))
