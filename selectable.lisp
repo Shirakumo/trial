@@ -46,28 +46,51 @@
 (defun color->object (id)
   (gethash (ensure-color id) *color-id-map*))
 
-(define-finalizable selection-buffer (framebuffer)
-  ())
+(define-subject selection-buffer (framebuffer)
+  ()
+  (:default-initargs
+   :width (width *main*)
+   :height (height *main*)))
+
+;; We want to always keep it alive for as long as we exist.
+(defmethod resource ((asset asset))
+  (slot-value asset 'resource))
+
+(defmethod (setf resource) (value (asset asset))
+  (setf (slot-value asset 'resource) value))
+
+(define-handler (selection-buffer mouse-release mouse-release 1000) (ev pos)
+  (let* ((x (round (vx pos)))
+         (y (- (height buffer) (round (vy pos)))))
+    (render *loop* selection-buffer)
+    (v:info :test "CLICK: ~a/~a => ~a" x y (object-at-point buffer x y))))
 
 (defmethod render (scene (buffer selection-buffer))
-  (gl:clear-color 0.0 0.0 0.0 0.0)
-  (gl:clear :color-buffer :depth-buffer)
-  ;; Disable blending and textures to ensure we have just 32bit colours.
-  (gl:disable :blend :texture-2d :multisample)
-  (gl:enable :depth-test :cull-face)
-  (with-pushed-matrix
-    ;; FIXME: Multiple cameras? Camera not named this?
-    (handle (make-instance 'tick) (unit :camera scene))
-    (paint scene buffer)))
+  (unless (and (= (width *main*) (width buffer))
+               (= (height *main*) (height buffer)))
+    ;; Size might have changed since we last updated...
+    (reinitialize-instance buffer :width (width *main*) :height (height *main*)))
+  (when (q+:bind (data buffer))
+    (unwind-protect
+         (progn
+           (gl:clear-color 0.0 0.0 0.0 0.0)
+           (gl:clear :color-buffer :depth-buffer)
+           ;; Disable blending and textures to ensure we have just 32bit colours.
+           (gl:disable :blend :texture-2d :multisample)
+           (gl:enable :depth-test :cull-face)
+           (with-pushed-matrix
+               ;; FIXME: Multiple cameras? Camera not named this?
+               (handle (make-instance 'tick) (unit :camera scene))
+             (paint scene buffer)))
+      (q+:release (data buffer)))))
 
 (defmethod paint :around (thing (buffer selection-buffer))
-  ;; FIXME: Nested structures?
   (when (or (typep thing 'selectable-entity)
             (typep thing 'container))
     (call-next-method)))
 
-(defmethod paint ((buffer selection-buffer) thing)
-  (gl:bind-texture :texture-2d (texture buffer))
+(defmethod paint ((buffer selection-buffer) (thing (eql :hud)))
+  (gl:bind-texture :texture-2d (q+:texture (data buffer)))
   (with-primitives :quads
     (gl:tex-coord 1 1)
     (gl:vertex (width *main*) 0)

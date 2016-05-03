@@ -12,12 +12,10 @@
    (tick-count :initform 0.0d0 :accessor tick-count)
    (update-thread :initform NIL :accessor update-thread)
    (last-pause :initform 0 :accessor last-pause)
-   (fps :initarg :fps :accessor fps)
-   (selection :initarg :selection :accessor selection :finalized T))
+   (fps :initarg :fps :accessor fps))
   (:default-initargs
    :name :controller
-   :fps 30.0f0
-   :selection NIL))
+   :fps 30.0f0))
 
 (defmethod initialize-instance :after ((controller controller) &key)
   (setf (update-thread controller)
@@ -64,10 +62,6 @@
     (setup-rendering main)
     (setup-scene scene)
     (start scene)
-
-    (setf (selection controller)
-          (make-instance 'selection-buffer :width (q+:width main)
-                                           :height (q+:height main)))
     
     (with-slots-bound (controller controller)
       (unwind-protect
@@ -138,7 +132,7 @@
     (gl:clear :depth-buffer)
 
     #+trial-debug-selection-buffer
-    (paint (selection controller) main)
+    (paint (unit :selection-buffer (scene main)) :hud)
     
     (let ((font (get-resource 'font :trial :debug-hud)))
       (q+:render-text main 20 30 (format NIL "Pause: ~,10f" (last-pause controller))
@@ -151,14 +145,11 @@
 
 ;; FIXME: proper LOADing of a map
 (defun setup-scene (scene)
-  (enter (make-instance 'skybox) scene)
+  ;(enter (make-instance 'skybox) scene)
   (enter (make-instance 'space-axes) scene)
   (enter (make-instance 'player) scene)
-  (enter (make-instance 'fps-camera :name :camera) scene))
-
-(define-handler (controller resize resize) (ev width height)
-  (v:info :trial.controller "Resizing to ~ax~a" width height)
-  (reinitialize-instance (selection controller) :width width :height height))
+  (enter (make-instance 'fps-camera :name :camera) scene)
+  (enter (make-instance 'selection-buffer :name :selection-buffer) scene))
 
 (define-handler (controller tick tick 100) (ev)
   (incf (tick-count controller))
@@ -188,13 +179,6 @@
 (define-handler (controller key-release) (ev key)
   (when (eql key :escape)
     (q+:release-mouse *main*)))
-
-(define-handler (controller mouse-release) (ev pos)
-  (let* ((buffer (selection controller))
-         (x (round (vx pos)))
-         (y (- (height buffer) (round (vy pos)))))
-    (render (first (loops controller)) buffer)
-    (v:info :test "CLICK: ~a/~a => ~a" x y (object-at-point buffer x y))))
 
 (defclass execute (event)
   ((func :initarg :func :reader func)
