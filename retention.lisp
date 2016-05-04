@@ -73,3 +73,6 @@
 
 (define-uniform-retention mouse (mouse-press mouse-release button)
   button)
+
+(define-uniform-retention gamepad (gamepad-press gamepad-release button)
+  button)
