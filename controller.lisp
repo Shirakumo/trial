@@ -158,7 +158,8 @@
   (cl-gamepad:process-events))
 
 (define-handler (controller mapping T 100) (ev)
-  (map-event ev *loop*))
+  (map-event ev *loop*)
+  (retain-event ev))
 
 (define-handler (controller launch-editor) (ev)
   (signal! *main* (launch-editor)))

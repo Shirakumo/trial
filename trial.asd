@@ -38,6 +38,7 @@
                (:file "input-tables")
                (:file "input")
                (:file "mapping")
+               (:file "retention")
                (:file "controller")
                (:file "player"))
   :depends-on (:alexandria

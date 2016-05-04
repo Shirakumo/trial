@@ -7,8 +7,6 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-;; FIXME: how to check if something is pressed?
-
 (defclass input-event (event)
   ())
 
