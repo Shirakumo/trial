@@ -48,6 +48,10 @@
   (dolist (handler (handlers container))
     (handle event handler)))
 
+(defmethod handle :around (event handler)
+  (with-simple-restart (abort "Don't handle ~a in ~a." event handler)
+    (call-next-method)))
+
 (defclass event-loop (handler-container)
   ((queue :initform (make-array 0 :initial-element NIL :adjustable T :fill-pointer T) :reader queue)))
 
