@@ -208,3 +208,22 @@
             (let ((*context* ,cont))
               ,@body)
          (release-context ,cont :reentrant ,reentrant)))))
+
+(defmethod describe-object :after ((context context) stream)
+  (format stream "~&~%Running GL~a.~a with ~a buffer~:p / ~a sample~:p, max texture size ~a.~%"
+          (gl:get* :major-version)
+          (gl:get* :minor-version)
+          (gl:get* :sample-buffers)
+          (gl:get* :samples)
+          (gl:get* :max-texture-size))
+  (format stream "~&GL info report:~%~
+                    GL Vendor:     ~a~%~
+                    GL Renderer:   ~a~%~
+                    GL Version:    ~a~%~
+                    GL Shader:     ~a~%~
+                    GL Extensions: ~a~%"
+           (gl:get-string :vendor)
+           (gl:get-string :renderer)
+           (gl:get-string :version)
+           (gl:get-string :shading-language-version)
+           (gl:get-string :extensions)))
