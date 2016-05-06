@@ -124,12 +124,6 @@
   (with-main-window (window (apply #'make-instance 'main initargs)
                             #-darwin :main-thread #-darwin NIL)))
 
-(defmethod width ((object qobject))
-  (q+:width object))
-
-(defmethod height ((object qobject))
-  (q+:height object))
-
 (defmethod destroy-context :before ((main main))
   (q+:hide main)
   (dolist (pool (pools))

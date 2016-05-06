@@ -43,6 +43,12 @@
           do (setf (row-major-aref m i) x))
     m))
 
+(defmethod width ((object qobject))
+  (q+:width object))
+
+(defmethod height ((object qobject))
+  (q+:height object))
+
 (defun one-of (thing &rest options)
   (find thing options))
 
