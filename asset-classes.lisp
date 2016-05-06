@@ -29,19 +29,33 @@
   (finalize data))
 
 (defclass gl-asset (asset)
-  ())
+  ((resource :initform (tg:make-weak-hash-table :weakness :value))))
 
-(defmethod reload ((asset gl-asset))
-  (with-context (*main*)
-    (call-next-method)))
+(defmethod resource ((asset gl-asset))
+  (unless *context*
+    (error "Cannot fetch resource of ~a without an active context!" asset))
+  (gethash *context* (slot-value asset 'gl-asset)))
+
+(defmethod (setf resource) (value (asset gl-asset))
+  (unless *context*
+    (error "Cannot update resource of ~a without an active context!" asset))
+  (setf (gethash *context* (slot-value asset 'gl-asset)) value))
+
+(defun call-with-asset-context (asset func)
+  (if *context*
+      (funcall func)
+      (loop for context being the hash-keys of (slot-value asset 'gl-asset)
+            do (with-context (context)
+                 (funcall func)))))
+
+(defmethod reload :around ((asset gl-asset))
+  (call-with-asset-context asset #'call-next-method))
 
 (defmethod load-data :around ((asset gl-asset))
-  (with-context (*main*)
-    (call-next-method)))
+  (call-with-asset-context asset #'call-next-method))
 
 (defmethod finalize-data :around ((asset gl-asset) data)
-  (with-context (*main*)
-    (call-next-method)))
+  (call-with-asset-context asset #'call-next-method))
 
 (defclass file-asset (asset)
   ((file :initform NIL :accessor file))
