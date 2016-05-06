@@ -9,7 +9,7 @@
 
 (defvar *context* NIL)
 
-(defclass context ()
+(define-widget context (QGLWidget)
   ((glformat :initform NIL :reader glformat)
    (glcontext :initform NIL :reader glcontext)
    (current-thread :initform NIL :accessor current-thread)
@@ -17,6 +17,12 @@
    (lock :initform (bt:make-lock "Context lock") :reader context-lock)
    (wait-lock :initform (bt:make-lock "Context wait lock") :reader context-wait-lock)
    (context-needs-recreation :initform NIL :accessor context-needs-recreation)))
+
+(defmethod print-object ((context context) stream)
+  (print-unreadable-object (context stream :type T :identity T)))
+
+(defmethod construct ((context context))
+  (new context (glformat context)))
 
 (defmethod shared-initialize :after ((context context)
                                      slots
@@ -58,7 +64,11 @@
       (format-set profile))))
 
 (defmethod initialize-instance :after ((context context) &key)
-  (setf (context-needs-recreation context) NIL))
+  (setf (context-needs-recreation context) NIL)
+  (setf (q+:updates-enabled context) NIL)
+  (setf (q+:auto-buffer-swap context) NIL)
+  (setf (q+:focus-policy context) (q+:qt.strong-focus))
+  (setf (q+:mouse-tracking context) T))
 
 (defmethod reinitialize-instance :after ((context context) &key)
   (when (context-needs-recreation context)
@@ -128,6 +138,13 @@
 (defmethod destroy-context ((context context))
   (when (q+:is-valid context)
     (v:info :trial.context "Destroying context.")
+    (q+:hide context)
+    (dolist (pool (pools))
+      (dolist (asset (assets pool))
+        (let ((resource (resource asset)))
+          (when resource
+            (finalize-data asset (data resource))
+            (setf (slot-value resource 'data) NIL)))))
     (q+:reset (q+:context context))))
 
 (defmethod create-context :around ((context context))
@@ -140,7 +157,20 @@
         (v:info :trial.context "Recreated context successfully.")
         (error "Failed to recreate context. Game over."))
     (q+:make-current context)
-    (setf (context-needs-recreation context) NIL)))
+    (setf (context-needs-recreation context) NIL)
+    (dolist (pool (pools))
+      (dolist (asset (assets pool))
+        (let ((resource (resource asset)))
+          (when resource
+            (setf (slot-value resource 'data) (load-data asset))))))
+    (q+:show context)))
+
+(defmethod (setf parent) (parent (context context))
+  ;; This is so annoying because Microsoft® Windows®™©
+  (with-context (context)
+    (destroy-context context)
+    (setf (q+:parent context) parent)
+    (create-context context)))
 
 (defmethod acquire-context ((context context) &key force)
   (let ((current (current-thread context))

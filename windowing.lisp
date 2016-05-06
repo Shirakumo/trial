@@ -14,12 +14,6 @@
    (controller :accessor controller :finalized NIL)
    (execute-queue :initform (make-array 0 :adjustable T :fill-pointer T) :accessor execute-queue)))
 
-(defmethod construct ((main main))
-  (new main (glformat main)))
-
-(defmethod print-object ((main main) stream)
-  (print-unreadable-object (main stream :type T :identity T)))
-
 (defmethod initialize-instance :after ((main main) &key resolution fullscreen)
   (etypecase resolution
     (null)
@@ -37,13 +31,9 @@
 (define-initializer (main setup)
   (v:info :trial "GENESIS")
   (setf *main* main)
-  (setf (q+:updates-enabled main) NIL)
-  (setf (q+:auto-buffer-swap main) NIL)
   (setf (q+:window-title main) "Trial")
   (setf (q+:minimum-size main) (values 300 200))
   (setf (q+:fixed-size main) (values 1024 768))
-  (setf (q+:focus-policy main) (q+:qt.strong-focus))
-  (setf (q+:mouse-tracking main) T)
   (setf scene (make-instance 'scene))
   (release-context main)
   (setf controller (make-instance 'controller))
@@ -123,27 +113,3 @@
   #+linux (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
   (with-main-window (window (apply #'make-instance 'main initargs)
                             #-darwin :main-thread #-darwin NIL)))
-
-(defmethod destroy-context :before ((main main))
-  (q+:hide main)
-  (dolist (pool (pools))
-    (dolist (asset (assets pool))
-      (let ((resource (resource asset)))
-        (when resource
-          (finalize-data asset (data resource))
-          (setf (slot-value resource 'data) NIL))))))
-
-(defmethod create-context :after ((main main))
-  (dolist (pool (pools))
-    (dolist (asset (assets pool))
-      (let ((resource (resource asset)))
-        (when resource
-          (setf (slot-value resource 'data) (load-data asset))))))
-  (q+:show main))
-
-(defmethod (setf parent) (parent (main main))
-  ;; This is so annoying because Microsoft® Windows®™©
-  (with-context (main)
-    (destroy-context main)
-    (setf (q+:parent main) parent)
-    (create-context main)))
