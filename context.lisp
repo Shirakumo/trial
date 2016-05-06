@@ -9,6 +9,15 @@
 
 (defvar *context* NIL)
 
+(defmacro with-context ((context &key force reentrant) &body body)
+  (let ((cont (gensym "CONTEXT")))
+    `(let ((,cont ,context))
+       (acquire-context ,cont :force ,force)
+       (unwind-protect
+            (let ((*context* ,cont))
+              ,@body)
+         (release-context ,cont :reentrant ,reentrant)))))
+
 (define-widget context (QGLWidget)
   ((glformat :initform NIL :reader glformat)
    (glcontext :initform NIL :reader glcontext)
@@ -199,15 +208,6 @@
       (setf (current-thread context) NIL)
       (q+:done-current context)
       (bt:release-lock (context-lock context)))))
-
-(defmacro with-context ((context &key force reentrant) &body body)
-  (let ((cont (gensym "CONTEXT")))
-    `(let ((,cont ,context))
-       (acquire-context ,cont :force ,force)
-       (unwind-protect
-            (let ((*context* ,cont))
-              ,@body)
-         (release-context ,cont :reentrant ,reentrant)))))
 
 (defmethod describe-object :after ((context context) stream)
   (format stream "~&~%Running GL~a.~a with ~a buffer~:p / ~a sample~:p, max texture size ~a.~%"
