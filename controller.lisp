@@ -58,7 +58,6 @@
   (let* ((display (display controller))
          (scene (scene display)))
     (acquire-context display)
-    (setf *context* display)
     (setup-rendering display)
     (setup-scene display)
     (start scene)

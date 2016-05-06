@@ -12,9 +12,9 @@
 (defmacro with-context ((context &key force reentrant) &body body)
   (let ((cont (gensym "CONTEXT")))
     `(let ((,cont ,context))
-       (acquire-context ,cont :force ,force)
        (unwind-protect
-            (let ((*context* ,cont))
+            (let ((*context* *context*))
+              (acquire-context ,cont :force ,force)
               ,@body)
          (release-context ,cont :reentrant ,reentrant)))))
 
@@ -198,6 +198,7 @@
         (error "Attempting to acquire invalid context ~a" context))
       (v:info :trial.context "~a acquiring ~a." this context)
       (setf (current-thread context) this)
+      (setf *context* context)
       (q+:make-current context))))
 
 (defmethod release-context ((context context) &key reentrant)
