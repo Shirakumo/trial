@@ -194,6 +194,8 @@
                (decf (context-waiting context))))
             (T
              (bt:acquire-lock (context-lock context))))
+      (unless (q+:is-valid context)
+        (error "Attempting to acquire invalid context ~a" context))
       (v:info :trial.context "~a acquiring ~a." this context)
       (setf (current-thread context) this)
       (q+:make-current context))))
@@ -206,7 +208,8 @@
                (not *context*))
       (v:info :trial.context "~a releasing ~a." this context)
       (setf (current-thread context) NIL)
-      (q+:done-current context)
+      (when (q+:is-valid context)
+        (q+:done-current context))
       (bt:release-lock (context-lock context)))))
 
 (defmethod describe-object :after ((context context) stream)
