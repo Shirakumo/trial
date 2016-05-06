@@ -63,7 +63,7 @@
     (acquire-context display)
     (setf *context* display)
     (setup-rendering display)
-    (setup-scene scene)
+    (setup-scene display)
     (start scene)
     
     (with-slots-bound (controller controller)
@@ -95,14 +95,6 @@
                                        (floor (/ (round (clock (scene display))) 60))
                                        (mod (clock (scene display)) 60))
                     (data font))))
-
-;; FIXME: proper LOADing of a map
-(defun setup-scene (scene)
-  ;(enter (make-instance 'skybox) scene)
-  (enter (make-instance 'space-axes) scene)
-  (enter (make-instance 'player) scene)
-  (enter (make-instance 'fps-camera :name :camera) scene)
-  (enter (make-instance 'selection-buffer :name :selection-buffer) scene))
 
 (define-handler (controller tick tick 100) (ev)
   (incf (tick-count controller)))

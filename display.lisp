@@ -106,6 +106,8 @@
       (render-hud (controller display) display)))
   (gl:matrix-mode :modelview))
 
+(defmethod setup-scene ((display display)))
+
 (define-signal (display execute) ())
 
 (define-slot (display execute) ()

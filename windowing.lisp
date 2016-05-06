@@ -39,3 +39,11 @@
   #+linux (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
   (with-main-window (window (apply #'make-instance 'main initargs)
                             #-darwin :main-thread #-darwin NIL)))
+
+;; FIXME: proper LOADing of a map
+(defmethod setup-scene ((main main))
+  ;;(enter (make-instance 'skybox) scene)
+  (enter (make-instance 'space-axes) scene)
+  (enter (make-instance 'player) scene)
+  (enter (make-instance 'fps-camera :name :camera) scene)
+  (enter (make-instance 'selection-buffer :name :selection-buffer) scene))
