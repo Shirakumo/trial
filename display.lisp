@@ -39,12 +39,9 @@
   (acquire-context display :force T)
   (finalize scene))
 
-(define-handler (display key-release) (ev key)
-  (when (eql key :escape)
-    (q+:release-mouse display)))
-
-(define-override (display focus-in-event) (ev)
-  (q+:grab-mouse display))
+;; FIXME! How to release?
+;; (define-override (display focus-in-event) (ev)
+;;   (q+:grab-mouse display))
 
 ;;; REASON FOR THE FOLLOWING TWO OVERRIDES:
 ;; The rendering in this engine works as follows.

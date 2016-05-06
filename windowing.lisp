@@ -22,8 +22,9 @@
   (dolist (pool (pools))
     (mapc #'offload (assets pool))))
 
-(define-handler (main launch-editor) (ev)
-  (signal! main (launch-editor)))
+;; FIXME! How to catch the launching event?
+;; (define-handler (main launch-editor) (ev)
+;;   (signal! main (launch-editor)))
 
 (define-signal (main launch-editor) ())
 
