@@ -11,7 +11,7 @@
   (cl-monitors:modes (find-if #'cl-monitors:primary-p (cl-monitors:detect))))
 
 (define-widget launcher (QDialog)
-  ())
+  ((context :initform (make-instance 'context))))
 
 (define-subwidget (launcher resolution) (q+:make-qcombobox launcher)
   (dolist (mode (primary-monitor-modes))
@@ -25,7 +25,7 @@
   (q+:add-items vsync '("Off" "Adaptive" "Strict")))
 
 (define-subwidget (launcher samples) (q+:make-qcombobox launcher)
-  (let ((max (with-context (*main*)
+  (let ((max (with-context (context)
                (gl:get* :max-samples))))
     (q+:add-item samples "Off")
     (loop for s = 2 then (* 2 s)
@@ -34,7 +34,7 @@
 
 (define-subwidget (launcher filtering) (q+:make-qcombobox launcher)
   (q+:add-items filtering '("Nearest" "Linear" "Bilinear" "Trilinear"))
-  (let ((max (with-context (*main*)
+  (let ((max (with-context (context)
                (when (gl:extension-present-p "GL_EXT_texture_filter_anisotropic")
                  (gl:get-float :max-texture-max-anisotropy-ext 1)))))
     (loop for s = 2 then (* 2 s)
