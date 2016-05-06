@@ -12,10 +12,12 @@
    (tick-count :initform 0.0d0 :accessor tick-count)
    (update-thread :initform NIL :accessor update-thread)
    (last-pause :initform 0 :accessor last-pause)
-   (fps :initarg :fps :accessor fps))
+   (fps :initarg :fps :accessor fps)
+   (display :initarg :display :accessor display))
   (:default-initargs
    :name :controller
-   :fps 30.0f0))
+   :fps 30.0f0
+   :display (error "DISPLAY required.")))
 
 (defmethod initialize-instance :after ((controller controller) &key)
   (setf (update-thread controller)
@@ -55,11 +57,10 @@
          ,pause))))
 
 (defun update-loop (controller)
-  (let* ((main *main*)
-         (scene (scene main)))
-    (acquire-context main)
-    (cl-gamepad:init)
-    (setup-rendering main)
+  (let* ((display (display controller))
+         (scene (scene display)))
+    (acquire-context display)
+    (setup-rendering display)
     (setup-scene scene)
     (start scene)
     
@@ -71,77 +72,27 @@
                             (with-frame-pause ((fps controller))
                               ;; Potentially release context every time to allow
                               ;; other threads to grab it.
-                              (with-context (main :reentrant T)
+                              (with-context (display :reentrant T)
                                 (issue scene 'tick)
                                 (process scene)
-                                (render controller main)
-                                (render-hud controller main)
-                                (q+:swap-buffers main))))))
-        (release-context main)
+                                (render NIL display)
+                                (render-hud NIL display)
+                                (q+:swap-buffers display))))))
+        (release-context display)
         (stop scene))))
   (v:info :trial.controller "Exiting update-loop."))
 
-(defun setup-rendering (main)
-  (v:info :trial.controller "Running GL~a.~a with ~a buffer~:p / ~a sample~:p, max texture size ~a."
-          (gl:get* :major-version)
-          (gl:get* :minor-version)
-          (gl:get* :sample-buffers)
-          (gl:get* :samples)
-          (gl:get* :max-texture-size))
-  (v:debug :trial.controller "GL info report:~%~
-                             GL Vendor:     ~a~%~
-                             GL Renderer:   ~a~%~
-                             GL Version:    ~a~%~
-                             GL Shader:     ~a~%~
-                             GL Extensions: ~a"
-           (gl:get-string :vendor)
-           (gl:get-string :renderer)
-           (gl:get-string :version)
-           (gl:get-string :shading-language-version)
-           (gl:get-string :extensions))
-  (gl:depth-mask T)
-  (gl:depth-func :lequal)
-  (gl:clear-depth 1.0)
-  (gl:alpha-func :greater 0)
-  (gl:blend-func :src-alpha :one-minus-src-alpha)
-  (gl:shade-model :smooth)
-  (gl:front-face :ccw)
-  (gl:cull-face :back)
-  (gl:hint :perspective-correction-hint :nicest)
-  (gl:hint :line-smooth-hint :nicest)
-  (gl:hint :polygon-smooth-hint :nicest))
-
-(defmethod render ((controller controller) (main main))
-  (q+:qgl-clear-color main (slot-value main 'background))
-  (let ((width (width main)) (height (height main)))
-    (gl:clear :color-buffer :depth-buffer)
-    (gl:enable :blend :cull-face :texture-2d :multisample
-               :line-smooth :polygon-smooth
-               :depth-test :depth-clamp :alpha-test)
-    (with-pushed-matrix
-      (paint (first (loops controller)) main))
-    (gl:load-identity)))
-
-(defun render-hud (controller main)
-  (gl:with-pushed-matrix* (:projection)
-    (gl:load-identity)
-    (gl:ortho 0 (q+:width main) (q+:height main) 0 -1 10)
-    (gl:matrix-mode :modelview)
-    (gl:load-identity)
-    (gl:disable :cull-face)
-    (gl:clear :depth-buffer)
-
-    #+trial-debug-selection-buffer
-    (paint (unit :selection-buffer (scene main)) :hud)
-    
-    (let ((font (get-resource 'font :trial :debug-hud)))
-      (q+:render-text main 20 30 (format NIL "Pause: ~,10f" (last-pause controller))
-                      (data font))
-      (q+:render-text main 20 50 (format NIL "Time:  ~2,'0d:~6,3,,,'0f"
-                                         (floor (/ (round (clock (scene main))) 60))
-                                         (mod (clock (scene main)) 60))
-                      (data font))))
-  (gl:matrix-mode :modelview))
+(defmethod render-hud ((controller controller) (display display))
+  #+trial-debug-selection-buffer
+  (paint (unit :selection-buffer (scene display)) :hud)
+  
+  (let ((font (get-resource 'font :trial :debug-hud)))
+    (q+:render-text display 20 30 (format NIL "Pause: ~,10f" (last-pause controller))
+                    (data font))
+    (q+:render-text display 20 50 (format NIL "Time:  ~2,'0d:~6,3,,,'0f"
+                                       (floor (/ (round (clock (scene display))) 60))
+                                       (mod (clock (scene display)) 60))
+                    (data font))))
 
 ;; FIXME: proper LOADing of a map
 (defun setup-scene (scene)
