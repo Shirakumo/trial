@@ -31,7 +31,7 @@
   (release-context display)
   (setf controller (make-instance 'controller))
   (enter controller scene)
-  (enter main scene))
+  (enter display scene))
 
 (define-finalizer (display teardown)
   (v:info :trial.display "~a is tearing down..." display)
@@ -100,7 +100,7 @@
 (defmethod render-hud ((null null) (display display))
   (gl:with-pushed-matrix* (:projection)
     (gl:load-identity)
-    (gl:ortho 0 (q+:width main) (q+:height main) 0 -1 10)
+    (gl:ortho 0 (q+:width display) (q+:height display) 0 -1 10)
     (gl:matrix-mode :modelview)
     (gl:load-identity)
     (gl:disable :cull-face)
@@ -110,18 +110,18 @@
       (render-hud (controller display) display)))
   (gl:matrix-mode :modelview))
 
-(define-signal (main execute) ())
+(define-signal (display execute) ())
 
-(define-slot (main execute) ()
-  (declare (connected main (execute)))
+(define-slot (display execute) ()
+  (declare (connected display (execute)))
   (loop for ev across execute-queue
         do (v:debug :trial.display "Executing ~a" ev)
            (execute ev)
         finally (setf (fill-pointer execute-queue) 0)))
 
-(defun funcall-in-gui (main func &key bindings (want-results T))
+(defun funcall-in-gui (display func &key bindings (want-results T))
   (let ((event (make-instance 'execute :func func :bindings bindings)))
-    (vector-push-extend event (execute-queue main))
+    (vector-push-extend event (execute-queue display))
     (when want-results
       (values-list
        (loop for result = (result event)
