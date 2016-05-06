@@ -22,7 +22,12 @@
   (print-unreadable-object (context stream :type T :identity T)))
 
 (defmethod construct ((context context))
-  (new context (glformat context)))
+  (new context (glformat context))
+  (let ((glcontext (q+:context context)))
+    (if (q+:is-valid glcontext)
+        (v:info :trial.context "~a successfully created context." context)
+        (error "Failed to create context."))
+    (acquire-context context)))
 
 (defmethod shared-initialize :after ((context context)
                                      slots
@@ -120,13 +125,6 @@
   (setf (q+:version (glformat context)) (values (first version) (second version)))
   (setf (context-needs-recreation context) T)
   version)
-
-(defmethod setup ((context context))
-  (let ((glcontext (q+:context context)))
-    (if (q+:is-valid glcontext)
-        (v:info :trial.context "~a successfully created context." context)
-        (error "Failed to create context."))
-    (acquire-context context)))
 
 (defmethod finalize :after ((context context))
   (finalize (glformat context)))
