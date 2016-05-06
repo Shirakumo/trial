@@ -147,6 +147,12 @@
   (let ((resource (resource asset)))
     (and resource (data resource))))
 
+(defmethod (setf data) (data (asset asset))
+  (let ((resource (resource asset)))
+    (if resource
+        (setf (data resource) data)
+        (setf (resource asset) (make-instance 'resource :asset asset :data data)))))
+
 (defmethod matches ((a asset) (b asset))
   (and (eql (type-of a) (type-of b))
        (string-equal (name a) (name b))))
@@ -165,12 +171,9 @@
   asset)
 
 (defmethod restore ((asset asset))
-  (cond ((not (resource asset))
-         (setf (resource asset) (make-instance 'resource
-                                               :asset asset
-                                               :data (load-data asset))))
-        ((not (slot-value (resource asset) 'data))
-         (setf (data (resource asset)) (load-data asset))))
+  (when (or (not (resource asset))
+            (not (slot-value (resource asset) 'data)))
+    (setf (data asset) (load-data asset)))
   asset)
 
 (defmethod finalize ((asset asset))
