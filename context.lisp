@@ -205,7 +205,7 @@
         (this (bt:current-thread)))
     (when (and (eql this current)
                (or (not reentrant) (< 0 (context-waiting context)))
-               (not *context*))
+               (not (eql *context* context)))
       (v:info :trial.context "~a releasing ~a." this context)
       (setf (current-thread context) NIL)
       (when (q+:is-valid context)
