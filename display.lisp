@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(define-widget display (QGLWidget context subject)
+(define-widget display (QGLWidget context)
   ((scene :initform NIL :accessor scene)
    (controller :initform NIL :accessor controller)
    (execute-queue :initform (make-array 0 :adjustable T :fill-pointer T) :accessor execute-queue)))
