@@ -103,17 +103,11 @@
   (enter (make-instance 'selection-buffer :name :selection-buffer) scene))
 
 (define-handler (controller tick tick 100) (ev)
-  (incf (tick-count controller))
-  (when (= 0 (mod (tick-count controller) (fps controller)))
-    (cl-gamepad:detect-devices))
-  (cl-gamepad:process-events))
+  (incf (tick-count controller)))
 
 (define-handler (controller mapping T 100) (ev)
   (map-event ev *loop*)
   (retain-event ev))
-
-(define-handler (controller launch-editor) (ev)
-  (signal! *main* (launch-editor)))
 
 (define-handler (controller reload-assets reload-assets 99) (ev)
   (dolist (pool (pools))
@@ -127,10 +121,6 @@
         (leave obj scene)
         (finalize obj)))
     (setup-scene scene)))
-
-(define-handler (controller key-release) (ev key)
-  (when (eql key :escape)
-    (q+:release-mouse *main*)))
 
 (defclass execute (event)
   ((func :initarg :func :reader func)

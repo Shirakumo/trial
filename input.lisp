@@ -114,32 +114,38 @@
    :old-pos (error "OLD-POS required.")
    :pos (error "POS required.")))
 
-(defun cl-gamepad:device-attached (device)
-  (v:info :trial.input "Attached ~s" (cl-gamepad:print-device device NIL))
-  (issue (scene *main*) 'gamepad-attach
-         :device device))
+;; FIXME!
+;; (defun cl-gamepad:device-attached (device)
+;;   (v:info :trial.input "Attached ~s" (cl-gamepad:print-device device NIL))
+;;   (issue (scene *display*) 'gamepad-attach
+;;          :device device))
 
-(defun cl-gamepad:device-removed (device)
-  (v:info :trial.input "Removed ~s" (cl-gamepad:print-device device NIL))
-  (issue (scene *main*) 'gamepad-remove
-         :device device))
+;; (defun cl-gamepad:device-removed (device)
+;;   (v:info :trial.input "Removed ~s" (cl-gamepad:print-device device NIL))
+;;   (issue (scene *display*) 'gamepad-remove
+;;          :device device))
 
-(defun cl-gamepad:button-pressed (button time device)
-  (declare (ignore time))
-  (issue (scene *main*) 'gamepad-press
-         :button (gamepad-button->symbol device button)
-         :device device))
+;; (defun cl-gamepad:button-pressed (button time device)
+;;   (declare (ignore time))
+;;   (issue (scene *display*) 'gamepad-press
+;;          :button (gamepad-button->symbol device button)
+;;          :device device))
 
-(defun cl-gamepad:button-released (button time device)
-  (declare (ignore time))
-  (issue (scene *main*) 'gamepad-release
-         :button (gamepad-button->symbol device button)
-         :device device))
+;; (defun cl-gamepad:button-released (button time device)
+;;   (declare (ignore time))
+;;   (issue (scene *display*) 'gamepad-release
+;;          :button (gamepad-button->symbol device button)
+;;          :device device))
 
-(defun cl-gamepad:axis-moved (axis last-value value time device)
-  (declare (ignore time))
-  (issue (scene *main*) 'gamepad-move
-         :axis (gamepad-axis->symbol device axis)
-         :old-pos last-value
-         :pos value
-         :device device))
+;; (defun cl-gamepad:axis-moved (axis last-value value time device)
+;;   (declare (ignore time))
+;;   (issue (scene *display*) 'gamepad-move
+;;          :axis (gamepad-axis->symbol device axis)
+;;          :old-pos last-value
+;;          :pos value
+;;          :device device))
+
+;; FIXME!!
+;; (when (= 0 (mod (tick-count controller) (fps controller)))
+;;   (cl-gamepad:detect-devices))
+;; (cl-gamepad:process-events)
