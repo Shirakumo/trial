@@ -66,7 +66,7 @@
     (let* ((mode (nth (q+:current-index resolution) (primary-monitor-modes)))
            (vsync (cond ((string= "Off" (q+:current-text vsync)) 0)
                         ((string= "Adaptive" (q+:current-text vsync)) -1)
-                        ((string= "Strict" (q+:current-text vsync)) (cl-monitors:refresh mode))))
+                        ((string= "Strict" (q+:current-text vsync)) 1)))
            (samples (or (parse-integer (q+:current-text samples) :junk-allowed T) 0))
            (filter (cond ((string= "Nearest" (q+:current-text filtering)) :nearest)
                          ((string= "Linear" (q+:current-text filtering)) :linear)
