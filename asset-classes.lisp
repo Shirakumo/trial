@@ -29,7 +29,7 @@
   (finalize data))
 
 (defclass gl-asset (asset)
-  ((resource :initform (tg:make-weak-hash-table :weakness :value))))
+  ((resource :initform (tg:make-weak-hash-table :weakness :key-and-value))))
 
 (defmethod resource ((asset gl-asset))
   (when *context*
