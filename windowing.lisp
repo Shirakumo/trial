@@ -13,7 +13,6 @@
   ())
 
 (define-initializer (main setup)
-  (v:info :trial "GENESIS")
   (setf *main* main)
   (setf (q+:window-title main) "Trial"))
 
@@ -36,6 +35,7 @@
 
 (defun launch (&rest initargs)
   (v:output-here)
+  (v:info :trial "GENESIS")
   #+linux (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
   (with-main-window (window (apply #'make-instance 'main initargs)
                             #-darwin :main-thread #-darwin NIL)))
