@@ -21,11 +21,8 @@
 
 (defmethod initialize-instance :after ((controller controller) &key)
   (setf (update-thread controller)
-        (bt:make-thread (lambda () (update-loop controller))
-                        :name "controller update-thread"
-                        :initial-bindings `((*standard-output* . ,*standard-output*)
-                                            (*error-output* . ,*error-output*)
-                                            (*context* . NIL)))))
+        (with-thread ("controller update-thread")
+          (update-loop controller))))
 
 (defmethod finalize ((controller controller))
   (let ((thread (update-thread controller)))

@@ -137,6 +137,17 @@
                       (return NIL))
                     (bt:thread-yield))))
 
+(defun make-thread (name func)
+  (bt:make-thread func
+                  :name name
+                  :initial-bindings `((*standard-output* . ,*standard-output*)
+                                      (*error-output* . ,*error-output*)
+                                      (*trace-output* . ,*trace-output*)
+                                      (*context* . NIL))))
+
+(defmacro with-thread ((name) &body body)
+  `(make-thread ,name (lambda () ,@body)))
+
 (defun check-texture-size (width height)
   (let ((max (gl:get* :max-texture-size)))
     (when (< max (max width height))
