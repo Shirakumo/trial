@@ -11,7 +11,7 @@
   (cl-monitors:modes (find-if #'cl-monitors:primary-p (cl-monitors:detect))))
 
 (define-widget launcher (QDialog)
-  ((context :initform (make-instance 'context))))
+  ((context :initform (make-instance 'context) :finalized T)))
 
 (define-subwidget (launcher resolution) (q+:make-qcombobox launcher)
   (dolist (mode (primary-monitor-modes))
@@ -20,6 +20,8 @@
                          (cl-monitors:width mode)
                          (cl-monitors:height mode)
                          (cl-monitors:refresh mode)))))
+
+(define-subwidget (launcher fullscreen) (q+:make-qcheckbox launcher))
 
 (define-subwidget (launcher vsync) (q+:make-qcombobox launcher)
   (q+:add-items vsync '("Off" "Adaptive" "Strict")))
@@ -52,6 +54,7 @@
 
 (define-subwidget (launcher layout) (q+:make-qformlayout launcher)
   (q+:add-row layout "Resolution" resolution)
+  (q+:add-row layout "Fullscreen" fullscreen)
   (q+:add-row layout "VSync" vsync)
   (q+:add-row layout "Antialiasing" samples)
   (q+:add-row layout "Filtering" filtering)
@@ -64,16 +67,17 @@
            (vsync (cond ((string= "Off" (q+:current-text vsync)) 0)
                         ((string= "Adaptive" (q+:current-text vsync)) -1)
                         ((string= "Strict" (q+:current-text vsync)) (cl-monitors:refresh mode))))
-           (samples (parse-integer (q+:current-text samples)))
-           (filtering (cond ((string= "Nearest" (q+:current-text filtering)) :nearest)
-                            ((string= "Linear" (q+:current-text filtering)) :linear)
-                            ((string= "Bilinear" (q+:current-text filtering)) :linear-mipmap-nearest)
-                            (T :linear-mipmap-linear)))
-           (anisotropic (float (parse-integer (q+:current-text filtering)) 0.0f0)))
+           (samples (or (parse-integer (q+:current-text samples) :junk-allowed T) 0))
+           (filter (cond ((string= "Nearest" (q+:current-text filtering)) :nearest)
+                         ((string= "Linear" (q+:current-text filtering)) :linear)
+                         ((string= "Bilinear" (q+:current-text filtering)) :linear-mipmap-nearest)
+                         (T :linear-mipmap-linear)))
+           (anisotropic (float (or (parse-integer (q+:current-text filtering) :junk-allowed T) 0.0) 0.0f0)))
       (list :resolution mode
+            :fullscreen (q+:is-checked fullscreen)
             :swap-interval vsync
             :multisampling (when samples T)
             :samples samples
-            :filtering filtering
+            :filtering filter
             :anisotropic anisotropic
             :fov (qui:value fov)))))
