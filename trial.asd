@@ -17,6 +17,7 @@
                (:file "debugging")
                (:file "toolkit")
                (:file "context")
+               (:file "display")
                (:file "storage")
                (:file "assets")
                (:file "asset-classes")

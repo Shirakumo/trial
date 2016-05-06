@@ -25,17 +25,17 @@
 (defclass key-release (keyboard-event)
   ())
 
-(define-override (main key-press-event) (ev)
+(define-override (display key-press-event) (ev)
   (unless (q+:is-auto-repeat ev)
     (let ((key (qt-key->symbol (q+:key ev))))
       (v:debug :trial.input "Key pressed: ~a" key)
-      (issue (scene main) 'key-press :key key))))
+      (issue (scene display) 'key-press :key key))))
 
-(define-override (main key-release-event) (ev)
+(define-override (display key-release-event) (ev)
   (unless (q+:is-auto-repeat ev)
     (let ((key (qt-key->symbol (q+:key ev))))
       (v:debug :trial.input "Key release: ~a" key)
-      (issue (scene main) 'key-release :key key))))
+      (issue (scene display) 'key-release :key key))))
 
 (defclass mouse-event (input-event)
   ((pos :initarg :pos :reader pos))
@@ -66,20 +66,20 @@
   (print-unreadable-object (event stream :type T)
     (format stream "~a => ~a" (old-pos event) (pos event))))
 
-(define-override (main mouse-press-event) (ev)
-  (issue (scene main) 'mouse-press
+(define-override (display mouse-press-event) (ev)
+  (issue (scene display) 'mouse-press
          :button (qt-button->symbol (q+:button ev))
          :pos (vec (q+:x (q+:pos-f ev)) (q+:y (q+:pos-f ev)) 0)))
 
-(define-override (main mouse-release-event) (ev)
-  (issue (scene main) 'mouse-release
+(define-override (display mouse-release-event) (ev)
+  (issue (scene display) 'mouse-release
          :button (qt-button->symbol (q+:button ev))
          :pos (vec (q+:x (q+:pos-f ev)) (q+:y (q+:pos-f ev)) 0)))
 
 (defvar *previous-mouse-position* NIL)
-(define-override (main mouse-move-event) (ev)
+(define-override (display mouse-move-event) (ev)
   (let ((pos (vec (q+:x (q+:pos-f ev)) (q+:y (q+:pos-f ev)) 0)))
-    (issue (scene main) 'mouse-move
+    (issue (scene display) 'mouse-move
            :old-pos (or *previous-mouse-position* pos)
            :pos pos)
     (setf *previous-mouse-position* pos)))
