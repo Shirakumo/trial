@@ -24,8 +24,8 @@
 (defmethod paint :around ((camera camera) target))
 
 (defmethod project-view :before ((camera camera) ev)
-  (let ((width (width *main*))
-        (height (height *main*)))
+  (let ((width (width *context*))
+        (height (height *context*)))
     (gl:matrix-mode :projection)
     (gl:load-identity)
     (perspective-view (fov camera) (/ width (max 1 height)) 0.01 100000.0)

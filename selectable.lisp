@@ -49,8 +49,8 @@
 (define-subject selection-buffer (framebuffer)
   ()
   (:default-initargs
-   :width (width *main*)
-   :height (height *main*)
+   :width (width *context*)
+   :height (height *context*)
    :home :trial
    :name :selection-buffer))
 
@@ -71,10 +71,10 @@
     (v:info :test "CLICK: ~a/~a => ~a" x y (object-at-point selection-buffer x y))))
 
 (defmethod render (scene (buffer selection-buffer))
-  (unless (and (= (width *main*) (width buffer))
-               (= (height *main*) (height buffer)))
+  (unless (and (= (width *context*) (width buffer))
+               (= (height *context*) (height buffer)))
     ;; Size might have changed since we last updated...
-    (reinitialize-instance buffer :width (width *main*) :height (height *main*)))
+    (reinitialize-instance buffer :width (width *context*) :height (height *context*)))
   (when (q+:bind (data buffer))
     (unwind-protect
          (progn
@@ -98,13 +98,13 @@
   (gl:bind-texture :texture-2d (q+:texture (data buffer)))
   (with-primitives :quads
     (gl:tex-coord 1 1)
-    (gl:vertex (width *main*) 0)
+    (gl:vertex (width *context*) 0)
     (gl:tex-coord 0 1)
     (gl:vertex 0 0)
     (gl:tex-coord 0 0)
-    (gl:vertex 0 (height *main*))
+    (gl:vertex 0 (height *context*))
     (gl:tex-coord 1 0)
-    (gl:vertex (width *main*) (height *main*)))
+    (gl:vertex (width *context*) (height *context*)))
   (gl:bind-texture :texture-2d 0))
 
 (defmethod object-at-point ((buffer selection-buffer) x y)
