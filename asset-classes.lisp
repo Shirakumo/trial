@@ -46,8 +46,9 @@
   (if *context*
       (funcall func)
       (loop for context being the hash-keys of (slot-value asset 'resource)
-            do (with-context (context)
-                 (funcall func)))))
+            do (when (q+:is-valid context)
+                 (with-context (context)
+                   (funcall func))))))
 
 (defmethod reload :around ((asset gl-asset))
   (call-with-asset-context asset #'call-next-method))
