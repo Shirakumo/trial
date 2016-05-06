@@ -8,7 +8,8 @@
 (in-readtable :qtools)
 
 (define-widget display (QGLWidget context)
-  ((scene :initform NIL :accessor scene)
+  ((original-mode :initform NIL :accessor original-mode)
+   (scene :initform NIL :accessor scene)
    (controller :initform NIL :accessor controller)
    (execute-queue :initform (make-array 0 :adjustable T :fill-pointer T) :accessor execute-queue)))
 
@@ -20,9 +21,15 @@
                                            (second resolution))))
     (cl-monitors:mode
      (setf (q+:fixed-size display) (values (cl-monitors:width resolution)
-                                           (cl-monitors:height resolution)))))
+                                           (cl-monitors:height resolution)))
+     (setf (original-mode display) (cl-monitors:mode (cl-monitors:monitor resolution)))
+     (cl-monitors:make-current resolution)))
   (when fullscreen
     (q+:show-full-screen display)))
+
+(defmethod finalize :after ((display display))
+  (when (original-mode display)
+    (cl-monitors:make-current (original-mode display))))
 
 (define-initializer (display setup)
   (v:info :trial.display "~a is launching..." display)
