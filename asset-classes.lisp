@@ -32,19 +32,18 @@
   ((resource :initform (tg:make-weak-hash-table :weakness :value))))
 
 (defmethod resource ((asset gl-asset))
-  (unless *context*
-    (error "Cannot fetch resource of ~a without an active context!" asset))
-  (gethash *context* (slot-value asset 'gl-asset)))
+  (when *context*
+    (gethash *context* (slot-value asset 'resource))))
 
 (defmethod (setf resource) (value (asset gl-asset))
   (unless *context*
     (error "Cannot update resource of ~a without an active context!" asset))
-  (setf (gethash *context* (slot-value asset 'gl-asset)) value))
+  (setf (gethash *context* (slot-value asset 'resource)) value))
 
 (defun call-with-asset-context (asset func)
   (if *context*
       (funcall func)
-      (loop for context being the hash-keys of (slot-value asset 'gl-asset)
+      (loop for context being the hash-keys of (slot-value asset 'resource)
             do (with-context (context)
                  (funcall func)))))
 
