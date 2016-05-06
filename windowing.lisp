@@ -20,7 +20,8 @@
 (define-finalizer (main teardown)
   (v:info :trial "RAPTURE")
   (dolist (pool (pools))
-    (mapc #'offload (assets pool))))
+    (mapc #'offload (assets pool)))
+  (setf *main* NIL))
 
 ;; FIXME! How to catch the launching event?
 ;; (define-handler (main launch-editor) (ev)
