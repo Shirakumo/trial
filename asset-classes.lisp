@@ -38,7 +38,9 @@
 (defmethod (setf resource) (value (asset gl-asset))
   (unless *context*
     (error "Cannot update resource of ~a without an active context!" asset))
-  (setf (gethash *context* (slot-value asset 'resource)) value))
+  (if value
+      (setf (gethash *context* (slot-value asset 'resource)) value)
+      (remhash value (slot-value asset 'resource))))
 
 (defun call-with-asset-context (asset func)
   (if *context*
