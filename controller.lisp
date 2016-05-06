@@ -24,7 +24,8 @@
         (bt:make-thread (lambda () (update-loop controller))
                         :name "controller update-thread"
                         :initial-bindings `((*standard-output* . ,*standard-output*)
-                                            (*error-output* . ,*error-output*)))))
+                                            (*error-output* . ,*error-output*)
+                                            (*context* . NIL)))))
 
 (defmethod finalize ((controller controller))
   (let ((thread (update-thread controller)))
@@ -60,6 +61,7 @@
   (let* ((display (display controller))
          (scene (scene display)))
     (acquire-context display)
+    (setf *context* display)
     (setup-rendering display)
     (setup-scene scene)
     (start scene)
