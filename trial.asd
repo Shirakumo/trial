@@ -41,7 +41,8 @@
                (:file "mapping")
                (:file "retention")
                (:file "controller")
-               (:file "player"))
+               (:file "player")
+               (:file "launcher"))
   :depends-on (:alexandria
                :3d-vectors
                :verbose
