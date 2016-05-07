@@ -42,8 +42,9 @@
 
 ;; FIXME: proper LOADing of a map
 (defmethod setup-scene ((main main))
-  ;;(enter (make-instance 'skybox) scene)
-  (enter (make-instance 'space-axes) scene)
-  (enter (make-instance 'player) scene)
-  (enter (make-instance 'fps-camera :name :camera) scene)
-  (enter (make-instance 'selection-buffer :name :selection-buffer) scene))
+  (let ((scene (scene main)))
+    ;;(enter (make-instance 'skybox) scene)
+    (enter (make-instance 'space-axes) scene)
+    (enter (make-instance 'player) scene)
+    (enter (make-instance 'following-camera :name :camera :target (unit :player scene)) scene)
+    (enter (make-instance 'selection-buffer :name :selection-buffer) scene)))
