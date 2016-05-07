@@ -9,8 +9,20 @@
 
 (defvar *main* NIL)
 
-(define-widget main (QGLWidget display)
+(define-subject main-controller (controller)
   ())
+
+(define-handler (main-controller launch-editor) (ev)
+  (signal! (display main-controller) (launch-editor)))
+
+(define-handler (main-controller tick) (ev)
+  (when (= 0 (mod (tick-count controller) (fps controller)))
+    (cl-gamepad:detect-devices))
+  (cl-gamepad:process-events))
+
+
+(define-widget main (QGLWidget display)
+  ((controller :initform (make-instance 'main-controller))))
 
 (define-initializer (main setup)
   (setf *main* main)
@@ -21,10 +33,6 @@
   (dolist (pool (pools))
     (mapc #'offload (assets pool)))
   (setf *main* NIL))
-
-;; FIXME! How to catch the launching event?
-;; (define-handler (main launch-editor) (ev)
-;;   (signal! main (launch-editor)))
 
 (define-signal (main launch-editor) ())
 
@@ -46,10 +54,14 @@
   (v:output-here)
   (v:info :trial "GENESIS")
   #+linux (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
-  (with-main-window (window (apply #'make-instance 'main initargs)
-                     #-darwin :main-thread #-darwin NIL)))
+  (cl-gamepad:init)
+  (unwind-protect
+       (with-main-window (window (apply #'make-instance 'main initargs)
+                          #-darwin :main-thread #-darwin NIL))
+    (cl-gamepad:shutdown)))
 
 (defun launch-with-launcher (&rest initargs)
+  #+linux (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
   (ensure-qapplication)
   (cl-monitors:init)
   (unwind-protect
