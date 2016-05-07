@@ -61,3 +61,6 @@
 ;; But we still need to call it in tick.
 (defmethod handle :before ((event tick) (scene scene))
   (update scene))
+
+(defmethod finalize :after ((scene scene))
+  (clear scene))
