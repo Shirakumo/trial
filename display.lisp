@@ -44,10 +44,6 @@
   (acquire-context display :force T)
   (finalize scene))
 
-;; FIXME! How to release?
-;; (define-override (display focus-in-event) (ev)
-;;   (q+:grab-mouse display))
-
 ;;; REASON FOR THE FOLLOWING TWO OVERRIDES:
 ;; The rendering in this engine works as follows.
 ;; There is a main thread that controls the Qt windows and a separate thread that handles
