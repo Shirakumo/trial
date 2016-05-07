@@ -58,10 +58,10 @@
   (restore buffer))
 
 ;; We want to always keep it alive for as long as we exist.
-(defmethod resource ((asset asset))
+(defmethod resource ((asset selection-buffer))
   (slot-value asset 'resource))
 
-(defmethod (setf resource) (value (asset asset))
+(defmethod (setf resource) (value (asset selection-buffer))
   (setf (slot-value asset 'resource) value))
 
 (define-handler (selection-buffer mouse-release mouse-release 1000) (ev pos)
