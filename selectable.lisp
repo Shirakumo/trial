@@ -47,7 +47,7 @@
   (gethash (ensure-color id) *color-id-map*))
 
 (define-subject selection-buffer (framebuffer)
-  ()
+  ((resource :initform (tg:make-weak-hash-table :weakness :key)))
   (:default-initargs
    :width (width *context*)
    :height (height *context*)
@@ -56,13 +56,6 @@
 
 (defmethod initialize-instance :after ((buffer selection-buffer) &key)
   (restore buffer))
-
-;; We want to always keep it alive for as long as we exist.
-(defmethod resource ((asset selection-buffer))
-  (slot-value asset 'resource))
-
-(defmethod (setf resource) (value (asset selection-buffer))
-  (setf (slot-value asset 'resource) value))
 
 (define-handler (selection-buffer mouse-release mouse-release 1000) (ev pos)
   (let* ((x (round (vx pos)))
