@@ -13,6 +13,9 @@
 (define-widget launcher (QDialog)
   ((context :initform (make-instance 'context) :finalized T)))
 
+(define-initializer (launcher setup 1000)
+  (cl-monitors:init))
+
 (define-subwidget (launcher resolution) (q+:make-qcombobox launcher)
   (dolist (mode (primary-monitor-modes))
     (q+:add-item resolution
