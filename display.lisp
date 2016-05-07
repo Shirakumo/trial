@@ -115,6 +115,10 @@
 
 (defmethod setup-scene ((display display)))
 
+(defmethod setup-scene :around ((display display))
+  (with-simple-restart (continue "Skip loading the rest of the scene and hope for the best.")
+    (call-next-method)))
+
 (define-signal (display execute) ())
 
 (define-slot (display execute) ()
