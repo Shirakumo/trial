@@ -9,8 +9,8 @@
 
 (define-widget display (QGLWidget context)
   ((original-mode :initform NIL :accessor original-mode)
-   (scene :initform NIL :accessor scene)
-   (controller :initform NIL :accessor controller)
+   (scene :initform (make-instance 'scene) :accessor scene)
+   (controller :initform (make-instance 'controller) :accessor controller)
    (execute-queue :initform (make-array 0 :adjustable T :fill-pointer T) :accessor execute-queue)))
 
 (defmethod initialize-instance :after ((display display) &key resolution fullscreen)
@@ -35,8 +35,7 @@
   (v:info :trial.display "~a is launching..." display)
   (setf (q+:minimum-size display) (values 300 200))
   (release-context display)
-  (setf scene (make-instance 'scene))
-  (setf controller (make-instance 'controller :display display))
+  (setf (display controller) display)
   (enter controller scene))
 
 (define-finalizer (display teardown)
