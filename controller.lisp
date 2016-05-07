@@ -19,12 +19,12 @@
    :fps 30.0f0
    :display (error "DISPLAY required.")))
 
-(defmethod initialize-instance :after ((controller controller) &key)
+(defmethod enter :after ((controller controller) (scene scene))
   (setf (update-thread controller)
         (with-thread ("controller update-thread")
           (update-loop controller))))
 
-(defmethod finalize ((controller controller))
+(defmethod finalize :after ((controller controller))
   (let ((thread (update-thread controller)))
     (when thread
       (setf (update-thread controller) NIL)
