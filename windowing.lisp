@@ -29,7 +29,7 @@
   (setf (q+:window-title main) "Trial"))
 
 (define-finalizer (main teardown)
-  (v:info :trial "RAPTURE")
+  (v:info :trial.main "RAPTURE")
   (dolist (pool (pools))
     (mapc #'offload (assets pool)))
   (setf *main* NIL))
@@ -52,7 +52,7 @@
 
 (defun launch (&rest initargs)
   (v:output-here)
-  (v:info :trial "GENESIS")
+  (v:info :trial.main "GENESIS")
   #+linux (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
   (cl-gamepad:init)
   (unwind-protect
