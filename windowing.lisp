@@ -33,13 +33,6 @@
   (when (find-package '#:org.shirakumo.fraf.trial.editor)
     (funcall (find-symbol (string '#:launch) '#:org.shirakumo.fraf.trial.editor) main)))
 
-(defun launch (&rest initargs)
-  (v:output-here)
-  (v:info :trial "GENESIS")
-  #+linux (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
-  (with-main-window (window (apply #'make-instance 'main initargs)
-                            #-darwin :main-thread #-darwin NIL)))
-
 ;; FIXME: proper LOADing of a map
 (defmethod setup-scene ((main main))
   (let ((scene (scene main)))
@@ -48,3 +41,21 @@
     (enter (make-instance 'player) scene)
     (enter (make-instance 'following-camera :name :camera :target (unit :player scene)) scene)
     (enter (make-instance 'selection-buffer :name :selection-buffer) scene)))
+
+(defun launch (&rest initargs)
+  (v:output-here)
+  (v:info :trial "GENESIS")
+  #+linux (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
+  (with-main-window (window (apply #'make-instance 'main initargs)
+                     #-darwin :main-thread #-darwin NIL)))
+
+(defun launch-with-launcher (&rest initargs)
+  (ensure-qapplication)
+  (cl-monitors:init)
+  (unwind-protect
+       (let ((opts NIL))
+         (with-finalizing ((launcher (make-instance 'launcher)))
+           (with-main-window (w launcher #-darwin :main-thread #-darwin NIL))
+           (setf opts (init-options launcher)))
+         (apply #'launch (append initargs opts)))
+    (cl-monitors:deinit)))
