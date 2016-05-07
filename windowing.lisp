@@ -16,13 +16,13 @@
   (signal! (display main-controller) (launch-editor)))
 
 (define-handler (main-controller tick) (ev)
-  (when (= 0 (mod (tick-count controller) (fps controller)))
+  (when (= 0 (mod (tick-count main-controller) (fps main-controller)))
     (cl-gamepad:detect-devices))
   (cl-gamepad:process-events))
 
 
 (define-widget main (QGLWidget display)
-  ((controller :initform (make-instance 'main-controller))))
+  ((controller :initform (make-instance 'main-controller :display NIL))))
 
 (define-initializer (main setup)
   (setf *main* main)
