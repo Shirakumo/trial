@@ -34,14 +34,14 @@
                (:file "octree")
                (:file "camera")
                (:file "selectable")
-               (:file "windowing")
                (:file "flare")
                (:file "input-tables")
                (:file "input")
                (:file "mapping")
                (:file "retention")
-               (:file "controller")
                (:file "player")
+               (:file "controller")
+               (:file "windowing")
                (:file "launcher"))
   :depends-on (:alexandria
                :3d-vectors
