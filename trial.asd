@@ -41,7 +41,7 @@
                (:file "retention")
                (:file "player")
                (:file "controller")
-               (:file "windowing")
+               (:file "main")
                (:file "launcher"))
   :depends-on (:alexandria
                :3d-vectors
