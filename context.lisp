@@ -10,13 +10,17 @@
 (defvar *context* NIL)
 
 (defmacro with-context ((context &key force reentrant) &body body)
-  (let ((cont (gensym "CONTEXT")))
+  (let ((cont (gensym "CONTEXT"))
+        (thunk (gensym "THUNK")))
     `(let ((,cont ,context))
-       (unwind-protect
-            (let ((*context* *context*))
-              (acquire-context ,cont :force ,force)
-              ,@body)
-         (release-context ,cont :reentrant ,reentrant)))))
+       (flet ((,thunk () ,@body))
+         (if (eql *context* ,cont)
+             (,thunk)
+             (let ((*context* *context*))
+               (acquire-context ,cont :force ,force)
+               (unwind-protect
+                    (,thunk)
+                 (release-context ,cont :reentrant ,reentrant))))))))
 
 (define-widget context (QGLWidget)
   ((glformat :initform NIL :reader glformat)
@@ -205,13 +209,16 @@
   (let ((current (current-thread context))
         (this (bt:current-thread)))
     (when (and (eql this current)
-               (or (not reentrant) (< 0 (context-waiting context)))
-               (not (eql *context* context)))
-      (v:info :trial.context "~a releasing ~a." this context)
-      (setf (current-thread context) NIL)
-      (when (q+:is-valid context)
-        (q+:done-current context))
-      (bt:release-lock (context-lock context)))))
+               (or (not reentrant) (< 0 (context-waiting context))))
+      (cond ((eql *context* context)
+             (v:info :trial.context "~a releasing ~a." this context)
+             (setf (current-thread context) NIL)
+             (when (q+:is-valid context)
+               (q+:done-current context))
+             (bt:release-lock (context-lock context)))
+            (T
+             (v:warn :trial.context "~a attempted to release ~a even through ~a is active."
+                     this context *context*))))))
 
 (defmethod describe-object :after ((context context) stream)
   (format stream "~&~%Running GL~a.~a with ~a buffer~:p / ~a sample~:p, max texture size ~a.~%"
