@@ -46,7 +46,7 @@
   (if *context*
       (funcall func)
       (loop for context being the hash-keys of (slot-value asset 'resource)
-            do (when (q+:is-valid context)
+            do (when (and context (qobject-alive-p context) (q+:is-valid context))
                  (with-context (context)
                    (funcall func))))))
 
