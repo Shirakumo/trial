@@ -10,17 +10,19 @@
 (defvar *context* NIL)
 
 (defmacro with-context ((context &key force reentrant) &body body)
-  (let ((cont (gensym "CONTEXT"))
-        (thunk (gensym "THUNK")))
+  (let* ((cont (gensym "CONTEXT"))
+         (acquiring-body `(progn
+                            (acquire-context ,cont :force ,force)
+                            (unwind-protect
+                                 (progn ,@body)
+                              (release-context ,cont :reentrant ,reentrant)))))
     `(let ((,cont ,context))
-       (flet ((,thunk () ,@body))
-         (if (eql *context* ,cont)
-             (,thunk)
-             (let ((*context* *context*))
-               (acquire-context ,cont :force ,force)
-               (unwind-protect
-                    (,thunk)
-                 (release-context ,cont :reentrant ,reentrant))))))))
+       ,(if reentrant
+            acquiring-body
+            `(if (eql *context* ,cont)
+                 (progn ,@body)
+                 (let ((*context* *context*))
+                   ,acquiring-body))))))
 
 (define-widget context (QGLWidget)
   ((glformat :initform NIL :reader glformat)
