@@ -57,11 +57,7 @@
 (defun update-loop (controller)
   (let* ((display (display controller))
          (scene (scene display)))
-    (acquire-context display)
-    (setup-rendering display)
-    (setup-scene display)
-    (start scene)
-    
+    (v:info :test "~a ~a" display *context*)
     (with-slots-bound (controller controller)
       (unwind-protect
            (loop while (update-thread controller)
@@ -76,7 +72,7 @@
                                 (render NIL display)
                                 (render-hud NIL display)
                                 (q+:swap-buffers display))))))
-        (release-context display)
+        
         (stop scene))))
   (v:info :trial.controller "Exiting update-loop."))
 

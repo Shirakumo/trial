@@ -34,8 +34,12 @@
 (define-initializer (display setup)
   (v:info :trial.display "~a is launching..." display)
   (setf (q+:minimum-size display) (values 300 200))
-  (release-context display)
   (setf (display controller) display)
+  (setup-rendering display)
+  (setup-scene display)
+  (start scene)
+  (release-context display)
+  ;; Launch the controller
   (enter controller scene))
 
 (define-finalizer (display teardown)
