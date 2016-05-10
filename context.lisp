@@ -141,7 +141,9 @@
   (setf (context-needs-recreation context) T)
   version)
 
-(defmethod finalize :after ((context context))
+(defmethod finalize ((context context))
+  (destroy-context context)
+  (call-next-method)
   (finalize (glformat context)))
 
 (defmethod destroy-context :around ((context context))
