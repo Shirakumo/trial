@@ -301,6 +301,9 @@
              (make-gamepad-table ',(cdr (assoc :buttons options))
                                  (gethash ,inherit *gamepad-button-table*))))))
 
+;; FIXME: Some gamepad axes are reversed, we need a way to
+;;        indicate that.
+
 ;;; General name mapping conventions:
 ;; :left-h      -- Left analog stick, horizontal movement
 ;; :left-v      -- Left analog stick, vertical movement
