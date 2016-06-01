@@ -166,17 +166,29 @@
   (gl:delete-textures (list data)))
 
 (defclass model (file-asset)
-  ())
+  ((texture-map :initarg :texture-map :accessor texture-map)
+   (texture-store :initform () :accessor texture-store))
+  (:default-initargs
+   :texture-map ()))
 
-(defmethod load-data ((asset model))
-  (let ((data (wavefront-loader:load-obj (file asset))))
+(defmethod load-data ((model model))
+  (let ((data (wavefront-loader:load-obj (file model))))
     (loop for obj across data
           for diffuse = (wavefront-loader:diffuse-map (wavefront-loader:material obj))
           do (when diffuse
-               (setf (wavefront-loader:diffuse-map (wavefront-loader:material obj))
-                     ;; FIXME: In general, this is suboptimal and will break horribly
-                     ;;        if references to the asset are not maintained. How to fix?
-                     (data (get-resource WHICH-POOL-?? 'texture WHICH-NAME-??)))))))
+               (let* ((texture (or (cdr (assoc diffuse (texture-map model) :test #'string-equal))
+                                   diffuse))
+                      (asset (etypecase texture
+                               (string (make-instance 'texture :file texture))
+                               (cons (asset 'texture (first texture) (second texture)))))
+                      (resource (resource (restore asset))))
+                 (pushnew resource (texture-store model))
+                 (setf (wavefront-loader:diffuse-map (wavefront-loader:material obj))
+                       (data resource)))))))
+
+(defmethod finalize-data :after ((model model) data)
+  ;; Free references
+  (setf (texture-store model) ()))
 
 ;; FIXME: allow specifying inline shaders
 (defclass shader (file-asset gl-asset)
