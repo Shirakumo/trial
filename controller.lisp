@@ -58,8 +58,8 @@
                               (with-context (display :reentrant T)
                                 (issue scene 'tick :tick-count (tick-count controller))
                                 (process scene)
-                                (render NIL display)
-                                (render-hud NIL display)
+                                (render display display)
+                                (render-hud display display)
                                 (q+:swap-buffers display))))))
         
         (stop scene))))

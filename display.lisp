@@ -14,7 +14,6 @@
 
 (define-initializer (display setup)
   (v:info :trial.display "~a is launching..." display)
-  (setf (q+:minimum-size display) (values 300 200))
   (setf (display controller) display)
   (setup-rendering display)
   (setup-scene display)
@@ -70,20 +69,20 @@
   (gl:hint :line-smooth-hint :nicest)
   (gl:hint :polygon-smooth-hint :nicest))
 
-(defmethod render ((null null) (display display))
+(defmethod render ((display source) (display target))
   (gl:clear-color 0 0 0 1)
   (gl:clear :color-buffer :depth-buffer)
   (gl:enable :blend :cull-face :texture-2d :multisample
              :line-smooth :polygon-smooth
              :depth-test :depth-clamp :alpha-test)
   (with-pushed-matrix
-    (paint (scene display) display))
+    (paint (scene source) target))
   (gl:load-identity))
 
-(defmethod render-hud ((null null) (display display))
+(defmethod render-hud ((display source) (display target))
   (gl:with-pushed-matrix* (:projection)
     (gl:load-identity)
-    (gl:ortho 0 (q+:width display) (q+:height display) 0 -1 10)
+    (gl:ortho 0 (q+:width target) (q+:height target) 0 -1 10)
     (gl:matrix-mode :modelview)
     (gl:load-identity)
     (gl:disable :cull-face)
