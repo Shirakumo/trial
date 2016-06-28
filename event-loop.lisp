@@ -62,6 +62,14 @@
                   (apply #'make-instance event-type args)))))
     (vector-push-extend event (queue loop))))
 
+(define-compiler-macro issue (&whole whole &environment env loop event-type &rest args)
+  (cond ((and (constantp event-type env)
+              (listp event-type)
+              (eql (first event-type) 'quote)
+              (symbolp (second event-type)))
+         `(vector-push-extend (make-instance ,event-type ,@args) (queue ,loop)))
+        (T whole)))
+
 (defun process (loop)
   (loop for i from 0
         while (< i (length (queue loop)))
