@@ -26,19 +26,8 @@
 
 (defmethod finalize :after ((controller controller))
   (let ((thread (update-thread controller)))
-    (when thread
-      (setf (update-thread controller) NIL)
-      (loop for i from 0
-            while (bt:thread-alive-p thread)
-            do (sleep 0.1)
-               (with-simple-restart (continue "Continue waiting.")
-                 (when (= 10 i)
-                   (restart-case
-                       (error "Update thread did not exit after 1s.")
-                     (abort ()
-                       :report "Kill the thread and exit, risking corrupting the image."
-                       (bt:destroy-thread thread)
-                       (return)))))))))
+    (with-thread-exit (thread)
+      (setf (update-thread controller) NIL))))
 
 (defun pause-time (fps start)
   (let* ((duration (max 0 (- (current-time) start)))

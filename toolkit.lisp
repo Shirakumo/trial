@@ -148,6 +148,26 @@
 (defmacro with-thread ((name) &body body)
   `(make-thread ,name (lambda () ,@body)))
 
+(defun wait-for-thread-exit (thread &key (timeout 1) (interval 0.1))
+  (loop for i from 0
+        while (bt:thread-alive-p thread)
+        do (sleep interval)
+           (with-simple-restart (continue "Continue waiting.")
+             (when (= i (/ timeout interval))
+               (restart-case
+                   (error "Thread ~s did not exit after ~a s." (bt:thread-name thread))
+                 (abort ()
+                   :report "Kill the thread and exit, risking corrupting the image."
+                   (bt:destroy-thread thread)
+                   (return)))))))
+
+(defmacro with-thread-exit ((thread &key (timeout 1) (interval 0.1)) &body body)
+  (let ((thread-g (gensym "THREAD")))
+    `(let ((,thread-g ,thread))
+       (when (and ,thread-g (bt:thread-alive-p ,thread-g))
+         ,@body
+         (wait-for-thread-exit ,thread-g :timeout ,timeout :interval ,interval)))))
+
 (defun check-texture-size (width height)
   (let ((max (gl:get* :max-texture-size)))
     (when (< max (max width height))
