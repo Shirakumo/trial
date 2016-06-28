@@ -7,26 +7,23 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(define-subject renderer ()
+(defclass renderable ()
   ((thread :initform NIL :accessor thread)
    (last-pause :initform 0 :accessor last-pause)
-   (fps :initarg :fps :accessor fps)
-   (target :initarg :target :accessor target))
+   (fps :initarg :fps :accessor fps))
   (:default-initargs
    :name :controller
-   :fps 30.0f0
-   :target (error "TARGET required.")))
+   :fps 30.0f0))
 
-(defmethod initialize-instance :after ((renderer renderer) &key target)
-  (etypecase target (context))
-  (setf (thread renderer)
-        (with-thread ("renderer thread")
-          (render target renderer))))
+(defmethod initialize-instance :after ((renderable renderable) &key)
+  (setf (thread renderable)
+        (with-thread ("renderable thread")
+          (render-loop renderable))))
 
-(defmethod finalize :after ((renderer renderer))
-  (let ((thread (thread renderer)))
+(defmethod finalize :before ((renderable renderable))
+  (let ((thread (thread renderable)))
     (with-thread-exit (thread)
-      (setf (thread renderer) NIL))))
+      (setf (thread renderable) NIL))))
 
 (defun pause-time (fps start)
   (let* ((duration (max 0 (- (current-time) start)))
@@ -42,12 +39,14 @@
          (sleep ,pause)
          ,pause))))
 
-(defmethod render (target (renderer renderer))
+(defmethod render (thing (renderable renderable)))
+
+(defun render-loop (renderable)
   (unwind-protect
-       (with-error-logging (:trial.renderer "Error in render thread")
-         (loop while (thread renderer)
+       (with-error-logging (:trial.renderable "Error in render thread")
+         (loop while (thread renderable)
                do (with-simple-restart (abort "Abort the update and retry.")
-                    (setf (last-pause renderer)
-                          (with-frame-pause ((fps renderer))
-                            (render target target))))))    
-    (v:info :trial.renderer "Exiting render-loop for ~a." target)))
+                    (setf (last-pause renderable)
+                          (with-frame-pause ((fps renderable))
+                            (render renderable renderable))))))    
+    (v:info :trial.renderable "Exiting render-loop for ~a." renderable)))

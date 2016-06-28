@@ -7,14 +7,13 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(define-widget display (QGLWidget context)
-  ((renderer :initform NIL :accessor renderer)))
+(define-widget display (QGLWidget context renderable)
+  ())
 
 (define-initializer (display setup)
   (v:info :trial.display "~a is launching..." display)
   (setup-rendering display)
-  (release-context display)
-  (setf (renderer display) (make-instance 'renderer :display display)))
+  (release-context display))
 
 ;;; REASON FOR THE FOLLOWING TWO OVERRIDES:
 ;; The rendering in this engine works as follows.
@@ -69,6 +68,7 @@
     (with-pushed-matrix
       (paint source target))
     (gl:load-identity)
+    (render-hud source target)
     (q+:swap-buffers target)))
 
 (defmethod render-hud ((source display) (target display))
