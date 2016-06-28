@@ -8,24 +8,13 @@
 (in-readtable :qtools)
 
 (define-widget display (QGLWidget context)
-  ((scene :initform (make-instance 'scene) :accessor scene)
-   (controller :initform (make-instance 'controller :display NIL) :accessor controller)))
+  ((renderer :initform NIL :accessor renderer)))
 
 (define-initializer (display setup)
   (v:info :trial.display "~a is launching..." display)
-  (setf (display controller) display)
   (setup-rendering display)
-  (setup-scene display)
-  (start scene)
   (release-context display)
-  ;; Launch the controller
-  (enter controller scene))
-
-(define-finalizer (display teardown)
-  (v:info :trial.display "~a is tearing down..." display)
-  (finalize controller)
-  (acquire-context display :force T)
-  (finalize scene))
+  (setf (renderer display) (make-instance 'renderer :display display)))
 
 ;;; REASON FOR THE FOLLOWING TWO OVERRIDES:
 ;; The rendering in this engine works as follows.
@@ -68,17 +57,17 @@
   (gl:hint :line-smooth-hint :nicest)
   (gl:hint :polygon-smooth-hint :nicest))
 
-(defmethod render ((display source) (display target))
+(defmethod render (source (target display))
   (gl:clear-color 0 0 0 1)
   (gl:clear :color-buffer :depth-buffer)
   (gl:enable :blend :cull-face :texture-2d :multisample
              :line-smooth :polygon-smooth
              :depth-test :depth-clamp :alpha-test)
   (with-pushed-matrix
-    (paint (scene source) target))
+    (paint source target))
   (gl:load-identity))
 
-(defmethod render-hud ((display source) (display target))
+(defmethod render-hud ((source display) (target display))
   (gl:with-pushed-matrix* (:projection)
     (gl:load-identity)
     (gl:ortho 0 (q+:width target) (q+:height target) 0 -1 10)
@@ -86,13 +75,6 @@
     (gl:load-identity)
     (gl:disable :cull-face)
     (gl:clear :depth-buffer)
-
-    (with-pushed-matrix
-      (render-hud (controller display) display)))
+    ;; Figure out how to delegate drawing.
+    )
   (gl:matrix-mode :modelview))
-
-(defmethod setup-scene ((display display)))
-
-(defmethod setup-scene :around ((display display))
-  (with-simple-restart (continue "Skip loading the rest of the scene and hope for the best.")
-    (call-next-method)))

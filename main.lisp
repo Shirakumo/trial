@@ -17,16 +17,23 @@
 
 
 (define-widget main (QGLWidget display fullscreenable executable)
-  ((controller :initform (make-instance 'main-controller :display NIL))
+  ((scene :initform (make-instance 'scene) :accessor scene)
+   (controller :initform (make-instance 'main-controller))
    (input-handler :initform (make-instance 'input-handler))))
 
 (define-initializer (main setup)
   (setf *main* main)
   (setf (q+:window-title main) "Trial")
-  (add-handler main input-handler))
+  (add-handler main input-handler)
+  (enter controller scene)
+  (issue scene 'reload-scene)
+  (start scene))
 
 (define-finalizer (main teardown)
   (v:info :trial.main "RAPTURE")
+  (acquire-context display :force T)
+  (finalize controller)
+  (finalize scene)
   (dolist (pool (pools))
     (mapc #'offload (assets pool)))
   (setf *main* NIL))
@@ -38,6 +45,10 @@
   (when (find-package '#:org.shirakumo.fraf.trial.editor)
     (funcall (find-symbol (string '#:launch) '#:org.shirakumo.fraf.trial.editor) main)))
 
+(defmethod setup-scene :around ((display display))
+  (with-simple-restart (continue "Skip loading the rest of the scene and hope for the best.")
+    (call-next-method)))
+
 ;; FIXME: proper LOADing of a map
 (defmethod setup-scene ((main main))
   (let ((scene (scene main)))
@@ -46,6 +57,9 @@
     (enter (make-instance 'player) scene)
     (enter (make-instance 'following-camera :name :camera :target (unit :player scene)) scene)
     (enter (make-instance 'selection-buffer :name :selection-buffer) scene)))
+
+(defmethod paint ((source main) (target display))
+  (paint (scene source) target))
 
 (defun launch (&rest initargs)
   (v:output-here)
