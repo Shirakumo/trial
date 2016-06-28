@@ -97,18 +97,9 @@
         (finalize obj)))
     (setup-scene scene)))
 
-
-
 (define-handler (controller execute) (ev)
   (execute ev))
 
-(defun funcall-in-scene (scene func &key bindings (want-results T))
-  (let ((event (make-instance 'execute :func func :bindings bindings)))
-    (issue scene event)
-    (when want-results
-      (values-list
-       (loop for result = (result event)
-             do (sleep 0.01)
-                (case (car result)
-                  (:failure (error (cdr result)))
-                  (:success (return (cdr result)))))))))
+(defun funcall-in-scene (scene func &key bindings (return-values T))
+  (with-execution (return-values event 'execute-request :func func :bindings bindings )
+    (issue scene event)))
