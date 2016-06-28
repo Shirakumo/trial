@@ -9,8 +9,7 @@
 
 (define-widget display (QGLWidget context)
   ((scene :initform (make-instance 'scene) :accessor scene)
-   (controller :initform (make-instance 'controller :display NIL) :accessor controller)
-   (execute-queue :initform (make-array 0 :adjustable T :fill-pointer T) :accessor execute-queue)))
+   (controller :initform (make-instance 'controller :display NIL) :accessor controller)))
 
 (define-initializer (display setup)
   (v:info :trial.display "~a is launching..." display)
@@ -97,23 +96,3 @@
 (defmethod setup-scene :around ((display display))
   (with-simple-restart (continue "Skip loading the rest of the scene and hope for the best.")
     (call-next-method)))
-
-(define-signal (display execute) ())
-
-(define-slot (display execute) ()
-  (declare (connected display (execute)))
-  (loop for ev across execute-queue
-        do (v:debug :trial.display "Executing ~a" ev)
-           (execute ev)
-        finally (setf (fill-pointer execute-queue) 0)))
-
-(defun funcall-in-gui (display func &key bindings (want-results T))
-  (let ((event (make-instance 'execute :func func :bindings bindings)))
-    (vector-push-extend event (execute-queue display))
-    (when want-results
-      (values-list
-       (loop for result = (result event)
-             do (sleep 0.01)
-                (case (car result)
-                  (:failure (error (cdr result)))
-                  (:success (return (cdr result)))))))))

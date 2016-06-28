@@ -16,7 +16,7 @@
   (signal! (display main-controller) (launch-editor)))
 
 
-(define-widget main (QGLWidget display fullscreenable)
+(define-widget main (QGLWidget display fullscreenable executable)
   ((controller :initform (make-instance 'main-controller :display NIL))
    (input-handler :initform (make-instance 'input-handler))))
 

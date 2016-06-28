@@ -28,6 +28,7 @@
                (:file "geometry")
                (:file "helpers")
                (:file "event-loop")
+               (:file "executable")
                (:file "subject")
                (:file "subjects")
                (:file "scene")

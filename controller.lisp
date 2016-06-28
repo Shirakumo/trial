@@ -97,29 +97,7 @@
         (finalize obj)))
     (setup-scene scene)))
 
-(defclass execute (event)
-  ((func :initarg :func :reader func)
-   (bindings :initarg :bindings :reader bindings)
-   (result :initform NIL :accessor result))
-  (:default-initargs
-   :func (error "FORM required.")
-   :bindings ()))
 
-(defmethod execute :around ((execute execute))
-  (with-slots (bindings result) execute
-    (handler-case
-        (handler-bind ((error (lambda (err)
-                                (v:error :trial.controller "Error attempting to process execute event: ~a" err)
-                                (v:debug :trial.controller err))))
-          (progv (mapcar #'first bindings)
-              (mapcar #'second bindings)
-            (setf result (cons :success (multiple-value-list
-                                         (call-next-method))))))
-      (error (err)
-        (setf result (cons :failure err))))))
-
-(defmethod execute ((execute execute))
-  (funcall (func execute)))
 
 (define-handler (controller execute) (ev)
   (execute ev))
