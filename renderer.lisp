@@ -44,9 +44,7 @@
 
 (defmethod render ((target context) (renderer renderer))
   (unwind-protect
-       (handler-bind ((error (lambda (err)
-                               (v:severe :trial.renderer "Error in render thread: ~a" err)
-                               (v:debug :trial.renderer err))))
+       (with-error-logging (:trial.renderer "Error in render thread")
          (loop while (thread renderer)
                do (with-simple-restart (abort "Abort the update and retry.")
                     (setf (last-pause renderer)

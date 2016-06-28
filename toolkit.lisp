@@ -168,6 +168,14 @@
          ,@body
          (wait-for-thread-exit ,thread-g :timeout ,timeout :interval ,interval)))))
 
+(defmacro with-error-logging ((&optional (category :trial) message) &body body)
+  (let ((category-g (gensym "CATEGORY")))
+    `(let ((,category-g ,category))
+       (handler-bind ((error (lambda (err)
+                               (v:severe ,category-g "~@[~a ~]~a" ,message err)
+                               (v:debug ,category-g err))))
+         ,@body))))
+
 (defun check-texture-size (width height)
   (let ((max (gl:get* :max-texture-size)))
     (when (< max (max width height))
