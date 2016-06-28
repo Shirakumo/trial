@@ -157,7 +157,7 @@
                             (sleep 1/60))
                 (cl-gamepad:shutdown))))))
 
-(defun shutdown-init-system ()
+(defun shutdown-input-system ()
   (with-thread-exit (*input-gamepad-thread*)
     (setf *input-gamepad-thread* NIL)))
 
