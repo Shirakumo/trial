@@ -96,4 +96,4 @@
   ())
 
 (defclass tick (event)
-  ())
+  ((tick-count :initarg :tick-count :reader tick-count)))

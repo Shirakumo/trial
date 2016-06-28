@@ -67,7 +67,7 @@
                               ;; Potentially release context every time to allow
                               ;; other threads to grab it.
                               (with-context (display :reentrant T)
-                                (issue scene 'tick)
+                                (issue scene 'tick :tick-count (tick-count controller))
                                 (process scene)
                                 (render NIL display)
                                 (render-hud NIL display)
