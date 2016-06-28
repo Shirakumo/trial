@@ -16,6 +16,7 @@
   :components ((:file "package")
                (:file "debugging")
                (:file "toolkit")
+               (:file "fullscreenable")
                (:file "context")
                (:file "display")
                (:file "storage")

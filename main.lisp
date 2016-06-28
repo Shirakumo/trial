@@ -16,7 +16,7 @@
   (signal! (display main-controller) (launch-editor)))
 
 
-(define-widget main (QGLWidget display)
+(define-widget main (QGLWidget display fullscreenable)
   ((controller :initform (make-instance 'main-controller :display NIL))
    (input-handler :initform (make-instance 'input-handler))))
 
@@ -58,11 +58,8 @@
 (defun launch-with-launcher (&rest initargs)
   #+linux (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
   (ensure-qapplication)
-  (cl-monitors:init)
-  (unwind-protect
-       (let ((opts NIL))
-         (with-finalizing ((launcher (make-instance 'launcher)))
-           (with-main-window (w launcher #-darwin :main-thread #-darwin NIL))
-           (setf opts (init-options launcher)))
-         (apply #'launch (append initargs opts)))
-    (cl-monitors:deinit)))
+  (let ((opts NIL))
+    (with-finalizing ((launcher (make-instance 'launcher)))
+      (with-main-window (w launcher #-darwin :main-thread #-darwin NIL))
+      (setf opts (init-options launcher)))
+    (apply #'launch (append initargs opts))))
