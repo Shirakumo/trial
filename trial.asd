@@ -18,6 +18,7 @@
                (:file "toolkit")
                (:file "fullscreenable")
                (:file "context")
+               (:file "renderer")
                (:file "display")
                (:file "storage")
                (:file "assets")
