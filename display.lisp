@@ -58,14 +58,18 @@
   (gl:hint :polygon-smooth-hint :nicest))
 
 (defmethod render (source (target display))
-  (gl:clear-color 0 0 0 1)
-  (gl:clear :color-buffer :depth-buffer)
-  (gl:enable :blend :cull-face :texture-2d :multisample
-             :line-smooth :polygon-smooth
-             :depth-test :depth-clamp :alpha-test)
-  (with-pushed-matrix
-    (paint source target))
-  (gl:load-identity))
+  ;; Potentially release context every time to allow
+  ;; other threads to grab it.
+  (with-context (target :reentrant T)
+    (gl:clear-color 0 0 0 1)
+    (gl:clear :color-buffer :depth-buffer)
+    (gl:enable :blend :cull-face :texture-2d :multisample
+               :line-smooth :polygon-smooth
+               :depth-test :depth-clamp :alpha-test)
+    (with-pushed-matrix
+      (paint source target))
+    (gl:load-identity)
+    (q+:swap-buffers target)))
 
 (defmethod render-hud ((source display) (target display))
   (gl:with-pushed-matrix* (:projection)

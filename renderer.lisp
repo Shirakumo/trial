@@ -42,16 +42,12 @@
          (sleep ,pause)
          ,pause))))
 
-(defmethod render ((target context) (renderer renderer))
+(defmethod render (target (renderer renderer))
   (unwind-protect
        (with-error-logging (:trial.renderer "Error in render thread")
          (loop while (thread renderer)
                do (with-simple-restart (abort "Abort the update and retry.")
                     (setf (last-pause renderer)
                           (with-frame-pause ((fps renderer))
-                            ;; Potentially release context every time to allow
-                            ;; other threads to grab it.
-                            (with-context (target :reentrant T)
-                              (render target target)
-                              (q+:swap-buffers target)))))))    
+                            (render target target))))))    
     (v:info :trial.renderer "Exiting render-loop for ~a." target)))
