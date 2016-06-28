@@ -15,18 +15,15 @@
 (define-handler (main-controller launch-editor) (ev)
   (signal! (display main-controller) (launch-editor)))
 
-(define-handler (main-controller tick) (ev)
-  (when (= 0 (mod (tick-count main-controller) (fps main-controller)))
-    (cl-gamepad:detect-devices))
-  (cl-gamepad:process-events))
-
 
 (define-widget main (QGLWidget display)
-  ((controller :initform (make-instance 'main-controller :display NIL))))
+  ((controller :initform (make-instance 'main-controller :display NIL))
+   (input-handler :initform (make-instance 'input-handler))))
 
 (define-initializer (main setup)
   (setf *main* main)
-  (setf (q+:window-title main) "Trial"))
+  (setf (q+:window-title main) "Trial")
+  (add-handler main input-handler))
 
 (define-finalizer (main teardown)
   (v:info :trial.main "RAPTURE")
@@ -54,11 +51,9 @@
   (v:output-here)
   (v:info :trial.main "GENESIS")
   #+linux (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
-  (cl-gamepad:init)
   (unwind-protect
        (with-main-window (window (apply #'make-instance 'main initargs)
-                          #-darwin :main-thread #-darwin NIL))
-    (cl-gamepad:shutdown)))
+                          #-darwin :main-thread #-darwin NIL))))
 
 (defun launch-with-launcher (&rest initargs)
   #+linux (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
