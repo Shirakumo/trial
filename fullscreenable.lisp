@@ -20,7 +20,7 @@
   (setf (resolution widget) resolution)
   (setf (fullscreen widget) fullscreen))
 
-(define-finalizer (fullscreenable restore-monitor)
+(defmethod finalize :after ((fullscreenable fullscreenable))
   (setf (resolution fullscreenable) NIL))
 
 (defmethod (setf resolution) :before (resolution (widget fullscreenable))
