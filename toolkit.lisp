@@ -168,11 +168,11 @@
          ,@body
          (wait-for-thread-exit ,thread-g :timeout ,timeout :interval ,interval)))))
 
-(defmacro with-error-logging ((&optional (category :trial) message) &body body)
+(defmacro with-error-logging ((&optional (category :trial) (message "") &rest args) &body body)
   (let ((category-g (gensym "CATEGORY")))
     `(let ((,category-g ,category))
        (handler-bind ((error (lambda (err)
-                               (v:severe ,category-g "~@[~a ~]~a" ,message err)
+                               (v:severe ,category-g "~@[~@? ~]~a" ,message ,@args err)
                                (v:debug ,category-g err))))
          ,@body))))
 
