@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(defclass fullscreenable (QWidget)
+(define-widget fullscreenable (QWidget)
   ((original-mode :initform NIL :accessor original-mode)
    (resolution :accessor resolution)
    (fullscreen :accessor fullscreen))
@@ -20,7 +20,7 @@
   (setf (resolution widget) resolution)
   (setf (fullscreen widget) fullscreen))
 
-(defmethod finalize :after ((fullscreenable fullscreenable))
+(define-finalizer (fullscreenable restore-resolution)
   (setf (resolution fullscreenable) NIL))
 
 (defmethod (setf resolution) :before (resolution (widget fullscreenable))
