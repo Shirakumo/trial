@@ -7,8 +7,6 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(defvar *main* NIL)
-
 (define-subject main-controller (controller)
   ())
 
@@ -22,7 +20,6 @@
    (input-handler :initform (make-instance 'input-handler))))
 
 (define-initializer (main setup)
-  (setf *main* main)
   (setf (q+:window-title main) "Trial")
   (add-handler main input-handler)
   (enter controller scene)
@@ -35,8 +32,7 @@
   (finalize controller)
   (finalize scene)
   (dolist (pool (pools))
-    (mapc #'offload (assets pool)))
-  (setf *main* NIL))
+    (mapc #'offload (assets pool))))
 
 (define-signal (main launch-editor) ())
 
