@@ -10,6 +10,8 @@
 (define-widget display (QGLWidget context renderable)
   ())
 
+(defmethod handle (event (display display)))
+
 (define-initializer (display setup)
   (v:info :trial.display "~a is launching..." display)
   (setup-rendering display)
@@ -39,7 +41,8 @@
    (height :initarg :height :reader height)))
 
 (define-override (display resize-event) (ev)
-  (issue scene 'resize :width (q+:width (q+:size ev)) :height (q+:height (q+:size ev))))
+  (handle (make-instance 'resize :width (q+:width (q+:size ev)) :height (q+:height (q+:size ev)))
+          display))
 
 (define-override (display paint-event) (ev))
 
