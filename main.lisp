@@ -28,7 +28,7 @@
 
 (define-finalizer (main teardown)
   (v:info :trial.main "RAPTURE")
-  (acquire-context display :force T)
+  (acquire-context main :force T)
   (finalize controller)
   (finalize scene)
   (dolist (pool (pools))
@@ -44,7 +44,7 @@
 (defmethod handle (event (main main))
   (issue (scene main) event))
 
-(defmethod setup-scene :around ((display display))
+(defmethod setup-scene :around ((main main))
   (with-simple-restart (continue "Skip loading the rest of the scene and hope for the best.")
     (call-next-method)))
 
@@ -61,7 +61,7 @@
   (issue (scene target) 'tick)
   (process (scene target)))
 
-(defmethod paint ((source main) (target display))
+(defmethod paint ((source main) (target main))
   (paint (scene source) target))
 
 (defun launch (&rest initargs)
