@@ -15,33 +15,33 @@
    :resolution (list 800 600)
    :fullscreen NIL))
 
-(defmethod initialize-instance :after ((widget fullscreenable) &key resolution fullscreen)
-  (setf (original-mode widget) (cl-monitors:mode
+(defmethod initialize-instance :after ((fullscreenable fullscreenable) &key resolution fullscreen)
+  (setf (original-mode fullscreenable) (cl-monitors:mode
                                 (dolist (monitor (cl-monitors:detect))
                                   (when (cl-monitors:primary-p monitor)
                                     (return monitor)))))
-  (setf (resolution widget) resolution)
-  (setf (fullscreen widget) fullscreen))
+  (setf (resolution fullscreenable) resolution)
+  (setf (fullscreen fullscreenable) fullscreen))
 
 (define-finalizer (fullscreenable restore-resolution)
   (setf (resolution fullscreenable) NIL))
 
-(defmethod (setf resolution) :before (resolution (widget fullscreenable))
+(defmethod (setf resolution) :before (resolution (fullscreenable fullscreenable))
   (etypecase resolution
     (null
      (cl-monitors:make-current (original-mode fullscreenable)))
     (list
-     (setf (q+:fixed-size widget) (values (first resolution)
-                                          (second resolution))))
+     (setf (q+:fixed-size fullscreenable) (values (first resolution)
+                                                  (second resolution))))
     (cl-monitors:mode
-     (setf (q+:fixed-size widget) (values (cl-monitors:width resolution)
-                                          (cl-monitors:height resolution)))
+     (setf (q+:fixed-size fullscreenable) (values (cl-monitors:width resolution)
+                                                  (cl-monitors:height resolution)))
      (cl-monitors:make-current resolution))))
 
-(defmethod (setf fullscreen) :before (fullscreen (widget fullscreenable))
+(defmethod (setf fullscreen) :before (fullscreen (fullscreenable fullscreenable))
   (if fullscreen
-      (q+:show-full-screen widget)
-      (q+:show-normal widget)))
+      (q+:show-full-screen fullscreenable)
+      (q+:show-normal fullscreenable)))
 
 (cl-monitors:init)
 (pushnew #'cl-monitors:deinit qtools:*build-hooks*)
