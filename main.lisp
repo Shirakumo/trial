@@ -14,10 +14,12 @@
   (signal! (display main-controller) (launch-editor)))
 
 
-(define-widget main (QGLWidget display input-handler fullscreenable executable)
+(define-widget main (QGLWidget display input-handler fullscreenable executable window)
   ((scene :initform (make-instance 'scene) :accessor scene)
    (controller :initform (make-instance 'main-controller))
-   (input-handler :initform (make-instance 'input-handler))))
+   (input-handler :initform (make-instance 'input-handler)))
+  (:default-initargs
+   :name :main))
 
 (define-initializer (main setup)
   (setf (q+:window-title main) "Trial")
@@ -64,9 +66,8 @@
   (v:output-here)
   (v:info :trial.main "GENESIS")
   #+linux (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
-  (unwind-protect
-       (with-main-window (window (apply #'make-instance 'main initargs)
-                          #-darwin :main-thread #-darwin NIL))))
+  (with-main-window (window (apply #'make-instance 'main initargs)
+                     #-darwin :main-thread #-darwin NIL)))
 
 (defun launch-with-launcher (&rest initargs)
   #+linux (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
