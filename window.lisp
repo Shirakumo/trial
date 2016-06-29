@@ -26,13 +26,12 @@
 (defun remove-window (name)
   (remhash (window-name name) *windows*))
 
-(define-widget window (QWidget entity)
-  ())
+(define-widget window (QWidget)
+  ((name :initarg :name :reader name)))
 
 (defmethod initialize-instance :before ((window window) &key name)
   (unless name
-    (error "NAME required."))
-  (setf (name window) (window-name name)))
+    (error "NAME required.")))
 
 (define-initializer (window register-window 1000)
   (setf (window (name window)) window))
