@@ -16,14 +16,12 @@
 
 (define-widget main (QGLWidget display input-handler fullscreenable executable window)
   ((scene :initform (make-instance 'scene) :accessor scene)
-   (controller :initform (make-instance 'main-controller))
-   (input-handler :initform (make-instance 'input-handler)))
+   (controller :initform (make-instance 'main-controller)))
   (:default-initargs
    :name :main))
 
 (define-initializer (main setup)
   (setf (q+:window-title main) "Trial")
-  (add-handler main input-handler)
   (enter controller scene)
   (issue scene 'reload-scene)
   (start scene))
