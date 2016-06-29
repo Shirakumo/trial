@@ -42,7 +42,7 @@
     (funcall (find-symbol (string '#:launch) '#:org.shirakumo.fraf.trial.editor) main)))
 
 (defmethod handle (event (main main))
-  (issue event (scene main)))
+  (issue (scene main) event))
 
 (defmethod setup-scene :around ((display display))
   (with-simple-restart (continue "Skip loading the rest of the scene and hope for the best.")
@@ -58,7 +58,7 @@
     (enter (make-instance 'selection-buffer :name :selection-buffer) scene)))
 
 (defmethod render :before (source (target main))
-  (issue 'tick (scene target))
+  (issue (scene target) 'tick)
   (process (scene target)))
 
 (defmethod paint ((source main) (target display))
