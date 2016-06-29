@@ -16,7 +16,7 @@
   (signal! (display main-controller) (launch-editor)))
 
 
-(define-widget main (QGLWidget display fullscreenable executable)
+(define-widget main (QGLWidget display input-handler fullscreenable executable)
   ((scene :initform (make-instance 'scene) :accessor scene)
    (controller :initform (make-instance 'main-controller))
    (input-handler :initform (make-instance 'input-handler))))
@@ -44,6 +44,9 @@
   (declare (connected main (launch-editor)))
   (when (find-package '#:org.shirakumo.fraf.trial.editor)
     (funcall (find-symbol (string '#:launch) '#:org.shirakumo.fraf.trial.editor) main)))
+
+(defmethod handle (event (main main))
+  (issue event (scene main)))
 
 (defmethod setup-scene :around ((display display))
   (with-simple-restart (continue "Skip loading the rest of the scene and hope for the best.")
