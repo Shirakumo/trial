@@ -45,5 +45,5 @@
         (finalize obj)))
     (setup-scene scene)))
 
-(define-handler (controller execute) (ev)
+(define-handler (controller execute-request) (ev)
   (execute ev))
