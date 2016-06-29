@@ -37,13 +37,17 @@
     (mapc #'reload (assets pool))))
 
 (define-handler (controller reload-scene reload-scene 99) (ev)
-  ;; gross!
   (let ((scene (first (loops controller))))
     (dolist (obj (flare-indexed-set:coerce-set (objects scene) 'list))
       (unless (eql obj controller)
         (leave obj scene)
-        (finalize obj)))
-    (setup-scene scene)))
+        (finalize obj))))
+  (setup-scene main))
 
 (define-handler (controller execute-request) (ev)
   (execute ev))
+
+(define-handler (controller launch-editor) (ev)
+  (when (find-package '#:org.shirakumo.fraf.trial.editor)
+    (with-body-in-gui (main :return-values NIL)
+      (funcall (find-symbol (string '#:launch) '#:org.shirakumo.fraf.trial.editor) main))))

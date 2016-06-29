@@ -7,16 +7,9 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(define-subject main-controller (controller)
-  ())
-
-(define-handler (main-controller launch-editor) (ev)
-  (signal! (display main-controller) (launch-editor)))
-
-
 (define-widget main (QGLWidget display input-handler fullscreenable executable window)
   ((scene :initform (make-instance 'scene) :accessor scene)
-   (controller :initform (make-instance 'main-controller)))
+   (controller :initform (make-instance 'controller)))
   (:default-initargs
    :name :main))
 
@@ -33,13 +26,6 @@
   (finalize scene)
   (dolist (pool (pools))
     (mapc #'offload (assets pool))))
-
-(define-signal (main launch-editor) ())
-
-(define-slot (main launch-editor) ()
-  (declare (connected main (launch-editor)))
-  (when (find-package '#:org.shirakumo.fraf.trial.editor)
-    (funcall (find-symbol (string '#:launch) '#:org.shirakumo.fraf.trial.editor) main)))
 
 (defmethod handle (event (main main))
   (issue (scene main) event))
