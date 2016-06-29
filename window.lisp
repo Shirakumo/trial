@@ -12,7 +12,7 @@
 (defun window-name (name)
   (etypecase name
     (symbol name)
-    (entity (name name))))
+    (window (name name))))
 
 (defun window (name)
   (gethash (window-name name) *windows*))
