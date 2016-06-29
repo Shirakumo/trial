@@ -55,6 +55,7 @@
 (defclass event-loop (handler-container)
   ((queue :initform (make-array 0 :initial-element NIL :adjustable T :fill-pointer T) :reader queue)))
 
+(declaim (inline issue))
 (defun issue (loop event-type &rest args)
   (let ((event (etypecase event-type
                  (event event-type)
