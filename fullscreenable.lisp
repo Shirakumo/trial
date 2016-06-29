@@ -16,7 +16,10 @@
    :fullscreen NIL))
 
 (defmethod initialize-instance :after ((widget fullscreenable) &key resolution fullscreen)
-  (setf (original-mode widget) (cl-monitors:mode (cl-monitors:monitor resolution)))
+  (setf (original-mode widget) (cl-monitors:mode
+                                (dolist (monitor (cl-monitors:detect))
+                                  (when (cl-monitors:primary-p monitor)
+                                    (return monitor)))))
   (setf (resolution widget) resolution)
   (setf (fullscreen widget) fullscreen))
 
