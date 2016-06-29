@@ -59,6 +59,8 @@
   (gl:hint :line-smooth-hint :nicest)
   (gl:hint :polygon-smooth-hint :nicest))
 
+(defmethod paint (source (target display)))
+
 (defmethod render (source (target display))
   ;; Potentially release context every time to allow
   ;; other threads to grab it.
@@ -70,18 +72,8 @@
                :depth-test :depth-clamp :alpha-test)
     (with-pushed-matrix
       (paint source target))
-    (gl:load-identity)
-    (render-hud source target)
-    (q+:swap-buffers target)))
+    (gl:load-identity)))
 
-(defmethod render-hud ((source display) (target display))
-  (gl:with-pushed-matrix* (:projection)
-    (gl:load-identity)
-    (gl:ortho 0 (q+:width target) (q+:height target) 0 -1 10)
-    (gl:matrix-mode :modelview)
-    (gl:load-identity)
-    (gl:disable :cull-face)
-    (gl:clear :depth-buffer)
-    ;; Figure out how to delegate drawing.
-    )
-  (gl:matrix-mode :modelview))
+(defmethod render :around (source (target display))
+  (call-next-method)
+  (q+:swap-buffers target))
