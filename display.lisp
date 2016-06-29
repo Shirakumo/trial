@@ -12,7 +12,7 @@
 
 (defmethod handle (event (display display)))
 
-(define-initializer (display setup)
+(define-initializer (display setup-rendering)
   (v:info :trial.display "~a is launching..." display)
   (setup-rendering display)
   (release-context display))

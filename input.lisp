@@ -123,11 +123,11 @@
 
 ;; All of this crap is necessary to allow distributing the gamepad events onto
 ;; multiple instances of input-handlers with potentially multiple targets.
-(define-initializer (input-handler setup)
+(define-initializer (input-handler register-input-handler)
   (bt:with-lock-held (*input-handlers-lock*)
     (push input-handler *input-handlers*)))
 
-(define-finalizer (input-handler teardown)
+(define-finalizer (input-handler deregister-input-handler)
   (bt:with-lock-held (*input-handlers-lock*)
     (setf *input-handlers* (remove input-handler *input-handlers*))))
 
