@@ -16,6 +16,7 @@
    :fps 30.0f0))
 
 (defmethod initialize-instance :after ((renderable renderable) &key)
+  (setf (thread renderable) T)
   (setf (thread renderable)
         (with-thread ("renderable thread")
           (render-loop renderable))))
