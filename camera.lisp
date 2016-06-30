@@ -14,25 +14,56 @@
     (gl:frustum (- fw) fw (- fh) fh z-near z-far)))
 
 (define-subject camera (located-entity)
-  ((fov :initarg :fov :accessor fov))
+  ((near-plane :initarg :near-plane :accessor near-plane)
+   (far-plane :initarg :far-plane :accessor far-plane))
   (:default-initargs
-   :fov 75
-   :location (vec 0 30 200)))
+   :location (vec 0 30 200)
+   :near-plane 0.01f0
+   :far-plane 1000000.0f0))
 
 (define-generic-handler (camera project-view tick -100))
+(define-generic-handler (camera setup-perspective resize))
+
+(defmethod (setf near-plane) :after (val (camera camera))
+  (setup-perspective camera))
+
+(defmethod (setf far-plane) :after (val (camera camera))
+  (setup-perspective camera))
 
 (defmethod paint :around ((camera camera) target))
 
-(defmethod project-view :before ((camera camera) ev)
-  (let ((width (width *context*))
-        (height (height *context*)))
-    (gl:matrix-mode :projection)
-    (gl:load-identity)
-    (perspective-view (fov camera) (/ width (max 1 height)) 0.01 100000.0)
-    (gl:matrix-mode :modelview)
-    (gl:viewport 0 0 width height)))
+(defmethod setup-perspective :before ((camera camera) ev)
+  (gl:matrix-mode :projection)
+  (gl:load-identity))
 
-(define-subject target-camera (camera)
+(defmethod setup-perspective :after ((camera camera) ev)
+  (gl:matrix-mode :modelview)
+  (gl:load-identity)
+  (gl:viewport 0 0 (width ev) (height ev)))
+
+(define-subject 2d-camera (camera)
+  ()
+  (:default-initargs
+   :near-plane most-negative-double-float
+   :far-plane most-positive-double-float))
+
+(defmethod setup-perspective ((camera 2d-camera) ev)
+  (gl:ortho 0 (width ev) (height ev) 0
+            (near-plane 2d-camera) (far-plane 2d-camera)))
+
+(define-subject 3d-camera (camera)
+  ((fov :initarg :fov :accessor fov))
+  (:default-initargs
+   :fov 75))
+
+(defmethod (setf fov) :after (val (camera 3d-camera))
+  (setup-perspective camera))
+
+(defmethod setup-perspective  ((camera 3d-camera) ev)
+  (perspective-view (fov camera) (/ (width ev) (max 1 (height ev)))
+                    (near-plane 2d-camera) (far-plane 2d-camera)))
+
+(define-subject target-camera (3d-camera)
   ((target :initarg :target :accessor target)
    (up :initarg :up :accessor up))
   (:default-initargs
@@ -77,7 +108,7 @@
              (location (target camera))
              (up camera))))
 
-(define-subject fps-camera (camera)
+(define-subject fps-camera (3d-camera)
   ((rotation :initarg :rotation :accessor rotation)
    (acceleration :initarg :acceleration :accessor acceleration))
   (:default-initargs
