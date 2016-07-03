@@ -17,6 +17,7 @@
                (:file "debugging")
                (:file "toolkit")
                (:file "entity")
+               (:file "layer-set")
                (:file "window")
                (:file "fullscreenable")
                (:file "renderable")

@@ -176,6 +176,22 @@
                                (v:debug ,category-g err))))
          ,@body))))
 
+(defun insert-index (object list &key (key #'identity) (replace T))
+  (flet ((k (value) (funcall key value)))
+    (let ((n (k object)))
+      (cond ((< n (k (first list)))
+             (list* object list))
+            (T
+             (loop for cons on list
+                   do (cond ((= n (k (car cons)))
+                             (return (when replace (setf (car cons) object))))
+                            ((not (cdr cons))
+                             (return (setf (cdr cons) (list object))))
+                            ((< (k (car cons)) n (k (cadr cons)))
+                             (let ((cell (cons object (cdr cons))))
+                               (return (setf (cdr cons) cell))))))
+             list)))))
+
 (defun check-texture-size (width height)
   (let ((max (gl:get* :max-texture-size)))
     (when (< max (max width height))
