@@ -13,7 +13,7 @@
   (:default-initargs
    :name :main))
 
-(define-initializer (main setup)
+(define-initializer (main setup -10)
   (setf (q+:window-title main) "Trial")
   (enter controller scene)
   (issue scene 'reload-scene)
