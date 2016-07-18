@@ -7,73 +7,44 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(defclass layer (container)
-  ((index :initarg :index :accessor index)
-   (active :initarg :active :accessor active))
-  (:default-initargs
-   :index 0
-   :active T))
-
-(defclass layer-entity (entity)
+(defclass layer-container (container)
   ((layer :initarg :layer :accessor layer))
-  (:default-initargs
-   :layer 0))
+  (:default-initargs :layer 0))
 
-(defmethod (setf layer) :after (new-layer (entity layer-entity))
-  (let ((collective (collective entity)))
-    (when (typep collective 'layer-set)
-      (leave entity collective)
-      (enter entity collective))))
+(defclass layer-set (unit-container)
+  ((objects :initform (make-array 0 :adjustable T :fill-pointer T))
+   (index-map :initform (make-hash-table :test 'eql) :accessor index-map)))
 
-(defclass layer-set (collective)
-  ((layer-map :initform (make-hash-table :test 'eql) :reader layer-map)
-   (layer-seq :initform (list (make-instance 'layer :index 0)) :accessor layer-seq)
-   (objects :initform NIL)))
+(defmethod unit (index (layer-set layer-set))
+  (gethash index (index-map layer-set)))
 
-(defmethod initialize-instance :after ((layer-set layer-set) &key)
-  (setf (gethash 0 (layer-map layer-set)) (layer-seq layer-set)))
+(defmethod enter ((n integer) (layer-set layer-set))
+  (enter (or (unit n layer-set) (make-instance 'layer-container :layer n)) layer-set))
 
-(defmethod nth-layer (n (layer-set layer-set))
-  (or (gethash n (layer-map layer-set))
-      (setf (nth-layer n layer-set) (make-instance 'layer))))
-
-(defmethod (setf nth-layer) ((layer layer) (n integer) (layer-set layer-set))
-  (setf (index layer) n)
-  (setf (layer-seq layer-set) (insert-index layer (layer-seq layer-set)))
-  (setf (gethash n (layer-map layer-set)) layer))
-
-;; objects stub. Since this is incompatible with how the usual OBJECTS accessor
-;; works and coercing it would be too expensive, we just stub it with the 0 layer.
-(defmethod objects ((layer-set layer-set))
-  (objects (gethash 0 (layer-map layer-set))))
-
-(defmethod (setf objects) (value (layer-set layer-set))
-  (setf (objects (gethash 0 (layer-map layer-set))) value))
-
-(defmethod update ((layer-set layer-set))
-  (mapc #'update (layer-seq layer-set)))
-
-(defmethod paint ((layer-set layer-set) target)
-  (mapc (lambda (a) (paint a target)) (layer-seq layer-set)))
-
-(defmethod insert ((layer-set layer-set) &rest objects)
-  (mapc (lambda (a) (insert a objects)) (layer-seq layer-set)))
-
-(defmethod withdraw ((layer-set layer-set) &rest objects)
-  (mapc (lambda (a) (withdraw a objects)) (layer-seq layer-set)))
-
-(defmethod units ((layer-set layer-set))
-  (loop for layer in (layer-seq layer-set)
-        nconc (units layer)))
+(defmethod enter ((layer layer-container) (layer-set layer-set))
+  (when (unit (layer layer) layer-set)
+    (cerror "A layer with index ~a already exists in ~a."
+            (layer layer) layer-set))
+  (vector-push-extend layer (objects layer-set))
+  (setf (objects layer-set) (sort (objects layer-set) #'< :key #'layer))
+  (setf (gethash (layer layer) (index-map layer-set)) layer))
 
 (defmethod enter ((unit unit) (layer-set layer-set))
-  (insert (nth-layer 0 layer-set) unit))
-
-(defmethod enter ((entity layer-entity) (layer-set layer-set))
-  (insert (nth-layer (layer entity) layer-set) entity))
+  (enter unit (unit 0 layer-set)))
 
 (defmethod leave ((unit unit) (layer-set layer-set))
-  (withdraw (nth-layer 0 layer-set) unit))
+  (leave unit (unit 0 layer-set)))
 
-(defmethod leave ((entity layer-entity) (layer-set layer-set))
-  (withdraw (nth-layer (layer entity) layer-set) entity))
+(defmethod paint ((layer-set layer-set) target)
+  (for:for ((layer across (objects layer-set)))
+    (paint layer target)))
+
+(defclass layered-unit (unit)
+  ((layer :initarg :layer :accessor layer))
+  (:default-initargs :layer 0))
+
+(defmethod enter ((unit layered-unit) (layer-set layer-set))
+  (enter unit (unit (layer unit) layer-set)))
+
+(defmethod leave ((unit layered-unit) (layer-set layer-set))
+  (leave unit (unit (layer unit) layer-set)))

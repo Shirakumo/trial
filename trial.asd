@@ -64,4 +64,5 @@
                :cl-monitors
                :pathname-utils
                :flare
-               :qtools-ui-slider))
+               :qtools-ui-slider
+               :for))
