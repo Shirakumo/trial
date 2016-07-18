@@ -12,7 +12,3 @@
 
 (define-handler (clocked-subject advance-time tick) (ev)
   (update clocked-subject))
-
-(defmethod save-form-args append ((subject clocked-subject))
-  `(:clock ,(clock subject)
-    :running ,(running subject)))

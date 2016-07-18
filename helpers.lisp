@@ -18,9 +18,6 @@
       (gl:translate (vx location) (vy location) (vz location))
       (call-next-method))))
 
-(defmethod save-form-args append ((entity located-entity))
-  `(:location ,(location entity)))
-
 (defclass oriented-entity (entity)
   ((orientation :initarg :orientation :accessor orientation)
    (up :initarg :up :accessor up))
@@ -35,10 +32,6 @@
       (gl:rotate angle (vx axis) (vy axis) (vz axis))
       (call-next-method))))
 
-(defmethod save-form-args append ((entity oriented-entity))
-  `(:orientation ,(orientation entity)
-    :up ,(up entity)))
-
 (defclass rotated-entity (entity)
   ((axis :initarg :axis :accessor axis)
    (angle :initarg :angle :accessor angle))
@@ -52,10 +45,6 @@
       (gl:rotate (angle obj) (vx axis) (vy axis) (vz axis))
       (call-next-method))))
 
-(defmethod save-form-args append ((entity rotated-entity))
-  `(:axis ,(axis entity)
-    :angle ,(angle entity)))
-
 (defclass pivoted-entity (entity)
   ((pivot :initarg :pivot :accessor pivot))
   (:default-initargs
@@ -66,9 +55,6 @@
     (let ((pivot (pivot obj)))
       (gl:translate (vx pivot) (vy pivot) (vz pivot))
       (call-next-method))))
-
-(defmethod save-form-args append ((entity pivoted-entity))
-  `(:pivot ,(pivot entity)))
 
 (defclass bound-entity (located-entity)
   ((bounds :initarg :bounds :accessor bounds))
@@ -201,9 +187,6 @@
       (call-next-method)
       (gl:bind-texture target 0))))
 
-(defmethod save-form-args append ((entity textured-entity))
-  `(:texture ,(texture entity)))
-
 (defclass mesh-entity (entity)
   ((mesh :initform NIL :accessor mesh)))
 
@@ -225,9 +208,6 @@
 (defmethod paint ((entity mesh-entity) target)
   (loop for mesh across (data (mesh entity))
         do (wavefront-loader:draw mesh)))
-
-(defmethod save-form-args append ((entity mesh-entity))
-  `(:mesh ,(mesh entity)))
 
 (defclass shader-entity (entity)
   ((shader-program :accessor shader-program)))

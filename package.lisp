@@ -285,15 +285,6 @@
    #:sprite-subject
    #:animations
    #:animation)
-  ;; storage.lisp
-  (:export
-   #:*pack-compile*
-   #:ins
-   #:savable
-   #:save-form-args
-   #:save-form
-   #:pack
-   #:unpack)
   ;; subject.lisp
   (:export
    #:define-handler

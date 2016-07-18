@@ -23,7 +23,6 @@
                (:file "renderable")
                (:file "context")
                (:file "display")
-               (:file "storage")
                (:file "assets")
                (:file "asset-classes")
                (:file "asset-pool")
