@@ -76,15 +76,15 @@
 (defmethod pool ((pool pool))
   pool)
 
-(defmethod enter ((asset asset) pool)
-  (enter asset (pool pool)))
+(defmethod enter ((asset asset) (name symbol))
+  (enter asset (pool name)))
 
 (defmethod enter ((asset asset) (pool pool))
   (leave asset pool)
   (push asset (assets pool)))
 
-(defmethod leave ((asset asset) pool)
-  (leave asset (pool pool)))
+(defmethod leave ((asset asset) (name symbol))
+  (leave asset (pool name)))
 
 (defmethod leave ((asset asset) (pool pool))
   (setf (assets pool) (remove asset (assets pool) :test #'matches)))
