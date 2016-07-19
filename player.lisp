@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(define-subject player (face-entity collidable-entity selectable-entity savable)
+(define-subject player (face-entity collidable-entity selectable-entity)
   ((velocity :initarg :velocity :accessor velocity))
   (:default-initargs
    :velocity (vec 0 0 0)
