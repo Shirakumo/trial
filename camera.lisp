@@ -61,7 +61,7 @@
 
 (defmethod setup-perspective  ((camera 3d-camera) ev)
   (perspective-view (fov camera) (/ (width ev) (max 1 (height ev)))
-                    (near-plane 2d-camera) (far-plane 2d-camera)))
+                    (near-plane camera) (far-plane camera)))
 
 (define-subject target-camera (3d-camera)
   ((target :initarg :target :accessor target)
