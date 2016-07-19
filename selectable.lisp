@@ -46,7 +46,7 @@
 (defun color->object (id)
   (gethash (ensure-color id) *color-id-map*))
 
-(define-subject selection-buffer (framebuffer)
+(define-subject selection-buffer (framebuffer hud-entity)
   ((resource :initform (tg:make-weak-hash-table :weakness :key)))
   (:default-initargs
    :width (width *context*)
@@ -87,6 +87,7 @@
             (typep thing 'container))
     (call-next-method)))
 
+#+trial-debug-selection-buffer
 (defmethod paint-hud ((buffer selection-buffer) target)
   (gl:bind-texture :texture-2d (q+:texture (data buffer)))
   (with-primitives :quads
