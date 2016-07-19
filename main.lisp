@@ -46,7 +46,7 @@
     (enter (make-instance 'following-camera :name :camera :target (unit :player scene)) scene)
     (enter (make-instance 'selection-buffer :name :selection-buffer) scene)))
 
-(defmethod render :before (source (target main))
+(defmethod paint :before (source (target main))
   (issue (scene target) 'tick)
   (process (scene target)))
 
