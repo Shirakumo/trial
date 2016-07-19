@@ -154,12 +154,7 @@
   (when (q+:is-valid context)
     (v:info :trial.context "Destroying context.")
     (q+:hide context)
-    (dolist (pool (pools))
-      (dolist (asset (assets pool))
-        (let ((resource (resource asset)))
-          (when resource
-            (finalize-data asset (data resource))
-            (setf (slot-value resource 'data) NIL)))))
+    (mapc #'offload (pools))
     (q+:reset (q+:context context))))
 
 (defmethod create-context :around ((context context))

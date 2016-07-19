@@ -101,6 +101,12 @@
                                 (string-equal (name asset) name)))
            (assets pool)))
 
+(defmethod restore ((pool pool))
+  (mapc #'restore (assets pool)))
+
+(defmethod offload ((pool pool))
+  (mapc #'offload (assets pool)))
+
 (defmacro define-pool (name &body options)
   `(name (make-instance 'pool :name ',name ,@options)))
 
