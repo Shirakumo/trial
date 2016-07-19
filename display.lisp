@@ -70,8 +70,7 @@
     (gl:enable :blend :cull-face :texture-2d :multisample
                :line-smooth :polygon-smooth
                :depth-test :depth-clamp :alpha-test)
-    (with-pushed-matrix
-      (paint source target))
+    (paint source target)
     (gl:load-identity)))
 
 (defmethod render :around (source (target display))

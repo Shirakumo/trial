@@ -47,11 +47,9 @@
     ;;(enter (make-instance 'selection-buffer :name :selection-buffer) scene)
     ))
 
-(defmethod paint :before (source (target main))
-  (issue (scene target) 'tick)
-  (process (scene target)))
-
 (defmethod paint ((source main) (target main))
+  (issue (scene target) 'tick)
+  (process (scene target))
   (paint (scene source) target)
   (paint (hud source) target))
 
