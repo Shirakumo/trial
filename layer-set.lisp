@@ -8,8 +8,15 @@
 (in-readtable :qtools)
 
 (defclass layer-container (container)
-  ((layer :initarg :layer :accessor layer))
-  (:default-initargs :layer 0))
+  ((layer :initarg :layer :accessor layer)
+   (active :initarg :active :accessor active))
+  (:default-initargs
+   :layer 0
+   :active T))
+
+(defmethod paint :around ((layer layer-container) target)
+  (when (active layer)
+    (call-next-method)))
 
 (defclass layer-set (unit-container)
   ((objects :initform (make-array 0 :adjustable T :fill-pointer T))
@@ -38,6 +45,12 @@
 (defmethod paint ((layer-set layer-set) target)
   (for:for ((layer across (objects layer-set)))
     (paint layer target)))
+
+(defmethod layer-active-p (n (layer-set layer-set))
+  (active (unit n layer-set)))
+
+(defmethod (setf layer-active-p) (bool n (layer-set layer-set))
+  (setf (active (unit n layer-set)) bool))
 
 (defclass layered-unit (unit)
   ((layer :initarg :layer :accessor layer))
