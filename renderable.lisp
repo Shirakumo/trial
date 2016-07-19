@@ -12,7 +12,6 @@
    (last-pause :initform 0 :accessor last-pause)
    (fps :initarg :fps :accessor fps))
   (:default-initargs
-   :name :controller
    :fps 30.0f0))
 
 (defmethod initialize-instance :after ((renderable renderable) &key)
