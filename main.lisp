@@ -9,6 +9,7 @@
 
 (define-widget main (QGLWidget display input-handler fullscreenable executable window)
   ((scene :initform (make-instance 'scene) :accessor scene)
+   (hud :initform (make-instance 'hud) :accessor hud)
    (controller :initform (make-instance 'controller)))
   (:default-initargs
    :name :main))
@@ -16,6 +17,7 @@
 (define-initializer (main setup -10)
   (setf (q+:window-title main) "Trial")
   (enter controller scene)
+  (enter hud scene)
   (issue scene 'reload-scene)
   (start scene))
 
@@ -48,7 +50,8 @@
   (process (scene target)))
 
 (defmethod paint ((source main) (target main))
-  (paint (scene source) target))
+  (paint (scene source) target)
+  (paint (hud source) target))
 
 (defun launch (&rest initargs)
   (v:output-here)
