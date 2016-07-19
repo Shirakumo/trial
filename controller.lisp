@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(define-subject controller ()
+(define-subject controller (hud-entity)
   (;; Has to be a double to avoid bignums after ~3.8 hours of runtime.
    (tick-count :initform 0.0d0 :accessor tick-count)
    (display :initform NIL :accessor display))
@@ -16,8 +16,6 @@
 
 (defmethod paint-hud ((controller controller) target)
   (when (typep target 'amin)
-    #+trial-debug-selection-buffer
-    (paint (unit :selection-buffer (scene display)) :hud)
     (let ((font (get-resource 'font :trial :debug-hud))
           (clock (clock (scene (display controller)))))
       (q+:render-text target 20 30 (format NIL "Pause: ~,10f" (last-pause controller))
