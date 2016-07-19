@@ -187,7 +187,8 @@
 
 (defmethod offload ((asset asset))
   (let ((resource (resource asset)))
-    (when (and resource (data resource))
+    ;; Don't use the accessor as it might otherwise reload it.
+    (when (and resource (slot-value resource 'data))
       (finalize-data asset (data resource))
       (setf (data resource) NIL)
       (setf (resource asset) NIL)))
