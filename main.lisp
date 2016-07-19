@@ -17,8 +17,8 @@
 (define-initializer (main setup -10)
   (setf (q+:window-title main) "Trial")
   (setf (display controller) main)
-  (enter controller scene)
   (enter hud scene)
+  (enter controller scene)
   (issue scene 'reload-scene)
   (start scene))
 
@@ -44,7 +44,8 @@
     (enter (make-instance 'space-axes) scene)
     (enter (make-instance 'player) scene)
     (enter (make-instance 'following-camera :name :camera :target (unit :player scene)) scene)
-    (enter (make-instance 'selection-buffer :name :selection-buffer) scene)))
+    ;;(enter (make-instance 'selection-buffer :name :selection-buffer) scene)
+    ))
 
 (defmethod paint :before (source (target main))
   (issue (scene target) 'tick)

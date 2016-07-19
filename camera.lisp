@@ -13,6 +13,18 @@
          (fw (* fh aspect)))
     (gl:frustum (- fw) fw (- fh) fh z-near z-far)))
 
+(defun look-at (eye target up)
+  (let* ((z (nvunit (v- eye target)))
+         (x (nvunit (vc up z)))
+         (y (nvunit (vc z x))))
+    (gl:mult-matrix
+     (matrix-4x4
+      (vx x) (vx y) (vx z) 0.0f0
+      (vy x) (vy y) (vy z) 0.0f0
+      (vz x) (vz y) (vz z) 0.0f0
+      0.0f0  0.0f0  0.0f0 1.0f0))
+    (gl:translate (- (vx eye)) (- (vy eye)) (- (vz eye)))))
+
 (define-subject camera (located-entity)
   ((near-plane :initarg :near-plane :accessor near-plane)
    (far-plane :initarg :far-plane :accessor far-plane))
@@ -72,18 +84,6 @@
 
 (defmethod project-view ((camera target-camera) ev)
   (look-at (location camera) (target camera) (up camera)))
-
-(defun look-at (eye target up)
-  (let* ((z (nvunit (v- eye target)))
-         (x (nvunit (vc up z)))
-         (y (nvunit (vc z x))))
-    (gl:mult-matrix
-     (matrix-4x4
-      (vx x) (vx y) (vx z) 0.0f0
-      (vy x) (vy y) (vy z) 0.0f0
-      (vz x) (vz y) (vz z) 0.0f0
-       0.0f0  0.0f0  0.0f0 1.0f0))
-    (gl:translate (- (vx eye)) (- (vy eye)) (- (vz eye)))))
 
 (define-subject pivot-camera (target-camera)
   ()
