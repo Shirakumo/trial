@@ -9,21 +9,23 @@
 
 (define-subject controller ()
   (;; Has to be a double to avoid bignums after ~3.8 hours of runtime.
-   (tick-count :initform 0.0d0 :accessor tick-count))
+   (tick-count :initform 0.0d0 :accessor tick-count)
+   (display :initform NIL :accessor display))
   (:default-initargs
    :name :controller))
 
-(defmethod render-hud ((controller controller) (display display))
-  #+trial-debug-selection-buffer
-  (paint (unit :selection-buffer (scene display)) :hud)
-  
-  (let ((font (get-resource 'font :trial :debug-hud)))
-    (q+:render-text display 20 30 (format NIL "Pause: ~,10f" (last-pause controller))
-                    (data font))
-    (q+:render-text display 20 50 (format NIL "Time:  ~2,'0d:~6,3,,,'0f"
-                                       (floor (/ (round (clock (scene display))) 60))
-                                       (mod (clock (scene display)) 60))
-                    (data font))))
+(defmethod paint-hud ((controller controller) target)
+  (when (typep target 'amin)
+    #+trial-debug-selection-buffer
+    (paint (unit :selection-buffer (scene display)) :hud)
+    (let ((font (get-resource 'font :trial :debug-hud))
+          (clock (clock (scene (display controller)))))
+      (q+:render-text target 20 30 (format NIL "Pause: ~,10f" (last-pause controller))
+                      (data font))
+      (q+:render-text target 20 50 (format NIL "Time:  ~2,'0d:~6,3,,,'0f"
+                                           (floor (/ (round clock) 60))
+                                           (mod clock 60))
+                      (data font)))))
 
 (define-handler (controller tick tick 100) (ev)
   (incf (tick-count controller)))
@@ -42,7 +44,7 @@
       (unless (eql obj controller)
         (leave obj scene)
         (finalize obj))))
-  (setup-scene main))
+  (setup-scene (display controller)))
 
 (define-handler (controller execute-request) (ev)
   (execute ev))

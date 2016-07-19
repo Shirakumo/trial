@@ -16,6 +16,7 @@
 
 (define-initializer (main setup -10)
   (setf (q+:window-title main) "Trial")
+  (setf (display controller) main)
   (enter controller scene)
   (enter hud scene)
   (issue scene 'reload-scene)
