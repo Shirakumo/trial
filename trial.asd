@@ -33,6 +33,7 @@
                (:file "subject")
                (:file "subjects")
                (:file "scene")
+               (:file "hud")
                (:file "sprite")
                (:file "skybox")
                (:file "octree")
