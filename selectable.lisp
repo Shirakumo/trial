@@ -87,7 +87,7 @@
             (typep thing 'container))
     (call-next-method)))
 
-(defmethod paint ((buffer selection-buffer) (thing (eql :hud)))
+(defmethod paint-hud ((buffer selection-buffer) target)
   (gl:bind-texture :texture-2d (q+:texture (data buffer)))
   (with-primitives :quads
     (gl:tex-coord 1 1)
