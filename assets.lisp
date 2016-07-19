@@ -259,6 +259,9 @@
              (new (resource asset)))
         (v:severe :trial.asset "Data reference to finalized resource of ~a. Expect instability or crashes down the road."
                   asset)
+        #+trial-debug-error-on-invalid-asset-reference
+        (error "Illegal access to finalised resource.")
+        #-trial-debug-error-on-invalid-asset-reference
         (cond ((eql resource new)
                (v:severe :trial.asset "~a has not yet been restored, forcing reload. This might work!"
                          asset resource)
