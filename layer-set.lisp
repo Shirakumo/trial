@@ -18,7 +18,7 @@
   (when (active layer)
     (call-next-method)))
 
-(defclass layer-set (unit-container)
+(defclass layer-set (container-unit)
   ((objects :initform (make-array 0 :adjustable T :fill-pointer T))
    (index-map :initform (make-hash-table :test 'eql) :accessor index-map)))
 
