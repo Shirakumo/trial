@@ -34,7 +34,7 @@
     (gl:clear :depth-buffer)
     (for:for ((layer across (objects hud)))
       (for:for ((item over layer))
-        (paint-hud item target))))
+        (paint item hud))))
   (gl:matrix-mode :modelview))
 
 (defclass hud-entity (entity)
@@ -47,4 +47,4 @@
 (defmethod leave ((entity hud-entity) (hud hud))
   (leave entity (unit (hud-layer entity) hud)))
 
-(defmethod paint-hud ((entity hud-entity) target))
+(defmethod paint ((entity hud-entity) (hud hud)))

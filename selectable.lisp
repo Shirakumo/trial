@@ -88,7 +88,7 @@
     (call-next-method)))
 
 #+trial-debug-selection-buffer
-(defmethod paint-hud ((buffer selection-buffer) target)
+(defmethod paint ((buffer selection-buffer) (hud hud))
   (gl:bind-texture :texture-2d (q+:texture (data buffer)))
   (with-primitives :quads
     (gl:tex-coord 1 1)
