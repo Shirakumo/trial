@@ -15,10 +15,10 @@
    :name :controller))
 
 (defmethod paint-hud ((controller controller) target)
-  (when (typep target 'amin)
+  (when (typep target 'main)
     (let ((font (get-resource 'font :trial :debug-hud))
           (clock (clock (scene (display controller)))))
-      (q+:render-text target 20 30 (format NIL "Pause: ~,10f" (last-pause controller))
+      (q+:render-text target 20 30 (format NIL "Pause: ~,10f" (last-pause target))
                       (data font))
       (q+:render-text target 20 50 (format NIL "Time:  ~2,'0d:~6,3,,,'0f"
                                            (floor (/ (round clock) 60))
