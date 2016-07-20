@@ -241,14 +241,13 @@
   `(name (update-or-create-asset ',type ',name ',home ',pools ,@options)))
 
 (defclass resource ()
-  ((data :initarg :data :accessor data)
+  ((data :initform NIL :accessor data)
    (asset :initarg :asset :accessor resource-asset))
   (:default-initargs
-   :data (error "DATA required.")
    :asset (error "ASSET required.")))
 
-(defmethod initialize-instance :after ((resource resource) &key asset data)
-  (tg:finalize resource (lambda () (finalize-data asset data))))
+(defmethod initialize-instance :after ((resource resource) &key data)
+  (setf (data resource) data))
 
 (defmethod print-object ((resource resource) stream)
   (print-unreadable-object (resource stream :type T :identity T)
@@ -282,6 +281,11 @@
                (v:severe :trial.asset "~a has already been restored, attempting recovery by copying ~a's data. This will not end well!"
                          asset new)
                (setf (data resource) (data new)))))))
+
+(defmethod (setf data) :after (data (resource resource))
+  (tg:cancel-finalization resource)
+  (when data
+    (tg:finalize resource (lambda () (finalize-data (resource-asset resource) data)))))
 
 ;; Delegate
 (defmethod slot-missing (class (resource resource) slot operation &optional new-value)
