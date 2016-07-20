@@ -21,7 +21,9 @@
     ;;        Generally some kinda UI framework...
     (q+:render-text (display controller) 20 30 (format NIL "Pause: ~,10f" (last-pause (display controller)))
                     (data font))
-    (q+:render-text (display controller) 20 50 (format NIL "Time:  ~2,'0d:~6,3,,,'0f"
+    (q+:render-text (display controller) 20 50 (format NIL "FPS:   ~,10f" (actual-fps (display controller)))
+                    (data font))
+    (q+:render-text (display controller) 20 70 (format NIL "Time:  ~2,'0d:~6,3,,,'0f"
                                            (floor (/ (round clock) 60))
                                            (mod clock 60))
                     (data font))))
