@@ -23,13 +23,11 @@
    (index-map :initform (make-hash-table :test 'eql) :accessor index-map)))
 
 (defmethod unit (index (layer-set layer-set))
-  (gethash index (index-map layer-set)))
-
-(defmethod enter ((n integer) (layer-set layer-set))
-  (enter (or (unit n layer-set) (make-instance 'layer-container :layer n)) layer-set))
+  (or (gethash index (index-map layer-set))
+      (enter (make-instance 'layer-container :layer index) layer-set)))
 
 (defmethod enter ((layer layer-container) (layer-set layer-set))
-  (when (unit (layer layer) layer-set)
+  (when (gethash (layer layer) (index-map layer-set))
     (cerror "A layer with index ~a already exists in ~a."
             (layer layer) layer-set))
   (vector-push-extend layer (objects layer-set))
