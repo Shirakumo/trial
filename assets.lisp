@@ -11,6 +11,8 @@
 ;;        stuff like dimensions of a texture or mesh material or whatever?
 ;;        How do we "bind" the asset if it's needed? Spilling the CONTENT everywhere
 ;;        seems like a bad idea.
+;; FIXME: Resources need to be sectioned off on a per-context basis so that clashing
+;;        cannot occur. How to generalise without losing performance?
 
 (defvar *redefining* NIL)
 (defvar *pools* (make-hash-table :test 'eql))
