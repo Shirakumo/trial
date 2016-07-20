@@ -9,10 +9,12 @@
 
 (defclass renderable ()
   ((thread :initform NIL :accessor thread)
-   (last-pause :initform 0 :accessor last-pause)
-   (fps :initarg :fps :accessor fps))
+   (last-pause :initform 0.0s0 :accessor last-pause)
+   (last-duration :initform 0.0s0 :accessor last-duration)
+   (target-fps :initarg :target-fps :accessor target-fps)
+   (actual-fps :initform 1.0s0 :accessor actual-fps))
   (:default-initargs
-   :fps 30.0f0))
+   :target-fps 30.0s0))
 
 (defmethod initialize-instance :after ((renderable renderable) &key)
   (setf (thread renderable) T)
@@ -25,19 +27,22 @@
     (with-thread-exit (thread)
       (setf (thread renderable) NIL))))
 
-(defun pause-time (fps start)
-  (let* ((duration (max 0 (- (current-time) start)))
-         (remainder (- (/ fps) (/ duration *time-units*))))
-    (max 0 remainder)))
+(declaim (inline call-with-frame-pause))
+(defun call-with-frame-pause (function renderable)
+  (let* ((start (current-time))
+         (fps (target-fps renderable)))
+    (funcall function)
+    (let* ((duration (/ (max 0.0s0 (- (current-time) start)) *time-units*)))
+      (setf (last-duration renderable) duration)
+      (when fps
+        (locally (declare (type single-float fps))
+          (let ((remainder (max 0.0s0 (- (/ fps) duration))))
+            (setf (last-pause renderable) remainder)
+            (sleep remainder))))
+      (setf (actual-fps renderable) (/ *time-units* (max 1.0s0 (- (current-time) start)))))))
 
-(defmacro with-frame-pause ((fps) &body body)
-  (let ((pause (gensym "PAUSE"))
-        (start (gensym "START")))
-    `(let ((,start (current-time)))
-       ,@body
-       (let ((,pause (pause-time ,fps ,start)))
-         (sleep ,pause)
-         ,pause))))
+(defmacro with-frame-pause ((renderable) &body body)
+  `(call-with-frame-pause (lambda () ,@body) ,renderable))
 
 (defmethod render (thing (renderable renderable)))
 
@@ -46,7 +51,6 @@
        (with-error-logging (:trial.renderable "Error in render thread")
          (loop while (thread renderable)
                do (with-simple-restart (abort "Abort the update and retry.")
-                    (setf (last-pause renderable)
-                          (with-frame-pause ((fps renderable))
-                            (render renderable renderable))))))    
+                    (with-frame-pause (renderable)
+                      (render renderable renderable)))))    
     (v:info :trial.renderable "Exiting render-loop for ~a." renderable)))
