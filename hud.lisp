@@ -10,11 +10,11 @@
 (define-subject hud (layer-set)
   ())
 
-(define-handler (hud enter) (entity)
+(define-handler (hud enter) (ev entity)
   (when (typep entity 'hud-entity)
     (enter entity hud)))
 
-(define-handler (hud leave) (entity)
+(define-handler (hud leave) (ev entity)
   (when (typep entity 'hud-entity)
     (leave entity hud)))
 
@@ -24,7 +24,7 @@
 (defmethod enter ((hud hud) (scene scene)))
 (defmethod leave ((hud hud) (scene scene)))
 
-(defmethod paint ((hud hud) target) 
+(defmethod paint ((hud hud) target)
   (gl:with-pushed-matrix* (:projection)
     (gl:load-identity)
     (gl:ortho 0 (q+:width target) (q+:height target) 0 -1 10)
