@@ -38,7 +38,8 @@
   (gl:matrix-mode :modelview))
 
 (defclass hud-entity (entity)
-  ((hud-layer :initarg :hud-layer :accessor hud-layer)))
+  ((hud-layer :initarg :hud-layer :accessor hud-layer))
+  (:default-initargs :hud-layer 0))
 
 (defmethod enter ((entity hud-entity) (hud hud))
   (enter entity (unit (hud-layer entity) hud)))
