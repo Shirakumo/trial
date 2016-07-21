@@ -53,7 +53,8 @@
     (call-next-method)))
 
 (defclass event-loop (handler-container)
-  ((queue :initform (make-array 0 :initial-element NIL :adjustable T :fill-pointer T) :reader queue)))
+  ((queue :initform (make-array 0 :initial-element NIL :adjustable T :fill-pointer T) :reader queue)
+   (queue-index :initform 0 :accessor queue-index)))
 
 (declaim (inline issue))
 (defun issue (loop event-type &rest args)
@@ -72,11 +73,14 @@
         (T whole)))
 
 (defun process (loop)
-  (loop for i from 0
+  (loop for i = (1- (incf (queue-index loop)))
         while (< i (length (queue loop)))
-        do (handle (aref (queue loop) i) loop)
-           (setf (aref (queue loop) i) NIL))
-  (setf (fill-pointer (queue loop)) 0))
+        do (let ((event (aref (queue loop) i)))
+             (when event
+               (handle event loop)
+               (setf (aref (queue loop) i) NIL))))
+  (setf (fill-pointer (queue loop)) 0
+        (queue-index loop) 0))
 
 (defmethod handle (event (loop event-loop))
   (let ((*loop* loop))
