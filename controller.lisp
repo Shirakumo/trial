@@ -68,7 +68,7 @@
   (create-save (first (loops controller)) #p"~/test.sav.lisp"))
 
 (define-handler (controller load-game) (ev)
-  (load-save #p"~/test.sav.lisp"))
+  (load-save (first (loops controller)) #p"~/test.sav.lisp"))
 
 (define-handler (controller execute-request) (ev)
   (execute ev))
