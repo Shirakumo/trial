@@ -19,3 +19,10 @@
   (with-pushed-matrix
     (gl:translate (vx vec) (vy vec) (vz vec))
     (funcall func)))
+
+(defmethod save-form-objects ((container container))
+  (for:for ((object over container)
+            (form = (make-save-form object))
+            (forms when form collecting form))))
+
+(define-saved-slots clock clock running timescale)

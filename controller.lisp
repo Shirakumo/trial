@@ -21,7 +21,7 @@
     ;;        Generally some kinda UI framework...
     (q+:render-text (display controller) 20 30 (format NIL "Pause: ~,10f" (last-pause (display controller)))
                     (data font))
-    (q+:render-text (display controller) 20 50 (format NIL "FPS:   ~,10f" (actual-fps (display controller)))
+    (q+:render-text (display controller) 20 50 (format NIL "FPS:   ~,2f" (actual-fps (display controller)))
                     (data font))
     (q+:render-text (display controller) 20 70 (format NIL "Time:  ~2,'0d:~6,3,,,'0f"
                                            (floor (/ (round clock) 60))
@@ -46,6 +46,12 @@
         (leave obj scene)
         (finalize obj))))
   (setup-scene (display controller)))
+
+(define-handler (controller save-game) (ev)
+  (create-save (first (loops controller)) #p"~/test.sav.lisp"))
+
+(define-handler (controller load-game) (ev)
+  (load-save #p"~/test.sav.lisp"))
 
 (define-handler (controller execute-request) (ev)
   (execute ev))

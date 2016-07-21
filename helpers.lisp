@@ -12,6 +12,8 @@
   (:default-initargs
    :location (vec 0 0 0)))
 
+(define-saved-slots located-entity location)
+
 (defmethod paint :around ((obj located-entity) target)
   (with-pushed-matrix
     (let ((location (location obj)))
@@ -24,6 +26,8 @@
   (:default-initargs
    :orientation (vec 1 0 0)
    :up (vec 0 1 0)))
+
+(define-saved-slots oriented-entity orientation up)
 
 (defmethod paint :around ((obj oriented-entity) target)
   (with-pushed-matrix
@@ -39,6 +43,8 @@
    :axis (vec 0 1 0)
    :angle 0))
 
+(define-saved-slots rotated-entity axis angle)
+
 (defmethod paint :around ((obj rotated-entity) target)
   (with-pushed-matrix
     (let ((axis (axis obj)))
@@ -50,6 +56,8 @@
   (:default-initargs
    :pivot (vec 0 0 0)))
 
+(define-saved-slots pivoted-entity pivot)
+
 (defmethod paint :around ((obj pivoted-entity) target)
   (with-pushed-matrix
     (let ((pivot (pivot obj)))
@@ -60,6 +68,8 @@
   ((bounds :initarg :bounds :accessor bounds))
   (:default-initargs
    :bounds (vec 0 0 0)))
+
+(define-saved-slots bound-entity bounds)
 
 (defmethod min-bound ((entity bound-entity) &key relative)
   (if relative (vec 0 0 0) (location entity)))
@@ -156,6 +166,8 @@
   ((color :initarg :color :accessor color))
   (:default-initargs
    :color (vec 0.0 0.0 1.0)))
+
+(define-saved-slots colored-entity color)
 
 (defmethod paint :before ((entity colored-entity) target)
   (let ((c (color entity)))

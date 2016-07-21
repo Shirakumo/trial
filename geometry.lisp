@@ -17,15 +17,21 @@
    :width 10
    :height 10))
 
+(define-saved-slots bounded-geometry width height)
+
 (defclass sized-geometry (geometry)
   ((size :initarg :size :accessor size))
   (:default-initargs
    :size 10))
 
+(define-saved-slots sized-geometry size)
+
 (defclass segmented-geometry (geometry)
   ((segments :initarg :segments :accessor segments))
   (:default-initargs
    :segments 8))
+
+(define-saved-slots segmented-geometry segments)
 
 (defclass triangle (bounded-geometry)
   ())
