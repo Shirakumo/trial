@@ -77,10 +77,10 @@
   (dolist (loop (loops subject))
     (add-handler subject loop)))
 
-(defmethod enter :after ((subject subject) (loop event-loop))
+(defmethod register :after ((subject subject) (loop event-loop))
   (push loop (loops subject)))
 
-(defmethod leave :after ((subject subject) (loop event-loop))
+(defmethod deregister :after ((subject subject) (loop event-loop))
   (setf (loops subject) (delete loop (loops subject))))
 
 (defmacro define-subject (name direct-superclasses direct-slots &rest options)
