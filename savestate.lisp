@@ -124,7 +124,7 @@
         (save-to target)))
   target)
 
-(defmethod create-save (scene (target stream))
+(defmethod create-save (scene (stream stream))
   (let ((*package* (find-package '#:trial-save-area)))
     (stop scene)
     (process scene) ; Process pending events
