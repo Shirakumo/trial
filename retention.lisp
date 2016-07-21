@@ -77,3 +77,14 @@
 
 (define-uniform-retention gamepad (gamepad-press gamepad-release button)
   button)
+
+(define-retention movement (ev)
+  (typecase ev
+    (start-left (setf (retained 'movement :left) T))
+    (start-right (setf (retained 'movement :right) T))
+    (start-up (setf (retained 'movement :up) T))
+    (start-down (setf (retained 'movement :down) T))
+    (stop-left (setf (retained 'movement :left) NIL))
+    (stop-right (setf (retained 'movement :right) NIL))
+    (stop-up (setf (retained 'movement :up) NIL))
+    (stop-down (setf (retained 'movement :down) NIL))))
