@@ -181,3 +181,12 @@
   (let ((axis (gamepad-axis->symbol device axis)))
     (dolist (handler *input-handlers*)
       (handle (make-instance 'gamepad-move :axis axis :old-pos last-value :pos value :device device) handler))))
+
+(define-uniform-retention key (key-press key-release key)
+  key)
+
+(define-uniform-retention mouse (mouse-press mouse-release button)
+  button)
+
+(define-uniform-retention gamepad (gamepad-press gamepad-release button)
+  button)

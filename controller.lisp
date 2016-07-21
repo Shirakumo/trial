@@ -7,6 +7,23 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
+(define-action system-action ())
+
+(define-action launch-editor (system-action)
+  (key-press (eql key :section)))
+
+(define-action save-game (system-action)
+  (key-press (eql key :f2)))
+
+(define-action load-game (system-action)
+  (key-press (eql key :f3)))
+
+(define-action reload-assets (system-action)
+  (key-press (eql key :f5)))
+
+(define-action reload-scene (system-action)
+  (key-press (eql key :f6)))
+
 (define-subject controller (hud-entity)
   (;; Has to be a double to avoid bignums after ~3.8 hours of runtime.
    (tick-count :initform 0.0d0 :accessor tick-count)
