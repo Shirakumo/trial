@@ -22,7 +22,8 @@
 
 (defmethod save-form-objects ((container container))
   (for:for ((object over container)
-            (form = (make-save-form object))
-            (forms when form collecting form))))
+            (objs collecting object))))
 
 (define-saved-slots clock clock running timescale)
+
+(define-saved-slots unit name)

@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass scene (flare:scene event-loop entity savable)
+(defclass scene (flare:scene event-loop entity)
   ())
 
 (defclass scene-event (event)
