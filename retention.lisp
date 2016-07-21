@@ -33,8 +33,9 @@
   (remhash type *retention-functions*))
 
 (defun retain-event (event)
-  (loop for v being the hash-values of *retention-functions*
-        do (funcall v event)))
+  (unless (typep event 'tick)
+    (loop for v being the hash-values of *retention-functions*
+          do (funcall v event))))
 
 (defmacro define-retention (type (ev &rest args) &body body)
   `(progn (unless (gethash ',type *retention-table*)
