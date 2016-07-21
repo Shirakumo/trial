@@ -15,6 +15,7 @@
 (defvar trial-save-area::*scene*)
 
 (defgeneric make-save-form (object))
+(defgeneric make-reference (object))
 (defgeneric save-form-initargs (object)
   (:method-combination append))
 (defgeneric save-form-objects (object))
@@ -28,17 +29,17 @@
                collect `(enter ,object ,cont))
        ,cont)))
 
-(defmacro trial-save-area::make (class &rest initargs &key)
+(defmacro trial-save-area::make (class &rest initargs)
   `(make-instance ',class ,@initargs))
 
-(defmacro trial-save-area::alloc (class &rest initargs &key)
+(defmacro trial-save-area::alloc (class &rest initargs)
   `(allocate-instance ',class ,@initargs))
 
 (defmacro trial-save-area::with-container ((class &rest initargs) &body objects)
   `(trial-save-area::insert (trial-save-area::make ,class ,@initargs)
                             ,@objects))
 
-(defmethod make-save-form (object)
+(defmethod make-save-form ((object standard-object))
   (let* ((inner (save-form-objects object))
          (forms (remove-if #'null (mapc #'make-save-form inner))))
     (if forms
@@ -46,6 +47,16 @@
            ,@forms)
         `(trial-save-area::make ,(class-name (class-of object))
                                 ,@(save-form-initargs object)))))
+
+(defmethod make-reference ((symbol symbol))
+  `',symbol)
+
+(defmethod make-reference (other)
+  other)
+
+;; FIXME: This does not work if the item we want to retrieve is entered after the reference is evaluated.
+(defmethod make-reference ((unit unit))
+  `(unit ',(name unit) trial-save-area::*scene*))
 
 (defmethod save-form-initargs append (object)
   NIL)
@@ -75,7 +86,7 @@
                         for slot = (find name slots :key #'c2mop:slot-definition-name)
                         for arg = (or (first (c2mop:slot-definition-initargs slot))
                                       (error "No initarg for class slot ~a." name))
-                        collect arg collect `(slot-value ,class-name ',name))))))))
+                        collect arg collect `(make-reference (slot-value ,class-name ',name)))))))))
 
 (defmacro define-saved-slots (class-name &rest slot-names)
   `(%create-save-form-initargs-method ',class-name ,@(loop for name in slot-names collect `',name)))
@@ -103,7 +114,10 @@
             (persistents when (typep item 'persistent) collecting item))
     (unless (typep item 'persistent)
       (when (typep item 'container)
-        (clear-for-reload item))
+        (let ((subpersist (clear-for-reload item)))
+          (when subpersist
+              (warn "Found persistent units~%  ~s~%while clearing ~a for reload at non-toplevel position which cannot be persisted."
+                    subpersist item))))
       (leave item container))))
 
 (defmethod create-save (object (target string))
@@ -116,7 +130,7 @@
                                         :if-does-not-exist :create)
              (create-save scene stream)
              file)))
-    (v:info :test "Saving ~a to ~a ." scene target)
+    (v:info :trial.savestate "Saving ~a to ~a ." scene target)
     (if *compile-save*
         (let ((temp (merge-pathnames (format NIL "~a.tmp" (pathname-name target)))))
           (unwind-protect
@@ -129,7 +143,11 @@
   (let ((*package* (find-package '#:trial-save-area)))
     (stop scene)
     (process scene) ; Process pending events
-    (write-save-object `(cl:in-package '#:trial-save-area)
+    (write-save-object `(cl:in-package #:trial-save-area)
+                       stream)
+    (write-save-object `(cl:reinitialize-instance
+                         trial-save-area::*scene*
+                         ,@(save-form-initargs scene))
                        stream)
     (write-save-object `(trial-save-area::insert
                          trial-save-area::*scene*
@@ -145,10 +163,14 @@
 (defmethod load-save (scene (source pathname))
   (let ((*package* (find-package '#:trial-save-area))
         (trial-save-area::*scene* scene))
+    (v:info :trial.savestate "Loading ~a from ~a ." scene source)
+    ;; Gracefully stop
     (stop scene)
-    (process scene) ; Process pending events
+    (process scene) 
     (let ((persistents (clear-for-reload scene)))
       (load source)
       (dolist (persistent persistents)
         (enter persistent scene)))
+    ;; Restart from a fresh state
+    (discard-events scene)
     (start scene)))
