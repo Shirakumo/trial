@@ -99,7 +99,8 @@
   (terpri stream))
 
 (defun clear-for-reload (container)
-  (for:for ((item over container))
+  (for:for ((item over container)
+            (persistents when (typep item 'persistent) collecting item))
     (unless (typep item 'persistent)
       (when (typep item 'container)
         (clear-for-reload item))
@@ -146,6 +147,8 @@
         (trial-save-area::*scene* scene))
     (stop scene)
     (process scene) ; Process pending events
-    (clear-for-reload scene)
-    (load source)
+    (let ((persistents (clear-for-reload scene)))
+      (load source)
+      (dolist (persistent persistents)
+        (enter persistent scene)))
     (start scene)))
