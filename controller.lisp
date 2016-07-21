@@ -24,7 +24,7 @@
 (define-action reload-scene (system-action)
   (key-press (eql key :f6)))
 
-(define-subject controller (hud-entity)
+(define-subject controller (hud-entity persistent)
   (;; Has to be a double to avoid bignums after ~3.8 hours of runtime.
    (tick-count :initform 0.0d0 :accessor tick-count)
    (display :initform NIL :accessor display))

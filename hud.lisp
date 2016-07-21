@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(define-subject hud (layer-set)
+(define-subject hud (layer-set persistent)
   ())
 
 (define-handler (hud enter) (ev entity)
