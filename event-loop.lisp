@@ -82,6 +82,13 @@
   (setf (fill-pointer (queue loop)) 0
         (queue-index loop) 0))
 
+(defun discard-events (loop)
+  (loop for i = (1- (incf (queue-index loop)))
+        while (< i (length (queue loop)))
+        do (setf (aref (queue loop) i) NIL))
+  (setf (fill-pointer (queue loop)) 0
+        (queue-index loop) 0))
+
 (defmethod handle (event (loop event-loop))
   (let ((*loop* loop))
     (call-next-method)))
