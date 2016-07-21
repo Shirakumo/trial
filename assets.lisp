@@ -145,6 +145,9 @@
 (defmethod (setf home) (pool (asset asset))
   (setf (slot-value asset 'home) (pool pool)))
 
+(defmethod loaded-p ((asset asset))
+  (and (resource asset) (slot-value (resource asset) 'data)))
+
 (defmethod resource ((asset asset))
   (let ((maybe-pointer (slot-value asset 'resource)))
     (when maybe-pointer (tg:weak-pointer-value maybe-pointer))))
@@ -174,15 +177,14 @@
       (setf (data resource) (load-data asset)))))
 
 (defmethod reload :around ((asset asset))
-  (when (resource asset)
+  (when (loaded-p asset)
     (if *redefining*
         (v:debug :trial.asset "Skipping reload of ~a due to redefinition context." asset)
         (call-next-method)))
   asset)
 
 (defmethod restore ((asset asset))
-  (when (or (not (resource asset))
-            (not (slot-value (resource asset) 'data)))
+  (unless (loaded-p asset)
     (setf (data asset) (load-data asset)))
   asset)
 
@@ -190,9 +192,9 @@
   (offload asset))
 
 (defmethod offload ((asset asset))
-  (let ((resource (resource asset)))
-    ;; Don't use the accessor as it might otherwise reload it.
-    (when (and resource (slot-value resource 'data))
+  (when (loaded-p asset)
+    (let ((resource (resource asset)))
+      ;; Don't use the accessor as it might otherwise reload it.
       (finalize-data asset (data resource))
       (setf (data resource) NIL)
       (setf (resource asset) NIL)))
