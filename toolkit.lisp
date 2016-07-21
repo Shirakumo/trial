@@ -152,14 +152,15 @@
   (loop for i from 0
         while (bt:thread-alive-p thread)
         do (sleep interval)
-           (with-simple-restart (continue "Continue waiting.")
-             (when (= i (/ timeout interval))
-               (restart-case
-                   (error "Thread ~s did not exit after ~a s." (bt:thread-name thread) (* i interval))
-                 (abort ()
-                   :report "Kill the thread and exit, risking corrupting the image."
-                   (bt:destroy-thread thread)
-                   (return)))))))
+           (when (= i (/ timeout interval))
+             (restart-case
+                 (error "Thread ~s did not exit after ~a s." (bt:thread-name thread) (* i interval))
+               (continue ()
+                 :report "Continue waiting.")
+               (abort ()
+                 :report "Kill the thread and exit, risking corrupting the image."
+                 (bt:destroy-thread thread)
+                 (return))))))
 
 (defmacro with-thread-exit ((thread &key (timeout 1) (interval 0.1)) &body body)
   (let ((thread-g (gensym "THREAD")))
