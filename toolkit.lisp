@@ -155,7 +155,7 @@
            (with-simple-restart (continue "Continue waiting.")
              (when (= i (/ timeout interval))
                (restart-case
-                   (error "Thread ~s did not exit after ~a s." (bt:thread-name thread))
+                   (error "Thread ~s did not exit after ~a s." (bt:thread-name thread) (* i interval))
                  (abort ()
                    :report "Kill the thread and exit, risking corrupting the image."
                    (bt:destroy-thread thread)
