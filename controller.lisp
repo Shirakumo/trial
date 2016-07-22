@@ -65,10 +65,10 @@
   (setup-scene (display controller)))
 
 (define-handler (controller save-game) (ev)
-  (create-save (first (loops controller)) #p"~/test.sav.lisp"))
+  (save-scene (first (loops controller)) #p"~/test.sav.lisp"))
 
 (define-handler (controller load-game) (ev)
-  (load-save (first (loops controller)) #p"~/test.sav.lisp"))
+  (load-scene (first (loops controller)) #p"~/test.sav.lisp"))
 
 (define-handler (controller execute-request) (ev)
   (execute ev))

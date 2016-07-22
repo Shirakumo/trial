@@ -27,3 +27,12 @@
 (define-saved-slots clock clock running timescale)
 
 (define-saved-slots unit name)
+
+(defclass unit-reference (reference)
+  ((referenced-type :initform 'unit :allocation :class)))
+
+(defmethod dereference ((reference unit-reference))
+  (unit (id reference) *scene*))
+
+(defmethod serialize ((unit unit))
+  (@ unit (name unit)))

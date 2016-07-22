@@ -7,14 +7,23 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
+(defparameter *compile-savestate* NIL)
+
 (defgeneric serialize (object))
+(defgeneric allocation-slots (unit)
+  (:method-combination append))
+(defgeneric make-allocation-form (object))
+(defgeneric dereference (reference))
+(defgeneric traverse (object function))
 
 (defmethod serialize (object)
   object)
 
-(defmethod serialize (symbol)
+(defmethod serialize ((symbol symbol))
   ;; FIXME: dereferencing gensym named units
-  (if (keywordp symbol) symbol `',symbol))
+  (typecase symbol
+    ((or keyword (eql T) (eql NIL)) symbol)
+    (T `',symbol)))
 
 (defmethod serialize ((list list))
   `(list ,@(loop for i in list
@@ -45,67 +54,50 @@
                      collect `',name collect (serialize (slot-value object name)))))
 
 (defclass reference ()
-  ((id :initarg :id :accessor id)))
+  ((id :initarg :id :accessor id)
+   (referenced-type :allocation :class :reader referenced-type)))
 
 (defmethod print-object ((reference reference) stream)
-  (print `(@ ,(class-name (class-of reference)) ',(id reference)) stream))
+  (print `(@ ,(referenced-type reference) ,(serialize (id reference))) stream))
 
 (defmethod dereference ((reference reference))
   (error "Don't know how to dereference ~s." reference))
 
+(defun find-reference-for-type (type)
+  (labels ((traverse (class)
+             (dolist (class (c2mop:class-direct-subclasses class))
+               (c2mop:finalize-inheritance class)
+               (when (eql type (referenced-type (c2mop:class-prototype class)))
+                 (return-from find-reference-for-type (class-name class)))
+               (traverse class))))
+    (traverse (find-class 'reference))))
+
 (defmacro @ (type id)
-    (let ((type (or (find-symbol (format NIL "~a-~a" type 'reference) #.*package*)
-                    (error "No such reference type ~s." type))))
-      `(make-instance ',type :id ,id)))
+  `(make-instance (find-reference-for-type ',type) :id ,id))
 
-(defclass unit-reference () ())
-
-(defmethod dereference ((reference unit-reference))
-  (unit (id reference) *scene*))
-
-(defmethod serialize ((unit unit))
-  (@ unit (name unit)))
-
-(defclass asset-reference () ())
-
-(defmethod dereference ((reference asset-reference))
-  (apply #'asset (id reference)))
-
-(defmethod serialize ((asset asset))
-  (@ asset (list (class-name (class-of asset))
-                (name (pool asset))
-                (name asset))))
-
-(defclass resource-reference () ())
-
-(defmethod dereference ((reference resource-reference))
-  (resource (apply #'asset (id reference))))
-
-(defmethod serialize ((resource resource))
-  (let ((asset (resource-asset resource)))
-    (@ resource (list (class-name (class-of asset))
-                      (name (pool asset))
-                      (name asset)))))
-
-(defun allocate-into (scene &rest forms)
-  (dolist (form forms scene)
-    (enter (apply #'allocate-instance (first form) (rest form)))))
+(defun enter-all (scene &rest entities)
+  (dolist (entity entities scene)
+    (enter entity scene)))
 
 (defmacro with-allocation-in (scene &body units)
-  `(allocate-into ,scene
-                  ,@(loop for (type . args) in units
-                          collect `(list ',type ,@args))))
+  `(enter-all ,scene
+              ,@(loop for (type . args) in units
+                      collect `(mkobject ',type ,@(loop for (key val) on args by #'cddr collect `',key collect val)))))
 
-(defmethod create-allocation-form ((unit unit))
+(defmethod make-allocation-form ((unit unit))
   `(,(class-name (class-of unit))
-    ,@(loop for (key val) on (allocation-initargs unit) by #'cddr
+    ,@(loop for (key val) on (allocation-slots unit) by #'cddr
             collect key collect (serialize val))))
 
-(defgeneric allocation-initargs (unit)
-  (:method-combination append))
+(defmacro define-saved-slots (class-name &rest slot-names)
+  `(defmethod allocation-slots append ((,class-name ,class-name))
+     (list ,@(loop for name in slot-names collect `',name collect `(slot-value ,class-name ',name)))))
 
-(defmethod allocation-initargs append ((unit unit))
-  (list :name (name unit)))
+(defvar *traversal-stack* NIL)
+(defmethod traverse :around (object function)
+  (unless (find object *traversal-stack*)
+    (let ((*traversal-stack* (cons object *traversal-stack*)))
+      (call-next-method))))
 
 (defmethod traverse (object function)
   object)
@@ -146,7 +138,7 @@
   object)
 
 (defmethod traverse ((queue flare-queue:queue) function)
-  (for:for ((cell of-queue queue)
+  (for:for ((cell flare-queue:of-queue queue)
             (val = (flare-queue:value cell))
             (new-val = (funcall function val)))
     (unless (eq val new-val) (setf (flare-queue:value cell) new-val)))
@@ -157,8 +149,21 @@
              (if (typep object 'reference)
                  (dereference object)
                  (traverse object #'maybe-dereference))))
-    (loop val being the hash-values of (name-map scene)
+    (loop for val being the hash-values of (name-map scene)
           do (traverse val #'maybe-dereference))))
+
+(defun insert-references (scene)
+  (labels ((maybe-reference (object)
+             (if (typep object 'unit)
+                 (make-instance 'unit-reference :id (name object))
+                 (traverse object #'maybe-reference))))
+    (loop for val being the hash-values of (name-map scene)
+          do (traverse val #'maybe-reference))))
+
+(defun clear-for-reload (scene)
+  (loop for item being the hash-values of (name-map scene)
+        do (unless (typep item 'persistent)
+             (leave item scene))))
 
 (defun structure-scene (scene structure)
   (labels ((find-item (name)
@@ -183,10 +188,49 @@
               (c collecting (unit-structure unit))))))
 
 (defun scene-save-form (scene)
-  `(defun restore-scene (scene)
-     (reinitialize-instance scene ,@(allocation-initargs scene))
-     (with-allocation-in scene
-       ,@(for:for ((unit over scene)
-                   (forms collecting (create-allocation-form unit)))))
-     (resolve-references scene)
-     (structure-scene scene ',(compile-structure scene))))
+  (let ((scenesym (gensym "SCENE")))
+    `(defun restore-scene (,scenesym)
+       (update-slots ,scenesym ,@(mapcar #'serialize (allocation-slots scene)))
+       (with-allocation-in ,scenesym
+         ,@(loop for unit being the hash-values of (name-map scene)
+                 for form = (make-allocation-form unit)
+                 when form collect form))
+       (structure-scene ,scenesym ',(compile-structure scene)))))
+
+(defclass unsavable () ())
+
+(defmethod make-allocation-form ((unsavable unsavable))
+  NIL)
+
+(defclass persistent (unsavable) ())
+
+(defun save-scene (scene file)
+  (v:info :trial.savestate "Saving ~a to ~a ." scene file)
+  (stop scene)
+  (process scene)
+  (let ((temp (make-pathname :type "tmp" :defaults file))
+        (*package* #.*package*))
+    (unwind-protect
+         (progn
+           (with-open-file (stream temp :direction :output :if-exists :supersede)
+             (let ((*package* #.*package*))
+               (write (scene-save-form scene) :stream stream :case :downcase :circle T)))
+           (if *compile-savestate*
+               (compile-file temp :output-file file)
+               (uiop:copy-file temp file)))
+      (uiop:delete-file-if-exists temp)))
+  (start scene))
+
+(defun load-scene (scene file)
+  (let ((*package* #.*package*))
+    (v:info :trial.savestate "Loading ~a from ~a ." scene file)
+    (stop scene)
+    (process scene)
+    (clear-for-reload scene)
+    (insert-references scene)
+    (tg:gc :full T)
+    (load file)
+    (restore-scene scene)
+    (resolve-references scene)
+    (discard-events scene)
+    (start scene)))

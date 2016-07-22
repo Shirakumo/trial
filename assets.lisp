@@ -242,6 +242,17 @@
 (defmacro define-asset (type name (home &rest pools) &body options)
   `(name (update-or-create-asset ',type ',name ',home ',pools ,@options)))
 
+(defclass asset-reference (reference)
+  ((referenced-type :initform 'asset :allocation :class)))
+
+(defmethod dereference ((reference asset-reference))
+  (apply #'asset (id reference)))
+
+(defmethod serialize ((asset asset))
+  (@ asset (list (class-name (class-of asset))
+                 (name (pool asset))
+                 (name asset))))
+
 (defclass resource ()
   ((data :initform NIL :accessor data)
    (asset :initarg :asset :accessor resource-asset))
@@ -296,3 +307,15 @@
     (slot-makunbound (slot-makunbound (resource-asset resource) slot))
     (slot-value (slot-value (resource-asset resource) slot))
     (slot-boundp (slot-boundp (resource-asset resource) slot))))
+
+(defclass resource-reference (reference)
+  ((referenced-type :initform 'resource :allocation :class)))
+
+(defmethod dereference ((reference resource-reference))
+  (resource (apply #'asset (id reference))))
+
+(defmethod serialize ((resource resource))
+  (let ((asset (resource-asset resource)))
+    (@ resource (list (class-name (class-of asset))
+                      (name (pool asset))
+                      (name asset)))))

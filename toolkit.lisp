@@ -49,10 +49,17 @@
     table))
 
 (defun mkobject (class &rest items)
-  (let ((object (allocate-instance class)))
+  (let ((object (allocate-instance (etypecase class
+                                     (standard-class class)
+                                     (symbol (find-class class))))))
     (loop for (key val) on items by #'cddr
           do (setf (slot-value object key) val))
     object))
+
+(defun update-slots (object &rest items)
+  (loop for (key val) on items by #'cddr
+        do (setf (slot-value object key) val))
+  object)
 
 (defun matrix-4x4 (&rest elements)
   (let ((m (make-array '(4 4) :element-type 'single-float :initial-element 0.0f0)))
