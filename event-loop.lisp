@@ -72,6 +72,11 @@
          `(vector-push-extend (make-instance ,event-type ,@args) (queue ,loop)))
         (T whole)))
 
+;; FIXME: This will forget events if PROCESS or DISCARD-EVENTS is called
+;;        recursively (thus resetting the index) and new events are issued
+;;        beyond the point of the index where the recursive call happens.
+;;        The check will assume nothing has changed and it'll continue from
+;;        where it left off, thus missing events before the current index.
 (defun process (loop)
   (loop for i = (1- (incf (queue-index loop)))
         while (< i (length (queue loop)))
