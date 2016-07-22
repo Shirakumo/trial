@@ -36,6 +36,24 @@
                (progn ,@body)
             (gl:pop-matrix))))
 
+(defun mkarray (dimensions &rest items)
+  (let ((array (make-array dimensions)))
+    (loop for i from 0 for item in items
+          do (setf (row-major-aref array i) item))
+    array))
+
+(defun mktable (test &rest items)
+  (let ((table (make-hash-table :test test)))
+    (loop for (key val) on items by #'cddr
+          do (setf (gethash key table) val))
+    table))
+
+(defun mkobject (class &rest items)
+  (let ((object (allocate-instance class)))
+    (loop for (key val) on items by #'cddr
+          do (setf (slot-value object key) val))
+    object))
+
 (defun matrix-4x4 (&rest elements)
   (let ((m (make-array '(4 4) :element-type 'single-float :initial-element 0.0f0)))
     (loop for x in elements
