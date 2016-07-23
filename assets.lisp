@@ -245,13 +245,13 @@
 (defclass asset-reference (reference)
   ((referenced-type :initform 'asset :allocation :class)))
 
-(defmethod dereference ((reference asset-reference))
-  (apply #'asset (id reference)))
+(defmethod @=> ((type (eql 'asset)) &rest args)
+  (apply #'asset args))
 
 (defmethod serialize ((asset asset))
-  (@ asset (list (class-name (class-of asset))
-                 (name (pool asset))
-                 (name asset))))
+  `(@ asset ,(class-name (class-of asset))
+            ,(name (pool asset))
+            ,(name asset)))
 
 (defclass resource ()
   ((data :initform NIL :accessor data)
@@ -308,14 +308,11 @@
     (slot-value (slot-value (resource-asset resource) slot))
     (slot-boundp (slot-boundp (resource-asset resource) slot))))
 
-(defclass resource-reference (reference)
-  ((referenced-type :initform 'resource :allocation :class)))
-
-(defmethod dereference ((reference resource-reference))
-  (resource (apply #'asset (id reference))))
+(defmethod @=> ((type (eql 'resource)) &rest args)
+  (resource (apply #'asset args)))
 
 (defmethod serialize ((resource resource))
   (let ((asset (resource-asset resource)))
-    (@ resource (list (class-name (class-of asset))
-                      (name (pool asset))
-                      (name asset)))))
+    `(@ resource ,(class-name (class-of asset))
+                 ,(name (pool asset))
+                 ,(name asset))))
