@@ -85,7 +85,7 @@
 
 (defmacro define-subject (name direct-superclasses direct-slots &rest options)
   (unless (find-if (lambda (c) (c2mop:subclassp c 'subject)) direct-superclasses)
-    (push 'subject direct-superclasses))
+    (setf direct-superclasses (append direct-superclasses (list 'subject))))
   (unless (find :metaclass options :key #'first)
     (push '(:metaclass subject-class) options))
   `(eval-when (:compile-toplevel :load-toplevel :execute)
