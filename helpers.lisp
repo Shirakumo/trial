@@ -12,7 +12,7 @@
   (:default-initargs
    :location (vec 0 0 0)))
 
-(define-saved-slots located-entity location)
+(define-saved-initargs located-entity location)
 
 (defmethod paint :around ((obj located-entity) target)
   (with-pushed-matrix
@@ -27,7 +27,7 @@
    :orientation (vec 1 0 0)
    :up (vec 0 1 0)))
 
-(define-saved-slots oriented-entity orientation up)
+(define-saved-initargs oriented-entity orientation up)
 
 (defmethod paint :around ((obj oriented-entity) target)
   (with-pushed-matrix
@@ -43,7 +43,7 @@
    :axis (vec 0 1 0)
    :angle 0))
 
-(define-saved-slots rotated-entity axis angle)
+(define-saved-initargs rotated-entity axis angle)
 
 (defmethod paint :around ((obj rotated-entity) target)
   (with-pushed-matrix
@@ -56,7 +56,7 @@
   (:default-initargs
    :pivot (vec 0 0 0)))
 
-(define-saved-slots pivoted-entity pivot)
+(define-saved-initargs pivoted-entity pivot)
 
 (defmethod paint :around ((obj pivoted-entity) target)
   (with-pushed-matrix
@@ -69,7 +69,7 @@
   (:default-initargs
    :bounds (vec 0 0 0)))
 
-(define-saved-slots bound-entity bounds)
+(define-saved-initargs bound-entity bounds)
 
 (defmethod min-bound ((entity bound-entity) &key relative)
   (if relative (vec 0 0 0) (location entity)))
@@ -167,7 +167,7 @@
   (:default-initargs
    :color (vec 0.0 0.0 1.0)))
 
-(define-saved-slots colored-entity color)
+(define-saved-initargs colored-entity color)
 
 (defmethod paint :before ((entity colored-entity) target)
   (let ((c (color entity)))
@@ -176,10 +176,7 @@
 (defclass textured-entity (entity)
   ((texture :initform NIL :accessor texture)))
 
-(defmethod initialize-instance :after ((entity textured-entity) &key (texture NIL t-p) &allow-other-keys)
-  (when t-p (setf (texture entity) texture)))
-
-(defmethod reinitialize-instance :after ((entity textured-entity) &key (texture NIL t-p) &allow-other-keys)
+(defmethod shared-initialize :after ((entity textured-entity) slots &key (texture NIL t-p) &allow-other-keys)
   (when t-p (setf (texture entity) texture)))
 
 (defmethod (setf texture) ((resource resource) (entity textured-entity))
@@ -202,10 +199,7 @@
 (defclass mesh-entity (entity)
   ((mesh :initform NIL :accessor mesh)))
 
-(defmethod initialize-instance :after ((entity mesh-entity) &key (mesh NIL t-p) &allow-other-keys)
-  (when t-p (setf (mesh entity) mesh)))
-
-(defmethod reinitialize-instance :after ((entity mesh-entity) &key (mesh NIL t-p) &allow-other-keys)
+(defmethod shared-initialize :after ((entity mesh-entity) slots &key (mesh NIL t-p) &allow-other-keys)
   (when t-p (setf (mesh entity) mesh)))
 
 (defmethod (setf mesh) ((resource resource) (entity mesh-entity))
@@ -224,10 +218,7 @@
 (defclass shader-entity (entity)
   ((shader-program :accessor shader-program)))
 
-(defmethod initialize-instance :after ((entity shader-entity) &key shader-program)
-  (setf (shader-program entity) shader-program))
-
-(defmethod initialize-instance :after ((entity shader-entity) &key (shader-program NIL s-p))
+(defmethod shared-initialize :after ((entity shader-entity) slots &key (shader-program NIL s-p))
   (when s-p (setf (shader-program entity) shader-program)))
 
 (defmethod (setf shader-program) ((resource resource) (entity shader-entity))
