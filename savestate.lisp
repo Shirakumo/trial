@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(defparameter *compile-savestate* NIL)
+(defparameter *compile-savestate* T)
 (defvar *scene*)
 
 (defgeneric serialize (object))
@@ -184,8 +184,10 @@
     (stop scene)
     (process scene)
     (clear-for-reload scene)
+    ;; FIXME: Updating references from persistent objects to units within the scene
     (tg:gc :full T)
     (load file)
     (restore-scene scene)
+    (fmakunbound 'restore-scene)
     (discard-events scene)
     (start scene)))
