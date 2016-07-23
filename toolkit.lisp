@@ -17,6 +17,11 @@
            usec)
   #-sbcl (get-internal-real-time))
 
+(defun executable-directory ()
+  (pathname-utils:to-directory
+   (or (first (uiop:command-line-arguments))
+       *default-pathname-defaults*)))
+
 (defun enlist (item &rest items)
   (if (listp item) item (list* item items)))
 

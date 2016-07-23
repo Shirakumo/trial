@@ -18,6 +18,7 @@
 
 (defvar *redefining* NIL)
 (defvar *pools* (make-hash-table :test 'eql))
+(defvar *standalone* NIL)
 
 ;; forward definition
 (defclass asset () ())
@@ -45,13 +46,33 @@
 (defun pools ()
   (alexandria:hash-table-values *pools*))
 
+(defun resolve-pool-base (base)
+  (pathname-utils:normalize-pathname
+   (if *standalone*
+       (let ((root (merge-pathnames "pool/" (executable-directory))))
+         (etypecase base
+           (string (merge-pathnames (uiop:parse-native-namestring base) root))
+           (pathname (merge-pathnames base root))
+           (symbol (merge-pathnames (format NIL "~(~a~)/" base) root))
+           (list (merge-pathnames (merge-pathnames (second base) (format NIL "~(~a~)/" (first base))) root))))
+       (etypecase base
+         (string (uiop:parse-native-namestring base))
+         (pathname base)
+         (symbol (asdf:system-relative-pathname base "data/"))
+         (list (asdf:system-relative-pathname (first base) (second base)))))))
+
+(defun reconfigure-pool-bases ()
+  (mapc #'reinitialize-instance (pools)))
+
+(pushnew 'reconfigure-pool-bases qtools:*boot-hooks*)
+
 (defclass pool ()
   ((name :initarg :name :reader name)
+   (base-designator :accessor base-designator)
    (base :initform NIL :accessor base)
    (assets :initform NIL :accessor assets))
   (:default-initargs
-   :name (error "NAME required.")
-   :base (error "BASE required.")))
+   :name (error "NAME required.")))
 
 (defmethod print-object ((pool pool) stream)
   (print-unreadable-object (pool stream :type T)
@@ -62,20 +83,18 @@
     (when prev
       (setf (assets pool) (assets prev))))
   (setf (pool (name pool)) pool)
+  (setf (base pool) (or base (name pool))))
+
+(defmethod reinitialize-instance :after ((pool pool) &key (base (base-designator pool)))
   (setf (base pool) base))
 
-(defmethod (setf base) (thing (pool pool))
-  (error "Cannot set ~s as base on ~a. Must be a pathname-designator."
-         thing pool))
-
-(defmethod (setf base) ((base symbol) (pool pool))
-  (setf (base pool) (asdf:system-relative-pathname base "data/")))
-
-(defmethod (setf base) ((base string) (pool pool))
-  (setf (base pool) (uiop:parse-native-namestring base)))
-
-(defmethod (setf base) ((base pathname) (pool pool))
-  (setf (slot-value pool 'base) (pathname-utils:normalize-pathname base)))
+(defmethod (setf base) (base (pool pool))
+  (setf (base-designator pool) base)
+  (let ((path (resolve-pool-base base)))
+    (unless (uiop:directory-exists-p path)
+      (warn "The pool base ~&  ~s~&resolved from ~s does not exist."
+            path base))
+    (setf (slot-value pool 'base) path)))
 
 (defmethod pool ((pool pool))
   pool)

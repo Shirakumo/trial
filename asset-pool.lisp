@@ -7,8 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(define-pool :trial
-  :base (asdf:system-relative-pathname :trial "data/"))
+(define-pool :trial)
 
 (define-asset font debug-hud (trial)
   :family "Consolas, Monospace"
