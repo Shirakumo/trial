@@ -13,8 +13,6 @@
 ;;        seems like a bad idea.
 ;; FIXME: Resources need to be sectioned off on a per-context basis so that clashing
 ;;        cannot occur. How to generalise without losing performance?
-;; FIXME: Something is very broken. Things are finalizing and restoring for no reason.
-;;        Please investigate asap, me.
 
 (defvar *redefining* NIL)
 (defvar *pools* (make-hash-table :test 'eql))
