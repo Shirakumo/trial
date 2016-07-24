@@ -74,7 +74,7 @@
   (let ((lat (segments sphere))
         (lng (segments sphere))
         (size (size sphere)))
-    (loop for i from lat downto 0
+    (loop for i from lat downto 1
           for lat0 = (* PI (- (/ (1- i) lat) 0.5))
           for lat1 = (* PI (- (/ i lat) 0.5))
           for z0 = (sin lat0)
