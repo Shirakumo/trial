@@ -74,22 +74,22 @@
   (let ((lat (segments sphere))
         (lng (segments sphere))
         (size (size sphere)))
-    (loop for i from 0 below lat
-          for lat0 = (* PI (+ -0.5 (/ (1- i) lat)))
-          for lat1 = (* PI (+ -0.5 (/ i lat)))
+    (loop for i from lat downto 0
+          for lat0 = (* PI (- (/ (1- i) lat) 0.5))
+          for lat1 = (* PI (- (/ i lat) 0.5))
           for z0 = (sin lat0)
           for zr0 = (cos lat0)
           for z1 = (sin lat1)
           for zr1 = (cos lat1)
           do (with-primitives :quad-strip
-               (loop for j from 0 to lng
+               (loop for j from lng downto 0
                      for l = (* 2 PI (/ (1- j) lng))
                      for x = (cos l)
                      for y = (sin l)
-                     do (gl:normal (* x zr0 size) (* y zr0 size) z0)
-                        (gl:vertex (* x zr0 size) (* y zr0 size) z0)
-                        (gl:normal (* x zr1 size) (* y zr1 size) z1)
-                        (gl:vertex (* x zr1 size) (* y zr1 size) z1))))))
+                     do (gl:normal (* x zr0 size) (* y zr0 size) (* z0 size))
+                        (gl:vertex (* x zr0 size) (* y zr0 size) (* z0 size))
+                        (gl:normal (* x zr1 size) (* y zr1 size) (* z1 size))
+                        (gl:vertex (* x zr1 size) (* y zr1 size) (* z1 size)))))))
 
 (defclass cube (sized-geometry)
   ())
