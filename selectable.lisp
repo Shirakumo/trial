@@ -69,12 +69,11 @@
     (render *loop* selection-buffer)
     (let ((object (object-at-point selection-buffer x y))
           (previous (selected selection-buffer)))
-      (when object
-        (when (and previous (typep previous 'selectable-entity))
-          (setf (selected previous) NIL))
-        (setf (selected selection-buffer) object)
-        (when (typep object 'selectable-entity)
-          (setf (selected object) T))))))
+      (when (typep previous 'selectable-entity)
+        (setf (selected previous) NIL))
+      (setf (selected selection-buffer) object)
+      (when (typep object 'selectable-entity)
+        (setf (selected object) T)))))
 
 (define-handler (selection-buffer enter) (ev entity)
   (when (typep entity 'selectable-entity)
