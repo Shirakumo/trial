@@ -47,7 +47,8 @@
   (gethash (ensure-color id) *color-id-map*))
 
 (define-subject selection-buffer (framebuffer hud-entity)
-  ((resource :initform (tg:make-weak-hash-table :weakness :key)))
+  ((resource :initform (tg:make-weak-hash-table :weakness :key))
+   (selected :initform NIL :accessor selected))
   (:default-initargs
    :width (width *context*)
    :height (height *context*)
@@ -61,7 +62,12 @@
   (let* ((x (round (vx pos)))
          (y (- (height selection-buffer) (round (vy pos)))))
     (render *loop* selection-buffer)
-    (v:info :test "CLICK: ~a/~a => ~a" x y (object-at-point selection-buffer x y))))
+    (let ((object (object-at-point selection-buffer x y)))
+      (when object
+        (when (selected selection-buffer)
+          (setf (selected (selected selection-buffer)) NIL))
+        (setf (selected selection-buffer) object)
+        (setf (selected object) T)))))
 
 (defmethod render (scene (buffer selection-buffer))
   (unless (and (= (width *context*) (width buffer))
@@ -73,13 +79,17 @@
          (progn
            (gl:clear-color 0.0 0.0 0.0 0.0)
            (gl:clear :color-buffer :depth-buffer)
+           ;; FIXME: How do we know what to deactivate and reactivate?
            ;; Disable blending and textures to ensure we have just 32bit colours.
            (gl:disable :blend :texture-2d :multisample)
            (gl:enable :depth-test :cull-face)
            (with-pushed-matrix
-               ;; FIXME: Multiple cameras? Camera not named this?
-               (handle (make-instance 'tick) (unit :camera scene))
-             (paint scene buffer)))
+             ;; FIXME: Multiple cameras? Camera not named this?
+             (setup-perspective (unit :camera scene) (make-instance 'resize :width (width *context*) :height (height *context*)))
+             (project-view (unit :camera scene) (make-instance 'tick))
+             (paint scene buffer))
+           ;; Reenable
+           (gl:enable :blend :texture-2d :multisample))
       (q+:release (data buffer)))))
 
 (defmethod paint :around (thing (buffer selection-buffer))
@@ -108,7 +118,8 @@
       (q+:release (data buffer)))))
 
 (defclass selectable-entity (entity)
-  ((color-id :initarg :color-id :accessor color-id))
+  ((color-id :initarg :color-id :accessor color-id)
+   (selected :initform NIL :accessor selected))
   (:default-initargs
    :color-id NIL))
 
@@ -120,3 +131,18 @@
             (/ (ldb (byte 8 16) (color-id entity)) 255)
             (/ (ldb (byte 8  8) (color-id entity)) 255)
             (/ (ldb (byte 8  0) (color-id entity)) 255)))
+
+#+trial-debug-selection-buffer
+(defmethod paint :around ((entity selectable-entity) target)
+  (cond ((selected entity)
+         (gl:polygon-mode :back :line)
+         (gl:cull-face :front)
+         (gl:depth-func :lequal)
+         (gl:color 255 0 0)
+         (gl:line-width 5)
+         (call-next-method)
+         (gl:cull-face :back)
+         (gl:polygon-mode :back :fill)
+         (gl:color 255 255 255)
+         (call-next-method))
+        (T (call-next-method))))
