@@ -9,33 +9,14 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(defclass font (asset)
-  ((size :initarg :size :accessor size)
-   (family :initarg :family :accessor family))
-  (:default-initargs
-   :size 12
-   :family (error "FAMILY required.")))
-
-(defmethod (setf family) :after (family (asset font))
-  (reload asset))
-
-(defmethod (setf size) :after (size (asset font))
-  (reload asset))
-
-(defmethod load-data ((asset font))
-  (q+:make-qfont (family asset) (size asset)))
-
-(defmethod finalize-data ((asset font) data)
-  (finalize data))
-
-(defclass gl-asset (asset)
+(defclass context-asset (asset)
   ((resource :initform (tg:make-weak-hash-table :weakness :key-and-value))))
 
-(defmethod resource ((asset gl-asset))
+(defmethod resource ((asset context-asset))
   (when *context*
     (gethash *context* (slot-value asset 'resource))))
 
-(defmethod (setf resource) (value (asset gl-asset))
+(defmethod (setf resource) (value (asset context-asset))
   (unless *context*
     (error "Cannot update resource of ~a without an active context!" asset))
   (if value
@@ -50,13 +31,13 @@
                  (with-context (context)
                    (funcall func))))))
 
-(defmethod reload :around ((asset gl-asset))
+(defmethod reload :around ((asset context-asset))
   (call-with-asset-context asset #'call-next-method))
 
-(defmethod load-data :around ((asset gl-asset))
+(defmethod load-data :around ((asset context-asset))
   (call-with-asset-context asset #'call-next-method))
 
-(defmethod finalize-data :around ((asset gl-asset) data)
+(defmethod finalize-data :around ((asset context-asset) data)
   (call-with-asset-context asset #'call-next-method))
 
 (defclass file-asset (asset)
@@ -106,7 +87,35 @@
 (defmethod finalize-data ((asset image) data)
   (finalize data))
 
-(defclass texture (image gl-asset)
+(defvar *global-font-cache* (make-hash-table :test 'equal))
+
+(defun global-font (family)
+  (or (gethash family *global-font-cache*)
+      (setf (gethash family *global-font-cache*)
+            (q+:make-qfont family))))
+
+(defclass font (context-asset)
+  ((size :initarg :size :accessor size)
+   (family :initarg :family :accessor family))
+  (:default-initargs
+   :size 12
+   :family (error "FAMILY required.")))
+
+(defmethod (setf family) :after (family (asset font))
+  (reload asset))
+
+(defmethod (setf size) :after (size (asset font))
+  (reload asset))
+
+(defmethod load-data ((asset font))
+  (let ((font (q+:make-qfont (global-font (family asset)) *context*)))
+    (setf (q+:point-size font) (size asset))
+    font))
+
+(defmethod finalize-data ((asset font) data)
+  (finalize data))
+
+(defclass texture (image context-asset)
   ((target :initarg :target :reader target)
    (mag-filter :initarg :mag-filter :reader mag-filter)
    (min-filter :initarg :min-filter :reader min-filter)
@@ -191,7 +200,7 @@
   (setf (texture-store model) ()))
 
 ;; FIXME: allow specifying inline shaders
-(defclass shader (file-asset gl-asset)
+(defclass shader (file-asset context-asset)
   ((shader-type :initarg :shader-type :reader shader-type))
   (:default-initargs
    :shader-type NIL))
@@ -235,7 +244,7 @@
 (defmethod finalize-data ((asset shader) data)
   (gl:delete-shader data))
 
-(defclass shader-program (gl-asset)
+(defclass shader-program (context-asset)
   ((shaders :initarg :shaders :accessor shaders)))
 
 (defmethod (setf shaders) :after (shaders (asset shader-program))
@@ -258,7 +267,7 @@
   (gl:delete-program data))
 
 ;; FIXME: allow loading from file or non-array type
-(defclass vertex-buffer (gl-asset)
+(defclass vertex-buffer (context-asset)
   ((buffer-type :initarg :buffer-type :accessor buffer-type)
    (element-type :initarg :element-type :accessor element-type)
    (buffer-data :initarg :buffer-data :accessor buffer-data)
@@ -298,7 +307,7 @@
 (defmethod finalize-data ((asset vertex-buffer) data)
   (gl:delete-buffers (list data)))
 
-(defclass vertex-array (gl-asset)
+(defclass vertex-array (context-asset)
   ((buffers :initarg :buffers :accessor buffers)))
 
 (defmethod (setf buffers) :after (buffers (asset vertex-array))
@@ -324,7 +333,7 @@
 (defmethod finalize-data ((asset vertex-array) data)
   (gl:delete-vertex-arrays (list data)))
 
-(defclass framebuffer (gl-asset)
+(defclass framebuffer (context-asset)
   ((attachment :initarg :attachment :reader attachment)
    (width :initarg :width :reader width)
    (height :initarg :height :reader height)
