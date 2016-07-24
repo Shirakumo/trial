@@ -74,8 +74,10 @@
   (execute ev))
 
 (define-handler (controller launch-editor) (ev)
-  (when (asdf:find-system :trial-editor)
-    (asdf:load-system :trial-editor))
+  (let ((sys (asdf:find-system :trial-editor)))
+    (when sys
+      (unless (asdf:component-loaded-p sys)
+        (asdf:load-system sys))))
   (when (find-package '#:org.shirakumo.fraf.trial.editor)
     (with-body-in-gui ((display controller) :return-values NIL)
       (funcall (find-symbol (string '#:launch) '#:org.shirakumo.fraf.trial.editor)
