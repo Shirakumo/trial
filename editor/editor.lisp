@@ -52,21 +52,36 @@
             (floor (/ (round (flare:clock scene)) 60))
             (mod (flare:clock scene) 60))))
 
+(define-widget subwindow (QMdiSubWindow)
+  ())
+
+(define-override (subwindow close-event) (ev)
+  (q+:hide subwindow)
+  (q+:ignore ev))
+
+(define-widget game-view (QMdiSubWindow subwindow)
+  ())
+
+(define-override (game-view resize-event) (ev)
+  (q+:resize-event (q+:widget game-view) ev)
+  (stop-overriding))
+
 (define-widget editor (QMainWindow)
-  ((main :initarg :main :accessor main))
+  ((main :initarg :main :accessor main)
+   (file :initform NIL :accessor file))
   (:default-initargs
     :main (error "MAIN required.")))
 
 (define-subwidget (editor area) (q+:make-qmdiarea editor)
   (setf (q+:central-widget editor) area))
 
-(define-subwidget (editor game-view) (q+:make-qmdisubwindow editor)
+(define-subwidget (editor game-view) (make-instance 'game-view)
   (setf (q+:widget game-view) main)
   (setf (parent main) game-view)
   (setf (q+:window-title game-view) "Game View")
   (q+:add-sub-window area game-view))
 
-(define-subwidget (editor console) (q+:make-qmdisubwindow editor)
+(define-subwidget (editor console) (make-instance 'subwindow)
   (setf (q+:widget console) (make-instance 'trial-editor-console:console :main main))
   (setf (q+:window-title console) "Console")
   (q+:add-sub-window area console))
