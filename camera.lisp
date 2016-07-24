@@ -180,3 +180,6 @@
             (retained 'key :control))
     (nv+ (rotation selection-camera) (nv* (nvorder (v- pos old-pos) :y :x :z)
                                           (acceleration selection-camera)))))
+
+(define-handler (selection-camera resume) (ev))
+(define-handler (selection-camera pause) (ev))
