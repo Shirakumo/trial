@@ -17,6 +17,9 @@
 (defun window (name)
   (gethash (window-name name) *windows*))
 
+(defun list-windows ()
+  (loop for window being the hash-values of *windows* collect window))
+
 (defun (setf window) (window name)
   (etypecase window (window))
   (when (window name)
@@ -32,6 +35,10 @@
 (defmethod initialize-instance :before ((window window) &key name)
   (unless name
     (error "NAME required.")))
+
+(defmethod print-object ((window window) stream)
+  (print-unreadable-object (window stream :type T)
+    (format stream "~s" (name window))))
 
 (define-initializer (window register-window 1000)
   (setf (window (name window)) window))
