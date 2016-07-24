@@ -34,6 +34,7 @@
 (defmethod paint ((controller controller) (hud hud))
   (let ((font (get-resource 'font :trial :debug-hud))
         (clock (clock (scene (display controller)))))
+    (gl:color 1.0 1.0 1.0)
     ;; FIXME: Some way to draw text without having to call Qt methods explicitly.
     ;;        Generally some kinda UI framework...
     (q+:render-text (display controller) 20 30 (format NIL "Pause: ~,10f" (last-pause (display controller)))
