@@ -109,17 +109,16 @@
     (v:debug :trial.input "Mouse pressed: ~a" button)
     (handle (make-instance 'mouse-press :button button :pos position) input-handler)))
 
-(define-override (input-handler mouse-press-event) (ev)
+(define-override (input-handler mouse-release-event) (ev)
   (let ((button (qt-button->symbol (q+:button ev)))
         (position (vec (q+:x (q+:pos-f ev)) (q+:y (q+:pos-f ev)) 0)))
     (v:debug :trial.input "Mouse released: ~a" button)
     (handle (make-instance 'mouse-release :button button :pos position) input-handler)))
 
 (define-override (input-handler mouse-move-event) (ev)
-  (let ((button (qt-button->symbol (q+:button ev)))
-        (position (vec (q+:x (q+:pos-f ev)) (q+:y (q+:pos-f ev)) 0)))
-    (setf previous-pos position)
-    (handle (make-instance 'mouse-move :old-pos (or previous-pos position) :pos position) input-handler)))
+  (let ((position (vec (q+:x (q+:pos-f ev)) (q+:y (q+:pos-f ev)) 0)))
+    (handle (make-instance 'mouse-move :old-pos (or previous-pos position) :pos position) input-handler)
+    (setf previous-pos position)))
 
 ;; All of this crap is necessary to allow distributing the gamepad events onto
 ;; multiple instances of input-handlers with potentially multiple targets.
