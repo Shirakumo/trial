@@ -30,6 +30,15 @@
   (dolist (pool (pools))
     (mapc #'offload (assets pool))))
 
+(define-override (main focus-in-event) (ev)
+  ;; FIXME: too primitive, must account for menus and such at a later point.
+  (issue scene 'resume)
+  (stop-overriding))
+
+(define-override (main focus-out-event) (ev)
+  (issue scene 'pause)
+  (stop-overriding))
+
 (defmethod handle (event (main main))
   (issue (scene main) event))
 

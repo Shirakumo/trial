@@ -82,3 +82,7 @@
     (with-body-in-gui ((display controller) :return-values NIL)
       (funcall (find-symbol (string '#:launch) '#:org.shirakumo.fraf.trial.editor)
                (display controller)))))
+
+(define-handler (controller key-release) (ev key)
+  (when (eql key :escape)
+    (issue (first (loops controller)) 'pause)))

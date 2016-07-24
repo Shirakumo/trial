@@ -122,3 +122,9 @@
 
 (defclass tick (event)
   ((tick-count :initarg :tick-count :reader tick-count)))
+
+(defclass pause (event)
+  ())
+
+(defclass resume (event)
+  ())
