@@ -7,9 +7,6 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(defvar *color-id-counter* 0)
-(defvar *color-id-map* (trivial-garbage:make-weak-hash-table :test 'eql :weakness :value))
-
 (defun ensure-color (color)
   (etypecase color
     ((unsigned-byte 32) color)
@@ -35,20 +32,12 @@
        (setf (ldb (byte 8 24) id) (aref color 0))
        id))))
 
-;; FIXME: To fix the 2^32 limit issue, upon finalization used IDs should
-;; be put onto a free queue (or something), which can be popped from
-;; once the counter limit is reached.
-(defun register-object-color (object &optional id)
-  (let ((id (ensure-color (or id (incf *color-id-counter*)))))
-    (setf (gethash id *color-id-map*) object)
-    id))
-
-(defun color->object (id)
-  (gethash (ensure-color id) *color-id-map*))
-
-(define-subject selection-buffer (framebuffer hud-entity)
+(define-subject selection-buffer (framebuffer hud-entity unsavable)
   ((resource :initform (tg:make-weak-hash-table :weakness :key))
-   (selected :initform NIL :accessor selected))
+   (selected :initform NIL :accessor selected)
+   (name-map :initform (trivial-garbage:make-weak-hash-table :test 'eql :weakness :value) :reader name-map)
+   (color-map :initform (trivial-garbage:make-weak-hash-table :test 'eql :weakness :key) :reader color-map)
+   (next-id :initform 0 :accessor next-id))
   (:default-initargs
    :width (width *context*)
    :height (height *context*)
@@ -58,16 +47,43 @@
 (defmethod initialize-instance :after ((buffer selection-buffer) &key)
   (restore buffer))
 
+;; FIXME: To fix the 2^32 limit issue, upon finalization used IDs should
+;; be put onto a free queue (or something), which can be popped from
+;; once the counter limit is reached.
+(defmethod register-object-color ((buffer selection-buffer) object &optional id)
+  (when (= 0 (object->color buffer object))
+    (let ((id (ensure-color (or id (incf (next-id buffer))))))
+      (setf (gethash id (name-map buffer)) object)
+      (setf (gethash object (color-map buffer)) id)
+      id)))
+
+(defmethod color->object ((buffer selection-buffer) id)
+  (gethash (ensure-color id) (name-map buffer)))
+
+(defmethod object->color ((buffer selection-buffer) object)
+  (gethash object (color-map buffer) 0))
+
 (define-handler (selection-buffer mouse-release mouse-release 1000) (ev pos)
   (let* ((x (round (vx pos)))
          (y (- (height selection-buffer) (round (vy pos)))))
     (render *loop* selection-buffer)
-    (let ((object (object-at-point selection-buffer x y)))
+    (let ((object (object-at-point selection-buffer x y))
+          (previous (selected selection-buffer)))
       (when object
-        (when (selected selection-buffer)
-          (setf (selected (selected selection-buffer)) NIL))
+        (when (and previous (typep previous 'selectable-entity))
+          (setf (selected previous) NIL))
         (setf (selected selection-buffer) object)
-        (setf (selected object) T)))))
+        (when (typep object 'selectable-entity)
+          (setf (selected object) T))))))
+
+(define-handler (selection-buffer enter) (ev entity)
+  (when (typep entity 'selectable-entity)
+    (register-object-color selection-buffer entity (color-id entity))))
+
+(defmethod enter ((buffer selection-buffer) (scene scene))
+  (do-container-tree (unit scene)
+    (when (typep unit 'selectable-entity)
+      (register-object-color buffer unit (color-id unit)))))
 
 (defmethod render (scene (buffer selection-buffer))
   (unless (and (= (width *context*) (width buffer))
@@ -92,10 +108,34 @@
            (gl:enable :blend :texture-2d :multisample))
       (q+:release (data buffer)))))
 
-(defmethod paint :around (thing (buffer selection-buffer))
-  (when (or (typep thing 'selectable-entity)
-            (typep thing 'container))
-    (call-next-method)))
+(defmethod paint :before (thing (buffer selection-buffer))
+  (let ((color (object->color buffer thing)))
+    (gl:color (/ (ldb (byte 8 24) color) 255)
+              (/ (ldb (byte 8 16) color) 255)
+              (/ (ldb (byte 8  8) color) 255)
+              (/ (ldb (byte 8  0) color) 255))))
+
+(defmethod object-at-point ((buffer selection-buffer) x y)
+  (when (q+:bind (data buffer))
+    (unwind-protect
+         (color->object buffer (gl:read-pixels x y 1 1 :rgba :unsigned-byte))
+      (q+:release (data buffer)))))
+
+(define-subject global-selection-buffer (selection-buffer)
+  ())
+
+(define-handler (global-selection-buffer enter) (ev entity)
+  (register-object-color global-selection-buffer entity (color-id entity)))
+
+(defmethod enter ((buffer global-selection-buffer) (scene scene))
+  (do-container-tree (unit scene)
+    (register-object-color buffer unit (color-id unit))))
+
+(defclass selectable-entity (entity)
+  ((color-id :initarg :color-id :accessor color-id)
+   (selected :initform NIL :accessor selected))
+  (:default-initargs
+   :color-id NIL))
 
 #+trial-debug-selection-buffer
 (defmethod paint ((buffer selection-buffer) (hud hud))
@@ -110,27 +150,6 @@
     (gl:tex-coord 1 0)
     (gl:vertex (width *context*) (height *context*)))
   (gl:bind-texture :texture-2d 0))
-
-(defmethod object-at-point ((buffer selection-buffer) x y)
-  (when (q+:bind (data buffer))
-    (unwind-protect
-         (color->object (gl:read-pixels x y 1 1 :rgba :unsigned-byte))
-      (q+:release (data buffer)))))
-
-(defclass selectable-entity (entity)
-  ((color-id :initarg :color-id :accessor color-id)
-   (selected :initform NIL :accessor selected))
-  (:default-initargs
-   :color-id NIL))
-
-(defmethod initialize-instance :after ((entity selectable-entity) &key)
-  (setf (color-id entity) (register-object-color entity (color-id entity))))
-
-(defmethod paint :before ((entity selectable-entity) (buffer selection-buffer))
-  (gl:color (/ (ldb (byte 8 24) (color-id entity)) 255)
-            (/ (ldb (byte 8 16) (color-id entity)) 255)
-            (/ (ldb (byte 8  8) (color-id entity)) 255)
-            (/ (ldb (byte 8  0) (color-id entity)) 255)))
 
 #+trial-debug-selection-buffer
 (defmethod paint :around ((entity selectable-entity) target)
