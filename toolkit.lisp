@@ -73,6 +73,11 @@
           do (setf (row-major-aref m i) x))
     m))
 
+(defun v4 (a b c d)
+  (let ((v (make-array 4 :element-type 'float :initial-element 0.0s0)))
+    (setf (aref v 0) a (aref v 1) b (aref v 2) c (aref v 3) d)
+    v))
+
 (defmethod width ((object qobject))
   (q+:width object))
 

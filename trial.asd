@@ -39,6 +39,7 @@
                (:file "skybox")
                (:file "octree")
                (:file "camera")
+               (:file "projection")
                (:file "selectable")
                (:file "flare")
                (:file "mapping")
