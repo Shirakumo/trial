@@ -12,21 +12,25 @@
   (:shadow #:scene #:entity)
   ;; asset-classes.lisp
   (:export
-   #:font
-   #:size
-   #:family
-   #:gl-asset
+   #:context-asset
+   #:resource
    #:file-asset
    #:file
    #:image
+   #:font
+   #:size
+   #:family
    #:texture
    #:target
-   #:filter
+   #:mag-filter
+   #:min-filter
+   #:anisotropy
    #:wrapping
    #:model
+   #:texture-map
+   #:texture-store
    #:shader
    #:shader-type
-   #:pathname->shader-type
    #:shader-program
    #:shaders
    #:vertex-buffer
@@ -35,28 +39,42 @@
    #:buffer-data
    #:data-usage
    #:vertex-array
-   #:buffers)
+   #:buffers
+   #:framebuffer
+   #:attachment
+   #:width
+   #:height
+   #:mipmap
+   #:samples)
   ;; asset-pool.lisp
   (:export)
   ;; assets.lisp
   (:export
+   #:*standalone*
    #:pool
    #:remove-pool
    #:pools
+   #:resolve-pool-base
+   #:reconfigure-pool-bases
    #:pool
    #:name
+   #:base-designator
    #:base
    #:assets
    #:enter
    #:leave
    #:asset
+   #:restore
+   #:offload
    #:define-pool
    #:asset
    #:name
    #:home
    #:resource
-   #:resource-type
+   #:dependencies
+   #:loaded-p
    #:data
+   #:matches
    #:reload
    #:restore
    #:offload
@@ -70,43 +88,76 @@
   ;; camera.lisp
   (:export
    #:perspective-view
-   #:camera
-   #:target
-   #:up
-   #:fov
-   #:project-view
    #:look-at
+   #:camera
+   #:near-plane
+   #:far-plane
+   #:project-view
+   #:setup-perspective
+   #:2d-camera
+   #:3d-camera
+   #:fov
+   #:target-camera
    #:pivot-camera
-   #:following-camera)
+   #:following-cmaera
+   #:fps-camera
+   #:freeroam-camera
+   #:editor-camera)
   ;; context.lisp
   (:export
+   #:*context*
+   #:with-context
    #:context
-   #:context
+   #:glformat
+   #:glcontext
    #:current-thread
+   #:context-waiting
    #:context-lock
+   #:context-wait-lock
+   #:context-needs-recreation
+   #:construct
+   #:accumulation-buffer
+   #:alpha-buffer
+   #:depth-buffer
+   #:stencil-buffer
+   #:stereo-buffer
+   #:direct-rendering
+   #:double-buffering
+   #:overlay
+   #:plane
+   #:multisampling
+   #:samples
+   #:swap-interval
+   #:profile
+   #:version
+   #:destroy-context
+   #:create-context
    #:acquire-context
-   #:release-context
-   #:with-context)
+   #:release-context)
   ;; controller.lisp
   (:export
+   #:system-action
+   #:launch-editor
+   #:save-game
+   #:load-game
+   #:reload-assets
+   #:reload-scene
    #:controller
    #:tick-count
-   #:update-thread
-   #:setup-rendering
-   #:render
-   #:render-hud
-   #:setup-scene
-   #:execute
-   #:func
-   #:bindings
-   #:result
-   #:execute
-   #:funcall-in-scene)
+   #:display)
   ;; debugging.lisp
   (:export
-   #:*debug-features*
-   #:*optimize-features*
    #:reload-with-features)
+  ;; display.lisp
+  (:export
+   #:display
+   #:handle
+   #:resize
+   #:width
+   #:height
+   #:setup-rendering
+   #:paint
+   #:render)
   ;; entity.lisp
   (:export
    #:matches
@@ -120,27 +171,37 @@
    #:handler-container
    #:handlers
    #:event-loop
-   #:queue
    #:issue
    #:process
+   #:discard-events
    #:handler
    #:event-type
    #:container
    #:delivery-function
-   #:priority)
+   #:priority
+   #:event
+   #:tick
+   #:pause
+   #:resume)
+  ;; executable.lisp
+  (:export
+   #:execute-request
+   #:func
+   #:bindings
+   #:result
+   #:execute
+   #:with-execution
+   #:executable
+   #:funcall-in-gui
+   #:with-body-in-gui)
   ;; flare.lisp
   (:export)
-  ;; framebuffer.lisp
+  ;; fullscreenable.lisp
   (:export
-   #:attachment-value
-   #:framebuffer
-   #:buffer-object
-   #:buffer-format
-   #:call-with-framebuffer-bound
-   #:with-framebuffer-bound
-   #:width
-   #:height
-   #:texture)
+   #:fullscreenable
+   #:original-mode
+   #:resolution
+   #:fullscreen)
   ;; geometry.lisp
   (:export
    #:geometry
@@ -170,22 +231,10 @@
    #:angle
    #:pivoted-entity
    #:pivot
-   #:bound-entity
-   #:bounds
-   #:min-bound
-   #:max-bound
-   #:contains
-   #:intersects
-   #:intersection-entity
-   #:first-object
-   #:second-object
-   #:distance
-   #:normal
-   #:ray
-   #:collidable-entity
-   #:handle-collision
    #:colored-entity
+   #:color
    #:textured-entity
+   #:texture
    #:mesh-entity
    #:mesh
    #:shader-entity
@@ -193,6 +242,11 @@
    #:face-entity
    #:tex-location
    #:tex-bounds)
+  ;; hud.lisp
+  (:export
+   #:hud
+   #:hud-entity
+   #:hud-layer)
   ;; input-tables.lisp
   (:export
    #:*key-table*
@@ -201,6 +255,11 @@
    #:*gamepad-axis-table*
    #:*gamepad-button-table*
    #:define-gamepad
+   #:xbox-360
+   #:logitech-f310
+   #:dualshock-3
+   #:buffalo-bsgp801
+   #:steam-controller
    #:qt-key->symbol
    #:qt-button->symbol
    #:gamepad-axis->symbol
@@ -226,7 +285,37 @@
    #:gamepad-remove
    #:gamepad-press
    #:gamepad-release
-   #:gamepad-move)
+   #:gamepad-move
+   #:axis
+   #:input-handler
+   #:init-input-system
+   #:shutdown-input-system
+   #:key
+   #:mouse
+   #:gamepad)
+  ;; launcher.lisp
+  (:export
+   #:launcher
+   #:init-options)
+  ;; layer-set.lisp
+  (:export
+   #:layer-container
+   #:layer
+   #:active
+   #:layer-set
+   #:enter
+   #:leave
+   #:paint
+   #:layer-active-p
+   #:layered-unit
+   #:layer)
+  ;; main.lisp
+  (:export
+   #:main
+   #:scene
+   #:hud
+   #:launch
+   #:launch-with-launcher)
   ;; mapping.lisp
   (:export
    #:mapping
@@ -236,42 +325,86 @@
    #:map-event
    #:action
    #:remove-action-mappings
-   #:define-action
-   #:system-action
-   #:launch-editor
-   #:save-game
-   #:load-game
-   #:reload-assets
-   #:reload-scene
-   #:player-action
-   #:movement
-   #:start-left
-   #:start-right
-   #:start-up
-   #:start-down
-   #:stop-left
-   #:stop-right
-   #:stop-up
-   #:stop-down
-   #:perform)
+   #:define-action)
+  ;; octree.lisp
+  (:export)
+  ;; octree2.lisp
+  (:export)
   ;; player.lisp
   (:export)
+  ;; renderable.lisp
+  (:export
+   #:renderable
+   #:thread
+   #:last-pause
+   #:last-duration
+   #:target-fps
+   #:actual-fps
+   #:call-with-frame-pause
+   #:with-frame-pause
+   #:render-loop)
+  ;; retention.lisp
+  (:export
+   #:retained
+   #:clear-retained
+   #:retention-function
+   #:remove-retention-function
+   #:retain-event
+   #:define-retention
+   #:define-coupled-retention
+   #:define-uniform-retention)
+  ;; savestate.lisp
+  (:export
+   #:*compile-savestate*
+   #:serialize
+   #:restoration-slots
+   #:restoration-initargs
+   #:make-restore-form
+   #:@=>
+   #:@
+   #:define-saved-slots
+   #:define-saved-initargs
+   #:unsavable
+   #:persistent
+   #:save-scene
+   #:load-scene)
   ;; scene.lisp
   (:export
    #:scene
    #:scene-event
    #:scene
    #:enter
+   #:leave
    #:entity
-   #:leave)
+   #:register
+   #:deregister
+   #:funcall-in-scene
+   #:with-body-in-scene)
   ;; selectable.lisp
   (:export
+   #:ensure-color
+   #:selection-buffer
+   #:selected
+   #:name-map
+   #:color-map
+   #:next-id
    #:register-object-color
    #:color->object
-   #:selection-buffer
+   #:object->color
    #:object-at-point
+   #:object-at-mouse
+   #:mouse-press-entity
+   #:entity
+   #:button
+   #:mouse-release-entity
+   #:global-selection-buffer
+   #:color-id-entity
+   #:color-id
    #:selectable-entity
-   #:color-id)
+   #:selected
+   #:draggable-entity
+   #:held
+   #:drag)
   ;; skybox.lisp
   (:export
    #:skybox)
@@ -287,14 +420,15 @@
    #:animation)
   ;; subject.lisp
   (:export
-   #:define-handler
-   #:define-generic-handler
    #:subject-class
    #:effective-handlers
    #:instances
    #:subject
    #:loops
-   #:define-subject)
+   #:regenerate-handlers
+   #:define-subject
+   #:define-handler
+   #:define-generic-handler)
   ;; subjects.lisp
   (:export
    #:clocked-subject)
@@ -302,13 +436,20 @@
   (:export
    #:*time-units*
    #:current-time
+   #:executable-directory
    #:enlist
    #:unlist
    #:with-primitives
    #:with-pushed-matrix
-   #:matirx-4x4
+   #:mkarray
+   #:mktable
+   #:mkobject
+   #:update-slots
+   #:matrix-4x4
+   #:v4
+   #:width
+   #:height
    #:one-of
-   #:make-painter
    #:with-painter
    #:input-source
    #:input-value
@@ -317,22 +458,29 @@
    #:with-new-value-restart
    #:with-cleanup-on-failure
    #:acquire-lock-with-starvation-test
+   #:make-thread
+   #:with-thread
+   #:wait-for-thread-exit
+   #:with-thread-exit
+   #:with-error-logging
+   #:insert-index
    #:check-texture-size
    #:check-texture-target
+   #:check-texture-mag-filter
+   #:check-texture-min-filter
    #:check-shader-type
    #:check-vertex-buffer-type
    #:check-vertex-buffer-element-type
-   #:check-vertex-buffer-data-usage)
-  ;; windowing.lisp
+   #:check-vertex-buffer-data-usage
+   #:check-framebuffer-attachment)
+  ;; window.lisp
   (:export
-   #:main
-   #:scene
-   #:controller
-   #:resize
-   #:width
-   #:height
-   #:funcall-in-gui
-   #:launch))
+   #:window-name
+   #:window
+   #:list-windows
+   #:remove-window
+   #:window
+   #:name))
 
 (flet ((reexport (in from)
          (do-external-symbols (symb in)
