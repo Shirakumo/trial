@@ -175,14 +175,14 @@
     (nvrotv vec (v* (/ PI -180) (rotation freeroam-camera)))
     (nv+ (location freeroam-camera) vec)))
 
-(define-subject selection-camera (freeroam-camera)
+(define-subject editor-camera (freeroam-camera)
   ())
 
-(define-handler (selection-camera mouse-move) (ev pos old-pos)
+(define-handler (editor-camera mouse-move) (ev pos old-pos)
   (when (or (retained 'mouse :middle)
             (retained 'key :control))
-    (nv+ (rotation selection-camera) (nv* (nvorder (v- pos old-pos) :y :x :z)
-                                          (acceleration selection-camera)))))
+    (nv+ (rotation editor-camera) (nv* (nvorder (v- pos old-pos) :y :x :z)
+                                          (acceleration editor-camera)))))
 
-(define-handler (selection-camera resume) (ev))
-(define-handler (selection-camera pause) (ev))
+(define-handler (editor-camera resume) (ev))
+(define-handler (editor-camera pause) (ev))
