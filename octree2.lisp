@@ -7,6 +7,8 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
+;; FIXME: Don't trickle units that are bigger than the subnode.
+
 (define-subject octree2 (located-subject)
   ((root :initform NIL :accessor root)
    (size :initarg :size :accessor size)
