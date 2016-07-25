@@ -62,17 +62,16 @@
 (defmethod paint (source (target display)))
 
 (defmethod render (source (target display))
+  (gl:clear-color 0 0 0 1)
+  (gl:clear :color-buffer :depth-buffer)
+  (gl:enable :blend :cull-face :texture-2d :multisample
+             :line-smooth :polygon-smooth
+             :depth-test :depth-clamp :alpha-test)
+  (paint source target))
+
+(defmethod render :around (source (target display))
   ;; Potentially release context every time to allow
   ;; other threads to grab it.
   (with-context (target :reentrant T)
-    (gl:clear-color 0 0 0 1)
-    (gl:clear :color-buffer :depth-buffer)
-    (gl:enable :blend :cull-face :texture-2d :multisample
-               :line-smooth :polygon-smooth
-               :depth-test :depth-clamp :alpha-test)
-    (paint source target)
-    (gl:load-identity)))
-
-(defmethod render :around (source (target display))
-  (call-next-method)
-  (q+:swap-buffers target))
+    (call-next-method)
+    (q+:swap-buffers target)))

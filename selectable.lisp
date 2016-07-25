@@ -156,10 +156,11 @@
   (do-container-tree (unit scene)
     (register-object-color buffer unit (color-id unit))))
 
-(defclass color-id-entity (entity)
-  ((color-id :initarg :color-id :accessor color-id))
-  (:default-initargs
-   :color-id NIL))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defclass color-id-entity (entity)
+    ((color-id :initarg :color-id :accessor color-id))
+    (:default-initargs
+     :color-id NIL)))
 
 #+trial-debug-selection-buffer
 (defmethod paint :around ((entity selectable-entity) target)
@@ -181,7 +182,7 @@
 
 (define-handler (selectable-entity mouse-release) (ev)
   (when (eql (button ev) :left)
-    (setf (selected entity) NIL)))
+    (setf (selected selectable-entity) NIL)))
 
 (define-handler (selectable-entity mouse-release-entity) (ev entity)
   (when (and (eql (button ev) :left)

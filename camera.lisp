@@ -55,6 +55,9 @@
   (gl:load-identity)
   (gl:viewport 0 0 (width ev) (height ev)))
 
+(defmethod project-view :before ((camera camera) ev)
+  (gl:load-identity))
+
 (define-subject 2d-camera (camera)
   ()
   (:default-initargs
