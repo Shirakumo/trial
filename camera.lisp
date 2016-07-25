@@ -119,10 +119,14 @@
 
 (define-subject fps-camera (3d-camera)
   ((rotation :initarg :rotation :accessor rotation)
-   (acceleration :initarg :acceleration :accessor acceleration))
+   (acceleration :initarg :acceleration :accessor acceleration)
+   (x-inverted :initarg :x-inverted :accessor x-inverted)
+   (y-inverted :initarg :y-inverted :accessor y-inverted))
   (:default-initargs
    :rotation (vec 0 0 0)
-   :acceleration 0.5))
+   :acceleration 0.5
+   :x-inverted NIL
+   :y-inverted NIL))
 
 (define-saved-slots fps-camera rotation acceleration)
 
@@ -134,9 +138,15 @@
                 (- (vy (location camera)))
                 (- (vz (location camera)))))
 
-(define-handler (fps-camera mouse-move) (ev pos old-pos)
-  (nv+ (rotation fps-camera) (nv* (nvorder (v- pos old-pos) :y :x :z)
-                                  (acceleration fps-camera))))
+(defun do-fps-movement (camera old-pos pos)
+  (let ((delta (v- pos old-pos)))
+    (when (x-inverted camera) (setf (vx delta) (- (vx delta))))
+    (when (y-inverted camera) (setf (vy delta) (- (vy delta))))
+    (nv+ (rotation camera) (nv* (nvorder delta :y :x :z)
+                                (acceleration camera)))))
+
+(define-handler (fps-camera mouse-move) (ev old-pos pos)
+  (do-fps-movement fps-camera old-pos pos))
 
 (define-handler (fps-camera resume) (ev)
   (q+:grab-mouse *context*)
@@ -178,11 +188,10 @@
 (define-subject editor-camera (freeroam-camera)
   ())
 
-(define-handler (editor-camera mouse-move) (ev pos old-pos)
+(define-handler (editor-camera mouse-move) (ev old-pos pos)
   (when (or (retained 'mouse :middle)
             (retained 'key :control))
-    (nv+ (rotation editor-camera) (nv* (nvorder (v- pos old-pos) :y :x :z)
-                                          (acceleration editor-camera)))))
+    (do-fps-movement editor-camera old-pos pos)))
 
 (define-handler (editor-camera resume) (ev))
 (define-handler (editor-camera pause) (ev))
