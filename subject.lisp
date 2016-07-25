@@ -83,8 +83,8 @@
 (defmethod deregister :after ((subject subject) (loop event-loop))
   (setf (loops subject) (delete loop (loops subject))))
 
-(defmacro define-subject (name direct-superclasses direct-slots &rest options)
-  (unless (find-if (lambda (c) (c2mop:subclassp c 'subject)) direct-superclasses)
+(defmacro define-subject (&environment env name direct-superclasses direct-slots &rest options)
+  (unless (find-if (lambda (c) (c2mop:subclassp (find-class c T env) 'subject)) direct-superclasses)
     (setf direct-superclasses (append direct-superclasses (list 'subject))))
   (unless (find :metaclass options :key #'first)
     (push '(:metaclass subject-class) options))
