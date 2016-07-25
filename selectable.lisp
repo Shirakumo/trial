@@ -63,25 +63,43 @@
 (defmethod object->color ((buffer selection-buffer) object)
   (gethash object (color-map buffer) 0))
 
-(define-handler (selection-buffer mouse-release mouse-release 1000) (ev pos)
+(defmethod object-at-point ((buffer selection-buffer) x y)
+  (when (q+:bind (data buffer))
+    (unwind-protect
+         (color->object buffer (gl:read-pixels x y 1 1 :rgba :unsigned-byte))
+      (q+:release (data buffer)))))
+
+(defmethod object-at-mouse ((buffer selection-buffer) pos)
   (let* ((x (round (vx pos)))
-         (y (- (height selection-buffer) (round (vy pos)))))
-    (render *loop* selection-buffer)
-    (let ((object (object-at-point selection-buffer x y))
-          (previous (selected selection-buffer)))
-      (when (typep previous 'selectable-entity)
-        (setf (selected previous) NIL))
-      (setf (selected selection-buffer) object)
-      (when (typep object 'selectable-entity)
-        (setf (selected object) T)))))
+         (y (- (height buffer) (round (vy pos)))))
+    (render *loop* buffer)
+    (object-at-point buffer x y)))
+
+(defclass mouse-press-entity (event)
+  ((entity :initarg :entity :reader entity)
+   (button :initarg :button :reader button)))
+
+(defclass mouse-release-entity (event)
+  ((entity :initarg :entity :reader entity)
+   (button :initarg :button :reader button)))
+
+(define-handler (selection-buffer mouse-press) (ev pos)
+  (let ((object (object-at-mouse selection-buffer pos)))
+    (when object (issue *loop* 'mouse-press-entity :entity object :button (button ev)))))
+
+(define-handler (selection-buffer mouse-release mouse-release 1000) (ev pos)
+  (let ((object (object-at-mouse selection-buffer pos)))
+    (when (eql (button ev) :left)
+      (setf (selected selection-buffer) object))
+    (when object (issue *loop* 'mouse-release-entity :entity object :button (button ev)))))
 
 (define-handler (selection-buffer enter) (ev entity)
-  (when (typep entity 'selectable-entity)
+  (when (typep entity 'color-id-entity)
     (register-object-color selection-buffer entity (color-id entity))))
 
 (defmethod enter ((buffer selection-buffer) (scene scene))
   (do-container-tree (unit scene)
-    (when (typep unit 'selectable-entity)
+    (when (typep unit 'color-id-entity)
       (register-object-color buffer unit (color-id unit)))))
 
 (defmethod render (scene (buffer selection-buffer))
@@ -114,28 +132,6 @@
               (/ (ldb (byte 8  8) color) 255)
               (/ (ldb (byte 8  0) color) 255))))
 
-(defmethod object-at-point ((buffer selection-buffer) x y)
-  (when (q+:bind (data buffer))
-    (unwind-protect
-         (color->object buffer (gl:read-pixels x y 1 1 :rgba :unsigned-byte))
-      (q+:release (data buffer)))))
-
-(define-subject global-selection-buffer (selection-buffer)
-  ())
-
-(define-handler (global-selection-buffer enter) (ev entity)
-  (register-object-color global-selection-buffer entity (color-id entity)))
-
-(defmethod enter ((buffer global-selection-buffer) (scene scene))
-  (do-container-tree (unit scene)
-    (register-object-color buffer unit (color-id unit))))
-
-(defclass selectable-entity (entity)
-  ((color-id :initarg :color-id :accessor color-id)
-   (selected :initform NIL :accessor selected))
-  (:default-initargs
-   :color-id NIL))
-
 #+trial-debug-selection-buffer
 (defmethod paint ((buffer selection-buffer) (hud hud))
   (gl:bind-texture :texture-2d (q+:texture (data buffer)))
@@ -149,6 +145,21 @@
     (gl:tex-coord 1 0)
     (gl:vertex (width *context*) (height *context*)))
   (gl:bind-texture :texture-2d 0))
+
+(define-subject global-selection-buffer (selection-buffer)
+  ())
+
+(define-handler (global-selection-buffer enter) (ev entity)
+  (register-object-color global-selection-buffer entity (color-id entity)))
+
+(defmethod enter ((buffer global-selection-buffer) (scene scene))
+  (do-container-tree (unit scene)
+    (register-object-color buffer unit (color-id unit))))
+
+(defclass color-id-entity (entity)
+  ((color-id :initarg :color-id :accessor color-id))
+  (:default-initargs
+   :color-id NIL))
 
 #+trial-debug-selection-buffer
 (defmethod paint :around ((entity selectable-entity) target)
@@ -164,3 +175,33 @@
          (gl:color 255 255 255)
          (call-next-method))
         (T (call-next-method))))
+
+(define-subject selectable-entity (color-id-entity)
+  ((selected :initform NIL :accessor selected)))
+
+(define-handler (selectable-entity mouse-release) (ev)
+  (when (eql (button ev) :left)
+    (setf (selected entity) NIL)))
+
+(define-handler (selectable-entity mouse-release-entity) (ev entity)
+  (when (and (eql (button ev) :left)
+             (eql entity selectable-entity))
+    (setf (selected entity) T)))
+
+(define-subject draggable-entity (color-id-entity)
+  ((held :initform NIL :accessor held)))
+
+(define-handler (draggable-entity mouse-release) (ev)
+  (setf (held draggable-entity) NIL))
+
+(define-handler (draggable-entity mouse-press-entity) (ev entity)
+  (when (and (button ev) :left
+             (eql entity draggable-entity))
+    (setf (held entity) T)))
+
+(define-handler (draggable-entity mouse-move) (ev old-pos pos)
+  (when (held draggable-entity)
+    (drag draggable-entity old-pos pos)))
+
+(defgeneric drag (object from to)
+  (:method ((entity draggable-entity) from to)))
