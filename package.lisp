@@ -332,6 +332,14 @@
   (:export)
   ;; player.lisp
   (:export)
+  ;; projection.lisp
+  (:export
+   #:modelview-matrix
+   #:projection-matrix
+   #:proj-matrix
+   #:view-matrix
+   #:vec->screen
+   #:vec->main)
   ;; renderable.lisp
   (:export
    #:renderable
