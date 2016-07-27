@@ -14,6 +14,8 @@
 
 (define-initializer (display %display-setup)
   (v:info :trial.display "~a is launching..." display)
+  (setf (q+:auto-fill-background display) NIL)
+  (setf (q+:auto-buffer-swap display) NIL)
   (setup-rendering display)
   (release-context display))
 
