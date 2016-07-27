@@ -36,6 +36,8 @@
   (with-painter (painter *context*)
     (let ((font (get-resource 'font :trial :debug-hud))
           (clock (clock (scene (display controller)))))
+      (setf (q+:render-hint painter) (q+:qpainter.text-antialiasing))
+      (setf (q+:render-hint painter) (q+:qpainter.high-quality-antialiasing))
       (setf (q+:font painter) (data font))
       (gl:color 255 255 255)
       (q+:draw-text painter 20 30 (format NIL "Pause: ~,10f" (last-pause (display controller))))
