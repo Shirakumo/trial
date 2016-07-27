@@ -108,6 +108,7 @@
     ;; Size might have changed since we last updated...
     (reinitialize-instance buffer :width (width *context*) :height (height *context*)))
   (when (q+:bind (data buffer))
+    (gl:push-attrib :all-attrib-bits)
     (unwind-protect
          (progn
            (gl:clear-color 0.0 0.0 0.0 0.0)
@@ -120,9 +121,8 @@
              ;; FIXME: Multiple cameras? Camera not named this?
              (setup-perspective (unit :camera scene) (make-instance 'resize :width (width *context*) :height (height *context*)))
              (project-view (unit :camera scene) (make-instance 'tick))
-             (paint scene buffer))
-           ;; Reenable
-           (gl:enable :blend :texture-2d :multisample))
+             (paint scene buffer)))
+      (gl:pop-attrib)
       (q+:release (data buffer)))))
 
 (defmethod paint :before (thing (buffer selection-buffer))
