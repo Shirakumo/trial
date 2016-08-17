@@ -178,9 +178,9 @@
 (defmethod (setf parent) (parent (context context))
   ;; This is so annoying because Microsoft® Windows®™©
   (with-context (context)
-    (destroy-context context)
+    #+windows (destroy-context context)
     (setf (q+:parent context) parent)
-    (create-context context)))
+    #+windows (create-context context)))
 
 (defmethod acquire-context ((context context) &key force)
   (let ((current (current-thread context))
