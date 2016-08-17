@@ -66,8 +66,7 @@
   (v:output-here)
   (v:info :trial.main "GENESIS")
   #+linux (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
-  (with-main-window (window (apply #'make-instance 'main initargs)
-                     #-darwin :main-thread #-darwin NIL)))
+  (with-main-window (window (apply #'make-instance 'main initargs))))
 
 (defun launch-with-launcher (&rest initargs)
   #+linux (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
