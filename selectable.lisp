@@ -150,17 +150,29 @@
   ())
 
 (define-handler (global-selection-buffer enter) (ev entity)
-  (register-object-color global-selection-buffer entity (color-id entity)))
+  (register-object-color global-selection-buffer entity (when (typep entity 'color-id-entity (color-id entity)))))
 
 (defmethod enter ((buffer global-selection-buffer) (scene scene))
   (do-container-tree (unit scene)
-    (register-object-color buffer unit (color-id unit))))
+    (register-object-color buffer unit (when (typep entity 'color-id-entity (color-id entity))))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass color-id-entity (entity)
     ((color-id :initarg :color-id :accessor color-id))
     (:default-initargs
      :color-id NIL)))
+
+(define-subject selectable-entity (color-id-entity)
+  ((selected :initform NIL :accessor selected)))
+
+(define-handler (selectable-entity mouse-release) (ev)
+  (when (eql (button ev) :left)
+    (setf (selected selectable-entity) NIL)))
+
+(define-handler (selectable-entity mouse-release-entity) (ev entity)
+  (when (and (eql (button ev) :left)
+             (eql entity selectable-entity))
+    (setf (selected entity) T)))
 
 #+trial-debug-selection-buffer
 (defmethod paint :around ((entity selectable-entity) target)
@@ -176,18 +188,6 @@
          (gl:color 255 255 255)
          (call-next-method))
         (T (call-next-method))))
-
-(define-subject selectable-entity (color-id-entity)
-  ((selected :initform NIL :accessor selected)))
-
-(define-handler (selectable-entity mouse-release) (ev)
-  (when (eql (button ev) :left)
-    (setf (selected selectable-entity) NIL)))
-
-(define-handler (selectable-entity mouse-release-entity) (ev entity)
-  (when (and (eql (button ev) :left)
-             (eql entity selectable-entity))
-    (setf (selected entity) T)))
 
 (define-subject draggable-entity (color-id-entity)
   ((held :initform NIL :accessor held)))
