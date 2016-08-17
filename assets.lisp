@@ -68,7 +68,7 @@
   ((name :initarg :name :reader name)
    (base-designator :accessor base-designator)
    (base :initform NIL :accessor base)
-   (assets :initform NIL :accessor assets))
+   (assets :initform () :accessor assets))
   (:default-initargs
    :name (error "NAME required.")))
 
@@ -92,7 +92,11 @@
     (unless (uiop:directory-exists-p path)
       (warn "The pool base ~&  ~s~&resolved from ~s does not exist."
             path base))
-    (setf (slot-value pool 'base) path)))
+    (setf (slot-value pool 'base) path)
+    ;; Update all assets that are local to this.
+    (dolist (asset (assets pool))
+      (when (eql pool (home asset))
+        (reinitialize-instance asset)))))
 
 (defmethod pool ((pool pool))
   pool)
