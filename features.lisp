@@ -10,7 +10,8 @@
 (defvar *debug-features* '(:trial-debug-selection-buffer
                            :trial-debug-bound-subject
                            :trial-debug-error-on-invalid-asset-reference))
-(defvar *optimize-features* '(:trial-optimize-resource-validity-check))
+(defvar *optimize-features* '(:trial-optimize-resource-validity-check
+                              :trial-optimize-pool-watching))
 
 #+trial-debug-all
 (setf *features* (union *features* *debug-features*))

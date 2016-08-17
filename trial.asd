@@ -14,7 +14,7 @@
   :homepage "https://github.com/Shirakumo/trial"
   :serial T
   :components ((:file "package")
-               (:file "debugging")
+               (:file "features")
                (:file "toolkit")
                (:file "entity")
                (:file "savestate")
