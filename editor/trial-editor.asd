@@ -17,6 +17,7 @@
                (:file "inspector")
                (:file "object-tree")
                (:file "asset-browser")
+               (:file "edit-tools")
                (:file "editor"))
   :depends-on (:trial
                :verbose

@@ -6,7 +6,8 @@
 
 (defpackage #:trial-editor-tools
   (:nicknames #:org.shirakumo.fraf.trial.editor.tools)
-  (:use #:cl+qt)
+  (:use #:cl+qt :trial :3d-vectors)
+  (:shadowing-import-from #:flare #:slot)
   (:export #:tools))
 (in-package #:org.shirakumo.fraf.trial.editor.tools)
 (in-readtable :qtools)
@@ -16,8 +17,18 @@
 
 (defmethod (setf selected) :after ((entity located-entity) (toolkit toolkit))
   (when (eql (mode toolkit) :move)
-    ))
+    (enter (make-instance 'move-arrow :direction +vx+ :location (v+ (location entity))) (first (loops toolkit)))
+    (enter (make-instance 'move-arrow :direction +vy+ :location (v+ (location entity))) (first (loops toolkit)))
+    (enter (make-instance 'move-arrow :direction +vz+ :location (v+ (location entity))) (first (loops toolkit)))))
 
-;; FIXME: Enter editing tool things that you can drag to move / scale / rotate and so forth.
-;;        Just think 3Ds Max, really. That's what I want. And with some effort, that's what
-;;        we're going to get too.
+(define-subject move-arrow (draggable-entity cube colored-entity located-entity)
+  ((direction :initarg :direction :accessor direction))
+  (:default-initargs
+   :direction +vx+))
+
+(defmethod drag ((move-arrow move-arrow) from to)
+  (let* ((loc (vec->main (location move-arrow) (window :main)))
+         (end (vec->main (v+ (location move-arrow) (direction move-arrow)) (window :main)))
+         (dir (nvunit (v- end loc)))
+         (pos (vlength (nv* dir (v. (v- to loc) dir)))))
+    (nv+ (location move-arrow) (v* (direction move-arrow) pos))))

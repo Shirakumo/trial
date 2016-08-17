@@ -66,7 +66,7 @@
   (q+:resize-event (q+:widget game-view) ev)
   (stop-overriding))
 
-(define-widget editor (QMainWindow)
+(define-widget editor (QMainWindow trial:unsavable trial:container-unit trial:window)
   ((main :initarg :main :accessor main)
    (file :initform NIL :accessor file))
   (:default-initargs
@@ -99,8 +99,15 @@
   (setf (q+:single-shot updater) NIL)
   (q+:start updater 500))
 
+;; (define-subwidget (editor toolkit) (make-instance 'trial-editor-tools::toolkit)
+;;   (trial:enter toolkit editor))
+
 (define-initializer (editor setup)
-  (setf (q+:window-title editor) "Trial Editor"))
+  (setf (q+:window-title editor) "Trial Editor")
+  (trial:enter editor (trial:scene main)))
+
+(define-finalizer (editor teardown)
+  (trial:leave editor (trial:scene main)))
 
 (define-override (editor close-event) (ev)
   (setf (parent main) NIL)
@@ -118,7 +125,7 @@
            (trial::with-body-in-scene ((trial::scene (main editor)) :return-values NIL)
              (trial::save-scene (trial::scene (main editor)) (file editor)))))
     (if (or query (not (file editor)))
-        (let ((dialog (q+:make-qfiledialog)))
+        (with-finalizing ((dialog (q+:make-qfiledialog)))
           (when (file editor)
             (setf (q+:directory dialog) (uiop:native-namestring (pathname-utils:to-directory (file editor))))
             (q+:select-file dialog (pathname-utils:file-name (file editor))))
@@ -130,7 +137,7 @@
         (save))))
 
 (defun editor-open (editor)
-  (let ((dialog (q+:make-qfiledialog)))
+  (with-finalizing ((dialog (q+:make-qfiledialog)))
     (when (file editor)
       (setf (q+:directory dialog) (uiop:native-namestring (pathname-utils:to-directory (file editor))))
       (q+:select-file dialog (pathname-utils:file-name (file editor))))
