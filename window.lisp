@@ -30,11 +30,10 @@
   (remhash (window-name name) *windows*))
 
 (define-widget window (QWidget)
-  ((name :initarg :name :reader name)))
+  ((name :reader name)))
 
 (defmethod initialize-instance :before ((window window) &key name)
-  (unless name
-    (error "NAME required.")))
+  (setf (slot-value window 'name) (or name (class-name (class-of window)))))
 
 (defmethod print-object ((window window) stream)
   (print-unreadable-object (window stream :type T)
