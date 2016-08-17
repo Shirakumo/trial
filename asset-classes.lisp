@@ -59,6 +59,7 @@
   (setf (file asset) (uiop:parse-native-namestring file)))
 
 (defmethod (setf file) ((file pathname) (asset file-asset))
+  ;; FIXME: How to notify pool of change?
   (setf (slot-value asset 'file) (pathname-utils:normalize-pathname
                                   (merge-pathnames file (base (home asset))))))
 

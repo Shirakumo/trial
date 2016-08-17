@@ -151,16 +151,24 @@
             (when (home asset) (string-upcase (name (home asset))))
             (name asset) (resource asset))))
 
+;; We need to do this in two phases because we need to ensure that the home slot
+;; is ready during init, but still give the asset a chance to do things before
+;; we are actually entered into the home.
 (defmethod shared-initialize :after ((asset asset) slot-names &key home)
   (when home
     (when (home asset)
       (leave asset (home asset)))
-    (enter asset home)
     (setf (home asset) home)))
 
-(defmethod reinitialize-instance :around ((asset asset) &key)
+(defmethod initialize-instance :after ((asset asset) &key home)
+  (when home
+    (enter asset home)))
+
+(defmethod reinitialize-instance :around ((asset asset) &key home)
   (let ((*redefining* T))
     (call-next-method))
+  (when home
+    (enter asset home))
   (reload asset))
 
 (defmethod (setf home) (pool (asset asset))
