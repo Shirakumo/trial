@@ -99,7 +99,7 @@
    #:fov
    #:target-camera
    #:pivot-camera
-   #:following-cmaera
+   #:following-camera
    #:fps-camera
    #:freeroam-camera
    #:editor-camera)
