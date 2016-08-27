@@ -17,6 +17,23 @@
            usec)
   #-sbcl (get-internal-real-time))
 
+(defmacro undefmethod (name &rest args)
+  (flet ((lambda-keyword-p (symbol)
+           (find symbol lambda-list-keywords)))
+    (destructuring-bind (qualifiers args) (loop for thing = (pop args)
+                                                until (listp thing)
+                                                collect thing into qualifiers
+                                                finally (return (list qualifiers thing)))
+      `(remove-method
+        #',name
+        (find-method
+         #',name
+         ',qualifiers
+         (mapcar #'find-class
+                 ',(loop for arg in args
+                         until (lambda-keyword-p arg)
+                         collect (if (listp arg) (second arg) T))))))))
+
 (defun executable-directory ()
   (pathname-utils:to-directory
    (or (first (uiop:command-line-arguments))
