@@ -62,7 +62,11 @@
 (defun reconfigure-pool-bases ()
   (mapc #'reinitialize-instance (pools)))
 
-(pushnew 'reconfigure-pool-bases qtools:*boot-hooks*)
+(defun prepare-standalone ()
+  (setf *standalone* T)
+  (reconfigure-pool-bases))
+
+(pushnew 'prepare-standalone qtools:*boot-hooks*)
 
 (defclass pool ()
   ((name :initarg :name :reader name)
