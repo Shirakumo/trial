@@ -314,6 +314,7 @@
    #:main
    #:scene
    #:hud
+   #:setup-scene
    #:launch
    #:launch-with-launcher)
   ;; mapping.lisp
