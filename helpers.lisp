@@ -8,9 +8,7 @@
 (in-readtable :qtools)
 
 (defclass located-entity (entity)
-  ((location :initarg :location :accessor location))
-  (:default-initargs
-   :location (vec 0 0 0)))
+  ((location :initarg :location :initform (vec 0 0 0) :accessor location)))
 
 (define-saved-initargs located-entity location)
 
@@ -21,11 +19,8 @@
       (call-next-method))))
 
 (defclass oriented-entity (entity)
-  ((orientation :initarg :orientation :accessor orientation)
-   (up :initarg :up :accessor up))
-  (:default-initargs
-   :orientation (vec 1 0 0)
-   :up (vec 0 1 0)))
+  ((orientation :initarg :orientation :initform (vec 1 0 0) :accessor orientation)
+   (up :initarg :up :initform (vec 0 1 0) :accessor up)))
 
 (define-saved-initargs oriented-entity orientation up)
 
@@ -37,11 +32,8 @@
       (call-next-method))))
 
 (defclass rotated-entity (entity)
-  ((axis :initarg :axis :accessor axis)
-   (angle :initarg :angle :accessor angle))
-  (:default-initargs
-   :axis (vec 0 1 0)
-   :angle 0))
+  ((axis :initarg :axis :initform (vec 0 1 0) :accessor axis)
+   (angle :initarg :angle :initform 0 :accessor angle)))
 
 (define-saved-initargs rotated-entity axis angle)
 
@@ -52,9 +44,7 @@
       (call-next-method))))
 
 (defclass pivoted-entity (entity)
-  ((pivot :initarg :pivot :accessor pivot))
-  (:default-initargs
-   :pivot (vec 0 0 0)))
+  ((pivot :initarg :pivot :initform (vec 0 0 0) :accessor pivot)))
 
 (define-saved-initargs pivoted-entity pivot)
 
@@ -65,9 +55,7 @@
       (call-next-method))))
 
 (defclass bound-entity (located-entity)
-  ((bounds :initarg :bounds :accessor bounds))
-  (:default-initargs
-   :bounds (vec 0 0 0)))
+  ((bounds :initarg :bounds :initform (vec 0 0 0) :accessor bounds)))
 
 (define-saved-initargs bound-entity bounds)
 
@@ -106,46 +94,45 @@
 
 #+trial-debug-bound-entity
 (defmethod paint :after ((entity bound-entity) target)
-  (when (draw-bounds-p entity)
-    (gl:line-width 1.0)
-    (gl:color 0.0 0.8 0.0)
-    (gl:disable :cull-face)
-    (gl:polygon-mode :front-and-back :line)
-    (with-primitives :quads
-      (let ((min (min-bound entity :relative T))
-            (max (max-bound entity :relative T)))
-        (gl:vertex (vx min) (vy min) (vz min))
-        (gl:vertex (vx max) (vy min) (vz min))
-        (gl:vertex (vx max) (vy max) (vz min))
-        (gl:vertex (vx min) (vy max) (vz min))
+  (gl:line-width 1.0)
+  (gl:color 0.0 0.8 0.0)
+  (gl:disable :cull-face)
+  (gl:polygon-mode :front-and-back :line)
+  (with-primitives :quads
+    (let ((min (min-bound entity :relative T))
+          (max (max-bound entity :relative T)))
+      (gl:vertex (vx min) (vy min) (vz min))
+      (gl:vertex (vx max) (vy min) (vz min))
+      (gl:vertex (vx max) (vy max) (vz min))
+      (gl:vertex (vx min) (vy max) (vz min))
 
-        (gl:vertex (vx min) (vy min) (vz max))
-        (gl:vertex (vx max) (vy min) (vz max))
-        (gl:vertex (vx max) (vy max) (vz max))
-        (gl:vertex (vx min) (vy max) (vz max))
-        
-        (gl:vertex (vx min) (vy min) (vz min))
-        (gl:vertex (vx min) (vy max) (vz min))
-        (gl:vertex (vx min) (vy max) (vz max))
-        (gl:vertex (vx min) (vy min) (vz max))
-        
-        (gl:vertex (vx max) (vy min) (vz min))
-        (gl:vertex (vx max) (vy max) (vz min))
-        (gl:vertex (vx max) (vy max) (vz max))
-        (gl:vertex (vx max) (vy min) (vz max))
-        
-        (gl:vertex (vx min) (vy min) (vz min))
-        (gl:vertex (vx max) (vy min) (vz min))
-        (gl:vertex (vx max) (vy min) (vz max))
-        (gl:vertex (vx min) (vy min) (vz max))
-        
-        (gl:vertex (vx min) (vy max) (vz min))
-        (gl:vertex (vx max) (vy max) (vz min))
-        (gl:vertex (vx max) (vy max) (vz max))
-        (gl:vertex (vx min) (vy max) (vz max))))
-    (gl:enable :cull-face)
-    (gl:polygon-mode :front-and-back :fill)
-    (gl:color 1.0 1.0 1.0)))
+      (gl:vertex (vx min) (vy min) (vz max))
+      (gl:vertex (vx max) (vy min) (vz max))
+      (gl:vertex (vx max) (vy max) (vz max))
+      (gl:vertex (vx min) (vy max) (vz max))
+      
+      (gl:vertex (vx min) (vy min) (vz min))
+      (gl:vertex (vx min) (vy max) (vz min))
+      (gl:vertex (vx min) (vy max) (vz max))
+      (gl:vertex (vx min) (vy min) (vz max))
+      
+      (gl:vertex (vx max) (vy min) (vz min))
+      (gl:vertex (vx max) (vy max) (vz min))
+      (gl:vertex (vx max) (vy max) (vz max))
+      (gl:vertex (vx max) (vy min) (vz max))
+      
+      (gl:vertex (vx min) (vy min) (vz min))
+      (gl:vertex (vx max) (vy min) (vz min))
+      (gl:vertex (vx max) (vy min) (vz max))
+      (gl:vertex (vx min) (vy min) (vz max))
+      
+      (gl:vertex (vx min) (vy max) (vz min))
+      (gl:vertex (vx max) (vy max) (vz min))
+      (gl:vertex (vx max) (vy max) (vz max))
+      (gl:vertex (vx min) (vy max) (vz max))))
+  (gl:enable :cull-face)
+  (gl:polygon-mode :front-and-back :fill)
+  (gl:color 1.0 1.0 1.0))
 
 (defclass intersection-entity (bound-entity)
   ((first-object :initarg :first-object :accessor first-object)
@@ -163,9 +150,7 @@
 (defmethod handle-collision ((entity collidable-entity) intersection))
 
 (defclass colored-entity (entity)
-  ((color :initarg :color :accessor color))
-  (:default-initargs
-   :color (vec 0.0 0.0 1.0)))
+  ((color :initarg :color :initform (vec 0 0 1) :accessor color)))
 
 (define-saved-initargs colored-entity color)
 
@@ -238,11 +223,8 @@
     (gl:use-program 0)))
 
 (defclass face-entity (textured-entity bound-entity)
-  ((tex-location :initarg :tex-location :accessor tex-location)
-   (tex-bounds :initarg :tex-bounds :accessor tex-bounds))
-  (:default-initargs
-   :tex-location (vec 0 0 0)
-   :tex-bounds (vec 1 1 0)))
+  ((tex-location :initarg :tex-location :initform (vec 0 0 0) :accessor tex-location)
+   (tex-bounds :initarg :tex-bounds :initform (vec 1 1 0) :accessor tex-bounds)))
 
 (defmethod paint ((entity face-entity) target)
   (with-slots ((tl tex-location) (tb tex-bounds) bounds) entity

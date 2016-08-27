@@ -11,25 +11,18 @@
   ())
 
 (defclass bounded-geometry (geometry)
-  ((width :initarg :width :accessor width)
-   (height :initarg :height :accessor height))
-  (:default-initargs
-   :width 10
-   :height 10))
+  ((width :initarg :width :initform 10 :accessor width)
+   (height :initarg :height :initform 10 :accessor height)))
 
 (define-saved-slots bounded-geometry width height)
 
 (defclass sized-geometry (geometry)
-  ((size :initarg :size :accessor size))
-  (:default-initargs
-   :size 10))
+  ((size :initarg :size :initform 10 :accessor size)))
 
 (define-saved-slots sized-geometry size)
 
 (defclass segmented-geometry (geometry)
-  ((segments :initarg :segments :accessor segments))
-  (:default-initargs
-   :segments 8))
+  ((segments :initarg :segments :initform 8 :accessor segments)))
 
 (define-saved-slots segmented-geometry segments)
 
