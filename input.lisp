@@ -126,7 +126,7 @@
 
 (define-override (input-handler wheel-event) (ev)
   (let ((delta (/ (q+:delta ev) 8 15))
-        (position (vec (q+:x (q+:pos-f ev)) (q+:y (q+:pos-f ev)) 0)))
+        (position (vec (q+:x (q+:pos ev)) (q+:y (q+:pos ev)) 0)))
     (v:debug :trial.input "Mouse wheel: ~a" delta)
     (handle (make-instance 'mouse-scroll :delta delta :pos position) input-handler)))
 
