@@ -45,6 +45,15 @@
 (defclass mouse-release (mouse-button-event)
   ())
 
+(defclass mouse-scroll (mouse-event)
+  ((delta :initarg :delta :reader delta))
+  (:default-initargs
+   :delta (error "DELTA required.")))
+
+(defmethod print-object ((event mouse-scroll) stream)
+  (print-unreadable-object (event stream :type T)
+    (format stream "~a" (delta event))))
+
 (defclass mouse-move (mouse-event)
   ((old-pos :initarg :old-pos :reader old-pos))
   (:default-initargs
@@ -114,6 +123,12 @@
         (position (vec (q+:x (q+:pos-f ev)) (q+:y (q+:pos-f ev)) 0)))
     (v:debug :trial.input "Mouse released: ~a" button)
     (handle (make-instance 'mouse-release :button button :pos position) input-handler)))
+
+(define-override (input-handler wheel-event) (ev)
+  (let ((delta (/ (q+:delta ev) 8 15))
+        (position (vec (q+:x (q+:pos-f ev)) (q+:y (q+:pos-f ev)) 0)))
+    (v:debug :trial.input "Mouse wheel: ~a" delta)
+    (handle (make-instance 'mouse-scroll :delta delta :pos position) input-handler)))
 
 (define-override (input-handler mouse-move-event) (ev)
   (let ((position (vec (q+:x (q+:pos-f ev)) (q+:y (q+:pos-f ev)) 0)))

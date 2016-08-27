@@ -279,6 +279,8 @@
    #:button
    #:mouse-press
    #:mouse-release
+   #:mouse-scroll
+   #:delta
    #:mouse-move
    #:old-pos
    #:gamepad-event
