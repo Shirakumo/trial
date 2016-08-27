@@ -8,7 +8,8 @@
 (in-readtable :qtools)
 
 (define-subject hud (layer-set persistent)
-  ())
+  ((width :initarg :width :accessor width)
+   (height :initarg :height :accessor height)))
 
 (define-handler (hud enter) (ev entity)
   (when (typep entity 'hud-entity)
@@ -17,6 +18,10 @@
 (define-handler (hud leave) (ev entity)
   (when (typep entity 'hud-entity)
     (leave entity hud)))
+
+(define-handler (hud resize) (ev width height)
+  (setf (width hud) width
+        (height hud) height))
 
 ;; This avoids the hud from being added to the actual scene
 ;; list of units while still making it tied in with the
@@ -27,7 +32,7 @@
 (defmethod paint ((hud hud) target)
   (gl:with-pushed-matrix* (:projection)
     (gl:load-identity)
-    (gl:ortho 0 (q+:width target) (q+:height target) 0 -1 10)
+    (gl:ortho 0 (width hud) (height hud) 0 -1 10)
     (gl:matrix-mode :modelview)
     (gl:load-identity)
     (gl:disable :cull-face)
