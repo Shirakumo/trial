@@ -231,6 +231,8 @@
    #:angle
    #:pivoted-entity
    #:pivot
+   #:bound-entity
+   #:bounds
    #:colored-entity
    #:color
    #:textured-entity
