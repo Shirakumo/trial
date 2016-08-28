@@ -236,11 +236,15 @@
          ,@body))))
 
 (defmacro with-timing-report ((level category format &rest args) &body body)
-  (let ((start (gensym "START")))
-    `(let ((,start (current-time)))
+  (let ((run (gensym "RUNTIME"))
+        (real (gensym "REALTIME")))
+    `(let ((,run (get-internal-run-time))
+           (,real (get-internal-real-time)))
        (unwind-protect
             (progn ,@body)
-         (v:log ,(intern (string level) :keyword) ,category ,format ,@args (/ ,start *time-units*))))))
+         (v:log ,(intern (string level) :keyword) ,category ,format ,@args
+                (/ (- (get-internal-run-time) ,run) INTERNAL-TIME-UNITS-PER-SECOND)
+                (/ (- (get-internal-real-time) ,real) INTERNAL-TIME-UNITS-PER-SECOND))))))
 
 (defun insert-index (object list &key (key #'identity) (replace T))
   (flet ((k (value) (funcall key value)))
