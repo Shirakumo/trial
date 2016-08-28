@@ -346,7 +346,9 @@
    #:proj-matrix
    #:view-matrix
    #:vec->screen
-   #:vec->main)
+   #:screen->vec
+   #:vec->main
+   #:main->vec)
   ;; renderable.lisp
   (:export
    #:renderable
