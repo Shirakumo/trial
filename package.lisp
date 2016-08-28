@@ -215,6 +215,7 @@
    #:triangle
    #:square
    #:rectangle
+   #:disc
    #:sphere
    #:cube
    #:cylinder

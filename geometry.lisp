@@ -60,6 +60,17 @@
       (gl:vertex    w     h)
       (gl:vertex (- w)    h))))
 
+(defclass disc (sized-geometry segmented-geometry)
+  ())
+
+(defmethod paint ((disc disc) target)
+  (let ((s (size disc))
+        (segs (segments disc)))
+    (with-primitives :triangle-fan
+      (gl:vertex 0 0)
+      (loop for i from 0 to (* 2 PI) by (/ (* 2 PI) segs)
+            do (gl:vertex (* s (cos i)) (* s (sin i)))))))
+
 (defclass sphere (sized-geometry segmented-geometry)
   ())
 
