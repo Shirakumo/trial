@@ -27,19 +27,23 @@
           do (when handler
                (setf (car cons) handler)
                (setf handlers (delete handler handlers))))
-    (setf (handlers container) (sort (nconc handlers (handlers container)) #'> :key #'priority))))
+    (setf (handlers container) (sort (nconc handlers (handlers container)) #'> :key #'priority)))
+  handlers)
 
 (defmethod add-handler ((source handler-container) (container handler-container))
-  (add-handler (handlers source) container))
+  (add-handler (handlers source) container)
+  source)
 
 (defmethod remove-handler (handler (container handler-container))
   (setf (handlers container)
-        (delete handler (handlers container) :test #'matches)))
+        (delete handler (handlers container) :test #'matches))
+  handler)
 
 (defmethod remove-handler ((handlers list) (container handler-container))
   (setf (handlers container) (delete-if (lambda (el)
                                           (find el handlers :test #'matches))
-                                        (handlers container))))
+                                        (handlers container)))
+  handlers)
 
 (defmethod remove-handler ((source handler-container) (container handler-container))
   (remove-handler (handlers source) container))
