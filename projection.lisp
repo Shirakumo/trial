@@ -14,13 +14,13 @@
   (gl:get-double :projection-matrix 16))
 
 (defun proj-matrix (camera)
-  (gl:with-pushed-matrix* (:projection)
+  (with-pushed-matrix
     (setup-perspective camera (make-instance 'resize :width (width *context*)
                                                      :height (height *context*)))
     (projection-matrix)))
 
 (defun view-matrix (camera)
-  (gl:with-pushed-matrix* (:modelview)
+  (with-pushed-matrix
     (project-view camera NIL)
     (modelview-matrix)))
 

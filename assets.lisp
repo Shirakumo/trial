@@ -69,7 +69,7 @@
 (pushnew 'prepare-standalone qtools:*boot-hooks*)
 
 (defclass pool ()
-  ((name :initarg :name :reader name)
+  ((name :initarg :name  :initform NIL :reader name)
    (base-designator :accessor base-designator)
    (base :initform NIL :accessor base)
    (assets :initform () :accessor assets))
@@ -142,10 +142,10 @@
   `(name (make-instance 'pool :name ',name ,@options)))
 
 (defclass asset ()
-  ((name :initarg :name :accessor name)
+  ((name :initarg :name :initform NIL :accessor name)
    (home :initform NIL :accessor home)
    (resource :initform NIL :accessor resource)
-   (dependencies :initarg :dependencies :initarg :depends-on :accessor dependencies))
+   (dependencies :initarg :dependencies :initarg :depends-on :initform NIL :accessor dependencies))
   (:default-initargs
    :name (error "NAME required.")
    :home (error "HOME required.")
