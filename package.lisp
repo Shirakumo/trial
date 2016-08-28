@@ -478,6 +478,7 @@
    #:wait-for-thread-exit
    #:with-thread-exit
    #:with-error-logging
+   #:with-timing-report
    #:insert-index
    #:check-texture-size
    #:check-texture-target

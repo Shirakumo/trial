@@ -44,7 +44,9 @@
 
 (defmethod setup-scene :around ((main main))
   (with-simple-restart (continue "Skip loading the rest of the scene and hope for the best.")
-    (call-next-method)))
+    (v:info :trial.main "Setting up scene")
+    (with-timing-report (v:info :trial.main "Scene setup took ~fs")
+      (call-next-method))))
 
 ;; FIXME: proper LOADing of a map
 (defmethod setup-scene ((main main))

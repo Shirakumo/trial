@@ -235,6 +235,13 @@
                                (v:debug ,category-g err))))
          ,@body))))
 
+(defmacro with-timing-report ((level category format &rest args) &body body)
+  (let ((start (gensym "START")))
+    `(let ((,start (current-time)))
+       (unwind-protect
+            (progn ,@body)
+         (v:log ',level ,category ,format ,@args (/ ,start *time-units*))))))
+
 (defun insert-index (object list &key (key #'identity) (replace T))
   (flet ((k (value) (funcall key value)))
     (let ((n (k object)))
