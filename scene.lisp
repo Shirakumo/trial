@@ -15,8 +15,16 @@
 (defclass enter (scene-event)
   ((entity :initarg :entity :accessor entity)))
 
+(defmethod print-object ((enter enter) stream)
+  (print-unreadable-object (enter stream :type T)
+    (format stream "~a => ~a" (entity enter) (scene enter))))
+
 (defclass leave (scene-event)
   ((entity :initarg :entity :accessor entity)))
+
+(defmethod print-object ((leave leave) stream)
+  (print-unreadable-object (leave stream :type T)
+    (format stream "~a => ~a" (scene leave) (entity leave))))
 
 (defmethod register :after ((entity entity) (scene scene))
   (issue scene 'enter :scene scene :entity entity))
