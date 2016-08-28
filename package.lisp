@@ -151,6 +151,7 @@
   ;; display.lisp
   (:export
    #:display
+   #:clear-color
    #:handle
    #:resize
    #:width

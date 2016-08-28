@@ -8,7 +8,7 @@
 (in-readtable :qtools)
 
 (define-widget display (QGLWidget context renderable)
-  ())
+  ((clear-color :initarg :clear-color :initform (vec 0 0 0) :accessor clear-color)))
 
 (defmethod handle (event (display display)))
 
@@ -64,7 +64,8 @@
 (defmethod paint (source (target display)))
 
 (defmethod render (source (target display))
-  (gl:clear-color 0 0 0 1)
+  (let ((c (clear-color target)))
+    (gl:clear-color (vx c) (vy c) (vz c) 1))
   (gl:clear :color-buffer :depth-buffer)
   (gl:enable :blend :cull-face :texture-2d :multisample
              :line-smooth :polygon-smooth
