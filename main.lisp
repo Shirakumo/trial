@@ -7,7 +7,8 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(define-widget main (QGLWidget display input-handler fullscreenable executable window)
+;; FIXME: Fullscreenable seems to cause really bad behaviour, idk
+(define-widget main (QGLWidget display input-handler executable window)
   ((scene :initform (make-instance 'scene) :accessor scene)
    (hud :initform (make-instance 'hud) :accessor hud)
    (controller :initform (make-instance 'controller)))
