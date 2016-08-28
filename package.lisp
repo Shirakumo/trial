@@ -454,6 +454,7 @@
    #:unlist
    #:with-primitives
    #:with-pushed-matrix
+   #:with-pushed-attribs
    #:mkarray
    #:mktable
    #:mkobject

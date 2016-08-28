@@ -108,22 +108,22 @@
     ;; Size might have changed since we last updated...
     (reinitialize-instance buffer :width (width *context*) :height (height *context*)))
   (when (q+:bind (data buffer))
-    (gl:push-attrib :all-attrib-bits)
-    (unwind-protect
-         (progn
-           (gl:clear-color 0.0 0.0 0.0 0.0)
-           (gl:clear :color-buffer :depth-buffer)
-           ;; FIXME: How do we know what to deactivate and reactivate?
-           ;; Disable blending and textures to ensure we have just 32bit colours.
-           (gl:disable :blend :texture-2d :multisample)
-           (gl:enable :depth-test :cull-face)
-           (with-pushed-matrix
-             ;; FIXME: Multiple cameras? Camera not named this?
-             (setup-perspective (unit :camera scene) (make-instance 'resize :width (width *context*) :height (height *context*)))
-             (project-view (unit :camera scene) (make-instance 'tick))
-             (paint scene buffer)))
-      (gl:pop-attrib)
-      (q+:release (data buffer)))))
+    (with-pushed-attribs T
+      (unwind-protect
+           (progn
+             (gl:clear-color 0.0 0.0 0.0 0.0)
+             (gl:clear :color-buffer :depth-buffer)
+             ;; FIXME: How do we know what to deactivate and reactivate?
+             ;; Disable blending and textures to ensure we have just 32bit colours.
+             (gl:disable :blend :texture-2d :multisample)
+             (gl:enable :depth-test :cull-face)
+             (with-pushed-matrix
+               ;; FIXME: Multiple cameras? Camera not named this?
+               (setup-perspective (unit :camera scene) (make-instance 'resize :width (width *context*) :height (height *context*)))
+               (project-view (unit :camera scene) (make-instance 'tick))
+               (paint scene buffer)))
+        
+        (q+:release (data buffer))))))
 
 (defmethod paint :before (thing (buffer selection-buffer))
   (let ((color (object->color buffer thing)))

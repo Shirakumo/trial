@@ -228,15 +228,14 @@
 
 (defmethod paint ((entity face-entity) target)
   (with-slots ((tl tex-location) (tb tex-bounds) bounds) entity
-    (gl:push-attrib)
-    (gl:disable :cull-face)
-    (with-primitives :quads
-      (gl:tex-coord (vx tl) (vy tl))
-      (gl:vertex 0 0)
-      (gl:tex-coord (vx tb) (vy tl))
-      (gl:vertex (vx bounds) 0)
-      (gl:tex-coord (vx tb) (vy tb))
-      (gl:vertex (vx bounds) (vy bounds))
-      (gl:tex-coord (vx tl) (vy tb))
-      (gl:vertex 0 (vy bounds)))
-    (gl:pop-attrib)))
+    (with-pushed-attribs T
+      (gl:disable :cull-face)
+      (with-primitives :quads
+        (gl:tex-coord (vx tl) (vy tl))
+        (gl:vertex 0 0)
+        (gl:tex-coord (vx tb) (vy tl))
+        (gl:vertex (vx bounds) 0)
+        (gl:tex-coord (vx tb) (vy tb))
+        (gl:vertex (vx bounds) (vy bounds))
+        (gl:tex-coord (vx tl) (vy tb))
+        (gl:vertex 0 (vy bounds))))))

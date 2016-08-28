@@ -58,6 +58,12 @@
                (progn ,@body)
             (gl:pop-matrix))))
 
+(defmacro with-pushed-attribs (items &body body)
+  `(progn (gl:push-attrib ,@(if (eql T items) '(:all-attrib-bits) items))
+          (unwind-protect
+               (progn ,@body)
+            (gl:pop-attrib))))
+
 (defun mkarray (dimensions &rest items)
   (let ((array (make-array dimensions)))
     (loop for i from 0 for item in items

@@ -32,20 +32,19 @@
    :name :controller))
 
 (defmethod paint ((controller controller) (hud hud))
-  (gl:push-attrib :all-attrib-bits)
-  (with-painter (painter *context*)
-    (let ((font (get-resource 'font :trial :debug-hud))
-          (clock (clock (scene (display controller)))))
-      (setf (q+:render-hint painter) (q+:qpainter.text-antialiasing))
-      (setf (q+:render-hint painter) (q+:qpainter.high-quality-antialiasing))
-      (setf (q+:font painter) (data font))
-      (gl:color 255 255 255)
-      (q+:draw-text painter 20 30 (format NIL "Pause: ~,10f" (last-pause (display controller))))
-      (q+:draw-text painter 20 50 (format NIL "FPS:   ~,2f" (actual-fps (display controller))))
-      (q+:draw-text painter 20 70 (format NIL "Time:  ~2,'0d:~6,3,,,'0f"
-                                          (floor (/ (round clock) 60))
-                                          (mod clock 60)))))
-  (gl:pop-attrib))
+  (with-pushed-attribs T
+    (with-painter (painter *context*)
+      (let ((font (get-resource 'font :trial :debug-hud))
+            (clock (clock (scene (display controller)))))
+        (setf (q+:render-hint painter) (q+:qpainter.text-antialiasing))
+        (setf (q+:render-hint painter) (q+:qpainter.high-quality-antialiasing))
+        (setf (q+:font painter) (data font))
+        (gl:color 255 255 255)
+        (q+:draw-text painter 20 30 (format NIL "Pause: ~,10f" (last-pause (display controller))))
+        (q+:draw-text painter 20 50 (format NIL "FPS:   ~,2f" (actual-fps (display controller))))
+        (q+:draw-text painter 20 70 (format NIL "Time:  ~2,'0d:~6,3,,,'0f"
+                                            (floor (/ (round clock) 60))
+                                            (mod clock 60)))))))
 
 (define-handler (controller tick tick 100) (ev)
   (incf (tick-count controller)))
