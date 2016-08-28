@@ -26,8 +26,8 @@
 ;; This avoids the hud from being added to the actual scene
 ;; list of units while still making it tied in with the
 ;; event handling part of it.
-(defmethod enter ((hud hud) (scene scene)))
-(defmethod leave ((hud hud) (scene scene)))
+(defmethod enter ((hud hud) (scene scene)) hud)
+(defmethod leave ((hud hud) (scene scene)) hud)
 
 (defmethod paint ((hud hud) target)
   (gl:with-pushed-matrix* (:projection)

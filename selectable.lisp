@@ -98,7 +98,7 @@
     (register-object-color selection-buffer entity (color-id entity))))
 
 (defmethod enter ((buffer selection-buffer) (scene scene))
-  (do-container-tree (unit scene)
+  (do-container-tree (unit scene buffer)
     (when (typep unit 'color-id-entity)
       (register-object-color buffer unit (color-id unit)))))
 
@@ -153,7 +153,7 @@
   (register-object-color global-selection-buffer entity (when (typep entity 'color-id-entity (color-id entity)))))
 
 (defmethod enter ((buffer global-selection-buffer) (scene scene))
-  (do-container-tree (unit scene)
+  (do-container-tree (unit scene buffer)
     (register-object-color buffer unit (when (typep entity 'color-id-entity (color-id entity))))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
