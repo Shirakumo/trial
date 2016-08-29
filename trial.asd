@@ -50,7 +50,8 @@
                (:file "player")
                (:file "controller")
                (:file "main")
-               (:file "launcher"))
+               (:file "launcher")
+               (:file "deploy"))
   :depends-on (:alexandria
                :3d-vectors
                :verbose
