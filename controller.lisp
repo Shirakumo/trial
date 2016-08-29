@@ -31,6 +31,7 @@
   (:default-initargs
    :name :controller))
 
+#+:trial-debug-controller
 (defmethod paint ((controller controller) (hud hud))
   (with-pushed-attribs T
     (with-painter (painter *context*)

@@ -9,7 +9,8 @@
 
 (defvar *debug-features* '(:trial-debug-selection-buffer
                            :trial-debug-bound-subject
-                           :trial-debug-error-on-invalid-asset-reference))
+                           :trial-debug-error-on-invalid-asset-reference
+                           :trial-debug-controller))
 (defvar *optimize-features* '(:trial-optimize-resource-validity-check
                               :trial-optimize-pool-watching))
 
