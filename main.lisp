@@ -11,17 +11,21 @@
 (define-widget main (QGLWidget display input-handler executable window)
   ((scene :initform (make-instance 'scene) :accessor scene)
    (hud :initform (make-instance 'hud) :accessor hud)
-   (controller :initform (make-instance 'controller)))
+   (controller :initform (make-instance 'controller))
+   (title :initform "Trial" :initarg :title :accessor title))
   (:default-initargs
    :name :main))
 
 (define-initializer (main setup -10)
-  (setf (q+:window-title main) "Trial")
+  (setf (q+:window-title main) (title main))
   (setf (display controller) main)
   (register hud scene)
   (register controller scene)
   (issue scene 'reload-scene)
   (start scene))
+
+(defmethod (setf title) :after (title (main main))
+  (setf (q+:window-title main) title))
 
 (define-finalizer (main teardown)
   (v:info :trial.main "RAPTURE")
