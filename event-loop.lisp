@@ -100,7 +100,8 @@
 
 (defmethod handle (event (loop event-loop))
   (let ((*loop* loop))
-    (call-next-method)))
+    (with-simple-restart (skip-event "Skip handling the event entirely.")
+      (call-next-method))))
 
 (defclass handler (entity)
   ((event-type :initarg :event-type :accessor event-type)

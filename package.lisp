@@ -175,6 +175,7 @@
    #:issue
    #:process
    #:discard-events
+   #:skip-event
    #:handler
    #:event-type
    #:container
@@ -320,6 +321,7 @@
    #:main
    #:scene
    #:hud
+   #:title
    #:setup-scene
    #:launch
    #:launch-with-launcher)
