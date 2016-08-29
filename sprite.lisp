@@ -42,18 +42,25 @@
   (setf (animation subject) (or (gethash value (animations subject))
                                 (error "No such animation ~s on ~a" value subject))))
 
+(defmethod (setf animation) ((animation sprite-animation) (subject sprite-subject))
+  (unless (eql animation (animation subject))
+    (start subject)
+    (reset subject)
+    (setf (slot-value subject 'animation) animation)))
+
 (defmethod enter :after ((subject sprite-subject) scene)
   (start subject))
 
 (define-handler (sprite-subject advance-frame tick) (ev)
   (with-slots (animations animation) sprite-subject
-    (let ((frame (floor (* (/ (clock sprite-subject) (duration animation))
+    (let ((frame (round (* (/ (clock sprite-subject) (duration animation))
                            (frames animation)))))
-      (cond ((<= (frames animation) frame)
+      (cond ((and (<= (frames animation) frame) (next animation))
              (setf (frame animation) 0)
              (reset sprite-subject)
-             (when (next animation)
-               (setf animation (gethash (next animation) animations))))
+             (setf animation (gethash (next animation) animations)))
+            ((<= (frames animation) frame)
+             (stop sprite-subject))
             (T
              (setf (frame animation) frame))))))
 
