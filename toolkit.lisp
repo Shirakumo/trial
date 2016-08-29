@@ -195,8 +195,16 @@
                       (return NIL))
                     (bt:thread-yield))))
 
+(defun standalone-error-handler (err)
+  (when *standalone*
+    (v:debug :trial err)
+    (v:fatal :trial "Encountered unhandled error in ~a, bailing." (bt:current-thread))
+    (qtools::quit)))
+
 (defun make-thread (name func)
-  (bt:make-thread func
+  (bt:make-thread (lambda ()
+                    (handler-bind ((error #'standalone-error-handler))
+                      (funcall func)))
                   :name name
                   :initial-bindings `((*standard-output* . ,*standard-output*)
                                       (*error-output* . ,*error-output*)
