@@ -60,11 +60,13 @@
 
 (defmethod (setf file) ((file pathname) (asset file-asset))
   ;; FIXME: How to notify pool of change?
-  (setf (slot-value asset 'file) (pathname-utils:normalize-pathname
-                                  (merge-pathnames file (base (home asset))))))
+  (setf (slot-value asset 'file) (pathname-utils:normalize-pathname file)))
 
 (defmethod (setf file) :after ((file pathname) (asset file-asset))
   (reload asset))
+
+(defmethod file ((asset file-asset))
+  (merge-pathnames (slot-value asset 'file) (base (home asset))))
 
 (defmethod load-data :before ((asset file-asset))
   (unless (probe-file (file asset))
