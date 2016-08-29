@@ -13,18 +13,20 @@
 (define-user-libs (libmonitors cl-monitors-cffi::*static*)
   (cl-monitors-cffi:libmonitors))
 
-(defun copy-dir (dir to)
-  (let* ((dir (pathname-utils:to-directory dir))
-         (base (pathname-utils:subdirectory to (pathname-utils:directory-name dir))))
-    (ensure-directories-exist base)
+(defun copy-dir-contents (dir to)
+  (let ((dir (pathname-utils:to-directory dir))
+        (to (pathname-utils:to-directory to)))
+    (ensure-directories-exist to)
     (dolist (file (uiop:directory* (merge-pathnames pathname-utils:*wild-file* dir)))
       (cond ((pathname-utils:directory-p file)
-             (copy-dir file base))
+             (copy-dir-contents file (pathname-utils:subdirectory to (pathname-utils:directory-name file))))
             (T
-             (uiop:copy-file file (merge-pathnames (pathname-utils:to-file file) base)))))))
+             (uiop:copy-file file (merge-pathnames (pathname-utils:to-file file) to)))))))
 
 (defun deploy-resources ()
   (let ((path qtools:*deployment-location*))
     (dolist (pool (pools))
       (qtools::status 1 "Copying pool ~a from ~a" (name pool) (base pool))
-      (copy-dir (base pool) path))))
+      (copy-dir-contents (base pool) (pathname-utils:subdirectory path "data" (string-downcase (base-designator pool)))))))
+
+(pushnew 'deploy-resources qtools:*build-hooks*)
