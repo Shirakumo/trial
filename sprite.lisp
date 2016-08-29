@@ -47,14 +47,15 @@
 
 (define-handler (sprite-subject advance-frame tick) (ev)
   (with-slots (animations animation) sprite-subject
-    (let ((frame (round (* (/ (clock sprite-subject) (duration animation))
+    (let ((frame (floor (* (/ (clock sprite-subject) (duration animation))
                            (frames animation)))))
-      (when (<= (frames animation) frame)
-        (setf frame 0)
-        (reset sprite-subject)
-        (when (next animation)
-          (setf animation (gethash (next animation) animations))))
-      (setf (frame animation) frame))))
+      (cond ((<= (frames animation) frame)
+             (setf (frame animation) 0)
+             (reset sprite-subject)
+             (when (next animation)
+               (setf animation (gethash (next animation) animations))))
+            (T
+             (setf (frame animation) frame))))))
 
 (defmethod paint ((subject sprite-subject) target)
   (paint (animation subject) target))
