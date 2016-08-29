@@ -31,6 +31,7 @@
         do (destructuring-bind (name duration frames &key next texture (bounds bounds)) animation
              (setf (gethash name (animations subject))
                    (make-instance 'sprite-animation
+                                  :name name
                                   :duration duration
                                   :frames frames
                                   :texture texture
