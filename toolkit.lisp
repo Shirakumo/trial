@@ -270,6 +270,33 @@
                                (return (setf (cdr cons) cell))))))
              list)))))
 
+(defun check-gl-type (thing size &optional unsigned)
+  (if unsigned
+      (unless (<= 0 thing (expt 2 size))
+        (error "~a does not fit within [0,2^~a]." thing size))
+      (let ((size (1- size)))
+        (unless (<= (- (expt 2 size)) thing (1- (expt 2 size)))
+          (error "~a does not fit within [-2^~a,2^~:*~a-1]." thing size)))))
+
+(defun gl-coerce (thing type)
+  (ecase type
+    (:double
+     (float thing 0.0d0))
+    (:float
+     (float thing 0.0s0))
+    (:int
+     (check-gl-type thing 32)
+     (values (round thing)))
+    (:uint
+     (check-gl-type thing 32 T)
+     (values (round thing)))
+    (:char
+     (check-gl-type thing 8)
+     (values (round thing)))
+    (:uchar
+     (check-gl-type thing 8 T)
+     (values (round thing)))))
+
 (defun check-texture-size (width height)
   (let ((max (gl:get* :max-texture-size)))
     (when (< max (max width height))
