@@ -345,12 +345,14 @@
             do (destructuring-bind (pool name &key (index 0)
                                                    (size 3)
                                                    (normalized NIL)
-                                                   (stride 0))
+                                                   (stride 0)
+                                                   (offset (cffi:null-pointer)))
                    buffer
                  (let ((buffer (asset 'vertex-buffer pool name)))
                    (gl:bind-buffer (buffer-type buffer) (data buffer))
-                   (gl:enable-vertex-attrib-array index)
-                   (gl:vertex-attrib-pointer index size (element-type buffer) normalized stride (cffi:null-pointer))))))
+                   (gl:vertex-attrib-pointer index size (element-type buffer) normalized stride offset)
+                   (gl:enable-vertex-attrib-array index))))
+      (gl:bind-vertex-array 0))
     array))
 
 (defmethod finalize-data ((asset vertex-array) data)
