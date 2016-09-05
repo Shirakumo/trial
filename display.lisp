@@ -52,12 +52,13 @@
   (gl:depth-mask T)
   (gl:depth-func :lequal)
   (gl:clear-depth 1.0)
-  (gl:alpha-func :greater 0)
-  (gl:blend-func :src-alpha :one-minus-src-alpha)
-  (gl:shade-model :smooth)
+  #+:trial-gl-compatibility
+  (progn
+    (gl:alpha-func :greater 0)
+    (gl:blend-func :src-alpha :one-minus-src-alpha)
+    (gl:shade-model :smooth))
   (gl:front-face :ccw)
   (gl:cull-face :back)
-  (gl:hint :perspective-correction-hint :nicest)
   (gl:hint :line-smooth-hint :nicest)
   (gl:hint :polygon-smooth-hint :nicest))
 
@@ -67,9 +68,11 @@
   (let ((c (clear-color target)))
     (gl:clear-color (vx c) (vy c) (vz c) 1))
   (gl:clear :color-buffer :depth-buffer)
-  (gl:enable :blend :cull-face :texture-2d :multisample
+  (gl:enable :blend :cull-face :multisample
              :line-smooth :polygon-smooth
-             :depth-test :depth-clamp :alpha-test)
+             :depth-test :depth-clamp)
+  #+:trial-gl-compatibility
+  (gl:enable :alpha-test :texture-2d)
   (paint source target))
 
 (defmethod render :around (source (target display))

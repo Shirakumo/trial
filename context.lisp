@@ -60,8 +60,9 @@
                                           (multisampling T)
                                           (samples 2)
                                           (swap-interval 0)
-                                          (profile :compatibility)
-                                          (version (list 3 0)))
+                                          (profile #+:trial-gl-compatibility :compatibility
+                                                   #-:trial-gl-compatibility :core)
+                                          (version :keep))
   (let ((initialized (glformat context)))
     (unless initialized (setf (slot-value context 'glformat) (q+:make-qglformat)))
     (macrolet ((format-set (value &optional (accessor value))
