@@ -42,7 +42,8 @@
     (if (q+:is-valid glcontext)
         (v:info :trial.context "~a successfully created context." context)
         (error "Failed to create context."))
-    (acquire-context context)))
+    (acquire-context context)
+    (context-note-debug-info context)))
 
 (defmethod shared-initialize :after ((context context)
                                      slots
@@ -167,6 +168,7 @@
         (v:info :trial.context "Recreated context successfully.")
         (error "Failed to recreate context. Game over."))
     (q+:make-current context)
+    (context-note-debug-info context)
     (setf (context-needs-recreation context) NIL)
     (dolist (pool (pools))
       (dolist (asset (assets pool))
@@ -221,20 +223,25 @@
                      this context *context*))))))
 
 (defmethod describe-object :after ((context context) stream)
-  (format stream "~&~%Running GL~a.~a with ~a buffer~:p / ~a sample~:p, max texture size ~a.~%"
-          (gl:get* :major-version)
-          (gl:get* :minor-version)
-          (gl:get* :sample-buffers)
-          (gl:get* :samples)
-          (gl:get* :max-texture-size))
-  (format stream "~&GL info report:~%~
+  (format stream "~&~%Running GL~a.~a with ~a buffer~:p / ~a sample~:p, max texture size ~a.~%~
+                    GL info report:~%~
                     GL Vendor:     ~a~%~
                     GL Renderer:   ~a~%~
                     GL Version:    ~a~%~
                     GL Shader:     ~a~%~
                     GL Extensions: ~a~%"
-           (gl:get-string :vendor)
-           (gl:get-string :renderer)
-           (gl:get-string :version)
-           (gl:get-string :shading-language-version)
-           (gl:get-string :extensions)))
+          (gl:get* :major-version)
+          (gl:get* :minor-version)
+          (gl:get* :sample-buffers)
+          (gl:get* :samples)
+          (gl:get* :max-texture-size)
+          (gl:get-string :vendor)
+          (gl:get-string :renderer)
+          (gl:get-string :version)
+          (gl:get-string :shading-language-version)
+          (gl:get-string-i :extensions)))
+
+(defun context-note-debug-info (context)
+  (v:debug :trial.context "Context information: ~a"
+           (with-output-to-string (out)
+             (describe-object context out))))
