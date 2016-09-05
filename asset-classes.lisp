@@ -250,8 +250,18 @@
 (defclass shader-program (context-asset)
   ((shaders :initarg :shaders :accessor shaders)))
 
+(defmethod initialize-instance :after ((asset shader-program) &key shaders)
+  ;; Automatically register all shaders as dependencies.
+  (dolist (shader shaders)
+    (pushnew (list* 'shader shader) (dependencies asset) :test #'equal)))
+
 (defmethod (setf shaders) :after (shaders (asset shader-program))
-  (reload asset))
+  (reload asset)
+  ;; Remove deps if not found. This is not perfect as we don't know whether the user perhaps
+  ;; specifically requested a shader in the dependencies that is not actually included.
+  (setf (dependencies asset)
+        (remove-if (lambda (dep) (and (eql (first dep) 'shader)
+                                      (not (find (rest dep) shaders :test #'equal)))) (dependencies asset))))
 
 (defmethod load-data ((asset shader-program))
   (let ((shaders (loop for (pool name) in (shaders asset)
@@ -313,8 +323,18 @@
 (defclass vertex-array (context-asset)
   ((buffers :initarg :buffers :accessor buffers)))
 
+(defmethod initialize-instance :after ((asset vertex-array) &key buffers)
+  ;; Automatically register all buffers as dependencies.
+  (dolist (buffer buffers)
+    (pushnew (list* 'vertex-buffer buffer) (dependencies asset) :test #'equal)))
+
 (defmethod (setf buffers) :after (buffers (asset vertex-array))
-  (reload asset))
+  (reload asset)
+  ;; Remove deps if not found. This is not perfect as we don't know whether the user perhaps
+  ;; specifically requested a buffer in the dependencies that is not actually included.
+  (setf (dependencies asset)
+        (remove-if (lambda (dep) (and (eql (first dep) 'vertex-buffer)
+                                      (not (find (rest dep) buffers :test #'equal)))) (dependencies asset))))
 
 (defmethod load-data ((asset vertex-array))
   (let ((array (gl:gen-vertex-array)))
