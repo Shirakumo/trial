@@ -26,7 +26,7 @@
                (:file "display")
                (:file "assets")
                (:file "asset-classes")
-               (:file "asset-watcher")
+               ;(:file "asset-watcher")
                (:file "asset-pool")
                (:file "geometry")
                (:file "helpers")
