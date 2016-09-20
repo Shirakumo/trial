@@ -54,6 +54,7 @@
                (:file "deploy"))
   :depends-on (:alexandria
                :3d-vectors
+               :3d-matrices
                :verbose
                :qtools
                :qtcore
