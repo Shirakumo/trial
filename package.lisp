@@ -7,7 +7,7 @@
 (in-package #:cl-user)
 (defpackage #:trial
   (:nicknames #:org.shirakumo.fraf.trial)
-  (:use #:cl+qt #:3d-vectors #:flare)
+  (:use #:cl+qt #:3d-vectors #:3d-matrices #:flare)
   (:shadowing-import-from #:flare #:slot)
   (:shadow #:scene #:entity)
   ;; asset-classes.lisp
