@@ -309,9 +309,9 @@
            (with-cleanup-on-failure
                (finalize-data asset buffer)
              (gl:bind-buffer buffer-type buffer)
-             (loop for i from 0
-                   for el across buffer-data
-                   do (setf (gl:glaref array i) (gl-coerce el element-type)))
+             (for:for ((i from 0)
+                       (el over buffer-data))
+               (setf (gl:glaref array i) (gl-coerce el element-type)))
              (gl:buffer-data buffer-type data-usage array))
         (gl:bind-buffer buffer-type 0)
         (gl:free-gl-array array))
