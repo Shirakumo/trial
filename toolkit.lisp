@@ -270,6 +270,13 @@
                                (return (setf (cdr cons) cell))))))
              list)))))
 
+(defun symbol->c-name (symbol)
+  (with-output-to-string (out)
+    (loop for c across (symbol-name symbol)
+          do (case c
+               (#\- (write-char #\_ out))
+               (T (write-char c out))))))
+
 (defun check-gl-type (thing size &optional unsigned)
   (if unsigned
       (unless (<= 0 thing (expt 2 size))

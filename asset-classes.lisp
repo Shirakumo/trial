@@ -250,7 +250,10 @@
   (gl:delete-shader data))
 
 (defclass shader-program (context-asset)
-  ((shaders :initarg :shaders :accessor shaders)))
+  ((shaders :initarg :shaders :accessor shaders)
+   (uniforms :initarg :uniforms :accessor uniforms))
+  (:default-initargs
+   :uniforms ()))
 
 (defmethod initialize-instance :after ((asset shader-program) &key shaders)
   ;; Automatically register all shaders as dependencies.
@@ -280,6 +283,36 @@
 
 (defmethod finalize-data ((asset shader-program) data)
   (gl:delete-program data))
+
+(defmethod uniform-location ((asset shader-program) (name string))
+  (gl:get-uniform-location (data (resource (reload asset))) name))
+
+(defmethod uniform-location ((asset shader-program) (name symbol))
+  (uniform-location asset (symbol->c-name name)))
+
+(defmethod (setf uniform) (data (asset shader-program) (name symbol))
+  (let ((uniform (cdr (assoc name (uniforms asset)))))
+    (destructuring-bind (&key (name (symbol->c-name name)) (location (uniform-location asset name)))
+        uniform
+      (etypecase data
+        (fixnum (gl:uniformi location data))
+        (single-float (gl:uniformf location data))
+        (vec2 (gl:uniformf location (vx data) (vy data)))
+        (vec3 (gl:uniformf location (vx data) (vy data) (vz data)))
+        (vec4 (gl:uniformf location (vx data) (vy data) (vz data) (vw data)))
+        (mat2 (gl:uniform-matrix-2fv location (marr2 data)))
+        (mat3 (gl:uniform-matrix-3fv location (marr3 data)))
+        (mat4 (gl:uniform-matrix-4fv location (marr4 data)))
+        (matn (ecase (mrows data)
+                (2 (ecase (mcols data)
+                     (3 (gl:uniform-matrix-2x3-fv location (marrn data)))
+                     (4 (gl:uniform-matrix-2x4-fv location (marrn data)))))
+                (3 (ecase (mcols data)
+                     (2 (gl:uniform-matrix-3x2-fv location (marrn data)))
+                     (4 (gl:uniform-matrix-3x4-fv location (marrn data)))))
+                (4 (ecase (mcols data)
+                     (2 (gl:uniform-matrix-4x2-fv location (marrn data)))
+                     (3 (gl:uniform-matrix-4x3-fv location (marrn data)))))))))))
 
 ;; FIXME: allow loading from file or non-array type
 (defclass vertex-buffer (context-asset)
@@ -344,14 +377,15 @@
         (finalize-data asset array)
       (gl:bind-vertex-array array)
       (loop for buffer in (buffers asset)
-            do (destructuring-bind (pool name &key (index 0)
+            for i from 0
+            do (destructuring-bind (pool name &key (index i)
                                                    (size 3)
                                                    (normalized NIL)
                                                    (stride 0)
-                                                   (offset (cffi:null-pointer)))
+                                                   (offset 0))
                    buffer
                  (let ((buffer (asset 'vertex-buffer pool name)))
-                   (gl:bind-buffer (buffer-type buffer) (data buffer))
+                   (gl:bind-buffer (buffer-type buffer) (data (resource (restore buffer))))
                    (gl:vertex-attrib-pointer index size (element-type buffer) normalized stride offset)
                    (gl:enable-vertex-attrib-array index))))
       (gl:bind-vertex-array 0))
