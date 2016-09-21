@@ -163,6 +163,8 @@
           (with-cleanup-on-failure
               (finalize-data asset texture)
             (image-buffer-to-texture buffer target)
+            (unless (find min-filter '(:nearest :linear))
+              (gl:generate-mipmap target))
             (gl:tex-parameter target :texture-min-filter min-filter)
             (gl:tex-parameter target :texture-mag-filter mag-filter)
             (when anisotropy
