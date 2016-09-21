@@ -240,9 +240,10 @@
           (gl:get-string :renderer)
           (gl:get-string :version)
           (gl:get-string :shading-language-version)
-          (gl:get-string-i :extensions)))
+          (gl:get-string-i :extensions 0)))
 
 (defun context-note-debug-info (context)
   (v:debug :trial.context "Context information: ~a"
-           (with-output-to-string (out)
-             (describe-object context out))))
+           (let ((*print-right-margin* 1000)) ; SBCL fails otherwise. Huh?
+             (with-output-to-string (out)
+               (describe-object context out)))))
