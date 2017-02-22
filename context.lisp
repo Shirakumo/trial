@@ -120,7 +120,7 @@
 (define-context-accessor swap-interval swap-interval)
 
 (defmethod profile ((context context))
-  (qtenumcase (q+:profile context)
+  (qtenumcase (q+:profile (glformat context))
     ((q+:qglformat.no-profile) NIL)
     ((q+:qglformat.core-profile) :core)
     ((q+:qglformat.compatibility-profile) :compatibility)))
