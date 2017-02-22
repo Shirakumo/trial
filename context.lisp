@@ -60,7 +60,7 @@
                                           (samples 2)
                                           (swap-interval 0)
                                           (profile :core)
-                                          (version '(4 5)))
+                                          (version '(3 3)))
   (let ((initialized (glformat context)))
     (unless initialized (setf (slot-value context 'glformat) (q+:make-qglformat)))
     (macrolet ((format-set (value &optional (accessor value))
