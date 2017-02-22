@@ -57,9 +57,9 @@
 (defmethod setup-scene ((main main))
   (let ((scene (scene main)))
     ;;(enter (make-instance 'skybox) scene)
-    (enter (make-instance 'space-axes) scene)
-    (enter (make-instance 'player) scene)
-    (enter (make-instance 'following-camera :name :camera :target (unit :player scene)) scene)
+    ;; (enter (make-instance 'space-axes) scene)
+    ;; (enter (make-instance 'player) scene)
+    ;; (enter (make-instance 'following-camera :name :camera :target (unit :player scene)) scene)
     ;;(enter (make-instance 'selection-buffer :name :selection-buffer) scene)
     ))
 
@@ -67,7 +67,8 @@
   (issue (scene target) 'tick)
   (process (scene target))
   (paint (scene source) target)
-  (paint (hud source) target))
+  ;; (paint (hud source) target)
+  )
 
 (defun launch (&optional (main 'main) &key initargs application-name)
   (v:output-here)
