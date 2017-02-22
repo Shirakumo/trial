@@ -10,7 +10,7 @@
   :author "Nicolas Hafner <shinmera@tymoon.eu>"
   :maintainer "Nicolas Hafner <shinmera@tymoon.eu>"
   :license "Artistic"
-  :description "Trial run for the upcoming Ludum Dare 35"
+  :description "A flexible and extensible video game engine."
   :homepage "https://github.com/Shirakumo/trial"
   :serial T
   :components ((:file "package")
