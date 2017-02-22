@@ -465,8 +465,6 @@
    #:mktable
    #:mkobject
    #:update-slots
-   #:matrix-4x4
-   #:v4
    #:width
    #:height
    #:one-of

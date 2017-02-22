@@ -14,9 +14,8 @@
 
 (defmethod paint :around ((obj located-entity) target)
   (with-pushed-matrix
-    (let ((location (location obj)))
-      (gl:translate (vx location) (vy location) (vz location))
-      (call-next-method))))
+    (translate (location obj))
+    (call-next-method)))
 
 (defclass oriented-entity (entity)
   ((orientation :initarg :orientation :initform (vec 1 0 0) :accessor orientation)
@@ -26,10 +25,9 @@
 
 (defmethod paint :around ((obj oriented-entity) target)
   (with-pushed-matrix
-    (let ((axis (vc (up obj) (orientation obj)))
-          (angle (* 180 (/ (acos (v. (up obj) (orientation obj))) PI))))
-      (gl:rotate angle (vx axis) (vy axis) (vz axis))
-      (call-next-method))))
+    (rotate (vc (up obj) (orientation obj))
+            (* 180 (/ (acos (v. (up obj) (orientation obj))) PI)))
+    (call-next-method)))
 
 (defclass rotated-entity (entity)
   ((axis :initarg :axis :initform (vec 0 1 0) :accessor axis)
@@ -39,9 +37,8 @@
 
 (defmethod paint :around ((obj rotated-entity) target)
   (with-pushed-matrix
-    (let ((axis (axis obj)))
-      (gl:rotate (angle obj) (vx axis) (vy axis) (vz axis))
-      (call-next-method))))
+    (rotate (axis obj) (angle obj))
+    (call-next-method)))
 
 (defclass pivoted-entity (entity)
   ((pivot :initarg :pivot :initform (vec 0 0 0) :accessor pivot)))
@@ -50,9 +47,8 @@
 
 (defmethod paint :around ((obj pivoted-entity) target)
   (with-pushed-matrix
-    (let ((pivot (pivot obj)))
-      (gl:translate (vx pivot) (vy pivot) (vz pivot))
-      (call-next-method))))
+    (translate (pivot obj))
+    (call-next-method)))
 
 (defclass bound-entity (located-entity)
   ((bounds :initarg :bounds :initform (vec 0 0 0) :accessor bounds)))
@@ -149,6 +145,7 @@
 
 (defmethod handle-collision ((entity collidable-entity) intersection))
 
+;; FIXME for OGL3
 (defclass colored-entity (entity)
   ((color :initarg :color :initform (vec 0 0 1) :accessor color)))
 
@@ -222,6 +219,7 @@
        (call-next-method)
     (gl:use-program 0)))
 
+;; FIXME for OGL3
 (defclass face-entity (textured-entity bound-entity)
   ((tex-location :initarg :tex-location :initform (vec 0 0 0) :accessor tex-location)
    (tex-bounds :initarg :tex-bounds :initform (vec 1 1 0) :accessor tex-bounds)))

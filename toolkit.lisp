@@ -52,12 +52,6 @@
           (progn ,@body)
        (gl:end))))
 
-(defmacro with-pushed-matrix (&body body)
-  `(progn (gl:push-matrix)
-          (unwind-protect
-               (progn ,@body)
-            (gl:pop-matrix))))
-
 (defmacro with-pushed-attribs (items &body body)
   `(progn (gl:push-attrib ,@(if (eql T items) '(:all-attrib-bits) items))
           (unwind-protect
@@ -88,18 +82,6 @@
   (loop for (key val) on items by #'cddr
         do (setf (slot-value object key) val))
   object)
-
-(defun matrix-4x4 (&rest elements)
-  (let ((m (make-array '(4 4) :element-type 'single-float :initial-element 0.0f0)))
-    (loop for x in elements
-          for i from 0
-          do (setf (row-major-aref m i) x))
-    m))
-
-(defun v4 (a b c d)
-  (let ((v (make-array 4 :element-type 'float :initial-element 0.0s0)))
-    (setf (aref v 0) a (aref v 1) b (aref v 2) c (aref v 3) d)
-    v))
 
 (defmethod width ((object qobject))
   (q+:width object))

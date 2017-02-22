@@ -17,7 +17,7 @@
 
 (defmethod call-with-translation (func target (vec vec3))
   (with-pushed-matrix
-    (gl:translate (vx vec) (vy vec) (vz vec))
+    (translate vec)
     (funcall func)))
 
 (defmethod save-form-objects ((container container))

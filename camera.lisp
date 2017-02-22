@@ -7,24 +7,6 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(defun perspective-view (fovy aspect z-near z-far)
-  ;; http://nehe.gamedev.net/article/replacement_for_gluperspective/21002/
-  (let* ((fh (* (tan (* (/ fovy 360) PI)) z-near))
-         (fw (* fh aspect)))
-    (gl:frustum (- fw) fw (- fh) fh z-near z-far)))
-
-(defun look-at (eye target up)
-  (let* ((z (nvunit (v- eye target)))
-         (x (nvunit (vc up z)))
-         (y (nvunit (vc z x))))
-    (gl:mult-matrix
-     (matrix-4x4
-      (vx x) (vx y) (vx z) 0.0f0
-      (vy x) (vy y) (vy z) 0.0f0
-      (vz x) (vz y) (vz z) 0.0f0
-      0.0f0  0.0f0  0.0f0 1.0f0))
-    (gl:translate (- (vx eye)) (- (vy eye)) (- (vz eye)))))
-
 (define-subject camera (located-entity)
   ((near-plane :initarg :near-plane :accessor near-plane)
    (far-plane :initarg :far-plane :accessor far-plane))
@@ -47,16 +29,13 @@
 (defmethod paint :around ((camera camera) target))
 
 (defmethod setup-perspective :before ((camera camera) ev)
-  (gl:matrix-mode :projection)
-  (gl:load-identity))
+  (reset-matrix *projection-matrix*))
 
 (defmethod setup-perspective :after ((camera camera) ev)
-  (gl:matrix-mode :modelview)
-  (gl:load-identity)
   (gl:viewport 0 0 (width ev) (height ev)))
 
 (defmethod project-view :before ((camera camera) ev)
-  (gl:load-identity))
+  (reset-matrix))
 
 (define-subject 2d-camera (camera)
   ()
@@ -65,8 +44,8 @@
    :far-plane most-positive-double-float))
 
 (defmethod setup-perspective ((camera 2d-camera) ev)
-  (gl:ortho 0 (width ev) (height ev) 0
-            (near-plane 2d-camera) (far-plane 2d-camera)))
+  (orthographic-view 0 (width ev) (height ev) 0
+                     (near-plane 2d-camera) (far-plane 2d-camera)))
 
 (define-subject 3d-camera (camera)
   ((fov :initarg :fov :accessor fov))
@@ -131,12 +110,10 @@
 (define-saved-slots fps-camera rotation acceleration)
 
 (defmethod project-view ((camera fps-camera) ev)
-  (gl:rotate (vx (rotation camera)) 1.0 0.0 0.0)
-  (gl:rotate (vy (rotation camera)) 0.0 1.0 0.0)
-  (gl:rotate (vz (rotation camera)) 0.0 0.0 1.0)
-  (gl:translate (- (vx (location camera)))
-                (- (vy (location camera)))
-                (- (vz (location camera)))))
+  (rotate-by 1.0 0.0 0.0 (vx (rotation camera)))
+  (rotate-by 0.0 1.0 0.0 (vy (rotation camera)))
+  (rotate-by 0.0 0.0 1.0 (vz (rotation camera)))
+  (translate (v- (location camera))))
 
 (defun do-fps-movement (camera old-pos pos)
   (let ((delta (v- pos old-pos)))
