@@ -52,11 +52,6 @@
   (gl:depth-mask T)
   (gl:depth-func :lequal)
   (gl:clear-depth 1.0)
-  #+:trial-gl-compatibility
-  (progn
-    (gl:alpha-func :greater 0)
-    (gl:blend-func :src-alpha :one-minus-src-alpha)
-    (gl:shade-model :smooth))
   (gl:front-face :ccw)
   (gl:cull-face :back)
   (gl:hint :line-smooth-hint :nicest)
@@ -71,8 +66,6 @@
   (gl:enable :blend :cull-face :multisample
              :line-smooth :polygon-smooth
              :depth-test :depth-clamp)
-  #+:trial-gl-compatibility
-  (gl:enable :alpha-test :texture-2d)
   (paint source target))
 
 (defmethod render :around (source (target display))
