@@ -224,7 +224,7 @@
                      this context *context*))))))
 
 (defmethod describe-object :after ((context context) stream)
-  (format stream "~&~%Running GL~a.~a with ~a buffer~:p / ~a sample~:p, max texture size ~a.~%~
+  (format stream "~&~%Running GL~a.~a ~a with ~a buffer~:p / ~a sample~:p, max texture size ~a.~%~
                     GL info report:~%~
                     GL Vendor:     ~a~%~
                     GL Renderer:   ~a~%~
@@ -233,6 +233,7 @@
                     GL Extensions: ~a~%"
           (gl:get* :major-version)
           (gl:get* :minor-version)
+          (profile context)
           (gl:get* :sample-buffers)
           (gl:get* :samples)
           (gl:get* :max-texture-size)
