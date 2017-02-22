@@ -47,7 +47,6 @@
 
 (defmethod shared-initialize :after ((context context)
                                      slots
-                                     &rest args
                                      &key (accumulation-buffer NIL)
                                           (alpha-buffer T)
                                           (depth-buffer T)
@@ -60,16 +59,15 @@
                                           (multisampling T)
                                           (samples 2)
                                           (swap-interval 0)
-                                          (profile #+:trial-gl-compatibility :compatibility
-                                                   #-:trial-gl-compatibility :core)
-                                          (version :keep))
+                                          (profile :core)
+                                          (version '(4 5)))
   (let ((initialized (glformat context)))
     (unless initialized (setf (slot-value context 'glformat) (q+:make-qglformat)))
     (macrolet ((format-set (value &optional (accessor value))
                  (let ((keyword (intern (string value) :keyword)))
-                   `(cond ((eql :keep (getf args ,keyword :keep)))
+                   `(cond ((eql :keep ,value))
                           ((not initialized) (setf (,accessor context) ,value))
-                          (T (setf (,accessor context) (getf args ,keyword)))))))
+                          (T (setf (,accessor context) ,value))))))
       (format-set accumulation-buffer)
       (format-set alpha-buffer)
       (format-set depth-buffer)
