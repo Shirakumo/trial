@@ -8,7 +8,7 @@
 (in-readtable :qtools)
 
 (define-widget display (QGLWidget context renderable)
-  ((clear-color :initarg :clear-color :initform (vec 0 0 0) :accessor clear-color)))
+  ((clear-color :initarg :clear-color :initform (vec 0.2 0.3 0.3) :accessor clear-color)))
 
 (defmethod handle (event (display display)))
 
