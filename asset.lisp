@@ -214,3 +214,115 @@
                       (gl:vertex-attrib-pointer index size (element-type buffer) normalized stride offset)
                       (gl:enable-vertex-attrib-array index)))
         (gl:bind-vertex-array 0)))))
+
+(defclass texture-asset (asset)
+  ((target :initarg :target :accessor target)
+   (mag-filter :initarg :mag-filter :accessor mag-filter)
+   (min-filter :initarg :min-filter :accessor min-filter)
+   (anisotropy :initarg :anisotropy :accessor anisotropy)
+   (wrapping :initarg :wrapping :reader wrapping))
+  (:default-initargs
+   :target :texture-2d
+   :mag-filter :linear
+   :min-filter :linear
+   :anisotropy NIL
+   :wrapping :clamp-to-edge))
+
+(defmethod initialize-instnace :around ((asset texture-asset) &rest args)
+  (setf (getf args :wrapping) (enlist (getf args :wrapping) (getf args :wrapping) (getf args :wrapping)))
+  (apply #'call-next-method asset args))
+
+(defmethod initialize-instance :before ((asset texture-asset) &key target mag-filter min-filter wrapping)
+  (check-texture-target target)
+  (check-texture-mag-filter mag-filter)
+  (check-texture-min-filter min-filter)
+  (check-texture-wrapping (first wrapping))
+  (check-texture-wrapping (second wrapping))
+  (check-texture-wrapping (third wrapping)))
+
+(defmethod coerce-input ((asset texture-asset) (file pathname))
+  (with-finalizing ((image (q+:make-qimage (uiop:native-namestring file))))
+    (when (q+:is-null image)
+      (error "Qt failed to load image ~s" file))
+    (coerce-input asset image)))
+
+(defmethod coerce-input ((asset texture-asset) (object qobject))
+  (q+:qglwidget-convert-to-glformat object))
+
+(defmethod offload-asset ((asset texture-asset))
+  (gl:delete-textures (list (resource asset))))
+
+(defun images-to-textures (target images &optional (offset 0))
+  (case target
+    (:texture-cube-map
+     (cond ((= 6 (length images))
+            (loop for image in images
+                  for target in '(:texture-cube-map-positive-x :texture-cube-map-negative-x
+                                  :texture-cube-map-positive-y :texture-cube-map-negative-y
+                                  :texture-cube-map-positive-z :texture-cube-map-negative-z)
+                  do (images-to-textures target (list image))))
+           ((= 1 (length images))
+            (let ((image (first images)))
+              (loop with width = (q+:width image)
+                    with height = (/ (q+:height image) 6)
+                    for target in '(:texture-cube-map-positive-x :texture-cube-map-negative-x
+                                    :texture-cube-map-positive-y :texture-cube-map-negative-y
+                                    :texture-cube-map-positive-z :texture-cube-map-negative-z)
+                    for index from 0
+                    do (images-to-textures target (list image) (* width height index 4)))))
+           (T
+            (error "Only one or six inputs are supported for the TEXTURE-CUBE-MAP target."))))
+    (T
+     (when (cdr images) (error "Only one input is supported for the ~a target." target))
+     (let ((image (first images)))
+       (gl:tex-image-2d target 0 :rgba (q+:width image) (q+:height image) 0 :rgba :unsigned-byte
+                        (cffi:inc-pointer (q+:bits image) offset))))))
+
+(defmethod load-asset ((asset texture-asset))
+  (with-slots (target mag-filter min-filter anisotropy wrapping) asset
+    (let ((images (coerced-inputs asset)))
+      (unwind-protect
+           (let ((texture (setf (resource asset) (gl:gen-texture))))
+             (with-cleanup-on-failure (offload-asset asset)
+               (gl:bind-texture target texture)
+               (images-to-textures target images)
+               (unless (or (eql min-filter :nearest) (eql min-filter :linear))
+                 (gl:generate-mipmap target))
+               (gl:tex-parameter target :texture-min-filter min-filter)
+               (gl:tex-parameter target :texture-mag-filter mag-filter)
+               (gl:tex-parameter target :texture-wrap-s (first wrapping))
+               (gl:tex-parameter target :texture-wrap-t (second wrapping))
+               (unless (eql target :texture-2d)
+                 (gl:tex-parameter target :texture-wrap-r (third wrapping)))
+               (when anisotropy
+                 (gl:tex-parameter target :texture-max-anisotropy-ext anisotropy))))
+        (mapc #'finalize images)))))
+
+(defclass framebuffer-asset (asset)
+  ((attachment :initarg :attachment :accessor attachment)
+   (width :initarg :width :accessor width)
+   (height :initarg :height :accessor height)
+   (mipmap :initarg :mipmap :accessor mipmap)
+   (samples :initarg :samples :reader samples))
+  (:default-initargs
+   :attachment :depth-stencil
+   :mipmap NIL
+   :samples 0))
+
+(defmethod initialize-instance :before ((asset framebuffer-asset) &key attachment width height)
+  (unless width (error "WIDTH required."))
+  (unless height (error "HEIGHT required."))
+  (check-framebuffer-attachment attachment))
+
+(defmethod offload-asset ((asset framebuffer-asset))
+  (finalize (resource asset)))
+
+(defmethod load-asset ((asset framebuffer-asset))
+  (with-finalizing ((format (q+:make-qglframebufferobjectformat)))
+    (setf (q+:mipmap format) (mipmap asset))
+    (setf (q+:samples format) (samples asset))
+    (setf (q+:attachment format) (ecase (attachment asset)
+                                   (:depth-stencil (q+:qglframebufferobject.combined-depth-stencil))
+                                   (:depth (q+:qglframebufferobject.depth))
+                                   ((NIL) (q+:qglframebufferobject.no-attachment))))
+    (setf (resource asset) (q+:make-qglframebufferobject (width asset) (height asset) format))))

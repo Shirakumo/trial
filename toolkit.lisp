@@ -300,7 +300,10 @@
 
 (defun check-texture-min-filter (filter)
   (ecase filter ((:nearest :linear :nearest-mipmap-nearest :nearest-mipmap-linear
-                           :linear-mipmap-nearest :linear-mipmap-linear))))
+                  :linear-mipmap-nearest :linear-mipmap-linear))))
+
+(defun check-texture-wrapping (wrapping)
+  (ecase wrapping ((:repeat :mirrored-repeat :clamp-to-edge :clamp-to-border))))
 
 (defun check-shader-type (shader-type)
   (ecase shader-type ((:compute-shader :vertex-shader
