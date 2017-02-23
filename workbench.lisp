@@ -1,59 +1,53 @@
+(in-package #:trial)
+(in-readtable :qtools)
 
 (define-asset shader primitive-vert (trial)
   :file "primitive.vert")
+
 (define-asset shader primitive-frag (trial)
   :file "primitive.frag")
+
 (define-asset shader-program primitive (trial)
   :shaders '((trial primitive-vert)
              (trial primitive-frag)))
 
-(define-asset vertex-buffer triangle (trial)
-  :buffer-type :array-buffer
-  :buffer-data '(-0.5 -0.5 0.0
-                 +0.5 -0.5 0.0
-                 +0.0 +0.5 0.0))
-(define-asset vertex-array triangle (trial)
-  :buffers '((trial triangle)))
-
-(define-asset vertex-buffer square (trial)
-  :buffer-type :array-buffer
-  :buffer-data '(-0.5 -0.5 0.0
-                 +0.5 -0.5 0.0
-                 +0.5 +0.5 0.0
-                 -0.5 +0.5 0.0))
-(define-asset vertex-buffer square-tex (trial)
-  :buffer-type :array-buffer
-  :buffer-data '(1.0 1.0
-                 0.0 1.0
-                 0.0 0.0
-                 1.0 0.0))
-(define-asset vertex-array square (trial)
-  :buffers '((trial square)
-             (trial square-tex :size 2)))
-
-(defmethod setup-scene ((main main))
-  (let ((scene (scene main)))
-    ;;(enter (make-instance 'skybox) scene)
-    ;;(enter (make-instance 'space-axes) scene)
-    ;;(enter (make-instance 'player) scene)
-    ;;(enter (make-instance 'following-camera :name :camera :target (unit :player scene)) scene)
-    ;;(enter (make-instance 'selection-buffer :name :selection-buffer) scene)
-    ))
-
 (defmethod paint ((source main) (target main))
+  (gl:viewport 0 0 (width target) (height target))
   (issue (scene target) 'tick)
   (process (scene target))
-  ;; (paint (scene source) target)
-  ;; (paint (hud source) target)
-  (let ((shader (get-resource 'shader-program :trial 'primitive))
-        (square (get-resource 'vertex-array :trial 'square))
-        (texture (get-resource 'texture :trial 'cat)))
-    (gl:bind-texture :texture-2d (data texture))
-    (gl:use-program (data shader))
-    (gl:bind-vertex-array (data square))
-    (dotimes (i 100)
-      (setf (uniform shader :transform)
-            (marr (nmrotate (mtranslation (vec (cos i) (sin i) 0))
-                            +vz+ (sin i))))
-      (gl:draw-arrays :quads 0 4))
-    (gl:use-program 0)))
+  (let* ((triangle-buffer (make-asset 'vertex-buffer-asset '((-0.5 -0.5  0.0
+                                                              0.5 -0.5  0.0
+                                                              0.0  0.5  0.0))))
+         (triangle-array (make-asset 'vertex-array-asset `((,triangle-buffer :size 3))))
+         (vertex-shader (make-asset 'shader-asset '("
+#version 330 core
+  
+layout (location = 0) in vec3 position;
+
+void main(){
+  gl_Position = vec4(position, 1.0f);
+}") :type :vertex-shader))
+         (fragment-shader (make-asset 'shader-asset '("
+#version 330 core
+
+out vec4 color;
+
+void main(){
+  color = vec4(1.0, 0.2, 0.2, 1.0);
+}") :type :fragment-shader))
+         (shader-program (make-asset 'shader-program-asset (list vertex-shader fragment-shader))))
+    (load-asset triangle-buffer)
+    (load-asset triangle-array)
+    (load-asset vertex-shader)
+    (load-asset fragment-shader)
+    (load-asset shader-program)
+    (gl:use-program (resource shader-program))
+    (gl:bind-vertex-array (resource triangle-array))
+    (gl:draw-arrays :triangles 0 3)
+    (gl:bind-vertex-array 0)
+    (gl:use-program 0)
+    (offload-asset triangle-buffer)
+    (offload-asset triangle-array)
+    (offload-asset vertex-shader)
+    (offload-asset fragment-shader)
+    (offload-asset shader-program)))
