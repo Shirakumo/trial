@@ -1,0 +1,10 @@
+# Trial Asset System
+The asset system is a central element of the Trial engine. It takes care of loading and offloading static resources that the graphics and sound pipelines will need. Understanding the asset system is therefore paramount to working with Trial.
+
+## Asset Basics
+An asset is, just like every object, composed of a type and instances thereof. The type describes the mechanisms in order to "load" and "offload" an asset instance, and in order to access its "resource". Loading an asset ensures that its resource object is accessible. This may be costly and take up additional memory. Offloading an asset ensures the resource is no longer accessible and will free the additional memory taken up. The resource itself is some kind of object that is specific to the type of asset and represents the data that was loaded.
+
+An asset instance has one or more "inputs". An input is some kind of abstract descriptor of the resource that will be managed by the asset. The inputs must correspond to the format dictated by the asset's type. The asset must then, when being loaded, conver the inputs into the resource object. In doing so, it is not allowed to modify the inputs in any way.
+
+## Asset Management
+The system should take care of loading and offloading the assets at appropriate times by itself. 
