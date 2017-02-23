@@ -155,66 +155,31 @@
   (let ((c (color entity)))
     (gl:color (vx c) (vy c) (vz c))))
 
+;; FIXME for asset
 (defclass textured-entity (entity)
   ((texture :initform NIL :accessor texture)))
 
 (defmethod shared-initialize :after ((entity textured-entity) slots &key (texture NIL t-p) &allow-other-keys)
   (when t-p (setf (texture entity) texture)))
 
-(defmethod (setf texture) ((resource resource) (entity textured-entity))
-  (setf (slot-value entity 'texture) resource))
-
-(defmethod (setf texture) ((null null) (entity textured-entity))
-  (setf (slot-value entity 'texture) NIL))
-
-(defmethod (setf texture) ((id list) (entity textured-entity))
-  (setf (texture entity) (get-resource 'texture (first id) (second id))))
-
 (defmethod paint :around ((obj textured-entity) target)
   (let* ((tex (texture obj))
-         (target (slot-value tex 'target)))
+         (target (target tex)))
     (when tex
-      (gl:bind-texture target (data tex))
+      (gl:bind-texture target (resource tex))
       (call-next-method)
       (gl:bind-texture target 0))))
 
-(defclass mesh-entity (entity)
-  ((mesh :initform NIL :accessor mesh)))
-
-(defmethod shared-initialize :after ((entity mesh-entity) slots &key (mesh NIL t-p) &allow-other-keys)
-  (when t-p (setf (mesh entity) mesh)))
-
-(defmethod (setf mesh) ((resource resource) (entity mesh-entity))
-  (setf (slot-value entity 'mesh) resource))
-
-(defmethod (setf mesh) ((null null) (entity mesh-entity))
-  (setf (slot-value entity 'mesh) NIL))
-
-(defmethod (setf mesh) ((id list) (entity mesh-entity))
-  (setf (mesh entity) (get-resource 'model (first id) (second id))))
-
-(defmethod paint ((entity mesh-entity) target)
-  (loop for mesh across (data (mesh entity))
-        do (wavefront-loader:draw mesh)))
-
+;; FIXME for asset & OGL3
 (defclass shader-entity (entity)
   ((shader-program :accessor shader-program)))
 
 (defmethod shared-initialize :after ((entity shader-entity) slots &key (shader-program NIL s-p))
   (when s-p (setf (shader-program entity) shader-program)))
 
-(defmethod (setf shader-program) ((resource resource) (entity shader-entity))
-  (setf (slot-value entity 'shader-program) resource))
-
-(defmethod (setf shader-program) ((null null) (entity shader-entity))
-  (setf (slot-value entity 'shader-program) NIL))
-
-(defmethod (setf shader-program) ((id list) (entity shader-entity))
-  (setf (shader-program entity) (get-resource 'shader-program (first id) (second id))))
-
 (defmethod paint :around ((entity shader-entity) target)
   (when (shader-program entity)
-    (gl:use-program (data (shader-program entity))))
+    (gl:use-program (resource (shader-program entity))))
   (unwind-protect
        (call-next-method)
     (gl:use-program 0)))

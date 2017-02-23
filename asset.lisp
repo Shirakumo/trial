@@ -44,12 +44,15 @@
   (apply #'make-instance type :inputs (enlist inputs) initargs))
 
 (defmacro with-assets (asset-specs &body body)
-  (let ((storage (make-hash-table :test 'eq)))
-    `(let* ,(loop for (name . initargs) in asset-specs
-                  collect `(,name (or (gethash ',name ,storage)
-                                      (setf (gethash ',name ,storage)
-                                            (make-asset ,@initargs)))))
-       ,@body)))
+  (if asset-specs
+      (destructuring-bind (variable . initform) (first asset-specs)
+        `(let ((,variable (make-asset ,@initform)))
+           (load-asset ,variable)
+           (unwind-protect
+                (with-assets ,(rest asset-specs)
+                  ,@body)
+             (offload-asset ,variable))))
+      `(progn ,@body)))
 
 (defclass shader-asset (asset)
   ((shader-type :initarg :type :accessor shader-type)))
@@ -144,16 +147,16 @@
                    (3 (gl:uniform-matrix-4x3-fv location (marrn data))))))))))
 
 (defclass vertex-buffer-asset (asset)
-  ((buffer-type :initarg :buffer-type :accessor buffer-type)
+  ((buffer-type :initarg :type :accessor buffer-type)
    (element-type :initarg :element-type :accessor element-type)
    (data-usage :initarg :data-usage :accessor data-usage))
   (:default-initargs
-   :buffer-type :array-buffer
+   :type :array-buffer
    :element-type :float
    :data-usage :static-draw))
 
-(defmethod initialize-instance :before ((asset vertex-buffer-asset) &key buffer-type element-type data-usage)
-  (check-vertex-buffer-type buffer-type)
+(defmethod initialize-instance :before ((asset vertex-buffer-asset) &key type element-type data-usage)
+  (check-vertex-buffer-type type)
   (check-vertex-buffer-element-type element-type)
   (check-vertex-buffer-data-usage data-usage))
 
@@ -163,8 +166,11 @@
 (defmethod coerce-input ((asset vertex-buffer-asset) (list list))
   (coerce list 'vector))
 
+(defmethod coerce-input ((asset vertex-buffer-asset) (number real))
+  (make-array 1 :initial-element (float number)))
+
 (defmethod offload-asset ((asset vertex-buffer-asset))
-  (gl:delete-buffers (resource asset)))
+  (gl:delete-buffers (list (resource asset))))
 
 (defmethod load-asset ((asset vertex-buffer-asset))
   (let ((buffer-data (let ((output (make-array 0 :adjustable T :fill-pointer T)))
@@ -193,7 +199,7 @@
 (defmethod coerce-input ((asset vertex-array-asset) (spec list))
   spec)
 
-(defmethod offload-asset ((asset vertex-buffer-asset))
+(defmethod offload-asset ((asset vertex-array-asset))
   (gl:delete-vertex-arrays (list (resource asset))))
 
 (defmethod load-asset ((asset vertex-array-asset))
@@ -204,15 +210,17 @@
       (unwind-protect
            (loop for buffer in (coerced-inputs asset)
                  for i from 0
-                 do (destructuring-bind (buffer &key (index i)
-                                                     (size 3)
-                                                     (normalized NIL)
-                                                     (stride 0)
-                                                     (offset 0))
+                 do (destructuring-bind (buffer/s &key (index i)
+                                                       (size 3)
+                                                       (normalized NIL)
+                                                       (stride 0)
+                                                       (offset 0))
                         buffer
-                      (gl:bind-buffer (buffer-type buffer) (resource buffer))
-                      (gl:vertex-attrib-pointer index size (element-type buffer) normalized stride offset)
-                      (gl:enable-vertex-attrib-array index)))
+                      (let ((buffers (enlist buffer/s)))
+                        (dolist (buffer buffers)
+                          (gl:bind-buffer (buffer-type buffer) (resource buffer)))
+                        (gl:vertex-attrib-pointer index size (element-type (first buffers)) normalized stride offset)
+                        (gl:enable-vertex-attrib-array index))))
         (gl:bind-vertex-array 0)))))
 
 (defclass texture-asset (asset)
@@ -228,7 +236,7 @@
    :anisotropy NIL
    :wrapping :clamp-to-edge))
 
-(defmethod initialize-instnace :around ((asset texture-asset) &rest args)
+(defmethod initialize-instance :around ((asset texture-asset) &rest args)
   (setf (getf args :wrapping) (enlist (getf args :wrapping) (getf args :wrapping) (getf args :wrapping)))
   (apply #'call-next-method asset args))
 

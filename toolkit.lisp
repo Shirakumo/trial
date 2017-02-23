@@ -177,6 +177,7 @@
                       (return NIL))
                     (bt:thread-yield))))
 
+(defvar *standalone* NIL)
 (defun standalone-error-handler (err)
   (when *standalone*
     (v:debug :trial err)

@@ -32,7 +32,7 @@
        (setf (ldb (byte 8 24) id) (aref color 0))
        id))))
 
-(define-subject selection-buffer (framebuffer hud-entity unsavable)
+(define-subject selection-buffer (framebuffer-asset hud-entity unsavable)
   ((resource :initform (tg:make-weak-hash-table :weakness :key))
    (selected :initform NIL :accessor selected)
    (name-map :initform (trivial-garbage:make-weak-hash-table :test 'eql :weakness :value) :reader name-map)

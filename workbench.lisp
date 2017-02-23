@@ -1,53 +1,57 @@
 (in-package #:trial)
 (in-readtable :qtools)
 
-(define-asset shader primitive-vert (trial)
-  :file "primitive.vert")
-
-(define-asset shader primitive-frag (trial)
-  :file "primitive.frag")
-
-(define-asset shader-program primitive (trial)
-  :shaders '((trial primitive-vert)
-             (trial primitive-frag)))
-
 (defmethod paint ((source main) (target main))
   (gl:viewport 0 0 (width target) (height target))
   (issue (scene target) 'tick)
   (process (scene target))
-  (let* ((triangle-buffer (make-asset 'vertex-buffer-asset '((-0.5 -0.5  0.0
-                                                              0.5 -0.5  0.0
-                                                              0.0  0.5  0.0))))
-         (triangle-array (make-asset 'vertex-array-asset `((,triangle-buffer :size 3))))
-         (vertex-shader (make-asset 'shader-asset '("
+  (with-assets ((vertex-buffer 'vertex-buffer-asset '(+0.5  0.5 0.0  1.0 1.0
+                                                      +0.5 -0.5 0.0  1.0 0.0
+                                                      -0.5 -0.5 0.0  0.0 0.0
+                                                      -0.5  0.5 0.0  0.0 1.0))
+                (element-buffer 'vertex-buffer-asset '(3 1 0 3 2 1) :type :element-array-buffer :element-type :uint)
+                (triangle-array 'vertex-array-asset `(((,vertex-buffer ,element-buffer) :size 3 :stride 20 :offset  0)
+                                                      ((,vertex-buffer ,element-buffer) :size 2 :stride 20 :offset 12)))
+                (cat-texture 'texture-asset '(#p"/home/linus/av.png"))
+                (vertex-shader 'shader-asset '("
 #version 330 core
   
 layout (location = 0) in vec3 position;
+layout (location = 1) in vec2 dtexcoord;
+
+out vec2 texcoord;
+
+uniform mat4 model_matrix;
+uniform mat4 view_matrix;
+uniform mat4 projection_matrix;
 
 void main(){
-  gl_Position = vec4(position, 1.0f);
-}") :type :vertex-shader))
-         (fragment-shader (make-asset 'shader-asset '("
+  gl_Position = projection_matrix * view_matrix * model_matrix * vec4(position, 1.0f);
+  texcoord = dtexcoord;
+}") :type :vertex-shader)
+                (fragment-shader 'shader-asset '("
 #version 330 core
 
+in vec2 texcoord;
 out vec4 color;
+uniform sampler2D teximage;
 
 void main(){
-  color = vec4(1.0, 0.2, 0.2, 1.0);
-}") :type :fragment-shader))
-         (shader-program (make-asset 'shader-program-asset (list vertex-shader fragment-shader))))
-    (load-asset triangle-buffer)
-    (load-asset triangle-array)
-    (load-asset vertex-shader)
-    (load-asset fragment-shader)
-    (load-asset shader-program)
+  color = texture(teximage, texcoord);
+}") :type :fragment-shader)
+                (shader-program 'shader-program-asset (list vertex-shader fragment-shader)))
     (gl:use-program (resource shader-program))
     (gl:bind-vertex-array (resource triangle-array))
-    (gl:draw-arrays :triangles 0 3)
+    (with-pushed-matrix
+      (translate-by 0.5 0.5 0)
+      (rotate +vz+ 15)
+      (setf (uniform shader-program "model_matrix") (model-matrix))
+      (setf (uniform shader-program "view_matrix") (view-matrix))
+      (setf (uniform shader-program "projection_matrix") (projection-matrix))
+      (%gl:draw-elements :triangles 6 :unsigned-int 0))
+    (setf (uniform shader-program "model_matrix") (model-matrix))
+    (setf (uniform shader-program "view_matrix") (view-matrix))
+    (setf (uniform shader-program "projection_matrix") (projection-matrix))
+    (%gl:draw-elements :triangles 6 :unsigned-int 0)
     (gl:bind-vertex-array 0)
-    (gl:use-program 0)
-    (offload-asset triangle-buffer)
-    (offload-asset triangle-array)
-    (offload-asset vertex-shader)
-    (offload-asset fragment-shader)
-    (offload-asset shader-program)))
+    (gl:use-program 0)))
