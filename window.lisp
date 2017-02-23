@@ -23,7 +23,7 @@
 (defun (setf window) (window name)
   (etypecase window (window))
   (when (window name)
-    (error "A window with the name ~s is already known!" name))
+    (cerror "Overwrite it" "A window with the name ~s is already known!" name))
   (setf (gethash (window-name name) *windows*) window))
 
 (defun remove-window (name)
