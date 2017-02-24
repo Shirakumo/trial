@@ -68,6 +68,26 @@
              (offload-asset ,variable))))
       `(progn ,@body)))
 
+(defvar *asset-cache* (tg:make-weak-hash-table :weakness :key :test 'eq))
+
+(defun clear-asset-cache ()
+  (loop for table being the hash-values of *asset-cache*
+        do (loop for asset being the hash-values of table
+                 do (offload-asset asset)))
+  (clrhash *asset-cache*))
+
+(defmacro with-assets* (asset-specs &body body)
+  (let ((index (gensym "INDEX"))
+        (table (gensym "TABLE")))
+    `(let* ((,table (or (gethash ',index *asset-cache*)
+                        (setf (gethash ',index *asset-cache*)
+                              (make-hash-table :test 'eq))))
+            ,@(loop for (variable . initform) in asset-specs
+                    collect `(,variable (or (gethash ',variable ,table)
+                                            (setf (gethash ',variable ,table)
+                                                  (load-asset (make-asset ,@initform)))))))
+       ,@body)))
+
 (defclass shader-asset (asset)
   ((shader-type :initarg :type :accessor shader-type)))
 
