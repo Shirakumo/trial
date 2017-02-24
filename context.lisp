@@ -154,7 +154,7 @@
   (when (q+:is-valid context)
     (v:info :trial.context "Destroying context.")
     (q+:hide context)
-    (mapc #'offload (pools))
+    (clear-asset-cache)
     (q+:reset (q+:context context))))
 
 (defmethod create-context :around ((context context))

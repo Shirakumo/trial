@@ -31,9 +31,7 @@
   (v:info :trial.main "RAPTURE")
   (acquire-context main :force T)
   (finalize controller)
-  (finalize scene)
-  (dolist (pool (pools))
-    (mapc #'offload (assets pool))))
+  (finalize scene))
 
 (define-override (main focus-in-event) (ev)
   ;; FIXME: too primitive, must account for menus and such at a later point.

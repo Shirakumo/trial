@@ -17,7 +17,17 @@
 (defmethod print-object ((asset asset) stream)
   (print-unreadable-object (asset stream :type T :identity T)))
 
-(defmethod finalize-resource ((asset asset) resource))
+(defmethod finalize-resource ((asset asset) resource)
+  (finalize-resource (type-of asset) resource))
+
+(defmethod finalize-resource :before ((type symbol) resource)
+  (v:debug :trial.asset "Finalising resource ~a of type ~a"
+           resource type))
+
+(defmethod (setf resource) :after (value (asset asset))
+  (when value
+    (let ((type (type-of asset)))
+      (tg:finalize asset (lambda () (finalize-resource type value))))))
 
 (defmethod coerce-input ((asset asset) input)
   (error "Incompatible input type ~s for asset of type ~s."
@@ -34,8 +44,12 @@
 
 (defmethod offload-asset :around ((asset asset))
   (when (resource asset)
+    (tg:cancel-finalization asset)
     (call-next-method))
   asset)
+
+(defmethod offload-asset ((asset asset))
+  (finalize-resource asset (resource asset)))
 
 (defmethod finalize :after ((asset asset))
   (offload-asset asset))
@@ -66,8 +80,8 @@
 (defmethod coerce-input ((asset shader-asset) (source string))
   source)
 
-(defmethod offload-asset ((asset shader-asset))
-  (gl:delete-shader (resource asset)))
+(defmethod finalize-resource ((type (eql 'shader-asset)) resource)
+  (gl:delete-shader resource))
 
 (defmethod load-asset ((asset shader-asset))
   (let ((source (with-output-to-string (output)
@@ -97,8 +111,8 @@
                (setf (gethash (shader-type shader) table) shader))
         finally (return shaders)))
 
-(defmethod offload-asset ((asset shader-program-asset))
-  (gl:delete-program (resource asset)))
+(defmethod finalize-resource ((type (eql 'shader-program-asset)) resource)
+  (gl:delete-program resource))
 
 (defmethod load-asset ((asset shader-program-asset))
   (let ((shaders (coerced-inputs asset)))
@@ -169,8 +183,8 @@
 (defmethod coerce-input ((asset vertex-buffer-asset) (number real))
   (make-array 1 :initial-element (float number)))
 
-(defmethod offload-asset ((asset vertex-buffer-asset))
-  (gl:delete-buffers (list (resource asset))))
+(defmethod finalize-resource ((type (eql 'vertex-buffer-asset)) resource)
+  (gl:delete-buffers (list resource)))
 
 (defmethod load-asset ((asset vertex-buffer-asset))
   (let ((buffer-data (let ((output (make-array 0 :adjustable T :fill-pointer T)))
@@ -199,8 +213,8 @@
 (defmethod coerce-input ((asset vertex-array-asset) (spec list))
   spec)
 
-(defmethod offload-asset ((asset vertex-array-asset))
-  (gl:delete-vertex-arrays (list (resource asset))))
+(defmethod finalize-resource ((type (eql 'vertex-array-asset)) resource)
+  (gl:delete-vertex-arrays (list resource)))
 
 (defmethod load-asset ((asset vertex-array-asset))
   (let ((array (gl:gen-vertex-array)))
@@ -257,8 +271,8 @@
 (defmethod coerce-input ((asset texture-asset) (object qobject))
   (q+:qglwidget-convert-to-glformat object))
 
-(defmethod offload-asset ((asset texture-asset))
-  (gl:delete-textures (list (resource asset))))
+(defmethod finalize-resource ((type (eql 'texture-asset)) resource)
+  (gl:delete-textures (list resource)))
 
 (defun images-to-textures (target images &optional (offset 0))
   (case target
@@ -322,8 +336,8 @@
   (unless height (error "HEIGHT required."))
   (check-framebuffer-attachment attachment))
 
-(defmethod offload-asset ((asset framebuffer-asset))
-  (finalize (resource asset)))
+(defmethod finalize-resource ((type (eql 'framebuffer-asset)) resource)
+  (finalize resource))
 
 (defmethod load-asset ((asset framebuffer-asset))
   (with-finalizing ((format (q+:make-qglframebufferobjectformat)))
