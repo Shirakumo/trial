@@ -33,10 +33,10 @@
 (defun look-at (eye target up)
   (setf *view-matrix* (mlookat eye target up)))
 
-(defun perspective-view (fovy aspect near far)
+(defun perspective-projection (fovy aspect near far)
   (setf *projection-matrix* (mperspective fovy aspect near far)))
 
-(defun orthographic-view (left right bottom top near far)
+(defun orthographic-projection (left right bottom top near far)
   (setf *projection-matrix* (mortho left right bottom top near far)))
 
 (defun model-matrix ()
