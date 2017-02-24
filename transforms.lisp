@@ -7,6 +7,8 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
+;; FIXME: inline and compiler-macro things to make it more efficient
+
 (defvar *view-matrix* (meye 4))
 (defvar *projection-matrix* (meye 4))
 (defvar *model-matrix-stack* (list (meye 4)))
@@ -60,23 +62,23 @@
                (progn ,@body)
             (pop-matrix))))
 
-(defun translate (v)
-  (nmtranslate (model-matrix) v))
+(defun translate (v &optional (matrix (model-matrix)))
+  (nmtranslate matrix v))
 
-(defun translate-by (x y z)
-  (translate (vec3 x y z)))
+(defun translate-by (x y z &optional (matrix (model-matrix)))
+  (translate (vec3 x y z) matrix))
 
-(defun rotate (v angle)
-  (nmrotate (model-matrix) v angle))
+(defun rotate (v angle &optional (matrix (model-matrix)))
+  (nmrotate matrix v angle))
 
-(defun rotate-by (x y z angle)
-  (rotate (vec3 x y z) angle))
+(defun rotate-by (x y z angle &optional (matrix (model-matrix)))
+  (rotate (vec3 x y z) angle matrix))
 
-(defun scale (v)
-  (nmscale (model-matrix) v))
+(defun scale (v &optional (matrix (model-matrix)))
+  (nmscale matrix v))
 
-(defun scale-by (x y z)
-  (scale (vec3 x y z)))
+(defun scale-by (x y z &optional (matrix (model-matrix)))
+  (scale (vec3 x y z) matrix))
 
 (defun reset-matrix (&optional (matrix (model-matrix)))
   (with-fast-matref (a matrix 4)
