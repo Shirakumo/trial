@@ -12,7 +12,7 @@
                  (element-buffer 'vertex-buffer-asset '(3 1 0 3 2 1) :type :element-array-buffer :element-type :uint)
                  (triangle-array 'vertex-array-asset `(((,vertex-buffer ,element-buffer) :size 3 :stride 20 :offset  0)
                                                        ((,vertex-buffer ,element-buffer) :size 2 :stride 20 :offset 12)))
-                 (avatar-texture 'texture-asset '(#p"/home/linus/av.png"))
+                 (avatar-texture 'texture-asset '(#p"/home/linus/avc.png"))
                  (vertex-shader 'shader-asset '("
 #version 330 core
   
@@ -46,8 +46,8 @@ void main(){
     (reset-matrix (projection-matrix))
     (reset-matrix (view-matrix))
     (perspective-projection 45 (/ (width target) (height target)) 0.1 100)
-    (translate-by 0 0 3 (view-matrix))
-    (rotate +vx+ 0.1)
+    (translate-by 0 0 -3 (view-matrix))
+    (rotate +vx+ 0.03)
     (rotate +vy+ 0.05)
     (flet ((draw ()
              (setf (uniform shader-program "model_matrix") (model-matrix))
