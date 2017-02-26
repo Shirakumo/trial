@@ -51,6 +51,7 @@
 (defmethod setup-rendering ((display display))
   (gl:depth-mask T)
   (gl:depth-func :lequal)
+  (gl:blend-func :src-alpha :one-minus-src-alpha)
   (gl:clear-depth 1.0)
   (gl:front-face :ccw)
   (gl:cull-face :back)
