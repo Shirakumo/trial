@@ -26,6 +26,7 @@
                (:file "context")
                (:file "display")
                (:file "asset")
+               (:file "asset-pool")
                (:file "geometry")
                (:file "helpers")
                (:file "event-loop")
