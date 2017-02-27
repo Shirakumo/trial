@@ -270,20 +270,20 @@
 
 (defun gl-coerce (thing type)
   (ecase type
-    (:double
+    ((:double :double-float)
      (float thing 0.0d0))
-    (:float
+    ((:float :single-float)
      (float thing 0.0s0))
-    (:int
+    ((:int)
      (check-gl-type thing 32)
      (values (round thing)))
-    (:uint
+    ((:uint :unsigned-int)
      (check-gl-type thing 32 T)
      (values (round thing)))
-    (:char
+    ((:char :byte)
      (check-gl-type thing 8)
      (values (round thing)))
-    (:uchar
+    ((:uchar :unsigned-char :unsigned-byte)
      (check-gl-type thing 8 T)
      (values (round thing)))))
 
@@ -294,7 +294,9 @@
              width height max))))
 
 (defun check-texture-target (target)
-  (ecase target ((:texture-2d :texture-cube-map))))
+  (ecase target ((:texture-1d :texture-2d :texture-3d :texture-1d-array
+                  :texture-2d-array :texture-rectangle :texture-cube-map :texture-cube-map-array
+                  :texture-buffer :texture-2d-multisample :texture-2d-multisample-array))))
 
 (defun check-texture-mag-filter (filter)
   (ecase filter ((:nearest :linear))))
@@ -331,4 +333,6 @@
                       :dynamic-copy))))
 
 (defun check-framebuffer-attachment (attachment)
-  (ecase attachment ((:depth-stencil :depth NIL))))
+  (ecase attachment ((:color-attachment0 :color-attachment1 :color-attachment2 :color-attachment3
+                      :color-attachment4 :color-attachment5 :color-attachment6 :color-attachment7
+                      :depth-attachment :stencil-attachment :depth-stencil-attachment))))
