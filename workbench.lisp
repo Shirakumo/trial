@@ -5,11 +5,11 @@
   (gl:viewport 0 0 (width target) (height target))
   (issue (scene target) 'tick)
   (process (scene target))
-  (with-assets* ((vertex-buffer 'vertex-buffer-asset '(+0.5  0.5 0.0  1.0 1.0
-                                                       +0.5 -0.5 0.0  1.0 0.0
-                                                       -0.5 -0.5 0.0  0.0 0.0
-                                                       -0.5  0.5 0.0  0.0 1.0))
-                 (element-buffer 'vertex-buffer-asset '(3 1 0 3 2 1) :type :element-array-buffer :element-type :uint)
+  (with-assets* ((vertex-buffer 'vertex-buffer-asset '((+0.5  0.5 0.0  1.0 1.0
+                                                         +0.5 -0.5 0.0  1.0 0.0
+                                                         -0.5 -0.5 0.0  0.0 0.0
+                                                         -0.5  0.5 0.0  0.0 1.0)))
+                 (element-buffer 'vertex-buffer-asset '((3 1 0 3 2 1)) :type :element-array-buffer :element-type :uint)
                  (triangle-array 'vertex-array-asset `(((,vertex-buffer ,element-buffer) :size 3 :stride 20 :offset  0)
                                                        ((,vertex-buffer ,element-buffer) :size 2 :stride 20 :offset 12)))
                  (avatar-texture 'texture-asset '(#p"/home/linus/avc.png"))
@@ -49,6 +49,7 @@ void main(){
     (translate-by 0 0 -3 (view-matrix))
     (rotate +vx+ 0.03)
     (rotate +vy+ 0.05)
+    (rotate +vz+ 0.07)
     (flet ((draw ()
              (setf (uniform shader-program "model_matrix") (model-matrix))
              (setf (uniform shader-program "view_matrix") (view-matrix))

@@ -11,8 +11,8 @@
 
 (defclass asset ()
   ((inputs :initarg :inputs :accessor inputs)
-   (resource :initarg :resource :accessor resource))
-  (:default-initargs :inputs () :resource NIL))
+   (resource :initform NIL :accessor resource))
+  (:default-initargs :inputs ()))
 
 (defmethod initialize-instance :around ((asset asset) &rest args &key input inputs)
   (when input (setf (getf args :inputs) (list* input inputs)))
@@ -307,7 +307,16 @@
 (defmethod finalize-resource ((type (eql 'texture-asset)) resource)
   (gl:delete-textures (list resource)))
 
-(defun images-to-textures (target images level)
+(defun object-to-texparams (object)
+  (etypecase object
+    (qobject (list (q+:width object)
+                   (q+:height object)
+                   (q+:bits object)
+                   :rgba))
+    (cons    (destructuring-bind (width &optional (height 1) (bits 0) (format :rgba)) object
+               (list width height bits format)))))
+
+(defun images-to-textures (target images)
   (case target
     ;; FIXME: Array textures
     (:texture-cube-map
@@ -315,25 +324,24 @@
            for target in '(:texture-cube-map-positive-x :texture-cube-map-negative-x
                            :texture-cube-map-positive-y :texture-cube-map-negative-y
                            :texture-cube-map-positive-z :texture-cube-map-negative-z)
-           do (images-to-textures target (list image) level)))
+           do (images-to-textures target (list image))))
     (T
      (when (cdr images) (error "Only one input is supported for the ~a target." target))
-     (let ((image (first images)))
-       (case target
-         ((:texture-cube-map-positive-x :texture-cube-map-negative-x
-           :texture-cube-map-positive-y :texture-cube-map-negative-y
-           :texture-cube-map-positive-z :texture-cube-map-negative-z
-           :texture-2d)
-          (etypecase image
-            (qobject (gl:tex-image-2d target level :rgba (q+:width image) (q+:height image) 0 :rgba :unsigned-byte (q+:bits image)))
-            (cons    (gl:tex-image-2d target level :rgba (first image) (second image) 0 :rgba :unsigned-byte 0))))
-         (:texture-1d
-          (etypecase image
-            (qobject (gl:tex-image-1d target level :rgba (* (q+:width image) (q+:height image)) 0 :rgba :unsigned-byte (q+:bits image)))
-            (cons    (gl:tex-image-1d target level :rgba (first image) 0 :rgba :unsigned-byte 0))))
-         (:texture-3d
-          (etypecase image
-            (cons    (gl:tex-image-3d target level :rgba (first image) (second image) (third image) 0 :rgba :unsigned-byte 0)))))))))
+     (loop for level from 0
+           for image in images
+           do (case target
+                (:texture-1d
+                 (destructuring-bind (width height bits format) (object-to-texparams image)
+                   (gl:tex-image-1d target level format (* width height) 0 format :unsigned-byte bits)))
+                ((:texture-cube-map-positive-x :texture-cube-map-negative-x
+                  :texture-cube-map-positive-y :texture-cube-map-negative-y
+                  :texture-cube-map-positive-z :texture-cube-map-negative-z
+                  :texture-2d)
+                 (destructuring-bind (width height bits format) (object-to-texparams image)
+                   (gl:tex-image-2d target level format width height 0 format :unsigned-byte bits)))
+                (:texture-3d
+                 (destructuring-bind (width height depth bits format) image
+                   (gl:tex-image-3d target level format width height depth 0 format :unsigned-byte bits))))))))
 
 (defmethod load-asset ((asset texture-asset))
   (with-slots (target mag-filter min-filter anisotropy wrapping) asset
@@ -342,7 +350,7 @@
            (let ((texture (setf (resource asset) (gl:gen-texture))))
              (with-cleanup-on-failure (offload-asset asset)
                (gl:bind-texture target texture)
-               (images-to-textures target images 0)
+               (images-to-textures target images)
                (unless (or (eql min-filter :nearest) (eql min-filter :linear))
                  (gl:generate-mipmap target))
                (gl:tex-parameter target :texture-min-filter min-filter)
@@ -408,18 +416,28 @@
     (tg:finalize asset (lambda () (finalize-resource type resource)))))
 
 (defmethod coerce-input ((asset asset) (attachment symbol))
-  (check-framebuffer-attachment attachment)
-  (let ((texture (make-instance 'texture-asset :input (list (width asset) (height asset)))))
-    (list texture :attachment attachment)))
+  (coerce-input asset (list :attachment attachment)))
 
 (defmethod coerce-input ((asset asset) (spec cons))
-  (check-framebuffer-attachment attachment)
-  (let ((texture (make-instance 'texture-asset :input (list (width asset) (height asset)))))
-    (list* texture spec)))
+  (let ((attachment (getf spec :attachment)))
+    (check-framebuffer-attachment attachment)
+    (list* (make-instance 'texture-asset :input (list (width asset) (height asset)
+                                                      (getf spec :bits 0)
+                                                      (case attachment
+                                                        (:depth-attachment :depth-component)
+                                                        (:depth-stencil-attachment :depth-stencil)
+                                                        (T :rgba)))
+                                         :min-filter (getf spec :min-filter :nearest)
+                                         :mag-filter (getf spec :mag-filter :nearest)
+                                         :wrapping (getf spec :wrapping))
+           (loop for (k v) on spec by #'cddr
+                 for test = (find k '(:min-filter :mag-filter :wrapping :bits))
+                 unless test collect k
+                 unless test collect v))))
 
 (defmethod load-asset ((asset framebuffer-bundle-asset))
   (let ((inputs (coerced-inputs asset)))
-    (with-cleanup-on-failure (mpac #'offload-asset (textures asset))
+    (with-cleanup-on-failure (mapc #'offload-asset (textures asset))
       (dolist (input inputs)
         (push (load-asset (first input)) (textures asset)))
       (setf (framebuffer asset) buffer)
