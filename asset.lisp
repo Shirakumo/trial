@@ -14,6 +14,10 @@
    (resource :initarg :resource :accessor resource))
   (:default-initargs :inputs () :resource NIL))
 
+(defmethod initialize-instance :around ((asset asset) &rest args &key input inputs)
+  (when input (setf (getf args :inputs) (list* input inputs)))
+  (apply #'call-next-method asset args))
+
 (defmethod print-object ((asset asset) stream)
   (print-unreadable-object (asset stream :type T :identity T)))
 
@@ -24,10 +28,14 @@
   (v:debug :trial.asset "Finalising resource ~a of type ~a"
            resource type))
 
+(defmethod install-finalizer ((asset asset))
+  (let ((type (type-of asset))
+        (resource (resource asset)))
+    (tg:finalize asset (lambda () (finalize-resource type resource)))))
+
 (defmethod (setf resource) :after (value (asset asset))
   (when value
-    (let ((type (type-of asset)))
-      (tg:finalize asset (lambda () (finalize-resource type value))))))
+    (install-finalizer asset)))
 
 (defmethod coerce-input ((asset asset) input)
   (error "Incompatible input type ~s for asset of type ~s."
@@ -257,6 +265,11 @@
                         (gl:enable-vertex-attrib-array index))))
         (gl:bind-vertex-array 0)))))
 
+(defclass vertex-array-bundle (asset)
+  ())
+
+
+
 (defclass texture-asset (asset)
   ((target :initarg :target :accessor target)
    (mag-filter :initarg :mag-filter :accessor mag-filter)
@@ -294,31 +307,33 @@
 (defmethod finalize-resource ((type (eql 'texture-asset)) resource)
   (gl:delete-textures (list resource)))
 
-(defun images-to-textures (target images &optional (offset 0))
+(defun images-to-textures (target images level)
   (case target
+    ;; FIXME: Array textures
     (:texture-cube-map
-     (cond ((= 6 (length images))
-            (loop for image in images
-                  for target in '(:texture-cube-map-positive-x :texture-cube-map-negative-x
-                                  :texture-cube-map-positive-y :texture-cube-map-negative-y
-                                  :texture-cube-map-positive-z :texture-cube-map-negative-z)
-                  do (images-to-textures target (list image))))
-           ((= 1 (length images))
-            (let ((image (first images)))
-              (loop with width = (q+:width image)
-                    with height = (/ (q+:height image) 6)
-                    for target in '(:texture-cube-map-positive-x :texture-cube-map-negative-x
-                                    :texture-cube-map-positive-y :texture-cube-map-negative-y
-                                    :texture-cube-map-positive-z :texture-cube-map-negative-z)
-                    for index from 0
-                    do (images-to-textures target (list image) (* width height index 4)))))
-           (T
-            (error "Only one or six inputs are supported for the TEXTURE-CUBE-MAP target."))))
+     (loop for image in images
+           for target in '(:texture-cube-map-positive-x :texture-cube-map-negative-x
+                           :texture-cube-map-positive-y :texture-cube-map-negative-y
+                           :texture-cube-map-positive-z :texture-cube-map-negative-z)
+           do (images-to-textures target (list image) level)))
     (T
      (when (cdr images) (error "Only one input is supported for the ~a target." target))
      (let ((image (first images)))
-       (gl:tex-image-2d target 0 :rgba (q+:width image) (q+:height image) 0 :rgba :unsigned-byte
-                        (cffi:inc-pointer (q+:bits image) offset))))))
+       (case target
+         ((:texture-cube-map-positive-x :texture-cube-map-negative-x
+           :texture-cube-map-positive-y :texture-cube-map-negative-y
+           :texture-cube-map-positive-z :texture-cube-map-negative-z
+           :texture-2d)
+          (etypecase image
+            (qobject (gl:tex-image-2d target level :rgba (q+:width image) (q+:height image) 0 :rgba :unsigned-byte (q+:bits image)))
+            (cons    (gl:tex-image-2d target level :rgba (first image) (second image) 0 :rgba :unsigned-byte 0))))
+         (:texture-1d
+          (etypecase image
+            (qobject (gl:tex-image-1d target level :rgba (* (q+:width image) (q+:height image)) 0 :rgba :unsigned-byte (q+:bits image)))
+            (cons    (gl:tex-image-1d target level :rgba (first image) 0 :rgba :unsigned-byte 0))))
+         (:texture-3d
+          (etypecase image
+            (cons    (gl:tex-image-3d target level :rgba (first image) (second image) (third image) 0 :rgba :unsigned-byte 0)))))))))
 
 (defmethod load-asset ((asset texture-asset))
   (with-slots (target mag-filter min-filter anisotropy wrapping) asset
@@ -327,44 +342,92 @@
            (let ((texture (setf (resource asset) (gl:gen-texture))))
              (with-cleanup-on-failure (offload-asset asset)
                (gl:bind-texture target texture)
-               (images-to-textures target images)
+               (images-to-textures target images 0)
                (unless (or (eql min-filter :nearest) (eql min-filter :linear))
                  (gl:generate-mipmap target))
                (gl:tex-parameter target :texture-min-filter min-filter)
                (gl:tex-parameter target :texture-mag-filter mag-filter)
                (gl:tex-parameter target :texture-wrap-s (first wrapping))
                (gl:tex-parameter target :texture-wrap-t (second wrapping))
-               (unless (eql target :texture-2d)
+               (when (eql target :texture-cube-map)
                  (gl:tex-parameter target :texture-wrap-r (third wrapping)))
                (when anisotropy
                  (gl:tex-parameter target :texture-max-anisotropy-ext anisotropy))))
         (mapc #'finalize images)))))
 
 (defclass framebuffer-asset (asset)
-  ((attachment :initarg :attachment :accessor attachment)
-   (width :initarg :width :accessor width)
-   (height :initarg :height :accessor height)
-   (mipmap :initarg :mipmap :accessor mipmap)
-   (samples :initarg :samples :reader samples))
-  (:default-initargs
-   :attachment :depth-stencil
-   :mipmap NIL
-   :samples 0))
+  ())
 
-(defmethod initialize-instance :before ((asset framebuffer-asset) &key attachment width height)
-  (unless width (error "WIDTH required."))
-  (unless height (error "HEIGHT required."))
-  (check-framebuffer-attachment attachment))
+(defmethod coerce-input ((asset asset) (texture texture-asset))
+  (list texture :attachment :color-attachment0))
+
+(defmethod coerce-input ((asset asset) (spec list))
+  spec)
 
 (defmethod finalize-resource ((type (eql 'framebuffer-asset)) resource)
-  (finalize resource))
+  (gl:delete-framebuffers (list resource)))
 
 (defmethod load-asset ((asset framebuffer-asset))
-  (with-finalizing ((format (q+:make-qglframebufferobjectformat)))
-    (setf (q+:mipmap format) (mipmap asset))
-    (setf (q+:samples format) (samples asset))
-    (setf (q+:attachment format) (ecase (attachment asset)
-                                   (:depth-stencil (q+:qglframebufferobject.combined-depth-stencil))
-                                   (:depth (q+:qglframebufferobject.depth))
-                                   ((NIL) (q+:qglframebufferobject.no-attachment))))
-    (setf (resource asset) (q+:make-qglframebufferobject (width asset) (height asset) format))))
+  (let ((buffer (setf (resource asset) (gl:gen-framebuffer))))
+    (with-cleanup-on-failure (offload-asset asset)
+      (gl:bind-framebuffer :framebuffer buffer)
+      (unwind-protect
+           (dolist (input (coerced-inputs asset))
+             (destructuring-bind (texture &key (level 0) layer attachment) input
+               (check-framebuffer-attachment attachment)
+               (check-type texture texture-asset)
+               (if layer
+                   (%gl:framebuffer-texture-layer :framebuffer attachment (resource texture) level layer)
+                   (%gl:framebuffer-texture :framebuffer attachment (resource texture) level))
+               (unless (eql :framebuffer-complete (gl:check-framebuffer-status :framebuffer))
+                 (error "Failed to attach ~a as ~s to ~a"
+                        texture attachment asset))))
+        (gl:bind-framebuffer :framebuffer 0)))))
+
+(defclass framebuffer-bundle-asset (asset)
+  ((width :initarg :width :accessor width)
+   (height :initarg :height :accessor height)
+   (framebuffer :initform NIL :accessor framebuffer)
+   (textures :initform () :accessor textures))
+  (:default-initargs
+   :width (error "WIDTH required.")
+   :height (error "HEIGHT required.")))
+
+(defmethod finalize-resource ((type (eql 'famebuffer-bundle-asset)) resource)
+  (mapcar #'offload-asset resource))
+
+(defmethod offload-asset ((asset framebuffer-bundle-asset))
+  (mapcar #'offload-asset (list* (framebuffer asset) (textures asset)))
+  (setf (framebuffer asset) NIL)
+  (setf (textures asset) ())
+  (setf (resource asset) NIL))
+
+(defmethod install-finalizer ((asset framebuffer-bundle-asset))
+  (let ((type (type-of asset))
+        (resource (list* (framebuffer asset) (textures asset))))
+    (tg:finalize asset (lambda () (finalize-resource type resource)))))
+
+(defmethod coerce-input ((asset asset) (attachment symbol))
+  (check-framebuffer-attachment attachment)
+  (let ((texture (make-instance 'texture-asset :input (list (width asset) (height asset)))))
+    (list texture :attachment attachment)))
+
+(defmethod coerce-input ((asset asset) (spec cons))
+  (check-framebuffer-attachment attachment)
+  (let ((texture (make-instance 'texture-asset :input (list (width asset) (height asset)))))
+    (list* texture spec)))
+
+(defmethod load-asset ((asset framebuffer-bundle-asset))
+  (let ((inputs (coerced-inputs asset)))
+    (with-cleanup-on-failure (mpac #'offload-asset (textures asset))
+      (dolist (input inputs)
+        (push (load-asset (first input)) (textures asset)))
+      (setf (framebuffer asset) buffer)
+      (setf (resource asset) (resource buffer)))))
+
+(defmethod resize ((asset framebuffer-bundle-asset) width height)
+  (let ((loaded (resource asset)))
+    (when loaded (offload-asset asset))
+    (setf (width asset) width)
+    (setf (height asset) height)
+    (when loaded (load-asset asset))))
