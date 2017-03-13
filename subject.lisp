@@ -10,7 +10,7 @@
   ((effective-handlers :initform NIL :accessor effective-handlers)
    (instances :initform () :accessor instances)))
 
-(defun cascade-option-changes (class)
+(defmethod cascade-option-changes ((class subject-class))
   ;; Recompute effective handlers
   (loop with effective-handlers = (handlers class)
         for super in (c2mop:class-direct-superclasses class)
@@ -24,7 +24,9 @@
         when value
         collect (prog1 pointer
                   (reinitialize-instance value)) into instances
-        finally (setf (instances class) instances))
+        finally (setf (instances class) instances)))
+
+(defmethod cascade-option-changes :after ((class subject-class))
   ;; Propagate
   (loop for sub-class in (c2mop:class-direct-subclasses class)
         when (and (typep sub-class 'subject-class)

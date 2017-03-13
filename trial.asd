@@ -68,4 +68,5 @@
                :pathname-utils
                :flare
                :qtools-ui-slider
-               :for))
+               :for
+               :glsl-toolkit))
