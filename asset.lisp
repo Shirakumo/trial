@@ -134,7 +134,9 @@
         (gl:shader-source shader source)
         (gl:compile-shader shader)
         (unless (gl:get-shader shader :compile-status)
-          (error "Failed to compile ~a: ~%~a" asset (gl:get-shader-info-log shader)))))))
+          (error "Failed to compile ~a: ~%~a~%Shader source:~%~a"
+                 asset (gl:get-shader-info-log shader)
+                 source))))))
 
 (defclass shader-program-asset (asset)
   ())
