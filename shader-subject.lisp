@@ -90,8 +90,7 @@
       (let ((shaders ()))
         (loop for (type spec) on (effective-shaders class) by #'cddr
               for shader = (make-asset 'shader-asset spec :type type)
-              do (load shader)
-                 (push shader shaders))
+              do (push shader shaders))
         (setf (shader-asset class) (make-asset 'shader-program-asset shaders)))
       (when loaded
         (load (shader-asset class))))))
