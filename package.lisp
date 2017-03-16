@@ -9,7 +9,7 @@
   (:nicknames #:org.shirakumo.fraf.trial)
   (:use #:cl+qt #:3d-vectors #:3d-matrices #:flare)
   (:shadowing-import-from #:flare #:slot)
-  (:shadow #:scene #:entity)
+  (:shadow #:scene #:entity #:load)
   ;; asset-classes.lisp
   (:export
    #:context-asset

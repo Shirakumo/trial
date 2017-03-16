@@ -17,7 +17,8 @@
 
 (defmethod setup-scene ((main main))
   (let ((scene (scene main)))
-    (enter (make-instance 'testcube) scene)))
+    (enter (make-instance 'testcube) scene)
+    (load scene)))
 
 (defmethod paint ((source main) (target main))
   (let ((scene (scene source)))

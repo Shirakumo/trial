@@ -9,6 +9,18 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
+(defgeneric load (object)
+  (:method-combination progn :most-specific-last))
+
+(defmethod load progn (object)
+  (v:info :trial "Loading ~a" object))
+
+(defgeneric offload (object)
+  (:method-combination progn :most-specific-first))
+
+(defmethod load progn (object)
+  (v:info :trial "Offloading ~a" object))
+
 (defclass asset ()
   ((inputs :initarg :inputs :accessor inputs)
    (resource :initform NIL :accessor resource))
@@ -45,22 +57,22 @@
   (loop for input in (inputs asset)
         collect (coerce-input asset input)))
 
-(defmethod load-asset :around ((asset asset))
+(defmethod load :around ((asset asset))
   (unless (resource asset)
     (call-next-method))
   asset)
 
-(defmethod offload-asset :around ((asset asset))
+(defmethod offload :around ((asset asset))
   (when (resource asset)
     (tg:cancel-finalization asset)
     (call-next-method))
   asset)
 
-(defmethod offload-asset ((asset asset))
+(defmethod offload ((asset asset))
   (finalize-resource asset (resource asset)))
 
 (defmethod finalize :after ((asset asset))
-  (offload-asset asset))
+  (offload asset))
 
 (defun make-asset (type inputs &rest initargs)
   (apply #'make-instance type :inputs (enlist inputs) initargs))
@@ -69,11 +81,11 @@
   (if asset-specs
       (destructuring-bind (variable . initform) (first asset-specs)
         `(let ((,variable (make-asset ,@initform)))
-           (load-asset ,variable)
+           (load ,variable)
            (unwind-protect
                 (with-assets ,(rest asset-specs)
                   ,@body)
-             (offload-asset ,variable))))
+             (offload ,variable))))
       `(progn ,@body)))
 
 (defvar *asset-cache* (tg:make-weak-hash-table :weakness :key :test 'eq))
@@ -81,7 +93,7 @@
 (defun clear-asset-cache ()
   (loop for table being the hash-values of *asset-cache*
         do (loop for asset being the hash-values of table
-                 do (offload-asset asset)))
+                 do (offload asset)))
   (clrhash *asset-cache*))
 
 (defmacro with-assets* (asset-specs &body body)
@@ -93,7 +105,7 @@
             ,@(loop for (variable . initform) in asset-specs
                     collect `(,variable (or (gethash ',variable ,table)
                                             (setf (gethash ',variable ,table)
-                                                  (load-asset (make-asset ,@initform)))))))
+                                                  (load (make-asset ,@initform)))))))
        ,@body)))
 
 (defclass shader-asset (asset)
@@ -111,13 +123,13 @@
 (defmethod finalize-resource ((type (eql 'shader-asset)) resource)
   (gl:delete-shader resource))
 
-(defmethod load-asset ((asset shader-asset))
+(defmethod load progn ((asset shader-asset))
   (let ((source (with-output-to-string (output)
                   (dolist (source (coerced-inputs asset))
                     (write-sequence source output))))
         (shader (gl:create-shader (shader-type asset))))
     (setf (resource asset) shader)
-    (with-cleanup-on-failure (offload-asset asset)
+    (with-cleanup-on-failure (offload asset)
       (with-new-value-restart (source input-source) (use-source "Supply new source code directly.")
         (gl:shader-source shader source)
         (gl:compile-shader shader)
@@ -142,12 +154,12 @@
 (defmethod finalize-resource ((type (eql 'shader-program-asset)) resource)
   (gl:delete-program resource))
 
-(defmethod load-asset ((asset shader-program-asset))
+(defmethod load progn ((asset shader-program-asset))
   (let ((shaders (coerced-inputs asset)))
     (check-shader-compatibility shaders)
     (let ((program (gl:create-program)))
       (setf (resource asset) program)
-      (with-cleanup-on-failure (offload-asset asset)
+      (with-cleanup-on-failure (offload asset)
         (dolist (shader shaders)
           (gl:attach-shader program (resource shader)))
         (gl:link-program program)
@@ -222,12 +234,12 @@
           (loop for v across input do (vector-push-extend v output))))
       (first inputs)))
 
-(defmethod load-asset ((asset vertex-buffer-asset))
+(defmethod load progn ((asset vertex-buffer-asset))
   (let ((buffer-data (ensure-single-vector (coerced-inputs asset))))
     (with-slots (element-type buffer-type data-usage) asset
       (let ((buffer (gl:gen-buffer)))
         (setf (resource asset) buffer)
-        (with-cleanup-on-failure (offload-asset asset)
+        (with-cleanup-on-failure (offload asset)
           (let ((array (gl:alloc-gl-array element-type (length buffer-data))))
             (unwind-protect
                  (loop initially (gl:bind-buffer buffer-type buffer)
@@ -251,10 +263,10 @@
 (defmethod finalize-resource ((type (eql 'vertex-array-asset)) resource)
   (gl:delete-vertex-arrays (list resource)))
 
-(defmethod load-asset ((asset vertex-array-asset))
+(defmethod load progn ((asset vertex-array-asset))
   (let ((array (gl:gen-vertex-array)))
     (setf (resource asset) array)
-    (with-cleanup-on-failure (offload-asset asset)
+    (with-cleanup-on-failure (offload asset)
       (gl:bind-vertex-array array)
       (unwind-protect
            (loop for buffer in (coerced-inputs asset)
@@ -267,6 +279,7 @@
                         buffer
                       (let ((buffers (enlist buffer/s)))
                         (dolist (buffer buffers)
+                          (load buffer)
                           (when (and (not (size asset))
                                      (eql :element-array-buffer (buffer-type buffer)))
                             (setf (size asset) (size buffer)))
@@ -275,6 +288,7 @@
                         (gl:enable-vertex-attrib-array index))))
         (gl:bind-vertex-array 0)))))
 
+;; FIXME: delete vbos after vao is loaded and unbound
 (defun pack-vao (element &rest specs)
   (let ((buffer (make-array 0 :adjustable T :fill-pointer 0))
         (groups)
@@ -379,12 +393,12 @@
                  (destructuring-bind (width height depth bits format) image
                    (gl:tex-image-3d target level format width height depth 0 format :unsigned-byte bits))))))))
 
-(defmethod load-asset ((asset texture-asset))
+(defmethod load progn ((asset texture-asset))
   (with-slots (target mag-filter min-filter anisotropy wrapping) asset
     (let ((images (coerced-inputs asset)))
       (unwind-protect
            (let ((texture (setf (resource asset) (gl:gen-texture))))
-             (with-cleanup-on-failure (offload-asset asset)
+             (with-cleanup-on-failure (offload asset)
                (gl:bind-texture target texture)
                (images-to-textures target images)
                (unless (or (eql min-filter :nearest) (eql min-filter :linear))
@@ -411,9 +425,9 @@
 (defmethod finalize-resource ((type (eql 'framebuffer-asset)) resource)
   (gl:delete-framebuffers (list resource)))
 
-(defmethod load-asset ((asset framebuffer-asset))
+(defmethod load progn ((asset framebuffer-asset))
   (let ((buffer (setf (resource asset) (gl:gen-framebuffer))))
-    (with-cleanup-on-failure (offload-asset asset)
+    (with-cleanup-on-failure (offload asset)
       (gl:bind-framebuffer :framebuffer buffer)
       (unwind-protect
            (dolist (input (coerced-inputs asset))
@@ -438,10 +452,10 @@
    :height (error "HEIGHT required.")))
 
 (defmethod finalize-resource ((type (eql 'famebuffer-bundle-asset)) resource)
-  (mapcar #'offload-asset resource))
+  (mapcar #'offload resource))
 
-(defmethod offload-asset ((asset framebuffer-bundle-asset))
-  (mapcar #'offload-asset (list* (framebuffer asset) (textures asset)))
+(defmethod offload progn ((asset framebuffer-bundle-asset))
+  (mapcar #'offload (list* (framebuffer asset) (textures asset)))
   (setf (framebuffer asset) NIL)
   (setf (textures asset) ())
   (setf (resource asset) NIL))
@@ -471,17 +485,17 @@
                  unless test collect k
                  unless test collect v))))
 
-(defmethod load-asset ((asset framebuffer-bundle-asset))
+(defmethod load progn ((asset framebuffer-bundle-asset))
   (let ((inputs (coerced-inputs asset)))
-    (with-cleanup-on-failure (mapc #'offload-asset (textures asset))
+    (with-cleanup-on-failure (mapc #'offload (textures asset))
       (dolist (input inputs)
-        (push (load-asset (first input)) (textures asset)))
+        (push (load (first input)) (textures asset)))
       (setf (framebuffer asset) buffer)
       (setf (resource asset) (resource buffer)))))
 
 (defmethod resize ((asset framebuffer-bundle-asset) width height)
   (let ((loaded (resource asset)))
-    (when loaded (offload-asset asset))
+    (when loaded (offload asset))
     (setf (width asset) width)
     (setf (height asset) height)
-    (when loaded (load-asset asset))))
+    (when loaded (load asset))))

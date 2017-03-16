@@ -75,18 +75,27 @@
 (defmethod (setf uniform) (data (subject shader-subject) name)
   (setf (uniform (shader-asset (class-of subject)) name) data))
 
-(defmethod reinitialize-instance :after ((subject shader-subject) &key)
-  (let ((class (class-of subject)))
-    (when (and *context* (dirty class))
-      (when (shader-asset class)
-        (offload-asset (shader-asset class)))
+(defmethod load progn ((subject shader-subject))
+  (load (shader-asset (class-of subject))))
+
+(defmethod offload progn ((subject shader-subject))
+  (offload (shader-asset (class-of subject))))
+
+(defmethod shared-initialize :after ((subject shader-subject) slots &key)
+  (declare (ignore slots))
+  (let* ((class (class-of subject))
+         (loaded (when (shader-asset class) (resource (shader-asset class)))))
+    (when (dirty class)
+      (when loaded
+        (offload (shader-asset class)))
       (let ((shaders ()))
         (loop for (type spec) on (effective-shaders class) by #'cddr
               for shader = (make-asset 'shader-asset spec :type type)
-              do (load-asset shader)
+              do (load shader)
                  (push shader shaders))
         (setf (shader-asset class) (make-asset 'shader-program shaders)))
-      (load-asset (shader-asset class)))))
+      (when loaded
+        (load (shader-asset class))))))
 
 (defmethod paint :around ((subject shader-subject) target)
   (gl:use-program (resource (shader-asset subject)))

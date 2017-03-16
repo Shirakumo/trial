@@ -54,6 +54,7 @@
   (map-event ev *loop*)
   (retain-event ev))
 
+;; FIXME for new asset system
 (define-handler (controller reload-assets reload-assets 99) (ev)
   (dolist (pool (pools))
     (mapc #'reload (assets pool))))

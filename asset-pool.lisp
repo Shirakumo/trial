@@ -89,10 +89,10 @@
     (substitute-asset-paths inputs (pool pool))
     `(let ((,loaded))
        (when (asset ',pool ',name)
-         (offload-asset (asset ',pool ',name))
+         (offload (asset ',pool ',name))
          (setf ,loaded T))
        (setf (asset ',pool ',name)
              (make-asset ',type (list ,@inputs) ,@initargs))
        (when ,loaded
-         (load-asset (asset ',pool ',name)))
+         (load (asset ',pool ',name)))
        ',name)))

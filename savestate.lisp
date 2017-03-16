@@ -186,7 +186,7 @@
     (clear-for-reload scene)
     ;; FIXME: Updating references from persistent objects to units within the scene
     (tg:gc :full T)
-    (load file)
+    (cl:load file)
     (restore-scene scene)
     (fmakunbound 'restore-scene)
     (discard-events scene)

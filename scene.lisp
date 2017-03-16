@@ -38,6 +38,14 @@
 (defmethod deregister :after ((container handler-container) (scene scene))
   (remove-handler container scene))
 
+(defmethod load progn ((scene scene))
+  (for:for ((object over scene))
+    (load object)))
+
+(defmethod offload progn ((scene scene))
+  (for:for ((object over scene))
+    (offload object)))
+
 ;; Since we have a tick event, we don't want to dupe that here.
 ;; animations and clock update are already handled by the method
 ;; combination, but defining a noop primary method prevents update
