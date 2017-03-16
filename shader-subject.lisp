@@ -88,7 +88,7 @@
        (call-next-method)
     (gl:use-program 0)))
 
-(defmacro define-shader-subject (name direct-superclasses direct-slots &rest options)
+(defmacro define-shader-subject (&environment env name direct-superclasses direct-slots &rest options)
   (unless (find-if (lambda (c) (c2mop:subclassp (find-class c T env) 'shader-subject)) direct-superclasses)
     (setf direct-superclasses (append direct-superclasses (list 'shader-subject))))
   (unless (find :metaclass options :key #'first)
