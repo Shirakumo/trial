@@ -191,7 +191,8 @@
 (defclass vertex-buffer-asset (asset)
   ((buffer-type :initarg :type :accessor buffer-type)
    (element-type :initarg :element-type :accessor element-type)
-   (data-usage :initarg :data-usage :accessor data-usage))
+   (data-usage :initarg :data-usage :accessor data-usage)
+   (size :initarg :size :accessor size))
   (:default-initargs
    :type :array-buffer
    :element-type :float
@@ -214,10 +215,15 @@
 (defmethod finalize-resource ((type (eql 'vertex-buffer-asset)) resource)
   (gl:delete-buffers (list resource)))
 
+(defun ensure-single-vector (inputs)
+  (if (cdr inputs)
+      (let ((output (make-array 0 :adjustable T :fill-pointer T)))
+        (dolist (input inputs output)
+          (loop for v across input do (vector-push-extend v output))))
+      (first inputs)))
+
 (defmethod load-asset ((asset vertex-buffer-asset))
-  (let ((buffer-data (let ((output (make-array 0 :adjustable T :fill-pointer T)))
-                       (dolist (input (coerced-inputs asset) output)
-                         (loop for v across input do (vector-push-extend v output))))))
+  (let ((buffer-data (ensure-single-vector (coerced-inputs asset))))
     (with-slots (element-type buffer-type data-usage) asset
       (let ((buffer (gl:gen-buffer)))
         (setf (resource asset) buffer)
@@ -230,10 +236,11 @@
                        do (setf (gl:glaref array i) (gl-coerce el element-type))
                        finally (gl:buffer-data buffer-type data-usage array))
               (gl:free-gl-array array)
-              (gl:bind-buffer buffer-type 0))))))))
+              (gl:bind-buffer buffer-type 0))
+            (setf (size asset) (length buffer-data))))))))
 
 (defclass vertex-array-asset (asset)
-  ())
+  ((size :initarg :size :initform NIL :accessor size)))
 
 (defmethod coerce-input ((asset vertex-array-asset) (buffer vertex-buffer-asset))
   (list buffer))
@@ -260,6 +267,9 @@
                         buffer
                       (let ((buffers (enlist buffer/s)))
                         (dolist (buffer buffers)
+                          (when (and (not (size asset))
+                                     (eql :element-array-buffer (buffer-type buffer)))
+                            (setf (size asset) (size buffer)))
                           (gl:bind-buffer (buffer-type buffer) (resource buffer)))
                         (gl:vertex-attrib-pointer index size (element-type (first buffers)) normalized stride offset)
                         (gl:enable-vertex-attrib-array index))))
