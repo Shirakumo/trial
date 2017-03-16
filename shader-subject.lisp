@@ -110,3 +110,9 @@
   `(defclass ,name ,direct-superclasses
      ,direct-slots
      ,@options))
+
+(define-class-shader shader-subject :vertex-shader
+  "#version 330 core")
+
+(define-class-shader shader-subject :fragment-shader
+  "#version 330 core")
