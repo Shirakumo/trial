@@ -69,7 +69,8 @@
   asset)
 
 (defmethod offload progn ((asset asset))
-  (finalize-resource asset (resource asset)))
+  (finalize-resource asset (resource asset))
+  (setf (resource asset) NIL))
 
 (defmethod finalize :after ((asset asset))
   (offload asset))
