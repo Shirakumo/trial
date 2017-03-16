@@ -164,6 +164,7 @@
       (setf (resource asset) program)
       (with-cleanup-on-failure (offload asset)
         (dolist (shader shaders)
+          (load shader)
           (gl:attach-shader program (resource shader)))
         (gl:link-program program)
         (dolist (shader shaders)
