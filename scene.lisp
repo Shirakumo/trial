@@ -58,6 +58,7 @@
 
 (defmethod finalize :after ((scene scene))
   (stop scene)
+  (offload scene)
   (clear scene))
 
 (defun funcall-in-scene (scene func &key bindings (return-values T))
