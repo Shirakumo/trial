@@ -75,7 +75,7 @@ void main(){
 }")
 
 (define-shader-subject textured-subject ()
-  ((texture :initform NIL :accessor texture)))
+  ((texture :initform NIL :initarg :texture :accessor texture)))
 
 (defmethod paint :around ((obj textured-subject) target)
   (let* ((tex (texture obj))

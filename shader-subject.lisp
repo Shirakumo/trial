@@ -28,6 +28,12 @@
     (setf (effective-shaders class) effective-shaders)
     (setf (dirty class) T)))
 
+(defmethod effective-shaders ((class symbol))
+  (effective-shaders (find-class class)))
+
+(defmethod direct-shaders ((class symbol))
+  (direct-shaders (find-class class)))
+
 (defmethod class-shader (type (class shader-subject-class))
   (getf (direct-shaders class) type))
 
