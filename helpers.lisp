@@ -146,45 +146,6 @@
 (defmethod handle-collision ((entity collidable-entity) intersection))
 
 ;; FIXME for OGL3
-(defclass colored-entity (entity)
-  ((color :initarg :color :initform (vec 0 0 1) :accessor color)))
-
-(define-saved-initargs colored-entity color)
-
-(defmethod paint :before ((entity colored-entity) target)
-  (let ((c (color entity)))
-    (gl:color (vx c) (vy c) (vz c))))
-
-;; FIXME for asset
-(defclass textured-entity (entity)
-  ((texture :initform NIL :accessor texture)))
-
-(defmethod shared-initialize :after ((entity textured-entity) slots &key (texture NIL t-p) &allow-other-keys)
-  (when t-p (setf (texture entity) texture)))
-
-(defmethod paint :around ((obj textured-entity) target)
-  (let* ((tex (texture obj))
-         (target (target tex)))
-    (when tex
-      (gl:bind-texture target (resource tex))
-      (call-next-method)
-      (gl:bind-texture target 0))))
-
-;; FIXME for asset & OGL3
-(defclass shader-entity (entity)
-  ((shader-program :accessor shader-program)))
-
-(defmethod shared-initialize :after ((entity shader-entity) slots &key (shader-program NIL s-p))
-  (when s-p (setf (shader-program entity) shader-program)))
-
-(defmethod paint :around ((entity shader-entity) target)
-  (when (shader-program entity)
-    (gl:use-program (resource (shader-program entity))))
-  (unwind-protect
-       (call-next-method)
-    (gl:use-program 0)))
-
-;; FIXME for OGL3
 (defclass face-entity (textured-entity bound-entity)
   ((tex-location :initarg :tex-location :initform (vec 0 0 0) :accessor tex-location)
    (tex-bounds :initarg :tex-bounds :initform (vec 1 1 0) :accessor tex-bounds)))
