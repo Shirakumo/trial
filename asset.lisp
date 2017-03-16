@@ -301,7 +301,7 @@
     (loop for index from 0
           for (size input) on specs by #'cddr
           do ;; Ensure that each array matches with all others in groups.
-             (cond ((/= 0 (mod (length input)size))
+             (cond ((/= 0 (mod (length input) size))
                     (error "The input array~%  ~s~% with size ~a cannot be divided into even groups."
                            input size))
                    ((not groups)
@@ -309,11 +309,13 @@
                    ((/= (/ (length input) size) groups)
                     (error "The input array~%  ~s~% with size ~a does not match the number of groups ~a."
                            input size groups)))
-             ;; Accumulate into general buffer.
-             (for:for ((el over input))
-               (vector-push-extend el buffer))
              (push (list :index index :size size :offset offset) inputs)
              (incf offset (* size 4)))
+    ;; Fill the buffer
+    (dotimes (group groups)
+      (loop for (size input) on specs by #'cddr
+            do (loop for i from (* size group) below (* size (1+ group))
+                     do (vector-push-extend (elt input i) buffer))))
     ;; Construct actual assets.
     (let ((buffer (make-asset 'vertex-buffer-asset (list buffer)
                               :element-type :float))
