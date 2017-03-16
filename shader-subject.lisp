@@ -17,14 +17,13 @@
     (loop for (type shader) on (direct-shaders class) by #'cddr
           do (setf (getf effective-shaders type)
                    (list shader)))
-    (loop for super in (c2mop:class-direct-superclasses class)
+    (loop for super in (c2mop:compute-class-precedence-list class)
           do (when (typep super 'shader-subject-class)
-               (loop for (type shader) on (effective-shaders super) by #'cddr
+               (loop for (type shader) on (direct-shaders super) by #'cddr
                      do (pushnew shader (getf effective-shaders type)))))
     (loop for (type shaders) on effective-shaders by #'cddr
           do (setf (getf effective-shaders type)
-                   (glsl-toolkit:merge-shader-sources
-                    (nreverse shaders))))
+                   (glsl-toolkit:merge-shader-sources shaders)))
     (setf (effective-shaders class) effective-shaders)
     (setf (dirty class) T)))
 
