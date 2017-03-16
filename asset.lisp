@@ -18,7 +18,7 @@
 (defgeneric offload (object)
   (:method-combination progn :most-specific-first))
 
-(defmethod load progn (object)
+(defmethod offload progn (object)
   (v:info :trial "Offloading ~a" object))
 
 (defclass asset ()
@@ -68,7 +68,7 @@
     (call-next-method))
   asset)
 
-(defmethod offload ((asset asset))
+(defmethod offload progn ((asset asset))
   (finalize-resource asset (resource asset)))
 
 (defmethod finalize :after ((asset asset))
