@@ -443,7 +443,7 @@
    #:effective-handlers
    #:instances
    #:subject
-   #:loops
+   #:event-loop
    #:regenerate-handlers
    #:define-subject
    #:define-handler

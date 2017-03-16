@@ -17,9 +17,9 @@
 
 (defmethod (setf selected) :after ((entity located-entity) (toolkit toolkit))
   (when (eql (mode toolkit) :move)
-    (enter (make-instance 'move-arrow :direction +vx+ :location (v+ (location entity))) (first (loops toolkit)))
-    (enter (make-instance 'move-arrow :direction +vy+ :location (v+ (location entity))) (first (loops toolkit)))
-    (enter (make-instance 'move-arrow :direction +vz+ :location (v+ (location entity))) (first (loops toolkit)))))
+    (enter (make-instance 'move-arrow :direction +vx+ :location (v+ (location entity))) (event-loop toolkit))
+    (enter (make-instance 'move-arrow :direction +vy+ :location (v+ (location entity))) (event-loop toolkit))
+    (enter (make-instance 'move-arrow :direction +vz+ :location (v+ (location entity))) (event-loop toolkit))))
 
 (define-subject move-arrow (draggable-entity cube colored-entity located-entity)
   ((direction :initarg :direction :accessor direction))

@@ -52,9 +52,9 @@
   (remove-handler handler (find-class class)))
 
 (defclass subject (entity finalizable handler-container)
-  ((loops :initarg :loops :accessor loops))
+  ((event-loop :initarg :event-loop :accessor event-loop))
   (:default-initargs
-   :loops ())
+   :event-loop NIL)
   (:metaclass subject-class))
 
 (defmethod initialize-instance :after ((subject subject) &key)
@@ -65,25 +65,32 @@
   (regenerate-handlers subject))
 
 (defmethod regenerate-handlers ((subject subject))
-  (dolist (loop (loops subject))
-    (remove-handler subject loop))
-  (loop for handler in (effective-handlers (class-of subject))
-        collect (make-instance
-                 'handler
-                 :container subject
-                 :name (name handler)
-                 :event-type (event-type handler)
-                 :priority (priority handler)
-                 :delivery-function (delivery-function handler)) into handlers
-        finally (setf (handlers subject) handlers))
-  (dolist (loop (loops subject))
-    (add-handler subject loop)))
+  (let ((loop (event-loop subject)))
+    (when loop
+      (remove-handler subject loop))
+    (loop for handler in (effective-handlers (class-of subject))
+          collect (make-instance
+                   'handler
+                   :container subject
+                   :name (name handler)
+                   :event-type (event-type handler)
+                   :priority (priority handler)
+                   :delivery-function (delivery-function handler)) into handlers
+          finally (setf (handlers subject) handlers))
+    (when loop
+      (add-handler subject loop))))
 
 (defmethod register :after ((subject subject) (loop event-loop))
-  (push loop (loops subject)))
+  (when (event-loop subject)
+    (error "~s is already registered on the event-loop ~s, can't add it to ~s."
+           subject (event-loop subject) loop))
+  (setf (event-loop subject) loop))
 
 (defmethod deregister :after ((subject subject) (loop event-loop))
-  (setf (loops subject) (delete loop (loops subject))))
+  (unless (eql loop (event-loop subject))
+    (error "~s is registered on the event-loop ~s, can't remove it from ~s."
+           subject (event-loop subject) loop))
+  (setf (event-loop subject) NIL))
 
 (defmacro define-subject (&environment env name direct-superclasses direct-slots &rest options)
   (unless (find-if (lambda (c) (c2mop:subclassp (find-class c T env) 'subject)) direct-superclasses)

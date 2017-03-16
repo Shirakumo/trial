@@ -59,7 +59,7 @@
     (mapc #'reload (assets pool))))
 
 (define-handler (controller reload-scene reload-scene 99) (ev)
-  (let ((scene (first (loops controller))))
+  (let ((scene (event-loop controller)))
     (dolist (obj (flare-indexed-set:coerce-set (objects scene) 'list))
       (unless (eql obj controller)
         (leave obj scene)
@@ -67,10 +67,10 @@
   (setup-scene (display controller)))
 
 (define-handler (controller save-game) (ev)
-  (save-scene (first (loops controller)) #p"~/test.sav.lisp"))
+  (save-scene (event-loop controller) #p"~/test.sav.lisp"))
 
 (define-handler (controller load-game) (ev)
-  (load-scene (first (loops controller)) #p"~/test.sav.lisp"))
+  (load-scene (event-loop controller) #p"~/test.sav.lisp"))
 
 (define-handler (controller execute-request) (ev)
   (execute ev))
@@ -87,4 +87,4 @@
 
 (define-handler (controller key-release) (ev key)
   (when (eql key :escape)
-    (issue (first (loops controller)) 'pause)))
+    (issue (event-loop controller) 'pause)))
