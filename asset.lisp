@@ -13,13 +13,13 @@
   (:method-combination progn :most-specific-last))
 
 (defmethod load progn (object)
-  (v:info :trial "Loading ~a" object))
+  (v:info :trial.asset "Loading ~a" object))
 
 (defgeneric offload (object)
   (:method-combination progn :most-specific-first))
 
 (defmethod offload progn (object)
-  (v:info :trial "Offloading ~a" object))
+  (v:info :trial.asset "Offloaded ~a" object))
 
 (defclass asset ()
   ((inputs :initarg :inputs :accessor inputs)
