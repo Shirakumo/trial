@@ -92,7 +92,7 @@
               for shader = (make-asset 'shader-asset spec :type type)
               do (load shader)
                  (push shader shaders))
-        (setf (shader-asset class) (make-asset 'shader-program shaders)))
+        (setf (shader-asset class) (make-asset 'shader-program-asset shaders)))
       (when loaded
         (load (shader-asset class))))))
 
