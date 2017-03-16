@@ -32,6 +32,7 @@
                (:file "event-loop")
                (:file "executable")
                (:file "subject")
+               (:file "shader-subject")
                (:file "subjects")
                (:file "scene")
                (:file "hud")

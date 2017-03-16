@@ -8,16 +8,18 @@
 
 (defclass shader-subject-class (subject-class)
   ((effective-shaders :initform () :accessor effective-shaders)
-   (direct-shaders :initform () :accessor direct-shaders)
+   (direct-shaders :initform () :initarg :shaders :accessor direct-shaders)
    (shader-asset :initform NIL :accessor shader-asset)
    (dirty :initform T :accessor dirty)))
 
 (defmethod cascade-option-changes :before ((class shader-subject-class))
-  (let ((shaders-list (direct-shaders class))
-        (effective-shaders ()))
+  (let ((effective-shaders ()))
+    (loop for (type shader) on (direct-shaders class) by #'cddr
+          do (setf (getf effective-shaders type)
+                   (list shader)))
     (loop for super in (c2mop:class-direct-superclasses class)
           do (when (typep super 'shader-subject-class)
-               (loop for (type shader) on (shaders-list super) by #'cddr
+               (loop for (type shader) on (effective-shaders super) by #'cddr
                      do (pushnew shader (getf effective-shaders type)))))
     (loop for (type shaders) on effective-shaders by #'cddr
           do (setf (getf effective-shaders type)
@@ -26,8 +28,36 @@
     (setf (effective-shaders class) effective-shaders)
     (setf (dirty class) T)))
 
-(defmethod apply-uniforms ((class shader-subject-class))
-  )
+(defmethod class-shader (type (class shader-subject-class))
+  (getf (direct-shaders class) type))
+
+(defmethod class-shader (type (class symbol))
+  (class-shader type (find-class class)))
+
+(defmethod (setf class-shader) (shader type (class shader-subject-class))
+  (setf (getf (direct-shaders class) type) shader))
+
+(defmethod (setf class-shader) (shader type (class symbol))
+  (setf (class-shader type (find-class class)) shader))
+
+(defmethod (setf class-shader) :after (shader type (class shader-subject-class))
+  (cascade-option-changes class))
+
+(defmethod remove-class-shader (type (class shader-subject-class))
+  (remf (direct-shaders class) type))
+
+(defmethod remove-class-shader (type (class symbol))
+  (remove-class-shader type (find-class class)))
+
+(defmethod remove-class-shader :after (type (class shader-subject-class))
+  (cascade-option-changes class))
+
+(defmacro define-class-shader (class type &body definitions)
+  `(setf (class-shader ,type ',class)
+         (progn ,@definitions)))
+
+(defmethod (setf uniform) (data (class shader-subject-class) name)
+  (setf (uniform (shader-asset class) name) data))
 
 (defclass shader-subject (subject)
   ()
@@ -35,6 +65,9 @@
 
 (defmethod shader-asset ((subject shader-subject))
   (shader-asset (class-of subject)))
+
+(defmethod (setf uniform) (data (subject shader-subject) name)
+  (setf (uniform (shader-asset (class-of subject)) name) data))
 
 (defmethod reinitialize-instance :after ((subject shader-subject) &key)
   (let ((class (class-of subject)))
@@ -55,5 +88,11 @@
        (call-next-method)
     (gl:use-program 0)))
 
-(defmethod paint :before ((subject shader-subject) target)
-  (apply-uniforms (class-of subject)))
+(defmacro define-shader-subject (name direct-superclasses direct-slots &rest options)
+  (unless (find-if (lambda (c) (c2mop:subclassp (find-class c T env) 'shader-subject)) direct-superclasses)
+    (setf direct-superclasses (append direct-superclasses (list 'shader-subject))))
+  (unless (find :metaclass options :key #'first)
+    (push '(:metaclass shader-subject-class) options))
+  `(defclass ,name ,direct-superclasses
+     ,direct-slots
+     ,@options))
