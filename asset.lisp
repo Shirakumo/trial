@@ -292,39 +292,50 @@
                         (gl:enable-vertex-attrib-array index))))
         (gl:bind-vertex-array 0)))))
 
-;; FIXME: delete vbos after vao is loaded and unbound
-(defun pack-vao (element &rest specs)
+(defclass packed-vao-asset (asset)
+  ())
+
+(defmethod finalize-resource ((type (eql 'packed-vao-asset)) resource)
+  (finalize-resource 'vertex-array-asset resource))
+
+(defmethod load progn ((asset packed-vao-asset))
   (let ((buffer (make-array 0 :adjustable T :fill-pointer 0))
         (groups)
         (inputs ())
-        (offset 0))
+        (offset 0)
+        (element (first (inputs asset)))
+        (specs (rest (inputs asset))))
     (loop for index from 0
           for (size input) on specs by #'cddr
           do ;; Ensure that each array matches with all others in groups.
-             (cond ((/= 0 (mod (length input) size))
-                    (error "The input array~%  ~s~% with size ~a cannot be divided into even groups."
-                           input size))
-                   ((not groups)
-                    (setf groups (/ (length input) size)))
-                   ((/= (/ (length input) size) groups)
-                    (error "The input array~%  ~s~% with size ~a does not match the number of groups ~a."
-                           input size groups)))
-             (push (list :index index :size size :offset offset) inputs)
-             (incf offset (* size 4)))
+          (cond ((/= 0 (mod (length input) size))
+                 (error "The input array~%  ~s~% with size ~a cannot be divided into even groups."
+                        input size))
+                ((not groups)
+                 (setf groups (/ (length input) size)))
+                ((/= (/ (length input) size) groups)
+                 (error "The input array~%  ~s~% with size ~a does not match the number of groups ~a."
+                        input size groups)))
+          (push (list :index index :size size :offset offset) inputs)
+          (incf offset (* size 4)))
     ;; Fill the buffer
     (dotimes (group groups)
       (loop for (size input) on specs by #'cddr
             do (loop for i from (* size group) below (* size (1+ group))
                      do (vector-push-extend (elt input i) buffer))))
     ;; Construct actual assets.
-    (let ((buffer (make-asset 'vertex-buffer-asset (list buffer)
-                              :element-type :float))
-          (element (make-asset 'vertex-buffer-asset (list element)
-                               :type :element-array-buffer
-                               :element-type :uint)))
-      (make-asset 'vertex-array-asset
-                  (print (loop for spec in (nreverse inputs)
-                               collect (list* (list buffer element) :stride offset spec)))))))
+    (let* ((buffer (make-asset 'vertex-buffer-asset (list buffer)
+                               :element-type :float))
+           (element (make-asset 'vertex-buffer-asset (list element)
+                                :type :element-array-buffer
+                                :element-type :uint))
+           (vao (make-asset 'vertex-array-asset
+                            (loop for spec in (nreverse inputs)
+                                  collect (list* (list buffer element) :stride offset spec)))))
+      (load vao)
+      (setf (resource asset) (resource vao))
+      (offload buffer)
+      (offload element))))
 
 (defclass texture-asset (asset)
   ((target :initarg :target :accessor target)
