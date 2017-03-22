@@ -8,7 +8,8 @@
 (in-readtable :qtools)
 
 (defclass shader-pass-class (standard-class)
-  ((pass-inputs :initarg :pass-inputs :initform () :accessor pass-inputs)))
+  ((pass-inputs :initarg :pass-inputs :initform () :accessor pass-inputs)
+   (pass-outputs :initarg :pass-outputs :initform () :accessor pass-outputs)))
 
 (defmethod c2mop:validate-superclass ((class shader-pass-class) (superclass T))
   NIL)
@@ -27,11 +28,12 @@
 (defgeneric shader-resource-for-pass (pass object))
 
 (defmacro define-shader-pass (name direct-superclasses inputs &optional slots &rest options)
+  (unless (find :metaclass options :key #'car)
+    (push '(:metaclass shader-pass-class) options))
   `(defclass ,name (shader-pass ,@direct-superclasses)
      ,slots
-     (:metaclass shader-pass-class)
-     (:pass-inputs ,@inputs)
-     ,@options))
+     ,@options
+     (:pass-inputs ,@inputs)))
 
 (define-shader-pass per-object-pass ()
   ()
