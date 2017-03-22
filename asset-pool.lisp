@@ -85,14 +85,19 @@
     (T tree)))
 
 (defmacro define-asset (type (pool name) inputs &rest initargs)
-  (let ((loaded (gensym "GENSYM")))
+  (let ((loaded (gensym "GENSYM"))
+        (asset (gensym "ASSET")))
     (substitute-asset-paths inputs (pool pool))
-    `(let ((,loaded))
-       (when (asset ',pool ',name)
-         (offload (asset ',pool ',name))
-         (setf ,loaded T))
-       (setf (asset ',pool ',name)
-             (make-asset ',type (list ,@inputs) ,@initargs))
-       (when ,loaded
-         (load (asset ',pool ',name)))
+    `(let ((,loaded)
+           (,asset (asset ',pool ',name)))
+       (cond (asset
+              (when (resource ,asset)
+                (offload ,asset)
+                (setf ,loaded T))
+              (reinitialize-instance ,asset :inputs (list ,@inputs) ,@initargs)
+              (when ,loaded
+                (load ,asset)))
+             (T
+              (setf (asset ',pool ',name)
+                    (make-asset ',type (list ,@inputs) ,@initargs))))
        ',name)))
