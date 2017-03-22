@@ -80,27 +80,6 @@
 (defmethod offload progn ((subject shader-subject))
   (offload (shader-asset (class-of subject))))
 
-(defmethod shared-initialize :after ((subject shader-subject) slots &key)
-  (declare (ignore slots))
-  (let* ((class (class-of subject))
-         (loaded (when (shader-asset class) (resource (shader-asset class)))))
-    (when (dirty class)
-      (when loaded
-        (offload (shader-asset class)))
-      (let ((shaders ()))
-        (loop for (type spec) on (effective-shaders class) by #'cddr
-              for shader = (make-asset 'shader-asset spec :type type)
-              do (push shader shaders))
-        (setf (shader-asset class) (make-asset 'shader-program-asset shaders)))
-      (when loaded
-        (load (shader-asset class))))))
-
-(defmethod paint :around ((subject shader-subject) target)
-  (gl:use-program (resource (shader-asset subject)))
-  (unwind-protect
-       (call-next-method)
-    (gl:use-program 0)))
-
 (defmacro define-shader-subject (&environment env name direct-superclasses direct-slots &rest options)
   (unless (find-if (lambda (c) (c2mop:subclassp (find-class c T env) 'shader-subject)) direct-superclasses)
     (setf direct-superclasses (append direct-superclasses (list 'shader-subject))))
