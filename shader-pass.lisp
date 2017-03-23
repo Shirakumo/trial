@@ -27,6 +27,15 @@
 (defgeneric register-object-for-pass (pass object))
 (defgeneric shader-resource-for-pass (pass object))
 
+(defmethod paint ((pass shader-pass) (target main))
+  (paint (scene target) pass))
+
+(defmethod pass-inputs ((pass shader-pass))
+  (pass-inputs (class-of pass)))
+
+(defmethod pass-outputs ((pass shader-pass))
+  (pass-outputs (class-of pass)))
+
 (defmacro define-shader-pass (name direct-superclasses inputs &optional slots &rest options)
   (unless (find :metaclass options :key #'car)
     (push '(:metaclass shader-pass-class) options))
