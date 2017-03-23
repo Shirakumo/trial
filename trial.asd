@@ -35,6 +35,8 @@
                (:file "shader-subject")
                (:file "subjects")
                (:file "scene")
+               (:file "shader-pass")
+               (:file "pipeline")
                (:file "hud")
                (:file "sprite")
                (:file "skybox")
