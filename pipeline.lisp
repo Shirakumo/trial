@@ -28,7 +28,18 @@
 
 (defmethod deregister ((pass shader-pass) (pipeline pipeline))
   (setf (passes pipeline) (delete pass (passes pipeline)))
-  (remhash pass (connections pipeline)))
+  (remhash pass (connections pipeline))
+  (loop for k being the hash-keys of (connections pipeline)
+        for v being the hash-values of (connections pipeline)
+        do (setf (gethash k (connections pipeline))
+                 (remove pass v :key #'second))))
+
+(defmethod clear ((pipeline pipeline))
+  (offload pipeline)
+  (clrhash (connections pipeline))
+  (clrhash (pass-fbo-map pipeline))
+  (setf (passes pipeline) ())
+  (setf (framebuffers pipeline) #()))
 
 ;; FIXME: At some point we should probably allow doing more automated
 ;;        connections and nodes that use a previous node's FBOs as

@@ -32,13 +32,13 @@
    :texture (asset 'radiance 'av)
    :vertex-array (asset 'radiance 'cube)))
 
-(defvar *pipeline*)
+(defvar *pipeline* (make-instance 'pipeline))
 
 (defmethod setup-scene ((main main))
   (let ((scene (scene main)))
     (enter (make-instance 'testcube) scene)
     (load scene)
-    (setf *pipeline* (make-instance 'pipeline))
+    (clear *pipeline*)
     (register (make-instance 'per-object-pass) *pipeline*)
     (pack-pipeline *pipeline* main)
     (load *pipeline*)))
