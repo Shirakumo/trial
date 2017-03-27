@@ -53,7 +53,17 @@
                    (mapcar #'second v)))
     table))
 
+(defmethod check-consistent ((pipeline pipeline))
+  (dolist (pass (passes pipeline))
+    (dolist (input (pass-inputs (class-of pass)))
+      (unless (find input (gethash pass (connections pipeline))
+                    :test #'string= :key #'first)
+        (error "Pipeline is not consistent.~%~
+                Pass ~s is missing a connection to its input ~s."
+               pass input)))))
+
 (defmethod pack-pipeline ((pipeline pipeline) target)
+  (check-consistent pipeline)
   (let* ((nodes (passes pipeline))
          (edges (connections->edges (connections pipeline)))
          (passes (flatten-dag nodes edges))
@@ -69,8 +79,13 @@
     ;; Optimise color table
     (loop for pass being the hash-keys of colors
           for color being the hash-values of colors
-          do (setf (gethash pass color) (aref framebuffers color)))
+          do (setf (gethash pass colors) (aref framebuffers color)))
     ;; Commit
+    (dolist (pass passes)
+      (setf (pass-inputs pass) ())
+      (loop for (input source) in (gethash pass (connections pipeline))
+            do (push (list input (gethash source colors))
+                     (pass-inputs pass))))
     (setf (passes pipeline) passes)
     (setf (framebuffers pipeline) framebuffers)
     (setf (pass-fbo-map pipeline) colors)))
@@ -93,7 +108,8 @@
       ;; Reset availability on adjacent
       (dolist (to (gethash node edges))
         (let ((color (gethash to result)))
-          (when color (setf (aref available color) T)))))))
+          (when color (setf (aref available color) T)))))
+    result))
 
 (defun flatten-dag (nodes edges)
   ;; Tarjan
@@ -123,4 +139,5 @@
           for fbo = (gethash pass pass-fbo-map)
           do (gl:bind-framebuffer :framebuffer (resource fbo))
              (paint pass target)
-          finally (paint fbo target))))
+          finally (gl:bind-framebuffer :framebuffer 0)
+                  (paint fbo target))))
