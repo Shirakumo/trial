@@ -8,10 +8,10 @@
 (in-readtable :qtools)
 
 (defclass pipeline ()
-  ((connections :initform () :accessor connections)
+  ((connections :initform (make-hash-table :test 'eq) :accessor connections)
    (passes :initform () :accessor passes)
    (framebuffers :initform #() :accessor framebuffers)
-   (pass-fbo-map :initform (make-hash-table) :accessor pass-fbo-map)))
+   (pass-fbo-map :initform (make-hash-table :test 'eq) :accessor pass-fbo-map)))
 
 (defmethod load progn ((pipeline pipeline))
   (map NIL #'load (framebuffers pipeline)))
@@ -27,24 +27,35 @@
   (pushnew pass (passes pipeline)))
 
 (defmethod deregister ((pass shader-pass) (pipeline pipeline))
-  (setf (passes pipeline) (delete pass (passes pipeline))))
+  (setf (passes pipeline) (delete pass (passes pipeline)))
+  (remhash pass (connections pipeline)))
 
-(defmethod connect-pass (source-pass source-output target-pass target-input pipeline)
-  (unless (or (find source-output '(:color :depth))
-              (find source-output (pass-outputs source-pass)))
-    (error "The pass output ~s does not exist on ~a."
-           source-output source-pass))
-  (unless (or (find target-input '(:color :depth))
-              (find target-input (pass-inputs target-pass)))
+;; FIXME: At some point we should probably allow doing more automated
+;;        connections and nodes that use a previous node's FBOs as
+;;        their own.
+(defmethod connect-pass (source-pass target-pass target-input (pipeline pipeline))
+  (unless (find target-input (pass-inputs (class-of target-pass)))
     (error "The pass input ~s does not exist on ~a."
            target-input target-pass))
-  (pushnew (list source-pass source-output target-pass target-input)
-           (connections pipeline) :test #'equal))
+  (unless (find source-pass (passes pipeline))
+    (pushnew source-pass (passes pipeline)))
+  (unless (find target-pass (passes pipeline))
+    (pushnew target-pass (passes pipeline)))
+  ;; FIXME: override on exists
+  (push (list target-input source-pass)
+        (gethash target-pass (connections pipeline))))
+
+(defun connections->edges (connections)
+  (let ((table (make-hash-table :test 'eq)))
+    (loop for k being the hash-keys of connections
+          for v being the hash-values of connections
+          do (setf (gethash k table)
+                   (mapcar #'second v)))
+    table))
 
 (defmethod pack-pipeline ((pipeline pipeline) target)
   (let* ((nodes (passes pipeline))
-         (edges (loop for connection in (connections pipeline)
-                      collect (cons (first connection) (third connection))))
+         (edges (connections->edges (connections pipeline)))
          (passes (flatten-dag nodes edges))
          (colors (color-graph nodes edges))
          (framebuffers (make-array (loop for color being the hash-values of colors
@@ -71,37 +82,32 @@
     (setf (gethash (pop nodes) result) 0)
     (dolist (node nodes result)
       ;; Mark adjacent as unavailable
-      (loop for (from to) in edges
-            do (when (eql from node)
-                 (let ((color (gethash to result)))
-                   (when color (setf (aref available color) NIL)))))
+      (dolist (to (gethash node edges))
+        (let ((color (gethash to result)))
+          (when color (setf (aref available color) NIL))))
       ;; Assign available
       (setf (gethash node result)
             (loop for i from 0 below (length available)
                   do (when (aref available i)
                        (return i))))
       ;; Reset availability on adjacent
-      (loop for (from to) in edges
-            do (when (eql from node)
-                 (let ((color (gethash to result)))
-                   (when color (setf (aref available color) T))))))))
+      (dolist (to (gethash node edges))
+        (let ((color (gethash to result)))
+          (when color (setf (aref available color) T)))))))
 
 (defun flatten-dag (nodes edges)
   ;; Tarjan
-  (let ((edges* (make-hash-table :test 'eql))
-        (nodes* (make-hash-table :test 'eql))
+  (let ((nodes* (make-hash-table :test 'eql))
         (sorted ()))
     (dolist (node nodes)
       (setf (gethash node nodes*) :unvisited))
-    (dolist (edge edges)
-      (pushnew (cdr edge) (gethash (car edge) edges*)))
     (labels ((visit (node)
                (case (gethash node nodes*)
                  (:temporary
                   (error "Detected loop in shader pass dependency graph."))
                  (:unvisited
                   (setf (gethash node nodes*) :temporary)
-                  (dolist (target (gethash node edges*))
+                  (dolist (target (gethash node edges))
                     (visit target))
                   (remhash node nodes*)
                   (push node sorted)))))
@@ -111,14 +117,10 @@
     sorted))
 
 (defmethod paint ((pipeline pipeline) target)
-  (with-accessors ((pass-fbo-map pass-fbo-map) (passes passes)))
-  (loop for pass in passes
-        for fbo = (gethash pass pass-fbo-map)
-        do () ;; FIXME: Resolve inputs to FBOs and set their uniforms
-           (gl:bind-framebuffer :framebuffer (resource fbo))
-           (paint pass target)
-        finally (paint fbo target)))
-
-(defmethod paint ((fbo framebuffer-bundle-asset) target)
-  ;; FIXME: draw the FBO onto the general framebuffer.
-  )
+  (let ((pass-fbo-map (pass-fbo-map pipeline))
+        (passes (passes pipeline)))
+    (loop for pass in passes
+          for fbo = (gethash pass pass-fbo-map)
+          do (gl:bind-framebuffer :framebuffer (resource fbo))
+             (paint pass target)
+          finally (paint fbo target))))
