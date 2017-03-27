@@ -62,7 +62,7 @@
       (when errorp (error "No asset with name ~s on pool ~a." name pool))))
 
 (defmethod asset ((pool symbol) name &optional errorp)
-  (let ((pool (pool symbol errorp)))
+  (let ((pool (pool pool errorp)))
     (when pool (asset pool name errorp))))
 
 (defmethod (setf asset) ((asset asset) (pool pool) name)
@@ -79,8 +79,8 @@
 
 (defun substitute-asset-paths (tree pool)
   (typecase tree
-    (cons (cons (substitute-asset-paths (car tree))
-                (substitute-asset-paths (cdr tree))))
+    (cons (cons (substitute-asset-paths (car tree) pool)
+                (substitute-asset-paths (cdr tree) pool)))
     (pathname (merge-pathnames tree (base pool)))
     (T tree)))
 
@@ -90,7 +90,7 @@
     (substitute-asset-paths inputs (pool pool))
     `(let ((,loaded)
            (,asset (asset ',pool ',name)))
-       (cond (asset
+       (cond (,asset
               (when (resource ,asset)
                 (offload ,asset)
                 (setf ,loaded T))
