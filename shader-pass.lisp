@@ -8,8 +8,7 @@
 (in-readtable :qtools)
 
 (defclass shader-pass-class (standard-class)
-  ((pass-inputs :initarg :pass-inputs :initform () :accessor pass-inputs)
-   (pass-outputs :initarg :pass-outputs :initform () :accessor pass-outputs)))
+  ((pass-inputs :initarg :pass-inputs :initform () :accessor pass-inputs)))
 
 (defmethod c2mop:validate-superclass ((class shader-pass-class) (superclass T))
   NIL)
@@ -21,25 +20,19 @@
   T)
 
 (defclass shader-pass ()
-  ()
+  ((pass-inputs :initarg :pass-inputs :initform () :accessor pass-inputs))
   (:metaclass shader-pass-class))
 
 (defgeneric register-object-for-pass (pass object))
 (defgeneric shader-resource-for-pass (pass object))
 
-(defmethod paint ((pass shader-pass) (target main))
-  (paint (scene target) pass))
-
-(defmethod pass-inputs ((pass shader-pass))
-  (pass-inputs (class-of pass)))
-
-(defmethod pass-outputs ((pass shader-pass))
-  (pass-outputs (class-of pass)))
+;; (defmethod paint ((pass shader-pass) (target main))
+;;   (paint (scene target) pass))
 
 (defmacro define-shader-pass (name direct-superclasses inputs &optional slots &rest options)
   (unless (find :metaclass options :key #'car)
     (push '(:metaclass shader-pass-class) options))
-  `(defclass ,name (shader-pass ,@direct-superclasses)
+  `(defclass ,name (,@direct-superclasses shader-pass)
      ,slots
      ,@options
      (:pass-inputs ,@inputs)))
@@ -71,6 +64,7 @@
 
 (defmethod paint :around ((subject shader-subject) (pass per-object-pass))
   (gl:use-program (resource (shader-asset subject)))
+  ;; FIXME: register inputs as uniforms... ?
   (unwind-protect
        (call-next-method)
     (gl:use-program 0)))
@@ -87,20 +81,21 @@
 
 (defmethod paint :around ((pass single-shader-pass) target)
   (gl:use-program (resource (shader-program pass)))
+  ;; FIXME: register inputs as uniforms... ?
   (unwind-protect
        (call-next-method)
     (gl:use-program 0)))
 
-(define-asset packed-vao-asset (radiance fullscreen-square)
-              (#(0 1 2 2 3 0)
-                3 #(+1.0 +1.0 +0.0
-                    +1.0 -1.0 +0.0
-                    -1.0 -1.0 +0.0
-                    -1.0 +1.0 +0.0)
-                2 #(1.0 1.0
-                    1.0 0.0
-                    0.0 0.0
-                    0.0 1.0)))
+;; (define-asset packed-vao-asset (radiance fullscreen-square)
+;;               (#(0 1 2 2 3 0)
+;;                 3 #(+1.0 +1.0 +0.0
+;;                     +1.0 -1.0 +0.0
+;;                     -1.0 -1.0 +0.0
+;;                     -1.0 +1.0 +0.0)
+;;                 2 #(1.0 1.0
+;;                     1.0 0.0
+;;                     0.0 0.0
+;;                     0.0 1.0)))
 
 (define-shader-pass post-effect-pass (single-shader-pass)
   (input)
