@@ -32,10 +32,16 @@
    :texture (asset 'radiance 'av)
    :vertex-array (asset 'radiance 'cube)))
 
+(defvar *pipeline*)
+
 (defmethod setup-scene ((main main))
   (let ((scene (scene main)))
     (enter (make-instance 'testcube) scene)
-    (load scene)))
+    (load scene)
+    (setf *pipeline* (make-instance 'pipeline))
+    (register (make-instance 'per-object-pass) *pipeline*)
+    (pack-pipeline *pipeline* main)
+    (load *pipeline*)))
 
 (defmethod paint ((source main) (target main))
   (let ((scene (scene source)))
@@ -49,4 +55,4 @@
     (rotate +vx+ 0.03)
     (rotate +vy+ 0.05)
     (rotate +vz+ 0.07)
-    (paint scene target)))
+    (paint *pipeline* target)))
