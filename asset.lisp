@@ -507,8 +507,9 @@
     (with-cleanup-on-failure (mapc #'offload (textures asset))
       (dolist (input inputs)
         (push (load (first input)) (textures asset)))
-      (setf (framebuffer asset) buffer)
-      (setf (resource asset) (resource buffer)))))
+      (let ((buffer (make-asset 'framebuffer-asset inputs)))
+        (setf (framebuffer asset) buffer)
+        (setf (resource asset) (resource buffer))))))
 
 (defmethod resize ((asset framebuffer-bundle-asset) width height)
   (let ((loaded (resource asset)))
