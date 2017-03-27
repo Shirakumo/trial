@@ -34,16 +34,20 @@
 ;;        connections and nodes that use a previous node's FBOs as
 ;;        their own.
 (defmethod connect-pass (source-pass target-pass target-input (pipeline pipeline))
-  (unless (find target-input (pass-inputs (class-of target-pass)))
-    (error "The pass input ~s does not exist on ~a."
-           target-input target-pass))
-  (unless (find source-pass (passes pipeline))
-    (pushnew source-pass (passes pipeline)))
-  (unless (find target-pass (passes pipeline))
-    (pushnew target-pass (passes pipeline)))
-  ;; FIXME: override on exists
-  (push (list target-input source-pass)
-        (gethash target-pass (connections pipeline))))
+  (let ((connections (connections pipeline)))
+    (unless (find target-input (pass-inputs (class-of target-pass)))
+      (error "The pass input ~s does not exist on ~a."
+             target-input target-pass))
+    (unless (find source-pass (passes pipeline))
+      (pushnew source-pass (passes pipeline)))
+    (unless (find target-pass (passes pipeline))
+      (pushnew target-pass (passes pipeline)))
+    ;; Remove potential previous connection
+    (setf (gethash target-pass connections)
+          (remove target-input (gethash target-pass connections)
+                  :key #'first :test #'string))
+    (push (list target-input source-pass)
+          (gethash target-pass connections))))
 
 (defun connections->edges (connections)
   (let ((table (make-hash-table :test 'eq)))
