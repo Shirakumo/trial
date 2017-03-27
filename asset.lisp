@@ -459,6 +459,10 @@
                         texture attachment asset))))
         (gl:bind-framebuffer :framebuffer 0)))))
 
+(defmethod paint ((fbo framebuffer-asset) target)
+  ;; FIXME: paint FBO
+  )
+
 (defclass framebuffer-bundle-asset (asset)
   ((width :initarg :width :accessor width)
    (height :initarg :height :accessor height)
@@ -517,3 +521,6 @@
     (setf (width asset) width)
     (setf (height asset) height)
     (when loaded (load asset))))
+
+(defmethod paint ((fbo framebuffer-bundle-asset) target)
+  (paint (framebuffer fbo) target))
