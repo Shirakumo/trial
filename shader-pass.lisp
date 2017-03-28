@@ -86,6 +86,11 @@
   ()
   ((shader-program :initform (make-instance 'shader-program-asset) :accessor shader-program)))
 
+(defmethod reinitialize-instance :after ((pass single-shader-pass) &key)
+  (when (resource (shader-program pass))
+    (offload pass)
+    (load pass)))
+
 (defmethod load progn ((pass single-shader-pass))
   (setf (shader-program pass) (make-class-shader-program pass))
   (load (shader-program pass)))
