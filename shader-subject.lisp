@@ -9,7 +9,6 @@
 (defclass shader-subject-class (subject-class)
   ((effective-shaders :initform () :accessor effective-shaders)
    (direct-shaders :initform () :initarg :shaders :accessor direct-shaders)
-   (shader-asset :initform NIL :accessor shader-asset)
    (dirty :initform T :accessor dirty)))
 
 (defmethod cascade-option-changes :before ((class shader-subject-class))
@@ -61,24 +60,32 @@
   `(setf (class-shader ,type ',class)
          (progn ,@definitions)))
 
-(defmethod (setf uniform) (data (class shader-subject-class) name)
-  (setf (uniform (shader-asset class) name) data))
+(defmethod make-class-shader-program ((class shader-subject-class))
+  (make-asset 'shader-program-asset
+              (loop for (type source) on (effective-shaders class) by #'cddr
+                    collect (make-asset 'shader-asset (list source) :type type))))
 
 (defclass shader-subject (subject)
   ()
   (:metaclass shader-subject-class))
 
-(defmethod shader-asset ((subject shader-subject))
-  (shader-asset (class-of subject)))
+(defmethod effective-shaders ((subject shader-subject))
+  (effective-shaders (class-of subject)))
 
-(defmethod (setf uniform) (data (subject shader-subject) name)
-  (setf (uniform (shader-asset (class-of subject)) name) data))
+(defmethod direct-shaders ((subject shader-subject))
+  (direct-shaders (class-of subject)))
 
-(defmethod load progn ((subject shader-subject))
-  (load (shader-asset (class-of subject))))
+(defmethod class-shader (type (subject shader-subject))
+  (class-shader type (class-of subject)))
 
-(defmethod offload progn ((subject shader-subject))
-  (offload (shader-asset (class-of subject))))
+(defmethod (setf class-shader) (source type (subject shader-subject))
+  (setf (class-shader type (class-of subject)) source))
+
+(defmethod remove-class-shader (type (subject shader-subject))
+  (remove-class-shader type (class-of subject)))
+
+(defmethod make-class-shader-program ((subject shader-subject))
+  (make-class-shader-program (class-of subject)))
 
 (defmacro define-shader-subject (&environment env name direct-superclasses direct-slots &rest options)
   (unless (find-if (lambda (c) (c2mop:subclassp (find-class c T env) 'shader-subject)) direct-superclasses)
