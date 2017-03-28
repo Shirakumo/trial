@@ -474,9 +474,10 @@
    :width (error "WIDTH required.")
    :height (error "HEIGHT required.")))
 
-(defmethod finalize-resource ((type (eql 'famebuffer-bundle-asset)) resource)
+(defmethod finalize-resource ((type (eql 'framebuffer-bundle-asset)) resource)
   (mapcar #'offload resource))
 
+;; FIXME: gc?
 (defmethod offload progn ((asset framebuffer-bundle-asset))
   (mapcar #'offload (list* (framebuffer asset) (textures asset)))
   (setf (framebuffer asset) NIL)
