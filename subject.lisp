@@ -31,8 +31,9 @@
   ;; Notify
   (loop for pointer in (instances class)
         for subject = (tg:weak-pointer-value pointer)
-        when subject return (issue (event-loop subject) 'subject-class-redefined
-                                   :subject-class class)))
+        when (and subject (event-loop subject))
+        return (issue (event-loop subject) 'subject-class-redefined
+                      :subject-class class)))
 
 (defmethod cascade-option-changes :after ((class subject-class))
   ;; Propagate
