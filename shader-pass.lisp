@@ -49,9 +49,8 @@
   (glsl-toolkit:merge-shader-sources
    (list (class-shader type pass) spec)))
 
-(defmethod register-object-for-pass ((pass per-object-pass) (subject shader-subject))
-  (let ((shaders ())
-        (class (class-of subject)))
+(defmethod register-object-for-pass ((pass per-object-pass) (class shader-subject-class))
+  (let ((shaders ()))
     (unless (gethash class (assets pass))
       (loop for (type spec) on (effective-shaders class) by #'cddr
             for inputs = (coerce-pass-shader pass type spec)
@@ -60,11 +59,19 @@
       (setf (gethash class (assets pass))
             (make-asset 'shader-program-asset shaders)))))
 
+(defmethod register-object-for-pass ((pass per-object-pass) (subject shader-subject))
+  (register-object-for-pass pass (class-of subject)))
+
 (defmethod paint :around ((subject shader-subject) (pass per-object-pass))
   (let ((program (shader-program-for-pass pass subject)))
     (gl:use-program (resource program))
     ;; FIXME: register inputs as uniforms... ?
     (call-next-method)))
+
+(define-handler (per-object-pass update-shader-for-redefined-subject subject-redefined) (ev)
+  (remhash (subject-class ev) (assets per-object-pass))
+  ;; FIXME: Might not always need to load.
+  (load (register-object-for-pass per-object-pass (subject-class ev))))
 
 (define-shader-pass single-shader-pass ()
   ()
