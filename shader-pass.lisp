@@ -133,7 +133,7 @@ void main(){
 in vec2 texCoord;")
 
 
-(define-shader-pass copy-pass (single-shader-pass)
+(define-shader-pass copy-pass (post-effect-pass)
   ("previous"))
 
 (define-class-shader copy-pass :fragment-shader
