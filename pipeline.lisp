@@ -64,7 +64,7 @@
     (loop for k being the hash-keys of connections
           for v being the hash-values of connections
           do (loop for connection in v
-                   do (push (cons k connection) edges)))
+                   do (push (cons k (second connection)) edges)))
     edges))
 
 (defmethod check-consistent ((pipeline pipeline))
@@ -85,8 +85,9 @@
          (colors (color-graph nodes edges))
          (framebuffers (make-array (1+ (loop for color being the hash-values of colors
                                              maximize color)))))
-    (v:info :trial.pipeline "~a pass order:   ~a" pipeline passes)
+    (v:info :trial.pipeline "~a pass order: ~a" pipeline passes)
     (v:info :trial.pipeline "~a framebuffers: ~a" pipeline (length framebuffers))
+    (v:info :trial.pipeline "~a fbo allocation: ~a" pipeline (alexandria:hash-table-alist colors))
     ;; Allocate FBOs
     (loop for i from 0 below (length framebuffers)
           do (setf (aref framebuffers i)
@@ -158,7 +159,7 @@
       (loop while (with-hash-table-iterator (iterator nodes*)
                     (multiple-value-bind (found node) (iterator)
                       (when found (visit node) T)))))
-    sorted))
+    (nreverse sorted)))
 
 (defmethod paint ((pipeline pipeline) target)
   (let ((pass-fbo-map (pass-fbo-map pipeline))
