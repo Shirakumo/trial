@@ -29,10 +29,10 @@
          0.0 0.0
          0.0 1.0)))
 
-(define-shader-pass blur-shader (post-effect-pass)
+(define-shader-pass box-blur-pass (post-effect-pass)
   ("previous"))
 
-(define-class-shader blur-shader :fragment-shader
+(define-class-shader box-blur-pass :fragment-shader
   "
 in vec2 texCoord;
 out vec4 outColor;
@@ -64,7 +64,7 @@ void main(){
     (register pipeline scene)
     (load scene)
     (connect-pass (make-instance 'per-object-pass)
-                  (make-instance 'blur-shader)
+                  (make-instance 'box-blur-pass)
                   "previous" *pipeline*)
     (pack-pipeline *pipeline* main)
     (load *pipeline*)))
