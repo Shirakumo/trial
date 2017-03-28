@@ -113,7 +113,9 @@
                      (pass-inputs pass))))
     (setf (passes pipeline) passes)
     (setf (framebuffers pipeline) framebuffers)
-    (setf (pass-fbo-map pipeline) colors)))
+    (setf (pass-fbo-map pipeline) colors)
+    (setf (pass-inputs (copy-pass pipeline))
+          `(("previousPass" ,(gethash (car (last passes)) colors))))))
 
 (defun color-graph (nodes edges)
   ;; Greedy colouring
