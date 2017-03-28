@@ -42,6 +42,11 @@
   ()
   ((assets :initform (make-hash-table :test 'eql) :accessor assets)))
 
+(defmethod reinitialize-instance :after ((pass per-object-pass) &key)
+  (loop for class being the hash-keys of (assets pass)
+        do (remhash class (assets pass))
+           (register-object-for-pass pass class)))
+
 (defmethod load progn ((pass per-object-pass))
   (loop for v being the hash-values of (assets pass)
         do (load v)))
