@@ -30,21 +30,21 @@
          0.0 1.0)))
 
 (define-shader-pass box-blur-pass (post-effect-pass)
-  ("previous"))
+  ("previousPass"))
 
 (define-class-shader box-blur-pass :fragment-shader
   "
 in vec2 texCoord;
 out vec4 color;
-uniform sampler2D previous;
+uniform sampler2D previousPass;
 const float blurSizeH = 1.0 / 300.0;
 const float blurSizeV = 1.0 / 200.0;
 
 void main(){
   vec4 sum = vec4(0.0);
-  for (int x = -4; x <= 4; x++){
-    for (int y = -4; y <= 4; y++){
-      sum += texture(previous,
+  for (int x=-4; x<=4; x++){
+    for (int y=-4; y<=4; y++){
+      sum += texture(previousPass,
                      vec2(texCoord.x + x * blurSizeH, texCoord.y + y * blurSizeV)) / 81.0;
     }
   }
@@ -66,7 +66,7 @@ void main(){
     (register (make-instance 'per-object-pass) pipeline)
     ;; (connect-pass (make-instance 'per-object-pass)
     ;;               (make-instance 'box-blur-pass)
-    ;;               "previous" pipeline)
+    ;;               "previousPass" pipeline)
     (pack-pipeline pipeline main)
     ;; Manual for now
     (dolist (pass (passes pipeline))
