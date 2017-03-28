@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(defclass pipeline ()
+(defclass pipeline (entity event-loop)
   ((connections :initform (make-hash-table :test 'eq) :accessor connections)
    (passes :initform () :accessor passes)
    (framebuffers :initform #() :accessor framebuffers)
