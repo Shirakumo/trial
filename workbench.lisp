@@ -74,6 +74,10 @@ void main(){
         (register-object-for-pass pass element)))
     (load pipeline)))
 
+(define-handler (controller resize) (ev width height)
+  (let ((pipeline (unit 'pipeline (scene *context*))))
+    (when pipeline (resize pipeline width height))))
+
 (defmethod paint ((source main) (target main))
   (let ((scene (scene source)))
     (gl:viewport 0 0 (width target) (height target))
