@@ -89,20 +89,9 @@
     ;; FIXME: register inputs as uniforms... ?
     (call-next-method)))
 
-;; (define-asset packed-vao-asset (radiance fullscreen-square)
-;;               (#(0 1 2 2 3 0)
-;;                 3 #(+1.0 +1.0 +0.0
-;;                     +1.0 -1.0 +0.0
-;;                     -1.0 -1.0 +0.0
-;;                     -1.0 +1.0 +0.0)
-;;                 2 #(1.0 1.0
-;;                     1.0 0.0
-;;                     0.0 0.0
-;;                     0.0 1.0)))
-
 (define-shader-pass post-effect-pass (single-shader-pass)
   (input)
-  ((vertex-array :initform (asset 'radiance 'fullscreen-square) :accessor vertex-array)))
+  ((vertex-array :initform (asset 'geometry 'fullscreen-square) :accessor vertex-array)))
 
 (defmethod load progn ((pass post-effect-pass))
   (load (vertex-array pass)))
@@ -112,3 +101,18 @@
     (gl:bind-vertex-array (resource vao))
     (%gl:draw-elements (vertex-form subject) (size vao) :unsigned-int 0)
     (gl:bind-vertex-array 0)))
+
+(define-class-shader post-effect-pass :vertex-shader
+  "
+layout (location = 0) in vec3 position;
+layout (location = 1) in vec2 in_texCoord;
+out vec2 texCoord;
+
+void main(){
+  gl_Position = vec4(position, 1.0f);
+  texCoord = in_texCoord;
+}")
+
+(define-class-shader post-effect-pass :fragment-shader
+  "
+in vec2 texCoord;")
