@@ -66,12 +66,12 @@
           (gethash target-pass connections))))
 
 (defun connections->edges (connections)
-  (let ((table (make-hash-table :test 'eq)))
+  (let ((edges))
     (loop for k being the hash-keys of connections
           for v being the hash-values of connections
-          do (setf (gethash k table)
-                   (mapcar #'second v)))
-    table))
+          do (loop for connection in v
+                   do (push (cons k connection) edges)))
+    edges))
 
 (defmethod check-consistent ((pipeline pipeline))
   (dolist (pass (passes pipeline))
@@ -87,12 +87,12 @@
   (v:info :trial.pipeline "~a packing for ~a" pipeline target)
   (let* ((nodes (passes pipeline))
          (edges (connections->edges (connections pipeline)))
-         (passes (flatten-dag nodes edges))
+         (passes (flatten-graph nodes edges))
          (colors (color-graph nodes edges))
-         (framebuffers (make-array (loop for color being the hash-values of colors
-                                         maximize color))))
-    (v:info :trial.pipeline "~a pass order:   ~a" passes)
-    (v:info :trial.pipeline "~a framebuffers: ~a" (length framebuffers))
+         (framebuffers (make-array (1+ (loop for color being the hash-values of colors
+                                             maximize color)))))
+    (v:info :trial.pipeline "~a pass order:   ~a" pipeline passes)
+    (v:info :trial.pipeline "~a framebuffers: ~a" pipeline (length framebuffers))
     ;; Allocate FBOs
     (loop for i from 0 below (length framebuffers)
           do (setf (aref framebuffers i)
@@ -118,39 +118,46 @@
   (let ((result (make-hash-table :test 'eq))
         (available (make-array (length nodes) :initial-element T)))
     (setf (gethash (pop nodes) result) 0)
-    (dolist (node nodes result)
-      ;; Mark adjacent as unavailable
-      (dolist (to (gethash node edges))
-        (let ((color (gethash to result)))
-          (when color (setf (aref available color) NIL))))
-      ;; Assign available
-      (setf (gethash node result)
-            (loop for i from 0 below (length available)
-                  do (when (aref available i)
-                       (return i))))
-      ;; Reset availability on adjacent
-      (dolist (to (gethash node edges))
-        (let ((color (gethash to result)))
-          (when color (setf (aref available color) T)))))
+    (flet ((mark-adjacent (node how)
+             (loop for (from . to) in edges
+                   do (cond ((eql node from)
+                             (let ((color (gethash to result)))
+                               (when color (setf (aref available color) how))))
+                            ((eql node to)
+                             (let ((color (gethash from result)))
+                               (when color (setf (aref available color) how))))))))
+      (dolist (node nodes result)
+        ;; Mark adjacent as unavailable
+        (mark-adjacent node NIL)
+        ;; Assign available
+        (setf (gethash node result)
+              (loop for i from 0 below (length available)
+                    do (when (aref available i)
+                         (return i))))
+        ;; Reset availability on adjacent
+        (mark-adjacent node T)))
     result))
 
-(defun flatten-dag (nodes edges)
+(defun flatten-graph (nodes edges)
   ;; Tarjan
   (let ((nodes* (make-hash-table :test 'eql))
+        (edges* (make-hash-table :test 'eql))
         (sorted ()))
     (dolist (node nodes)
       (setf (gethash node nodes*) :unvisited))
+    (dolist (edge edges)
+      (push (cdr edge) (gethash (car edge) edges*)))
     (labels ((visit (node)
                (case (gethash node nodes*)
                  (:temporary
                   (error "Detected loop in shader pass dependency graph."))
                  (:unvisited
                   (setf (gethash node nodes*) :temporary)
-                  (dolist (target (gethash node edges))
+                  (dolist (target (gethash node edges*))
                     (visit target))
                   (remhash node nodes*)
                   (push node sorted)))))
-      (loop while (with-hash-table-iterator (iterator nodes)
+      (loop while (with-hash-table-iterator (iterator nodes*)
                     (multiple-value-bind (found node) (iterator)
                       (when found (visit node) T)))))
     sorted))
