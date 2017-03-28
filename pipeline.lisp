@@ -88,7 +88,7 @@
     ;; Allocate FBOs
     (loop for i from 0 below (length framebuffers)
           do (setf (aref framebuffers i)
-                   (make-asset 'framebuffer-bundle-asset :depth-attachment
+                   (make-asset 'framebuffer-bundle-asset (list :color :depth)
                                :width (width target)
                                :height (height target))))
     ;; Optimise color table
