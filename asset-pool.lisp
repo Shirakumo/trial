@@ -37,7 +37,7 @@
 
 (defclass pool ()
   ((name :initarg :name :accessor name)
-   (base :accessor base)
+   (base :initarg :base :accessor base)
    (assets :initform (make-hash-table :test 'eq) :accessor assets))
   (:default-initargs
    :name (error "NAME required.")
@@ -45,6 +45,13 @@
 
 (defmethod initialize-instance :after ((pool pool) &key base)
   (setf (base pool) base))
+
+(defmethod reinitialize-instance :after ((pool pool) &key (base NIL base-p))
+  (when base-p (setf (base pool) base)))
+
+(defmethod print-object ((pool pool) stream)
+  (print-unreadable-object (pool stream :type T)
+    (format stream "~a ~s" (name pool) (base pool))))
 
 (defmethod (setf base) (base (pool pool))
   (setf (slot-value pool 'base) (coerce-base base)))
@@ -84,7 +91,7 @@
     (pathname (merge-pathnames tree (base pool)))
     (T tree)))
 
-(defmacro define-asset (type (pool name) inputs &rest initargs)
+(defmacro define-asset ((pool name) type inputs &rest initargs)
   (let ((loaded (gensym "GENSYM"))
         (asset (gensym "ASSET")))
     (substitute-asset-paths inputs (pool pool))
@@ -101,3 +108,5 @@
               (setf (asset ',pool ',name)
                     (make-asset ',type (list ,@inputs) ,@initargs))))
        ',name)))
+
+(indent:define-indentation define-asset (2 4 (&whole 4 &rest 1) &body))
