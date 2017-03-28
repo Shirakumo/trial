@@ -1,36 +1,61 @@
 (in-package #:trial)
 (in-readtable :qtools)
 
-(define-asset texture-asset (radiance av)
-              #p"~/av.png")
+(define-pool workbench
+  :base 'trial)
 
-(define-asset packed-vao-asset (radiance cube)
-              (#(0 1 2 2 3 0
-                 0 1 5 5 4 0
-                 2 3 7 7 6 2
-                 4 5 6 6 7 4)
-                3 #(+0.5 +0.5 +0.5
-                    +0.5 -0.5 +0.5
-                    -0.5 -0.5 +0.5
-                    -0.5 +0.5 +0.5
-                    +0.5 +0.5 -0.5
-                    +0.5 -0.5 -0.5
-                    -0.5 -0.5 -0.5
-                    -0.5 +0.5 -0.5)
-                2 #(1.0 1.0
-                    1.0 0.0
-                    0.0 0.0
-                    0.0 1.0
-                    1.0 1.0
-                    1.0 0.0
-                    0.0 0.0
-                    0.0 1.0)))
+(define-asset (workbench av) texture-asset
+    (#p"~/av.png"))
+
+(define-asset (workbench cube) packed-vao-asset
+    (#(0 1 2 2 3 0
+       0 1 5 5 4 0
+       2 3 7 7 6 2
+       4 5 6 6 7 4)
+     3 #(+0.5 +0.5 +0.5
+         +0.5 -0.5 +0.5
+         -0.5 -0.5 +0.5
+         -0.5 +0.5 +0.5
+         +0.5 +0.5 -0.5
+         +0.5 -0.5 -0.5
+         -0.5 -0.5 -0.5
+         -0.5 +0.5 -0.5)
+     2 #(1.0 1.0
+         1.0 0.0
+         0.0 0.0
+         0.0 1.0
+         1.0 1.0
+         1.0 0.0
+         0.0 0.0
+         0.0 1.0)))
+
+(define-shader-pass blur-shader (post-effect-pass)
+  ("previous"))
+
+(define-class-shader blur-shader :fragment-shader
+  "
+in vec2 texCoord;
+out vec4 outColor;
+uniform sampler2D previous;
+const float blurSizeH = 1.0 / 300.0;
+const float blurSizeV = 1.0 / 200.0;
+
+void main(){
+  vec4 sum = vec4(0.0);
+  for (int x = -4; x <= 4; x++){
+    for (int y = -4; y <= 4; y++){
+      sum += texture(previous,
+                     vec2(texCoord.x + x * blurSizeH, texCoord.y + y * blurSizeV)) / 81.0;
+    }
+  }
+  outColor = sum;
+}")
 
 (define-shader-subject testcube (vertex-subject textured-subject)
   ()
   (:default-initargs
-   :texture (asset 'radiance 'av)
-   :vertex-array (asset 'radiance 'cube)))
+   :texture (asset 'workbench 'av)
+   :vertex-array (asset 'workbench 'cube)))
 
 (defvar *pipeline* (make-instance 'pipeline))
 
@@ -39,7 +64,9 @@
     (enter (make-instance 'testcube) scene)
     (load scene)
     (clear *pipeline*)
-    (register (make-instance 'per-object-pass) *pipeline*)
+    (connect-pass (make-instance 'per-object-pass)
+                  (make-instance 'blur-shader)
+                  "previous" *pipeline*)
     (pack-pipeline *pipeline* main)
     (load *pipeline*)))
 
