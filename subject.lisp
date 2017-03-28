@@ -88,16 +88,20 @@
     (when loop
       (add-handler subject loop))))
 
-(defmethod register :after ((subject subject) (loop event-loop))
+(defmethod register :before ((subject subject) (loop event-loop))
   (when (event-loop subject)
     (error "~s is already registered on the event-loop ~s, can't add it to ~s."
-           subject (event-loop subject) loop))
+           subject (event-loop subject) loop)))
+
+(defmethod register :after ((subject subject) (loop event-loop))
   (setf (event-loop subject) loop))
 
-(defmethod deregister :after ((subject subject) (loop event-loop))
+(defmethod deregister :before ((subject subject) (loop event-loop))
   (unless (eql loop (event-loop subject))
     (error "~s is registered on the event-loop ~s, can't remove it from ~s."
-           subject (event-loop subject) loop))
+           subject (event-loop subject) loop)))
+
+(defmethod deregister :after ((subject subject) (loop event-loop))
   (setf (event-loop subject) NIL))
 
 (defmacro define-subject (&environment env name direct-superclasses direct-slots &rest options)
