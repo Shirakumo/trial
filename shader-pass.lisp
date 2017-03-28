@@ -113,7 +113,7 @@
   (let ((vao (vertex-array pass)))
     (gl:disable :depth-test)
     (gl:bind-vertex-array (resource vao))
-    (%gl:draw-elements (vertex-form vao) (size vao) :unsigned-int 0)
+    (%gl:draw-elements :triangles (size vao) :unsigned-int 0)
     (gl:bind-vertex-array 0)
     (gl:enable :depth-test)))
 
