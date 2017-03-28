@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(defclass shader-pass-class (standard-class)
+(defclass shader-pass-class (shader-subject-class)
   ((pass-inputs :initarg :pass-inputs :initform () :accessor pass-inputs)))
 
 (defmethod c2mop:validate-superclass ((class shader-pass-class) (superclass T))
@@ -19,15 +19,12 @@
 (defmethod c2mop:validate-superclass ((class shader-pass-class) (superclass standard-class))
   T)
 
-(defclass shader-pass ()
+(defclass shader-pass (shader-subject)
   ((pass-inputs :initarg :pass-inputs :initform () :accessor pass-inputs))
   (:metaclass shader-pass-class))
 
 (defgeneric register-object-for-pass (pass object))
-(defgeneric shader-resource-for-pass (pass object))
-
-;; (defmethod paint ((pass shader-pass) (target main))
-;;   (paint (scene target) pass))
+(defgeneric shader-program-for-pass (pass object))
 
 (defmacro define-shader-pass (name direct-superclasses inputs &optional slots &rest options)
   (unless (find :metaclass options :key #'car)
@@ -39,17 +36,18 @@
 
 (define-shader-pass per-object-pass ()
   ()
-  ((assets :initform (make-hash-table :test 'eql))))
+  ((assets :initform (make-hash-table :test 'eql) :accessor assets)))
 
 (defmethod load progn ((pass per-object-pass))
   (loop for v being the hash-values of (assets pass)
         do (load v)))
 
-(defmethod shader-resource-for-pass ((pass per-object-pass) (subject shader-subject))
-  (resource (gethash (class-of subject) (assets pass))))
+(defmethod shader-program-for-pass ((pass per-object-pass) (subject shader-subject))
+  (gethash (class-of subject) (assets pass)))
 
 (defmethod coerce-pass-shader ((pass per-object-pass) type spec)
-  spec)
+  (glsl-toolkit:merge-shader-sources
+   (list (class-shader type pass) spec)))
 
 (defmethod register-object-for-pass ((pass per-object-pass) (subject shader-subject))
   (let ((shaders ())
@@ -63,28 +61,33 @@
             (make-asset 'shader-program-asset shaders)))))
 
 (defmethod paint :around ((subject shader-subject) (pass per-object-pass))
-  (gl:use-program (resource (shader-asset subject)))
-  ;; FIXME: register inputs as uniforms... ?
-  (unwind-protect
-       (call-next-method)
-    (gl:use-program 0)))
+  (let ((program (shader-program-for-pass pass subject)))
+    (gl:use-program (resource program))
+    ;; FIXME: register inputs as uniforms... ?
+    (call-next-method)))
 
 (define-shader-pass single-shader-pass ()
   ()
-  ((shader-program :initarg :shader-program :accessor shader-program)))
+  ((shader-program :initform (make-instance 'shader-program-asset) :accessor shader-program)))
 
 (defmethod load progn ((pass single-shader-pass))
+  (setf (shader-program pass) (make-class-shader-program pass))
   (load (shader-program pass)))
 
+(defmethod offload progn ((pass single-shader-pass))
+  (offload (shader-program pass))
+  (setf (shader-program pass) NIL))
+
 (defmethod register-object-for-pass ((pass single-shader-pass) o))
-(defmethod shader-resource-for-pass ((pass single-shader-pass) o))
+
+(defmethod shader-program-for-pass ((pass single-shader-pass) o)
+  (shader-program pass))
 
 (defmethod paint :around ((pass single-shader-pass) target)
-  (gl:use-program (resource (shader-program pass)))
-  ;; FIXME: register inputs as uniforms... ?
-  (unwind-protect
-       (call-next-method)
-    (gl:use-program 0)))
+  (let ((program (shader-program pass)))
+    (gl:use-program (resource program))
+    ;; FIXME: register inputs as uniforms... ?
+    (call-next-method)))
 
 ;; (define-asset packed-vao-asset (radiance fullscreen-square)
 ;;               (#(0 1 2 2 3 0)
