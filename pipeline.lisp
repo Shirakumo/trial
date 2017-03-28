@@ -19,11 +19,6 @@
   (map NIL #'load (passes pipeline))
   (load (copy-pass pipeline)))
 
-(defmethod offload progn ((pipeline pipeline))
-  (map NIL #'offload (framebuffers pipeline))
-  (map NIL #'offload (passes pipeline))
-  (offload (copy-pass pipeline)))
-
 (defmethod resize ((pipeline pipeline) width height)
   (loop for framebuffer across (framebuffers pipeline)
         do (resize framebuffer width height)))
@@ -40,7 +35,6 @@
                  (remove pass v :key #'second))))
 
 (defmethod clear ((pipeline pipeline))
-  (offload pipeline)
   (clrhash (connections pipeline))
   (clrhash (pass-fbo-map pipeline))
   (setf (passes pipeline) ())

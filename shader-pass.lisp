@@ -88,16 +88,12 @@
 
 (defmethod reinitialize-instance :after ((pass single-shader-pass) &key)
   (when (resource (shader-program pass))
-    (offload pass)
+    (offload (shader-program pass))
     (load pass)))
 
 (defmethod load progn ((pass single-shader-pass))
   (setf (shader-program pass) (make-class-shader-program pass))
   (load (shader-program pass)))
-
-(defmethod offload progn ((pass single-shader-pass))
-  (offload (shader-program pass))
-  (setf (shader-program pass) NIL))
 
 (defmethod register-object-for-pass ((pass single-shader-pass) o))
 
@@ -122,9 +118,6 @@
 
 (defmethod load progn ((pass post-effect-pass))
   (load (vertex-array pass)))
-
-(defmethod offload progn ((pass post-effect-pass))
-  (offload (vertex-array pass)))
 
 (defmethod paint ((pass post-effect-pass) target)
   (let ((vao (vertex-array pass)))

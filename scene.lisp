@@ -40,15 +40,7 @@
 
 (defmethod load progn ((scene scene))
   (for:for ((object over scene))
-    (load object))
-  (for:for ((object over (name-map scene)))
-    (offload object)))
-
-(defmethod offload progn ((scene scene))
-  (for:for ((object over scene))
-    (offload object))
-  (for:for ((object over (name-map scene)))
-    (offload object)))
+    (load object)))
 
 ;; Since we have a tick event, we don't want to dupe that here.
 ;; animations and clock update are already handled by the method

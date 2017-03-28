@@ -32,9 +32,6 @@
 (defmethod load progn ((subject vertex-subject))
   (load (vertex-array subject)))
 
-(defmethod offload progn ((subject vertex-subject))
-  (offload (vertex-array subject)))
-
 (define-class-shader vertex-subject :vertex-shader
   "layout (location = 0) in vec3 position;
 
@@ -95,9 +92,6 @@ void main(){
 
 (defmethod load progn ((subject textured-subject))
   (load (texture subject)))
-
-(defmethod offload progn ((subject textured-subject))
-  (offload (texture subject)))
 
 (define-class-shader textured-subject :vertex-shader
   "layout (location = 1) in vec2 in_texcoord;
