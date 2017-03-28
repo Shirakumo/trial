@@ -14,10 +14,12 @@
    (pass-fbo-map :initform (make-hash-table :test 'eq) :accessor pass-fbo-map)))
 
 (defmethod load progn ((pipeline pipeline))
-  (map NIL #'load (framebuffers pipeline)))
+  (map NIL #'load (framebuffers pipeline))
+  (map NIL #'load (passes pipeline)))
 
 (defmethod offload progn ((pipeline pipeline))
-  (map NIL #'offload (framebuffers pipeline)))
+  (map NIL #'offload (framebuffers pipeline))
+  (map NIL #'offload (passes pipeline)))
 
 (defmethod resize ((pipeline pipeline) width height)
   (loop for framebuffer across (framebuffers pipeline)
