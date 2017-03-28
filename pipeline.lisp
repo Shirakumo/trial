@@ -81,12 +81,15 @@
 
 (defmethod pack-pipeline ((pipeline pipeline) target)
   (check-consistent pipeline)
+  (v:info :trial.pipeline "~a packing for ~a" pipeline target)
   (let* ((nodes (passes pipeline))
          (edges (connections->edges (connections pipeline)))
          (passes (flatten-dag nodes edges))
          (colors (color-graph nodes edges))
          (framebuffers (make-array (loop for color being the hash-values of colors
                                          maximize color))))
+    (v:info :trial.pipeline "~a pass order:   ~a" passes)
+    (v:info :trial.pipeline "~a framebuffers: ~a" (length framebuffers))
     ;; Allocate FBOs
     (loop for i from 0 below (length framebuffers)
           do (setf (aref framebuffers i)
