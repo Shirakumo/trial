@@ -31,7 +31,8 @@
    (waiting :initform 0 :accessor context-waiting)
    (lock :initform (bt:make-lock "Context lock") :reader context-lock)
    (wait-lock :initform (bt:make-lock "Context wait lock") :reader context-wait-lock)
-   (context-needs-recreation :initform NIL :accessor context-needs-recreation)))
+   (context-needs-recreation :initform NIL :accessor context-needs-recreation)
+   (assets :initform (make-hash-table :test 'eq) :accessor assets)))
 
 (defmethod print-object ((context context) stream)
   (print-unreadable-object (context stream :type T :identity T)))
@@ -155,6 +156,8 @@
     (v:info :trial.context "Destroying context.")
     (q+:hide context)
     (clear-asset-cache)
+    (loop for asset being the hash-values of (assets context)
+          do (offload asset))
     (q+:reset (q+:context context))))
 
 (defmethod create-context :around ((context context))

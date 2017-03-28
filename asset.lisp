@@ -59,13 +59,15 @@
 
 (defmethod load :around ((asset asset))
   (unless (resource asset)
-    (call-next-method))
+    (call-next-method)
+    (setf (gethash asset (assets *context*)) asset))
   asset)
 
 (defmethod offload :around ((asset asset))
   (when (resource asset)
     (tg:cancel-finalization asset)
-    (call-next-method))
+    (call-next-method)
+    (remhash asset (assets *context*)))
   asset)
 
 (defmethod offload progn ((asset asset))
