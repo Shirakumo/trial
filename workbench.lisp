@@ -65,9 +65,9 @@ void main(){
     (load scene)
     (connect-pass (make-instance 'per-object-pass)
                   (make-instance 'box-blur-pass)
-                  "previous" *pipeline*)
-    (pack-pipeline *pipeline* main)
-    (load *pipeline*)))
+                  "previous" pipeline)
+    (pack-pipeline pipeline main)
+    (load pipeline)))
 
 (defmethod paint ((source main) (target main))
   (let ((scene (scene source)))
