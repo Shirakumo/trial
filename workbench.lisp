@@ -57,13 +57,12 @@ void main(){
    :texture (asset 'workbench 'av)
    :vertex-array (asset 'workbench 'cube)))
 
-(defvar *pipeline* (make-instance 'pipeline))
-
 (defmethod setup-scene ((main main))
-  (let ((scene (scene main)))
+  (let ((scene (scene main))
+        (pipeline (make-instance 'pipeline :name 'pipeline)))
     (enter (make-instance 'testcube) scene)
+    (register pipeline scene)
     (load scene)
-    (clear *pipeline*)
     (connect-pass (make-instance 'per-object-pass)
                   (make-instance 'blur-shader)
                   "previous" *pipeline*)
@@ -82,4 +81,4 @@ void main(){
     (rotate +vx+ 0.03)
     (rotate +vy+ 0.05)
     (rotate +vz+ 0.07)
-    (paint *pipeline* target)))
+    (paint (unit 'pipeline scene) target)))
