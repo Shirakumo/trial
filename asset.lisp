@@ -494,10 +494,10 @@
     (check-framebuffer-attachment attachment)
     (list* (make-instance 'texture-asset :input (list (width asset) (height asset)
                                                       (getf spec :bits 0)
-                                                      (case attachment
-                                                        (:depth-attachment :depth-component)
-                                                        (:depth-stencil-attachment :depth-stencil)
-                                                        (T :rgba)))
+                                                      (ecase attachment
+                                                        ((:depth :depth-attachment) :depth-component)
+                                                        ((:depth-stencil :depth-stencil-attachment) :depth-stencil)
+                                                        ((:color :color-attachment) :rgba)))
                                          :min-filter (getf spec :min-filter :nearest)
                                          :mag-filter (getf spec :mag-filter :nearest)
                                          :wrapping (getf spec :wrapping))
