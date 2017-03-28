@@ -51,7 +51,7 @@
 ;;        their own.
 (defmethod connect-pass (source-pass target-pass target-input (pipeline pipeline))
   (let ((connections (connections pipeline)))
-    (unless (find target-input (pass-inputs (class-of target-pass)))
+    (unless (find target-input (pass-inputs (class-of target-pass)) :test #'string=)
       (error "The pass input ~s does not exist on ~a."
              target-input target-pass))
     (unless (find source-pass (passes pipeline))
@@ -61,7 +61,7 @@
     ;; Remove potential previous connection
     (setf (gethash target-pass connections)
           (remove target-input (gethash target-pass connections)
-                  :key #'first :test #'string))
+                  :key #'first :test #'string=))
     (push (list target-input source-pass)
           (gethash target-pass connections))))
 
