@@ -64,7 +64,8 @@
   (let ((c (clear-color target)))
     (gl:clear-color (vx c) (vy c) (vz c) 1))
   (gl:clear :color-buffer :depth-buffer)
-  (gl:enable :blend :cull-face :multisample
+  ;; FIXME: reenable cull face
+  (gl:enable :blend :multisample
              :line-smooth :polygon-smooth
              :depth-test :depth-clamp)
   (paint source target))
