@@ -11,15 +11,18 @@
   ((connections :initform (make-hash-table :test 'eq) :accessor connections)
    (passes :initform () :accessor passes)
    (framebuffers :initform #() :accessor framebuffers)
-   (pass-fbo-map :initform (make-hash-table :test 'eq) :accessor pass-fbo-map)))
+   (pass-fbo-map :initform (make-hash-table :test 'eq) :accessor pass-fbo-map)
+   (copy-pass :initform (make-instance 'copy-pass) :accessor copy-pass)))
 
 (defmethod load progn ((pipeline pipeline))
   (map NIL #'load (framebuffers pipeline))
-  (map NIL #'load (passes pipeline)))
+  (map NIL #'load (passes pipeline))
+  (load (copy-pass pipeline)))
 
 (defmethod offload progn ((pipeline pipeline))
   (map NIL #'offload (framebuffers pipeline))
-  (map NIL #'offload (passes pipeline)))
+  (map NIL #'offload (passes pipeline))
+  (offload (copy-pass pipeline)))
 
 (defmethod resize ((pipeline pipeline) width height)
   (loop for framebuffer across (framebuffers pipeline)
@@ -160,4 +163,4 @@
           do (gl:bind-framebuffer :framebuffer (resource fbo))
              (paint pass target)
           finally (gl:bind-framebuffer :framebuffer 0)
-                  (paint fbo target))))
+                  (paint (copy-pass pipeline) target))))
