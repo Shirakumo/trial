@@ -67,6 +67,10 @@ void main(){
                   (make-instance 'box-blur-pass)
                   "previous" pipeline)
     (pack-pipeline pipeline main)
+    ;; Manual for now
+    (dolist (pass (passes pipeline))
+      (for:for ((element over scene))
+        (register-object-for-pass pass element)))
     (load pipeline)))
 
 (defmethod paint ((source main) (target main))
