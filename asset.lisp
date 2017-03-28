@@ -514,7 +514,7 @@
         (push (load (first input)) (textures asset)))
       (setf (textures asset) (nreverse (textures asset)))
       (let ((buffer (make-asset 'framebuffer-asset inputs)))
-        (setf (framebuffer asset) buffer)
+        (setf (framebuffer asset) (load buffer))
         (setf (resource asset) (resource buffer))))))
 
 (defmethod resize ((asset framebuffer-bundle-asset) width height)
