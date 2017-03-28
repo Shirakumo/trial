@@ -17,10 +17,11 @@
   ((vertex-array :initarg :vertex-array :accessor vertex-array)
    (vertex-form :initarg :vertex-form :initform :triangles :accessor vertex-form)))
 
-(defmethod paint :before ((obj vertex-subject) target)
-  (setf (uniform obj "model_matrix") (model-matrix))
-  (setf (uniform obj "view_matrix") (view-matrix))
-  (setf (uniform obj "projection_matrix") (projection-matrix)))
+(defmethod paint :before ((obj vertex-subject) (pass shader-pass))
+  (let ((shader (shader-program-for-pass pass obj)))
+    (setf (uniform shader "model_matrix") (model-matrix))
+    (setf (uniform shader "view_matrix") (view-matrix))
+    (setf (uniform shader "projection_matrix") (projection-matrix))))
 
 (defmethod paint ((subject vertex-subject) target)
   (let ((vao (vertex-array subject)))
