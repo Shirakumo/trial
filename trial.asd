@@ -52,7 +52,9 @@
                (:file "controller")
                (:file "main")
                (:file "launcher")
-               (:file "deploy"))
+               (:file "deploy")
+               ;; Testing, remove for production.
+               (:file "workbench"))
   :depends-on (:alexandria
                :3d-vectors
                :3d-matrices
