@@ -86,7 +86,13 @@
 (defmethod paint :around ((pass single-shader-pass) target)
   (let ((program (shader-program pass)))
     (gl:use-program (resource program))
-    ;; FIXME: register inputs as uniforms... ?
+    ;; FIXME: register inputs as uniforms properly
+    (loop for (uniform fbo) in (pass-inputs pass)
+          for texture-index from 8
+          for texture-name in '(:texture8 :texture9 :texture10)
+          do (setf (uniform program uniform) texture-index)
+             (gl:active-texture texture-name)
+             (gl:bind-texture :texture2d (resource (first (textures fbo)))))
     (call-next-method)))
 
 (define-shader-pass post-effect-pass (single-shader-pass)
