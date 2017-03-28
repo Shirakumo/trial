@@ -51,6 +51,21 @@ void main(){
   color = sum;
 }")
 
+(define-shader-pass grayscale-pass (post-effect-pass)
+  ("previousPass"))
+
+(define-class-shader grayscale-pass :fragment-shader
+  "
+in vec2 texCoord;
+out vec4 color;
+uniform sampler2D previousPass;
+
+void main(){
+  color = texture(previousPass, texCoord);
+  float avg = 0.2126*color.r + 0.7152*color.g + 0.0722*color.b;
+  color = vec4(avg, avg, avg, 1.0);
+}")
+
 (define-shader-subject testcube (vertex-subject textured-subject)
   ()
   (:default-initargs
@@ -63,10 +78,11 @@ void main(){
     (enter (make-instance 'testcube) scene)
     (register pipeline scene)
     (load scene)
-    (register (make-instance 'per-object-pass) pipeline)
-    ;; (connect-pass (make-instance 'per-object-pass)
-    ;;               (make-instance 'box-blur-pass)
-    ;;               "previousPass" pipeline)
+    (let ((pass1 (make-instance 'per-object-pass))
+          (pass2 (make-instance 'grayscale-pass))
+          (pass3 (make-instance 'box-blur-pass)))
+      (connect-pass pass1 pass2 "previousPass" pipeline)
+      (connect-pass pass2 pass3 "previousPass" pipeline))
     (pack-pipeline pipeline main)
     ;; Manual for now
     (dolist (pass (passes pipeline))
