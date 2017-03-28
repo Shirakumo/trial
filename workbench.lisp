@@ -35,7 +35,7 @@
 (define-class-shader box-blur-pass :fragment-shader
   "
 in vec2 texCoord;
-out vec4 outColor;
+out vec4 color;
 uniform sampler2D previous;
 const float blurSizeH = 1.0 / 300.0;
 const float blurSizeV = 1.0 / 200.0;
@@ -48,7 +48,7 @@ void main(){
                      vec2(texCoord.x + x * blurSizeH, texCoord.y + y * blurSizeV)) / 81.0;
     }
   }
-  outColor = sum;
+  color = sum;
 }")
 
 (define-shader-subject testcube (vertex-subject textured-subject)

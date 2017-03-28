@@ -143,14 +143,14 @@ in vec2 texCoord;")
 
 
 (define-shader-pass copy-pass (post-effect-pass)
-  ("previous"))
+  ("previousPass"))
 
 (define-class-shader copy-pass :fragment-shader
   "
 in vec2 texCoord;
-out vec4 outColor;
-uniform sampler2D previous;
+out vec4 color;
+uniform sampler2D previousPass;
 
 void main(){
-  outColor = texture(previous, texCoord);
+  color = texture(previousPass, texCoord);
 }")
