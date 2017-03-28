@@ -433,10 +433,10 @@
 (defclass framebuffer-asset (asset)
   ())
 
-(defmethod coerce-input ((asset asset) (texture texture-asset))
+(defmethod coerce-input ((asset framebuffer-asset) (texture texture-asset))
   (list texture :attachment :color-attachment0))
 
-(defmethod coerce-input ((asset asset) (spec list))
+(defmethod coerce-input ((asset framebuffer-asset) (spec list))
   spec)
 
 (defmethod finalize-resource ((type (eql 'framebuffer-asset)) resource)
@@ -482,21 +482,21 @@
         (resource (list* (framebuffer asset) (textures asset))))
     (tg:finalize asset (lambda () (finalize-resource type resource)))))
 
-(defmethod coerce-input ((asset asset) (attachment symbol))
+(defmethod coerce-input ((asset framebuffer-bundle-asset) (attachment symbol))
   (coerce-input asset (list :attachment attachment)))
 
-(defmethod coerce-input ((asset asset) (spec cons))
+(defmethod coerce-input ((asset framebuffer-bundle-asset) (spec cons))
   (let ((attachment (getf spec :attachment)))
     (check-framebuffer-attachment attachment)
     (list* (make-instance 'texture-asset :input (list (width asset) (height asset)
                                                       (getf spec :bits 0)
-                                                      (ecase attachment
-                                                        ((:depth :depth-attachment) :depth-component)
-                                                        ((:depth-stencil :depth-stencil-attachment) :depth-stencil)
-                                                        ((:color :color-attachment) :rgba)))
+                                                      (case attachment
+                                                        (:depth-attachment :depth-component)
+                                                        (:depth-stencil-attachment :depth-stencil)
+                                                        (T :rgba)))
                                          :min-filter (getf spec :min-filter :nearest)
                                          :mag-filter (getf spec :mag-filter :nearest)
-                                         :wrapping (getf spec :wrapping))
+                                         :wrapping (getf spec :wrapping :clamp-to-edge))
            (loop for (k v) on spec by #'cddr
                  for test = (find k '(:min-filter :mag-filter :wrapping :bits))
                  unless test collect k
