@@ -56,14 +56,15 @@
 (defmethod remove-class-shader :after (type (class shader-subject-class))
   (cascade-option-changes class))
 
-(defmacro define-class-shader (class type &body definitions)
-  `(setf (class-shader ,type ',class)
-         (progn ,@definitions)))
-
 (defmethod make-class-shader-program ((class shader-subject-class))
   (make-asset 'shader-program-asset
               (loop for (type source) on (effective-shaders class) by #'cddr
                     collect (make-asset 'shader-asset (list source) :type type))))
+
+;; FIXME: handle redefinition while running
+(defmacro define-class-shader (class type &body definitions)
+  `(setf (class-shader ,type ',class)
+         (progn ,@definitions)))
 
 (defclass shader-subject (subject)
   ()

@@ -91,6 +91,7 @@
     (pathname (merge-pathnames tree (base pool)))
     (T tree)))
 
+;; FIXME: handle redefinition while running
 (defmacro define-asset ((pool name) type inputs &rest initargs)
   (let ((loaded (gensym "GENSYM"))
         (asset (gensym "ASSET")))
