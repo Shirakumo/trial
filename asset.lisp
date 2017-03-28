@@ -371,6 +371,9 @@
 (defmethod coerce-input ((asset texture-asset) (object qobject))
   (q+:qglwidget-convert-to-glformat object))
 
+(defmethod coerce-input ((asset texture-asset) (spec cons))
+  spec)
+
 (defmethod finalize-resource ((type (eql 'texture-asset)) resource)
   (gl:delete-textures (list resource)))
 
@@ -380,7 +383,7 @@
                    (q+:height object)
                    (q+:bits object)
                    :rgba))
-    (cons    (destructuring-bind (width &optional (height 1) (bits 0) (format :rgba)) object
+    (cons    (destructuring-bind (width &optional (height 1) (bits (cffi:null-pointer)) (format :rgba)) object
                (list width height bits format)))))
 
 (defun images-to-textures (target images)
@@ -489,7 +492,7 @@
   (let ((attachment (getf spec :attachment)))
     (check-framebuffer-attachment attachment)
     (list* (make-instance 'texture-asset :input (list (width asset) (height asset)
-                                                      (getf spec :bits 0)
+                                                      (getf spec :bits (cffi:null-pointer))
                                                       (case attachment
                                                         (:depth-attachment :depth-component)
                                                         (:depth-stencil-attachment :depth-stencil)
