@@ -457,9 +457,11 @@
                (if layer
                    (%gl:framebuffer-texture-layer :framebuffer attachment (resource texture) level layer)
                    (%gl:framebuffer-texture :framebuffer attachment (resource texture) level))
-               (unless (eql :framebuffer-complete (gl:check-framebuffer-status :framebuffer))
-                 (error "Failed to attach ~a as ~s to ~a"
-                        texture attachment asset))))
+               (let ((completeness (gl:check-framebuffer-status :framebuffer)))
+                 (unless (or (eql :framebuffer-complete completeness)
+                             (eql :framebuffer-complete-oes completeness))
+                   (error "Failed to attach ~a as ~s to ~a: ~s"
+                          texture attachment asset completeness)))))
         (gl:bind-framebuffer :framebuffer 0)))))
 
 (defclass framebuffer-bundle-asset (asset)
