@@ -99,7 +99,7 @@
           for texture-name in '(:texture8 :texture9 :texture10)
           do (setf (uniform program uniform) texture-index)
              (gl:active-texture texture-name)
-             (gl:bind-texture :texture2d (resource (first (textures fbo)))))
+             (gl:bind-texture :texture-2d (resource (first (textures fbo)))))
     (call-next-method)))
 
 (define-shader-pass post-effect-pass (single-shader-pass)
