@@ -26,6 +26,10 @@
 (defgeneric register-object-for-pass (pass object))
 (defgeneric shader-program-for-pass (pass object))
 
+(defmethod paint ((pass shader-pass) target)
+  (when (typep target 'main)
+    (paint (scene target) pass)))
+
 (defmacro define-shader-pass (name direct-superclasses inputs &optional slots &rest options)
   (unless (find :metaclass options :key #'car)
     (push '(:metaclass shader-pass-class) options))
