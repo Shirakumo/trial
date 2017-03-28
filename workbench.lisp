@@ -63,9 +63,10 @@ void main(){
     (enter (make-instance 'testcube) scene)
     (register pipeline scene)
     (load scene)
-    (connect-pass (make-instance 'per-object-pass)
-                  (make-instance 'box-blur-pass)
-                  "previous" pipeline)
+    (register (make-instance 'per-object-pass) pipeline)
+    ;; (connect-pass (make-instance 'per-object-pass)
+    ;;               (make-instance 'box-blur-pass)
+    ;;               "previous" pipeline)
     (pack-pipeline pipeline main)
     ;; Manual for now
     (dolist (pass (passes pipeline))
