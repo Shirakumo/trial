@@ -7,6 +7,20 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
+(define-pool geometry
+  :base 'trial)
+
+(define-asset (geometry fullscreen-square) packed-vao-asset
+    (#(0 1 2 2 3 0)
+     3 #(+1.0 +1.0 +0.0
+         +1.0 -1.0 +0.0
+         -1.0 -1.0 +0.0
+         -1.0 +1.0 +0.0)
+     2 #(1.0 1.0
+         1.0 0.0
+         0.0 0.0
+         0.0 1.0)))
+
 (defclass geometry (entity)
   ())
 
