@@ -118,6 +118,9 @@
 (defmethod load progn ((pass post-effect-pass))
   (load (vertex-array pass)))
 
+(defmethod offload progn ((pass post-effect-pass))
+  (offload (vertex-array pass)))
+
 (defmethod paint ((pass post-effect-pass) target)
   (let ((vao (vertex-array pass)))
     (gl:disable :depth-test)
