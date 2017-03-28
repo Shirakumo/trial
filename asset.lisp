@@ -511,6 +511,7 @@
     (with-cleanup-on-failure (mapc #'offload (textures asset))
       (dolist (input inputs)
         (push (load (first input)) (textures asset)))
+      (setf (textures asset) (nreverse (textures asset)))
       (let ((buffer (make-asset 'framebuffer-asset inputs)))
         (setf (framebuffer asset) buffer)
         (setf (resource asset) (resource buffer))))))
