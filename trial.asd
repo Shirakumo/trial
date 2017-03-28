@@ -35,6 +35,7 @@
                (:file "shader-subject")
                (:file "scene")
                (:file "shader-pass")
+               (:file "effects")
                (:file "pipeline")
                (:file "subjects")
                (:file "hud")

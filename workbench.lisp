@@ -29,43 +29,6 @@
          0.0 0.0
          0.0 1.0)))
 
-(define-shader-pass box-blur-pass (post-effect-pass)
-  ("previousPass"))
-
-(define-class-shader box-blur-pass :fragment-shader
-  "
-in vec2 texCoord;
-out vec4 color;
-uniform sampler2D previousPass;
-const float blurSizeH = 1.0 / 300.0;
-const float blurSizeV = 1.0 / 200.0;
-
-void main(){
-  vec4 sum = vec4(0.0);
-  for (int x=-4; x<=4; x++){
-    for (int y=-4; y<=4; y++){
-      sum += texture(previousPass,
-                     vec2(texCoord.x + x * blurSizeH, texCoord.y + y * blurSizeV)) / 81.0;
-    }
-  }
-  color = sum;
-}")
-
-(define-shader-pass grayscale-pass (post-effect-pass)
-  ("previousPass"))
-
-(define-class-shader grayscale-pass :fragment-shader
-  "
-in vec2 texCoord;
-out vec4 color;
-uniform sampler2D previousPass;
-
-void main(){
-  color = texture(previousPass, texCoord);
-  float avg = 0.2126*color.r + 0.7152*color.g + 0.0722*color.b;
-  color = vec4(avg, avg, avg, 1.0);
-}")
-
 (define-shader-subject testcube (vertex-subject textured-subject)
   ()
   (:default-initargs
