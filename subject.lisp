@@ -6,6 +6,9 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(defclass subject-class-redefined (event)
+  ((subject-class :initarg :subject-class :reader subject-class)))
+
 (defclass subject-class (qtools:finalizable-class handler-container)
   ((effective-handlers :initform NIL :accessor effective-handlers)
    (instances :initform () :accessor instances)))
@@ -20,11 +23,16 @@
         finally (setf (effective-handlers class) effective-handlers))
   ;; Update instances
   (loop for pointer in (instances class)
-        for value = (tg:weak-pointer-value pointer)
-        when value
+        for subject = (tg:weak-pointer-value pointer)
+        when subject
         collect (prog1 pointer
-                  (reinitialize-instance value)) into instances
-        finally (setf (instances class) instances)))
+                  (reinitialize-instance subject)) into instances
+        finally (setf (instances class) instances))
+  ;; Notify
+  (loop for pointer in (instances class)
+        for subject = (tg:weak-pointer-value pointer)
+        when subject return (issue (event-loop subject) 'subject-class-redefined
+                                   :subject-class class)))
 
 (defmethod cascade-option-changes :after ((class subject-class))
   ;; Propagate
@@ -61,12 +69,8 @@
   (push (tg:make-weak-pointer subject) (instances (class-of subject)))
   (regenerate-handlers subject))
 
-(defclass subject-redefined (event)
-  ((subject :initarg :subject :reader subject)))
-
 (defmethod reinitialize-instance :after ((subject subject) &key)
-  (regenerate-handlers subject)
-  (issue (event-loop subject) 'subject-redefined :subject subject))
+  (regenerate-handlers subject))
 
 (defmethod regenerate-handlers ((subject subject))
   (let ((loop (event-loop subject)))
