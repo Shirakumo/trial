@@ -88,6 +88,7 @@ void main(){
   (let* ((tex (texture obj))
          (target (target tex)))
     (when tex
+      (gl:active-texture :texture0)
       (gl:bind-texture target (resource tex))
       (call-next-method)
       (gl:bind-texture target 0))))
