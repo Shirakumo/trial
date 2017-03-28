@@ -61,8 +61,12 @@
   (push (tg:make-weak-pointer subject) (instances (class-of subject)))
   (regenerate-handlers subject))
 
+(defclass subject-redefined (event)
+  ((subject :initarg :subject :reader subject)))
+
 (defmethod reinitialize-instance :after ((subject subject) &key)
-  (regenerate-handlers subject))
+  (regenerate-handlers subject)
+  (issue (event-loop subject) 'subject-redefined :subject subject))
 
 (defmethod regenerate-handlers ((subject subject))
   (let ((loop (event-loop subject)))
