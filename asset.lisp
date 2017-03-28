@@ -293,7 +293,7 @@
         (gl:bind-vertex-array 0)))))
 
 (defclass packed-vao-asset (asset)
-  ())
+  ((size :initform NIL :accessor size)))
 
 (defmethod finalize-resource ((type (eql 'packed-vao-asset)) resource)
   (finalize-resource 'vertex-array-asset resource))
@@ -324,6 +324,7 @@
             do (loop for i from (* size group) below (* size (1+ group))
                      do (vector-push-extend (elt input i) buffer))))
     ;; Construct actual assets.
+    (setf (size asset) (length element))
     (let* ((buffer (make-asset 'vertex-buffer-asset (list buffer)
                                :element-type :float))
            (element (make-asset 'vertex-buffer-asset (list element)
