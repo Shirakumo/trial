@@ -103,7 +103,7 @@
     (call-next-method)))
 
 (define-shader-pass post-effect-pass (single-shader-pass)
-  (input)
+  ()
   ((vertex-array :initform (asset 'geometry 'fullscreen-square) :accessor vertex-array)))
 
 (defmethod load progn ((pass post-effect-pass))
@@ -131,3 +131,17 @@ void main(){
 (define-class-shader post-effect-pass :fragment-shader
   "
 in vec2 texCoord;")
+
+
+(define-shader-pass copy-pass (single-shader-pass)
+  ("previous"))
+
+(define-class-shader copy-pass :fragment-shader
+  "
+in vec2 texCoord;
+out vec4 outColor;
+uniform sampler2D previous;
+
+void main(){
+  outColor = texture(previous, texCoord);
+}")
