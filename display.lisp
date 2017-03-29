@@ -42,6 +42,7 @@
   ((width :initarg :width :reader width)
    (height :initarg :height :reader height)))
 
+;; FIXME: Only signal after a timeout, in order to avoid excessively resizing
 (define-override (display resize-event) (ev)
   (handle (make-instance 'resize :width (q+:width (q+:size ev)) :height (q+:height (q+:size ev)))
           display))

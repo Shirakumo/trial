@@ -56,10 +56,10 @@
 
 ;; FIXME for new asset system
 (define-handler (controller reload-assets reload-assets 99) (ev)
-  (dolist (pool (pools))
-    (mapc #'reload (assets pool))))
+  )
 
 (define-handler (controller reload-scene reload-scene 99) (ev)
+  ;; FIXME: properly clear and resetup scene
   (let ((scene (event-loop controller)))
     (dolist (obj (flare-indexed-set:coerce-set (objects scene) 'list))
       (unless (eql obj controller)
