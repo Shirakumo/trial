@@ -225,7 +225,10 @@
                      this context *context*))))))
 
 (defmethod describe-object :after ((context context) stream)
-  (format stream "~&~%Running GL~a.~a ~a
+  (context-info context stream))
+
+(defun context-info (context stream)
+  (format stream "~&~%Running GL~a.~a ~a~%~
                     Sample buffers:    ~a (~a sample~:p)~%~
                     Max texture size:  ~a~%~
                     Max texture units: ~a~%~
@@ -251,4 +254,4 @@
   (v:debug :trial.context "Context information: ~a"
            (let ((*print-right-margin* 1000)) ; SBCL fails otherwise. Huh?
              (with-output-to-string (out)
-               (describe-object context out)))))
+               (context-info context out)))))
