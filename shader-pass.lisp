@@ -89,11 +89,9 @@
 
 (defmethod reinitialize-instance :after ((pass single-shader-pass) &key)
   (when (resource (shader-program pass))
+    ;; FIXME: signalled for each instance rather than once.
+    (setf (shader-program pass) (make-class-shader-program pass))
     (issue (scene (Window :main)) 'load-request :asset (shader-program pass))))
-
-(defmethod load progn ((pass single-shader-pass))
-  (setf (shader-program pass) (make-class-shader-program pass))
-  (load (shader-program pass)))
 
 (defmethod register-object-for-pass ((pass single-shader-pass) o))
 
