@@ -159,7 +159,8 @@
            (setf (vy vec) (+ speed)))
           ((retained 'key :c)
            (setf (vy vec) (- speed))))
-    (nvrotv vec (v* (/ PI -180) (rotation freeroam-camera)))
+    (let ((rot (v* (/ PI -180) (rotation freeroam-camera))))
+      (nvrotv vec rot))
     (nv+ (location freeroam-camera) vec)))
 
 (define-subject editor-camera (freeroam-camera)
