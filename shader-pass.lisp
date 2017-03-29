@@ -42,6 +42,7 @@
   ()
   ((assets :initform (make-hash-table :test 'eql) :accessor assets)))
 
+;; FIXME: make sure this happens in the context!!
 (defmethod reinitialize-instance :after ((pass per-object-pass) &key)
   (loop for class being the hash-keys of (assets pass)
         do (remhash class (assets pass))
@@ -88,8 +89,7 @@
 
 (defmethod reinitialize-instance :after ((pass single-shader-pass) &key)
   (when (resource (shader-program pass))
-    (offload (shader-program pass))
-    (load pass)))
+    (issue (scene (Window :main)) 'load-request :asset (shader-program pass))))
 
 (defmethod load progn ((pass single-shader-pass))
   (setf (shader-program pass) (make-class-shader-program pass))
