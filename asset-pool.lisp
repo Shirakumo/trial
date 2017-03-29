@@ -91,23 +91,27 @@
     (pathname (merge-pathnames tree (base pool)))
     (T tree)))
 
-;; FIXME: handle redefinition while running
+(defclass load-request (event)
+  ((asset :initarg :asset)
+   (action :initarg :action :initform 'reload)))
+
+;; FIXME: maybe there's something nicer to find the loop
 (defmacro define-asset ((pool name) type inputs &rest initargs)
-  (let ((loaded (gensym "GENSYM"))
-        (asset (gensym "ASSET")))
+  (let ((scene (gensym "SCENE"))
+        (asset (gensym "ASSET")))l
     (substitute-asset-paths inputs (pool pool))
-    `(let ((,loaded)
+    `(let ((,scene (when (window :main) (scene (window :main))))
            (,asset (asset ',pool ',name)))
-       (cond (,asset
-              (when (resource ,asset)
-                (offload ,asset)
-                (setf ,loaded T))
+       (cond ((and ,asset (eql (type-of ,asset) ',type))
               (reinitialize-instance ,asset :inputs (list ,@inputs) ,@initargs)
-              (when ,loaded
-                (load ,asset)))
+              (when (and ,scene (resource ,asset))
+                (issue ,scene 'load-request :asset ,asset)))
              (T
               (setf (asset ',pool ',name)
-                    (make-asset ',type (list ,@inputs) ,@initargs))))
+                    (make-asset ',type (list ,@inputs) ,@initargs))
+              (when (and ,scene ,asset (resource ,asset))
+                (issue ,scene 'load-request :asset ,asset :action 'offload)
+                (issue ,scene 'load-request :asset (asset ',pool ',name) :action 'load))))
        ',name)))
 
 (indent:define-indentation define-asset (2 4 (&whole 4 &rest 1) &body))

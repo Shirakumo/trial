@@ -67,6 +67,12 @@
         (finalize obj))))
   (setup-scene (display controller)))
 
+(define-handler (controller load-request) (ev asset action)
+  (ecase action
+    (offload (offload asset))
+    (load    (load asset))
+    (reload  (load (offload asset)))))
+
 (define-handler (controller save-game) (ev)
   (save-scene (event-loop controller) #p"~/test.sav.lisp"))
 
