@@ -14,6 +14,9 @@
    (pass-fbo-map :initform (make-hash-table :test 'eq) :accessor pass-fbo-map)
    (copy-pass :initform (make-instance 'copy-pass) :accessor copy-pass)))
 
+(defmethod handle :after ((tick tick) (pipeline pipeline))
+  (process pipeline))
+
 (defmethod load progn ((pipeline pipeline))
   (map NIL #'load (framebuffers pipeline))
   (map NIL #'load (passes pipeline))
@@ -24,11 +27,13 @@
         do (resize framebuffer width height)))
 
 (defmethod register ((pass shader-pass) (pipeline pipeline))
-  (pushnew pass (passes pipeline)))
+  (pushnew pass (passes pipeline))
+  (add-handler pass pipeline))
 
 (defmethod deregister ((pass shader-pass) (pipeline pipeline))
   (setf (passes pipeline) (delete pass (passes pipeline)))
   (remhash pass (connections pipeline))
+  (remove-handler pass pipeline)
   (loop for k being the hash-keys of (connections pipeline)
         for v being the hash-values of (connections pipeline)
         do (setf (gethash k (connections pipeline))
@@ -49,9 +54,9 @@
       (error "The pass input ~s does not exist on ~a."
              target-input target-pass))
     (unless (find source-pass (passes pipeline))
-      (pushnew source-pass (passes pipeline)))
+      (register source-pass pipeline))
     (unless (find target-pass (passes pipeline))
-      (pushnew target-pass (passes pipeline)))
+      (register target-pass pipeline))
     ;; Remove potential previous connection
     (setf (gethash target-pass connections)
           (remove target-input (gethash target-pass connections)
