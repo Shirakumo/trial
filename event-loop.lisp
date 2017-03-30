@@ -103,6 +103,15 @@
     (with-simple-restart (skip-event "Skip handling the event entirely.")
       (call-next-method))))
 
+;; Force adding the loop directly.
+(defmethod add-handler ((loop event-loop) (container handler-container))
+  (setf (handlers container) (cons loop (delete loop (handlers container) :test #'matches)))
+  loop)
+
+(defmethod remove-handler ((loop event-loop) (container handler-container))
+  (setf (handlers container) (delete loop (handlers container) :test #'matches))
+  loop)
+
 (defclass handler (entity)
   ((event-type :initarg :event-type :accessor event-type)
    (container :initarg :container :accessor container)
