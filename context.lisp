@@ -229,26 +229,33 @@
 
 (defun context-info (context stream)
   (format stream "~&~%Running GL~a.~a ~a~%~
-                    Sample buffers:    ~a (~a sample~:p)~%~
-                    Max texture size:  ~a~%~
-                    Max texture units: ~a~%~
-                    GL Vendor:         ~a~%~
-                    GL Renderer:       ~a~%~
-                    GL Version:        ~a~%~
-                    GL Shader:         ~a~%~
-                    GL Extensions:     ~a~%"
+                    Sample buffers:     ~a (~a sample~:p)~%~
+                    Max texture size:   ~a~%~
+                    Max texture units:  ~a ~a ~a ~a ~a ~a~%~
+                    GL Vendor:          ~a~%~
+                    GL Renderer:        ~a~%~
+                    GL Version:         ~a~%~
+                    GL Shader Language: ~a~%~
+                    GL Extensions:      ~{~a~^ ~}~%"
           (gl:get* :major-version)
           (gl:get* :minor-version)
           (profile context)
           (gl:get* :sample-buffers)
           (gl:get* :samples)
           (gl:get* :max-texture-size)
-          (gl:get* :max-combined-texture-image-units)
+          (gl:get* :max-vertex-texture-image-units)
+          ;; Fuck you, GL, and your stupid legacy crap.
+          (gl:get* :max-texture-image-units)
+          (gl:get* :max-tess-control-texture-image-units)
+          (gl:get* :max-tess-evaluation-texture-image-units)
+          (gl:get* :max-geometry-texture-image-units)
+          (gl:get* :max-compute-texture-image-units)
           (gl:get-string :vendor)
           (gl:get-string :renderer)
           (gl:get-string :version)
           (gl:get-string :shading-language-version)
-          (gl:get-string-i :extensions 0)))
+          (loop for i from 0 below (gl:get* :num-extensions)
+                collect (gl:get-string-i :extensions i))))
 
 (defun context-note-debug-info (context)
   (v:debug :trial.context "Context information: ~a"
