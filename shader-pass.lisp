@@ -93,6 +93,9 @@
     (setf (shader-program pass) (make-class-shader-program pass))
     (issue (scene (Window :main)) 'load-request :asset (shader-program pass))))
 
+(defmethod load progn ((pass single-shader-pass))
+  (setf (shader-program pass) (load (make-class-shader-program pass))))
+
 (defmethod register-object-for-pass ((pass single-shader-pass) o))
 
 (defmethod shader-program-for-pass ((pass single-shader-pass) o)
