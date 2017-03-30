@@ -126,14 +126,11 @@
                              (let ((color (gethash from result)))
                                (when color (setf (aref available color) how))))))))
       (dolist (node nodes result)
-        ;; Mark adjacent as unavailable
         (mark-adjacent node NIL)
-        ;; Assign available
         (setf (gethash node result)
               (loop for i from 0 below (length available)
                     do (when (aref available i)
                          (return i))))
-        ;; Reset availability on adjacent
         (mark-adjacent node T)))
     result))
 

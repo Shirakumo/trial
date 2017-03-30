@@ -61,7 +61,6 @@
               (loop for (type source) on (effective-shaders class) by #'cddr
                     collect (make-asset 'shader-asset (list source) :type type))))
 
-;; FIXME: handle redefinition while running
 (defmacro define-class-shader (class type &body definitions)
   `(setf (class-shader ,type ',class)
          (progn ,@definitions)))

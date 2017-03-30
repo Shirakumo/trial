@@ -19,7 +19,7 @@
   (setup-rendering display)
   (release-context display))
 
-;;; REASON FOR THE FOLLOWING TWO OVERRIDES:
+;;; REASON FOR THE OVERRIDES:
 ;; The rendering in this engine works as follows.
 ;; There is a main thread that controls the Qt windows and a separate thread that handles
 ;; the display updating and GL rendering. Now, OpenGL has a context, that can only ever be
