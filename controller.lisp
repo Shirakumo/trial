@@ -54,9 +54,9 @@
   (map-event ev *loop*)
   (retain-event ev))
 
-;; FIXME for new asset system
 (define-handler (controller reload-assets reload-assets 99) (ev)
-  )
+  (loop for asset being the hash-keys of (assets *context*)
+        do (load (offload asset))))
 
 (define-handler (controller reload-scene reload-scene 99) (ev)
   ;; FIXME: properly clear and resetup scene
