@@ -19,6 +19,8 @@
 (defmethod c2mop:validate-superclass ((class shader-pass-class) (superclass standard-class))
   T)
 
+;; FIXME: check for input compatibility in inheritance
+
 (defclass shader-pass (shader-subject)
   ((pass-inputs :initarg :pass-inputs :initform () :accessor pass-inputs))
   (:metaclass shader-pass-class))
@@ -42,11 +44,22 @@
   ()
   ((assets :initform (make-hash-table :test 'eql) :accessor assets)))
 
-;; FIXME: make sure this happens in the context!!
-(defmethod reinitialize-instance :after ((pass per-object-pass) &key)
-  (loop for class being the hash-keys of (assets pass)
-        do (remhash class (assets pass))
-           (register-object-for-pass pass class)))
+(define-handler (per-object-pass update-shader-for-redefined-subject subject-class-redefined) (ev subject-class)
+  (let ((assets (assets per-object-pass)))
+    (flet ((refresh (class)
+             (let ((loaded (and (gethash class assets) (resource (gethash class assets)))))
+               (when loaded (offload (gethash class assets)))
+               (remhash class assets)
+               (register-object-for-pass per-object-pass class)
+               (when loaded (load (gethash class assets))))))
+      (cond ((eql subject-class (class-of per-object-pass))
+             ;; Pass changed, recompile everything
+             (loop for class being the hash-keys of assets
+                   do (refresh class)))
+            ((and (typep subject-class 'shader-subject-class)
+                  (not (typep subject-class 'shader-pass-class)))
+             ;; Object changed, recompile it
+             (refresh subject-class))))))
 
 (defmethod load progn ((pass per-object-pass))
   (loop for v being the hash-values of (assets pass)
@@ -78,20 +91,17 @@
     ;; FIXME: register inputs as uniforms... ?
     (call-next-method)))
 
-(define-handler (per-object-pass update-shader-for-redefined-subject subject-redefined) (ev)
-  (remhash (subject-class ev) (assets per-object-pass))
-  ;; FIXME: Might not always need to load.
-  (load (register-object-for-pass per-object-pass (subject-class ev))))
-
 (define-shader-pass single-shader-pass ()
   ()
   ((shader-program :initform (make-instance 'shader-program-asset) :accessor shader-program)))
 
-(defmethod reinitialize-instance :after ((pass single-shader-pass) &key)
-  (when (resource (shader-program pass))
-    ;; FIXME: signalled for each instance rather than once.
-    (setf (shader-program pass) (make-class-shader-program pass))
-    (issue (scene (Window :main)) 'load-request :asset (shader-program pass))))
+(define-handler (single-shader-pass update-shader-for-redefined-subject subject-class-redefined) (ev subject-class)
+  (when (eql subject-class (class-of single-shader-pass))
+    (let* ((program (shader-program single-shader-pass))
+           (loaded (and program (resource program))))
+      (when loaded (offload program))
+      (setf (shader-program single-shader-pass) (make-class-shader-program single-shader-pass))
+      (when loaded (load (shader-program single-shader-pass))))))
 
 (defmethod load progn ((pass single-shader-pass))
   (setf (shader-program pass) (load (make-class-shader-program pass))))
@@ -110,6 +120,7 @@
           for texture-name in '(:texture8 :texture9 :texture10)
           do (setf (uniform program uniform) texture-index)
              (gl:active-texture texture-name)
+             ;; First is always the colour texture
              (gl:bind-texture :texture-2d (resource (first (textures fbo)))))
     (call-next-method)))
 
@@ -142,7 +153,6 @@ void main(){
 (define-class-shader post-effect-pass :fragment-shader
   "
 in vec2 texCoord;")
-
 
 (define-shader-pass copy-pass (post-effect-pass)
   ("previousPass"))
