@@ -98,7 +98,7 @@
 ;; FIXME: maybe there's something nicer to find the loop
 (defmacro define-asset ((pool name) type inputs &rest initargs)
   (let ((scene (gensym "SCENE"))
-        (asset (gensym "ASSET")))l
+        (asset (gensym "ASSET")))
     (substitute-asset-paths inputs (pool pool))
     `(let ((,scene (when (window :main) (scene (window :main))))
            (,asset (asset ',pool ',name)))
