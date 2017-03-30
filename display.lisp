@@ -42,9 +42,15 @@
   ((width :initarg :width :reader width)
    (height :initarg :height :reader height)))
 
-;; FIXME: Only signal after a timeout, in order to avoid excessively resizing
+(define-subwidget (display resize-timer) (q+:make-qtimer display)
+  (setf (q+:single-shot resize-timer) T))
+
 (define-override (display resize-event) (ev)
-  (handle (make-instance 'resize :width (q+:width (q+:size ev)) :height (q+:height (q+:size ev)))
+  (q+:start resize-timer 100))
+
+(define-slot (display resize-timer) ()
+  (declare (connected resize-timer (timeout)))
+  (handle (make-instance 'resize :width (q+:width display) :height (q+:height display))
           display))
 
 (define-override (display paint-event) (ev))
