@@ -72,6 +72,8 @@
   (glsl-toolkit:merge-shader-sources
    (list (class-shader type pass) spec)))
 
+(defmethod register-object-for-pass ((pass per-object-pass) o))
+
 (defmethod register-object-for-pass ((pass per-object-pass) (class shader-subject-class))
   (let ((shaders ()))
     (unless (gethash class (assets pass))
