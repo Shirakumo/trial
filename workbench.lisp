@@ -7,72 +7,6 @@
 (define-asset (workbench av) texture-asset
     (#p"~/Documents/img/Gaymes/Touhou/5ac25bb39c05968f7ec82d4a6615f075.jpg"))
 
-(define-asset (workbench cube) packed-vao-asset
-    (#( 0  1  2  2  3  0
-        4  5  6  6  7  4
-        8  9 10 10 11  8
-       12 13 14 14 15 12
-       16 17 18 18 19 16
-       20 21 22 22 23 20)
-     3 #(+0.5 +0.5 -0.5
-         -0.5 +0.5 -0.5
-         -0.5 +0.5 +0.5
-         +0.5 +0.5 +0.5
-         
-         +0.5 -0.5 +0.5
-         -0.5 -0.5 +0.5
-         -0.5 -0.5 -0.5
-         +0.5 -0.5 -0.5
-
-         +0.5 +0.5 +0.5
-         -0.5 +0.5 +0.5
-         -0.5 -0.5 +0.5
-         +0.5 -0.5 +0.5
-
-         +0.5 -0.5 -0.5
-         -0.5 -0.5 -0.5
-         -0.5 +0.5 -0.5
-         +0.5 +0.5 -0.5
-
-         -0.5 +0.5 +0.5
-         -0.5 +0.5 -0.5
-         -0.5 -0.5 -0.5
-         -0.5 -0.5 +0.5
-
-         +0.5 +0.5 -0.5
-         +0.5 +0.5 +0.5
-         +0.5 -0.5 +0.5
-         +0.5 -0.5 -0.5)
-     2 #(1.0 1.0
-         0.0 1.0
-         0.0 0.0
-         1.0 0.0
-
-         1.0 1.0
-         0.0 1.0
-         0.0 0.0
-         1.0 0.0
-
-         1.0 1.0
-         0.0 1.0
-         0.0 0.0
-         1.0 0.0
-
-         1.0 1.0
-         0.0 1.0
-         0.0 0.0
-         1.0 0.0
-
-         1.0 1.0
-         0.0 1.0
-         0.0 0.0
-         1.0 0.0
-
-         1.0 1.0
-         0.0 1.0
-         0.0 0.0
-         1.0 0.0)))
-
 (define-shader-pass test-pass (post-effect-pass)
   ("previousPass"))
 
@@ -90,7 +24,7 @@ void main(){
   ()
   (:default-initargs
    :texture (asset 'workbench 'av)
-   :vertex-array (asset 'workbench 'cube)))
+   :vertex-array (asset 'geometry 'cube)))
 
 (defmethod setup-scene ((main main))
   (let ((scene (scene main))
