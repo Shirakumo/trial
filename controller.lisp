@@ -47,6 +47,10 @@
                                             (floor (/ (round clock) 60))
                                             (mod clock 60)))))))
 
+(define-handler (controller resize) (ev width height)
+  (let ((pipeline (pipeline (display controller))))
+    (when pipeline (resize pipeline width height))))
+
 (define-handler (controller tick tick 100) (ev)
   (incf (tick-count controller)))
 
@@ -65,6 +69,7 @@
       (unless (eql obj controller)
         (leave obj scene)
         (finalize obj))))
+  (clear (pipeline (display controller)))
   (setup-scene (display controller)))
 
 (define-handler (controller load-request) (ev asset action)

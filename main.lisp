@@ -8,9 +8,10 @@
 (in-readtable :qtools)
 
 ;; FIXME: Fullscreenable seems to cause really bad behaviour, idk
+;; FIXME: Re-add hud somehow
 (define-widget main (QGLWidget display input-handler executable window)
   ((scene :initform (make-instance 'scene) :accessor scene)
-   (hud :initform (make-instance 'hud) :accessor hud)
+   (pipeline :initform (make-instance 'pipeline :name :pipeline) :accessor pipeline)
    (controller :initform (make-instance 'controller))
    (title :initform "Trial" :initarg :title :accessor title))
   (:default-initargs
@@ -19,7 +20,7 @@
 (define-initializer (main setup -10)
   (setf (q+:window-title main) (title main))
   (setf (display controller) main)
-  (register hud scene)
+  (register pipeline scene)
   (register controller scene)
   (issue scene 'reload-scene)
   (start scene))
@@ -31,6 +32,7 @@
   (v:info :trial.main "RAPTURE")
   (acquire-context main :force T)
   (finalize controller)
+  (finalize pipeline)
   (finalize scene))
 
 (define-override (main focus-in-event) (ev)
@@ -53,20 +55,29 @@
 
 ;; FIXME: proper LOADing of a map
 (defmethod setup-scene ((main main))
-  (let ((scene (scene main)))
-    ;;(enter (make-instance 'skybox) scene)
-    ;; (enter (make-instance 'space-axes) scene)
-    ;; (enter (make-instance 'player) scene)
-    ;; (enter (make-instance 'following-camera :name :camera :target (unit :player scene)) scene)
-    ;;(enter (make-instance 'selection-buffer :name :selection-buffer) scene)
-    ))
+  ())
+
+(defmethod setup-scene :after ((main main))
+  (let ((scene (scene main))
+        (pipeline (pipeline main)))
+    (setup-pipeline main)
+    ;; FIXME: suboptimal
+    (dolist (pass (passes pipeline))
+      (for:for ((element over scene))
+        (register-object-for-pass pass element)))
+    (load scene)
+    (load pipeline)))
+
+(defmethod setup-pipeline ((main main))
+  ())
+
+(defmethod setup-pipeline :after ((main main))
+  (pack-pipeline (pipeline main) main))
 
 (defmethod paint ((source main) (target main))
   (issue (scene target) 'tick)
   (process (scene target))
-  (paint (scene source) target)
-  ;; (paint (hud source) target)
-  )
+  (paint (pipeline source) target))
 
 (defun launch (&optional (main 'main) &key initargs application-name)
   (v:output-here)
