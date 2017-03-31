@@ -30,6 +30,10 @@
     (setf (handlers container) (sort (nconc handlers (handlers container)) #'> :key #'priority)))
   handlers)
 
+;; Default priority
+(defmethod priority (object)
+  0)
+
 (defmethod add-handler ((source handler-container) (container handler-container))
   (add-handler (handlers source) container)
   source)
