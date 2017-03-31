@@ -22,6 +22,9 @@
   (map NIL #'load (passes pipeline))
   (load (copy-pass pipeline)))
 
+(defmethod finalize ((pipeline pipeline))
+  (clear pipeline))
+
 (defmethod resize ((pipeline pipeline) width height)
   (loop for framebuffer across (framebuffers pipeline)
         do (resize framebuffer width height)))
