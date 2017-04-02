@@ -100,48 +100,6 @@
                           :first-object other
                           :second-object this)))))
 
-#+trial-debug-bound-entity
-(defmethod paint :after ((entity bound-entity) target)
-  (gl:line-width 1.0)
-  (gl:color 0.0 0.8 0.0)
-  (gl:disable :cull-face)
-  (gl:polygon-mode :front-and-back :line)
-  (with-primitives :quads
-    (let ((min (min-bound entity :relative T))
-          (max (max-bound entity :relative T)))
-      (gl:vertex (vx min) (vy min) (vz min))
-      (gl:vertex (vx max) (vy min) (vz min))
-      (gl:vertex (vx max) (vy max) (vz min))
-      (gl:vertex (vx min) (vy max) (vz min))
-
-      (gl:vertex (vx min) (vy min) (vz max))
-      (gl:vertex (vx max) (vy min) (vz max))
-      (gl:vertex (vx max) (vy max) (vz max))
-      (gl:vertex (vx min) (vy max) (vz max))
-      
-      (gl:vertex (vx min) (vy min) (vz min))
-      (gl:vertex (vx min) (vy max) (vz min))
-      (gl:vertex (vx min) (vy max) (vz max))
-      (gl:vertex (vx min) (vy min) (vz max))
-      
-      (gl:vertex (vx max) (vy min) (vz min))
-      (gl:vertex (vx max) (vy max) (vz min))
-      (gl:vertex (vx max) (vy max) (vz max))
-      (gl:vertex (vx max) (vy min) (vz max))
-      
-      (gl:vertex (vx min) (vy min) (vz min))
-      (gl:vertex (vx max) (vy min) (vz min))
-      (gl:vertex (vx max) (vy min) (vz max))
-      (gl:vertex (vx min) (vy min) (vz max))
-      
-      (gl:vertex (vx min) (vy max) (vz min))
-      (gl:vertex (vx max) (vy max) (vz min))
-      (gl:vertex (vx max) (vy max) (vz max))
-      (gl:vertex (vx min) (vy max) (vz max))))
-  (gl:enable :cull-face)
-  (gl:polygon-mode :front-and-back :fill)
-  (gl:color 1.0 1.0 1.0))
-
 (defclass intersection-entity (bound-entity)
   ((first-object :initarg :first-object :accessor first-object)
    (second-object :initarg :second-object :accessor second-object)
