@@ -30,12 +30,24 @@
     (call-next-method)))
 
 (defclass rotated-entity (entity)
+  ((rotation :initarg :rotation :initform (vec 0 0 0) :accessor rotation)))
+
+(define-saved-initargs rotated-entity rotation)
+
+(defmethod paint :around ((obj rotated-entity) target)
+  (with-pushed-matrix
+    (rotate +vx+ (vx (rotation obj)))
+    (rotate +vy+ (vy (rotation obj)))
+    (rotate +vz+ (vz (rotation obj)))
+    (call-next-method)))
+
+(defclass axis-rotated-entity (entity)
   ((axis :initarg :axis :initform (vec 0 1 0) :accessor axis)
    (angle :initarg :angle :initform 0 :accessor angle)))
 
-(define-saved-initargs rotated-entity axis angle)
+(define-saved-initargs axis-rotated-entity axis angle)
 
-(defmethod paint :around ((obj rotated-entity) target)
+(defmethod paint :around ((obj axis-rotated-entity) target)
   (with-pushed-matrix
     (rotate (axis obj) (angle obj))
     (call-next-method)))
