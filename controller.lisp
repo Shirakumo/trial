@@ -97,3 +97,7 @@
 (define-handler (controller key-release) (ev key)
   (when (eql key :escape)
     (issue (event-loop controller) 'pause)))
+
+(defun maybe-reload-scene (&optional (window (or *context* (window :main))))
+  (when window
+    (issue (scene window) 'reload-scene)))
