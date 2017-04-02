@@ -63,12 +63,9 @@
         do (load (offload asset))))
 
 (define-handler (controller reload-scene reload-scene 99) (ev)
-  ;; FIXME: properly clear and resetup scene
-  (let ((scene (event-loop controller)))
-    (dolist (obj (flare-indexed-set:coerce-set (objects scene) 'list))
-      (unless (eql obj controller)
-        (leave obj scene)
-        (finalize obj))))
+  (loop for asset being the hash-keys of (assets *context*)
+        do (offload asset))
+  (clear (scene (display controller)))
   (clear (pipeline (display controller)))
   (setup-scene (display controller)))
 
