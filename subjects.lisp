@@ -43,13 +43,15 @@ void main(){
   gl_Position = projection_matrix * view_matrix * model_matrix * vec4(position, 1.0f);
 }")
 
+;; FIXME: Make sure to coerce for proper colour format!
 (define-shader-subject colored-subject ()
   ((color :initarg :color :initform (vec 0 0 1 1) :accessor color)))
 
 (define-saved-initargs colored-subject color)
 
-(defmethod paint :before ((obj colored-subject) target)
-  (setf (uniform obj "objectcolor") (color obj)))
+(defmethod paint :before ((obj colored-subject) (pass shader-pass))
+  (let ((shader (shader-program-for-pass pass obj)))
+    (setf (uniform shader "objectcolor") (color obj))))
 
 (define-class-shader colored-subject :fragment-shader
   "uniform vec4 objectcolor;

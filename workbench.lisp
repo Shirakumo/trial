@@ -20,21 +20,27 @@ void main(){
   color = texture(previousPass, texCoord);
 }")
 
-(define-shader-subject testcube (vertex-subject textured-subject)
+(define-shader-subject testcube (vertex-subject textured-subject located-entity rotated-entity)
   ()
   (:default-initargs
    :texture (asset 'workbench 'av)
    :vertex-array (asset 'geometry 'cube)))
 
-(defmethod paint :before ((testcube testcube) target)
-  (rotate +vx+ 0.1)
-  (rotate +vy+ 0.07)
-  (rotate +vz+ 0.03))
+(define-handler (testcube tick) (ev)
+  (incf (angle testcube) 0.1)
+  (cond ((retained 'movement :left)
+         (decf (vx (location testcube)) 0.1))
+        ((retained 'movement :right)
+         (incf (vx (location testcube)) 0.1))
+        ((retained 'movement :up)
+         (decf (vz (location testcube)) 0.1))
+        ((retained 'movement :down)
+         (incf (vz (location testcube)) 0.1))))
 
 (defmethod setup-scene ((main main))
   (let ((scene (scene main)))
     (enter (make-instance 'testcube) scene)
-    (enter (make-instance 'target-camera :location (vec 0 2 2)) scene)))
+    (enter (make-instance 'target-camera :location (vec 0 -3 2)) scene)))
 
 (defmethod setup-pipeline ((main main))
   (let ((pipeline (pipeline main))
