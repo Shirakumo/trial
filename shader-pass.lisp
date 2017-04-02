@@ -95,7 +95,8 @@
 
 (define-shader-pass single-shader-pass ()
   ()
-  ((shader-program :initform (make-instance 'shader-program-asset) :accessor shader-program)))
+  ((shader-program :initform (make-instance 'shader-program-asset) :accessor shader-program)
+   (pass-uniforms :initarg :uniforms :initform () :accessor pass-uniforms)))
 
 (define-handler (single-shader-pass update-shader-for-redefined-subject subject-class-redefined) (ev subject-class)
   (when (eql subject-class (class-of single-shader-pass))
@@ -116,6 +117,8 @@
 (defmethod paint :around ((pass single-shader-pass) target)
   (let ((program (shader-program pass)))
     (gl:use-program (resource program))
+    (loop for (uniform value) in (pass-uniforms pass)
+          do (setf (uniform program uniform) value))
     ;; FIXME: register inputs as uniforms properly
     (loop for (uniform fbo) in (pass-inputs pass)
           for texture-index from 8
