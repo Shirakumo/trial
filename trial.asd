@@ -40,7 +40,6 @@
                (:file "subjects")
                (:file "hud")
                (:file "sprite")
-               (:file "skybox")
                (:file "octree")
                (:file "camera")
                (:file "selectable")
