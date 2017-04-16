@@ -93,6 +93,35 @@
     ;; FIXME: register inputs as uniforms... ?
     (call-next-method)))
 
+(define-shader-pass multisampled-pass ()
+  ()
+  ((multisample-fbo :initform (make-asset 'framebuffer-bundle-asset
+                                          '((:attachment :color-attachment0 :bits 8)
+                                            (:attachment :depth-attachment :bits 8))
+                                          :width 512 :height 512)
+                    :accessor multisample-fbo)))
+
+(defmethod load progn ((pass multisampled-pass))
+  (load (multisample-fbo pass)))
+
+(defmethod paint :around ((pass multisampled-pass) target)
+  ;; FIXME: slow
+  (let ((original-framebuffer (gl:geti :draw-framebuffer-binding))
+        (framebuffer (multisample-fbo pass)))
+    (gl:bind-framebuffer :framebuffer (resource framebuffer))
+    (call-next-method)
+    (gl:bind-framebuffer :draw-framebuffer original-framebuffer)
+    (%gl:blit-framebuffer 0 0 (width target) (height target) 0 0 (width target) (height target)
+                          (logior (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
+                                  (cffi:foreign-bitfield-value '%gl::ClearBufferMask :depth-buffer))
+                          (cffi:foreign-enum-value '%gl:enum :nearest))))
+
+(define-handler (multisampled-pass resize) (ev width height)
+  (resize (multisample-fbo multisampled-pass) width height))
+
+(define-shader-pass multisampled-per-object-pass (multisampled-pass per-object-pass)
+  ())
+
 (define-shader-pass single-shader-pass ()
   ()
   ((shader-program :initform (make-instance 'shader-program-asset) :accessor shader-program)
