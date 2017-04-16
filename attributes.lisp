@@ -44,11 +44,12 @@
     (if parent
         (loop for k being the hash-keys of parent
               for v being the hash-values of parent
-              do (setf (gethash table k) v))
+              do (setf (gethash k table) v))
         (loop for k across *gl-attributes*
               do (if (find k *default-enabled-gl-attributes*)
-                     (setf (gethash table k) T)
-                     (setf (gethash table k) NIL))))))
+                     (setf (gethash k table) T)
+                     (setf (gethash k table) NIL))))
+    table))
 
 (defvar *attribute-stack* (list (make-attribute-table)))
 
@@ -77,9 +78,9 @@
         (cur (attribute-table)))
     (loop for k being the hash-keys of prev
           for v being the hash-values of prev
-          do (cond ((and v (not (gethash cur k)))
+          do (cond ((and v (not (gethash k cur)))
                     (gl:disable k))
-                   ((and (not v) (gethash cur k))
+                   ((and (not v) (gethash k cur))
                     (gl:enable k))))))
 
 (defmacro with-pushed-attribs (&body body)
@@ -87,4 +88,3 @@
           (unwind-protect
                (progn ,@body)
             (pop-attribs))))
-

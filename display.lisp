@@ -10,10 +10,6 @@
 (define-widget display (QGLWidget context renderable)
   ((clear-color :initarg :clear-color :initform (vec 0.2 0.3 0.3) :accessor clear-color)))
 
-(defmethod (setf clear-color) :after (c (display display))
-  (with-context (display)
-    (gl:clear-color (vx c) (vy c) (vz c) (if (vec4-p c) (vw c) 1.0))))
-
 (defmethod handle (event (display display)))
 
 (define-initializer (display %display-setup)
@@ -67,9 +63,7 @@
   (gl:front-face :ccw)
   (gl:cull-face :back)
   (gl:hint :line-smooth-hint :nicest)
-  (gl:hint :polygon-smooth-hint :nicest)
-  (enable :blend :multisample :line-smooth :polygon-smooth
-          :depth-test :depth-clamp))
+  (enable :blend :multisample :line-smooth :depth-test :depth-clamp))
 
 (defmethod paint (source (target display)))
 
@@ -80,5 +74,8 @@
   ;; Potentially release context every time to allow
   ;; other threads to grab it.
   (with-context (target :reentrant T)
+    (let ((c (clear-color target)))
+      (gl:clear-color (vx c) (vy c) (vz c) (if (vec4-p c) (vw c) 1.0)))
+    (gl:clear :color-buffer :depth-buffer)
     (call-next-method)
     (q+:swap-buffers target)))

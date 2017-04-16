@@ -67,8 +67,8 @@
 
 (defmethod setup-pipeline :after ((main main))
   (pack-pipeline (pipeline main) main)
-  (dolist (pass (passes pipeline))
-    (for:for ((element over scene))
+  (dolist (pass (passes (pipeline main)))
+    (for:for ((element over (scene main)))
       (register-object-for-pass pass element))))
 
 (defmethod paint ((source main) (target main))
