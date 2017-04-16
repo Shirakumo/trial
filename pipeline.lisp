@@ -11,16 +11,14 @@
   ((connections :initform (make-hash-table :test 'eq) :accessor connections)
    (passes :initform () :accessor passes)
    (framebuffers :initform #() :accessor framebuffers)
-   (pass-fbo-map :initform (make-hash-table :test 'eq) :accessor pass-fbo-map)
-   (copy-pass :initform (make-instance 'copy-pass) :accessor copy-pass)))
+   (pass-fbo-map :initform (make-hash-table :test 'eq) :accessor pass-fbo-map)))
 
 (defmethod handle :after ((tick tick) (pipeline pipeline))
   (process pipeline))
 
 (defmethod load progn ((pipeline pipeline))
   (map NIL #'load (framebuffers pipeline))
-  (map NIL #'load (passes pipeline))
-  (load (copy-pass pipeline)))
+  (map NIL #'load (passes pipeline)))
 
 (defmethod finalize ((pipeline pipeline))
   (clear pipeline))
@@ -116,9 +114,7 @@
                      (pass-inputs pass))))
     (setf (passes pipeline) passes)
     (setf (framebuffers pipeline) framebuffers)
-    (setf (pass-fbo-map pipeline) colors)
-    (setf (pass-inputs (copy-pass pipeline))
-          `(("previousPass" ,(gethash (car (last passes)) colors))))))
+    (setf (pass-fbo-map pipeline) colors)))
 
 (defun color-graph (nodes edges)
   ;; Greedy colouring
@@ -169,13 +165,15 @@
 (defmethod paint ((pipeline pipeline) target)
   (let ((pass-fbo-map (pass-fbo-map pipeline))
         (passes (passes pipeline)))
-    (typecase passes
+    (etypecase passes
       (cons (loop for pass in passes
                   for fbo = (gethash pass pass-fbo-map)
                   do (gl:bind-framebuffer :framebuffer (resource fbo))
                      (gl:clear-color 0.0 0.0 0.0 0.0)
                      (gl:clear :color-buffer :depth-buffer)
                      (paint pass target)
-                  finally (gl:bind-framebuffer :framebuffer 0)
-                          (paint (copy-pass pipeline) target)))
-      (null (gl:clear :color-buffer :depth-buffer)))))
+                  finally (gl:bind-framebuffer :draw-framebuffer 0)
+                          (%gl:blit-framebuffer 0 0 (width target) (height target) 0 0 (width target) (height target)
+                                                (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
+                                                (cffi:foreign-enum-value '%gl:enum :nearest))))
+      (null))))
