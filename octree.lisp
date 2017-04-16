@@ -29,8 +29,7 @@
       (setf (pivot octree) (v- 0 (vec (vx size) 0 (vz size)))))))
 
 (defmethod enter ((object collidable-entity) (octree octree))
-  (unless (null octree)
-    (push object (pending-objects octree)))
+  (when octree (push object (pending-objects octree)))
   object)
 
 (defmethod leave ((object collidable-entity) (octree octree))
@@ -38,98 +37,108 @@
   )
 
 (defmethod build-tree ((octree octree))
+  "Builds children for the given octree if and only if it needs to split."
   (when (and (< (treshold octree) (length (objects octree)))
              (v< 1 (bounds octree)))
-    (let ((octant (sub-octant octree))
-          (child-objects (make-array 8 :initial-element NIL))
-          (cur-objects (objects octree))
-          (new-objects NIL))
+    (let* ((octant (sub-octant octree))
+           (child-objects (make-array (array-dimension octant 0)
+                                      :initial-element NIL))
+           (cur-objects (objects octree))
+           (new-objects NIL))
       ;; Find who belongs where
       (loop while cur-objects
             do (let ((object (pop cur-objects))
                      (set-p NIL))
                  (when (v< 0 (bounds object))
-                   (dotimes (i 8)
-                     (let ((sub-box (elt octant i)))
-                       (when(contains sub-box object)
-                         (push object (elt child-objects i))
-                         (setf set-p T)
-                         (return)))))
+                   (for:for ((i repeat (array-dimension octant 0))
+                             (sub-box across octant))
+                     (when (contains sub-box object)
+                       (push object (elt child-objects i))
+                       (setf set-p T)
+                       (return))))
                  (unless set-p
                    (push object new-objects))))
       (setf (objects octree) new-objects)
       
       ;; Create the child nodes
-      (dotimes (i 8)
-        (let ((sub-box (elt octant i)))
-          (when (elt child-objects i)
-            (let ((child (make-instance 'octree
-                                        :bounds (bounds sub-box)
-                                        :location (location sub-box)
-                                        :parent octree
-                                        :treshold (treshold octree))))
-              (loop for obj in (elt child-objects i)
-                    do (enter obj child))
-              (build-tree child)
-              (setf (elt (children octree) i) child)
-              (setf (active-children octree)
-                    (logior (active-children octree)
-                            (ash 1 i)))))))
+      (for:for ((i repeat (array-dimension octant 0))
+                (sub-box across octant)
+                (children across child-objects))
+        (when children
+          (let ((child (make-instance 'octree
+                                      :bounds (bounds sub-box)
+                                      :location (location sub-box)
+                                      :parent octree
+                                      :treshod (treshold octree))))
+            (for:for ((object in children))
+              (enter object child))
+            (build-tree child)
+            (setf (elt (children octree) i) child)
+            (setf (active-children octree)
+                  (logior (active-children octree)
+                          (ash 1 i))))))
       (setf (built-p octree) T
             (ready-p octree) T))))
 
 (defmethod insert-object ((octree octree) (object collidable-entity))
+  "Inserts an object into the octree."
   (cond ((or (and (<= (length (objects octree)) (treshold octree))
                   (/= 0 (active-children octree)))
              (v<= (bounds object) 1))
+         ;; Equal bounds and there's space, make it part of this area
+         ;; TODO: If there are equal bounds but no room, should we spread
+         ;;       the existing children into sub-trees and keep this one here?
          (push object (objects octree)))
         ((contains octree object)
          (let ((octant (sub-octant octree))
                (found NIL))
            ;; Let's find a child where this fits
-           (dotimes (i 8)
-             (let ((sub-box (elt octant i))
-                   (child (elt (children octree) i)))
-               (when (contains sub-box object)
-                 (cond (child
-                        (insert-object child object))
-                       (T
-                        (let ((child (make-instance 'octree
-                                                    :bounds (bounds sub-box)
-                                                    :location (location sub-box)
-                                                    :parent octree
-                                                    :treshold (treshold octree))))
-                          (insert-object child object)
-                          (setf (elt (children octree) i) child)
-                          (setf (active-children octree)
-                                (logior (active-children octree)
-                                        (ash 1 i))))))
-                 (setf found T)
-                 (return))))
+           (for:for ((i repeat (array-dimension octant 0))
+                     (sub-box across octant)
+                     (child across (children octree)))
+             (when (contains sub-box object)
+               (if child
+                   (insert-object child object)
+                   (let ((child (make-instance 'octree
+                                               :bounds (bounds sub-box)
+                                               :location (location sub-box)
+                                               :parent octree
+                                               :treshold (treshold octree))))
+                     (insert-object child object)
+                     (setf (elt (children octree) i) child)
+                     (setf (active-children octree) ;; TODO: For future optimisations
+                           (logior (active-children octree)
+                                   (ash 1 i)))))
+               (setf found T)
+               (return)))
            (unless found
              (push object (objects octree)))))
-        (T ;; It's out of bounds or intersects. Just ignore? I don't know.
+        (T ;; It's out of bounds or intersects. Just ignore.
          (build-tree octree)))) ;; Rebuild just in case.
 
 (defmethod intersections ((octree octree) &optional parent-objects)
-  (let ((isects NIL) (local-objs (copy-list (objects octree))))
-    (loop for parent-obj in parent-objects
-          do (loop for obj in local-objs
-                   do (let ((isection (intersects parent-obj obj)))
-                        (when isection (push isection isects)))))
-    (when (< 0 (length local-objs))
+  "Returns intersections that happen with the objects in the octree."
+  (let ((isects NIL)
+        (local-objs (copy-list (objects octree))))
+    (for:for ((parent-obj in parent-objects))
+      (for:for ((obj in local-objs))
+        (let ((isection (intersects parent-obj obj)))
+          (when isection (push isection isects)))))
+    (when local-objs
       (let ((tmp-objects (copy-list local-objs)))
-        (loop while tmp-objects
-              do (let ((cur-obj (pop tmp-objects)))
-                   (loop for other-obj in tmp-objects
-                         do (let ((isect (intersects cur-obj other-obj)))
-                              (when isect (push isect isects))))))))
+        (for:for ()
+          (while tmp-objects)
+          (let ((cur-obj (pop tmp-objects)))
+            (for:for ((other-obj in tmp-objects))
+              (let ((isect (intersects cur-obj other-obj)))
+                (when isect (push isect isects))))))))
     ;; Merge and pass them on
     (when (/= 0 (active-children octree))
       (nconc local-objs parent-objects)
-      (loop for child across (children octree)
-            do (when child
-                 (nconc isects (intersections child local-objs)))))))
+      (for:for ((child across (children octree)))
+        (when child
+          (nconc isects (intersections child local-objs)))))
+    isects))
 
 (defmethod sub-octant ((octree octree))
   (let* ((half (v/ (bounds octree) 2))
@@ -162,14 +171,17 @@
     octant))
 
 (defmethod update-tree ((octree octree))
+  "Inserts the pending objects into the three"
   (let ((pending (pending-objects octree)))
     (cond ((built-p octree)
-           (loop while pending
-                 do (insert-object octree (pop pending)))
+           (for:for ()
+             (while pending)
+             (insert-object octree (pop pending)))
            (setf (pending-objects octree) NIL))
           (T
-           (loop while pending
-                 do (push (pop pending) (objects octree)))
+           (for:for ()
+             (while pending)
+             (push (pop pending) (objects octree)))
            (setf (pending-objects octree) NIL)
            (build-tree octree))))
   (setf (ready-p octree) T))
@@ -177,47 +189,48 @@
 (defmethod update-cycle ((octree octree))
   (when (built-p octree)
     ;; Set the life span of this node
-    (if (< 0 (length (objects octree)))
+    (if (objects octree)
         (when (= 0 (active-children octree))
           (if (< (life octree) 0)
-              (setf (life octree) (life-span octree)) ;; start death count
+              (setf (life octree) (1- (life-span octree))) ;; start death count
               (decf (life octree)))) ;; decrease life
         (when (<= 0 (life octree))
           ;; objects added while dying, increase lifespan and quit death count
           (when (< (life-span octree) *max-octree-life-span*)
+            ;; Give it a bigger life span as it seems this octree is used more often
             (incf (life-span octree) (life-span octree)))
           (setf (life octree) -1)))
 
     ;; Get the moved objects
     (let ((new-objects NIL)
           (moved-objects NIL))
-      (loop while (objects octree)
-            do (let ((object (pop (objects octree))))
-                 (when (alive-p object) ;; Prune the dead
-                   (if (contains octree object)
-                       (push object new-objects)
-                       (push object moved-objects)))))
+      (for:for ()
+        (while (objects octree))
+        (let ((object (pop (objects octree))))
+          (if (contains octree object)
+              (push object new-objects)
+              (push object moved-objects))))
       (setf (objects octree) new-objects)
 
       ;; Update children here so they might give us their moved objects
-      (loop for child across (children octree)
-            do (when child (update-cycle child)))
+      (for:for ((child across (children octree)))
+        (when child (update-cycle child)))
 
       ;; Move the moved objects
       (let ((current (parent octree)))
-        (loop while (and current moved-objects)
-              do (let ((object (pop moved-objects)))
-                   (when (contains current object)
-                     (insert-object current (pop moved-objects)))))
+        (for:for ()
+          (while (and current moved-objects))
+          (let ((object (pop moved-objects)))
+            (when (contains current object)
+              (insert-object current (pop moved-objects)))))
         (setf current (parent current))))
 
     ;; Prune dead children
-    (dotimes (i 8)
-      (let ((child (elt (children octree) i)))
-        (when (= 0 (active-children child) (life child))
-          (setf (elt (children octree) i) NIL
-                (active-children octree)
-                (logxor (active-children octree) (ash 1 i))))))
+    (for:for ((i repeat (array-dimension (children octree) 0))
+              (child across (children octree)))
+      (when (= 0 (active-children child) (life child))
+        (setf (elt (children octree) i) NIL
+              (active-children octree) (logxor (active-children octree) (ash 1 i)))))
 
     ;; Finally moved everything right, let's check those collisions
     (unless (parent octree)
