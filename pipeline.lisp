@@ -169,11 +169,13 @@
 (defmethod paint ((pipeline pipeline) target)
   (let ((pass-fbo-map (pass-fbo-map pipeline))
         (passes (passes pipeline)))
-    (loop for pass in passes
-          for fbo = (gethash pass pass-fbo-map)
-          do (gl:bind-framebuffer :framebuffer (resource fbo))
-             (gl:clear-color 0.0 0.0 0.0 0.0)
-             (gl:clear :color-buffer :depth-buffer)
-             (paint pass target)
-          finally (gl:bind-framebuffer :framebuffer 0)
-                  (paint (copy-pass pipeline) target))))
+    (typecase passes
+      (cons (loop for pass in passes
+                  for fbo = (gethash pass pass-fbo-map)
+                  do (gl:bind-framebuffer :framebuffer (resource fbo))
+                     (gl:clear-color 0.0 0.0 0.0 0.0)
+                     (gl:clear :color-buffer :depth-buffer)
+                     (paint pass target)
+                  finally (gl:bind-framebuffer :framebuffer 0)
+                          (paint (copy-pass pipeline) target)))
+      (null (gl:clear :color-buffer :depth-buffer)))))
