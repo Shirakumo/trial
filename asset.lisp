@@ -412,6 +412,9 @@
                   :texture-2d)
                  (destructuring-bind (width height bits format) (object-to-texparams image)
                    (gl:tex-image-2d target level format width height 0 format :unsigned-byte bits)))
+                (:texture-2d-multisample
+                 (destructuring-bind (width height samples format) (object-to-texparams image)
+                   (%gl:tex-image-2d-multisample target samples format width height 0)))
                 (:texture-3d
                  (destructuring-bind (width height depth bits format) image
                    (gl:tex-image-3d target level format width height depth 0 format :unsigned-byte bits))))))))
