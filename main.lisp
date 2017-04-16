@@ -58,21 +58,18 @@
   ())
 
 (defmethod setup-scene :after ((main main))
-  (let ((scene (scene main))
-        (pipeline (pipeline main)))
-    (setup-pipeline main)
-    ;; FIXME: suboptimal
-    (dolist (pass (passes pipeline))
-      (for:for ((element over scene))
-        (register-object-for-pass pass element)))
-    (load scene)
-    (load pipeline)))
+  (setup-pipeline main)
+  (load (scene main))
+  (load (pipeline main)))
 
 (defmethod setup-pipeline ((main main))
   ())
 
 (defmethod setup-pipeline :after ((main main))
-  (pack-pipeline (pipeline main) main))
+  (pack-pipeline (pipeline main) main)
+  (dolist (pass (passes pipeline))
+    (for:for ((element over scene))
+      (register-object-for-pass pass element))))
 
 (defmethod paint ((source main) (target main))
   (issue (scene target) 'tick)
