@@ -17,6 +17,7 @@
                (:file "features")
                (:file "toolkit")
                (:file "transforms")
+               (:file "attributes")
                (:file "entity")
                (:file "savestate")
                (:file "layer-set")

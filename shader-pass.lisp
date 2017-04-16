@@ -138,11 +138,11 @@
 
 (defmethod paint ((pass post-effect-pass) target)
   (let ((vao (vertex-array pass)))
-    (gl:disable :depth-test)
-    (gl:bind-vertex-array (resource vao))
-    (%gl:draw-elements :triangles (size vao) :unsigned-int 0)
-    (gl:bind-vertex-array 0)
-    (gl:enable :depth-test)))
+    (with-pushed-attribs
+      (disable :depth-test)
+      (gl:bind-vertex-array (resource vao))
+      (%gl:draw-elements :triangles (size vao) :unsigned-int 0)
+      (gl:bind-vertex-array 0))))
 
 (define-class-shader post-effect-pass :vertex-shader
   "

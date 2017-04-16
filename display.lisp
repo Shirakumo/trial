@@ -10,6 +10,10 @@
 (define-widget display (QGLWidget context renderable)
   ((clear-color :initarg :clear-color :initform (vec 0.2 0.3 0.3) :accessor clear-color)))
 
+(defmethod (setf clear-color) :after (c (display display))
+  (with-context (display)
+    (gl:clear-color (vx c) (vy c) (vz c) (if (vec4-p c) (vw c) 1.0))))
+
 (defmethod handle (event (display display)))
 
 (define-initializer (display %display-setup)
@@ -63,18 +67,13 @@
   (gl:front-face :ccw)
   (gl:cull-face :back)
   (gl:hint :line-smooth-hint :nicest)
-  (gl:hint :polygon-smooth-hint :nicest))
+  (gl:hint :polygon-smooth-hint :nicest)
+  (enable :blend :multisample :line-smooth :polygon-smooth
+          :depth-test :depth-clamp))
 
 (defmethod paint (source (target display)))
 
 (defmethod render (source (target display))
-  (let ((c (clear-color target)))
-    (gl:clear-color (vx c) (vy c) (vz c) 1))
-  (gl:clear :color-buffer :depth-buffer)
-  ;; FIXME: reenable cull face
-  (gl:enable :blend :multisample
-             :line-smooth :polygon-smooth
-             :depth-test :depth-clamp)
   (paint source target))
 
 (defmethod render :around (source (target display))

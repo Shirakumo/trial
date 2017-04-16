@@ -108,15 +108,15 @@
     ;; Size might have changed since we last updated...
     (reinitialize-instance buffer :width (width *context*) :height (height *context*)))
   (when (q+:bind (data buffer))
-    (with-pushed-attribs T
+    (with-pushed-attribs
       (unwind-protect
            (progn
              (gl:clear-color 0.0 0.0 0.0 0.0)
              (gl:clear :color-buffer :depth-buffer)
              ;; FIXME: How do we know what to deactivate and reactivate?
              ;; Disable blending and textures to ensure we have just 32bit colours.
-             (gl:disable :blend :texture-2d :multisample)
-             (gl:enable :depth-test :cull-face)
+             (disable :blend :texture-2d :multisample)
+             (enable :depth-test :cull-face)
              (with-pushed-matrix
                ;; FIXME: Multiple cameras? Camera not named this?
                (setup-perspective (unit :camera scene) (make-instance 'resize :width (width *context*) :height (height *context*)))
