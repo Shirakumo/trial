@@ -31,8 +31,8 @@
   ;; Notify
   (loop for pointer in (instances class)
         for subject = (tg:weak-pointer-value pointer)
-        when (and subject (event-loop subject))
-        return (issue (event-loop subject) 'subject-class-redefined
+        when (and subject (slot-value subject 'event-loop))
+        return (issue (slot-value subject 'event-loop) 'subject-class-redefined
                       :subject-class class)))
 
 (defmethod cascade-option-changes :after ((class subject-class))
@@ -74,7 +74,9 @@
   (regenerate-handlers subject))
 
 (defmethod regenerate-handlers ((subject subject))
-  (let ((loop (event-loop subject)))
+  ;; During recompilation the EVENT-LOOP method might
+  ;; be temporarily unavailable
+  (let ((loop (slot-value subject 'event-loop)))
     (when loop
       (remove-handler subject loop))
     (loop for handler in (effective-handlers (class-of subject))
