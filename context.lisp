@@ -58,7 +58,7 @@
                                           (overlay NIL)
                                           (plane 0)
                                           (multisampling T)
-                                          (samples 2)
+                                          (samples 1)
                                           (swap-interval 0)
                                           (profile :core)
                                           (version '(3 3)))
