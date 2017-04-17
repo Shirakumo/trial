@@ -75,7 +75,7 @@
   ;; other threads to grab it.
   (with-context (target :reentrant T)
     (let ((c (clear-color target)))
-      (gl:clear-color (vx c) (vy c) (vz c) (if (vec4-p c) (vw c) 1.0)))
+      (gl:clear-color (vx c) (vy c) (vz c) (if (vec4-p c) (vw c) 0.0)))
     (gl:clear :color-buffer :depth-buffer)
     (call-next-method)
     (q+:swap-buffers target)))
