@@ -165,6 +165,7 @@
 (defmethod paint ((pipeline pipeline) target)
   (let ((pass-fbo-map (pass-fbo-map pipeline))
         (passes (passes pipeline)))
+    (gl:clear-color 0.0 0.0 0.0 0.0)
     (etypecase passes
       (cons (loop for pass in passes
                   for fbo = (gethash pass pass-fbo-map)
