@@ -28,28 +28,7 @@ void main(){
 
 (define-class-shader texcube :fragment-shader
   "
-in vec2 texcoord;
-out vec4 color;
-uniform sampler2D texture_image;
-
-void main(){
-  vec2 texSize = textureSize(texture_image, 0);
-  vec2 center = texSize/2;
-  vec2 tc = texcoord * texSize;
-  float radius = 1000;
-  float angle = 0.8;
-  tc -= center;
-  float dist = length(tc);
-  if (dist < radius) {
-    float percent = (radius - dist) / radius;
-    float theta = percent * percent * angle * 8.0;
-    float s = sin(theta);
-    float c = cos(theta);
-    tc = vec2(dot(tc, vec2(c, -s)), dot(tc, vec2(s, c)));
-  }
-  tc += center;
-  color = texture2D(texture_image, tc / texSize);
-}")
+")
 
 (define-shader-subject colcube (vertex-subject colored-subject located-entity rotated-entity)
   ()
@@ -72,8 +51,10 @@ void main(){
 (progn
   (defmethod setup-pipeline ((main main))
     (let ((pipeline (pipeline main))
-          (pass1 (make-instance 'multisampled-per-object-pass))
-          (pass2 (make-instance 'test-pass)))
-      (connect-pass pass1 pass2 "previousPass" pipeline)))
+          (pass1 (make-instance 'per-object-pass))
+          (pass2 (make-instance 'test-pass))
+          (pass3 (make-instance 'fxaa-pass)))
+      (connect-pass pass1 pass2 "previousPass" pipeline)
+      (connect-pass pass2 pass3 "previousPass" pipeline)))
 
   (maybe-reload-scene))
