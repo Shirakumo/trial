@@ -84,11 +84,17 @@
 (defmethod finalize ((pool pool))
   (mapc #'finalize (list-assets pool)))
 
+(defmethod pool-path ((pool pool) pathname)
+  (merge-pathnames pathname (base pool)))
+
+(defmethod pool-path ((name symbol) pathname)
+  (pool-path (pool name T) pathname))
+
 (defun substitute-asset-paths (tree pool)
   (typecase tree
     (cons (cons (substitute-asset-paths (car tree) pool)
                 (substitute-asset-paths (cdr tree) pool)))
-    (pathname (merge-pathnames tree (base pool)))
+    (pathname (pool-path pool tree))
     (T tree)))
 
 (defclass load-request (event)

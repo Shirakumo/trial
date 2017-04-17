@@ -22,7 +22,12 @@
                      do (pushnew shader (getf effective-shaders type)))))
     (loop for (type shaders) on effective-shaders by #'cddr
           do (setf (getf effective-shaders type)
-                   (glsl-toolkit:merge-shader-sources shaders)))
+                   (glsl-toolkit:merge-shader-sources
+                    (loop for shader in shaders
+                          collect (etypecase shader
+                                    (string shader)
+                                    (list (destructuring-bind (pool path) shader
+                                            (pool-path pool path))))))))
     (setf (effective-shaders class) effective-shaders)
     (setf (dirty class) T)))
 
