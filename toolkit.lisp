@@ -45,6 +45,12 @@
 (defun unlist (item)
   (if (listp item) (first item) item))
 
+(defun remf* (list &rest keys)
+  (loop for (k v) on list by #'cddr
+        for x = (member k keys)
+        unless x collect k
+        unless x collect v))
+
 (defmacro with-primitives (primitive &body body)
   `(progn
      (gl:begin ,primitive)

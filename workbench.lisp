@@ -57,8 +57,7 @@ void main(){
    :vertex-array (asset 'geometry 'cube)))
 
 (define-handler (colcube tick) (ev)
-  (incf (vx (rotation colcube)) 0.1)
-  (incf (vy (rotation colcube)) 0.2))
+  )
 
 (progn
   (defmethod setup-scene ((main main))
@@ -73,12 +72,8 @@ void main(){
 (progn
   (defmethod setup-pipeline ((main main))
     (let ((pipeline (pipeline main))
-          (pass1 (make-instance 'per-object-pass))
-          (pass2 (make-instance 'test-pass))
-          (pass3 (make-instance 'gaussian-blur-pass :uniforms '(("blurRadius" 2.0))))
-          (pass4 (make-instance 'gaussian-blur-pass :uniforms `(("blurRadius" 2.0) ("dir" ,(vec2 0.0 1.0))))))
-      (connect-pass pass1 pass2 "previousPass" pipeline)
-      (connect-pass pass2 pass3 "previousPass" pipeline)
-      (connect-pass pass3 pass4 "previousPass" pipeline)))
+          (pass1 (make-instance 'multisampled-per-object-pass))
+          (pass2 (make-instance 'test-pass)))
+      (connect-pass pass1 pass2 "previousPass" pipeline)))
 
   (maybe-reload-scene))

@@ -96,8 +96,8 @@
 (define-shader-pass multisampled-pass ()
   ()
   ((multisample-fbo :initform (make-asset 'framebuffer-bundle-asset
-                                          '((:attachment :color-attachment0 :bits 8)
-                                            (:attachment :depth-attachment :bits 8))
+                                          '((:attachment :color-attachment0 :bits 8 :target :texture-2d-multisample)
+                                            (:attachment :depth-attachment  :bits 8 :target :texture-2d-multisample))
                                           :width 512 :height 512)
                     :accessor multisample-fbo)))
 
@@ -106,7 +106,7 @@
 
 (defmethod paint :around ((pass multisampled-pass) target)
   ;; FIXME: slow
-  (let ((original-framebuffer (gl:geti :draw-framebuffer-binding))
+  (let ((original-framebuffer (gl:get-integer :draw-framebuffer-binding))
         (framebuffer (multisample-fbo pass)))
     (gl:bind-framebuffer :framebuffer (resource framebuffer))
     (call-next-method)

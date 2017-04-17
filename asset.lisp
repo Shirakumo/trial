@@ -427,16 +427,17 @@
              (with-cleanup-on-failure (offload asset)
                (gl:bind-texture target texture)
                (images-to-textures target images)
-               (unless (or (eql min-filter :nearest) (eql min-filter :linear))
-                 (gl:generate-mipmap target))
-               (gl:tex-parameter target :texture-min-filter min-filter)
-               (gl:tex-parameter target :texture-mag-filter mag-filter)
-               (gl:tex-parameter target :texture-wrap-s (first wrapping))
-               (gl:tex-parameter target :texture-wrap-t (second wrapping))
-               (when (eql target :texture-cube-map)
-                 (gl:tex-parameter target :texture-wrap-r (third wrapping)))
-               (when anisotropy
-                 (gl:tex-parameter target :texture-max-anisotropy-ext anisotropy))))
+               (unless (eql target :texture-2d-multisample)
+                 (unless (or (eql min-filter :nearest) (eql min-filter :linear))
+                   (gl:generate-mipmap target))
+                 (when anisotropy
+                   (gl:tex-parameter target :texture-max-anisotropy-ext anisotropy))
+                 (gl:tex-parameter target :texture-min-filter min-filter)
+                 (gl:tex-parameter target :texture-mag-filter mag-filter)
+                 (gl:tex-parameter target :texture-wrap-s (first wrapping))
+                 (gl:tex-parameter target :texture-wrap-t (second wrapping))
+                 (when (eql target :texture-cube-map)
+                   (gl:tex-parameter target :texture-wrap-r (third wrapping))))))
         (mapc #'finalize images)))))
 
 (defclass framebuffer-asset (asset)
@@ -457,7 +458,7 @@
       (gl:bind-framebuffer :framebuffer buffer)
       (unwind-protect
            (dolist (input (coerced-inputs asset))
-             (destructuring-bind (texture &key (level 0) layer attachment) input
+             (destructuring-bind (texture &key (level 0) layer attachment &allow-other-keys) input
                (check-framebuffer-attachment attachment)
                (check-type texture texture-asset)
                (if layer
@@ -498,21 +499,18 @@
   (coerce-input asset (list :attachment attachment)))
 
 (defmethod coerce-input ((asset framebuffer-bundle-asset) (spec cons))
-  (let ((attachment (getf spec :attachment)))
+  (let* ((attachment (getf spec :attachment))
+         (texspec (remf* spec :level :layer :attachment :bits)))
     (check-framebuffer-attachment attachment)
-    (list* (make-instance 'texture-asset :input (list (width asset) (height asset)
-                                                      (getf spec :bits (cffi:null-pointer))
-                                                      (case attachment
-                                                        (:depth-attachment :depth-component)
-                                                        (:depth-stencil-attachment :depth-stencil)
-                                                        (T :rgba)))
-                                         :min-filter (getf spec :min-filter :nearest)
-                                         :mag-filter (getf spec :mag-filter :nearest)
-                                         :wrapping (getf spec :wrapping :clamp-to-edge))
-           (loop for (k v) on spec by #'cddr
-                 for test = (find k '(:min-filter :mag-filter :wrapping :bits))
-                 unless test collect k
-                 unless test collect v))))
+    (list* (apply #'make-instance 'texture-asset
+                  :input (list (width asset) (height asset)
+                               (getf spec :bits (cffi:null-pointer))
+                               (case attachment
+                                 (:depth-attachment :depth-component)
+                                 (:depth-stencil-attachment :depth-stencil)
+                                 (T :rgba)))
+                  texspec)
+           spec)))
 
 (defmethod load progn ((asset framebuffer-bundle-asset))
   (let ((inputs (coerced-inputs asset)))
