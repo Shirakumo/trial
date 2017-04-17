@@ -169,7 +169,6 @@
       (cons (loop for pass in passes
                   for fbo = (gethash pass pass-fbo-map)
                   do (gl:bind-framebuffer :framebuffer (resource fbo))
-                     (gl:clear-color 0.0 0.0 0.0 0.0)
                      (gl:clear :color-buffer :depth-buffer)
                      (paint pass target)
                   finally (gl:bind-framebuffer :draw-framebuffer 0)
