@@ -1,13 +1,13 @@
 in vec2 texCoord;
 out vec4 color;
 uniform sampler2D previousPass;
-uniform float blurRadius = 2;
+uniform float intensity = 2.0;
 uniform vec2 dir = vec2(1.0, 0.0);
 
 void main() {
   ivec2 size = textureSize(previousPass, 0);
   // FIXME: Calculate the dimension properly
-  float blur = blurRadius;
+  float blur = intensity;
   if(dir.x == 1.0)
     blur /= size.x;
   else

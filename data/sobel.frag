@@ -1,11 +1,12 @@
 in vec2 texCoord;
 out vec4 color;
 uniform sampler2D previousPass;
+uniform float intensity = 1.0;
 
 void main(){
   ivec2 size = textureSize(previousPass, 0);
-  float sobelSizeH = 1.0 / size.x;
-  float sobelSizeV = 1.0 / size.y;
+  float sobelSizeH = intensity / size.x;
+  float sobelSizeV = intensity / size.y;
   vec4 top         = texture(previousPass, vec2(texCoord.x, texCoord.y + sobelSizeV));
   vec4 bottom      = texture(previousPass, vec2(texCoord.x, texCoord.y - sobelSizeV));
   vec4 left        = texture(previousPass, vec2(texCoord.x - sobelSizeH, texCoord.y));
