@@ -29,6 +29,7 @@
                (:file "asset")
                (:file "asset-pool")
                (:file "vertex-format")
+               (:file "collada")
                (:file "geometry")
                (:file "helpers")
                (:file "event-loop")
@@ -75,4 +76,7 @@
                :flare
                :qtools-ui-slider
                :for
-               :glsl-toolkit))
+               :glsl-toolkit
+               :fast-io
+               :ieee-floats
+               :lquery))
