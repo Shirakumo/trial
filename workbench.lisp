@@ -5,7 +5,7 @@
   :base 'trial)
 
 (define-asset (workbench av) texture-asset
-    (#p"~/Documents/img/Gaymes/Touhou/5ac25bb39c05968f7ec82d4a6615f075.jpg"))
+    (#p"cat.png"))
 
 (define-shader-subject texcube (vertex-subject textured-subject located-entity rotated-entity)
   ()
