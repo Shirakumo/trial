@@ -246,16 +246,25 @@
       (let ((buffer (gl:gen-buffer)))
         (setf (resource asset) buffer)
         (with-cleanup-on-failure (offload asset)
-          (let ((array (gl:alloc-gl-array element-type (length buffer-data))))
-            (unwind-protect
-                 (loop initially (gl:bind-buffer buffer-type buffer)
-                       for i from 0
-                       for el across buffer-data
-                       do (setf (gl:glaref array i) (gl-coerce el element-type))
-                       finally (gl:buffer-data buffer-type data-usage array))
-              (gl:free-gl-array array)
-              (gl:bind-buffer buffer-type 0))
-            (setf (size asset) (length buffer-data))))))))
+          (etypecase buffer-data
+            (vector
+             (let ((array (gl:alloc-gl-array element-type (length buffer-data))))
+               (unwind-protect
+                    (loop initially (gl:bind-buffer buffer-type buffer)
+                          for i from 0
+                          for el across buffer-data
+                          do (setf (gl:glaref array i) (gl-coerce el element-type))
+                          finally (gl:buffer-data buffer-type data-usage array))
+                 (gl:free-gl-array array)
+                 (gl:bind-buffer buffer-type 0))
+               (setf (size asset) (length buffer-data))))
+            (cffi:foreign-pointer
+             (let ((array (gl::make-gl-array-from-pointer buffer-data element-type (size asset))))
+               (gl:bind-buffer buffer-type buffer)
+               (unwind-protect
+                    (gl:buffer-data buffer-type data-usage array)
+                 (gl:free-gl-array array)
+                 (gl:bind-buffer buffer-type 0))))))))))
 
 (defclass vertex-array-asset (asset)
   ((size :initarg :size :initform NIL :accessor size)))
