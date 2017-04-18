@@ -112,6 +112,7 @@
   (let ((original-framebuffer (gl:get-integer :draw-framebuffer-binding))
         (framebuffer (multisample-fbo pass)))
     (gl:bind-framebuffer :framebuffer (resource framebuffer))
+    (gl:clear :color-buffer :depth-buffer)
     (call-next-method)
     (gl:bind-framebuffer :draw-framebuffer original-framebuffer)
     (%gl:blit-framebuffer 0 0 (width target) (height target) 0 0 (width target) (height target)
