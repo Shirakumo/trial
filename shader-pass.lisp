@@ -95,14 +95,17 @@
 
 (define-shader-pass multisampled-pass ()
   ()
-  ((multisample-fbo :initform (make-asset 'framebuffer-bundle-asset
-                                          '((:attachment :color-attachment0 :bits 8 :target :texture-2d-multisample)
-                                            (:attachment :depth-attachment  :bits 8 :target :texture-2d-multisample))
-                                          :width 512 :height 512)
-                    :accessor multisample-fbo)))
+  ((multisample-fbo :accessor multisample-fbo)
+   (samples :initarg :samples :accessor samples))
+  (:default-initargs :samples 8))
 
 (defmethod load progn ((pass multisampled-pass))
-  (load (multisample-fbo pass)))
+  (let ((fbo (make-asset 'framebuffer-bundle-asset
+                         `((:attachment :color-attachment0 :bits ,(samples pass) :target :texture-2d-multisample)
+                           (:attachment :depth-attachment  :bits ,(samples pass) :target :texture-2d-multisample))
+                         :width (width *context*) :height (height *context*))))
+    (load fbo)
+    (setf (multisample-fbo pass) fbo)))
 
 (defmethod paint :around ((pass multisampled-pass) target)
   ;; FIXME: slow
@@ -114,7 +117,8 @@
     (%gl:blit-framebuffer 0 0 (width target) (height target) 0 0 (width target) (height target)
                           (logior (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
                                   (cffi:foreign-bitfield-value '%gl::ClearBufferMask :depth-buffer))
-                          (cffi:foreign-enum-value '%gl:enum :nearest))))
+                          (cffi:foreign-enum-value '%gl:enum :nearest))
+    (gl:bind-framebuffer :framebuffer original-framebuffer)))
 
 (define-handler (multisampled-pass resize) (ev width height)
   (resize (multisample-fbo multisampled-pass) width height))
