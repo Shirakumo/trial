@@ -45,3 +45,15 @@
 
 (define-class-shader fxaa-pass :fragment-shader
   '(effects #p"fxaa.frag"))
+
+(define-shader-pass high-pass-filter (post-effect-pass)
+  ("previousPass"))
+
+(define-class-shader high-pass-filter :fragment-shader
+  '(effects #p"high-pass-filter.frag"))
+
+(define-shader-pass low-pass-filter (post-effect-pass)
+  ("previousPass"))
+
+(define-class-shader low-pass-filter :fragment-shader
+  '(effects #p"low-pass-filter.frag"))
