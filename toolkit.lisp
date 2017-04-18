@@ -293,46 +293,53 @@
       (error "Hardware cannot support a texture of size ~ax~a, max is ~a."
              width height max))))
 
-(defun check-texture-target (target)
-  (ecase target ((:texture-1d :texture-2d :texture-3d :texture-1d-array
-                  :texture-2d-array :texture-rectangle :texture-cube-map :texture-cube-map-array
-                  :texture-buffer :texture-2d-multisample :texture-2d-multisample-array))))
+(defmacro define-enum-check (name &body cases)
+  (let ((list (intern (format NIL "*~a-~a*" name '#:list)))
+        (func (intern (Format NIL "~a-~a" '#:check name))))
+    `(progn (defvar ,list '(,@cases))
+            (defun ,func (enum)
+              (unless (find enum ,list)
+                (error "~a is not a valid ~a. Needs to be one of the following:~%~a"
+                       enum ',name ,list))))))
 
-(defun check-texture-mag-filter (filter)
-  (ecase filter ((:nearest :linear))))
+(define-enum-check texture-target
+  :texture-1d :texture-2d :texture-3d :texture-1d-array
+  :texture-2d-array :texture-rectangle :texture-cube-map :texture-cube-map-array
+  :texture-buffer :texture-2d-multisample :texture-2d-multisample-array)
 
-(defun check-texture-min-filter (filter)
-  (ecase filter ((:nearest :linear :nearest-mipmap-nearest :nearest-mipmap-linear
-                  :linear-mipmap-nearest :linear-mipmap-linear))))
+(define-enum-check texture-mag-filter
+  :nearest :linear)
 
-(defun check-texture-wrapping (wrapping)
-  (ecase wrapping ((:repeat :mirrored-repeat :clamp-to-edge :clamp-to-border))))
+(define-enum-check texture-min-filter
+  :nearest :linear :nearest-mipmap-nearest :nearest-mipmap-linear
+  :linear-mipmap-nearest :linear-mipmap-linear)
 
-(defun check-shader-type (shader-type)
-  (ecase shader-type ((:compute-shader :vertex-shader
-                       :geometry-shader :fragment-shader
-                       :tess-control-shader :tess-evaluation-shader))))
+(define-enum-check texture-wrapping
+  :repeat :mirrored-repeat :clamp-to-edge :clamp-to-border)
 
-(defun check-vertex-buffer-type (buffer-type)
-  (ecase buffer-type ((:array-buffer :atomic-counter-buffer
-                       :copy-read-buffer :copy-write-buffer
-                       :dispatch-indirect-buffer :draw-indirect-buffer
-                       :element-array-buffer :pixel-pack-buffer
-                       :pixel-unpack-buffer :query-buffer
-                       :shader-storage-buffer :texture-buffer
-                       :transform-feedback-buffer :uniform-buffer))))
+(define-enum-check shader-type
+  :compute-shader :vertex-shader
+  :geometry-shader :fragment-shader
+  :tess-control-shader :tess-evaluation-shader)
 
-(defun check-vertex-buffer-element-type (element-type)
-  (ecase element-type ((:double :float :int :uint :char))))
+(define-enum-check vertex-buffer-type
+  :array-buffer :atomic-counter-buffer
+  :copy-read-buffer :copy-write-buffer
+  :dispatch-indirect-buffer :draw-indirect-buffer
+  :element-array-buffer :pixel-pack-buffer
+  :pixel-unpack-buffer :query-buffer
+  :shader-storage-buffer :texture-buffer
+  :transform-feedback-buffer :uniform-buffer)
 
-(defun check-vertex-buffer-data-usage (data-usage)
-  (ecase data-usage ((:stream-draw :stream-read
-                      :stream-copy :static-draw
-                      :static-read :static-copy
-                      :dynamic-draw :dynamic-read
-                      :dynamic-copy))))
+(define-enum-check vertex-buffer-element-type
+  :double :float :int :uint :char)
 
-(defun check-framebuffer-attachment (attachment)
-  (ecase attachment ((:color-attachment0 :color-attachment1 :color-attachment2 :color-attachment3
-                      :color-attachment4 :color-attachment5 :color-attachment6 :color-attachment7
-                      :depth-attachment :stencil-attachment :depth-stencil-attachment))))
+(define-enum-check vertex-buffer-data-usage
+  :stream-draw :stream-read :stream-copy :static-draw
+  :static-read :static-copy :dynamic-draw :dynamic-read
+  :dynamic-copy)
+
+(define-enum-check framebuffer-attachment
+  :color-attachment0 :color-attachment1 :color-attachment2 :color-attachment3
+  :color-attachment4 :color-attachment5 :color-attachment6 :color-attachment7
+  :depth-attachment :stencil-attachment :depth-stencil-attachment)
