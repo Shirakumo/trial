@@ -230,6 +230,10 @@
 (defmethod coerce-input ((asset vertex-buffer-asset) (number real))
   (make-array 1 :initial-element (float number)))
 
+(defmethod coerce-input ((asset vertex-buffer-asset) (pointer T))
+  (check-type pointer cffi:foreign-pointer)
+  pointer)
+
 (defmethod finalize-resource ((type (eql 'vertex-buffer-asset)) resource)
   (gl:delete-buffers (list resource)))
 
