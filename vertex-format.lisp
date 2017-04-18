@@ -45,6 +45,7 @@
                        do (setf (cffi:mem-aref array :float i) (ieee-floats:decode-float32 (fast-io:readu32-be stream)))))
               (2 (loop for i from 0 below size
                        do (setf (cffi:mem-aref array :double i) (ieee-floats:decode-float64 (fast-io:readu64-be stream))))))
+            size
             type)))
 
 (defun vformat-write-string (stream string)
@@ -83,8 +84,8 @@
       (error "Expected vertex buffer identifier, but got ~s" name)))
   (let ((type (int->vertex-buffer-type (fast-io:readu8 stream)))
         (usage (int->vertex-buffer-usage (fast-io:readu8 stream))))
-    (multiple-value-bind (data element-type) (vformat-read-vector stream)
-      (values data type usage element-type))))
+    (multiple-value-bind (data size element-type) (vformat-read-vector stream)
+      (values data size type usage element-type))))
 
 (defun vformat-write-array (stream buffer-refs)
   (when (<= (expt 2 8) (length buffer-refs))
@@ -149,13 +150,14 @@
     (unless (string= name "VBUN")
       (error "Expected vertex bundle identifier, but got ~s" name)))
   (let* ((buffers (loop repeat (fast-io:readu8 stream)
-                        collect (multiple-value-bind (data type usage element-type)
+                        collect (multiple-value-bind (data size type usage element-type)
                                     (vformat-read-buffer stream)
                                   (let ((asset (make-asset 'vertex-array-asset
                                                            (list data)
                                                            :type type
                                                            :element-type element-type
-                                                           :data-usage usage)))
+                                                           :data-usage usage
+                                                           :size size)))
                                     (prog1 (load asset)
                                       (setf (inputs asset) NIL)
                                       (cffi:foreign-free data))))))
