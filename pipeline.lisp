@@ -98,10 +98,9 @@
     (loop for i from 0 below (length framebuffers)
           do (setf (aref framebuffers i)
                    (make-asset 'framebuffer-bundle-asset
-                               (list :color-attachment0
-                                     :depth-attachment)
-                               :width (width target)
-                               :height (height target))))
+                               '((:attachment :color-attachment0)
+                                 (:attachment :depth-attachment))
+                               :width (width target) :height (height target))))
     ;; Optimise color table
     (loop for pass being the hash-keys of colors
           for color being the hash-values of colors
