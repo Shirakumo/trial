@@ -28,6 +28,7 @@
                (:file "display")
                (:file "asset")
                (:file "asset-pool")
+               (:file "vertex-format")
                (:file "geometry")
                (:file "helpers")
                (:file "event-loop")

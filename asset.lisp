@@ -279,9 +279,9 @@
                  for i from 0
                  do (destructuring-bind (buffer/s &key (index i)
                                                        (size 3)
-                                                       (normalized NIL)
                                                        (stride 0)
-                                                       (offset 0))
+                                                       (offset 0)
+                                                       (normalized NIL))
                         buffer
                       (let ((buffers (enlist buffer/s)))
                         (dolist (buffer buffers)
