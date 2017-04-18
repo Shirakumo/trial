@@ -45,11 +45,14 @@
         (loop for k being the hash-keys of parent
               for v being the hash-values of parent
               do (setf (gethash k table) v))
-        (loop for k across *gl-attributes*
-              do (if (find k *default-enabled-gl-attributes*)
-                     (setf (gethash k table) T)
-                     (setf (gethash k table) NIL))))
+        (reset-attributes table))
     table))
+
+(defun reset-attributes (&optional (table (attribute-table)))
+  (loop for k across *gl-attributes*
+        do (if (find k *default-enabled-gl-attributes*)
+               (setf (gethash k table) T)
+               (setf (gethash k table) NIL))))
 
 (defvar *attribute-stack* (list (make-attribute-table)))
 

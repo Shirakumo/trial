@@ -56,6 +56,10 @@
 (define-override (display paint-event) (ev))
 
 (defmethod setup-rendering ((display display))
+  (reset-matrix (model-matrix))
+  (reset-matrix (view-matrix))
+  (reset-matrix (projection-matrix))
+  (reset-attributes (attribute-table))
   (gl:depth-mask T)
   (gl:depth-func :lequal)
   (gl:blend-func :src-alpha :one-minus-src-alpha)
