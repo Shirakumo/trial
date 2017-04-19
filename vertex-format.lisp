@@ -204,3 +204,21 @@
     (when stream
       (fast-io:with-fast-input (buffer NIL stream)
         (vformat-read-bundle buffer)))))
+
+(defclass vertex-format-asset (asset)
+  ((size :initform NIL :accessor size)))
+
+(defmethod coerce-input ((asset vertex-format-asset) (file string))
+  (coerce-input asset (uiop:native-namestring file)))
+
+(defmethod coerce-input ((asset vertex-format-asset) (file pathname))
+  file)
+
+(defmethod finalize-resource ((type (eql 'vertex-format-asset)) resource)
+  (gl:delete-vertex-arrays (list resource)))
+
+(defmethod load progn ((asset vertex-format-asset))
+  (let* ((inputs (coerced-inputs asset))
+         (array (load-vformat (first inputs))))
+    (setf (resource asset) (resource array))
+    (setf (size asset) (size array))))
