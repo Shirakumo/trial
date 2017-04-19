@@ -287,23 +287,24 @@
     (with-cleanup-on-failure (offload asset)
       (gl:bind-vertex-array array)
       (unwind-protect
-           (loop for buffer in (coerced-inputs asset)
+           (loop for input in (coerced-inputs asset)
                  for i from 0
-                 do (destructuring-bind (buffer/s &key (index i)
-                                                       (size 3)
-                                                       (stride 0)
-                                                       (offset 0)
-                                                       (normalized NIL))
-                        buffer
-                      (let ((buffers (enlist buffer/s)))
-                        (dolist (buffer buffers)
-                          (load buffer)
-                          (when (and (not (size asset))
-                                     (eql :element-array-buffer (buffer-type buffer)))
-                            (setf (size asset) (size buffer)))
-                          (gl:bind-buffer (buffer-type buffer) (resource buffer)))
-                        (gl:vertex-attrib-pointer index size (element-type (first buffers)) normalized stride offset)
-                        (gl:enable-vertex-attrib-array index))))
+                 do (destructuring-bind (buffer &key (index i)
+                                                     (size 3)
+                                                     (stride 0)
+                                                     (offset 0)
+                                                     (normalized NIL))
+                        (enlist input)
+                      (load buffer)
+                      (gl:bind-buffer (buffer-type buffer) (resource buffer))
+                      (ecase (buffer-type buffer)
+                        (:element-array-buffer
+                         (unless (size asset)
+                           (setf (size asset) (size buffer)))
+                         (decf i))
+                        (:array-buffer
+                         (gl:vertex-attrib-pointer index size (element-type buffer) normalized stride offset)
+                         (gl:enable-vertex-attrib-array index)))))
         (gl:bind-vertex-array 0)))))
 
 (defclass packed-vao-asset (asset)
@@ -345,8 +346,9 @@
                                 :type :element-array-buffer
                                 :element-type :uint))
            (vao (make-asset 'vertex-array-asset
-                            (loop for spec in (nreverse inputs)
-                                  collect (list* (list buffer element) :stride offset spec)))))
+                            (list* element
+                                   (loop for spec in (nreverse inputs)
+                                         collect (list* buffer :stride offset spec))))))
       (load vao)
       (setf (resource asset) (resource vao))
       (offload buffer)
