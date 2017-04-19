@@ -7,6 +7,8 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
+;; FIXME: more error/integrity checks
+
 (defun vformat-write-vector (stream array type)
   (when (<= (expt 2 32) (length array))
     (error "Array is longer than 2³² elements."))
@@ -107,10 +109,8 @@
     (error "More than 2⁸ buffer refs."))
   (vformat-write-string stream "VARR")
   (fast-io:writeu8 (length buffer-refs) stream)
-  (loop for (buffers index size stride offset normalized) in buffer-refs
-        do (fast-io:writeu8 (length buffers) stream)
-           (dolist (buffer buffers)
-             (fast-io:writeu8 buffer stream))
+  (loop for (buffer index size stride offset normalized) in buffer-refs
+        do (fast-io:writeu8 buffer stream)
            (fast-io:writeu8 index stream)
            (fast-io:writeu8 size stream)
            (fast-io:writeu8 stride stream)
@@ -123,8 +123,7 @@
       (error "Expected vertex array identifier, but got ~s" name)))
   (let ((size (fast-io:readu8 stream)))
     (loop repeat size
-          collect (list (loop repeat (fast-io:readu8 stream)
-                              collect (fast-io:readu8 stream))
+          collect (list (fast-io:readu8 stream)
                         (fast-io:readu8 stream)
                         (fast-io:readu8 stream)
                         (fast-io:readu8 stream)
@@ -151,14 +150,14 @@
      (vformat-write-array
       stream (loop for i from 0
                    for input in (inputs array)
-                   collect (destructuring-bind (buffers &key (index i)
+                   collect (destructuring-bind (bufref &key (index i)
                                                              (size 3)
                                                              (stride 0)
                                                              (offset 0)
                                                              (normalized NIL))
                                input
-                             (list (loop for buffer in (enlist buffers)
-                                         collect (position buffer buffers))
+                             (list (or (position bufref buffers)
+                                       (error "Unable to find ~a in buffer list." bufref))
                                    index size stride offset normalized)))))))
 
 (defun vformat-read-bundle (stream)
@@ -177,9 +176,8 @@
                                     (prog1 (load asset)
                                       (setf (inputs asset) NIL)
                                       (cffi:foreign-free data))))))
-         (inputs (loop for (buffers index size stride offset normalized) in (vformat-read-array stream)
-                       collect (list (loop for buffer in buffers
-                                           collect (elt buffers buffer))
+         (inputs (loop for (bufref index size stride offset normalized) in (vformat-read-array stream)
+                       collect (list (elt buffers bufref)
                                      :index index
                                      :size size
                                      :stride stride
@@ -199,7 +197,7 @@
         (vformat-write-bundle buffer buffers array))
       file)))
 
-(defun read-vformat (file &key (if-does-not-exist :error))
+(defun load-vformat (file &key (if-does-not-exist :error))
   (with-open-file (stream file :direction :input
                                :element-type '(unsigned-byte 8)
                                :if-does-not-exist if-does-not-exist)

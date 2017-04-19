@@ -119,16 +119,18 @@
 (defun collada->vertex-format (input output &key (if-exists :error))
   (destructuring-bind (sources inputs) (first (parse-collada input))
     (destructuring-bind (buffer index) (compress-collada-data sources inputs)
-      (write-vformat output
-                     (list (list index :element-array-buffer :static-draw :uint)
-                           (list buffer :array-buffer :static-draw :float))
-                     (list* (list 0 0 0 0 0 NIL)
-                            (loop for input in inputs
-                                  for index from 0
-                                  for stride = (second (elt sources (second input)))
-                                  for offset = 0 then (+ offset (* stride 4))
-                                  collect (list 1 index stride (* stride 4) offset NIL)))
-                     :if-exists if-exists))))
+      (let ((stride (* 4 (loop for input in inputs
+                               sum (second (elt sources (second input)))))))
+        (write-vformat output
+                       (list (list index :element-array-buffer :static-draw :uint)
+                             (list buffer :array-buffer :static-draw :float))
+                       (list* (list 0 0 0 0 0 NIL)
+                              (loop for input in inputs
+                                    for index from 0
+                                    for size = (second (elt sources (second input)))
+                                    for offset = 0 then (+ offset (* size 4))
+                                    collect (list 1 index size stride offset NIL)))
+                       :if-exists if-exists)))))
 
 (defun load-collada (input)
   (destructuring-bind (sources inputs) (first (parse-collada input))
@@ -143,7 +145,7 @@
                                        (loop for input in inputs
                                              for index from 0
                                              for size = (second (elt sources (second input)))
-                                             for offset = 0 then (+ offset (* stride 4))
+                                             for offset = 0 then (+ offset (* size 4))
                                              collect (list buffer :index index :size size :stride stride :offset offset))))))
         (prog1 (load array)
           (offload index)
