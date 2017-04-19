@@ -267,7 +267,6 @@
                (gl:bind-buffer buffer-type buffer)
                (unwind-protect
                     (gl:buffer-data buffer-type data-usage array)
-                 (gl:free-gl-array array)
                  (gl:bind-buffer buffer-type 0))))))))))
 
 (defclass vertex-array-asset (asset)
