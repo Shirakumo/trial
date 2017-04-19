@@ -142,7 +142,7 @@
                  source))))))
 
 (defclass shader-program-asset (asset)
-  ())
+  ((uniform-map :initform NIL :accessor uniform-map)))
 
 (defmethod coerce-input ((asset shader-program-asset) (shader shader-asset))
   shader)
@@ -164,6 +164,7 @@
     (check-shader-compatibility shaders)
     (let ((program (gl:create-program)))
       (setf (resource asset) program)
+      (setf (uniform-map asset) (make-hash-table :test 'equal))
       (with-cleanup-on-failure (offload asset)
         (dolist (shader shaders)
           (load shader)
@@ -176,7 +177,9 @@
                  asset (gl:get-program-info-log program)))))))
 
 (defmethod uniform-location ((asset shader-program-asset) (name string))
-  (gl:get-uniform-location (resource asset) name))
+  (or (gethash name (uniform-map asset))
+      (setf (gethash name (uniform-map asset))
+            (gl:get-uniform-location (resource asset) name))))
 
 (defmethod uniform-location ((asset shader-program-asset) (name symbol))
   (uniform-location asset (symbol->c-name name)))
