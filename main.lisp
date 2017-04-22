@@ -60,7 +60,9 @@
 (defmethod setup-scene :after ((main main))
   (setup-pipeline main)
   (load (scene main))
-  (load (pipeline main)))
+  (load (pipeline main))
+  ;; Cause camera to refresh
+  (issue (scene main) 'resize :width (width main) :height (height main)))
 
 (defmethod setup-pipeline ((main main))
   ())
