@@ -26,6 +26,7 @@
                (:file "renderable")
                (:file "context")
                (:file "display")
+               (:file "dialog-system")
                (:file "asset")
                (:file "asset-pool")
                (:file "vertex-format")
@@ -69,6 +70,7 @@
                :cl-opengl
                :closer-mop
                :trivial-garbage
+               :trivial-indent
                :bordeaux-threads
                :cl-gamepad
                :cl-monitors
