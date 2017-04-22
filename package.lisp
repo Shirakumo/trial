@@ -10,81 +10,61 @@
   (:use #:cl+qt #:3d-vectors #:3d-matrices #:flare)
   (:shadowing-import-from #:flare #:slot)
   (:shadow #:scene #:entity #:load)
-  ;; asset-classes.lisp
+  ;; asset-pool.lisp
   (:export
-   #:context-asset
+   #:pool
+   #:remove-pool
+   #:list-pools
+   #:pool
+   #:name
+   #:base
+   #:assets
+   #:define-pool
+   #:asset
+   #:pool-path
+   #:define-asset)
+  ;; asset.lisp
+  (:export
+   #:load
+   #:offload
+   #:asset
+   #:inputs
    #:resource
-   #:file-asset
-   #:file
-   #:image
-   #:font
+   #:finalize-resource
+   #:coerce-input
+   #:coerce-inputs
+   #:make-asset
+   #:with-assets
+   #:with-assets*
+   #:shader-asset
+   #:shader-type
+   #:shader-program-asset
+   #:uniform
+   #:vertex-buffer-asset
+   #:buffer-type
+   #:element-type
+   #:data-usage
    #:size
-   #:family
-   #:texture
+   #:vertex-array-asset
+   #:size
+   #:packed-vao-asset
+   #:texture-asset
    #:target
    #:mag-filter
    #:min-filter
    #:anisotropy
    #:wrapping
-   #:model
-   #:texture-map
-   #:texture-store
-   #:shader
-   #:shader-type
-   #:shader-program
-   #:shaders
-   #:vertex-buffer
-   #:buffer-type
-   #:element-type
-   #:buffer-data
-   #:data-usage
-   #:vertex-array
-   #:buffers
-   #:framebuffer
-   #:attachment
-   #:width
-   #:height
-   #:mipmap
-   #:samples)
-  ;; asset-pool.lisp
-  (:export)
-  ;; assets.lisp
+   #:framebuffer-asset
+   #:framebuffer-bundle-asset
+   #:resize)
+  ;; attributes.lisp
   (:export
-   #:*standalone*
-   #:pool
-   #:remove-pool
-   #:pools
-   #:resolve-pool-base
-   #:reconfigure-pool-bases
-   #:pool
-   #:name
-   #:base-designator
-   #:base
-   #:assets
-   #:enter
-   #:leave
-   #:asset
-   #:restore
-   #:offload
-   #:define-pool
-   #:asset
-   #:name
-   #:home
-   #:resource
-   #:dependencies
-   #:loaded-p
-   #:data
-   #:matches
-   #:reload
-   #:restore
-   #:offload
-   #:load-data
-   #:finalize-data
-   #:get-resource
-   #:define-asset
-   #:resource
-   #:data
-   #:resource-asset)
+   #:attribute-table
+   #:enable
+   #:disable
+   #:push-attribs
+   #:pop-attribs
+   #:with-pushed-attribs)
   ;; camera.lisp
   (:export
    #:perspective-view
@@ -103,6 +83,10 @@
    #:fps-camera
    #:freeroam-camera
    #:editor-camera)
+  ;; collada.lisp
+  (:export
+   #:collada->vertex-format
+   #:load-collada)
   ;; context.lisp
   (:export
    #:*context*
@@ -159,6 +143,17 @@
    #:setup-rendering
    #:paint
    #:render)
+  ;; effects.lisp
+  (:export
+   #:effects
+   #:negative-pass
+   #:grayscale-pass
+   #:box-blur-pass
+   #:sobel-pass
+   #:gaussian-blur-pass
+   #:fxaa-pass
+   #:high-pass-filter
+   #:low-pass-filter)
   ;; entity.lisp
   (:export
    #:matches
@@ -207,21 +202,8 @@
   ;; geometry.lisp
   (:export
    #:geometry
-   #:bounded-geometry
-   #:width
-   #:height
-   #:sized-geometry
-   #:size
-   #:segmented-geometry
-   #:segments
-   #:triangle
-   #:square
-   #:rectangle
-   #:disc
-   #:sphere
-   #:cube
-   #:cylinder
-   #:space-axes)
+   #:fullscreen-square
+   #:cube)
   ;; helpers.lisp
   (:export
    #:located-entity
@@ -230,6 +212,8 @@
    #:orientation
    #:up
    #:rotated-entity
+   #:rotation
+   #:axis-rotated-entity
    #:axis
    #:angle
    #:pivoted-entity
@@ -319,10 +303,12 @@
   ;; main.lisp
   (:export
    #:main
+   #:pipeline
    #:scene
    #:hud
    #:title
    #:setup-scene
+   #:setup-pipeline
    #:launch
    #:launch-with-launcher)
   ;; mapping.lisp
@@ -339,18 +325,20 @@
   (:export)
   ;; octree2.lisp
   (:export)
+  ;; pipeline.lisp
+  (:export
+   #:pipeline
+   #:asses
+   #:connections
+   #:framebuffers
+   #:pass-fbo-map
+   #:register
+   #:deregister
+   #:clear
+   #:connect-pass
+   #:pack-pipeline)
   ;; player.lisp
   (:export)
-  ;; projection.lisp
-  (:export
-   #:modelview-matrix
-   #:projection-matrix
-   #:proj-matrix
-   #:view-matrix
-   #:vec->screen
-   #:screen->vec
-   #:vec->main
-   #:main->vec)
   ;; renderable.lisp
   (:export
    #:renderable
@@ -424,6 +412,31 @@
    #:draggable-entity
    #:held
    #:drag)
+  ;; shader-pass.lisp
+  (:export
+   #:shader-pass-class
+   #:pass-inputs
+   #:shader-pass
+   #:register-object-for-pass
+   #:shader-program-for-pass
+   #:define-shader-pass
+   #:per-object-pass
+   #:assets
+   #:multisampled-pass
+   #:single-shader-pass
+   #:post-effect-pass
+   #:copy-pass)
+  ;; shader-subject.lisp
+  (:export
+   #:shader-subject-class
+   #:effective-shaders
+   #:direct-shaders
+   #:class-shader
+   #:remove-class-shader
+   #:make-class-shader-program
+   #:define-class-shader
+   #:shader-subject
+   #:define-shader-subject)
   ;; skybox.lisp
   (:export
    #:skybox)
@@ -439,6 +452,7 @@
    #:animation)
   ;; subject.lisp
   (:export
+   #:subject-class-redefined
    #:subject-class
    #:effective-handlers
    #:instances
@@ -450,7 +464,11 @@
    #:define-generic-handler)
   ;; subjects.lisp
   (:export
-   #:clocked-subject)
+   #:clocked-subject
+   #:vertex-subject
+   #:colored-subject
+   #:vertex-colored-subject
+   #:textured-subject)
   ;; toolkit.lisp
   (:export
    #:*time-units*
@@ -492,6 +510,33 @@
    #:check-vertex-buffer-element-type
    #:check-vertex-buffer-data-usage
    #:check-framebuffer-attachment)
+  ;; transforms.lisp
+  (:export
+   #:view-matrix
+   #:projection-matrix
+   #:look-at
+   #:perspective-projection
+   #:orthographic-projection
+   #:model-matrix
+   #:push-matrix
+   #:pop-matrix
+   #:with-pushed-matrix
+   #:translate
+   #:translate-by
+   #:rotate
+   #:rotate-by
+   #:scale
+   #:scale-by
+   #:reset-matrix
+   #:vec->screen
+   #:screen->vec
+   #:vec->main
+   #:main->vec)
+  ;; vertex-format.lisp
+  (:export
+   #:write-vformat
+   #:load-vformat
+   #:vertex-format-asset)
   ;; window.lisp
   (:export
    #:window-name
@@ -510,4 +555,5 @@
 (defpackage #:trial-user
   (:nicknames #:org.shirakumo.fraf.trial.user)
   (:use #:cl+qt #:trial)
+  (:shadowing-import-from #:cl+qt #:load)
   (:shadowing-import-from #:flare #:slot))

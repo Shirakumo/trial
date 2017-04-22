@@ -8,8 +8,7 @@
 
 (defclass shader-subject-class (subject-class)
   ((effective-shaders :initform () :accessor effective-shaders)
-   (direct-shaders :initform () :initarg :shaders :accessor direct-shaders)
-   (dirty :initform T :accessor dirty)))
+   (direct-shaders :initform () :initarg :shaders :accessor direct-shaders)))
 
 (defmethod cascade-option-changes :before ((class shader-subject-class))
   (let ((effective-shaders ()))
@@ -28,8 +27,7 @@
                                     (string shader)
                                     (list (destructuring-bind (pool path) shader
                                             (pool-path pool path))))))))
-    (setf (effective-shaders class) effective-shaders)
-    (setf (dirty class) T)))
+    (setf (effective-shaders class) effective-shaders)))
 
 (defmethod effective-shaders ((class symbol))
   (effective-shaders (find-class class)))
