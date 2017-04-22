@@ -40,12 +40,20 @@
 (define-subject 2d-camera (camera)
   ()
   (:default-initargs
-   :near-plane most-negative-double-float
-   :far-plane most-positive-double-float))
+   :near-plane 0.0
+   :far-plane 100.0
+   :location (vec 0 0 200)))
 
 (defmethod setup-perspective ((camera 2d-camera) ev)
   (orthographic-projection 0 (width ev) (height ev) 0
-                           (near-plane 2d-camera) (far-plane 2d-camera)))
+                           (near-plane camera) (far-plane camera)))
+
+(define-subject sidescroll-camera (2d-camera)
+  ())
+
+(defmethod project-view ((camera sidescroll-camera) ev)
+  (reset-matrix *view-matrix*)
+  (translate (v- (location camera)) *view-matrix*))
 
 (define-subject 3d-camera (camera)
   ((fov :initarg :fov :accessor fov))

@@ -75,6 +75,7 @@
    #:project-view
    #:setup-perspective
    #:2d-camera
+   #:sidescroll-camera
    #:3d-camera
    #:fov
    #:target-camera
@@ -128,7 +129,8 @@
    #:reload-scene
    #:controller
    #:tick-count
-   #:display)
+   #:display
+   #:maybe-reload-scene)
   ;; debugging.lisp
   (:export
    #:reload-with-features)
