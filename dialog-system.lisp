@@ -15,11 +15,6 @@
     (T (error (format NIL "Invalid type ~a for a tree name. Use symbol or keyword instead."
                       (type-of tree))))))
 
-(defun dialogue-tree (name &optional lines)
-  (let ((tree (ensure-dialogue-tree name)))
-    (loop for line in lines
-          do (add-line tree (car line) (cdr line)))))
-
 (defclass dialogue-tree ()
   ((lines :initform (make-hash-table))))
 
