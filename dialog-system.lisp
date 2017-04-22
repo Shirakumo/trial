@@ -59,6 +59,22 @@
                   (choices line))))
 
 (defun define-dialogue (name options &rest choices)
+  "Example use:
+'foo is the name of this particular bit of dialogue.
+:tree says which dialogue tree the line is added to, here 'foo-tree, which is created if it does not exist.
+:text simply is the text output given to the user, it defaults to empty.
+
+Rest of the arguments are choices presented to the user.
+First argument in a choice is the name of the choice. Name is provided for editing purposes.
+:text is the text presentation for this choice. It defaults to empty.
+:jump is the name of the bit of dialogue in the shared dialogue tree to which to jump if this is chosen,
+      if this argument is not given, it means the dialogue tree should be exited
+(define-dialogue 'foo
+    '(:tree foo-tree :text \"This is an example.\")
+  '(foo-1 :text \"Choice 1\" :jump bar)
+  '(foo-2 :text \"Choice 2\" :jump baz)
+  '(foo-3 :text \"Choice 3\"))
+"
   (let ((tree (ensure-dialogue-tree (getf options :tree)))
         (line (make-instance 'dialogue-line :text (getf options :text ""))))
     (loop for choice in choices do (add-choice line choice))
