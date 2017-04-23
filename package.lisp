@@ -431,6 +431,7 @@
    #:per-object-pass
    #:assets
    #:multisampled-pass
+   #:multisampled-per-object-pass
    #:single-shader-pass
    #:post-effect-pass
    #:copy-pass)
