@@ -54,6 +54,9 @@
       (call-next-method))))
 
 ;; FIXME: proper LOADing of a map
+(defmethod setup-scene :before ((main main))
+  (reset (scene main)))
+
 (defmethod setup-scene ((main main))
   ())
 
