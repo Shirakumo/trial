@@ -51,7 +51,11 @@
   (with-simple-restart (continue "Skip loading the rest of the scene and hope for the best.")
     (v:info :trial.main "Setting up scene")
     (with-timing-report (info :trial.main "Scene setup took ~fs run time, ~fs clock time.")
-      (call-next-method))))
+      (call-next-method)))
+  (load (scene main))
+  (load (pipeline main))
+  ;; Cause camera to refresh
+  (issue (scene main) 'resize :width (width main) :height (height main)))
 
 ;; FIXME: proper LOADing of a map
 (defmethod setup-scene :before ((main main))
@@ -61,11 +65,7 @@
   ())
 
 (defmethod setup-scene :after ((main main))
-  (setup-pipeline main)
-  (load (scene main))
-  (load (pipeline main))
-  ;; Cause camera to refresh
-  (issue (scene main) 'resize :width (width main) :height (height main)))
+  (setup-pipeline main))
 
 (defmethod setup-pipeline ((main main))
   ())
