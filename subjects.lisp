@@ -82,13 +82,12 @@ void main(){
   ((texture :initform NIL :initarg :texture :accessor texture)))
 
 (defmethod paint :around ((obj textured-subject) target)
-  (let* ((tex (texture obj))
-         (target (target tex)))
+  (let ((tex (texture obj)))
     (when tex
       (gl:active-texture :texture0)
-      (gl:bind-texture target (resource tex))
+      (gl:bind-texture (target tex) (resource tex))
       (call-next-method)
-      (gl:bind-texture target 0))))
+      (gl:bind-texture (target tex) 0))))
 
 (defmethod load progn ((subject textured-subject))
   (load (texture subject)))
