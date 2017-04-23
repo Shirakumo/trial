@@ -2,6 +2,15 @@
 
 (defvar *dialogues* (make-hash-table))
 
+(defun dialogue (name)
+  (gethash name *dialogues*))
+
+(defun (setf dialogue) (value name)
+  (setf (gethash name *dialogues*) value))
+
+(defun remove-dialogue (name)
+  (remhash name *dialogues*))
+
 (defun dialogue-action (action)
   (format NIL "> ~{~#[~;~@(~a~)..~;~@(~a~) ~(~a~)s~:;~@(~a~) ~(~a~)s~@[ at ~#[~;~(~a~)~;~(~a~) and ~(~a~)~:;~(~a~)~@{~#[~;, and ~(~a~)~:;, ~(~a~)~]~}~]~]~]~}." action))
 
@@ -17,7 +26,7 @@
                       (list choice))))
         (if (getf choice :go)
             (dialogue-find dialogue (getf choice :go))
-            (gethash (getf choice :dialogue) *dialogues*)))
+            (dialogue (getf choice :dialogue))))
       (getf dialogue :next)))
 
 (defmacro define-dialogue (name &rest dialogue)
@@ -61,6 +70,6 @@
                (symbol
                 (append-to-next (list :actor part :text (pop dialogue)))
                 (next-part))))
-        finally (progn
-                  (setf (gethash (getf dialog :name) *dialogues*) dialog)
-                  (return dialog))))
+        finally (return `(progn
+                           (setf (dialogue ',name) ',dialog)
+                           ',name))))

@@ -32,7 +32,7 @@
    #:resource
    #:finalize-resource
    #:coerce-input
-   #:coerce-inputs
+   #:coerced-inputs
    #:make-asset
    #:with-assets
    #:with-assets*
@@ -134,6 +134,12 @@
   ;; debugging.lisp
   (:export
    #:reload-with-features)
+  ;; dialog-system.lisp
+  (:export
+   #:dialogue
+   #:dialogue-find
+   #:dialogue-next
+   #:define-dialogue)
   ;; display.lisp
   (:export
    #:display
@@ -557,5 +563,5 @@
 (defpackage #:trial-user
   (:nicknames #:org.shirakumo.fraf.trial.user)
   (:use #:cl+qt #:trial)
-  (:shadowing-import-from #:cl+qt #:load)
+  (:shadowing-import-from #:trial #:load)
   (:shadowing-import-from #:flare #:slot))
