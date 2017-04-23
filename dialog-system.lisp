@@ -2,10 +2,10 @@
 
 (defvar *dialogues* (make-hash-table))
 
-(defun dialogue (name)
+(defmethod dialogue ((name symbol))
   (gethash name *dialogues*))
 
-(defun (setf dialogue) (value name)
+(defmethod (setf dialogue) (value (name symbol))
   (setf (gethash name *dialogues*) value))
 
 (defun remove-dialogue (name)
