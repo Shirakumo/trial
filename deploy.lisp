@@ -16,6 +16,12 @@
 (define-user-libs (libfond cl-fond-cffi::*static*)
   (cl-fond-cffi:libfond))
 
+(define-user-libs (libsoloud cl-soloud-cffi::*static*)
+  (cl-soloud-cffi:libsoloud))
+
+(define-user-libs (libmpg123 cl-mpg123-cffi::*static*)
+  (cl-mpg123-cffi:libmpg123))
+
 (defun copy-dir-contents (dir to)
   (let ((dir (pathname-utils:to-directory dir))
         (to (pathname-utils:to-directory to)))
