@@ -84,22 +84,29 @@
 (defmethod pool-path ((name symbol) pathname)
   (pool-path (pool name T) pathname))
 
+(defclass load-request (event)
+  ((asset :initarg :asset)
+   (action :initarg :action :initform 'reload)))
+
+(defstruct (pool-path (:constructor make-pool-path (pool pathname)))
+  pool pathname)
+
 (defun substitute-asset-paths (tree pool)
   (typecase tree
     (cons (cons (substitute-asset-paths (car tree) pool)
                 (substitute-asset-paths (cdr tree) pool)))
-    (pathname (pool-path pool tree))
+    (pathname `(make-pool-path ',pool ,tree))
     (T tree)))
 
-(defclass load-request (event)
-  ((asset :initarg :asset)
-   (action :initarg :action :initform 'reload)))
+(defmethod coerce-input ((asset asset) (pool-path pool-path))
+  (coerce-input asset (pool-path (pool-path-pool pool-path)
+                                 (pool-path-pathname pool-path))))
 
 ;; FIXME: maybe there's something nicer to find the loop
 (defmacro define-asset ((pool name) type inputs &rest initargs)
   (let ((scene (gensym "SCENE"))
         (asset (gensym "ASSET"))
-        (inputs (substitute-asset-paths inputs (pool pool))))
+        (inputs (substitute-asset-paths inputs pool)))
     `(let ((,scene (when (window :main) (scene (window :main))))
            (,asset (asset ',pool ',name)))
        (cond ((and ,asset (eql (type-of ,asset) ',type))
