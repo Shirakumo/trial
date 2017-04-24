@@ -37,7 +37,7 @@
     (dolist (pool (list-pools))
       (qtools::status 1 "Copying pool ~a from ~a" (name pool) (base pool))
       (copy-dir-contents (pool-path pool NIL)
-                         (pathname-utils:subdirectory path (string-downcase (base pool))))))
+                         (pathname-utils:subdirectory path "pool" (string-downcase (base pool))))))
   (setf *standalone* T))
 
 (pushnew 'deploy-resources qtools:*build-hooks*)

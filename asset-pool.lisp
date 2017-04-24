@@ -7,18 +7,10 @@
 (in-package #:org.shirakumo.fraf.trial)
 (in-readtable :qtools)
 
-(defmethod coerce-base ((base symbol))
+(defmethod coerce-base (base)
   (if *standalone*
-      (merge-pathnames (format NIL "~(~a~)/" base) (uiop:argv0))
+      (merge-pathnames (format NIL "pool/~(~a~)/" base) (uiop:argv0))
       (merge-pathnames "data/" (asdf:system-source-directory base))))
-
-(defmethod coerce-base ((base pathname))
-  (if *standalone*
-      (merge-pathnames base (uiop:argv0))
-      (merge-pathnames base (asdf:system-source-directory :trial))))
-
-(defmethod coerce-base ((base string))
-  (coerce-base (parse-namestring base)))
 
 (defvar *pools* (make-hash-table :test 'eql))
 
