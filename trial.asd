@@ -81,4 +81,5 @@
                :glsl-toolkit
                :fast-io
                :ieee-floats
-               :lquery))
+               :lquery
+               :cl-fond))

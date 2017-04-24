@@ -13,6 +13,9 @@
 (define-user-libs (libmonitors cl-monitors-cffi::*static*)
   (cl-monitors-cffi:libmonitors))
 
+(define-user-libs (libfond cl-fond-cffi::*static*)
+  (cl-fond-cffi:libfond))
+
 (defun copy-dir-contents (dir to)
   (let ((dir (pathname-utils:to-directory dir))
         (to (pathname-utils:to-directory to)))
