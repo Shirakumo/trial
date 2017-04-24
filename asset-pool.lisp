@@ -43,18 +43,9 @@
    :name (error "NAME required.")
    :base (error "BASE required.")))
 
-(defmethod initialize-instance :after ((pool pool) &key base)
-  (setf (base pool) base))
-
-(defmethod reinitialize-instance :after ((pool pool) &key (base NIL base-p))
-  (when base-p (setf (base pool) base)))
-
 (defmethod print-object ((pool pool) stream)
   (print-unreadable-object (pool stream :type T)
     (format stream "~a ~s" (name pool) (base pool))))
-
-(defmethod (setf base) (base (pool pool))
-  (setf (slot-value pool 'base) (coerce-base base)))
 
 (defmacro define-pool (name &body initargs)
   `(eval-when (:compile-toplevel :load-toplevel :execute)
@@ -84,8 +75,11 @@
 (defmethod finalize ((pool pool))
   (mapc #'finalize (list-assets pool)))
 
+(defmethod pool-path ((pool pool) (null null))
+  (coerce-base (base pool)))
+
 (defmethod pool-path ((pool pool) pathname)
-  (merge-pathnames pathname (base pool)))
+  (merge-pathnames pathname (coerce-base (base pool))))
 
 (defmethod pool-path ((name symbol) pathname)
   (pool-path (pool name T) pathname))
