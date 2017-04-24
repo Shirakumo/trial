@@ -336,7 +336,7 @@
   ;; pipeline.lisp
   (:export
    #:pipeline
-   #:asses
+   #:passes
    #:connections
    #:framebuffers
    #:pass-fbo-map
