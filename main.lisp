@@ -54,6 +54,7 @@
       (call-next-method)))
   (load (scene main))
   (load (pipeline main))
+  (reset (scene main))
   ;; Cause camera to refresh
   (issue (scene main) 'resize :width (width main) :height (height main)))
 
