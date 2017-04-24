@@ -160,6 +160,7 @@
    #:sobel-pass
    #:gaussian-blur-pass
    #:fxaa-pass
+   #:blend-pass
    #:high-pass-filter
    #:low-pass-filter)
   ;; entity.lisp

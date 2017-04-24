@@ -46,6 +46,12 @@
 (define-class-shader fxaa-pass :fragment-shader
   '(effects #p"fxaa.frag"))
 
+(define-shader-pass blend-pass (post-effect-pass)
+  ("aPass" "bPass"))
+
+(define-class-shader blend-pass :fragment-shader
+  '(effects #p"blend.frag"))
+
 (define-shader-pass high-pass-filter (post-effect-pass)
   ("previousPass"))
 
