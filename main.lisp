@@ -48,20 +48,21 @@
   (issue (scene main) event))
 
 (defmethod setup-scene :around ((main main))
+  (gl:clear :color-buffer)
+  (q+:swap-buffers main)
+  (stop (scene main))
+  (reset (scene main))
   (with-simple-restart (continue "Skip loading the rest of the scene and hope for the best.")
     (v:info :trial.main "Setting up scene")
     (with-timing-report (info :trial.main "Scene setup took ~fs run time, ~fs clock time.")
       (call-next-method)))
   (load (scene main))
   (load (pipeline main))
-  (reset (scene main))
+  (start (scene main))
   ;; Cause camera to refresh
   (issue (scene main) 'resize :width (width main) :height (height main)))
 
 ;; FIXME: proper LOADing of a map
-(defmethod setup-scene :before ((main main))
-  (reset (scene main)))
-
 (defmethod setup-scene ((main main))
   ())
 
