@@ -180,7 +180,7 @@
 (defvar *standalone* NIL)
 (defun standalone-error-handler (err)
   (when *standalone*
-    (v:debug :trial err)
+    (v:error :trial err)
     (v:fatal :trial "Encountered unhandled error in ~a, bailing." (bt:current-thread))
     (qtools::quit)))
 
