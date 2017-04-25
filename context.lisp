@@ -237,9 +237,9 @@
                     GL Version:         ~a~%~
                     GL Shader Language: ~a~%~
                     GL Extensions:      ~{~a~^ ~}~%"
-          (gl:get* :major-version)
-          (gl:get* :minor-version)
-          (profile context)
+          (ignore-errors (gl:get* :major-version))
+          (ignore-errors (gl:get* :minor-version))
+          (ignore-errors (profile context))
           (ignore-errors (gl:get* :sample-buffers))
           (ignore-errors (gl:get* :samples))
           (ignore-errors (gl:get* :max-texture-size))
@@ -250,12 +250,13 @@
           (ignore-errors (gl:get* :max-tess-evaluation-texture-image-units))
           (ignore-errors (gl:get* :max-geometry-texture-image-units))
           (ignore-errors (gl:get* :max-compute-texture-image-units))
-          (gl:get-string :vendor)
-          (gl:get-string :renderer)
-          (gl:get-string :version)
-          (gl:get-string :shading-language-version)
-          (loop for i from 0 below (gl:get* :num-extensions)
-                collect (gl:get-string-i :extensions i))))
+          (ignore-errors (gl:get-string :vendor))
+          (ignore-errors (gl:get-string :renderer))
+          (ignore-errors (gl:get-string :version))
+          (ignore-errors (gl:get-string :shading-language-version))
+          (ignore-errors
+           (loop for i from 0 below (gl:get* :num-extensions)
+                 collect (gl:get-string-i :extensions i)))))
 
 (defun context-note-debug-info (context)
   (v:debug :trial.context "Context information: ~a"
