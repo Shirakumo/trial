@@ -187,6 +187,13 @@
         (invoke-debugger err)
         (qtools::quit))))
 
+(defun standalone-logging-handler ()
+  (when *standalone*
+    (let ((log (uiop:getenv "TRIAL_LOGFILE")))
+      (when (and log (string/= "" log))
+        (v:define-pipe ()
+          (v:file-faucet :file log))))))
+
 (defun make-thread (name func)
   (bt:make-thread (lambda ()
                     (handler-bind ((error #'standalone-error-handler))
