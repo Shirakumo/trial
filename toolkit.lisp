@@ -182,7 +182,10 @@
   (when *standalone*
     (v:error :trial err)
     (v:fatal :trial "Encountered unhandled error in ~a, bailing." (bt:current-thread))
-    (qtools::quit)))
+    (if (and (uiop:getenv "TRIAL_DEBUG")
+             (string/= "" (uiop:getenv "TRIAL_DEBUG")))
+        (invoke-debugger err)
+        (qtools::quit))))
 
 (defun make-thread (name func)
   (bt:make-thread (lambda ()
