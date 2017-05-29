@@ -50,6 +50,7 @@
                (:file "flare")
                (:file "mapping")
                (:file "retention")
+               (:file "physics")
                (:file "input-tables")
                (:file "input")
                (:file "player")
