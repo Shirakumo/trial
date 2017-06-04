@@ -102,11 +102,6 @@
       (v:info :trial.context "Recreated context successfully.")
       (make-current context)
       (context-note-debug-info context)
-      (dolist (pool (pools))
-        (dolist (asset (assets pool))
-          (let ((resource (resource asset)))
-            (when resource
-              (setf (slot-value resource 'data) (load-data asset))))))
       (show context))))
 
 (defmethod acquire-context ((context context) &key force)
