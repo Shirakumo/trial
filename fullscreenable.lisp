@@ -5,9 +5,8 @@
 |#
 
 (in-package #:org.shirakumo.fraf.trial)
-(in-readtable :qtools)
 
-(define-widget fullscreenable (QWidget)
+(defclass fullscreenable (display)
   ((original-mode :initform NIL :accessor original-mode)
    (resolution :accessor resolution)
    (fullscreen :accessor fullscreen))
@@ -23,7 +22,7 @@
   (setf (resolution fullscreenable) resolution)
   (setf (fullscreen fullscreenable) fullscreen))
 
-(define-finalizer (fullscreenable restore-resolution)
+(defmethod finalize :after ((fullscreenable fullscreenable))
   (setf (resolution fullscreenable) NIL))
 
 (defmethod (setf resolution) :before (resolution (fullscreenable fullscreenable))
@@ -31,17 +30,17 @@
     (null
      (cl-monitors:make-current (original-mode fullscreenable)))
     (list
-     (setf (q+:fixed-size fullscreenable) (values (first resolution)
-                                                  (second resolution))))
-    (cl-monitors:mode
-     (setf (q+:fixed-size fullscreenable) (values (cl-monitors:width resolution)
-                                                  (cl-monitors:height resolution)))
-     (cl-monitors:make-current resolution))))
+     (resize (context fullscreenable)
+             (first resolution)
+             (second resolution))
+     (cl-monitors:mode
+      (resize (context fullscreenable)
+              (cl-monitors:width resolution)
+              (cl-monitors:height resolution))
+      (cl-monitors:make-current resolution)))))
 
 (defmethod (setf fullscreen) :before (fullscreen (fullscreenable fullscreenable))
-  (if fullscreen
-      (q+:show-full-screen fullscreenable)
-      (q+:show-normal fullscreenable)))
+  (show (context fullscreenable) :fullscreen fullscreen))
 
 (cl-monitors:init)
 (pushnew #'cl-monitors:deinit qtools:*build-hooks*)

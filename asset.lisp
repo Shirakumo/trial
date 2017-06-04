@@ -382,6 +382,7 @@
   (check-texture-wrapping (second wrapping))
   (check-texture-wrapping (third wrapping)))
 
+;; FIXME: Figure out how to do this without Qt.
 (defmethod coerce-input ((asset texture-asset) (file pathname))
   (with-finalizing ((image (q+:make-qimage (uiop:native-namestring file))))
     (when (q+:is-null image)

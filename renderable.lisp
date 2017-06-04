@@ -15,16 +15,19 @@
   (:default-initargs
    :target-fps 30.0s0))
 
-(defmethod initialize-instance :after ((renderable renderable) &key)
+(defmethod start ((renderable renderable))
   (setf (thread renderable) T)
   (setf (thread renderable)
         (with-thread ("renderable thread")
           (render-loop renderable))))
 
-(defmethod finalize :before ((renderable renderable))
+(defmethod stop ((renderable renderable))
   (let ((thread (thread renderable)))
     (with-thread-exit (thread)
       (setf (thread renderable) NIL))))
+
+(defmethod finalize :before ((renderable renderable))
+  (stop renderable))
 
 (declaim (inline call-with-frame-pause))
 (defun call-with-frame-pause (function renderable)

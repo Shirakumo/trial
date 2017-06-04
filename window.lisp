@@ -28,18 +28,16 @@
 (defun remove-window (name)
   (remhash (window-name name) *windows*))
 
-(define-widget window (QWidget)
+(defclass window ()
   ((name :reader name)))
 
 (defmethod initialize-instance :before ((window window) &key name)
-  (setf (slot-value window 'name) (or name (class-name (class-of window)))))
+  (setf (slot-value window 'name) (or name (class-name (class-of window))))
+  (setf (window (name window)) window))
 
 (defmethod print-object ((window window) stream)
   (print-unreadable-object (window stream :type T)
     (format stream "~s" (name window))))
 
-(define-initializer (window register-window 1000)
-  (setf (window (name window)) window))
-
-(define-finalizer (window deregister-window -1000)
+(defmethod finalize :after ((window window))
   (remove-window window))

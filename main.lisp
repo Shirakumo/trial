@@ -5,51 +5,38 @@
 |#
 
 (in-package #:org.shirakumo.fraf.trial)
-(in-readtable :qtools)
 
 ;; FIXME: Fullscreenable seems to cause really bad behaviour, idk
 ;; FIXME: Re-add hud somehow
-(define-widget main (QGLWidget display input-handler window)
+(defclass main (display window)
   ((scene :initform (make-instance 'scene) :accessor scene)
    (pipeline :initform (make-instance 'pipeline :name :pipeline) :accessor pipeline)
-   (controller :initform (make-instance 'controller))
-   (title :initform "Trial" :initarg :title :accessor title))
+   (controller :initform (make-instance 'controller)))
   (:default-initargs
    :name :main))
 
-(define-initializer (main setup -10)
-  (setf (q+:window-title main) (title main))
-  (setf (display controller) main)
-  (register pipeline scene)
-  (register controller scene)
-  (issue scene 'reload-scene)
-  (start scene))
+(defmethod initialize-instance :after ((main main) &key)
+  (with-slots (scene pipeline controller) main
+    (setf (display controller) main)
+    (register pipeline scene)
+    (register controller scene)
+    (issue scene 'reload-scene)
+    (start scene)))
 
-(defmethod (setf title) :after (title (main main))
-  (setf (q+:window-title main) title))
-
-(define-finalizer (main teardown)
-  (v:info :trial.main "RAPTURE")
-  (acquire-context main :force T)
-  (finalize controller)
-  (finalize pipeline)
-  (finalize scene))
-
-(define-override (main focus-in-event) (ev)
-  ;; FIXME: too primitive, must account for menus and such at a later point.
-  (issue scene 'resume)
-  (stop-overriding))
-
-(define-override (main focus-out-event) (ev)
-  (issue scene 'pause)
-  (stop-overriding))
+(defmethod finalize ((main main))
+  (with-slots (scene pipeline controller) main
+    (v:info :trial.main "RAPTURE")
+    (acquire-context (context main) :force T)
+    (finalize controller)
+    (finalize pipeline)
+    (finalize scene)))
 
 (defmethod handle (event (main main))
   (issue (scene main) event))
 
 (defmethod setup-scene :around ((main main))
   (gl:clear :color-buffer)
-  (q+:swap-buffers main)
+  (swap-buffers (context main))
   (stop (scene main))
   (reset (scene main))
   (with-simple-restart (continue "Skip loading the rest of the scene and hope for the best.")
@@ -83,20 +70,10 @@
   (process (scene target))
   (paint (pipeline source) target))
 
-(defun launch (&optional (main 'main) &key initargs application-name)
+(defun launch (&optional (main 'main) &rest initargs)
   (v:output-here)
   (v:info :trial.main "GENESIS")
-  #+linux (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
   (standalone-logging-handler)
   (handler-bind ((error #'standalone-error-handler))
-    (with-main-window (window (apply #'make-instance main initargs) :name application-name)))
+    (apply #'launch-with-context main initargs))
   (tg:gc :full T))
-
-(defun launch-with-launcher (&optional (main 'main) &key initargs application-name)
-  #+linux (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
-  (ensure-qapplication)
-  (let ((opts NIL))
-    (with-finalizing ((launcher (make-instance 'launcher)))
-      (with-main-window (w launcher #-darwin :main-thread #-darwin NIL))
-      (setf opts (init-options launcher)))
-    (launch main :initargs (append initargs opts) :application-name application-name)))

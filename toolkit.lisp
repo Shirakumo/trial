@@ -5,7 +5,6 @@
 |#
 
 (in-package #:org.shirakumo.fraf.trial)
-(in-readtable :qtools)
 
 (defparameter *time-units* #+sbcl 1000000
               #-sbcl internal-time-units-per-second)
@@ -51,13 +50,6 @@
         unless x collect k
         unless x collect v))
 
-(defmacro with-primitives (primitive &body body)
-  `(progn
-     (gl:begin ,primitive)
-     (unwind-protect
-          (progn ,@body)
-       (gl:end))))
-
 (defun mkarray (dimensions &rest items)
   (let ((array (make-array dimensions)))
     (loop for i from 0 for item in items
@@ -83,12 +75,6 @@
         do (setf (slot-value object key) val))
   object)
 
-(defmethod width ((object qobject))
-  (q+:width object))
-
-(defmethod height ((object qobject))
-  (q+:height object))
-
 (defun one-of (thing &rest options)
   (find thing options))
 
@@ -97,13 +83,6 @@
     `(let ((,thing-var ,thing))
        (or ,@(loop for option in options
                    collect `(eql ,thing-var ,option))))))
-
-(defmethod make-painter (target)
-  (q+:make-qpainter target))
-
-(defmacro with-painter ((painter target) &body body)
-  `(with-finalizing ((,painter (make-painter ,target)))
-     ,@body))
 
 (defun input-source (&optional (stream *query-io*))
   (with-output-to-string (out)
