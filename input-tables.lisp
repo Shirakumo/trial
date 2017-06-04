@@ -5,7 +5,6 @@
 |#
 
 (in-package #:org.shirakumo.fraf.trial)
-(in-readtable :qtools)
 
 (defparameter *key-table*
   (alexandria:alist-hash-table

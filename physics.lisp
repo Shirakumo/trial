@@ -5,7 +5,6 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 |#
 
 (in-package #:org.shirakumo.fraf.trial)
-(in-readtable :qtools)
 
 (defvar *physics-gravity* 0.0d0
   "Downways.")

@@ -5,7 +5,6 @@
 |#
 
 (in-package #:org.shirakumo.fraf.trial)
-(in-readtable :qtools)
 
 (defclass located-entity (entity)
   ((location :initarg :location :initform (vec 0 0 0) :accessor location)))

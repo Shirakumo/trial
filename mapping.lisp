@@ -5,7 +5,6 @@
 |#
 
 (in-package #:org.shirakumo.fraf.trial)
-(in-readtable :qtools)
 
 (defvar *mappings* (make-hash-table :test 'equal))
 

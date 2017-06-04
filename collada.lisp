@@ -5,7 +5,6 @@
 |#
 
 (in-package #:org.shirakumo.fraf.trial)
-(in-readtable :qtools)
 
 ;;; Everything here is really primitive.
 ;; TODO: - Properly respect reading types

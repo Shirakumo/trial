@@ -5,7 +5,6 @@
 |#
 
 (in-package #:org.shirakumo.fraf.trial)
-(in-readtable :qtools)
 
 (define-subject camera (located-entity)
   ((near-plane :initarg :near-plane :accessor near-plane)
@@ -132,20 +131,6 @@
 
 (define-handler (fps-camera mouse-move) (ev old-pos pos)
   (do-fps-movement fps-camera old-pos pos))
-
-(define-handler (fps-camera resume) (ev)
-  (q+:grab-mouse *context*)
-  (let ((cursor (q+:cursor *context*)))
-    (setf (q+:pos cursor) (q+:map-to-global *context* (q+:make-qpoint (round (/ (q+:width *context*) 2))
-                                                                      (round (/ (q+:height *context*) 2)))))
-    (setf (q+:shape cursor) (q+:qt.blank-cursor))
-    (setf (q+:cursor *context*) cursor)))
-
-(define-handler (fps-camera pause) (ev)
-  (q+:release-mouse *context*)
-  (let ((cursor (q+:cursor *context*)))
-    (setf (q+:shape cursor) (q+:qt.arrow-cursor))
-    (setf (q+:cursor *context*) cursor)))
 
 (define-subject freeroam-camera (fps-camera)
   ((move-speed :initarg :move-speed :accessor move-speed))

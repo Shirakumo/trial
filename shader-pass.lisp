@@ -5,7 +5,6 @@
 |#
 
 (in-package #:org.shirakumo.fraf.trial)
-(in-readtable :qtools)
 
 (defclass shader-pass-class (shader-subject-class)
   ((pass-inputs :initarg :pass-inputs :initform () :accessor pass-inputs)))

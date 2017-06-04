@@ -5,7 +5,6 @@
 |#
 
 (in-package #:org.shirakumo.fraf.trial)
-(in-readtable :qtools)
 
 (defvar *retention-functions* (make-hash-table :test 'eql))
 (defvar *retention-table* (make-hash-table :test 'eq))

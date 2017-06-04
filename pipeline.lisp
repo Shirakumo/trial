@@ -5,7 +5,6 @@
 |#
 
 (in-package #:org.shirakumo.fraf.trial)
-(in-readtable :qtools)
 
 (defclass pipeline (entity event-loop)
   ((connections :initform (make-hash-table :test 'eq) :accessor connections)

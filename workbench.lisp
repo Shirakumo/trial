@@ -1,5 +1,4 @@
 (in-package #:trial)
-(in-readtable :qtools)
 
 (define-pool workbench
   :base 'trial)

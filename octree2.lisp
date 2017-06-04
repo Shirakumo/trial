@@ -5,7 +5,6 @@
 |#
 
 (in-package #:org.shirakumo.fraf.trial)
-(in-readtable :qtools)
 
 ;; FIXME: Don't trickle units that are bigger than the subnode.
 
@@ -140,6 +139,8 @@
                          (return)))))))
         (octree-leaf
          (setf (root octree) (delete el (the list (root octree)))))))))
+
+;; FIXME: update
 
 (define-handler (octree2 enter) (ev entity)
   (when (typep entity 'collidable-entity)

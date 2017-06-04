@@ -5,7 +5,6 @@
 |#
 
 (in-package #:org.shirakumo.fraf.trial)
-(in-readtable :qtools)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *debug-features* '(:trial-debug-selection-buffer

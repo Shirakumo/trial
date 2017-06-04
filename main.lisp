@@ -9,7 +9,7 @@
 
 ;; FIXME: Fullscreenable seems to cause really bad behaviour, idk
 ;; FIXME: Re-add hud somehow
-(define-widget main (QGLWidget display input-handler executable window)
+(define-widget main (QGLWidget display input-handler window)
   ((scene :initform (make-instance 'scene) :accessor scene)
    (pipeline :initform (make-instance 'pipeline :name :pipeline) :accessor pipeline)
    (controller :initform (make-instance 'controller))

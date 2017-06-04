@@ -5,7 +5,6 @@
 |#
 
 (in-package #:org.shirakumo.fraf.trial)
-(in-readtable :qtools)
 
 (define-action system-action ())
 
@@ -24,28 +23,12 @@
 (define-action reload-scene (system-action)
   (key-press (eql key :f6)))
 
-(define-subject controller (hud-entity persistent)
+(define-subject controller (persistent)
   (;; Has to be a double to avoid bignums after ~3.8 hours of runtime.
    (tick-count :initform 0.0d0 :accessor tick-count)
    (display :initform NIL :accessor display))
   (:default-initargs
    :name :controller))
-
-#+:trial-debug-controller
-(defmethod paint ((controller controller) (hud hud))
-  (with-pushed-attribs T
-    (with-painter (painter *context*)
-      (let ((font (get-resource 'font :trial :debug-hud))
-            (clock (clock (scene (display controller)))))
-        (setf (q+:render-hint painter) (q+:qpainter.text-antialiasing))
-        (setf (q+:render-hint painter) (q+:qpainter.high-quality-antialiasing))
-        (setf (q+:font painter) (data font))
-        (gl:color 255 255 255)
-        (q+:draw-text painter 20 30 (format NIL "Pause: ~,10f" (last-pause (display controller))))
-        (q+:draw-text painter 20 50 (format NIL "FPS:   ~,2f" (actual-fps (display controller))))
-        (q+:draw-text painter 20 70 (format NIL "Time:  ~2,'0d:~6,3,,,'0f"
-                                            (floor (/ (round clock) 60))
-                                            (mod clock 60)))))))
 
 (define-handler (controller resize) (ev width height)
   (let ((pipeline (pipeline (display controller))))
@@ -80,19 +63,6 @@
 
 (define-handler (controller load-game) (ev)
   (load-scene (event-loop controller) #p"~/test.sav.lisp"))
-
-(define-handler (controller execute-request) (ev)
-  (execute ev))
-
-(define-handler (controller launch-editor) (ev)
-  (let ((sys (asdf:find-system :trial-editor)))
-    (when sys
-      (unless (asdf:component-loaded-p sys)
-        (asdf:load-system sys))))
-  (when (find-package '#:org.shirakumo.fraf.trial.editor)
-    (with-body-in-gui ((display controller) :return-values NIL)
-      (funcall (find-symbol (string '#:launch) '#:org.shirakumo.fraf.trial.editor)
-               (display controller)))))
 
 (define-handler (controller key-release) (ev key)
   (when (eql key :escape)

@@ -56,10 +56,3 @@
   (stop scene)
   (offload scene)
   (clear scene))
-
-(defun funcall-in-scene (scene func &key bindings (return-values T))
-  (with-execution (return-values event 'execute-request :func func :bindings bindings )
-    (issue scene event)))
-
-(defmacro with-body-in-scene ((scene &key bindings (return-values T)) &body body)
-  `(funcall-in-scene ,scene (lambda () ,@body) :bindings ,bindings :return-values ,return-values))

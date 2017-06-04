@@ -5,7 +5,6 @@
 |#
 
 (in-package #:org.shirakumo.fraf.trial)
-(in-readtable :qtools)
 
 (defclass layer-container (container)
   ((layer :initarg :layer :accessor layer)

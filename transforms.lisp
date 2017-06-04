@@ -5,7 +5,6 @@
 |#
 
 (in-package #:org.shirakumo.fraf.trial)
-(in-readtable :qtools)
 
 ;; FIXME: inline and compiler-macro things to make it more efficient
 
@@ -106,7 +105,7 @@
     (m* inv (vec4 x y 0 0))))
 
 (defun vec->main (vec main)
-  (vec->screen vec (q+:width main) (q+:height main)))
+  (vec->screen vec (width main) (height main)))
 
 (defun main->vec (vec main)
-  (screen->vec vec (q+:width main) (q+:height main)))
+  (screen->vec vec (width main) (height main)))

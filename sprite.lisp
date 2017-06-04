@@ -5,7 +5,6 @@
 |#
 
 (in-package #:org.shirakumo.fraf.trial)
-(in-readtable :qtools)
 
 (defclass sprite-animation (face-entity)
   ((duration :initarg :duration :accessor duration)

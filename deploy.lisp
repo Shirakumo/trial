@@ -5,7 +5,6 @@
 |#
 
 (in-package #:org.shirakumo.fraf.trial)
-(in-readtable :qtools)
 
 (define-user-libs (libstem-gamepad cl-gamepad-cffi::*static*)
   (cl-gamepad-cffi:libstem-gamepad))
@@ -15,12 +14,6 @@
 
 (define-user-libs (libfond cl-fond-cffi::*static*)
   (cl-fond-cffi:libfond))
-
-(define-user-libs (libsoloud cl-soloud-cffi::*static*)
-  (cl-soloud-cffi:libsoloud))
-
-(define-user-libs (libmpg123 cl-mpg123-cffi::*static*)
-  (cl-mpg123-cffi:libmpg123))
 
 (defun copy-dir-contents (dir to)
   (let ((dir (pathname-utils:to-directory dir))
