@@ -83,5 +83,4 @@
                :fast-io
                :ieee-floats
                :lquery
-               :cl-fond
-               :cl-soloud))
+               :cl-fond))
