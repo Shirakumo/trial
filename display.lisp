@@ -15,10 +15,13 @@
 
 (defmethod initialize-instance :after ((display display) &key context)
   (setf (handler context) display)
-  (add-gamepad-handler display))
+  (add-gamepad-handler display)
+  (with-context ((context display))
+    (setup-rendering display)))
 
 (defmethod finalize :after ((display display))
-  (remove-gamepad-handler display))
+  (remove-gamepad-handler display)
+  (finalize (context display)))
 
 (defmethod handle (event (display display)))
 
