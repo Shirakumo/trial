@@ -10,7 +10,8 @@
   ())
 
 (defclass keyboard-event (input-event)
-  ((key :initarg :key :reader key))
+  ((key :initarg :key :reader key)
+   (text :initarg :text :reader text))
   (:default-initargs
    :key (error "KEY required.")))
 

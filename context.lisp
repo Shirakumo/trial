@@ -64,8 +64,8 @@
   (release-context context))
 
 (defgeneric create-context (context))
-(defgeneric valid-p (context))
 (defgeneric destroy-context (context))
+(defgeneric valid-p (context))
 (defgeneric make-current (context))
 (defgeneric done-current (context))
 (defgeneric hide (context))
