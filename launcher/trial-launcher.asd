@@ -19,4 +19,5 @@
                :qtcore
                :qtgui
                :qtopengl
+               :qtools-ui-slider
                :trial))

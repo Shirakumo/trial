@@ -7,8 +7,8 @@
 (in-package #:cl-user)
 (defpackage #:trial
   (:nicknames #:org.shirakumo.fraf.trial)
-  (:use #:cl+qt #:3d-vectors #:3d-matrices #:flare)
-  (:shadowing-import-from #:flare #:slot)
+  (:use #:cl #:3d-vectors #:3d-matrices #:flare)
+  (:import-from #:qtools #:finalize)
   (:shadow #:scene #:entity #:load)
   ;; context.lisp
   (:export
@@ -130,6 +130,5 @@
 
 (defpackage #:trial-user
   (:nicknames #:org.shirakumo.fraf.trial.user)
-  (:use #:cl+qt #:trial)
-  (:shadowing-import-from #:trial #:load)
-  (:shadowing-import-from #:flare #:slot))
+  (:use #:cl #:trial)
+  (:shadowing-import-from #:trial #:load))

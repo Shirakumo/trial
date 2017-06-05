@@ -8,9 +8,6 @@
 
 (define-action system-action ())
 
-(define-action launch-editor (system-action)
-  (key-press (eql key :section)))
-
 (define-action save-game (system-action)
   (key-press (eql key :f2)))
 

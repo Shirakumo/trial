@@ -9,9 +9,21 @@
 (defclass subject-class-redefined (event)
   ((subject-class :initarg :subject-class :reader subject-class)))
 
-(defclass subject-class (qtools:finalizable-class handler-container)
+(defclass subject-class (standard-class handler-container)
   ((effective-handlers :initform NIL :accessor effective-handlers)
    (instances :initform () :accessor instances)))
+
+(defmethod c2mop:validate-superclass ((class subject-class) (superclass t))
+  NIL)
+
+(defmethod c2mop:validate-superclass ((class standard-class) (superclass subject-class))
+  NIL)
+
+(defmethod c2mop:validate-superclass ((class subject-class) (superclass standard-class))
+  T)
+
+(defmethod c2mop:validate-superclass ((class subject-class) (superclass subject-class))
+  T)
 
 (defmethod cascade-option-changes ((class subject-class))
   ;; Recompute effective handlers
@@ -60,7 +72,7 @@
 (defmethod remove-handler (handler (class symbol))
   (remove-handler handler (find-class class)))
 
-(defclass subject (entity finalizable handler-container)
+(defclass subject (entity handler-container)
   ((event-loop :initarg :event-loop :accessor event-loop))
   (:default-initargs
    :event-loop NIL)

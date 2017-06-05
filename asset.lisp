@@ -395,7 +395,7 @@
       object
     (cond (file
            (multiple-value-bind (bits rwidth rheight)
-               (cl-soil:load-image file :force-channels format)
+               (cl-soil:load-image file format)
              (list (or width rwidth) (or height rheight) bits format)))
           (T
            (list width (or height 1) (or bits (cffi:null-pointer)) format)))))
@@ -518,7 +518,8 @@
          (texspec (remf* spec :level :layer :attachment :bits)))
     (check-framebuffer-attachment attachment)
     (list* (apply #'make-instance 'texture-asset
-                  :input (list (width asset) (height asset)
+                  :input (list NIL
+                               (width asset) (height asset)
                                (getf spec :bits (cffi:null-pointer))
                                (case attachment
                                  (:depth-attachment :depth-component)

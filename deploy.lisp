@@ -6,13 +6,13 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-user-libs (libstem-gamepad cl-gamepad-cffi::*static*)
+(qtools:define-user-libs (libstem-gamepad cl-gamepad-cffi::*static*)
   (cl-gamepad-cffi:libstem-gamepad))
 
-(define-user-libs (libmonitors cl-monitors-cffi::*static*)
+(qtools:define-user-libs (libmonitors cl-monitors-cffi::*static*)
   (cl-monitors-cffi:libmonitors))
 
-(define-user-libs (libfond cl-fond-cffi::*static*)
+(qtools:define-user-libs (libfond cl-fond-cffi::*static*)
   (cl-fond-cffi:libfond))
 
 (defun copy-dir-contents (dir to)
