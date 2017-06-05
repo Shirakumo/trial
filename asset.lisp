@@ -7,7 +7,6 @@
 ;; FIXME: configurable defaults
 
 (in-package #:org.shirakumo.fraf.trial)
-(in-readtable :qtools)
 
 (defgeneric load (object)
   (:method-combination progn :most-specific-last))
@@ -382,15 +381,8 @@
   (check-texture-wrapping (second wrapping))
   (check-texture-wrapping (third wrapping)))
 
-;; FIXME: Figure out how to do this without Qt.
 (defmethod coerce-input ((asset texture-asset) (file pathname))
-  (with-finalizing ((image (q+:make-qimage (uiop:native-namestring file))))
-    (when (q+:is-null image)
-      (error "Qt failed to load image ~s" file))
-    (coerce-input asset image)))
-
-(defmethod coerce-input ((asset texture-asset) (object qobject))
-  (q+:qglwidget-convert-to-glformat object))
+  (list file))
 
 (defmethod coerce-input ((asset texture-asset) (spec cons))
   spec)
@@ -399,13 +391,14 @@
   (gl:delete-textures (list resource)))
 
 (defun object-to-texparams (object)
-  (etypecase object
-    (qobject (list (q+:width object)
-                   (q+:height object)
-                   (q+:bits object)
-                   :rgba))
-    (cons    (destructuring-bind (width &optional (height 1) (bits (cffi:null-pointer)) (format :rgba)) object
-               (list width height bits format)))))
+  (destructuring-bind (file &optional width height bits (format :rgba))
+      object
+    (cond (file
+           (multiple-value-bind (bits rwidth rheight)
+               (cl-soil:load-image file :force-channels format)
+             (list (or width rwidth) (or height rheight) bits format)))
+          (T
+           (list width (or height 1) (or bits (cffi:null-pointer)) format)))))
 
 (defun images-to-textures (target images)
   (case target
@@ -423,19 +416,22 @@
            do (case target
                 (:texture-1d
                  (destructuring-bind (width height bits format) (object-to-texparams image)
-                   (gl:tex-image-1d target level format (* width height) 0 format :unsigned-byte bits)))
+                   (gl:tex-image-1d target level format (* width height) 0 format :unsigned-byte bits)
+                   (unless (cffi:null-pointer-p bits) (cffi:foreign-free bits))))
                 ((:texture-cube-map-positive-x :texture-cube-map-negative-x
                   :texture-cube-map-positive-y :texture-cube-map-negative-y
                   :texture-cube-map-positive-z :texture-cube-map-negative-z
                   :texture-2d)
                  (destructuring-bind (width height bits format) (object-to-texparams image)
-                   (gl:tex-image-2d target level format width height 0 format :unsigned-byte bits)))
+                   (gl:tex-image-2d target level format width height 0 format :unsigned-byte bits)
+                   (unless (cffi:null-pointer-p bits) (cffi:foreign-free bits))))
                 (:texture-2d-multisample
                  (destructuring-bind (width height samples format) (object-to-texparams image)
                    (%gl:tex-image-2d-multisample target samples format width height 0)))
                 (:texture-3d
                  (destructuring-bind (width height depth bits format) image
-                   (gl:tex-image-3d target level format width height depth 0 format :unsigned-byte bits))))))))
+                   (gl:tex-image-3d target level format width height depth 0 format :unsigned-byte bits)
+                   (unless (cffi:null-pointer-p bits) (cffi:foreign-free bits)))))))))
 
 (defmethod load progn ((asset texture-asset))
   (with-slots (target mag-filter min-filter anisotropy wrapping) asset
@@ -445,7 +441,8 @@
              (with-cleanup-on-failure (offload asset)
                (gl:bind-texture target texture)
                (images-to-textures target images)
-               (unless (eql target :texture-2d-multisample)
+               (unless (eql
+                        target :texture-2d-multisample)
                  (unless (or (eql min-filter :nearest) (eql min-filter :linear))
                    (gl:generate-mipmap target))
                  (when anisotropy

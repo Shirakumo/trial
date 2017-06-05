@@ -58,22 +58,19 @@
                :3d-matrices
                :verbose
                :qtools
-               :qtcore
-               :qtgui
-               :qtopengl
-               :cl-opengl
                :closer-mop
                :trivial-garbage
                :trivial-indent
                :bordeaux-threads
+               :cl-opengl
                :cl-gamepad
                :cl-monitors
+               :cl-soil
+               :cl-fond
                :pathname-utils
                :flare
-               :qtools-ui-slider
                :for
                :glsl-toolkit
                :fast-io
                :ieee-floats
-               :lquery
-               :cl-fond))
+               :lquery))
