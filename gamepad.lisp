@@ -40,9 +40,6 @@
     (setf *gamepad-input-thread* NIL)))
 
 (init-gamepad-system)
-(pushnew #'shutdown-gamepad-system qtools:*build-hooks*)
-(pushnew #'init-gamepad-system qtools:*boot-hooks*)
-(pushnew #'shutdown-gamepad-system qtools:*quit-hooks*)
 
 (defun cl-gamepad:device-attached (device)
   (v:info :trial.input "Attached ~s" (cl-gamepad:print-device device NIL))

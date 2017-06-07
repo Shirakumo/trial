@@ -57,7 +57,7 @@
                :3d-vectors
                :3d-matrices
                :verbose
-               :qtools
+               :deploy
                :closer-mop
                :trivial-garbage
                :trivial-indent

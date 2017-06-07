@@ -6,31 +6,19 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(qtools:define-user-libs (libstem-gamepad cl-gamepad-cffi::*static*)
-  (cl-gamepad-cffi:libstem-gamepad))
-
-(qtools:define-user-libs (libmonitors cl-monitors-cffi::*static*)
-  (cl-monitors-cffi:libmonitors))
-
-(qtools:define-user-libs (libfond cl-fond-cffi::*static*)
-  (cl-fond-cffi:libfond))
-
-(defun copy-dir-contents (dir to)
-  (let ((dir (pathname-utils:to-directory dir))
-        (to (pathname-utils:to-directory to)))
-    (ensure-directories-exist to)
-    (dolist (file (uiop:directory* (merge-pathnames pathname-utils:*wild-file* dir)))
-      (cond ((pathname-utils:directory-p file)
-             (copy-dir-contents file (pathname-utils:subdirectory to (pathname-utils:directory-name file))))
-            (T
-             (uiop:copy-file file (merge-pathnames (pathname-utils:to-file file) to)))))))
-
-(defun deploy-resources ()
-  (let ((path qtools:*deployment-location*))
-    (dolist (pool (list-pools))
-      (qtools::status 1 "Copying pool ~a from ~a" (name pool) (base pool))
-      (copy-dir-contents (pool-path pool NIL)
-                         (pathname-utils:subdirectory path "pool" (string-downcase (base pool))))))
+(deploy:define-hook (:deploy trial) (target)
+  (dolist (pool (list-pools))
+    (deploy:status 1 "Copying pool ~a from ~a" (name pool) (base pool))
+    (deploy:copy-directory-tree
+     (pool-path pool NIL)
+     (pathname-utils:subdirectory target "pool" (string-downcase (base pool)))
+     :copy-root NIL))
   (setf *standalone* T))
 
-(pushnew 'deploy-resources qtools:*build-hooks*)
+(deploy:define-hook (:build trial) ()
+  (cl-monitors:deinit)
+  (shutdown-gamepad-system))
+
+(deploy:define-hook (:boot trial) ()
+  (cl-monitors:init)
+  (init-gamepad-system))

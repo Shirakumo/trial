@@ -9,6 +9,8 @@
 (defparameter *time-units* #+sbcl 1000000
               #-sbcl internal-time-units-per-second)
 
+(defgeneric finalize (object))
+
 (declaim (inline current-time))
 (defun current-time ()
   #+sbcl (let ((usec (nth-value 1 (sb-ext:get-time-of-day))))
@@ -164,7 +166,7 @@
     (if (and (uiop:getenv "TRIAL_DEBUG")
              (string/= "" (uiop:getenv "TRIAL_DEBUG")))
         (invoke-debugger err)
-        (qtools::quit))))
+        (deploy:quit))))
 
 (defun standalone-logging-handler ()
   (when *standalone*

@@ -43,6 +43,3 @@
   (show (context fullscreenable) :fullscreen fullscreen))
 
 (cl-monitors:init)
-(pushnew #'cl-monitors:deinit qtools:*build-hooks*)
-(pushnew #'cl-monitors:init qtools:*boot-hooks*)
-(pushnew #'cl-monitors:deinit qtools:*quit-hooks*)

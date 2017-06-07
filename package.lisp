@@ -8,7 +8,6 @@
 (defpackage #:trial
   (:nicknames #:org.shirakumo.fraf.trial)
   (:use #:cl #:3d-vectors #:3d-matrices #:flare)
-  (:import-from #:qtools #:finalize)
   (:shadow #:scene #:entity #:load)
   ;; context.lisp
   (:export
@@ -94,6 +93,7 @@
   ;; toolkit.lisp
   (:export
    #:*time-units*
+   #:finalize
    #:current-time
    #:executable-directory
    #:enlist
