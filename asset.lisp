@@ -435,25 +435,23 @@
 
 (defmethod load progn ((asset texture-asset))
   (with-slots (target mag-filter min-filter anisotropy wrapping) asset
-    (let ((images (coerced-inputs asset)))
-      (unwind-protect
-           (let ((texture (setf (resource asset) (gl:gen-texture))))
-             (with-cleanup-on-failure (offload asset)
-               (gl:bind-texture target texture)
-               (images-to-textures target images)
-               (unless (eql
-                        target :texture-2d-multisample)
-                 (unless (or (eql min-filter :nearest) (eql min-filter :linear))
-                   (gl:generate-mipmap target))
-                 (when anisotropy
-                   (gl:tex-parameter target :texture-max-anisotropy-ext anisotropy))
-                 (gl:tex-parameter target :texture-min-filter min-filter)
-                 (gl:tex-parameter target :texture-mag-filter mag-filter)
-                 (gl:tex-parameter target :texture-wrap-s (first wrapping))
-                 (gl:tex-parameter target :texture-wrap-t (second wrapping))
-                 (when (eql target :texture-cube-map)
-                   (gl:tex-parameter target :texture-wrap-r (third wrapping))))))
-        (mapc #'finalize images)))))
+    (let ((images (coerced-inputs asset))
+          (texture (setf (resource asset) (gl:gen-texture))))
+      (with-cleanup-on-failure (offload asset)
+        (gl:bind-texture target texture)
+        (images-to-textures target images)
+        (unless (eql
+                 target :texture-2d-multisample)
+          (unless (or (eql min-filter :nearest) (eql min-filter :linear))
+            (gl:generate-mipmap target))
+          (when anisotropy
+            (gl:tex-parameter target :texture-max-anisotropy-ext anisotropy))
+          (gl:tex-parameter target :texture-min-filter min-filter)
+          (gl:tex-parameter target :texture-mag-filter mag-filter)
+          (gl:tex-parameter target :texture-wrap-s (first wrapping))
+          (gl:tex-parameter target :texture-wrap-t (second wrapping))
+          (when (eql target :texture-cube-map)
+            (gl:tex-parameter target :texture-wrap-r (third wrapping))))))))
 
 (defclass framebuffer-asset (asset)
   ())

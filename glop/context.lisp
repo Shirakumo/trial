@@ -94,7 +94,7 @@
   (glop:show-cursor context))
 
 (defmethod hide-cursor ((context context))
-  (glop:hide-cursor (window ccontext)))
+  (glop:hide-cursor context))
 
 (defmethod title ((context context))
   (glop::window-title context))

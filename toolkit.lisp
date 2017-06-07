@@ -11,6 +11,9 @@
 
 (defgeneric finalize (object))
 
+(defmethod finalize (object)
+  object)
+
 (declaim (inline current-time))
 (defun current-time ()
   #+sbcl (let ((usec (nth-value 1 (sb-ext:get-time-of-day))))
@@ -227,6 +230,34 @@
          (v:log ,(intern (string level) :keyword) ,category ,format ,@args
                 (/ (- (get-internal-run-time) ,run) INTERNAL-TIME-UNITS-PER-SECOND)
                 (/ (- (get-internal-real-time) ,real) INTERNAL-TIME-UNITS-PER-SECOND))))))
+
+(defun ensure-class (class-ish)
+  (etypecase class-ish
+    (symbol (find-class class-ish))
+    (standard-class class-ish)
+    (standard-object (class-of class-ish))))
+
+(defmacro with-slots-bound ((instance class) &body body)
+  (let ((slots (loop for slot in (c2mop:class-direct-slots
+                                  (let ((class (ensure-class class)))
+                                    (c2mop:finalize-inheritance class)
+                                    class))
+                     for name = (c2mop:slot-definition-name slot)
+                     collect name)))
+    `(with-slots ,slots ,instance
+       (declare (ignorable ,@slots))
+       ,@body)))
+
+(defmacro with-all-slots-bound ((instance class) &body body)
+  (let ((slots (loop for slot in (c2mop:class-slots
+                                  (let ((class (ensure-class class)))
+                                    (c2mop:finalize-inheritance class)
+                                    class))
+                     for name = (c2mop:slot-definition-name slot)
+                     collect name)))
+    `(with-slots ,slots ,instance
+       (declare (ignorable ,@slots))
+       ,@body)))
 
 (defun insert-index (object list &key (key #'identity) (replace T))
   (flet ((k (value) (funcall key value)))
