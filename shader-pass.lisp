@@ -6,8 +6,8 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass shader-pass-class (shader-subject-class)
-  ((pass-inputs :initarg :pass-inputs :initform () :accessor pass-inputs)))
+(defclass shader-pass-class (shader-subject-class flow:static-node-class)
+  ())
 
 (defmethod c2mop:validate-superclass ((class shader-pass-class) (superclass T))
   NIL)
@@ -18,10 +18,20 @@
 (defmethod c2mop:validate-superclass ((class shader-pass-class) (superclass standard-class))
   T)
 
-;; FIXME: check for input compatibility in inheritance
+(defclass input (flow:in-port flow:1-port)
+  ((uniform :initarg :uniform :initform NIL :accessor uniform)
+   (texture :initform NIL :accessor texture)))
 
-(defclass shader-pass (shader-subject)
-  ((pass-inputs :initarg :pass-inputs :initform () :accessor pass-inputs))
+(defmethod initialize-instance :after ((input input) &key)
+  (unless (uniform input)
+    (setf (uniform input) (symbol->c-name (flow:name input)))))
+
+(defclass output (flow:out-port flow:n-port)
+  ((attachment :initarg :attachment :accessor attachment))
+  (:default-initargs :attachment :color-attachment0))
+
+(defclass shader-pass (shader-subject flow:static-node)
+  ((framebuffer :initform NIL :accessor framebuffer))
   (:metaclass shader-pass-class))
 
 (defgeneric register-object-for-pass (pass object))
@@ -31,13 +41,26 @@
   (when (typep target 'main)
     (paint (scene target) pass)))
 
-(defmacro define-shader-pass (name direct-superclasses inputs &optional slots &rest options)
+(defmacro define-shader-pass (name direct-superclasses direct-slots &rest options)
   (unless (find :metaclass options :key #'car)
     (push '(:metaclass shader-pass-class) options))
   `(defclass ,name (,@direct-superclasses shader-pass)
-     ,slots
-     ,@options
-     (:pass-inputs ,@inputs)))
+     ,direct-slots
+     ,@options))
+
+(defmethod paint :before (pass (target shader-pass))
+  ;; FIXME: Query for max number of textures available and build
+  ;;        this dynamically based on that number.
+  (loop with texture-index = '(15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0)
+        with texture-name = '(:texture15 :texture14 :texture13 :texture12
+                              :texture11 :texture10 :texture9  :texture8
+                              :texture7  :texture6  :texture5  :texture4
+                              :texture3  :texture2  :texture1  :texture0)
+        for port in (ports pass)
+        do (when (typep port 'input)
+             (setf (uniform program uniform) (pop texture-index))
+             (gl:active-texture (pop texture-name))
+             (gl:bind-texture :texture-2d (resource (texture port))))))
 
 (define-shader-pass per-object-pass ()
   ()
@@ -89,7 +112,6 @@
 (defmethod paint :around ((subject shader-subject) (pass per-object-pass))
   (let ((program (shader-program-for-pass pass subject)))
     (gl:use-program (resource program))
-    ;; FIXME: register inputs as uniforms... ?
     (call-next-method)))
 
 (define-shader-pass multisampled-pass ()
@@ -107,10 +129,8 @@
     (setf (multisample-fbo pass) fbo)))
 
 (defmethod paint :around ((pass multisampled-pass) target)
-  ;; FIXME: slow
-  (let ((original-framebuffer (gl:get-integer :draw-framebuffer-binding))
-        (framebuffer (multisample-fbo pass)))
-    (gl:bind-framebuffer :framebuffer (resource framebuffer))
+  (let ((original-framebuffer (resource (framebuffer pass))))
+    (gl:bind-framebuffer :framebuffer (resource (multisample-fbo pass)))
     (gl:clear :color-buffer :depth-buffer)
     (call-next-method)
     (gl:bind-framebuffer :draw-framebuffer original-framebuffer)
@@ -128,8 +148,7 @@
 
 (define-shader-pass single-shader-pass ()
   ()
-  ((shader-program :initform (make-instance 'shader-program-asset) :accessor shader-program)
-   (pass-uniforms :initarg :uniforms :initform () :accessor pass-uniforms)))
+  ((shader-program :initform (make-instance 'shader-program-asset) :accessor shader-program)))
 
 (define-handler (single-shader-pass update-shader-for-redefined-subject subject-class-redefined) (ev subject-class)
   (when (eql subject-class (class-of single-shader-pass))
@@ -147,19 +166,9 @@
 (defmethod shader-program-for-pass ((pass single-shader-pass) o)
   (shader-program pass))
 
-(defmethod paint :around ((pass single-shader-pass) target)
+(defmethod paint :around ((source scene) (pass single-shader-pass))
   (let ((program (shader-program pass)))
     (gl:use-program (resource program))
-    (loop for (uniform value) in (pass-uniforms pass)
-          do (setf (uniform program uniform) value))
-    ;; FIXME: register inputs as uniforms properly
-    (loop for (uniform fbo) in (pass-inputs pass)
-          for texture-index from 8
-          for texture-name in '(:texture8 :texture9 :texture10)
-          do (setf (uniform program uniform) texture-index)
-             (gl:active-texture texture-name)
-             ;; First is always the colour texture
-             (gl:bind-texture :texture-2d (resource (first (textures fbo)))))
     (call-next-method)))
 
 (define-shader-pass post-effect-pass (single-shader-pass)
@@ -169,7 +178,7 @@
 (defmethod load progn ((pass post-effect-pass))
   (load (vertex-array pass)))
 
-(defmethod paint ((pass post-effect-pass) target)
+(defmethod paint ((source scene) (pass post-effect-pass))
   (let ((vao (vertex-array pass)))
     (with-pushed-attribs
       (disable :depth-test)
@@ -191,16 +200,3 @@ void main(){
 (define-class-shader post-effect-pass :fragment-shader
   "
 in vec2 texCoord;")
-
-(define-shader-pass copy-pass (post-effect-pass)
-  ("previousPass"))
-
-(define-class-shader copy-pass :fragment-shader
-  "
-in vec2 texCoord;
-out vec4 color;
-uniform sampler2D previousPass;
-
-void main(){
-  color = texture(previousPass, texCoord);
-}")

@@ -7,171 +7,104 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass pipeline (entity event-loop)
-  ((connections :initform (make-hash-table :test 'eq) :accessor connections)
-   (passes :initform () :accessor passes)
-   (framebuffers :initform #() :accessor framebuffers)
-   (pass-fbo-map :initform (make-hash-table :test 'eq) :accessor pass-fbo-map)))
+  ((nodes :initform NIL :accessor nodes)
+   (passes :initform #() :accessor passes)
+   (textures :initform #() :accessor textures)))
 
 (defmethod handle :after ((tick tick) (pipeline pipeline))
   (process pipeline))
 
 (defmethod load progn ((pipeline pipeline))
-  (map NIL #'load (framebuffers pipeline))
+  (map NIL #'load (textures pipeline))
   (map NIL #'load (passes pipeline)))
 
 (defmethod finalize ((pipeline pipeline))
   (clear pipeline))
 
-(defmethod resize ((pipeline pipeline) width height)
-  (loop for framebuffer across (framebuffers pipeline)
-        do (resize framebuffer width height)))
-
 (defmethod register ((pass shader-pass) (pipeline pipeline))
-  (pushnew pass (passes pipeline))
+  (pushnew pass (nodes pipeline))
   (add-handler pass pipeline))
 
 (defmethod deregister ((pass shader-pass) (pipeline pipeline))
-  (setf (passes pipeline) (delete pass (passes pipeline)))
-  (remhash pass (connections pipeline))
-  (remove-handler pass pipeline)
-  (loop for k being the hash-keys of (connections pipeline)
-        for v being the hash-values of (connections pipeline)
-        do (setf (gethash k (connections pipeline))
-                 (remove pass v :key #'second))))
+  (setf (nodes pipeline) (delete pass (nodes pipeline)))
+  (remove-handler pass pipeline))
 
 (defmethod clear ((pipeline pipeline))
-  (clrhash (connections pipeline))
-  (clrhash (pass-fbo-map pipeline))
-  (setf (passes pipeline) ())
-  (setf (framebuffers pipeline) #()))
+  (setf (nodes pipeline) ())
+  (setf (passes pipeline) #())
+  (setf (textures pipeline) #()))
 
-;; FIXME: At some point we should probably allow doing more automated
-;;        connections and nodes that use a previous node's FBOs as
-;;        their own.
-(defmethod connect-pass (source-pass target-pass target-input (pipeline pipeline))
-  (let ((connections (connections pipeline)))
-    (unless (find target-input (pass-inputs (class-of target-pass)) :test #'string=)
-      (error "The pass input ~s does not exist on ~a."
-             target-input target-pass))
-    (unless (find source-pass (passes pipeline))
-      (register source-pass pipeline))
-    (unless (find target-pass (passes pipeline))
-      (register target-pass pipeline))
-    ;; Remove potential previous connection
-    (setf (gethash target-pass connections)
-          (remove target-input (gethash target-pass connections)
-                  :key #'first :test #'string=))
-    (push (list target-input source-pass)
-          (gethash target-pass connections))))
-
-(defun connections->edges (connections)
-  (let ((edges))
-    (loop for k being the hash-keys of connections
-          for v being the hash-values of connections
-          do (loop for connection in v
-                   do (push (cons k (second connection)) edges)))
-    edges))
+(defmethod connect ((source flow:port) (target flow:port) (pipeline pipeline))
+  (unless (find (flow:node source) (passes pipeline))
+    (register (flow:node source) pipeline))
+  (unless (find (flow:node target) (passes pipeline))
+    (register (flow:node target) pipeline))
+  (flow:connect source target 'flow:directed-connection)
+  pipeline)
 
 (defmethod check-consistent ((pipeline pipeline))
   (dolist (pass (passes pipeline))
-    (dolist (input (pass-inputs (class-of pass)))
-      (unless (find input (gethash pass (connections pipeline))
-                    :test #'string= :key #'first)
+    (dolist (port (flow:ports pass))
+      (when (and (typep port 'input)
+                 (null (flow:connections port))) 
         (error "Pipeline is not consistent.~%~
                 Pass ~s is missing a connection to its input ~s."
-               pass input)))))
+               pass port)))))
 
+(defun allocate-textures (passes width height)
+  (flet ((texpsec (port)
+           (list NIL width height (cffi:null-pointer)
+                 (case (attachment port)
+                   (:depth-attachment :depth-component)
+                   (:depth-stencil-attachment :depth-stencil)
+                   (T :rgba)))))
+    (let* ((texture-count (1+ (loop for pass in passes
+                                    when (flow:ports pass)
+                                    maximize (loop for port in (flow:ports node)
+                                                   when (flow:attribute port :color)
+                                                   maximize (flow:attribute port :color)))))
+           (textures (make-array texture-count :inital-element NIL)))
+      (dolist (pass passes textures)
+        (loop for port in (flow:ports pass)
+              for color = (flow:attribute port :color)
+              do (when color
+                   (unless (aref textures color)
+                     (setf (aref textures color)
+                           (make-asset 'texture-asset :input (texpsec port))))
+                   (setf (flow:attribute port 'texture) (aref textures color))))))))
+
+;; FIXME: resizing
 (defmethod pack-pipeline ((pipeline pipeline) target)
   (check-consistent pipeline)
   (v:info :trial.pipeline "~a packing for ~a" pipeline target)
-  (let* ((nodes (passes pipeline))
-         (edges (connections->edges (connections pipeline)))
-         (passes (flatten-graph nodes edges))
-         (colors (color-graph nodes edges))
-         (framebuffers (make-array (1+ (loop for color being the hash-values of colors
-                                             maximize color)))))
+  ;; FIXME: How to ensure algorithm distinguishes depth and colour buffers?
+  (let* ((passes (flow:allocate-ports (nodes pipeline)))
+         (textures (allocate-textures passes (width target) (height target))))
     (v:info :trial.pipeline "~a pass order: ~a" pipeline passes)
-    (v:info :trial.pipeline "~a framebuffers: ~a" pipeline (length framebuffers))
-    (v:info :trial.pipeline "~a fbo allocation: ~a" pipeline (alexandria:hash-table-alist colors))
-    ;; Allocate FBOs
-    (loop for i from 0 below (length framebuffers)
-          do (setf (aref framebuffers i)
-                   (make-asset 'framebuffer-bundle-asset
-                               '((:attachment :color-attachment0)
-                                 (:attachment :depth-attachment))
-                               :width (width target) :height (height target))))
-    ;; Optimise color table
-    (loop for pass being the hash-keys of colors
-          for color being the hash-values of colors
-          do (setf (gethash pass colors) (aref framebuffers color)))
-    ;; Commit
+    (v:info :trial.pipeline "~a texture count: ~a" pipeline (length textures))
+    (v:info :trial.pipeline "~a texture allocation: ~{~%~a~{ ~a: ~a~}~}"
+            (loop for pass in passes
+                  collect (list pass (loop for port in (flow:ports pass)
+                                           when (typep port 'output)
+                                           collect (list (flow:name port)
+                                                         (flow:attribute port :color))))))
     (dolist (pass passes)
-      (setf (pass-inputs pass) ())
-      (loop for (input source) in (gethash pass (connections pipeline))
-            do (push (list input (gethash source colors))
-                     (pass-inputs pass))))
-    (setf (passes pipeline) passes)
-    (setf (framebuffers pipeline) framebuffers)
-    (setf (pass-fbo-map pipeline) colors)))
-
-(defun color-graph (nodes edges)
-  ;; Greedy colouring
-  (let ((result (make-hash-table :test 'eq))
-        (available (make-array (length nodes) :initial-element T)))
-    (setf (gethash (pop nodes) result) 0)
-    (flet ((mark-adjacent (node how)
-             (loop for (from . to) in edges
-                   do (cond ((eql node from)
-                             (let ((color (gethash to result)))
-                               (when color (setf (aref available color) how))))
-                            ((eql node to)
-                             (let ((color (gethash from result)))
-                               (when color (setf (aref available color) how))))))))
-      (dolist (node nodes result)
-        (mark-adjacent node NIL)
-        (setf (gethash node result)
-              (loop for i from 0 below (length available)
-                    do (when (aref available i)
-                         (return i))))
-        (mark-adjacent node T)))
-    result))
-
-(defun flatten-graph (nodes edges)
-  ;; Tarjan
-  (let ((nodes* (make-hash-table :test 'eql))
-        (edges* (make-hash-table :test 'eql))
-        (sorted ()))
-    (dolist (node nodes)
-      (setf (gethash node nodes*) :unvisited))
-    (dolist (edge edges)
-      (push (cdr edge) (gethash (car edge) edges*)))
-    (labels ((visit (node)
-               (case (gethash node nodes*)
-                 (:temporary
-                  (error "Detected loop in shader pass dependency graph."))
-                 (:unvisited
-                  (setf (gethash node nodes*) :temporary)
-                  (dolist (target (gethash node edges*))
-                    (visit target))
-                  (remhash node nodes*)
-                  (push node sorted)))))
-      (loop while (with-hash-table-iterator (iterator nodes*)
-                    (multiple-value-bind (found node) (iterator)
-                      (when found (visit node) T)))))
-    (nreverse sorted)))
+      (setf (framebuffer pass)
+            (make-asset 'framebuffer-asset
+                        :input (loop for port in (flow:ports pass)
+                                     when (typep port 'output)
+                                     collect (list (flow:attribute port 'texture)
+                                                   :attachment (attachment port))))))
+    (setf (passes pipeline) (coerce passes 'vector))
+    (setf (textures pipeline) textures)))
 
 (defmethod paint ((pipeline pipeline) target)
-  (let ((pass-fbo-map (pass-fbo-map pipeline))
-        (passes (passes pipeline)))
-    ;; (gl:clear-color 0.0 0.0 0.0 0.0)
-    (etypecase passes
-      (cons (loop for pass in passes
-                  for fbo = (gethash pass pass-fbo-map)
-                  do (gl:bind-framebuffer :framebuffer (resource fbo))
-                     (gl:clear :color-buffer :depth-buffer)
-                     (paint pass target)
-                  finally (gl:bind-framebuffer :draw-framebuffer 0)
-                          (%gl:blit-framebuffer 0 0 (width target) (height target) 0 0 (width target) (height target)
-                                                (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
-                                                (cffi:foreign-enum-value '%gl:enum :nearest))))
-      (null))))
+  (loop for pass across (passes pipeline)
+        for fbo = (framebuffer pass)
+        do (gl:bind-framebuffer :framebuffer (resource fbo))
+           (gl:clear :color-buffer :depth-buffer)
+           (paint pass target)
+        finally (gl:bind-framebuffer :draw-framebuffer 0)
+                (%gl:blit-framebuffer 0 0 (width target) (height target) 0 0 (width target) (height target)
+                                      (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
+                                      (cffi:foreign-enum-value '%gl:enum :nearest))))

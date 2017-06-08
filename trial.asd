@@ -70,6 +70,7 @@
                :pathname-utils
                :flare
                :for
+               :flow
                :glsl-toolkit
                :fast-io
                :ieee-floats
