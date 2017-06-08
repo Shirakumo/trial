@@ -275,12 +275,16 @@
                                (return (setf (cdr cons) cell))))))
              list)))))
 
+(defvar *c-chars* "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")
+
 (defun symbol->c-name (symbol)
   (with-output-to-string (out)
     (loop for c across (symbol-name symbol)
-          do (case c
-               (#\- (write-char #\_ out))
-               (T (write-char c out))))))
+          do (cond ((char= c #\-)
+                    (write-char #\_ out))
+                   ((find c *c-chars*)
+                    (write-char (char-downcase c) out))
+                   (T (write-char #\_ out))))))
 
 (defun check-gl-type (thing size &optional unsigned)
   (if unsigned
