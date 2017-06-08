@@ -1,13 +1,13 @@
-in vec2 texcoord;
+in vec2 tex_coord;
 out vec4 color;
-uniform sampler2D previousPass;
+uniform sampler2D previous_pass;
 uniform float radius = 1000;
 uniform float angle = 0.8;
 
 void main(){
-  vec2 texSize = textureSize(previousPass, 0);
-  vec2 center = texSize/2;
-  vec2 tc = (texcoord * texSize) - center;
+  vec2 tex_size = textureSize(previous_pass, 0);
+  vec2 center = tex_size/2;
+  vec2 tc = (tex_coord * tex_size) - center;
   float dist = length(tc);
   if (dist < radius) {
     float percent = (radius - dist) / radius;
@@ -16,5 +16,5 @@ void main(){
     float c = cos(theta);
     tc = vec2(dot(tc, vec2(c, -s)), dot(tc, vec2(s, c)));
   }
-  color = texture2D(previousPass, (tc+center) / texSize);
+  color = texture2D(previous_pass, (tc+center) / tex_size);
 }

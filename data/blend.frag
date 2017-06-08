@@ -1,12 +1,12 @@
 out vec4 color;
 in vec2 texCoord;
-uniform sampler2D aPass;
-uniform sampler2D bPass;
+uniform sampler2D a_pass;
+uniform sampler2D b_pass;
 uniform int blendType = 0;
 
 void main(){
-  vec4 a = texture(aPass, texCoord);
-  vec4 b = texture(bPass, texCoord);
+  vec4 a = texture(a_pass, texCoord);
+  vec4 b = texture(b_pass, texCoord);
   
   switch(blendType){
   case 0: // Add
