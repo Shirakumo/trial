@@ -11,6 +11,9 @@
 
 (defgeneric finalize (object))
 
+(defmethod finalize :before (object)
+  (v:debug :trial "Finalizing ~a" object))
+
 (defmethod finalize (object)
   object)
 
