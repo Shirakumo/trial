@@ -52,7 +52,7 @@
      ,direct-slots
      ,@options))
 
-(defmethod paint :before (pass (target shader-pass))
+(defun attach-pass-textures (pass program)
   ;; FIXME: Query for max number of textures available and build
   ;;        this dynamically based on that number.
   (loop with texture-index = '(15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0)
@@ -60,7 +60,7 @@
                               :texture11 :texture10 :texture9  :texture8
                               :texture7  :texture6  :texture5  :texture4
                               :texture3  :texture2  :texture1  :texture0)
-        for port in (ports pass)
+        for port in (flow:ports pass)
         do (when (typep port 'input)
              (setf (uniform program (uniform-name port)) (pop texture-index))
              (gl:active-texture (pop texture-name))
@@ -115,6 +115,7 @@
 (defmethod paint :around ((subject shader-subject) (pass per-object-pass))
   (let ((program (shader-program-for-pass pass subject)))
     (gl:use-program (resource program))
+    (attach-pass-textures pass program)
     (call-next-method)))
 
 (define-shader-pass multisampled-pass ()
@@ -171,6 +172,7 @@
 (defmethod paint :around ((source scene) (pass single-shader-pass))
   (let ((program (shader-program pass)))
     (gl:use-program (resource program))
+    (attach-pass-textures pass program)
     (call-next-method)))
 
 (define-shader-pass post-effect-pass (single-shader-pass)

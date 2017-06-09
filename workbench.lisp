@@ -35,7 +35,7 @@
 (progn
   (defmethod setup-pipeline ((main main))
     (let ((pipeline (pipeline main))
-          (pass1 (make-instance 'multisampled-per-object-pass)))
+          (pass1 (make-instance 'msaa-pass)))
       (register pass1 pipeline)))
 
   (maybe-reload-scene))

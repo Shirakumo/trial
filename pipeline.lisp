@@ -67,7 +67,7 @@
                    (T :rgba)))))
     (let* ((texture-count (loop for pass in passes
                                 when (flow:ports pass)
-                                maximize (loop for port in (flow:ports node)
+                                maximize (loop for port in (flow:ports pass)
                                                when (and (flow:attribute port :color)
                                                          (funcall kind port))
                                                maximize (1+ (flow:attribute port :color)))))
@@ -79,7 +79,7 @@
                    (let ((color (+ offset (flow:attribute port :color))))
                      (unless (aref textures color)
                        (setf (aref textures color)
-                             (make-asset 'texture-asset :input (texpsec port))))
+                             (load (make-asset 'texture-asset (list (texpsec port))))))
                      (setf (flow:attribute port 'texture) (aref textures color)))))))))
 
 (defun %color-port-p (port)
@@ -98,20 +98,17 @@
 
 (defmethod pack-pipeline ((pipeline pipeline) target)
   (check-consistent pipeline)
-  (clear pipeline)
   (v:info :trial.pipeline "~a packing for ~a" pipeline target)
   ;; FIXME: How to ensure algorithm distinguishes depth and colour buffers?
   (let* ((passes (flow:topological-sort (nodes pipeline)))
-         (passes (progn 
-                        (flow:allocate-ports passes :sort NIL :test #'%depth-stencil-port-p)
-                        (flow:allocate-ports passes :sort NIL :test #'%color-port-p)))
          (textures (make-array 0 :initial-element NIL :adjustable T)))
+    (clear pipeline)
     (allocate-textures passes textures #'%color-port-p (width target) (height target))
     (allocate-textures passes textures #'%depth-port-p (width target) (height target))
     (allocate-textures passes textures #'%depth-stencil-port-p (width target) (height target))
     (v:info :trial.pipeline "~a pass order: ~a" pipeline passes)
     (v:info :trial.pipeline "~a texture count: ~a" pipeline (length textures))
-    (v:info :trial.pipeline "~a texture allocation: ~{~%~a~{ ~a: ~a~}~}"
+    (v:info :trial.pipeline "~a texture allocation: ~:{~%~a~:{ ~a: ~a~}~}" pipeline
             (loop for pass in passes
                   collect (list pass (loop for port in (flow:ports pass)
                                            when (typep port 'output)
@@ -119,11 +116,11 @@
                                                          (flow:attribute port :color))))))
     (dolist (pass passes)
       (setf (framebuffer pass)
-            (make-asset 'framebuffer-asset
-                        :input (loop for port in (flow:ports pass)
-                                     when (typep port 'output)
-                                     collect (list (flow:attribute port 'texture)
-                                                   :attachment (attachment port))))))
+            (load (make-asset 'framebuffer-asset
+                              (loop for port in (flow:ports pass)
+                                    when (typep port 'output)
+                                    collect (list (flow:attribute port 'texture)
+                                                  :attachment (attachment port)))))))
     (setf (passes pipeline) (coerce passes 'vector))
     (setf (textures pipeline) textures)))
 
