@@ -9,6 +9,14 @@
 (define-pool effects
   :base 'trial)
 
+(define-shader-pass msaa-pass (multisampled-per-object-pass)
+  ((color :port-type output :attachment :color-attachment0)
+   (depth :port-type output :attachment :depth-attachment)))
+
+(define-shader-pass render-pass (per-object-pass)
+  ((color :port-type output :attachment :color-attachment0)
+   (depth :port-type output :attachment :depth-attachment)))
+
 (define-shader-pass negative-pass (post-effect-pass)
   ((previous-pass :port-type input)
    (color-out :port-type output)))
