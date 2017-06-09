@@ -15,8 +15,7 @@
    (profile :initarg :profile :accessor profile)
    (version :initarg :version :accessor version)
    (mouse-pos :initform (vec 0 0) :accessor mouse-pos)
-   (previous-size :initform (vec 0 0) :accessor previous-size)
-   (resize-time :initform 0 :accessor resize-time)))
+   (previous-size :initform (vec 0 0) :accessor previous-size)))
 
 (defmethod initialize-instance ((context context) &key)
   (call-next-method)
@@ -161,10 +160,8 @@
                (handler context))))
     (glop:resize-event
      (let ((previous-size (previous-size context)))
-       (when (and (< (resize-time context) (get-universal-time))
-                  (or (/= (glop:width event) (vx previous-size))
-                      (/= (glop:height event) (vy previous-size))))
-         (setf (resize-time context) (get-universal-time))
+       (when (or (/= (glop:width event) (vx previous-size))
+                 (/= (glop:height event) (vy previous-size)))
          (setf (vx previous-size) (glop:width event))
          (setf (vy previous-size) (glop:height event))
          (handle (make-instance 'resize :width (glop:width event)
