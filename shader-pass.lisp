@@ -19,12 +19,12 @@
   T)
 
 (defclass input (flow:in-port flow:1-port)
-  ((uniform :initarg :uniform :initform NIL :accessor uniform)
+  ((uniform-name :initarg :uniform :initform NIL :accessor uniform-name)
    (texture :initform NIL :accessor texture)))
 
 (defmethod initialize-instance :after ((input input) &key)
-  (unless (uniform input)
-    (setf (uniform input) (symbol->c-name (flow:name input)))))
+  (unless (uniform-name input)
+    (setf (uniform-name input) (symbol->c-name (flow:name input)))))
 
 (defclass output (flow:out-port flow:n-port)
   ((attachment :initarg :attachment :accessor attachment))
@@ -36,6 +36,10 @@
 
 (defgeneric register-object-for-pass (pass object))
 (defgeneric shader-program-for-pass (pass object))
+
+(defmethod finalize :after ((pass shader-pass))
+  (when (framebuffer pass)
+    (finalize (framebuffer pass))))
 
 (defmethod paint ((pass shader-pass) target)
   (when (typep target 'main)
@@ -58,12 +62,11 @@
                               :texture3  :texture2  :texture1  :texture0)
         for port in (ports pass)
         do (when (typep port 'input)
-             (setf (uniform program uniform) (pop texture-index))
+             (setf (uniform program (uniform-name port)) (pop texture-index))
              (gl:active-texture (pop texture-name))
              (gl:bind-texture :texture-2d (resource (texture port))))))
 
 (define-shader-pass per-object-pass ()
-  ()
   ((assets :initform (make-hash-table :test 'eql) :accessor assets)))
 
 (define-handler (per-object-pass update-shader-for-redefined-subject subject-class-redefined) (ev subject-class)
@@ -115,8 +118,7 @@
     (call-next-method)))
 
 (define-shader-pass multisampled-pass ()
-  ()
-  ((multisample-fbo :accessor multisample-fbo)
+  ((multisample-fbo :initform NIL :accessor multisample-fbo)
    (samples :initarg :samples :accessor samples))
   (:default-initargs :samples 8))
 
@@ -141,13 +143,13 @@
     (gl:bind-framebuffer :framebuffer original-framebuffer)))
 
 (define-handler (multisampled-pass resize) (ev width height)
-  (resize (multisample-fbo multisampled-pass) width height))
+  (when (multisample-fbo multisampled-pass)
+    (resize (multisample-fbo multisampled-pass) width height)))
 
 (define-shader-pass multisampled-per-object-pass (multisampled-pass per-object-pass)
   ())
 
 (define-shader-pass single-shader-pass ()
-  ()
   ((shader-program :initform (make-instance 'shader-program-asset) :accessor shader-program)))
 
 (define-handler (single-shader-pass update-shader-for-redefined-subject subject-class-redefined) (ev subject-class)
@@ -172,7 +174,6 @@
     (call-next-method)))
 
 (define-shader-pass post-effect-pass (single-shader-pass)
-  ()
   ((vertex-array :initform (asset 'geometry 'fullscreen-square) :accessor vertex-array)))
 
 (defmethod load progn ((pass post-effect-pass))

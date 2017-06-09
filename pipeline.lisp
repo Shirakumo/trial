@@ -30,6 +30,12 @@
   (remove-handler pass pipeline))
 
 (defmethod clear ((pipeline pipeline))
+  (loop for tex across (textures pipeline)
+        do (finalize tex))
+  (loop for pass across (passes pipeline)
+        do (when (framebuffer pass)
+             (finalize (framebuffer pass))
+             (setf (framebuffer pass) NIL)))
   (setf (nodes pipeline) ())
   (setf (passes pipeline) #())
   (setf (textures pipeline) #()))
@@ -43,43 +49,66 @@
   pipeline)
 
 (defmethod check-consistent ((pipeline pipeline))
-  (dolist (pass (passes pipeline))
-    (dolist (port (flow:ports pass))
+  (dolist (node (nodes pipeline))
+    (dolist (port (flow:ports node))
       (when (and (typep port 'input)
                  (null (flow:connections port))) 
         (error "Pipeline is not consistent.~%~
                 Pass ~s is missing a connection to its input ~s."
-               pass port)))))
+               node port)))))
 
-(defun allocate-textures (passes width height)
+(defun allocate-textures (passes textures kind width height)
+  (flow:allocate-ports passes :sort NIL :test kind)
   (flet ((texpsec (port)
            (list NIL width height (cffi:null-pointer)
                  (case (attachment port)
                    (:depth-attachment :depth-component)
                    (:depth-stencil-attachment :depth-stencil)
                    (T :rgba)))))
-    (let* ((texture-count (1+ (loop for pass in passes
-                                    when (flow:ports pass)
-                                    maximize (loop for port in (flow:ports node)
-                                                   when (flow:attribute port :color)
-                                                   maximize (flow:attribute port :color)))))
-           (textures (make-array texture-count :inital-element NIL)))
+    (let* ((texture-count (loop for pass in passes
+                                when (flow:ports pass)
+                                maximize (loop for port in (flow:ports node)
+                                               when (and (flow:attribute port :color)
+                                                         (funcall kind port))
+                                               maximize (1+ (flow:attribute port :color)))))
+           (offset (length textures)))
+      (adjust-array textures (+ offset texture-count) :initial-element NIL)
       (dolist (pass passes textures)
         (loop for port in (flow:ports pass)
-              for color = (flow:attribute port :color)
-              do (when color
-                   (unless (aref textures color)
-                     (setf (aref textures color)
-                           (make-asset 'texture-asset :input (texpsec port))))
-                   (setf (flow:attribute port 'texture) (aref textures color))))))))
+              do (when (funcall kind port)
+                   (let ((color (+ offset (flow:attribute port :color))))
+                     (unless (aref textures color)
+                       (setf (aref textures color)
+                             (make-asset 'texture-asset :input (texpsec port))))
+                     (setf (flow:attribute port 'texture) (aref textures color)))))))))
 
+(defun %color-port-p (port)
+  (and (not (eql :depth-attachment (attachment port)))
+       (not (eql :depth-stencil-attachment (attachment port)))))
+
+(defun %depth-port-p (port)
+  (eql :depth-attachment (attachment port)))
+
+(defun %depth-stencil-port-p (port)
+  (eql :depth-stencil-attachment (attachment port)))
+
+(defmethod resize ((pipeline pipeline) width height)
+  )
 ;; FIXME: resizing
+
 (defmethod pack-pipeline ((pipeline pipeline) target)
   (check-consistent pipeline)
+  (clear pipeline)
   (v:info :trial.pipeline "~a packing for ~a" pipeline target)
   ;; FIXME: How to ensure algorithm distinguishes depth and colour buffers?
-  (let* ((passes (flow:allocate-ports (nodes pipeline)))
-         (textures (allocate-textures passes (width target) (height target))))
+  (let* ((passes (flow:topological-sort (nodes pipeline)))
+         (passes (progn 
+                        (flow:allocate-ports passes :sort NIL :test #'%depth-stencil-port-p)
+                        (flow:allocate-ports passes :sort NIL :test #'%color-port-p)))
+         (textures (make-array 0 :initial-element NIL :adjustable T)))
+    (allocate-textures passes textures #'%color-port-p (width target) (height target))
+    (allocate-textures passes textures #'%depth-port-p (width target) (height target))
+    (allocate-textures passes textures #'%depth-stencil-port-p (width target) (height target))
     (v:info :trial.pipeline "~a pass order: ~a" pipeline passes)
     (v:info :trial.pipeline "~a texture count: ~a" pipeline (length textures))
     (v:info :trial.pipeline "~a texture allocation: ~{~%~a~{ ~a: ~a~}~}"
