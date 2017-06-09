@@ -41,9 +41,9 @@
   (setf (textures pipeline) #()))
 
 (defmethod connect ((source flow:port) (target flow:port) (pipeline pipeline))
-  (unless (find (flow:node source) (passes pipeline))
+  (unless (find (flow:node source) (nodes pipeline))
     (register (flow:node source) pipeline))
-  (unless (find (flow:node target) (passes pipeline))
+  (unless (find (flow:node target) (nodes pipeline))
     (register (flow:node target) pipeline))
   (flow:connect source target 'flow:directed-connection)
   pipeline)
@@ -60,7 +60,7 @@
 (defun allocate-textures (passes textures kind width height)
   (flow:allocate-ports passes :sort NIL :test kind)
   (flet ((texpsec (port)
-           (list NIL width height (cffi:null-pointer)
+           (list NIL width height
                  (case (attachment port)
                    (:depth-attachment :depth-component)
                    (:depth-stencil-attachment :depth-stencil)
@@ -80,25 +80,30 @@
                      (unless (aref textures color)
                        (setf (aref textures color)
                              (load (make-asset 'texture-asset (list (texpsec port))))))
-                     (setf (flow:attribute port 'texture) (aref textures color)))))))))
+                     (setf (texture port) (aref textures color))
+                     (dolist (connection (flow:connections port))
+                       (setf (texture (flow:right connection)) (aref textures color))))))))))
 
 (defun %color-port-p (port)
-  (and (not (eql :depth-attachment (attachment port)))
+  (and (typep port 'output)
+       (not (eql :depth-attachment (attachment port)))
        (not (eql :depth-stencil-attachment (attachment port)))))
 
 (defun %depth-port-p (port)
-  (eql :depth-attachment (attachment port)))
+  (and (typep port 'output)
+       (eql :depth-attachment (attachment port))))
 
 (defun %depth-stencil-port-p (port)
-  (eql :depth-stencil-attachment (attachment port)))
+  (and (typep port 'output)
+       (eql :depth-stencil-attachment (attachment port))))
 
 (defmethod resize ((pipeline pipeline) width height)
-  )
-;; FIXME: resizing
+  (loop for texture across (textures pipeline)
+        do (resize texture width height)))
 
 (defmethod pack-pipeline ((pipeline pipeline) target)
   (check-consistent pipeline)
-  (v:info :trial.pipeline "~a packing for ~a" pipeline target)
+  (v:info :trial.pipeline "~a packing for ~a (~ax~a)" pipeline target (width target) (height target))
   ;; FIXME: How to ensure algorithm distinguishes depth and colour buffers?
   (let* ((passes (flow:topological-sort (nodes pipeline)))
          (textures (make-array 0 :initial-element NIL :adjustable T)))
@@ -108,19 +113,16 @@
     (allocate-textures passes textures #'%depth-stencil-port-p (width target) (height target))
     (v:info :trial.pipeline "~a pass order: ~a" pipeline passes)
     (v:info :trial.pipeline "~a texture count: ~a" pipeline (length textures))
-    (v:info :trial.pipeline "~a texture allocation: ~:{~%~a~:{ ~a: ~a~}~}" pipeline
+    (v:info :trial.pipeline "~a texture allocation: ~:{~%~a~:{~%    ~a: ~a~}~}" pipeline
             (loop for pass in passes
                   collect (list pass (loop for port in (flow:ports pass)
-                                           when (typep port 'output)
-                                           collect (list (flow:name port)
-                                                         (flow:attribute port :color))))))
+                                           collect (list (flow:name port) (texture port))))))
     (dolist (pass passes)
       (setf (framebuffer pass)
             (load (make-asset 'framebuffer-asset
                               (loop for port in (flow:ports pass)
                                     when (typep port 'output)
-                                    collect (list (flow:attribute port 'texture)
-                                                  :attachment (attachment port)))))))
+                                    collect (list (texture port) :attachment (attachment port)))))))
     (setf (passes pipeline) (coerce passes 'vector))
     (setf (textures pipeline) textures)))
 

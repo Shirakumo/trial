@@ -27,7 +27,8 @@
     (setf (uniform-name input) (symbol->c-name (flow:name input)))))
 
 (defclass output (flow:out-port flow:n-port)
-  ((attachment :initarg :attachment :accessor attachment))
+  ((attachment :initarg :attachment :accessor attachment)
+   (texture :initform NIL :accessor texture))
   (:default-initargs :attachment :color-attachment0))
 
 (defclass shader-pass (shader-subject flow:static-node)
@@ -192,14 +193,14 @@
 (define-class-shader post-effect-pass :vertex-shader
   "
 layout (location = 0) in vec3 position;
-layout (location = 1) in vec2 in_texCoord;
-out vec2 texCoord;
+layout (location = 1) in vec2 in_tex_coord;
+out vec2 tex_coord;
 
 void main(){
   gl_Position = vec4(position, 1.0f);
-  texCoord = in_texCoord;
+  tex_coord = in_tex_coord;
 }")
 
 (define-class-shader post-effect-pass :fragment-shader
   "
-in vec2 texCoord;")
+in vec2 tex_coord;")

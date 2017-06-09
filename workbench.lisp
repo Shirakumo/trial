@@ -35,7 +35,10 @@
 (progn
   (defmethod setup-pipeline ((main main))
     (let ((pipeline (pipeline main))
-          (pass1 (make-instance 'msaa-pass)))
-      (register pass1 pipeline)))
+          (pass1 (make-instance 'render-pass))
+          (pass2 (make-instance 'negative-pass))
+          (pass3 (make-instance 'box-blur-pass)))
+      (connect (flow:port pass1 'color) (flow:port pass2 'previous-pass) pipeline)
+      (connect (flow:port pass2 'color) (flow:port pass3 'previous-pass) pipeline)))
 
   (maybe-reload-scene))

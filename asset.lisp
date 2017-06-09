@@ -357,7 +357,8 @@
       (offload element))))
 
 (defclass texture-asset (asset)
-  ((target :initarg :target :accessor target)
+  ((reuse-resource :initform NIL :accessor reuse-resource)
+   (target :initarg :target :accessor target)
    (mag-filter :initarg :mag-filter :accessor mag-filter)
    (min-filter :initarg :min-filter :accessor min-filter)
    (anisotropy :initarg :anisotropy :accessor anisotropy)
@@ -391,14 +392,14 @@
   (gl:delete-textures (list resource)))
 
 (defun object-to-texparams (object)
-  (destructuring-bind (file &optional width height bits (format :rgba))
+  (destructuring-bind (file/bits &optional width height (format :rgba))
       object
-    (cond (file
+    (cond ((pathnamep file/bits)
            (multiple-value-bind (bits rwidth rheight)
-               (cl-soil:load-image file format)
+               (cl-soil:load-image file/bits format)
              (list (or width rwidth) (or height rheight) bits format)))
           (T
-           (list width (or height 1) (or bits (cffi:null-pointer)) format)))))
+           (list width (or height 1) (or file/bits (cffi:null-pointer)) format)))))
 
 (defun images-to-textures (target images)
   (case target
@@ -413,7 +414,8 @@
      (when (cdr images) (error "Only one input is supported for the ~a target." target))
      (loop for level from 0
            for image in images
-           do (case target
+           do (v:debug :trial.asset "Loading texture from specs ~a" image)
+              (case target
                 (:texture-1d
                  (destructuring-bind (width height bits format) (object-to-texparams image)
                    (gl:tex-image-1d target level format (* width height) 0 format :unsigned-byte bits)
@@ -436,7 +438,7 @@
 (defmethod load progn ((asset texture-asset))
   (with-slots (target mag-filter min-filter anisotropy wrapping) asset
     (let ((images (coerced-inputs asset))
-          (texture (setf (resource asset) (gl:gen-texture))))
+          (texture (setf (resource asset) (or (reuse-resource asset) (gl:gen-texture)))))
       (with-cleanup-on-failure (offload asset)
         (gl:bind-texture target texture)
         (images-to-textures target images)
@@ -452,6 +454,22 @@
           (gl:tex-parameter target :texture-wrap-t (second wrapping))
           (when (eql target :texture-cube-map)
             (gl:tex-parameter target :texture-wrap-r (third wrapping))))))))
+
+(defmethod resize ((asset texture-asset) width height)
+  (let ((change NIL))
+    (loop for input in (inputs asset)
+          do (when (consp input)
+               (when (and (second input) (/= (second input) width))
+                 (setf (second input) width)
+                 (setf change T))
+               (when (and (third input) (/= (third input) height))
+                 (setf (third input) height)
+                 (setf change T))))
+    (when (and (resource asset) change)
+      ;; Force reload
+      (setf (reuse-resource asset) (resource asset))
+      (setf (resource asset) NIL)
+      (load asset))))
 
 (defclass framebuffer-asset (asset)
   ())
@@ -474,6 +492,7 @@
              (destructuring-bind (texture &key (level 0) layer attachment &allow-other-keys) input
                (check-framebuffer-attachment attachment)
                (check-type texture texture-asset)
+               (v:debug :trial.asset "Attaching ~a as ~a to ~a." texture attachment asset)
                (if layer
                    (%gl:framebuffer-texture-layer :framebuffer attachment (resource texture) level layer)
                    (%gl:framebuffer-texture :framebuffer attachment (resource texture) level))
@@ -483,6 +502,13 @@
                    (error "Failed to attach ~a as ~s to ~a: ~s"
                           texture attachment asset completeness)))))
         (gl:bind-framebuffer :framebuffer 0)))))
+
+(defmethod resize ((asset framebuffer-asset) width height)
+  (let ((loaded (resource asset)))
+    (when loaded (offload asset))
+    (dolist (input (inputs asset))
+      (resize (if (listp input) (first input) input) width height))
+    (when loaded (load asset))))
 
 (defclass framebuffer-bundle-asset (asset)
   ((width :initarg :width :accessor width)
@@ -516,9 +542,8 @@
          (texspec (remf* spec :level :layer :attachment :bits)))
     (check-framebuffer-attachment attachment)
     (list* (apply #'make-instance 'texture-asset
-                  :input (list NIL
+                  :input (list (getf spec :bits)
                                (width asset) (height asset)
-                               (getf spec :bits (cffi:null-pointer))
                                (case attachment
                                  (:depth-attachment :depth-component)
                                  (:depth-stencil-attachment :depth-stencil)

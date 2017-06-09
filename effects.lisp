@@ -9,52 +9,62 @@
 (define-pool effects
   :base 'trial)
 
-(define-shader-pass msaa-pass (multisampled-per-object-pass)
-  ((color :port-type output :attachment :color-attachment0)
-   (depth :port-type output :attachment :depth-attachment)))
-
 (define-shader-pass render-pass (per-object-pass)
   ((color :port-type output :attachment :color-attachment0)
    (depth :port-type output :attachment :depth-attachment)))
 
-(define-shader-pass negative-pass (post-effect-pass)
+(define-shader-pass msaa-pass (render-pass multisampled-per-object-pass)
+  ())
+
+(define-shader-pass simple-post-effect-pass (post-effect-pass)
   ((previous-pass :port-type input)
-   (color-out :port-type output)))
+   (color :port-type output)))
+
+(define-shader-pass copy-pass (simple-post-effect-pass)
+  ())
+
+(define-class-shader copy-pass :fragment-shader
+  "
+uniform sampler2D previous_pass;
+in vec2 tex_coord;
+out vec4 color;
+
+void main(){
+  color = texture(previous_pass, tex_coord);
+}")
+
+(define-shader-pass negative-pass (simple-post-effect-pass)
+  ())
 
 (define-class-shader negative-pass :fragment-shader
   '(effects #p"negative.frag"))
 
-(define-shader-pass grayscale-pass (post-effect-pass)
-  ((previous-pass :port-type input)
-   (color-out :port-type output)))
+(define-shader-pass grayscale-pass (simple-post-effect-pass)
+  ())
 
 (define-class-shader grayscale-pass :fragment-shader
   '(effects #p"gray-filter.frag"))
 
-(define-shader-pass box-blur-pass (post-effect-pass)
-  ((previous-pass :port-type input)
-   (color-out :port-type output)))
+(define-shader-pass box-blur-pass (simple-post-effect-pass)
+  ())
 
 (define-class-shader box-blur-pass :fragment-shader
   '(effects #p"box-blur.frag"))
 
-(define-shader-pass sobel-pass (post-effect-pass)
-  ((previous-pass :port-type input)
-   (color-out :port-type output)))
+(define-shader-pass sobel-pass (simple-post-effect-pass)
+  ())
 
 (define-class-shader sobel-pass :fragment-shader
   '(effects #p"sobel.frag"))
 
-(define-shader-pass gaussian-blur-pass (post-effect-pass)
-  ((previous-pass :port-type input)
-   (color-out :port-type output)))
+(define-shader-pass gaussian-blur-pass (simple-post-effect-pass)
+  ())
 
 (define-class-shader gaussian-blur-pass :fragment-shader
   '(effects #p"gaussian.frag"))
 
-(define-shader-pass fxaa-pass (post-effect-pass)
-  ((previous-pass :port-type input)
-   (color-out :port-type output)))
+(define-shader-pass fxaa-pass (simple-post-effect-pass)
+  ())
 
 (define-class-shader fxaa-pass :fragment-shader
   '(effects #p"fxaa.frag"))
@@ -62,21 +72,19 @@
 (define-shader-pass blend-pass (post-effect-pass)
   ((a-pass :port-type input)
    (b-pass :port-type input)
-   (color-out :port-type output)))
+   (color :port-type output)))
 
 (define-class-shader blend-pass :fragment-shader
   '(effects #p"blend.frag"))
 
-(define-shader-pass high-pass-filter (post-effect-pass)
-  ((previous-pass :port-type input)
-   (color-out :port-type output)))
+(define-shader-pass high-pass-filter (simple-post-effect-pass)
+  ())
 
 (define-class-shader high-pass-filter :fragment-shader
   '(effects #p"high-pass-filter.frag"))
 
-(define-shader-pass low-pass-filter (post-effect-pass)
-  ((previous-pass :port-type input)
-   (color-out :port-type output)))
+(define-shader-pass low-pass-filter (simple-post-effect-pass)
+  ())
 
 (define-class-shader low-pass-filter :fragment-shader
   '(effects #p"low-pass-filter.frag"))
