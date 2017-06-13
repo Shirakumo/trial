@@ -80,7 +80,7 @@
     (let* ((buffer (make-asset 'vertex-buffer (list buffer)
                                :element-type :float))
            (element (make-asset 'vertex-buffer (list element)
-                                :type :element-array-buffer
+                                :buffer-type :element-array-buffer
                                 :element-type :uint))
            (vao (make-asset 'vertex-array
                             (list* element

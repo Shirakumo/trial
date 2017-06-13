@@ -7,17 +7,17 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass vertex-buffer (asset)
-  ((buffer-type :initarg :type :accessor buffer-type)
+  ((buffer-type :initarg :buffer-type :accessor buffer-type)
    (element-type :initarg :element-type :accessor element-type)
    (data-usage :initarg :data-usage :accessor data-usage)
    (size :initarg :size :accessor size))
   (:default-initargs
-   :type :array-buffer
+   :buffer-type :array-buffer
    :element-type :float
    :data-usage :static-draw))
 
-(defmethod initialize-instance :before ((asset vertex-buffer) &key type element-type data-usage)
-  (check-vertex-buffer-type type)
+(defmethod initialize-instance :before ((asset vertex-buffer) &key buffer-type element-type data-usage)
+  (check-vertex-buffer-type buffer-type)
   (check-vertex-buffer-element-type element-type)
   (check-vertex-buffer-data-usage data-usage))
 
