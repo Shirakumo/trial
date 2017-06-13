@@ -18,15 +18,3 @@
   (with-pushed-matrix
     (translate vec)
     (funcall func)))
-
-(defmethod save-form-objects ((container container))
-  (for:for ((object over container)
-            (objs collecting object))))
-
-(define-saved-slots clock clock running timescale)
-
-(defmethod serialize ((unit unit))
-  `(@ unit ,(name unit)))
-
-(defmethod @=> ((type (eql 'unit)) &rest args)
-  (unit (first args) *scene*))

@@ -14,8 +14,6 @@
    :near-plane 0.01f0
    :far-plane 1000000.0f0))
 
-(define-saved-slots camera near-plane far-plane)
-
 (define-generic-handler (camera project-view tick -100))
 (define-generic-handler (camera setup-perspective resize))
 
@@ -59,8 +57,6 @@
   (:default-initargs
    :fov 75))
 
-(define-saved-slots 3d-camera fov)
-
 (defmethod (setf fov) :after (val (camera 3d-camera))
   (setup-perspective camera))
 
@@ -74,8 +70,6 @@
   (:default-initargs
    :target (vec 0 0 0)
    :up (vec 0 1 0)))
-
-(define-saved-slots target-camera target up)
 
 (defmethod project-view ((camera target-camera) ev)
   (look-at (location camera) (target camera) (up camera)))
@@ -113,8 +107,6 @@
    :acceleration 0.5
    :x-inverted NIL
    :y-inverted NIL))
-
-(define-saved-slots fps-camera rotation acceleration)
 
 (defmethod project-view ((camera fps-camera) ev)
   (rotate-by 1.0 0.0 0.0 (vx (rotation camera)))
