@@ -21,7 +21,7 @@
          0.0 1.0)))
 
 (defclass geometry ()
-  ((meshes :initform (make-hash-table) :accessor meshes)))
+  ((meshes :initform (make-hash-table :test 'equal) :accessor meshes)))
 
 (defgeneric read-geometry (file format &key &allow-other-keys))
 
@@ -81,7 +81,7 @@
                         (setf (aref faces i) new-pos))))
     (setf (vertices mesh) new-verts)))
 
-(defmethod update-instance-for-different-class ((mesh vertex-mesh) (vao vertex-array) &key pack load (data-usage :static-draw) attributes &allow-other-keys)
+(defmethod update-instance-for-different-class :after ((mesh vertex-mesh) (vao vertex-array) &key pack load (data-usage :static-draw) attributes)
   (when pack (pack mesh))
   (let* ((vertices (vertices mesh))
          (primer (aref vertices 0))
@@ -118,7 +118,7 @@
       vao)))
 
 (defclass vertex ()
-  ((location :initform (vec 0 0 0) :initarg :vertex :initarg :location :accessor location :type vec3)))
+  ((location :initform (vec 0 0 0) :initarg :position :initarg :location :accessor location :type vec3)))
 
 (declaim (inline fill-vector-data))
 (defun fill-vector-data (vec type array &optional (offset 0))
@@ -169,9 +169,8 @@
 (defmethod vertex-attributes list ((vertex textured-vertex))
   'uv)
 
-(defmethod fill-vertex-atttribute ((vertex textured-vertex) (attribute (eql 'uv)) data offset)
-  (let ((offset (call-next-method)))
-    (fill-vector-data (uv vertex) 'vec2 data offset)))
+(defmethod fill-vertex-attribute ((vertex textured-vertex) (attribute (eql 'uv)) data offset)
+  (fill-vector-data (uv vertex) 'vec2 data offset))
 
 (defclass normal-vertex (vertex)
   ((normal :initform (vec 0 0 0 1) :initarg :normal :accessor normal :type vec3)))
@@ -186,8 +185,7 @@
   'normal)
 
 (defmethod fill-vertex-attribute ((vertex normal-vertex) (attribute (eql 'normal)) data offset)
-  (let ((offset (call-next-method)))
-    (fill-vector-data (normal vertex) 'vec3 data offset)))
+  (fill-vector-data (normal vertex) 'vec3 data offset))
 
 (defclass colored-vertex (vertex)
   ((color :initform (vec 0 0 0 1) :initarg :color :accessor color :type vec4)))
@@ -202,8 +200,7 @@
   'color)
 
 (defmethod fill-vertex-attribute ((vertex colored-vertex) (attribute (eql 'color)) data offset)
-  (let ((offset (call-next-method)))
-    (fill-vector-data (color vertex) 'vec4 data offset)))
+  (fill-vector-data (color vertex) 'vec4 data offset))
 
 (defclass basic-vertex (normal-vertex textured-vertex)
   ())
