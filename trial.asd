@@ -53,7 +53,6 @@
                (:file "flare")
                (:file "mapping")
                (:file "retention")
-               (:file "physics")
                (:file "input")
                (:file "gamepad")
                (:file "controller")
