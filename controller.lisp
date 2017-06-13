@@ -21,18 +21,13 @@
   (key-press (eql key :f6)))
 
 (define-subject controller ()
-  (;; Has to be a double to avoid bignums after ~3.8 hours of runtime.
-   (tick-count :initform 0.0d0 :accessor tick-count)
-   (display :initform NIL :accessor display))
+  ((display :initform NIL :accessor display))
   (:default-initargs
    :name :controller))
 
 (define-handler (controller resize) (ev width height)
   (let ((pipeline (pipeline (display controller))))
     (when pipeline (resize pipeline width height))))
-
-(define-handler (controller tick tick 100) (ev)
-  (incf (tick-count controller)))
 
 (define-handler (controller mapping T 100) (ev)
   (map-event ev *loop*)
