@@ -137,7 +137,7 @@
   (dolist (buffer buffers)
     (etypecase buffer
       (list (apply #'vformat-write-buffer stream buffer))
-      (vertex-buffer-asset
+      (vertex-buffer
        (vformat-write-buffer stream
                              (first (inputs buffer))
                              (buffer-type buffer)
@@ -145,7 +145,7 @@
                              (element-type buffer)))))
   (etypecase array
     (list (vformat-write-array stream array))
-    (vertex-array-asset
+    (vertex-array
      (vformat-write-array
       stream (loop for i from 0
                    for input in (inputs array)
@@ -166,7 +166,7 @@
   (let* ((buffers (loop repeat (fast-io:readu8 stream)
                         collect (multiple-value-bind (data size type usage element-type)
                                     (vformat-read-buffer stream)
-                                  (let ((asset (make-asset 'vertex-buffer-asset
+                                  (let ((asset (make-asset 'vertex-buffer
                                                            (list data)
                                                            :type type
                                                            :element-type element-type
@@ -182,7 +182,7 @@
                                      :stride stride
                                      :offset offset
                                      :normalized normalized))))
-    (let ((asset (make-asset 'vertex-array-asset inputs)))
+    (let ((asset (make-asset 'vertex-array inputs)))
       (prog1 (load asset)
         (setf (inputs asset) NIL)
         (mapcar #'offload buffers)))))
@@ -204,19 +204,19 @@
       (fast-io:with-fast-input (buffer NIL stream)
         (vformat-read-bundle buffer)))))
 
-(defclass vertex-format-asset (asset)
+(defclass vertex-format (asset)
   ((size :initform NIL :accessor size)))
 
-(defmethod coerce-input ((asset vertex-format-asset) (file string))
+(defmethod coerce-input ((asset vertex-format) (file string))
   (coerce-input asset (uiop:native-namestring file)))
 
-(defmethod coerce-input ((asset vertex-format-asset) (file pathname))
+(defmethod coerce-input ((asset vertex-format) (file pathname))
   file)
 
-(defmethod finalize-resource ((type (eql 'vertex-format-asset)) resource)
+(defmethod finalize-resource ((type (eql 'vertex-format)) resource)
   (gl:delete-vertex-arrays (list resource)))
 
-(defmethod load progn ((asset vertex-format-asset))
+(defmethod load progn ((asset vertex-format))
   (let* ((inputs (coerced-inputs asset))
          (array (load-vformat (first inputs))))
     (setf (resource asset) (resource array))

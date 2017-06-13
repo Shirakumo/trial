@@ -60,9 +60,9 @@
   (cascade-option-changes class))
 
 (defmethod make-class-shader-program ((class shader-subject-class))
-  (make-asset 'shader-program-asset
+  (make-asset 'shader-program
               (loop for (type source) on (effective-shaders class) by #'cddr
-                    collect (make-asset 'shader-asset (list source) :type type))))
+                    collect (make-asset 'shader (list source) :type type))))
 
 (defmacro define-class-shader (class type &body definitions)
   `(setf (class-shader ,type ',class)

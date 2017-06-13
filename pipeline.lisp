@@ -79,7 +79,7 @@
                    (let ((color (+ offset (flow:attribute port :color))))
                      (unless (aref textures color)
                        (setf (aref textures color)
-                             (load (make-asset 'texture-asset (list (texpsec port))))))
+                             (load (make-asset 'texture (list (texpsec port))))))
                      (setf (texture port) (aref textures color))
                      (dolist (connection (flow:connections port))
                        (setf (texture (flow:right connection)) (aref textures color))))))))))
@@ -119,7 +119,7 @@
                                            collect (list (flow:name port) (texture port))))))
     (dolist (pass passes)
       (setf (framebuffer pass)
-            (load (make-asset 'framebuffer-asset
+            (load (make-asset 'framebuffer
                               (loop for port in (flow:ports pass)
                                     when (typep port 'output)
                                     collect (list (texture port) :attachment (attachment port)))))))

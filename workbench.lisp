@@ -3,10 +3,10 @@
 (define-pool workbench
   :base 'trial)
 
-(define-asset (workbench cat) texture-asset
+(define-asset (workbench cat) texture
     (#p"cat.png"))
 
-(define-asset (workbench teapot) vertex-format-asset
+(define-asset (workbench teapot) vertex-format
     (#p"teapot.vf"))
 
 (define-shader-subject teapot (vertex-subject textured-subject located-entity rotated-entity)

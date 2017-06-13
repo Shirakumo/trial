@@ -29,9 +29,17 @@
                (:file "dialog-system")
                (:file "asset")
                (:file "asset-pool")
-               (:file "vertex-format")
-               (:file "collada")
+               (:module "assets"
+                :components ((:file "texture")
+                             (:file "shader")
+                             (:file "shader-program")
+                             (:file "vertex-buffer")
+                             (:file "vertex-array")
+                             (:file "framebuffer")))
                (:file "geometry")
+               (:module "formats"
+                :components ((:file "vertex-format")
+                             (:file "collada")))
                (:file "helpers")
                (:file "event-loop")
                (:file "subject")
@@ -74,4 +82,5 @@
                :glsl-toolkit
                :fast-io
                :ieee-floats
-               :lquery))
+               :lquery
+               :static-vectors))

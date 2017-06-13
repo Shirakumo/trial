@@ -105,10 +105,10 @@
     (unless (gethash class (assets pass))
       (loop for (type spec) on (effective-shaders class) by #'cddr
             for inputs = (coerce-pass-shader pass type spec)
-            for shader = (make-asset 'shader-asset inputs :type type)
+            for shader = (make-asset 'shader inputs :type type)
             do (push shader shaders))
       (setf (gethash class (assets pass))
-            (make-asset 'shader-program-asset shaders)))))
+            (make-asset 'shader-program shaders)))))
 
 (defmethod register-object-for-pass ((pass per-object-pass) (subject shader-subject))
   (register-object-for-pass pass (class-of subject)))
@@ -125,7 +125,7 @@
   (:default-initargs :samples 8))
 
 (defmethod load progn ((pass multisampled-pass))
-  (let ((fbo (make-asset 'framebuffer-bundle-asset
+  (let ((fbo (make-asset 'framebuffer-bundle
                          `((:attachment :color-attachment0 :bits ,(samples pass) :target :texture-2d-multisample)
                            (:attachment :depth-attachment  :bits ,(samples pass) :target :texture-2d-multisample))
                          :width (width *context*) :height (height *context*))))
@@ -152,7 +152,7 @@
   ())
 
 (define-shader-pass single-shader-pass ()
-  ((shader-program :initform (make-instance 'shader-program-asset) :accessor shader-program)))
+  ((shader-program :initform (make-instance 'shader-program) :accessor shader-program)))
 
 (define-handler (single-shader-pass update-shader-for-redefined-subject subject-class-redefined) (ev subject-class)
   (when (eql subject-class (class-of single-shader-pass))
