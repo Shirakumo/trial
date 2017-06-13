@@ -1,24 +1,10 @@
 #|
  This file is a part of trial
- (c) 2016 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
+ (c) 2017 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
  Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
 (in-package #:org.shirakumo.fraf.trial)
-
-(define-pool geometry
-  :base 'trial)
-
-(define-asset (geometry fullscreen-square) packed-vertex-array
-    (#(0 1 2 2 3 0)
-     3 #(+1.0 +1.0 +0.0
-         +1.0 -1.0 +0.0
-         -1.0 -1.0 +0.0
-         -1.0 +1.0 +0.0)
-     2 #(1.0 1.0
-         1.0 0.0
-         0.0 0.0
-         0.0 1.0)))
 
 (defclass geometry ()
   ((meshes :initform (make-hash-table :test 'equal) :accessor meshes)))
@@ -117,6 +103,16 @@
         (setf (inputs vao) NIL)
         (static-vectors:free-static-vector buffer))
       vao)))
+
+(defmacro with-vertex-filling ((mesh &key pack) &body body)
+  (let ((meshg (gensym "MESH")))
+    `(let ((,meshg ,mesh))
+       (flet ((vertex (&rest initargs)
+                (apply #'add-vertex ,meshg initargs)))
+         ,@body
+         (if ,pack
+             (pack ,meshg)
+             ,meshg)))))
 
 (defclass vertex ()
   ((location :initform (vec 0 0 0) :initarg :position :initarg :location :accessor location :type vec3)))

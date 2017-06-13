@@ -35,6 +35,7 @@
                              (:file "vertex-array")
                              (:file "framebuffer")))
                (:file "geometry")
+               (:file "geometry-shapes")
                (:module "formats"
                 :components ((:file "vertex-format")
                              (:file "collada")))
