@@ -26,12 +26,12 @@
 (defgeneric read-geometry (file format &key &allow-other-keys))
 
 (defmethod read-geometry (file (format (eql T)) &rest args)
-  (apply #'read-geometry file (intern (pathname-type file) :keyword) args))
+  (apply #'read-geometry file (intern (string-upcase (pathname-type file)) :keyword) args))
 
 (defgeneric write-geometry (geometry file format &key &allow-other-keys))
 
 (defmethod write-geometry (geometry file (format (eql T)) &rest args)
-  (apply #'write-geometry geometry file (intern (pathname-type file) :keyword) args))
+  (apply #'write-geometry geometry file (intern (string-upcase (pathname-type file)) :keyword) args))
 
 (defclass mesh ()
   ())
