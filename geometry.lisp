@@ -118,7 +118,7 @@
       vao)))
 
 (defclass vertex ()
-  ((location :initform (vec 0 0 0) :initarg :loc :initarg :location :accessor location :type vec3)))
+  ((location :initform (vec 0 0 0) :initarg :vertex :initarg :location :accessor location :type vec3)))
 
 (declaim (inline fill-vector-data))
 (defun fill-vector-data (vec type array &optional (offset 0))
@@ -158,7 +158,7 @@
   (v= (location a) (location b)))
 
 (defclass textured-vertex (vertex)
-  ((uv :initform (vec 0 0) :initarg :uv :accessor uv :type vec2)))
+  ((uv :initform (vec 0 0) :initarg :uv :initarg :texcoord :accessor uv :type vec2)))
 
 (defmethod vertex= and ((a textured-vertex) (b textured-vertex))
   (v= (uv a) (uv b)))
@@ -204,3 +204,6 @@
 (defmethod fill-vertex-attribute ((vertex colored-vertex) (attribute (eql 'color)) data offset)
   (let ((offset (call-next-method)))
     (fill-vector-data (color vertex) 'vec4 data offset)))
+
+(defclass basic-vertex (normal-vertex textured-vertex)
+  ())
