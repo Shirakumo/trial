@@ -73,13 +73,14 @@
           for new-pos = (position vertex new-verts :test #'vertex=)
           do (unless new-pos
                (setf new-pos (fill-pointer new-verts))
-               (vector-push vertex new-verts))
+               (vector-push-extend vertex new-verts))
              ;; Fix up face index. I feel like this could be done outside the
              ;; loop somehow to speed this up. For now though-- good nuff.
              (loop for i from 0 below (length faces)
                    do (when (= position (aref faces i))
                         (setf (aref faces i) new-pos))))
-    (setf (vertices mesh) new-verts)))
+    (setf (vertices mesh) new-verts))
+  mesh)
 
 (defmethod update-instance-for-different-class :after ((mesh vertex-mesh) (vao vertex-array) &key pack load (data-usage :static-draw) attributes)
   (when pack (pack mesh))
