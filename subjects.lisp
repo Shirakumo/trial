@@ -44,8 +44,6 @@ void main(){
 (define-shader-subject colored-subject ()
   ((color :initarg :color :initform (vec 0 0 1 1) :accessor color)))
 
-(define-saved-initargs colored-subject color)
-
 (defmethod paint :before ((obj colored-subject) (pass shader-pass))
   (let ((shader (shader-program-for-pass pass obj)))
     (setf (uniform shader "objectcolor") (color obj))))

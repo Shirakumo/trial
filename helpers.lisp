@@ -9,8 +9,6 @@
 (defclass located-entity (entity)
   ((location :initarg :location :initform (vec 0 0 0) :accessor location)))
 
-(define-saved-initargs located-entity location)
-
 (defmethod paint :around ((obj located-entity) target)
   (with-pushed-matrix
     (translate (location obj))
@@ -20,8 +18,6 @@
   ((orientation :initarg :orientation :initform (vec 1 0 0) :accessor orientation)
    (up :initarg :up :initform (vec 0 1 0) :accessor up)))
 
-(define-saved-initargs oriented-entity orientation up)
-
 (defmethod paint :around ((obj oriented-entity) target)
   (with-pushed-matrix
     (rotate (vc (up obj) (orientation obj))
@@ -30,8 +26,6 @@
 
 (defclass rotated-entity (entity)
   ((rotation :initarg :rotation :initform (vec 0 0 0) :accessor rotation)))
-
-(define-saved-initargs rotated-entity rotation)
 
 (defmethod paint :around ((obj rotated-entity) target)
   (with-pushed-matrix
@@ -44,8 +38,6 @@
   ((axis :initarg :axis :initform (vec 0 1 0) :accessor axis)
    (angle :initarg :angle :initform 0 :accessor angle)))
 
-(define-saved-initargs axis-rotated-entity axis angle)
-
 (defmethod paint :around ((obj axis-rotated-entity) target)
   (with-pushed-matrix
     (rotate (axis obj) (angle obj))
@@ -53,8 +45,6 @@
 
 (defclass pivoted-entity (entity)
   ((pivot :initarg :pivot :initform (vec 0 0 0) :accessor pivot)))
-
-(define-saved-initargs pivoted-entity pivot)
 
 (defmethod paint :around ((obj pivoted-entity) target)
   (with-pushed-matrix
