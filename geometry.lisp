@@ -95,15 +95,15 @@
           do (dolist (attribute attributes)
                (setf offset (fill-vertex-attribute vertex attribute buffer offset))))
     (let* ((vbo (make-asset 'vertex-buffer buffer
-                            :data-usage data-usage))
+                            :data-usage data-usage :element-type :float :buffer-type :array-buffer))
            (ebo (make-asset 'vertex-buffer (faces mesh)
                             :data-usage data-usage :element-type :uint :buffer-type :element-array-buffer))
            (specs (loop with stride = (reduce #'+ sizes)
                         for offset = 0 then (+ offset size)
                         for size in sizes
                         for index from 0
-                        collect (list vbo :stride stride
-                                          :offset offset
+                        collect (list vbo :stride (* stride (cffi:foreign-type-size :float))
+                                          :offset (* offset (cffi:foreign-type-size :float))
                                           :size size
                                           :index index))))
       (setf (inputs vao) (list* ebo specs))
