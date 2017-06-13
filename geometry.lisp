@@ -147,7 +147,7 @@
   (fill-vector-data (location vertex) 'vec3 data offset))
 
 (defgeneric vertex-attributes (vertex)
-  (:method-combination list))
+  (:method-combination list :most-specific-last))
 
 (defmethod vertex-attributes list ((vertex vertex))
   'location)
