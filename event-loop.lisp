@@ -64,7 +64,6 @@
   ((queue :initform (make-array 0 :initial-element NIL :adjustable T :fill-pointer T) :reader queue)
    (queue-index :initform 0 :accessor queue-index)))
 
-(declaim (inline issue))
 (defun issue (loop event-type &rest args)
   (let ((event (etypecase event-type
                  (event event-type)
@@ -78,7 +77,14 @@
               (eql (first event-type) 'quote)
               (symbolp (second event-type)))
          `(vector-push-extend (make-instance ,event-type ,@args) (queue ,loop)))
-        (T whole)))
+        (T
+         (let ((eventg (gensym "EVENT")))
+           `(let* ((,eventg ,event-type)
+                   (,eventg (etypecase ,eventg
+                              (event ,eventg)
+                              ((or class symbol)
+                               (apply #'make-instance ,eventg ,@args)))))
+              (vector-push-extend ,eventg (queue ,loop)))))))
 
 ;; FIXME: This will forget events if PROCESS or DISCARD-EVENTS is called
 ;;        recursively (thus resetting the index) and new events are issued
