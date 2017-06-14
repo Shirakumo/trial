@@ -6,75 +6,96 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-;; FIXME: more error/integrity checks
+(declaim (inline vformat-write-float))
+(defun vformat-write-float (buffer float)
+  (fast-io:writeu32-le (ieee-floats:encode-float32 float) buffer))
 
-(defun vformat-write-vector (stream array type)
+(declaim (inline vformat-write-double))
+(defun vformat-write-double (buffer float)
+  (fast-io:writeu64-le (ieee-floats:encode-float64 float) buffer))
+
+(declaim (inline vformat-read-float))
+(defun vformat-read-float (buffer)
+  (ieee-floats:decode-float32 (fast-io:readu32-le buffer)))
+
+(declaim (inline vformat-read-double))
+(defun vformat-read-double (buffer)
+  (ieee-floats:decode-float64 (fast-io:readu64-le buffer)))
+
+(defun vformat-write-vector (buffer array type)
   (when (<= (expt 2 32) (length array))
     (error "Array is longer than 2³² elements."))
-  (fast-io:write32-be (length array) stream)
+  (fast-io:write32-be (length array) buffer)
   (ecase type
     (:char
-     (fast-io:writeu8 0 stream)
+     (fast-io:writeu8 0 buffer)
      (loop for value across array
-           do (fast-io:write8 value stream)))
+           do (fast-io:write8 value buffer)))
     (:int
-     (fast-io:writeu8 1 stream)
+     (fast-io:writeu8 1 buffer)
      (loop for value across array
-           do (fast-io:write32-be value stream)))
+           do (fast-io:write32-be value buffer)))
     (:uint
-     (fast-io:writeu8 2 stream)
+     (fast-io:writeu8 2 buffer)
      (loop for value across array
-           do (fast-io:writeu32-be value stream)))
+           do (fast-io:writeu32-be value buffer)))
     (:float
-     (fast-io:writeu8 3 stream)
+     (fast-io:writeu8 3 buffer)
      (loop for value across array
-           do (fast-io:writeu32-be (ieee-floats:encode-float32 value) stream)))
+           do (vformat-write-float buffer value)))
     (:double
-     (fast-io:writeu8 4 stream)
+     (fast-io:writeu8 4 buffer)
      (loop for value across array
-           do (fast-io:writeu64-be (ieee-floats:encode-float64 value) stream)))))
+           do (vformat-write-double buffer value)))))
 
-(defun vformat-read-vector (stream)
-  (let* ((size (fast-io:read32-be stream))
-         (type (ecase (fast-io:readu8 stream)
+(defun vformat-read-vector (buffer)
+  (let* ((size (fast-io:read32-be buffer))
+         (type (ecase (fast-io:readu8 buffer)
                  (0 :char)
                  (1 :int)
                  (2 :uint)
                  (3 :float)
                  (4 :double)))
-         (array (cffi:foreign-alloc type :count size)))
+         (array (make-static-vector size :element-type (gl-type->cl-type type))))
     (ecase type
       (:char
        (loop for i from 0 below size
-             do (setf (cffi:mem-aref array :char i) (fast-io:read8 stream))))
+             do (setf (aref array i) (fast-io:read8 buffer))))
       (:int
        (loop for i from 0 below size
-             do (setf (cffi:mem-aref array :int i) (fast-io:read32-be stream))))
+             do (setf (aref array i) (fast-io:read32-be buffer))))
       (:uint
        (loop for i from 0 below size
-             do (setf (cffi:mem-aref array :uint i) (fast-io:readu32-be stream))))
+             do (setf (aref array i) (fast-io:readu32-be buffer))))
       (:float
        (loop for i from 0 below size
-             do (setf (cffi:mem-aref array :float i) (ieee-floats:decode-float32 (fast-io:readu32-be stream)))))
+             do (setf (aref array i) (vformat-read-float buffer))))
       (:double
        (loop for i from 0 below size
-             do (setf (cffi:mem-aref array :double i) (ieee-floats:decode-float64 (fast-io:readu64-be stream))))))
+             do (setf (aref array i) (vformat-read-double buffer)))))
     (values array
             size
             type)))
 
-(defun vformat-write-string (stream string)
+(defun vformat-write-string (buffer string)
   (loop for char across string
-        do (fast-io:writeu8 (char-code char) stream))
-  (fast-io:writeu8 0 stream))
+        do (fast-io:writeu8 (char-code char) buffer))
+  (fast-io:writeu8 0 buffer))
 
-(defun vformat-read-string (stream)
-  (let ((string (make-array 0 :element-type 'character :initial-element #\Null
-                              :adjustable T :fill-pointer T)))
-    (loop for code = (fast-io:readu8 stream)
+(defun vformat-read-string (buffer)
+  (with-output-to-string (out)
+    (loop for code = (fast-io:readu8 buffer)
           until (= 0 code)
-          do (vector-push-extend (code-char code) string))
-    string))
+          do (write-char (code-char code) out))))
+
+(defun vformat-write-symbol (buffer symbol)
+  (vformat-write-string buffer (package-name (symbol-package symbol)))
+  (vformat-write-string buffer (symbol-name symbol)))
+
+(defun vformat-read-symbol (buffer)
+  (let ((package (vformat-read-string buffer))
+        (name (vformat-read-string buffer)))
+    (intern name package)))
 
 (defun vertex-buffer-type->int (type)
   (position type *vertex-buffer-type-list*))
@@ -88,136 +109,212 @@
 (defun int->vertex-buffer-usage (int)
   (elt *vertex-buffer-data-usage-list* int))
 
-(defun vformat-write-buffer (stream data type usage element-type)
-  (vformat-write-string stream "VBUF")
-  (fast-io:writeu8 (vertex-buffer-type->int type) stream)
-  (fast-io:writeu8 (vertex-buffer-usage->int usage) stream)
-  (vformat-write-vector stream data element-type))
+(defun vformat-write-type (buffer value type)
+  (ecase type
+    (vec2
+     (vformat-write-float buffer (vx2 value))
+     (vformat-write-float buffer (vy2 value)))
+    (vec3
+     (vformat-write-float buffer (vx3 value))
+     (vformat-write-float buffer (vy3 value))
+     (vformat-write-float buffer (vz3 value)))
+    (vec4
+     (vformat-write-float buffer (vx4 value))
+     (vformat-write-float buffer (vy4 value))
+     (vformat-write-float buffer (vz4 value))
+     (vformat-write-float buffer (vw4 value)))
+    ((integer fixnum)
+     ;; FIXME check containment
+     (fast-io:write32-le value buffer))
+    (single-float
+     (vformat-write-float buffer value))
+    (double-float
+     (vformat-write-double buffer value))
+    (string
+     (vformat-write-string buffer value))
+    (T
+     (vformat-write buffer value))))
 
-(defun vformat-read-buffer (stream)
-  (let ((name (vformat-read-string stream)))
-    (unless (string= name "VBUF")
-      (error "Expected vertex buffer identifier, but got ~s" name)))
-  (let ((type (int->vertex-buffer-type (fast-io:readu8 stream)))
-        (usage (int->vertex-buffer-usage (fast-io:readu8 stream))))
-    (multiple-value-bind (data size element-type) (vformat-read-vector stream)
-      (values data size type usage element-type))))
+(defun vformat-read-type (buffer type)
+  (ecase type
+    (vec2
+     (vec2 (vformat-read-float buffer)
+           (vformat-read-float buffer)))
+    (vec3
+     (vec3 (vformat-read-float buffer)
+           (vformat-read-float buffer)
+           (vformat-read-float buffer)))
+    (vec4
+     (vec4 (vformat-read-float buffer)
+           (vformat-read-float buffer)
+           (vformat-read-float buffer)
+           (vformat-read-float buffer)))
+    ((integer fixnum)
+     ;; FIXME check containment
+     (fast-io:read32-le buffer))
+    (single-float
+     (vformat-read-float buffer))
+    (double-float
+     (vformat-read-double buffer))
+    (string
+     (vformat-read-string buffer))
+    (T
+     (vformat-read buffer T))))
 
-(defun vformat-write-array (stream buffer-refs)
-  (when (<= (expt 2 8) (length buffer-refs))
-    (error "More than 2⁸ buffer refs."))
-  (vformat-write-string stream "VARR")
-  (fast-io:writeu8 (length buffer-refs) stream)
-  (loop for (buffer index size stride offset normalized) in buffer-refs
-        do (fast-io:writeu8 buffer stream)
-           (fast-io:writeu8 index stream)
-           (fast-io:writeu8 size stream)
-           (fast-io:writeu8 stride stream)
-           (fast-io:writeu8 offset stream)
-           (fast-io:writeu8 (if normalized 1 0) stream)))
+(defun vformat-slot-data (class)
+  (let ((class (ensure-class class)))
+    (unless (c2mop:class-finalized-p class)
+      (c2mop:finalize-inheritance class))
+    (loop for slot in (c2mop:class-slots class)
+          for initargs = (c2mop:slot-definition-initargs slot)
+          when initargs
+          collect (list (c2mop:slot-definition-name slot)
+                        (c2mop:slot-definition-type slot)
+                        (minimize initargs #'< :key (lambda (a) (length (symbol-name a))))))))
 
-(defun vformat-read-array (stream)
-  (let ((name (vformat-read-string stream)))
-    (unless (string= name "VARR")
-      (error "Expected vertex array identifier, but got ~s" name)))
-  (let ((size (fast-io:readu8 stream)))
-    (loop repeat size
-          collect (list (fast-io:readu8 stream)
-                        (fast-io:readu8 stream)
-                        (fast-io:readu8 stream)
-                        (fast-io:readu8 stream)
-                        (fast-io:readu8 stream)
-                        (if (< 0 (fast-io:readu8 stream)) T NIL)))))
+(defun vformat-write-vertices (buffer vertices type)
+  (fast-io:writeu32-le (length vertices) buffer)
+  (let ((map (vformat-slot-data type)))
+    (fast-io:writeu8 (length map) buffer)
+    (loop for (slot type initarg) in map
+          do (vformat-write-string buffer (symbol-name initarg)))
+    (loop for vertex across vertices
+          do (loop for (slot type initarg) in map
+                   for value = (slot-value vertex slot)
+                   do (vformat-write-type buffer value type)))))
 
-(defun vformat-write-bundle (stream buffers array)
-  (when (<= (expt 2 8) (length buffers))
-    (error "More than 2⁸ buffers."))
-  (vformat-write-string stream "VBUN")
-  (fast-io:writeu8 (length buffers) stream)
-  (dolist (buffer buffers)
-    (etypecase buffer
-      (list (apply #'vformat-write-buffer stream buffer))
-      (vertex-buffer
-       (vformat-write-buffer stream
-                             (first (inputs buffer))
-                             (buffer-type buffer)
-                             (data-usage buffer)
-                             (element-type buffer)))))
-  (etypecase array
-    (list (vformat-write-array stream array))
-    (vertex-array
-     (vformat-write-array
-      stream (loop for i from 0
-                   for input in (inputs array)
-                   collect (destructuring-bind (bufref &key (index i)
-                                                             (size 3)
-                                                             (stride 0)
-                                                             (offset 0)
-                                                             (normalized NIL))
-                               input
-                             (list (or (position bufref buffers)
-                                       (error "Unable to find ~a in buffer list." bufref))
-                                   index size stride offset normalized)))))))
+(defun vformat-read-vertices (buffer type)
+  (let* ((size (fast-io:readu32-le buffer))
+         (map (vformat-slot-data type))
+         (initargs (loop repeat (fast-io:readu8 buffer)
+                         collect (intern (vformat-read-string buffer) :keyword)))
+         (vertices (make-array size)))
+    (loop for i from 0 below size
+          do (setf (aref vertices i)
+                   (apply #'make-instance type
+                          (loop for initarg in initargs
+                                for (slot type) = (find initarg map :key #'third)
+                                when slot collect initarg
+                                when slot collect (vformat-read-type buffer type)))))))
 
-(defun vformat-read-bundle (stream)
-  (let ((name (vformat-read-string stream)))
-    (unless (string= name "VBUN")
-      (error "Expected vertex bundle identifier, but got ~s" name)))
-  (let* ((buffers (loop repeat (fast-io:readu8 stream)
-                        collect (multiple-value-bind (data size type usage element-type)
-                                    (vformat-read-buffer stream)
-                                  (let ((asset (make-asset 'vertex-buffer
-                                                           (list data)
-                                                           :type type
-                                                           :element-type element-type
-                                                           :data-usage usage
-                                                           :size size)))
-                                    (prog1 (load asset)
-                                      (setf (inputs asset) NIL)
-                                      (cffi:foreign-free data))))))
-         (inputs (loop for (bufref index size stride offset normalized) in (vformat-read-array stream)
-                       collect (list (elt buffers bufref)
-                                     :index index
-                                     :size size
-                                     :stride stride
-                                     :offset offset
-                                     :normalized normalized))))
-    (let ((asset (make-asset 'vertex-array inputs)))
-      (prog1 (load asset)
-        (setf (inputs asset) NIL)
-        (mapcar #'offload buffers)))))
+(defmethod vformat-write (buffer (mesh vertex-mesh))
+  (let ((face-length (face-length mesh)))
+    (when (< 256 face-length)
+      (error "Faces with more than 2⁸ vertices are not supported."))
+    (fast-io:writeu8 face-length buffer))
+  (vformat-write-symbol buffer (vertex-type mesh))
+  (vformat-write-vector buffer (faces mesh) :uint)
+  (vformat-write-vertices buffer (vertices mesh) (vertex-type mesh)))
 
-(defun write-vformat (file buffers array &key (if-exists :error))
+(defmethod vformat-read (buffer (mesh vertex-mesh))
+  (initialize-instance mesh
+                       :face-length (fast-io:readu8 buffer)
+                       :vertex-type (vformat-read-symbol buffer))
+  (setf (faces mesh) (vformat-read-vector buffer))
+  (setf (vertices mesh) (vformat-read-vertices buffer (vertex-type mesh)))
+  mesh)
+
+(defmethod vformat-write (buffer (vbo vertex-buffer))
+  (fast-io:writeu8 (vertex-buffer-type->int (buffer-type vbo)) buffer)
+  (fast-io:writeu8 (vertex-buffer-usage->int (data-usage vbo)) buffer)
+  (vformat-write-vector buffer (coerced-inputs vbo) (element-type vbo)))
+
+(defmethod vformat-read (buffer (vbo vertex-buffer))
+  (let ((btype (int->vertex-buffer-type (fast-io:readu8 buffer)))
+        (usage (int->vertex-buffer-usage (fast-io:readu8 buffer))))
+    (multiple-value-bind (array size etype) (vformat-read-vector buffer)
+      (initialize-instance vbo :buffer-type btype
+                               :data-usage usage
+                               :element-type etype
+                               :size size
+                               :input array))))
+
+(defmethod vformat-write (buffer (vao vertex-array))
+  (fast-io:write32-le (or (size vao) -1) buffer)
+  (let* ((inputs (coerced-inputs vao))
+         (count (length inputs))
+         (buffers (remove-duplicates (mapcar #'first inputs))))
+    (when (< 256 count)
+      (error "More than 2⁸ buffers are not supported."))
+    ;; Write input list
+    (fast-io:writeu8 count buffer)
+    (loop for i from 0
+          for input in inputs
+          do (destructuring-bind (vbo &key (index i) (size 3) (stride 0) (offset 0) (normalized NIL)) input
+               (fast-io:writeu8 (position vbo buffers) buffer)
+               (fast-io:writeu8 index buffer)
+               (fast-io:writeu8 size buffer)
+               (fast-io:writeu32-le stride buffer)
+               (fast-io:writeu32-le offset buffer)
+               (fast-io:writeu8 (if normalized 1 0) buffer)))
+    ;; Write buffer list
+    (fast-io:writeu8 (length buffers) buffer)
+    (dolist (vbo buffers)
+      (vformat-write buffer vbo))))
+
+(defmethod vformat-read (buffer (vao vertex-array))
+  (let* ((size (fast-io:read32-le buffer))
+         (inputs (loop repeat (fast-io:readu8 buffer)
+                       collect (list (fast-io:readu8 buffer)
+                                     :index (fast-io:readu8 buffer)
+                                     :size (fast-io:readu8 buffer)
+                                     :stride (fast-io:readu32-le buffer)
+                                     :offset (fast-io:readu32-le buffer)
+                                     :normalized (= (fast-io:readu8 buffer) 1))))
+         (buffers (loop repeat (fast-io:readu8 buffer)
+                        collect (vformat-read buffer T))))
+    ;; Resolve buffer indexing
+    (dolist (input inputs)
+      (setf (first input) (nth (first input) buffers)))
+    (when (< size 0) (setf size NIL))
+    (initialize-instance vao :size size :inputs inputs)))
+
+(defmethod vformat-write (buffer (mesh sphere))
+  (vformat-write-double buffer (size mesh)))
+
+(defmethod vformat-read (buffer (mesh sphere))
+  (initialize-instance mesh :size (vformat-read-double buffer)))
+
+(defmethod vformat-write (buffer (geometry geometry))
+  (let ((count (hash-table-count (meshes geometry))))
+    (when (< 256 count)
+      (error "More than 2⁸ meshes is not supported."))
+    (fast-io:writeu8 count buffer))
+  (loop for name being the hash-keys of (meshes geometry)
+        for mesh being the hash-values of (meshes geometry)
+        do (vformat-write-symbol buffer name)
+           (vformat-write buffer mesh)))
+
+(defmethod vformat-read (buffer (geometry geometry))
+  (let* ((count (fast-io:readu8 buffer))
+         (table (make-hash-table :test 'eql :size count)))
+    (loop repeat count
+          for name = (vformat-read-symbol buffer)
+          for mesh = (vformat-read buffer T)
+          do (setf (gethash name table) mesh))
+    (initialize-instance geometry)
+    (setf (meshes geometry) table)
+    geometry))
+
+(defmethod vformat-write :before (buffer (object standard-object))
+  (vformat-write-symbol buffer (class-name (class-of object))))
+
+(defmethod vformat-read (buffer (type (eql T)))
+  (vformat-read buffer (allocate-instance (find-class (vformat-read-symbol buffer)))))
+
+(defmethod write-geometry ((geometry geometry) file (format (eql :vf)) &key (if-exists :error))
   (with-open-file (stream file :direction :output
                                :element-type '(unsigned-byte 8)
                                :if-exists if-exists)
     (when stream
       (fast-io:with-fast-output (buffer stream)
-        (vformat-write-bundle buffer buffers array))
+        (vformat-write buffer geometry))
       file)))
 
-(defun load-vformat (file &key (if-does-not-exist :error))
+(defmethod read-geometry (file (format (eql :vf)) &key (if-does-not-exist :error))
   (with-open-file (stream file :direction :input
                                :element-type '(unsigned-byte 8)
                                :if-does-not-exist if-does-not-exist)
     (when stream
       (fast-io:with-fast-input (buffer NIL stream)
-        (vformat-read-bundle buffer)))))
-
-(defclass vertex-format (asset)
-  ((size :initform NIL :accessor size)))
-
-(defmethod coerce-input ((asset vertex-format) (file string))
-  (coerce-input asset (uiop:native-namestring file)))
-
-(defmethod coerce-input ((asset vertex-format) (file pathname))
-  file)
-
-(defmethod finalize-resource ((type (eql 'vertex-format)) resource)
-  (gl:delete-vertex-arrays (list resource)))
-
-(defmethod load progn ((asset vertex-format))
-  (let* ((inputs (coerced-inputs asset))
-         (array (load-vformat (first inputs))))
-    (setf (resource asset) (resource array))
-    (setf (size asset) (size array))))
+        (vformat-read buffer T)))))

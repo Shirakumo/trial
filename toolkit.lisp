@@ -278,6 +278,26 @@
                                (return (setf (cdr cons) cell))))))
              list)))))
 
+(defun minimize (sequence test &key (key #'identity))
+  (etypecase sequence
+    (vector (when (< 0 (length sequence))
+              (loop with minimal = (aref sequence 0)
+                    for i from 1 below (length sequence)
+                    for current = (aref sequence i)
+                    do (when (funcall test
+                                      (funcall key current)
+                                      (funcall key minimal))
+                         (setf minimal current))
+                    finally (return minimal))))
+    (list (when sequence
+            (loop with minimal = (car sequence)
+                  for current in (rest sequence)
+                  do (when (funcall test
+                                    (funcall key current)
+                                    (funcall key minimal))
+                       (setf minimal current))
+                  finally (return minimal))))))
+
 (defvar *c-chars* "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")
 
 (defun symbol->c-name (symbol)
@@ -296,6 +316,22 @@
       (let ((size (1- size)))
         (unless (<= (- (expt 2 size)) thing (1- (expt 2 size)))
           (error "~a does not fit within [-2^~a,2^~:*~a-1]." thing size)))))
+
+(defun cl-type->gl-type (type)
+  (cond ((subtypep type '(signed-byte 8)) :char)
+        ((subtypep type '(unsigned-byte 32)) :uint)
+        ((subtypep type '(signed-byte 32)) :int)
+        ((subtypep type 'single-float) :float)
+        ((subtypep type 'double-float) :double)
+        (T (error "Don't know how to convert ~s to a GL type." type))))
+
+(defun gl-type->cl-type (type)
+  (ecase type
+    (:char '(signed-byte 8))
+    (:uint '(unsigned-byte 32))
+    (:int '(signed-byte 32))
+    (:float 'single-float)
+    (:double 'double-float)))
 
 (defun gl-coerce (thing type)
   (ecase type

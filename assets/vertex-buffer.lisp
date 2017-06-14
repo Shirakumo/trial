@@ -31,8 +31,7 @@
   (make-array 1 :initial-element (float number)))
 
 (defmethod coerce-input ((asset vertex-buffer) (pointer T))
-  (check-type pointer (or cffi:foreign-pointer
-                          static-vectors:static-vector))
+  (check-type pointer (or cffi:foreign-pointer static-vector))
   pointer)
 
 (defmethod finalize-resource ((type (eql 'vertex-buffer)) resource)
@@ -45,8 +44,11 @@
           (loop for v across input do (vector-push-extend v output))))
       (first inputs)))
 
+(defmethod coerced-inputs ((asset vertex-buffer))
+  (ensure-single-vector (call-next-method)))
+
 (defmethod load progn ((asset vertex-buffer))
-  (let ((buffer-data (ensure-single-vector (coerced-inputs asset))))
+  (let ((buffer-data (coerced-inputs asset)))
     (with-slots (element-type buffer-type data-usage) asset
       (let ((buffer (gl:gen-buffer)))
         (setf (resource asset) buffer)
@@ -63,8 +65,8 @@
                  (gl:free-gl-array array)
                  (gl:bind-buffer buffer-type 0))
                (setf (size asset) (length buffer-data))))
-            (static-vectors:static-vector
-             (let ((array (gl::make-gl-array-from-pointer (static-vectors:static-vector-pointer buffer-data)
+            (static-vector
+             (let ((array (gl::make-gl-array-from-pointer (static-vector-pointer buffer-data)
                                                           element-type (size asset))))
                (gl:bind-buffer buffer-type buffer)
                (unwind-protect

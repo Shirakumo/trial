@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass geometry ()
-  ((meshes :initform (make-hash-table :test 'equal) :accessor meshes)))
+  ((meshes :initform (make-hash-table :test 'eql) :accessor meshes)))
 
 (defgeneric read-geometry (file format &key &allow-other-keys))
 
@@ -26,10 +26,10 @@
   ((size :initarg :size :accessor size)))
 
 (defclass vertex-mesh (mesh)
-  ((vertices :initform (make-array 0 :adjustable T :fill-pointer T) :accessor vertices)
+  ((face-length :initform 3 :accessor face-length)
+   (vertex-type :initform 'vertex :initarg :vertex-type :reader vertex-type)
    (faces :initform (make-array 0 :element-type 'fixnum :adjustable T :fill-pointer T) :accessor faces)
-   (face-length :initform 3 :accessor face-length)
-   (vertex-type :initform 'vertex :initarg :vertex-type :reader vertex-type)))
+   (vertices :initform (make-array 0 :adjustable T :fill-pointer T) :accessor vertices)))
 
 (defun push-mesh-vertex (vertex mesh)
   (let ((vertices (vertices mesh)))
@@ -75,7 +75,7 @@
          (attributes (or attributes (vertex-attributes primer)))
          (sizes (loop for attr in attributes collect (vertex-attribute-size primer attr)))
          (total-size (* (length vertices) (reduce #'+ sizes)))
-         (buffer (static-vectors:make-static-vector total-size :element-type 'single-float)))
+         (buffer (make-static-vector total-size :element-type 'single-float)))
     (loop with offset = 0
           for vertex across vertices
           do (dolist (attribute attributes)
@@ -143,10 +143,10 @@
   (fill-vector-data (location vertex) 'vec3 data offset))
 
 (defgeneric vertex-attributes (vertex)
-  (:method-combination list :most-specific-last))
+  (:method-combination append :most-specific-last))
 
-(defmethod vertex-attributes list ((vertex vertex))
-  'location)
+(defmethod vertex-attributes append ((vertex vertex))
+  '(location))
 
 (defgeneric vertex= (a b)
   (:method-combination and))
@@ -163,8 +163,8 @@
 (defmethod vertex-attribute-size ((vertex textured-vertex) (attribute (eql 'uv)))
   2)
 
-(defmethod vertex-attributes list ((vertex textured-vertex))
-  'uv)
+(defmethod vertex-attributes append ((vertex textured-vertex))
+  '(uv))
 
 (defmethod fill-vertex-attribute ((vertex textured-vertex) (attribute (eql 'uv)) data offset)
   (fill-vector-data (uv vertex) 'vec2 data offset))
@@ -178,8 +178,8 @@
 (defmethod vertex-attribute-size ((vertex normal-vertex) (attribute (eql 'normal)))
   3)
 
-(defmethod vertex-attributes list ((vertex normal-vertex))
-  'normal)
+(defmethod vertex-attributes append ((vertex normal-vertex))
+  '(normal))
 
 (defmethod fill-vertex-attribute ((vertex normal-vertex) (attribute (eql 'normal)) data offset)
   (fill-vector-data (normal vertex) 'vec3 data offset))
@@ -193,8 +193,8 @@
 (defmethod vertex-attribute-size ((vertex colored-vertex) (attribute (eql 'color)))
   4)
 
-(defmethod vertex-attributes list ((vertex colored-vertex))
-  'color)
+(defmethod vertex-attributes append ((vertex colored-vertex))
+  '(color))
 
 (defmethod fill-vertex-attribute ((vertex colored-vertex) (attribute (eql 'color)) data offset)
   (fill-vector-data (color vertex) 'vec4 data offset))

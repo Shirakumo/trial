@@ -77,6 +77,7 @@
          (collada (plump:parse file))
          (geometry (make-instance 'geometry)))
     (loop for geom across (lquery:$ collada "geometry")
-          do (setf (gethash (plump:attribute geom "name") (meshes geometry))
+          for name = (plump:attribute geom "name")
+          do (setf (gethash (intern (string-upcase name) :keyword) (meshes geometry))
                    (read-collada-mesh (lquery:$ geom "mesh" (node)))))
     geometry))

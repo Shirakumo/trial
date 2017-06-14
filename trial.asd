@@ -16,6 +16,7 @@
   :components ((:file "package")
                (:file "features")
                (:file "toolkit")
+               (:file "static-vector")
                (:file "transforms")
                (:file "attributes")
                (:file "entity")
