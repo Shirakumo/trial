@@ -5,6 +5,16 @@
 |#
 
 (in-package #:cl-user)
+
+(defmethod asdf/find-component:resolve-dependency-combination (component (combinator (eql :..)) args)
+  (asdf/find-component:resolve-dependency-spec
+   (asdf:component-parent component) (first args)))
+
+(defmethod asdf/find-component:resolve-dependency-combination (component (combinator string) args)
+  (asdf:find-component
+   (asdf:find-component (asdf:component-parent component) combinator)
+   (first args)))
+
 (asdf:defsystem trial
   :version "1.2.0"
   :author "Nicolas Hafner <shinmera@tymoon.eu>"
@@ -12,55 +22,57 @@
   :license "Artistic"
   :description "A flexible and extensible video game engine."
   :homepage "https://github.com/Shirakumo/trial"
-  :serial T
   :components ((:file "package")
-               (:file "features")
-               (:file "toolkit")
-               (:file "static-vector")
-               (:file "transforms")
-               (:file "attributes")
-               (:file "entity")
-               (:file "layer-set")
-               (:file "window")
-               (:file "fullscreenable")
-               (:file "renderable")
-               (:file "context")
-               (:file "display")
-               (:file "asset")
-               (:file "asset-pool")
+               (:file "asset" :depends-on ("package" "toolkit" "context"))
+               (:file "asset-pool" :depends-on ("package" "asset" "window"))
+               (:file "attributes" :depends-on ("package"))
+               (:file "camera" :depends-on ("package" "subject" "helpers"))
+               (:file "context" :depends-on ("package"))
+               (:file "controller" :depends-on ("package" "mapping" "input" "subject"))
+               (:file "deploy" :depends-on ("package" "gamepad"))
+               (:file "display" :depends-on ("package" "context" "renderable"))
+               (:file "effects" :depends-on ("package" "shader-pass"))
+               (:file "entity" :depends-on ("package"))
+               (:file "event-loop" :depends-on ("package" "entity"))
+               (:file "features" :depends-on ("package"))
+               (:file "flare" :depends-on ("package" "transforms"))
+               (:file "fullscreenable" :depends-on ("package" "display"))
+               (:file "gamepad" :depends-on ("package" "event-loop"))
+               (:file "geometry" :depends-on ("package" "toolkit" "static-vector" ("assets" "vertex-array")))
+               (:file "geometry-shapes" :depends-on ("package" "geometry" "asset-pool"))
+               (:file "helpers" :depends-on ("package" "entity" "transforms"))
+               (:file "input" :depends-on ("package" "event-loop" "retention"))
+               (:file "layer-set" :depends-on ("package"))
+               (:file "main" :depends-on ("package" "display" "window" "toolkit" "scene" "pipeline"))
+               (:file "mapping" :depends-on ("package" "event-loop" "toolkit"))
+               (:file "pipeline" :depends-on ("package" "event-loop" "toolkit"))
+               (:file "renderable" :depends-on ("package" "toolkit"))
+               (:file "retention" :depends-on ("package" "event-loop"))
+               (:file "scene" :depends-on ("package" "event-loop" "entity"))
+               (:file "shader-pass" :depends-on ("package" "shader-subject" "asset" "scene"))
+               (:file "shader-subject" :depends-on ("package" "subject"))
+               (:file "static-vector" :depends-on ("package"))
+               (:file "subject" :depends-on ("package" "event-loop"))
+               (:file "subjects" :depends-on ("package" "subject" "shader-subject" "asset"))
+               (:file "toolkit" :depends-on ("package"))
+               (:file "transforms" :depends-on ("package"))
+               (:file "window" :depends-on ("package"))
+               ;; Testing, remove for production.
+               (:file "workbench" :depends-on ("assets" "asset-pool" "main"))
                (:module "assets"
+                :depends-on ("package" "asset" "toolkit")
                 :components ((:file "texture")
                              (:file "shader")
-                             (:file "shader-program")
-                             (:file "vertex-buffer")
-                             (:file "vertex-array")
-                             (:file "framebuffer")
-                             (:file "mesh")))
-               (:file "geometry")
-               (:file "geometry-shapes")
+                             (:file "shader-program" :depends-on ("shader"))
+                             (:file "vertex-buffer" :depends-on ((:.. "static-vector")))
+                             (:file "vertex-array" :depends-on ("vertex-buffer"))
+                             (:file "framebuffer" :depends-on ("vertex-array" "texture"))
+                             (:file "mesh" :depends-on ((:.. "geometry") (:.. "static-vector")))
+                             (:file "font" :depends-on ((:.. "shader-pass")))))
                (:module "formats"
+                :depends-on ("package" "geometry" "static-vector")
                 :components ((:file "vertex-format")
-                             (:file "collada")))
-               (:file "helpers")
-               (:file "event-loop")
-               (:file "subject")
-               (:file "shader-subject")
-               (:file "scene")
-               (:file "shader-pass")
-               (:file "effects")
-               (:file "pipeline")
-               (:file "subjects")
-               (:file "camera")
-               (:file "flare")
-               (:file "mapping")
-               (:file "retention")
-               (:file "input")
-               (:file "gamepad")
-               (:file "controller")
-               (:file "main")
-               (:file "deploy")
-               ;; Testing, remove for production.
-               (:file "workbench"))
+                             (:file "collada"))))
   :depends-on (:alexandria
                :3d-vectors
                :3d-matrices
