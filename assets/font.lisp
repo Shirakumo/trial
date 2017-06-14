@@ -74,11 +74,9 @@ void main(){
   (let ((vao (vertex-array subject))
         (font (resource (font subject))))
     (when font
-      (unless (and (string= text (text subject))
-                   (resource vao))
-        ;; FIXME: would be nice if cl-fond allowed re-using a VAO/VBO somehow...
-        (multiple-value-bind (resource size) (cl-fond:compute-text font text)
-          (when (resource vao)
-            (finalize-resource 'vertex-array (resource vao)))
-          (setf (resource vao) resource)
-          (setf (size vao) size))))))
+      ;; FIXME: would be nice if cl-fond allowed re-using a VAO/VBO somehow...
+      (multiple-value-bind (resource size) (cl-fond:compute-text font text)
+        (unless (eql T (resource vao))
+          (finalize-resource 'vertex-array (resource vao)))
+        (setf (resource vao) resource)
+        (setf (size vao) size)))))
