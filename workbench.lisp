@@ -10,6 +10,10 @@
     (#p"teapot.vf")
   :mesh :Teapot01Mesh)
 
+(define-asset (workbench noto) font
+    (#p"noto-sans-regular.ttf")
+  :charset "(°<)")
+
 (progn
   (define-shader-subject teapot (vertex-subject textured-subject located-entity rotated-entity)
     ()
@@ -27,9 +31,10 @@
 (progn
   (defmethod setup-scene ((main main))
     (let ((scene (scene main)))
-      (dotimes (i 200)
-        (enter (make-instance 'teapot :location (vec3-random -200 200)) scene))
-      (enter (make-instance 'target-camera :location (vec 0 2 -200)) scene)))
+      ;; (dotimes (i 200)
+      ;;   (enter (make-instance 'teapot :location (vec3-random -200 200)) scene))
+      (enter (make-instance 'text :font (asset 'workbench 'noto) :text "(°<°)") scene)
+      (enter (make-instance 'target-camera :location (vec 0 2 200)) scene)))
 
   (maybe-reload-scene))
 
@@ -39,7 +44,9 @@
           (pass1 (make-instance 'render-pass))
           (pass2 (make-instance 'negative-pass))
           (pass3 (make-instance 'box-blur-pass)))
-      (connect (flow:port pass1 'color) (flow:port pass2 'previous-pass) pipeline)
-      (connect (flow:port pass2 'color) (flow:port pass3 'previous-pass) pipeline)))
+      (register pass1 pipeline)
+      ;; (connect (flow:port pass1 'color) (flow:port pass2 'previous-pass) pipeline)
+      ;; (connect (flow:port pass2 'color) (flow:port pass3 'previous-pass) pipeline)
+      ))
 
   (maybe-reload-scene))
