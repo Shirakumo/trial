@@ -269,10 +269,10 @@
     (when (< size 0) (setf size NIL))
     (initialize-instance vao :size size :inputs inputs)))
 
-(defmethod vformat-write (buffer (mesh sphere))
+(defmethod vformat-write (buffer (mesh sphere-mesh))
   (vformat-write-double buffer (size mesh)))
 
-(defmethod vformat-read (buffer (mesh sphere))
+(defmethod vformat-read (buffer (mesh sphere-mesh))
   (initialize-instance mesh :size (vformat-read-double buffer)))
 
 (defmethod vformat-write (buffer (geometry geometry))

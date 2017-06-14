@@ -6,29 +6,30 @@
 (define-asset (workbench cat) texture
     (#p"cat.png"))
 
-(define-asset (workbench teapot) vertex-format
-    (#p"teapot.vf"))
+(define-asset (workbench teapot) mesh
+    (#p"teapot.vf")
+  :mesh :Teapot01Mesh)
 
-(define-shader-subject teapot (vertex-subject textured-subject located-entity rotated-entity)
-  ()
-  (:default-initargs
-   :vertex-array (asset 'workbench 'teapot)
-   :texture (asset 'workbench 'cat)))
+(progn
+  (define-shader-subject teapot (vertex-subject textured-subject located-entity rotated-entity)
+    ()
+    (:default-initargs
+     :vertex-array (asset 'workbench 'teapot)
+     :texture (asset 'workbench 'cat)))
+  
+  (maybe-reload-scene))
 
 (define-handler (teapot tick) (ev)
-  (incf (vz (rotation teapot)) 0.02)
-  (incf (vx (rotation teapot)) 0.01)
-  (incf (vy (rotation teapot)) 0.03)
-  (decf (vz (location teapot)) 0.1)
-  (when (<= (vz (location teapot)) -20)
-    (setf (vz (location teapot)) (random 10))))
+  (incf (vz (rotation teapot)) (/ (random 1.0) 10))
+  (incf (vx (rotation teapot)) (/ (random 1.0) 10))
+  (incf (vy (rotation teapot)) (/ (random 1.0) 10)))
 
 (progn
   (defmethod setup-scene ((main main))
     (let ((scene (scene main)))
-      (dotimes (i 100)
-        (enter (make-instance 'teapot :location (vec3-random -10 10) :rotation (vec3-random -1 1)) scene))
-      (enter (make-instance 'target-camera :location (vec 0 2 8)) scene)))
+      (dotimes (i 200)
+        (enter (make-instance 'teapot :location (vec3-random -200 200)) scene))
+      (enter (make-instance 'target-camera :location (vec 0 2 -200)) scene)))
 
   (maybe-reload-scene))
 

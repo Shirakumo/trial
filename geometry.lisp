@@ -19,13 +19,10 @@
 (defmethod write-geometry (geometry file (format (eql T)) &rest args)
   (apply #'write-geometry geometry file (intern (string-upcase (pathname-type file)) :keyword) args))
 
-(defclass mesh ()
-  ())
-
-(defclass sphere (mesh)
+(defclass sphere-mesh ()
   ((size :initarg :size :accessor size)))
 
-(defclass vertex-mesh (mesh)
+(defclass vertex-mesh ()
   ((face-length :initform 3 :accessor face-length)
    (vertex-type :initform 'vertex :initarg :vertex-type :reader vertex-type)
    (faces :initform (make-array 0 :element-type 'fixnum :adjustable T :fill-pointer T) :accessor faces)

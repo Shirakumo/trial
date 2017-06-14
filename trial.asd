@@ -34,7 +34,8 @@
                              (:file "shader-program")
                              (:file "vertex-buffer")
                              (:file "vertex-array")
-                             (:file "framebuffer")))
+                             (:file "framebuffer")
+                             (:file "mesh")))
                (:file "geometry")
                (:file "geometry-shapes")
                (:module "formats"
