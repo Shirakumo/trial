@@ -55,42 +55,7 @@
 (defun remf* (list &rest keys)
   (loop for (k v) on list by #'cddr
         for x = (member k keys)
-        unless x collect k
-        unless x collect v))
-
-(defun mkarray (dimensions &rest items)
-  (let ((array (make-array dimensions)))
-    (loop for i from 0 for item in items
-          do (setf (row-major-aref array i) item))
-    array))
-
-(defun mktable (test &rest items)
-  (let ((table (make-hash-table :test test)))
-    (loop for (key val) on items by #'cddr
-          do (setf (gethash key table) val))
-    table))
-
-(defun mkobject (class &rest items)
-  (let ((object (allocate-instance (etypecase class
-                                     (standard-class class)
-                                     (symbol (find-class class))))))
-    (loop for (key val) on items by #'cddr
-          do (setf (slot-value object key) val))
-    object))
-
-(defun update-slots (object &rest items)
-  (loop for (key val) on items by #'cddr
-        do (setf (slot-value object key) val))
-  object)
-
-(defun one-of (thing &rest options)
-  (find thing options))
-
-(define-compiler-macro one-of (thing &rest options)
-  (let ((thing-var (gensym "THING")))
-    `(let ((,thing-var ,thing))
-       (or ,@(loop for option in options
-                   collect `(eql ,thing-var ,option))))))
+        unless x collect k))
 
 (defun input-source (&optional (stream *query-io*))
   (with-output-to-string (out)
@@ -261,22 +226,6 @@
     `(with-slots ,slots ,instance
        (declare (ignorable ,@slots))
        ,@body)))
-
-(defun insert-index (object list &key (key #'identity) (replace T))
-  (flet ((k (value) (funcall key value)))
-    (let ((n (k object)))
-      (cond ((< n (k (first list)))
-             (list* object list))
-            (T
-             (loop for cons on list
-                   do (cond ((= n (k (car cons)))
-                             (return (when replace (setf (car cons) object))))
-                            ((not (cdr cons))
-                             (return (setf (cdr cons) (list object))))
-                            ((< (k (car cons)) n (k (cadr cons)))
-                             (let ((cell (cons object (cdr cons))))
-                               (return (setf (cdr cons) cell))))))
-             list)))))
 
 (defun minimize (sequence test &key (key #'identity))
   (etypecase sequence
