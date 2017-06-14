@@ -50,12 +50,6 @@
     (load    (load asset))
     (reload  (load (offload asset)))))
 
-(define-handler (controller save-game) (ev)
-  (save-scene (event-loop controller) #p"~/test.sav.lisp"))
-
-(define-handler (controller load-game) (ev)
-  (load-scene (event-loop controller) #p"~/test.sav.lisp"))
-
 (define-handler (controller key-release) (ev key)
   (when (eql key :escape)
     (issue (event-loop controller) 'pause)))
