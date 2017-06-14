@@ -22,7 +22,7 @@
 
 (defclass asset ()
   ((inputs :initarg :inputs :accessor inputs)
-   (resource :initform NIL :accessor resource))
+   (resource :initform NIL :initarg :resource :accessor resource))
   (:default-initargs :inputs ()))
 
 (defmethod initialize-instance :around ((asset asset) &rest args &key input inputs)
