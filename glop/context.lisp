@@ -66,11 +66,17 @@
 (defmethod vsync ((context context) mode)
   (let ((mode (ecase mode
                 (:on 1) (:off 0) (:adaptive -1))))
+    #+windows
+    (wgl-swap-interval mode)
     #+linux
     (glx-swap-interval
      (glop::glx-context-display (context context))
      (glop::x11-window-id context)
      mode)))
+
+#+windows
+(cffi:defcfun (wgl-swap-interval "wglSwapIntervalEXT") :boolean
+  (interval :int))
 
 #+linux
 (cffi:defcfun (glx-swap-interval "glXSwapIntervalEXT") :void
