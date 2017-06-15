@@ -7,10 +7,11 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 ;; ASCII
-(defvar *default-charset*
+(defparameter *default-charset*
   #.(with-output-to-string (out)
       (loop for i from 32 to 126
-            do (write-char (code-char i) out))))
+            do (write-char (code-char i) out))
+      (write-string "öäüçèàéê§°" out)))
 
 (defclass font (asset)
   ((charset :initarg :charset :accessor charset)
