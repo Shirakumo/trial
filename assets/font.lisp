@@ -68,7 +68,7 @@ void main(){
 
 (defmethod (setf font) :after (font (subject text))
   (when (resource font)
-    (setf (resource (texture subject)) (cl-fond:atlas (resource font)))))
+    (setf (resource (texture subject)) (cl-fond:texture (resource font)))))
 
 (defmethod (setf text) :before (text (subject text))
   (let ((vao (vertex-array subject))
