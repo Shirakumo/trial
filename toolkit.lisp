@@ -6,9 +6,6 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defparameter *time-units* #+sbcl 1000000
-              #-sbcl internal-time-units-per-second)
-
 (defgeneric finalize (object))
 
 (defmethod finalize :before (object)
@@ -21,8 +18,10 @@
 (defun current-time ()
   #+sbcl (let ((usec (nth-value 1 (sb-ext:get-time-of-day))))
            (declare (type (unsigned-byte 31) usec))
-           usec)
-  #-sbcl (get-internal-real-time))
+           (/ (coerce usec 'double-float)
+              1000000.0d0))
+  #-sbcl (/ (coerce (get-internal-real-time) 'double-float)
+            internal-time-units-per-second))
 
 (defmacro undefmethod (name &rest args)
   (flet ((lambda-keyword-p (symbol)
