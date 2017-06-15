@@ -37,6 +37,9 @@
   (loop for asset being the hash-keys of (assets *context*)
         do (load (offload asset))))
 
+;; FIXME: make these safer by loading a copy or something
+;;        to ensure that if the reload fails we can fall back
+;;        to the previous state.
 (define-handler (controller reload-scene reload-scene 99) (ev)
   (loop for asset being the hash-keys of (assets *context*)
         do (offload asset))
@@ -48,7 +51,7 @@
   (ecase action
     (offload (offload asset))
     (load    (load asset))
-    (reload  (load (offload asset)))))
+    (reload  (reload asset))))
 
 (define-handler (controller key-release) (ev key)
   (when (eql key :escape)

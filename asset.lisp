@@ -73,6 +73,14 @@
   (finalize-resource asset (resource asset))
   (setf (resource asset) NIL))
 
+(defmethod reload ((asset asset))
+  (let ((resource (resource asset)))
+    (setf (resource asset) NIL)
+    (with-cleanup-on-failure (setf (resource asset) resource)
+      (load asset)
+      (finalize-resource asset resource))
+    asset))
+
 (defmethod finalize :after ((asset asset))
   (offload asset))
 
