@@ -41,6 +41,7 @@
    (color :initarg :color :initform (vec 0 0 0 1) :accessor color)
    (size :initarg :size :accessor size))
   (:default-initargs
+   :text ""
    :vertex-array (make-instance 'vertex-array :resource T)
    :texture (make-instance 'texture :resource T)
    :size 20.0))
