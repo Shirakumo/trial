@@ -66,8 +66,6 @@
              (register-object-for-pass pass element))))
 
 (defmethod paint ((source main) (target main))
-  (issue (scene target) 'tick)
-  (process (scene target))
   (paint (pipeline source) target))
 
 (defun launch (&optional (main 'main) &rest initargs)
