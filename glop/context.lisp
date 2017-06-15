@@ -63,6 +63,21 @@
                                     :profile (profile context)
                                     :make-current T)))))
 
+(defmethod vsync ((context context) mode)
+  (let ((mode (ecase mode
+                (:on 1) (:off 0) (:adaptive -1))))
+    #+linux
+    (glx-swap-interval
+     (glop::glx-context-display (context context))
+     (glop::x11-window-id context)
+     mode)))
+
+#+linux
+(cffi:defcfun (glx-swap-interval "glXSwapIntervalEXT") :void
+  (display :pointer)
+  (drawable glop-glx::drawable)
+  (interval :int))
+
 (defmethod destroy-context ((context context))
   (glop:destroy-window context)
   (setf context NIL))
