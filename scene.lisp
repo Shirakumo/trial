@@ -46,11 +46,11 @@
 ;; animations and clock update are already handled by the method
 ;; combination, but defining a noop primary method prevents update
 ;; from being called on the children.
-(defmethod update ((scene scene)))
+(defmethod flare:update ((scene scene)))
 
 ;; But we still need to call it in tick.
 (defmethod handle :before ((event tick) (scene scene))
-  (update scene))
+  (flare:update scene))
 
 (defmethod finalize :after ((scene scene))
   (stop scene)

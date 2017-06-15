@@ -34,6 +34,10 @@
 (defmethod handle (event (main main))
   (issue (scene main) event))
 
+(defmethod update ((main main) tt dt)
+  (issue (scene main) 'tick :clock tt :delta dt)
+  (process (scene main)))
+
 (defmethod setup-scene :around ((main main))
   (gl:clear :color-buffer)
   (swap-buffers (context main))

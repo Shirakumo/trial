@@ -8,7 +8,7 @@
 (defpackage #:trial
   (:nicknames #:org.shirakumo.fraf.trial)
   (:use #:cl #:3d-vectors #:3d-matrices #:flare)
-  (:shadow #:scene #:entity #:load)
+  (:shadow #:scene #:entity #:load #:update)
   ;; context.lisp
   (:export
    #:*context*

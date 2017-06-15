@@ -10,7 +10,7 @@
   ())
 
 (define-handler (clocked-subject advance-time tick) (ev)
-  (update clocked-subject))
+  (flare:update clocked-subject))
 
 (define-shader-subject vertex-subject ()
   ((vertex-array :initarg :vertex-array :accessor vertex-array)
