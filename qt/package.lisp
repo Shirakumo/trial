@@ -7,8 +7,8 @@
 (in-package #:cl-user)
 (defpackage #:trial-qt
   (:nicknames #:org.shirakumo.fraf.trial.qt)
-  (:use #:cl+qt #:trial)
+  (:use #:cl+qt #:trial #:3d-vectors)
   (:shadow #:context)
-  (:shadowing-import-from #:flare #:slot)
+  (:shadowing-import-from #:trial #:load)
   (:export
    #:context))
