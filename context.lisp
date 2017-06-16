@@ -71,6 +71,7 @@
 (defgeneric hide (context))
 (defgeneric show (context &key fullscreen))
 (defgeneric resize (context width height))
+(defgeneric quit (context))
 (defgeneric swap-buffers (context))
 (defgeneric show-cursor (context))
 (defgeneric hide-cursor (context))

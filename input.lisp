@@ -11,9 +11,12 @@
 
 (defclass keyboard-event (input-event)
   ((key :initarg :key :reader key)
-   (text :initarg :text :reader text))
+   (text :initarg :text :reader text)
+   (modifiers :initarg :modifiers :reader modifiers))
   (:default-initargs
-   :key (error "KEY required.")))
+   :key (error "KEY required.")
+   :text (error "TEXT required.")
+   :modifiers ()))
 
 (defmethod print-object ((event keyboard-event) stream)
   (print-unreadable-object (event stream :type T)

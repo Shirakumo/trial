@@ -15,7 +15,9 @@
    (profile :initarg :profile :accessor profile)
    (version :initarg :version :accessor version)
    (mouse-pos :initform (vec 0 0) :accessor mouse-pos)
-   (previous-size :initform (vec 0 0) :accessor previous-size)))
+   (previous-size :initform (vec 0 0) :accessor previous-size)
+   (modifiers :initform () :accessor modifiers)
+   (closing :initform NIL :accessor closing)))
 
 (defmethod initialize-instance ((context context) &key)
   (call-next-method)
@@ -123,6 +125,9 @@
   (when fullscreen-p
     (glop:set-fullscreen context fullscreen)))
 
+(defmethod quit ((context context))
+  (setf (closing context) T))
+
 (defmethod resize ((context context) width height)
   (setf (glop:window-width context) width)
   (setf (glop:window-height context) height))
@@ -152,27 +157,52 @@
   #+linux (cffi:foreign-funcall "XInitThreads" :int)
   (let* ((main (apply #'make-instance main initargs))
          (context (trial:context main)))
-    (unwind-protect
-         (catch 'escape
-           (flet ((body ()
+    (flet ((body ()
+             (unwind-protect
+                  (catch 'escape
                     (start main)
-                    (loop (glop:dispatch-events context :blocking T :on-foo NIL))))
-             #+darwin
-             (tmt:with-body-in-main-thread (:blocking T)
-               (body))
-             #-darwin
-             (body)))
-      (trial::finalize main))))
+                    (loop until (closing context)
+                          do (glop:dispatch-events context :blocking NIL :on-foo NIL)))
+               (finalize main))))
+      #+darwin
+      (tmt:with-body-in-main-thread (:blocking T)
+        (body))
+      #-darwin
+      (body))))
 
 (defmethod glop:on-event ((context context) event)
   (typecase event
     (glop:key-press-event
+     (case (glop:keysym event)
+       ((:shift-l :shift-r)
+        (pushnew :shift (modifiers context)))
+       ((:control-l :control-r)
+        (pushnew :control (modifiers context)))
+       ((:meta-l :meta-r)
+        (pushnew :meta (modifiers context)))
+       ((:super-l :super-r)
+        (pushnew :super (modifiers context)))
+       ((:hyper-l :hyper-r)
+        (pushnew :hyper (modifiers context))))
      (handle (make-instance 'key-press :key (glop:keysym event)
-                                       :text (glop:text event))
+                                       :text (glop:text event)
+                                       :modifiers (modifiers context))
              (handler context)))
     (glop:key-release-event
+     (case (glop:keysym event)
+       ((:shift-l :shift-r)
+        (setf (modifiers context) (delete :shift (modifiers context))))
+       ((:control-l :control-r)
+        (setf (modifiers context) (delete :control (modifiers context))))
+       ((:meta-l :meta-r)
+        (setf (modifiers context) (delete :meta (modifiers context))))
+       ((:super-l :super-r)
+        (setf (modifiers context) (delete :super (modifiers context))))
+       ((:hyper-l :hyper-r)
+        (setf (modifiers context) (delete :hyper (modifiers context)))))
      (handle (make-instance 'key-release :key (glop:keysym event)
-                                         :text (glop:text event))
+                                         :text (glop:text event)
+                                         :modifiers (modifiers context))
              (handler context)))
     (glop:button-press-event
      (case (glop:button event)

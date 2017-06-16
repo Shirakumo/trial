@@ -278,6 +278,14 @@
      (#x00000010 . :x2))
    :test 'eql))
 
+(defparameter *modifier-table*
+  '((#x02000000 . :shift)
+    (#x04000000 . :control)
+    (#x08000000 . :alt)
+    (#x10000000 . :meta)
+    (#x20000000 . :keypad)
+    (#x40000000 . :group-switch)))
+
 (defun qt-key->symbol (enum)
   (let ((key (etypecase enum
                (integer enum)
@@ -291,3 +299,8 @@
                   (qt::enum (qt:enum-value enum)))))
     (or (gethash button *button-table*)
         button)))
+
+(defun qt-modifiers->list (enum)
+  (loop for (code . key) in *modifier-table*
+        when (/= 0 (logand enum code))
+        collect key))

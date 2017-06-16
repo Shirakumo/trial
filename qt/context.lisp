@@ -86,6 +86,7 @@
     (setf (q+:window-title context) title)))
 
 (defmethod finalize ((context context))
+  (trial:finalize (handler context))
   (call-next-method)
   (finalize (glformat context)))
 
@@ -121,6 +122,9 @@
     (if fullscreen
         (q+:show-full-screen context)
         (q+:show-normal context))))
+
+(defmethod quit ((context context))
+  (q+:close context))
 
 (defmethod title ((context context))
   (q+:window-title context))
@@ -190,8 +194,12 @@
 
 (defun launch-with-context (&optional (main 'main) &rest initargs)
   #+linux (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
-  (with-main-window (main (apply #'make-instance main initargs)
-                     :on-error #'standalone-error-handler
-                     :show NIL)
-    (show (trial:context main))
-    (start main)))
+  (let ((context))
+    (with-main-window (main (apply #'make-instance main initargs)
+                       :on-error #'standalone-error-handler
+                       :show NIL
+                       :finalize NIL)
+      (setf context (trial:context main))
+      (show context)
+      (start main))
+    (finalize context)))

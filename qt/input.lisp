@@ -11,14 +11,18 @@
   (unless (q+:is-auto-repeat ev)
     (let ((key (qt-key->symbol (q+:key ev))))
       (v:debug :trial.input "Key pressed: ~a" key)
-      (handle (make-instance 'key-press :key key :text (q+:text ev))
+      (handle (make-instance 'key-press :key key
+                                        :text (q+:text ev)
+                                        :modifiers (qt-modifiers->list (q+:modifiers ev)))
               (handler context)))))
 
 (define-override (context key-release-event) (ev)
   (unless (q+:is-auto-repeat ev)
     (let ((key (qt-key->symbol (q+:key ev))))
-      (v:debug :trial.input "Key released: ~a" key)
-      (handle (make-instance 'key-release :key key :text (q+:text ev))
+      (v:debug :trial.input "Key released: ~a ~a" key (qt-modifiers->list (q+:modifiers ev)))
+      (handle (make-instance 'key-release :key key
+                                          :text (q+:text ev)
+                                          :modifiers (qt-modifiers->list (q+:modifiers ev)))
               (handler context)))))
 
 (define-override (context mouse-press-event) (ev)

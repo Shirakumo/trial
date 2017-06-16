@@ -20,10 +20,16 @@
 (define-action reload-scene (system-action)
   (key-press (eql key :f6)))
 
+(define-action quit-game (system-action)
+  (key-press (and (eql key :q) (find :control modifiers))))
+
 (define-subject controller ()
   ((display :initform NIL :accessor display))
   (:default-initargs
    :name :controller))
+
+(define-handler (controller quit-game) (ev)
+  (quit *context*))
 
 (define-handler (controller resize) (ev width height)
   (let ((pipeline (pipeline (display controller))))

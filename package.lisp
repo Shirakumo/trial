@@ -98,6 +98,7 @@
    #:done-current
    #:hide
    #:show
+   #:quit
    #:resize
    #:swap-buffers
    #:show-cursor
@@ -117,6 +118,7 @@
    #:system-action
    #:save-game
    #:load-game
+   #:quit-game
    #:reload-assets
    #:reload-scene
    #:controller
@@ -259,6 +261,7 @@
    #:keyboard-event
    #:key
    #:text
+   #:modifiers
    #:key-press
    #:key-release
    #:mouse-event
