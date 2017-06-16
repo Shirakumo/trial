@@ -53,10 +53,6 @@
     (load    (load asset))
     (reload  (reload asset))))
 
-(define-handler (controller key-release) (ev key)
-  (when (eql key :escape)
-    (issue (event-loop controller) 'pause)))
-
 (defun maybe-reload-scene (&optional (window (or (window :main) (when *context* (handler *context*)))))
   (when window
     (issue (scene window) 'reload-scene)))
