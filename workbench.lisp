@@ -7,9 +7,10 @@
     (#p"noto-sans-regular.ttf"))
 
 (defmethod paint :before ((source main) (target main))
-  (let ((fps (unit :fps (scene source))))
-    (when fps
-      (setf (text fps) (format NIL "~a" (round (/ (frame-time source))))))))
+  (let ((fps (unit :fps (scene source)))
+        (tt (frame-time source)))
+    (when (and fps (/= 0 tt))
+      (setf (text fps) (format NIL "~a" (round (/ tt)))))))
 
 (progn
   (defmethod setup-scene ((main main))
