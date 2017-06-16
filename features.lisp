@@ -7,8 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defvar *debug-features* '(:trial-debug-selection-buffer
-                             :trial-debug-controller))
+  (defvar *debug-features* '(:trial-debug-controller))
   (defvar *optimize-features* '())
 
   #+trial-debug-all

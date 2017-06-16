@@ -103,9 +103,3 @@
         (y (1- (* 2 (/ (vy vec) height))))
         (inv (minv (m* (projection-matrix) (view-matrix) (model-matrix)))))
     (m* inv (vec4 x y 0 0))))
-
-(defun vec->main (vec main)
-  (vec->screen vec (width main) (height main)))
-
-(defun main->vec (vec main)
-  (screen->vec vec (width main) (height main)))

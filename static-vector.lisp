@@ -30,5 +30,3 @@
   (when (static-vector-p vector)
     (static-vectors:free-static-vector vector)
     (remhash vector *static-vector-map*)))
-
-(import 'static-vectors:static-vector-pointer #.*package*)
