@@ -42,11 +42,13 @@
 (defmethod install-finalizer ((asset asset))
   (let ((type (type-of asset))
         (resource (resource asset)))
+    (tg:cancel-finalization asset)
     (tg:finalize asset (lambda () (finalize-resource type resource)))))
 
 (defmethod (setf resource) :after (value (asset asset))
-  (when value
-    (install-finalizer asset)))
+  (if value
+      (install-finalizer asset)
+      (tg:cancel-finalization asset)))
 
 (defmethod coerce-input ((asset asset) input)
   (error "Incompatible input type ~s for asset of type ~s."
@@ -64,7 +66,6 @@
 
 (defmethod offload :around ((asset asset))
   (when (resource asset)
-    (tg:cancel-finalization asset)
     (call-next-method)
     (remhash asset (assets *context*)))
   asset)
