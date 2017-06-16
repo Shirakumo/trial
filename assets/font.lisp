@@ -18,7 +18,7 @@
    (size :initarg :size :accessor size))
   (:default-initargs
    :charset *default-charset*
-   :size 20))
+   :size 24))
 
 (defmethod coerce-input ((asset font) (file pathname))
   file)
@@ -44,7 +44,7 @@
    :text ""
    :vertex-array (make-instance 'vertex-array :resource T)
    :texture (make-instance 'texture :resource T)
-   :size 20.0))
+   :size 24.0))
 
 (defmethod paint :before ((subject text) (pass shader-pass))
   (let ((program (shader-program-for-pass pass subject)))
