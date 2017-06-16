@@ -72,7 +72,11 @@
     (glx-swap-interval
      (glop::glx-context-display (context context))
      (glop::x11-window-id context)
-     mode)))
+     mode)
+    #+darwin
+    (cffi:with-foreign-object (mode-ptr :int)
+      (setf (cffi:mem-ref mode-ptr :int) mode)
+      (cgl-set-parameter (context context) :swap-interval mode-ptr))))
 
 #+windows
 (cffi:defcfun (wgl-swap-interval "wglSwapIntervalEXT") :boolean
@@ -83,6 +87,20 @@
   (display :pointer)
   (drawable glop-glx::drawable)
   (interval :int))
+
+;; http://mirror.informatimago.com/next/developer.apple.com/documentation/GraphicsImaging/Conceptual/OpenGL/chap5/chapter_5_section_40.html#//apple_ref/doc/c_ref/CGLContextParameter
+#+darwin
+(cffi:defcenum cgl-context-parameter
+  (:swap-rectangle 200)
+  (:swap-interval= 222)
+  (:client-storage 226))
+
+;; http://mirror.informatimago.com/next/developer.apple.com/documentation/GraphicsImaging/Conceptual/OpenGL/chap5/chapter_5_section_20.html
+#+darwin
+(cffi:defcfun (cgl-set-parameter "CGLSetParameter") glop-bridge::cg-error
+  (context :pointer)
+  (property cgl-context-parameter)
+  (params :pointer))
 
 (defmethod destroy-context ((context context))
   (glop:destroy-window context)
