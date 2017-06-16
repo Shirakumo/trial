@@ -14,13 +14,20 @@
 (defmethod finalize (object)
   object)
 
+(define-symbol-macro current-time-start
+    (load-time-value (logand (sb-ext:get-time-of-day) (1- (expt 2 32)))))
+
 (declaim (inline current-time))
 (defun current-time ()
-  #+sbcl (let ((usec (nth-value 1 (sb-ext:get-time-of-day))))
-           (declare (type (unsigned-byte 31) usec))
-           (/ (coerce usec 'double-float)
-              1000000.0d0))
-  #-sbcl (/ (coerce (get-internal-real-time) 'double-float)
+  (declare (optimize speed (safety 0)))
+  #+sbcl (multiple-value-bind (s ms) (sb-ext:get-time-of-day)
+           (let* ((s (logand s (1- (expt 2 62))))
+                  (ms (logand ms (1- (expt 2 62)))))
+             (declare (type (unsigned-byte 62) s ms))
+             (+ (- s current-time-start)
+                (* ms
+                   (coerce 1/1000000 'double-float)))))
+  #-sbcl (/ (get-internal-real-time)
             internal-time-units-per-second))
 
 (defmacro undefmethod (name &rest args)
