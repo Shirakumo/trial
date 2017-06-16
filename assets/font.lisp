@@ -79,6 +79,6 @@ void main(){
       ;; FIXME: would be nice if cl-fond allowed re-using a VAO/VBO somehow...
       (multiple-value-bind (resource size) (cl-fond:compute-text font text)
         (unless (eql T (resource vao))
-          (finalize-resource 'vertex-array (resource vao)))
+          (gl:delete-vertex-arrays (list (resource vao))))
         (setf (resource vao) resource)
         (setf (size vao) size)))))
