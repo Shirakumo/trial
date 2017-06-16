@@ -121,7 +121,7 @@
 (defmethod show ((context context) &key (fullscreen NIL fullscreen-p))
   (glop:show-window context)
   (when fullscreen-p
-    (glop:set-fullscreen window fullscreen)))
+    (glop:set-fullscreen context fullscreen)))
 
 (defmethod resize ((context context) width height)
   (setf (glop:window-width context) width)
