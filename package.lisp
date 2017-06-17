@@ -10,6 +10,7 @@
   (:use #:cl #:3d-vectors #:3d-matrices #:flare)
   (:shadow #:scene #:entity #:load #:update)
   (:import-from #:static-vectors #:static-vector-pointer)
+  (:import-from #:flow #:port)
   ;; asset-pool.lisp
   (:export
    #:pool
@@ -357,6 +358,7 @@
   ;; shader-pass.lisp
   (:export
    #:shader-pass-class
+   #:port
    #:input
    #:uniform-name
    #:texture
