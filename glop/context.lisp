@@ -161,8 +161,7 @@
              (unwind-protect
                   (catch 'escape
                     (start main)
-                    (loop until (closing context)
-                          do (glop:dispatch-events context :blocking NIL :on-foo NIL)))
+                    (loop (glop:dispatch-events context :blocking T :on-foo NIL)))
                (finalize main))))
       #+darwin
       (tmt:with-body-in-main-thread (:blocking T)
@@ -240,7 +239,9 @@
     (glop:visibility-event)
     (glop:focus-event)
     (glop:close-event
-     (throw 'escape NIL))))
+     (setf (closing context) T)))
+  (when (closing context)
+    (throw 'escape NIL)))
 
 (defun glop-button->symbol (button)
   (case button
