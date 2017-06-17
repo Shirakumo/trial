@@ -155,7 +155,8 @@
    #:fxaa-pass
    #:blend-pass
    #:high-pass-filter
-   #:low-pass-filter)
+   #:low-pass-filter
+   #:chromatic-aberration-effect)
   ;; entity.lisp
   (:export
    #:matches

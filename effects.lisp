@@ -88,3 +88,9 @@ void main(){
 
 (define-class-shader low-pass-filter :fragment-shader
   '(effects #p"low-pass-filter.frag"))
+
+(define-shader-pass chromatic-aberration-filter (simple-post-effect-pass)
+  ())
+
+(define-class-shader chromatic-aberration-filter :fragment-shader
+  '(effects #p"aberration.frag"))
