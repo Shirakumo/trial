@@ -91,6 +91,8 @@
   (let ((loop (slot-value subject 'event-loop)))
     (when loop
       (remove-handler subject loop))
+    ;; FIXME: Retain objects that were not created by the
+    ;;        handlers mechanism of the subject.
     (loop for handler in (effective-handlers (class-of subject))
           collect (make-instance
                    'handler
