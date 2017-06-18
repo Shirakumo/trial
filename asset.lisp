@@ -14,11 +14,19 @@
 (defmethod load progn (object)
   (v:debug :trial.asset "Loading ~a" object))
 
+(defmethod load :around (object)
+  (call-next-method)
+  object)
+
 (defgeneric offload (object)
   (:method-combination progn :most-specific-first))
 
 (defmethod offload progn (object)
   (v:debug :trial.asset "Offloaded ~a" object))
+
+(defmethod offload :around (object)
+  (call-next-method)
+  object)
 
 (defclass asset ()
   ((inputs :initarg :inputs :accessor inputs)
