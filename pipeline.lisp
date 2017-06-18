@@ -22,8 +22,7 @@
   (clear pipeline))
 
 (defmethod register ((pass shader-pass) (pipeline pipeline))
-  (pushnew pass (nodes pipeline))
-  (add-handler pass pipeline))
+  (pushnew pass (nodes pipeline)))
 
 (defmethod deregister ((pass shader-pass) (pipeline pipeline))
   (setf (nodes pipeline) (delete pass (nodes pipeline)))
@@ -35,7 +34,8 @@
   (loop for pass across (passes pipeline)
         do (when (framebuffer pass)
              (finalize (framebuffer pass))
-             (setf (framebuffer pass) NIL)))
+             (setf (framebuffer pass) NIL))
+           (remove-handler pass pipeline))
   (setf (nodes pipeline) ())
   (setf (passes pipeline) #())
   (setf (textures pipeline) #()))
@@ -118,6 +118,7 @@
                   collect (list pass (loop for port in (flow:ports pass)
                                            collect (list (flow:name port) (texture port))))))
     (dolist (pass passes)
+      (add-handler pass pipeline)
       (setf (framebuffer pass)
             (load (make-asset 'framebuffer
                               (loop for port in (flow:ports pass)
