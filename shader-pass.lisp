@@ -102,7 +102,7 @@
 
 (defmethod coerce-pass-shader ((pass per-object-pass) type spec)
   (glsl-toolkit:merge-shader-sources
-   (list (class-shader type pass) spec)))
+   (list spec (class-shader type pass))))
 
 (defmethod register-object-for-pass ((pass per-object-pass) o))
 
