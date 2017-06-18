@@ -103,5 +103,6 @@
          (y (+ (* -2 (/ (vy vec) height)) 1))
          (inv (minv (m* (projection-matrix) (view-matrix))))
          (res (m* inv (vec4 x y 0 1))))
-    (vec2 (/ (vx res) (vw res))
-          (/ (vy res) (vw res)))))
+    (vec3 (/ (vx res) (vw res))
+          (/ (vy res) (vw res))
+          0)))
