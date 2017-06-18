@@ -145,5 +145,5 @@
   ())
 
 (defclass tick (event)
-  ((clock :initarg :clock :accessor clock)
-   (delta :initarg :delta :accessor delta)))
+  ((tt :initarg :tt :accessor tt)
+   (dt :initarg :dt :accessor dt)))

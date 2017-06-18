@@ -35,7 +35,7 @@
   (issue (scene main) event))
 
 (defmethod update ((main main) tt dt)
-  (issue (scene main) 'tick :clock tt :delta dt)
+  (issue (scene main) 'tick :tt tt :dt dt)
   (process (scene main)))
 
 (defmethod setup-scene :around ((main main))
