@@ -51,6 +51,7 @@
                (:file "scene" :depends-on ("package" "event-loop" "entity"))
                (:file "shader-pass" :depends-on ("package" "shader-subject" "asset" "scene"))
                (:file "shader-subject" :depends-on ("package" "subject"))
+               (:file "sprite" :depends-on ("package" "shader-subject" "subjects" "helpers"))
                (:file "static-vector" :depends-on ("package"))
                (:file "subject" :depends-on ("package" "event-loop"))
                (:file "subjects" :depends-on ("package" "subject" "shader-subject" "asset"))
@@ -58,7 +59,7 @@
                (:file "transforms" :depends-on ("package"))
                (:file "window" :depends-on ("package"))
                ;; Testing, remove for production.
-               (:file "workbench" :depends-on ("assets" "asset-pool" "main"))
+               (:file "workbench" :depends-on ("assets" "asset-pool" "formats" "main" "helpers" "subjects"))
                (:module "assets"
                 :depends-on ("package" "asset" "toolkit")
                 :components ((:file "texture")
