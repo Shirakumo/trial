@@ -6,8 +6,9 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass shader-pass-class (shader-subject-class flow:static-node-class)
-  ())
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defclass shader-pass-class (shader-subject-class flow:static-node-class)
+    ()))
 
 (defmethod c2mop:validate-superclass ((class shader-pass-class) (superclass T))
   NIL)
@@ -31,7 +32,7 @@
    (texture :initform NIL :accessor texture))
   (:default-initargs :attachment :color-attachment0))
 
-(defclass shader-pass (shader-subject flow:static-node)
+(define-shader-subject shader-pass (flow:static-node)
   ((framebuffer :initform NIL :accessor framebuffer))
   (:metaclass shader-pass-class))
 
