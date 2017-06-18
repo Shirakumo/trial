@@ -253,6 +253,13 @@
                        (setf minimal current))
                   finally (return minimal))))))
 
+(declaim (inline deg->rad rad->deg))
+(defun deg->rad (deg)
+  (* deg PI 1/180))
+
+(defun rad->deg (rad)
+  (* rad 180 (/ PI)))
+
 (defvar *c-chars* "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")
 
 (defun symbol->c-name (symbol)
