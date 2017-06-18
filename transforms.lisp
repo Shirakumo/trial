@@ -99,7 +99,9 @@
                    0.0s0))))))
 
 (defun screen->vec (vec width height)
-  (let ((x (1- (* 2 (/ (vx vec) width))))
-        (y (1- (* 2 (/ (vy vec) height))))
-        (inv (minv (m* (projection-matrix) (view-matrix) (model-matrix)))))
-    (m* inv (vec4 x y 0 0))))
+  (let* ((x (- (* 2 (/ (vx vec) width)) 1))
+         (y (+ (* -2 (/ (vy vec) height)) 1))
+         (inv (minv (m* (projection-matrix) (view-matrix))))
+         (res (m* inv (vec4 x y 0 1))))
+    (vec2 (/ (vx res) (vw res))
+          (/ (vy res) (vw res)))))
