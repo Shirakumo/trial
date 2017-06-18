@@ -50,7 +50,7 @@
 
 (defmethod project-view ((camera sidescroll-camera) ev)
   (reset-matrix *view-matrix*)
-  (translate (v- (location camera)) *view-matrix*))
+  (translate (location camera) *view-matrix*))
 
 (define-subject 3d-camera (camera)
   ((fov :initarg :fov :accessor fov))
