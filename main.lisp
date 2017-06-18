@@ -43,6 +43,7 @@
   (swap-buffers (context main))
   (stop (scene main))
   (reset (scene main))
+  (clear (pipeline main))
   (with-simple-restart (continue "Skip loading the rest of the scene and hope for the best.")
     (v:info :trial.main "Setting up scene")
     (with-timing-report (info :trial.main "Scene setup took ~fs run time, ~fs clock time.")
