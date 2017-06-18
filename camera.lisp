@@ -104,21 +104,21 @@
    (y-inverted :initarg :y-inverted :accessor y-inverted))
   (:default-initargs
    :rotation (vec 0 0 0)
-   :acceleration 0.5
+   :acceleration 0.01
    :x-inverted NIL
    :y-inverted NIL))
 
 (defmethod project-view ((camera fps-camera) ev)
-  (rotate-by 1.0 0.0 0.0 (vx (rotation camera)))
-  (rotate-by 0.0 1.0 0.0 (vy (rotation camera)))
-  (rotate-by 0.0 0.0 1.0 (vz (rotation camera)))
+  (rotate +vx+ (vx (rotation camera)))
+  (rotate +vy+ (vy (rotation camera)))
+  (rotate +vz+ (vz (rotation camera)))
   (translate (v- (location camera))))
 
 (defun do-fps-movement (camera old-pos pos)
   (let ((delta (v- pos old-pos)))
     (when (x-inverted camera) (setf (vx delta) (- (vx delta))))
     (when (y-inverted camera) (setf (vy delta) (- (vy delta))))
-    (nv+ (rotation camera) (nv* (nvorder delta :y :x :z)
+    (nv+ (rotation camera) (nv* (vyx_ delta)
                                 (acceleration camera)))))
 
 (define-handler (fps-camera mouse-move) (ev old-pos pos)
