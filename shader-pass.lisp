@@ -47,7 +47,8 @@
     (paint (scene target) pass)))
 
 (define-handler (shader-pass register-subject-for-enter enter) (ev entity)
-  (register-object-for-pass shader-pass entity))
+  (let ((pass (register-object-for-pass shader-pass entity)))
+    (when pass (load pass))))
 
 (defmacro define-shader-pass (name direct-superclasses direct-slots &rest options)
   (unless (find :metaclass options :key #'car)
