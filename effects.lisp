@@ -100,3 +100,21 @@ void main(){
 
 (define-class-shader chromatic-aberration-filter :fragment-shader
   '(effects #p"aberration.frag"))
+
+(define-shader-pass black-render-pass (render-pass)
+  ((color :port-type output)))
+
+(define-class-shader black-render-pass :fragment-shader
+  "out vec4 color;
+
+void main(){
+  color = vec4(0, 0, 0, 1);
+}")
+
+(define-shader-pass light-scatter-pass (post-effect-pass)
+  ((previous-pass :port-type input)
+   (black-render-pass :port-type input)
+   (color :port-type output)))
+
+(define-class-shader light-scatter-pass :fragment-shader
+  '(effects #p"light-scatter.frag"))
