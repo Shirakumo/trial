@@ -63,6 +63,12 @@ void main(){
 (define-class-shader gaussian-blur-pass :fragment-shader
   '(effects #p"gaussian.frag"))
 
+(define-shader-pass radial-blur-pass (simple-post-effect-pass)
+  ())
+
+(define-class-shader radial-blur-pass :fragment-shader
+  '(effects #p"radial-blur.frag"))
+
 (define-shader-pass fxaa-pass (simple-post-effect-pass)
   ())
 
