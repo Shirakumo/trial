@@ -98,9 +98,10 @@
     (setf direct-superclasses (append direct-superclasses (list 'shader-subject))))
   (unless (find :metaclass options :key #'first)
     (push '(:metaclass shader-subject-class) options))
-  `(defclass ,name ,direct-superclasses
-     ,direct-slots
-     ,@options))
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (defclass ,name ,direct-superclasses
+       ,direct-slots
+       ,@options)))
 
 (define-class-shader shader-subject :vertex-shader
   "#version 330 core")

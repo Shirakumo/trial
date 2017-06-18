@@ -49,9 +49,10 @@
 (defmacro define-shader-pass (name direct-superclasses direct-slots &rest options)
   (unless (find :metaclass options :key #'car)
     (push '(:metaclass shader-pass-class) options))
-  `(defclass ,name (,@direct-superclasses shader-pass)
-     ,direct-slots
-     ,@options))
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (defclass ,name (,@direct-superclasses shader-pass)
+       ,direct-slots
+       ,@options)))
 
 (defun attach-pass-textures (pass program)
   ;; FIXME: Query for max number of textures available and build
