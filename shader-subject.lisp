@@ -8,16 +8,19 @@
 
 (defclass shader-subject-class (subject-class)
   ((effective-shaders :initform () :accessor effective-shaders)
-   (direct-shaders :initform () :initarg :shaders :accessor direct-shaders)))
+   (direct-shaders :initform () :initarg :shaders :accessor direct-shaders)
+   (inhibit-shaders :initform () :initarg :inhibit-shaders :accessor inhibit-shaders)))
 
 (defmethod cascade-option-changes :before ((class shader-subject-class))
-  (let ((effective-shaders ()))
+  (let ((effective-shaders ())
+        (inhibited (inhibit-shaders class)))
     (loop for (type shader) on (direct-shaders class) by #'cddr
           do (setf (getf effective-shaders type)
                    (list shader)))
     (loop for super in (c2mop:compute-class-precedence-list class)
           do (when (typep super 'shader-subject-class)
                (loop for (type shader) on (direct-shaders super) by #'cddr
+                     unless (find (list (class-name super) type) inhibited :test #'equal)
                      do (pushnew shader (getf effective-shaders type)))))
     (loop for (type shaders) on effective-shaders by #'cddr
           do (setf (getf effective-shaders type)
