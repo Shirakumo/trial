@@ -12,9 +12,9 @@
 (defvar *projection-matrix* (meye 4))
 (defvar *model-matrix-stack* (list (meye 4)))
 
-(declaim (inline view-matrix (cl:setf view-matrix)
-                 projection-matrix (cl:setf projection-matrix)
-                 model-matrix (cl:setf model-matrix)
+(declaim (inline view-matrix (setf view-matrix)
+                 projection-matrix (setf projection-matrix)
+                 model-matrix (setf model-matrix)
                  push-matrix pop-matrix
                  translate translate-by
                  rotate rotate-by
@@ -22,13 +22,13 @@
 (defun view-matrix ()
   *view-matrix*)
 
-(defun (cl:setf view-matrix) (mat4)
+(defun (setf view-matrix) (mat4)
   (setf *view-matrix* mat4))
 
 (defun projection-matrix ()
   *projection-matrix*)
 
-(defun (cl:setf projection-matrix) (mat4)
+(defun (setf projection-matrix) (mat4)
   (setf *projection-matrix* mat4))
 
 (defun look-at (eye target up)
@@ -43,7 +43,7 @@
 (defun model-matrix ()
   (first *model-matrix-stack*))
 
-(defun (cl:setf model-matrix) (mat4)
+(defun (setf model-matrix) (mat4)
   (setf (first *model-matrix-stack*) mat4))
 
 (defun push-matrix (&optional (matrix (mcopy4 (model-matrix))))
