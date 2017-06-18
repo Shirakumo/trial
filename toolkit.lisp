@@ -307,6 +307,26 @@
      (check-gl-type thing 8 T)
      (values (round thing)))))
 
+;; https://www.khronos.org/registry/OpenGL/extensions/ATI/ATI_meminfo.txt
+(defun gpu-room-ati ()
+  (let ((vbo-free-memory-ati (gl:get-integer #x87FB 4))
+        (tex-free-memory-ati (gl:get-integer #x87FC 4))
+        (buf-free-memory-ati (gl:get-integer #x87FD 4)))
+    (+ (aref vbo-free-memory-ati 0)
+       (aref tex-free-memory-ati 0)
+       (aref buf-free-memory-ati 0))))
+
+;; http://developer.download.nvidia.com/opengl/specs/GL_NVX_gpu_memory_info.txt
+(defun gpu-room-nvidia ()
+  (let ((vidmem-total (gl:get-integer #x9047 1))
+        (vidmem-free  (gl:get-integer #x9049 1)))
+    (values vidmem-free
+            vidmem-total)))
+
+(defun gpu-room ()
+  (or (ignore-errors (gpu-room-ati))
+      (ignore-errors (gpu-room-nvidia))))
+
 (defun check-texture-size (width height)
   (let ((max (gl:get* :max-texture-size)))
     (when (< max (max width height))
