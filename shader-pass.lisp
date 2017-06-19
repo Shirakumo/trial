@@ -33,7 +33,8 @@
   (:default-initargs :attachment :color-attachment0))
 
 (define-shader-subject shader-pass (flow:static-node)
-  ((framebuffer :initform NIL :accessor framebuffer))
+  ((framebuffer :initform NIL :accessor framebuffer)
+   (uniforms :initarg :uniforms :initform () :accessor uniforms))
   (:metaclass shader-pass-class))
 
 (defgeneric register-object-for-pass (pass object))
@@ -59,7 +60,7 @@
        ,direct-slots
        ,@options)))
 
-(defun attach-pass-textures (pass program)
+(defun prepare-pass-program (pass program)
   ;; FIXME: Query for max number of textures available and build
   ;;        this dynamically based on that number.
   (loop with texture-index = '(15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0)
@@ -71,7 +72,9 @@
         do (when (typep port 'input)
              (setf (uniform program (uniform-name port)) (pop texture-index))
              (gl:active-texture (pop texture-name))
-             (gl:bind-texture :texture-2d (resource (texture port))))))
+             (gl:bind-texture :texture-2d (resource (texture port)))))
+  (loop for (name value) in (uniforms pass)
+        do (setf (uniform program name) value)))
 
 (define-shader-pass per-object-pass ()
   ((assets :initform (make-hash-table :test 'eql) :accessor assets)))
@@ -122,7 +125,7 @@
 (defmethod paint :around ((subject shader-subject) (pass per-object-pass))
   (let ((program (shader-program-for-pass pass subject)))
     (gl:use-program (resource program))
-    (attach-pass-textures pass program)
+    (prepare-pass-program pass program)
     (call-next-method)))
 
 (define-shader-pass multisampled-pass ()
@@ -179,7 +182,7 @@
 (defmethod paint :around ((source scene) (pass single-shader-pass))
   (let ((program (shader-program pass)))
     (gl:use-program (resource program))
-    (attach-pass-textures pass program)
+    (prepare-pass-program pass program)
     (call-next-method)))
 
 (define-shader-pass post-effect-pass (single-shader-pass)
