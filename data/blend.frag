@@ -1,14 +1,14 @@
 out vec4 color;
-in vec2 texCoord;
+in vec2 tex_coord;
 uniform sampler2D a_pass;
 uniform sampler2D b_pass;
-uniform int blendType = 0;
+uniform int blend_type = 0;
 
 void main(){
-  vec4 a = texture(a_pass, texCoord);
-  vec4 b = texture(b_pass, texCoord);
+  vec4 a = texture(a_pass, tex_coord);
+  vec4 b = texture(b_pass, tex_coord);
   
-  switch(blendType){
+  switch(blend_type){
   case 0: // Add
     color = a+b;
     break;
