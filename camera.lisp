@@ -46,11 +46,17 @@
                            (near-plane camera) (far-plane camera)))
 
 (define-subject sidescroll-camera (2d-camera)
-  ())
+  ((zoom :initarg :zoom :accessor zoom)
+   (target :initarg :target :accessor target))
+  (:default-initargs
+   :zoom 1.0
+   :target NIL))
 
 (defmethod project-view ((camera sidescroll-camera) ev)
-  (reset-matrix *view-matrix*)
-  (translate (location camera) *view-matrix*))
+  (let ((z (zoom camera)))
+    (reset-matrix *view-matrix*)
+    (scale-by z z z *view-matrix*)
+    (translate (v- (location camera) (location (target camera))) *view-matrix*)))
 
 (define-subject 3d-camera (camera)
   ((fov :initarg :fov :accessor fov))
