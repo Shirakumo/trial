@@ -108,13 +108,19 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 
 (defmethod initialize-instance :after ((entity physical-entity)
                                        &key points edges)
-  "Argument points is assumed to be a list of cons where they are location values in order (x . y).
-Argument edges is a list of cons where the pairs are indexes in the points list. These two points will form the edge.
+"
+  Argument points is assumed to be a list of cons where they are location values in order (x . y).
+  Argument edges is a list of cons where the pairs are indexes in the points list. These two points will form the edge.
 
-Example to make a triangle:
-(make-instance 'physical-entity :points '((-1 . 2) (0 . 0) (1 . 2)) :edges '((0 . 1) (1 . 2) (2 . 0)))
+  Example to make a triangle:
+  (make-instance 'physical-entity :points '((-1 . 2) (0 . 0) (1 . 2)) :edges '((0 . 1) (1 . 2) (2 . 0)))
 
-This is terrible and should be made more sensible someday."
+  This is terrible and should be made more sensible someday.
+"
+  (unless (< 3 (length points))
+    (error "Must define a minimum of three points"))
+  (when (< (length edges) (length points))
+    (error "Must define enough edges for all points")) ;; TODO: Should we allow missing the final edge?
   (let* ((point-count (length points))
          (edge-point-count (length edges))
          (vertices (make-array point-count :initial-element NIL))
