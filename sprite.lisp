@@ -47,6 +47,10 @@ void main(){
   ((animations :initarg :animations :initform NIL :accessor animations)
    (clock :initform 0.0d0 :accessor clock)))
 
+(defmethod shared-initialize :after ((subject animated-sprite-subject) slots &key animation frame)
+  (when animation (setf (animation subject) animation))
+  (when frame (setf (frame subject) frame)))
+
 (defmethod frame ((subject animated-sprite-subject))
   (vx (tile subject)))
 
