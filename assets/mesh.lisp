@@ -17,8 +17,11 @@
 (defmethod coerce-input ((asset mesh) (input string))
   (read-geometry (pathname input) T))
 
-;; (defmethod coerce-input ((asset mesh) (input geometry))
-;;   input)
+(defmethod coerce-input ((asset mesh) (input geometry))
+  input)
+
+(defmethod coerce-input ((asset mesh) (input vertex-mesh))
+  input)
 
 (defmethod finalize-resource ((type (eql 'mesh)) resource)
   (finalize-resource 'vertex-array resource))
@@ -26,9 +29,11 @@
 (defmethod load progn ((asset mesh))
   (let* ((geometry (first (coerced-inputs asset)))
          (own (eql geometry (first (inputs asset))))
-         (mesh (or (gethash (mesh asset) (meshes geometry))
-                   (error "~a does not contain a mesh named ~a."
-                          geometry (mesh asset)))))
+         (mesh (etypecase geometry
+                 (geometry (or (gethash (mesh asset) (meshes geometry))
+                               (error "~a does not contain a mesh named ~a."
+                                      geometry (mesh asset))))
+                 (vertex-mesh geometry))))
     (etypecase mesh
       (vertex-mesh
        (unless own
