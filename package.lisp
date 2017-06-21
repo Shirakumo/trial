@@ -183,8 +183,8 @@
    #:priority
    #:event
    #:tick
-   #:clock
-   #:delta)
+   #:tt
+   #:dt)
   ;; features.lisp
   (:export
    #:*debug-features*
