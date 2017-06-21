@@ -23,6 +23,9 @@
 (defmethod coerce-input ((asset mesh) (input vertex-mesh))
   input)
 
+(defmethod coerce-input ((asset mesh) (input vertex-array))
+  input)
+
 (defmethod finalize-resource ((type (eql 'mesh)) resource)
   (finalize-resource 'vertex-array resource))
 
@@ -33,7 +36,7 @@
                  (geometry (or (gethash (mesh asset) (meshes geometry))
                                (error "~a does not contain a mesh named ~a."
                                       geometry (mesh asset))))
-                 (vertex-mesh geometry))))
+                 (T geometry))))
     (etypecase mesh
       (vertex-mesh
        (unless own
