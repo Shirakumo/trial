@@ -446,6 +446,8 @@
    #:enlist
    #:unlist
    #:remf*
+   #:deg->rad
+   #:rad->deg
    #:with-retry-restart
    #:with-new-value-restart
    #:with-cleanup-on-failure
