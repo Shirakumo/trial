@@ -504,7 +504,62 @@
    #:list-windows
    #:remove-window
    #:window
-   #:name))
+   #:name)
+  ;; assets
+  ;;; font.lisp
+  (:export
+   #:*default-charset*
+   #:font
+   #:charset
+   #:size
+   #:text
+   #:font
+   #:text
+   #:color
+   #:size)
+  ;;; framebuffer.lisp
+  (:export
+   #:framebuffer
+   #:resize
+   #:framebuffer-bundle
+   #:width
+   #:height
+   #:framebuffer
+   #:textures)
+  ;;; mesh.lisp
+  (:export
+   #:mesh)
+  ;;; shader-program.lisp
+  (:export
+   #:shader-program
+   #:uniform-map
+   #:uniform-location
+   #:uniform)
+  ;;; shader.lisp
+  (:export
+   #:shader
+   #:shader-type)
+  ;;; texture.lisp
+  (:export
+   #:texture
+   #:target
+   #:mag-filter
+   #:min-filter
+   #:anisotropy
+   #:wrapping
+   #:resize)
+  ;;; vertex-array.lisp
+  (:export
+   #:vertex-array
+   #:size
+   #:packed-vertex-array)
+  ;;; vertex-buffer.lisp
+  (:export
+   #:vertex-buffer
+   #:buffer-type
+   #:element-type
+   #:data-usage
+   #:size))
 
 (defpackage #:cl+trial
   (:nicknames #:org.shirakumo.fraf.trial.cl+trial)
@@ -512,7 +567,7 @@
   (:use #:cl #:trial #:3d-vectors #:flare))
 
 (do-symbols (symb '#:cl+trial)
-  (export symb '#:cl+trial))
+  (export (list symb) '#:cl+trial))
 
 (defpackage #:trial-user
   (:nicknames #:org.shirakumo.fraf.trial.user)
