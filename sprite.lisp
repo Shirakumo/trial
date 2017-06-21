@@ -67,7 +67,7 @@ void main(){
     (setf (vx (tile subject)) (first (nth value (animations subject))))))
 
 (defmethod (setf animations) (value (subject animated-sprite-subject))
-  (setf (slot-value subject)
+  (setf (slot-value subject 'animations)
         (loop for spec in value
               for i from 0
               collect (destructuring-bind (duration frames &key (start 0) (next i) (loop-to start))
