@@ -9,7 +9,7 @@
 (defclass mesh (asset)
   ((mesh :initarg :mesh :accessor mesh)
    (size :initform 0 :accessor size))
-  (:default-initargs :mesh (error "MESH required.")))
+  (:default-initargs :mesh NIL))
 
 (defmethod coerce-input ((asset mesh) (input pathname))
   (read-geometry input T))
