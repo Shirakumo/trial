@@ -302,6 +302,7 @@
    #:main
    #:scene
    #:pipeline
+   #:setup-scene
    #:setup-pipeline
    #:launch)
   ;; mapping.lisp
