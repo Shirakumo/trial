@@ -395,6 +395,16 @@
    #:define-class-shader
    #:shader-subject
    #:define-shader-subject)
+  ;; sprite.lisp
+  (:export
+   #:sprite-subject
+   #:tile
+   #:size
+   #:animated-sprite-subject
+   #:animations
+   #:frame
+   #:animation
+   #:clock)
   ;; static-vector.lisp
   (:export
    #:make-static-vector
@@ -493,7 +503,14 @@
    #:window
    #:name))
 
+(defpackage #:cl+trial
+  (:nicknames #:org.shirakumo.fraf.trial.cl+trial)
+  (:shadowing-import-from #:trial #:scene #:entity #:load #:update)
+  (:use #:cl #:trial #:3d-vectors #:flare))
+
+(do-symbols (symb '#:cl+trial)
+  (export symb '#:cl+trial))
+
 (defpackage #:trial-user
   (:nicknames #:org.shirakumo.fraf.trial.user)
-  (:use #:cl #:trial #:3d-vectors #:flare)
-  (:shadowing-import-from #:trial #:scene #:entity #:load #:update))
+  (:use #:cl+trial))
