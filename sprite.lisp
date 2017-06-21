@@ -18,10 +18,6 @@
   (:inhibit-shaders
    (textured-subject :vertex-shader)))
 
-(defmethod shared-initialize :after ((subject sprite-subject) slots &key size)
-  (when size
-    (setf (vertex-array subject) (change-class (make-rectangle (vx size) (vy size)) 'vertex-array))))
-
 (defmethod paint :before ((subject sprite-subject) (pass shader-pass))
   (let ((shader (shader-program-for-pass pass subject)))
     (setf (uniform shader "size") (size subject))
