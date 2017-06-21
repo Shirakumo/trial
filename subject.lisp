@@ -73,9 +73,7 @@
   (remove-handler handler (find-class class)))
 
 (defclass subject (entity handler-container)
-  ((event-loop :initarg :event-loop :accessor event-loop))
-  (:default-initargs
-   :event-loop NIL)
+  ((event-loop :initarg :event-loop :initform NIL :accessor event-loop))
   (:metaclass subject-class))
 
 (defmethod initialize-instance :after ((subject subject) &key)
