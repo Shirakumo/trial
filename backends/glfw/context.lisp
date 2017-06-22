@@ -219,6 +219,7 @@
   (%with-context
    (case action
      (:press
+      (setf (key-text context) "")
       (handle (make-instance 'key-press
                              :key (glfw-key->key key)
                              :text ""
