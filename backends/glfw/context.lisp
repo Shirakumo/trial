@@ -102,6 +102,7 @@
           (error "Error creating context."))
         (setf (gethash (cffi:pointer-address window) *window-table*) context)
         (setf (window context) window)
+        (cl-glfw3:make-context-current window)
         (cl-glfw3:set-window-size-callback 'ctx-size window)
         (cl-glfw3:set-window-focus-callback 'ctx-focus window)
         (cl-glfw3:set-key-callback 'ctx-key window)
@@ -118,11 +119,10 @@
   (not (null (window context))))
 
 (defmethod make-current ((context context))
-  (cl-glfw3:make-context-current (window context)))
+  (%glfw:make-context-current (window context)))
 
-;; GLFW doesn't have a method for this.
 (defmethod done-current ((context context))
-  NIL)
+  (%glfw:make-context-current (cffi:null-pointer)))
 
 (defmethod hide ((context context))
   (cl-glfw3:hide-window (window context)))
@@ -185,6 +185,7 @@
   (flet ((body ()
            (cl-glfw3:with-init
              (let ((main (apply #'make-instance main initargs)))
+               (start main)
                (unwind-protect
                     (loop with window = (window (trial:context main))
                           until (cl-glfw3:window-should-close-p window)
@@ -218,14 +219,12 @@
   (%with-context
    (case action
      (:press
-      (v:info :test "DOWN: ~a ~a" key (key-text context))
       (handle (make-instance 'key-press
                              :key (glfw-key->key key)
                              :text ""
                              :modifiers modifiers)
               (handler context)))
      (:release
-      (v:info :test "UP: ~a ~a" key (key-text context))
       (handle (make-instance 'key-release
                              :key (glfw-key->key key)
                              :text (key-text context)
