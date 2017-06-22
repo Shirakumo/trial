@@ -75,6 +75,8 @@
 (defgeneric swap-buffers (context))
 (defgeneric show-cursor (context))
 (defgeneric hide-cursor (context))
+(defgeneric lock-cursor (context))
+(defgeneric unlock-cursor (context))
 (defgeneric title (context))
 (defgeneric (setf title) (value context))
 
@@ -146,6 +148,12 @@
 (defclass resize (event)
   ((width :initarg :width :reader width)
    (height :initarg :height :reader height)))
+
+(defclass gain-focus (event)
+  ())
+
+(defclass lose-focus (event)
+  ())
 
 (defmethod describe-object :after ((context context) stream)
   (context-info context stream))

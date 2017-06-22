@@ -144,6 +144,12 @@
 (defmethod hide-cursor ((context context))
   (setf (q+:cursor context) (q+:qt.blank-cursor)))
 
+(defmethod lock-cursor ((context context))
+  (q+:grab-mouse context))
+
+(defmethod unlock-cursor ((context context))
+  (q+:release-mouse context))
+
 (defmethod width ((context context))
   (q+:width context))
 

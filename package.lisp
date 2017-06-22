@@ -104,6 +104,8 @@
    #:swap-buffers
    #:show-cursor
    #:hide-cursor
+   #:lock-cursor
+   #:unlock-cursor
    #:title
    #:width
    #:height
@@ -112,6 +114,8 @@
    #:acquire-context
    #:release-context
    #:resize
+   #:gain-focus
+   #:lose-focus
    #:context-info
    #:context-note-debug-info)
   ;; controller.lisp

@@ -51,3 +51,9 @@
     (handle (make-instance 'mouse-move :old-pos (or previous-pos position) :pos position)
             (handler context))
     (setf previous-pos position)))
+
+(define-override (context focus-in-event) (ev)
+  (handle (make-instance 'gain-focus) (handler context)))
+
+(define-override (context focus-out-event) (ev)
+  (handle (make-instance 'lose-focus) (handler context)))

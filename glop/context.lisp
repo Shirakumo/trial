@@ -141,6 +141,13 @@
 (defmethod hide-cursor ((context context))
   (glop:hide-cursor context))
 
+;; FIXME
+(defmethod lock-cursor ((context context))
+  )
+
+(defmethod unlock-cursor ((context context))
+  )
+
 (defmethod title ((context context))
   (glop::window-title context))
 
@@ -237,7 +244,10 @@
                  (handler context)))))
     (glop:expose-event)
     (glop:visibility-event)
-    (glop:focus-event)
+    (glop:focus-in-event
+     (handle (make-instance 'gain-focus) (handler context)))
+    (glop:focus-out-event
+     (handle (make-instance 'lose-focus) (handler context)))
     (glop:close-event
      (setf (closing context) T)))
   (when (closing context)
