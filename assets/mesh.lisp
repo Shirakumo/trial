@@ -31,7 +31,6 @@
 
 (defmethod load progn ((asset mesh))
   (let* ((geometry (first (coerced-inputs asset)))
-         (own (eql geometry (first (inputs asset))))
          (mesh (etypecase geometry
                  (geometry (or (gethash (mesh asset) (meshes geometry))
                                (error "~a does not contain a mesh named ~a."
@@ -39,18 +38,12 @@
                  (T geometry))))
     (etypecase mesh
       (vertex-mesh
-       (unless own
-         (let ((new (make-instance 'vertex-mesh :face-length (face-length mesh))))
-           (setf (faces new) (faces mesh))
-           (setf (vertices new) (vertices mesh))
-           (setf mesh new)))
-       (change-class mesh 'vertex-array :pack T :load T)
-       (setf (resource asset) (resource mesh)))
+       (let ((new (make-instance 'vertex-mesh :face-length (face-length mesh))))
+         (setf (faces new) (faces mesh))
+         (setf (vertices new) (vertices mesh))
+         (change-class new 'vertex-array :load T)
+         (setf (resource asset) (resource new))
+         (setf (size asset) (size new))))
       (vertex-array
        (setf (resource asset) (resource (load mesh)))
-       (when own
-         (loop for (buffer) in (inputs mesh)
-               do (offload buffer)
-                  (maybe-free-static-vector (unlist (inputs buffer)))
-                  (setf (inputs buffer) NIL)))))
-    (setf (size asset) (size mesh))))
+       (setf (size asset) (size mesh))))))
