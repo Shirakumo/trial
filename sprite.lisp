@@ -46,7 +46,7 @@ void main(){
 (defmethod shared-initialize :after ((subject animated-sprite-subject) slots &key animation frame animations)
   (when animation (setf (animation subject) animation))
   (when frame (setf (frame subject) frame))
-  (setf (animations subject) animations))
+  (when animations (setf (animations subject) animations)))
 
 (defmethod frame ((subject animated-sprite-subject))
   (vx (tile subject)))
