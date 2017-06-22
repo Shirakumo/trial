@@ -12,6 +12,7 @@
   ((title :initform "" :accessor title)
    (cursor-visible :initform T :accessor cursor-visible)
    (mouse-pos :initform (vec 0 0) :accessor mouse-pos)
+   (key-text :initform "" :accessor key-text)
    (initargs :initform NIL :accessor initargs)
    (window :initform NIL :accessor window))
   (:default-initargs
@@ -99,7 +100,7 @@
                                          (cffi:null-pointer))))
         (when (cffi:null-pointer-p window)
           (error "Error creating context."))
-        (setf (gethash *window-table* window) context)
+        (setf (gethash (cffi:pointer-address window) *window-table*) context)
         (setf (window context) window)
         (cl-glfw3:set-window-size-callback 'ctx-size window)
         (cl-glfw3:set-window-focus-callback 'ctx-focus window)
@@ -180,14 +181,16 @@
 (defun make-context (&optional handler)
   (make-instance 'context :handler handler))
 
-(defun launch-with-contet (&optional main &rest initargs)
+(defun launch-with-context (&optional main &rest initargs)
   (flet ((body ()
            (cl-glfw3:with-init
              (let ((main (apply #'make-instance main initargs)))
-               (loop with window = (window (trial:context main))
-                     until (cl-glfw3:window-should-close-p window)
-                     do (cl-glfw3:poll-events)
-                        (bt:thread-yield))))))
+               (unwind-protect
+                    (loop with window = (window (trial:context main))
+                          until (cl-glfw3:window-should-close-p window)
+                          do (cl-glfw3:poll-events)
+                             (bt:thread-yield))
+                 (finalize main))))))
     #+darwin
     (tmt:with-body-in-main-thread ()
       (body))
@@ -195,7 +198,7 @@
     (body)))
 
 (defmacro %with-context (&body body)
-  `(let ((context (gethash window *window-table*)))
+  `(let ((context (gethash (cffi:pointer-address window) *window-table*)))
      ,@body))
 
 (cl-glfw3:def-window-size-callback ctx-size (window w h)
@@ -213,24 +216,28 @@
 (cl-glfw3:def-key-callback ctx-key (window key scancode action modifiers)
   (declare (ignore scancode))
   (%with-context
-   (v:info :test "KEY: ~a" key)
    (case action
      (:press
+      (v:info :test "DOWN: ~a ~a" key (key-text context))
       (handle (make-instance 'key-press
                              :key (glfw-key->key key)
+                             :text ""
                              :modifiers modifiers)
               (handler context)))
      (:release
+      (v:info :test "UP: ~a ~a" key (key-text context))
       (handle (make-instance 'key-release
                              :key (glfw-key->key key)
+                             :text (key-text context)
                              :modifiers modifiers)
               (handler context))))))
 
 (cl-glfw3:def-char-callback ctx-char (window char)
   (%with-context
-   (v:info :test "CHAR: ~a" char)))
+    (setf (key-text context) (string char))))
 
 (cl-glfw3:def-mouse-button-callback ctx-button (window button action modifiers)
+  (declare (ignore modifiers))
   (%with-context
    (case action
      (:press
@@ -245,6 +252,7 @@
               (handler context))))))
 
 (cl-glfw3:def-scroll-callback ctx-scroll (window x y)
+  (declare (ignore y))
   (%with-context
    (handle (make-instance 'mouse-scroll
                           :pos (mouse-pos context)
