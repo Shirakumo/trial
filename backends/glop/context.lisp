@@ -28,11 +28,13 @@
                                           (height NIL height-p)
                                           (title NIL title-p)
                                           (double-buffering NIL double-buffering-p)
+                                          (stereo-buffer NIL stereo-buffer-p)
+                                          (vsync NIL vsync-p)
+                                     ;; Extra
                                           (accumulation-buffer NIL accumulation-buffer-p)
                                           (alpha-buffer NIL alpha-buffer-p)
                                           (depth-buffer NIL depth-buffer-p)
-                                          (stencil-buffer NIL stencil-buffer-p)
-                                          (stereo-buffer NIL stereo-buffer-p))
+                                          (stencil-buffer NIL stencil-buffer-p))
   (macrolet ((maybe-set (var)
                `(when ,(intern (format NIL "~a-~a" var 'p))
                   (setf (getf (initargs context) ,(intern (string var) :keyword))
@@ -45,7 +47,8 @@
     (maybe-set alpha-buffer)
     (maybe-set depth-buffer)
     (maybe-set stencil-buffer)
-    (maybe-set stereo-buffer)))
+    (maybe-set stereo-buffer)
+    (maybe-set vsync)))
 
 (defmethod create-context ((context context))
   (flet ((g (item &optional default)
@@ -63,7 +66,8 @@
                                     :major (first (version context))
                                     :minor (second (version context))
                                     :profile (profile context)
-                                    :make-current T)))))
+                                    :make-current T))
+      (vsync context (g :vsync)))))
 
 (defmethod vsync ((context context) mode)
   (let ((mode (ecase mode

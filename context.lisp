@@ -45,11 +45,8 @@
    :version '(3 3)
    :profile :core
    :double-buffering T
-   :accumulation-buffer NIL
-   :alpha-buffer T
-   :depth-buffer T
-   :stencil-buffer T
    :stereo-buffer NIL
+   :vsync :off
    :handler NIL))
 
 (defmethod print-object ((context context) stream)
