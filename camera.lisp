@@ -118,7 +118,7 @@
   (rotate +vx+ (vx (rotation camera)))
   (rotate +vy+ (vy (rotation camera)))
   (rotate +vz+ (vz (rotation camera)))
-  (translate (v- (location camera))))
+  (translate (v- (the vec3 (location camera)))))
 
 (defun do-fps-movement (camera old-pos pos)
   (let ((delta (v- pos old-pos)))

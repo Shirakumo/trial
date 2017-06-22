@@ -19,6 +19,13 @@
                  translate translate-by
                  rotate rotate-by
                  scale scale-by))
+
+(declaim (ftype (function () mat4)
+                projection-matrix
+                view-matrix
+                model-matrix
+                pop-matrix))
+
 (defun view-matrix ()
   *view-matrix*)
 
@@ -47,13 +54,14 @@
   (setf (first *model-matrix-stack*) mat4))
 
 (defun push-matrix (&optional (matrix (mcopy4 (model-matrix))))
-  (push matrix *model-matrix-stack*))
+  (push matrix *model-matrix-stack*)
+  matrix)
 
 (defun pop-matrix ()
-  (pop *model-matrix-stack*)
-  ;; Make sure we can't pop too far
-  (unless *model-matrix-stack*
-    (setf *model-matrix-stack* (list (meye 4)))))
+  (prog1 (pop *model-matrix-stack*)
+    ;; Make sure we can't pop too far
+    (unless *model-matrix-stack*
+      (setf *model-matrix-stack* (list (meye 4))))))
 
 (defmacro with-pushed-matrix (&body body)
   `(progn (push-matrix)
@@ -62,18 +70,21 @@
             (pop-matrix))))
 
 (defun translate (v &optional (matrix (model-matrix)))
+  (declare (type vec3 v) (type mat4 matrix))
   (nmtranslate matrix v))
 
 (defun translate-by (x y z &optional (matrix (model-matrix)))
   (translate (vec3 x y z) matrix))
 
 (defun rotate (v angle &optional (matrix (model-matrix)))
+  (declare (type vec3 v) (type mat4 matrix))
   (nmrotate matrix v angle))
 
 (defun rotate-by (x y z angle &optional (matrix (model-matrix)))
   (rotate (vec3 x y z) angle matrix))
 
 (defun scale (v &optional (matrix (model-matrix)))
+  (declare (type vec3 v) (type mat4 matrix))
   (nmscale matrix v))
 
 (defun scale-by (x y z &optional (matrix (model-matrix)))
