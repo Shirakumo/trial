@@ -204,33 +204,35 @@
 
 (cl-glfw3:def-window-size-callback ctx-size (window w h)
   (%with-context
-   (handle (make-instance 'resize
-                          :width w
-                          :height h)
-           (handler context))))
+    (handle (make-instance 'resize
+                           :width w
+                           :height h)
+            (handler context))))
 
 (cl-glfw3:def-window-focus-callback ctx-focus (window focusedp)
   (%with-context
-   (handle (make-instance (if focusedp 'gain-focus 'lose-focus))
-           (handler context))))
+    (handle (make-instance (if focusedp 'gain-focus 'lose-focus))
+            (handler context))))
 
 (cl-glfw3:def-key-callback ctx-key (window key scancode action modifiers)
   (declare (ignore scancode))
   (%with-context
-   (case action
-     (:press
-      (setf (key-text context) "")
-      (handle (make-instance 'key-press
-                             :key (glfw-key->key key)
-                             :text ""
-                             :modifiers modifiers)
-              (handler context)))
-     (:release
-      (handle (make-instance 'key-release
-                             :key (glfw-key->key key)
-                             :text (key-text context)
-                             :modifiers modifiers)
-              (handler context))))))
+    (case action
+      (:press
+       (v:debug :trial.input "Key pressed: ~a" key)
+       (setf (key-text context) "")
+       (handle (make-instance 'key-press
+                              :key (glfw-key->key key)
+                              :text ""
+                              :modifiers modifiers)
+               (handler context)))
+      (:release
+       (v:debug :trial.input "Key released: ~a" key)
+       (handle (make-instance 'key-release
+                              :key (glfw-key->key key)
+                              :text (key-text context)
+                              :modifiers modifiers)
+               (handler context))))))
 
 (cl-glfw3:def-char-callback ctx-char (window char)
   (%with-context
@@ -239,34 +241,37 @@
 (cl-glfw3:def-mouse-button-callback ctx-button (window button action modifiers)
   (declare (ignore modifiers))
   (%with-context
-   (case action
-     (:press
-      (handle (make-instance 'mouse-press
-                             :pos (mouse-pos context)
-                             :button (glfw-button->button button))
-              (handler context)))
-     (:release
-      (handle (make-instance 'mouse-release
-                             :pos (mouse-pos context)
-                             :button (glfw-button->button button))
-              (handler context))))))
+    (case action
+      (:press
+       (v:debug :trial.input "Mouse pressed: ~a" (glfw-button->button button))
+       (handle (make-instance 'mouse-press
+                              :pos (mouse-pos context)
+                              :button (glfw-button->button button))
+               (handler context)))
+      (:release
+       (v:debug :trial.input "Mouse released: ~a" (glfw-button->button button))
+       (handle (make-instance 'mouse-release
+                              :pos (mouse-pos context)
+                              :button (glfw-button->button button))
+               (handler context))))))
 
 (cl-glfw3:def-scroll-callback ctx-scroll (window x y)
   (declare (ignore y))
   (%with-context
-   (handle (make-instance 'mouse-scroll
-                          :pos (mouse-pos context)
-                          :delta x)
-           (handler context))))
+    (v:debug :trial.input "Mouse wheel: ~a" x)
+    (handle (make-instance 'mouse-scroll
+                           :pos (mouse-pos context)
+                           :delta x)
+            (handler context))))
 
 (cl-glfw3:def-cursor-pos-callback ctx-pos (window x y)
   (%with-context
-   (let ((current (vec x y)))
-     (handle (make-instance 'mouse-move
-                            :pos current
-                            :old-pos (mouse-pos context))
-             (handler context))
-     (setf (mouse-pos context) current))))
+    (let ((current (vec x y)))
+      (handle (make-instance 'mouse-move
+                             :pos current
+                             :old-pos (mouse-pos context))
+              (handler context))
+      (setf (mouse-pos context) current))))
 
 (defun glfw-button->button (button)
   (case button
@@ -283,4 +288,5 @@
 ;; FIXME: match keys up with glop backend
 (defun glfw-key->key (key)
   (case key
+    (:grave-accent :section)
     (T key)))

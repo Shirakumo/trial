@@ -183,6 +183,7 @@
 (defmethod glop:on-event ((context context) event)
   (typecase event
     (glop:key-press-event
+     (v:debug :trial.input "Key pressed: ~a" (glop:keysym event))
      (case (glop:keysym event)
        ((:shift-l :shift-r)
         (pushnew :shift (modifiers context)))
@@ -199,6 +200,7 @@
                                        :modifiers (modifiers context))
              (handler context)))
     (glop:key-release-event
+     (v:debug :trial.input "Key released: ~a" (glop:keysym event))
      (case (glop:keysym event)
        ((:shift-l :shift-r)
         (setf (modifiers context) (delete :shift (modifiers context))))
@@ -216,17 +218,23 @@
              (handler context)))
     (glop:button-press-event
      (case (glop:button event)
-       (4 (handle (make-instance 'mouse-scroll :delta 1
-                                               :pos (mouse-pos context))
-                  (handler context)))
-       (5 (handle (make-instance 'mouse-scroll :delta -1
-                                               :pos (mouse-pos context))
-                  (handler context)))
-       (T (handle (make-instance 'mouse-press :button (glop-button->symbol
-                                                       (glop:button event))
-                                              :pos (mouse-pos context))
+       (4 (v:debug :trial.input "Mouse wheel: ~a" 1)
+        (handle (make-instance 'mouse-scroll :delta 1
+                                             :pos (mouse-pos context))
+                (handler context)))
+       (5 (v:debug :trial.input "Mouse wheel: ~a" -1)
+        (handle (make-instance 'mouse-scroll :delta -1
+                                             :pos (mouse-pos context))
+                (handler context)))
+       (T (v:debug :trial.input "Mouse pressed: ~a" (glop-button->symbol
+                                                     (glop:button event)))
+        (handle (make-instance 'mouse-press :button (glop-button->symbol
+                                                     (glop:button event))
+                                            :pos (mouse-pos context))
                 (handler context)))))
     (glop:button-release-event
+     (v:debug :trial.input "Mouse released: ~a" (glop-button->symbol
+                                                 (glop:button event)))
      (handle (make-instance 'mouse-release :button (glop:button event)
                                            :pos (mouse-pos context))
              (handler context)))
