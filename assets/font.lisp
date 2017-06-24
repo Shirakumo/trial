@@ -39,12 +39,30 @@
   ((font :initarg :font :accessor font)
    (text :initarg :text :accessor text)
    (color :initarg :color :initform (vec 0 0 0 1) :accessor color)
-   (size :initarg :size :accessor size))
+   (size :initarg :size :accessor size)
+   (vbo)
+   (ebo))
   (:default-initargs
    :text ""
-   :vertex-array (make-instance 'vertex-array :resource T)
+   :vertex-array NIL
    :texture (make-instance 'texture :resource T)
    :size 24.0))
+
+(defmethod initialize-instance :after ((text text) &key)
+  (let ((vbo (make-instance 'vertex-buffer :buffer-type :array-buffer
+                                           :data-usage :dynamic-draw
+                                           :inputs (list (cffi:null-pointer))
+                                           :size 0))
+        (ebo (make-instance 'vertex-buffer :buffer-type :element-array-buffer
+                                           :data-usage :dynamic-draw
+                                           :inputs (list (cffi:null-pointer))
+                                           :size 0)))
+    (setf (slot-value text 'vbo) vbo)
+    (setf (slot-value text 'ebo) ebo)
+    (setf (vertex-array text)
+          (make-instance 'vertex-array :inputs `((,vbo :size 2 :stride 16 :offset 0)
+                                                 (,vbo :size 2 :stride 16 :offset 8)
+                                                 ,ebo)))))
 
 (defmethod paint :before ((subject text) (pass shader-pass))
   (let ((program (shader-program-for-pass pass subject)))
@@ -62,6 +80,9 @@ void main(){
 }")
 
 (defmethod load progn ((subject text))
+  (load (slot-value subject 'vbo))
+  (load (slot-value subject 'ebo))
+  (load (vertex-array subject))
   (setf (font subject) (load (font subject)))
   (setf (text subject) (text subject)))
 
@@ -70,15 +91,13 @@ void main(){
 
 (defmethod (setf font) :after (font (subject text))
   (when (resource font)
-    (setf (resource (texture subject)) (cl-fond:texture (resource font)))))
+    (setf (resource (texture subject)) (cl-fond:texture (resource font)))
+    (setf (text subject) (text subject))))
 
 (defmethod (setf text) :before (text (subject text))
   (let ((vao (vertex-array subject))
+        (vbo (slot-value subject 'vbo))
+        (ebo (slot-value subject 'ebo))
         (font (resource (font subject))))
     (when font
-      ;; FIXME: would be nice if cl-fond allowed re-using a VAO/VBO somehow...
-      (multiple-value-bind (resource size) (cl-fond:compute-text font text)
-        (unless (eql T (resource vao))
-          (gl:delete-vertex-arrays (list (resource vao))))
-        (setf (resource vao) resource)
-        (setf (size vao) size)))))
+      (setf (size vao) (cl-fond:update-text font text vbo ebo)))))
