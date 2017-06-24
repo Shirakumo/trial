@@ -52,7 +52,7 @@
   (let ((pass (register-object-for-pass shader-pass entity)))
     (when pass (load pass))))
 
-(defmacro define-shader-pass (name direct-superclasses direct-slots &rest options)
+(defmacro define-shader-pass (&environment env name direct-superclasses direct-slots &rest options)
   (unless (find-if (lambda (c) (c2mop:subclassp (find-class c T env) 'shader-pass)) direct-superclasses)
     (setf direct-superclasses (append direct-superclasses (list 'shader-pass))))
   (unless (find :metaclass options :key #'car)
