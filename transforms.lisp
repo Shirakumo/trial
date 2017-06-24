@@ -6,11 +6,10 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-;; FIXME: inline and compiler-macro things to make it more efficient
-
-(defvar *view-matrix* (meye 4))
-(defvar *projection-matrix* (meye 4))
-(defvar *model-matrix-stack* (list (meye 4)))
+(declaim (type mat4
+               *view-matrix*
+               *projection-matrix*
+               *model-matrix*))
 
 (declaim (inline view-matrix (setf view-matrix)
                  projection-matrix (setf projection-matrix)
@@ -26,6 +25,10 @@
                 model-matrix
                 pop-matrix))
 
+(defvar *view-matrix* (meye 4))
+(defvar *projection-matrix* (meye 4))
+(defvar *model-matrix* (meye 4))
+
 (defun view-matrix ()
   *view-matrix*)
 
@@ -38,6 +41,12 @@
 (defun (setf projection-matrix) (mat4)
   (setf *projection-matrix* mat4))
 
+(defun model-matrix ()
+  *model-matrix*)
+
+(defun (setf model-matrix) (mat4)
+  (setf *model-matrix* mat4))
+
 (defun look-at (eye target up)
   (setf *view-matrix* (mlookat eye target up)))
 
@@ -47,27 +56,13 @@
 (defun orthographic-projection (left right bottom top near far)
   (setf *projection-matrix* (mortho left right bottom top near far)))
 
-(defun model-matrix ()
-  (first *model-matrix-stack*))
-
-(defun (setf model-matrix) (mat4)
-  (setf (first *model-matrix-stack*) mat4))
-
-(defun push-matrix (&optional (matrix (mcopy4 (model-matrix))))
-  (push matrix *model-matrix-stack*)
-  matrix)
-
-(defun pop-matrix ()
-  (prog1 (pop *model-matrix-stack*)
-    ;; Make sure we can't pop too far
-    (unless *model-matrix-stack*
-      (setf *model-matrix-stack* (list (meye 4))))))
-
-(defmacro with-pushed-matrix (&body body)
-  `(progn (push-matrix)
-          (unwind-protect
-               (progn ,@body)
-            (pop-matrix))))
+(defmacro with-pushed-matrix ((&optional (accessor '(model-matrix))) &body body)
+  (let ((variable (ecase (unlist accessor)
+                    ((*view-matrix* view-matrix) '*view-matrix*)
+                    ((*projection-matrix* projection-matrix) '*projection-matrix*)
+                    ((*model-matrix* model-matrix) '*model-matrix*))))
+    `(let ((,variable (mcopy4 ,variable)))
+       ,@body)))
 
 (defun translate (v &optional (matrix (model-matrix)))
   (declare (type vec3 v) (type mat4 matrix))

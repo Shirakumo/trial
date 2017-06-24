@@ -486,12 +486,10 @@
   (:export
    #:view-matrix
    #:projection-matrix
+   #:model-matrix
    #:look-at
    #:perspective-projection
    #:orthographic-projection
-   #:model-matrix
-   #:push-matrix
-   #:pop-matrix
    #:with-pushed-matrix
    #:translate
    #:translate-by
