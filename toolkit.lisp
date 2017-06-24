@@ -63,6 +63,9 @@
         for x = (member k keys)
         unless x collect k))
 
+(defun one-of (thing &rest options)
+  (find thing options))
+
 (defun input-source (&optional (stream *query-io*))
   (with-output-to-string (out)
     (loop for in = (read-line stream NIL NIL)
@@ -316,12 +319,13 @@
 
 ;; https://www.khronos.org/registry/OpenGL/extensions/ATI/ATI_meminfo.txt
 (defun gpu-room-ati ()
-  (let ((vbo-free-memory-ati (gl:get-integer #x87FB 4))
-        (tex-free-memory-ati (gl:get-integer #x87FC 4))
-        (buf-free-memory-ati (gl:get-integer #x87FD 4)))
-    (+ (aref vbo-free-memory-ati 0)
-       (aref tex-free-memory-ati 0)
-       (aref buf-free-memory-ati 0))))
+  (let* ((vbo-free-memory-ati (gl:get-integer #x87FB 4))
+         (tex-free-memory-ati (gl:get-integer #x87FC 4))
+         (buf-free-memory-ati (gl:get-integer #x87FD 4))
+         (total (+ (aref vbo-free-memory-ati 0)
+                   (aref tex-free-memory-ati 0)
+                   (aref buf-free-memory-ati 0))))
+    (values total total)))
 
 ;; http://developer.download.nvidia.com/opengl/specs/GL_NVX_gpu_memory_info.txt
 (defun gpu-room-nvidia ()
@@ -333,6 +337,16 @@
 (defun gpu-room ()
   (or (ignore-errors (gpu-room-ati))
       (ignore-errors (gpu-room-nvidia))))
+
+(defun cpu-room ()
+  #+sbcl
+  (values (round
+           (/ (- (sb-ext:dynamic-space-size)
+                 (sb-kernel:dynamic-usage))
+              1024.0))
+          (round
+           (/ (sb-ext:dynamic-space-size) 1024.0)))
+  #-sbcl (values 1 1))
 
 (defun check-texture-size (width height)
   (let ((max (gl:get* :max-texture-size)))
