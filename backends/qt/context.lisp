@@ -55,8 +55,7 @@
       (maybe-set overlay overlay)
       (maybe-set plane plane)
       (maybe-set multisampling sample-buffers)
-      (maybe-set samples samples)
-      (maybe-set swap-interval swap-interval))
+      (maybe-set samples samples))
     (when vsync-p
       (setf (q+:swap-interval format)
             (ecase vsync (:off 0) (:on 1) (:adaptive -1))))
