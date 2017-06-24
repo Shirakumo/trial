@@ -53,10 +53,12 @@
     (when pass (load pass))))
 
 (defmacro define-shader-pass (name direct-superclasses direct-slots &rest options)
+  (unless (find-if (lambda (c) (c2mop:subclassp (find-class c T env) 'shader-pass)) direct-superclasses)
+    (setf direct-superclasses (append direct-superclasses (list 'shader-pass))))
   (unless (find :metaclass options :key #'car)
     (push '(:metaclass shader-pass-class) options))
   `(eval-when (:compile-toplevel :load-toplevel :execute)
-     (defclass ,name (,@direct-superclasses shader-pass)
+     (defclass ,name ,direct-superclasses
        ,direct-slots
        ,@options)))
 
