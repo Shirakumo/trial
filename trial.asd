@@ -48,6 +48,7 @@
                (:file "pipeline" :depends-on ("package" "event-loop" "toolkit"))
                (:file "renderable" :depends-on ("package" "toolkit"))
                (:file "retention" :depends-on ("package" "event-loop"))
+               (:file "scene-buffer" :depends-on ("package" "scene" "pipeline"))
                (:file "scene" :depends-on ("package" "event-loop" "entity"))
                (:file "shader-pass" :depends-on ("package" "shader-subject" "asset" "scene"))
                (:file "shader-subject" :depends-on ("package" "subject"))

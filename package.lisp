@@ -351,6 +351,14 @@
    #:define-retention
    #:define-coupled-retention
    #:define-uniform-retention)
+  ;; scene-buffer.lisp
+  (:export
+   #:scene-buffer
+   #:render-pass
+   #:width
+   #:height
+   #:texture
+   #:pack)
   ;; scene.lisp
   (:export
    #:scene
