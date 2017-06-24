@@ -186,7 +186,7 @@
     (call-next-method)))
 
 (define-shader-pass post-effect-pass (single-shader-pass)
-  ((vertex-array :initform (asset 'geometry 'fullscreen-square) :accessor vertex-array)))
+  ((vertex-array :initform (asset 'trial 'fullscreen-square) :accessor vertex-array)))
 
 (defmethod load progn ((pass post-effect-pass))
   (load (vertex-array pass)))

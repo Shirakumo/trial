@@ -39,6 +39,7 @@
     (format stream "~a ~s" (name pool) (base pool))))
 
 (defmacro define-pool (name &body initargs)
+  (check-type name symbol)
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (cond ((pool ',name)
             (reinitialize-instance (pool ',name) ,@initargs))
@@ -113,3 +114,7 @@
        ',name)))
 
 (indent:define-indentation define-asset (2 4 (&whole 4 &rest 1) &body))
+
+(values
+ (define-pool trial
+   :base :trial))

@@ -6,10 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-pool geometry
-  :base 'trial)
-
-(define-asset (geometry fullscreen-square) packed-vertex-array
+(define-asset (trial fullscreen-square) packed-vertex-array
     (#(0 1 2 2 3 0)
      3 #(+1.0 +1.0 +0.0
          +1.0 -1.0 +0.0
