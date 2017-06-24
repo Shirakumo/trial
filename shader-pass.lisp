@@ -138,14 +138,15 @@
 
 (defmethod register-object-for-pass ((pass per-object-pass) (class shader-subject-class))
   (let ((shaders ()))
-    (let ((class (determine-effective-shader-class class)))
-      (unless (gethash class (assets pass))
-        (loop for (type spec) on (effective-shaders class) by #'cddr
+    (let ((effective-class (determine-effective-shader-class class)))
+      (unless (gethash effective-class (assets pass))
+        (loop for (type spec) on (effective-shaders effective-class) by #'cddr
               for inputs = (coerce-pass-shader pass type spec)
               for shader = (make-asset 'shader inputs :type type)
               do (push shader shaders))
-        (setf (gethash class (assets pass))
-              (make-asset 'shader-program shaders))))))
+        (setf (gethash effective-class (assets pass))
+              (make-asset 'shader-program shaders)))
+      (setf (gethash class (assets pass)) (gethash effective-class (assets pass))))))
 
 (defmethod register-object-for-pass ((pass per-object-pass) (subject shader-subject))
   (register-object-for-pass pass (class-of subject)))
