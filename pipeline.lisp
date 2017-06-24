@@ -132,8 +132,19 @@
         for fbo = (framebuffer pass)
         do (gl:bind-framebuffer :framebuffer (resource fbo))
            (gl:clear :color-buffer :depth-buffer)
-           (paint pass target)
-        finally (gl:bind-framebuffer :draw-framebuffer 0)
-                (%gl:blit-framebuffer 0 0 (width target) (height target) 0 0 (width target) (height target)
-                                      (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
-                                      (cffi:foreign-enum-value '%gl:enum :nearest))))
+           (paint pass target)))
+
+(defmethod register-object-for-pass ((pipeline pipeline) object)
+  (loop for pass across (passes pipeline)
+        do (register-object-for-pass pass object)))
+
+(defclass frame-pipeline (pipeline)
+  ()
+  (:default-initargs
+   :name :pipeline))
+
+(defmethod paint :after ((pipeline pipeline) target)
+  (gl:bind-framebuffer :draw-framebuffer 0)
+  (%gl:blit-framebuffer 0 0 (width target) (height target) 0 0 (width target) (height target)
+                        (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
+                        (cffi:foreign-enum-value '%gl:enum :nearest)))
