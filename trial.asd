@@ -28,7 +28,7 @@
                (:file "attributes" :depends-on ("package"))
                (:file "camera" :depends-on ("package" "subject" "helpers"))
                (:file "context" :depends-on ("package"))
-               (:file "controller" :depends-on ("package" "mapping" "input" "subject"))
+               (:file "controller" :depends-on ("package" "mapping" "input" "subject" ("assets" "font")))
                (:file "deploy" :depends-on ("package" "gamepad"))
                (:file "display" :depends-on ("package" "context" "renderable"))
                (:file "effects" :depends-on ("package" "shader-pass"))
@@ -69,7 +69,7 @@
                              (:file "vertex-array" :depends-on ("vertex-buffer"))
                              (:file "framebuffer" :depends-on ("vertex-array" "texture"))
                              (:file "mesh" :depends-on ((:.. "geometry") (:.. "static-vector")))
-                             (:file "font" :depends-on ((:.. "shader-pass")))))
+                             (:file "font" :depends-on ((:.. "shader-pass") (:.. "subjects")))))
                (:module "formats"
                 :depends-on ("package" "geometry" "static-vector")
                 :components ((:file "vertex-format")

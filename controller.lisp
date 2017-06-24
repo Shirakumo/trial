@@ -23,10 +23,65 @@
 (define-action quit-game (system-action)
   (key-press (and (eql key :q) (find :control modifiers))))
 
+(define-action toggle-overlay (system-action)
+  (key-press (one-of key :section)))
+
+(define-asset (trial noto-sans) font
+    (#p"noto-sans-regular.ttf"))
+
+(define-asset (trial noto-mono) font
+    (#p"noto-mono-regular.ttf"))
+
 (define-subject controller ()
-  ((display :initform NIL :accessor display))
+  ((display :initform NIL :accessor display)
+   (text :initform (make-instance 'text :font (asset 'trial 'noto-mono) :size 18) :accessor text)
+   (fps-buffer :initform (make-array 100 :fill-pointer T :initial-element 1))
+   (show-overlay :initform NIL :accessor show-overlay))
   (:default-initargs
    :name :controller))
+
+(defmethod load progn ((controller controller))
+  (load (text controller)))
+
+(defmethod register-object-for-pass :after (pass (controller controller))
+  (register-object-for-pass pass (text controller)))
+
+(define-handler (controller toggle-overlay) (ev)
+  (setf (show-overlay controller) (not (show-overlay controller))))
+
+(define-handler (controller tick) (ev tt)
+  (when (show-overlay controller)
+    (multiple-value-bind (gfree gtotal) (gpu-room)
+      (multiple-value-bind (cfree ctotal) (cpu-room)
+        (with-slots (fps-buffer text) controller
+          (when (= (array-total-size fps-buffer) (fill-pointer fps-buffer))
+            (setf (fill-pointer fps-buffer) 0))
+          (vector-push (if (= 0 (frame-time (handler *context*))) 1 (/ (frame-time (handler *context*)))) fps-buffer)
+          
+          (setf (vy (location text))
+                (- (getf (cl-fond:compute-extent (resource (font text)) "a") :t)))
+          (setf (vx (location text)) 5)
+          (setf (text text) (format NIL "TIME  [s]: ~8,2f~%~
+                                         FPS  [Hz]: ~8,2f~%~
+                                         RAM  [KB]: ~8d (~2d%)~%~
+                                         VRAM [KB]: ~8d (~2d%)"
+                                    tt
+                                    (/ (loop for i from 0 below (array-total-size fps-buffer)
+                                             sum (aref fps-buffer i))
+                                       (array-total-size fps-buffer))
+                                    (- ctotal cfree) (floor (/ (- ctotal cfree) ctotal 0.01))
+                                    (- gtotal gfree) (floor (/ (- gtotal gfree) gtotal 0.01)))))))))
+
+(defmethod paint ((controller controller) target)
+  (when (show-overlay controller)
+    (with-pushed-matrix (*projection-matrix* :zero)
+      (orthographic-projection 0 (width *context*)
+                               0 (height *context*)
+                               0 10)
+      (with-pushed-matrix (*model-matrix* :identity)
+        (translate-by 0 (height *context*) 0)
+        (with-pushed-matrix (*view-matrix* :identity)
+          (paint (text controller) target))))))
 
 (define-handler (controller quit-game) (ev)
   (quit *context*))

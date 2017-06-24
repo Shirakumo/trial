@@ -48,7 +48,6 @@
     (v:info :trial.main "Setting up scene")
     (with-timing-report (info :trial.main "Scene setup took ~fs run time, ~fs clock time.")
       (call-next-method)))
-  (enter (controller main) (scene main))
   (load (scene main))
   (load (pipeline main))
   (start (scene main))
@@ -60,6 +59,7 @@
   ())
 
 (defmethod setup-scene :after ((main main))
+  (enter (controller main) (scene main))
   (setup-pipeline main))
 
 (defmethod setup-pipeline ((main main))
