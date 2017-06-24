@@ -11,7 +11,9 @@
   #.(with-output-to-string (out)
       (loop for i from 32 to 126
             do (write-char (code-char i) out))
-      (write-string "öäüçèàéê§°" out)))
+      (write-string "öäüçèàéê§°" out)
+      (write-char #\Return out)
+      (write-char #\Linefeed out)))
 
 (defclass font (asset)
   ((charset :initarg :charset :accessor charset)
@@ -83,8 +85,7 @@ void main(){
   (load (slot-value subject 'vbo))
   (load (slot-value subject 'ebo))
   (load (vertex-array subject))
-  (setf (font subject) (load (font subject)))
-  (setf (text subject) (text subject)))
+  (setf (font subject) (load (font subject))))
 
 (defmethod offload progn ((subject text))
   (offload (vertex-array subject)))
@@ -100,4 +101,6 @@ void main(){
         (ebo (slot-value subject 'ebo))
         (font (resource (font subject))))
     (when font
-      (setf (size vao) (cl-fond:update-text font text vbo ebo)))))
+      (setf (size vao) (cl-fond:update-text font text
+                                            (resource vbo)
+                                            (resource ebo))))))
