@@ -11,7 +11,7 @@
 (defclass main (display window)
   ((scene :initform (make-instance 'scene) :accessor scene)
    (pipeline :initform (make-instance 'pipeline :name :pipeline) :accessor pipeline)
-   (controller :initform (make-instance 'controller)))
+   (controller :initform (make-instance 'controller) :accessor controller))
   (:default-initargs
    :name :main))
 
@@ -48,6 +48,7 @@
     (v:info :trial.main "Setting up scene")
     (with-timing-report (info :trial.main "Scene setup took ~fs run time, ~fs clock time.")
       (call-next-method)))
+  (enter (controller main) (scene main))
   (load (scene main))
   (load (pipeline main))
   (start (scene main))
