@@ -109,17 +109,43 @@
   (glsl-toolkit:merge-shader-sources
    (list spec (class-shader type pass))))
 
+(defmethod determine-effective-shader-class ((name symbol))
+  (determine-effective-shader-class (find-class name)))
+
+(defmethod determine-effective-shader-class ((object shader-subject))
+  (determine-effective-shader-class (class-of object)))
+
+(defmethod determine-effective-shader-class ((class standard-class))
+  NIL)
+
+(defmethod determine-effective-shader-class ((class shader-subject-class))
+  (if (direct-shaders class)
+      class
+      (let* ((effective-superclasses (list (find-class 'shader-subject))))
+        ;; Loop through superclasses and push new, effective superclasses.
+        (loop for superclass in (c2mop:class-direct-superclasses class)
+              for effective-class = (determine-effective-shader-class superclass)
+              do (when (and effective-class (not (find effective-class effective-superclasses)))
+                   (push effective-class effective-superclasses)))
+        ;; If we have one or two --one always being the shader-subject class--
+        ;; then we just return the more specific of the two, as there's no class
+        ;; combination happening that would produce new shaders.
+        (if (<= (length effective-superclasses) 2)
+            (first effective-superclasses)
+            class))))
+
 (defmethod register-object-for-pass ((pass per-object-pass) o))
 
 (defmethod register-object-for-pass ((pass per-object-pass) (class shader-subject-class))
   (let ((shaders ()))
-    (unless (gethash class (assets pass))
-      (loop for (type spec) on (effective-shaders class) by #'cddr
-            for inputs = (coerce-pass-shader pass type spec)
-            for shader = (make-asset 'shader inputs :type type)
-            do (push shader shaders))
-      (setf (gethash class (assets pass))
-            (make-asset 'shader-program shaders)))))
+    (let ((class (determine-effective-shader-class class)))
+      (unless (gethash class (assets pass))
+        (loop for (type spec) on (effective-shaders class) by #'cddr
+              for inputs = (coerce-pass-shader pass type spec)
+              for shader = (make-asset 'shader inputs :type type)
+              do (push shader shaders))
+        (setf (gethash class (assets pass))
+              (make-asset 'shader-program shaders))))))
 
 (defmethod register-object-for-pass ((pass per-object-pass) (subject shader-subject))
   (register-object-for-pass pass (class-of subject)))
