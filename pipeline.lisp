@@ -143,7 +143,7 @@
   (:default-initargs
    :name :pipeline))
 
-(defmethod paint :after ((pipeline pipeline) target)
+(defmethod paint :after ((pipeline frame-pipeline) target)
   (gl:bind-framebuffer :draw-framebuffer 0)
   (%gl:blit-framebuffer 0 0 (width target) (height target) 0 0 (width target) (height target)
                         (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)

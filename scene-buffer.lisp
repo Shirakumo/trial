@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass scene-buffer (scene pipeline)
+(defclass scene-buffer (pipeline scene)
   ((render-pass :initform (make-instance 'render-pass) :accessor render-pass)
    (width :initarg :width :accessor width)
    (height :initarg :height :accessor height))
@@ -28,3 +28,10 @@
 
 (defmethod enter :after ((subject shader-subject) (buffer scene-buffer))
   (register-object-for-pass buffer subject))
+
+(defmethod paint :before ((buffer scene-buffer) (target scene-buffer))
+  (gl:viewport 0 0 (width target) (height target)))
+
+(defmethod paint ((pass shader-pass) (buffer scene-buffer))
+  (for:for ((object over buffer))
+    (paint object pass)))
