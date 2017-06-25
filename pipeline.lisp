@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass pipeline (entity event-loop)
+(defclass pipeline (event-loop entity)
   ((nodes :initform NIL :accessor nodes)
    (passes :initform #() :accessor passes)
    (textures :initform #() :accessor textures)))
