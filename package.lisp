@@ -492,6 +492,9 @@
    #:check-framebuffer-attachment)
   ;; transforms.lisp
   (:export
+   #:*view-matrix*
+   #:*projection-matrix*
+   #:*model-matrix*
    #:view-matrix
    #:projection-matrix
    #:model-matrix
