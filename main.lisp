@@ -73,6 +73,9 @@
 (defmethod paint ((source main) (target main))
   (paint (pipeline source) target))
 
+(defmethod paint ((pass shader-pass) (target main))
+  (paint (scene target) pass))
+
 (defun launch (&optional (main 'main) &rest initargs)
   (v:output-here)
   (v:info :trial.main "GENESIS")

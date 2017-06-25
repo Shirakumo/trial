@@ -44,10 +44,6 @@
   (when (framebuffer pass)
     (finalize (framebuffer pass))))
 
-(defmethod paint ((pass shader-pass) target)
-  (when (typep target 'main)
-    (paint (scene target) pass)))
-
 (define-handler (shader-pass register-subject-for-enter enter) (ev entity)
   (let ((pass (register-object-for-pass shader-pass entity)))
     (when pass (load pass))))
