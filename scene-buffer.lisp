@@ -16,7 +16,7 @@
 
 (defmethod initialize-instance :after ((buffer scene-buffer) &key)
   (register (render-pass buffer) buffer)
-  (pack-pipeline buffer))
+  (pack buffer))
 
 (defmethod pack ((buffer scene-buffer))
   (pack-pipeline buffer buffer))
@@ -26,5 +26,5 @@
     (texture (find :color-attachment0 (flow:ports pass)
                    :key #'attachment))))
 
-(defmethod enter ((subject shader-subject) (buffer scene-buffer))
+(defmethod enter :after ((subject shader-subject) (buffer scene-buffer))
   (register-object-for-pass buffer subject))
