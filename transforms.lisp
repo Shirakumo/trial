@@ -56,15 +56,19 @@
 (defun orthographic-projection (left right bottom top near far)
   (setf *projection-matrix* (mortho left right bottom top near far)))
 
-(defmacro with-pushed-matrix ((&optional (accessor '(model-matrix)) fill) &body body)
-  (let ((variable (ecase (unlist accessor)
-                    ((*view-matrix* view-matrix) '*view-matrix*)
-                    ((*projection-matrix* projection-matrix) '*projection-matrix*)
-                    ((*model-matrix* model-matrix) '*model-matrix*))))
-    `(let ((,variable ,(ecase fill
-                         (:zero `(mat4))
-                         (:identity `(meye 4))
-                         ((:copy NIL) `(mcopy4 ,variable)))))
+(defmacro with-pushed-matrix (specs &body body)
+  (let ((specs (or specs '(((model-matrix) :copy)))))
+    `(let ,(loop for spec in specs
+                 for (accessor fill) = (enlist spec :copy)
+                 for variable = (ecase (unlist accessor)
+                                  ((*view-matrix* view-matrix) '*view-matrix*)
+                                  ((*projection-matrix* projection-matrix) '*projection-matrix*)
+                                  ((*model-matrix* model-matrix) '*model-matrix*))
+                 collect `(,variable
+                           ,(ecase fill
+                              (:zero `(mat4))
+                              (:identity `(meye 4))
+                              ((:copy NIL) `(mcopy4 ,variable)))))
        ,@body)))
 
 (defun translate (v &optional (matrix (model-matrix)))
