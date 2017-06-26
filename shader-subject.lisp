@@ -14,14 +14,18 @@
 (defmethod cascade-option-changes :before ((class shader-subject-class))
   (let ((effective-shaders ())
         (inhibited (inhibit-shaders class)))
+    ;; Make all direct shaders effective
     (loop for (type shader) on (direct-shaders class) by #'cddr
           do (setf (getf effective-shaders type)
                    (list shader)))
+    ;; Go through all superclasses in order
     (loop for super in (c2mop:compute-class-precedence-list class)
           do (when (typep super 'shader-subject-class)
+               (setf inhibited (append inhibited (inhibit-shaders super)))
                (loop for (type shader) on (direct-shaders super) by #'cddr
                      unless (find (list (class-name super) type) inhibited :test #'equal)
                      do (pushnew shader (getf effective-shaders type)))))
+    ;; Compute effective single shader sources
     (loop for (type shaders) on effective-shaders by #'cddr
           do (setf (getf effective-shaders type)
                    (glsl-toolkit:merge-shader-sources
