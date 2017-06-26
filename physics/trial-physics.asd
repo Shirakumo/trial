@@ -15,4 +15,4 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   :homepage "https://github.com/Shirakumo/trial"
   :components ((:file "package")
                (:file "verlet" :depends-on ("package")))
-  :depends-on (:trial))
+  :depends-on (:3d-vectors :flare :trial))

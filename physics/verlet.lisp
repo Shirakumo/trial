@@ -6,7 +6,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 
 (in-package #:org.shirakumo.fraf.trial.physics)
 
-(defvar *default-gravity* 0.0d0
+(defvar *default-forces* (vec 0 0.5)
   "Downways.")
 (defvar *default-viscosity* 1.0d0
   "How hard is it to move horizontally when falling on a surface.")
@@ -18,6 +18,12 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
           (vec2 (+ (vx v) (vy v)))
           (vec3 (+ (vx v) (vy v) (vz v)))
           (vec4 (+ (vx v) (vy v) (vz v) (vw v))))))
+
+(defun nvnormal (v)
+  (nv/ v (etypecase v
+           (vec2 (+ (vx v) (vy v)))
+           (vec3 (+ (vx v) (vy v) (vz v)))
+           (vec4 (+ (vx v) (vy v) (vz v) (vw v))))))
 
 (defclass physical-point ()
   ((location :initarg :location :accessor location)
@@ -41,11 +47,11 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
    (center :initform NIL :accessor center)
    (static-p :initarg :static-p :accessor static-p)
    (mass :initarg :mass :accessor mass)
-   (gravity :initarg :gravity :accessor gravity)
+   (forces :initarg :forces :accessor forces)
    (viscosity :initarg :viscosity :accessor viscosity))
   (:default-initargs :mass 1.0
                      :static-p NIL
-                     :gravity *default-gravity*
+                     :forces *default-forces*
                      :viscosity *default-viscosity*))
 
 (defmethod initialize-instance :after ((entity physical-entity)
@@ -98,8 +104,9 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
     (for:for ((point in (vertices entity))
               (loc = (location point))
               (old = (old-location point)))
-      (setf (location point) (vec (- (* viscosity (vx loc)) (* viscosity (vx old)))
-                                  (+ (- (* viscosity (vx loc)) (* viscosity (vx old))) (gravity entity)))
+      (setf (location point) (v+ (vec (- (* viscosity (vx loc)) (* viscosity (vx old)))
+                                      (- (* viscosity (vx loc)) (* viscosity (vx old))))
+                                 (forces entity))
             (old-location point) loc))))
 
 (defmethod update-edges ((entity physical-entity))
@@ -175,24 +182,6 @@ vertex: point that pierces furthest in"
                   vertex point))) ;; And here we find the piercing point
         (values depth (/ mass1 total-mass) (/ mass2 total-mass) normal col-edge vertex)))))
 
-(defun update-physics (entities)
-  (for:for ((entity in entities))
-    (apply-forces entity)
-    (update-edges entity))
-  (dotimes (i *physics-iterations*) ;; More you do it, better it gets
-    (loop for list = entities then (rest list)
-          for entity = (first list)
-          for rest = (rest list)
-          while (and entity rest)
-          do (update-edges entity)
-          do (calculate-center entity)
-          do (for:for ((other in rest))
-               (update-edges other)
-               (calculate-center other)
-               (multiple-value-bind (depth mass-a mass-b normal edge vertex)
-                   (collides-p entity other)
-                 (when depth (resolve-collision depth mass-a mass-b normal edge vertex)))))))
-
 (defun resolve-collision (depth mass-a mass-b normal edge vertex)
   "Pushes back the two entities from one another. The normal always points towards the piercing entity."
   (let ((response (v* normal depth))) ;; Pushback for the piercing entity
@@ -216,3 +205,21 @@ vertex: point that pierces furthest in"
       ;; ... I really hope the masses are right way around.
       (setf (location (point-a edge)) (v- point-a (v* response (- 1 t-point) mass-b lmba))
             (location (point-b edge)) (v- point-b (v* response t-point mass-b lmba))))))
+
+(defun update-physics (entities)
+  (for:for ((entity in entities))
+    (apply-forces entity)
+    (update-edges entity))
+  (dotimes (i *physics-iterations*) ;; More you do it, better it gets
+    (loop for list = entities then (rest list)
+          for entity = (first list)
+          for rest = (rest list)
+          while (and entity rest)
+          do (update-edges entity)
+          do (calculate-center entity)
+          do (for:for ((other in rest))
+               (update-edges other)
+               (calculate-center other)
+               (multiple-value-bind (depth mass-a mass-b normal edge vertex)
+                   (collides-p entity other)
+                 (when depth (resolve-collision depth mass-a mass-b normal edge vertex)))))))

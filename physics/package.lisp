@@ -7,5 +7,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 (in-package #:org.shirakumo.fraf.trial)
 (defpackage #:trial-physics
   (:nicknames #:org.shirakumo.fraf.trial.physics)
-  (:use #:cl #:3d-vectors #:3d-matrices #:flare #:trial))
+  (:shadow #:scene #:entity #:load #:update)
+  (:use #:cl #:3d-vectors #:3d-matrices #:flare #:trial)
+  (:export #:update-physics))
 (in-package #:org.shirakumo.fraf.trial.physics)
