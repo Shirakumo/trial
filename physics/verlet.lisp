@@ -13,17 +13,22 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 (defvar *iterations* 5
   "Number of physics calculation iterations. Increases accuracy of calculations.")
 
-(defun vnormal (v)
+(3d-vectors::define-ofun vnormal (v)
+  (declare (ftype (function (vec)) vnormal))
   (v/ v (etypecase v
           (vec2 (+ (vx v) (vy v)))
           (vec3 (+ (vx v) (vy v) (vz v)))
           (vec4 (+ (vx v) (vy v) (vz v) (vw v))))))
 
-(defun nvnormal (v)
-  (nv/ v (etypecase v
-           (vec2 (+ (vx v) (vy v)))
-           (vec3 (+ (vx v) (vy v) (vz v)))
-           (vec4 (+ (vx v) (vy v) (vz v) (vw v))))))
+(3d-vectors::define-ofun nvnormal (v)
+  (declare (ftype (function (vec)) nvnormal))
+  (let ((normal (vnormal v)))
+    (setf (vx v) (vx normal)
+          (vy v) (vy normal))
+    (typecase v
+      (vec3 (setf (vz v) (vz normal)))
+      (vec4 (setf (vz v) (vz normal)
+                  (vw v) (vw normal))))))
 
 (defclass physical-point ()
   ((location :initarg :location :accessor location)
@@ -117,9 +122,10 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
             (a-to-b = (v- point-b point-a))
             (length = (vlength a-to-b))
             (diff = (- length (original-length edge)))
-            (normal = (vnormal a-to-b)))
-    (setf (location (point-a edge)) (v+ point-a (v* normal diff 0.5))
-          (location (point-b edge)) (v- point-b (v* normal diff 0.5)))))
+            (normal = (vnormal a-to-b))
+            (diff-force = (v* normal diff 0.5)))
+    (setf (location (point-a edge)) (v+ point-a diff-force)
+          (location (point-b edge)) (v- point-b diff-force))))
 
 (defmethod project-to-axis ((entity physical-entity) axis)
   "Gets the nearest and furthest point along an axis." ;; Think of it like casting a shadow on a wall.
