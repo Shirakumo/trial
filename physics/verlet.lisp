@@ -6,67 +6,42 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 
 (in-package #:org.shirakumo.fraf.trial.physics)
 
-(defvar *default-forces* (vec 0 0.5)
-  "Downways.")
 (defvar *default-viscosity* 1.0
   "How hard is it to move horizontally when falling on a surface.")
 (defvar *iterations* 5
   "Number of physics calculation iterations. Increases accuracy of calculations.")
 
-(3d-vectors::define-ofun vnormal (v)
-  (declare (ftype (function (vec)) vnormal))
-  (v/ v (etypecase v
-          (vec2 (+ (vx v) (vy v)))
-          (vec3 (+ (vx v) (vy v) (vz v)))
-          (vec4 (+ (vx v) (vy v) (vz v) (vw v))))))
-
-(3d-vectors::define-ofun nvnormal (v)
-  (declare (ftype (function (vec)) nvnormal))
-  (let ((normal (vnormal v)))
-    (setf (vx v) (vx normal)
-          (vy v) (vy normal))
-    (typecase v
-      (vec3 (setf (vz v) (vz normal)))
-      (vec4 (setf (vz v) (vz normal)
-                  (vw v) (vw normal))))))
-
-(defclass physical-point ()
+(defclass verlet-point ()
   ((location :initarg :location :accessor location)
    (old-location :initform NIL :accessor old-location)
    (acceleration :initform NIL :accessor acceleration))
   (:default-initargs :location (error "Must define a location for a point!")))
 
-(defmethod initialize-instance :after ((point physical-point) &key old-location acceleration)
+(defmethod initialize-instance :after ((point verlet-point) &key old-location acceleration)
   (setf (old-location point) (or old-location (location point))
         (acceleration point) (or acceleration (vec 0 0))))
 
-(defclass physical-edge ()
+(defclass verlet-edge ()
   ((parent :initarg :parent :reader parent)
    (point-a :initarg :point-a :accessor point-a)
    (point-b :initarg :point-b :accessor point-b)
    (original-length :initarg :length :reader original-length)))
 
-(defclass physical-entity (located-entity rotated-entity pivoted-entity)
+(defclass verlet-entity (physical-entity)
   ((vertices :initform NIL :accessor vertices)
    (edges :initform NIL :accessor edges)
    (center :initform NIL :accessor center)
-   (static-p :initarg :static-p :accessor static-p)
-   (mass :initarg :mass :accessor mass)
-   (forces :initarg :forces :accessor forces)
    (viscosity :initarg :viscosity :accessor viscosity))
-  (:default-initargs :mass 1.0
-                     :static-p NIL
-                     :forces *default-forces*
-                     :viscosity *default-viscosity*))
+  (:default-initargs :viscosity *default-viscosity*))
 
-(defmethod initialize-instance :after ((entity physical-entity)
+(defmethod initialize-instance :after ((entity verlet-entity)
                                        &key points edges)
 "
   Argument points is assumed to be a list of cons where they are location values in order (x . y).
   Argument edges is a list of cons where the pairs are indexes in the points list. These two points will form the edge.
 
   Example to make a triangle:
-  (make-instance 'physical-entity :points '((-1 . 2) (0 . 0) (1 . 2)) :edges '((0 . 1) (1 . 2) (2 . 0)))
+  (make-instance 'verlet-entity :points '((-1 . 2) (0 . 0) (1 . 2)) :edges '((0 . 1) (1 . 2) (2 . 0)))
 
   This is terrible and should be made more sensible someday.
 "
@@ -82,18 +57,18 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
               (i counting point)
               (x = (car point))
               (y = (cdr point)))
-      (setf (aref vertices i) (make-instance 'physical-point :location (vec x y))))
+      (setf (aref vertices i) (make-instance 'verlet-point :location (vec x y))))
     (for:for ((edge in edges)
               (i counting edge)
               (p1 = (car edge))
               (p2 = (cdr edge)))
-      (setf (aref edge-arr i) (make-instance 'physical-edge :parent entity
+      (setf (aref edge-arr i) (make-instance 'verlet-edge :parent entity
                                                             :point-a (aref (vertices entity) p1)
                                                             :point-a (aref (vertices entity) p2))))
     (setf (vertices entity) vertices
           (edges entity) edge-arr)))
 
-(defmethod calculate-center ((entity physical-entity))
+(defmethod calculate-center ((entity verlet-entity))
   "Calculates the average of the points that form the entity's bounding box."
   (setf (center entity) (for:for ((point across (vertices entity))
                                   (i count point)
@@ -102,7 +77,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
                                   (sum-y summing (vy location)))
                           (returning (vec (/ sum-x i) (/ sum-y i))))))
 
-(defmethod apply-forces ((entity physical-entity))
+(defmethod apply-forces ((entity verlet-entity))
   "Movement causing effects from input also go here. And things like wind."
   ;; TODO: Fix it up to read the forces from somewhere.
   (let ((viscosity (viscosity entity)))
@@ -114,7 +89,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
                                  (forces entity))
             (old-location point) loc))))
 
-(defmethod update-edges ((entity physical-entity))
+(defmethod update-edges ((entity verlet-entity))
   "Keeps things rigid."
   (for:for ((edge in (edges entity))
             (point-a = (location (point-a edge)))
@@ -127,7 +102,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
     (setf (location (point-a edge)) (v+ point-a diff-force)
           (location (point-b edge)) (v- point-b diff-force))))
 
-(defmethod project-to-axis ((entity physical-entity) axis)
+(defmethod project-to-axis ((entity verlet-entity) axis)
   "Gets the nearest and furthest point along an axis." ;; Think of it like casting a shadow on a wall.
   (let ((min) (max))
     (for:for ((point in (vertices entity))
@@ -138,7 +113,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
         (setf max dotp)))
     (values min max)))
 
-(defmethod collides-p ((entity physical-entity) (other physical-entity))
+(defmethod collides-p ((entity verlet-entity) (other verlet-entity))
   "Collision test between two entities. Does not return T or NIL, as the name would hint, but rather gives you multiple values,
 depth: length of the collision vector, or how deep the objects overlap
 mass-a: mass of the first entity [0,1]
