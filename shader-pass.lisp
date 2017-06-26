@@ -53,7 +53,11 @@
 (define-shader-subject shader-pass (flow:static-node)
   ((framebuffer :initform NIL :accessor framebuffer)
    (uniforms :initarg :uniforms :initform () :accessor uniforms))
-  (:metaclass shader-pass-class))
+  (:metaclass shader-pass-class)
+  (:inhibit-shaders (shader-subject :fragment-shader)))
+
+(define-class-shader (shader-pass :fragment-shader)
+  "#version 330 core")
 
 ;; FIXME: check for duplicate inputs/outputs.
 
