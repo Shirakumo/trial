@@ -59,6 +59,8 @@
                (:file "toolkit" :depends-on ("package"))
                (:file "transforms" :depends-on ("package"))
                (:file "window" :depends-on ("package"))
+               (:file "physics/package" :depends-on ("package"))
+               (:file "physics/verlet" :depends-on ("package" "physics/package"))
                ;; Testing, remove for production.
                (:file "workbench" :depends-on ("assets" "asset-pool" "formats" "main" "helpers" "subjects"))
                (:module "assets"
