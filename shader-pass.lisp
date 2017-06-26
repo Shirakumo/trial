@@ -19,23 +19,40 @@
 (defmethod c2mop:validate-superclass ((class shader-pass-class) (superclass standard-class))
   T)
 
-(defclass input (flow:in-port flow:1-port)
-  ((uniform-name :initarg :uniform :initform NIL :accessor uniform-name)
-   (texture :initform NIL :accessor texture)))
+(defclass texture-port (flow:port)
+  ((texture :initform NIL :accessor texture)))
+
+(flow:define-port-value-slot texture-port texture texture)
+
+(defclass input (flow:in-port flow:1-port texture-port)
+  ((uniform-name :initarg :uniform :initform NIL :accessor uniform-name)))
 
 (defmethod initialize-instance :after ((input input) &key)
   (unless (uniform-name input)
     (setf (uniform-name input) (symbol->c-name (flow:name input)))))
 
-(defclass output (flow:out-port flow:n-port)
-  ((attachment :initarg :attachment :accessor attachment)
-   (texture :initform NIL :accessor texture))
+(defmethod check-consistent ((input input))
+  (unless (flow:connections port)
+    (error "Pipeline is not consistent.~%~
+            Pass ~s is missing a connection to its input ~s."
+           (flow:node port) port)))
+
+(defclass output (flow:out-port flow:n-port texture-port)
+  ((attachment :initarg :attachment :accessor attachment))
   (:default-initargs :attachment :color-attachment0))
+
+(defmethod check-consistent ((output output))
+  ())
+
+(defclass buffer (output input)
+  ())
 
 (define-shader-subject shader-pass (flow:static-node)
   ((framebuffer :initform NIL :accessor framebuffer)
    (uniforms :initarg :uniforms :initform () :accessor uniforms))
   (:metaclass shader-pass-class))
+
+;; FIXME: check for duplicate inputs/outputs.
 
 (defgeneric register-object-for-pass (pass object))
 (defgeneric shader-program-for-pass (pass object))
