@@ -25,7 +25,7 @@
     (loop for (type shaders) on effective-shaders by #'cddr
           do (setf (getf effective-shaders type)
                    (glsl-toolkit:merge-shader-sources
-                    (loop for shader in shaders
+                    (loop for (priority shader) in (stable-sort shaders #'> :key #'first)
                           collect (etypecase shader
                                     (string shader)
                                     (list (destructuring-bind (pool path) shader
@@ -67,9 +67,9 @@
               (loop for (type source) on (effective-shaders class) by #'cddr
                     collect (make-asset 'shader (list source) :type type))))
 
-(defmacro define-class-shader (class type &body definitions)
+(defmacro define-class-shader ((class type &optional (priority 0)) &body definitions)
   `(setf (class-shader ,type ',class)
-         (progn ,@definitions)))
+         (list ,priority (progn ,@definitions))))
 
 (defclass shader-subject (subject)
   ()
@@ -103,10 +103,10 @@
        ,direct-slots
        ,@options)))
 
-(define-class-shader shader-subject :vertex-shader
+(define-class-shader (shader-subject :vertex-shader)
   "#version 330 core")
 
-(define-class-shader shader-subject :fragment-shader
+(define-class-shader (shader-subject :fragment-shader)
   "#version 330 core
 out vec4 color;
 

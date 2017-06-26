@@ -29,7 +29,7 @@
 (defmethod load progn ((subject vertex-subject))
   (load (vertex-array subject)))
 
-(define-class-shader vertex-subject :vertex-shader
+(define-class-shader (vertex-subject :vertex-shader)
   "layout (location = 0) in vec3 position;
 
 uniform mat4 model_matrix;
@@ -48,7 +48,7 @@ void main(){
   (let ((shader (shader-program-for-pass pass obj)))
     (setf (uniform shader "objectcolor") (color obj))))
 
-(define-class-shader colored-subject :fragment-shader
+(define-class-shader (colored-subject :fragment-shader)
   "uniform vec4 objectcolor;
 out vec4 color;
 
@@ -59,7 +59,7 @@ void main(){
 (define-shader-subject vertex-colored-subject ()
   ())
 
-(define-class-shader vertex-colored-subject :vertex-shader
+(define-class-shader (vertex-colored-subject :vertex-shader)
   "layout (location = 2) in vec4 in_vertexcolor;
 out vec4 vertexcolor;
 
@@ -67,7 +67,7 @@ void main(){
   vertexcolor = in_vertexcolor;
 }")
 
-(define-class-shader vertex-colored-subject :fragment-shader
+(define-class-shader (vertex-colored-subject :fragment-shader)
   "in vec4 vertexcolor;
 out vec4 color;
 
@@ -89,7 +89,7 @@ void main(){
 (defmethod load progn ((subject textured-subject))
   (load (texture subject)))
 
-(define-class-shader textured-subject :vertex-shader
+(define-class-shader (textured-subject :vertex-shader)
   "layout (location = 1) in vec2 in_texcoord;
 out vec2 texcoord;
 
@@ -97,7 +97,7 @@ void main(){
   texcoord = in_texcoord;
 }")
 
-(define-class-shader textured-subject :fragment-shader
+(define-class-shader (textured-subject :fragment-shader)
   "in vec2 texcoord;
 out vec4 color;
 uniform sampler2D texture_image;

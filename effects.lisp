@@ -23,7 +23,7 @@
 (define-shader-pass copy-pass (simple-post-effect-pass)
   ())
 
-(define-class-shader copy-pass :fragment-shader
+(define-class-shader (copy-pass :fragment-shader)
   "
 uniform sampler2D previous_pass;
 in vec2 tex_coord;
@@ -36,43 +36,43 @@ void main(){
 (define-shader-pass negative-pass (simple-post-effect-pass)
   ())
 
-(define-class-shader negative-pass :fragment-shader
+(define-class-shader (negative-pass :fragment-shader)
   '(effects #p"negative.frag"))
 
 (define-shader-pass grayscale-pass (simple-post-effect-pass)
   ())
 
-(define-class-shader grayscale-pass :fragment-shader
+(define-class-shader (grayscale-pass :fragment-shader)
   '(effects #p"gray-filter.frag"))
 
 (define-shader-pass box-blur-pass (simple-post-effect-pass)
   ())
 
-(define-class-shader box-blur-pass :fragment-shader
+(define-class-shader (box-blur-pass :fragment-shader)
   '(effects #p"box-blur.frag"))
 
 (define-shader-pass sobel-pass (simple-post-effect-pass)
   ())
 
-(define-class-shader sobel-pass :fragment-shader
+(define-class-shader (sobel-pass :fragment-shader)
   '(effects #p"sobel.frag"))
 
 (define-shader-pass gaussian-blur-pass (simple-post-effect-pass)
   ())
 
-(define-class-shader gaussian-blur-pass :fragment-shader
+(define-class-shader (gaussian-blur-pass :fragment-shader)
   '(effects #p"gaussian.frag"))
 
 (define-shader-pass radial-blur-pass (simple-post-effect-pass)
   ())
 
-(define-class-shader radial-blur-pass :fragment-shader
+(define-class-shader (radial-blur-pass :fragment-shader)
   '(effects #p"radial-blur.frag"))
 
 (define-shader-pass fxaa-pass (simple-post-effect-pass)
   ())
 
-(define-class-shader fxaa-pass :fragment-shader
+(define-class-shader (fxaa-pass :fragment-shader)
   '(effects #p"fxaa.frag"))
 
 (define-shader-pass blend-pass (post-effect-pass)
@@ -80,31 +80,31 @@ void main(){
    (b-pass :port-type input)
    (color :port-type output)))
 
-(define-class-shader blend-pass :fragment-shader
+(define-class-shader (blend-pass :fragment-shader)
   '(effects #p"blend.frag"))
 
 (define-shader-pass high-pass-filter (simple-post-effect-pass)
   ())
 
-(define-class-shader high-pass-filter :fragment-shader
+(define-class-shader (high-pass-filter :fragment-shader)
   '(effects #p"high-pass-filter.frag"))
 
 (define-shader-pass low-pass-filter (simple-post-effect-pass)
   ())
 
-(define-class-shader low-pass-filter :fragment-shader
+(define-class-shader (low-pass-filter :fragment-shader)
   '(effects #p"low-pass-filter.frag"))
 
 (define-shader-pass chromatic-aberration-filter (simple-post-effect-pass)
   ())
 
-(define-class-shader chromatic-aberration-filter :fragment-shader
+(define-class-shader (chromatic-aberration-filter :fragment-shader)
   '(effects #p"aberration.frag"))
 
 (define-shader-pass black-render-pass (render-pass)
   ((color :port-type output)))
 
-(define-class-shader black-render-pass :fragment-shader
+(define-class-shader (black-render-pass :fragment-shader)
   "out vec4 color;
 
 void main(){

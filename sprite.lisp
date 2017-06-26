@@ -23,7 +23,7 @@
     (setf (uniform shader "size") (size subject))
     (setf (uniform shader "tile") (tile subject))))
 
-(define-class-shader sprite-subject :vertex-shader
+(define-class-shader (sprite-subject :vertex-shader)
   "layout (location = 1) in vec2 in_texcoord;
 out vec2 texcoord;
 uniform sampler2D texture_image;

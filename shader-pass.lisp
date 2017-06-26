@@ -224,7 +224,7 @@
       (%gl:draw-elements :triangles (size vao) :unsigned-int 0)
       (gl:bind-vertex-array 0))))
 
-(define-class-shader post-effect-pass :vertex-shader
+(define-class-shader (post-effect-pass :vertex-shader)
   "
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 in_tex_coord;
@@ -235,6 +235,6 @@ void main(){
   tex_coord = in_tex_coord;
 }")
 
-(define-class-shader post-effect-pass :fragment-shader
+(define-class-shader (post-effect-pass :fragment-shader)
   "
 in vec2 tex_coord;")
