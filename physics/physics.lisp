@@ -9,7 +9,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   (:nicknames #:org.shirakumo.fraf.trial.physics)
   (:shadow #:scene #:entity #:load #:update)
   (:use #:cl #:3d-vectors #:3d-matrices #:flare #:trial)
-  (:export #:update-physics))
+  (:export #:vnormal #:nvnormal #:physical-entity #:mass #:static-p #:forces))
 (in-package #:org.shirakumo.fraf.trial.physics)
 
 (defvar *default-forces* (vec 0 0.5)

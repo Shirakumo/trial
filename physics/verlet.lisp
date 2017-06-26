@@ -9,7 +9,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   (:nicknames #:org.shirakumo.fraf.trial.physics.verlet)
   (:shadow #:scene #:entity #:load #:update)
   (:use #:cl #:3d-vectors #:3d-matrices #:flare #:trial #:trial-physics)
-  (:export #:update-physics))
+  (:export #:verlet-entity #:viscosity #:update-physics))
 (in-package #:org.shirakumo.fraf.trial.physics.verlet)
 
 (defvar *default-viscosity* 1.0
