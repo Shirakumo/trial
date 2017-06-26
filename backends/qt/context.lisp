@@ -25,21 +25,21 @@
 
 (defmethod shared-initialize :after ((context context)
                                      slots
-                                     &key (accumulation-buffer NIL accumulation-buffer-p)
-                                          (alpha-buffer NIL alpha-buffer-p)
-                                          (depth-buffer NIL depth-buffer-p)
-                                          (stencil-buffer NIL stencil-buffer-p)
-                                          (stereo-buffer NIL stereo-buffer-p)
+                                     &key (stereo-buffer NIL stereo-buffer-p)
                                           (double-buffering NIL double-buffering-p)
                                           (profile NIL profile-p)
                                           (version NIL version-p)
-                                     ;; Qt-exclusive options.
+                                          (vsync NIL vsync-p)
+                                     ;; Extra options
+                                          (accumulation-buffer NIL accumulation-buffer-p)
+                                          (alpha-buffer NIL alpha-buffer-p)
+                                          (depth-buffer NIL depth-buffer-p)
+                                          (stencil-buffer NIL stencil-buffer-p)
                                           (direct-rendering T direct-rendering-p)
                                           (overlay NIL overlay-p)
                                           (plane 0 plane-p)
                                           (multisampling T multisampling-p)
-                                          (samples 1 samples-p)
-                                          (swap-interval 0 swap-interval-p))
+                                          (samples 1 samples-p))
   (with-accessors ((format glformat)) context
     (unless format (setf format (q+:make-qglformat)))
     (macrolet ((maybe-set (variable setter)
@@ -55,15 +55,17 @@
       (maybe-set overlay overlay)
       (maybe-set plane plane)
       (maybe-set multisampling sample-buffers)
-      (maybe-set samples samples)
-      (maybe-set swap-interval swap-interval))
+      (maybe-set samples samples))
+    (when vsync-p
+      (setf (q+:swap-interval format)
+            (ecase vsync (:off 0) (:on 1) (:adaptive -1))))
     (when version-p
       (setf (q+:version format) (values (first version)
                                         (second version))))
     (when profile-p
       (setf (q+:profile format)
             (ecase profile
-              (NIL (q+:qglformat.no-profile))
+              ((NIL) (q+:qglformat.no-profile))
               (:core (q+:qglformat.core-profile))
               (:compatibility (q+:qglformat.compatibility-profile)))))))
 
@@ -143,6 +145,12 @@
 
 (defmethod hide-cursor ((context context))
   (setf (q+:cursor context) (q+:qt.blank-cursor)))
+
+(defmethod lock-cursor ((context context))
+  (q+:grab-mouse context))
+
+(defmethod unlock-cursor ((context context))
+  (q+:release-mouse context))
 
 (defmethod width ((context context))
   (q+:width context))

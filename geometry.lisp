@@ -23,7 +23,7 @@
   ((size :initarg :size :accessor size)))
 
 (defclass vertex-mesh ()
-  ((face-length :initform 3 :accessor face-length)
+  ((face-length :initarg :face-length :initform 3 :accessor face-length)
    (vertex-type :initform 'vertex :initarg :vertex-type :reader vertex-type)
    (faces :initform (make-array 0 :element-type 'fixnum :adjustable T :fill-pointer T) :accessor faces)
    (vertices :initform (make-array 0 :adjustable T :fill-pointer T) :accessor vertices)))

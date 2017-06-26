@@ -15,6 +15,6 @@
   (finalize (objects container)))
 
 (defmethod call-with-translation (func target (vec vec3))
-  (with-pushed-matrix
+  (with-pushed-matrix ()
     (translate vec)
     (funcall func)))

@@ -6,11 +6,10 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-;; FIXME: inline and compiler-macro things to make it more efficient
-
-(defvar *view-matrix* (meye 4))
-(defvar *projection-matrix* (meye 4))
-(defvar *model-matrix-stack* (list (meye 4)))
+(declaim (type mat4
+               *view-matrix*
+               *projection-matrix*
+               *model-matrix*))
 
 (declaim (inline view-matrix (setf view-matrix)
                  projection-matrix (setf projection-matrix)
@@ -19,6 +18,17 @@
                  translate translate-by
                  rotate rotate-by
                  scale scale-by))
+
+(declaim (ftype (function () mat4)
+                projection-matrix
+                view-matrix
+                model-matrix
+                pop-matrix))
+
+(defvar *view-matrix* (meye 4))
+(defvar *projection-matrix* (meye 4))
+(defvar *model-matrix* (meye 4))
+
 (defun view-matrix ()
   *view-matrix*)
 
@@ -31,6 +41,12 @@
 (defun (setf projection-matrix) (mat4)
   (setf *projection-matrix* mat4))
 
+(defun model-matrix ()
+  *model-matrix*)
+
+(defun (setf model-matrix) (mat4)
+  (setf *model-matrix* mat4))
+
 (defun look-at (eye target up)
   (setf *view-matrix* (mlookat eye target up)))
 
@@ -40,40 +56,37 @@
 (defun orthographic-projection (left right bottom top near far)
   (setf *projection-matrix* (mortho left right bottom top near far)))
 
-(defun model-matrix ()
-  (first *model-matrix-stack*))
-
-(defun (setf model-matrix) (mat4)
-  (setf (first *model-matrix-stack*) mat4))
-
-(defun push-matrix (&optional (matrix (mcopy4 (model-matrix))))
-  (push matrix *model-matrix-stack*))
-
-(defun pop-matrix ()
-  (pop *model-matrix-stack*)
-  ;; Make sure we can't pop too far
-  (unless *model-matrix-stack*
-    (setf *model-matrix-stack* (list (meye 4)))))
-
-(defmacro with-pushed-matrix (&body body)
-  `(progn (push-matrix)
-          (unwind-protect
-               (progn ,@body)
-            (pop-matrix))))
+(defmacro with-pushed-matrix (specs &body body)
+  (let ((specs (or specs '(((model-matrix) :copy)))))
+    `(let ,(loop for spec in specs
+                 for (accessor fill) = (enlist spec :copy)
+                 for variable = (ecase (unlist accessor)
+                                  ((*view-matrix* view-matrix) '*view-matrix*)
+                                  ((*projection-matrix* projection-matrix) '*projection-matrix*)
+                                  ((*model-matrix* model-matrix) '*model-matrix*))
+                 collect `(,variable
+                           ,(ecase fill
+                              (:zero `(mat4))
+                              (:identity `(meye 4))
+                              ((:copy NIL) `(mcopy4 ,variable)))))
+       ,@body)))
 
 (defun translate (v &optional (matrix (model-matrix)))
+  (declare (type vec3 v) (type mat4 matrix))
   (nmtranslate matrix v))
 
 (defun translate-by (x y z &optional (matrix (model-matrix)))
   (translate (vec3 x y z) matrix))
 
 (defun rotate (v angle &optional (matrix (model-matrix)))
+  (declare (type vec3 v) (type mat4 matrix))
   (nmrotate matrix v angle))
 
 (defun rotate-by (x y z angle &optional (matrix (model-matrix)))
   (rotate (vec3 x y z) angle matrix))
 
 (defun scale (v &optional (matrix (model-matrix)))
+  (declare (type vec3 v) (type mat4 matrix))
   (nmscale matrix v))
 
 (defun scale-by (x y z &optional (matrix (model-matrix)))

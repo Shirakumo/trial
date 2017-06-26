@@ -104,6 +104,8 @@
    #:swap-buffers
    #:show-cursor
    #:hide-cursor
+   #:lock-cursor
+   #:unlock-cursor
    #:title
    #:width
    #:height
@@ -112,6 +114,8 @@
    #:acquire-context
    #:release-context
    #:resize
+   #:gain-focus
+   #:lose-focus
    #:context-info
    #:context-note-debug-info)
   ;; controller.lisp
@@ -183,8 +187,8 @@
    #:priority
    #:event
    #:tick
-   #:clock
-   #:delta)
+   #:tt
+   #:dt)
   ;; features.lisp
   (:export
    #:*debug-features*
@@ -302,6 +306,7 @@
    #:main
    #:scene
    #:pipeline
+   #:setup-scene
    #:setup-pipeline
    #:launch)
   ;; mapping.lisp
@@ -346,6 +351,14 @@
    #:define-retention
    #:define-coupled-retention
    #:define-uniform-retention)
+  ;; scene-buffer.lisp
+  (:export
+   #:scene-buffer
+   #:render-pass
+   #:width
+   #:height
+   #:texture
+   #:pack)
   ;; scene.lisp
   (:export
    #:scene
@@ -395,6 +408,16 @@
    #:define-class-shader
    #:shader-subject
    #:define-shader-subject)
+  ;; sprite.lisp
+  (:export
+   #:sprite-subject
+   #:tile
+   #:size
+   #:animated-sprite-subject
+   #:animations
+   #:frame
+   #:animation
+   #:clock)
   ;; static-vector.lisp
   (:export
    #:make-static-vector
@@ -435,6 +458,8 @@
    #:enlist
    #:unlist
    #:remf*
+   #:deg->rad
+   #:rad->deg
    #:with-retry-restart
    #:with-new-value-restart
    #:with-cleanup-on-failure
@@ -467,14 +492,15 @@
    #:check-framebuffer-attachment)
   ;; transforms.lisp
   (:export
+   #:*view-matrix*
+   #:*projection-matrix*
+   #:*model-matrix*
    #:view-matrix
    #:projection-matrix
+   #:model-matrix
    #:look-at
    #:perspective-projection
    #:orthographic-projection
-   #:model-matrix
-   #:push-matrix
-   #:pop-matrix
    #:with-pushed-matrix
    #:translate
    #:translate-by
@@ -491,9 +517,71 @@
    #:list-windows
    #:remove-window
    #:window
-   #:name))
+   #:name)
+  ;; assets
+  ;;; font.lisp
+  (:export
+   #:*default-charset*
+   #:font
+   #:charset
+   #:size
+   #:text
+   #:font
+   #:text
+   #:color
+   #:size)
+  ;;; framebuffer.lisp
+  (:export
+   #:framebuffer
+   #:resize
+   #:framebuffer-bundle
+   #:width
+   #:height
+   #:framebuffer
+   #:textures)
+  ;;; mesh.lisp
+  (:export
+   #:mesh)
+  ;;; shader-program.lisp
+  (:export
+   #:shader-program
+   #:uniform-map
+   #:uniform-location
+   #:uniform)
+  ;;; shader.lisp
+  (:export
+   #:shader
+   #:shader-type)
+  ;;; texture.lisp
+  (:export
+   #:texture
+   #:target
+   #:mag-filter
+   #:min-filter
+   #:anisotropy
+   #:wrapping
+   #:resize)
+  ;;; vertex-array.lisp
+  (:export
+   #:vertex-array
+   #:size
+   #:packed-vertex-array)
+  ;;; vertex-buffer.lisp
+  (:export
+   #:vertex-buffer
+   #:buffer-type
+   #:element-type
+   #:data-usage
+   #:size))
+
+(defpackage #:cl+trial
+  (:nicknames #:org.shirakumo.fraf.trial.cl+trial)
+  (:shadowing-import-from #:trial #:scene #:entity #:load #:update)
+  (:use #:cl #:trial #:3d-vectors #:flare))
+
+(do-symbols (symb '#:cl+trial)
+  (export (list symb) '#:cl+trial))
 
 (defpackage #:trial-user
   (:nicknames #:org.shirakumo.fraf.trial.user)
-  (:use #:cl #:trial #:3d-vectors #:flare)
-  (:shadowing-import-from #:trial #:scene #:entity #:load #:update))
+  (:use #:cl+trial))

@@ -44,19 +44,17 @@
   (when (framebuffer pass)
     (finalize (framebuffer pass))))
 
-(defmethod paint ((pass shader-pass) target)
-  (when (typep target 'main)
-    (paint (scene target) pass)))
-
 (define-handler (shader-pass register-subject-for-enter enter) (ev entity)
   (let ((pass (register-object-for-pass shader-pass entity)))
     (when pass (load pass))))
 
-(defmacro define-shader-pass (name direct-superclasses direct-slots &rest options)
+(defmacro define-shader-pass (&environment env name direct-superclasses direct-slots &rest options)
+  (unless (find-if (lambda (c) (c2mop:subclassp (find-class c T env) 'shader-pass)) direct-superclasses)
+    (setf direct-superclasses (append direct-superclasses (list 'shader-pass))))
   (unless (find :metaclass options :key #'car)
     (push '(:metaclass shader-pass-class) options))
   `(eval-when (:compile-toplevel :load-toplevel :execute)
-     (defclass ,name (,@direct-superclasses shader-pass)
+     (defclass ,name ,direct-superclasses
        ,direct-slots
        ,@options)))
 
@@ -107,17 +105,44 @@
   (glsl-toolkit:merge-shader-sources
    (list spec (class-shader type pass))))
 
+(defmethod determine-effective-shader-class ((name symbol))
+  (determine-effective-shader-class (find-class name)))
+
+(defmethod determine-effective-shader-class ((object shader-subject))
+  (determine-effective-shader-class (class-of object)))
+
+(defmethod determine-effective-shader-class ((class standard-class))
+  NIL)
+
+(defmethod determine-effective-shader-class ((class shader-subject-class))
+  (if (direct-shaders class)
+      class
+      (let* ((effective-superclasses (list (find-class 'shader-subject))))
+        ;; Loop through superclasses and push new, effective superclasses.
+        (loop for superclass in (c2mop:class-direct-superclasses class)
+              for effective-class = (determine-effective-shader-class superclass)
+              do (when (and effective-class (not (find effective-class effective-superclasses)))
+                   (push effective-class effective-superclasses)))
+        ;; If we have one or two --one always being the shader-subject class--
+        ;; then we just return the more specific of the two, as there's no class
+        ;; combination happening that would produce new shaders.
+        (if (<= (length effective-superclasses) 2)
+            (first effective-superclasses)
+            class))))
+
 (defmethod register-object-for-pass ((pass per-object-pass) o))
 
 (defmethod register-object-for-pass ((pass per-object-pass) (class shader-subject-class))
   (let ((shaders ()))
-    (unless (gethash class (assets pass))
-      (loop for (type spec) on (effective-shaders class) by #'cddr
-            for inputs = (coerce-pass-shader pass type spec)
-            for shader = (make-asset 'shader inputs :type type)
-            do (push shader shaders))
-      (setf (gethash class (assets pass))
-            (make-asset 'shader-program shaders)))))
+    (let ((effective-class (determine-effective-shader-class class)))
+      (unless (gethash effective-class (assets pass))
+        (loop for (type spec) on (effective-shaders effective-class) by #'cddr
+              for inputs = (coerce-pass-shader pass type spec)
+              for shader = (make-asset 'shader inputs :type type)
+              do (push shader shaders))
+        (setf (gethash effective-class (assets pass))
+              (make-asset 'shader-program shaders)))
+      (setf (gethash class (assets pass)) (gethash effective-class (assets pass))))))
 
 (defmethod register-object-for-pass ((pass per-object-pass) (subject shader-subject))
   (register-object-for-pass pass (class-of subject)))
@@ -186,7 +211,7 @@
     (call-next-method)))
 
 (define-shader-pass post-effect-pass (single-shader-pass)
-  ((vertex-array :initform (asset 'geometry 'fullscreen-square) :accessor vertex-array)))
+  ((vertex-array :initform (asset 'trial 'fullscreen-square) :accessor vertex-array)))
 
 (defmethod load progn ((pass post-effect-pass))
   (load (vertex-array pass)))

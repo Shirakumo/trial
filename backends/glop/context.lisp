@@ -28,11 +28,13 @@
                                           (height NIL height-p)
                                           (title NIL title-p)
                                           (double-buffering NIL double-buffering-p)
+                                          (stereo-buffer NIL stereo-buffer-p)
+                                          (vsync NIL vsync-p)
+                                     ;; Extra
                                           (accumulation-buffer NIL accumulation-buffer-p)
                                           (alpha-buffer NIL alpha-buffer-p)
                                           (depth-buffer NIL depth-buffer-p)
-                                          (stencil-buffer NIL stencil-buffer-p)
-                                          (stereo-buffer NIL stereo-buffer-p))
+                                          (stencil-buffer NIL stencil-buffer-p))
   (macrolet ((maybe-set (var)
                `(when ,(intern (format NIL "~a-~a" var 'p))
                   (setf (getf (initargs context) ,(intern (string var) :keyword))
@@ -45,7 +47,8 @@
     (maybe-set alpha-buffer)
     (maybe-set depth-buffer)
     (maybe-set stencil-buffer)
-    (maybe-set stereo-buffer)))
+    (maybe-set stereo-buffer)
+    (maybe-set vsync)))
 
 (defmethod create-context ((context context))
   (flet ((g (item &optional default)
@@ -63,7 +66,8 @@
                                     :major (first (version context))
                                     :minor (second (version context))
                                     :profile (profile context)
-                                    :make-current T)))))
+                                    :make-current T))
+      (vsync context (g :vsync)))))
 
 (defmethod vsync ((context context) mode)
   (let ((mode (ecase mode
@@ -141,6 +145,13 @@
 (defmethod hide-cursor ((context context))
   (glop:hide-cursor context))
 
+;; FIXME
+(defmethod lock-cursor ((context context))
+  )
+
+(defmethod unlock-cursor ((context context))
+  )
+
 (defmethod title ((context context))
   (glop::window-title context))
 
@@ -172,6 +183,7 @@
 (defmethod glop:on-event ((context context) event)
   (typecase event
     (glop:key-press-event
+     (v:debug :trial.input "Key pressed: ~a" (glop:keysym event))
      (case (glop:keysym event)
        ((:shift-l :shift-r)
         (pushnew :shift (modifiers context)))
@@ -188,6 +200,7 @@
                                        :modifiers (modifiers context))
              (handler context)))
     (glop:key-release-event
+     (v:debug :trial.input "Key released: ~a" (glop:keysym event))
      (case (glop:keysym event)
        ((:shift-l :shift-r)
         (setf (modifiers context) (delete :shift (modifiers context))))
@@ -205,17 +218,23 @@
              (handler context)))
     (glop:button-press-event
      (case (glop:button event)
-       (4 (handle (make-instance 'mouse-scroll :delta 1
-                                               :pos (mouse-pos context))
-                  (handler context)))
-       (5 (handle (make-instance 'mouse-scroll :delta -1
-                                               :pos (mouse-pos context))
-                  (handler context)))
-       (T (handle (make-instance 'mouse-press :button (glop-button->symbol
-                                                       (glop:button event))
-                                              :pos (mouse-pos context))
+       (4 (v:debug :trial.input "Mouse wheel: ~a" 1)
+        (handle (make-instance 'mouse-scroll :delta 1
+                                             :pos (mouse-pos context))
+                (handler context)))
+       (5 (v:debug :trial.input "Mouse wheel: ~a" -1)
+        (handle (make-instance 'mouse-scroll :delta -1
+                                             :pos (mouse-pos context))
+                (handler context)))
+       (T (v:debug :trial.input "Mouse pressed: ~a" (glop-button->symbol
+                                                     (glop:button event)))
+        (handle (make-instance 'mouse-press :button (glop-button->symbol
+                                                     (glop:button event))
+                                            :pos (mouse-pos context))
                 (handler context)))))
     (glop:button-release-event
+     (v:debug :trial.input "Mouse released: ~a" (glop-button->symbol
+                                                 (glop:button event)))
      (handle (make-instance 'mouse-release :button (glop:button event)
                                            :pos (mouse-pos context))
              (handler context)))
@@ -237,7 +256,10 @@
                  (handler context)))))
     (glop:expose-event)
     (glop:visibility-event)
-    (glop:focus-event)
+    (glop:focus-in-event
+     (handle (make-instance 'gain-focus) (handler context)))
+    (glop:focus-out-event
+     (handle (make-instance 'lose-focus) (handler context)))
     (glop:close-event
      (setf (closing context) T)))
   (when (closing context)

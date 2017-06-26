@@ -6,10 +6,11 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass pipeline (entity event-loop)
+(defclass pipeline (event-loop entity)
   ((nodes :initform NIL :accessor nodes)
    (passes :initform #() :accessor passes)
-   (textures :initform #() :accessor textures)))
+   (textures :initform #() :accessor textures)
+   (texture-properties :initarg :texture-properties :initform NIL :accessor texture-properties)))
 
 (defmethod handle :after ((tick tick) (pipeline pipeline))
   (process pipeline))
@@ -57,7 +58,7 @@
                 Pass ~s is missing a connection to its input ~s."
                node port)))))
 
-(defun allocate-textures (passes textures kind width height)
+(defun allocate-textures (pipeline passes textures kind width height)
   (flow:allocate-ports passes :sort NIL :test kind)
   (flet ((texpsec (port)
            (list NIL width height
@@ -79,7 +80,8 @@
                    (let ((color (+ offset (flow:attribute port :color))))
                      (unless (aref textures color)
                        (setf (aref textures color)
-                             (load (make-asset 'texture (list (texpsec port))))))
+                             (load (apply #'make-asset 'texture (list (texpsec port))
+                                          (texture-properties pipeline)))))
                      (setf (texture port) (aref textures color))
                      (dolist (connection (flow:connections port))
                        (setf (texture (flow:right connection)) (aref textures color))))))))))
@@ -108,9 +110,9 @@
   (let* ((passes (flow:topological-sort (nodes pipeline)))
          (textures (make-array 0 :initial-element NIL :adjustable T)))
     (clear pipeline)
-    (allocate-textures passes textures #'%color-port-p (width target) (height target))
-    (allocate-textures passes textures #'%depth-port-p (width target) (height target))
-    (allocate-textures passes textures #'%depth-stencil-port-p (width target) (height target))
+    (allocate-textures pipeline passes textures #'%color-port-p (width target) (height target))
+    (allocate-textures pipeline passes textures #'%depth-port-p (width target) (height target))
+    (allocate-textures pipeline passes textures #'%depth-stencil-port-p (width target) (height target))
     (v:info :trial.pipeline "~a pass order: ~a" pipeline passes)
     (v:info :trial.pipeline "~a texture count: ~a" pipeline (length textures))
     (v:info :trial.pipeline "~a texture allocation: ~:{~%~a~:{~%    ~a: ~a~}~}" pipeline
@@ -132,8 +134,19 @@
         for fbo = (framebuffer pass)
         do (gl:bind-framebuffer :framebuffer (resource fbo))
            (gl:clear :color-buffer :depth-buffer)
-           (paint pass target)
-        finally (gl:bind-framebuffer :draw-framebuffer 0)
-                (%gl:blit-framebuffer 0 0 (width target) (height target) 0 0 (width target) (height target)
-                                      (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
-                                      (cffi:foreign-enum-value '%gl:enum :nearest))))
+           (paint pass target)))
+
+(defmethod register-object-for-pass ((pipeline pipeline) object)
+  (loop for pass across (passes pipeline)
+        do (register-object-for-pass pass object)))
+
+(defclass frame-pipeline (pipeline)
+  ()
+  (:default-initargs
+   :name :pipeline))
+
+(defmethod paint :after ((pipeline frame-pipeline) target)
+  (gl:bind-framebuffer :draw-framebuffer 0)
+  (%gl:blit-framebuffer 0 0 (width target) (height target) 0 0 (width target) (height target)
+                        (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
+                        (cffi:foreign-enum-value '%gl:enum :nearest)))

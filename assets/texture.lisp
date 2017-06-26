@@ -45,6 +45,8 @@
   (destructuring-bind (file/bits &optional width height (format :rgba))
       object
     (cond ((pathnamep file/bits)
+           (unless (probe-file file/bits)
+             (error "The texture file ~s does not exist." file/bits))
            (multiple-value-bind (bits rwidth rheight)
                (cl-soil:load-image file/bits format)
              (list (or width rwidth) (or height rheight) bits format)))

@@ -10,7 +10,7 @@
   ((location :initarg :location :initform (vec 0 0 0) :accessor location)))
 
 (defmethod paint :around ((obj located-entity) target)
-  (with-pushed-matrix
+  (with-pushed-matrix ()
     (translate (location obj))
     (call-next-method)))
 
@@ -19,7 +19,7 @@
    (up :initarg :up :initform (vec 0 1 0) :accessor up)))
 
 (defmethod paint :around ((obj oriented-entity) target)
-  (with-pushed-matrix
+  (with-pushed-matrix ()
     (rotate (vc (up obj) (orientation obj))
             (* 180 (/ (acos (v. (up obj) (orientation obj))) PI)))
     (call-next-method)))
@@ -28,7 +28,7 @@
   ((rotation :initarg :rotation :initform (vec 0 0 0) :accessor rotation)))
 
 (defmethod paint :around ((obj rotated-entity) target)
-  (with-pushed-matrix
+  (with-pushed-matrix ()
     (rotate +vx+ (vx (rotation obj)))
     (rotate +vy+ (vy (rotation obj)))
     (rotate +vz+ (vz (rotation obj)))
@@ -39,7 +39,7 @@
    (angle :initarg :angle :initform 0 :accessor angle)))
 
 (defmethod paint :around ((obj axis-rotated-entity) target)
-  (with-pushed-matrix
+  (with-pushed-matrix ()
     (rotate (axis obj) (angle obj))
     (call-next-method)))
 
@@ -47,6 +47,6 @@
   ((pivot :initarg :pivot :initform (vec 0 0 0) :accessor pivot)))
 
 (defmethod paint :around ((obj pivoted-entity) target)
-  (with-pushed-matrix
+  (with-pushed-matrix ()
     (translate (pivot obj))
     (call-next-method)))

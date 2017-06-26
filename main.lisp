@@ -10,8 +10,8 @@
 ;; FIXME: Re-add hud somehow
 (defclass main (display window)
   ((scene :initform (make-instance 'scene) :accessor scene)
-   (pipeline :initform (make-instance 'pipeline :name :pipeline) :accessor pipeline)
-   (controller :initform (make-instance 'controller)))
+   (pipeline :initform (make-instance 'frame-pipeline) :accessor pipeline)
+   (controller :initform (make-instance 'controller) :accessor controller))
   (:default-initargs
    :name :main))
 
@@ -59,6 +59,7 @@
   ())
 
 (defmethod setup-scene :after ((main main))
+  (enter (controller main) (scene main))
   (setup-pipeline main))
 
 (defmethod setup-pipeline ((main main))
@@ -66,12 +67,14 @@
 
 (defmethod setup-pipeline :after ((main main))
   (pack-pipeline (pipeline main) main)
-  (loop for pass across (passes (pipeline main))
-        do (for:for ((element over (scene main)))
-             (register-object-for-pass pass element))))
+  (for:for ((element over (scene main)))
+    (register-object-for-pass (pipeline main) element)))
 
 (defmethod paint ((source main) (target main))
   (paint (pipeline source) target))
+
+(defmethod paint ((pass shader-pass) (target main))
+  (paint (scene target) pass))
 
 (defun launch (&optional (main 'main) &rest initargs)
   (v:output-here)
