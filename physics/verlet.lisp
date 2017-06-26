@@ -6,80 +6,27 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 
 (in-package #:org.shirakumo.fraf.trial.physics)
 
-(defvar *physics-gravity* 0.0d0
+(defvar *default-gravity* 0.0d0
   "Downways.")
-(defvar *physics-viscosity* 1.0d0
+(defvar *default-viscosity* 1.0d0
   "How hard is it to move horizontally when falling on a surface.")
-(defvar *physics-iterations* 5
+(defvar *iterations* 5
   "Number of physics calculation iterations. Increases accuracy of calculations.")
 
-;; TODO: use a proper vector geometry from somewhere else, maybe
-
-(defun pv2 (x y)
-  (cons x y))
-
-(defun pv2x (a)
-  (car a))
-
-(defun (setf pv2x) (value a)
-  (setf (car a) value))
-
-(defun pv2y (a)
-  (cdr a))
-
-(defun (setf pv2y) (value a)
-  (setf (cdr a) value))
-
-(defun pv2-neg (a)
-  (pv2 (- (pv2x a)) (- (pv2y a))))
-
-(defun pv2-add (a &rest rest)
-  (let ((x (pv2x a))
-        (y (pv2y a)))
-    (for:for ((b in rest))
-      (incf x (pv2x b))
-      (incf y (pv2y b))
-      (returning (pv2 x y)))))
-
-(defun pv2-sub (a &rest rest)
-  (let ((x (pv2x a))
-        (y (pv2y a)))
-    (for:for ((b in rest))
-      (incf x (- (pv2x b)))
-      (incf y (- (pv2y b)))
-      (returning (pv2 x y)))))
-
-(defun pv2-mul (a &rest rest)
-  (let ((x (pv2x a))
-        (y (pv2y a)))
-    (for:for ((b in rest)
-              (xd = (if (typep b 'number) b (pv2x b)))
-              (yd = (if (typep b 'number) b (pv2y b))))
-      (setf x (* x xd)
-            y (* y yd))
-      (returning (pv2 x y)))))
-
-(defun pv2-div (a &rest rest)
-  (let ((x (pv2x a))
-        (y (pv2y a)))
-    (for:for ((b in rest)
-              (xd = (if (typep b 'number) b (pv2x b)))
-              (yd = (if (typep b 'number) b (pv2y b))))
-      (setf x (/ x xd)
-            y (/ y yd))
-      (returning (pv2 x y)))))
-
-(defun pv2-dotp (a b)
-  (+ (* (pv2x a) (pv2x b)) (* (pv2y a) (pv2y b))))
-
-(defun pv2-length (a)
-  (sqrt (pv2-dotp a a)))
-
-(defun pv2-normal (a)
-  (let* ((x (pv2x a))
-         (y (pv2y a))
-         (sum (+ (abs x) (abs y))))
-    (pv2 (/ x sum) (/ y sum))))
+(defun vnormal (v)
+  (etypecase v
+    (vec2 (let ((sum (+ (vx v) (vy v))))
+            (vec (/ (vx v) sum)
+                 (/ (vy v) sum))))
+    (vec3 (let ((sum (+ (vx v) (vy v) (vz v))))
+            (vec (/ (vx v) sum)
+                 (/ (vy v) sum)
+                 (/ (vz v) sum))))
+    (vec4 (let ((sum (+ (vx v) (vy v) (vz v) (vw v))))
+            (vec (/ (vx v) sum)
+                 (/ (vy v) sum)
+                 (/ (vz v) sum)
+                 (/ (vw v) sum))))))
 
 (defclass physical-point ()
   ((location :initarg :location :accessor location)
@@ -89,7 +36,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 
 (defmethod initialize-instance :after ((point physical-point) &key old-location acceleration)
   (setf (old-location point) (or old-location (location point))
-        (acceleration point) (or acceleration (pv2 0.0d0 0.0d0))))
+        (acceleration point) (or acceleration (vec 0 0))))
 
 (defclass physical-edge ()
   ((parent :initarg :parent :reader parent)
@@ -129,7 +76,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
               (i counting point)
               (x = (car point))
               (y = (cdr point)))
-      (setf (aref vertices i) (make-instance 'physical-point :location (pv2 x y))))
+      (setf (aref vertices i) (make-instance 'physical-point :location (vec x y))))
     (for:for ((edge in edges)
               (i counting edge)
               (p1 = (car edge))
@@ -145,9 +92,9 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   (setf (center entity) (for:for ((point across (vertices entity))
                                   (i count point)
                                   (location = (location point))
-                                  (sum-x summing (pv2x location))
-                                  (sum-y summing (pv2y location)))
-                          (returning (pv2 (/ sum-x i) (/ sum-y i))))))
+                                  (sum-x summing (vx location))
+                                  (sum-y summing (vy location)))
+                          (returning (vec (/ sum-x i) (/ sum-y i))))))
 
 (defmethod apply-forces ((entity physical-entity))
   "Movement causing effects from input also go here. And things like wind.
@@ -157,8 +104,8 @@ TODO: Fix it up to read them from somewhere."
     (for:for ((point in (vertices entity))
               (loc = (location point))
               (old = (old-location point)))
-      (setf (location point) (pv2 (- (* viscosity (pv2x loc)) (* viscosity (pv2x old)))
-                                  (+ (- (* viscosity (pv2x loc)) (* viscosity (pv2x old))) gravity))
+      (setf (location point) (vec (- (* viscosity (vx loc)) (* viscosity (vx old)))
+                                  (+ (- (* viscosity (vx loc)) (* viscosity (vx old))) gravity))
             (old-location point) loc))))
 
 (defmethod update-edges ((entity physical-entity))
@@ -166,18 +113,18 @@ TODO: Fix it up to read them from somewhere."
   (for:for ((edge in (edges entity))
             (point-a = (location (point-a edge)))
             (point-b = (location (point-b edge)))
-            (a-to-b = (pv2-sub point-b point-a))
-            (length = (pv2-length a-to-b))
+            (a-to-b = (v- point-b point-a))
+            (length = (vlength a-to-b))
             (diff = (- length (original-length edge)))
-            (normal = (pv2-normal a-to-b)))
-    (setf (location (point-a edge)) (pv2-add point-a (pv2-mul normal diff 0.5d0))
-          (location (point-b edge)) (pv2-sub point-b (pv2-mul normal diff 0.5d0)))))
+            (normal = (vnormal a-to-b)))
+    (setf (location (point-a edge)) (v+ point-a (v* normal diff 0.5d0))
+          (location (point-b edge)) (v- point-b (v* normal diff 0.5d0)))))
 
 (defmethod project-to-axis ((entity physical-entity) axis)
   "Gets the nearest and furthest point along an axis." ;; Think of it like casting a shadow on a wall.
   (let ((min) (max))
     (for:for ((point in (vertices entity))
-              (dotp = (pv2-dotp axis (location point))))
+              (dotp = (v. axis (location point))))
       (unless (and min (< dotp min))
         (setf min dotp))
       (unless (and max (< max dotp))
@@ -202,7 +149,7 @@ vertex: point that pierces furthest in"
                             (aref (edges other) (- index edge-count-a))))
                 (point-a = (location (point-a edge)))
                 (point-b = (location (point-b edge)))
-                (axis = (pv2-normal (pv2 (- (pv2y point-a) (pv2y point-b)) (- (pv2x point-a) (pv2x point-b))))))
+                (axis = (vnormal (vec (- (vy point-a) (vy point-b)) (- (vx point-a) (vx point-b))))))
         (multiple-value-bind (min-a max-a)
             (project-to-axis entity axis)
           (multiple-value-bind (min-b max-b)
@@ -216,19 +163,19 @@ vertex: point that pierces furthest in"
                       col-edge edge))))))
       (let* ((ent1 (if (eql (parent col-edge) other) entity other))
              (ent2 (if (eql (parent col-edge) other) other entity))
-             (center (pv2-sub (center ent1) (center ent2))) ;; Already calculated in update-physics
-             (sign (pv2-dotp normal center))
+             (center (v- (center ent1) (center ent2))) ;; Already calculated in update-physics
+             (sign (v. normal center))
              (mass1 (cond ((static-p ent1) 0.0d0) ((static-p ent2) 1.0d0) (T (mass ent1))))
              (mass2 (cond ((static-p ent2) 0.0d0) ((static-p ent1) 1.0d0) (T (mass ent2))))
              (total-mass (+ mass1 mass2))
              (smallest-dist)
              (vertex))
         (when (< sign 0)
-          (setf normal (pv2-neg normal)))
+          (setf normal (v- normal)))
         (for:for ((point in (vertices ent1))
                   (loc = (location point))
-                  (v = (pv2-sub loc (center ent2)))
-                  (dist = (pv2-dotp normal v)))
+                  (v = (v- loc (center ent2)))
+                  (dist = (v. normal v)))
           (when (or (null smallest-dist) (< dist smallest-dist))
             (setf smallest-dist dist
                   vertex point))) ;; And here we find the piercing point
@@ -254,17 +201,17 @@ vertex: point that pierces furthest in"
 
 (defun resolve-collision (depth mass-a mass-b normal edge vertex)
   "Pushes back the two entities from one another. The normal always points towards the piercing entity."
-  (let ((response (pv2-mul normal depth))) ;; Pushback for the piercing entity
-    (setf (location vertex) (pv2-add (location vertex) (pv2-mul response mass-a)))
+  (let ((response (v* normal depth))) ;; Pushback for the piercing entity
+    (setf (location vertex) (v+ (location vertex) (v* response mass-a)))
     (let* ((point-a (location (point-a edge)))
            (point-b (location (point-b edge))) ;; Pushback for the edging entity
            ;; t-point is the factor that determines where on the edge the vertex lies, [0, 1]
            ;; It has to do the if-else check so we don't accidentally divide by zero
-           (t-point (if (< (abs (- (pv2y point-a) (pv2y point-b))) (abs (- (pv2x point-a) (pv2x point-b))))
-                        (/ (- (pv2x (location vertex)) (pv2x response) (pv2x point-a))
-                           (- (pv2x point-b) (pv2x point-a)))
-                        (/ (- (pv2y (location vertex)) (pv2y response) (pv2y point-a))
-                           (- (pv2y point-b) (pv2y point-a)))))
+           (t-point (if (< (abs (- (vy point-a) (vy point-b))) (abs (- (vx point-a) (vx point-b))))
+                        (/ (- (vx (location vertex)) (vx response) (vx point-a))
+                           (- (vx point-b) (vx point-a)))
+                        (/ (- (vy (location vertex)) (vy response) (vy point-a))
+                           (- (vy point-b) (vy point-a)))))
            ;; Now lambda here. It's the scaling factor for ensuring that the collision vertex lies on
            ;; the collision edge. I have no idea who came up with it but it's just
            ;; lambda = 1 / (t^2 + (1 - t)^2)
@@ -273,5 +220,5 @@ vertex: point that pierces furthest in"
       ;; Note the (- 1 t-point) and t-point multipliers.
       ;; It causes a bit of spin if edge wasn't hit in the middle.
       ;; ... I really hope the masses are right way around.
-      (setf (location (point-a edge)) (pv2-sub point-a (pv2-mul response (- 1 t-point) mass-b lmba))
-            (location (point-b edge)) (pv2-sub point-b (pv2-mul response t-point mass-b lmba))))))
+      (setf (location (point-a edge)) (v- point-a (v* response (- 1 t-point) mass-b lmba))
+            (location (point-b edge)) (v- point-b (v* response t-point mass-b lmba))))))
