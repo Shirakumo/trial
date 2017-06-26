@@ -63,14 +63,14 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
               (i counting point)
               (x = (car point))
               (y = (cdr point)))
-      (setf (aref vertices i) (make-instance 'verlet-point :location (vec x y))))
+      (setf (aref vertices (1- i)) (make-instance 'verlet-point :location (vec x y))))
     (for:for ((edge in edges)
               (i counting edge)
               (p1 = (car edge))
               (p2 = (cdr edge)))
-      (setf (aref edge-arr i) (make-instance 'verlet-edge :parent entity
-                                                            :point-a (aref (vertices entity) p1)
-                                                            :point-a (aref (vertices entity) p2))))
+      (setf (aref edge-arr (1- i)) (make-instance 'verlet-edge :parent entity
+                                                               :point-a (aref vertices p1)
+                                                               :point-b (aref vertices p2))))
     (setf (vertices entity) vertices
           (edges entity) edge-arr)))
 
