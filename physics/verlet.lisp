@@ -14,19 +14,10 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   "Number of physics calculation iterations. Increases accuracy of calculations.")
 
 (defun vnormal (v)
-  (etypecase v
-    (vec2 (let ((sum (+ (vx v) (vy v))))
-            (vec (/ (vx v) sum)
-                 (/ (vy v) sum))))
-    (vec3 (let ((sum (+ (vx v) (vy v) (vz v))))
-            (vec (/ (vx v) sum)
-                 (/ (vy v) sum)
-                 (/ (vz v) sum))))
-    (vec4 (let ((sum (+ (vx v) (vy v) (vz v) (vw v))))
-            (vec (/ (vx v) sum)
-                 (/ (vy v) sum)
-                 (/ (vz v) sum)
-                 (/ (vw v) sum))))))
+  (v/ v (etypecase v
+          (vec2 (+ (vx v) (vy v)))
+          (vec3 (+ (vx v) (vy v) (vz v)))
+          (vec4 (+ (vx v) (vy v) (vz v) (vw v))))))
 
 (defclass physical-point ()
   ((location :initarg :location :accessor location)
@@ -49,9 +40,13 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
    (edges :initform NIL :accessor edges)
    (center :initform NIL :accessor center)
    (static-p :initarg :static-p :accessor static-p)
-   (mass :initarg :mass :accessor mass))
+   (mass :initarg :mass :accessor mass)
+   (gravity :initarg :gravity :accessor gravity)
+   (viscosity :initarg :viscosity :accessor viscosity))
   (:default-initargs :mass 1.0
-                     :static-p NIL))
+                     :static-p NIL
+                     :gravity *default-gravity*
+                     :viscosity *default-viscosity*))
 
 (defmethod initialize-instance :after ((entity physical-entity)
                                        &key points edges)
@@ -97,15 +92,14 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
                           (returning (vec (/ sum-x i) (/ sum-y i))))))
 
 (defmethod apply-forces ((entity physical-entity))
-  "Movement causing effects from input also go here. And things like wind.
-TODO: Fix it up to read them from somewhere."
-  (let ((viscosity *physics-viscosity*)
-        (gravity *physics-gravity*))
+  "Movement causing effects from input also go here. And things like wind."
+  ;; TODO: Fix it up to read the forces from somewhere.
+  (let ((viscosity (viscosity entity)))
     (for:for ((point in (vertices entity))
               (loc = (location point))
               (old = (old-location point)))
       (setf (location point) (vec (- (* viscosity (vx loc)) (* viscosity (vx old)))
-                                  (+ (- (* viscosity (vx loc)) (* viscosity (vx old))) gravity))
+                                  (+ (- (* viscosity (vx loc)) (* viscosity (vx old))) (gravity entity)))
             (old-location point) loc))))
 
 (defmethod update-edges ((entity physical-entity))
