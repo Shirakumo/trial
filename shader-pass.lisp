@@ -120,7 +120,7 @@
 
 (defmethod coerce-pass-shader ((pass per-object-pass) type spec)
   (glsl-toolkit:merge-shader-sources
-   (list spec (class-shader type pass))))
+   (list spec (getf (effective-shaders pass) type))))
 
 (defmethod determine-effective-shader-class ((name symbol))
   (determine-effective-shader-class (find-class name)))
