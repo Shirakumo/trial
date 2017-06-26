@@ -5,6 +5,12 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 |#
 
 (in-package #:org.shirakumo.fraf.trial.physics)
+(defpackage #:trial-verlet
+  (:nicknames #:org.shirakumo.fraf.trial.physics.verlet)
+  (:shadow #:scene #:entity #:load #:update)
+  (:use #:cl #:3d-vectors #:3d-matrices #:flare #:trial #:trial-physics)
+  (:export #:update-physics))
+(in-package #:org.shirakumo.fraf.trial.physics.verlet)
 
 (defvar *default-viscosity* 1.0
   "How hard is it to move horizontally when falling on a surface.")
