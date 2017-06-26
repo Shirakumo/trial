@@ -4,7 +4,7 @@ This file is a part of trial
 Author: Janne Pakarinen <gingeralesy@gmail.com>
 |#
 
-(in-package #:org.shirakumo.fraf.trial)
+(in-package #:org.shirakumo.fraf.trial.physics)
 
 (defvar *physics-gravity* 0.0d0
   "Downways.")
