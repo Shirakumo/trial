@@ -127,14 +127,14 @@ void main(){
   (:default-initargs :layers 8))
 
 (defmethod paint ((pass depth-peel-pass) target)
-  (gl:blend-equation :add)
+  (gl:blend-equation :func-add)
   (gl:blend-func-separate :dst-alpha :one
                           :zero :one-minus-src-alpha)
   (dotimes (i (layers pass))
     (call-next-method)
     ;; Swap textures.
     (rotatef (previous-depth pass) (depth pass))
-    (%gl:framebuffer-texture :framebuffer :depth-attachment (depth pass) 0)))
+    (%gl:framebuffer-texture :framebuffer :depth-attachment (resource (depth pass)) 0)))
 
 (define-class-shader (depth-peel-pass :fragment-shader 100)
   "uniform sampler2D previous_depth;
