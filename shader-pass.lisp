@@ -24,12 +24,15 @@
 
 (flow:define-port-value-slot texture-port texture texture)
 
-(defclass input (flow:in-port flow:1-port texture-port)
+(defclass uniform-port (flow:port)
   ((uniform-name :initarg :uniform :initform NIL :accessor uniform-name)))
 
-(defmethod initialize-instance :after ((input input) &key)
-  (unless (uniform-name input)
-    (setf (uniform-name input) (symbol->c-name (flow:name input)))))
+(defmethod initialize-instance :after ((port uniform-port) &key)
+  (unless (uniform-name port)
+    (setf (uniform-name port) (symbol->c-name (flow:name port)))))
+
+(defclass input (flow:in-port flow:1-port texture-port uniform-port)
+  ())
 
 (defmethod check-consistent ((input input))
   (unless (flow:connections port)
@@ -44,7 +47,7 @@
 (defmethod check-consistent ((output output))
   ())
 
-(defclass buffer (output input)
+(defclass buffer (output uniform-port)
   ())
 
 (define-shader-subject shader-pass (flow:static-node)
@@ -84,7 +87,7 @@
                               :texture7  :texture6  :texture5  :texture4
                               :texture3  :texture2  :texture1  :texture0)
         for port in (flow:ports pass)
-        do (when (typep port 'input)
+        do (when (typep port 'uniform-port)
              (setf (uniform program (uniform-name port)) (pop texture-index))
              (gl:active-texture (pop texture-name))
              (gl:bind-texture :texture-2d (resource (texture port)))))
