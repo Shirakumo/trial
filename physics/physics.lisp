@@ -9,28 +9,11 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   (:nicknames #:org.shirakumo.fraf.trial.physics)
   (:shadow #:scene #:entity #:load #:update)
   (:use #:cl #:3d-vectors #:3d-matrices #:flare #:trial)
-  (:export #:vnormal #:nvnormal #:physical-entity #:mass #:static-p #:forces))
+  (:export #:physical-entity #:mass #:static-p #:forces))
 (in-package #:org.shirakumo.fraf.trial.physics)
 
 (defvar *default-forces* (vec 0 0.5)
   "Downways.")
-
-(3d-vectors::define-ofun vnormal (v)
-  (declare (ftype (function (vec)) vnormal))
-  (v/ v (etypecase v
-          (vec2 (+ (vx v) (vy v)))
-          (vec3 (+ (vx v) (vy v) (vz v)))
-          (vec4 (+ (vx v) (vy v) (vz v) (vw v))))))
-
-(3d-vectors::define-ofun nvnormal (v)
-  (declare (ftype (function (vec)) nvnormal))
-  (let ((normal (vnormal v)))
-    (setf (vx v) (vx normal)
-          (vy v) (vy normal))
-    (typecase v
-      (vec3 (setf (vz v) (vz normal)))
-      (vec4 (setf (vz v) (vz normal)
-                  (vw v) (vw normal))))))
 
 (defclass physical-entity (located-entity rotated-entity pivoted-entity)
   ((mass :initarg :mass :accessor mass)

@@ -40,8 +40,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
    (viscosity :initarg :viscosity :accessor viscosity))
   (:default-initargs :viscosity *default-viscosity*))
 
-(defmethod initialize-instance :after ((entity verlet-entity)
-                                       &key points edges)
+(defmethod initialize-instance :after ((entity verlet-entity) &key points edges)
 "
   Argument points is assumed to be a list of cons where they are location values in order (x . y).
   Argument edges is a list of cons where the pairs are indexes in the points list. These two points will form the edge.
@@ -103,7 +102,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
             (a-to-b = (v- point-b point-a))
             (length = (vlength a-to-b))
             (diff = (- length (original-length edge)))
-            (normal = (vnormal a-to-b))
+            (normal = (vunit a-to-b))
             (diff-force = (v* normal diff 0.5)))
     (setf (location (point-a edge)) (v+ point-a diff-force)
           (location (point-b edge)) (v- point-b diff-force))))
@@ -137,7 +136,7 @@ vertex: point that pierces furthest in"
                             (aref (edges other) (- index edge-count-a))))
                 (point-a = (location (point-a edge)))
                 (point-b = (location (point-b edge)))
-                (axis = (vnormal (vec (- (vy point-a) (vy point-b)) (- (vx point-a) (vx point-b))))))
+                (axis = (vunit (vec (- (vy point-a) (vy point-b)) (- (vx point-a) (vx point-b))))))
         (multiple-value-bind (min-a max-a)
             (project-to-axis entity axis)
           (multiple-value-bind (min-b max-b)
