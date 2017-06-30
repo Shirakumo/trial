@@ -52,11 +52,7 @@
 (defmethod check-consistent ((pipeline pipeline))
   (dolist (node (nodes pipeline))
     (dolist (port (flow:ports node))
-      (when (and (typep port 'input)
-                 (null (flow:connections port))) 
-        (error "Pipeline is not consistent.~%~
-                Pass ~s is missing a connection to its input ~s."
-               node port)))))
+      (check-consistent port))))
 
 (defun allocate-textures (pipeline passes textures kind width height)
   (flow:allocate-ports passes :sort NIL :test kind)
@@ -124,7 +120,7 @@
       (setf (framebuffer pass)
             (load (make-asset 'framebuffer
                               (loop for port in (flow:ports pass)
-                                    when (typep port 'output)
+                                    when (typep port '(and output (not buffer)))
                                     collect (list (texture port) :attachment (attachment port)))))))
     (setf (passes pipeline) (coerce passes 'vector))
     (setf (textures pipeline) textures)))

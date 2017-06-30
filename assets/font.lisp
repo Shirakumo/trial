@@ -73,7 +73,7 @@
   (let ((r (/ (size subject) (size (font subject)))))
     (scale-by r r r)))
 
-(define-class-shader text :fragment-shader
+(define-class-shader (text :fragment-shader)
   "uniform vec4 text_color;
 
 void main(){

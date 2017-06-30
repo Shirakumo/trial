@@ -19,23 +19,47 @@
 (defmethod c2mop:validate-superclass ((class shader-pass-class) (superclass standard-class))
   T)
 
-(defclass input (flow:in-port flow:1-port)
-  ((uniform-name :initarg :uniform :initform NIL :accessor uniform-name)
-   (texture :initform NIL :accessor texture)))
+(defclass texture-port (flow:port)
+  ((texture :initform NIL :accessor texture)))
 
-(defmethod initialize-instance :after ((input input) &key)
-  (unless (uniform-name input)
-    (setf (uniform-name input) (symbol->c-name (flow:name input)))))
+(flow:define-port-value-slot texture-port texture texture)
 
-(defclass output (flow:out-port flow:n-port)
-  ((attachment :initarg :attachment :accessor attachment)
-   (texture :initform NIL :accessor texture))
+(defclass uniform-port (flow:port)
+  ((uniform-name :initarg :uniform :initform NIL :accessor uniform-name)))
+
+(defmethod initialize-instance :after ((port uniform-port) &key)
+  (unless (uniform-name port)
+    (setf (uniform-name port) (symbol->c-name (flow:name port)))))
+
+(defclass input (flow:in-port flow:1-port texture-port uniform-port)
+  ())
+
+(defmethod check-consistent ((input input))
+  (unless (flow:connections port)
+    (error "Pipeline is not consistent.~%~
+            Pass ~s is missing a connection to its input ~s."
+           (flow:node port) port)))
+
+(defclass output (flow:out-port flow:n-port texture-port)
+  ((attachment :initarg :attachment :accessor attachment))
   (:default-initargs :attachment :color-attachment0))
+
+(defmethod check-consistent ((output output))
+  ())
+
+(defclass buffer (output uniform-port)
+  ())
 
 (define-shader-subject shader-pass (flow:static-node)
   ((framebuffer :initform NIL :accessor framebuffer)
    (uniforms :initarg :uniforms :initform () :accessor uniforms))
-  (:metaclass shader-pass-class))
+  (:metaclass shader-pass-class)
+  (:inhibit-shaders (shader-subject :fragment-shader)))
+
+(define-class-shader (shader-pass :fragment-shader)
+  "#version 330 core")
+
+;; FIXME: check for duplicate inputs/outputs.
 
 (defgeneric register-object-for-pass (pass object))
 (defgeneric shader-program-for-pass (pass object))
@@ -67,7 +91,7 @@
                               :texture7  :texture6  :texture5  :texture4
                               :texture3  :texture2  :texture1  :texture0)
         for port in (flow:ports pass)
-        do (when (typep port 'input)
+        do (when (typep port 'uniform-port)
              (setf (uniform program (uniform-name port)) (pop texture-index))
              (gl:active-texture (pop texture-name))
              (gl:bind-texture :texture-2d (resource (texture port)))))
@@ -103,7 +127,7 @@
 
 (defmethod coerce-pass-shader ((pass per-object-pass) type spec)
   (glsl-toolkit:merge-shader-sources
-   (list spec (class-shader type pass))))
+   (list spec (getf (effective-shaders pass) type))))
 
 (defmethod determine-effective-shader-class ((name symbol))
   (determine-effective-shader-class (find-class name)))
@@ -224,7 +248,7 @@
       (%gl:draw-elements :triangles (size vao) :unsigned-int 0)
       (gl:bind-vertex-array 0))))
 
-(define-class-shader post-effect-pass :vertex-shader
+(define-class-shader (post-effect-pass :vertex-shader)
   "
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 in_tex_coord;
@@ -235,6 +259,6 @@ void main(){
   tex_coord = in_tex_coord;
 }")
 
-(define-class-shader post-effect-pass :fragment-shader
+(define-class-shader (post-effect-pass :fragment-shader)
   "
 in vec2 tex_coord;")
