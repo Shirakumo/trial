@@ -35,10 +35,10 @@
   ())
 
 (defmethod check-consistent ((input input))
-  (unless (flow:connections port)
+  (unless (flow:connections input)
     (error "Pipeline is not consistent.~%~
             Pass ~s is missing a connection to its input ~s."
-           (flow:node port) port)))
+           (flow:node input) input)))
 
 (defclass output (flow:out-port flow:n-port texture-port)
   ((attachment :initarg :attachment :accessor attachment))
