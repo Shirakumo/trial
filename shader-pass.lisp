@@ -245,7 +245,7 @@
     (with-pushed-attribs
       (disable :depth-test)
       (gl:bind-vertex-array (resource vao))
-      (%gl:draw-elements :triangles (size vao) :unsigned-int 0)
+      (%gl:draw-elements :triangles (size vao) :unsigned-int (cffi:null-pointer))
       (gl:bind-vertex-array 0))))
 
 (define-class-shader (post-effect-pass :vertex-shader)
