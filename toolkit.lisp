@@ -14,6 +14,7 @@
 (defmethod finalize (object)
   object)
 
+#+sbcl
 (define-symbol-macro current-time-start
     (load-time-value (logand (sb-ext:get-time-of-day) (1- (expt 2 32)))))
 
