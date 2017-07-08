@@ -38,6 +38,7 @@
                (:file "flare" :depends-on ("package" "transforms"))
                (:file "fullscreenable" :depends-on ("package" "display"))
                (:file "gamepad" :depends-on ("package" "event-loop"))
+               (:file "gamepad-db" :depends-on ("package" "gamepad"))
                (:file "geometry" :depends-on ("package" "toolkit" "static-vector" ("assets" "vertex-array")))
                (:file "geometry-shapes" :depends-on ("package" "geometry" "asset-pool"))
                (:file "helpers" :depends-on ("package" "entity" "transforms"))
