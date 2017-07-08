@@ -14,6 +14,7 @@
 (defmethod finalize (object)
   object)
 
+#+sbcl
 (define-symbol-macro current-time-start
     (load-time-value (logand (sb-ext:get-time-of-day) (1- (expt 2 32)))))
 
@@ -335,8 +336,15 @@
             vidmem-total)))
 
 (defun gpu-room ()
-  (or (ignore-errors (gpu-room-ati))
-      (ignore-errors (gpu-room-nvidia))))
+  (macrolet ((jit (thing)
+               `(ignore-errors
+                 (return-from gpu-room
+                   (multiple-value-prog1 ,thing
+                     (compile 'gpu-room (lambda ()
+                                          ,thing)))))))
+    (jit (gpu-room-ati))
+    (jit (gpu-room-nvidia))
+    (jit (values 1 1))))
 
 (defun cpu-room ()
   #+sbcl
