@@ -16,7 +16,7 @@
   (:default-initargs
    :target :texture-2d
    :mag-filter :linear
-   :min-filter :linear
+   :min-filter :linear-mipmap-linear
    :anisotropy NIL
    :wrapping :clamp-to-edge))
 
@@ -96,7 +96,8 @@
         (images-to-textures target images)
         (unless (eql
                  target :texture-2d-multisample)
-          (unless (or (eql min-filter :nearest) (eql min-filter :linear))
+          (when (find min-filter '(:linear-mipmap-linear :linear-mipmap-nearest
+                                   :nearest-mipmap-linear :nearest-mipmap-nearest))
             (gl:generate-mipmap target))
           (when anisotropy
             (gl:tex-parameter target :texture-max-anisotropy-ext anisotropy))
