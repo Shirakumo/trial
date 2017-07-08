@@ -42,7 +42,11 @@
 (init-gamepad-system)
 
 (defun cl-gamepad:device-attached (device)
-  (v:info :trial.input "Attached ~s" (cl-gamepad:print-device device NIL))
+  (v:info :trial.input "Attached ~s (~:[Unknown~;~:*~a~])"
+          (cl-gamepad:print-device device NIL)
+          (gethash (cons (cl-gamepad:vendor device)
+                         (cl-gamepad:product device))
+                   *gamepad-device-table*))
   (dolist (handler *gamepad-handlers*)
     (handle (make-instance 'gamepad-attach :device device) handler)))
 
