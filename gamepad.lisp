@@ -201,7 +201,7 @@
    (15 :x) ; square
    (16 :home)))
 
-(define-gamepad dualshock-4 (1356 1476)
+(define-gamepad dualshock-4 (1356 2508)
   (:axes
    ( 0 :left-h)
    ( 1 :left-v)
