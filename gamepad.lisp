@@ -201,6 +201,27 @@
    (15 :x) ; square
    (16 :home)))
 
+(define-gamepad dualshock-4 (1356 1476)
+  (:axes
+   ( 0 :left-h)
+   ( 1 :left-v)
+   ( 2 :l2)
+   ( 3 :right-h)
+   ( 4 :right-v)
+   ( 5 :r2))
+  (:buttons
+   ( 0 :x)
+   ( 1 :a)
+   ( 2 :b)
+   ( 3 :y)
+   ( 4 :l1)
+   ( 5 :r1)
+   ( 8 :select)
+   ( 9 :start)
+   (10 :home)
+   (11 :left)
+   (12 :right)))
+
 (define-gamepad buffalo-bsgp801 (1411 8288)
   (:axes
    ( 0 :dpad-h)
