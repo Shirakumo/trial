@@ -281,11 +281,16 @@
    #:mouse-move
    #:old-pos
    #:gamepad-event
+   #:device
    #:gamepad-attach
    #:gamepad-remove
    #:gamepad-press
+   #:button
    #:gamepad-release
    #:gamepad-move
+   #:axis
+   #:old-pos
+   #:pos
    #:key
    #:mouse
    #:gamepad)
@@ -457,6 +462,7 @@
    #:executable-directory
    #:enlist
    #:unlist
+   #:one-of
    #:remf*
    #:deg->rad
    #:rad->deg
