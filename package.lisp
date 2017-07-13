@@ -458,6 +458,8 @@
   ;; toolkit.lisp
   (:export
    #:finalize
+   #:single-float-negative-infinity
+   #:single-float-positive-infinity
    #:current-time
    #:executable-directory
    #:enlist

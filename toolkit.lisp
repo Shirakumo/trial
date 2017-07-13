@@ -14,6 +14,14 @@
 (defmethod finalize (object)
   object)
 
+(defconstant single-float-positive-infinity
+  #+sbcl sb-ext:single-float-positive-infinity
+  #-sbcl most-positive-single-float)
+
+(defconstant single-float-negative-infinity
+  #+sbcl sb-ext:single-float-negative-infinity
+  #-sbcl most-negative-single-float)
+
 #+sbcl
 (define-symbol-macro current-time-start
     (load-time-value (logand (sb-ext:get-time-of-day) (1- (expt 2 32)))))
