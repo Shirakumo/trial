@@ -22,6 +22,12 @@
   #+sbcl sb-ext:single-float-negative-infinity
   #-sbcl most-negative-single-float)
 
+(defmacro with-float-traps-masked (args &body body)
+  (declare (ignorable args))
+  #+sbcl `(sb-int:with-float-traps-masked ,(or args '(:overflow :underflow :inexact))
+            ,@body)
+  #-sbcl (progn ,@body))
+
 #+sbcl
 (define-symbol-macro current-time-start
     (load-time-value (logand (sb-ext:get-time-of-day) (1- (expt 2 32)))))

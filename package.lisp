@@ -460,6 +460,7 @@
    #:finalize
    #:single-float-negative-infinity
    #:single-float-positive-infinity
+   #:with-float-traps-masked
    #:current-time
    #:executable-directory
    #:enlist
