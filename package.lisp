@@ -127,6 +127,7 @@
    #:quit-game
    #:reload-assets
    #:reload-scene
+   #:toggle-overlay
    #:controller
    #:display
    #:maybe-reload-scene)
