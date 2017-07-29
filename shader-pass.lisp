@@ -125,7 +125,7 @@
 (defmethod shader-program-for-pass ((pass per-object-pass) (subject shader-subject))
   (gethash (class-of subject) (assets pass)))
 
-(defmethod coerce-pass-shader ((pass per-object-pass) type spec)
+(defmethod coerce-pass-shader ((pass per-object-pass) class type spec)
   (glsl-toolkit:merge-shader-sources
    (list spec (getf (effective-shaders pass) type))))
 
@@ -161,7 +161,7 @@
     (let ((effective-class (determine-effective-shader-class class)))
       (unless (gethash effective-class (assets pass))
         (loop for (type spec) on (effective-shaders effective-class) by #'cddr
-              for inputs = (coerce-pass-shader pass type spec)
+              for inputs = (coerce-pass-shader pass effective-class type spec)
               for shader = (make-asset 'shader inputs :type type)
               do (push shader shaders))
         (setf (gethash effective-class (assets pass))
