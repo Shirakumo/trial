@@ -64,6 +64,7 @@
    #:setup-perspective
    #:2d-camera
    #:sidescroll-camera
+   #:zoom
    #:3d-camera
    #:fov
    #:target-camera
