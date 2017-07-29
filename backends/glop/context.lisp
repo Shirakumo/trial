@@ -235,7 +235,8 @@
     (glop:button-release-event
      (v:debug :trial.input "Mouse released: ~a" (glop-button->symbol
                                                  (glop:button event)))
-     (handle (make-instance 'mouse-release :button (glop:button event)
+     (handle (make-instance 'mouse-release :button (glop-button->symbol
+                                                    (glop:button event))
                                            :pos (mouse-pos context))
              (handler context)))
     (glop:mouse-motion-event

@@ -24,7 +24,7 @@
   (key-press (and (eql key :q) (find :control modifiers))))
 
 (define-action toggle-overlay (system-action)
-  (key-press (one-of key :section)))
+  (key-press (one-of key :section :grave)))
 
 (define-asset (trial noto-sans) font
     (#p"noto-sans-regular.ttf"))
