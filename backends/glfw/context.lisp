@@ -256,12 +256,11 @@
                (handler context))))))
 
 (cl-glfw3:def-scroll-callback ctx-scroll (window x y)
-  (declare (ignore y))
   (%with-context
-    (v:debug :trial.input "Mouse wheel: ~a" x)
+    (v:debug :trial.input "Mouse wheel: ~a ~a" x y)
     (handle (make-instance 'mouse-scroll
                            :pos (mouse-pos context)
-                           :delta x)
+                           :delta y)
             (handler context))))
 
 (cl-glfw3:def-cursor-pos-callback ctx-pos (window x y)
