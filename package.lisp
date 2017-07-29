@@ -156,11 +156,14 @@
    #:box-blur-pass
    #:sobel-pass
    #:gaussian-blur-pass
+   #:radial-blur-pass
    #:fxaa-pass
    #:blend-pass
    #:high-pass-filter
    #:low-pass-filter
-   #:chromatic-aberration-effect)
+   #:chromatic-aberration-effect
+   #:black-render-pass
+   #:light-scatter-pass)
   ;; entity.lisp
   (:export
    #:matches
