@@ -178,6 +178,9 @@
                   :initial-bindings `((*standard-output* . ,*standard-output*)
                                       (*error-output* . ,*error-output*)
                                       (*trace-output* . ,*trace-output*)
+                                      (*standard-input* . ,*standard-input*)
+                                      (*query-io* . ,*query-io*)
+                                      (*debug-io* . ,*debug-io*)
                                       (*context* . NIL))))
 
 (defmacro with-thread ((name) &body body)
