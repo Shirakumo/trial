@@ -49,7 +49,6 @@
     (with-timing-report (info :trial.main "Scene setup took ~fs run time, ~fs clock time.")
       (call-next-method)))
   (load (scene main))
-  (load (pipeline main))
   (start (scene main))
   ;; Cause camera to refresh
   (issue (scene main) 'resize :width (width main) :height (height main)))
@@ -65,10 +64,14 @@
 (defmethod setup-pipeline ((main main))
   ())
 
+(defmethod setup-pipeline :before ((main main))
+  (clear (pipeline main)))
+
 (defmethod setup-pipeline :after ((main main))
   (pack-pipeline (pipeline main) main)
   (for:for ((element over (scene main)))
-    (register-object-for-pass (pipeline main) element)))
+    (register-object-for-pass (pipeline main) element))
+  (load (pipeline main)))
 
 (defmethod paint ((source main) (target main))
   (paint (pipeline source) target))
