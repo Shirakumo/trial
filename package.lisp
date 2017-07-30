@@ -389,6 +389,7 @@
    #:output
    #:attachment
    #:texture
+   #:uniforms
    #:shader-pass
    #:framebuffer
    #:register-object-for-pass
