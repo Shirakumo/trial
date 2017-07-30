@@ -18,3 +18,11 @@
   (with-pushed-matrix ()
     (translate vec)
     (funcall func)))
+
+(defmethod load progn ((container container))
+  (for:for ((object over container))
+    (load object)))
+
+(defmethod offload progn ((container container))
+  (for:for ((object over container))
+    (offload object)))
