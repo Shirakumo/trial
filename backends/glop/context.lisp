@@ -167,7 +167,8 @@
 (defun launch-with-context (&optional (main 'main) &rest initargs)
   #+linux (cffi:foreign-funcall "XInitThreads" :int)
   (let* ((main (apply #'make-instance main initargs))
-         (context (trial:context main)))
+         (context (trial:context main))
+         (glop:*ignore-auto-repeat* t))
     (flet ((body ()
              (unwind-protect
                   (catch 'escape
