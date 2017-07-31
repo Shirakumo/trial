@@ -17,8 +17,10 @@
 
 (deploy:define-hook (:build trial) ()
   (cl-monitors:deinit)
-  (shutdown-gamepad-system))
+  (shutdown-gamepad-system)
+  (v:remove-global-controller))
 
 (deploy:define-hook (:boot trial) ()
+  (v:restart-global-controller)
   (cl-monitors:init)
   (init-gamepad-system))
