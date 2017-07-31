@@ -24,3 +24,6 @@
   (v:restart-global-controller)
   (cl-monitors:init)
   (init-gamepad-system))
+
+(deploy:define-library cl-opengl-bindings::opengl
+  :dont-deploy T)
