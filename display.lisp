@@ -10,10 +10,15 @@
   ((context :initarg :context :accessor context)
    (clear-color :initarg :clear-color :accessor clear-color))
   (:default-initargs
-   :clear-color (vec 0.2 0.3 0.3)
-   :context (make-context)))
+   :clear-color (vec 0.2 0.3 0.3)))
 
-(defmethod initialize-instance :after ((display display) &key context)
+(defmethod initialize-instance :after ((display display) &rest initargs &key context title width height version profile double-buffering stereo-buffer vsync)
+  (declare (ignore title width height version profile double-buffering stereo-buffer vsync))
+  (unless context
+    (let ((args (loop for (k v) on initargs by #'cddr
+                      for keep = (find k '(:title :width :height :version :profile :double-buffering :stereo-buffer :vsync))
+                      when keep collect k when keep collect v)))
+      (setf context (setf (context display) (apply #'make-context NIL args)))))
   (setf (handler context) display)
   (add-gamepad-handler display)
   (with-context ((context display))
