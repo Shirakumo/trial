@@ -8,7 +8,7 @@
 
 (defmethod coerce-base (base)
   (if *standalone*
-      (merge-pathnames (format NIL "pool/~(~a~)/" base) (uiop:argv0))
+      (merge-pathnames (format NIL "pool/~(~a~)/" base) (deploy:data-directory))
       (merge-pathnames "data/" (asdf:system-source-directory base))))
 
 (defvar *pools* (make-hash-table :test 'eql))
