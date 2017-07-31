@@ -51,7 +51,8 @@
   (load (scene main))
   (start (scene main))
   ;; Cause camera to refresh
-  (issue (scene main) 'resize :width (width main) :height (height main)))
+  (issue (scene main) 'resize :width (width main) :height (height main))
+  (invoke-restart 'reset-render-loop))
 
 ;; FIXME: proper LOADing of a map
 (defmethod setup-scene ((main main))

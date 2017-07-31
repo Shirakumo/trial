@@ -350,7 +350,8 @@
    #:start
    #:stop
    #:render
-   #:update)
+   #:update
+   #:reset-render-loop)
   ;; retention.lisp
   (:export
    #:retained
