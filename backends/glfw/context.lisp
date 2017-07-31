@@ -178,8 +178,8 @@
   (list (cl-glfw3:get-window-attribute :context-version-major (window context))
         (cl-glfw3:get-window-attribute :context-version-minor (window context))))
 
-(defun make-context (&optional handler)
-  (make-instance 'context :handler handler))
+(defun make-context (&optional handler &rest initargs)
+  (apply #'make-instance 'context :handler handler initargs))
 
 (defun launch-with-context (&optional main &rest initargs)
   (flet ((body ()

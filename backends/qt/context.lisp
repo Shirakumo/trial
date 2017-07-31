@@ -7,8 +7,8 @@
 (in-package #:org.shirakumo.fraf.trial.qt)
 (in-readtable :qtools)
 
-(defun make-context (&optional handler)
-  (make-instance 'context :handler handler))
+(defun make-context (&optional handler &rest initargs)
+  (apply #'make-instance 'context :handler handler initargs))
 
 (define-widget context (QGLWidget trial:context)
   ((glformat :initform NIL :accessor glformat)

@@ -6,8 +6,8 @@
 
 (in-package #:org.shirakumo.fraf.trial.glop)
 
-(defun make-context (&optional handler)
-  (make-instance 'context :handler handler))
+(defun make-context (&optional handler &rest initargs)
+  (apply #'make-instance 'context :handler handler initargs))
 
 (defclass context (trial:context glop:window)
   ((context :initform NIL :accessor context)
