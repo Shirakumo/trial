@@ -134,6 +134,7 @@
   (define-generic-controller generic (0 0)))
 
 (define-gamepad xbox-360 (1118 654)
+  #-windows
   (:axes
    ( 0 :left-h)
    ( 1 :left-v)
@@ -143,6 +144,17 @@
    ( 5 :r2)
    ( 6 :dpad-h)
    ( 7 :dpad-v))
+  #+windows
+  (:axes
+   ( 0 :left-h)
+   ( 1 :left-v)
+   ( 2 :right-h)
+   ( 3 :right-v)
+   ( 4 :l2)
+   ( 5 :r2)
+   ( 6 :dpad-h)
+   ( 7 :dpad-v))
+  #-windows
   (:buttons
    ( 0 :a)
    ( 1 :b)
@@ -154,7 +166,24 @@
    ( 7 :start)
    ( 8 :home)
    ( 9 :left)
-   (10 :right)))
+   (10 :right))
+  #+windows
+  (:buttons
+   ( 0 :up)
+   ( 1 :down)
+   ( 2 :left)
+   ( 3 :right)
+   ( 4 :start)
+   ( 5 :select)
+   ( 6 :l3)
+   ( 7 :r3)
+   ( 8 :l2)
+   ( 9 :r2)
+   (10 :a)
+   (11 :b)
+   (12 :x)
+   (13 :y)
+   (14 :home)))
 
 (define-gamepad logitech-f310 (1133 49693 :inherit xbox-360)
   (:axes)
