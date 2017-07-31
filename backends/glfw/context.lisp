@@ -41,7 +41,7 @@
                                           (visible NIL visible-p)
                                           (decorated NIL decorated-p)
                                           (robustness NIL robustness-p)
-                                          (forward-compat NIL forward-compat-p)
+                                          (forward-compat T forward-compat-p)
                                           (debug-context NIL debug-context-p))
   (flet (((setf g) (value name) (setf (getf (initargs context) name) value)))
     (macrolet ((maybe-set (var &optional (name (intern (string var) :keyword)))
