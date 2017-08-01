@@ -26,3 +26,7 @@
 (defmethod offload progn ((container container))
   (for:for ((object over container))
     (offload object)))
+
+(defmethod register-object-for-pass (pass (container container))
+  (for:for ((object over container))
+    (register-object-for-pass pass object)))
