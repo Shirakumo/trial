@@ -166,9 +166,10 @@
 (defun standalone-logging-handler ()
   (when *standalone*
     (let ((log (uiop:getenv "TRIAL_LOGFILE")))
-      (when (and log (string/= "" log))
-        (v:define-pipe ()
-          (v:file-faucet :file log))))))
+      (unless (and log (string/= "" log))
+        (setf log (merge-pathnames "trial.log" (or (uiop:argv0) (user-homedir-pathname)))))
+      (v:define-pipe ()
+        (v:file-faucet :file log)))))
 
 (defun make-thread (name func)
   (bt:make-thread (lambda ()
