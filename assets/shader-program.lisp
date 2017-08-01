@@ -68,6 +68,7 @@
           #-sbcl
           (gl:uniform-matrix-2fv location (marr2 data)))
     (single-float (%gl:uniform-1f location data))
+    (double-float (%gl:uniform-1d location data))
     (fixnum (%gl:uniform-1i location data))
     (matn (ecase (mrows data)
             (2 (ecase (mcols data)
