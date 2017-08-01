@@ -81,9 +81,9 @@
   (paint (scene target) pass))
 
 (defun launch (&optional (main 'main) &rest initargs)
+  (standalone-logging-handler)
   (v:output-here)
   (v:info :trial.main "GENESIS")
-  (standalone-logging-handler)
   (handler-bind ((error #'standalone-error-handler))
     (apply #'launch-with-context main initargs))
   (tg:gc :full T))
