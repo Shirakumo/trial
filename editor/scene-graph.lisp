@@ -9,8 +9,8 @@
 
 (define-widget scene-graph (QDialog)
   ((scene :initarg :scene :accessor scene)
-   (unit->item-map :initform (make-hash-table :test 'eq) :accessor unit->item-map)
-   (item->unit-map :initform (make-hash-table :test 'eq) :accessor item->unit-map))
+   (entity->item-map :initform (make-hash-table :test 'eq) :accessor entity->item-map)
+   (item->entity-map :initform (make-hash-table :test 'eq) :accessor item->entity-map))
   (:default-initargs :scene (error "SCENE required.")))
 
 (define-initializer (scene-graph setup)
@@ -36,13 +36,13 @@
     (q+:make-qpushbutton)
   (setf (q+:icon enter) (q+:standard-icon (q+:style enter)
                                           (q+:qstyle.sp_file-dialog-new-folder)))
-  (setf (q+:tool-tip enter) "Enter a new unit into the scene."))
+  (setf (q+:tool-tip enter) "Enter a new entity into the scene."))
 
 (define-subwidget (scene-graph leave)
     (q+:make-qpushbutton)
   (setf (q+:icon leave) (q+:standard-icon (q+:style leave)
                                           (q+:qstyle.sp_dialog-close-button)))
-  (setf (q+:tool-tip leave) "Leave the selected unit from the scene."))
+  (setf (q+:tool-tip leave) "Leave the selected entity from the scene."))
 
 (define-subwidget (scene-graph reload)
     (q+:make-qpushbutton)
@@ -60,19 +60,20 @@
   (setf (q+:spacing layout) 0))
 
 (defun make-scene-graph-item (entity scene-graph)
-  (let ((item (q+:make-qtreewidgetitem)))
-    (setf (gethash entity (unit->item-map scene-graph)) item)
-    (setf (gethash item (item->unit-map scene-graph)) entity)
-    (setf (q+:text item 0) (format NIL "~(~s~)" (flare:name entity)))
-    (setf (q+:text item 1) (format NIL "~(~s~)" (class-name (class-of entity))))
-    (when (typep entity 'flare:container)
-      (flare-queue:do-queue (child (flare:objects entity))
-        (q+:add-child item (make-scene-graph-item child scene-graph))))
-    item))
+  (or (gethash entity (entity->item-map scene-graph))
+      (let ((item (q+:make-qtreewidgetitem)))
+        (setf (gethash entity (entity->item-map scene-graph)) item)
+        (setf (gethash item (item->entity-map scene-graph)) entity)
+        (setf (q+:text item 0) (format NIL "~(~s~)" (flare:name entity)))
+        (setf (q+:text item 1) (format NIL "~(~s~)" (class-name (class-of entity))))
+        (when (typep entity 'flare:container)
+          (flare-queue:do-queue (child (flare:objects entity))
+            (q+:add-child item (make-scene-graph-item child scene-graph))))
+        item)))
 
 (define-slot (scene-graph refresh refresh-instances) ()
-  (clrhash (unit->item-map scene-graph))
-  (clrhash (item->unit-map scene-graph))
+  (clrhash (entity->item-map scene-graph))
+  (clrhash (item->entity-map scene-graph))
   (q+:clear tree)
   (let ((item (q+:make-qtreewidgetitem))
         (scene (scene scene-graph)))
@@ -86,8 +87,10 @@
 
 (define-slot (scene-graph clicked) ((item "QTreeWidgetItem *") (column "int"))
   (declare (connected tree (item-double-clicked "QTreeWidgetItem *" "int")))
-  (let ((unit (gethash item (item->unit-map scene-graph))))
-    (inspect unit)))
+  (let ((entity (gethash item (item->entity-map scene-graph))))
+    (case column
+      (0 (inspect entity))
+      (1 (q+:show (make-instance 'subject-chooser :instances-class (class-of entity)))))))
 
 (define-slot (scene-graph pause) ()
   (declare (connected pause (clicked)))
@@ -102,7 +105,7 @@
 (define-slot (scene-graph leave) ()
   (declare (connected leave (clicked)))
   (dolist (item (q+:selected-items tree))
-    (trial:leave (gethash item (item->unit-map scene-graph)) (scene scene-graph))))
+    (trial:leave (gethash item (item->entity-map scene-graph)) (scene scene-graph))))
 
 (define-slot (scene-graph reload) ()
   (declare (connected reload (clicked)))
@@ -118,9 +121,9 @@
 
 (defmethod trial:handle ((leave trial:leave) (scene-graph scene-graph))
   (let* ((entity (trial:entity leave))
-         (item (gethash entity (unit->item-map scene-graph))))
-    (remhash entity (unit->item-map scene-graph))
-    (remhash item (item->unit-map scene-graph))
+         (item (gethash entity (entity->item-map scene-graph))))
+    (remhash entity (entity->item-map scene-graph))
+    (remhash item (item->entity-map scene-graph))
     (when item
       (q+:remove-child (q+:parent item) item)
       (finalize item))))
