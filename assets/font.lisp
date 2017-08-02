@@ -35,7 +35,8 @@
   (setf (resource asset)
         (cl-fond:make-font (first (coerced-inputs asset))
                            (charset asset)
-                           :size (size asset))))
+                           :size (size asset)))
+  (v:debug :trial.asset "Loaded font ~a" (first (coerced-inputs asset))))
 
 (define-shader-subject text (vertex-subject textured-subject located-entity)
   ((font :initarg :font :accessor font)
