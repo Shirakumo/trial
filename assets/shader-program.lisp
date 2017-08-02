@@ -39,7 +39,8 @@
           (gl:detach-shader program (resource shader)))
         (unless (gl:get-program program :link-status)
           (error "Failed to link ~a: ~%~a"
-                 asset (gl:get-program-info-log program)))))))
+                 asset (gl:get-program-info-log program)))
+        (v:debug :trial.asset "Linked ~a with ~a." program shaders)))))
 
 (declaim (inline %set-uniform))
 (defun %set-uniform (location data)

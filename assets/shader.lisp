@@ -34,4 +34,5 @@
         (unless (gl:get-shader shader :compile-status)
           (error "Failed to compile ~a: ~%~a~%Shader source:~%~a"
                  asset (gl:get-shader-info-log shader)
-                 source))))))
+                 source))
+        (v:debug :trial.asset "Compiled shader ~a: ~%~a" shader source)))))
