@@ -65,7 +65,7 @@
                                          FPS  [Hz]: ~8,2f~%~
                                          RAM  [KB]: ~8d (~2d%)~%~
                                          VRAM [KB]: ~8d (~2d%)"
-                                    tt
+                                    (clock (scene (display controller)))
                                     (/ (loop for i from 0 below (array-total-size fps-buffer)
                                              sum (aref fps-buffer i))
                                        (array-total-size fps-buffer))

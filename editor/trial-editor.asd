@@ -12,8 +12,10 @@
   :description "A flexible and extensible video game engine."
   :homepage "https://github.com/Shirakumo/trial"
   :components ((:file "package")
+               (:file "inspector")
                (:file "subject-chooser")
-               (:file "subject-class-chooser"))
+               (:file "subject-class-chooser")
+               (:file "scene-graph"))
   :depends-on (:trial
                :qtools
                :qtcore

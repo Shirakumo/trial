@@ -72,7 +72,7 @@
   (declare (connected inspect (clicked)))
   (let ((selected (qui:active-item result-list)))
     (when selected
-      #+swank (swank:inspect-in-emacs selected))))
+      (inspect selected))))
 
 (defun find-subject-instances (base-class)
   (let ((result ()))
@@ -103,4 +103,4 @@
                                               (T (princ-to-string instance))))))
 
 (define-override (instance-listing-widget mouse-double-click-event) (ev)
-  #+swank (swank:inspect-in-emacs (qui:widget-item instance-listing-widget)))
+  (inspect (qui:widget-item instance-listing-widget)))

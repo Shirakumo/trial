@@ -8,4 +8,5 @@
 (defpackage #:trial-editor
   (:nicknames #:org.shirakumo.trial.editor)
   (:use #:cl+qt)
+  (:shadow #:inspect)
   (:export))

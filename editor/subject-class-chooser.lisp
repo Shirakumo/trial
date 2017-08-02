@@ -83,7 +83,7 @@
   (declare (connected inspect (clicked)))
   (let ((selected (qui:active-item result-list)))
     (when selected
-      #+swank (swank:inspect-in-emacs selected))))
+      (inspect selected))))
 
 (define-slot (subject-class-chooser list-instances) ()
   (declare (connected list-instances (clicked)))
