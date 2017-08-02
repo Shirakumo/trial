@@ -12,13 +12,13 @@
   (:default-initargs :instances-class (error "CLASS required.")))
 
 (define-initializer (subject-chooser setup)
-  (setf (q+:window-title subject-chooser) (format NIL "Instance Chooser for ~s"
+  (setf (q+:window-title subject-chooser) (format NIL "Instances of ~s"
                                                    (class-name (instances-class subject-chooser))))
   (q+:resize subject-chooser 300 400)
   (refresh-instances subject-chooser))
 
 (define-subwidget (subject-chooser filter)
-    (q+:make-qlineedit "subject"))
+    (q+:make-qlineedit ""))
 
 (define-subwidget (subject-chooser clear-filter)
     (q+:make-qpushbutton)
@@ -50,15 +50,21 @@
 
 (define-subwidget (subject-chooser layout)
     (q+:make-qgridlayout subject-chooser)
+  (let ((inner (q+:make-qhboxlayout)))
+    (q+:add-widget inner filter)
+    (q+:add-widget inner clear-filter)
+    (q+:add-layout layout inner 0 0 1 2))
   (q+:add-widget layout scroller 1 0 1 2)
   (q+:add-widget layout refresh 2 0 1 1)
   (q+:add-widget layout inspect 2 1 1 1)
   (setf (q+:spacing layout) 0))
 
 (define-slot (subject-chooser refresh refresh-instances) ()
+  (declare (connected filter (text-changed string)))
   (declare (connected refresh (clicked)))
   (qui:clear-layout result-list T)
-  (dolist (item (sort (find-subject-instances (instances-class subject-chooser))
+  (dolist (item (sort (remove-if-not (lambda (a) (search (q+:text filter) (string (flare:name a)) :test #'char-equal))
+                                     (find-subject-instances (instances-class subject-chooser)))
                       #'string< :key #'princ-to-string))
     (qui:add-item item result-list)))
 

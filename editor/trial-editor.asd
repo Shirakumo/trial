@@ -13,7 +13,7 @@
   :homepage "https://github.com/Shirakumo/trial"
   :components ((:file "package")
                (:file "subject-chooser")
-               (:file "entity-chooser"))
+               (:file "subject-class-chooser"))
   :depends-on (:trial
                :qtools
                :qtcore
