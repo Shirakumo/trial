@@ -38,7 +38,7 @@
 
 (define-subwidget (object-inspector slots)
     (make-instance 'slot-listing :object object)
-  (dolist (slot (c2mop:class- (class-of object)))
+  (dolist (slot (c2mop:class-slots (class-of object)))
     (qui:add-item (c2mop:slot-definition-name slot) slots)))
 
 (define-subwidget (object-inspector scroller)
@@ -62,8 +62,8 @@
 
 (define-subwidget (object-inspector layout)
     (q+:make-qgridlayout object-inspector)
-  (q+:add-widget layout instance-label 0 0 1 2)
-  (q+:add-widget layout class-button 1 0 1 2)
+  (q+:add-widget layout class-button 0 0 1 2)
+  (q+:add-widget layout instance-label 1 0 1 2)
   (q+:add-widget layout docstring 2 0 1 2)
   (q+:add-widget layout scroller 3 0 1 2)
   (q+:add-widget layout reinitialize 4 0 1 1)
