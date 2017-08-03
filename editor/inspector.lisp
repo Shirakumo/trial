@@ -18,6 +18,8 @@
      (q+:show (make-instance 'symbol-inspector :object object)))
     (package
      (q+:show (make-instance 'package-inspector :object object)))
+    (pathname
+     (q+:show (make-instance 'pathname-inspector :object object)))
     (cons
      (q+:show
       (if (or (consp (cdr object)) (null (cdr object)))
@@ -26,9 +28,9 @@
     ((or standard-object structure-object condition)
      (q+:show (make-instance 'object-inspector :object object)))))
 
-(defun safe-princ (value)
+(defun safe-princ (value &optional (length 50))
   (handler-case (let ((string (princ-to-string value)))
-                  (if (< 50 (length string))
+                  (if (and length (< length (length string)))
                       (with-output-to-string (out)
                         (write-sequence string out :end 50)
                         (write-string "..." out))
@@ -37,9 +39,9 @@
       (declare (ignore err))
       (format NIL "<ERROR DURING PRINTING>"))))
 
-(defun safe-prin1 (value)
+(defun safe-prin1 (value &optional (length 50))
   (handler-case (let ((string (prin1-to-string value)))
-                  (if (< 50 (length string))
+                  (if (and length (< length (length string)))
                       (with-output-to-string (out)
                         (write-sequence string out :end 50)
                         (write-string "..." out))
@@ -67,3 +69,4 @@
              parent "Error during evaluation of new value"
              (princ-to-string err))
             (return (values NIL NIL))))))))
+

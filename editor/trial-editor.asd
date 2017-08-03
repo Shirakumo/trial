@@ -20,6 +20,7 @@
                (:file "list-inspector")
                (:file "symbol-inspector")
                (:file "package-inspector")
+               (:file "pathname-inspector")
                (:file "subject-chooser")
                (:file "subject-class-chooser")
                (:file "scene-graph"))
