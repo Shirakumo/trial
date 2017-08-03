@@ -55,7 +55,8 @@
   (q+:add-widget layout scroller 1 0 1 3)
   (q+:add-widget layout refresh 2 0 1 1)
   (q+:add-widget layout add 2 1 1 1)
-  (q+:add-widget layout adjust 2 2 1 1))
+  (q+:add-widget layout adjust 2 2 1 1)
+  (setf (q+:spacing layout) 0))
 
 (define-slot (array-inspector refresh refresh-instances) ()
   (declare (connected refresh (clicked)))
@@ -78,14 +79,15 @@
 (define-slot (array-inspector adjust) ()
   (declare (connected adjust (clicked)))
   (if (adjustable-array-p object)
-      (cffi:with-foreign-object (ok :int)
+      (cffi:with-foreign-object (ok :bool)
         (let ((value (q+:qinputdialog-get-int array-inspector "Enter new array size"
-                                              "Enter the new array size:" (length object)
-                                              0 (expt 2 31) 1 ok)))
-          (when (< 0 (cffi:mem-ref ok :int))
+                                              "Enter the new array size:" (array-total-size object)
+                                              0 (1- (expt 2 31)) 1 ok)))
+          (when (cffi:mem-ref ok :bool)
             (if (array-has-fill-pointer-p object)
                 (adjust-array object value :fill-pointer (min value (fill-pointer object)))
-                (adjust-array object value)))))
+                (adjust-array object value))
+            (refresh-instances array-inspector))))
       (q+:qmessagebox-critical array-inspector "Error adjusting array"
                                "The array is not adjustable!")))
 

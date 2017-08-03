@@ -48,7 +48,8 @@
   (q+:add-layout layout table-info 0 0 1 2)
   (q+:add-widget layout scroller 1 0 1 2)
   (q+:add-widget layout refresh 2 0 1 1)
-  (q+:add-widget layout clear 2 1 1 1))
+  (q+:add-widget layout clear 2 1 1 1)
+  (setf (q+:spacing layout) 0))
 
 (define-slot (hash-table-inspector refresh refresh-instances) ()
   (declare (connected refresh (clicked)))

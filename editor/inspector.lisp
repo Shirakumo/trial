@@ -16,7 +16,12 @@
      (q+:show (make-instance 'array-inspector :object object)))
     ((or standard-object structure-object condition)
      (q+:show (make-instance 'object-inspector :object object)))
-    ((or cons package symbol)
+    (cons
+     (q+:show
+      (if (or (consp (cdr object)) (null (cdr object)))
+          (make-instance 'list-inspector :object object)
+          (make-instance 'cons-inspector :object object))))
+    ((or package symbol)
      #+swank (swank:inspect-in-emacs object))))
 
 (defun safe-princ (value)
@@ -28,7 +33,7 @@
 (defun safe-input-value (&optional parent)
   (let ((new (q+:qinputdialog-get-text
               parent (format NIL "Set a new value")
-              "Enter a new value for the slot. What you enter will be evaluated.")))
+              "Enter a new value. What you enter will be evaluated.")))
     (block NIL
       (when (string= new "")
         (return (values NIL NIL)))
