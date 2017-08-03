@@ -14,15 +14,17 @@
      (q+:show (make-instance 'hash-table-inspector :object object)))
     (array
      (q+:show (make-instance 'array-inspector :object object)))
-    ((or standard-object structure-object condition)
-     (q+:show (make-instance 'object-inspector :object object)))
+    (symbol
+     (q+:show (make-instance 'symbol-inspector :object object)))
+    (package
+     (q+:show (make-instance 'package-inspector :object object)))
     (cons
      (q+:show
       (if (or (consp (cdr object)) (null (cdr object)))
           (make-instance 'list-inspector :object object)
           (make-instance 'cons-inspector :object object))))
-    ((or package symbol)
-     #+swank (swank:inspect-in-emacs object))))
+    ((or standard-object structure-object condition)
+     (q+:show (make-instance 'object-inspector :object object)))))
 
 (defun safe-princ (value)
   (handler-case (princ-to-string value)
