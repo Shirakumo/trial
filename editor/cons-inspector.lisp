@@ -4,6 +4,9 @@
  Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
+(in-package #:org.shirakumo.trial.editor)
+(in-readtable :qtools)
+
 (define-widget cons-inspector (QDialog)
   ((object :initarg :object :accessor object))
   (:default-initargs :object (error "OBJECT is required.")))
