@@ -20,6 +20,8 @@
      (q+:show (make-instance 'package-inspector :object object)))
     (pathname
      (q+:show (make-instance 'pathname-inspector :object object)))
+    (function
+     (q+:show (make-instance 'function-inspector :object object)))
     (cons
      (q+:show
       (if (or (consp (cdr object)) (null (cdr object)))

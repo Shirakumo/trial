@@ -12,7 +12,7 @@
   (:default-initargs :object (error "OBJECT is required.")))
 
 (define-initializer (pathname-inspector setup)
-  (setf (q+:window-title pathname-inspector) (format NIL "Pathname Inspector for ~s" object))
+  (setf (q+:window-title pathname-inspector) (format NIL "Pathname Inspector for ~a" object))
   (q+:resize pathname-inspector 400 200))
 
 (define-subwidget (pathname-inspector layout)
