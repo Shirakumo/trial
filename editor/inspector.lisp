@@ -37,9 +37,20 @@
       (declare (ignore err))
       (format NIL "<ERROR DURING PRINTING>"))))
 
+(defun safe-prin1 (value)
+  (handler-case (let ((string (prin1-to-string value)))
+                  (if (< 50 (length string))
+                      (with-output-to-string (out)
+                        (write-sequence string out :end 50)
+                        (write-string "..." out))
+                      string))
+    (error (err)
+      (declare (ignore err))
+      (format NIL "<ERROR DURING PRINTING>"))))
+
 (defun safe-input-value (&optional parent)
   (let ((new (q+:qinputdialog-get-text
-              parent (format NIL "Set a new value")
+              parent "Set a new value"
               "Enter a new value. What you enter will be evaluated.")))
     (block NIL
       (when (string= new "")

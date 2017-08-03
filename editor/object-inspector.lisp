@@ -105,7 +105,7 @@
   (let ((object (object (qui:container slot-listing-widget)))
         (slot (qui:widget-item slot-listing-widget)))
     (setf (q+:text value-button) (if (slot-boundp object slot)
-                                     (safe-princ (slot-value object slot))
+                                     (safe-prin1 (slot-value object slot))
                                      "<UNBOUND>"))
     (setf (q+:style-sheet value-button) "text-align:left;")
     (setf (q+:maximum-height value-button) 50)))
@@ -147,7 +147,7 @@
     (multiple-value-bind (value got) (safe-input-value slot-listing-widget)
       (when got
         (setf (slot-value object slot) value)
-        (setf (q+:text value-button) (safe-princ value))))))
+        (setf (q+:text value-button) (safe-prin1 value))))))
 
 (define-slot (slot-listing-widget unbind-slot) ()
   (declare (connected unbind-slot (clicked)))

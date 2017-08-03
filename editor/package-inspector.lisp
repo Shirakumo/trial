@@ -32,7 +32,8 @@
     (q+:make-qcheckbox "Internal"))
 
 (define-subwidget (package-inspector filter)
-    (q+:make-qlineedit))
+    (q+:make-qlineedit)
+  (setf (q+:placeholder-text filter) "Filter..."))
 
 (define-subwidget (package-inspector clear-filter)
     (q+:make-qpushbutton)
@@ -68,7 +69,7 @@
     (q+:make-qpushbutton)
   (setf (q+:icon rename) (q+:standard-icon (q+:style rename)
                                            (q+:qstyle.sp_dialog-reset-button)))
-  (setf (q+:tool-tip use) "Rename the package."))
+  (setf (q+:tool-tip rename) "Rename the package."))
 
 (define-subwidget (package-inspector refresh)
     (q+:make-qpushbutton)
@@ -128,15 +129,36 @@
 
 (define-slot (package-inspector intern) ()
   (declare (connected intern (clicked)))
-  )
+  (multiple-value-bind (value got) (safe-input-value package-inspector)
+    (when got
+      (etypecase value
+        (string (intern value object)
+         (refresh-instances package-inspector))
+        (symbol (import value object)
+         (refresh-instances package-inspector))
+        (T (q+:qmessagebox-critical package-inspector "Error interning symbol"
+                                    (format NIL "The given value is not a symbol or string: ~%~a"
+                                            value)))))))
 
 (define-slot (package-inspector use) ()
   (declare (connected use (clicked)))
-  )
+  (let ((name (q+:qinputdialog-get-text package-inspector "Enter package name"
+                                        "Enter the name of the package to use.")))
+    (when (string/= name "")
+      (cond ((find-package name)
+             (use-package (find-package name) object)
+             (refresh-instances package-inspector))
+            (T
+             (q+:qmessagebox-critical package-inspector "Error using package"
+                                      (format NIL "No package named ~a found." name)))))))
 
 (define-slot (package-inspector rename) ()
-  (declare (connected use (clicked)))
-  )
+  (declare (connected rename (clicked)))
+  (let ((name-list (list* (package-name object)
+                          (copy-list (package-nicknames object)))))
+    (q+:exec (make-instance 'list-inspector :object name-list))
+    (rename-package object (first name-list) (rest name-list))
+    (refresh-instances package-inspector)))
 
 (define-widget package-listing (QWidget qui:listing)
   ((inspector :initarg :inspector :accessor inspector)))
@@ -188,8 +210,16 @@
 
 (define-slot (package-listing-widget un/export) ()
   (declare (connected un/export (clicked)))
-  )
+  (let ((object (object (inspector (qui:container package-listing-widget))))
+        (symbol (qui:widget-item package-listing-widget)))
+    (if (eql :external (nth-value 1 (find-symbol (symbol-name symbol) object)))
+        (unexport symbol object)
+        (export symbol object))
+    (setf (q+:text status) (safe-princ (nth-value 1 (find-symbol (symbol-name symbol) object))))))
 
 (define-slot (package-listing-widget unintern) ()
   (declare (connected unintern (clicked)))
-  )
+  (let ((object (object (inspector (qui:container package-listing-widget))))
+        (symbol (qui:widget-item package-listing-widget)))
+    (unintern symbol object)
+    (qui:remove-widget package-listing-widget (qui:container package-listing-widget))))

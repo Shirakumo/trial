@@ -17,7 +17,7 @@
   (refresh-instances cons-inspector))
 
 (define-subwidget (cons-inspector car-button)
-    (q+:make-qpushbutton (safe-princ (car object))))
+    (q+:make-qpushbutton (safe-prin1 (car object))))
 
 (define-subwidget (cons-inspector set-car)
     (q+:make-qpushbutton)
@@ -27,7 +27,7 @@
   (setf (q+:fixed-width set-car) 40))
 
 (define-subwidget (cons-inspector cdr-button)
-    (q+:make-qpushbutton (safe-princ (cdr object))))
+    (q+:make-qpushbutton (safe-prin1 (cdr object))))
 
 (define-subwidget (cons-inspector set-cdr)
     (q+:make-qpushbutton)
@@ -53,8 +53,8 @@
 
 (define-slot (cons-inspector refresh refresh-instances) ()
   (declare (connected refresh (clicked)))
-  (setf (q+:text car-button) (safe-princ (car object)))
-  (setf (q+:text cdr-button) (safe-princ (cdr object))))
+  (setf (q+:text car-button) (safe-prin1 (car object)))
+  (setf (q+:text cdr-button) (safe-prin1 (cdr object))))
 
 (define-slot (cons-inspector inspect-car) ()
   (declare (connected car-button (clicked)))

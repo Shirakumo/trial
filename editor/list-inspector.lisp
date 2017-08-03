@@ -71,7 +71,7 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
 
 (define-subwidget (list-listing-widget value-button)
     (let ((cons (qui:widget-item list-listing-widget)))
-      (q+:make-qpushbutton (safe-princ (car cons)))))
+      (q+:make-qpushbutton (safe-prin1 (car cons)))))
 
 (define-subwidget (list-listing-widget set-value)
     (q+:make-qpushbutton)
@@ -106,7 +106,7 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
     (multiple-value-bind (value got) (safe-input-value list-listing-widget)
       (when got
         (setf (car cons) value)
-        (setf (q+:text value-button) (safe-princ value))))))
+        (setf (q+:text value-button) (safe-prin1 value))))))
 
 (define-slot (list-listing-widget remove-entry) ()
   (declare (connected remove-entry (clicked)))
@@ -117,4 +117,4 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
            (refresh-instances (inspector (qui:container list-listing-widget))))
           (T
            (setf (car cons) NIL)
-           (setf (q+:text value-button) (safe-princ NIL))))))
+           (setf (q+:text value-button) (safe-prin1 NIL))))))

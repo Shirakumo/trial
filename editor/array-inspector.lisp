@@ -124,7 +124,7 @@
 (define-subwidget (array-listing-widget value-button)
     (let ((object (object (inspector (qui:container array-listing-widget))))
           (key (qui:widget-item array-listing-widget)))
-      (q+:make-qpushbutton (safe-princ (aref object key)))))
+      (q+:make-qpushbutton (safe-prin1 (aref object key)))))
 
 (define-subwidget (array-listing-widget set-value)
     (q+:make-qpushbutton)
@@ -162,7 +162,7 @@
     (multiple-value-bind (value got) (safe-input-value array-listing-widget)
       (when got
         (setf (row-major-aref object index) value)
-        (setf (q+:text value-button) (safe-princ value))))))
+        (setf (q+:text value-button) (safe-prin1 value))))))
 
 (define-slot (array-listing-widget remove-entry) ()
   (declare (connected remove-entry (clicked)))
@@ -173,7 +173,7 @@
            (refresh-instances (inspector (qui:container array-listing-widget))))
           ((typep NIL (array-element-type object))
            (setf (row-major-aref object index) NIL)
-           (setf (q+:text value-button) (safe-princ NIL)))
+           (setf (q+:text value-button) (safe-prin1 NIL)))
           (T
            (q+:qmessagebox-critical array-listing-widget "Failed to remove entry"
                                     "Cannot remove this entry: the array is not a vector and its element-type does not allow NIL for values.")))))

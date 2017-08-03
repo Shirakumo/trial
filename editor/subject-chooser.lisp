@@ -18,7 +18,8 @@
   (refresh-instances subject-chooser))
 
 (define-subwidget (subject-chooser filter)
-    (q+:make-qlineedit ""))
+    (q+:make-qlineedit)
+  (setf (q+:placeholder-text filter) "Filter..."))
 
 (define-subwidget (subject-chooser clear-filter)
     (q+:make-qpushbutton)

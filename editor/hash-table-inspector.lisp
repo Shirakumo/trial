@@ -84,12 +84,12 @@
   (:default-initargs :draw-item NIL))
 
 (define-subwidget (table-listing-widget key-button)
-    (q+:make-qpushbutton (safe-princ (qui:widget-item table-listing-widget))))
+    (q+:make-qpushbutton (safe-prin1 (qui:widget-item table-listing-widget))))
 
 (define-subwidget (table-listing-widget value-button)
     (let ((object (object (qui:container table-listing-widget)))
           (key (qui:widget-item table-listing-widget)))
-      (q+:make-qpushbutton (safe-princ (gethash key object)))))
+      (q+:make-qpushbutton (safe-prin1 (gethash key object)))))
 
 (define-subwidget (table-listing-widget set-value)
     (q+:make-qpushbutton)
@@ -131,7 +131,7 @@
     (multiple-value-bind (value got) (safe-input-value table-listing-widget)
       (when got
         (setf (gethash key object) value)
-        (setf (q+:text value-button) (safe-princ value))))))
+        (setf (q+:text value-button) (safe-prin1 value))))))
 
 (define-slot (table-listing-widget remove-entry) ()
   (declare (connected remove-entry (clicked)))
