@@ -13,7 +13,7 @@
 
 (define-initializer (package-inspector setup)
   (setf (q+:window-title package-inspector) (format NIL "Package Inspector for ~a" (package-name object)))
-  (q+:resize package-inspector 300 600)
+  (q+:resize package-inspector 500 600)
   (refresh-instances package-inspector))
 
 (define-subwidget (package-inspector package-info)
@@ -36,6 +36,7 @@
 
 (define-subwidget (package-inspector clear-filter)
     (q+:make-qpushbutton)
+  (setf (q+:focus-policy clear-filter) (q+:qt.no-focus))
   (setf (q+:icon clear-filter) (q+:standard-icon (q+:style clear-filter)
                                                  (q+:qstyle.sp_dialog-close-button)))
   (setf (q+:tool-tip clear-filter) "Clear the filter.")
@@ -123,8 +124,7 @@
 (define-slot (package-inspector clear-filter) ()
   (declare (connected clear-filter (clicked)))
   (setf (q+:text filter) "")
-  ;; (refresh-instances package-inspector)
-  )
+  (refresh-instances package-inspector))
 
 (define-slot (package-inspector intern) ()
   (declare (connected intern (clicked)))

@@ -20,6 +20,7 @@
 
 (define-subwidget (subject-class-chooser clear-filter)
     (q+:make-qpushbutton)
+  (setf (q+:focus-policy clear-filter) (q+:qt.no-focus))
   (setf (q+:icon clear-filter) (q+:standard-icon (q+:style clear-filter)
                                                  (q+:qstyle.sp_dialog-close-button)))
   (setf (q+:tool-tip clear-filter) "Clear the class filter"))

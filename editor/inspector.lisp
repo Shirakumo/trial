@@ -27,10 +27,15 @@
      (q+:show (make-instance 'object-inspector :object object)))))
 
 (defun safe-princ (value)
-  (handler-case (princ-to-string value)
+  (handler-case (let ((string (princ-to-string value)))
+                  (if (< 50 (length string))
+                      (with-output-to-string (out)
+                        (write-sequence string out :end 50)
+                        (write-string "..." out))
+                      string))
     (error (err)
       (declare (ignore err))
-      (format NIL "#<error during printing>"))))
+      (format NIL "<ERROR DURING PRINTING>"))))
 
 (defun safe-input-value (&optional parent)
   (let ((new (q+:qinputdialog-get-text
