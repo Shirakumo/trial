@@ -13,7 +13,7 @@
 
 (define-initializer (package-inspector setup)
   (setf (q+:window-title package-inspector) (format NIL "Package Inspector for ~a" (package-name object)))
-  (q+:resize package-inspector 500 600)
+  (q+:resize package-inspector 700 800)
   (refresh-instances package-inspector))
 
 (define-subwidget (package-inspector package-info)
