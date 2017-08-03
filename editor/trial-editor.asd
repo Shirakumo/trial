@@ -13,6 +13,9 @@
   :homepage "https://github.com/Shirakumo/trial"
   :components ((:file "package")
                (:file "inspector")
+               (:file "object-inspector")
+               (:file "hash-table-inspector")
+               (:file "array-inspector")
                (:file "subject-chooser")
                (:file "subject-class-chooser")
                (:file "scene-graph"))
@@ -20,4 +23,5 @@
                :qtools
                :qtcore
                :qtgui
-               :qtools-ui-listing))
+               :qtools-ui-listing
+               :array-utils))
