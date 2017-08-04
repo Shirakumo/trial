@@ -7,15 +7,32 @@
     (#p"teapot.vf")
   :mesh :TEAPOT01MESH)
 
-(define-shader-subject teapot (vertex-subject colored-subject)
+(define-shader-subject teapot (vertex-subject colored-subject selectable)
   ()
-  (:Default-initargs :vertex-array (asset 'workbench 'teapot)))
+  (:default-initargs :vertex-array (asset 'workbench 'teapot)))
+
+(define-subject clicky ()
+  ((buffer :initform NIL :accessor buffer)))
+
+(define-handler (clicky mouse-release) (ev pos)
+  (paint (buffer clicky) (buffer clicky))
+  (print (object-at-point pos (buffer clicky))))
+
+(defmethod load progn ((clicky clicky))
+  (setf (buffer clicky) (load (make-instance 'selection-buffer
+                                             :scene *loop*
+                                             :width (width *context*)
+                                             :height (height *context*)))))
+
+(defmethod offload progn ((clicky clicky))
+  (finalize (buffer clicky)))
 
 (progn
   (defmethod setup-scene ((main main))
     (let ((scene (scene main)))
       (enter (make-instance 'teapot) scene)
-      (enter (make-instance 'target-camera) scene)))
+      (enter (make-instance 'target-camera) scene)
+      (enter (make-instance 'clicky) scene)))
 
   (maybe-reload-scene))
 
