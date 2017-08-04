@@ -38,7 +38,7 @@
 
 (defmethod initialize-instance :after ((button inline-button) &key icon tooltip)
   (setf (q+:size-policy button) (values (q+:qsizepolicy.maximum) (q+:qsizepolicy.maximum)))
-  (setf (q+:minimum-size button) (q+:make-qsize 24 24))
+  (setf (q+:fixed-size button) (q+:make-qsize 30 30))
   (setf (q+:icon-size button) (q+:make-qsize 16 16))
   (setf (q+:icon button) (icon icon))
   (when tooltip (setf (q+:tool-tip button) tooltip)))

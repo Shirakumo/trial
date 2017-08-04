@@ -19,6 +19,9 @@
   (trial:add-handler scene-graph (scene scene-graph))
   (refresh-instances scene-graph))
 
+(define-finalizer (scene-graph teardown)
+  (trial:remove-handler scene-graph (scene scene-graph)))
+
 (define-subwidget (scene-graph tree)
     (q+:make-qtreewidget)
   (setf (q+:column-count tree) 2)
@@ -96,7 +99,9 @@
 
 (define-slot (scene-graph enter) ()
   (declare (connected enter (clicked)))
-  )
+  (multiple-value-bind (value got) (safe-input-value scene-graph)
+    (when got
+      (trial:enter value (scene scene-graph)))))
 
 (define-slot (scene-graph leave) ()
   (declare (connected leave (clicked)))
@@ -120,6 +125,6 @@
          (item (gethash entity (entity->item-map scene-graph))))
     (remhash entity (entity->item-map scene-graph))
     (remhash item (item->entity-map scene-graph))
-    (when item
+    (when (and item (qobject-alive-p item))
       (q+:remove-child (q+:parent item) item)
       (finalize item))))

@@ -64,7 +64,8 @@
     (block NIL
       (when (string= new "")
         (return (values NIL NIL)))
-      (let ((expr (handler-case (read-from-string new)
+      (let* ((*package* #.(find-package '#:trial-user))
+             (expr (handler-case (read-from-string new)
                     (error (err)
                       (q+:qmessagebox-critical
                        parent "Error during reading of new value"
