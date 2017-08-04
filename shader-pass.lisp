@@ -190,7 +190,7 @@
     (load fbo)
     (setf (multisample-fbo pass) fbo)))
 
-(defmethod paint :around ((pass multisampled-pass) target)
+(defmethod paint-with :around ((pass multisampled-pass) target)
   (let ((original-framebuffer (resource (framebuffer pass))))
     (gl:bind-framebuffer :framebuffer (resource (multisample-fbo pass)))
     (gl:clear :color-buffer :depth-buffer)
@@ -228,7 +228,7 @@
 (defmethod shader-program-for-pass ((pass single-shader-pass) o)
   (shader-program pass))
 
-(defmethod paint :around ((source scene) (pass single-shader-pass))
+(defmethod paint-with :around ((pass single-shader-pass) thing)
   (let ((program (shader-program pass)))
     (gl:use-program (resource program))
     (prepare-pass-program pass program)
@@ -240,7 +240,7 @@
 (defmethod load progn ((pass post-effect-pass))
   (load (vertex-array pass)))
 
-(defmethod paint ((source scene) (pass post-effect-pass))
+(defmethod paint-with ((pass post-effect-pass) thing)
   (let ((vao (vertex-array pass)))
     (with-pushed-attribs
       (disable :depth-test)

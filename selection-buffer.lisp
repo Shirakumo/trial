@@ -46,10 +46,14 @@
 (defmethod initialize-instance :after ((buffer selection-buffer) &key scene)
   (register (make-instance 'selection-buffer-pass) buffer)
   (pack buffer)
+  (register-object-for-pass buffer scene)
   (add-handler buffer scene))
 
+(defmethod finalize :after ((buffer selection-buffer))
+  (remove-handler buffer (scene buffer)))
+
 (defmethod object-at-point ((point vec2) (buffer selection-buffer))
-  (color->object (gl:read-pixels (round (vx point)) (round (vy point)) 1 1 :rgba :unsigned-byte)
+  (color->object (print (gl:read-pixels (round (vx point)) (round (vy point)) 1 1 :rgba :unsigned-byte))
                  buffer))
 
 (defmethod color->object (color (buffer selection-buffer))
@@ -66,10 +70,16 @@
 
 (defmethod handle (thing (buffer selection-buffer)))
 
+(defmethod handle ((resize resize) (buffer selection-buffer))
+  (setf (width buffer) (width resize)
+        (height buffer) (height resize))
+  (resize buffer (width resize) (height resize)))
+
 (defmethod handle ((enter enter) (buffer selection-buffer))
   (let ((entity (entity enter)))
     (when (typep entity 'selectable)
-      (setf (color->object (selection-color entity) buffer) entity))))
+      (setf (color->object (selection-color entity) buffer) entity)
+      (load (register-object-for-pass (aref (passes buffer) 0) entity)))))
 
 (defmethod handle ((leave leave) (buffer selection-buffer))
   (let ((entity (entity leave)))
@@ -84,7 +94,7 @@
     (disable :blend)
     (call-next-method)))
 
-(define-shader-subject selection-buffer-pass (render-pass)
+(define-shader-pass selection-buffer-pass (render-pass)
   ())
 
 (define-class-shader (selection-buffer-pass :fragment-shader)
@@ -96,17 +106,18 @@ void main(){
 }")
 
 (define-shader-subject selectable ()
-  ((selection-color :initarg :selection-color :accessor selection-color))
-  (:default-initargs :selection-color (find-new-selection-color)))
+  ((selection-color :initarg :selection-color :initform (find-new-selection-color) :accessor selection-color)))
 
 (defun find-new-selection-color ()
   (let ((num (incf *selection-color-counter*)))
-    (vec4 (ldb (byte 8 24) num)
-          (ldb (byte 8 16) num)
-          (ldb (byte 8 8) num)
-          (ldb (byte 8 0) num))))
+    (vec4 (/ (ldb (byte 8 24) num) 255.0)
+          (/ (ldb (byte 8 16) num) 255.0)
+          (/ (ldb (byte 8 8) num) 255.0)
+          (/ (ldb (byte 8 0) num) 255.0))))
 
-(defmethod paint :around ((subject shader-subject) (pass selection-buffer-pass)))
+(defmethod paint :around (subject (pass selection-buffer-pass))
+  (when (typep subject 'selectable)
+    (call-next-method)))
 
 (defmethod paint :before ((subject selectable) (pass selection-buffer-pass))
   (let ((shader (shader-program-for-pass pass subject)))

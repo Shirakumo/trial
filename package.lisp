@@ -140,7 +140,6 @@
    #:clear-color
    #:handle
    #:setup-rendering
-   #:paint
    #:render)
   ;; effects.lisp
   (:export
@@ -200,7 +199,9 @@
    #:*optimize-features*
    #:reload-with-features)
   ;; flare.lisp
-  (:export)
+  (:export
+   #:paint
+   #:paint-with)
   ;; fullscreenable.lisp
   (:export
    #:fullscreenable

@@ -8,10 +8,12 @@
 
 (defclass render-texture (pipeline)
   ((width :initarg :width :accessor width)
-   (height :initarg :height :accessor height))
+   (height :initarg :height :accessor height)
+   (clear-color :initarg :clear-color :accessor clear-color))
   (:default-initargs
    :width (error "WIDTH required.")
-   :height (error "HEIGHT required.")))
+   :height (error "HEIGHT required.")
+   :clear-color (vec4 0 0 0 0)))
 
 (defmethod pack ((render-texture render-texture))
   (pack-pipeline render-texture render-texture))
@@ -21,7 +23,8 @@
     (texture (find :color-attachment0 (flow:ports pass)
                    :key #'attachment))))
 
-(defmethod paint ((entity entity) (render-texture render-texture))
-  (gl:viewport 0 0 (width render-texture) (height render-texture))
-  (register-object-for-pass render-texture entity)
-  (paint render-texture entity))
+(defmethod paint :before (source (target render-texture))
+  (gl:viewport 0 0 (width target) (height target))
+  (let ((c (clear-color target)))
+    (gl:clear-color (vx c) (vy c) (vz c) (if (vec4-p c) (vw c) 0.0)))
+  (register-object-for-pass target source))

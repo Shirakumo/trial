@@ -75,10 +75,10 @@
   (load (pipeline main)))
 
 (defmethod paint ((source main) (target main))
-  (paint (pipeline source) target))
+  (paint source (pipeline target)))
 
-(defmethod paint ((pass shader-pass) (target main))
-  (paint (scene target) pass))
+(defmethod paint ((source main) (target shader-pass))
+  (paint (scene source) target))
 
 (defun launch (&optional (main 'main) &rest initargs)
   (standalone-logging-handler)

@@ -8,6 +8,9 @@
 
 (defmethod paint (thing target))
 
+(defmethod paint-with (target thing)
+  (paint thing target))
+
 (defmethod finalize ((set flare-indexed-set:indexed-set))
   (flare-indexed-set:map-set #'finalize set))
 
