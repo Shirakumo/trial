@@ -12,6 +12,7 @@
   :description "A flexible and extensible video game engine."
   :homepage "https://github.com/Shirakumo/trial"
   :components ((:file "package")
+               (:file "icons")
                (:file "inspector")
                (:file "object-inspector")
                (:file "hash-table-inspector")
@@ -21,6 +22,7 @@
                (:file "symbol-inspector")
                (:file "package-inspector")
                (:file "pathname-inspector")
+               (:file "function-inspector")
                (:file "subject-chooser")
                (:file "subject-class-chooser")
                (:file "scene-graph"))
@@ -28,6 +30,7 @@
                :qtools
                :qtcore
                :qtgui
+               :qtsvg
                :qtools-ui-listing
                :array-utils
                :cl-ppcre))

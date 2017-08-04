@@ -27,14 +27,12 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
 
 (define-subwidget (list-inspector add)
     (q+:make-qpushbutton)
-  (setf (q+:icon add) (q+:standard-icon (q+:style add)
-                                        (q+:qstyle.sp_file-dialog-new-folder)))
+  (setf (q+:icon add) (icon :add))
   (setf (q+:tool-tip add) "Add a list element."))
 
 (define-subwidget (list-inspector refresh)
     (q+:make-qpushbutton)
-  (setf (q+:icon refresh) (q+:standard-icon (q+:style refresh)
-                                            (q+:qstyle.sp_browser-reload)))
+  (setf (q+:icon refresh) (icon :refresh))
   (setf (q+:tool-tip refresh) "Refresh the list of entries."))
 
 (define-subwidget (list-inspector layout)
@@ -83,18 +81,10 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
       (q+:make-qpushbutton (safe-prin1 (car cons)))))
 
 (define-subwidget (list-listing-widget set-value)
-    (q+:make-qpushbutton)
-  (setf (q+:icon set-value) (q+:standard-icon (q+:style set-value)
-                                              (q+:qstyle.sp_arrow-left)))
-  (setf (q+:tool-tip set-value) "Set the element to a new value.")
-  (setf (q+:fixed-width set-value) 40))
+    (make-instance 'inline-button :icon :set :tooltip "Set the element to a new value."))
 
 (define-subwidget (list-listing-widget remove-entry)
-    (q+:make-qpushbutton)
-  (setf (q+:icon remove-entry) (q+:standard-icon (q+:style remove-entry)
-                                                 (q+:qstyle.sp_dialog-close-button)))
-  (setf (q+:tool-tip remove-entry) "Remove the element.")
-  (setf (q+:fixed-width remove-entry) 40))
+    (make-instance 'inline-button :icon :remove :tooltip "Remove the element."))
 
 (define-subwidget (list-listing-widget layout)
     (q+:make-qhboxlayout list-listing-widget)

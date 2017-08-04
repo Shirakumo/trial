@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="10px" height="20px" viewBox="0 0 10 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 3.8.1 (29687) - http://www.bohemiancoding.com/sketch -->
+    <title>thermometer [#748]</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Dribbble-Dark-Preview" transform="translate(-65.000000, -4919.000000)" fill="#FFFFFF">
+            <g id="icons" transform="translate(56.000000, 160.000000)">
+                <path d="M14,4777 C12.346,4777 11,4775.654 11,4774 C11,4772.698 11.839,4771.599 13,4771.184 L13,4769.101 L13,4769 L15,4769 L15,4769.101 L15,4771.184 C16.161,4771.599 17,4772.698 17,4774 C17,4775.654 15.654,4777 14,4777 L14,4777 Z M13,4767 L15,4767 L15,4765 L13,4765 L13,4767 Z M13,4763 L15,4763 L15,4761 L13,4761 L13,4763 Z M17,4770.023 L17,4759 L11,4759 L11,4770.023 C9.792,4770.935 9,4772.37 9,4774 C9,4776.761 11.239,4779 14,4779 C16.761,4779 19,4776.761 19,4774 C19,4772.37 18.208,4770.935 17,4770.023 L17,4770.023 Z" id="thermometer-[#748]"></path>
+            </g>
+        </g>
+    </g>
+</svg>

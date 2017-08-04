@@ -35,12 +35,7 @@
   (setf (q+:placeholder-text filter) "Filter..."))
 
 (define-subwidget (package-inspector clear-filter)
-    (q+:make-qpushbutton)
-  (setf (q+:focus-policy clear-filter) (q+:qt.no-focus))
-  (setf (q+:icon clear-filter) (q+:standard-icon (q+:style clear-filter)
-                                                 (q+:qstyle.sp_dialog-close-button)))
-  (setf (q+:tool-tip clear-filter) "Clear the filter.")
-  (setf (q+:fixed-width clear-filter) 40))
+    (make-instance 'inline-button :icon :close :tooltip "Clear the filter."))
 
 (define-subwidget (package-inspector symbols)
     (make-instance 'package-listing :inspector package-inspector))
@@ -54,26 +49,22 @@
 
 (define-subwidget (package-inspector intern)
     (q+:make-qpushbutton)
-  (setf (q+:icon intern) (q+:standard-icon (q+:style intern)
-                                           (q+:qstyle.sp_file-dialog-new-folder)))
+  (setf (q+:icon intern) (icon :add))
   (setf (q+:tool-tip intern) "Intern or import a new symbol."))
 
 (define-subwidget (package-inspector use)
     (q+:make-qpushbutton)
-  (setf (q+:icon use) (q+:standard-icon (q+:style use)
-                                        (q+:qstyle.sp_file-dialog-new-folder)))
+  (setf (q+:icon use) (icon :use))
   (setf (q+:tool-tip use) "Use a new package."))
 
 (define-subwidget (package-inspector rename)
     (q+:make-qpushbutton)
-  (setf (q+:icon rename) (q+:standard-icon (q+:style rename)
-                                           (q+:qstyle.sp_dialog-reset-button)))
+  (setf (q+:icon rename) (icon :rename))
   (setf (q+:tool-tip rename) "Rename the package."))
 
 (define-subwidget (package-inspector refresh)
     (q+:make-qpushbutton)
-  (setf (q+:icon refresh) (q+:standard-icon (q+:style refresh)
-                                            (q+:qstyle.sp_browser-reload)))
+  (setf (q+:icon refresh) (icon :refresh))
   (setf (q+:tool-tip refresh) "Refresh the list of symbols."))
 
 (define-subwidget (package-inspector layout)
@@ -191,18 +182,10 @@
   (setf (q+:fixed-width status) 100))
 
 (define-subwidget (package-listing-widget un/export)
-    (q+:make-qpushbutton)
-  (setf (q+:icon un/export) (q+:standard-icon (q+:style un/export)
-                                              (q+:qstyle.sp_arrow-left)))
-  (setf (q+:tool-tip un/export) "Un/Export the symbol from the package.")
-  (setf (q+:fixed-width un/export) 40))
+    (make-instance 'inline-button :icon :export :tooltip "Un/Export the symbol from the package."))
 
 (define-subwidget (package-listing-widget unintern)
-    (q+:make-qpushbutton)
-  (setf (q+:icon unintern) (q+:standard-icon (q+:style unintern)
-                                             (q+:qstyle.sp_dialog-close-button)))
-  (setf (q+:tool-tip unintern) "Unintern the symbol from the package.")
-  (setf (q+:fixed-width unintern) 40))
+    (make-instance 'inline-button :icon :remove :tooltip "Unintern the symbol from the package."))
 
 (define-subwidget (package-listing-widget layout)
     (q+:make-qhboxlayout package-listing-widget)

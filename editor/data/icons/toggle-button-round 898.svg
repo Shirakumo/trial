@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="20px" height="14px" viewBox="0 0 20 14" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 3.8.1 (29687) - http://www.bohemiancoding.com/sketch -->
+    <title>toggle_button_round [#898]</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Dribbble-Dark-Preview" transform="translate(-140.000000, -4242.000000)" fill="#FFFFFF">
+            <g id="icons" transform="translate(56.000000, 160.000000)">
+                <path d="M94.292,4089.068 C94.292,4090.725 92.949,4092.068 91.292,4092.068 C89.635,4092.068 88.292,4090.725 88.292,4089.068 C88.292,4087.411 89.635,4086.068 91.292,4086.068 C92.949,4086.068 94.292,4087.411 94.292,4089.068 L94.292,4089.068 Z M97.116,4094 L91.116,4094 C88.359,4094 86.116,4091.757 86.116,4089 C86.116,4086.243 88.359,4084 91.116,4084 L97.116,4084 C99.873,4084 102.116,4086.243 102.116,4089 C102.116,4091.757 99.873,4094 97.116,4094 L97.116,4094 Z M104,4089 C104,4085.134 100.866,4082 97,4082 L91,4082 C87.134,4082 84,4085.134 84,4089 L84,4089 C84,4092.866 87.134,4096 91,4096 L97,4096 C100.866,4096 104,4092.866 104,4089 L104,4089 Z" id="toggle_button_round-[#898]"></path>
+            </g>
+        </g>
+    </g>
+</svg>

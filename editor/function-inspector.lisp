@@ -27,20 +27,17 @@
 
 (define-subwidget (function-inspector refresh)
     (q+:make-qpushbutton)
-  (setf (q+:icon refresh) (q+:standard-icon (q+:style refresh)
-                                            (q+:qstyle.sp_browser-reload)))
+  (setf (q+:icon refresh) (icon :refresh))
   (setf (q+:tool-tip refresh) "Refresh the function."))
 
 (define-subwidget (function-inspector recompile)
     (q+:make-qpushbutton)
-  (setf (q+:icon recompile) (q+:standard-icon (q+:style recompile)
-                                              (q+:qstyle.sp_browser-reload)))
+  (setf (q+:icon recompile) (icon :compile))
   (setf (q+:tool-tip recompile) "Recompile the function."))
 
 (define-subwidget (function-inspector unbind)
     (q+:make-qpushbutton)
-  (setf (q+:icon unbind) (q+:standard-icon (q+:style unbind)
-                                           (q+:qstyle.sp_browser-reload)))
+  (setf (q+:icon unbind) (icon :remove))
   (setf (q+:tool-tip unbind) "Unbind the function."))
 
 (define-subwidget (function-inspector layout)
@@ -54,20 +51,28 @@
 
 (define-slot (function-inspector refresh refresh-instances) ()
   (declare (connected refresh (clicked)))
-  (let* ((location (cdr (swank:find-definition-for-thing
-                         (if (symbolp object)
-                             (or (macro-function object)
-                                 (fdefinition object))
-                             object))))
-         (file (second (assoc :file location)))
-         (position (second (assoc :position location))))
-    (when location
-      (setf (q+:plain-text editor)
-            (alexandria:read-file-into-string file))
-      (let ((cursor (q+:text-cursor editor)))
-        (setf (q+:position cursor) position)
-        (setf (q+:text-cursor editor) cursor)
-        (q+:ensure-cursor-visible editor)))))
+  (let ((info (swank::find-source-location
+               (if (symbolp object)
+                   (or (macro-function object)
+                       (fdefinition object))
+                   object))))
+    (case (first info)
+      (:error
+       (q+:qmessagebox-critical function-inspector "Error retrieving function source"
+                                (second info))
+       (q+:close function-inspector))
+      (:location
+       (let* ((file (second (assoc :file (cdr info))))
+              (position (second (assoc :position (cdr info)))))
+         (setf (q+:plain-text editor)
+               (alexandria:read-file-into-string file))
+         (let ((cursor (q+:text-cursor editor)))
+           (setf (q+:position cursor) (1- position))
+           (setf (q+:text-cursor editor) cursor)
+           (let ((top (/ (q+:top (q+:cursor-rect editor))
+                         (q+:height (q+:cursor-rect editor))))
+                 (scroll (q+:vertical-scroll-bar editor)))
+             (setf (q+:value scroll) (- (round top) 10)))))))))
 
 (define-slot (function-inspector recompile) ()
   (declare (connected recompile (clicked)))

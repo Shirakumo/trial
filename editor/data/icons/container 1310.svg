@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="14px" height="20px" viewBox="0 0 14 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 3.8.1 (29687) - http://www.bohemiancoding.com/sketch -->
+    <title>container [#1310]</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Dribbble-Dark-Preview" transform="translate(-143.000000, -2359.000000)" fill="#FFFFFF">
+            <g id="icons" transform="translate(56.000000, 160.000000)">
+                <path d="M91,2211 L97,2211 L97,2203 L91,2203 L91,2211 Z M96,2217 L92,2217 C91.448,2217 91,2216.552 91,2216 L91,2213 L97,2213 L97,2216 C97,2216.552 96.552,2217 96,2217 L96,2217 Z M96,2201 L96,2201 C96,2199.895 95.105,2199 94,2199 C92.895,2199 92,2199.895 92,2201 L88,2201 C87.448,2201 87,2201.448 87,2202 C87,2202.552 87.448,2203 88,2203 L89,2203 L89,2217 C89,2218.105 89.895,2219 91,2219 L97,2219 C98.105,2219 99,2218.105 99,2217 L99,2203 L100,2203 C100.552,2203 101,2202.552 101,2202 C101,2201.448 100.552,2201 100,2201 L96,2201 Z" id="container-[#1310]"></path>
+            </g>
+        </g>
+    </g>
+</svg>

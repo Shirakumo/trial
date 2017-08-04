@@ -28,26 +28,22 @@
 
 (define-subwidget (scene-graph pause)
     (q+:make-qpushbutton)
-  (setf (q+:icon pause) (q+:standard-icon (q+:style pause)
-                                          (q+:qstyle.sp_media-pause)))
+  (setf (q+:icon pause) (icon :pause))
   (setf (q+:tool-tip pause) "Un/Pause the scene."))
 
 (define-subwidget (scene-graph enter)
     (q+:make-qpushbutton)
-  (setf (q+:icon enter) (q+:standard-icon (q+:style enter)
-                                          (q+:qstyle.sp_file-dialog-new-folder)))
+  (setf (q+:icon enter) (icon :add))
   (setf (q+:tool-tip enter) "Enter a new entity into the scene."))
 
 (define-subwidget (scene-graph leave)
     (q+:make-qpushbutton)
-  (setf (q+:icon leave) (q+:standard-icon (q+:style leave)
-                                          (q+:qstyle.sp_dialog-close-button)))
+  (setf (q+:icon leave) (icon :remove))
   (setf (q+:tool-tip leave) "Leave the selected entity from the scene."))
 
 (define-subwidget (scene-graph reload)
     (q+:make-qpushbutton)
-  (setf (q+:icon reload) (q+:standard-icon (q+:style reload)
-                                           (q+:qstyle.sp_dialog-reset-button)))
+  (setf (q+:icon reload) (icon :refresh))
   (setf (q+:tool-tip reload) "Reload the scene fully."))
 
 (define-subwidget (scene-graph layout)

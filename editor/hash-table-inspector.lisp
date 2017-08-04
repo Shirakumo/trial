@@ -32,14 +32,12 @@
 
 (define-subwidget (hash-table-inspector clear)
     (q+:make-qpushbutton)
-  (setf (q+:icon clear) (q+:standard-icon (q+:style clear)
-                                          (q+:qstyle.sp_dialog-close-button)))
+  (setf (q+:icon clear) (icon :clear))
   (setf (q+:tool-tip clear) "Clear the hash table."))
 
 (define-subwidget (hash-table-inspector refresh)
     (q+:make-qpushbutton)
-  (setf (q+:icon refresh) (q+:standard-icon (q+:style refresh)
-                                            (q+:qstyle.sp_browser-reload)))
+  (setf (q+:icon refresh) (icon :refresh))
   (setf (q+:tool-tip refresh) "Refresh the list of entries."))
 
 (define-subwidget (hash-table-inspector layout)
@@ -101,18 +99,10 @@
       (q+:make-qpushbutton (safe-prin1 (gethash key object)))))
 
 (define-subwidget (table-listing-widget set-value)
-    (q+:make-qpushbutton)
-  (setf (q+:icon set-value) (q+:standard-icon (q+:style set-value)
-                                              (q+:qstyle.sp_arrow-left)))
-  (setf (q+:tool-tip set-value) "Set the slot to a new value.")
-  (setf (q+:fixed-width set-value) 40))
+    (make-instance 'inline-button :icon :set :tooltip "Set the slot to a new value."))
 
 (define-subwidget (table-listing-widget remove-entry)
-    (q+:make-qpushbutton)
-  (setf (q+:icon remove-entry) (q+:standard-icon (q+:style remove-entry)
-                                                 (q+:qstyle.sp_dialog-close-button)))
-  (setf (q+:tool-tip remove-entry) "Remove the entry.")
-  (setf (q+:fixed-width remove-entry) 40))
+    (make-instance 'inline-button :icon :remove :tooltip "Remove the entry."))
 
 (define-subwidget (table-listing-widget layout)
     (q+:make-qhboxlayout table-listing-widget)

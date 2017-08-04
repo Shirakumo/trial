@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="20px" height="20px" viewBox="0 0 20 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 3.8.1 (29687) - http://www.bohemiancoding.com/sketch -->
+    <title>calendar [#1195]</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Dribbble-Dark-Preview" transform="translate(-340.000000, -2799.000000)" fill="#FFFFFF">
+            <g id="icons" transform="translate(56.000000, 160.000000)">
+                <path d="M293,2650 L291,2650 L291,2648 L295,2648 L295,2654 L293,2654 L293,2650 Z M286,2657 L302,2657 L302,2645 L286,2645 L286,2657 Z M302,2641 L302,2639 L300,2639 L300,2641 L295,2641 L295,2639 L293,2639 L293,2641 L288,2641 L288,2639 L286,2639 L286,2641 L284,2641 L284,2659 L304,2659 L304,2641 L302,2641 Z" id="calendar-[#1195]"></path>
+            </g>
+        </g>
+    </g>
+</svg>

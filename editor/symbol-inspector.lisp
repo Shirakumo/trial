@@ -34,11 +34,7 @@
        
        ,@(when accessor
            `((define-subwidget (symbol-inspector ,set-name)
-                 (q+:make-qpushbutton)
-               (setf (q+:icon ,set-name) (q+:standard-icon (q+:style ,set-name)
-                                                           (q+:qstyle.sp_arrow-left)))
-               (setf (q+:tool-tip ,set-name) ,(format NIL "Set the ~(~a~)." accessor))
-               (setf (q+:fixed-width ,set-name) 40))
+                 (make-instance 'inline-button :icon :set :tooltip ,(format NIL "Set the ~(~a~)." unbinder)))
              
              (define-slot (symbol-inspector ,set-name) ()
                (declare (connected ,set-name (clicked)))
@@ -46,13 +42,10 @@
                  (when got
                    (setf (,accessor object) value)
                    (refresh-instances symbol-inspector))))))
+       
        ,@(when unbinder
            `((define-subwidget (symbol-inspector ,unbind-name)
-                 (q+:make-qpushbutton)
-               (setf (q+:icon ,unbind-name) (q+:standard-icon (q+:style ,unbind-name)
-                                                              (q+:qstyle.sp_dialog-close-button)))
-               (setf (q+:tool-tip ,unbind-name) ,(format NIL "Unbind the ~(~a~)." unbinder))
-               (setf (q+:fixed-width ,unbind-name) 40))
+                 (make-instance 'inline-button :icon :remove :tooltip ,(format NIL "Unbind the ~(~a~)." unbinder)))
 
              (define-slot (symbol-inspector ,unbind-name) ()
                (declare (connected ,unbind-name (clicked)))

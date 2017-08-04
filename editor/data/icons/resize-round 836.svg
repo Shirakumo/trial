@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="20px" height="20px" viewBox="0 0 20 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 3.8.1 (29687) - http://www.bohemiancoding.com/sketch -->
+    <title>resize_round [#836]</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Dribbble-Dark-Preview" transform="translate(-220.000000, -4479.000000)" fill="#FFFFFF">
+            <g id="icons" transform="translate(56.000000, 160.000000)">
+                <path d="M181,4337 L167,4337 C166.448,4337 166,4336.552 166,4336 L166,4322 C166,4321.448 166.448,4321 167,4321 L173,4321 C173.552,4321 174,4321.448 174,4322 L174,4327 C174,4328.105 174.895,4329 176,4329 L181,4329 C181.552,4329 182,4329.448 182,4330 L182,4336 C182,4336.552 181.552,4337 181,4337 L181,4337 Z M174,4319 L166,4319 C164.895,4319 164,4319.895 164,4321 L164,4337 C164,4338.105 164.895,4339 166,4339 L182,4339 C183.105,4339 184,4338.105 184,4337 L184,4329 L184,4321 C184,4319.895 183.105,4319 182,4319 L174,4319 Z" id="resize_round-[#836]"></path>
+            </g>
+        </g>
+    </g>
+</svg>

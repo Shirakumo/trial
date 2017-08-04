@@ -19,26 +19,17 @@
     (q+:make-qpushbutton (safe-prin1 (car object))))
 
 (define-subwidget (cons-inspector set-car)
-    (q+:make-qpushbutton)
-  (setf (q+:icon set-car) (q+:standard-icon (q+:style set-car)
-                                            (q+:qstyle.sp_arrow-left)))
-  (setf (q+:tool-tip set-car) "Set the car to a new value.")
-  (setf (q+:fixed-width set-car) 40))
+    (make-instance 'inline-button :icon :set :tooltip "Set the car to a new value."))
 
 (define-subwidget (cons-inspector cdr-button)
     (q+:make-qpushbutton (safe-prin1 (cdr object))))
 
 (define-subwidget (cons-inspector set-cdr)
-    (q+:make-qpushbutton)
-  (setf (q+:icon set-cdr) (q+:standard-icon (q+:style set-cdr)
-                                            (q+:qstyle.sp_arrow-left)))
-  (setf (q+:tool-tip set-cdr) "Set the cdr to a new value.")
-  (setf (q+:fixed-width set-cdr) 40))
+    (make-instance 'inline-button :icon :set :tooltip "Set the cdr to a new value."))
 
 (define-subwidget (cons-inspector refresh)
     (q+:make-qpushbutton)
-  (setf (q+:icon refresh) (q+:standard-icon (q+:style refresh)
-                                            (q+:qstyle.sp_browser-reload)))
+  (setf (q+:icon refresh) (icon :refresh))
   (setf (q+:tool-tip refresh) "Refresh the cons structure."))
 
 (define-subwidget (cons-inspector layout)

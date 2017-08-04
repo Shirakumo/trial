@@ -7,9 +7,10 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defmethod coerce-base (base)
-  (if *standalone*
-      (merge-pathnames (format NIL "pool/~(~a~)/" base) (deploy:data-directory))
-      (merge-pathnames "data/" (asdf:system-source-directory base))))
+  (destructuring-bind (base &rest sub) (if (listp base) base (list base))
+    (if *standalone*
+        (merge-pathnames (format NIL "pool/~(~a~)/~{~a/~}" base sub) (deploy:data-directory))
+        (merge-pathnames (format NIL "data/~{~a/~}" sub) (asdf:system-source-directory base)))))
 
 (defvar *pools* (make-hash-table :test 'eql))
 

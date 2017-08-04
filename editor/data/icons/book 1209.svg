@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="20px" height="20px" viewBox="0 0 20 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 3.8.1 (29687) - http://www.bohemiancoding.com/sketch -->
+    <title>book [#1209]</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Dribbble-Dark-Preview" transform="translate(-180.000000, -2759.000000)" fill="#FFFFFF">
+            <g id="icons" transform="translate(56.000000, 160.000000)">
+                <path d="M142,2614 C142,2614.552 141.552,2615 141,2615 L135,2615 L135,2601 L141,2601 C141.552,2601 142,2601.448 142,2602 L142,2614 Z M133,2615 L127,2615 C126.448,2615 126,2614.552 126,2614 L126,2602 C126,2601.448 126.448,2601 127,2601 L133,2601 L133,2615 Z M142,2599 L126,2599 C124.895,2599 124,2599.895 124,2601 L124,2615 C124,2616.104 124.895,2617 126,2617 L133,2617 L133,2618 C133,2618.552 133.448,2619 134,2619 C134.552,2619 135,2618.552 135,2618 L135,2617 L142,2617 C143.105,2617 144,2616.104 144,2615 L144,2601 C144,2599.895 143.105,2599 142,2599 L142,2599 Z" id="book-[#1209]"></path>
+            </g>
+        </g>
+    </g>
+</svg>

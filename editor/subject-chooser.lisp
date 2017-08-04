@@ -24,8 +24,7 @@
 (define-subwidget (subject-chooser clear-filter)
     (q+:make-qpushbutton)
   (setf (q+:focus-policy clear-filter) (q+:qt.no-focus))
-  (setf (q+:icon clear-filter) (q+:standard-icon (q+:style clear-filter)
-                                                 (q+:qstyle.sp_dialog-close-button)))
+  (setf (q+:icon clear-filter) (icon :close))
   (setf (q+:tool-tip clear-filter) "Clear the instance filter"))
 
 (define-subwidget (subject-chooser result-list)
@@ -40,14 +39,12 @@
 
 (define-subwidget (subject-chooser refresh)
     (q+:make-qpushbutton)
-  (setf (q+:icon refresh) (q+:standard-icon (q+:style refresh)
-                                            (q+:qstyle.sp_browser-reload)))
+  (setf (q+:icon refresh) (icon :refresh))
   (setf (q+:tool-tip refresh) "Refresh the list of instances."))
 
 (define-subwidget (subject-chooser inspect)
     (q+:make-qpushbutton)
-  (setf (q+:icon inspect) (q+:standard-icon (q+:style inspect)
-                                            (q+:qstyle.sp_file-dialog-contents-view)))
+  (setf (q+:icon inspect) (icon :inspect))
   (setf (q+:tool-tip inspect) "Inspect the source code."))
 
 (define-subwidget (subject-chooser layout)

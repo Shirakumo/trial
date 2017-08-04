@@ -32,20 +32,17 @@
 
 (define-subwidget (array-inspector add)
     (q+:make-qpushbutton)
-  (setf (q+:icon add) (q+:standard-icon (q+:style add)
-                                        (q+:qstyle.sp_file-dialog-new-folder)))
+  (setf (q+:icon add) (icon :add))
   (setf (q+:tool-tip add) "Add an array element."))
 
 (define-subwidget (array-inspector adjust)
     (q+:make-qpushbutton)
-  (setf (q+:icon adjust) (q+:standard-icon (q+:style adjust)
-                                           (q+:qstyle.sp_dialog-close-button)))
+  (setf (q+:icon adjust) (icon :adjust))
   (setf (q+:tool-tip adjust) "Adjust the array."))
 
 (define-subwidget (array-inspector refresh)
     (q+:make-qpushbutton)
-  (setf (q+:icon refresh) (q+:standard-icon (q+:style refresh)
-                                            (q+:qstyle.sp_browser-reload)))
+  (setf (q+:icon refresh) (icon :refresh))
   (setf (q+:tool-tip refresh) "Refresh the list of entries."))
 
 (define-subwidget (array-inspector layout)
@@ -129,7 +126,7 @@
 
 (define-subwidget (array-listing-widget index)
     (q+:make-qlabel (safe-princ (qui:widget-item array-listing-widget)))
-  (setf (q+:fixed-width index) 50)
+  (setf (q+:fixed-width index) 36)
   (setf (q+:margin index) 5)
   (setf (q+:alignment index) (q+:qt.align-right)))
 
@@ -139,18 +136,10 @@
       (q+:make-qpushbutton (safe-prin1 (aref object key)))))
 
 (define-subwidget (array-listing-widget set-value)
-    (q+:make-qpushbutton)
-  (setf (q+:icon set-value) (q+:standard-icon (q+:style set-value)
-                                              (q+:qstyle.sp_arrow-left)))
-  (setf (q+:tool-tip set-value) "Set the element to a new value.")
-  (setf (q+:fixed-width set-value) 40))
+    (make-instance 'inline-button :icon :set :tooltip "Set the element to a new value."))
 
 (define-subwidget (array-listing-widget remove-entry)
-    (q+:make-qpushbutton)
-  (setf (q+:icon remove-entry) (q+:standard-icon (q+:style remove-entry)
-                                                 (q+:qstyle.sp_dialog-close-button)))
-  (setf (q+:tool-tip remove-entry) "Remove the element.")
-  (setf (q+:fixed-width remove-entry) 40))
+    (make-instance 'inline-button :icon :remove :tooltip "Remove the element."))
 
 (define-subwidget (array-listing-widget layout)
     (q+:make-qhboxlayout array-listing-widget)

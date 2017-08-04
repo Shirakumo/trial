@@ -22,8 +22,7 @@
 (define-subwidget (subject-class-chooser clear-filter)
     (q+:make-qpushbutton)
   (setf (q+:focus-policy clear-filter) (q+:qt.no-focus))
-  (setf (q+:icon clear-filter) (q+:standard-icon (q+:style clear-filter)
-                                                 (q+:qstyle.sp_dialog-close-button)))
+  (setf (q+:icon clear-filter) (icon :close))
   (setf (q+:tool-tip clear-filter) "Clear the class filter"))
 
 (define-subwidget (subject-class-chooser result-list)
@@ -38,20 +37,17 @@
 
 (define-subwidget (subject-class-chooser refresh)
     (q+:make-qpushbutton)
-  (setf (q+:icon refresh) (q+:standard-icon (q+:style refresh)
-                                            (q+:qstyle.sp_browser-reload)))
+  (setf (q+:icon refresh) (icon :refresh))
   (setf (q+:tool-tip refresh) "Refresh the list of subclasses."))
 
 (define-subwidget (subject-class-chooser inspect)
     (q+:make-qpushbutton)
-  (setf (q+:icon inspect) (q+:standard-icon (q+:style inspect)
-                                            (q+:qstyle.sp_file-dialog-contents-view)))
+  (setf (q+:icon inspect) (icon :inspect))
   (setf (q+:tool-tip inspect) "Inspect the source code."))
 
 (define-subwidget (subject-class-chooser list-instances)
     (q+:make-qpushbutton)
-  (setf (q+:icon list-instances) (q+:standard-icon (q+:style list-instances)
-                                                   (q+:qstyle.sp_file-dialog-list-view)))
+  (setf (q+:icon list-instances) (icon :list))
   (setf (q+:tool-tip list-instances) "List all instances of this class."))
 
 (define-subwidget (subject-class-chooser layout)

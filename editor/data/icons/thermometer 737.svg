@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="18px" height="20px" viewBox="0 0 18 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 3.8.1 (29687) - http://www.bohemiancoding.com/sketch -->
+    <title>thermometer [#737]</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Dribbble-Dark-Preview" transform="translate(-101.000000, -4959.000000)" fill="#FFFFFF">
+            <g id="icons" transform="translate(56.000000, 160.000000)">
+                <path d="M47,4805 L49,4805 L49,4803 L47,4803 L47,4805 Z M47,4801 L45,4801 L45,4803 L45,4805 L45,4807 L47,4807 L49,4807 L51,4807 L51,4805 L51,4803 L51,4801 L49,4801 L47,4801 Z M58,4817 C56.346,4817 55,4815.654 55,4814 C55,4812.698 55.839,4811.599 57,4811.185 L57,4809.101 L57,4809 L59,4809 L59,4809.101 L59,4811.185 C60.161,4811.599 61,4812.698 61,4814 C61,4815.654 59.654,4817 58,4817 L58,4817 Z M57,4807 L59,4807 L59,4805 L57,4805 L57,4807 Z M57,4803 L59,4803 L59,4801 L57,4801 L57,4803 Z M61,4810.022 L61,4799 L55,4799 L55,4810.022 C53.792,4810.936 53,4812.37 53,4814 C53,4816.761 55.239,4819 58,4819 C60.761,4819 63,4816.761 63,4814 C63,4812.37 62.208,4810.936 61,4810.022 L61,4810.022 Z" id="thermometer-[#737]"></path>
+            </g>
+        </g>
+    </g>
+</svg>

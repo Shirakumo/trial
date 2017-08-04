@@ -40,20 +40,17 @@
 
 (define-subwidget (object-inspector reinitialize)
     (q+:make-qpushbutton)
-  (setf (q+:icon reinitialize) (q+:standard-icon (q+:style reinitialize)
-                                                 (q+:qstyle.sp_dialog-reset-button)))
+  (setf (q+:icon reinitialize) (icon :reinitialize))
   (setf (q+:tool-tip reinitialize) "Reinitialize the instance."))
 
 (define-subwidget (object-inspector finalize)
     (q+:make-qpushbutton)
-  (setf (q+:icon finalize) (q+:standard-icon (q+:style finalize)
-                                             (q+:qstyle.sp_dialog-close-button)))
+  (setf (q+:icon finalize) (icon :finalize))
   (setf (q+:tool-tip finalize) "Finalize the instance."))
 
 (define-subwidget (object-inspector refresh)
     (q+:make-qpushbutton)
-  (setf (q+:icon refresh) (q+:standard-icon (q+:style refresh)
-                                            (q+:qstyle.sp_browser-reload)))
+  (setf (q+:icon refresh) (icon :refresh))
   (setf (q+:tool-tip refresh) "Refresh the list of slots."))
 
 (define-subwidget (object-inspector layout)
@@ -110,18 +107,10 @@
     (setf (q+:maximum-height value-button) 50)))
 
 (define-subwidget (slot-listing-widget set-value)
-    (q+:make-qpushbutton)
-  (setf (q+:icon set-value) (q+:standard-icon (q+:style set-value)
-                                              (q+:qstyle.sp_arrow-left)))
-  (setf (q+:tool-tip set-value) "Set the slot to a new value.")
-  (setf (q+:fixed-width set-value) 40))
+    (make-instance 'inline-button :icon :set :tooltip "Set the slot to a new value."))
 
 (define-subwidget (slot-listing-widget unbind-slot)
-    (q+:make-qpushbutton)
-  (setf (q+:icon unbind-slot) (q+:standard-icon (q+:style unbind-slot)
-                                                (q+:qstyle.sp_dialog-close-button)))
-  (setf (q+:tool-tip unbind-slot) "Unbind the slot.")
-  (setf (q+:fixed-width unbind-slot) 40))
+    (make-instance 'inline-button :icon :remove :tooltip "Unbind the slot."))
 
 (define-subwidget (slot-listing-widget layout)
     (q+:make-qhboxlayout slot-listing-widget)
