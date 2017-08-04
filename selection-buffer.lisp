@@ -53,7 +53,7 @@
   (remove-handler buffer (scene buffer)))
 
 (defmethod object-at-point ((point vec2) (buffer selection-buffer))
-  (color->object (print (gl:read-pixels (round (vx point)) (round (vy point)) 1 1 :rgba :unsigned-byte))
+  (color->object (gl:read-pixels (round (vx point)) (round (vy point)) 1 1 :rgba :unsigned-byte)
                  buffer))
 
 (defmethod color->object (color (buffer selection-buffer))
