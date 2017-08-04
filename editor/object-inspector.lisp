@@ -110,7 +110,7 @@
     (make-instance 'inline-button :icon :set :tooltip "Set the slot to a new value."))
 
 (define-subwidget (slot-listing-widget unbind-slot)
-    (make-instance 'inline-button :icon :remove :tooltip "Unbind the slot."))
+    (make-instance 'inline-button :icon :close :tooltip "Unbind the slot."))
 
 (define-subwidget (slot-listing-widget layout)
     (q+:make-qhboxlayout slot-listing-widget)

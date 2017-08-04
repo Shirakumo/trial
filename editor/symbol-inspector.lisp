@@ -45,7 +45,7 @@
        
        ,@(when unbinder
            `((define-subwidget (symbol-inspector ,unbind-name)
-                 (make-instance 'inline-button :icon :remove :tooltip ,(format NIL "Unbind the ~(~a~)." unbinder)))
+                 (make-instance 'inline-button :icon :close :tooltip ,(format NIL "Unbind the ~(~a~)." unbinder)))
 
              (define-slot (symbol-inspector ,unbind-name) ()
                (declare (connected ,unbind-name (clicked)))
@@ -68,6 +68,17 @@
   :accessor symbol-function
   :bound-test fboundp
   :unbinder fmakunbound)
+
+(defun %find-class (name)
+  (find-class name NIL))
+
+(defun class-makunbound (name)
+  (setf (find-class name) NIL))
+
+(define-symbol-attr _class
+  :reader %find-class
+  :bound-test find-class
+  :unbinder class-makunbound)
 
 (define-symbol-attr plist
   :reader symbol-plist
@@ -93,10 +104,13 @@
   (q+:add-widget layout function 3 1 1 1)
   (q+:add-widget layout set-function 3 2 1 1)
   (q+:add-widget layout unbind-function 3 3 1 1)
-  (q+:add-widget layout (q+:make-qlabel "Plist") 4 0 1 1)
-  (q+:add-widget layout plist 4 1 1 1)
-  (q+:add-widget layout set-plist 4 2 1 1)
-  (q+:add-widget layout refresh 5 0 1 4)
+  (q+:add-widget layout (q+:make-qlabel "Class") 4 0 1 1)
+  (q+:add-widget layout _class 4 1 1 1)
+  (q+:add-widget layout unbind-_class 4 3 1 1)
+  (q+:add-widget layout (q+:make-qlabel "Plist") 5 0 1 1)
+  (q+:add-widget layout plist 5 1 1 1)
+  (q+:add-widget layout set-plist 5 2 1 1)
+  (q+:add-widget layout refresh 6 0 1 4)
   (setf (q+:spacing layout) 0))
 
 (define-slot (symbol-inspector refresh refresh-instances) ()
@@ -111,4 +125,7 @@
   (setf (q+:text function) (if (fboundp object)
                                (safe-princ (symbol-function object))
                                "<UNBOUND>"))
+  (setf (q+:text _class) (if (find-class object NIL)
+                             (safe-princ (find-class object))
+                             "<UNBOUND>"))
   (setf (q+:text plist) (safe-prin1 (symbol-plist object))))
