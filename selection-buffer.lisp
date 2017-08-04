@@ -86,8 +86,8 @@
     (when (typep entity 'selectable)
       (setf (color->object (selection-color entity) buffer) NIL))))
 
-(defmethod paint ((thing (eql T)) (buffer selection-buffer))
-  (paint (scene buffer) buffer))
+(defmethod paint ((source selection-buffer) (buffer selection-buffer))
+  (paint (scene source) buffer))
 
 (defmethod paint :around (thing (buffer selection-buffer))
   (with-pushed-attribs
@@ -115,8 +115,9 @@ void main(){
           (/ (ldb (byte 8 8) num) 255.0)
           (/ (ldb (byte 8 0) num) 255.0))))
 
-(defmethod paint :around (subject (pass selection-buffer-pass))
-  (when (typep subject 'selectable)
+(defmethod paint :around ((subject subject) (pass selection-buffer))
+  (when (or (typep subject 'selectable)
+            (typep subject 'container))
     (call-next-method)))
 
 (defmethod paint :before ((subject selectable) (pass selection-buffer-pass))
