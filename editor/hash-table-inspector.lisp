@@ -7,9 +7,8 @@
 (in-package #:org.shirakumo.trial.editor)
 (in-readtable :qtools)
 
-(define-widget hash-table-inspector (QDialog)
-  ((object :initarg :object :accessor object))
-  (:default-initargs :object (error "OBJECT is required.")))
+(define-widget hash-table-inspector (QDialog inspector)
+  ((object)))
 
 (define-initializer (hash-table-inspector setup)
   (setf (q+:window-title hash-table-inspector) (format NIL "Inspecting ~a" (safe-princ object)))
@@ -65,8 +64,16 @@
     (add-row "Rehash Size" (hash-table-rehash-size object))
     (add-row "Rehash Threshold" (hash-table-rehash-threshold object)))
   (qui:clear-layout entries T)
-  (loop for key being the hash-key of object
-        do (qui:add-item key entries)))
+  (bt:make-thread
+   (lambda ()
+     (loop for key being the hash-key of object
+           do (add-item key entries)
+              (sleep 0.01)))))
+
+(define-slot (hash-table-inspector add-item) ((item qobject))
+  (declare (connected hash-table-inspector (add-item qobject)))
+  (when (typep item 'signal-carrier)
+    (qui:add-item (object item) entries)))
 
 (define-slot (hash-table-inspector clear) ()
   (declare (connected clear (clicked)))

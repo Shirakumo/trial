@@ -29,4 +29,5 @@
                :qtcore
                :qtgui
                :qtools-ui-listing
-               :array-utils))
+               :array-utils
+               :cl-ppcre))

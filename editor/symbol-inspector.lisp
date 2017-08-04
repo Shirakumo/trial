@@ -7,9 +7,8 @@
 (in-package #:org.shirakumo.trial.editor)
 (in-readtable :qtools)
 
-(define-widget symbol-inspector (QDialog)
-  ((object :initarg :object :accessor object))
-  (:default-initargs :object (error "OBJECT is required.")))
+(define-widget symbol-inspector (QDialog inspector)
+  ((object)))
 
 (define-initializer (symbol-inspector setup)
   (setf (q+:window-title symbol-inspector) (format NIL "Symbol Inspector for ~s" object))

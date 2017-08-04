@@ -7,9 +7,8 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
 (in-package #:org.shirakumo.trial.editor)
 (in-readtable :qtools)
 
-(define-widget list-inspector (QDialog)
-  ((object :initarg :object :accessor object))
-  (:default-initargs :object (error "OBJECT is required.")))
+(define-widget list-inspector (QDialog inspector)
+  ((object)))
 
 (define-initializer (list-inspector setup)
   (setf (q+:window-title list-inspector) "List Inspector")
@@ -48,8 +47,16 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
 (define-slot (list-inspector refresh refresh-instances) ()
   (declare (connected refresh (clicked)))
   (qui:clear-layout entries T)
-  (loop for cons on object
-        do (qui:add-item cons entries)))
+  (bt:make-thread
+   (lambda ()
+     (loop for cons on object
+           do (add-item cons entries)
+              (sleep 0.01)))))
+
+(define-slot (list-inspector add-item) ((item qobject))
+  (declare (connected list-inspector (add-item qobject)))
+  (when (typep item 'signal-carrier)
+    (qui:add-item (object item) entries)))
 
 (define-slot (list-inspector add) ()
   (declare (connected add (clicked)))

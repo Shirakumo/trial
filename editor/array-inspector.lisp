@@ -7,9 +7,8 @@
 (in-package #:org.shirakumo.trial.editor)
 (in-readtable :qtools)
 
-(define-widget array-inspector (QDialog)
-  ((object :initarg :object :accessor object))
-  (:default-initargs :object (error "OBJECT is required.")))
+(define-widget array-inspector (QDialog inspector)
+  ((object)))
 
 (define-initializer (array-inspector setup)
   (setf (q+:window-title array-inspector) "Array Inspector")
@@ -69,12 +68,21 @@
     (add-row "Dimensions" (array-dimensions object))
     (add-row "Element-type" (array-element-type object)))
   (qui:clear-layout entries T)
-  (if (typep object 'vector)
-      (loop for thing across object
-            for i from 0
-            do (qui:add-item i entries))
-      (loop for i from 0 below (array-total-size object)
-            do (qui:add-item i entries))))
+  (bt:make-thread
+   (lambda ()
+     (if (typep object 'vector)
+         (loop for thing across object
+               for i from 0
+               do (add-item i entries)
+                  (sleep 0.01))
+         (loop for i from 0 below (array-total-size object)
+               do (add-item i entries)
+                  (sleep 0.01))))))
+
+(define-slot (array-inspector add-item) ((item qobject))
+  (declare (connected array-inspector (add-item qobject)))
+  (when (typep item 'signal-carrier)
+    (qui:add-item (object item) entries)))
 
 (define-slot (array-inspector adjust) ()
   (declare (connected adjust (clicked)))

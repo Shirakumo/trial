@@ -7,9 +7,8 @@
 (in-package #:org.shirakumo.trial.editor)
 (in-readtable :qtools)
 
-(define-widget function-inspector (QDialog)
-  ((object :initarg :object :accessor object))
-  (:default-initargs :object (error "OBJECT is required.")))
+(define-widget function-inspector (QDialog inspector)
+  ((object)))
 
 (define-initializer (function-inspector setup)
   (setf (q+:window-title function-inspector) (format NIL "Inspecting ~a" (safe-princ object)))
