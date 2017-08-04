@@ -16,20 +16,20 @@
   (refresh-instances object-inspector))
 
 (define-subwidget (object-inspector instance-label)
-    (q+:make-qlabel (safe-princ object))
+    (q+:make-qlabel)
   (setf (q+:alignment instance-label) (q+:qt.align-center))
   (setf (q+:style-sheet instance-label) "margin: 2px; font-size: 16pt;"))
 
 (define-subwidget (object-inspector class-button)
-    (q+:make-qpushbutton (prin1-to-string (class-name (class-of object)))))
+    (q+:make-qpushbutton))
 
 (define-subwidget (object-inspector docstring)
-    (q+:make-qlabel (or (documentation (class-of object) T) "<No documentation>"))
+    (q+:make-qlabel)
   (setf (q+:word-wrap docstring) T)
   (setf (q+:style-sheet docstring) "margin: 10px;"))
 
 (define-subwidget (object-inspector slots)
-    (make-instance 'slot-listing :object object))
+    (make-instance 'slot-listing :inspector object-inspector))
 
 (define-subwidget (object-inspector scroller)
     (q+:make-qscrollarea)
@@ -66,6 +66,9 @@
 
 (define-slot (object-inspector refresh refresh-instances) ()
   (declare (connected refresh (clicked)))
+  (setf (q+:text instance-label) (safe-princ object))
+  (setf (q+:text class-button) (prin1-to-string (class-name (class-of object))))
+  (setf (q+:text docstring) (or (documentation (class-of object) T) "<No documentation>"))
   (qui:clear-layout slots T)
   (dolist (slot (c2mop:class-slots (class-of object)))
     (qui:add-item (c2mop:slot-definition-name slot) slots)))
@@ -83,7 +86,7 @@
   (trial:finalize object))
 
 (define-widget slot-listing (QWidget qui:listing)
-  ((object :initarg :object :accessor object)))
+  ((inspector :initarg :inspector :accessor inspector)))
 
 (defmethod qui:coerce-item ((item symbol) (listing slot-listing))
   (make-instance 'slot-listing-widget :item item :container listing))
@@ -94,11 +97,12 @@
 
 (define-subwidget (slot-listing-widget name)
     (q+:make-qlabel (format NIL "~(~s~)" (qui:widget-item slot-listing-widget)))
-  (setf (q+:fixed-width name) 200))
+  (setf (q+:tool-tip name) (format NIL "~(~s~)" (qui:widget-item slot-listing-widget)))
+  (setf (q+:fixed-width name) 150))
 
 (define-subwidget (slot-listing-widget value-button)
     (q+:make-qpushbutton)
-  (let ((object (object (qui:container slot-listing-widget)))
+  (let ((object (object (inspector (qui:container slot-listing-widget))))
         (slot (qui:widget-item slot-listing-widget)))
     (setf (q+:text value-button) (if (slot-boundp object slot)
                                      (safe-prin1 (slot-value object slot))
@@ -123,14 +127,14 @@
 
 (define-slot (slot-listing-widget inspect-value) ()
   (declare (connected value-button (clicked)))
-  (let ((object (object (qui:container slot-listing-widget)))
+  (let ((object (object (inspector (qui:container slot-listing-widget))))
         (slot (qui:widget-item slot-listing-widget)))
     (when (slot-boundp object slot)
       (inspect (slot-value object slot)))))
 
 (define-slot (slot-listing-widget set-value) ()
   (declare (connected set-value (clicked)))
-  (let* ((object (object (qui:container slot-listing-widget)))
+  (let* ((object (object (inspector (qui:container slot-listing-widget))))
          (slot (qui:widget-item slot-listing-widget)))
     (multiple-value-bind (value got) (safe-input-value slot-listing-widget)
       (when got
@@ -139,7 +143,7 @@
 
 (define-slot (slot-listing-widget unbind-slot) ()
   (declare (connected unbind-slot (clicked)))
-  (let ((object (object (qui:container slot-listing-widget)))
+  (let ((object (object (inspector (qui:container slot-listing-widget))))
         (slot (qui:widget-item slot-listing-widget)))
     (slot-makunbound object slot)
     (setf (q+:text value-button) "<UNBOUND>")))

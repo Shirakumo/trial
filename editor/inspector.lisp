@@ -100,3 +100,6 @@
 (defmethod add-item (item (inspector inspector))
   (signal! inspector (add-item qobject)
            (make-instance 'signal-carrier :object item)))
+
+(defmethod (setf object) :after (object (inspector inspector))
+  (refresh-instances inspector))

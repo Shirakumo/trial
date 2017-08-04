@@ -45,15 +45,20 @@
 
 (defmethod initialize-instance :after ((buffer selection-buffer) &key scene)
   (register (make-instance 'selection-buffer-pass) buffer)
-  (pack buffer)
-  (register-object-for-pass buffer scene)
   (add-handler buffer scene))
+
+(defmethod load progn ((buffer selection-buffer))
+  (pack buffer)
+  (for:for ((object over (scene buffer)))
+    (register-object-for-pass buffer object))
+  (loop for pass across (passes buffer)
+        do (load pass)))
 
 (defmethod finalize :after ((buffer selection-buffer))
   (remove-handler buffer (scene buffer)))
 
 (defmethod object-at-point ((point vec2) (buffer selection-buffer))
-  (color->object (gl:read-pixels (round (vx point)) (round (vy point)) 1 1 :rgba :unsigned-byte)
+  (color->object (gl:read-pixels (round (vx point)) (- (height buffer) (round (vy point))) 1 1 :rgba :unsigned-byte)
                  buffer))
 
 (defmethod color->object (color (buffer selection-buffer))
@@ -68,6 +73,9 @@
       (remhash (ensure-selection-color color)
                (color->object-map buffer))))
 
+(defmethod register-object-for-pass :after ((buffer selection-buffer) (selectable selectable))
+  (setf (color->object (selection-color selectable) buffer) selectable))
+
 (defmethod handle (thing (buffer selection-buffer)))
 
 (defmethod handle ((resize resize) (buffer selection-buffer))
@@ -78,7 +86,6 @@
 (defmethod handle ((enter enter) (buffer selection-buffer))
   (let ((entity (entity enter)))
     (when (typep entity 'selectable)
-      (setf (color->object (selection-color entity) buffer) entity)
       (load (register-object-for-pass (aref (passes buffer) 0) entity)))))
 
 (defmethod handle ((leave leave) (buffer selection-buffer))
@@ -87,9 +94,13 @@
       (setf (color->object (selection-color entity) buffer) NIL))))
 
 (defmethod paint ((source selection-buffer) (buffer selection-buffer))
-  (paint (scene source) buffer))
+  (paint-with buffer (scene source))
+  (gl:bind-framebuffer :draw-framebuffer 0)
+  (%gl:blit-framebuffer 0 0 (width source) (height source) 0 0 (width source) (height source)
+                        (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
+                        (cffi:foreign-enum-value '%gl:enum :nearest)))
 
-(defmethod paint :around (thing (buffer selection-buffer))
+(defmethod paint-with :around ((buffer selection-buffer) thing)
   (with-pushed-attribs
     (disable :blend)
     (call-next-method)))

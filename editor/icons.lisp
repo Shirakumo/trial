@@ -43,6 +43,7 @@
   (setf (q+:icon button) (icon icon))
   (when tooltip (setf (q+:tool-tip button) tooltip)))
 
+(define-icon :select "mouse-pointer 6.svg")
 (define-icon :add "plus 1512.svg")
 (define-icon :adjust "arrow-outside 262.svg")
 (define-icon :refresh "arrow-repeat 235.svg")

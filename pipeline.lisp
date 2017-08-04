@@ -125,7 +125,7 @@
     (setf (passes pipeline) (coerce passes 'vector))
     (setf (textures pipeline) textures)))
 
-(defmethod paint (source (pipeline pipeline))
+(defmethod paint-with ((pipeline pipeline) source)
   (loop for pass across (passes pipeline)
         for fbo = (framebuffer pass)
         do (gl:bind-framebuffer :framebuffer (resource fbo))
@@ -141,7 +141,7 @@
   (:default-initargs
    :name :pipeline))
 
-(defmethod paint :after ((source display) (pipeline frame-pipeline))
+(defmethod paint-with :after ((pipeline frame-pipeline) (source display))
   (gl:bind-framebuffer :draw-framebuffer 0)
   (%gl:blit-framebuffer 0 0 (width source) (height source) 0 0 (width source) (height source)
                         (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)

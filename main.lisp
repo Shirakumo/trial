@@ -75,7 +75,7 @@
   (load (pipeline main)))
 
 (defmethod paint ((source main) (target main))
-  (paint source (pipeline target)))
+  (paint-with (pipeline target) source))
 
 (defmethod paint ((source main) (target shader-pass))
   (paint (scene source) target))

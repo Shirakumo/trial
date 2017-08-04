@@ -156,6 +156,10 @@
 
 (defmethod register-object-for-pass ((pass per-object-pass) o))
 
+(defmethod register-object-for-pass ((pass per-object-pass) (container container))
+  (for:for ((object over container))
+    (register-object-for-pass pass object)))
+
 (defmethod register-object-for-pass ((pass per-object-pass) (class shader-subject-class))
   (let ((shaders ()))
     (let ((effective-class (determine-effective-shader-class class)))

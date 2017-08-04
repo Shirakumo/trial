@@ -25,7 +25,8 @@
                (:file "function-inspector")
                (:file "subject-chooser")
                (:file "subject-class-chooser")
-               (:file "scene-graph"))
+               (:file "scene-graph")
+               (:file "selector"))
   :depends-on (:trial
                :qtools
                :qtcore
