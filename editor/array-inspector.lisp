@@ -68,16 +68,18 @@
     (add-row "Dimensions" (array-dimensions object))
     (add-row "Element-type" (array-element-type object)))
   (qui:clear-layout entries T)
-  (bt:make-thread
-   (lambda ()
-     (if (typep object 'vector)
-         (loop for thing across object
-               for i from 0
-               do (add-item i entries)
-                  (sleep 0.01))
-         (loop for i from 0 below (array-total-size object)
-               do (add-item i entries)
-                  (sleep 0.01))))))
+  (refresh-background array-inspector))
+
+(defmethod refresh-background ((array-inspector array-inspector))
+  (with-slots-bound (array-inspector array-inspector)
+    (if (typep object 'vector)
+        (loop for thing across object
+              for i from 0
+              do (add-item i array-inspector)
+                 (sleep 0.01))
+        (loop for i from 0 below (array-total-size object)
+              do (add-item i array-inspector)
+                 (sleep 0.01)))))
 
 (define-slot (array-inspector add-item) ((item qobject))
   (declare (connected array-inspector (add-item qobject)))
@@ -127,7 +129,9 @@
 
 (define-subwidget (array-listing-widget index)
     (q+:make-qlabel (safe-princ (qui:widget-item array-listing-widget)))
-  (setf (q+:fixed-width index) 50))
+  (setf (q+:fixed-width index) 50)
+  (setf (q+:margin index) 5)
+  (setf (q+:alignment index) (q+:qt.align-right)))
 
 (define-subwidget (array-listing-widget value-button)
     (let ((object (object (inspector (qui:container array-listing-widget))))

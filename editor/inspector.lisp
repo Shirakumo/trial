@@ -78,13 +78,23 @@
             (return (values NIL NIL))))))))
 
 (define-widget inspector (QWidget)
-  ((object :initarg :object :accessor object))
+  ((object :initarg :object :accessor object)
+   (refresh-thread :initform NIL :accessor refresh-thread))
   (:default-initargs :object (error "OBJECT required.")))
 
 (define-object signal-carrier (QObject)
   ((object :initarg :object :accessor object)))
 
 (define-signal (inspector add-item) (qobject))
+
+(defmethod refresh-background :around ((inspector inspector))
+  (let ((thread (refresh-thread inspector)))
+    (when (and thread (bt:thread-alive-p thread))
+      (bt:interrupt-thread thread (lambda () (abort))))
+    (setf (refresh-thread inspector)
+          (bt:make-thread (lambda ()
+                            (with-simple-restart (abort "Exit refreshing.")
+                              (call-next-method)))))))
 
 (defmethod add-item (item (inspector inspector))
   (signal! inspector (add-item qobject)

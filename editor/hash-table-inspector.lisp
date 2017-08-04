@@ -64,11 +64,13 @@
     (add-row "Rehash Size" (hash-table-rehash-size object))
     (add-row "Rehash Threshold" (hash-table-rehash-threshold object)))
   (qui:clear-layout entries T)
-  (bt:make-thread
-   (lambda ()
-     (loop for key being the hash-key of object
-           do (add-item key entries)
-              (sleep 0.01)))))
+  (refresh-background hash-table-inspector))
+
+(defmethod refresh-background ((hash-table-inspector hash-table-inspector))
+  (with-slots-bound (hash-table-inspector hash-table-inspector)
+    (loop for key being the hash-key of object
+          do (add-item key hash-table-inspector)
+             (sleep 0.01))))
 
 (define-slot (hash-table-inspector add-item) ((item qobject))
   (declare (connected hash-table-inspector (add-item qobject)))

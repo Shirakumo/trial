@@ -47,11 +47,13 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
 (define-slot (list-inspector refresh refresh-instances) ()
   (declare (connected refresh (clicked)))
   (qui:clear-layout entries T)
-  (bt:make-thread
-   (lambda ()
-     (loop for cons on object
-           do (add-item cons entries)
-              (sleep 0.01)))))
+  (refresh-background list-inspector))
+
+(defmethod refresh-background ((list-inspector list-inspector))
+  (with-slots-bound (list-inspector list-inspector)
+    (loop for cons on object
+          do (add-item cons list-inspector)
+             (sleep 0.01))))
 
 (define-slot (list-inspector add-item) ((item qobject))
   (declare (connected list-inspector (add-item qobject)))
