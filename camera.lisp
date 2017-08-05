@@ -133,13 +133,13 @@
 (define-subject freeroam-camera (fps-camera)
   ((move-speed :initarg :move-speed :accessor move-speed))
   (:default-initargs
-   :move-speed 2))
+   :move-speed 1))
 
 (define-handler (freeroam-camera tick) (ev)
   (let* ((loc (location freeroam-camera))
          (rot (rotation freeroam-camera))
          (speed (* (move-speed freeroam-camera)
-                   (if (retained 'key :left-shift) 2 1))))
+                   (if (retained 'key :left-shift) 4 1))))
     (cond ((retained 'key :a)
            (decf (vx loc) (* speed (cos (vy rot))))
            (decf (vz loc) (* speed (sin (vy rot)))))
