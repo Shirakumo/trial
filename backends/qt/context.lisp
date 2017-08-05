@@ -16,7 +16,11 @@
    (previous-pos :initform NIL)))
 
 (defmethod construct ((context context))
-  (new context (glformat context))
+  (new context
+       (glformat context)
+       (null-qobject "QWidget")
+       (or (shared-with context)
+           (null-qobject "QGLWidget")))
   (let ((glcontext (q+:context context)))
     (if (q+:is-valid glcontext)
         (v:info :trial.context "~a successfully created context." context)

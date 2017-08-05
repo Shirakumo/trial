@@ -53,6 +53,8 @@
 (defmethod create-context ((context context))
   (flet ((g (item &optional default)
            (getf (initargs context) item default)))
+    (when (shared-with context)
+      (error "GLOP does not support context sharing! Go bugger the devs about it."))
     (glop:open-window context
                       (g :title) (g :width) (g :height)
                       :x (g :x 0) :y (g :y 0)
