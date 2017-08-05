@@ -115,9 +115,10 @@
    :y-inverted NIL))
 
 (defmethod project-view ((camera fps-camera) ev)
-  (rotate +vx+ (vx (rotation camera)))
-  (rotate +vy+ (vy (rotation camera)))
-  (translate (v- (the vec3 (location camera)))))
+  (reset-matrix (view-matrix))
+  (rotate +vx+ (vx (rotation camera)) (view-matrix))
+  (rotate +vy+ (vy (rotation camera)) (view-matrix))
+  (translate (v- (the vec3 (location camera))) (view-matrix)))
 
 (defun do-fps-movement (camera old-pos pos)
   (let ((delta (v- pos old-pos)))
