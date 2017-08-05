@@ -17,6 +17,21 @@
          0.0 0.0
          0.0 1.0)))
 
+;; FIXME: Allow positioning the shapes
+;; FIXME: Allow passing in an existing mesh to compose things
+;; FIXME: Allow specifying which attributes to include
+;; FIXME: Generate normals
+;; FIXME: Add shapes:
+;;        - Box
+;;        - Sphere
+;;        - Torus
+;;        - Ring
+;;        - Disc
+;;        - Cylinder
+;;        - Tube
+;;        - Cone
+;;        - Arrow
+
 (defun make-rectangle (w h)
   (let ((w (/ w 2)) (h (/ h 2)))
     (with-vertex-filling ((make-instance 'vertex-mesh :vertex-type 'textured-vertex) :pack T)
