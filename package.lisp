@@ -93,6 +93,7 @@
    #:context-wait-lock
    #:assets
    #:handler
+   #:shared-with
    #:create-context
    #:destroy-context
    #:valid-p
