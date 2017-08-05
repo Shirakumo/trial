@@ -13,6 +13,15 @@
 (define-asset (workbench cat) texture
     (#p"cat.png"))
 
+(define-asset (workbench skybox) texture
+    (#p"nissi-beach/posx.jpg"
+     #p"nissi-beach/negx.jpg"
+     #p"nissi-beach/posy.jpg"
+     #p"nissi-beach/negy.jpg"
+     #p"nissi-beach/posz.jpg"
+     #p"nissi-beach/negz.jpg")
+  :target :texture-cube-map)
+
 (define-shader-subject teapot (vertex-subject colored-subject textured-subject located-entity rotated-entity selectable)
   ((vel :initform (/ (random 1.0) (+ 10 (random 20))) :accessor vel))
   (:default-initargs :vertex-array (asset 'workbench 'teapot)
@@ -32,6 +41,7 @@
 (progn
   (defmethod setup-scene ((main main))
     (let ((scene (scene main)))
+      (enter (make-instance 'skybox :texture (asset 'workbench 'skybox)) scene)
       (enter (make-instance 'grid) scene)
       (dotimes (i 5)
         (enter (make-instance 'teapot) scene))

@@ -436,6 +436,10 @@
    #:define-class-shader
    #:shader-subject
    #:define-shader-subject)
+  ;; skybox.lisp
+  (:export
+   #:skybox
+   #:texture)
   ;; sprite.lisp
   (:export
    #:sprite-subject
