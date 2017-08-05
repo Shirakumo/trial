@@ -34,9 +34,7 @@
        id))))
 
 (defclass selection-buffer (render-texture)
-  ((width :initarg :width :accessor width)
-   (height :initarg :height :accessor height)
-   (scene :initarg :scene :accessor scene)
+  ((scene :initarg :scene :accessor scene)
    (color->object-map :initform (make-hash-table :test 'eql) :accessor color->object-map))
   (:default-initargs
    :width (error "WIDTH required.")

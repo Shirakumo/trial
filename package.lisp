@@ -342,6 +342,13 @@
    #:connect
    #:check-consistent
    #:pack-pipeline)
+  ;; render-texture.lisp
+  (:export
+   #:render-texture
+   #:width
+   #:height
+   #:pack
+   #:texture)
   ;; renderable.lisp
   (:export
    #:renderable
@@ -366,11 +373,7 @@
   ;; scene-buffer.lisp
   (:export
    #:scene-buffer
-   #:render-pass
-   #:width
-   #:height
-   #:texture
-   #:pack)
+   #:render-pass)
   ;; scene.lisp
   (:export
    #:scene
@@ -381,6 +384,18 @@
    #:leave
    #:register
    #:deregister)
+  ;; selection-buffer.lisp
+  (:export
+   #:ensure-selection-color
+   #:selection-buffer
+   #:scene
+   #:color->object-map
+   #:object-at-point
+   #:color->object
+   #:selection-buffer-pass
+   #:selectable
+   #:selection-color
+   #:find-new-selection-color)
   ;; shader-pass.lisp
   (:export
    #:shader-pass-class
