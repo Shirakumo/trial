@@ -63,7 +63,6 @@
                            :texture-cube-map-positive-z :texture-cube-map-negative-z)
            do (images-to-textures target (list image))))
     (T
-     (when (cdr images) (error "Only one input is supported for the ~a target." target))
      (loop for level from 0
            for image in images
            do (v:debug :trial.asset "Loading texture from specs ~a" image)
