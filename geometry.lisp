@@ -38,7 +38,7 @@
   (push-mesh-vertex (apply #'make-instance (vertex-type mesh) initargs) mesh))
 
 (defmethod triangulate ((mesh vertex-mesh))
-  (unless (= 3 (face-length mesh))
+  (when (< 3 (face-length mesh))
     (error "Triangulation is not yet implemented."))
   mesh)
 
