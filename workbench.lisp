@@ -7,6 +7,9 @@
     (#p"teapot.vf")
   :mesh :TEAPOT01MESH)
 
+(define-asset (workbench grid) mesh
+    ((make-line-grid 10 200 200)))
+
 (define-asset (workbench cat) texture
     (#p"cat.png"))
 
@@ -14,9 +17,14 @@
   ((vel :initform (/ (random 1.0) (+ 10 (random 20))) :accessor vel))
   (:default-initargs :vertex-array (asset 'workbench 'teapot)
                      :texture (asset 'workbench 'cat)
-                     :rotation (vec 0 0 0)
+                     :rotation (vec (/ PI -2) 0 0)
                      :color (vec4-random 0.2 0.8)
-                     :location (vec3-random -80 80)))
+                     :location (vx_z (vec3-random -100 100))))
+
+(define-shader-subject grid (vertex-subject colored-subject)
+  ()
+  (:default-initargs :vertex-array (asset 'workbench 'grid)
+                     :vertex-form :lines))
 
 (define-handler (teapot tick) (ev)
   (incf (vz (rotation teapot)) (vel teapot)))
@@ -24,9 +32,10 @@
 (progn
   (defmethod setup-scene ((main main))
     (let ((scene (scene main)))
-      (dotimes (i 10)
+      (enter (make-instance 'grid) scene)
+      (dotimes (i 5)
         (enter (make-instance 'teapot) scene))
-      (enter (make-instance 'target-camera :location (vec 0 100 100)) scene)))
+      (enter (make-instance 'editor-camera :location (vec 0 100 150)) scene)))
 
   (maybe-reload-scene))
 
