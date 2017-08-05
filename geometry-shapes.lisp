@@ -86,12 +86,12 @@
                       (vertex :position (vec (+ x) (+ y) +0.0))))))
 
 (defun make-line-grid (s w h)
-  (with-vertex-filling ((make-instance 'vertex-mesh :vertex-type 'vertex) :pack T)
+  (with-vertex-filling ((make-instance 'vertex-mesh :vertex-type 'vertex :face-length 2) :pack T)
     (let ((w (/ w 2)) (h (/ h 2))
           (ws (/ w s)) (hs (/ h s)))
       (loop for x from (- w) to w by ws
-            do (vertex :position (vec x (- h) +0.0))
-               (vertex :position (vec x (+ h) +0.0)))
+            do (vertex :position (vec x 0.0 (- h)))
+               (vertex :position (vec x 0.0 (+ h))))
       (loop for y from (- h) to h by hs
-            do (vertex :position (vec (- w) y +0.0))
-               (vertex :position (vec (+ w) y +0.0))))))
+            do (vertex :position (vec (- w) 0.0 y))
+               (vertex :position (vec (+ w) 0.0 y))))))
