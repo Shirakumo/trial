@@ -37,7 +37,8 @@
    (lock :initform (bt:make-lock "Context lock") :reader context-lock)
    (wait-lock :initform (bt:make-lock "Context wait lock") :reader context-wait-lock)
    (assets :initform (make-hash-table :test 'eq) :accessor assets)
-   (handler :initarg :handler :accessor handler))
+   (handler :initarg :handler :accessor handler)
+   (shared-with :initarg :share-with :reader shared-with))
   (:default-initargs
    :title "Trial"
    :width 800
@@ -47,6 +48,7 @@
    :double-buffering T
    :stereo-buffer NIL
    :vsync :off
+   :share-with NIL
    :handler NIL))
 
 (defmethod print-object ((context context) stream)
