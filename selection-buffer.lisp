@@ -71,9 +71,6 @@
       (remhash (ensure-selection-color color)
                (color->object-map buffer))))
 
-(defmethod register-object-for-pass :after ((buffer selection-buffer) (selectable selectable))
-  (setf (color->object (selection-color selectable) buffer) selectable))
-
 (defmethod handle (thing (buffer selection-buffer)))
 
 (defmethod handle ((resize resize) (buffer selection-buffer))
@@ -132,3 +129,6 @@ void main(){
 (defmethod paint :before ((subject selectable) (pass selection-buffer-pass))
   (let ((shader (shader-program-for-pass pass subject)))
     (setf (uniform shader "selection_color") (selection-color subject))))
+
+(defmethod register-object-for-pass :after ((buffer selection-buffer) (selectable selectable))
+  (setf (color->object (selection-color selectable) buffer) selectable))
