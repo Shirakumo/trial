@@ -32,15 +32,22 @@
 ;;        - Cone
 ;;        - Arrow
 
-(defun make-rectangle (w h)
-  (let ((w (/ w 2)) (h (/ h 2)))
+(defun make-rectangle (w h &key (align :center))
+  (let (l r u b)
+    (ecase align
+      (:center (setf l (- (/ w 2)) r (+ (/ w 2))
+                     u (- (/ h 2)) b (+ (/ h 2))))
+      (:topleft (setf l 0 r w
+                      u 0 b h))
+      (:bottomleft (setf l 0 r w
+                         u (- h) b 0)))
     (with-vertex-filling ((make-instance 'vertex-mesh :vertex-type 'textured-vertex) :pack T)
-      (vertex :position (vec (+ w) (+ h) +0.0) :uv (vec 1.0 1.0))
-      (vertex :position (vec (+ w) (- h) +0.0) :uv (vec 1.0 0.0))
-      (vertex :position (vec (- w) (- h) +0.0) :uv (vec 0.0 0.0))
-      (vertex :position (vec (- w) (- h) +0.0) :uv (vec 0.0 0.0))
-      (vertex :position (vec (- w) (+ h) +0.0) :uv (vec 0.0 1.0))
-      (vertex :position (vec (+ w) (+ h) +0.0) :uv (vec 1.0 1.0)))))
+      (vertex :position (vec r u +0.0) :uv (vec 1.0 1.0))
+      (vertex :position (vec r b +0.0) :uv (vec 1.0 0.0))
+      (vertex :position (vec l b +0.0) :uv (vec 0.0 0.0))
+      (vertex :position (vec l b +0.0) :uv (vec 0.0 0.0))
+      (vertex :position (vec l u +0.0) :uv (vec 0.0 1.0))
+      (vertex :position (vec r u +0.0) :uv (vec 1.0 1.0)))))
 
 (defun make-cube (s)
   (let ((s (/ s 2)))
