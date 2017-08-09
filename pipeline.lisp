@@ -15,6 +15,9 @@
 (defmethod handle :after ((tick tick) (pipeline pipeline))
   (process pipeline))
 
+(defmethod handle :after ((resize resize) (pipeline pipeline))
+  (resize pipeline (width resize) (height resize)))
+
 (defmethod load progn ((pipeline pipeline))
   (map NIL #'load (textures pipeline))
   (map NIL #'load (passes pipeline)))

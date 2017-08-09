@@ -86,10 +86,6 @@
 (define-handler (controller quit-game) (ev)
   (quit *context*))
 
-(define-handler (controller resize) (ev width height)
-  (let ((pipeline (pipeline (display controller))))
-    (when pipeline (resize pipeline width height))))
-
 (define-handler (controller mapping T 100) (ev)
   (map-event ev *loop*)
   (retain-event ev))
