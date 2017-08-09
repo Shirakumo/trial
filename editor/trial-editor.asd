@@ -9,7 +9,7 @@
   :author "Nicolas Hafner <shinmera@tymoon.eu>"
   :maintainer "Nicolas Hafner <shinmera@tymoon.eu>"
   :license "Artistic"
-  :description "A flexible and extensible video game engine."
+  :description "Editor UI for the Trial engine."
   :homepage "https://github.com/Shirakumo/trial"
   :components ((:file "package")
                (:file "icons")

@@ -45,6 +45,9 @@
   (orthographic-projection 0 (width ev) (height ev) 0
                            (near-plane camera) (far-plane camera)))
 
+(defmethod project-view ((camera 2d-camera) ev)
+  (translate (v- (location camera)) *view-matrix*))
+
 (define-subject sidescroll-camera (2d-camera)
   ((zoom :initarg :zoom :accessor zoom)
    (target :initarg :target :accessor target))
