@@ -336,6 +336,30 @@
      (check-gl-type thing 8 T)
      (values (round thing)))))
 
+(defun texture-internal-format->texture-format (format)
+  (ecase format
+    ((:stencil-index :stencil-index1 :stencil-index4 :stencil-index8 :stencil-index16)
+     :stencil-index)
+    ((:depth-component :depth-component16 :depth-component24 :depth-component32 :depth-component32f)
+     :depth-component)
+    ((:depth-stencil :depth32f-stencil8 :depth24-stencil8)
+     :depth-stencil)
+    ((:red :r8 :r8-snorm :r16 :r16-snorm :r16f :r32f :r8i :r8ui :r16i :r16ui :r32i :r32ui :compressed-red :compressed-red-rgtc1 :compressed-signed-red-rgtc1)
+     :red)
+    ((:rg :rg8 :rg8-snorm :rg16 :rg16-snorm :rg16f :rg32f :rg8i :rg8ui :rg16i :rg16ui :rg32i :rg32ui :compressed-rg :compressed-rg-rgtc2 :compressed-signed-rg-rgtc2)
+     :rg)
+    ((:rgb :r3-g3-b2 :rgb4 :rgb5 :rgb8 :rgb8-snorm :rgb10 :rgb12 :rgb16-snorm :rgba2 :rgba4 :srgb8 :rgb16f :rgb32f :r11f-g11f-b10f :rgb9-e5 :rgb8i :rgb8ui :rgb16i :rgb16ui :rgb32i :rgb32ui :compressed-rgb :compressed-srgb :compressed-rgb-bptc-signed-float :compressed-rgb-bptc-unsigned-float)
+     :rgb)
+    ((:rgba :rgb5-a1 :rgba8 :rgba8-snorm :rgb10-a2 :rgb10-a2ui :rgba12 :rgba16 :srgb8-alpha8 :rgba16f :rgba32f :rgba8i :rgba8ui :rgba16i :rgba16ui :rgba32i :rgba32ui :compressed-rgba :compressed-srgb-alpha :compressed-rgba-bptc-unorm :compressed-srgb-alpha-bptc-unorm)
+     :rgba)))
+
+(defun texture-format->data-type (format)
+  (case format
+    (:depth-stencil :unsigned-int-24-8)
+    (:depth24-stencil8 :unsigned-int-24-8)
+    (:depth32f-stencil8 :unsigned-int-32-8)
+    (T :unsigned-byte)))
+
 ;; https://www.khronos.org/registry/OpenGL/extensions/ATI/ATI_meminfo.txt
 (defun gpu-room-ati ()
   (let* ((vbo-free-memory-ati (gl:get-integer #x87FB 4))
