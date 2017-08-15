@@ -102,6 +102,7 @@
         do (offload asset))
   (clear (scene (display controller)))
   (clear (pipeline (display controller)))
+  (setup-rendering (display controller))
   (setup-scene (display controller)))
 
 (define-handler (controller load-request) (ev asset action)
