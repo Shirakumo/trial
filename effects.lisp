@@ -11,7 +11,7 @@
 
 (define-shader-pass render-pass (per-object-pass)
   ((color :port-type output :attachment :color-attachment0)
-   (depth :port-type output :attachment :depth-attachment)))
+   (depth :port-type output :attachment :depth-stencil-attachment)))
 
 (define-shader-pass msaa-pass (render-pass multisampled-per-object-pass)
   ())

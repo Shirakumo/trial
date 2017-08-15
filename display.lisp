@@ -35,6 +35,9 @@
   (reset-matrix (view-matrix))
   (reset-matrix (projection-matrix))
   (reset-attributes (attribute-table))
+  (gl:stencil-mask #xFF)
+  (gl:clear-stencil #x00)
+  (gl:stencil-op :keep :keep :keep)
   (gl:depth-mask T)
   (gl:depth-func :lequal)
   (gl:blend-func :src-alpha :one-minus-src-alpha)
@@ -56,7 +59,7 @@
     (with-context (context :reentrant T)
       (let ((c (clear-color target)))
         (gl:clear-color (vx c) (vy c) (vz c) (if (vec4-p c) (vw c) 0.0)))
-      (gl:clear :color-buffer :depth-buffer)
+      (gl:clear :color-buffer :depth-buffer :stencil-buffer)
       (call-next-method)
       (swap-buffers context))))
 
