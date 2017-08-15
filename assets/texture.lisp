@@ -69,21 +69,21 @@
               (case target
                 (:texture-1d
                  (destructuring-bind (width height bits format) (object-to-texparams image)
-                   (gl:tex-image-1d target level format (* width height) 0 format :unsigned-byte bits)
+                   (gl:tex-image-1d target level format (* width height) 0 (texture-internal-format->texture-format format) (texture-format->data-type format) bits)
                    (unless (cffi:null-pointer-p bits) (cffi:foreign-free bits))))
                 ((:texture-cube-map-positive-x :texture-cube-map-negative-x
                   :texture-cube-map-positive-y :texture-cube-map-negative-y
                   :texture-cube-map-positive-z :texture-cube-map-negative-z
                   :texture-2d)
                  (destructuring-bind (width height bits format) (object-to-texparams image)
-                   (gl:tex-image-2d target level format width height 0 format :unsigned-byte bits)
+                   (gl:tex-image-2d target level format width height 0 (texture-internal-format->texture-format format) (texture-format->data-type format) bits)
                    (unless (cffi:null-pointer-p bits) (cffi:foreign-free bits))))
                 (:texture-2d-multisample
                  (destructuring-bind (width height samples format) (object-to-texparams image)
                    (%gl:tex-image-2d-multisample target samples format width height 0)))
                 (:texture-3d
                  (destructuring-bind (width height depth bits format) image
-                   (gl:tex-image-3d target level format width height depth 0 format :unsigned-byte bits)
+                   (gl:tex-image-3d target level format width height depth 0 (texture-internal-format->texture-format format) (texture-format->data-type format) bits)
                    (unless (cffi:null-pointer-p bits) (cffi:foreign-free bits)))))))))
 
 (defmethod load progn ((asset texture))
@@ -93,8 +93,7 @@
       (with-cleanup-on-failure (offload asset)
         (gl:bind-texture target texture)
         (images-to-textures target images)
-        (unless (eql
-                 target :texture-2d-multisample)
+        (unless (eql target :texture-2d-multisample)
           (when (find min-filter '(:linear-mipmap-linear :linear-mipmap-nearest
                                    :nearest-mipmap-linear :nearest-mipmap-nearest))
             (gl:generate-mipmap target))
