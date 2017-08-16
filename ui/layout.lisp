@@ -9,7 +9,11 @@
 (defclass layout ()
   ())
 
-(defclass horizontal-layout ()
+(defmethod apply-layout :around ((layout layout) (pane pane))
+  (when (/= 0 (length (children pane)))
+    (call-next-method)))
+
+(defclass horizontal-layout (layout)
   ((alignment :initarg :alignment :initform :center :accessor alignment)))
 
 (defmethod apply-layout ((layout horizontal-layout) (pane pane))
@@ -31,7 +35,7 @@
                       h)
                (note-extent-change e NIL)))))
 
-(defclass vertical-layout ()
+(defclass vertical-layout (layout)
   ((alignment :initarg :alignment :initform :center :accessor alignment)))
 
 (defmethod apply-layout ((layout vertical-layout) (pane pane))
