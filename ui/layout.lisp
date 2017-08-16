@@ -40,9 +40,9 @@
            (alignment (alignment layout))
            (scale (/ 1 (loop for e across children sum (preferred-height e)))))
       (loop for e across children
-            for y = top then (+ y h)
             for w = (*       (preferred-width e) total-width)
             for h = (* scale (preferred-height e) total-height)
+            for y = (+ top total-height (- h)) then (- y h)
             do (vsetf (the vec4 (extent e))
                       (ecase alignment
                         (:left left)
