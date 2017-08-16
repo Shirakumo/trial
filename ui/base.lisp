@@ -78,6 +78,9 @@
 (defmethod insert-child :after ((child ui-element) (pane pane) &key)
   (apply-layout (layout pane) pane))
 
+(defmethod enter ((child ui-element) (pane pane))
+  (insert-child child pane))
+
 (defmethod remove-child ((child ui-element) (pane pane))
   (array-utils:vector-pop-position (children pane) (position child (children pane))))
 
@@ -86,6 +89,9 @@
 
 (defmethod remove-child :after ((child ui-element) (pane pane))
   (apply-layout (layout pane) pane))
+
+(defmethod leave ((child ui-element) (pane pane))
+  (remove-child child pane))
 
 (defmethod paint ((pane pane) target)
   (loop for e across (children pane)
