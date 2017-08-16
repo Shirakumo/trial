@@ -42,7 +42,7 @@
    :location (vec 0 0 200)))
 
 (defmethod setup-perspective ((camera 2d-camera) ev)
-  (orthographic-projection 0 (width ev) (height ev) 0
+  (orthographic-projection 0 (width ev) 0 (height ev)
                            (near-plane camera) (far-plane camera)))
 
 (defmethod project-view ((camera 2d-camera) ev)
