@@ -48,11 +48,11 @@
             (setf (pool ',name) (make-instance 'pool :name ',name ,@initargs))))
      ',name))
 
-(defmethod asset ((pool pool) name &optional errorp)
+(defmethod asset ((pool pool) name &optional (errorp T))
   (or (gethash name (assets pool))
       (when errorp (error "No asset with name ~s on pool ~a." name pool))))
 
-(defmethod asset ((pool symbol) name &optional errorp)
+(defmethod asset ((pool symbol) name &optional (errorp T))
   (let ((pool (pool pool errorp)))
     (when pool (asset pool name errorp))))
 
