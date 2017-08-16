@@ -6,55 +6,35 @@
 (progn
   (defmethod setup-scene ((main main))
     (let ((scene (scene main)))
-      (enter (make-instance 'trial-ui::ui-window
-                            :name :ui
-                            :extent (vec4 0 0 (width *context*) (height *context*))
-                            :layout (make-instance 'trial-ui::horizontal-layout :alignment :top)
-                            :color (vec 0.1 0.1 0.1 1)
-                            :children (list (make-instance 'trial-ui::spacer
-                                                           :preferred-size (vec 0.1 0.1))
-                                            (make-instance 'trial-ui::ui-window
-                                                           :color (vec 0.2 0.2 0.2 1)
-                                                           :layout (make-instance 'trial-ui::vertical-layout)
-                                                           :children (list (make-instance 'trial-ui::label
-                                                                                          :text "A"
-                                                                                          :color (vec 1 0 0 1)
-                                                                                          :preferred-size (vec 0.5 0.5))
-                                                                           (make-instance 'trial-ui::spacer
-                                                                                          :preferred-size (vec 0.1 0.1))
-                                                                           (make-instance 'trial-ui::label
-                                                                                          :text "B"
-                                                                                          :color (vec 0 1 0 1)
-                                                                                          :preferred-size (vec 0.7 0.5))
-                                                                           (make-instance 'trial-ui::spacer
-                                                                                          :preferred-size (vec 0.1 0.1))
-                                                                           (make-instance 'trial-ui::label
-                                                                                          :text "C"
-                                                                                          :color (vec 0 0 1 1)
-                                                                                          :preferred-size (vec 2.0 0.5))))
-                                            (make-instance 'trial-ui::spacer
-                                                           :preferred-size (vec 0.1 0.1))
-                                            (make-instance 'trial-ui::label
-                                                           :text "Whoa"
-                                                           :color (vec 0 1 0 1)
-                                                           :preferred-size (vec 1 1.5))
-                                            (make-instance 'trial-ui::spacer
-                                                           :preferred-size (vec 0.1 0.1))
-                                            (make-instance 'trial-ui::label
-                                                           :text "Hey there"
-                                                           :color (vec 0 0 1 1)
-                                                           :preferred-size (vec 1 0.2))
-                                            (make-instance 'trial-ui::spacer
-                                                           :preferred-size (vec 0.1 0.1))))
-             scene)
+      (let ((window (make-instance 'trial-ui::ui-window
+                                   :name :ui
+                                   :extent (vec4 0 0 (width *context*) (height *context*))
+                                   :layout (make-instance 'trial-ui::horizontal-layout :alignment :top)
+                                   :color (vec 0.1 0.1 0.1 1))))
+        (enter (make-instance 'trial-ui::spacer :preferred-size (vec 0.1 0.1)) window)
+        (enter (make-instance 'trial-ui::label :text "1") window)
+        (enter (make-instance 'trial-ui::spacer :preferred-size (vec 0.1 0.1)) window)
+        (let ((subwindow (make-instance 'trial-ui::ui-window
+                                        :color (vec 0.2 0.2 0.2 1)
+                                        :layout (make-instance 'trial-ui::vertical-layout))))
+          (enter (make-instance 'trial-ui::label :text "A") subwindow)
+          (enter (make-instance 'trial-ui::spacer :preferred-size (vec 0.1 0.1)) subwindow)
+          (enter (make-instance 'trial-ui::label :text "B") subwindow)
+          (enter (make-instance 'trial-ui::spacer :preferred-size (vec 0.1 0.1)) subwindow)
+          (enter (make-instance 'trial-ui::label :text "C") subwindow)
+          (enter subwindow window))
+        (enter (make-instance 'trial-ui::spacer :preferred-size (vec 0.1 0.1)) window)
+        (enter (make-instance 'trial-ui::label :text "2") window)
+        (enter (make-instance 'trial-ui::spacer :preferred-size (vec 0.1 0.1)) window)
+        (enter window scene))
       (enter (make-instance '2d-camera) scene)))
 
   (maybe-reload-scene))
 
 (define-handler (controller resize) (ev width height)
   (let ((ui (unit :ui *loop*)))
-    (setf (vz (trial-ui::extent ui)) (/ width 2))
-    (setf (vw (trial-ui::extent ui)) (/ height 2))
+    (setf (vz (extent ui)) width)
+    (setf (vw (extent ui)) height)
     (trial-ui::note-extent-change ui nil)))
 
 (progn

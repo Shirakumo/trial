@@ -8,7 +8,9 @@
 
 (define-shader-subject flat-ui-element (vertex-subject colored-subject ui-element)
   ()
-  (:default-initargs :vertex-array NIL))
+  (:default-initargs
+   :color (vec 0.5 0.5 0.5 1)
+   :vertex-array NIL))
 
 (defmethod shared-initialize :after ((ui-element flat-ui-element) slots &key extent)
   (when extent
