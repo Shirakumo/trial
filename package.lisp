@@ -27,7 +27,8 @@
    #:load-request
    #:asset
    #:action
-   #:define-asset)
+   #:define-asset
+   #:trial)
   ;; asset.lisp
   (:export
    #:load

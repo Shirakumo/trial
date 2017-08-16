@@ -31,9 +31,48 @@
 (defmethod note-extent-change ((ui-element spacer) (other null)))
 
 (define-shader-subject label (flat-ui-element)
-  ((text :initarg :text :accessor text)))
+  ((text-asset :accessor text-asset)
+   (text-offset :initform (vec2 0 0) :accessor text-offset)
+   (align :initarg :align :accessor align))
+  (:default-initargs
+   :text ""
+   :text-color (vec 0 0 0 1)
+   :font (asset 'trial 'trial::noto-sans)
+   :align (list :center :center)))
 
-(defmethod note-extent-change ((ui-element label) (other null)))
+(defmethod initialize-instance :after ((label label) &key text text-color font)
+  (setf (text-asset label) (make-instance 'text :text text :color text-color :font font)))
+
+(defmethod load progn ((label label))
+  (load (text-asset label)))
+
+(defmethod offload progn ((label label))
+  (offload (text-asset label)))
+
+(defmethod text ((label label))
+  (text (text-asset label)))
+
+(defmethod (setf text) (text (label label))
+  (setf (text (text-asset label)) text)
+  (note-extent-change label NIL))
+
+(defmethod note-extent-change ((label label) (other null))
+  (destructuring-bind (halign valign) (align label)
+    (let* ((bounds (extent (text-asset label)))
+           (x (ecase halign
+                (:left 0)
+                (:right (- (width label) (getf bounds :r)))
+                (:center (/ (- (width label) (getf bounds :r)) 2))))
+           (y (ecase valign
+                (:bottom 0)
+                (:top (- (height label) (getf bounds :t)))
+                (:center (/ (- (height label) (getf bounds :t)) 2)))))
+      (vsetf (text-offset label) x y))))
+
+(defmethod paint :after ((label label) target)
+  (let ((offset (text-offset label)))
+    (translate-by (vx2 offset) (vy2 offset) 0)
+    (paint (text-asset label) target)))
 
 (define-shader-subject ui-window (flat-ui-element rectangular-pane)
   ())
