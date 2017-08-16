@@ -566,7 +566,8 @@
    #:font
    #:text
    #:color
-   #:size)
+   #:size
+   #:extent)
   ;;; framebuffer.lisp
   (:export
    #:framebuffer

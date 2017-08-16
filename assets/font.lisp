@@ -105,3 +105,7 @@ void main(){
       (setf (size vao) (cl-fond:update-text font text
                                             (resource vbo)
                                             (resource ebo))))))
+
+(defmethod extent ((subject text))
+  (cl-fond:compute-extent (resource (font subject))
+                          (text subject)))
