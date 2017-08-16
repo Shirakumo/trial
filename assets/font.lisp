@@ -107,5 +107,7 @@ void main(){
                                             (resource ebo))))))
 
 (defmethod extent ((subject text))
-  (cl-fond:compute-extent (resource (font subject))
-                          (text subject)))
+  (if (resource (font subject))
+      (cl-fond:compute-extent (resource (font subject))
+                              (text subject))
+      '(:l 0 :r 0 :t 0 :b 0 :gap 0)))
