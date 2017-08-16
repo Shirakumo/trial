@@ -60,13 +60,13 @@
   (destructuring-bind (halign valign) (align label)
     (let* ((bounds (extent (text-asset label)))
            (x (ecase halign
-                (:left 0)
-                (:right (- (width label) (getf bounds :r)))
-                (:center (/ (- (width label) (getf bounds :r)) 2))))
+                (:left (getf bounds :l))
+                (:right (- (+ (width label) (getf bounds :l)) (getf bounds :r)))
+                (:center (/ (- (+ (width label) (getf bounds :l)) (getf bounds :r)) 2))))
            (y (ecase valign
-                (:bottom 0)
-                (:top (- (height label) (getf bounds :t)))
-                (:center (/ (- (height label) (getf bounds :t)) 2)))))
+                (:bottom (getf bounds :b))
+                (:top (- (+ (height label) (getf bounds :b)) (getf bounds :t)))
+                (:center (/ (- (+ (height label) (getf bounds :b)) (getf bounds :t)) 2)))))
       (vsetf (text-offset label) x y))))
 
 (defmethod paint :after ((label label) target)
