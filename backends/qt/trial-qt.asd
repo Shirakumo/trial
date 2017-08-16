@@ -4,7 +4,7 @@
  Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
-(in-package #:cl-user)
+
 (asdf:defsystem trial-qt
   :version "1.2.0"
   :author "Nicolas Hafner <shinmera@tymoon.eu>"
