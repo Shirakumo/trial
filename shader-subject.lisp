@@ -9,7 +9,7 @@
 (defclass shader-subject-class (subject-class shader-entity-class)
   ())
 
-(defclass shader-subject (subject)
+(defclass shader-subject (subject shader-entity)
   ()
   (:metaclass shader-subject-class))
 

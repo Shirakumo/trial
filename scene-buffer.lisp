@@ -16,7 +16,7 @@
   (register (render-pass buffer) buffer)
   (pack buffer))
 
-(defmethod enter :after ((subject shader-subject) (buffer scene-buffer))
+(defmethod enter :after ((subject shader-entity) (buffer scene-buffer))
   (register-object-for-pass buffer subject))
 
 (defmethod paint ((pass shader-pass) (buffer scene-buffer))

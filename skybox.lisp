@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-shader-subject skybox ()
+(define-shader-entity skybox ()
   ((texture :initarg :texture :accessor texture)
    (vertex-array :initform NIL :Accessor vertex-array))
   (:default-initargs :texture (error "TEXTURE required.")))

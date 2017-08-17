@@ -113,7 +113,7 @@
              ;; Pass changed, recompile everything
              (loop for class being the hash-keys of assets
                    do (refresh class)))
-            ((and (typep subject-class 'shader-subject-class)
+            ((and (typep subject-class 'shader-entity-class)
                   (not (typep subject-class 'shader-pass-class)))
              ;; Object changed, recompile it
              (refresh subject-class))))))
@@ -122,7 +122,7 @@
   (loop for v being the hash-values of (assets pass)
         do (load v)))
 
-(defmethod shader-program-for-pass ((pass per-object-pass) (subject shader-subject))
+(defmethod shader-program-for-pass ((pass per-object-pass) (subject shader-entity))
   (gethash (class-of subject) (assets pass)))
 
 (defmethod coerce-pass-shader ((pass per-object-pass) class type spec)
@@ -132,22 +132,22 @@
 (defmethod determine-effective-shader-class ((name symbol))
   (determine-effective-shader-class (find-class name)))
 
-(defmethod determine-effective-shader-class ((object shader-subject))
+(defmethod determine-effective-shader-class ((object shader-entity))
   (determine-effective-shader-class (class-of object)))
 
 (defmethod determine-effective-shader-class ((class standard-class))
   NIL)
 
-(defmethod determine-effective-shader-class ((class shader-subject-class))
+(defmethod determine-effective-shader-class ((class shader-entity-class))
   (if (direct-shaders class)
       class
-      (let* ((effective-superclasses (list (find-class 'shader-subject))))
+      (let* ((effective-superclasses (list (find-class 'shader-entity))))
         ;; Loop through superclasses and push new, effective superclasses.
         (loop for superclass in (c2mop:class-direct-superclasses class)
               for effective-class = (determine-effective-shader-class superclass)
               do (when (and effective-class (not (find effective-class effective-superclasses)))
                    (push effective-class effective-superclasses)))
-        ;; If we have one or two --one always being the shader-subject class--
+        ;; If we have one or two --one always being the shader-entity class--
         ;; then we just return the more specific of the two, as there's no class
         ;; combination happening that would produce new shaders.
         (if (<= (length effective-superclasses) 2)
@@ -160,7 +160,7 @@
   (for:for ((object over container))
     (register-object-for-pass pass object)))
 
-(defmethod register-object-for-pass ((pass per-object-pass) (class shader-subject-class))
+(defmethod register-object-for-pass ((pass per-object-pass) (class shader-entity-class))
   (let ((shaders ()))
     (let ((effective-class (determine-effective-shader-class class)))
       (unless (gethash effective-class (assets pass))
@@ -172,10 +172,10 @@
               (make-asset 'shader-program shaders)))
       (setf (gethash class (assets pass)) (gethash effective-class (assets pass))))))
 
-(defmethod register-object-for-pass ((pass per-object-pass) (subject shader-subject))
+(defmethod register-object-for-pass ((pass per-object-pass) (subject shader-entity))
   (register-object-for-pass pass (class-of subject)))
 
-(defmethod paint :around ((subject shader-subject) (pass per-object-pass))
+(defmethod paint :around ((subject shader-entity) (pass per-object-pass))
   (let ((program (shader-program-for-pass pass subject)))
     (gl:use-program (resource program))
     (prepare-pass-program pass program)

@@ -111,7 +111,7 @@ void main(){
   color = selection_color;
 }")
 
-(define-shader-subject selectable ()
+(define-shader-entity selectable ()
   ((selection-color :initarg :selection-color :initform (find-new-selection-color) :accessor selection-color)))
 
 (defun find-new-selection-color ()

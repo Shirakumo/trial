@@ -94,6 +94,8 @@
         (gl:bind-texture target texture)
         (images-to-textures target images)
         (unless (eql target :texture-2d-multisample)
+          ;; FIXME: generating mipmaps for depth-stencil textures is apparently not
+          ;;        allowed on all drivers.
           (when (find min-filter '(:linear-mipmap-linear :linear-mipmap-nearest
                                    :nearest-mipmap-linear :nearest-mipmap-nearest))
             (gl:generate-mipmap target))
