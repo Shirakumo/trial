@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial.ui)
 
-(define-shader-subject flat-ui-element (vertex-subject colored-subject ui-element)
+(define-shader-entity flat-ui-element (vertex-entity colored-entity ui-element)
   ()
   (:default-initargs
    :color (vec 0.5 0.5 0.5 1)
@@ -32,7 +32,7 @@
 
 (defmethod note-extent-change ((ui-element spacer) (other null)))
 
-(define-shader-subject label (flat-ui-element)
+(define-shader-entity label (flat-ui-element)
   ((text-asset :accessor text-asset)
    (text-offset :initform (vec2 0 0) :accessor text-offset)
    (align :initarg :align :accessor align))
@@ -76,7 +76,7 @@
     (translate-by (vx2 offset) (vy2 offset) 0)
     (paint (text-asset label) target)))
 
-(define-shader-subject ui-window (flat-ui-element rectangular-pane)
+(define-shader-entity ui-window (flat-ui-element rectangular-pane)
   ())
 
 (defmethod paint :after ((window ui-window) target)

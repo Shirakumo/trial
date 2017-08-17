@@ -268,7 +268,16 @@
    #:rotation
    #:axis-rotated-entity
    #:pivoted-entity
-   #:pivot)
+   #:pivot
+   #:clocked-subject
+   #:vertex-entity
+   #:vertex-array
+   #:vertex-form
+   #:colored-entity
+   #:color
+   #:vertex-colored-entity
+   #:textured-subject
+   #:texture)
   ;; input.lisp
   (:export
    #:input-event
@@ -398,6 +407,19 @@
    #:selectable
    #:selection-color
    #:find-new-selection-color)
+  ;; shader-entity.lisp
+  (:export
+   #:shader-entity-class
+   #:effective-shaders
+   #:direct-shaders
+   #:inhibit-shaders
+   #:compute-effective-shaders
+   #:class-shader
+   #:remove-class-shader
+   #:make-class-shader-program
+   #:define-class-shader
+   #:shader-entity
+   #:define-shader-entity)
   ;; shader-pass.lisp
   (:export
    #:shader-pass-class
@@ -430,12 +452,6 @@
   ;; shader-subject.lisp
   (:export
    #:shader-subject-class
-   #:effective-shaders
-   #:direct-shaders
-   #:class-shader
-   #:remove-class-shader
-   #:make-class-shader-program
-   #:define-class-shader
    #:shader-subject
    #:define-shader-subject)
   ;; skybox.lisp
@@ -444,7 +460,7 @@
    #:texture)
   ;; sprite.lisp
   (:export
-   #:sprite-subject
+   #:sprite-entity
    #:tile
    #:size
    #:animated-sprite-subject
@@ -463,27 +479,14 @@
   (:export
    #:subject-class-redefined
    #:subject-class
-   #:subject-class
    #:effective-handlers
-   #:instances
-   #:cascade-option-changes
+   #:compute-effective-handlers
    #:subject
    #:event-loop
    #:regenerate-handlers
    #:define-subject
    #:define-handler
    #:define-generic-handler)
-  ;; subjects.lisp
-  (:export
-   #:clocked-subject
-   #:vertex-subject
-   #:vertex-array
-   #:vertex-form
-   #:colored-subject
-   #:color
-   #:vertex-colored-subject
-   #:textured-subject
-   #:texture)
   ;; toolkit.lisp
   (:export
    #:finalize

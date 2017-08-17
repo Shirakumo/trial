@@ -11,7 +11,7 @@
 
 (defclass subject-class (standard-class handler-container)
   ((effective-handlers :initform NIL :accessor effective-handlers)
-   (instances :initform () :accessor instances)))
+   (class-redefinition-event-sent :initform T :accessor class-redefinition-event-sent)))
 
 (defmethod c2mop:validate-superclass ((class subject-class) (superclass t))
   NIL)
@@ -25,7 +25,7 @@
 (defmethod c2mop:validate-superclass ((class subject-class) (superclass subject-class))
   T)
 
-(defmethod cascade-option-changes ((class subject-class))
+(defmethod compute-effective-handlers ((class subject-class))
   ;; Recompute effective handlers
   (loop with effective-handlers = (handlers class)
         for super in (c2mop:class-direct-superclasses class)
@@ -33,38 +33,28 @@
              (dolist (handler (effective-handlers super))
                (pushnew handler effective-handlers :key #'name)))
         finally (setf (effective-handlers class) effective-handlers))
-  ;; Update instances
-  (loop for pointer in (instances class)
-        for subject = (tg:weak-pointer-value pointer)
-        when subject
-        collect (prog1 pointer
-                  (reinitialize-instance subject)) into instances
-        finally (setf (instances class) instances))
-  ;; Notify
-  (loop for pointer in (instances class)
-        for subject = (tg:weak-pointer-value pointer)
-        when (and subject (slot-value subject 'event-loop))
-        return (issue (slot-value subject 'event-loop) 'subject-class-redefined
-                      :subject-class class)))
+  ;; Mark as obsolete
+  (setf (class-redefinition-event-sent class) NIL)
+  (make-instances-obsolete class))
 
-(defmethod cascade-option-changes :after ((class subject-class))
+(defmethod compute-effective-handlers :after ((class subject-class))
   ;; Propagate
   (loop for sub-class in (c2mop:class-direct-subclasses class)
         when (and (typep sub-class 'subject-class)
                   (c2mop:class-finalized-p sub-class))
-        do (cascade-option-changes sub-class)))
+        do (compute-effective-handlers sub-class)))
 
 (defmethod c2mop:finalize-inheritance :after ((class subject-class))
   (dolist (super (c2mop:class-direct-superclasses class))
     (unless (c2mop:class-finalized-p super)
       (c2mop:finalize-inheritance super)))
-  (cascade-option-changes class))
+  (compute-effective-handlers class))
 
 (defmethod add-handler :after (handler (class subject-class))
-  (cascade-option-changes class))
+  (compute-effective-handlers class))
 
 (defmethod remove-handler :after (handler (class subject-class))
-  (cascade-option-changes class))
+  (compute-effective-handlers class))
 
 (defmethod add-handler (handler (class symbol))
   (add-handler handler (find-class class)))
@@ -77,11 +67,18 @@
   (:metaclass subject-class))
 
 (defmethod initialize-instance :after ((subject subject) &key)
-  (push (tg:make-weak-pointer subject) (instances (class-of subject)))
   (regenerate-handlers subject))
 
 (defmethod reinitialize-instance :after ((subject subject) &key)
   (regenerate-handlers subject))
+
+(defmethod update-instance-for-redefined-class ((subject subject) aslots dslots plist &key args)
+  (let ((class (class-of subject)))
+    (regenerate-handlers subject)
+    (when (and (not (class-redefinition-event-sent class))
+               (event-loop subject))
+      (issue (event-loop subject) 'subject-class-redefined :subject-class class)
+      (setf (class-redefinition-event-sent class) T))))
 
 (defmethod regenerate-handlers ((subject subject))
   ;; During recompilation the EVENT-LOOP method might

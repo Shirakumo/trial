@@ -9,21 +9,21 @@
 ;;; Sprite sheets define an animation for every row
 ;;; and a frame in the animation for every column.
 
-(define-shader-subject sprite-subject (vertex-subject textured-subject)
+(define-shader-entity sprite-entity (vertex-entity textured-entity)
   ((tile :initarg :tile :accessor tile)
    (size :initarg :size :accessor size))
   (:default-initargs
    :size (vec2 32 32)
    :tile (vec2 0 0))
   (:inhibit-shaders
-   (textured-subject :vertex-shader)))
+   (textured-entity :vertex-shader)))
 
-(defmethod paint :before ((subject sprite-subject) (pass shader-pass))
-  (let ((shader (shader-program-for-pass pass subject)))
-    (setf (uniform shader "size") (size subject))
-    (setf (uniform shader "tile") (tile subject))))
+(defmethod paint :before ((entity sprite-entity) (pass shader-pass))
+  (let ((shader (shader-program-for-pass pass entity)))
+    (setf (uniform shader "size") (size entity))
+    (setf (uniform shader "tile") (tile entity))))
 
-(define-class-shader (sprite-subject :vertex-shader)
+(define-class-shader (sprite-entity :vertex-shader)
   "layout (location = 1) in vec2 in_texcoord;
 out vec2 texcoord;
 uniform sampler2D texture_image;
@@ -39,7 +39,7 @@ void main(){
   texcoord = frame_start + in_texcoord * sprite_size;
 }")
 
-(define-shader-subject animated-sprite-subject (sprite-subject)
+(define-shader-subject animated-sprite-subject (sprite-entity)
   ((animations :initform NIL :accessor animations)
    (clock :initform 0.0d0 :accessor clock)))
 

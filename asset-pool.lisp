@@ -101,7 +101,7 @@
         (asset (gensym "ASSET"))
         (inputs (substitute-asset-paths inputs pool)))
     `(let ((,scene (when (window :main) (scene (window :main))))
-           (,asset (asset ',pool ',name)))
+           (,asset (asset ',pool ',name NIL)))
        (cond ((and ,asset (eql (type-of ,asset) ',type))
               (reinitialize-instance ,asset :inputs (list ,@inputs) ,@initargs)
               (when (and ,scene (resource ,asset))
