@@ -98,16 +98,16 @@ void main(){
 
 (defmethod (setf text) :before (text (entity text))
   (let ((vao (vertex-array entity))
-        (vbo (slot-value subject 'vbo))
-        (ebo (slot-value subject 'ebo))
-        (font (resource (font subject))))
+        (vbo (slot-value entity 'vbo))
+        (ebo (slot-value entity 'ebo))
+        (font (resource (font entity))))
     (when font
       (setf (size vao) (cl-fond:update-text font text
                                             (resource vbo)
                                             (resource ebo))))))
 
-(defmethod extent ((subject text))
-  (if (resource (font subject))
-      (cl-fond:compute-extent (resource (font subject))
-                              (text subject))
+(defmethod extent ((entity text))
+  (if (resource (font entity))
+      (cl-fond:compute-extent (resource (font entity))
+                              (text entity))
       '(:l 0 :r 0 :t 0 :b 0 :gap 0)))
