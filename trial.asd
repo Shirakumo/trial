@@ -64,7 +64,13 @@
                (:file "transforms" :depends-on ("package"))
                (:file "window" :depends-on ("package"))
                ;; Testing, remove for production.
-               (:file "workbench" :depends-on ("assets" "asset-pool" "formats" "main" "helpers"))
+               (:file "workbench" :depends-on ("assets" "asset-pool" "formats" "main" "helpers" "ui"))
+               (:module "ui"
+                :depends-on ("package" "shader-entity" "helpers" "input")
+                :components ((:file "package")
+                             (:file "base" :depends-on ("package"))
+                             (:file "layout" :depends-on ("package" "base"))
+                             (:file "elements" :depends-on ("package" "base"))))
                (:module "assets"
                 :depends-on ("package" "asset" "toolkit")
                 :components ((:file "texture")
