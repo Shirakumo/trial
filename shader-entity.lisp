@@ -25,18 +25,31 @@
 
 (defmethod compute-effective-shaders ((class shader-entity-class))
   (let ((effective-shaders ())
-        (inhibited (inhibit-shaders class)))
+        (inhibited (inhibit-shaders class))
+        (superclasses (remove 'shader-entity-class
+                              (c2mop:compute-class-precedence-list class)
+                              :test-not (lambda (type class) (typep class type)))))
+    ;; Check whether inhibits are effective
+    (loop for (name type) in inhibited
+          for super = (find name superclasses :key #'class-name)
+          do (cond ((not super)
+                    (warn "No superclass ~s in hierarchy of ~s. Cannot inhibit its shader ~s." name (class-of super) (class-name class))
+                    (setf (inhibit-shaders class) (remove (list name type) inhibited :test #'equal)))
+                   ((not (getf (direct-shaders super) type))
+                    (warn "No shader of type ~s is defined on ~s. Cannot inhibit it for ~s." type name (class-name class))
+                    (setf (inhibit-shaders class) (remove (list name type) inhibited :test #'equal)))))
+    ;; Compute effective inhibited list
+    (loop for super in superclasses
+          do (setf inhibited (append inhibited (inhibit-shaders super))))
     ;; Make all direct shaders effective
     (loop for (type shader) on (direct-shaders class) by #'cddr
           do (setf (getf effective-shaders type)
                    (list shader)))
     ;; Go through all superclasses in order
-    (loop for super in (c2mop:compute-class-precedence-list class)
-          do (when (typep super 'shader-entity-class)
-               (setf inhibited (append inhibited (inhibit-shaders super)))
-               (loop for (type shader) on (direct-shaders super) by #'cddr
-                     unless (find (list (class-name super) type) inhibited :test #'equal)
-                     do (pushnew shader (getf effective-shaders type)))))
+    (loop for super in superclasses
+          do (loop for (type shader) on (direct-shaders super) by #'cddr
+                   unless (find (list (class-name super) type) inhibited :test #'equal)
+                   do (pushnew shader (getf effective-shaders type))))
     ;; Compute effective single shader sources
     (loop for (type shaders) on effective-shaders by #'cddr
           do (setf (getf effective-shaders type)
