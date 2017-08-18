@@ -54,7 +54,7 @@
   ((framebuffer :initform NIL :accessor framebuffer)
    (uniforms :initarg :uniforms :initform () :accessor uniforms))
   (:metaclass shader-pass-class)
-  (:inhibit-shaders (shader-subject :fragment-shader)))
+  (:inhibit-shaders (shader-entity :fragment-shader)))
 
 (define-class-shader (shader-pass :fragment-shader)
   "#version 330 core")
