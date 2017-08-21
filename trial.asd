@@ -70,6 +70,7 @@
                 :components ((:file "package")
                              (:file "base" :depends-on ("package"))
                              (:file "layout" :depends-on ("package" "base"))
+                             (:file "input" :depends-on ("package" "base"))
                              (:file "elements" :depends-on ("package" "base"))))
                (:module "assets"
                 :depends-on ("package" "asset" "toolkit")

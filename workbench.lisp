@@ -11,8 +11,11 @@
                                    :extent (vec4 0 0 (width *context*) (height *context*))
                                    :layout (make-instance 'trial-ui::horizontal-layout :alignment :top)
                                    :color (vec 0.1 0.1 0.1 1))))
+        (setf (trial-ui::focused-p window) T)
         (enter (make-instance 'trial-ui::spacer :preferred-size (vec 0.1 0.1)) window)
-        (enter (make-instance 'trial-ui::label :text "1") window)
+        (let ((text-field (make-instance 'trial-ui::text-field)))
+          (enter text-field window)
+          (setf (trial-ui::active-p text-field) T))
         (enter (make-instance 'trial-ui::spacer :preferred-size (vec 0.1 0.1)) window)
         (let ((subwindow (make-instance 'trial-ui::ui-window
                                         :color (vec 0.2 0.2 0.2 1)
@@ -36,6 +39,9 @@
     (setf (vz (extent ui)) width)
     (setf (vw (extent ui)) height)
     (trial-ui::note-extent-change ui nil)))
+
+(define-handler (controller prop T) (ev)
+  (handle ev (unit :ui *loop*)))
 
 (progn
   (defmethod setup-pipeline ((main main))

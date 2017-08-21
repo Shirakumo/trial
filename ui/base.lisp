@@ -8,6 +8,7 @@
 
 (defclass ui-element (entity)
   ((focused-p :initform NIL :accessor focused-p)
+   (active-p :initform NIL :accessor active-p)
    (parent :initform NIL :initarg :parent :accessor parent)
    (extent :initform (vec4 0 0 0 0) :initarg :extent :accessor extent)
    (preferred-size :initform (vec2 1 1) :initarg :preferred-size :accessor preferred-size)
@@ -15,6 +16,14 @@
 
 (defmethod (setf visible-p) :after ((visibility null) (ui-element ui-element))
   (note-extent-change ui-element ui-element))
+
+(defmethod (setf active-p) :after ((active null) (ui-element ui-element))
+  (when (focused-p ui-element)
+    (setf (focused-p ui-element) NIL)))
+
+(defmethod (setf active-p) :after ((active (eql T)) (ui-element ui-element))
+  (unless (focused-p ui-element)
+    (setf (focused-p ui-element) T)))
 
 (defmethod (setf extent) :after (extent (ui-element ui-element))
   (note-extent-change ui-element ui-element))
@@ -66,6 +75,10 @@
     (when (layout pane)
       (apply-layout (layout pane) pane))))
 
+(defmethod (setf focused-p) :after ((value null) (pane pane))
+  (loop for child across (children pane)
+        do (setf (focused-p child) NIL)))
+
 (defmethod (setf layout) :after (layout (pane pane))
   (apply-layout (layout pane) pane))
 
@@ -115,6 +128,12 @@
 (defmethod register-object-for-pass :after (pass (pane pane))
   (loop for e across (children pane)
         do (register-object-for-pass pass e)))
+
+(defclass inactive-element (ui-element)
+  ())
+
+(defmethod (setf focused-p) (value (ui-element inactive-element))
+  NIL)
 
 (defvar *ui-layer* 0)
 
