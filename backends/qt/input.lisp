@@ -47,7 +47,8 @@
             (handler context))))
 
 (define-override (context mouse-move-event) (ev)
-  (let ((position (vec (q+:x (q+:pos-f ev)) (q+:y (q+:pos-f ev)))))
+  (let ((position (vec (q+:x (q+:pos-f ev))
+                       (- (q+:height context) (q+:y (q+:pos-f ev))))))
     (handle (make-instance 'mouse-move :old-pos (or previous-pos position) :pos position)
             (handler context))
     (setf previous-pos position)))

@@ -267,7 +267,7 @@
 
 (cl-glfw3:def-cursor-pos-callback ctx-pos (window x y)
   (%with-context
-    (let ((current (vec x y)))
+    (let ((current (vec x (- (second (cl-glfw3:get-window-size (window context))) y))))
       (handle (make-instance 'mouse-move
                              :pos current
                              :old-pos (mouse-pos context))

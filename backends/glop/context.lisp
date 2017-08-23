@@ -244,11 +244,11 @@
              (handler context)))
     (glop:mouse-motion-event
      (let ((current (vec (+ (glop:x event) (glop:dx event))
-                         (+ (glop:y event) (glop:dy event)))))
-       (setf (mouse-pos context) current)
-       (handle (make-instance 'mouse-move :old-pos (vec (glop:x event) (glop:y event))
-                                          :pos (vcopy current))
-               (handler context))))
+                         (- (glop:window-height context) (+ (glop:y event) (glop:dy event))))))
+       (handle (make-instance 'mouse-move :old-pos (or (mouse-pos context) current)
+                                          :pos current)
+               (handler context))
+       (setf (mouse-pos context) current)))
     (glop:resize-event
      (let ((previous-size (previous-size context)))
        (when (or (/= (glop:width event) (vx previous-size))
