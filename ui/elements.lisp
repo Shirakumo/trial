@@ -7,12 +7,14 @@
 (in-package #:org.shirakumo.fraf.trial.ui)
 
 (define-shader-entity flat-ui-element (vertex-entity colored-entity ui-element)
-  ()
+  ((background-color :initarg :background-color :accessor background-color))
   (:default-initargs
-   :color (vec 0.5 0.5 0.5 1)
+   :background-color (vec 0.5 0.5 0.5 1)
    :vertex-array NIL))
 
-(defmethod shared-initialize :after ((ui-element flat-ui-element) slots &key extent)
+(defmethod shared-initialize :after ((ui-element flat-ui-element) slots &key extent background-color)
+  (when background-color
+    (setf (color ui-element) background-color))
   (when extent
     (note-extent-change ui-element NIL)))
 
@@ -26,6 +28,23 @@
   (with-pushed-matrix (((model-matrix) :identity))
     (translate (vxy_ (extent ui-element)))
     (call-next-method)))
+
+(define-shader-entity highlightable-ui-element (flat-ui-element)
+  ((highlight-color :initarg :highlight-color :accessor highlight-color))
+  (:default-initargs
+   :highlight-color (vec 1.0 1.0 1.0 1)))
+
+(defmethod (setf focus) :after (value (ui-element highlightable-ui-element))
+  (setf (color ui-element) (case value
+                             ((NIL) (background-color ui-element))
+                             (T (highlight-color ui-element)))))
+
+(define-shader-entity bordered-ui-element (flat-ui-element)
+  ((border-size :initarg :border-size :accessor border-size)
+   (border-color :initarg :border-color :accessor border-color))
+  (:default-initargs
+   :border-size 1
+   :border-color (vec4 0.3 0.3 0.3 1)))
 
 (defclass spacer (inactive-element)
   ())
@@ -79,7 +98,7 @@
 (define-shader-entity label (flat-ui-element text-element inactive-element)
   ())
 
-(define-shader-entity text-field (flat-ui-element text-element)
+(define-shader-entity text-field (highlightable-ui-element text-element)
   ((cursor :initform 0 :accessor cursor)
    (vtext :initarg :text :accessor vtext))
   (:default-initargs
@@ -136,7 +155,7 @@
                 (setf (vtext text-field) (string-insert-pos (vtext text-field) (cursor text-field) (text event)))
                 (incf (cursor text-field) (length (text event)))))))))
 
-(define-shader-entity ui-window (flat-ui-element rectangular-pane)
+(define-shader-entity ui-window (highlightable-ui-element rectangular-pane)
   ())
 
 (defmethod paint :after ((window ui-window) target)
