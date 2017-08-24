@@ -287,6 +287,7 @@
    #:modifiers
    #:key-press
    #:key-release
+   #:text-entered
    #:mouse-event
    #:pos
    #:mouse-button-event

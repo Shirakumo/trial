@@ -199,7 +199,6 @@
        ((:hyper-l :hyper-r)
         (pushnew :hyper (modifiers context))))
      (handle (make-instance 'key-press :key (glop:keysym event)
-                                       :text (glop:text event)
                                        :modifiers (modifiers context))
              (handler context)))
     (glop:key-release-event
@@ -216,9 +215,11 @@
        ((:hyper-l :hyper-r)
         (setf (modifiers context) (delete :hyper (modifiers context)))))
      (handle (make-instance 'key-release :key (glop:keysym event)
-                                         :text (glop:text event)
                                          :modifiers (modifiers context))
-             (handler context)))
+             (handler context))
+     (when (and (glop:text event) (string/= "" (glop:text event)))
+       (handle (make-instance 'text-entered :text (glop:text event))
+               (handler context))))
     (glop:button-press-event
      (case (glop:button event)
        (4 (v:debug :trial.input "Mouse wheel: ~a" 1)

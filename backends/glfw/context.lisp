@@ -238,7 +238,9 @@
 
 (cl-glfw3:def-char-callback ctx-char (window char)
   (%with-context
-    (setf (key-text context) (string char))))
+    (handle (make-instance 'text-entered
+                           :text char)
+            (handler context))))
 
 (cl-glfw3:def-mouse-button-callback ctx-button (window button action modifiers)
   (declare (ignore modifiers))

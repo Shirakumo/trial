@@ -141,19 +141,11 @@
       (:home
        (setf (cursor text-field) 0))
       (:end
-       (setf (cursor text-field) (length (vtext text-field))))
-      ((:left-control :right-control :left-alt :right-alt :left-shift :right-shift :shift))
-      (T (cond ((find :left-control (modifiers event))
-                (case key
-                  (:c)
-                  (:v)
-                  (:x)
-                  (:k
-                   (setf (vtext text-field) "")
-                   (setf (cursor text-field) 0))))
-               (T
-                (setf (vtext text-field) (string-insert-pos (vtext text-field) (cursor text-field) (text event)))
-                (incf (cursor text-field) (length (text event)))))))))
+       (setf (cursor text-field) (length (vtext text-field)))))))
+
+(defmethod handle ((event text-entered) (text-field text-field))
+  (setf (vtext text-field) (string-insert-pos (vtext text-field) (cursor text-field) (text event)))
+  (incf (cursor text-field) (length (text event))))
 
 (define-shader-entity ui-window (highlightable-ui-element rectangular-pane)
   ())

@@ -11,11 +11,9 @@
 
 (defclass keyboard-event (input-event)
   ((key :initarg :key :reader key)
-   (text :initarg :text :reader text)
    (modifiers :initarg :modifiers :reader modifiers))
   (:default-initargs
    :key (error "KEY required.")
-   :text (error "TEXT required.")
    :modifiers ()))
 
 (defmethod print-object ((event keyboard-event) stream)
@@ -27,6 +25,11 @@
 
 (defclass key-release (keyboard-event)
   ())
+
+(defclass text-entered (keyboard-event)
+  ((text :initarg :text :reader text))
+  (:default-initargs
+   :text (error "TEXT required.")))
 
 (defclass mouse-event (input-event)
   ((pos :initarg :pos :reader pos))
