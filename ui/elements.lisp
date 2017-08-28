@@ -6,40 +6,43 @@
 
 (in-package #:org.shirakumo.fraf.trial.ui)
 
-(define-shader-entity flat-ui-element (vertex-entity colored-entity ui-element)
+(define-shader-entity flat-widget (vertex-entity colored-entity widget)
   ((background-color :initarg :background-color :accessor background-color))
   (:default-initargs
    :background-color (vec 0.5 0.5 0.5 1)
    :vertex-array NIL))
 
-(defmethod shared-initialize :after ((ui-element flat-ui-element) slots &key extent background-color)
+(defmethod shared-initialize :after ((widget flat-widget) slots &key extent background-color)
   (when background-color
-    (setf (color ui-element) background-color))
+    (setf (color widget) background-color))
   (when extent
-    (note-extent-change ui-element NIL)))
+    (note-extent-change widget NIL)))
 
-(defmethod note-extent-change :after ((ui-element flat-ui-element) (other null))
-  (finalize (vertex-array ui-element))
-  (setf (vertex-array ui-element)
-        (change-class (make-rectangle (width ui-element) (height ui-element) :align :topleft)
+(defmethod note-extent-change :after ((widget flat-widget) (other null))
+  (finalize (vertex-array widget))
+  (setf (vertex-array widget)
+        (change-class (make-rectangle (width widget) (height widget) :align :topleft)
                       'vertex-array :load T)))
 
-(defmethod paint :around ((ui-element ui-element) target)
+(defmethod paint :around ((widget widget) target)
   (with-pushed-matrix (((model-matrix) :identity))
-    (translate (vxy_ (extent ui-element)))
+    (translate (vxy_ (extent widget)))
     (call-next-method)))
 
-(define-shader-entity highlightable-ui-element (flat-ui-element)
-  ((highlight-color :initarg :highlight-color :accessor highlight-color))
+(define-shader-entity highlightable-widget (flat-widget control)
+  ((highlight-color :initarg :highlight-color :accessor highlight-color)
+   (active-color :initarg :active-color :accessor active-color))
   (:default-initargs
-   :highlight-color (vec 1.0 1.0 1.0 1)))
+   :highlight-color (vec 0.8 0.8 0.8 1)
+   :active-color (vec 1.0 1.0 1.0 1)))
 
-(defmethod (setf focus) :after (value (ui-element highlightable-ui-element))
-  (setf (color ui-element) (case value
-                             ((NIL) (background-color ui-element))
-                             (T (highlight-color ui-element)))))
+(defmethod (setf status) :after (value (widget highlightable-widget))
+  (setf (color widget) (ecase value
+                         (:background (background-color widget))
+                         (:highlighted (highlight-color widget))
+                         (:active (active-color widget)))))
 
-(define-shader-entity bordered-ui-element (flat-ui-element)
+(define-shader-entity bordered-widget (flat-widget)
   ((border-size :initarg :border-size :accessor border-size)
    (border-color :initarg :border-color :accessor border-color))
   (:default-initargs
@@ -49,7 +52,7 @@
 (defclass spacer (inactive-element)
   ())
 
-(defmethod note-extent-change ((ui-element spacer) (other null)))
+(defmethod note-extent-change ((widget spacer) (other null)))
 
 (define-shader-entity text-element ()
   ((text-asset :accessor text-asset)
@@ -95,61 +98,5 @@
     (translate-by (vx2 offset) (vy2 offset) 0)
     (paint (text-asset text-element) target)))
 
-(define-shader-entity label (flat-ui-element text-element inactive-element)
+(define-shader-entity label (flat-widget text-element inactive-element)
   ())
-
-(define-shader-entity text-field (highlightable-ui-element text-element)
-  ((cursor :initform 0 :accessor cursor)
-   (vtext :initarg :text :accessor vtext))
-  (:default-initargs
-   :align (list :left :center)))
-
-(defun string-remove-pos (string pos)
-  (let ((new (make-array (1- (length string)) :element-type 'character)))
-    (replace new string :end1 pos)
-    (replace new string :start1 pos :start2 (1+ pos))
-    new))
-
-(defun string-insert-pos (string pos stuff)
-  (let ((new (make-array (+ (length string) (length stuff)) :element-type 'character)))
-    (replace new string :end1 pos)
-    (replace new stuff :start1 pos)
-    (replace new string :start1 (+ pos (length stuff)) :start2 pos)
-    new))
-
-;; This is fucking stupid. Do something more sensible.
-(defmethod (setf cursor) :after (pos (text-field text-field))
-  (setf (text text-field) (string-insert-pos (vtext text-field) pos "|")))
-
-(defmethod handle ((event key-release) (text-field text-field))
-  (let ((key (key event)))
-    (case key
-      (:backspace
-       (when (<= 1 (cursor text-field) (length (text text-field)))
-         (setf (vtext text-field) (string-remove-pos (vtext text-field) (1- (cursor text-field))))
-         (decf (cursor text-field))))
-      (:delete
-       (when (< -1 (cursor text-field) (length (vtext text-field)))
-         (setf (vtext text-field) (string-remove-pos (vtext text-field) (cursor text-field)))
-         (setf (cursor text-field) (cursor text-field))))
-      (:left
-       (when (< 0 (cursor text-field))
-         (decf (cursor text-field))))
-      (:right
-       (when (< (cursor text-field) (length (vtext text-field)))
-         (incf (cursor text-field))))
-      (:home
-       (setf (cursor text-field) 0))
-      (:end
-       (setf (cursor text-field) (length (vtext text-field)))))))
-
-(defmethod handle ((event text-entered) (text-field text-field))
-  (setf (vtext text-field) (string-insert-pos (vtext text-field) (cursor text-field) (text event)))
-  (incf (cursor text-field) (length (text event))))
-
-(define-shader-entity ui-window (highlightable-ui-element rectangular-pane)
-  ())
-
-(defmethod paint :after ((window ui-window) target)
-  (loop for e across (children window)
-        do (paint e target)))

@@ -11,6 +11,9 @@
   (:shadow #:scene #:entity #:load #:update)
   (:import-from #:static-vectors #:static-vector-pointer)
   (:import-from #:flow #:port)
+  ;; array-container.lisp
+  (:export
+   #:array-container)
   ;; asset-pool.lisp
   (:export
    #:pool

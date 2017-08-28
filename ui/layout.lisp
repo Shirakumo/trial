@@ -10,7 +10,7 @@
   ())
 
 (defmethod apply-layout :around ((layout layout) (pane pane))
-  (when (/= 0 (length (children pane)))
+  (when (/= 0 (length (objects pane)))
     (call-next-method)))
 
 (defclass horizontal-layout (layout)
@@ -18,7 +18,7 @@
 
 (defmethod apply-layout ((layout horizontal-layout) (pane pane))
   (with-vec4 (left top total-width total-height) (extent pane)
-    (let* ((children (children pane))
+    (let* ((children (objects pane))
            (alignment (alignment layout))
            (scale (/ 1 (loop for e across children sum (preferred-width e)))))
       (loop for e across children
@@ -40,7 +40,7 @@
 
 (defmethod apply-layout ((layout vertical-layout) (pane pane))
   (with-vec4 (left top total-width total-height) (extent pane)
-    (let* ((children (children pane))
+    (let* ((children (objects pane))
            (alignment (alignment layout))
            (scale (/ 1 (loop for e across children sum (preferred-height e)))))
       (loop for e across children

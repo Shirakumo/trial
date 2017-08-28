@@ -23,6 +23,7 @@
   :description "A flexible and extensible video game engine."
   :homepage "https://github.com/Shirakumo/trial"
   :components ((:file "package")
+               (:file "array-container" :depends-on ("package"))
                (:file "asset" :depends-on ("package" "toolkit" "context"))
                (:file "asset-pool" :depends-on ("package" "asset" "window"))
                (:file "attributes" :depends-on ("package"))
@@ -68,10 +69,13 @@
                (:module "ui"
                 :depends-on ("package" "shader-entity" "helpers" "input")
                 :components ((:file "package")
-                             (:file "base" :depends-on ("package"))
-                             (:file "layout" :depends-on ("package" "base"))
-                             (:file "input" :depends-on ("package" "base"))
-                             (:file "elements" :depends-on ("package" "base"))))
+                             (:file "widget" :depends-on ("package"))
+                             (:file "pane" :depends-on ("package" "widget"))
+                             (:file "layout" :depends-on ("package" "widget"))
+                             (:file "input" :depends-on ("package" "widget"))
+                             (:file "elements" :depends-on ("package" "widget" "input"))
+                             (:file "text-field" :depends-on ("package" "elements"))
+                             (:file "ui-window" :depends-on ("package" "pane" "elements"))))
                (:module "assets"
                 :depends-on ("package" "asset" "toolkit")
                 :components ((:file "texture")
