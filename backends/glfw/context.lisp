@@ -12,7 +12,6 @@
   ((title :initform "" :accessor title)
    (cursor-visible :initform T :accessor cursor-visible)
    (mouse-pos :initform (vec 0 0) :accessor mouse-pos)
-   (key-text :initform "" :accessor key-text)
    (initargs :initform NIL :accessor initargs)
    (window :initform NIL :accessor window))
   (:default-initargs
@@ -222,24 +221,21 @@
     (case action
       (:press
        (v:debug :trial.input "Key pressed: ~a" key)
-       (setf (key-text context) "")
        (handle (make-instance 'key-press
                               :key (glfw-key->key key)
-                              :text ""
                               :modifiers modifiers)
                (handler context)))
       (:release
        (v:debug :trial.input "Key released: ~a" key)
        (handle (make-instance 'key-release
                               :key (glfw-key->key key)
-                              :text (key-text context)
                               :modifiers modifiers)
                (handler context))))))
 
 (cl-glfw3:def-char-callback ctx-char (window char)
   (%with-context
     (handle (make-instance 'text-entered
-                           :text char)
+                           :text (string char))
             (handler context))))
 
 (cl-glfw3:def-mouse-button-callback ctx-button (window button action modifiers)
