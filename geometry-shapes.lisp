@@ -149,16 +149,16 @@
     (loop with step = (/ (* 2 PI) segments)
           for i1 = (- step) then i2
           for i2 from 0 to (* 2 PI) by step
-          for e1b = (vec (+ x (* size (cos i1))) (+ y (* size (sin i1))) z)
-          for e2b = (vec (+ x (* size (cos i2))) (+ y (* size (sin i2))) z)
-          for e1t = (nv+ (vec 0 0 height) e1b)
-          for e2t = (nv+ (vec 0 0 height) e2b)
+          for e1b = (vec (+ x (* size (cos i1))) y (+ z (* size (sin i1))))
+          for e2b = (vec (+ x (* size (cos i2))) y (+ z (* size (sin i2))))
+          for e1t = (nv+ (vec 0 height 0) e1b)
+          for e2t = (nv+ (vec 0 height 0) e2b)
           do ;; Bottom disc
              (vertex :position (vec x y z))
              (vertex :position e2b)
              (vertex :position e1b)
              ;; Top Disc
-             (vertex :position (vec x y (+ height z)))
+             (vertex :position (vec x (+ height y) z))
              (vertex :position e1t)
              (vertex :position e2t)
              ;; Wall
@@ -175,16 +175,56 @@
           for i1 = (- step) then i2
           for i2 from 0 to (* 2 PI) by step
           do ;; Cone top
-             (vertex :position (vec x y (+ z height)))
-             (vertex :position (vec (+ x (* size (cos i1))) (+ y (* size (sin i1))) z))
-             (vertex :position (vec (+ x (* size (cos i2))) (+ y (* size (sin i2))) z))
+             (vertex :position (vec x (+ y height) z))
+             (vertex :position (vec (+ x (* size (cos i1))) y (+ z (* size (sin i1)))))
+             (vertex :position (vec (+ x (* size (cos i2))) y (+ z (* size (sin i2)))))
              ;; Bottom disc
              (vertex :position (vec x y z))
-             (vertex :position (vec (+ x (* size (cos i2))) (+ y (* size (sin i2))) z))
-             (vertex :position (vec (+ x (* size (cos i1))) (+ y (* size (sin i1))) z)))))
-
-(defun make-torus (size thickness &key mesh pack (x 0) (y 0) (z 0))
-  )
+             (vertex :position (vec (+ x (* size (cos i2))) y (+ z (* size (sin i2)))))
+             (vertex :position (vec (+ x (* size (cos i1))) y (+ z (* size (sin i1))))))))
 
 (defun make-tube (size height inner-size &key (segments 32) mesh pack (x 0) (y 0) (z 0))
+  (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
+    (loop with step = (/ (* 2 PI) segments)
+          for i1 = (- step) then i2
+          for i2 from 0 to (* 2 PI) by step
+          for e1b = (vec (+ x (* size (cos i1))) y (+ z (* size (sin i1))))
+          for e2b = (vec (+ x (* size (cos i2))) y (+ z (* size (sin i2))))
+          for e1t = (nv+ (vec 0 height 0) e1b)
+          for e2t = (nv+ (vec 0 height 0) e2b)
+          
+          for f1b = (vec (+ x (* inner-size (cos i1))) y (+ z (* inner-size (sin i1))))
+          for f2b = (vec (+ x (* inner-size (cos i2))) y (+ z (* inner-size (sin i2))))
+          for f1t = (nv+ (vec 0 height 0) f1b)
+          for f2t = (nv+ (vec 0 height 0) f2b)
+          do ;; Bottom ring
+          (vertex :position f1b)
+          (vertex :position e1b)
+          (vertex :position e2b)
+          (vertex :position e2b)
+          (vertex :position f2b)
+          (vertex :position f1b)
+          ;; Top ring
+          (vertex :position f2t)
+          (vertex :position e2t)
+          (vertex :position e1t)
+          (vertex :position e1t)
+          (vertex :position f1t)
+          (vertex :position f2t)
+          ;; ;; Outer wall
+          (vertex :position e2b)
+          (vertex :position e1b)
+          (vertex :position e1t)
+          (vertex :position e1t)
+          (vertex :position e2t)
+          (vertex :position e2b)
+          ;; ;; Inner wall
+          (vertex :position f2b)
+          (vertex :position f1t)
+          (vertex :position f1b)
+          (vertex :position f1t)
+          (vertex :position f2b)
+          (vertex :position f2t))))
+
+(defun make-torus (size thickness &key mesh pack (x 0) (y 0) (z 0))
   )
