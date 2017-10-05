@@ -169,11 +169,22 @@
              (vertex :position e2b)
              (vertex :position e2t))))
 
+(defun make-cone (size height &key (segments 32) mesh pack (x 0) (y 0) (z 0))
+  (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
+    (loop with step = (/ (* 2 PI) segments)
+          for i1 = (- step) then i2
+          for i2 from 0 to (* 2 PI) by step
+          do ;; Cone top
+             (vertex :position (vec x y (+ z height)))
+             (vertex :position (vec (+ x (* size (cos i1))) (+ y (* size (sin i1))) z))
+             (vertex :position (vec (+ x (* size (cos i2))) (+ y (* size (sin i2))) z))
+             ;; Bottom disc
+             (vertex :position (vec x y z))
+             (vertex :position (vec (+ x (* size (cos i2))) (+ y (* size (sin i2))) z))
+             (vertex :position (vec (+ x (* size (cos i1))) (+ y (* size (sin i1))) z)))))
+
 (defun make-torus (size thickness &key mesh pack (x 0) (y 0) (z 0))
   )
 
 (defun make-tube (size height inner-size &key (segments 32) mesh pack (x 0) (y 0) (z 0))
-  )
-
-(defun make-cone (size height &key (segments 32) mesh pack (x 0) (y 0) (z 0))
   )

@@ -6,7 +6,7 @@
 (define-shader-entity thing (vertex-entity)
   ()
   (:default-initargs
-   :vertex-array (make-asset 'mesh (list (make-cylinder 30 50)))))
+   :vertex-array (make-asset 'mesh (list (make-cone 30 50)))))
 
 (progn
   (defmethod setup-scene ((main main))
