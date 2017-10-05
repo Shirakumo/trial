@@ -63,6 +63,8 @@
 
 (defgeneric register-object-for-pass (pass object))
 (defgeneric shader-program-for-pass (pass object))
+(defgeneric coerce-pass-shader (pass class type spec))
+(defgeneric determine-effective-shader-class (class))
 
 (defmethod finalize :after ((pass shader-pass))
   (when (framebuffer pass)
