@@ -123,7 +123,7 @@
             for zr0 = (cos lat0)
             for z1 = (sin lat1)
             for zr1 = (cos lat1)
-            do (loop for j from lng downto 0 by 2
+            do (loop for j from lng downto 0
                      for l1 = (* 2 PI (/ (- j 1) lng)) for l2 = (* 2 PI (/ (- j 2) lng))
                      for x1 = (cos l1) for x2 = (cos l2)
                      for y1 = (sin l1) for y2 = (sin l2)
@@ -137,33 +137,37 @@
 
 (defun make-disc (size &key (segments 32) mesh pack (x 0) (y 0) (z 0))
   (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
-    (loop for i from 0 to (* 2 PI) by (/ (* 2 PI) segments)
+    (loop with step = (/ (* 2 PI) segments)
+          for i1 = (- step) then i2
+          for i2 from 0 to (* 2 PI) by step
           do (vertex :position (vec x y z))
-             (vertex :position (vec (+ x (* size (cos (1+ i)))) (+ y (* size (sin (1+ i)))) z))
-             (vertex :position (vec (+ x (* size (cos      i))) (+ y (* size (sin      i))) z)))))
+             (vertex :position (vec (+ x (* size (cos i1))) (+ y (* size (sin i1))) z))
+             (vertex :position (vec (+ x (* size (cos i2))) (+ y (* size (sin i2))) z)))))
 
 (defun make-cylinder (size height &key (segments 32) mesh pack (x 0) (y 0) (z 0))
   (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
-    (loop for i from 0 to (* 2 PI) by (/ (* 2 PI) segments)
-          for e1b = (vec (+ x (* size (cos      i))) (+ y (* size (sin      i))) z)
-          for e2b = (vec (+ x (* size (cos (1+ i)))) (+ y (* size (sin (1+ i)))) z)
-          for e1t = (nv+ (vec 0 height 0) e1b)
-          for e2t = (nv+ (vec 0 height 0) e2b)
+    (loop with step = (/ (* 2 PI) segments)
+          for i1 = (- step) then i2
+          for i2 from 0 to (* 2 PI) by step
+          for e1b = (vec (+ x (* size (cos i1))) (+ y (* size (sin i1))) z)
+          for e2b = (vec (+ x (* size (cos i2))) (+ y (* size (sin i2))) z)
+          for e1t = (nv+ (vec 0 0 height) e1b)
+          for e2t = (nv+ (vec 0 0 height) e2b)
           do ;; Bottom disc
              (vertex :position (vec x y z))
-             (vertex :position e1b)
              (vertex :position e2b)
+             (vertex :position e1b)
              ;; Top Disc
-             (vertex :position (vec x (+ y height) z))
-             (vertex :position e2t)
+             (vertex :position (vec x y (+ height z)))
              (vertex :position e1t)
+             (vertex :position e2t)
              ;; Wall
              (vertex :position e2b)
+             (vertex :position e1t)
              (vertex :position e1b)
              (vertex :position e1t)
-             (vertex :position e1t)
-             (vertex :position e2t)
-             (vertex :position e2b))))
+             (vertex :position e2b)
+             (vertex :position e2t))))
 
 (defun make-torus (size thickness &key mesh pack (x 0) (y 0) (z 0))
   )

@@ -6,13 +6,13 @@
 (define-shader-entity thing (vertex-entity)
   ()
   (:default-initargs
-   :vertex-array (make-sphere 30)))
+   :vertex-array (make-asset 'mesh (list (make-cylinder 30 50)))))
 
 (progn
   (defmethod setup-scene ((main main))
     (let ((scene (scene main)))
       (enter (make-instance 'thing) scene)
-      (enter (make-instance 'freeroam-camera) scene)))
+      (enter (make-instance 'editor-camera) scene)))
 
   (maybe-reload-scene))
 
