@@ -191,7 +191,9 @@
                     (loop with window = (window (trial:context main))
                           until (cl-glfw3:window-should-close-p window)
                           do (cl-glfw3:poll-events)
-                             (bt:thread-yield))
+                             ;; Apparently bt:thread-yield is a no-op sometimes,
+                             ;; making this loop consume the core. Sleep instead.
+                             (sleep 0.001))
                  (finalize main))))))
     #+darwin
     (tmt:with-body-in-main-thread ()
