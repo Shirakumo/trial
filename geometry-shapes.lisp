@@ -19,11 +19,10 @@
 
 ;; FIXME: Allow specifying which attributes to include
 ;; FIXME: Generate normals
+;; FIXME: Generate UVs
 ;; FIXME: Add shapes:
 ;;        - Box
 ;;        - Torus
-;;        - Tube
-;;        - Cone
 ;;        - Arrow
 
 (defun make-rectangle (w h &key (align :center) mesh pack (x 0) (y 0) (z 0))
@@ -230,4 +229,5 @@
           (vertex :position f2t))))
 
 (defun make-torus (size thickness &key mesh pack (x 0) (y 0) (z 0))
-  )
+  (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
+    ))
