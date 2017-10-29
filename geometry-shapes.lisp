@@ -90,19 +90,18 @@
 
 (defun make-quad-grid (size x-count z-count &key mesh pack (x 0) (y 0) (z 0))
   (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
-    (let ((s (/ size 2)))
-      (loop repeat x-count
-            for xc from (* x-count size -0.5) by size
-            do (loop repeat z-count
-                     for zc from (* z-count size -0.5) by size
-                     do (let ((l (+ x (- xc s))) (r (+ x (+ xc s)))
-                              (u (+ z (- zc s))) (b (+ z (+ zc s))))
-                          (vertex :position (vec r y u))
-                          (vertex :position (vec r y b))
-                          (vertex :position (vec l y b))
-                          (vertex :position (vec l y b))
-                          (vertex :position (vec l y u))
-                          (vertex :position (vec r y u))))))))
+    (loop repeat x-count
+          for xc from (* x-count size -0.5) by size
+          do (loop repeat z-count
+                   for zc from (* z-count size -0.5) by size
+                   do (let ((l (+ x xc)) (r (+ x xc size))
+                            (u (+ z zc)) (b (+ z zc size)))
+                        (vertex :position (vec r y u))
+                        (vertex :position (vec r y b))
+                        (vertex :position (vec l y b))
+                        (vertex :position (vec l y b))
+                        (vertex :position (vec l y u))
+                        (vertex :position (vec r y u)))))))
 
 (defun make-line-grid (size w h &key mesh pack (x 0) (y 0) (z 0))
   (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex :face-length 2)) :pack pack)
