@@ -41,6 +41,7 @@
                (:file "gamepad" :depends-on ("package" "event-loop" "toolkit"))
                ;; (:file "gamepad-db" :depends-on ("package" "gamepad"))
                (:file "geometry" :depends-on ("package" "toolkit" "static-vector" ("assets" "vertex-array")))
+               (:file "geometry-clipmap" :depends-on ("package" "geometry-shapes" "shader-subject"))
                (:file "geometry-shapes" :depends-on ("package" "geometry" "asset-pool"))
                (:file "helpers" :depends-on ("package" "entity" "transforms" "shader-subject" "shader-pass" "asset"))
                (:file "input" :depends-on ("package" "event-loop" "retention"))
@@ -66,7 +67,7 @@
                (:file "transforms" :depends-on ("package"))
                (:file "window" :depends-on ("package"))
                ;; Testing, remove for production.
-               (:file "workbench" :depends-on ("assets" "asset-pool" "formats" "main" "helpers" "ui"))
+               (:file "workbench" :depends-on ("assets" "asset-pool" "formats" "main" "helpers" "geometry-clipmap" "ui"))
                (:module "ui"
                 :depends-on ("package" "shader-entity" "helpers" "input")
                 :components ((:file "package")
