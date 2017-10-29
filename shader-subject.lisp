@@ -9,6 +9,11 @@
 (defclass shader-subject-class (subject-class shader-entity-class)
   ())
 
+(defmethod (setf effective-shaders) :after (shaders (class shader-subject-class))
+  ;; Mark as obsolete
+  (setf (class-redefinition-event-sent class) NIL)
+  (make-instances-obsolete class))
+
 (defclass shader-subject (subject shader-entity)
   ()
   (:metaclass shader-subject-class))
