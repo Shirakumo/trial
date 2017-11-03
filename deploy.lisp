@@ -23,7 +23,8 @@
 (deploy:define-hook (:boot trial) ()
   (v:restart-global-controller)
   (cl-monitors:init)
-  (init-gamepad-system))
+  (init-gamepad-system)
+  (setf *random-state* (make-random-state T)))
 
 (deploy:define-library cl-opengl-bindings::opengl
   :dont-deploy T)
