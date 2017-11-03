@@ -11,7 +11,7 @@
    (clipmap-block :accessor clipmap-block)
    (clipmap-fixup :accessor clipmap-fixup)
    (clipmap-trims :accessor clipmap-trims)
-   (texture :initarg :texture :accessore texture)))
+   (texture :initarg :texture :accessor texture)))
 
 (defmethod initialize-instance :after ((clipmap clipmap) &key n)
   (setf (clipmap-block clipmap) (make-asset 'mesh (list (make-clipmap-block n))))
