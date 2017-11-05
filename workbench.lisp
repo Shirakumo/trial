@@ -4,13 +4,18 @@
   :base 'trial)
 
 (define-asset (workbench heightmap) texture
-    (#p"/home/linus/output.png"))
+    (#p"/home/linus/output1.png"
+     #p"/home/linus/output2.png"
+     #p"/home/linus/output3.png")
+  :target :texture-2d-array
+  :min-filter :linear
+  :wrapping :clamp)
 
 (progn
   (defmethod setup-scene ((main main))
     (let ((scene (scene main)))
       (gl:polygon-mode :front-and-back :line)
-      (enter (make-instance 'clipmap :n 39 :texture (asset 'workbench 'heightmap)) scene)
+      (enter (make-instance 'clipmap :n 127 :levels 3 :texture (asset 'workbench 'heightmap)) scene)
       (enter (make-instance 'vertex-entity :vertex-array (make-asset 'mesh (list (make-cone 0.0001 0.5 :segments 16)))) scene)
       (enter (make-instance 'vertex-entity :vertex-array (make-asset 'mesh (list (make-quad-grid 1 1 1)))) scene)
       ;; (enter (make-instance 'vertex-entity :vertex-array (make-asset 'mesh (list (make-quad-grid (/ 16) 4 2)))) scene)
