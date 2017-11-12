@@ -90,10 +90,10 @@ out vec2 uv;
 
 void main(){
    vec2 world = (position.xz + block) * scale + offset;
-   vec2 uv_inner = position.xz + 0.5 + block;
-   vec2 uv_outer = (position.xz + 0.5 + block)/2;
+   vec2 uv_inner = position.xz + 0.5 + block + offset;
+   vec2 uv_outer = (position.xz + 1 + block - offsetp)/2 + offset;
 
-   vec2 alpha = clamp(abs(world/scale)*10-4, 0, 1);
+   vec2 alpha = clamp(abs(world/scale)*10-3.8, 0, 1);
    a = max(alpha.x, alpha.y);
    if(level == 0) a = 0;
 
