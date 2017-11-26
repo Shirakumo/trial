@@ -85,9 +85,17 @@ void main(){
   gl_Position = projection_matrix * view_matrix * model_matrix * vec4(position, 1.0f);
 }")
 
-;; FIXME: Make sure to coerce for proper colour format!
 (define-shader-entity colored-entity ()
-  ((color :initarg :color :initform (vec 0 0 1 1) :accessor color)))
+  ((color :initform (vec 0 0 1 1) :reader color)))
+
+(defmethod shared-initialize :after ((entity colored-entity) slots &key color)
+  (when color (setf color entity) color))
+
+(defmethod (setf color) ((color vec3) (entity colored-entity))
+  (setf (color entity) (vec4 (vx color) (vy color) (vz color) 1)))
+
+(defmethod (setf color) ((color vec4) (entity colored-entity))
+  (setf (slot-value entity 'color) color))
 
 (defmethod paint :before ((obj colored-entity) (pass shader-pass))
   (let ((shader (shader-program-for-pass pass obj)))
