@@ -398,6 +398,14 @@
            (/ (sb-ext:dynamic-space-size) 1024.0)))
   #-sbcl (values 1 1))
 
+(defun gl-vendor ()
+  (let ((vendor (gl:get-string :vendor)))
+    (cond ((search "Intel" vendor) :intel)
+          ((search "NVIDIA" vendor) :nvidia)
+          ((search "ATI" vendor) :amd)
+          ((search "AMD" vendor) :amd)
+          (T :unknown))))
+
 (defun check-texture-size (width height)
   (let ((max (gl:get* :max-texture-size)))
     (when (< max (max width height))
