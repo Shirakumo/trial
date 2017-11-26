@@ -146,6 +146,12 @@
 (defmethod determine-effective-shader-class ((class standard-class))
   NIL)
 
+;; FIXME: Maybe consider determining effective class for each
+;;        individual shader stage as they might each change
+;;        at different levels and could thus be cached more
+;;        effectively.
+;; FIXME: Share SHADER assets between shader programs by caching
+;;        them... somewhere somehow?
 (defmethod determine-effective-shader-class ((class shader-entity-class))
   (if (direct-shaders class)
       class
