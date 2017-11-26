@@ -41,6 +41,9 @@
 (defmethod finalize-resource ((type (eql 'texture)) resource)
   (gl:delete-textures (list resource)))
 
+(defun texparam-format (object)
+  (or (fourth object) :rgba))
+
 (defun object-to-texparams (object)
   (destructuring-bind (file/bits &optional width height (format :rgba))
       object
@@ -106,9 +109,8 @@
       (with-cleanup-on-failure (offload asset)
         (gl:bind-texture target texture)
         (images-to-textures target images)
-        (unless (eql target :texture-2d-multisample)
-          ;; FIXME: generating mipmaps for depth-stencil textures is apparently not
-          ;;        allowed on all drivers.
+        (unless (or (eql target :texture-2d-multisample)
+                    (find (texparam-format (first images)) '(:depth-component :depth-stencil)))
           (when (find min-filter '(:linear-mipmap-linear :linear-mipmap-nearest
                                    :nearest-mipmap-linear :nearest-mipmap-nearest))
             (gl:generate-mipmap target))
