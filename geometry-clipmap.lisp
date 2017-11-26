@@ -157,9 +157,6 @@ void main(){
     color = vec4(s * c, 1.0);
 }")
 
-(setf (location (unit :camera (scene (window :main))))
-      (vec 0 0.28 0))
-
 (defun make-clipmap-block (n)
   (let ((m (1- (/ (1+ n) 4)))
         (s (/ (1- n))))
