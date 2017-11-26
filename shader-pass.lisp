@@ -84,21 +84,24 @@
        ,direct-slots
        ,@options)))
 
+(defun generate-prepare-pass-program (&optional (units (gl:get* :max-texture-image-units)))
+  (check-type units (integer 1))
+  (let ((units (loop for i downfrom (1- units) to 0 collect i)))
+    `(lambda (pass program)
+       (loop with texture-index = ',units
+             with texture-name = ',(loop for unit in units collect
+                                         (intern (format NIL "~a~a" :texture unit) "KEYWORD"))
+             for port in (flow:ports pass)
+             do (when (typep port 'uniform-port)
+                  (setf (uniform program (uniform-name port)) (pop texture-index))
+                  (gl:active-texture (pop texture-name))
+                  (gl:bind-texture :texture-2d (resource (texture port)))))
+       (loop for (name value) in (uniforms pass)
+             do (setf (uniform program name) value)))))
+
 (defun prepare-pass-program (pass program)
-  ;; FIXME: Query for max number of textures available and build
-  ;;        this dynamically based on that number.
-  (loop with texture-index = '(15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0)
-        with texture-name = '(:texture15 :texture14 :texture13 :texture12
-                              :texture11 :texture10 :texture9  :texture8
-                              :texture7  :texture6  :texture5  :texture4
-                              :texture3  :texture2  :texture1  :texture0)
-        for port in (flow:ports pass)
-        do (when (typep port 'uniform-port)
-             (setf (uniform program (uniform-name port)) (pop texture-index))
-             (gl:active-texture (pop texture-name))
-             (gl:bind-texture :texture-2d (resource (texture port)))))
-  (loop for (name value) in (uniforms pass)
-        do (setf (uniform program name) value)))
+  (funcall (compile 'prepare-pass-program (generate-prepare-pass-program))
+           pass program))
 
 (define-shader-pass per-object-pass ()
   ((assets :initform (make-hash-table :test 'eql) :accessor assets)))
