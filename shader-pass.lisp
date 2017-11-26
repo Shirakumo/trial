@@ -106,11 +106,17 @@
 (define-handler (per-object-pass update-shader-for-redefined-subject subject-class-redefined) (ev subject-class)
   (let ((assets (assets per-object-pass)))
     (flet ((refresh (class)
-             (let ((loaded (and (gethash class assets) (resource (gethash class assets)))))
-               (when loaded (offload (gethash class assets)))
+             (let ((previous (gethash class assets)))
                (remhash class assets)
                (register-object-for-pass per-object-pass class)
-               (when loaded (load (gethash class assets))))))
+               (when (and previous (resource previous))
+                 (restart-case
+                     (progn
+                       (load (gethash class assets))
+                       (offload previous))
+                   (continue ()
+                     :report "Ignore the change and continue with the hold shader."
+                     (setf (gethash class assets) previous)))))))
       (cond ((eql subject-class (class-of per-object-pass))
              ;; Pass changed, recompile everything
              (loop for class being the hash-keys of assets
