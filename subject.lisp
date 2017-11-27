@@ -81,24 +81,24 @@
       (setf (class-redefinition-event-sent class) T))))
 
 (defmethod regenerate-handlers ((subject subject))
-  ;; During recompilation the EVENT-LOOP method might
-  ;; be temporarily unavailable
-  (let ((loop (slot-value subject 'event-loop)))
-    (when loop
-      (remove-handler subject loop))
-    ;; FIXME: Retain objects that were not created by the
-    ;;        handlers mechanism of the subject.
-    (loop for handler in (effective-handlers (class-of subject))
-          collect (make-instance
-                   'handler
-                   :container subject
-                   :name (name handler)
-                   :event-type (event-type handler)
-                   :priority (priority handler)
-                   :delivery-function (delivery-function handler)) into handlers
-          finally (setf (handlers subject) handlers))
-    (when loop
-      (add-handler subject loop))))
+  (let ((event-loop (event-loop subject)))
+    (setf (handlers subject)
+          (remove-if (lambda (handler)
+                       (when (typep handler 'subject-handler)
+                         (when event-loop (remove-handler handler event-loop))
+                         T))
+                     (handlers subject)))
+    (loop for prototype in (effective-handlers (class-of subject))
+          for handler = (make-instance
+                         'subject-handler
+                         :subject subject
+                         :name (name prototype)
+                         :event-type (event-type prototype)
+                         :priority (priority prototype)
+                         :delivery-function (delivery-function prototype))
+          do (push handler (handlers subject))
+             (when event-loop
+               (add-handler handler event-loop)))))
 
 (defmethod register :before ((subject subject) (loop event-loop))
   (when (event-loop subject)
@@ -126,14 +126,32 @@
        ,direct-slots
        ,@options)))
 
+(defclass subject-handler (handler)
+  ((subject :initarg :subject :accessor subject))
+  (:default-initargs
+   :subject (error "SUBJECT required.")))
+
+(defmethod matches ((a subject-handler) (b subject-handler))
+  (and (eq (subject a) (subject b))
+       (eql (name a) (name b))))
+
+(defmethod matches ((a subject-handler) (b handler))
+  NIL)
+
+(defmethod matches ((a handler) (b subject-handler))
+  NIL)
+
+(defmethod handle (event (handler subject-handler))
+  (funcall (delivery-function handler) (subject handler) event))
+
 (defmacro define-handler ((class name &optional (event-type name) (priority 0)) args &body body)
   (let ((event (first args))
         (args (rest args)))
     `(add-handler (make-instance
-                   'handler
+                   'subject-handler
                    :name ',name
                    :event-type ',event-type
-                   :container ',class
+                   :subject ',class
                    :priority ,priority
                    :delivery-function (lambda (,class ,event)
                                         (declare (ignorable ,class ,event))
@@ -146,10 +164,10 @@
      (defgeneric ,name (,class event)
        ,@options)
      (add-handler (make-instance
-                   'handler
+                   'subject-handler
                    :name ',name
                    :event-type ',event-type
-                   :container ',class
+                   :subject ',class
                    :priority ,priority
                    :delivery-function #',name)
                   ',class)))

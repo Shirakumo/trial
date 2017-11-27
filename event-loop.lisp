@@ -124,22 +124,22 @@
 
 (defclass handler (entity)
   ((event-type :initarg :event-type :accessor event-type)
-   (container :initarg :container :accessor container)
    (delivery-function :initarg :delivery-function :accessor delivery-function)
    (priority :initarg :priority :accessor priority))
   (:default-initargs
-   :event-type (error "EVENT-TYPE required.")
-   :container (error "CONTAINER required.")
+   :event-type 'event
    :delivery-function (error "DELIVERY-FUNCTION needed.")
    :priority 0))
 
 (defmethod matches ((a handler) (b handler))
-  (and (eq (container a) (container b))
-       (eql (name a) (name b))))
+  (eql (name a) (name b)))
+
+(defmethod handle :around (event (handler handler))
+  (when (typep event (event-type handler))
+    (call-next-method)))
 
 (defmethod handle (event (handler handler))
-  (when (typep event (event-type handler))
-    (funcall (delivery-function handler) (container handler) event)))
+  (funcall (delivery-function handler) event))
 
 (defclass event ()
   ())
