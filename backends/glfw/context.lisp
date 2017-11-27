@@ -286,7 +286,6 @@
     (:8 :x5)
     (T button)))
 
-;; FIXME: match keys up with glop backend
 (defun glfw-key->key (key)
   (case key
     (:grave-accent :section)

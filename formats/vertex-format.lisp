@@ -124,7 +124,8 @@
      (vformat-write-float buffer (vz4 value))
      (vformat-write-float buffer (vw4 value)))
     ((integer fixnum)
-     ;; FIXME check containment
+     (unless (< value (expt 2 32))
+       (error "Cannot write an integer bigger than 32 bits."))
      (fast-io:write32-le value buffer))
     (single-float
      (vformat-write-float buffer value))
@@ -150,7 +151,6 @@
            (vformat-read-float buffer)
            (vformat-read-float buffer)))
     ((integer fixnum)
-     ;; FIXME check containment
      (fast-io:read32-le buffer))
     (single-float
      (vformat-read-float buffer))

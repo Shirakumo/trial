@@ -198,7 +198,7 @@
         (pushnew :super (modifiers context)))
        ((:hyper-l :hyper-r)
         (pushnew :hyper (modifiers context))))
-     (handle (make-instance 'key-press :key (glop:keysym event)
+     (handle (make-instance 'key-press :key (glop-key->key (glop:keysym event))
                                        :modifiers (modifiers context))
              (handler context)))
     (glop:key-release-event
@@ -214,7 +214,7 @@
         (setf (modifiers context) (delete :super (modifiers context))))
        ((:hyper-l :hyper-r)
         (setf (modifiers context) (delete :hyper (modifiers context)))))
-     (handle (make-instance 'key-release :key (glop:keysym event)
+     (handle (make-instance 'key-release :key (glop-key->key (glop:keysym event))
                                          :modifiers (modifiers context))
              (handler context))
      (when (and (glop:text event) (string/= "" (glop:text event)))
@@ -269,6 +269,11 @@
      (setf (closing context) T)))
   (when (closing context)
     (throw 'escape NIL)))
+
+;; FIXME: match this up with the GLFW backend.
+(defun glop-key->key (key)
+  (case key
+    (T key)))
 
 (defun glop-button->symbol (button)
   (case button
