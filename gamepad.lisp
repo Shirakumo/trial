@@ -6,9 +6,13 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defvar *gamepad-device-table* (make-hash-table :test 'equal))
-(defvar *gamepad-axis-table* (make-hash-table :test 'eql))
-(defvar *gamepad-button-table* (make-hash-table :test 'eql))
+(defstruct gamepad
+  (vendor 0)
+  (product 0)
+  (axis-table (make-hash-table :test 'eql))
+  (button-table (make-hash-table :test 'eql)))
+
+(defvar *gamepad-info-table* (make-hash-table :test 'eql))
 (defvar *gamepad-handlers* ())
 (defvar *gamepad-handlers-lock* (bt:make-lock))
 (defvar *gamepad-input-thread* ())
@@ -41,12 +45,20 @@
 
 (init-gamepad-system)
 
+(defun encode-gamepad-id (vendor product)
+  (let ((i (ash vendor 16)))
+    (setf (ldb (byte 16 0) i) product)
+    i))
+
+(defun decode-gamepad-id (id)
+  (values (ash id -16)
+          (logand id (1- (expt 2 16)))))
+
 (defun cl-gamepad:device-attached (device)
   (v:info :trial.input "Attached ~s (~:[Unknown~;~:*~a~])"
           (cl-gamepad:print-device device NIL)
-          (gethash (cons (cl-gamepad:vendor device)
-                         (cl-gamepad:product device))
-                   *gamepad-device-table*))
+          (gethash (encode-gamepad-id (cl-gamepad:vendor device) (cl-gamepad:product device))
+                   *gamepad-info-table*))
   (dolist (handler *gamepad-handlers*)
     (handle (make-instance 'gamepad-attach :device device) handler)))
 
@@ -85,9 +97,9 @@
         (inherit (when inherit (intern (string name) :keyword))))
     `(progn
        (setf (gethash (cons ,manufacturer ,id) *gamepad-device-table*) ,name)
-       (setf (gethash ,name *gamepad-axis-table*)
+       (setf (gethash ,name *gamepad-axis-info*)
              (make-gamepad-table ',(cdr (assoc :axes options))
-                                 (gethash ,inherit *gamepad-axis-table*)))
+                                 (gethash ,inherit *gamepad-axis-info*)))
        (setf (gethash ,name *gamepad-button-table*)
              (make-gamepad-table ',(cdr (assoc :buttons options))
                                  (gethash ,inherit *gamepad-button-table*))))))
@@ -269,13 +281,13 @@
   (:axes)
   (:buttons))
 
-(defun gamepad-axis->symbol (device axis)
+(defun gamepad-axis->info (device axis)
   (let ((device (or (gethash (cons (cl-gamepad:vendor device)
                                    (cl-gamepad:product device))
                              *gamepad-device-table*)
                     :generic)))
-    (or (gethash axis (gethash device *gamepad-axis-table*))
-        axis)))
+    (or (gethash axis (gethash device *gamepad-axis-info*))
+        (list axis 1))))
 
 (defun gamepad-button->symbol (device button)
   (let ((device (or (gethash (cons (cl-gamepad:vendor device)
