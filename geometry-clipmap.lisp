@@ -40,11 +40,10 @@
          (shader (shader-program-for-pass pass clipmap)))
     (setf (uniform shader "view_matrix") (view-matrix))
     (setf (uniform shader "projection_matrix") (projection-matrix))
-    (draw-ring clipmap m s shader 0 1.0 0 0 0)
-    (loop for scale = 0.5 then (/ scale 2)
+    (loop for scale = 1 then (/ scale 2)
           for offp = 0 then off
-          for off = (* s scale -1) then (+ off (* s scale))
-          for level from 1 below (slot-value clipmap 'levels)
+          for off = 0 then (+ off (* s scale))
+          for level from 0 below (1- (slot-value clipmap 'levels))
           do (draw-ring clipmap m s shader level scale off offp 1)
           finally (setf (uniform shader "level") (float level 0s0))
                   (setf (uniform shader "scale") (float scale 0s0))
@@ -93,16 +92,16 @@ uniform float level, scale, offset, offsetp;
 uniform vec2 block;
 
 out vec3 normal;
-out float z, a;
+out float z;
 
 void main(){
    float level_o = max(level-1, 0);
    vec2 world = (position.xz + block) * scale + offset;
    vec2 uv_inner = position.xz + block + offset + 0.5;
-   vec2 uv_outer = (position.xz + block - offsetp)/2 + offset + 0.5;
+   vec2 uv_outer = (position.xz + block + offsetp)/2 + offset + 0.5;
 
    vec2 alpha = clamp(abs(world/scale)*10-3.8, 0, 1);
-   a = max(alpha.x, alpha.y);
+   float a = max(alpha.x, alpha.y);
    if(level == 0) a = 0;
 
    float zi = texture(texture_image, vec3(uv_inner, level)).r;
@@ -138,7 +137,7 @@ uniform vec3 light = vec3(0.5, 1.0, 2.0);
 uniform sampler2DArray texture_image;
 
 in vec3 normal;
-in float z, a;
+in float z;
 out vec4 color;
 
 void main(){
@@ -155,7 +154,6 @@ void main(){
       c = vec3(1,1,1);
     }
     color = vec4(s * c, 1.0);
-//    color.r = a;
 }")
 
 (defun make-clipmap-block (n)
