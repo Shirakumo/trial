@@ -96,12 +96,12 @@
                    for zc from (* z-count size -0.5) by size
                    do (let ((l (+ x xc)) (r (+ x xc size))
                             (u (+ z zc)) (b (+ z zc size)))
-                        (vertex :position (vec r y u))
+                        (vertex :position (vec l y b))
                         (vertex :position (vec r y b))
-                        (vertex :position (vec l y b))
-                        (vertex :position (vec l y b))
+                        (vertex :position (vec r y u))
+                        (vertex :position (vec r y u))
                         (vertex :position (vec l y u))
-                        (vertex :position (vec r y u)))))))
+                        (vertex :position (vec l y b)))))))
 
 (defun make-line-grid (size w h &key mesh pack (x 0) (y 0) (z 0))
   (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex :face-length 2)) :pack pack)
