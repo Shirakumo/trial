@@ -16,7 +16,7 @@
    (texture :initarg :texture :accessor texture)))
 
 (defmethod initialize-instance :after ((clipmap clipmap) &key n)
-  (setf (clipmap-center clipmap) (make-asset 'mesh (list (make-quad-grid (* 2 (/ (1- n))) (/ (1+ n) 2) (/ (1+ n) 2)))))
+  (setf (clipmap-center clipmap) (make-asset 'mesh (list (make-quad-grid (/ (1- n)) (1- n) (1- n)))))
   (setf (clipmap-block clipmap) (make-asset 'mesh (list (make-clipmap-block n))))
   (setf (clipmap-fixup clipmap) (make-asset 'mesh (list (make-clipmap-fixup n))))
   (let ((trims (make-clipmap-trim n)))
