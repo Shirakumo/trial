@@ -6,13 +6,6 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defstruct gamepad
-  (vendor 0)
-  (product 0)
-  (axis-table (make-hash-table :test 'eql))
-  (button-table (make-hash-table :test 'eql)))
-
-(defvar *gamepad-info-table* (make-hash-table :test 'eql))
 (defvar *gamepad-handlers* ())
 (defvar *gamepad-handlers-lock* (bt:make-lock))
 (defvar *gamepad-input-thread* ())
@@ -45,20 +38,10 @@
 
 (init-gamepad-system)
 
-(defun encode-gamepad-id (vendor product)
-  (let ((i (ash vendor 16)))
-    (setf (ldb (byte 16 0) i) product)
-    i))
-
-(defun decode-gamepad-id (id)
-  (values (ash id -16)
-          (logand id (1- (expt 2 16)))))
-
 (defun cl-gamepad:device-attached (device)
   (v:info :trial.input "Attached ~s (~:[Unknown~;~:*~a~])"
           (cl-gamepad:print-device device NIL)
-          (gethash (encode-gamepad-id (cl-gamepad:vendor device) (cl-gamepad:product device))
-                   *gamepad-info-table*))
+          (gamepad-info device))
   (dolist (handler *gamepad-handlers*)
     (handle (make-instance 'gamepad-attach :device device) handler)))
 
@@ -69,230 +52,18 @@
 
 (defun cl-gamepad:button-pressed (button time device)
   (declare (ignore time))
-  (let ((button (gamepad-button->symbol device button)))
+  (let ((button (gethash button (gamepad-info device))))
     (dolist (handler *gamepad-handlers*)
       (handle (make-instance 'gamepad-press :button button :device device) handler))))
 
 (defun cl-gamepad:button-released (button time device)
   (declare (ignore time))
-  (let ((button (gamepad-button->symbol device button)))
+  (let ((button (gethash button (gamepad-info device))))
     (dolist (handler *gamepad-handlers*)
       (handle (make-instance 'gamepad-release :button button :device device) handler))))
 
 (defun cl-gamepad:axis-moved (axis last-value value time device)
   (declare (ignore time))
-  (let ((axis (gamepad-axis->symbol device axis)))
+  (destructuring-bind (axis modifier) (gethash axis (gamepad-info device))
     (dolist (handler *gamepad-handlers*)
-      (handle (make-instance 'gamepad-move :axis axis :old-pos last-value :pos value :device device) handler))))
-
-(defun make-gamepad-table (defs &optional base)
-  (let ((table (make-hash-table :test 'eql)))
-    (when base
-      (maphash (lambda (k v) (setf (gethash k table) v)) base))
-    (dolist (entry defs table)
-      (setf (gethash (first entry) table) (second entry)))))
-
-(defmacro define-gamepad (name (manufacturer id &key inherit) &body options)
-  (let ((name (intern (string name) :keyword))
-        (inherit (when inherit (intern (string name) :keyword))))
-    `(progn
-       (setf (gethash (cons ,manufacturer ,id) *gamepad-device-table*) ,name)
-       (setf (gethash ,name *gamepad-axis-info*)
-             (make-gamepad-table ',(cdr (assoc :axes options))
-                                 (gethash ,inherit *gamepad-axis-info*)))
-       (setf (gethash ,name *gamepad-button-table*)
-             (make-gamepad-table ',(cdr (assoc :buttons options))
-                                 (gethash ,inherit *gamepad-button-table*))))))
-
-;; FIXME: Some gamepad axes are reversed, we need a way to
-;;        indicate that.
-
-;;; General name mapping conventions:
-;; :left-h      -- Left analog stick, horizontal movement
-;; :left-v      -- Left analog stick, vertical movement
-;; :right-h     -- Right analog stick, horizontal movement
-;; :right-v     -- Right analog stick, vertical movement
-;; :dpad-h      -- Directional pad, horizontal movement
-;; :dpad-v      -- Directional pad, vertical movement
-;; :dpad-up     -- Directional pad up
-;; :dpad-right  -- Directional pad right
-;; :dpad-down   -- Directional pad down
-;; :dpad-left   -- Directional pad left
-;; :l1          -- Left upper trigger or bumper
-;; :l2          -- Left lower trigger or bumper
-;; :r1          -- Right upper trigger or bumper
-;; :r2          -- Right lower trigger or bumper
-;; :y           -- Upper button (Y on Xbox pads)
-;; :b           -- Right button (B on Xbox pads)
-;; :a           -- Lower button (A on Xbox pads)
-;; :x           -- Left button  (X on Xbox pads)
-;; :left        -- Left analog stick click
-;; :right       -- Right analog stick click
-;; :select      -- Left menu button
-;; :home        -- Middle menu button
-;; :start       -- Right menu button
-;;
-;; Gamepads with special hardware may have additional axes
-;; and buttons and thus additional names. If you wish to
-;; use those, see the respective mapping table for the
-;; device
-
-(macrolet ((define-generic-controller (name (vendor id))
-             `(define-gamepad ,name (,vendor ,id)
-                (:axes ,@(loop for i from 0 to 255
-                               collect `(,i ,(intern (format NIL "AXIS-~a" i) :keyword))))
-                (:buttons ,@(loop for i from 0 to 255
-                                  collect `(,i ,(intern (format NIL "BUTTON-~a" i) :keyword)))))))
-  (define-generic-controller generic (0 0)))
-
-(define-gamepad xbox-360 (1118 654)
-  #-windows
-  (:axes
-   ( 0 :left-h)
-   ( 1 :left-v)
-   ( 2 :l2)
-   ( 3 :right-h)
-   ( 4 :right-v)
-   ( 5 :r2)
-   ( 6 :dpad-h)
-   ( 7 :dpad-v))
-  #+windows
-  (:axes
-   ( 0 :left-h)
-   ( 1 :left-v)
-   ( 2 :right-h)
-   ( 3 :right-v)
-   ( 4 :l2)
-   ( 5 :r2)
-   ( 6 :dpad-h)
-   ( 7 :dpad-v))
-  #-windows
-  (:buttons
-   ( 0 :a)
-   ( 1 :b)
-   ( 2 :x)
-   ( 3 :y)
-   ( 4 :l1)
-   ( 5 :r1)
-   ( 6 :select)
-   ( 7 :start)
-   ( 8 :home)
-   ( 9 :left)
-   (10 :right))
-  #+windows
-  (:buttons
-   ( 0 :up)
-   ( 1 :down)
-   ( 2 :left)
-   ( 3 :right)
-   ( 4 :start)
-   ( 5 :select)
-   ( 6 :l3)
-   ( 7 :r3)
-   ( 8 :l2)
-   ( 9 :r2)
-   (10 :a)
-   (11 :b)
-   (12 :x)
-   (13 :y)
-   (14 :home)))
-
-(define-gamepad logitech-f310 (1133 49693 :inherit xbox-360)
-  (:axes)
-  (:buttons))
-
-(define-gamepad dualshock-3 (1356 616)
-  (:axes
-   ( 0 :left-h)
-   ( 1 :left-v)
-   ( 2 :right-h)
-   ( 3 :right-v)
-   ( 8 :dpad-up)
-   ( 9 :dpad-right)
-   (10 :dpad-down)
-   (11 :dpad-left)
-   (12 :l2)
-   (13 :r2)
-   (14 :l1)
-   (15 :r1)
-   (16 :y) ; triangle
-   (17 :b) ; circle
-   (18 :a) ; cross
-   (19 :x) ; square
-   (23 :axis-x)
-   (24 :axis-z)
-   (25 :axis-y)
-   (26 :axis-r))
-  (:buttons
-   ( 0 :select)
-   ( 1 :left)
-   ( 2 :right)
-   ( 3 :start)
-   ( 4 :dpad-up)
-   ( 5 :dpad-right)
-   ( 6 :dpad-down)
-   ( 7 :dpad-left)
-   ( 8 :l2)
-   ( 9 :r2)
-   (10 :l1)
-   (11 :r1)
-   (12 :y) ; triangle
-   (13 :b) ; circle
-   (14 :a) ; cross
-   (15 :x) ; square
-   (16 :home)))
-
-(define-gamepad dualshock-4 (1356 2508)
-  (:axes
-   ( 0 :left-h)
-   ( 1 :left-v)
-   ( 2 :l2)
-   ( 3 :right-h)
-   ( 4 :right-v)
-   ( 5 :r2))
-  (:buttons
-   ( 0 :a)
-   ( 1 :b)
-   ( 2 :y)
-   ( 3 :x)
-   ( 4 :l1)
-   ( 5 :r1)
-   ( 8 :select)
-   ( 9 :start)
-   (10 :home)
-   (11 :left)
-   (12 :right)))
-
-(define-gamepad buffalo-bsgp801 (1411 8288)
-  (:axes
-   ( 0 :dpad-h)
-   ( 1 :dpad-v))
-  (:buttons
-   ( 0 :b)
-   ( 1 :a)
-   ( 2 :x)
-   ( 3 :y)
-   ( 4 :l1)
-   ( 5 :r1)
-   ( 6 :select)
-   ( 7 :start)))
-
-(define-gamepad steam-controller (10462 4604 :inherit xbox-360)
-  (:axes)
-  (:buttons))
-
-(defun gamepad-axis->info (device axis)
-  (let ((device (or (gethash (cons (cl-gamepad:vendor device)
-                                   (cl-gamepad:product device))
-                             *gamepad-device-table*)
-                    :generic)))
-    (or (gethash axis (gethash device *gamepad-axis-info*))
-        (list axis 1))))
-
-(defun gamepad-button->symbol (device button)
-  (let ((device (or (gethash (cons (cl-gamepad:vendor device)
-                                   (cl-gamepad:product device))
-                             *gamepad-device-table*)
-                    :generic)))
-    (or (gethash button (gethash device *gamepad-button-table*))
-        button)))
+      (handle (make-instance 'gamepad-move :axis axis :old-pos (* modifier last-value) :pos  (* modifier value) :device device) handler))))

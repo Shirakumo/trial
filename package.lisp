@@ -213,16 +213,28 @@
    #:original-mode
    #:resolution
    #:fullscreen)
-  ;; gamepad.lisp
+  ;; gamepad-db.lisp
   (:export
-   #:add-gamepad-handler
-   #:remove-gamepad-handler
-   #:define-gamepad
    #:xbox-360
    #:logitech-f310
    #:dualshock-3
    #:buffalo-bsgp801
    #:steam-controller)
+  ;; gamepad-info.lisp
+  (:export
+   #:gamepad-info
+   #:gamepad-info-id
+   #:gamepad-info-name
+   #:gamepad-info-axis-table
+   #:gamepad-info-button-table
+   #:gamepad-info
+   #:remove-gamepad-info
+   #:gamepad-info-options
+   #:define-gamepad)
+  ;; gamepad.lisp
+  (:export
+   #:add-gamepad-handler
+   #:remove-gamepad-handler)
   ;; geometry-shapes.lisp
   (:export
    #:geometry
