@@ -6,7 +6,8 @@
 (define-asset (workbench heightmap) texture
     (#p"/home/linus/output1.png"
      #p"/home/linus/output2.png"
-     #p"/home/linus/output3.png")
+     #p"/home/linus/output3.png"
+     #p"/home/linus/output4.png")
   :target :texture-2d-array
   :min-filter :linear
   :wrapping :clamp-to-edge)

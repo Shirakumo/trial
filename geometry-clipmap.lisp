@@ -16,7 +16,7 @@
    (texture :initarg :texture :accessor texture)))
 
 (defmethod initialize-instance :after ((clipmap clipmap) &key n)
-  (setf (clipmap-center clipmap) (make-asset 'mesh (list (make-quad-grid (/ (1- n)) (/ (1+ n) 2) (/ (1+ n) 2)))))
+  (setf (clipmap-center clipmap) (make-asset 'mesh (list (make-quad-grid (* 2 (/ (1- n))) (/ (1+ n) 2) (/ (1+ n) 2)))))
   (setf (clipmap-block clipmap) (make-asset 'mesh (list (make-clipmap-block n))))
   (setf (clipmap-fixup clipmap) (make-asset 'mesh (list (make-clipmap-fixup n))))
   (let ((trims (make-clipmap-trim n)))
@@ -41,18 +41,18 @@
     (setf (uniform shader "view_matrix") (view-matrix))
     (setf (uniform shader "projection_matrix") (projection-matrix))
     (draw-ring clipmap m s shader 0 1.0 0 0 0)
-    (loop for level from 1 below (slot-value clipmap 'levels)
-          for scale = 0.5 then (/ scale 2)
+    (loop for scale = 0.5 then (/ scale 2)
           for offp = 0 then off
           for off = (* s scale -1) then (+ off (* s scale))
+          for level from 1 below (slot-value clipmap 'levels)
           do (draw-ring clipmap m s shader level scale off offp 1)
-          finally   (setf (uniform shader "level") (float level 0s0))
-                    (setf (uniform shader "scale") (float scale 0s0))
-                    (setf (uniform shader "offset") (float off 0s0))
-                    (setf (uniform shader "offsetp") (float offp 0s0))
-                    (setf (uniform shader "block") (vec 0 0))
-                    (gl:bind-vertex-array (resource (clipmap-center clipmap)))
-                    (%gl:draw-elements :triangles (size (clipmap-center clipmap)) :unsigned-int 0))))
+          finally (setf (uniform shader "level") (float level 0s0))
+                  (setf (uniform shader "scale") (float scale 0s0))
+                  (setf (uniform shader "offset") (float off 0s0))
+                  (setf (uniform shader "offsetp") (float offp 0s0))
+                  (setf (uniform shader "block") (vec 0 0))
+                  (gl:bind-vertex-array (resource (clipmap-center clipmap)))
+                  (%gl:draw-elements :triangles (size (clipmap-center clipmap)) :unsigned-int 0))))
 
 (defun draw-ring (clipmap m s shader level scale off offp f)
   (setf (uniform shader "level") (float level 0s0))
@@ -93,7 +93,7 @@ uniform float level, scale, offset, offsetp;
 uniform vec2 block;
 
 out vec3 normal;
-out float z;
+out float z, a;
 
 void main(){
    float level_o = max(level-1, 0);
@@ -102,7 +102,7 @@ void main(){
    vec2 uv_outer = (position.xz + block - offsetp)/2 + offset + 0.5;
 
    vec2 alpha = clamp(abs(world/scale)*10-3.8, 0, 1);
-   float a = max(alpha.x, alpha.y);
+   a = max(alpha.x, alpha.y);
    if(level == 0) a = 0;
 
    float zi = texture(texture_image, vec3(uv_inner, level)).r;
@@ -138,7 +138,7 @@ uniform vec3 light = vec3(0.5, 1.0, 2.0);
 uniform sampler2DArray texture_image;
 
 in vec3 normal;
-in float z;
+in float z, a;
 out vec4 color;
 
 void main(){
@@ -155,6 +155,7 @@ void main(){
       c = vec3(1,1,1);
     }
     color = vec4(s * c, 1.0);
+//    color.r = a;
 }")
 
 (defun make-clipmap-block (n)
