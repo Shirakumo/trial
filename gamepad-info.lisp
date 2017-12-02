@@ -35,7 +35,7 @@
      (encode-gamepad-id (car gamepad-ish) (cdr gamepad-ish)))
     (cffi:foreign-pointer
      (encode-gamepad-id (cl-gamepad:vendor gamepad-ish)
-                        (cl-gamepad:device gamepad-ish)))
+                        (cl-gamepad:product gamepad-ish)))
     (gamepad-info
      (gamepad-info-id gamepad-ish))
     (symbol
@@ -66,7 +66,7 @@
   (let ((info (gamepad-info gamepad-ish)))
     (loop for (id name dir) in (cdr (assoc :axes options))
           do (setf (gethash id (gamepad-info-axis-table info)) (list name (or dir 1))))
-    (loop for (id name) in (cdr (assoc :axes options))
+    (loop for (id name) in (cdr (assoc :buttons options))
           do (setf (gethash id (gamepad-info-button-table info)) name))
     options))
 
@@ -88,3 +88,13 @@
                 (:buttons ,@(loop for i from 0 to 255
                                   collect `(,i ,(intern (format NIL "BUTTON-~a" i) :keyword)))))))
   (define-generic-controller generic (0 0)))
+
+(defun gamepad-button (device button-id)
+  (let ((info (or (gamepad-info device)
+                  (gamepad-info 'generic))))
+    (gethash button-id (gamepad-info-button-table info) :unknown)))
+
+(defun gamepad-axis (device axis-id)
+  (let ((info (or (gamepad-info device)
+                  (gamepad-info 'generic))))
+    (gethash axis-id (gamepad-info-axis-table info) '(:unknown 1))))

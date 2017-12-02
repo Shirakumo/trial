@@ -39,31 +39,33 @@
 (init-gamepad-system)
 
 (defun cl-gamepad:device-attached (device)
-  (v:info :trial.input "Attached ~s (~:[Unknown~;~:*~a~])"
+  (v:info :trial.input.gamepad "Attached ~s (~:[Unknown~;~:*~a~])"
           (cl-gamepad:print-device device NIL)
           (gamepad-info device))
   (dolist (handler *gamepad-handlers*)
     (handle (make-instance 'gamepad-attach :device device) handler)))
 
 (defun cl-gamepad:device-removed (device)
-  (v:info :trial.input "Removed ~s" (cl-gamepad:print-device device NIL))
+  (v:info :trial.input.gamepad "Removed ~s" (cl-gamepad:print-device device NIL))
   (dolist (handler *gamepad-handlers*)
     (handle (make-instance 'gamepad-remove :device device) handler)))
 
 (defun cl-gamepad:button-pressed (button time device)
   (declare (ignore time))
-  (let ((button (gethash button (gamepad-info device))))
+  (let ((button (gamepad-button device button)))
+    (v:trace :trial.input.gamepad "~a pressed  ~a" (cl-gamepad:id device) button)
     (dolist (handler *gamepad-handlers*)
       (handle (make-instance 'gamepad-press :button button :device device) handler))))
 
 (defun cl-gamepad:button-released (button time device)
   (declare (ignore time))
-  (let ((button (gethash button (gamepad-info device))))
+  (let ((button (gamepad-button device button)))
+    (v:trace :trial.input.gamepad "~a released ~a" (cl-gamepad:id device) button)
     (dolist (handler *gamepad-handlers*)
       (handle (make-instance 'gamepad-release :button button :device device) handler))))
 
 (defun cl-gamepad:axis-moved (axis last-value value time device)
   (declare (ignore time))
-  (destructuring-bind (axis modifier) (gethash axis (gamepad-info device))
+  (destructuring-bind (axis modifier) (gamepad-axis device axis)
     (dolist (handler *gamepad-handlers*)
       (handle (make-instance 'gamepad-move :axis axis :old-pos (* modifier last-value) :pos  (* modifier value) :device device) handler))))
