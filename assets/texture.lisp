@@ -75,7 +75,7 @@
        (gl:tex-image-2d target 1 format width height 0 (texture-internal-format->texture-format format) (texture-format->data-type format) bits)))
     (:texture-2d-array
      (with-image-object (width height bits format) (first images)
-       (%gl:tex-storage-3d target 1 format width height (length images))
+       (%gl:tex-storage-3d target 1 :rgba32f width height (length images))
        (gl:tex-sub-image-3d target 0 0 0 0 width height 1 (texture-internal-format->texture-format format) (texture-format->data-type format) bits)
        (loop for level from 1
              for image in (rest images)
