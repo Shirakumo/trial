@@ -71,7 +71,7 @@
                   (apply #'make-instance event-type args)))))
     (vector-push-extend event (queue loop))))
 
-(define-compiler-macro issue (&whole whole &environment env loop event-type &rest args)
+(define-compiler-macro issue (&environment env loop event-type &rest args)
   (cond ((and (constantp event-type env)
               (listp event-type)
               (eql (first event-type) 'quote)
@@ -83,7 +83,7 @@
                    (,eventg (etypecase ,eventg
                               (event ,eventg)
                               ((or class symbol)
-                               (apply #'make-instance ,eventg ,@args)))))
+                               (make-instance ,eventg ,@args)))))
               (vector-push-extend ,eventg (queue ,loop)))))))
 
 ;; FIXME: This will forget events if PROCESS or DISCARD-EVENTS is called

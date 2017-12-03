@@ -29,7 +29,7 @@
 (defmethod clear ((container array-container))
   (let ((objects (objects container)))
     (loop for i from 0 below (length objects)
-          do (setf (aref i objects) NIL))
+          do (setf (aref objects i) NIL))
     (adjust-array objects 0 :fill-pointer 0))
   container)
 
