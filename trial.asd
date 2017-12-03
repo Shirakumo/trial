@@ -45,6 +45,7 @@
                (:file "helpers" :depends-on ("package" "entity" "transforms" "shader-subject" "shader-pass" "asset"))
                (:file "input" :depends-on ("package" "event-loop" "retention"))
                (:file "layer-set" :depends-on ("package"))
+               (:file "loader" :depends-on ("package" "scene" "asset"))
                (:file "main" :depends-on ("package" "display" "window" "toolkit" "scene" "pipeline"))
                (:file "mapping" :depends-on ("package" "event-loop" "toolkit"))
                (:file "pipeline" :depends-on ("package" "event-loop" "toolkit"))
