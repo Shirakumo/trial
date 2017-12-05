@@ -20,7 +20,7 @@
 (defmethod leave ((pass shader-pass) (pipeline pipeline))
   (setf (nodes pipeline) (delete pass (nodes pipeline))))
 
-(defmethod clear ((pipeline pipeline))
+(defmethod clear-pipeline ((pipeline pipeline))
   (loop for tex across (textures pipeline)
         do (finalize tex))
   (loop for pass across (passes pipeline)
@@ -95,7 +95,7 @@
   ;; FIXME: How to ensure algorithm distinguishes depth and colour buffers?
   (let* ((passes (flow:topological-sort (nodes pipeline)))
          (textures (make-array 0 :initial-element NIL :adjustable T)))
-    (clear pipeline)
+    (clear-pipeline pipeline)
     (allocate-textures pipeline passes textures #'%color-port-p (width target) (height target))
     (allocate-textures pipeline passes textures #'%depth-port-p (width target) (height target))
     (allocate-textures pipeline passes textures #'%depth-stencil-port-p (width target) (height target))
