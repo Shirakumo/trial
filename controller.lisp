@@ -40,6 +40,9 @@
   (:default-initargs
    :name :controller))
 
+(defmethod compute-assets ((controller controller) cache)
+  (list (text controller)))
+
 (defmethod register-object-for-pass :after (pass (controller controller))
   (register-object-for-pass pass (text controller)))
 
