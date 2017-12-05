@@ -71,9 +71,6 @@
     (%gl:draw-elements (vertex-form subject) (size vao) :unsigned-int 0)
     (gl:bind-vertex-array 0)))
 
-(defmethod load progn ((subject vertex-entity))
-  (load (vertex-array subject)))
-
 (define-class-shader (vertex-entity :vertex-shader)
   "layout (location = 0) in vec3 position;
 
@@ -138,9 +135,6 @@ void main(){
       (gl:bind-texture (target tex) (resource tex))
       (call-next-method)
       (gl:bind-texture (target tex) 0))))
-
-(defmethod load progn ((subject textured-entity))
-  (load (texture subject)))
 
 (define-class-shader (textured-entity :vertex-shader)
   "layout (location = 1) in vec2 in_texcoord;

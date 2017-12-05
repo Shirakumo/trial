@@ -67,12 +67,6 @@
 (defmethod initialize-instance :after ((text-element text-element) &key text text-color font)
   (setf (text-asset text-element) (make-instance 'text :text text :color text-color :font font)))
 
-(defmethod load progn ((text-element text-element))
-  (load (text-asset text-element)))
-
-(defmethod offload progn ((text-element text-element))
-  (offload (text-asset text-element)))
-
 (defmethod text ((text-element text-element))
   (text (text-asset text-element)))
 

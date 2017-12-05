@@ -23,13 +23,6 @@
     (setf (clipmap-trims clipmap) (loop for trim in trims
                                       collect (make-asset 'mesh (list trim))))))
 
-(defmethod load progn ((clipmap clipmap))
-  (load (clipmap-center clipmap))
-  (load (clipmap-block clipmap))
-  (load (clipmap-fixup clipmap))
-  (mapc #'load (clipmap-trims clipmap))
-  (load (texture clipmap)))
-
 (defmethod paint ((clipmap clipmap) (pass shader-pass))
   (gl:active-texture :texture0)
   (gl:bind-texture :texture-2d-array (resource (texture clipmap)))

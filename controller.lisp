@@ -40,9 +40,6 @@
   (:default-initargs
    :name :controller))
 
-(defmethod load progn ((controller controller))
-  (load (text controller)))
-
 (defmethod register-object-for-pass :after (pass (controller controller))
   (register-object-for-pass pass (text controller)))
 

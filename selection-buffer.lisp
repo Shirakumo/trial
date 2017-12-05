@@ -45,12 +45,10 @@
   (register (make-instance 'selection-buffer-pass) buffer)
   (add-handler buffer scene))
 
-(defmethod load progn ((buffer selection-buffer))
+(defmethod bake ((buffer selection-buffer))
   (pack buffer)
   (for:for ((object over (scene buffer)))
-    (register-object-for-pass buffer object))
-  (loop for pass across (passes buffer)
-        do (load pass)))
+    (register-object-for-pass buffer object)))
 
 (defmethod finalize :after ((buffer selection-buffer))
   (remove-handler buffer (scene buffer)))

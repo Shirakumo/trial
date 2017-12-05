@@ -6,18 +6,11 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-shader-entity skybox ()
+(define-shader-entity skybox (vertex-entity)
   ((texture :initarg :texture :accessor texture)
    (vertex-array :initform NIL :Accessor vertex-array))
-  (:default-initargs :texture (error "TEXTURE required.")))
-
-(defmethod load progn ((skybox skybox))
-  (load (texture skybox))
-  (setf (vertex-array skybox) (gl:gen-vertex-array)))
-
-(defmethod offload progn ((skybox skybox))
-  (offload (texture skybox))
-  (gl:delete-vertex-arrays (list (vertex-array skybox))))
+  (:default-initargs :texture (error "TEXTURE required.")
+                     :vertex-array (make-instance 'vertex-array)))
 
 (defmethod paint ((skybox skybox) (pass shader-pass))
   (let ((shader (shader-program-for-pass pass skybox))
@@ -25,12 +18,10 @@
     (setf (uniform shader "view_matrix") (view-matrix))
     (setf (uniform shader "projection_matrix") (projection-matrix))
     (gl:depth-mask NIL)
-    (gl:bind-vertex-array (vertex-array skybox))
     (gl:active-texture :texture0)
     (gl:bind-texture (target texture) (resource texture))
     (gl:draw-arrays :triangle-strip 0 4)
     (gl:bind-texture (target texture) 0)
-    (gl:bind-vertex-array 0)
     (gl:depth-mask T)))
 
 (define-class-shader (skybox :vertex-shader)

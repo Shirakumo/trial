@@ -39,14 +39,6 @@
 (defmethod (setf unit) (value n (container array-container))
   (setf (aref (objects container) n) value))
 
-(defmethod load progn ((container array-container))
-  (for:for ((object across (objects container)))
-    (load object)))
-
-(defmethod offload progn ((container array-container))
-  (for:for ((object across (objects container)))
-    (offload object)))
-
 (defmethod finalize ((container array-container))
   (for:for ((object across (objects container)))
     (finalize object)))

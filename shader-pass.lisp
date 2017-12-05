@@ -129,10 +129,6 @@
              ;; Object changed, recompile it
              (refresh subject-class))))))
 
-(defmethod load progn ((pass per-object-pass))
-  (loop for v being the hash-values of (assets pass)
-        do (load v)))
-
 (defmethod shader-program-for-pass ((pass per-object-pass) (subject shader-entity))
   (gethash (class-of subject) (assets pass)))
 
@@ -203,13 +199,12 @@
    (samples :initarg :samples :accessor samples))
   (:default-initargs :samples 8))
 
-(defmethod load progn ((pass multisampled-pass))
-  (let ((fbo (make-asset 'framebuffer-bundle
-                         `((:attachment :color-attachment0 :bits ,(samples pass) :target :texture-2d-multisample)
-                           (:attachment :depth-stencil-attachment :bits ,(samples pass) :target :texture-2d-multisample))
-                         :width (width *context*) :height (height *context*))))
-    (load fbo)
-    (setf (multisample-fbo pass) fbo)))
+(defmethod bake ((pass multisampled-pass))
+  (setf (multisample-fbo pass)
+        (make-asset 'framebuffer-bundle
+                    `((:attachment :color-attachment0 :bits ,(samples pass) :target :texture-2d-multisample)
+                      (:attachment :depth-stencil-attachment :bits ,(samples pass) :target :texture-2d-multisample))
+                    :width (width *context*) :height (height *context*))))
 
 (defmethod paint-with :around ((pass multisampled-pass) target)
   (let ((original-framebuffer (resource (framebuffer pass))))
@@ -243,7 +238,7 @@
       (when loaded (load (shader-program single-shader-pass))))))
 
 (defmethod load progn ((pass single-shader-pass))
-  (setf (shader-program pass) (load (make-class-shader-program pass))))
+  (setf (shader-program pass) (make-class-shader-program pass)))
 
 (defmethod register-object-for-pass ((pass single-shader-pass) o))
 
@@ -258,9 +253,6 @@
 
 (define-shader-pass post-effect-pass (single-shader-pass)
   ((vertex-array :initform (asset 'trial 'fullscreen-square) :accessor vertex-array)))
-
-(defmethod load progn ((pass post-effect-pass))
-  (load (vertex-array pass)))
 
 (defmethod paint-with ((pass post-effect-pass) thing)
   (let ((vao (vertex-array pass)))
