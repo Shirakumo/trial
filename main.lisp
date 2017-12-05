@@ -51,7 +51,7 @@
   (enter (controller main) scene))
 
 (defmethod paint ((source main) (target main))
-  (paint (scene main) target)
+  (paint (scene source) target)
   (gl:bind-framebuffer :draw-framebuffer 0)
   (%gl:blit-framebuffer 0 0 (width source) (height source) 0 0 (width source) (height source)
                         (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
