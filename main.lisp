@@ -16,8 +16,6 @@
 (defmethod initialize-instance :after ((main main) &key)
   (with-slots (scene controller) main
     (setf (display controller) main)
-    (register controller scene)
-    (issue scene 'reload-scene)
     (start scene)))
 
 (defmethod finalize ((main main))
@@ -33,6 +31,10 @@
 (defmethod update ((main main) tt dt)
   (issue (scene main) 'tick :tt tt :dt dt)
   (process (scene main)))
+
+(defmethod setup-rendering :after ((main main))
+  (setup-scene main (scene main))
+  (transition NIL (scene main)))
 
 (defmethod setup-scene :around ((main main) (scene scene))
   (v:info :trial.main "Setting up ~a" scene)
