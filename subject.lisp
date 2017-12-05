@@ -63,7 +63,7 @@
   (remove-handler handler (find-class class)))
 
 (defclass subject (entity handler-container)
-  ((event-loop :initarg :event-loop :initform NIL :accessor event-loop))
+  ((event-loops :initarg :event-loops :initform NIL :accessor event-loops))
   (:metaclass subject-class))
 
 (defmethod initialize-instance :after ((subject subject) &key)
@@ -75,46 +75,46 @@
 (defmethod update-instance-for-redefined-class ((subject subject) aslots dslots plist &key args)
   (let ((class (class-of subject)))
     (regenerate-handlers subject)
-    (when (and (not (class-redefinition-event-sent class))
-               (event-loop subject))
-      (issue (event-loop subject) 'subject-class-redefined :subject-class class)
+    (when (not (class-redefinition-event-sent class))
+      (dolist (event-loop (event-loops subject))
+        (issue event-loop 'subject-class-redefined :subject-class class))
       (setf (class-redefinition-event-sent class) T))))
 
 (defmethod regenerate-handlers ((subject subject))
-  (let ((event-loop (event-loop subject)))
-    (setf (handlers subject)
-          (remove-if (lambda (handler)
-                       (when (typep handler 'subject-handler)
-                         (when event-loop (remove-handler handler event-loop))
-                         T))
-                     (handlers subject)))
-    (loop for prototype in (effective-handlers (class-of subject))
-          for handler = (make-instance
-                         'subject-handler
-                         :subject subject
-                         :name (name prototype)
-                         :event-type (event-type prototype)
-                         :priority (priority prototype)
-                         :delivery-function (delivery-function prototype))
-          do (push handler (handlers subject))
-             (when event-loop
-               (add-handler handler event-loop)))))
+  (setf (handlers subject)
+        (remove-if (lambda (handler)
+                     (when (typep handler 'subject-handler)
+                       (dolist (event-loop (event-loops subject))
+                         (remove-handler handler event-loop))
+                       T))
+                   (handlers subject)))
+  (loop for prototype in (effective-handlers (class-of subject))
+        for handler = (make-instance
+                       'subject-handler
+                       :subject subject
+                       :name (name prototype)
+                       :event-type (event-type prototype)
+                       :priority (priority prototype)
+                       :delivery-function (delivery-function prototype))
+        do (push handler (handlers subject))
+           (dolist (event-loop (event-loops subject))
+             (add-handler handler event-loop))))
 
 (defmethod register :before ((subject subject) (loop event-loop))
-  (when (event-loop subject)
-    (error "~s is already registered on the event-loop ~s, can't add it to ~s."
-           subject (event-loop subject) loop)))
+  (when (find loop (event-loops subject))
+    (error "~s is already registered on the event-loop ~s."
+           subject loop)))
 
 (defmethod register :after ((subject subject) (loop event-loop))
-  (setf (event-loop subject) loop))
+  (push loop (event-loops subject)))
 
 (defmethod deregister :before ((subject subject) (loop event-loop))
-  (unless (eql loop (event-loop subject))
-    (error "~s is registered on the event-loop ~s, can't remove it from ~s."
-           subject (event-loop subject) loop)))
+  (unless (find loop (event-loops subject))
+    (error "~s is not registered on the event-loop ~s."
+           subject loop)))
 
 (defmethod deregister :after ((subject subject) (loop event-loop))
-  (setf (event-loop subject) NIL))
+  (setf (event-loops subject) (remove loop (event-loops subject))))
 
 (defmacro define-subject (&environment env name direct-superclasses direct-slots &rest options)
   (unless (find-if (lambda (c) (c2mop:subclassp (find-class c T env) 'subject)) direct-superclasses)
