@@ -6,11 +6,15 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass pipelined-scene (scene pipeline)
+(defclass pipelined-scene (scene pipeline bakable)
   ())
 
 (defmethod paint ((scene pipelined-scene) target)
   (paint-with scene scene))
+
+(defmethod paint ((scene pipelined-scene) (target shader-pass))
+  (for:for ((element over scene))
+    (paint-with target element)))
 
 (defmethod enter :after ((entity entity) (scene pipelined-scene))
   (register-object-for-pass scene entity))

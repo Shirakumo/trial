@@ -33,7 +33,7 @@
        (setf (ldb (byte 8 24) id) (aref color 0))
        id))))
 
-(defclass selection-buffer (render-texture)
+(defclass selection-buffer (render-texture bakable)
   ((scene :initarg :scene :accessor scene)
    (color->object-map :initform (make-hash-table :test 'eql) :accessor color->object-map))
   (:default-initargs

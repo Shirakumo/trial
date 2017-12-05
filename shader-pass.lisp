@@ -194,7 +194,7 @@
     (prepare-pass-program pass program)
     (call-next-method)))
 
-(define-shader-pass multisampled-pass ()
+(define-shader-pass multisampled-pass (bakable)
   ((multisample-fbo :initform NIL :accessor multisample-fbo)
    (samples :initarg :samples :accessor samples))
   (:default-initargs :samples 8))
