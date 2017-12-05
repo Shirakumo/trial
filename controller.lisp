@@ -105,7 +105,6 @@
           (setf (clock new) (clock old))
           (setup-scene display new)
           (transition old new)
-          (setup-rendering display)
           (setf (scene display) new))
       (abort ()
         :report "Give up reloading the scene and continue with the old."
