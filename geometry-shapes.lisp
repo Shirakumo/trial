@@ -17,6 +17,9 @@
          0.0 0.0
          0.0 1.0)))
 
+(define-asset (trial empty-vertex-array) vertex-array
+    ())
+
 ;; FIXME: Allow specifying which attributes to include
 ;; FIXME: Generate normals
 ;; FIXME: Generate UVs
