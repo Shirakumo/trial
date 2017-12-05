@@ -3,28 +3,48 @@
 (define-pool workbench
   :base 'trial)
 
-(define-asset (workbench heightmap) texture
-    (#p"/home/linus/output1.png"
-     #p"/home/linus/output2.png"
-     #p"/home/linus/output3.png"
-     #p"/home/linus/output4.png")
-  :target :texture-2d-array
-  :min-filter :linear
-  :wrapping :clamp-to-edge)
+(define-asset (workbench teapot) mesh
+    (#p"teapot.vf")
+  :mesh :TEAPOT01MESH)
+
+(define-asset (workbench grid) mesh
+    ((make-line-grid 10 200 200)))
+
+(define-asset (workbench cat) texture
+    (#p"cat.png"))
+
+(define-asset (workbench skybox) texture
+    (#p"nissi-beach/posx.jpg"
+     #p"nissi-beach/negx.jpg"
+     #p"nissi-beach/posy.jpg"
+     #p"nissi-beach/negy.jpg"
+     #p"nissi-beach/posz.jpg"
+     #p"nissi-beach/negz.jpg")
+  :target :texture-cube-map)
+
+(define-shader-subject teapot (vertex-entity colored-entity textured-entity located-entity rotated-entity selectable)
+  ((vel :initform (/ (random 1.0) (+ 10 (random 20))) :accessor vel))
+  (:default-initargs :vertex-array (asset 'workbench 'teapot)
+                     :texture (asset 'workbench 'cat)
+                     :rotation (vec (/ PI -2) 0 0)
+                     :color (vec4-random 0.2 0.8)
+                     :location (vx_z (vec3-random -100 100))))
+
+(define-shader-subject grid (vertex-entity colored-entity)
+  ()
+  (:default-initargs :vertex-array (asset 'workbench 'grid)
+                     :vertex-form :lines))
+
+(define-handler (teapot tick) (ev)
+  (incf (vz (rotation teapot)) (vel teapot)))
 
 (progn
-  (defmethod setup-scene ((main main))
-    (let ((scene (scene main)))
-      (gl:polygon-mode :front-and-back :line)
-      (enter (make-instance 'clipmap :n 127 :levels 4 :texture (asset 'workbench 'heightmap)) scene)
-      ;; (enter (make-instance 'vertex-entity :vertex-array (make-asset 'mesh (list (make-quad-grid (/ 16) 4 2)))) scene)
-      (enter (make-instance 'editor-camera :move-speed 0.001 :location (vec 0 0.2 0) :name :camera) scene)
-      ;;(enter (make-instance 'target-camera :target (vec 0 0 0) :location (vec 0 0.6 0.0000001)) scene)
-      ))
-
-  (defmethod setup-pipeline ((main main))
-    (let ((pipeline (pipeline main))
-          (pass1 (make-instance 'render-pass)))
-      (register pass1 pipeline)))
+  (defmethod setup-scene ((main main) scene)
+    (enter (make-instance 'skybox :texture (asset 'workbench 'skybox)) scene)
+    (enter (make-instance 'grid) scene)
+    (dotimes (i 5)
+      (enter (make-instance 'teapot) scene))
+    (enter (make-instance 'editor-camera :location (vec 0 100 150)) scene)
+    (enter (make-instance 'render-pass) scene))
 
   (maybe-reload-scene))

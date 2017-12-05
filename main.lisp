@@ -7,28 +7,24 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 ;; FIXME: Fullscreenable seems to cause really bad behaviour, idk
-;; FIXME: Re-add hud somehow
 (defclass main (display window)
-  ((scene :initform (make-instance 'scene) :accessor scene)
-   (pipeline :initform (make-instance 'frame-pipeline) :accessor pipeline)
+  ((scene :initform (make-instance 'pipelined-scene) :accessor scene)
    (controller :initform (make-instance 'controller) :accessor controller))
   (:default-initargs
    :name :main))
 
 (defmethod initialize-instance :after ((main main) &key)
-  (with-slots (scene pipeline controller) main
+  (with-slots (scene controller) main
     (setf (display controller) main)
-    (register pipeline scene)
     (register controller scene)
     (issue scene 'reload-scene)
     (start scene)))
 
 (defmethod finalize ((main main))
-  (with-slots (scene pipeline controller) main
+  (with-slots (scene controller) main
     (v:info :trial.main "RAPTURE")
     (acquire-context (context main) :force T)
     (finalize controller)
-    (finalize pipeline)
     (finalize scene)))
 
 (defmethod handle (event (main main))
@@ -38,47 +34,26 @@
   (issue (scene main) 'tick :tt tt :dt dt)
   (process (scene main)))
 
-(defmethod setup-scene :around ((main main))
-  (gl:clear :color-buffer)
-  (swap-buffers (context main))
-  (stop (scene main))
-  (reset (scene main))
-  (clear (pipeline main))
-  (with-simple-restart (continue "Skip loading the rest of the scene and hope for the best.")
-    (v:info :trial.main "Setting up scene")
-    (with-timing-report (info :trial.main "Scene setup took ~fs run time, ~fs clock time.")
-      (call-next-method)))
-  (load (scene main))
-  (start (scene main))
+(defmethod setup-scene :around ((main main) (scene scene))
+  (v:info :trial.main "Setting up ~a" scene)
+  (with-timing-report (info :trial.main "Scene setup took ~fs run time, ~fs clock time.")
+    (call-next-method))
+  (start scene)
   ;; Cause camera to refresh
-  (issue (scene main) 'resize :width (width main) :height (height main))
-  (invoke-restart 'reset-render-loop))
+  (issue scene 'resize :width (width main) :height (height main)))
 
-;; FIXME: proper LOADing of a map
-(defmethod setup-scene ((main main))
+(defmethod setup-scene ((main main) scene)
   ())
 
-(defmethod setup-scene :after ((main main))
-  (enter (controller main) (scene main))
-  (setup-pipeline main))
-
-(defmethod setup-pipeline ((main main))
-  ())
-
-(defmethod setup-pipeline :before ((main main))
-  (clear (pipeline main)))
-
-(defmethod setup-pipeline :after ((main main))
-  (pack-pipeline (pipeline main) main)
-  (for:for ((element over (scene main)))
-    (register-object-for-pass (pipeline main) element))
-  (load (pipeline main)))
+(defmethod setup-scene :after ((main main) (scene scene))
+  (enter (controller main) scene))
 
 (defmethod paint ((source main) (target main))
-  (paint-with (pipeline target) source))
-
-(defmethod paint ((source main) (target shader-pass))
-  (paint (scene source) target))
+  (paint (scene main) target)
+  (gl:bind-framebuffer :draw-framebuffer 0)
+  (%gl:blit-framebuffer 0 0 (width source) (height source) 0 0 (width source) (height source)
+                        (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
+                        (cffi:foreign-enum-value '%gl:enum :nearest)))
 
 (defun launch (&optional (main 'main) &rest initargs)
   (standalone-logging-handler)

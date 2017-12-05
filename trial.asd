@@ -48,6 +48,7 @@
                (:file "main" :depends-on ("package" "display" "window" "toolkit" "scene" "pipeline"))
                (:file "mapping" :depends-on ("package" "event-loop" "toolkit"))
                (:file "pipeline" :depends-on ("package" "event-loop" "toolkit"))
+               (:file "pipelined-scene" :depends-on ("package" "pipeline" "scene"))
                (:file "rails" :depends-on ("package" "subject" "helpers"))
                (:file "render-texture" :depends-on ("package" "pipeline" "entity"))
                (:file "renderable" :depends-on ("package" "toolkit"))

@@ -94,16 +94,20 @@
   (loop for asset being the hash-keys of (assets *context*)
         do (load (offload asset))))
 
-;; FIXME: make these safer by loading a copy or something
-;;        to ensure that if the reload fails we can fall back
-;;        to the previous state.
 (define-handler (controller reload-scene reload-scene 99) (ev)
-  (loop for asset being the hash-keys of (assets *context*)
-        do (offload asset))
-  (clear (scene (display controller)))
-  (clear (pipeline (display controller)))
-  (setup-rendering (display controller))
-  (setup-scene (display controller)))
+  (let* ((display (display controller))
+         (old (scene display)))
+    (stop old)
+    (restart-case
+        (let ((new (make-instance (type-of old))))
+          (setf (clock new) (clock old))
+          (setup-scene display new)
+          (transition old new)
+          (setup-rendering display)
+          (setf (scene display) new))
+      (abort ()
+        :report "Give up reloading the scene and continue with the old."
+        (start old)))))
 
 (define-handler (controller load-request) (ev asset action)
   (ecase action

@@ -6,31 +6,19 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass pipeline (event-loop entity)
+(defclass pipeline ()
   ((nodes :initform NIL :accessor nodes)
    (passes :initform #() :accessor passes)
-   (textures :initform #() :accessor textures)
-   (texture-properties :initarg :texture-properties :initform NIL :accessor texture-properties)))
-
-(defmethod handle :after ((tick tick) (pipeline pipeline))
-  (process pipeline))
-
-(defmethod handle :after ((resize resize) (pipeline pipeline))
-  (resize pipeline (width resize) (height resize)))
-
-(defmethod load progn ((pipeline pipeline))
-  (map NIL #'load (textures pipeline))
-  (map NIL #'load (passes pipeline)))
+   (textures :initform #() :accessor textures)))
 
 (defmethod finalize ((pipeline pipeline))
   (clear pipeline))
 
-(defmethod register ((pass shader-pass) (pipeline pipeline))
+(defmethod enter ((pass shader-pass) (pipeline pipeline))
   (pushnew pass (nodes pipeline)))
 
-(defmethod deregister ((pass shader-pass) (pipeline pipeline))
-  (setf (nodes pipeline) (delete pass (nodes pipeline)))
-  (remove-handler pass pipeline))
+(defmethod leave ((pass shader-pass) (pipeline pipeline))
+  (setf (nodes pipeline) (delete pass (nodes pipeline))))
 
 (defmethod clear ((pipeline pipeline))
   (loop for tex across (textures pipeline)
@@ -46,9 +34,9 @@
 
 (defmethod connect ((source flow:port) (target flow:port) (pipeline pipeline))
   (unless (find (flow:node source) (nodes pipeline))
-    (register (flow:node source) pipeline))
+    (enter (flow:node source) pipeline))
   (unless (find (flow:node target) (nodes pipeline))
-    (register (flow:node target) pipeline))
+    (enter (flow:node target) pipeline))
   (flow:connect source target 'flow:directed-connection)
   pipeline)
 
@@ -79,8 +67,7 @@
                    (let ((color (+ offset (flow:attribute port :color))))
                      (unless (aref textures color)
                        (setf (aref textures color)
-                             (load (apply #'make-asset 'texture (list (texpsec port))
-                                          (texture-properties pipeline)))))
+                             (load (make-asset 'texture (list (texpsec port))))))
                      (setf (texture port) (aref textures color))
                      (dolist (connection (flow:connections port))
                        (setf (texture (flow:right connection)) (aref textures color))))))))))
@@ -139,14 +126,3 @@
 (defmethod register-object-for-pass ((pipeline pipeline) object)
   (loop for pass across (passes pipeline)
         do (register-object-for-pass pass object)))
-
-(defclass frame-pipeline (pipeline)
-  ()
-  (:default-initargs
-   :name :pipeline))
-
-(defmethod paint-with :after ((pipeline frame-pipeline) (source display))
-  (gl:bind-framebuffer :draw-framebuffer 0)
-  (%gl:blit-framebuffer 0 0 (width source) (height source) 0 0 (width source) (height source)
-                        (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
-                        (cffi:foreign-enum-value '%gl:enum :nearest)))
