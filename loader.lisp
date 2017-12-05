@@ -6,44 +6,48 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defgeneric compute-assets (object))
+(defgeneric compute-assets (object traversal-cache))
 (defgeneric bake (bakable))
 (defgeneric baked-p (bakable))
 (defgeneric transition (from to))
 
-(defmethod compute-assets ((null null))
-  ())
+(defmethod compute-assets :around (object (cache null))
+  (compute-assets object (make-hash-table :test 'eq)))
 
-(defmethod compute-assets ((cons cons))
-  (nconc (compute-assets (car cons))
-         (compute-assets (cdr cons))))
+(defmethod compute-assets :around (object (cache hash-table))
+  (unless (gethash object cache)
+    (setf (gethash object cache) T)
+    (call-next-method)))
 
-(defmethod compute-assets ((vector vector))
-  (reduce #'nconc vector :key #'compute-assets))
+(defmethod compute-assets ((anything T) cache)
+  NIL)
 
-(defmethod compute-assets ((table hash-table))
+(defmethod compute-assets ((cons cons) cache)
+  (nconc (compute-assets (car cons) cache)
+         (compute-assets (cdr cons) cache)))
+
+(defmethod compute-assets ((vector vector) cache)
+  (unless (typep vector 'string)
+    (loop for object across vector
+          nconc (compute-assets object cache))))
+
+(defmethod compute-assets ((table hash-table) cache)
   (loop for value being the hash-values of table
-        nconc (compute-assets value)))
+        nconc (compute-assets value cache)))
 
-(defmethod compute-assets ((struct structure-object))
-  (loop for slot in (c2mop:class-slots (class-of struct))
-        for name = (c2mop:slot-definition-name slot)
-        when (slot-boundp struct name)
-        nconc (compute-assets (slot-value struct name))))
-
-(defmethod compute-assets ((object standard-object))
+(defmethod compute-assets ((object entity) cache)
   (loop for slot in (c2mop:class-slots (class-of object))
         for name = (c2mop:slot-definition-name slot)
         when (slot-boundp object name)
-        nconc (compute-assets (slot-value object (c2mop:slot-definition-name slot)))))
+        nconc (compute-assets (slot-value object (c2mop:slot-definition-name slot)) cache)))
 
-(defmethod compute-assets ((asset asset))
+(defmethod compute-assets ((asset asset) cache)
   (nconc (list asset) (call-next-method)))
 
 (defclass bakable ()
   ((baked-p :initform NIL :accessor baked-p)))
 
-(defmethod compute-assets :before ((bakable bakable))
+(defmethod compute-assets :before ((bakable bakable) cache)
   (bake bakable))
 
 (defmethod bake :around ((bakable bakable))
