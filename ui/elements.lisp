@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial.ui)
 
-(define-shader-entity flat-widget (vertex-entity colored-entity widget)
+(define-shader-entity flat-widget (vertex-entity colored-entity widget bakable)
   ((background-color :initarg :background-color :accessor background-color))
   (:default-initargs
    :background-color (vec 0.5 0.5 0.5 1)
@@ -17,6 +17,9 @@
     (setf (color widget) background-color))
   (when extent
     (note-extent-change widget NIL)))
+
+(defmethod bake ((widget flat-widget))
+  (note-extent-change widget NIL))
 
 (defmethod note-extent-change :after ((widget flat-widget) (other null))
   (finalize (vertex-array widget))
