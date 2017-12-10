@@ -339,6 +339,13 @@
    #:layer-active-p
    #:layered-unit
    #:layer)
+  ;; loader.lisp
+  (:export
+   #:compute-assets
+   #:bake
+   #:baked-p
+   #:transition
+   #:bakable)
   ;; main.lisp
   (:export
    #:main
