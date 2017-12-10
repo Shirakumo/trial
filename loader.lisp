@@ -39,10 +39,10 @@
   (loop for slot in (c2mop:class-slots (class-of object))
         for name = (c2mop:slot-definition-name slot)
         when (slot-boundp object name)
-        nconc (compute-assets (slot-value object (c2mop:slot-definition-name slot)) cache)))
+        nconc (compute-assets (slot-value object name) cache)))
 
 (defmethod compute-assets ((asset asset) cache)
-  (nconc (list asset) (call-next-method)))
+  (nconc (call-next-method) (list asset)))
 
 (defclass bakable ()
   ((baked-p :initform NIL :accessor baked-p)))
