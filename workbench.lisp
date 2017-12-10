@@ -3,48 +3,28 @@
 (define-pool workbench
   :base 'trial)
 
-(define-asset (workbench teapot) mesh
-    (#p"teapot.vf")
-  :mesh :TEAPOT01MESH)
-
-(define-asset (workbench grid) mesh
-    ((make-line-grid 10 200 200)))
-
-(define-asset (workbench cat) texture
-    (#p"cat.png"))
-
-(define-asset (workbench skybox) texture
-    (#p"nissi-beach/posx.jpg"
-     #p"nissi-beach/negx.jpg"
-     #p"nissi-beach/posy.jpg"
-     #p"nissi-beach/negy.jpg"
-     #p"nissi-beach/posz.jpg"
-     #p"nissi-beach/negz.jpg")
-  :target :texture-cube-map)
-
-(define-shader-subject teapot (vertex-entity colored-entity textured-entity located-entity rotated-entity selectable)
-  ((vel :initform (/ (random 1.0) (+ 10 (random 20))) :accessor vel))
-  (:default-initargs :vertex-array (asset 'workbench 'teapot)
-                     :texture (asset 'workbench 'cat)
-                     :rotation (vec (/ PI -2) 0 0)
-                     :color (vec4-random 0.2 0.8)
-                     :location (vx_z (vec3-random -100 100))))
-
-(define-shader-subject grid (vertex-entity colored-entity)
-  ()
-  (:default-initargs :vertex-array (asset 'workbench 'grid)
-                     :vertex-form :lines))
-
-(define-handler (teapot tick) (ev)
-  (incf (vz (rotation teapot)) (vel teapot)))
-
 (progn
   (defmethod setup-scene ((main main) scene)
-    (enter (make-instance 'skybox :texture (asset 'workbench 'skybox)) scene)
-    (enter (make-instance 'grid) scene)
-    (dotimes (i 5)
-      (enter (make-instance 'teapot) scene))
-    (enter (make-instance 'editor-camera :location (vec 0 100 150)) scene)
+    (let ((window (make-instance 'trial-ui::ui-window
+                                 :name :ui
+                                 :extent (vec4 0 0 (width *context*) (height *context*))
+                                 :layout (make-instance 'trial-ui::horizontal-layout :alignment :top)))
+          (context (make-instance 'trial-ui::ui-context)))
+      (enter (make-instance 'trial-ui::spacer :preferred-size (vec 0.1 0.1)) window)
+      (enter (make-instance 'trial-ui::text-field :text "1") window)
+      (enter (make-instance 'trial-ui::spacer :preferred-size (vec 0.1 0.1)) window)
+      (enter (make-instance 'trial-ui::text-field :text "2") window)
+      (enter (make-instance 'trial-ui::spacer :preferred-size (vec 0.1 0.1)) window)
+      (enter window scene)
+      (enter window context)
+      (add-handler context scene))
+    (enter (make-instance '2d-camera) scene)
     (enter (make-instance 'render-pass) scene))
 
   (maybe-reload-scene))
+
+(define-handler (controller resize) (ev width height)
+  (let ((ui (unit :ui *loop*)))
+    (setf (vz (extent ui)) width)
+    (setf (vw (extent ui)) height)
+    (trial-ui::note-extent-change ui nil)))
