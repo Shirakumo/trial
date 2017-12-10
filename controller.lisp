@@ -41,7 +41,7 @@
    :name :controller))
 
 (defmethod compute-assets ((controller controller) cache)
-  (list (text controller)))
+  (compute-assets (text controller) cache))
 
 (defmethod register-object-for-pass :after (pass (controller controller))
   (register-object-for-pass pass (text controller)))
