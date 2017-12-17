@@ -40,7 +40,9 @@
   (v:debug :trial.asset "Loaded font ~a" (first (coerced-inputs asset))))
 
 (defmethod text-extent ((font font) text)
-  (cl-fond:compute-extent (resource font) text))
+  (if (resource font)
+      (cl-fond:compute-extent (resource font) text)
+      '(:l 0 :r 0 :t 0 :b 0 :gap 0)))
 
 (define-shader-entity text (asset located-entity)
   ((font :initarg :font :accessor font)
@@ -128,9 +130,7 @@ void main(){
       (setf (size vao) (cl-fond:update-text font text (resource vbo) (resource ebo))))))
 
 (defmethod extent ((entity text))
-  (if (resource (font entity))
-      (text-extent entity (text entity))
-      '(:l 0 :r 0 :t 0 :b 0 :gap 0)))
+  (text-extent entity (text entity)))
 
 (defmethod text-extent ((entity text) text)
   (destructuring-bind (&key l r ((:t u)) b gap) (text-extent (font entity) text)
