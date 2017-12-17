@@ -35,8 +35,12 @@
   (setf (resource asset)
         (cl-fond:make-font (first (coerced-inputs asset))
                            (charset asset)
-                           :size (size asset)))
+                           :size (size asset)
+                           :oversample 2))
   (v:debug :trial.asset "Loaded font ~a" (first (coerced-inputs asset))))
+
+(defmethod text-extent ((font font) text)
+  (cl-fond:compute-extent (resource font) text))
 
 (define-shader-entity text (asset located-entity)
   ((font :initarg :font :accessor font)
@@ -125,7 +129,10 @@ void main(){
 
 (defmethod extent ((entity text))
   (if (resource (font entity))
-      (cl-fond:compute-extent (resource (font entity))
-                              (text entity))
+      (text-extent entity (text entity))
       '(:l 0 :r 0 :t 0 :b 0 :gap 0)))
 
+(defmethod text-extent ((entity text) text)
+  (destructuring-bind (&key l r ((:t u)) b gap) (text-extent (font entity) text)
+    (let ((s (/ (size entity) (size (font entity)))))
+      (list :l (* l s) :r (* r s) :t (* u s) :b (* b s) :gap (* gap s)))))

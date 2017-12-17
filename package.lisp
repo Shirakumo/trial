@@ -589,6 +589,7 @@
    #:font
    #:charset
    #:size
+   #:text-extent
    #:text
    #:font
    #:text
