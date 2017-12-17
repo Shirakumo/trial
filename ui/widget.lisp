@@ -50,3 +50,9 @@
   (when (parent widget)
     (note-extent-change (parent widget) widget)))
 
+(defmethod paint :around ((widget widget) target)
+  (let ((prev (gl:get-integer :scissor-box 4)))
+    (with-vec4 (x y w h) (extent widget)
+      (gl:scissor x y w h))
+    (call-next-method)
+    (gl:scissor (aref prev 0) (aref prev 1) (aref prev 2) (aref prev 3))))

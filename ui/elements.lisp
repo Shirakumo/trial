@@ -27,7 +27,7 @@
         (change-class (make-rectangle (width widget) (height widget) :align :topleft)
                       'vertex-array :load T)))
 
-(defmethod paint :around ((widget widget) target)
+(defmethod paint :around ((widget flat-widget) target)
   (with-pushed-matrix (((model-matrix) :identity))
     (translate (vxy_ (extent widget)))
     (call-next-method)))
@@ -67,8 +67,11 @@
    :font (asset 'trial 'trial::noto-sans)
    :align (list :center :center)))
 
-(defmethod initialize-instance :after ((text-element text-element) &key text text-color font)
-  (setf (text-asset text-element) (make-instance 'text :text text :color text-color :font font)))
+(defmethod initialize-instance :after ((text-element text-element) &key (size 24) text text-color font)
+  (setf (text-asset text-element) (make-instance 'text :text text
+                                                       :color text-color
+                                                       :font font
+                                                       :size size)))
 
 (defmethod text ((text-element text-element))
   (text (text-asset text-element)))
@@ -81,7 +84,7 @@
   (destructuring-bind (halign valign) (align text-element)
     (let* ((bounds (extent (text-asset text-element)))
            (x (ecase halign
-                (:left (getf bounds :l))
+                (:left (- (getf bounds :l)))
                 (:right (- (+ (width text-element) (getf bounds :l)) (getf bounds :r)))
                 (:center (/ (- (+ (width text-element) (getf bounds :l)) (getf bounds :r)) 2))))
            (y (ecase valign

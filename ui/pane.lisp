@@ -63,14 +63,3 @@
   (loop for e across (objects pane)
         do (paint e target)))
 
-(defclass rectangular-pane (pane)
-  ())
-
-(defmethod paint :around ((pane rectangular-pane) target)
-  (with-pushed-attribs ()
-    (let ((prev (gl:get-integer :scissor-box 4)))
-      (enable :scissor-test)
-      (with-vec4 (x y w h) (extent pane)
-        (gl:scissor x y w h))
-      (call-next-method)
-      (gl:scissor (aref prev 0) (aref prev 1) (aref prev 2) (aref prev 3)))))
