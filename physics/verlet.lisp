@@ -19,6 +19,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 
 (defclass verlet-point ()
   ((location :initarg :location :accessor location)
+   (distance :initarg :distance :reader distance)
    (old-location :initform NIL :accessor old-location)
    (acceleration :initform NIL :accessor acceleration))
   (:default-initargs :location (error "Must define a location for a point!")))
@@ -56,13 +57,14 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
     (error "Must define enough edges for all points")) ;; TODO: Should we allow missing the final edge?
   (let* ((point-count (length points))
          (edge-point-count (length edges))
+         (location (location entity))
          (vertices (make-array point-count :initial-element NIL))
          (edge-arr (make-array edge-point-count :initial-element NIL)))
     (for:for ((point in points)
               (i counting point)
-              (x = (car point))
-              (y = (cdr point)))
-      (setf (aref vertices (1- i)) (make-instance 'verlet-point :location (vec x y))))
+              (loc = (vec (car point) (cdr point))))
+      (setf (aref vertices (1- i)) (make-instance 'verlet-point :location (v+ loc location)
+                                                                :distance (vlength loc))))
     (for:for ((edge in edges)
               (i counting edge)
               (p1 = (car edge))
@@ -118,6 +120,10 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
         (setf max dotp)))
     (values min max)))
 
+(defmethod ensure-position ((entity verlet-entity))
+  "Makes sure that the position and the rotation of this entity matches how its vertices have moved."
+  )
+
 (defmethod collides-p ((entity verlet-entity) (other verlet-entity))
   "Collision test between two entities. Does not return T or NIL, as the name would hint, but rather gives you multiple values,
 depth: length of the collision vector, or how deep the objects overlap
@@ -168,6 +174,50 @@ vertex: point that pierces furthest in"
                   vertex point))) ;; And here we find the piercing point
         (values depth (/ mass1 total-mass) (/ mass2 total-mass) normal col-edge vertex)))))
 
+(defun in-between-point (p0 r0 p1 r1)
+"
+Calculates the point in between two points in space that is in 90 degrees from a point that is r0 distance away from p0 and r1 distance away from p1.
+Values returned are the aforementioned point as a VEC and the distance from the point that the r0 r1 distances are for.
+"
+  (let* ((d (vlength (v- p1 p0)))
+         (a (/ (+ (- (* r0 r0) (* r1 r1)) (* d d)) (* 2 d))))
+    (values (v+ p0 (v/ (v* (v- p1 p0) a) d))
+            (sqrt (+ (* a a) (* r0 r0))))))
+
+(defun triangulate (points &optional dimensions)
+  "Triangulates the position from a collection of VERLET-POINT objects."
+  (let* ((points (etypecase points
+                   (list points)
+                   (array (loop for point across points (collecting point)))))
+         (point (aref points 0))
+         (p0 (location point))
+         (r0 (distance point))
+         (dimensions (or (and dimensions (1- dimensions))
+                         (etypecase p0 (vec2 2) (vec3 3) (vec4 4)))))
+    (for:for ((point over points)
+              (p = (location point))
+              (r = (distance point)))
+      ;; Find three separate points
+      (cond
+        ((null p0)
+         (setf p0 p
+               r0 (distance p)))
+        ((and p0 (null p1) (v/= p p0))
+         (setf p1 p
+               r1 (distance p)))
+        ((and p0 p1 (null p2) (v/= p p0) (v/= p p1))
+         (setf p2 p
+               r2 (distance p))))
+      (until (and p0 p1 p2)))
+    (multiple-value-bind (p01 r01)
+        (in-between-point p0 r0 p1 r1)
+      ;; p01 is the point along p0-p1 line that is in 90 degrees from the wanted position etc.
+      (multiple-value-bind (p12 r12)
+          (in-between-point p1 r1 p2 r2)
+        (multiple-value-bind (p02 r02)
+            (in-between-point p0 r0 p2 r2)
+          )))))
+
 (defun resolve-collision (depth mass-a mass-b normal edge vertex)
   "Pushes back the two entities from one another. The normal always points towards the piercing entity."
   (when (and depth mass-a mass-b normal edge vertex)
@@ -209,4 +259,6 @@ vertex: point that pierces furthest in"
           do (for:for ((other in rest))
                (update-edges other)
                (calculate-center other)
-               (multiple-value-call #'resolve-collision (collides-p entity other))))))
+               (multiple-value-call #'resolve-collision (collides-p entity other))
+               (ensure-position other))
+          do (ensure-position entity))))
