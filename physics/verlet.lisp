@@ -15,31 +15,46 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 (defvar *default-viscosity* 1.0
   "How hard is it to move horizontally when falling on a surface.")
 (defvar *iterations* 5
-  "Number of physics calculation iterations. Increases accuracy of calculations.")
+  "Number of physics calculation iterations. Increases accuracy of calculations.
+In general, 4 is minimum for an alright accuracy, 8 is enough for a good accuracy.")
 
 (defclass verlet-point ()
   ((location :initarg :location :accessor location)
-   (distance :initarg :distance :reader distance)
    (old-location :initform NIL :accessor old-location)
-   (acceleration :initform NIL :accessor acceleration))
-  (:default-initargs :location (error "Must define a location for a point!")))
+   (acceleration :initarg :acceleration :accessor acceleration))
+  (:default-initargs :location (error "Must define a location for a point!")
+                     :acceleration (vec 0 0)))
 
-(defmethod initialize-instance :after ((point verlet-point) &key old-location acceleration)
-  (setf (old-location point) (or old-location (location point))
-        (acceleration point) (or acceleration (vec 0 0))))
+(defmethod initialize-instance :after ((point verlet-point) &key old-location)
+  (setf (old-location point) (or old-location (location point))))
+
+(defmethod simulate ((point verlet-point) delta)
+  (nv* (acceleration point) (* delta delta))
+  (let ((position (v+ (v- (v* (position point) 2)
+                          (old-position point))
+                      (acceleration point))))
+    (setf (old-position point) (position point)
+          (position point) position)
+    (vdecf (acceleration point) (acceleration point))))
 
 (defclass verlet-edge ()
   ((parent :initarg :parent :reader parent)
    (point-a :initarg :point-a :accessor point-a)
    (point-b :initarg :point-b :accessor point-b)
-   (original-length :initarg :length :reader original-length)))
+   (original-length :initform NIL :reader original-length)
+   (stretchiness )))
+
+(defmethod initialize-instance :after ((edge verlet-edge) &key)
+  (setf (slot-value edge 'original-length) (vlength (v- (point-a edge) (point-b edge)))))
 
 (defclass verlet-entity (physical-entity)
   ((vertices :initform NIL :accessor vertices)
    (edges :initform NIL :accessor edges)
    (center :initform NIL :accessor center)
-   (viscosity :initarg :viscosity :accessor viscosity))
-  (:default-initargs :viscosity *default-viscosity*))
+   (viscosity :initarg :viscosity :accessor viscosity)
+   (rotates-p  :initarg :rotates-p :accessor rotates-p))
+  (:default-initargs :viscosity *default-viscosity*
+                     :rotates-p T))
 
 (defmethod initialize-instance :after ((entity verlet-entity) &key points edges)
 "
@@ -54,7 +69,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   (unless (< 3 (length points))
     (error "Must define a minimum of three points"))
   (when (< (length edges) (length points))
-    (error "Must define enough edges for all points")) ;; TODO: Should we allow missing the final edge?
+    (error "Must define enough edges for all points"))
   (let* ((point-count (length points))
          (edge-point-count (length edges))
          (location (location entity))
@@ -63,8 +78,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
     (for:for ((point in points)
               (i counting point)
               (loc = (vec (car point) (cdr point))))
-      (setf (aref vertices (1- i)) (make-instance 'verlet-point :location (v+ loc location)
-                                                                :distance (vlength loc))))
+      (setf (aref vertices (1- i)) (make-instance 'verlet-point :location (v+ loc location))))
     (for:for ((edge in edges)
               (i counting edge)
               (p1 = (car edge))
@@ -175,48 +189,12 @@ vertex: point that pierces furthest in"
         (values depth (/ mass1 total-mass) (/ mass2 total-mass) normal col-edge vertex)))))
 
 (defun in-between-point (p0 r0 p1 r1)
-"
-Calculates the point in between two points in space that is in 90 degrees from a point that is r0 distance away from p0 and r1 distance away from p1.
-Values returned are the aforementioned point as a VEC and the distance from the point that the r0 r1 distances are for.
-"
+  "Calculates the point in between two points in space that is in 90 degrees from a point that is r0 distance away from p0 and r1 distance away from p1.
+Values returned are the aforementioned point as a VEC and the distance from the point that the r0->r1 distances are for."
   (let* ((d (vlength (v- p1 p0)))
          (a (/ (+ (- (* r0 r0) (* r1 r1)) (* d d)) (* 2 d))))
     (values (v+ p0 (v/ (v* (v- p1 p0) a) d))
             (sqrt (+ (* a a) (* r0 r0))))))
-
-(defun triangulate (points &optional dimensions)
-  "Triangulates the position from a collection of VERLET-POINT objects."
-  (let* ((points (etypecase points
-                   (list points)
-                   (array (loop for point across points (collecting point)))))
-         (point (aref points 0))
-         (p0 (location point))
-         (r0 (distance point))
-         (dimensions (or (and dimensions (1- dimensions))
-                         (etypecase p0 (vec2 2) (vec3 3) (vec4 4)))))
-    (for:for ((point over points)
-              (p = (location point))
-              (r = (distance point)))
-      ;; Find three separate points
-      (cond
-        ((null p0)
-         (setf p0 p
-               r0 (distance p)))
-        ((and p0 (null p1) (v/= p p0))
-         (setf p1 p
-               r1 (distance p)))
-        ((and p0 p1 (null p2) (v/= p p0) (v/= p p1))
-         (setf p2 p
-               r2 (distance p))))
-      (until (and p0 p1 p2)))
-    (multiple-value-bind (p01 r01)
-        (in-between-point p0 r0 p1 r1)
-      ;; p01 is the point along p0-p1 line that is in 90 degrees from the wanted position etc.
-      (multiple-value-bind (p12 r12)
-          (in-between-point p1 r1 p2 r2)
-        (multiple-value-bind (p02 r02)
-            (in-between-point p0 r0 p2 r2)
-          )))))
 
 (defun resolve-collision (depth mass-a mass-b normal edge vertex)
   "Pushes back the two entities from one another. The normal always points towards the piercing entity."
@@ -245,11 +223,11 @@ Values returned are the aforementioned point as a VEC and the distance from the 
         (setf (location (point-a edge)) (v- point-a (v* response (- 1 t-point) mass-b lmba))
               (location (point-b edge)) (v- point-b (v* response t-point mass-b lmba)))))))
 
-(defun update-physics (entities)
+(defun update-physics (entities &key (iterations *iterations*))
   (for:for ((entity in entities))
     (apply-forces entity)
     (update-edges entity))
-  (dotimes (i *iterations*) ;; More you do it, better it gets
+  (dotimes (i iterations) ;; More you do it, better it gets
     (loop for list = entities then (rest list)
           for entity = (first list)
           for rest = (rest list)
