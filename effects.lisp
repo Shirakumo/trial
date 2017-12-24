@@ -11,7 +11,7 @@
 
 (define-shader-pass render-pass (per-object-pass)
   ((color :port-type output :attachment :color-attachment0)
-   (depth :port-type output :attachment :depth-attachment)))
+   (depth :port-type output :attachment :depth-stencil-attachment)))
 
 (define-shader-pass msaa-pass (render-pass multisampled-per-object-pass)
   ())
@@ -108,7 +108,7 @@ void main(){
   "out vec4 color;
 
 void main(){
-  color = vec4(0, 0, 0, 1);
+  color *= vec4(0, 0, 0, 1);
 }")
 
 (define-shader-pass light-scatter-pass (post-effect-pass)
@@ -118,34 +118,3 @@ void main(){
 
 (define-class-shader (light-scatter-pass :fragment-shader)
   '(effects #p"light-scatter.frag"))
-
-(define-shader-pass depth-peel-pass (per-object-pass)
-  ((layers :initarg :layers :accessor layers)
-   (previous-depth :port-type buffer :attachment :depth-attachment :accessor previous-depth)
-   (color :port-type output :attachment :color-attachment0 :accessor color)
-   (depth :port-type output :attachment :depth-attachment :accessor depth))
-  (:default-initargs :layers 8))
-
-(defmethod paint ((pass depth-peel-pass) target)
-  (call-next-method)
-  (gl:blend-func-separate :dst-alpha :one
-                          :zero :one-minus-src-alpha)
-  (dotimes (i (layers pass))
-    ;; Swap textures.
-    (rotatef (previous-depth pass) (depth pass))
-    (%gl:framebuffer-texture :framebuffer :depth-attachment (resource (depth pass)) 0)
-    (call-next-method))
-  (gl:blend-func :src-alpha :one-minus-src-alpha))
-
-(define-class-shader (depth-peel-pass :fragment-shader 100)
-  "uniform sampler2D previous_depth;
-
-void main(){
-  float depth = gl_FragCoord.z;
-  float previous_depth = texture(previous_depth, gl_FragCoord.xy).r;
-
-  // This may seem confusing, but 1.0 is \"far\" and 0.0 is \"near\".
-  if(depth <= previous_depth){
-    discard;
-  }
-}")

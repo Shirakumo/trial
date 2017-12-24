@@ -10,10 +10,15 @@
   ((context :initarg :context :accessor context)
    (clear-color :initarg :clear-color :accessor clear-color))
   (:default-initargs
-   :clear-color (vec 0.2 0.3 0.3)
-   :context (make-context)))
+   :clear-color (vec 0.2 0.3 0.3)))
 
-(defmethod initialize-instance :after ((display display) &key context)
+(defmethod initialize-instance :after ((display display) &rest initargs &key context title width height version profile double-buffering stereo-buffer vsync)
+  (declare (ignore title width height version profile double-buffering stereo-buffer vsync))
+  (unless context
+    (let ((args (loop for (k v) on initargs by #'cddr
+                      for keep = (find k '(:title :width :height :version :profile :double-buffering :stereo-buffer :vsync))
+                      when keep collect k when keep collect v)))
+      (setf context (setf (context display) (apply #'make-context NIL args)))))
   (setf (handler context) display)
   (add-gamepad-handler display)
   (with-context ((context display))
@@ -30,6 +35,9 @@
   (reset-matrix (view-matrix))
   (reset-matrix (projection-matrix))
   (reset-attributes (attribute-table))
+  (gl:stencil-mask #xFF)
+  (gl:clear-stencil #x00)
+  (gl:stencil-op :keep :keep :keep)
   (gl:depth-mask T)
   (gl:depth-func :lequal)
   (gl:blend-func :src-alpha :one-minus-src-alpha)
@@ -37,7 +45,7 @@
   (gl:front-face :ccw)
   (gl:cull-face :back)
   (gl:hint :line-smooth-hint :nicest)
-  (enable :blend :multisample :line-smooth :depth-test :depth-clamp))
+  (enable :blend :multisample :cull-face :line-smooth :depth-test :depth-clamp :scissor-test))
 
 (defmethod paint (source (target display)))
 
@@ -51,7 +59,7 @@
     (with-context (context :reentrant T)
       (let ((c (clear-color target)))
         (gl:clear-color (vx c) (vy c) (vz c) (if (vec4-p c) (vw c) 0.0)))
-      (gl:clear :color-buffer :depth-buffer)
+      (gl:clear :color-buffer :depth-buffer :stencil-buffer)
       (call-next-method)
       (swap-buffers context))))
 

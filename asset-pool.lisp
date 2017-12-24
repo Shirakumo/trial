@@ -7,9 +7,10 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defmethod coerce-base (base)
-  (if *standalone*
-      (merge-pathnames (format NIL "pool/~(~a~)/" base) (uiop:argv0))
-      (merge-pathnames "data/" (asdf:system-source-directory base))))
+  (destructuring-bind (base &rest sub) (if (listp base) base (list base))
+    (if *standalone*
+        (merge-pathnames (format NIL "pool/~(~a~)/~{~a/~}" base sub) (deploy:data-directory))
+        (merge-pathnames (format NIL "data/~{~a/~}" sub) (asdf:system-source-directory base)))))
 
 (defvar *pools* (make-hash-table :test 'eql))
 
@@ -47,11 +48,11 @@
             (setf (pool ',name) (make-instance 'pool :name ',name ,@initargs))))
      ',name))
 
-(defmethod asset ((pool pool) name &optional errorp)
+(defmethod asset ((pool pool) name &optional (errorp T))
   (or (gethash name (assets pool))
       (when errorp (error "No asset with name ~s on pool ~a." name pool))))
 
-(defmethod asset ((pool symbol) name &optional errorp)
+(defmethod asset ((pool symbol) name &optional (errorp T))
   (let ((pool (pool pool errorp)))
     (when pool (asset pool name errorp))))
 
@@ -100,7 +101,7 @@
         (asset (gensym "ASSET"))
         (inputs (substitute-asset-paths inputs pool)))
     `(let ((,scene (when (window :main) (scene (window :main))))
-           (,asset (asset ',pool ',name)))
+           (,asset (asset ',pool ',name NIL)))
        (cond ((and ,asset (eql (type-of ,asset) ',type))
               (reinitialize-instance ,asset :inputs (list ,@inputs) ,@initargs)
               (when (and ,scene (resource ,asset))

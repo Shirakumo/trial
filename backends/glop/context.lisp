@@ -6,8 +6,8 @@
 
 (in-package #:org.shirakumo.fraf.trial.glop)
 
-(defun make-context (&optional handler)
-  (make-instance 'context :handler handler))
+(defun make-context (&optional handler &rest initargs)
+  (apply #'make-instance 'context :handler handler initargs))
 
 (defclass context (trial:context glop:window)
   ((context :initform NIL :accessor context)
@@ -53,6 +53,8 @@
 (defmethod create-context ((context context))
   (flet ((g (item &optional default)
            (getf (initargs context) item default)))
+    (when (shared-with context)
+      (error "GLOP does not support context sharing! Go bugger the devs about it."))
     (glop:open-window context
                       (g :title) (g :width) (g :height)
                       :x (g :x 0) :y (g :y 0)
@@ -167,7 +169,8 @@
 (defun launch-with-context (&optional (main 'main) &rest initargs)
   #+linux (cffi:foreign-funcall "XInitThreads" :int)
   (let* ((main (apply #'make-instance main initargs))
-         (context (trial:context main)))
+         (context (trial:context main))
+         (glop:*ignore-auto-repeat* t))
     (flet ((body ()
              (unwind-protect
                   (catch 'escape
@@ -195,8 +198,7 @@
         (pushnew :super (modifiers context)))
        ((:hyper-l :hyper-r)
         (pushnew :hyper (modifiers context))))
-     (handle (make-instance 'key-press :key (glop:keysym event)
-                                       :text (glop:text event)
+     (handle (make-instance 'key-press :key (glop-key->key (glop:keysym event))
                                        :modifiers (modifiers context))
              (handler context)))
     (glop:key-release-event
@@ -212,10 +214,12 @@
         (setf (modifiers context) (delete :super (modifiers context))))
        ((:hyper-l :hyper-r)
         (setf (modifiers context) (delete :hyper (modifiers context)))))
-     (handle (make-instance 'key-release :key (glop:keysym event)
-                                         :text (glop:text event)
+     (handle (make-instance 'key-release :key (glop-key->key (glop:keysym event))
                                          :modifiers (modifiers context))
-             (handler context)))
+             (handler context))
+     (when (and (glop:text event) (string/= "" (glop:text event)))
+       (handle (make-instance 'text-entered :text (glop:text event))
+               (handler context))))
     (glop:button-press-event
      (case (glop:button event)
        (4 (v:debug :trial.input "Mouse wheel: ~a" 1)
@@ -235,16 +239,17 @@
     (glop:button-release-event
      (v:debug :trial.input "Mouse released: ~a" (glop-button->symbol
                                                  (glop:button event)))
-     (handle (make-instance 'mouse-release :button (glop:button event)
+     (handle (make-instance 'mouse-release :button (glop-button->symbol
+                                                    (glop:button event))
                                            :pos (mouse-pos context))
              (handler context)))
     (glop:mouse-motion-event
      (let ((current (vec (+ (glop:x event) (glop:dx event))
-                         (+ (glop:y event) (glop:dy event)))))
-       (setf (mouse-pos context) current)
-       (handle (make-instance 'mouse-move :old-pos (vec (glop:x event) (glop:y event))
-                                          :pos (vcopy current))
-               (handler context))))
+                         (- (glop:window-height context) (+ (glop:y event) (glop:dy event))))))
+       (handle (make-instance 'mouse-move :old-pos (or (mouse-pos context) current)
+                                          :pos current)
+               (handler context))
+       (setf (mouse-pos context) current)))
     (glop:resize-event
      (let ((previous-size (previous-size context)))
        (when (or (/= (glop:width event) (vx previous-size))
@@ -264,6 +269,11 @@
      (setf (closing context) T)))
   (when (closing context)
     (throw 'escape NIL)))
+
+;; FIXME: match this up with the GLFW backend.
+(defun glop-key->key (key)
+  (case key
+    (T key)))
 
 (defun glop-button->symbol (button)
   (case button

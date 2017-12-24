@@ -24,7 +24,7 @@
   (key-press (and (eql key :q) (find :control modifiers))))
 
 (define-action toggle-overlay (system-action)
-  (key-press (one-of key :section)))
+  (key-press (one-of key :section :grave)))
 
 (define-asset (trial noto-sans) font
     (#p"noto-sans-regular.ttf"))
@@ -40,8 +40,8 @@
   (:default-initargs
    :name :controller))
 
-(defmethod load progn ((controller controller))
-  (load (text controller)))
+(defmethod compute-assets ((controller controller) cache)
+  (compute-assets (text controller) cache))
 
 (defmethod register-object-for-pass :after (pass (controller controller))
   (register-object-for-pass pass (text controller)))
@@ -64,13 +64,15 @@
           (setf (text text) (format NIL "TIME  [s]: ~8,2f~%~
                                          FPS  [Hz]: ~8,2f~%~
                                          RAM  [KB]: ~8d (~2d%)~%~
-                                         VRAM [KB]: ~8d (~2d%)"
-                                    tt
+                                         VRAM [KB]: ~8d (~2d%)~%~
+                                         ASSETS   : ~8d"
+                                    (clock (scene (display controller)))
                                     (/ (loop for i from 0 below (array-total-size fps-buffer)
                                              sum (aref fps-buffer i))
                                        (array-total-size fps-buffer))
                                     (- ctotal cfree) (floor (/ (- ctotal cfree) ctotal 0.01))
-                                    (- gtotal gfree) (floor (/ (- gtotal gfree) gtotal 0.01)))))))))
+                                    (- gtotal gfree) (floor (/ (- gtotal gfree) gtotal 0.01))
+                                    (hash-table-count (assets *context*)))))))))
 
 (defmethod paint ((controller controller) target)
   (when (show-overlay controller)
@@ -86,27 +88,27 @@
 (define-handler (controller quit-game) (ev)
   (quit *context*))
 
-(define-handler (controller resize) (ev width height)
-  (let ((pipeline (pipeline (display controller))))
-    (when pipeline (resize pipeline width height))))
-
 (define-handler (controller mapping T 100) (ev)
   (map-event ev *loop*)
   (retain-event ev))
 
-(define-handler (controller reload-assets reload-assets 99) (ev)
-  (loop for asset being the hash-keys of (assets *context*)
-        do (load (offload asset))))
+;; (define-handler (controller reload-assets reload-assets 99) (ev)
+;;   (loop for asset being the hash-keys of (assets *context*)
+;;         do (load (offload asset))))
 
-;; FIXME: make these safer by loading a copy or something
-;;        to ensure that if the reload fails we can fall back
-;;        to the previous state.
 (define-handler (controller reload-scene reload-scene 99) (ev)
-  (loop for asset being the hash-keys of (assets *context*)
-        do (offload asset))
-  (clear (scene (display controller)))
-  (clear (pipeline (display controller)))
-  (setup-scene (display controller)))
+  (let* ((display (display controller))
+         (old (scene display)))
+    (stop old)
+    (restart-case
+        (let ((new (make-instance (type-of old))))
+          (setf (clock new) (clock old))
+          (setup-scene display new)
+          (transition old new)
+          (setf (scene display) new))
+      (abort ()
+        :report "Give up reloading the scene and continue with the old."
+        (start old)))))
 
 (define-handler (controller load-request) (ev asset action)
   (ecase action

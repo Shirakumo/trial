@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="20px" height="20px" viewBox="0 0 20 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 3.8.1 (29687) - http://www.bohemiancoding.com/sketch -->
+    <title>object_alignment_round [#871]</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Dribbble-Dark-Preview" transform="translate(-420.000000, -4319.000000)" fill="#FFFFFF">
+            <g id="icons" transform="translate(56.000000, 160.000000)">
+                <path d="M379,4161 L381,4161 C381.552,4161 382,4161.448 382,4162 L382,4165 L378,4165 L378,4162 C378,4161.448 378.448,4161 379,4161 L379,4161 Z M376,4167 L378,4167 L382,4167 L382,4171 L372,4171 L372,4168 C372,4167.448 372.448,4167 373,4167 L376,4167 Z M370,4173 L372,4173 L382,4173 L382,4176 C382,4176.552 381.552,4177 381,4177 L367,4177 C366.448,4177 366,4176.552 366,4176 L366,4174 C366,4173.448 366.448,4173 367,4173 L370,4173 Z M372,4165 C370.895,4165 370,4165.895 370,4167 L370,4171 L366,4171 C364.895,4171 364,4171.895 364,4173 L364,4177 C364,4178.105 364.895,4179 366,4179 L382,4179 C383.105,4179 384,4178.105 384,4177 L384,4173 L384,4171 L384,4167 L384,4165 L384,4161 C384,4159.895 383.105,4159 382,4159 L378,4159 C376.896,4159 376.001,4159.895 376.001,4160.998 L376,4165 L372,4165 Z" id="object_alignment_round-[#871]"></path>
+            </g>
+        </g>
+    </g>
+</svg>

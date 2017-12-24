@@ -7,8 +7,8 @@
 (in-package #:org.shirakumo.fraf.trial.qt)
 (in-readtable :qtools)
 
-(defun make-context (&optional handler)
-  (make-instance 'context :handler handler))
+(defun make-context (&optional handler &rest initargs)
+  (apply #'make-instance 'context :handler handler initargs))
 
 (define-widget context (QGLWidget trial:context)
   ((glformat :initform NIL :accessor glformat)
@@ -16,7 +16,11 @@
    (previous-pos :initform NIL)))
 
 (defmethod construct ((context context))
-  (new context (glformat context))
+  (new context
+       (glformat context)
+       (null-qobject "QWidget")
+       (or (shared-with context)
+           (null-qobject "QGLWidget")))
   (let ((glcontext (q+:context context)))
     (if (q+:is-valid glcontext)
         (v:info :trial.context "~a successfully created context." context)

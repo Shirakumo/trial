@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="20px" height="14px" viewBox="0 0 20 14" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 3.8.1 (29687) - http://www.bohemiancoding.com/sketch -->
+    <title>toggle_button [#896]</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Dribbble-Dark-Preview" transform="translate(-220.000000, -4242.000000)" fill="#FFFFFF">
+            <g id="icons" transform="translate(56.000000, 160.000000)">
+                <path d="M174.502,4088.795 C174.502,4090.452 173.159,4091.795 171.502,4091.795 C169.845,4091.795 168.502,4090.452 168.502,4088.795 C168.502,4087.138 169.845,4085.795 171.502,4085.795 C173.159,4085.795 174.502,4087.138 174.502,4088.795 L174.502,4088.795 Z M182,4090 C182,4092.209 180.21,4094 178,4094 L170,4094 C167.791,4094 166,4092.209 166,4090 L166,4088 C166,4085.791 167.791,4084 170,4084 L178,4084 C180.21,4084 182,4085.791 182,4088 L182,4090 Z M184,4088 C184,4084.686 181.314,4082 178,4082 L170,4082 C166.687,4082 164,4084.686 164,4088 L164,4090 C164,4093.314 166.687,4096 170,4096 L178,4096 C181.314,4096 184,4093.314 184,4090 L184,4088 Z" id="toggle_button-[#896]"></path>
+            </g>
+        </g>
+    </g>
+</svg>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="14px" height="20px" viewBox="0 0 14 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 3.8.1 (29687) - http://www.bohemiancoding.com/sketch -->
+    <title>container [#1313]</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Dribbble-Dark-Preview" transform="translate(-423.000000, -2319.000000)" fill="#FFFFFF">
+            <g id="icons" transform="translate(56.000000, 160.000000)">
+                <path d="M376,2177 L372,2177 C371.448,2177 371,2176.552 371,2176 L371,2172 L377,2172 L377,2176 C377,2176.552 376.552,2177 376,2177 M377,2161 L377,2170 L371,2170 L371,2161 C371,2159.895 370.105,2159 369,2159 L368,2159 C367.448,2159 367,2159.448 367,2160 C367,2160.552 367.448,2161 368,2161 C368.552,2161 369,2161.448 369,2162 L369,2177 C369,2178.105 369.895,2179 371,2179 L377,2179 C378.105,2179 379,2178.105 379,2177 L379,2162 C379,2161.448 379.448,2161 380,2161 C380.552,2161 381,2160.552 381,2160 C381,2159.448 380.552,2159 380,2159 L379,2159 C377.895,2159 377,2159.895 377,2161" id="container-[#1313]"></path>
+            </g>
+        </g>
+    </g>
+</svg>

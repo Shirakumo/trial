@@ -39,7 +39,8 @@
           (gl:detach-shader program (resource shader)))
         (unless (gl:get-program program :link-status)
           (error "Failed to link ~a: ~%~a"
-                 asset (gl:get-program-info-log program)))))))
+                 asset (gl:get-program-info-log program)))
+        (v:debug :trial.asset "Linked ~a with ~a." program shaders)))))
 
 (declaim (inline %set-uniform))
 (defun %set-uniform (location data)
@@ -68,6 +69,7 @@
           #-sbcl
           (gl:uniform-matrix-2fv location (marr2 data)))
     (single-float (%gl:uniform-1f location data))
+    (double-float (%gl:uniform-1d location data))
     (fixnum (%gl:uniform-1i location data))
     (matn (ecase (mrows data)
             (2 (ecase (mcols data)

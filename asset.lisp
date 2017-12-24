@@ -12,7 +12,7 @@
   (:method-combination progn :most-specific-last))
 
 (defmethod load progn (object)
-  (v:debug :trial.asset "Loading ~a" object))
+  (v:trace :trial.asset "Loading ~a" object))
 
 (defmethod load :around (object)
   (call-next-method)
@@ -22,7 +22,7 @@
   (:method-combination progn :most-specific-first))
 
 (defmethod offload progn (object)
-  (v:debug :trial.asset "Offloaded ~a" object))
+  (v:trace :trial.asset "Offloaded ~a" object))
 
 (defmethod offload :around (object)
   (call-next-method)
@@ -44,7 +44,7 @@
   (finalize-resource (type-of asset) resource))
 
 (defmethod finalize-resource :before ((type symbol) resource)
-  (v:debug :trial.asset "Finalising resource ~a of type ~a"
+  (v:trace :trial.asset "Finalising resource ~a of type ~a"
            resource type))
 
 (defmethod install-finalizer ((asset asset))

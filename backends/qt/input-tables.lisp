@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial.qt)
 
-;; FIXME: match this up with the glop backend.
+;; FIXME: match this up with the GLFW backend.
 (defparameter *key-table*
   (alexandria:alist-hash-table
    '((#x01000000 . :escape)

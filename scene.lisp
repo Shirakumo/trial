@@ -35,12 +35,8 @@
 (defmethod register :after ((container handler-container) (scene scene))
   (add-handler container scene))
 
-(defmethod deregister :after ((container handler-container) (scene scene))
-  (remove-handler container scene))
-
-(defmethod load progn ((scene scene))
-  (for:for ((object over scene))
-    (load object)))
+(defmethod deregister :after (thing (scene scene))
+  (remove-handler thing scene))
 
 ;; Since we have a tick event, we don't want to dupe that here.
 ;; animations and clock update are already handled by the method

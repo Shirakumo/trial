@@ -11,6 +11,9 @@
   (:shadow #:scene #:entity #:load #:update)
   (:import-from #:static-vectors #:static-vector-pointer)
   (:import-from #:flow #:port)
+  ;; array-container.lisp
+  (:export
+   #:array-container)
   ;; asset-pool.lisp
   (:export
    #:pool
@@ -27,7 +30,8 @@
    #:load-request
    #:asset
    #:action
-   #:define-asset)
+   #:define-asset
+   #:trial)
   ;; asset.lisp
   (:export
    #:load
@@ -64,6 +68,7 @@
    #:setup-perspective
    #:2d-camera
    #:sidescroll-camera
+   #:zoom
    #:3d-camera
    #:fov
    #:target-camera
@@ -92,6 +97,7 @@
    #:context-wait-lock
    #:assets
    #:handler
+   #:shared-with
    #:create-context
    #:destroy-context
    #:valid-p
@@ -126,6 +132,7 @@
    #:quit-game
    #:reload-assets
    #:reload-scene
+   #:toggle-overlay
    #:controller
    #:display
    #:maybe-reload-scene)
@@ -138,7 +145,6 @@
    #:clear-color
    #:handle
    #:setup-rendering
-   #:paint
    #:render)
   ;; effects.lisp
   (:export
@@ -156,11 +162,14 @@
    #:box-blur-pass
    #:sobel-pass
    #:gaussian-blur-pass
+   #:radial-blur-pass
    #:fxaa-pass
    #:blend-pass
    #:high-pass-filter
    #:low-pass-filter
-   #:chromatic-aberration-effect)
+   #:chromatic-aberration-effect
+   #:black-render-pass
+   #:light-scatter-pass)
   ;; entity.lisp
   (:export
    #:matches
@@ -195,23 +204,37 @@
    #:*optimize-features*
    #:reload-with-features)
   ;; flare.lisp
-  (:export)
+  (:export
+   #:paint
+   #:paint-with)
   ;; fullscreenable.lisp
   (:export
    #:fullscreenable
    #:original-mode
    #:resolution
    #:fullscreen)
-  ;; gamepad.lisp
+  ;; gamepad-db.lisp
   (:export
-   #:add-gamepad-handler
-   #:remove-gamepad-handler
-   #:define-gamepad
    #:xbox-360
    #:logitech-f310
    #:dualshock-3
    #:buffalo-bsgp801
    #:steam-controller)
+  ;; gamepad-info.lisp
+  (:export
+   #:gamepad-info
+   #:gamepad-info-id
+   #:gamepad-info-name
+   #:gamepad-info-axis-table
+   #:gamepad-info-button-table
+   #:gamepad-info
+   #:remove-gamepad-info
+   #:gamepad-info-options
+   #:define-gamepad)
+  ;; gamepad.lisp
+  (:export
+   #:add-gamepad-handler
+   #:remove-gamepad-handler)
   ;; geometry-shapes.lisp
   (:export
    #:geometry
@@ -260,7 +283,16 @@
    #:rotation
    #:axis-rotated-entity
    #:pivoted-entity
-   #:pivot)
+   #:pivot
+   #:clocked-subject
+   #:vertex-entity
+   #:vertex-array
+   #:vertex-form
+   #:colored-entity
+   #:color
+   #:vertex-colored-entity
+   #:textured-subject
+   #:texture)
   ;; input.lisp
   (:export
    #:input-event
@@ -270,6 +302,7 @@
    #:modifiers
    #:key-press
    #:key-release
+   #:text-entered
    #:mouse-event
    #:pos
    #:mouse-button-event
@@ -281,11 +314,16 @@
    #:mouse-move
    #:old-pos
    #:gamepad-event
+   #:device
    #:gamepad-attach
    #:gamepad-remove
    #:gamepad-press
+   #:button
    #:gamepad-release
    #:gamepad-move
+   #:axis
+   #:old-pos
+   #:pos
    #:key
    #:mouse
    #:gamepad)
@@ -301,6 +339,13 @@
    #:layer-active-p
    #:layered-unit
    #:layer)
+  ;; loader.lisp
+  (:export
+   #:compute-assets
+   #:bake
+   #:baked-p
+   #:transition
+   #:bakable)
   ;; main.lisp
   (:export
    #:main
@@ -331,6 +376,13 @@
    #:connect
    #:check-consistent
    #:pack-pipeline)
+  ;; render-texture.lisp
+  (:export
+   #:render-texture
+   #:width
+   #:height
+   #:pack
+   #:texture)
   ;; renderable.lisp
   (:export
    #:renderable
@@ -340,7 +392,8 @@
    #:start
    #:stop
    #:render
-   #:update)
+   #:update
+   #:reset-render-loop)
   ;; retention.lisp
   (:export
    #:retained
@@ -354,11 +407,7 @@
   ;; scene-buffer.lisp
   (:export
    #:scene-buffer
-   #:render-pass
-   #:width
-   #:height
-   #:texture
-   #:pack)
+   #:render-pass)
   ;; scene.lisp
   (:export
    #:scene
@@ -369,6 +418,31 @@
    #:leave
    #:register
    #:deregister)
+  ;; selection-buffer.lisp
+  (:export
+   #:ensure-selection-color
+   #:selection-buffer
+   #:scene
+   #:color->object-map
+   #:object-at-point
+   #:color->object
+   #:selection-buffer-pass
+   #:selectable
+   #:selection-color
+   #:find-new-selection-color)
+  ;; shader-entity.lisp
+  (:export
+   #:shader-entity-class
+   #:effective-shaders
+   #:direct-shaders
+   #:inhibit-shaders
+   #:compute-effective-shaders
+   #:class-shader
+   #:remove-class-shader
+   #:make-class-shader-program
+   #:define-class-shader
+   #:shader-entity
+   #:define-shader-entity)
   ;; shader-pass.lisp
   (:export
    #:shader-pass-class
@@ -379,6 +453,7 @@
    #:output
    #:attachment
    #:texture
+   #:uniforms
    #:shader-pass
    #:framebuffer
    #:register-object-for-pass
@@ -400,17 +475,15 @@
   ;; shader-subject.lisp
   (:export
    #:shader-subject-class
-   #:effective-shaders
-   #:direct-shaders
-   #:class-shader
-   #:remove-class-shader
-   #:make-class-shader-program
-   #:define-class-shader
    #:shader-subject
    #:define-shader-subject)
+  ;; skybox.lisp
+  (:export
+   #:skybox
+   #:texture)
   ;; sprite.lisp
   (:export
-   #:sprite-subject
+   #:sprite-entity
    #:tile
    #:size
    #:animated-sprite-subject
@@ -429,34 +502,25 @@
   (:export
    #:subject-class-redefined
    #:subject-class
-   #:subject-class
    #:effective-handlers
-   #:instances
-   #:cascade-option-changes
+   #:compute-effective-handlers
    #:subject
    #:event-loop
    #:regenerate-handlers
    #:define-subject
    #:define-handler
    #:define-generic-handler)
-  ;; subjects.lisp
-  (:export
-   #:clocked-subject
-   #:vertex-subject
-   #:vertex-array
-   #:vertex-form
-   #:colored-subject
-   #:color
-   #:vertex-colored-subject
-   #:textured-subject
-   #:texture)
   ;; toolkit.lisp
   (:export
    #:finalize
+   #:single-float-negative-infinity
+   #:single-float-positive-infinity
+   #:with-float-traps-masked
    #:current-time
    #:executable-directory
    #:enlist
    #:unlist
+   #:one-of
    #:remf*
    #:deg->rad
    #:rad->deg
@@ -525,11 +589,13 @@
    #:font
    #:charset
    #:size
+   #:text-extent
    #:text
    #:font
    #:text
    #:color
-   #:size)
+   #:size
+   #:extent)
   ;;; framebuffer.lisp
   (:export
    #:framebuffer

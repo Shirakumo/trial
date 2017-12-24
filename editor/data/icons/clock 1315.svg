@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="20px" height="20px" viewBox="0 0 20 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 3.8.1 (29687) - http://www.bohemiancoding.com/sketch -->
+    <title>clock [#1315]</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Dribbble-Dark-Preview" transform="translate(-340.000000, -2319.000000)" fill="#FFFFFF">
+            <g id="icons" transform="translate(56.000000, 160.000000)">
+                <path d="M302,2169 C302,2164.589 298.411,2161 294,2161 C289.589,2161 286,2164.589 286,2169 C286,2173.411 289.589,2177 294,2177 C298.411,2177 302,2173.411 302,2169 M304,2169 C304,2174.523 299.523,2179 294,2179 C288.477,2179 284,2174.523 284,2169 C284,2163.477 288.477,2159 294,2159 C299.523,2159 304,2163.477 304,2169 M300,2170 C300,2170.552 299.552,2171 299,2171 L295,2171 C293.895,2171 293,2170.105 293,2169 L293,2164 C293,2163.448 293.448,2163 294,2163 C294.552,2163 295,2163.448 295,2164 L295,2168 C295,2168.55 295.45,2169 296,2169 L299,2169 C299.552,2169 300,2169.448 300,2170" id="clock-[#1315]"></path>
+            </g>
+        </g>
+    </g>
+</svg>

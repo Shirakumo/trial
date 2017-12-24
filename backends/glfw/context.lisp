@@ -12,7 +12,6 @@
   ((title :initform "" :accessor title)
    (cursor-visible :initform T :accessor cursor-visible)
    (mouse-pos :initform (vec 0 0) :accessor mouse-pos)
-   (key-text :initform "" :accessor key-text)
    (initargs :initform NIL :accessor initargs)
    (window :initform NIL :accessor window))
   (:default-initargs
@@ -20,7 +19,7 @@
    :visible T
    :decorated T
    :robustness :no-robustness
-   :forward-compat NIL
+   :forward-compat T
    :debug-context NIL))
 
 (defmethod initialize-instance ((context context) &key)
@@ -97,7 +96,9 @@
                                          (getf initargs :height)
                                          (title context)
                                          (cffi:null-pointer)
-                                         (cffi:null-pointer))))
+                                         (if (shared-with context)
+                                             (window (shared-with context))
+                                             (cffi:null-pointer)))))
         (when (cffi:null-pointer-p window)
           (error "Error creating context."))
         (setf (gethash (cffi:pointer-address window) *window-table*) context)
@@ -178,8 +179,8 @@
   (list (cl-glfw3:get-window-attribute :context-version-major (window context))
         (cl-glfw3:get-window-attribute :context-version-minor (window context))))
 
-(defun make-context (&optional handler)
-  (make-instance 'context :handler handler))
+(defun make-context (&optional handler &rest initargs)
+  (apply #'make-instance 'context :handler handler initargs))
 
 (defun launch-with-context (&optional main &rest initargs)
   (flet ((body ()
@@ -190,7 +191,9 @@
                     (loop with window = (window (trial:context main))
                           until (cl-glfw3:window-should-close-p window)
                           do (cl-glfw3:poll-events)
-                             (bt:thread-yield))
+                             ;; Apparently bt:thread-yield is a no-op sometimes,
+                             ;; making this loop consume the core. Sleep instead.
+                             (sleep 0.001))
                  (finalize main))))))
     #+darwin
     (tmt:with-body-in-main-thread ()
@@ -220,23 +223,22 @@
     (case action
       (:press
        (v:debug :trial.input "Key pressed: ~a" key)
-       (setf (key-text context) "")
        (handle (make-instance 'key-press
                               :key (glfw-key->key key)
-                              :text ""
                               :modifiers modifiers)
                (handler context)))
       (:release
        (v:debug :trial.input "Key released: ~a" key)
        (handle (make-instance 'key-release
                               :key (glfw-key->key key)
-                              :text (key-text context)
                               :modifiers modifiers)
                (handler context))))))
 
 (cl-glfw3:def-char-callback ctx-char (window char)
   (%with-context
-    (setf (key-text context) (string char))))
+    (handle (make-instance 'text-entered
+                           :text (string char))
+            (handler context))))
 
 (cl-glfw3:def-mouse-button-callback ctx-button (window button action modifiers)
   (declare (ignore modifiers))
@@ -256,17 +258,16 @@
                (handler context))))))
 
 (cl-glfw3:def-scroll-callback ctx-scroll (window x y)
-  (declare (ignore y))
   (%with-context
-    (v:debug :trial.input "Mouse wheel: ~a" x)
+    (v:debug :trial.input "Mouse wheel: ~a ~a" x y)
     (handle (make-instance 'mouse-scroll
                            :pos (mouse-pos context)
-                           :delta x)
+                           :delta y)
             (handler context))))
 
 (cl-glfw3:def-cursor-pos-callback ctx-pos (window x y)
   (%with-context
-    (let ((current (vec x y)))
+    (let ((current (vec x (- (second (cl-glfw3:get-window-size (window context))) y))))
       (handle (make-instance 'mouse-move
                              :pos current
                              :old-pos (mouse-pos context))
@@ -285,7 +286,6 @@
     (:8 :x5)
     (T button)))
 
-;; FIXME: match keys up with glop backend
 (defun glfw-key->key (key)
   (case key
     (:grave-accent :section)

@@ -11,7 +11,7 @@
 
 (defclass subject-class (standard-class handler-container)
   ((effective-handlers :initform NIL :accessor effective-handlers)
-   (instances :initform () :accessor instances)))
+   (class-redefinition-event-sent :initform T :accessor class-redefinition-event-sent)))
 
 (defmethod c2mop:validate-superclass ((class subject-class) (superclass t))
   NIL)
@@ -25,7 +25,7 @@
 (defmethod c2mop:validate-superclass ((class subject-class) (superclass subject-class))
   T)
 
-(defmethod cascade-option-changes ((class subject-class))
+(defmethod compute-effective-handlers ((class subject-class))
   ;; Recompute effective handlers
   (loop with effective-handlers = (handlers class)
         for super in (c2mop:class-direct-superclasses class)
@@ -33,38 +33,28 @@
              (dolist (handler (effective-handlers super))
                (pushnew handler effective-handlers :key #'name)))
         finally (setf (effective-handlers class) effective-handlers))
-  ;; Update instances
-  (loop for pointer in (instances class)
-        for subject = (tg:weak-pointer-value pointer)
-        when subject
-        collect (prog1 pointer
-                  (reinitialize-instance subject)) into instances
-        finally (setf (instances class) instances))
-  ;; Notify
-  (loop for pointer in (instances class)
-        for subject = (tg:weak-pointer-value pointer)
-        when (and subject (slot-value subject 'event-loop))
-        return (issue (slot-value subject 'event-loop) 'subject-class-redefined
-                      :subject-class class)))
+  ;; Mark as obsolete
+  (setf (class-redefinition-event-sent class) NIL)
+  (make-instances-obsolete class))
 
-(defmethod cascade-option-changes :after ((class subject-class))
+(defmethod compute-effective-handlers :after ((class subject-class))
   ;; Propagate
   (loop for sub-class in (c2mop:class-direct-subclasses class)
         when (and (typep sub-class 'subject-class)
                   (c2mop:class-finalized-p sub-class))
-        do (cascade-option-changes sub-class)))
+        do (compute-effective-handlers sub-class)))
 
 (defmethod c2mop:finalize-inheritance :after ((class subject-class))
   (dolist (super (c2mop:class-direct-superclasses class))
     (unless (c2mop:class-finalized-p super)
       (c2mop:finalize-inheritance super)))
-  (cascade-option-changes class))
+  (compute-effective-handlers class))
 
 (defmethod add-handler :after (handler (class subject-class))
-  (cascade-option-changes class))
+  (compute-effective-handlers class))
 
 (defmethod remove-handler :after (handler (class subject-class))
-  (cascade-option-changes class))
+  (compute-effective-handlers class))
 
 (defmethod add-handler (handler (class symbol))
   (add-handler handler (find-class class)))
@@ -73,51 +63,58 @@
   (remove-handler handler (find-class class)))
 
 (defclass subject (entity handler-container)
-  ((event-loop :initarg :event-loop :initform NIL :accessor event-loop))
+  ((event-loops :initarg :event-loops :initform NIL :accessor event-loops))
   (:metaclass subject-class))
 
 (defmethod initialize-instance :after ((subject subject) &key)
-  (push (tg:make-weak-pointer subject) (instances (class-of subject)))
   (regenerate-handlers subject))
 
 (defmethod reinitialize-instance :after ((subject subject) &key)
   (regenerate-handlers subject))
 
+(defmethod update-instance-for-redefined-class ((subject subject) aslots dslots plist &key args)
+  (let ((class (class-of subject)))
+    (regenerate-handlers subject)
+    (when (not (class-redefinition-event-sent class))
+      (dolist (event-loop (event-loops subject))
+        (issue event-loop 'subject-class-redefined :subject-class class))
+      (setf (class-redefinition-event-sent class) T))))
+
 (defmethod regenerate-handlers ((subject subject))
-  ;; During recompilation the EVENT-LOOP method might
-  ;; be temporarily unavailable
-  (let ((loop (slot-value subject 'event-loop)))
-    (when loop
-      (remove-handler subject loop))
-    ;; FIXME: Retain objects that were not created by the
-    ;;        handlers mechanism of the subject.
-    (loop for handler in (effective-handlers (class-of subject))
-          collect (make-instance
-                   'handler
-                   :container subject
-                   :name (name handler)
-                   :event-type (event-type handler)
-                   :priority (priority handler)
-                   :delivery-function (delivery-function handler)) into handlers
-          finally (setf (handlers subject) handlers))
-    (when loop
-      (add-handler subject loop))))
+  (setf (handlers subject)
+        (remove-if (lambda (handler)
+                     (when (typep handler 'subject-handler)
+                       (dolist (event-loop (event-loops subject))
+                         (remove-handler handler event-loop))
+                       T))
+                   (handlers subject)))
+  (loop for prototype in (effective-handlers (class-of subject))
+        for handler = (make-instance
+                       'subject-handler
+                       :subject subject
+                       :name (name prototype)
+                       :event-type (event-type prototype)
+                       :priority (priority prototype)
+                       :delivery-function (delivery-function prototype))
+        do (push handler (handlers subject))
+           (dolist (event-loop (event-loops subject))
+             (add-handler handler event-loop))))
 
 (defmethod register :before ((subject subject) (loop event-loop))
-  (when (event-loop subject)
-    (error "~s is already registered on the event-loop ~s, can't add it to ~s."
-           subject (event-loop subject) loop)))
+  (when (find loop (event-loops subject))
+    (error "~s is already registered on the event-loop ~s."
+           subject loop)))
 
 (defmethod register :after ((subject subject) (loop event-loop))
-  (setf (event-loop subject) loop))
+  (push loop (event-loops subject)))
 
 (defmethod deregister :before ((subject subject) (loop event-loop))
-  (unless (eql loop (event-loop subject))
-    (error "~s is registered on the event-loop ~s, can't remove it from ~s."
-           subject (event-loop subject) loop)))
+  (unless (find loop (event-loops subject))
+    (error "~s is not registered on the event-loop ~s."
+           subject loop)))
 
 (defmethod deregister :after ((subject subject) (loop event-loop))
-  (setf (event-loop subject) NIL))
+  (setf (event-loops subject) (remove loop (event-loops subject))))
 
 (defmacro define-subject (&environment env name direct-superclasses direct-slots &rest options)
   (unless (find-if (lambda (c) (c2mop:subclassp (find-class c T env) 'subject)) direct-superclasses)
@@ -129,14 +126,32 @@
        ,direct-slots
        ,@options)))
 
+(defclass subject-handler (handler)
+  ((subject :initarg :subject :accessor subject))
+  (:default-initargs
+   :subject (error "SUBJECT required.")))
+
+(defmethod matches ((a subject-handler) (b subject-handler))
+  (and (eq (subject a) (subject b))
+       (eql (name a) (name b))))
+
+(defmethod matches ((a subject-handler) (b handler))
+  NIL)
+
+(defmethod matches ((a handler) (b subject-handler))
+  NIL)
+
+(defmethod handle (event (handler subject-handler))
+  (funcall (delivery-function handler) (subject handler) event))
+
 (defmacro define-handler ((class name &optional (event-type name) (priority 0)) args &body body)
   (let ((event (first args))
         (args (rest args)))
     `(add-handler (make-instance
-                   'handler
+                   'subject-handler
                    :name ',name
                    :event-type ',event-type
-                   :container ',class
+                   :subject ',class
                    :priority ,priority
                    :delivery-function (lambda (,class ,event)
                                         (declare (ignorable ,class ,event))
@@ -149,10 +164,10 @@
      (defgeneric ,name (,class event)
        ,@options)
      (add-handler (make-instance
-                   'handler
+                   'subject-handler
                    :name ',name
                    :event-type ',event-type
-                   :container ',class
+                   :subject ',class
                    :priority ,priority
                    :delivery-function #',name)
                   ',class)))

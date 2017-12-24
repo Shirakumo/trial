@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="20px" height="20px" viewBox="0 0 20 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 3.8.1 (29687) - http://www.bohemiancoding.com/sketch -->
+    <title>stairs [#58]</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Dribbble-Dark-Preview" transform="translate(-60.000000, -7959.000000)" fill="#FFFFFF">
+            <g id="icons" transform="translate(56.000000, 160.000000)">
+                <path d="M22,7816 C22,7816.552 21.552,7817 21,7817 L7,7817 C6.448,7817 6,7816.552 6,7816 L6,7802 C6,7801.448 6.448,7801 7,7801 L9,7801 C9.552,7801 10,7801.448 10,7802 L10,7805 C10,7806.105 10.896,7807 12,7807 L15,7807 C15.552,7807 16,7807.448 16,7808 L16,7811 C16,7812.105 16.896,7813 18,7813 L21,7813 C21.552,7813 22,7813.448 22,7814 L22,7816 Z M22,7811 L19,7811 C18.448,7811 18,7810.552 18,7810 L18,7807 C18,7805.895 17.104,7805 16,7805 L12,7805 L12,7801 C12,7799.895 11.104,7799 10,7799 L6,7799 C4.896,7799 4,7799.895 4,7801 L4,7817 C4,7818.105 4.896,7819 6,7819 L22,7819 C23.104,7819 24,7818.105 24,7817 L24,7813 C24,7811.895 23.104,7811 22,7811 L22,7811 Z" id="stairs-[#58]"></path>
+            </g>
+        </g>
+    </g>
+</svg>

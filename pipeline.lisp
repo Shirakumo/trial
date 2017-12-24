@@ -6,30 +6,21 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass pipeline (event-loop entity)
+(defclass pipeline ()
   ((nodes :initform NIL :accessor nodes)
    (passes :initform #() :accessor passes)
-   (textures :initform #() :accessor textures)
-   (texture-properties :initarg :texture-properties :initform NIL :accessor texture-properties)))
-
-(defmethod handle :after ((tick tick) (pipeline pipeline))
-  (process pipeline))
-
-(defmethod load progn ((pipeline pipeline))
-  (map NIL #'load (textures pipeline))
-  (map NIL #'load (passes pipeline)))
+   (textures :initform #() :accessor textures)))
 
 (defmethod finalize ((pipeline pipeline))
   (clear pipeline))
 
-(defmethod register ((pass shader-pass) (pipeline pipeline))
+(defmethod enter ((pass shader-pass) (pipeline pipeline))
   (pushnew pass (nodes pipeline)))
 
-(defmethod deregister ((pass shader-pass) (pipeline pipeline))
-  (setf (nodes pipeline) (delete pass (nodes pipeline)))
-  (remove-handler pass pipeline))
+(defmethod leave ((pass shader-pass) (pipeline pipeline))
+  (setf (nodes pipeline) (delete pass (nodes pipeline))))
 
-(defmethod clear ((pipeline pipeline))
+(defmethod clear-pipeline ((pipeline pipeline))
   (loop for tex across (textures pipeline)
         do (finalize tex))
   (loop for pass across (passes pipeline)
@@ -43,9 +34,9 @@
 
 (defmethod connect ((source flow:port) (target flow:port) (pipeline pipeline))
   (unless (find (flow:node source) (nodes pipeline))
-    (register (flow:node source) pipeline))
+    (enter (flow:node source) pipeline))
   (unless (find (flow:node target) (nodes pipeline))
-    (register (flow:node target) pipeline))
+    (enter (flow:node target) pipeline))
   (flow:connect source target 'flow:directed-connection)
   pipeline)
 
@@ -76,8 +67,7 @@
                    (let ((color (+ offset (flow:attribute port :color))))
                      (unless (aref textures color)
                        (setf (aref textures color)
-                             (load (apply #'make-asset 'texture (list (texpsec port))
-                                          (texture-properties pipeline)))))
+                             (load (make-asset 'texture (list (texpsec port))))))
                      (setf (texture port) (aref textures color))
                      (dolist (connection (flow:connections port))
                        (setf (texture (flow:right connection)) (aref textures color))))))))))
@@ -105,7 +95,7 @@
   ;; FIXME: How to ensure algorithm distinguishes depth and colour buffers?
   (let* ((passes (flow:topological-sort (nodes pipeline)))
          (textures (make-array 0 :initial-element NIL :adjustable T)))
-    (clear pipeline)
+    (clear-pipeline pipeline)
     (allocate-textures pipeline passes textures #'%color-port-p (width target) (height target))
     (allocate-textures pipeline passes textures #'%depth-port-p (width target) (height target))
     (allocate-textures pipeline passes textures #'%depth-stencil-port-p (width target) (height target))
@@ -125,24 +115,14 @@
     (setf (passes pipeline) (coerce passes 'vector))
     (setf (textures pipeline) textures)))
 
-(defmethod paint ((pipeline pipeline) target)
+(defmethod paint-with ((pipeline pipeline) source)
   (loop for pass across (passes pipeline)
         for fbo = (framebuffer pass)
         do (gl:bind-framebuffer :framebuffer (resource fbo))
-           (gl:clear :color-buffer :depth-buffer)
-           (paint pass target)))
+           ;; FIXME: Figure out which to clear depending on framebuffer attachments
+           (gl:clear :color-buffer :depth-buffer :stencil-buffer)
+           (paint-with pass source)))
 
 (defmethod register-object-for-pass ((pipeline pipeline) object)
   (loop for pass across (passes pipeline)
         do (register-object-for-pass pass object)))
-
-(defclass frame-pipeline (pipeline)
-  ()
-  (:default-initargs
-   :name :pipeline))
-
-(defmethod paint :after ((pipeline frame-pipeline) target)
-  (gl:bind-framebuffer :draw-framebuffer 0)
-  (%gl:blit-framebuffer 0 0 (width target) (height target) 0 0 (width target) (height target)
-                        (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
-                        (cffi:foreign-enum-value '%gl:enum :nearest)))

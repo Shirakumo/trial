@@ -16,7 +16,7 @@
   (:default-initargs
    :target :texture-2d
    :mag-filter :linear
-   :min-filter :linear
+   :min-filter :linear-mipmap-linear
    :anisotropy NIL
    :wrapping :clamp-to-edge))
 
@@ -41,6 +41,9 @@
 (defmethod finalize-resource ((type (eql 'texture)) resource)
   (gl:delete-textures (list resource)))
 
+(defun texparam-format (object)
+  (or (fourth object) :rgba))
+
 (defun object-to-texparams (object)
   (destructuring-bind (file/bits &optional width height (format :rgba))
       object
@@ -53,50 +56,65 @@
           (T
            (list width (or height 1) (or file/bits (cffi:null-pointer)) format)))))
 
+(defmacro with-image-object ((width height bits format) object &body body)
+  `(destructuring-bind (,width ,height ,bits ,format) (object-to-texparams ,object)
+     (unwind-protect
+          (progn ,@body)
+       (unless (cffi:null-pointer-p ,bits) (cffi:foreign-free ,bits)))))
+
 (defun images-to-textures (target images)
   (case target
-    ;; FIXME: Array textures
     (:texture-cube-map
      (loop for image in images
            for target in '(:texture-cube-map-positive-x :texture-cube-map-negative-x
                            :texture-cube-map-positive-y :texture-cube-map-negative-y
                            :texture-cube-map-positive-z :texture-cube-map-negative-z)
            do (images-to-textures target (list image))))
+    (:texture-1d-array
+     (with-image-object (width height bits format) (first images)
+       (gl:tex-image-2d target 1 format width height 0 (texture-internal-format->texture-format format) (texture-format->data-type format) bits)))
+    (:texture-2d-array
+     (with-image-object (width height bits format) (first images)
+       (%gl:tex-storage-3d target 1 :rgba32f width height (length images))
+       (gl:tex-sub-image-3d target 0 0 0 0 width height 1 (texture-internal-format->texture-format format) (texture-format->data-type format) bits)
+       (loop for level from 1
+             for image in (rest images)
+             do (with-image-object (width height bits format) image
+                  (gl:tex-sub-image-3d target 0 0 0 level width height 1 (texture-internal-format->texture-format format) (texture-format->data-type format) bits)))))
     (T
-     (when (cdr images) (error "Only one input is supported for the ~a target." target))
      (loop for level from 0
            for image in images
            do (v:debug :trial.asset "Loading texture from specs ~a" image)
               (case target
                 (:texture-1d
-                 (destructuring-bind (width height bits format) (object-to-texparams image)
-                   (gl:tex-image-1d target level format (* width height) 0 format :unsigned-byte bits)
-                   (unless (cffi:null-pointer-p bits) (cffi:foreign-free bits))))
+                 (with-image-object (width height bits format) image
+                   (gl:tex-image-1d target level format (* width height) 0 (texture-internal-format->texture-format format) (texture-format->data-type format) bits)))
                 ((:texture-cube-map-positive-x :texture-cube-map-negative-x
                   :texture-cube-map-positive-y :texture-cube-map-negative-y
                   :texture-cube-map-positive-z :texture-cube-map-negative-z
                   :texture-2d)
-                 (destructuring-bind (width height bits format) (object-to-texparams image)
-                   (gl:tex-image-2d target level format width height 0 format :unsigned-byte bits)
-                   (unless (cffi:null-pointer-p bits) (cffi:foreign-free bits))))
+                 (with-image-object (width height bits format) image
+                   (gl:tex-image-2d target level format width height 0 (texture-internal-format->texture-format format) (texture-format->data-type format) bits)))
                 (:texture-2d-multisample
                  (destructuring-bind (width height samples format) (object-to-texparams image)
                    (%gl:tex-image-2d-multisample target samples format width height 0)))
                 (:texture-3d
                  (destructuring-bind (width height depth bits format) image
-                   (gl:tex-image-3d target level format width height depth 0 format :unsigned-byte bits)
+                   (gl:tex-image-3d target level format width height depth 0 (texture-internal-format->texture-format format) (texture-format->data-type format) bits)
                    (unless (cffi:null-pointer-p bits) (cffi:foreign-free bits)))))))))
 
 (defmethod load progn ((asset texture))
   (with-slots (target mag-filter min-filter anisotropy wrapping) asset
     (let ((images (coerced-inputs asset))
-          (texture (setf (resource asset) (or (reuse-resource asset) (gl:gen-texture)))))
+          (texture (setf (resource asset) (or (reuse-resource asset) (gl:gen-texture))))
+          (wrapping (enlist wrapping wrapping)))
       (with-cleanup-on-failure (offload asset)
         (gl:bind-texture target texture)
         (images-to-textures target images)
-        (unless (eql
-                 target :texture-2d-multisample)
-          (unless (or (eql min-filter :nearest) (eql min-filter :linear))
+        (unless (or (eql target :texture-2d-multisample)
+                    (find (texparam-format (first images)) '(:depth-component :depth-stencil)))
+          (when (find min-filter '(:linear-mipmap-linear :linear-mipmap-nearest
+                                   :nearest-mipmap-linear :nearest-mipmap-nearest))
             (gl:generate-mipmap target))
           (when anisotropy
             (gl:tex-parameter target :texture-max-anisotropy-ext anisotropy))
