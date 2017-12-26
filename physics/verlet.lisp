@@ -8,8 +8,8 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 (defpackage #:trial-verlet
   (:nicknames #:org.shirakumo.fraf.trial.physics.verlet)
   (:shadow #:scene #:entity #:load #:update)
-  (:use #:cl #:3d-vectors #:3d-matrices #:flare #:trial #:trial-physics)
-  (:export #:verlet-entity #:viscosity #:update-physics))
+  (:use #:cl+trial #:3d-vectors #:3d-matrices #:flare #:trial-physics)
+  (:export #:verlet-entity #:viscosity))
 (in-package #:org.shirakumo.fraf.trial.physics.verlet)
 
 (defvar *default-viscosity* 1.0
@@ -21,94 +21,119 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
 (defclass verlet-point ()
   ((location :initarg :location :accessor location)
    (old-location :initform NIL :accessor old-location)
-   (acceleration :initarg :acceleration :accessor acceleration))
+   (acceleration :initarg :acceleration :accessor acceleration)
+   (fixed-p :initarg :fixed-p :accessor fixed-p))
   (:default-initargs :location (error "Must define a location for a point!")
-                     :acceleration (vec 0 0)))
+                     :acceleration (vec 0 0 0)
+                     :fixed-p NIL))
 
 (defmethod initialize-instance :after ((point verlet-point) &key old-location)
   (setf (old-location point) (or old-location (location point))))
 
+(defmethod accelerate ((point verlet-point) vector)
+  (unless (fixed-p point)
+    (nv+ (acceleration point) vector)))
+
+(defmethod correct ((point verlet-point) vector)
+  (unless (fixed-p point)
+    (nv+ (location point) vector)))
+
 (defmethod simulate ((point verlet-point) delta)
-  (nv* (acceleration point) (* delta delta))
-  (let ((position (v+ (v- (v* (position point) 2)
-                          (old-position point))
-                      (acceleration point))))
-    (setf (old-position point) (position point)
-          (position point) position)
-    (vdecf (acceleration point) (acceleration point))))
+  (unless (fixed-p point)
+    (nv* (acceleration point) (* delta delta))
+    (let ((location (v+ (v- (v* (location point) 2) (old-location point))
+                        (acceleration point))))
+      (setf (old-location point) (location point)
+            (location point) location)
+      (nv- (acceleration point) (acceleration point)))))
 
 (defclass verlet-edge ()
   ((parent :initarg :parent :reader parent)
    (point-a :initarg :point-a :accessor point-a)
    (point-b :initarg :point-b :accessor point-b)
-   (original-length :initform NIL :reader original-length)
-   (stretchiness )))
+   (target :initform NIL :reader target)
+   (elasticity :initarg :elasticity :accessor elasticity))
+  (:default-initargs :elasticity 0
+                     :point-a (error "Must define point A")
+                     :point-b (error "Must define point B")))
 
 (defmethod initialize-instance :after ((edge verlet-edge) &key)
-  (setf (slot-value edge 'original-length) (vlength (v- (point-a edge) (point-b edge)))))
+  (setf (slot-value edge 'target) (vlength (v- (location (point-b edge))
+                                               (location (point-a edge))))))
 
-(defclass verlet-entity (physical-entity)
+(defmethod resolve ((edge verlet-edge))
+  (let* ((pos-a (location (point-a edge)))
+         (pos-b (location (point-b edge)))
+         (direction (vunit (v- (vunit pos-b) (vunit pos-a))))
+         (length (vlength direction))
+         (factor (/ (- length (target edge)) length))
+         (correction (v* direction factor)))
+    (correct (point-a edge) correction)
+    (correct (point-b edge) (v- correction))))
+
+(define-shader-entity verlet-entity (physical-entity vertex-entity)
   ((vertices :initform NIL :accessor vertices)
    (edges :initform NIL :accessor edges)
    (center :initform NIL :accessor center)
-   (viscosity :initarg :viscosity :accessor viscosity)
-   (rotates-p  :initarg :rotates-p :accessor rotates-p))
-  (:default-initargs :viscosity *default-viscosity*
-                     :rotates-p T))
+   (viscosity :initarg :viscosity :accessor viscosity))
+  (:default-initargs :viscosity *default-viscosity*))
 
-(defmethod initialize-instance :after ((entity verlet-entity) &key points edges)
-"
-  Argument points is assumed to be a list of cons where they are location values in order (x . y).
-  Argument edges is a list of cons where the pairs are indexes in the points list. These two points will form the edge.
+(defmethod initialize-instance :after ((entity verlet-entity) &key points vertex-array location)
+  "Unless points are defined the vertices of the vertex-array in vertex-entity class are used."
+  (let* ((point-array (or points vertex-array))
+         (vertices (etypecase point-array
+                     (mesh (vertices (first (inputs vertex-array))))
+                     (vertex-mesh (vertices point-array))
+                     (array point-array)
+                     (list point-array))))
+    (unless (< 3 (length vertices))
+      (error "There are no vertices in the entity to form a shape."))
+    (let ((vertices (quick-hull (for:for ((vertex over vertices)
+                                          (v collecting (v+ location
+                                                            (if (typep vertex 'textured-vertex)
+                                                                (location vertex)
+                                                                vertex))))))))
+      (setf (vertices entity) (mapcar #'(lambda (v)
+                                          (make-instance 'verlet-point :location v))
+                                      vertices)))
+    (let ((start (first (vertices entity)))
+          (edges ())
+          (last NIL))
+      (loop for points = (vertices entity) then (rest points)
+            while points
+            for point = (first points)
+            for next = (second points)
+            for new-edge = (make-instance 'verlet-edge :point-a point
+                                                       :point-b (or next start))
+            do (if last
+                   (setf (cdr last) (cons new-edge NIL)
+                         last (cdr last))
+                   (setf last (cons new-edge NIL)
+                         edges last)))
+      (setf (edges entity) edges
+            (center entity) (calculate-center entity)))))
 
-  Example to make a triangle:
-  (make-instance 'verlet-entity :points '((-1 . 2) (0 . 0) (1 . 2)) :edges '((0 . 1) (1 . 2) (2 . 0)))
+(defmethod simulate-step ((entity verlet-entity) delta)
+  (for:for ((edge in (edges entity)))
+    (resolve edge))
+  (let ((forces (apply #'v+ (forces entity))))
+    (for:for ((point in (vertices entity)))
+      (accelerate point forces)
+      (simulate point delta))))
 
-  This is terrible and should be made more sensible someday.
-"
-  (unless (< 3 (length points))
-    (error "Must define a minimum of three points"))
-  (when (< (length edges) (length points))
-    (error "Must define enough edges for all points"))
-  (let* ((point-count (length points))
-         (edge-point-count (length edges))
-         (location (location entity))
-         (vertices (make-array point-count :initial-element NIL))
-         (edge-arr (make-array edge-point-count :initial-element NIL)))
-    (for:for ((point in points)
-              (i counting point)
-              (loc = (vec (car point) (cdr point))))
-      (setf (aref vertices (1- i)) (make-instance 'verlet-point :location (v+ loc location))))
-    (for:for ((edge in edges)
-              (i counting edge)
-              (p1 = (car edge))
-              (p2 = (cdr edge)))
-      (setf (aref edge-arr (1- i)) (make-instance 'verlet-edge :parent entity
-                                                               :point-a (aref vertices p1)
-                                                               :point-b (aref vertices p2))))
-    (setf (vertices entity) vertices
-          (edges entity) edge-arr)))
+(defmethod simulate ((entity verlet-entity) delta)
+  (let ((delta (/ delta *iterations*)))
+    (dotimes (i *iterations*)
+      (simulate-step entity delta)))
+  (setf (location entity) (calculate-center entity)))
 
 (defmethod calculate-center ((entity verlet-entity))
   "Calculates the average of the points that form the entity's bounding box."
-  (setf (center entity) (for:for ((point across (vertices entity))
-                                  (i count point)
-                                  (location = (location point))
-                                  (sum-x summing (vx location))
-                                  (sum-y summing (vy location)))
-                          (returning (vec (/ sum-x i) (/ sum-y i))))))
-
-(defmethod apply-forces ((entity verlet-entity))
-  "Movement causing effects from input also go here. And things like wind."
-  ;; TODO: Fix it up to read the forces from somewhere.
-  (let ((viscosity (viscosity entity)))
-    (for:for ((point in (vertices entity))
-              (loc = (location point))
-              (old = (old-location point)))
-      (setf (location point) (v+ (vec (- (* viscosity (vx loc)) (* viscosity (vx old)))
-                                      (- (* viscosity (vx loc)) (* viscosity (vx old))))
-                                 (forces entity))
-            (old-location point) loc))))
+  (let ((center (vcopy (location (first (vertices entity))))))
+    (for:for ((point over (rest (vertices entity)))
+              (i count point))
+      (nv+ center (location point))
+      (returning (v/ center (1+ i))))))
 
 (defmethod update-edges ((entity verlet-entity))
   "Keeps things rigid."
@@ -133,10 +158,6 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
       (unless (and max (< max dotp))
         (setf max dotp)))
     (values min max)))
-
-(defmethod ensure-position ((entity verlet-entity))
-  "Makes sure that the position and the rotation of this entity matches how its vertices have moved."
-  )
 
 (defmethod collides-p ((entity verlet-entity) (other verlet-entity))
   "Collision test between two entities. Does not return T or NIL, as the name would hint, but rather gives you multiple values,
@@ -223,7 +244,8 @@ Values returned are the aforementioned point as a VEC and the distance from the 
         (setf (location (point-a edge)) (v- point-a (v* response (- 1 t-point) mass-b lmba))
               (location (point-b edge)) (v- point-b (v* response t-point mass-b lmba)))))))
 
-(defun update-physics (entities &key (iterations *iterations*))
+#|
+(defun simulate (entities &key (iterations *iterations*))
   (for:for ((entity in entities))
     (apply-forces entity)
     (update-edges entity))
@@ -238,5 +260,6 @@ Values returned are the aforementioned point as a VEC and the distance from the 
                (update-edges other)
                (calculate-center other)
                (multiple-value-call #'resolve-collision (collides-p entity other))
-               (ensure-position other))
-          do (ensure-position entity))))
+               (ensure-location other))
+          do (ensure-location entity))))
+|#
