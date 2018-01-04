@@ -197,7 +197,7 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
   "Unless points are defined the mass-points of the vertex-array in vertex-entity class are used."
   (let* ((point-array (or points vertex-array))
          (mass-points (etypecase point-array
-                        (mesh (mass-points (first (inputs vertex-array))))
+                        (mesh (vertices (first (inputs vertex-array))))
                         (vertex-mesh (mass-points point-array))
                         (array point-array)
                         (list point-array))))
@@ -221,11 +221,11 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
                                          when link collect link)))))
 
 (defmethod simulate-step ((entity verlet-entity) delta &key forces)
-  (let ((forces (apply #'v+ (forces entity))))
+  (let ((base-forces (apply #'v+ (forces entity))))
     (for:for ((point in (mass-points entity)))
       (when forces
         (apply-forces point forces))
-      (simulate point delta :forces (forces entity)))))
+      (simulate point delta :forces base-forces))))
 
 (defmethod simulate ((entity verlet-entity) delta &key forces)
   (let ((delta (/ delta *iterations*)))
