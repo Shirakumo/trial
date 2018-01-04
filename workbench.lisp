@@ -6,18 +6,6 @@
 (define-asset (workbench box) mesh
     ((make-rectangle 10 10)))
 
-(defclass wb-main (main)
-  ()
-  (:default-initargs
-   :clear-color (vec 0.1 0.1 0.1 1)))
-
-(defmethod initialize-instance :after ((main wb-main) &key)
-  (harmony-simple:initialize)
-  (setf (harmony:min-distance (harmony-simple:segment :sfx)) 32))
-
-(defmethod finalize :after ((main wb-main))
-  (harmony-simple:stop))
-
 (define-shader-subject box (colored-entity trial-verlet:verlet-entity)
   ()
   (:default-initargs
@@ -28,7 +16,8 @@
   (trial-physics:simulate box (dt ev)))
 
 (progn
-  (defmethod setup-scene ((main wb-main) scene)
+  (defmethod setup-scene ((main main) scene)
+    (setf (clear-color main) (vec 0.11 0.1 0.1 1.0))
     (for:for ((i repeat 100)
               (box = (make-instance 'box :location (v+ (vec 0 0 10)
                                                        (v* (vec 1 1 0)
