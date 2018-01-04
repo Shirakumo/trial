@@ -8,41 +8,67 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 (defpackage #:trial-physics
   (:nicknames #:org.shirakumo.fraf.trial.physics)
   (:shadow #:scene #:entity #:load #:update)
-  (:use #:cl #:3d-vectors #:3d-matrices #:flare #:trial)
+  (:use #:cl #:3d-vectors #:3d-matrices #:trial)
   (:export #:physical-entity #:mass #:static-p #:forces #:simulate #:quick-hull))
 (in-package #:org.shirakumo.fraf.trial.physics)
 
+(defgeneric simulate (entity delta &key forces))
+
 (defvar *default-forces* (list (vec 0 0.05 0))
   "Directional forces affecting the physical entities.")
+
+(defmethod 2d-frame-constraint ((entity located-entity)
+                                &key (min (vec 0 0))
+                                     (max (vec (width *context*)
+                                               (height *context*))))
+  (let ((min-x (vx min))
+        (min-y (vy min))
+        (max-x (vx max))
+        (max-y (vy max)))
+    #'(lambda ()
+        (setf (vx (location entity)) (min max-x (max min-x (vx (location entity))))
+              (vy (location entity)) (min max-y (max min-y (vy (location entity))))))))
 
 (define-shader-entity physical-entity (located-entity rotated-entity pivoted-entity)
   ((mass :initarg :mass :accessor mass)
    (static-p :initarg :static-p :accessor static-p)
    (rotates-p  :initarg :rotates-p :accessor rotates-p)
+   (constraints :initform (make-hash-table) :accessor constraints)
    (forces :initarg :forces :accessor forces))
   (:default-initargs :mass 1.0
                      :static-p NIL
                      :rotates-p T
                      :forces *default-forces*))
 
-(defmethod simulate ((entity physical-entity) delta))
+(defmethod add-constraint ((entity physical-entity) name constraint-f)
+  (setf (gethash name (constraints entity)) constraint-f))
+
+(defmethod constraint ((entity physical-entity) name)
+  (gethash name (constraints entity)))
+
+(defmethod constraints-as-list ((entity physical-entity))
+  (alexandria:hash-table-values (constraints entity)))
+
+
+(defmethod simulate ((entity physical-entity) delta &key forces)
+  (declare (ignore entity delta forces)))
 
 ;; Below this is the calculation for Convex Hull. BE WARNED! It currently works only in 2D!
 ;; TODO: Read http://thomasdiewald.com/blog/?p=1888 for using QuickHull algorithm for 3D
 
-(defun min-max-horizontal (points)
-  "Finds the minimum and maximum point in x-axis."
+(defun min-max-axis (points &key (axis-f #'vx))
+  "Finds the minimum and maximum point in the VEC axis."
   (let* ((min-point (first points))
          (max-point (first points))
          (other ()))
     (for:for ((point in (rest points))
-              (x = (vx point)))
+              (x = (funcall axis-f point)))
       (cond
-        ((< x (vx min-point))
+        ((< x (funcall axis-f min-point))
          (when (v/= max-point min-point)
            (push min-point other))
          (setf min-point point))
-        ((< (vx max-point) x)
+        ((< (funcall axis-f max-point) x)
          (when (v/= max-point min-point)
            (push max-point other))
          (setf max-point point))))
@@ -94,7 +120,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   "Calculates the Convex Hull points using QuickHull algorithm."
   (when (<= 2 (length points))
     (multiple-value-bind (near far)
-        (min-max-horizontal points)
+        (min-max-axis points)
       (multiple-value-bind (left right)
           (points-relative-to-line near far points)
         (append (list near) ;; Upper hull
