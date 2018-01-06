@@ -7,9 +7,8 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 (in-package #:org.shirakumo.fraf.trial.physics)
 (defpackage #:trial-verlet
   (:nicknames #:org.shirakumo.fraf.trial.physics.verlet)
-  (:shadow #:screen-edge-2d-constraint)
   (:use #:cl+trial #:3d-vectors #:3d-matrices #:trial-physics)
-  (:export #:verlet-entity #:viscosity))
+  (:export #:verlet-entity #:viscosity #:simulate-entities))
 (in-package #:org.shirakumo.fraf.trial.physics.verlet)
 
 (defvar *default-viscosity* 1.0
@@ -18,9 +17,9 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   "Number of physics calculation iterations. Increases accuracy of calculations.
 In general, 4 is minimum for an alright accuracy, 8 is enough for a good accuracy.")
 
-(define-shader-entity verlet-point () ())
+(define-shader-entity verlet-point (located-entity) ())
 (defclass verlet-link () ())
-(define-shader-entity verlet-entity () ())
+(define-shader-entity verlet-entity (physical-entity vertex-entity) ())
 
 (define-shader-entity verlet-point (located-entity)
   ((id :initform (gensym "VERLET-POINT") :reader id)
@@ -86,11 +85,12 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
   (unless (pinned-p point)
     (nv+ (acceleration point) forces)))
 
-(defmethod simulate ((point verlet-point) delta &key (forces 0))
+(defmethod simulate ((point verlet-point) delta &key forces)
   (unless (pinned-p point)
-    (let ((forces (etypecase forces
+    (let ((forces (typecase forces
                     (number (v+ (v* (acceleration point) 0) forces))
-                    (vec forces))))
+                    (vec forces)
+                    (T (v* (acceleration point) 0)))))
       (apply-forces point (v* forces (mass point) delta)))
     (let* ((velocity (v* (v- (location point) (old-location point))
                          (dampen point)))
@@ -115,7 +115,7 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
 
 (defmethod link ((point verlet-point) (other verlet-point) &key tear stiffness)
   (add-link point (make-instance 'verlet-link :tear tear
-                                              :stiffness stiffness
+                                              :stiffness (or stiffness 1)
                                               :point-a point
                                               :point-b other)))
 
@@ -182,14 +182,13 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
              (difference (/ (- target delta) delta))
              (translate (v* diff-loc difference)))
         (when (and (tear link) (< (tear link) delta))
-          (remove-link point-a link))
+          (remove-link point link))
         (setf (location point) (v+ point-loc (v* translate point-scalar))
               (location other) (v- other-loc (v* translate other-scalar)))))))
 
 (define-shader-entity verlet-entity (physical-entity vertex-entity)
   ((mass-points :initform NIL :accessor mass-points)
    (edges :initform NIL :accessor edges)
-   (center :initform NIL :accessor center)
    (viscosity :initarg :viscosity :accessor viscosity))
   (:default-initargs :viscosity *default-viscosity*))
 
@@ -203,16 +202,15 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
                         (list point-array))))
     (unless (< 3 (length mass-points))
       (error "POINT-ARRAY or VERTEX-ARRAY required"))
-    (let ((mass-points (quick-hull (for:for ((vertex over mass-points)
+    (let ((mass-points (quick-hull (for:for ((point over mass-points)
                                              (v collecting (v+ location
-                                                               (if (typep vertex 'textured-vertex)
-                                                                   (location vertex)
-                                                                   vertex))))))))
+                                                               (if (typep point 'textured-vertex)
+                                                                   (location point)
+                                                                   point))))))))
       (setf (mass-points entity) (mapcar #'(lambda (v)
                                              (make-instance 'verlet-point :location v))
                                          mass-points)))
-    (setf (center entity) (calculate-center entity)
-          (edges entity) (or edges (loop for mass-points = (mass-points entity) then (rest mass-points)
+    (setf (edges entity) (or edges (loop for mass-points = (mass-points entity) then (rest mass-points)
                                          while mass-points
                                          for current = (first mass-points)
                                          for next = (or (second mass-points)
@@ -220,18 +218,29 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
                                          for link = (link current next)
                                          when link collect link)))))
 
-(defmethod simulate-step ((entity verlet-entity) delta &key forces)
-  (let ((base-forces (apply #'v+ (forces entity))))
+(defmethod location ((entity verlet-entity))
+  (calculate-center entity))
+
+(defmethod (setf location) (value (entity verlet-entity))
+  (unless (typep value 'vec) (error "VALUE not VEC"))
+  (let ((diff (v- value (calculate-center entity))))
     (for:for ((point in (mass-points entity)))
-      (when forces
-        (apply-forces point forces))
-      (simulate point delta :forces base-forces))))
+      (setf (location point) (v+ (location point) diff))))
+  value)
+
+(defmethod simulate-step ((entity verlet-entity) delta &key forces)
+  (let ((static-forces (when (static-forces entity)
+                         (apply #'v+ (static-forces entity)))))
+    (for:for ((point in (mass-points entity)))
+      (when static-forces
+        (apply-forces point static-forces))
+      (simulate point delta :forces forces)
+      (solve-links point))))
 
 (defmethod simulate ((entity verlet-entity) delta &key forces)
   (let ((delta (/ delta *iterations*)))
     (dotimes (i *iterations*)
-      (simulate-step entity delta :forces forces)))
-  (setf (location entity) (calculate-center entity)))
+      (simulate-step entity delta :forces forces))))
 
 (defmethod calculate-center ((entity verlet-entity))
   "Calculates the average of the points that form the entity's bounding box."
@@ -241,90 +250,129 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
       (nv+ center (location point))
       (returning (v/ center (1+ i))))))
 
+(defmethod min-max-point ((entity verlet-entity))
+  "Finds the minimum and maximum point that is theoretically within the entity's area."
+  (values-list
+   (for:for ((point in (mass-points entity))
+             (location = (location point))
+             (max-x maximize (vx location))
+             (max-y maximize (vy location))
+             (max-z when (or (typep location 'vec3) (typep location 'vec4))
+                    maximize (vz location))
+             (max-w when (typep location 'vec4) maximize (vw location))
+             (min-x minimize (vx location))
+             (min-y minimize (vy location))
+             (min-z when (or (typep location 'vec3) (typep location 'vec4))
+                    minimize (vz location))
+             (min-w when (typep location 'vec4) minimize (vw location)))
+     (returning (list (cond
+                        (min-w (vec min-x min-y min-z min-w))
+                        (min-z (vec min-x min-y min-z))
+                        (T (vec min-x min-y)))
+                      (cond
+                        (max-w (vec max-x max-y max-z max-w))
+                        (max-z (vec max-x max-y max-z))
+                        (T (vec max-x max-y))))))))
+
 (defmethod project-to-axis ((entity verlet-entity) axis)
   "Gets the nearest and furthest point along an axis." ;; Think of it like casting a shadow on a wall.
-  (let ((min) (max))
-    (for:for ((point in (mass-points entity))
-              (dotp = (v. axis (location point))))
-      (unless (and min (< dotp min))
-        (setf min dotp))
-      (unless (and max (< max dotp))
-        (setf max dotp)))
-    (values min max)))
+  (for:for ((point in (mass-points entity))
+            (dotp = (v. axis (location point)))
+            (min minimize dotp)
+            (max maximize dotp))
+    (returning (values min max))))
 
 (defmethod collides-p ((entity verlet-entity) (other verlet-entity))
   "Collision test between two entities. Does not return T or NIL, as the name would hint, but rather gives you multiple values,
 depth: length of the collision vector, or how deep the objects overlap
-mass-a: mass of the first entity [0,1]
-mass-b: mass of the second entity (- 1 mass-a)
 normal: direction of the collision vector
-edge: edge that is pierced
-vertex: point that pierces furthest in"
+col-edge: edge that is pierced"
   (unless (and (static-p entity) (static-p other))
-    (let ((depth) (normal) (col-edge)
-          (edge-count-a (length (edges entity)))
-          (edge-count-b (length (edges other))))
-      (for:for ((index ranging 0 (1- (+ edge-count-a edge-count-b)))
-                (edge = (if (< index edge-count-a)
-                            (aref (edges entity) index)
-                            (aref (edges other) (- index edge-count-a))))
-                (point-a = (location (point-a edge)))
-                (point-b = (location (point-b edge)))
-                (axis = (vunit (vec (- (vy point-a) (vy point-b)) (- (vx point-a) (vx point-b))))))
-        (multiple-value-bind (min-a max-a)
-            (project-to-axis entity axis)
-          (multiple-value-bind (min-b max-b)
-              (project-to-axis other axis)
-            (let ((dist (if (< min-a min-b) (- min-b max-a) (- min-a max-b))))
-              (when (< 0 dist) ;; Projections don't overlap
-                (return-from collides-p (values)))
-              (when (or (not depth) (< (abs dist) depth))
-                (setf depth (abs dist) ;; This gets us these three values
-                      normal axis
-                      col-edge edge))))))
-      (let* ((ent1 (if (eql (parent col-edge) other) entity other))
-             (ent2 (if (eql (parent col-edge) other) other entity))
-             (center (v- (center ent1) (center ent2))) ;; Already calculated in update-physics
-             (sign (v. normal center))
-             (mass1 (cond ((static-p ent1) 0.0) ((static-p ent2) 1.0) (T (mass ent1))))
-             (mass2 (cond ((static-p ent2) 0.0) ((static-p ent1) 1.0) (T (mass ent2))))
-             (total-mass (+ mass1 mass2))
-             (smallest-dist)
-             (vertex))
-        (when (< sign 0)
-          (setf normal (v- normal)))
-        (for:for ((point in (mass-points ent1))
-                  (loc = (location point))
-                  (v = (v- loc (center ent2)))
-                  (dist = (v. normal v)))
-          (when (or (null smallest-dist) (< dist smallest-dist))
-            (setf smallest-dist dist
-                  vertex point))) ;; And here we find the piercing point
-        (values depth (/ mass1 total-mass) (/ mass2 total-mass) normal col-edge vertex)))))
+    ;; AABB vs. AABB first
+    (multiple-value-bind (min-a max-a)
+        (min-max-point entity)
+      (multiple-value-bind (min-b max-b)
+          (min-max-point other)
+        (when (and (<= (vx min-a) (vx max-b))
+                   (<= (vx min-b) (vx max-a))
+                   (<= (vy min-a) (vy max-b))
+                   (<= (vy min-b) (vy max-a))
+                   (if (or (and (typep max-a 'vec3) (typep max-b 'vec3))
+                           (and (typep max-a 'vec4) (typep max-b 'vec4)))
+                       (and (<= (vz min-a) (vz max-b))
+                            (<= (vz min-b) (vz max-a)))
+                       T)
+                   (if (and (typep max-a 'vec4) (typep max-b 'vec4))
+                       (and (<= (vw min-a) (vw max-b))
+                            (<= (vw min-b) (vw max-a)))
+                       T))
+          ;; AABB v AABB success
+          (let ((edge-count (length (edges entity)))
+                depth normal col-edge entity-1 entity-2)
+            ;; FIXME: We're assuming 2D from here on out, points of interest are marked "2D"
+            (for:for ((edge in (append (edges entity) (edges other)))
+                      (i counting edge)
+                      (vector = (v- (location (point-b edge))
+                                    (location (point-a edge))))
+                      (axis = (vunit (vec (vy vector) (vx vector))))) ;; 2D
+              (multiple-value-bind (min-a max-a)
+                  (project-to-axis entity axis)
+                (multiple-value-bind (min-b max-b)
+                    (project-to-axis other axis)
+                  (let ((dist (if (< min-a min-b) (- min-b max-a) (- min-a max-b))))
+                    ;; Test projection overlap
+                    (when (< 0 dist) (return-from collides-p (values)))
+                    (when (or (not depth) (< (abs dist) depth))
+                      ;; This gets us these five values
+                      (setf depth (abs dist)
+                            normal axis
+                            col-edge edge
+                            entity-1 (if (< edge-count i) entity other)
+                            entity-2 (if (< edge-count i) other entity)))))))
+            (let* ((center-1 (calculate-center entity-1))
+                   (center-2 (calculate-center entity-2))
+                   (center (v- center-1 center-2))
+                   (sign (v. normal (vec (vx center) (vy center)))) ;; 2D
+                   (total-mass (+ (mass entity-1) (mass entity-2)))
+                   (mass-1 (cond
+                             ((static-p entity-1) 0.0)
+                             ((static-p entity-2) 1.0)
+                             (T (/ (mass entity-1) total-mass))))
+                   (mass-2 (cond
+                             ((static-p entity-2) 0.0)
+                             ((static-p entity-1) 1.0)
+                             (T (/ (mass entity-2) total-mass)))))
+              (when (< sign 0) (setf normal (v- normal)))
+              (values-list 
+               (for:for ((point in (mass-points entity-1))
+                         (loc = (location point))
+                         (vec = (v- loc center-2))
+                         (distance = (v. normal (vec (vx vec) (vy vec)))) ;; 2D
+                         (smallest-dist minimizing distance)
+                         (smallest-point when (= smallest-dist distance) = point))
+                 (returning (list depth mass-1 mass-2
+                                  normal col-edge
+                                  smallest-point)))))))))))
 
-(defun in-between-point (p0 r0 p1 r1)
-  "Calculates the point in between two points in space that is in 90 degrees from a point that is r0 distance away from p0 and r1 distance away from p1.
-Values returned are the aforementioned point as a VEC and the distance from the point that the r0->r1 distances are for."
-  (let* ((d (vlength (v- p1 p0)))
-         (a (/ (+ (- (* r0 r0) (* r1 r1)) (* d d)) (* 2 d))))
-    (values (v+ p0 (v/ (v* (v- p1 p0) a) d))
-            (sqrt (+ (* a a) (* r0 r0))))))
-
-(defun resolve-collision (depth mass-a mass-b normal edge vertex)
+(defun resolve-collision (&optional depth mass-a mass-b normal edge point)
   "Pushes back the two entities from one another. The normal always points towards the piercing entity."
-  (when (and depth mass-a mass-b normal edge vertex)
-    (let ((response (v* normal depth))) ;; Pushback for the piercing entity
-      (setf (location vertex) (v+ (location vertex) (v* response mass-a)))
+  (when (and depth mass-a mass-b normal edge point)
+    (let* ((point-loc (location point))
+           (normal (vec (vx normal) (vy normal) ;; 2D
+                        (when (or (typep point-loc 'vec3) (typep point-loc 'vec4)) 0)
+                        (when (typep point-loc 'vec4) 0)))
+           (response (v* normal depth))) ;; Pushback for the piercing entity
+      (nv+ (location point) (v* response mass-a))
       (let* ((point-a (location (point-a edge)))
              (point-b (location (point-b edge))) ;; Pushback for the edging entity
-             ;; t-point is the factor that determines where on the edge the vertex lies, [0, 1]
+             ;; t-point is the factor that determines where on the edge the point lies, [0, 1]
              ;; It has to do the if-else check so we don't accidentally divide by zero
              (t-point (if (< (abs (- (vy point-a) (vy point-b))) (abs (- (vx point-a) (vx point-b))))
-                          (/ (- (vx (location vertex)) (vx response) (vx point-a))
+                          (/ (- (vx (location point)) (vx response) (vx point-a))
                              (- (vx point-b) (vx point-a)))
-                          (/ (- (vy (location vertex)) (vy response) (vy point-a))
+                          (/ (- (vy (location point)) (vy response) (vy point-a))
                              (- (vy point-b) (vy point-a)))))
-             ;; Now lambda here. It's the scaling factor for ensuring that the collision vertex lies on
+             ;; Now lambda here. It's the scaling factor for ensuring that the collision point lies on
              ;; the collision edge. I have no idea who came up with it but it's just
              ;; lambda = 1 / (t^2 + (1 - t)^2)
              (lmba (/ (+ (* t-point t-point) (* (- 1 t-point) (- 1 t-point))))))
@@ -337,22 +385,18 @@ Values returned are the aforementioned point as a VEC and the distance from the 
         (setf (location (point-a edge)) (v- point-a (v* response (- 1 t-point) mass-b lmba))
               (location (point-b edge)) (v- point-b (v* response t-point mass-b lmba)))))))
 
-#|
-(defun simulate (entities &key (iterations *iterations*))
+(defun simulate-entities (entities delta &key forces)
   (for:for ((entity in entities))
-    (apply-forces entity)
-    (update-edges entity))
-  (dotimes (i iterations) ;; More you do it, better it gets
-    (loop for list = entities then (rest list)
-          for entity = (first list)
-          for rest = (rest list)
-          while (and entity rest)
-          do (update-edges entity)
-          do (calculate-center entity)
-          do (for:for ((other in rest))
-               (update-edges other)
-               (calculate-center other)
-               (multiple-value-call #'resolve-collision (collides-p entity other))
-               (ensure-location other))
-          do (ensure-location entity))))
-|#
+    (simulate entity delta :forces forces)) ;; Move to the new spots and apply forces
+  (let ((delta (/ delta *iterations*)))
+    (dotimes (i *iterations*)
+      (loop for remaining = entities then (rest remaining)
+            for rest = (rest remaining)
+            while (and remaining rest)
+            for entity = (first remaining)
+            do (for:for ((point in (mass-points entity)))
+                 (simulate point delta))
+            do (for:for ((other in rest))
+                 (for:for ((point in (mass-points other)))
+                   (simulate point delta))
+                 (multiple-value-call #'resolve-collision (collides-p entity other)))))))

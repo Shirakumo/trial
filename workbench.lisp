@@ -1,10 +1,15 @@
 (in-package #:trial)
 
+(defvar *boxes* NIL)
+
 (define-pool workbench
   :base 'trial)
 
 (define-asset (workbench box) mesh
     ((make-rectangle 10 10)))
+
+(define-shader-subject box-collection ()
+  ((boxes :initform NIL :accessor boxes)))
 
 (define-shader-subject box (colored-entity trial-verlet:verlet-entity)
   ()
@@ -12,8 +17,14 @@
    :vertex-array (asset 'workbench 'box)
    :name :box))
 
-(define-handler (box tick) (ev)
-  (trial-physics:simulate box (dt ev)))
+(defmethod enter :after ((box box) scene)
+  (unless *boxes*
+    (setf *boxes* (make-instance 'box-collection))
+    (enter *boxes* scene))
+  (push box (boxes *boxes*)))
+
+(define-handler (box-collection tick) (ev)
+  (trial-verlet:simulate-entities (boxes box-collection) (dt ev)))
 
 (progn
   (defmethod setup-scene ((main main) scene)

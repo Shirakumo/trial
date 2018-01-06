@@ -9,7 +9,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   (:nicknames #:org.shirakumo.fraf.trial.physics)
   (:shadow #:scene #:entity #:load #:update)
   (:use #:cl #:3d-vectors #:3d-matrices #:trial)
-  (:export #:physical-entity #:mass #:static-p #:forces #:simulate #:quick-hull))
+  (:export #:physical-entity #:mass #:static-p #:static-forces #:simulate #:quick-hull))
 (in-package #:org.shirakumo.fraf.trial.physics)
 
 (defgeneric simulate (entity delta &key forces))
@@ -18,27 +18,27 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   "Directional forces affecting the physical entities.")
 
 (defmethod 2d-frame-constraint ((entity located-entity)
-                                &key (min (vec 0 0))
-                                     (max (vec (width *context*)
-                                               (height *context*))))
+                                &key (min (vec 0 0)) max)
   (let ((min-x (vx min))
         (min-y (vy min))
-        (max-x (vx max))
-        (max-y (vy max)))
+        (max-x (when max (vx max)))
+        (max-y (when max (vy max))))
     #'(lambda ()
-        (setf (vx (location entity)) (min max-x (max min-x (vx (location entity))))
-              (vy (location entity)) (min max-y (max min-y (vy (location entity))))))))
+        (setf (vx (location entity)) (min (if max-x max-x (width *context*))
+                                          (max min-x (vx (location entity))))
+              (vy (location entity)) (min (if max-y max-y (height *context*))
+                                          (max min-y (vy (location entity))))))))
 
 (define-shader-entity physical-entity (located-entity rotated-entity pivoted-entity)
   ((mass :initarg :mass :accessor mass)
    (static-p :initarg :static-p :accessor static-p)
    (rotates-p  :initarg :rotates-p :accessor rotates-p)
    (constraints :initform (make-hash-table) :accessor constraints)
-   (forces :initarg :forces :accessor forces))
+   (static-forces :initarg :static-forces :accessor static-forces))
   (:default-initargs :mass 1.0
                      :static-p NIL
                      :rotates-p T
-                     :forces *default-forces*))
+                     :static-forces *default-forces*))
 
 (defmethod add-constraint ((entity physical-entity) name constraint-f)
   (setf (gethash name (constraints entity)) constraint-f))
