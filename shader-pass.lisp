@@ -112,14 +112,16 @@
              (let ((previous (gethash class assets)))
                (remhash class assets)
                (register-object-for-pass per-object-pass class)
-               (when (and previous (resource previous))
-                 (restart-case
-                     (progn
-                       (load (gethash class assets))
-                       (offload previous))
-                   (continue ()
-                     :report "Ignore the change and continue with the hold shader."
-                     (setf (gethash class assets) previous)))))))
+               (let ((new (gethash class assets)))
+                 (when (and previous (resource previous)
+                            (not (eql previous new)))
+                   (restart-case
+                       (progn
+                         (load new)
+                         (offload previous))
+                     (continue ()
+                       :report "Ignore the change and continue with the hold shader."
+                       (setf (gethash class assets) previous))))))))
       (cond ((eql subject-class (class-of per-object-pass))
              ;; Pass changed, recompile everything
              (loop for class being the hash-keys of assets
