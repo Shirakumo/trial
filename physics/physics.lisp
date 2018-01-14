@@ -4,12 +4,6 @@ This file is a part of trial
 Author: Janne Pakarinen <gingeralesy@gmail.com>
 |#
 
-(in-package #:org.shirakumo.fraf.trial)
-(defpackage #:trial-physics
-  (:nicknames #:org.shirakumo.fraf.trial.physics)
-  (:shadow #:scene #:entity #:load #:update)
-  (:use #:cl #:3d-vectors #:3d-matrices #:trial)
-  (:export #:physical-entity #:mass #:static-p #:static-forces #:simulate #:quick-hull))
 (in-package #:org.shirakumo.fraf.trial.physics)
 
 (defgeneric simulate (entity delta &key forces))
@@ -127,3 +121,27 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
                 (find-hull left near far)
                 (list far) ;; Lower hull
                 (find-hull right far near))))))
+
+(defun triangulate (point-a dist-a point-b dist-b point-c dist-c)
+  "Calculates the location in a 2D plane based on three other points and their distances from the location."
+  (when (v= point-a point-b) (error "POINT-A and POINT-B are equal"))
+  (when (v= point-a point-c) (error "POINT-A and POINT-C are equal"))
+  (when (v= point-b point-c) (error "POINT-B and POINT-C are equal"))
+  (let* ((vec-ab (v- point-a point-b))
+         (dist (vlength vec-ab))
+         (a (/ (+ (* dist-a dist-a) (- (* dist-b dist-b)) (* dist dist)) (* 2 dist)))
+         (h (sqrt (- (* dist-a dist-a) (* a a))))
+         (point-c (vec (vx point-c) (vy point-c)))
+         (point-mid (v+ point-a (v* vec-ab a (/ dist))))
+         (center-1 (vec (+ (vx point-mid)
+                           (* h (- (vy point-b) (vy point-a)) (/ dist)))
+                        (- (vy point-mid)
+                           (* h (- (vx point-b) (vx point-a)) (/ dist)))))
+         (center-2 (vec (- (vx point-mid)
+                           (* h (- (vy point-b) (vy point-a)) (/ dist)))
+                        (+ (vy point-mid)
+                           (* h (- (vx point-b) (vx point-a)) (/ dist)))))
+         (dist-1 (abs (vlength (v- point-c center-1))))
+         (dist-2 (abs (vlength (v- point-c center-2)))))
+    (if (< (abs (- (abs dist-c) dist-1)) (abs (- (abs dist-c) dist-2)))
+        center-1 center-2)))

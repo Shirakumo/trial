@@ -5,11 +5,6 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 |#
 
 (in-package #:org.shirakumo.fraf.trial.physics)
-(defpackage #:trial-verlet
-  (:nicknames #:org.shirakumo.fraf.trial.physics.verlet)
-  (:use #:cl+trial #:3d-vectors #:3d-matrices #:trial-physics)
-  (:export #:verlet-entity #:viscosity #:simulate-entities))
-(in-package #:org.shirakumo.fraf.trial.physics.verlet)
 
 (defvar *default-viscosity* 1.0
   "How hard is it to move horizontally when falling on a surface.")
@@ -67,18 +62,18 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
     (setf (pinned point) (etypecase pin-to
                            (vec2 (etypecase cur-loc
                                    (vec2 pin-to)
-                                   (vec3 (vec (vx pin-to) (vy pin-to)
-                                              (vz cur-loc)))
-                                   (vec4 (vec (vx pin-to) (vy pin-to)
-                                              (vz cur-loc) (vw cur-loc)))))
+                                   (vec3 (vec3 (vx pin-to) (vy pin-to)
+                                               (vz cur-loc)))
+                                   (vec4 (vec4 (vx pin-to) (vy pin-to)
+                                               (vz cur-loc) (vw cur-loc)))))
                            (vec3 (etypecase cur-loc
-                                   (vec2 (vec (vx pin-to) (vy pin-to)))
+                                   (vec2 (vec2 (vx pin-to) (vy pin-to)))
                                    (vec3 pin-to)
-                                   (vec4 (vec (vx pin-to) (vy pin-to)
-                                              (vz pin-to) (vw cur-loc)))))
+                                   (vec4 (vec4 (vx pin-to) (vy pin-to)
+                                               (vz pin-to) (vw cur-loc)))))
                            (vec4 (etypecase cur-loc
-                                   (vec2 (vec (vx pin-to) (vy pin-to)))
-                                   (vec3 (vec (vx pin-to) (vy pin-to) (vz pin-to)))
+                                   (vec2 (vec2 (vx pin-to) (vy pin-to)))
+                                   (vec3 (vec3 (vx pin-to) (vy pin-to) (vz pin-to)))
                                    (vec4 pin-to)))))))
 
 (defmethod apply-forces ((point verlet-point) forces)
@@ -134,13 +129,13 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
         (let ((current-loc (location point)))
           (setf (location point) (etypecase original-loc
                                    (vec2 current-loc)
-                                   (vec3 (vec (vx current-loc)
-                                              (vy current-loc)
-                                              (vz original-loc)))
-                                   (vec4 (vec (vx current-loc)
-                                              (vy current-loc)
-                                              (vz original-loc)
-                                              (vw original-loc)))))))))
+                                   (vec3 (vec3 (vx current-loc)
+                                               (vy current-loc)
+                                               (vz original-loc)))
+                                   (vec4 (vec4 (vx current-loc)
+                                               (vy current-loc)
+                                               (vz original-loc)
+                                               (vw original-loc)))))))))
 
 (defmethod fixed-location-constraint ((point located-entity))
   (let ((original-loc (location point)))
@@ -189,7 +184,8 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
 (define-shader-entity verlet-entity (physical-entity vertex-entity)
   ((mass-points :initform NIL :accessor mass-points)
    (edges :initform NIL :accessor edges)
-   (viscosity :initarg :viscosity :accessor viscosity))
+   (viscosity :initarg :viscosity :accessor viscosity)
+   (center :initform NIL :accessor center))
   (:default-initargs :viscosity *default-viscosity*))
 
 (defmethod initialize-instance :after ((entity verlet-entity) &key points edges vertex-array location)
@@ -198,8 +194,7 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
          (mass-points (etypecase point-array
                         (mesh (vertices (first (inputs vertex-array))))
                         (vertex-mesh (mass-points point-array))
-                        (array point-array)
-                        (list point-array))))
+                        ((or list array) point-array))))
     (unless (< 3 (length mass-points))
       (error "POINT-ARRAY or VERTEX-ARRAY required"))
     (let ((mass-points (quick-hull (for:for ((point over mass-points)
@@ -216,14 +211,22 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
                                          for next = (or (second mass-points)
                                                         (first (mass-points entity)))
                                          for link = (link current next)
-                                         when link collect link)))))
+                                         when link collect link)))
+    (let* ((points (mass-points entity))
+           (center (calculate-center entity))
+           (point-a (location (first points)))
+           (point-b (location (second points)))
+           (point-c (location (third points))))
+      (setf (center entity) (list point-a (vlength (v- center point-a))
+                                  point-b (vlength (v- center point-b))
+                                  point-c (vlength (v- center point-c)))))))
 
 (defmethod location ((entity verlet-entity))
-  (calculate-center entity))
+  (triangulate-center entity))
 
 (defmethod (setf location) (value (entity verlet-entity))
   (unless (typep value 'vec) (error "VALUE not VEC"))
-  (let ((diff (v- value (calculate-center entity))))
+  (let ((diff (v- value (triangulate-center entity))))
     (for:for ((point in (mass-points entity)))
       (setf (location point) (v+ (location point) diff))))
   value)
@@ -242,10 +245,19 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
     (dotimes (i *iterations*)
       (simulate-step entity delta :forces forces))))
 
+(defmethod triangulate-center ((entity verlet-entity))
+  ;; TODO: is this even potentially faster than CALCULATE-CENTER?
+  (let ((point-a (first (center entity)))
+        (center (apply #'triangulate (center entity))))
+    (etypecase point-a
+      (vec2 center)
+      (vec3 (vec3 (vx center) (vy center) (vz point-a)))
+      (vec4 (vec4 (vx center) (vy center) (vz point-a) (vw point-a))))))
+
 (defmethod calculate-center ((entity verlet-entity))
   "Calculates the average of the points that form the entity's bounding box."
   (let ((center (vcopy (location (first (mass-points entity))))))
-    (for:for ((point over (rest (mass-points entity)))
+    (for:for ((point in (rest (mass-points entity)))
               (i count point))
       (nv+ center (location point))
       (returning (v/ center (1+ i))))))
@@ -257,27 +269,29 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
              (location = (location point))
              (max-x maximize (vx location))
              (max-y maximize (vy location))
-             (max-z when (or (typep location 'vec3) (typep location 'vec4))
+             (max-z when (or (vec3-p location) (vec4-p location))
                     maximize (vz location))
-             (max-w when (typep location 'vec4) maximize (vw location))
+             (max-w when (vec4-p location) maximize (vw location))
              (min-x minimize (vx location))
              (min-y minimize (vy location))
-             (min-z when (or (typep location 'vec3) (typep location 'vec4))
+             (min-z when (or (vec3-p location) (vec4-p location))
                     minimize (vz location))
-             (min-w when (typep location 'vec4) minimize (vw location)))
+             (min-w when (vec4-p location) minimize (vw location)))
      (returning (list (cond
-                        (min-w (vec min-x min-y min-z min-w))
-                        (min-z (vec min-x min-y min-z))
-                        (T (vec min-x min-y)))
+                        (min-w (vec4 min-x min-y min-z min-w))
+                        (min-z (vec3 min-x min-y min-z))
+                        (T (vec2 min-x min-y)))
                       (cond
-                        (max-w (vec max-x max-y max-z max-w))
-                        (max-z (vec max-x max-y max-z))
-                        (T (vec max-x max-y))))))))
+                        (max-w (vec4 max-x max-y max-z max-w))
+                        (max-z (vec3 max-x max-y max-z))
+                        (T (vec2 max-x max-y))))))))
 
 (defmethod project-to-axis ((entity verlet-entity) axis)
   "Gets the nearest and furthest point along an axis." ;; Think of it like casting a shadow on a wall.
+  (declare (type vec2 axis))
   (for:for ((point in (mass-points entity))
-            (dotp = (v. axis (location point)))
+            (location = (location point))
+            (dotp = (v. axis (vec2 (vx location) (vy location)))) ;; 2D
             (min minimize dotp)
             (max maximize dotp))
     (returning (values min max))))
@@ -297,12 +311,12 @@ col-edge: edge that is pierced"
                    (<= (vx min-b) (vx max-a))
                    (<= (vy min-a) (vy max-b))
                    (<= (vy min-b) (vy max-a))
-                   (if (or (and (typep max-a 'vec3) (typep max-b 'vec3))
-                           (and (typep max-a 'vec4) (typep max-b 'vec4)))
+                   (if (or (and (vec3-p max-a) (vec3-p max-b))
+                           (and (vec4-p max-a) (vec4-p max-b)))
                        (and (<= (vz min-a) (vz max-b))
                             (<= (vz min-b) (vz max-a)))
                        T)
-                   (if (and (typep max-a 'vec4) (typep max-b 'vec4))
+                   (if (and (vec4-p max-a) (vec4-p max-b))
                        (and (<= (vw min-a) (vw max-b))
                             (<= (vw min-b) (vw max-a)))
                        T))
@@ -314,7 +328,7 @@ col-edge: edge that is pierced"
                       (i counting edge)
                       (vector = (v- (location (point-b edge))
                                     (location (point-a edge))))
-                      (axis = (vunit (vec (vy vector) (vx vector))))) ;; 2D
+                      (axis = (vunit (vec2 (vy vector) (vx vector))))) ;; 2D
               (multiple-value-bind (min-a max-a)
                   (project-to-axis entity axis)
                 (multiple-value-bind (min-b max-b)
@@ -329,10 +343,10 @@ col-edge: edge that is pierced"
                             col-edge edge
                             entity-1 (if (< edge-count i) entity other)
                             entity-2 (if (< edge-count i) other entity)))))))
-            (let* ((center-1 (calculate-center entity-1))
-                   (center-2 (calculate-center entity-2))
+            (let* ((center-1 (location entity-1))
+                   (center-2 (location entity-2))
                    (center (v- center-1 center-2))
-                   (sign (v. normal (vec (vx center) (vy center)))) ;; 2D
+                   (sign (v. normal (vec2 (vx center) (vy center)))) ;; 2D
                    (total-mass (+ (mass entity-1) (mass entity-2)))
                    (mass-1 (cond
                              ((static-p entity-1) 0.0)
@@ -347,7 +361,7 @@ col-edge: edge that is pierced"
                (for:for ((point in (mass-points entity-1))
                          (loc = (location point))
                          (vec = (v- loc center-2))
-                         (distance = (v. normal (vec (vx vec) (vy vec)))) ;; 2D
+                         (distance = (v. normal (vec2 (vx vec) (vy vec)))) ;; 2D
                          (smallest-dist minimizing distance)
                          (smallest-point when (= smallest-dist distance) = point))
                  (returning (list depth mass-1 mass-2
@@ -357,10 +371,12 @@ col-edge: edge that is pierced"
 (defun resolve-collision (&optional depth mass-a mass-b normal edge point)
   "Pushes back the two entities from one another. The normal always points towards the piercing entity."
   (when (and depth mass-a mass-b normal edge point)
+    (v:warn :resolve "physics.")
     (let* ((point-loc (location point))
-           (normal (vec (vx normal) (vy normal) ;; 2D
-                        (when (or (typep point-loc 'vec3) (typep point-loc 'vec4)) 0)
-                        (when (typep point-loc 'vec4) 0)))
+           (normal (etypecase point-loc
+                     (vec2 (vec2 (vx normal) (vy normal)))
+                     (vec3 (vec3 (vx normal) (vy normal) 0))
+                     (vec4 (vec4 (vx normal) (vy normal) 0 0))))
            (response (v* normal depth))) ;; Pushback for the piercing entity
       (nv+ (location point) (v* response mass-a))
       (let* ((point-a (location (point-a edge)))
@@ -385,7 +401,7 @@ col-edge: edge that is pierced"
         (setf (location (point-a edge)) (v- point-a (v* response (- 1 t-point) mass-b lmba))
               (location (point-b edge)) (v- point-b (v* response t-point mass-b lmba)))))))
 
-(defun simulate-entities (entities delta &key forces)
+(defun verlet-simulation (entities delta &key forces)
   (for:for ((entity in entities))
     (simulate entity delta :forces forces)) ;; Move to the new spots and apply forces
   (let ((delta (/ delta *iterations*)))

@@ -11,7 +11,7 @@
 (define-shader-subject box-collection ()
   ((boxes :initform NIL :accessor boxes)))
 
-(define-shader-subject box (colored-entity trial-verlet:verlet-entity)
+(define-shader-subject box (colored-entity trial-physics:verlet-entity)
   ()
   (:default-initargs
    :vertex-array (asset 'workbench 'box)
@@ -24,7 +24,7 @@
   (push box (boxes *boxes*)))
 
 (define-handler (box-collection tick) (ev)
-  (trial-verlet:simulate-entities (boxes box-collection) (dt ev)))
+  (trial-physics:verlet-simulation (boxes box-collection) (dt ev)))
 
 (progn
   (defmethod setup-scene ((main main) scene)
