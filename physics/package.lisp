@@ -22,6 +22,6 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
    #:triangulate)
   ;; verlet.lisp
   (:export
+   #:verlet-point
    #:verlet-entity
-   #:viscosity
    #:verlet-simulation))

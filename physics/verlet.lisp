@@ -6,254 +6,59 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 
 (in-package #:org.shirakumo.fraf.trial.physics)
 
-(defvar *default-viscosity* 1.0
-  "How hard is it to move horizontally when falling on a surface.")
 (defvar *iterations* 5
   "Number of physics calculation iterations. Increases accuracy of calculations.
 In general, 4 is minimum for an alright accuracy, 8 is enough for a good accuracy.")
 
+
 (define-shader-entity verlet-point (located-entity) ())
-(define-shader-entity verlet-circle (located-entity) ())
-(defclass verlet-link () ())
 (define-shader-entity verlet-entity (physical-entity vertex-entity) ())
 
+
 (define-shader-entity verlet-point (located-entity)
-  ((id :initform (gensym "VERLET-POINT") :reader id)
-   (old-location :initform NIL)
-   (mass :initarg :mass :accessor mass)
-   (acceleration :initform NIL :accessor acceleration)
-   (links :initarg :links :accessor links)
-   (dampen :initarg :dampen :accessor dampen)
-   (pinned :initarg :pinned :accessor pinned))
-  (:default-initargs :location (error "LOCATION required.")
-                     :mass 1
-                     :links NIL
-                     :dampen 0.99
-                     :pinned NIL))
+  ((old-location :initform NIL :accessor old-location)
+   (mass :initarg :mass :accessor mass))
+  (:default-initargs :mass 1))
 
-(defmethod initialize-instance :after ((point verlet-point) &key old-location acceleration)
-  (setf (old-location point) (or old-location (location point))
-        (acceleration point) (or acceleration (v* (location point) 0)))
-  (let ((old-mass (mass point)))
-    (unless (and (typep old-mass 'rational) (= old-mass (round old-mass)))
-      (setf (mass point) (rationalize (round old-mass)))
-      (v:warn :verlet-point "MASS was not a round rational number, converting it from ~a => ~a"
-              old-mass (mass point)))
-    (when (<= (mass point) 0)
-      (setf old-mass (mass point)
-            (mass point) (if (= 0 old-mass) 1 (abs old-mass)))
-      (v:warn :verlet-point "MASS was not a positive number, converting it from ~a => ~a"
-              old-mass (mass point)))))
-
-(defmethod location ((point verlet-point))
-  (if (pinned-p point) (pinned point) (call-next-method)))
-
-(defmethod old-location ((point verlet-point))
-  (if (pinned-p point) (pinned point) (slot-value point 'old-location)))
-
-(defmethod (setf old-location) (value (point verlet-point))
-  (setf (slot-value point 'old-location) value))
-
-(defmethod pinned-p ((point verlet-point))
-  (when (pinned point) T))
-
-(defmethod pin ((point verlet-point) pin-to)
-  ;; FIXME: There's got to be a better way to do this
-  (let ((cur-loc (location point)))
-    (setf (pinned point) (etypecase pin-to
-                           (vec2 (etypecase cur-loc
-                                   (vec2 pin-to)
-                                   (vec3 (vec3 (vx pin-to) (vy pin-to)
-                                               (vz cur-loc)))
-                                   (vec4 (vec4 (vx pin-to) (vy pin-to)
-                                               (vz cur-loc) (vw cur-loc)))))
-                           (vec3 (etypecase cur-loc
-                                   (vec2 (vec2 (vx pin-to) (vy pin-to)))
-                                   (vec3 pin-to)
-                                   (vec4 (vec4 (vx pin-to) (vy pin-to)
-                                               (vz pin-to) (vw cur-loc)))))
-                           (vec4 (etypecase cur-loc
-                                   (vec2 (vec2 (vx pin-to) (vy pin-to)))
-                                   (vec3 (vec3 (vx pin-to) (vy pin-to) (vz pin-to)))
-                                   (vec4 pin-to)))))))
-
-(defmethod apply-forces ((point verlet-point) forces)
-  (unless (pinned-p point)
-    (nv+ (acceleration point) forces)))
+(defmethod initialize-instance :after ((point verlet-point) &key old-location)
+  (setf (old-location point) (or old-location (location point))))
 
 (defmethod simulate ((point verlet-point) delta &key forces)
-  (unless (pinned-p point)
-    (let ((forces (typecase forces
-                    (number (v+ (v* (acceleration point) 0) forces))
-                    (vec forces)
-                    (T (v* (acceleration point) 0)))))
-      (apply-forces point (v* forces (mass point) delta)))
-    (let* ((velocity (v* (v- (location point) (old-location point))
-                         (dampen point)))
-           (next-loc (v+ (location point) (v* velocity 1/2
-                                              (acceleration point)
-                                              (* delta delta)))))
-      (setf (old-location point) (location point)
-            (location point) next-loc
-            (acceleration point) (v* (acceleration point) 0)))))
+  (let ((velocity (v- (location point) (old-location point))))
+    (setf (old-location point) (location point))
+    (nv+ (location point) (v+ forces velocity))))
 
-(defmethod solve-links ((point verlet-point))
-  (for:for ((link in (links point)))
-    (resolve link)))
-
-(defmethod add-link ((point verlet-point) (link verlet-link))
-  (let ((other (id (point-b link))))
-    (unless (for:for ((point-link in (links point)))
-              (thereis (eql (id (point-b point-link)) other)))
-      (setf (point-a link) point)
-      (push link (links point))
-      link)))
-
-(defmethod link ((point verlet-point) (other verlet-point) &key tear stiffness)
-  (add-link point (make-instance 'verlet-link :tear tear
-                                              :stiffness (or stiffness 1)
-                                              :point-a point
-                                              :point-b other)))
-
-(defmethod remove-link ((point verlet-point) (link verlet-link))
-  (let ((other (id (point-b link))))
-    (setf (links point)
-          (for:for ((point-link in (links point))
-                    (new-links unless (eql (id (point-b point-link))
-                                           other)
-                               collecting point-link))
-            (returning new-links)))))
-
-(defmethod 2d-constraint ((point located-entity))
-  (let ((original-loc (location point)))
-    #'(lambda ()
-        (let ((current-loc (location point)))
-          (setf (location point) (etypecase original-loc
-                                   (vec2 current-loc)
-                                   (vec3 (vec3 (vx current-loc)
-                                               (vy current-loc)
-                                               (vz original-loc)))
-                                   (vec4 (vec4 (vx current-loc)
-                                               (vy current-loc)
-                                               (vz original-loc)
-                                               (vw original-loc)))))))))
-
-(defmethod fixed-location-constraint ((point located-entity))
-  (let ((original-loc (location point)))
-    (setf (fixed point) T)
-    #'(lambda ()
-        (when (v/= (location point) original-loc)
-          (setf (location point) original-loc)))))
-
-(define-shader-entity verlet-circle (located-entity)
-  ((attached-point :initform NIL :accessor attached-point)
-   (radius :initarg :radius :accessor radius))
-  (:default-initargs :radius (error "RADIUS required.")))
-
-(defmethod solve-constraints ((circle verlet-circle) &key min max)
-  (declare (type vec min max))
-  (let* ((point (attached-point circle))
-         (loc (location point))
-         (radius (radius circle)))
-    (when min
-      (when (< (vx loc) (+ (vx min) radius))
-        (setf (vx loc) (- (* 2 radius) (vx loc))))
-      (when (< (vy loc) (+ (vy min) radius))
-        (setf (vy loc) (- (* 2 radius) (vy loc))))
-      (when (and (or (vec3-p loc) (vec4-p loc))
-                 (< (vz loc) (+ (vz min) radius)))
-        (setf (vz loc) (- (* 2 radius) (vz loc))))
-      (when (and (vec4-p loc) (< (vw loc) (+ (vw min) radius)))
-        (setf (vw loc) (- (* 2 radius) (vw loc)))))
-    (when max
-      (when (< (- (vx max) radius) (vx loc))
-        (setf (vx loc) (- (* 2 (- (vx max) radius)) (vx loc))))
-      (when (< (- (vy max) radius) (vy loc))
-        (setf (vy loc) (- (* 2 (- (vy max) radius)) (vy loc))))
-      (when (and (or (vec3-p loc) (vec4-p loc))
-                 (< (- (vz max) radius) (vz loc)))
-        (setf (vz loc) (- (* 2 (- (vz max) radius)) (vz loc))))
-      (when (and (vec4-p loc) (< (- (vw max) radius) (vw loc)))
-        (setf (vw loc) (- (* 2 (- (vw max) radius)) (vw loc)))))))
-
-(defmethod location ((circle verlet-circle))
-  (if (attached-point circle)
-      (location (attached-point circle))
-      (call-next-method)))
-
-(defmethod (setf location) (value (circle verlet-circle))
-  (if (attached-point circle)
-      (setf (location (attached-point circle)) value)
-      (call-next-method)))
-
-(defclass verlet-link ()
-  ((target :initform NIL :accessor target)
-   (tear :initform NIL :accessor tear)
-   (stiffness :initarg :stiffness :accessor stiffness)
-   (point-a :initarg :point-a :accessor point-a)
-   (point-b :initarg :point-b :accessor point-b))
-  (:default-initargs :stiffness 1
-                     :point-a (error "POINT-A required")
-                     :point-b (error "POINT-B required")))
-
-(defmethod initialize-instance :after ((link verlet-link) &key tear)
-  (setf (target link) (vlength (v- (location (point-b link))
-                                   (location (point-a link))))
-        (tear link) (when tear (+ (target link) tear))))
-
-(defmethod resolve ((link verlet-link))
-  (let ((point (point-a link))
-        (other (point-b link)))
-    (unless (and (pinned-p point) (pinned-p other))
-      (let* ((stiffness (stiffness link))
-             (target (target link))
-             (point-mass (/ (mass point)))
-             (other-mass (/ (mass other)))
-             ;; Masses scale which point are moved more towards
-             (point-scalar (* (/ point-mass (+ point-mass other-mass)) stiffness))
-             (other-scalar (- stiffness point-scalar))
-             (point-loc (location point))
-             (other-loc (location other))
-             (diff-loc (v- point-loc other-loc))
-             (delta (vlength diff-loc))
-             (difference (/ (- target delta) delta))
-             (translate (v* diff-loc difference)))
-        (when (and (tear link) (< (tear link) delta))
-          (remove-link point link))
-        (setf (location point) (v+ point-loc (v* translate point-scalar))
-              (location other) (v- other-loc (v* translate other-scalar)))))))
 
 (define-shader-entity verlet-entity (physical-entity vertex-entity)
   ((mass-points :initform NIL :accessor mass-points)
-   (edges :initform NIL :accessor edges)
-   (viscosity :initarg :viscosity :accessor viscosity)
-   (center :initform NIL :accessor center))
-  (:default-initargs :viscosity *default-viscosity*))
+   (constraints :initform NIL :accessor constraints)
+   (center :initform NIL :accessor center)
+   (static-forces :initarg :static-forces :accessor static-forces))
+  (:default-initargs :static-forces *default-forces*))
 
-(defmethod initialize-instance :after ((entity verlet-entity) &key points edges vertex-array location)
-  "Unless points are defined the mass-points of the vertex-array in vertex-entity class are used."
-  (let* ((point-array (or points vertex-array))
+(defmethod initialize-instance :after ((entity verlet-entity) &key mass-points vertex-array location)
+  (let* ((point-array (or mass-points vertex-array))
          (mass-points (etypecase point-array
                         (mesh (vertices (first (inputs vertex-array))))
                         (vertex-mesh (mass-points point-array))
                         ((or list array) point-array))))
     (unless (< 3 (length mass-points))
-      (error "POINT-ARRAY or VERTEX-ARRAY required"))
+      (error "MASS-POINTS or VERTEX-ARRAY required"))
     (let ((mass-points (quick-hull (for:for ((point over mass-points)
                                              (v collecting (v+ location
                                                                (if (typep point 'textured-vertex)
                                                                    (location point)
                                                                    point))))))))
-      (setf (mass-points entity) (mapcar #'(lambda (v)
-                                             (make-instance 'verlet-point :location v))
-                                         mass-points)))
-    (setf (edges entity) (or edges (loop for mass-points = (mass-points entity) then (rest mass-points)
-                                         while mass-points
-                                         for current = (first mass-points)
-                                         for next = (or (second mass-points)
-                                                        (first (mass-points entity)))
-                                         for link = (link current next)
-                                         when link collect link)))
+      (setf (mass-points entity) (mapcar #'(lambda (v) (make-instance 'verlet-point :location v))
+                                         mass-points)
+            (constraints entity)
+            (loop with first = (first (mass-points entity))
+                  for points = (mass-points entity) then (rest points)
+                  while points
+                  for current = (first points)
+                  for next = (or (second points) first)
+                  collect (make-instance 'distance-constraint :point-a current
+                                                              :point-b next))))
     (let* ((points (mass-points entity))
            (center (calculate-center entity))
            (point-a (location (first points)))
@@ -273,20 +78,6 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
       (setf (location point) (v+ (location point) diff))))
   value)
 
-(defmethod simulate-step ((entity verlet-entity) delta &key forces)
-  (let ((static-forces (when (static-forces entity)
-                         (apply #'v+ (static-forces entity)))))
-    (for:for ((point in (mass-points entity)))
-      (when static-forces
-        (apply-forces point static-forces))
-      (simulate point delta :forces forces)
-      (solve-links point))))
-
-(defmethod simulate ((entity verlet-entity) delta &key forces)
-  (let ((delta (/ delta *iterations*)))
-    (dotimes (i *iterations*)
-      (simulate-step entity delta :forces forces))))
-
 (defmethod triangulate-center ((entity verlet-entity))
   ;; TODO: is this even potentially faster than CALCULATE-CENTER?
   (let ((point-a (first (center entity)))
@@ -304,6 +95,26 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
       (nv+ center (location point))
       (returning (v/ center (1+ i))))))
 
+
+(defun verlet-simulation (entities delta &key forces (iterations *iterations*))
+  (let ((dlt (/ delta iterations)))
+    ;; Simulations
+    (for:for ((entity in entities)
+              (static-forces = (static-forces entity)))
+      (for:for ((point in (mass-points entity)))
+        (simulate point delta :forces (apply #'v+ (append (if (vec-p forces)
+                                                              (list forces)
+                                                              forces)
+                                                          (if (vec-p static-forces)
+                                                              (list static-forces)
+                                                              static-forces))))))
+    ;; Relax constraints
+    (for:for ((entity in entities))
+      (dotimes (i iterations)
+        (for:for ((constraint in (constraints entity)))
+          (relax constraint dlt))))))
+
+#|
 (defmethod min-max-point ((entity verlet-entity))
   "Finds the minimum and maximum point that is theoretically within the entity's area."
   (values-list
@@ -458,3 +269,4 @@ col-edge: edge that is pierced"
                  (for:for ((point in (mass-points other)))
                    (simulate point delta))
                  (multiple-value-call #'resolve-collision (collides-p entity other)))))))
+|#

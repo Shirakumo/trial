@@ -68,8 +68,10 @@
                (:file "transforms" :depends-on ("package"))
                (:file "window" :depends-on ("package"))
                (:file "physics/package" :depends-on ("package"))
-               (:file "physics/physics" :depends-on ("physics/package"))
-               (:file "physics/verlet" :depends-on ("physics/package" "physics/physics"))
+               (:file "physics/math" :depends-on ("physics/package"))
+               (:file "physics/physics" :depends-on ("physics/math"))
+               (:file "physics/constraint" :depends-on ("physics/math"))
+               (:file "physics/verlet" :depends-on ("physics/physics" "physics/constraint"))
                ;; Testing, remove for production.
                (:file "workbench" :depends-on ("assets" "asset-pool" "formats" "main" "helpers" "geometry-clipmap" "ui"))
                (:module "ui"
