@@ -32,9 +32,8 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
 (define-shader-entity verlet-entity (physical-entity vertex-entity)
   ((mass-points :initform NIL :accessor mass-points)
    (constraints :initform NIL :accessor constraints)
-   (center :initform NIL :accessor center)
-   (static-forces :initarg :static-forces :accessor static-forces))
-  (:default-initargs :static-forces *default-forces*))
+   (original-rotation :initform NIL :accessor original-rotation)
+   (center :initform NIL :accessor center)))
 
 (defmethod initialize-instance :after ((entity verlet-entity) &key mass-points vertex-array location)
   (let* ((point-array (or mass-points vertex-array))
@@ -66,7 +65,9 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
            (point-c (location (third points))))
       (setf (center entity) (list point-a (vlength (v- center point-a))
                                   point-b (vlength (v- center point-b))
-                                  point-c (vlength (v- center point-c)))))))
+                                  point-c (vlength (v- center point-c)))))
+    (setf (original-rotation entity) (v- (location (first (mass-points entity)))
+                                         (center entity)))))
 
 (defmethod location ((entity verlet-entity))
   (triangulate-center entity))
@@ -108,11 +109,16 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
                                                           (if (vec-p static-forces)
                                                               (list static-forces)
                                                               static-forces))))))
-    ;; Relax constraints
+    ;; Relax constraints and fix rotation
     (for:for ((entity in entities))
       (dotimes (i iterations)
         (for:for ((constraint in (constraints entity)))
-          (relax constraint dlt))))))
+          (relax constraint dlt)))
+      (when (rotates-p entity)
+        (let ((diff (v- (first (mass-points entity))
+                        (center entity)
+                        (original-rotation entity))))
+          (nv+ (rotation entity) diff))))))
 
 #|
 (defmethod min-max-point ((entity verlet-entity))

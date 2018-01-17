@@ -6,13 +6,6 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 
 (in-package #:org.shirakumo.fraf.trial.physics)
 
-(defvar *default-forces* (list (vec 0 -0.5 0))
-  "Directional forces affecting the physical entities.")
-
-
-(define-shader-entity physical-entity (located-entity rotated-entity pivoted-entity) ())
-
-
 (defgeneric simulate (entity delta &key forces))
 
 
@@ -24,7 +17,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   (:default-initargs :mass 1.0
                      :static-p NIL
                      :rotates-p T
-                     :static-forces *default-forces*))
+                     :static-forces NIL))
 
 (defmethod simulate ((entity physical-entity) delta &key forces)
   (declare (ignore entity delta forces)))
