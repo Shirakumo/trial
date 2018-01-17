@@ -26,14 +26,12 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
 (defmethod simulate ((point verlet-point) delta &key forces)
   (let ((velocity (v- (location point) (old-location point))))
     (setf (old-location point) (location point))
-    (when forces
-      (nv+ (location point) (v+ forces velocity)))))
-
+    (nv+ (location point) (v* (if forces (v+ forces velocity) velocity)
+                              delta))))
 
 (define-shader-entity verlet-entity (physical-entity vertex-entity)
   ((mass-points :initform NIL :accessor mass-points)
    (constraints :initform NIL :accessor constraints)
-   (original-rotation :initform NIL :accessor original-rotation)
    (center :initform NIL :accessor center)))
 
 (defmethod initialize-instance :after ((entity verlet-entity) &key mass-points vertex-array location)
@@ -67,17 +65,14 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
       (setf (center entity) (list point-a (vlength (v- center point-a))
                                   point-b (vlength (v- center point-b))
                                   point-c (vlength (v- center point-c)))))
-    (setf (original-rotation entity) (v- (location (first (mass-points entity)))
-                                         (location entity)))))
-
-(defmethod location ((entity verlet-entity))
-  (triangulate-center entity))
+    (setf (slot-value entity 'location) location)))
 
 (defmethod (setf location) (value (entity verlet-entity))
-  (unless (typep value 'vec) (error "VALUE not VEC"))
+  (unless (typep value 'vec) (error "Invalid VALUE."))
   (let ((diff (v- value (triangulate-center entity))))
     (for:for ((point in (mass-points entity)))
       (setf (location point) (v+ (location point) diff))))
+  (setf (slot-value entity 'location) value)
   value)
 
 (defmethod triangulate-center ((entity verlet-entity))
@@ -99,30 +94,34 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
 
 
 (defun verlet-simulation (entities delta &key forces (iterations *iterations*))
-  (let ((dlt (/ delta iterations)))
     ;; Simulations
-    (for:for ((entity in entities)
-              (static-forces = (static-forces entity)))
-      (for:for ((point in (mass-points entity)))
-        (simulate point delta :forces (when (or forces static-forces)
-                                        (apply #'v+ (append (if (vec-p forces)
-                                                                (list forces)
-                                                                forces)
-                                                            (if (vec-p static-forces)
-                                                                (list static-forces)
-                                                                static-forces)))))))
+  (for:for ((entity in entities)
+            (static-forces = (static-forces entity))
+            (all-forces = (when (or forces static-forces)
+                            (apply #'v+ (append (if (vec-p forces)
+                                                    (list forces)
+                                                    forces)
+                                                (if (vec-p static-forces)
+                                                    (list static-forces)
+                                                    static-forces))))))
+    (for:for ((point in (mass-points entity)))
+      (simulate point delta :forces all-forces)))
+  (let ((dlt (/ delta iterations)))
     ;; Relax constraints and fix rotation
     (for:for ((entity in entities))
       (dotimes (i iterations)
         (for:for ((constraint in (constraints entity)))
           (relax constraint dlt)))
-      (when (rotates-p entity)
-        (let ((diff (v- (location (first (mass-points entity)))
-                        (location entity)
-                        (original-rotation entity))))
-          (nv+ (rotation entity) diff))))))
+      (setf (slot-value entity 'location) (triangulate-center entity)))))
 
 #|
+(when (= 0 *foo*) (v:warn :simulate "~a,~a"
+                          (location (first (mass-points (first entities))))
+                          (triangulate-center (first entities))))
+(when (<= 1 (incf *foo* delta))
+  (setf *foo* 0))
+(defvar *foo* 0)
+
 (defmethod min-max-point ((entity verlet-entity))
   "Finds the minimum and maximum point that is theoretically within the entity's area."
   (values-list

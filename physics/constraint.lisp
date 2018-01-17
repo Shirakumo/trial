@@ -22,6 +22,8 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
                      :stiffness 1.0))
 
 (defmethod initialize-instance :after ((constraint distance-constraint) &key target)
+  (when (v= (location (point-a constraint)) (location (point-b constraint)))
+    (error "Point locations are the same!"))
   (setf (target constraint) (or target (vlength (v- (location (point-b constraint))
                                                     (location (point-a constraint)))))))
 
@@ -29,15 +31,19 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   (let* ((point-a (point-a constraint))
          (point-b (point-b constraint))
          (normal (v- (location point-a) (location point-b)))
-         (length2 (+ (* (vx normal) (vx normal)) (* (vy normal) (vy normal))))
-         (mass-a (/ (mass point-a) (+ (mass point-a) (mass point-b))))
-         (mass-b (/ (mass point-b) (+ (mass point-a) (mass point-b)))))
-    (nv* normal (* (/ (- (* (target constraint) (target constraint)) length2) length2)
-                   (stiffness constraint)
-                   delta
-                   2))
-    (nv+ (location point-a) (v* normal mass-a))
-    (nv- (location point-b) (v* normal mass-b))))
+         (diff (- (vlength normal) (target constraint)))
+         (mass-a (if (and (= 0 (mass point-a))
+                          (= 0 (mass point-b)))
+                     1/2
+                     (/ (mass point-a) (+ (mass point-a) (mass point-b)))))
+         (mass-b (if (and (= 0 (mass point-a))
+                          (= 0 (mass point-b)))
+                     1/2
+                     (/ (mass point-b) (+ (mass point-a) (mass point-b))))))
+    (when (and (/= 0 diff) (/= 0 (vlength normal)))
+      (let ((move (v* (vunit normal) diff)))
+        (nv+ (location point-a) (v* move mass-a))
+        (nv- (location point-b) (v* move mass-b))))))
 
 (defclass pin-constraint ()
   ((point :initarg :point :reader point)
