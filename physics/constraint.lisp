@@ -7,24 +7,6 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 (in-package #:org.shirakumo.fraf.trial.physics)
 
 
-(defun ensure-vector-type (vector vector-type &optional (default (vec4 0 0 0 0)))
-  (declare (type vec vector default))
-  (declare (type symbol vector-type))
-  (unless (or (eql vector-type 'vec2)
-              (eql vector-type 'vec3)
-              (eql vector-type 'vec4))
-    (error "Invalid VECTOR-TYPE."))
-  (if (typep vector vector-type)
-      vector
-      (case vector-type
-        (vec2 (vec (vx vector) (vy vector)))
-        (vec3 (vec (vx vector) (vy vector)
-                   (if (vec4-p vector) (vz vector) (vz default))))
-        (vec4 (vec (vx vector) (vy vector)
-                   (if (vec3-p vector) (vz vector) (vz default))
-                   (vw default))))))
-
-
 (defgeneric relax (constraint delta)
   (:documentation "Relaxes the constraint towards its resting position."))
 
