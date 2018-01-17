@@ -26,7 +26,8 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
 (defmethod simulate ((point verlet-point) delta &key forces)
   (let ((velocity (v- (location point) (old-location point))))
     (setf (old-location point) (location point))
-    (nv+ (location point) (v+ forces velocity))))
+    (when forces
+      (nv+ (location point) (v+ forces velocity)))))
 
 
 (define-shader-entity verlet-entity (physical-entity vertex-entity)
@@ -67,7 +68,7 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
                                   point-b (vlength (v- center point-b))
                                   point-c (vlength (v- center point-c)))))
     (setf (original-rotation entity) (v- (location (first (mass-points entity)))
-                                         (center entity)))))
+                                         (location entity)))))
 
 (defmethod location ((entity verlet-entity))
   (triangulate-center entity))
@@ -103,20 +104,21 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
     (for:for ((entity in entities)
               (static-forces = (static-forces entity)))
       (for:for ((point in (mass-points entity)))
-        (simulate point delta :forces (apply #'v+ (append (if (vec-p forces)
-                                                              (list forces)
-                                                              forces)
-                                                          (if (vec-p static-forces)
-                                                              (list static-forces)
-                                                              static-forces))))))
+        (simulate point delta :forces (when (or forces static-forces)
+                                        (apply #'v+ (append (if (vec-p forces)
+                                                                (list forces)
+                                                                forces)
+                                                            (if (vec-p static-forces)
+                                                                (list static-forces)
+                                                                static-forces)))))))
     ;; Relax constraints and fix rotation
     (for:for ((entity in entities))
       (dotimes (i iterations)
         (for:for ((constraint in (constraints entity)))
           (relax constraint dlt)))
       (when (rotates-p entity)
-        (let ((diff (v- (first (mass-points entity))
-                        (center entity)
+        (let ((diff (v- (location (first (mass-points entity)))
+                        (location entity)
                         (original-rotation entity))))
           (nv+ (rotation entity) diff))))))
 

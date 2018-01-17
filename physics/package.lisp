@@ -24,4 +24,12 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   (:export
    #:verlet-point
    #:verlet-entity
-   #:verlet-simulation))
+   #:verlet-simulation
+   #:mass-points
+   #:constraints)
+  ;; constraint.lisp
+  (:export
+   #:distance-constraint
+   #:pin-constraint
+   #:angle-constraint
+   #:frame-constraint))

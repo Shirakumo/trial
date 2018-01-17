@@ -35,6 +35,11 @@
                                                            (vec3-random 5 (- (min (width main)
                                                                                   (height main)) 
                                                                              10)))))))
+      (for:for ((point in (trial-physics:mass-points box)))
+        (push (make-instance 'trial-physics:frame-constraint :min (vec 0 0)
+                                                             :max (vec (width main) (height main))
+                                                             :point point)
+              (trial-physics:constraints box)))
       (setf (color box)
             (case (mod i 7)
               (1 (vec 0 1 0 1)) ;; Green
