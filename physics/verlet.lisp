@@ -13,6 +13,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 In general, 4 is minimum for an alright accuracy, 8 is enough for a good accuracy.")
 
 (define-shader-entity verlet-point (located-entity) ())
+(define-shader-entity verlet-circle (located-entity) ())
 (defclass verlet-link () ())
 (define-shader-entity verlet-entity (physical-entity vertex-entity) ())
 
@@ -143,6 +144,47 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
     #'(lambda ()
         (when (v/= (location point) original-loc)
           (setf (location point) original-loc)))))
+
+(define-shader-entity verlet-circle (located-entity)
+  ((attached-point :initform NIL :accessor attached-point)
+   (radius :initarg :radius :accessor radius))
+  (:default-initargs :radius (error "RADIUS required.")))
+
+(defmethod solve-constraints ((circle verlet-circle) &key min max)
+  (declare (type vec min max))
+  (let* ((point (attached-point circle))
+         (loc (location point))
+         (radius (radius circle)))
+    (when min
+      (when (< (vx loc) (+ (vx min) radius))
+        (setf (vx loc) (- (* 2 radius) (vx loc))))
+      (when (< (vy loc) (+ (vy min) radius))
+        (setf (vy loc) (- (* 2 radius) (vy loc))))
+      (when (and (or (vec3-p loc) (vec4-p loc))
+                 (< (vz loc) (+ (vz min) radius)))
+        (setf (vz loc) (- (* 2 radius) (vz loc))))
+      (when (and (vec4-p loc) (< (vw loc) (+ (vw min) radius)))
+        (setf (vw loc) (- (* 2 radius) (vw loc)))))
+    (when max
+      (when (< (- (vx max) radius) (vx loc))
+        (setf (vx loc) (- (* 2 (- (vx max) radius)) (vx loc))))
+      (when (< (- (vy max) radius) (vy loc))
+        (setf (vy loc) (- (* 2 (- (vy max) radius)) (vy loc))))
+      (when (and (or (vec3-p loc) (vec4-p loc))
+                 (< (- (vz max) radius) (vz loc)))
+        (setf (vz loc) (- (* 2 (- (vz max) radius)) (vz loc))))
+      (when (and (vec4-p loc) (< (- (vw max) radius) (vw loc)))
+        (setf (vw loc) (- (* 2 (- (vw max) radius)) (vw loc)))))))
+
+(defmethod location ((circle verlet-circle))
+  (if (attached-point circle)
+      (location (attached-point circle))
+      (call-next-method)))
+
+(defmethod (setf location) (value (circle verlet-circle))
+  (if (attached-point circle)
+      (setf (location (attached-point circle)) value)
+      (call-next-method)))
 
 (defclass verlet-link ()
   ((target :initform NIL :accessor target)

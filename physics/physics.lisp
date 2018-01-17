@@ -6,10 +6,32 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 
 (in-package #:org.shirakumo.fraf.trial.physics)
 
-(defgeneric simulate (entity delta &key forces))
+(defconstant +negative-infinity+
+  #+sbcl sb-ext:single-float-negative-infinity
+  #+clozure (coerce -infinity$$ 'single-float)
+  #+abcl ext:single-float-negative-infinity
+  #+allegro excl::*negative-infinity-single*
+  #+cmu ext:single-float-negative-infinity
+  #+(and ecl (not infinity-not-available)) si:single-float-negative-infinity
+  #+lispworks (coerce -infinity$$ 'single-float)
+  #+scl ext:single-float-negative-infinity
+  #+t most-negative-single-float)
+
+(defconstant +positive-infinity+
+  #+sbcl sb-ext:single-float-positive-infinity
+  #+clozure (coerce infinity$$ 'single-float)
+  #+abcl ext:single-float-positive-infinity
+  #+allegro excl::*infinity-single*
+  #+cmu ext:single-float-positive-infinity
+  #+(and ecl (not infinity-not-available)) si:single-float-positive-infinity
+  #+lispworks (coerce infinity$$ 'single-float)
+  #+scl ext:single-float-positive-infinity
+  #+t most-positive-single-float)
 
 (defvar *default-forces* (list (vec 0 0.05 0))
   "Directional forces affecting the physical entities.")
+
+(defgeneric simulate (entity delta &key forces))
 
 (defmethod 2d-frame-constraint ((entity located-entity)
                                 &key (min (vec 0 0)) max)

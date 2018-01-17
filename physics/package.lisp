@@ -11,6 +11,8 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   (:use #:cl #:3d-vectors #:3d-matrices #:trial)
   ;; physics.lisp
   (:export
+   #:+negative-infinity+
+   #:+positive-infinity+
    #:physical-entity
    #:mass
    #:static-p
