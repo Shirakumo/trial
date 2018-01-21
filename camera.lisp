@@ -10,6 +10,7 @@
   ((near-plane :initarg :near-plane :accessor near-plane)
    (far-plane :initarg :far-plane :accessor far-plane))
   (:default-initargs
+   :name :camera
    :location (vec 0 30 200)
    :near-plane 0.01f0
    :far-plane 1000000.0f0))
