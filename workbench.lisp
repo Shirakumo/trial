@@ -35,7 +35,7 @@
                                                            (vec3-random 5 (- (min (width main)
                                                                                   (height main)) 
                                                                              10))))
-                                         :static-forces (vec 0 10 0))))
+                                         :static-forces (vec 0 -10 0))))
       (for:for ((point in (trial-physics:mass-points box)))
         (push (make-instance 'trial-physics:frame-constraint :min (vec 0 0 10)
                                                              :max (vec (width main) (height main) 10)
