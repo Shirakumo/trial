@@ -86,12 +86,13 @@ void main(){
   ((color :initform (vec 0 0 1 1) :reader color)))
 
 (defmethod shared-initialize :after ((entity colored-entity) slots &key color)
-  (when color (setf color entity) color))
+  (when color (setf (color entity) color)))
 
 (defmethod (setf color) ((color vec3) (entity colored-entity))
   (setf (color entity) (vec4 (vx color) (vy color) (vz color) 1)))
 
 (defmethod (setf color) ((color vec4) (entity colored-entity))
+  (v:info :test "WHAT ~a" color)
   (setf (slot-value entity 'color) color))
 
 (defmethod paint :before ((obj colored-entity) (pass shader-pass))
