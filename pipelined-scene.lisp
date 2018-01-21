@@ -29,3 +29,6 @@
   (pack-pipeline scene *context*)
   (for:for ((element over scene))
     (register-object-for-pass scene element)))
+
+(defmethod handle :after ((event resize) (scene pipelined-scene))
+  (resize scene (width event) (height event)))
