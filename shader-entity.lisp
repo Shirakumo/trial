@@ -167,3 +167,28 @@ out vec4 color;
 void main(){
   color = vec4(1.0, 1.0, 1.0, 1.0);
 }")
+
+(defmethod determine-effective-shader-class ((name symbol))
+  (determine-effective-shader-class (find-class name)))
+
+(defmethod determine-effective-shader-class ((object shader-entity))
+  (determine-effective-shader-class (class-of object)))
+
+(defmethod determine-effective-shader-class ((class standard-class))
+  NIL)
+
+(defmethod determine-effective-shader-class ((class shader-entity-class))
+  (if (direct-shaders class)
+      class
+      (let* ((effective-superclasses (list (find-class 'shader-entity))))
+        ;; Loop through superclasses and push new, effective superclasses.
+        (loop for superclass in (c2mop:class-direct-superclasses class)
+              for effective-class = (determine-effective-shader-class superclass)
+              do (when (and effective-class (not (find effective-class effective-superclasses)))
+                   (push effective-class effective-superclasses)))
+        ;; If we have one or two --one always being the shader-entity class--
+        ;; then we just return the more specific of the two, as there's no class
+        ;; combination happening that would produce new shaders.
+        (if (<= (length effective-superclasses) 2)
+            (first effective-superclasses)
+            class))))

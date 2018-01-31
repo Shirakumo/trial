@@ -68,7 +68,6 @@
 (defgeneric shader-program-for-pass (pass object))
 (defgeneric make-pass-shader-program (pass class))
 (defgeneric coerce-pass-shader (pass class type spec))
-(defgeneric determine-effective-shader-class (class))
 
 (defmethod make-pass-shader-program ((pass shader-pass) (class symbol))
   (make-pass-shader-program pass (find-class class)))
@@ -125,6 +124,12 @@
   (add-class-redefinition-listener pass (determine-effective-shader-class object))
   (add-class-redefinition-listener pass (class-of object)))
 
+;; FIXME: Maybe consider determining effective class for each
+;;        individual shader stage as they might each change
+;;        at different levels and could thus be cached more
+;;        effectively.
+;; FIXME: Share SHADER assets between shader programs by caching
+;;        them... somewhere somehow?
 (defmethod notify-class-redefinition ((pass per-object-pass) (class shader-entity-class))
   ;; FIXME: What happens if the effective shader class changes?
   (let ((assets (assets pass)))
@@ -153,37 +158,6 @@
 (defmethod coerce-pass-shader ((pass per-object-pass) class type spec)
   (glsl-toolkit:merge-shader-sources
    (list spec (getf (effective-shaders pass) type))))
-
-(defmethod determine-effective-shader-class ((name symbol))
-  (determine-effective-shader-class (find-class name)))
-
-(defmethod determine-effective-shader-class ((object shader-entity))
-  (determine-effective-shader-class (class-of object)))
-
-(defmethod determine-effective-shader-class ((class standard-class))
-  NIL)
-
-;; FIXME: Maybe consider determining effective class for each
-;;        individual shader stage as they might each change
-;;        at different levels and could thus be cached more
-;;        effectively.
-;; FIXME: Share SHADER assets between shader programs by caching
-;;        them... somewhere somehow?
-(defmethod determine-effective-shader-class ((class shader-entity-class))
-  (if (direct-shaders class)
-      class
-      (let* ((effective-superclasses (list (find-class 'shader-entity))))
-        ;; Loop through superclasses and push new, effective superclasses.
-        (loop for superclass in (c2mop:class-direct-superclasses class)
-              for effective-class = (determine-effective-shader-class superclass)
-              do (when (and effective-class (not (find effective-class effective-superclasses)))
-                   (push effective-class effective-superclasses)))
-        ;; If we have one or two --one always being the shader-entity class--
-        ;; then we just return the more specific of the two, as there's no class
-        ;; combination happening that would produce new shaders.
-        (if (<= (length effective-superclasses) 2)
-            (first effective-superclasses)
-            class))))
 
 (defmethod register-object-for-pass ((pass per-object-pass) o))
 
