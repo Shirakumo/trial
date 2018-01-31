@@ -6,12 +6,8 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass subject-class-redefined (event)
-  ((subject-class :initarg :subject-class :reader subject-class)))
-
 (defclass subject-class (standard-class handler-container)
-  ((effective-handlers :initform NIL :accessor effective-handlers)
-   (class-redefinition-event-sent :initform T :accessor class-redefinition-event-sent)))
+  ((effective-handlers :initform NIL :accessor effective-handlers)))
 
 (defmethod c2mop:validate-superclass ((class subject-class) (superclass t))
   NIL)
@@ -33,8 +29,6 @@
              (dolist (handler (effective-handlers super))
                (pushnew handler effective-handlers :key #'name)))
         finally (setf (effective-handlers class) effective-handlers))
-  ;; Mark as obsolete
-  (setf (class-redefinition-event-sent class) NIL)
   (make-instances-obsolete class))
 
 (defmethod compute-effective-handlers :after ((class subject-class))
@@ -73,12 +67,7 @@
   (regenerate-handlers subject))
 
 (defmethod update-instance-for-redefined-class ((subject subject) aslots dslots plist &key args)
-  (let ((class (class-of subject)))
-    (regenerate-handlers subject)
-    (when (not (class-redefinition-event-sent class))
-      (dolist (event-loop (event-loops subject))
-        (issue event-loop 'subject-class-redefined :subject-class class))
-      (setf (class-redefinition-event-sent class) T))))
+  (regenerate-handlers subject))
 
 (defmethod regenerate-handlers ((subject subject))
   (setf (handlers subject)

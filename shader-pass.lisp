@@ -56,6 +56,9 @@
   (:metaclass shader-pass-class)
   (:inhibit-shaders (shader-entity :fragment-shader)))
 
+(defmethod initialize-instance :after ((pass shader-pass) &key)
+  (add-class-redefinition-listener pass (class-of pass)))
+
 (define-class-shader (shader-pass :fragment-shader)
   "#version 330 core")
 
@@ -65,6 +68,9 @@
 (defgeneric shader-program-for-pass (pass object))
 (defgeneric coerce-pass-shader (pass class type spec))
 (defgeneric determine-effective-shader-class (class))
+
+(defmethod register-object-for-pass :after ((pass shader-pass) (object shader-entity))
+  (add-class-redefinition-listener pass (class-of object)))
 
 (defmethod finalize :after ((pass shader-pass))
   (when (framebuffer pass)
@@ -106,12 +112,12 @@
 (define-shader-pass per-object-pass ()
   ((assets :initform (make-hash-table :test 'eql) :accessor assets)))
 
-(define-handler (per-object-pass update-shader-for-redefined-subject subject-class-redefined) (ev subject-class)
-  (let ((assets (assets per-object-pass)))
+(defmethod notify-class-redefinition ((pass per-object-pass) (class shader-entity-class))
+  (let ((assets (assets pass)))
     (flet ((refresh (class)
              (let ((previous (gethash class assets)))
                (remhash class assets)
-               (register-object-for-pass per-object-pass class)
+               (register-object-for-pass pass class)
                (let ((new (gethash class assets)))
                  (when (and previous (resource previous)
                             (not (eql previous new)))
@@ -122,14 +128,14 @@
                      (continue ()
                        :report "Ignore the change and continue with the hold shader."
                        (setf (gethash class assets) previous))))))))
-      (cond ((eql subject-class (class-of per-object-pass))
+      (cond ((eql class (class-of pass))
              ;; Pass changed, recompile everything
              (loop for class being the hash-keys of assets
                    do (refresh class)))
-            ((and (typep subject-class 'shader-entity-class)
-                  (not (typep subject-class 'shader-pass-class)))
+            ((and (typep class 'shader-entity-class)
+                  (not (typep class 'shader-pass-class)))
              ;; Object changed, recompile it
-             (refresh subject-class))))))
+             (refresh class))))))
 
 (defmethod shader-program-for-pass ((pass per-object-pass) (subject shader-entity))
   (gethash (class-of subject) (assets pass)))
@@ -231,13 +237,13 @@
 (define-shader-pass single-shader-pass ()
   ((shader-program :initform (make-instance 'shader-program) :accessor shader-program)))
 
-(define-handler (single-shader-pass update-shader-for-redefined-subject subject-class-redefined) (ev subject-class)
-  (when (eql subject-class (class-of single-shader-pass))
-    (let* ((program (shader-program single-shader-pass))
+(defmethod notify-class-redefinition ((pass single-shader-pass) class)
+  (when (eql class (class-of pass))
+    (let* ((program (shader-program pass))
            (loaded (and program (resource program))))
       (when loaded (offload program))
-      (setf (shader-program single-shader-pass) (make-class-shader-program single-shader-pass))
-      (when loaded (load (shader-program single-shader-pass))))))
+      (setf (shader-program pass) (make-class-shader-program pass))
+      (when loaded (load (shader-program pass))))))
 
 (defmethod load progn ((pass single-shader-pass))
   (setf (shader-program pass) (make-class-shader-program pass)))

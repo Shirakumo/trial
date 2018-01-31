@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass shader-entity-class (standard-class)
+(defclass shader-entity-class (redefinition-notifying-class)
   ((effective-shaders :initform () :accessor effective-shaders)
    (direct-shaders :initform () :initarg :shaders :accessor direct-shaders)
    (inhibit-shaders :initform () :initarg :inhibit-shaders :accessor inhibit-shaders)))
@@ -74,11 +74,23 @@
       (c2mop:finalize-inheritance super)))
   (compute-effective-shaders class))
 
+(defmethod (setf effective-shaders) :after (value (class shader-entity-class))
+  (notify-class-redefinition class class))
+
+(defmethod (setf direct-shaders) :after (value (class shader-entity-class))
+  (compute-effective-shaders class))
+
 (defmethod effective-shaders ((class symbol))
   (effective-shaders (find-class class)))
 
+(defmethod (setf effective-shaders) (value (class symbol))
+  (setf (effective-shaders (find-class class)) value))
+
 (defmethod direct-shaders ((class symbol))
   (direct-shaders (find-class class)))
+
+(defmethod (setf direct-shaders) (value (class symbol))
+  (setf (direct-shaders (find-class class)) value))
 
 (defmethod class-shader (type (class shader-entity-class))
   (getf (direct-shaders class) type))
@@ -92,17 +104,11 @@
 (defmethod (setf class-shader) (shader type (class symbol))
   (setf (class-shader type (find-class class)) shader))
 
-(defmethod (setf class-shader) :after (shader type (class shader-entity-class))
-  (compute-effective-shaders class))
-
 (defmethod remove-class-shader (type (class shader-entity-class))
   (remf (direct-shaders class) type))
 
 (defmethod remove-class-shader (type (class symbol))
   (remove-class-shader type (find-class class)))
-
-(defmethod remove-class-shader :after (type (class shader-entity-class))
-  (compute-effective-shaders class))
 
 (defmethod make-class-shader-program ((class shader-entity-class))
   (make-asset 'shader-program
@@ -120,8 +126,14 @@
 (defmethod effective-shaders ((subject shader-entity))
   (effective-shaders (class-of subject)))
 
+(defmethod (setf effective-shaders) (value (subject shader-entity))
+  (setf (effective-shaders (class-of subject)) value))
+
 (defmethod direct-shaders ((subject shader-entity))
   (direct-shaders (class-of subject)))
+
+(defmethod (setf direct-shaders) (value (subject shader-entity))
+  (setf (direct-shaders (class-of subject)) value))
 
 (defmethod class-shader (type (subject shader-entity))
   (class-shader type (class-of subject)))
