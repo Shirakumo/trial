@@ -21,7 +21,8 @@
 (defmethod c2mop:validate-superclass ((class redefinition-notifying-class) (superclass redefinition-notifying-class))
   T)
 
-(defmethod c2mop:finalize-inheritance :after ((class redefinition-notifying-class))
+(defmethod c2mop:finalize-inheritance :around ((class redefinition-notifying-class))
+  (call-next-method)
   (dolist (super (c2mop:class-direct-superclasses class))
     (unless (c2mop:class-finalized-p super)
       (c2mop:finalize-inheritance super)))
@@ -50,7 +51,7 @@
               collect listener)))
 
 (defmethod add-class-redefinition-listener (listener (class redefinition-notifying-class))
-  (unless (find listener (%class-redefinition-listeners class) :key tg:weak-pointer-value)
+  (unless (find listener (%class-redefinition-listeners class) :key #'tg:weak-pointer-value)
     (push (tg:make-weak-pointer listener) (%class-redefinition-listeners class)))
   listener)
 

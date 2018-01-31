@@ -66,11 +66,20 @@
 
 (defgeneric register-object-for-pass (pass object))
 (defgeneric shader-program-for-pass (pass object))
+(defgeneric make-pass-shader-program (pass class))
 (defgeneric coerce-pass-shader (pass class type spec))
 (defgeneric determine-effective-shader-class (class))
 
-(defmethod register-object-for-pass :after ((pass shader-pass) (object shader-entity))
-  (add-class-redefinition-listener pass (class-of object)))
+(defmethod make-pass-shader-program ((pass shader-pass) (class symbol))
+  (make-pass-shader-program pass (find-class class)))
+
+(defmethod make-pass-shader-program ((pass shader-pass) (class shader-entity-class))
+  (let ((shaders ()))
+    (loop for (type spec) on (effective-shaders class) by #'cddr
+          for inputs = (coerce-pass-shader pass class type spec)
+          for shader = (make-asset 'shader inputs :type type)
+          do (push shader shaders))
+    (make-asset 'shader-program shaders)))
 
 (defmethod finalize :after ((pass shader-pass))
   (when (framebuffer pass)
@@ -112,33 +121,34 @@
 (define-shader-pass per-object-pass ()
   ((assets :initform (make-hash-table :test 'eql) :accessor assets)))
 
+(defmethod register-object-for-pass :after ((pass per-object-pass) (object shader-entity))
+  (add-class-redefinition-listener pass (determine-effective-shader-class object))
+  (add-class-redefinition-listener pass (class-of object)))
+
 (defmethod notify-class-redefinition ((pass per-object-pass) (class shader-entity-class))
+  ;; FIXME: What happens if the effective shader class changes?
   (let ((assets (assets pass)))
     (flet ((refresh (class)
-             (let ((previous (gethash class assets)))
-               (remhash class assets)
-               (register-object-for-pass pass class)
-               (let ((new (gethash class assets)))
-                 (when (and previous (resource previous)
-                            (not (eql previous new)))
-                   (restart-case
-                       (progn
-                         (load new)
-                         (offload previous))
-                     (continue ()
-                       :report "Ignore the change and continue with the hold shader."
-                       (setf (gethash class assets) previous))))))))
+             (let ((prev (gethash class assets))
+                   (new (make-pass-shader-program pass class)))
+               (if (resource prev)
+                   (with-context ((context (window :main))) ; FUCK
+                     (with-simple-restart (continue "Ignore the change and continue with the hold shader.")
+                       (load new)
+                       (offload prev)
+                       (setf (gethash class assets) new)))
+                   (setf (gethash class assets) new)))))
       (cond ((eql class (class-of pass))
              ;; Pass changed, recompile everything
              (loop for class being the hash-keys of assets
                    do (refresh class)))
-            ((and (typep class 'shader-entity-class)
-                  (not (typep class 'shader-pass-class)))
+            ((eql class (determine-effective-shader-class class))
              ;; Object changed, recompile it
              (refresh class))))))
 
 (defmethod shader-program-for-pass ((pass per-object-pass) (subject shader-entity))
-  (gethash (class-of subject) (assets pass)))
+  ;; FIXME: FIXME: FIXME: FIXME: THIS REALLY NEEDS A FIX AS IT IS SUPER INEFFICIENT!
+  (gethash (determine-effective-shader-class subject) (assets pass)))
 
 (defmethod coerce-pass-shader ((pass per-object-pass) class type spec)
   (glsl-toolkit:merge-shader-sources
@@ -182,16 +192,10 @@
     (register-object-for-pass pass object)))
 
 (defmethod register-object-for-pass ((pass per-object-pass) (class shader-entity-class))
-  (let ((shaders ()))
-    (let ((effective-class (determine-effective-shader-class class)))
-      (unless (gethash effective-class (assets pass))
-        (loop for (type spec) on (effective-shaders effective-class) by #'cddr
-              for inputs = (coerce-pass-shader pass effective-class type spec)
-              for shader = (make-asset 'shader inputs :type type)
-              do (push shader shaders))
-        (setf (gethash effective-class (assets pass))
-              (make-asset 'shader-program shaders)))
-      (setf (gethash class (assets pass)) (gethash effective-class (assets pass))))))
+  (let ((effective-class (determine-effective-shader-class class)))
+    (unless (gethash effective-class (assets pass))
+      (setf (gethash effective-class (assets pass))
+            (make-pass-shader-program pass effective-class)))))
 
 (defmethod register-object-for-pass ((pass per-object-pass) (subject shader-entity))
   (register-object-for-pass pass (class-of subject)))
@@ -243,7 +247,9 @@
            (loaded (and program (resource program))))
       (when loaded (offload program))
       (setf (shader-program pass) (make-class-shader-program pass))
-      (when loaded (load (shader-program pass))))))
+      (when loaded
+        (with-context ((context (window :main))) ; FUCK
+          (load (shader-program pass)))))))
 
 (defmethod load progn ((pass single-shader-pass))
   (setf (shader-program pass) (make-class-shader-program pass)))
