@@ -92,7 +92,6 @@ void main(){
   (setf (color entity) (vec4 (vx color) (vy color) (vz color) 1)))
 
 (defmethod (setf color) ((color vec4) (entity colored-entity))
-  (v:info :test "WHAT ~a" color)
   (setf (slot-value entity 'color) color))
 
 (defmethod paint :before ((obj colored-entity) (pass shader-pass))
