@@ -9,7 +9,7 @@
 (defclass shader-entity-class (redefinition-notifying-class)
   ((effective-shaders :initform () :accessor effective-shaders)
    (direct-shaders :initform () :initarg :shaders :accessor direct-shaders)
-   (inhibit-shaders :initform () :initarg :inhibit-shaders :accessor inhibit-shaders)))
+   (inhibited-shaders :initform () :initarg :inhibit-shaders :accessor inhibited-shaders)))
 
 (defmethod c2mop:validate-superclass ((class shader-entity-class) (superclass t))
   NIL)
@@ -25,7 +25,7 @@
 
 (defmethod compute-effective-shaders ((class shader-entity-class))
   (let ((effective-shaders ())
-        (inhibited (inhibit-shaders class))
+        (inhibited (inhibited-shaders class))
         (superclasses (remove 'shader-entity-class
                               (c2mop:compute-class-precedence-list class)
                               :test-not (lambda (type class) (typep class type)))))
@@ -34,13 +34,13 @@
           for super = (find name superclasses :key #'class-name)
           do (cond ((not super)
                     (warn "No superclass ~s in hierarchy of ~s. Cannot inhibit its shader ~s." name (class-of super) (class-name class))
-                    (setf (inhibit-shaders class) (remove (list name type) inhibited :test #'equal)))
+                    (setf (inhibited-shaders class) (remove (list name type) inhibited :test #'equal)))
                    ((not (getf (direct-shaders super) type))
                     (warn "No shader of type ~s is defined on ~s. Cannot inhibit it for ~s." type name (class-name class))
-                    (setf (inhibit-shaders class) (remove (list name type) inhibited :test #'equal)))))
+                    (setf (inhibited-shaders class) (remove (list name type) inhibited :test #'equal)))))
     ;; Compute effective inhibited list
     (loop for super in superclasses
-          do (setf inhibited (append inhibited (inhibit-shaders super))))
+          do (setf inhibited (append inhibited (inhibited-shaders super))))
     ;; Make all direct shaders effective
     (loop for (type shader) on (direct-shaders class) by #'cddr
           do (setf (getf effective-shaders type)
