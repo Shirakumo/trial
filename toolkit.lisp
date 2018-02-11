@@ -336,7 +336,7 @@
      (check-gl-type thing 8 T)
      (values (round thing)))))
 
-(defun texture-internal-format->texture-format (format)
+(defun texture-internal-format->pixel-format (format)
   (ecase format
     ((:stencil-index :stencil-index1 :stencil-index4 :stencil-index8 :stencil-index16)
      :stencil-index)
@@ -353,7 +353,7 @@
     ((:rgba :rgb5-a1 :rgba8 :rgba8-snorm :rgb10-a2 :rgb10-a2ui :rgba12 :rgba16 :srgb8-alpha8 :rgba16f :rgba32f :rgba8i :rgba8ui :rgba16i :rgba16ui :rgba32i :rgba32ui :compressed-rgba :compressed-srgb-alpha :compressed-rgba-bptc-unorm :compressed-srgb-alpha-bptc-unorm)
      :rgba)))
 
-(defun texture-format->data-type (format)
+(defun pixel-format->pixel-type (format)
   (case format
     (:depth-stencil :unsigned-int-24-8)
     (:depth24-stencil8 :unsigned-int-24-8)
@@ -422,9 +422,10 @@
                        enum ',name ,list))))))
 
 (define-enum-check texture-target
-  :texture-1d :texture-2d :texture-3d :texture-1d-array
-  :texture-2d-array :texture-rectangle :texture-cube-map :texture-cube-map-array
-  :texture-buffer :texture-2d-multisample :texture-2d-multisample-array)
+  :texture-1d :texture-2d :texture-3d
+  :texture-1d-array :texture-2d-array
+  :texture-cube-map :texture-cube-map-array
+  :texture-2d-multisample :texture-2d-multisample-array)
 
 (define-enum-check texture-mag-filter
   :nearest :linear)
@@ -435,6 +436,52 @@
 
 (define-enum-check texture-wrapping
   :repeat :mirrored-repeat :clamp-to-edge :clamp-to-border)
+
+(define-enum-check texture-internal-format
+  :compressed-red :compressed-red-rgtc1
+  :compressed-rg :compressed-rg-rgtc2
+  :compressed-rgb :compressed-rgb-bptc-signed-float
+  :compressed-rgb-bptc-unsigned-float
+  :compressed-rgba :compressed-rgba-bptc-unorm
+  :compressed-signed-red-rgtc1 :compressed-signed-rg-rgtc2
+  :compressed-srgb :compressed-srgb-alpha :compressed-srgb-alpha-bptc-unorm
+  :depth-component :depth-stencil
+  :red
+  :r11f-g11f-b10f :r3-g3-b2 :rgb9-e5
+  :r16 :r16-snorm :r16f :r16i :r16ui
+  :r32f :r32i :r32ui
+  :r8 :r8-snorm :r8i :r8ui
+  :rg :rg16 :rg16-snorm :rg16f :rg16i :rg16ui
+  :rg32f :rg32i :rg32ui
+  :rg8 :rg8-snorm :rg8i :rg8ui
+  :rgb :rgb10 :rgb10-a2 :rgb10-a2ui :rgb12
+  :rgb16-snorm :rgb16f :rgb16i :rgb16ui
+  :rgb32f :rgb32i :rgb32ui
+  :rgb4 :rgb5 :rgb5-a1
+  :rgb8 :rgb8-snorm :rgb8i :rgb8ui
+  :rgba :rgba2 :rgba4 :rgba12
+  :rgba16 :rgba16f :rgba16i :rgba16ui
+  :rgba32f :rgba32i :rgba32ui
+  :rgba8 :rgba8-snorm :rgba8i :rgba8ui
+  :srgb8 :srgb8-alpha8)
+
+(define-enum-check texture-pixel-format
+  :red :rg :rgb :bgr :rgba :bgra
+  :red-integer :rg-integer :rgb-integer
+  :bgr-integer :rgba-integer :bgra-integer
+  :stencil-index :depth-component :depth-stencil)
+
+(define-enum-check texture-pixel-type
+  :unsigned-byte :byte
+  :unsigned-short :short
+  :unsigned-int :int
+  :float
+  :unsigned-byte-3-3-2 :unsigned-byte-2-3-3-rev
+  :unsigned-short-5-6-5 :unsigned-short-5-6-5-rev
+  :unsigned-short-4-4-4-4 :unsigned-short-4-4-4-4-rev
+  :unsigned-short-5-5-5-1 :unsigned-short-1-5-5-5-rev
+  :unsigned-int-8-8-8-8 :unsigned-int-8-8-8-8-rev
+  :unsigned-int-10-10-10-2 :unsigned-int-2-10-10-10-rev)
 
 (define-enum-check shader-type
   :compute-shader :vertex-shader

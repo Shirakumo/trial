@@ -7,11 +7,9 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 ;; FIXME: Fullscreenable seems to cause really bad behaviour, idk
-(defclass main (display window)
+(defclass main (display)
   ((scene :initform (make-instance 'pipelined-scene) :accessor scene)
-   (controller :initform (make-instance 'controller) :accessor controller))
-  (:default-initargs
-   :name :main))
+   (controller :initform (make-instance 'controller) :accessor controller)))
 
 (defmethod initialize-instance :after ((main main) &key)
   (with-slots (scene controller) main

@@ -24,8 +24,8 @@
   :homepage "https://github.com/Shirakumo/trial"
   :components ((:file "package")
                (:file "array-container" :depends-on ("package"))
-               (:file "asset" :depends-on ("package" "toolkit" "context"))
-               (:file "asset-pool" :depends-on ("package" "asset" "window"))
+               (:file "asset" :depends-on ("package" "toolkit" "resource"))
+               (:file "asset-pool" :depends-on ("package" "asset"))
                (:file "attributes" :depends-on ("package"))
                (:file "camera" :depends-on ("package" "subject" "helpers"))
                (:file "context" :depends-on ("package"))
@@ -46,7 +46,7 @@
                (:file "input" :depends-on ("package" "event-loop" "retention"))
                (:file "layer-set" :depends-on ("package"))
                (:file "loader" :depends-on ("package" "scene" "asset"))
-               (:file "main" :depends-on ("package" "display" "window" "toolkit" "scene" "pipeline"))
+               (:file "main" :depends-on ("package" "display" "toolkit" "scene" "pipeline"))
                (:file "mapping" :depends-on ("package" "event-loop" "toolkit"))
                (:file "pipeline" :depends-on ("package" "event-loop" "toolkit"))
                (:file "pipelined-scene" :depends-on ("package" "pipeline" "scene" "loader"))
@@ -54,6 +54,7 @@
                (:file "redefinition-notifying-class" :depends-on ("package"))
                (:file "render-texture" :depends-on ("package" "pipeline" "entity"))
                (:file "renderable" :depends-on ("package" "toolkit"))
+               (:file "resource" :depends-on ("package"))
                (:file "retention" :depends-on ("package" "event-loop"))
                (:file "scene-buffer" :depends-on ("package" "scene" "render-texture"))
                (:file "scene" :depends-on ("package" "event-loop" "entity"))
@@ -67,7 +68,6 @@
                (:file "subject" :depends-on ("package" "event-loop"))
                (:file "toolkit" :depends-on ("package"))
                (:file "transforms" :depends-on ("package"))
-               (:file "window" :depends-on ("package"))
                ;; Testing, remove for production.
                (:file "workbench" :depends-on ("assets" "asset-pool" "formats" "main" "helpers" "geometry-clipmap" "ui"))
                (:module "ui"

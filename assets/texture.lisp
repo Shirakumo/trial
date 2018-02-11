@@ -6,113 +6,117 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass texture (asset)
-  ((reuse-resource :initform NIL :accessor reuse-resource)
+(defclass texture (gl-resource)
+  ((width :initarg :width :accessor width)
+   (height :initarg :height :accessor height)
+   (depth :initarg :depth :accessor depth)
    (target :initarg :target :accessor target)
+   (level :initarg :level :accessor level)
+   (samples :initarg :samples :accessor samples)
+   (internal-format :initarg :internal-format :accessor internal-format)
+   (pixel-format :initarg :pixel-format :accessor pixel-format)
+   (pixel-type :initarg :pixel-type :accessor pixel-type)
+   (pixel-data :initarg :pixel-data :accessor pixel-data)
    (mag-filter :initarg :mag-filter :accessor mag-filter)
    (min-filter :initarg :min-filter :accessor min-filter)
    (anisotropy :initarg :anisotropy :accessor anisotropy)
-   (wrapping :initarg :wrapping :reader wrapping))
+   (wrapping :initarg :wrapping :accessor wrapping)
+   (storage :initarg :storage :reader storage))
   (:default-initargs
+   :width 1
+   :height 1
+   :depth 1
    :target :texture-2d
+   :level 0
+   :samples 1
+   :internal-format :rgba
+   :pixel-type :unsigned-byte
+   :pixel-data NIL
    :mag-filter :linear
    :min-filter :linear-mipmap-linear
    :anisotropy NIL
-   :wrapping :clamp-to-edge))
+   :wrapping :clamp-to-edge
+   :storage :dynamic))
 
-(defmethod initialize-instance :around ((asset texture) &rest args)
-  (setf (getf args :wrapping) (enlist (getf args :wrapping) (getf args :wrapping) (getf args :wrapping)))
-  (apply #'call-next-method asset args))
+(defmethod initialize-instance :around ((texture texture) &rest args)
+  (setf (getf args :wrapping) (enlist (getf args :wrapping)
+                                      (getf args :wrapping)
+                                      (getf args :wrapping)))
+  (unless (getf args :pixel-format)
+    (setf (getf args :pixel-format) (texture-internal-format->pixel-format)))
+  (unless (getf args :pixel-type)
+    (setf (getf args :pixel-type) (pixel-format->pixel-type (getf args :pixel-format))))
+  (apply #'call-next-method texture args))
 
-(defmethod initialize-instance :before ((asset texture) &key target mag-filter min-filter wrapping)
+(defmethod initialize-instance :before ((texture texture) &key width height depth target internal-format pixel-format pixel-type mag-filter min-filter wrapping)
+  (assert (< 0 width (gl:get* :max-texture-size)))
+  (assert (< 0 height (gl:get* :max-texture-size)))
+  (assert (< 0 depth (gl:get* :max-texture-size)))
   (check-texture-target target)
+  (check-texture-internal-format internal-format)
+  (check-texture-pixel-format pixel-format)
+  (check-texture-pixel-type pixel-type)
   (check-texture-mag-filter mag-filter)
   (check-texture-min-filter min-filter)
   (check-texture-wrapping (first wrapping))
   (check-texture-wrapping (second wrapping))
   (check-texture-wrapping (third wrapping)))
 
-(defmethod coerce-input ((asset texture) (file pathname))
-  (list file))
+(defmethod destructor ((texture texture))
+  (let ((tex (gl-name texture)))
+    (lambda () (gl:delete-textures (list tex)))))
 
-(defmethod coerce-input ((asset texture) (spec cons))
-  spec)
+(defmethod resize ((texture texture) width height)
+  (when (and (texture texture)
+             (or (/= width (width texture))
+                 (/= height (height texture))))
+    (assert (eql :dynamic (eql storage texture)))
+    (setf (width texture) width)
+    (setf (height texture) height)
+    (allocate-texture-storage texture)
+    (when (find (min-filter texture) '(:linear-mipmap-linear :linear-mipmap-nearest
+                                       :nearest-mipmap-linear :nearest-mipmap-nearest))
+      (gl:generate-mipmap target))))
 
-(defmethod finalize-resource ((type (eql 'texture)) resource)
-  (gl:delete-textures (list resource)))
-
-(defun texparam-format (object)
-  (or (fourth object) :rgba))
-
-(defun object-to-texparams (object)
-  (destructuring-bind (file/bits &optional width height (format :rgba))
-      object
-    (cond ((pathnamep file/bits)
-           (unless (probe-file file/bits)
-             (error "The texture file ~s does not exist." file/bits))
-           (multiple-value-bind (bits rwidth rheight)
-               (cl-soil:load-image file/bits format)
-             (list (or width rwidth) (or height rheight) bits format)))
-          (T
-           (list width (or height 1) (or file/bits (cffi:null-pointer)) format)))))
-
-(defmacro with-image-object ((width height bits format) object &body body)
-  `(destructuring-bind (,width ,height ,bits ,format) (object-to-texparams ,object)
-     (unwind-protect
-          (progn ,@body)
-       (unless (cffi:null-pointer-p ,bits) (cffi:foreign-free ,bits)))))
-
-(defun images-to-textures (target images)
+(defun allocate-texture-storage (texture)
   (case target
-    (:texture-cube-map
-     (loop for image in images
-           for target in '(:texture-cube-map-positive-x :texture-cube-map-negative-x
+    ((:texture-1d)
+     (ecase storage
+       (:dynamic (%gl:tex-image-1d target level internal-format width 0 pixel-format pixel-type pixel-data))
+       (:static (%gl:tex-storage-1d target level internal-format width))))
+    ((:texture-2d :texture-1d-array)
+     (ecase storage
+       (:dynamic (%gl:tex-image-2d target level internal-format width height 0 pixel-format pixel-type pixel-data))
+       (:static (%gl:tex-storage-2d target level internal-format width height))))
+    ((:texture-cube-map)
+     (loop for target in '(:texture-cube-map-positive-x :texture-cube-map-negative-x
                            :texture-cube-map-positive-y :texture-cube-map-negative-y
                            :texture-cube-map-positive-z :texture-cube-map-negative-z)
-           do (images-to-textures target (list image))))
-    (:texture-1d-array
-     (with-image-object (width height bits format) (first images)
-       (gl:tex-image-2d target 1 format width height 0 (texture-internal-format->texture-format format) (texture-format->data-type format) bits)))
-    (:texture-2d-array
-     (with-image-object (width height bits format) (first images)
-       (%gl:tex-storage-3d target 1 :rgba32f width height (length images))
-       (gl:tex-sub-image-3d target 0 0 0 0 width height 1 (texture-internal-format->texture-format format) (texture-format->data-type format) bits)
-       (loop for level from 1
-             for image in (rest images)
-             do (with-image-object (width height bits format) image
-                  (gl:tex-sub-image-3d target 0 0 0 level width height 1 (texture-internal-format->texture-format format) (texture-format->data-type format) bits)))))
-    (T
-     (loop for level from 0
-           for image in images
-           do (v:debug :trial.asset "Loading texture from specs ~a" image)
-              (case target
-                (:texture-1d
-                 (with-image-object (width height bits format) image
-                   (gl:tex-image-1d target level format (* width height) 0 (texture-internal-format->texture-format format) (texture-format->data-type format) bits)))
-                ((:texture-cube-map-positive-x :texture-cube-map-negative-x
-                  :texture-cube-map-positive-y :texture-cube-map-negative-y
-                  :texture-cube-map-positive-z :texture-cube-map-negative-z
-                  :texture-2d)
-                 (with-image-object (width height bits format) image
-                   (gl:tex-image-2d target level format width height 0 (texture-internal-format->texture-format format) (texture-format->data-type format) bits)))
-                (:texture-2d-multisample
-                 (destructuring-bind (width height samples format) (object-to-texparams image)
-                   (%gl:tex-image-2d-multisample target samples format width height 0)))
-                (:texture-3d
-                 (destructuring-bind (width height depth bits format) image
-                   (gl:tex-image-3d target level format width height depth 0 (texture-internal-format->texture-format format) (texture-format->data-type format) bits)
-                   (unless (cffi:null-pointer-p bits) (cffi:foreign-free bits)))))))))
+           for data in (if (consp pixel-data)
+                           pixel-data
+                           (let ((c (cons pixel-data NIL)))
+                             (setf (cdr c) c)))
+           do (ecase storage
+                (:dynamic (%gl:tex-image-2d target level internal-format width height 0 pixel-format pixel-type data))
+                (:static (%gl:tex-storage-2d target level internal-format width height)))))
+    ((:texture-3d :texture-2d-array)
+     (ecase storage
+       (:dynamic (%gl:tex-image-3d target level internal-format width height depth 0 pixel-format pixel-type pixel-data))
+       (:static (%gl:tex-storage-3d target level internal-format width height depth))))
+    ((:texture-2d-multisample)
+     (%gl:tex-storage-2d-multisample target samples internal-format width height 1))
+    ((:texture-2d-multisample-array)
+     (%gl:tex-storage-3d-multisample target samples internal-format width height depth 1))))
 
-(defmethod load progn ((asset texture))
-  (with-slots (target mag-filter min-filter anisotropy wrapping) asset
-    (let ((images (coerced-inputs asset))
-          (texture (setf (resource asset) (or (reuse-resource asset) (gl:gen-texture))))
-          (wrapping (enlist wrapping wrapping)))
-      (with-cleanup-on-failure (offload asset)
-        (gl:bind-texture target texture)
-        (images-to-textures target images)
+(defmethod allocate ((texture texture))
+  (with-slots (width height depth target level samples internal-format pixel-format pixel-type pixel-data mag-filter min-filter anisotropy wrapping storage)
+      texture
+    (let ((tex (gl:create-texture target)))
+      (with-cleanup-on-failure (gl:delete-textures (list tex))
+        (gl:bind-texture target tex)
+        (allocate-texture-storage texture)
         (unless (or (eql target :texture-2d-multisample)
-                    (find (texparam-format (first images)) '(:depth-component :depth-stencil)))
+                    (find internal-format '(:depth-component :depth-stencil)))
           (when (find min-filter '(:linear-mipmap-linear :linear-mipmap-nearest
                                    :nearest-mipmap-linear :nearest-mipmap-nearest))
             (gl:generate-mipmap target))
@@ -121,22 +125,8 @@
           (gl:tex-parameter target :texture-min-filter min-filter)
           (gl:tex-parameter target :texture-mag-filter mag-filter)
           (gl:tex-parameter target :texture-wrap-s (first wrapping))
-          (gl:tex-parameter target :texture-wrap-t (second wrapping))
+          (unless (find target '(:texture-1d-array :texture-1d))
+            (gl:tex-parameter target :texture-wrap-t (second wrapping)))
           (when (eql target :texture-cube-map)
             (gl:tex-parameter target :texture-wrap-r (third wrapping))))))))
 
-(defmethod resize ((asset texture) width height)
-  (let ((change NIL))
-    (loop for input in (inputs asset)
-          do (when (consp input)
-               (when (and (second input) (/= (second input) width))
-                 (setf (second input) width)
-                 (setf change T))
-               (when (and (third input) (/= (third input) height))
-                 (setf (third input) height)
-                 (setf change T))))
-    (when (and (resource asset) change)
-      ;; Force reload
-      (setf (reuse-resource asset) (resource asset))
-      (setf (resource asset) NIL)
-      (load asset))))
