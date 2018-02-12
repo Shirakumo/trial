@@ -74,6 +74,7 @@
 
 (defmethod make-pass-shader-program ((pass shader-pass) (class shader-entity-class))
   (let ((shaders ()))
+    ;; FIXME: What if the pass defines types that the class does not?
     (loop for (type spec) on (effective-shaders class) by #'cddr
           for inputs = (coerce-pass-shader pass class type spec)
           for shader = (make-asset 'shader inputs :type type)
