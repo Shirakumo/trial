@@ -15,10 +15,22 @@
 (defgeneric deallocate (resource))
 (defgeneric allocated-p (resource))
 
+(defmethod allocate :around ((resource resource))
+  (call-next-method)
+  resource)
+
+(defmethod deallocate :around ((resource resource))
+  (call-next-method)
+  resource)
+
+(defun check-allocated (resource)
+  (unless (allocated-p resource)
+    (error "~s is not yet allocated." resource)))
+
 (defclass foreign-resource (resource)
   ((data-pointer :initform NIL :initarg :data-pointer :accessor data-pointer)))
 
-(defgeneric destructor (resource))
+(defgeneric destructor (foreign-resource))
 
 (defmethod destructor ((resource foreign-resource))
   (lambda ()))

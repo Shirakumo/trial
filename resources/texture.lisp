@@ -1,7 +1,7 @@
 #|
- This file is a part of trial
- (c) 2017 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
- Author: Nicolas Hafner <shinmera@tymoon.eu>
+This file is a part of trial
+(c) 2017 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
+Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
 (in-package #:org.shirakumo.fraf.trial)
@@ -43,7 +43,7 @@
                                       (getf args :wrapping)
                                       (getf args :wrapping)))
   (unless (getf args :pixel-format)
-    (setf (getf args :pixel-format) (texture-internal-format->pixel-format)))
+    (setf (getf args :pixel-format) (texture-internal-format->pixel-format (getf args :internal-format))))
   (unless (getf args :pixel-type)
     (setf (getf args :pixel-type) (pixel-format->pixel-type (getf args :pixel-format))))
   (apply #'call-next-method texture args))
@@ -66,47 +66,36 @@
   (let ((tex (gl-name texture)))
     (lambda () (gl:delete-textures (list tex)))))
 
-(defmethod resize ((texture texture) width height)
-  (when (and (texture texture)
-             (or (/= width (width texture))
-                 (/= height (height texture))))
-    (assert (eql :dynamic (eql storage texture)))
-    (setf (width texture) width)
-    (setf (height texture) height)
-    (allocate-texture-storage texture)
-    (when (find (min-filter texture) '(:linear-mipmap-linear :linear-mipmap-nearest
-                                       :nearest-mipmap-linear :nearest-mipmap-nearest))
-      (gl:generate-mipmap target))))
-
 (defun allocate-texture-storage (texture)
-  (case target
-    ((:texture-1d)
-     (ecase storage
-       (:dynamic (%gl:tex-image-1d target level internal-format width 0 pixel-format pixel-type pixel-data))
-       (:static (%gl:tex-storage-1d target level internal-format width))))
-    ((:texture-2d :texture-1d-array)
-     (ecase storage
-       (:dynamic (%gl:tex-image-2d target level internal-format width height 0 pixel-format pixel-type pixel-data))
-       (:static (%gl:tex-storage-2d target level internal-format width height))))
-    ((:texture-cube-map)
-     (loop for target in '(:texture-cube-map-positive-x :texture-cube-map-negative-x
-                           :texture-cube-map-positive-y :texture-cube-map-negative-y
-                           :texture-cube-map-positive-z :texture-cube-map-negative-z)
-           for data in (if (consp pixel-data)
-                           pixel-data
-                           (let ((c (cons pixel-data NIL)))
-                             (setf (cdr c) c)))
-           do (ecase storage
-                (:dynamic (%gl:tex-image-2d target level internal-format width height 0 pixel-format pixel-type data))
-                (:static (%gl:tex-storage-2d target level internal-format width height)))))
-    ((:texture-3d :texture-2d-array)
-     (ecase storage
-       (:dynamic (%gl:tex-image-3d target level internal-format width height depth 0 pixel-format pixel-type pixel-data))
-       (:static (%gl:tex-storage-3d target level internal-format width height depth))))
-    ((:texture-2d-multisample)
-     (%gl:tex-storage-2d-multisample target samples internal-format width height 1))
-    ((:texture-2d-multisample-array)
-     (%gl:tex-storage-3d-multisample target samples internal-format width height depth 1))))
+  (with-slots (target storage level internal-format width height depth samples pixel-format pixel-type pixel-data) texture
+    (case target
+      ((:texture-1d)
+       (ecase storage
+         (:dynamic (%gl:tex-image-1d target level internal-format width 0 pixel-format pixel-type pixel-data))
+         (:static (%gl:tex-storage-1d target level internal-format width))))
+      ((:texture-2d :texture-1d-array)
+       (ecase storage
+         (:dynamic (%gl:tex-image-2d target level internal-format width height 0 pixel-format pixel-type pixel-data))
+         (:static (%gl:tex-storage-2d target level internal-format width height))))
+      ((:texture-cube-map)
+       (loop for target in '(:texture-cube-map-positive-x :texture-cube-map-negative-x
+                             :texture-cube-map-positive-y :texture-cube-map-negative-y
+                             :texture-cube-map-positive-z :texture-cube-map-negative-z)
+             for data in (if (consp pixel-data)
+                             pixel-data
+                             (let ((c (cons pixel-data NIL)))
+                               (setf (cdr c) c)))
+             do (ecase storage
+                  (:dynamic (%gl:tex-image-2d target level internal-format width height 0 pixel-format pixel-type data))
+                  (:static (%gl:tex-storage-2d target level internal-format width height)))))
+      ((:texture-3d :texture-2d-array)
+       (ecase storage
+         (:dynamic (%gl:tex-image-3d target level internal-format width height depth 0 pixel-format pixel-type pixel-data))
+         (:static (%gl:tex-storage-3d target level internal-format width height depth))))
+      ((:texture-2d-multisample)
+       (%gl:tex-storage-2d-multisample target samples internal-format width height 1))
+      ((:texture-2d-multisample-array)
+       (%gl:tex-storage-3d-multisample target samples internal-format width height depth 1)))))
 
 (defmethod allocate ((texture texture))
   (with-slots (width height depth target level samples internal-format pixel-format pixel-type pixel-data mag-filter min-filter anisotropy wrapping storage)
@@ -128,5 +117,17 @@
           (unless (find target '(:texture-1d-array :texture-1d))
             (gl:tex-parameter target :texture-wrap-t (second wrapping)))
           (when (eql target :texture-cube-map)
-            (gl:tex-parameter target :texture-wrap-r (third wrapping))))))))
+            (gl:tex-parameter target :texture-wrap-r (third wrapping))))
+        (setf (data-pointer texture) tex)))))
 
+(defmethod resize ((texture texture) width height)
+  (when (or (/= width (width texture))
+            (/= height (height texture)))
+    (assert (eql :dynamic (storage texture)))
+    (setf (width texture) width)
+    (setf (height texture) height)
+    (when (allocated-p texture)
+      (allocate-texture-storage texture)
+      (when (find (min-filter texture) '(:linear-mipmap-linear :linear-mipmap-nearest
+                                         :nearest-mipmap-linear :nearest-mipmap-nearest))
+        (gl:generate-mipmap (target texture))))))

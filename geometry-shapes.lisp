@@ -6,19 +6,20 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-asset (trial fullscreen-square) packed-vertex-array
-    (#(0 2 1 2 0 3)
-     3 #(+1.0 +1.0 +0.0
-         +1.0 -1.0 +0.0
-         -1.0 -1.0 +0.0
-         -1.0 +1.0 +0.0)
-     2 #(1.0 1.0
-         1.0 0.0
-         0.0 0.0
-         0.0 1.0)))
+;; FIXME
+;; (define-asset (trial fullscreen-square) packed-vertex-array
+;;     (#(0 2 1 2 0 3)
+;;      3 #(+1.0 +1.0 +0.0
+;;          +1.0 -1.0 +0.0
+;;          -1.0 -1.0 +0.0
+;;          -1.0 +1.0 +0.0)
+;;      2 #(1.0 1.0
+;;          1.0 0.0
+;;          0.0 0.0
+;;          0.0 1.0)))
 
-(define-asset (trial empty-vertex-array) vertex-array
-    ())
+;; (define-asset (trial empty-vertex-array) vertex-array
+;;     ())
 
 ;; FIXME: Allow specifying which attributes to include
 ;; FIXME: Generate normals

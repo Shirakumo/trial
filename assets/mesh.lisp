@@ -6,35 +6,17 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass mesh (asset)
+(defclass mesh (asset vertex-array)
   ((mesh :initarg :mesh :accessor mesh)
    (size :initform 0 :accessor size))
   (:default-initargs :mesh NIL))
 
-(defmethod coerce-input ((asset mesh) (input pathname))
-  (read-geometry input T))
-
-(defmethod coerce-input ((asset mesh) (input string))
-  (read-geometry (pathname input) T))
-
-(defmethod coerce-input ((asset mesh) (input geometry))
-  input)
-
-(defmethod coerce-input ((asset mesh) (input vertex-mesh))
-  input)
-
-(defmethod coerce-input ((asset mesh) (input vertex-array))
-  input)
-
-(defmethod finalize-resource ((type (eql 'mesh)) resource)
-  (finalize-resource 'vertex-array resource))
-
-(defmethod load progn ((asset mesh))
-  (let* ((geometry (first (coerced-inputs asset)))
+(defmethod load ((mesh mesh))
+  (let* ((geometry (first (coerced-inputs mesh)))
          (mesh (etypecase geometry
-                 (geometry (or (gethash (mesh asset) (meshes geometry))
+                 (geometry (or (gethash (mesh mesh) (meshes geometry))
                                (error "~a does not contain a mesh named ~a."
-                                      geometry (mesh asset))))
+                                      geometry (mesh mesh))))
                  (T geometry))))
     (etypecase mesh
       (vertex-mesh
@@ -42,8 +24,44 @@
          (setf (faces new) (faces mesh))
          (setf (vertices new) (vertices mesh))
          (change-class new 'vertex-array :load T)
-         (setf (resource asset) (resource new))
-         (setf (size asset) (size new))))
+         (setf (resource mesh) (resource new))
+         (setf (size mesh) (size new))))
       (vertex-array
-       (setf (resource asset) (resource (load mesh)))
-       (setf (size asset) (size mesh))))))
+       (setf (resource mesh) (resource (load mesh)))
+       (setf (size mesh) (size mesh))))))
+
+(defmethod update-instance-for-different-class :after ((mesh vertex-mesh) (vao vertex-array) &key pack load (data-usage :static-draw) attributes)
+  (when pack (pack mesh))
+  (let* ((vertices (vertices mesh))
+         (primer (aref vertices 0))
+         (attributes (or attributes (vertex-attributes primer)))
+         (sizes (loop for attr in attributes collect (vertex-attribute-size primer attr)))
+         (total-size (* (length vertices) (reduce #'+ sizes)))
+         (buffer (make-static-vector total-size :element-type 'single-float)))
+    (loop with offset = 0
+          for vertex across vertices
+          do (dolist (attribute attributes)
+               (setf offset (fill-vertex-attribute vertex attribute buffer offset))))
+    (let* ((vbo (make-asset 'vertex-buffer buffer
+                            :data-usage data-usage :element-type :float :buffer-type :array-buffer))
+           (ebo (make-asset 'vertex-buffer (faces mesh)
+                            :data-usage data-usage :element-type :uint :buffer-type :element-array-buffer))
+           (specs (loop with stride = (reduce #'+ sizes)
+                        for offset = 0 then (+ offset size)
+                        for size in sizes
+                        for index from 0
+                        collect (list vbo :stride (* stride (cffi:foreign-type-size :float))
+                                          :offset (* offset (cffi:foreign-type-size :float))
+                                          :size size
+                                          :index index))))
+      (setf (inputs vao) (list* ebo specs))
+      (when load
+        (load vao)
+        ;; Clean up
+        (offload vbo)
+        (offload ebo)
+        (setf (inputs vbo) NIL)
+        (setf (inputs ebo) NIL)
+        (setf (inputs vao) NIL)
+        (static-vectors:free-static-vector buffer))
+      vao)))

@@ -26,3 +26,5 @@
   (setf *features* (union *features* features))
   (asdf:compile-system :trial :force T :verbose NIL)
   (asdf:load-system :trial :force T :verbose NIL))
+
+;; FIXME: Put all the consistency checks and such during loading etc under features.

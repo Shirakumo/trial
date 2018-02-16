@@ -14,11 +14,11 @@
 
 (defvar *pools* (make-hash-table :test 'eql))
 
-(defun pool (name &optional errorp)
+(defun find-pool (name &optional errorp)
   (or (gethash name *pools*)
       (when errorp (error "No pool with name ~s." name))))
 
-(defun (setf pool) (pool name)
+(defun (setf find-pool) (pool name)
   (setf (gethash name *pools*) pool))
 
 (defun remove-pool (name)
@@ -42,10 +42,10 @@
 (defmacro define-pool (name &body initargs)
   (check-type name symbol)
   `(eval-when (:compile-toplevel :load-toplevel :execute)
-     (cond ((pool ',name)
-            (reinitialize-instance (pool ',name) ,@initargs))
+     (cond ((find-pool ',name)
+            (reinitialize-instance (find-pool ',name) ,@initargs))
            (T
-            (setf (pool ',name) (make-instance 'pool :name ',name ,@initargs))))
+            (setf (find-pool ',name) (make-instance 'pool :name ',name ,@initargs))))
      ',name))
 
 (defmethod asset ((pool pool) name &optional (errorp T))
@@ -53,14 +53,14 @@
       (when errorp (error "No asset with name ~s on pool ~a." name pool))))
 
 (defmethod asset ((pool symbol) name &optional (errorp T))
-  (let ((pool (pool pool errorp)))
+  (let ((pool (find-pool pool errorp)))
     (when pool (asset pool name errorp))))
 
 (defmethod (setf asset) ((asset asset) (pool pool) name)
   (setf (gethash name (assets pool)) asset))
 
 (defmethod (setf asset) ((asset asset) (pool symbol) name)
-  (setf (asset (pool pool T) name) asset))
+  (setf (asset (find-pool pool T) name) asset))
 
 (defmethod list-assets ((pool pool))
   (alexandria:hash-table-values (assets pool)))
@@ -75,12 +75,12 @@
   (merge-pathnames pathname (coerce-base (base pool))))
 
 (defmethod pool-path ((name symbol) pathname)
-  (pool-path (pool name T) pathname))
+  (pool-path (find-pool name T) pathname))
 
 (defclass load-request (event)
   ((asset :initarg :asset)
    (action :initarg :action :initform 'reload)))
 
-(eval-when (:load-toplevel :execute)
-  (define-pool trial
-    :base :trial))
+;; (eval-when (:load-toplevel :execute)
+;;   (define-pool trial
+;;     :base :trial))

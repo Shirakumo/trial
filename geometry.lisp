@@ -65,42 +65,6 @@
     (setf (vertices mesh) new-verts))
   mesh)
 
-(defmethod update-instance-for-different-class :after ((mesh vertex-mesh) (vao vertex-array) &key pack load (data-usage :static-draw) attributes)
-  (when pack (pack mesh))
-  (let* ((vertices (vertices mesh))
-         (primer (aref vertices 0))
-         (attributes (or attributes (vertex-attributes primer)))
-         (sizes (loop for attr in attributes collect (vertex-attribute-size primer attr)))
-         (total-size (* (length vertices) (reduce #'+ sizes)))
-         (buffer (make-static-vector total-size :element-type 'single-float)))
-    (loop with offset = 0
-          for vertex across vertices
-          do (dolist (attribute attributes)
-               (setf offset (fill-vertex-attribute vertex attribute buffer offset))))
-    (let* ((vbo (make-asset 'vertex-buffer buffer
-                            :data-usage data-usage :element-type :float :buffer-type :array-buffer))
-           (ebo (make-asset 'vertex-buffer (faces mesh)
-                            :data-usage data-usage :element-type :uint :buffer-type :element-array-buffer))
-           (specs (loop with stride = (reduce #'+ sizes)
-                        for offset = 0 then (+ offset size)
-                        for size in sizes
-                        for index from 0
-                        collect (list vbo :stride (* stride (cffi:foreign-type-size :float))
-                                          :offset (* offset (cffi:foreign-type-size :float))
-                                          :size size
-                                          :index index))))
-      (setf (inputs vao) (list* ebo specs))
-      (when load
-        (load vao)
-        ;; Clean up
-        (offload vbo)
-        (offload ebo)
-        (setf (inputs vbo) NIL)
-        (setf (inputs ebo) NIL)
-        (setf (inputs vao) NIL)
-        (static-vectors:free-static-vector buffer))
-      vao)))
-
 (defmacro with-vertex-filling ((mesh &key pack) &body body)
   (let ((meshg (gensym "MESH")))
     `(let ((,meshg ,mesh))

@@ -26,11 +26,12 @@
 (define-action toggle-overlay (system-action)
   (key-press (one-of key :section :grave)))
 
-(define-asset (trial noto-sans) font
-    (#p"noto-sans-regular.ttf"))
+;; FIXME
+;; (define-asset (trial noto-sans) font
+;;     #p"noto-sans-regular.ttf")
 
-(define-asset (trial noto-mono) font
-    (#p"noto-mono-regular.ttf"))
+;; (define-asset (trial noto-mono) font
+;;     #p"noto-mono-regular.ttf")
 
 (define-subject controller ()
   ((display :initform NIL :accessor display)
