@@ -22,26 +22,19 @@
    :charset *default-charset*
    :size 24))
 
-(defmethod coerce-input ((asset font) (file pathname))
-  file)
-
-(defmethod coerce-input ((asset font) (file string))
-  (pathname file))
-
 (defmethod finalize-resource ((type (eql 'font)) resource)
   (cl-fond:free resource))
 
-(defmethod load progn ((asset font))
-  (setf (resource asset)
-        (cl-fond:make-font (first (coerced-inputs asset))
-                           (charset asset)
-                           :size (size asset)
-                           :oversample 2))
-  (v:debug :trial.asset "Loaded font ~a" (first (coerced-inputs asset))))
+(defmethod load ((font font))
+  (setf (gl-name font)
+        (cl-fond:make-font (input font)
+                           (charset font)
+                           :size (size font)
+                           :oversample 2)))
 
 (defmethod text-extent ((font font) text)
-  (if (resource font)
-      (cl-fond:compute-extent (resource font) text)
+  (if (allocated-p font)
+      (cl-fond:compute-extent (gl-name font) text)
       '(:l 0 :r 0 :t 0 :b 0 :gap 0)))
 
 (define-shader-entity text (asset located-entity)
@@ -57,26 +50,24 @@
 (defmethod initialize-instance :after ((text text) &key)
   (let* ((vbo (make-instance 'vertex-buffer :buffer-type :array-buffer
                                             :data-usage :dynamic-draw
-                                            :inputs (list (cffi:null-pointer))
                                             :size 0))
          (ebo (make-instance 'vertex-buffer :buffer-type :element-array-buffer
                                             :data-usage :dynamic-draw
-                                            :inputs (list (cffi:null-pointer))
                                             :size 0))
-         (vao (make-instance 'vertex-array :inputs `((,vbo :size 2 :stride 16 :offset 0)
-                                                     (,vbo :size 2 :stride 16 :offset 8)
-                                                     ,ebo))))
+         (vao (make-instance 'vertex-array :buffers `((,vbo :size 2 :stride 16 :offset 0)
+                                                      (,vbo :size 2 :stride 16 :offset 8)
+                                                      ,ebo))))
     (setf (slot-value text 'vbo) vbo)
     (setf (slot-value text 'ebo) ebo)
     (setf (slot-value text 'vao) vao)))
 
-(defmethod load progn ((text text))
+(defmethod load ((text text))
   (setf (text text) (text text)))
 
 (defmethod paint ((text text) (pass shader-pass))
   (let ((program (shader-program-for-pass pass text))
         (vao (slot-value text 'vao))
-        (tex (cl-fond:texture (resource (font text))))
+        (tex (cl-fond:texture (gl-name (font text))))
         (r (/ (size text) (size (font text)))))
     (gl:active-texture :texture0)
     (gl:bind-texture :texture-2d tex)
@@ -86,7 +77,7 @@
       (setf (uniform program "view_matrix") (view-matrix))
       (setf (uniform program "projection_matrix") (projection-matrix))
       (setf (uniform program "text_color") (color text))
-      (gl:bind-vertex-array (resource vao))
+      (gl:bind-vertex-array (gl-name vao))
       (%gl:draw-elements :triangles (size vao) :unsigned-int 0)
       (gl:bind-vertex-array 0))
     (gl:bind-texture :texture-2d 0)))
@@ -118,16 +109,16 @@ void main(){
 }")
 
 (defmethod (setf font) :after (font (entity text))
-  (when (resource font)
+  (when (allocated-p font)
     (setf (text entity) (text entity))))
 
 (defmethod (setf text) :before (text (entity text))
   (let ((vao (slot-value entity 'vao))
         (vbo (slot-value entity 'vbo))
         (ebo (slot-value entity 'ebo))
-        (font (resource (font entity))))
+        (font (gl-name (font entity))))
     (when font
-      (setf (size vao) (cl-fond:update-text font text (resource vbo) (resource ebo))))))
+      (setf (size vao) (cl-fond:update-text font text (gl-name vbo) (gl-name ebo))))))
 
 (defmethod extent ((entity text))
   (text-extent entity (text entity)))

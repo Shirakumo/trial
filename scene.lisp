@@ -50,5 +50,4 @@
 
 (defmethod finalize :after ((scene scene))
   (stop scene)
-  (offload scene)
   (clear scene))

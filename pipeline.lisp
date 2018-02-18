@@ -45,7 +45,10 @@
     (dolist (port (flow:ports node))
       (check-consistent port))))
 
-(defun allocate-textures (pipeline passes textures kind width height)
+;; FIXME: update for new asset system, take into account all
+;;        sorts of texture options and compare according to
+;;        them.
+(defun allocate-textures (passes textures kind width height)
   (flow:allocate-ports passes :sort NIL :test kind)
   (flet ((texpsec (port)
            (list NIL width height
@@ -97,9 +100,9 @@
   (let* ((passes (flow:topological-sort (nodes pipeline)))
          (textures (make-array 0 :initial-element NIL :adjustable T)))
     (clear-pipeline pipeline)
-    (allocate-textures pipeline passes textures #'%color-port-p (width target) (height target))
-    (allocate-textures pipeline passes textures #'%depth-port-p (width target) (height target))
-    (allocate-textures pipeline passes textures #'%depth-stencil-port-p (width target) (height target))
+    (allocate-textures passes textures #'%color-port-p (width target) (height target))
+    (allocate-textures passes textures #'%depth-port-p (width target) (height target))
+    (allocate-textures passes textures #'%depth-stencil-port-p (width target) (height target))
     (v:info :trial.pipeline "~a pass order: ~a" pipeline passes)
     (v:info :trial.pipeline "~a texture count: ~a" pipeline (length textures))
     (v:info :trial.pipeline "~a texture allocation: ~:{~%~a~:{~%    ~a: ~a~}~}" pipeline
@@ -119,7 +122,7 @@
 (defmethod paint-with ((pipeline pipeline) source)
   (loop for pass across (passes pipeline)
         for fbo = (framebuffer pass)
-        do (gl:bind-framebuffer :framebuffer (resource fbo))
+        do (gl:bind-framebuffer :framebuffer (gl-name fbo))
            ;; FIXME: Figure out which to clear depending on framebuffer attachments
            (gl:clear :color-buffer :depth-buffer :stencil-buffer)
            (paint-with pass source)))

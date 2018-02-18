@@ -14,9 +14,6 @@
 (define-action load-game (system-action)
   (key-press (eql key :f3)))
 
-(define-action reload-assets (system-action)
-  (key-press (eql key :f5)))
-
 (define-action reload-scene (system-action)
   (key-press (eql key :f6)))
 
@@ -60,7 +57,7 @@
           (vector-push (if (= 0 (frame-time (handler *context*))) 1 (/ (frame-time (handler *context*)))) fps-buffer)
           
           (setf (vy (location text))
-                (- (getf (cl-fond:compute-extent (resource (font text)) "a") :t)))
+                (- (getf (cl-fond:compute-extent (gl-name (font text)) "a") :t)))
           (setf (vx (location text)) 5)
           (setf (text text) (format NIL "TIME  [s]: ~8,2f~%~
                                          FPS  [Hz]: ~8,2f~%~
@@ -93,10 +90,6 @@
   (map-event ev *loop*)
   (retain-event ev))
 
-;; (define-handler (controller reload-assets reload-assets 99) (ev)
-;;   (loop for asset being the hash-keys of (assets *context*)
-;;         do (load (offload asset))))
-
 (define-handler (controller reload-scene reload-scene 99) (ev)
   (let* ((display (display controller))
          (old (scene display)))
@@ -111,9 +104,13 @@
         :report "Give up reloading the scene and continue with the old."
         (start old)))))
 
+(defclass load-request (event)
+  ((asset :initarg :asset)
+   (action :initarg :action :initform 'reload)))
+
 (define-handler (controller load-request) (ev asset action)
   (ecase action
-    (offload (offload asset))
+    (offload (deallocate asset))
     (load    (load asset))
     (reload  (reload asset))))
 

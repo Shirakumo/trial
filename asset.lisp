@@ -11,22 +11,22 @@
    (name :initform NIL :accessor name)
    (input :initarg :input :accessor input)))
 
-(defmethod initialize-instance :after ((asset asset) &key pool name input)
+(defmethod initialize-instance :after ((asset asset) &key pool name)
   (check-type name symbol)
   (setf (name asset) name)
   (setf (pool asset) (etypecase pool
-                       (symbol (pool pool T))
+                       (symbol (find-pool pool T))
                        (pool pool)))
   (setf (asset pool name) asset))
 
 (defmethod reinitialize-instance :after ((asset asset) &key)
-  (when (loaded-p asset)
+  (when (allocated-p asset)
     (reload asset)))
 
 (defmethod update-instance-for-different-class :around ((previous asset) (current asset) &key)
   ;; FIXME: Error recovery?
-  (cond ((loaded-p current)
-         (offload current)
+  (cond ((allocated-p current)
+         (deallocate current)
          (call-next-method)
          (load current))
         (T
@@ -38,22 +38,26 @@
 
 (defgeneric load (asset))
 (defgeneric reload (asset))
-(defgeneric offload (asset))
-(defgeneric loaded-p (asset))
 
 (defmethod reload ((asset asset))
-  (offload asset)
+  (deallocate asset)
   (load asset))
 
 (defmethod load :around ((asset asset))
-  (unless (loaded-p asset)
+  (unless (allocated-p asset)
     (v:trace :trial.asset "Loading ~a/~a" (name (pool asset)) (name asset))
     (call-next-method)))
 
-(defmethod offload :around ((asset asset))
-  (when (loaded-p asset)
-    (v:trace :trial.asset "Offloading ~a/~a" (name (pool asset)) (name asset))
+(defmethod deallocate :around ((asset asset))
+  (when (allocated-p asset)
+    (v:trace :trial.asset "Deallocating ~a/~a" (name (pool asset)) (name asset))
     (call-next-method)))
+
+(defmethod coerce-asset-input ((asset asset) (input (eql T)))
+  (coerce-asset-input asset (input asset)))
+
+(defmethod coerce-asset-input ((asset asset) thing)
+  thing)
 
 (defmethod coerce-asset-input ((asset asset) (path pathname))
   (pool-path (pool asset) path))

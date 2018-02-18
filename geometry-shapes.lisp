@@ -231,7 +231,3 @@
           (vertex :position f1t)
           (vertex :position f2b)
           (vertex :position f2t))))
-
-(defun make-torus (size thickness &key mesh pack (x 0) (y 0) (z 0))
-  (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
-    ))

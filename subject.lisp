@@ -66,7 +66,8 @@
 (defmethod reinitialize-instance :after ((subject subject) &key)
   (regenerate-handlers subject))
 
-(defmethod update-instance-for-redefined-class ((subject subject) aslots dslots plist &key args)
+(defmethod update-instance-for-redefined-class ((subject subject) aslots dslots plist &key)
+  (declare (ignore aslots dslots plist))
   (regenerate-handlers subject))
 
 (defmethod regenerate-handlers ((subject subject))

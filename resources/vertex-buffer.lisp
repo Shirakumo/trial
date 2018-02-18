@@ -14,7 +14,7 @@
    (size :initarg :size :initform NIL :accessor size))
   (:default-initargs
    :buffer-type :array-buffer
-   :buffer-data (error "BUFFER-DATA required.")
+   :buffer-data NIL
    :element-type :float
    :data-usage :static-draw))
 
@@ -32,30 +32,32 @@
     (let* ((size (or (size buffer) (length buffer-data)))
            (bytes (* size (cffi:foreign-type-size element-type)))
            (vbo (gl:gen-buffer)))
-      (with-cleanup-on-failure (offload vbo)
+      (with-cleanup-on-failure (gl:delete-buffers (list vbo))
         (flet ((bind-data (buffer-data)
                  (gl:bind-buffer buffer-type vbo)
                  (unwind-protect
                       (%gl:buffer-data buffer-type bytes buffer-data data-usage)
-                   (gl:bind-buffer buffer-type 0)))))
-        (etypecase buffer-data
-          (vector
-           (if (and #+sbcl T #-sbcl NIL
-                    (find (array-element-type buffer-data)
-                          '(single-float double-float
-                            (unsigned-byte 8)
-                            (unsigned-byte 32) (signed-byte 32))
-                          :test 'equal))
-               ;; Arrays that already fit types can be shared directly on SBCL.
-               (cffi:with-pointer-to-vector-data (buffer-data buffer-data)
-                 (bind-data buffer-data))
-               (cffi:with-foreign-object (array element-type size)
-                 (loop for i from 0 for el across buffer-data
-                       do (setf (cffi:mem-aref array i) (gl-coerce el element-type)))
-                 (bind-data array))))
-          (static-vector
-           (bind-data (static-vector-pointer buffer-data)))
-          (cffi:foreign-pointer
-           (bind-data buffer-data)))
+                   (gl:bind-buffer buffer-type 0))))
+          (etypecase buffer-data
+            (vector
+             (if (and #+sbcl T #-sbcl NIL
+                      (find (array-element-type buffer-data)
+                            '(single-float double-float
+                              (unsigned-byte 8)
+                              (unsigned-byte 32) (signed-byte 32))
+                            :test 'equal))
+                 ;; Arrays that already fit types can be shared directly on SBCL.
+                 (cffi:with-pointer-to-vector-data (buffer-data buffer-data)
+                   (bind-data buffer-data))
+                 (cffi:with-foreign-object (array element-type size)
+                   (loop for i from 0 for el across buffer-data
+                         do (setf (cffi:mem-aref array i) (gl-coerce el element-type)))
+                   (bind-data array))))
+            (static-vector
+             (bind-data (static-vector-pointer buffer-data)))
+            (cffi:foreign-pointer
+             (bind-data buffer-data))
+            (null
+             (bind-data (cffi:null-pointer)))))
         (setf (size buffer) size)
         (setf (data-pointer buffer) vbo)))))

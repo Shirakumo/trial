@@ -77,10 +77,6 @@
 (defmethod pool-path ((name symbol) pathname)
   (pool-path (find-pool name T) pathname))
 
-(defclass load-request (event)
-  ((asset :initarg :asset)
-   (action :initarg :action :initform 'reload)))
-
 ;; (eval-when (:load-toplevel :execute)
 ;;   (define-pool trial
 ;;     :base :trial))

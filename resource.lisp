@@ -15,6 +15,9 @@
 (defgeneric deallocate (resource))
 (defgeneric allocated-p (resource))
 
+(defmethod load ((resource resource))
+  (allocate resource))
+
 (defmethod allocate :around ((resource resource))
   (call-next-method)
   resource)
@@ -41,9 +44,12 @@
 (defmethod allocate :after ((resource foreign-resource))
   (tg:finalize resource (destructor resource)))
 
+(defmethod deallocate ((resource foreign-resource))
+  (funcall (destructor resource)))
+
 (defmethod deallocate :after ((resource foreign-resource))
   (tg:cancel-finalization resource)
   (setf (data-pointer resource) NIL))
 
 (defclass gl-resource (foreign-resource)
-  ((data-pointer :reader gl-name)))
+  ((data-pointer :accessor gl-name)))

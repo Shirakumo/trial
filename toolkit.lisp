@@ -14,6 +14,11 @@
 (defmethod finalize (object)
   object)
 
+(defun gl-property (name)
+  (handler-case (gl:get* name)
+    (error (err) (declare (ignore err))
+      :unavailable)))
+
 (defconstant single-float-positive-infinity
   #+sbcl sb-ext:single-float-positive-infinity
   #-sbcl most-positive-single-float)

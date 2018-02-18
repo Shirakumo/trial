@@ -40,6 +40,7 @@
             Pass ~s is missing a connection to its input ~s."
            (flow:node input) input)))
 
+;; FIXME: Allow specifying all sorts of texture options
 (defclass output (flow:out-port flow:n-port texture-port)
   ((attachment :initarg :attachment :accessor attachment))
   (:default-initargs :attachment :color-attachment0))
@@ -77,9 +78,9 @@
     ;; FIXME: What if the pass defines types that the class does not?
     (loop for (type spec) on (effective-shaders class) by #'cddr
           for inputs = (coerce-pass-shader pass class type spec)
-          for shader = (make-asset 'shader inputs :type type)
+          for shader = (make-instance 'shader :source inputs :type type)
           do (push shader shaders))
-    (make-asset 'shader-program shaders)))
+    (make-instance 'shader-program :shaders shaders)))
 
 (defmethod finalize :after ((pass shader-pass))
   (when (framebuffer pass)
@@ -110,7 +111,7 @@
              do (when (typep port 'uniform-port)
                   (setf (uniform program (uniform-name port)) (pop texture-index))
                   (gl:active-texture (pop texture-name))
-                  (gl:bind-texture :texture-2d (resource (texture port)))))
+                  (gl:bind-texture :texture-2d (gl-name (texture port)))))
        (loop for (name value) in (uniforms pass)
              do (setf (uniform program name) value)))))
 
@@ -137,11 +138,11 @@
     (flet ((refresh (class)
              (let ((prev (gethash class assets))
                    (new (make-pass-shader-program pass class)))
-               (if (resource prev)
+               (if (allocated-p prev)
                    (with-context ((context (window :main))) ; FUCK
                      (with-simple-restart (continue "Ignore the change and continue with the hold shader.")
-                       (load new)
-                       (offload prev)
+                       (allocate new)
+                       (deallocate prev)
                        (setf (gethash class assets) new)))
                    (setf (gethash class assets) new)))))
       (cond ((eql class (class-of pass))
@@ -177,7 +178,7 @@
 
 (defmethod paint :around ((subject shader-entity) (pass per-object-pass))
   (let ((program (shader-program-for-pass pass subject)))
-    (gl:use-program (resource program))
+    (gl:use-program (gl-name program))
     (prepare-pass-program pass program)
     (call-next-method)))
 
@@ -188,14 +189,15 @@
 
 (defmethod bake ((pass multisampled-pass))
   (setf (multisample-fbo pass)
-        (make-asset 'framebuffer-bundle
-                    `((:attachment :color-attachment0 :bits ,(samples pass) :target :texture-2d-multisample)
-                      (:attachment :depth-stencil-attachment :bits ,(samples pass) :target :texture-2d-multisample))
-                    :width (width *context*) :height (height *context*))))
+        ;; FIXME!!!
+        (make-instance 'framebuffer-bundle
+                       `((:attachment :color-attachment0 :bits ,(samples pass) :target :texture-2d-multisample)
+                         (:attachment :depth-stencil-attachment :bits ,(samples pass) :target :texture-2d-multisample))
+                       :width (width *context*) :height (height *context*))))
 
 (defmethod paint-with :around ((pass multisampled-pass) target)
-  (let ((original-framebuffer (resource (framebuffer pass))))
-    (gl:bind-framebuffer :framebuffer (resource (multisample-fbo pass)))
+  (let ((original-framebuffer (gl-name (framebuffer pass))))
+    (gl:bind-framebuffer :framebuffer (gl-name (multisample-fbo pass)))
     (gl:clear :color-buffer :depth-buffer :stencil-buffer)
     (call-next-method)
     (gl:bind-framebuffer :draw-framebuffer original-framebuffer)
@@ -219,8 +221,8 @@
 (defmethod notify-class-redefinition ((pass single-shader-pass) class)
   (when (eql class (class-of pass))
     (let* ((program (shader-program pass))
-           (loaded (and program (resource program))))
-      (when loaded (offload program))
+           (loaded (and program (gl-name program))))
+      (when loaded (deallocate program))
       (setf (shader-program pass) (make-class-shader-program pass))
       (when loaded
         (with-context ((context (window :main))) ; FUCK
@@ -236,7 +238,7 @@
 
 (defmethod paint-with :around ((pass single-shader-pass) thing)
   (let ((program (shader-program pass)))
-    (gl:use-program (resource program))
+    (gl:use-program (gl-name program))
     (prepare-pass-program pass program)
     (call-next-method)))
 
@@ -247,7 +249,7 @@
   (let ((vao (vertex-array pass)))
     (with-pushed-attribs
       (disable :depth-test)
-      (gl:bind-vertex-array (resource vao))
+      (gl:bind-vertex-array (gl-name vao))
       (%gl:draw-elements :triangles (size vao) :unsigned-int (cffi:null-pointer))
       (gl:bind-vertex-array 0))))
 

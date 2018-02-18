@@ -93,9 +93,8 @@
     (with-context (context)
       (v:info :trial.context "Destroying context.")
       (hide context)
-      (clear-asset-cache)
       (loop for asset being the hash-values of (assets context)
-            do (offload asset))
+            do (deallocate asset))
       (call-next-method))))
 
 (defmethod create-context :around ((context context))
@@ -156,10 +155,6 @@
 
 (defmethod describe-object :after ((context context) stream)
   (context-info context stream))
-
-(defun gl-property (name)
-  (handler-case (gl:get* name)
-    (error (err) :unavailable)))
 
 (defun context-info (context stream)
   (format stream "~&~%Running GL~a.~a ~a~%~

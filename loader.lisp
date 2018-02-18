@@ -65,10 +65,10 @@
 
 (defmethod transition ((from scene) (to null))
   (v:info :trial.loader "Transitioning from ~a" from)
-  (let ((to-offload (compute-assets to NIL)))
-    (v:info :trial.loader "Offloading ~a assets." (length to-offload))
-    (v:debug :trial.loader "Offloading:~%~a" to-offload)
-    (mapc #'offload to-offload)
+  (let ((to-deallocate (compute-assets to NIL)))
+    (v:info :trial.loader "Deallocating ~a assets." (length to-deallocate))
+    (v:debug :trial.loader "Deallocating:~%~a" to-deallocate)
+    (mapc #'deallocate to-deallocate)
     to))
 
 (defun stable-set-difference-eq (a b)

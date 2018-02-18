@@ -32,12 +32,12 @@
     (list
      (resize (context fullscreenable)
              (first resolution)
-             (second resolution))
-     (cl-monitors:mode
-      (resize (context fullscreenable)
-              (cl-monitors:width resolution)
-              (cl-monitors:height resolution))
-      (cl-monitors:make-current resolution)))))
+             (second resolution)))
+    (cl-monitors:mode
+     (resize (context fullscreenable)
+             (cl-monitors:width resolution)
+             (cl-monitors:height resolution))
+     (cl-monitors:make-current resolution))))
 
 (defmethod (setf fullscreen) :before (fullscreen (fullscreenable fullscreenable))
   (show (context fullscreenable) :fullscreen fullscreen))

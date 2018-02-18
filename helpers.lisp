@@ -67,7 +67,7 @@
     (setf (uniform program "view_matrix") (view-matrix))
     (setf (uniform program "projection_matrix") (projection-matrix)))
   (let ((vao (vertex-array subject)))
-    (gl:bind-vertex-array (resource vao))
+    (gl:bind-vertex-array (gl-name vao))
     (%gl:draw-elements (vertex-form subject) (size vao) :unsigned-int 0)
     (gl:bind-vertex-array 0)))
 
@@ -132,7 +132,7 @@ void main(){
   (let ((tex (texture obj)))
     (when tex
       (gl:active-texture :texture0)
-      (gl:bind-texture (target tex) (resource tex))
+      (gl:bind-texture (target tex) (gl-name tex))
       (call-next-method)
       (gl:bind-texture (target tex) 0))))
 
