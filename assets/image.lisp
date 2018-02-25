@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass image (asset texture)
+(defclass image (gl-asset texture)
   ())
 
 (defmethod load ((image image))

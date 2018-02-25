@@ -79,3 +79,17 @@
                   (make-instance ',type :input ,input ,@options))))))
 
 (trivial-indent:define-indentation define-asset (4 6 4 &rest))
+
+(defclass gl-asset (asset gl-resource) ())
+
+(defmethod load :around ((asset gl-asset))
+  (with-context (*context*)
+    (call-next-method)))
+
+(defmethod deallocate :around ((asset gl-asset))
+  (with-context (*context*)
+    (call-next-method)))
+
+(defmethod reload :around ((asset gl-asset))
+  (with-context (*context*)
+    (call-next-method)))

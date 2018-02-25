@@ -111,9 +111,9 @@
 
 (define-handler (controller load-request) (ev asset action)
   (ecase action
-    (offload (deallocate asset))
-    (load    (load asset))
-    (reload  (reload asset))))
+    (deallocate (deallocate asset))
+    (load (load asset))
+    (reload (reload asset))))
 
 (defun maybe-reload-scene (&optional (window (list-windows)))
   (dolist (window (enlist window))

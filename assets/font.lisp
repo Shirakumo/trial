@@ -15,7 +15,7 @@
       (write-char #\Return out)
       (write-char #\Linefeed out)))
 
-(defclass font (asset)
+(defclass font (gl-asset)
   ((charset :initarg :charset :accessor charset)
    (size :initarg :size :accessor size))
   (:default-initargs
