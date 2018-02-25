@@ -10,18 +10,21 @@
 
 (defmacro with-context ((context &key force reentrant) &body body)
   (let* ((cont (gensym "CONTEXT"))
+         (thunk (gensym "THUNK"))
          (acquiring-body `(progn
                             (acquire-context ,cont :force ,force)
                             (unwind-protect
-                                 (progn ,@body)
+                                 (,thunk)
                               (release-context ,cont :reentrant ,reentrant)))))
     `(let ((,cont ,context))
-       ,(if reentrant
-            acquiring-body
-            `(if (eql *context* ,cont)
-                 (progn ,@body)
-                 (let ((*context* *context*))
-                   ,acquiring-body))))))
+       (flet ((,thunk ()
+                ,@body))
+         ,(if reentrant
+              acquiring-body
+              `(if (current-p ,cont)
+                   (,thunk)
+                   (let ((*context* ,cont))
+                     ,acquiring-body)))))))
 
 (defun launch-with-context (&optional main &rest initargs)
   (apply #'make-instance main initargs))
@@ -66,6 +69,7 @@
 (defgeneric destroy-context (context))
 (defgeneric valid-p (context))
 (defgeneric make-current (context))
+(defgeneric current-p (context &optional thread))
 (defgeneric done-current (context))
 (defgeneric hide (context))
 (defgeneric show (context &key fullscreen))
@@ -90,7 +94,7 @@
 
 (defmethod destroy-context :around ((context context))
   (when (valid-p context)
-    (with-context (context)
+    (with-context (context :force T)
       (v:info :trial.context "Destroying context.")
       (hide context)
       (loop for asset being the hash-values of (assets context)
@@ -104,6 +108,9 @@
     (make-current context)
     (context-note-debug-info context)
     (show context)))
+
+(defmethod current-p ((context context) &optional (thread (bt:current-thread)))
+  (eql thread (current-thread context)))
 
 (defmethod acquire-context ((context context) &key force)
   (let ((current (current-thread context))
@@ -140,7 +147,7 @@
              (bt:release-lock (context-lock context))
              (setf *context* NIL))
             (T
-             (v:warn :trial.context "~a attempted to release ~a even through ~a is active."
+             (v:warn :trial.context "~a attempted to release ~a even though ~a is active."
                      this context *context*))))))
 
 (defclass resize (event)

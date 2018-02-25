@@ -186,8 +186,7 @@
                                       (*trace-output* . ,*trace-output*)
                                       (*standard-input* . ,*standard-input*)
                                       (*query-io* . ,*query-io*)
-                                      (*debug-io* . ,*debug-io*)
-                                      (*context* . NIL))))
+                                      (*debug-io* . ,*debug-io*))))
 
 (defmacro with-thread ((name) &body body)
   `(make-thread ,name (lambda () ,@body)))
