@@ -46,7 +46,7 @@
                (:file "input" :depends-on ("package" "event-loop" "retention"))
                (:file "layer-set" :depends-on ("package"))
                (:file "loader" :depends-on ("package" "scene" "asset"))
-               (:file "main" :depends-on ("package" "display" "toolkit" "scene" "pipeline"))
+               (:file "main" :depends-on ("package" "display" "toolkit" "scene" "pipeline" "window"))
                (:file "mapping" :depends-on ("package" "event-loop" "toolkit"))
                (:file "pipeline" :depends-on ("package" "event-loop" "toolkit"))
                (:file "pipelined-scene" :depends-on ("package" "pipeline" "scene" "loader"))
@@ -68,6 +68,7 @@
                (:file "subject" :depends-on ("package" "event-loop"))
                (:file "toolkit" :depends-on ("package"))
                (:file "transforms" :depends-on ("package"))
+               (:file "window" :depends-on ("package"))
                ;; Testing, remove for production.
                (:file "workbench" :depends-on ("assets" "asset-pool" "formats" "main" "helpers" "geometry-clipmap" "ui"))
                (:module "ui"

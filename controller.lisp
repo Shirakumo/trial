@@ -54,6 +54,7 @@
         (with-slots (fps-buffer text) controller
           (when (= (array-total-size fps-buffer) (fill-pointer fps-buffer))
             (setf (fill-pointer fps-buffer) 0))
+          ;; FIXME: Yeesh. Don't like these (handler *context*) accesses.
           (vector-push (if (= 0 (frame-time (handler *context*))) 1 (/ (frame-time (handler *context*)))) fps-buffer)
           
           (setf (vy (location text))
@@ -114,6 +115,6 @@
     (load    (load asset))
     (reload  (reload asset))))
 
-(defun maybe-reload-scene (&optional (window (or (window :main) (when *context* (handler *context*)))))
-  (when window
+(defun maybe-reload-scene (&optional (window (list-windows)))
+  (dolist (window (enlist window))
     (issue (scene window) 'reload-scene)))
