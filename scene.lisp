@@ -6,6 +6,8 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(defvar *scene*)
+
 (defclass scene (flare:scene event-loop entity)
   ())
 
@@ -37,6 +39,14 @@
 
 (defmethod deregister :after (thing (scene scene))
   (remove-handler thing scene))
+
+(defmethod paint :around ((scene scene) target)
+  (let ((*scene* scene))
+    (call-next-method)))
+
+(defmethod process :around ((scene scene))
+  (let ((*scene* scene))
+    (call-next-method)))
 
 ;; Since we have a tick event, we don't want to dupe that here.
 ;; animations and clock update are already handled by the method
