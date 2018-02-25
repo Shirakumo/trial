@@ -87,7 +87,7 @@
   (quit *context*))
 
 (define-handler (controller mapping T 100) (ev)
-  (map-event ev *loop*)
+  (map-event ev *scene*)
   (retain-event ev))
 
 (define-handler (controller reload-scene reload-scene 99) (ev)
