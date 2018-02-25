@@ -111,9 +111,9 @@
   (remove-class-shader type (find-class class)))
 
 (defmethod make-class-shader-program ((class shader-entity-class))
-  (make-asset 'shader-program
-              (loop for (type source) on (effective-shaders class) by #'cddr
-                    collect (make-asset 'shader (list source) :type type))))
+  (make-instance 'shader-program
+                 :shaders (loop for (type source) on (effective-shaders class) by #'cddr
+                                collect (make-instance 'shader :source source :type type))))
 
 (defmacro define-class-shader ((class type &optional (priority 0)) &body definitions)
   `(setf (class-shader ,type ',class)
