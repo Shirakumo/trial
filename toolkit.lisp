@@ -442,32 +442,29 @@
   :repeat :mirrored-repeat :clamp-to-edge :clamp-to-border)
 
 (define-enum-check texture-internal-format
-  :compressed-red :compressed-red-rgtc1
-  :compressed-rg :compressed-rg-rgtc2
-  :compressed-rgb :compressed-rgb-bptc-signed-float
-  :compressed-rgb-bptc-unsigned-float
-  :compressed-rgba :compressed-rgba-bptc-unorm
-  :compressed-signed-red-rgtc1 :compressed-signed-rg-rgtc2
-  :compressed-srgb :compressed-srgb-alpha :compressed-srgb-alpha-bptc-unorm
-  :depth-component :depth-stencil
-  :red
-  :r11f-g11f-b10f :r3-g3-b2 :rgb9-e5
+  :red :r8 :r8-snorm :r8i :r8ui
   :r16 :r16-snorm :r16f :r16i :r16ui
   :r32f :r32i :r32ui
-  :r8 :r8-snorm :r8i :r8ui
-  :rg :rg16 :rg16-snorm :rg16f :rg16i :rg16ui
+  :rg :rg8 :rg8-snorm :rg8i :rg8ui
+  :rg16 :rg16-snorm :rg16f :rg16i :rg16ui
   :rg32f :rg32i :rg32ui
-  :rg8 :rg8-snorm :rg8i :rg8ui
-  :rgb :rgb10 :rgb10-a2 :rgb10-a2ui :rgb12
+  :rgb :rgb8 :rgb8-snorm :rgb8i :rgb8ui
+  :r3-g3-b2 :rgb4 :rgb5 :rgb9-e5 :rgb10 :r11f-g11f-b10f :rgb12
   :rgb16-snorm :rgb16f :rgb16i :rgb16ui
   :rgb32f :rgb32i :rgb32ui
-  :rgb4 :rgb5 :rgb5-a1
-  :rgb8 :rgb8-snorm :rgb8i :rgb8ui
-  :rgba :rgba2 :rgba4 :rgba12
+  :rgba :rgba2 :rgba4 :rgb5-a1 :rgb10-a2 :rgb10-a2ui :rgba12
+  :rgba8 :rgba8-snorm :rgba8i :rgba8ui
   :rgba16 :rgba16f :rgba16i :rgba16ui
   :rgba32f :rgba32i :rgba32ui
-  :rgba8 :rgba8-snorm :rgba8i :rgba8ui
-  :srgb8 :srgb8-alpha8)
+  :srgb8 :srgb8-alpha8
+  :depth-component :depth-component-16 :depth-component-24
+  :depth-component-32 :depth-component-32f
+  :depth-stencil :depth24-stencil8 :depth32f-stencil8
+  :compressed-red :compressed-red-rgtc1 :compressed-signed-red-rgtc1
+  :compressed-rg :compressed-rg-rgtc2 :compressed-signed-rg-rgtc2
+  :compressed-rgb :compressed-rgb-bptc-signed-float :compressed-rgb-bptc-unsigned-float
+  :compressed-rgba :compressed-rgba-bptc-unorm
+  :compressed-srgb :compressed-srgb-alpha :compressed-srgb-alpha-bptc-unorm)
 
 (define-enum-check texture-pixel-format
   :red :rg :rgb :bgr :rgba :bgra
