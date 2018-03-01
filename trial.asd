@@ -112,6 +112,7 @@
                :cl-monitors
                :cl-soil
                :cl-fond
+               :cl-ppcre
                :pathname-utils
                :flare
                :for
