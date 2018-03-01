@@ -281,6 +281,7 @@
                (same :mag-filter)
                (same :min-filter)
                (same :wrapping))
+      ;; FIXME: width and height handling
       (let ((texspec (copy-list a)))
         (setf (getf texspec :samples)
               (max (getf a :samples)
@@ -294,3 +295,21 @@
                (getf b :internal-format)))
         (when (getf texpsec :internal-format)
           texspec)))))
+
+(defun join-texspecs (texspecs)
+  (let (spec (collected ()))
+    (tagbody
+     next
+       (setf spec (pop texspecs))
+       (unless spec (go end))
+     loop
+       (dolist (other texspecs)
+         (let ((merged (join-texspec spec other)))
+           (when merged
+             (setf texspecs (remove other texspecs :test #'eq))
+             (setf spec merged)
+             (go loop))))
+       (push spec collected)
+       (go next)
+     end)
+    collected))

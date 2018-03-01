@@ -85,8 +85,8 @@
          (textures (make-array 0 :initial-element NIL :adjustable T))
          (texspecs (mapcar #'texspec (mapcan #'flow:ports passes))))
     (clear-pipeline pipeline)
-    (dolist (texspec (remove-duplicates texspecs :test #'texspec-matching-p))
-      (allocate-textures passes textures (lambda (port) (texspec-matching-p (texspec port texspec)))))
+    (dolist (texspec (join-texspecs texspecs))
+      (allocate-textures passes textures (lambda (port) (join-texspec texspec (texspec port)))))
     (v:info :trial.pipeline "~a pass order: ~a" pipeline passes)
     (v:info :trial.pipeline "~a texture count: ~a" pipeline (length textures))
     (v:info :trial.pipeline "~a texture allocation: ~:{~%~a~:{~%    ~a: ~a~}~}" pipeline
