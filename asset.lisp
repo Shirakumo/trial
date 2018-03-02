@@ -15,6 +15,7 @@
   (check-type name symbol)
   (setf (name asset) name)
   (setf (pool asset) (etypecase pool
+                       (null (error "POOL required."))
                        (symbol (find-pool pool T))
                        (pool pool)))
   (setf (asset pool name) asset))
@@ -71,12 +72,11 @@
   (check-type type symbol)
   `(let ((,name (asset ',pool ',name NIL)))
      (cond ((and ,name (eql (type-of ,name) ',type))
-            (reinitialize-instance ,name :input ,input ,@options))
+            (reinitialize-instance ,name ,@options :input ,input))
            (,name
-            (change-class ,name ',type :input ,input ,@options))
+            (change-class ,name ',type ,@options :input ,input))
            (T
-            (setf (asset ',pool ',name)
-                  (make-instance ',type :input ,input ,@options))))))
+            (make-instance ',type ,@options :input ,input :name ',name :pool ',pool)))))
 
 (trivial-indent:define-indentation define-asset (4 6 4 &rest))
 
