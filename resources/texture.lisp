@@ -50,9 +50,9 @@
   (apply #'call-next-method texture args))
 
 (defmethod initialize-instance :before ((texture texture) &key width height depth target internal-format pixel-format pixel-type mag-filter min-filter wrapping)
-  (assert (< 0 width (gl:get* :max-texture-size)))
-  (assert (< 0 height (gl:get* :max-texture-size)))
-  (assert (< 0 depth (gl:get* :max-texture-size)))
+  ;; (assert (< 0 width (gl:get* :max-texture-size)))
+  ;; (assert (< 0 height (gl:get* :max-texture-size)))
+  ;; (assert (< 0 depth (gl:get* :max-texture-size)))
   (check-texture-target target)
   (check-texture-internal-format internal-format)
   (check-texture-pixel-format pixel-format)
