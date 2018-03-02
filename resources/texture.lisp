@@ -134,6 +134,7 @@
             (gl:tex-parameter target :texture-wrap-t (second wrapping)))
           (when (eql target :texture-cube-map)
             (gl:tex-parameter target :texture-wrap-r (third wrapping))))
+        (gl:bind-texture target 0)
         (setf (data-pointer texture) tex)))))
 
 (defmethod resize ((texture texture) width height)
@@ -143,10 +144,12 @@
     (setf (width texture) width)
     (setf (height texture) height)
     (when (allocated-p texture)
+      (gl:bind-texture (target texture) (gl-name texture))
       (allocate-texture-storage texture)
       (when (find (min-filter texture) '(:linear-mipmap-linear :linear-mipmap-nearest
                                          :nearest-mipmap-linear :nearest-mipmap-nearest))
-        (gl:generate-mipmap (target texture))))))
+        (gl:generate-mipmap (target texture)))
+      (gl:bind-texture (target texture) 0))))
 
 ;;;; Texture spec wrangling
 ;; The idea of this is that, in order to maximise sharing of texture resources

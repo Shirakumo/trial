@@ -8,9 +8,8 @@
 
 ;; LATIN-1
 (defparameter *default-charset*
-  #.(with-output-to-string (out)
-      (loop for i from #x0000 to #x00FF
-            do (write-char (code-char i) out))))
+  " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~
+¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ")
 
 (defclass font (gl-asset)
   ((charset :initarg :charset :accessor charset)
@@ -41,22 +40,22 @@
    (size :initarg :size :accessor size)
    (vbo) (ebo) (vao))
   (:default-initargs
-   :text ""
-   :size 24.0))
+   :text ""))
 
-(defmethod initialize-instance :after ((text text) &key)
+(defmethod initialize-instance :after ((text text) &key size)
   (let* ((vbo (make-instance 'vertex-buffer :buffer-type :array-buffer
                                             :data-usage :dynamic-draw
                                             :size 0))
          (ebo (make-instance 'vertex-buffer :buffer-type :element-array-buffer
                                             :data-usage :dynamic-draw
                                             :size 0))
-         (vao (make-instance 'vertex-array :buffers `((,vbo :size 2 :stride 16 :offset 0)
-                                                      (,vbo :size 2 :stride 16 :offset 8)
-                                                      ,ebo))))
+         (vao (make-instance 'vertex-array :bindings `((,vbo :size 2 :stride 16 :offset 0)
+                                                       (,vbo :size 2 :stride 16 :offset 8)
+                                                       ,ebo))))
     (setf (slot-value text 'vbo) vbo)
     (setf (slot-value text 'ebo) ebo)
-    (setf (slot-value text 'vao) vao)))
+    (setf (slot-value text 'vao) vao)
+    (unless size (setf (size text) (size (font text))))))
 
 (defmethod dependencies ((text text))
   (list (font text)))

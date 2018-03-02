@@ -8,30 +8,30 @@
 
 (defclass vertex-array (gl-resource)
   ((size :initarg :size :initform NIL :accessor size)
-   (buffers :initarg :buffers :accessor buffers))
+   (bindings :initarg :bindings :accessor bindings))
   (:default-initargs
-   :buffers (error "BUFFERS required.")))
+   :bindings (error "BINDINGS required.")))
 
 (defmethod destructor ((array vertex-array))
   (let ((vao (gl-name array)))
     (lambda () (gl:delete-vertex-arrays (list vao)))))
 
 (defmethod dependencies ((array vertex-array))
-  (mapcar #'unlist (buffers array)))
+  (mapcar #'unlist (bindings array)))
 
 (defmethod allocate ((array vertex-array))
   (let ((vao (gl:gen-vertex-array)))
     (with-cleanup-on-failure (gl:delete-vertex-arrays (list vao))
       (gl:bind-vertex-array vao)
       (unwind-protect
-           (loop for buffer in (buffers array)
+           (loop for binding in (bindings array)
                  for i from 0
                  do (destructuring-bind (buffer &key (index i)
                                                      (size 3)
                                                      (stride 0)
                                                      (offset 0)
                                                      (normalized NIL))
-                        (enlist buffer)
+                        (enlist binding)
                       (check-allocated buffer)
                       (gl:bind-buffer (buffer-type buffer) (gl-name buffer))
                       (ecase (buffer-type buffer)

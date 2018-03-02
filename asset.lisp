@@ -78,7 +78,7 @@
            (T
             (make-instance ',type ,@options :input ,input :name ',name :pool ',pool)))))
 
-(trivial-indent:define-indentation define-asset (4 6 4 &rest))
+(trivial-indent:define-indentation define-asset (4 6 4 &body))
 
 (defclass gl-asset (asset gl-resource) ())
 

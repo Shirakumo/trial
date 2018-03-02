@@ -214,61 +214,60 @@
   (setf (vertices mesh) (vformat-read-vertices buffer (vertex-type mesh)))
   mesh)
 
-;; FIXME
-;; (defmethod vformat-write (buffer (vbo vertex-buffer))
-;;   (fast-io:writeu8 (vertex-buffer-type->int (buffer-type vbo)) buffer)
-;;   (fast-io:writeu8 (vertex-buffer-usage->int (data-usage vbo)) buffer)
-;;   (vformat-write-vector buffer (coerced-inputs vbo) (element-type vbo)))
+(defmethod vformat-write (buffer (vbo vertex-buffer))
+  (fast-io:writeu8 (vertex-buffer-type->int (buffer-type vbo)) buffer)
+  (fast-io:writeu8 (vertex-buffer-usage->int (data-usage vbo)) buffer)
+  (vformat-write-vector buffer (input vbo) (element-type vbo)))
 
-;; (defmethod vformat-read (buffer (vbo vertex-buffer))
-;;   (let ((btype (int->vertex-buffer-type (fast-io:readu8 buffer)))
-;;         (usage (int->vertex-buffer-usage (fast-io:readu8 buffer))))
-;;     (multiple-value-bind (array size etype) (vformat-read-vector buffer)
-;;       (initialize-instance vbo :buffer-type btype
-;;                                :data-usage usage
-;;                                :element-type etype
-;;                                :size size
-;;                                :input array))))
+(defmethod vformat-read (buffer (vbo vertex-buffer))
+  (let ((btype (int->vertex-buffer-type (fast-io:readu8 buffer)))
+        (usage (int->vertex-buffer-usage (fast-io:readu8 buffer))))
+    (multiple-value-bind (array size etype) (vformat-read-vector buffer)
+      (initialize-instance vbo :buffer-type btype
+                               :data-usage usage
+                               :element-type etype
+                               :size size
+                               :buffer-data array))))
 
-;; (defmethod vformat-write (buffer (vao vertex-array))
-;;   (fast-io:write32-le (or (size vao) -1) buffer)
-;;   (let* ((inputs (coerced-inputs vao))
-;;          (count (length inputs))
-;;          (buffers (remove-duplicates (mapcar #'first inputs))))
-;;     (when (< 256 count)
-;;       (error "More than 2⁸ buffers are not supported."))
-;;     ;; Write input list
-;;     (fast-io:writeu8 count buffer)
-;;     (loop for i from 0
-;;           for input in inputs
-;;           do (destructuring-bind (vbo &key (index i) (size 3) (stride 0) (offset 0) (normalized NIL)) input
-;;                (fast-io:writeu8 (position vbo buffers) buffer)
-;;                (fast-io:writeu8 index buffer)
-;;                (fast-io:writeu8 size buffer)
-;;                (fast-io:writeu32-le stride buffer)
-;;                (fast-io:writeu32-le offset buffer)
-;;                (fast-io:writeu8 (if normalized 1 0) buffer)))
-;;     ;; Write buffer list
-;;     (fast-io:writeu8 (length buffers) buffer)
-;;     (dolist (vbo buffers)
-;;       (vformat-write buffer vbo))))
+(defmethod vformat-write (buffer (vao vertex-array))
+  (fast-io:write32-le (or (size vao) -1) buffer)
+  (let* ((bindings (bindings vao))
+         (count (length bindings))
+         (buffers (remove-duplicates (mapcar #'first bindings))))
+    (when (< 256 count)
+      (error "More than 2⁸ buffers are not supported."))
+    ;; Write input list
+    (fast-io:writeu8 count buffer)
+    (loop for i from 0
+          for binding in bindings
+          do (destructuring-bind (vbo &key (index i) (size 3) (stride 0) (offset 0) (normalized NIL)) bindings
+               (fast-io:writeu8 (position vbo buffers) buffer)
+               (fast-io:writeu8 index buffer)
+               (fast-io:writeu8 size buffer)
+               (fast-io:writeu32-le stride buffer)
+               (fast-io:writeu32-le offset buffer)
+               (fast-io:writeu8 (if normalized 1 0) buffer)))
+    ;; Write buffer list
+    (fast-io:writeu8 (length buffers) buffer)
+    (dolist (vbo buffers)
+      (vformat-write buffer vbo))))
 
-;; (defmethod vformat-read (buffer (vao vertex-array))
-;;   (let* ((size (fast-io:read32-le buffer))
-;;          (inputs (loop repeat (fast-io:readu8 buffer)
-;;                        collect (list (fast-io:readu8 buffer)
-;;                                      :index (fast-io:readu8 buffer)
-;;                                      :size (fast-io:readu8 buffer)
-;;                                      :stride (fast-io:readu32-le buffer)
-;;                                      :offset (fast-io:readu32-le buffer)
-;;                                      :normalized (= (fast-io:readu8 buffer) 1))))
-;;          (buffers (loop repeat (fast-io:readu8 buffer)
-;;                         collect (vformat-read buffer T))))
-;;     ;; Resolve buffer indexing
-;;     (dolist (input inputs)
-;;       (setf (first input) (nth (first input) buffers)))
-;;     (when (< size 0) (setf size NIL))
-;;     (initialize-instance vao :size size :inputs inputs)))
+(defmethod vformat-read (buffer (vao vertex-array))
+  (let* ((size (fast-io:read32-le buffer))
+         (bindings (loop repeat (fast-io:readu8 buffer)
+                         collect (list (fast-io:readu8 buffer)
+                                       :index (fast-io:readu8 buffer)
+                                       :size (fast-io:readu8 buffer)
+                                       :stride (fast-io:readu32-le buffer)
+                                       :offset (fast-io:readu32-le buffer)
+                                       :normalized (= (fast-io:readu8 buffer) 1))))
+         (buffers (loop repeat (fast-io:readu8 buffer)
+                        collect (vformat-read buffer T))))
+    ;; Resolve buffer indexing
+    (dolist (binding bindings)
+      (setf (first binding) (nth (first binding) buffers)))
+    (when (< size 0) (setf size NIL))
+    (initialize-instance vao :size size :bindings bindings)))
 
 (defmethod vformat-write (buffer (mesh sphere-mesh))
   (vformat-write-double buffer (size mesh)))
@@ -303,13 +302,13 @@
 (defmethod vformat-read (buffer (type (eql T)))
   (vformat-read buffer (allocate-instance (find-class (vformat-read-symbol buffer)))))
 
-(defmethod write-geometry ((geometry geometry) file (format (eql :vf)) &key (if-exists :error))
+(defmethod write-geometry (thing file (format (eql :vf)) &key (if-exists :error))
   (with-open-file (stream file :direction :output
                                :element-type '(unsigned-byte 8)
                                :if-exists if-exists)
     (when stream
       (fast-io:with-fast-output (buffer stream)
-        (vformat-write buffer geometry))
+        (vformat-write buffer thing))
       file)))
 
 (defmethod read-geometry (file (format (eql :vf)) &key (if-does-not-exist :error))
