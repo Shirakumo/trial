@@ -56,11 +56,14 @@
   (let ((pool (find-pool pool errorp)))
     (when pool (asset pool name errorp))))
 
+(defmethod (setf asset) (asset (pool symbol) name)
+  (setf (asset (find-pool pool T) name) asset))
+
 (defmethod (setf asset) ((asset asset) (pool pool) name)
   (setf (gethash name (assets pool)) asset))
 
-(defmethod (setf asset) ((asset asset) (pool symbol) name)
-  (setf (asset (find-pool pool T) name) asset))
+(defmethod (setf asset) ((null null) (pool pool) name)
+  (deallocate (remhash name (assets pool))))
 
 (defmethod list-assets ((pool pool))
   (alexandria:hash-table-values (assets pool)))
@@ -77,6 +80,5 @@
 (defmethod pool-path ((name symbol) pathname)
   (pool-path (find-pool name T) pathname))
 
-;; (eval-when (:load-toplevel :execute)
-;;   (define-pool trial
-;;     :base :trial))
+(eval '(define-pool trial
+        :base :trial))
