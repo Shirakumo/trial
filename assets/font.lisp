@@ -34,7 +34,7 @@
       (cl-fond:compute-extent (gl-name font) text)
       '(:l 0 :r 0 :t 0 :b 0 :gap 0)))
 
-(define-shader-entity text (asset located-entity)
+(define-shader-entity text (resource located-entity)
   ((font :initarg :font :accessor font)
    (text :initarg :text :accessor text)
    (color :initarg :color :initform (vec 0 0 0 1) :accessor color)
