@@ -58,7 +58,10 @@
     (setf (slot-value text 'ebo) ebo)
     (setf (slot-value text 'vao) vao)))
 
-(defmethod load ((text text))
+(defmethod dependencies ((text text))
+  (list (font text)))
+
+(defmethod allocate ((text text))
   (setf (text text) (text text)))
 
 (defmethod paint ((text text) (pass shader-pass))

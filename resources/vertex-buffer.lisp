@@ -18,10 +18,14 @@
    :element-type :float
    :data-usage :static-draw))
 
-(defmethod initialize-instance :before ((asset vertex-buffer) &key buffer-type element-type data-usage)
+(defmethod initialize-instance :before ((buffer vertex-buffer) &key buffer-type element-type data-usage)
   (check-vertex-buffer-type buffer-type)
   (check-vertex-buffer-element-type element-type)
   (check-vertex-buffer-data-usage data-usage))
+
+(defmethod print-object ((buffer vertex-buffer) stream)
+  (print-unreadable-object (buffer stream :type T :identity T)
+    (format stream "~a ~a ~a" (data-usage buffer) (buffer-type buffer) (element-type buffer))))
 
 (defmethod destructor ((buffer vertex-buffer))
   (let ((vbo (gl-name buffer)))

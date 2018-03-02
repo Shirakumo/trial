@@ -38,8 +38,8 @@
   (:default-initargs
    :name :controller))
 
-(defmethod compute-assets ((controller controller) cache)
-  (compute-assets (text controller) cache))
+(defmethod compute-resources ((controller controller) cache)
+  (compute-resources (text controller) cache))
 
 (defmethod register-object-for-pass :after (pass (controller controller))
   (register-object-for-pass pass (text controller)))

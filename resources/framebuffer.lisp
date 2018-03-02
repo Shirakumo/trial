@@ -11,9 +11,16 @@
   (:default-initargs
    :attachments (error "ATTACHMENTS required.")))
 
+(defmethod print-object ((framebuffer framebuffer) stream)
+  (print-unreadable-object (framebuffer stream :type T :identity T)
+    (format stream "~:{~a ~}" (attachments framebuffer))))
+
 (defmethod destructor ((framebuffer framebuffer))
   (let ((fbo (gl-name framebuffer)))
     (lambda () (gl:delete-framebuffers (list fbo)))))
+
+(defmethod dependencies ((framebuffer framebuffer))
+  (mapcar #'second (attachments framebuffer)))
 
 (defmethod allocate ((framebuffer framebuffer))
   (let ((fbo (gl:gen-framebuffer)))

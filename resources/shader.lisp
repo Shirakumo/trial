@@ -13,8 +13,12 @@
    :type (error "TYPE required.")
    :source (error "SOURCE required.")))
 
-(defmethod initialize-instance :before ((asset shader) &key type)
+(defmethod initialize-instance :before ((shader shader) &key type)
   (check-shader-type type))
+
+(defmethod print-object ((shader shader) stream)
+  (print-unreadable-object (shader stream :type T :identity T)
+    (format stream "~a" (shader-type shader))))
 
 (defmethod destructor ((shader shader))
   (let ((shdr (gl-name shader)))

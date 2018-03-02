@@ -25,6 +25,9 @@
   (let ((prog (gl-name program)))
     (lambda () (gl:delete-program prog))))
 
+(defmethod dependencies ((program shader-program))
+  (copy-list (shaders program)))
+
 (defmethod allocate ((program shader-program))
   (let ((shaders (shaders program)))
     (check-shader-compatibility shaders)

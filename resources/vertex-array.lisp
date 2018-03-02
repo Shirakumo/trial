@@ -16,6 +16,9 @@
   (let ((vao (gl-name array)))
     (lambda () (gl:delete-vertex-arrays (list vao)))))
 
+(defmethod dependencies ((array vertex-array))
+  (mapcar #'unlist (buffers array)))
+
 (defmethod allocate ((array vertex-array))
   (let ((vao (gl:gen-vertex-array)))
     (with-cleanup-on-failure (gl:delete-vertex-arrays (list vao))
