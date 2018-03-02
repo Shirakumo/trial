@@ -239,12 +239,15 @@
                               (format NIL "compressed-~a~@[-rgtc~a~]~@[-~a~]~@[-~a~]"
                                       rgba (when (find :rgtc features) (length rgba))
                                       (find :bptc features) (find :unorm features)))
-                             (stencil
+                             ((and depth stencil)
                               (format NIL "depth~@[~a~]-stencil~@[~a~]"
                                       (format-type depth) (format-type stencil)))
                              (depth
-                              (format NIL "depth-component~@[-~a~]"
+                              (format NIL "depth-component~@[~a~]"
                                       (format-type depth)))
+                             (stencil
+                              (format NIL "stencil-index~@[~a~]"
+                                      (format-type stencil)))
                              (T
                               ;; FIXME: Doesn't handle different types for each component
                               (format NIL "~a~a~@[-e~a~]" rgba (format-type r) shared))))
@@ -278,6 +281,10 @@
                 (list :depth (join-texture-format-typespec* :depth)
                       :stencil (join-texture-format-typespec* :stencil)
                       :features (getf a :features))))
+              ((and (getf a :stencil) (getf b :stencil))
+               (restructure-texture-format
+                (list :stencil (join-texture-format-typespec* :stencil)
+                      :features (getf a :features))))
               ((not (or (getf a :depth) (getf b :depth)))
                (restructure-texture-format
                 (list :r (join-texture-format-typespec* :r)
@@ -305,11 +312,11 @@
         (setf (getf texspec :anisotropy)
               (max* (getf a :anisotropy)
                     (getf b :anisotropy)))
-        (setf (getf texpsec :internal-format)
+        (setf (getf texspec :internal-format)
               (join-texture-format
                (getf a :internal-format)
                (getf b :internal-format)))
-        (when (getf texpsec :internal-format)
+        (when (getf texspec :internal-format)
           texspec)))))
 
 (defun join-texspecs (texspecs)
