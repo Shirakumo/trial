@@ -161,30 +161,6 @@
 ;; restructure-texture-format, the rest should be generic enough to handle every-
 ;; thing, at least by my estimation.
 
-(defun normalize-texspec (texspec width height)
-  (assert (= 0 (getf texspec :level 0)))
-  (assert (= :dynamic (getf texpsec :storage :dynamic)))
-  (let ((initargs (c2mop:class-default-initargs (find-class 'texture))))
-    (loop for (key) on initargs by #'cddr
-          for val = (getf texspec key)
-          collect key
-          collect (cond ((eql key :width)
-                         (if val
-                             (eval `(let ((width ,width)
-                                          (height ,height))
-                                      ,val))
-                             width))
-                        ((eql key :height)
-                         (if val
-                             (eval `(let ((width ,width)
-                                          (height ,height))
-                                      ,val))
-                             height))
-                        (val
-                         val)
-                        (T
-                         (getf normalized key))))))
-
 (defun destructure-texture-format (format)
   (cl-ppcre:register-groups-bind (compression signed super r r-size r-type g g-size g-type b b-size b-type rg rg-size rg-type rgb rgb-size rgb-type rgba rgba-size rgba-type a a-size a-type e e-size d d-size d-type s s-size s-type rgtc bptc floatage snorm unorm) ("^(compressed-)?(signed-)?(s)?((?:red|r)(\\d+)?(ui|i|f)?)?(-g(\\d+)?(ui|i|f)?)?(-b(\\d+)?(ui|i|f)?)?(rg(\\d+)?(ui|i|f)?)?(rgb(\\d+)?(ui|i|f)?)?(rgba(\\d+)?(ui|i|f)?)?(-(?:a|alpha)(\\d+)?(ui|i|f)?)?(-e(\\d+)?)?(depth(?:-component-?)?(\\d+)?(f)?)?(-stencil(\\d+)?(ui|i|f)?)?(-rgtc\\d)?(-bptc)?(-signed-float|-unsigned-float)?(-snorm)?(-unorm)?$" (string-downcase format))
     (macrolet ((parse-part (part)

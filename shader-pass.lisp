@@ -20,7 +20,10 @@
   T)
 
 (defclass texture-port (flow:port)
-  ((texture :initform NIL :accessor texture)))
+  ((texture :initform NIL :accessor texture)
+   (texspec :initarg :texspec :accessor texspec))
+  (:default-initargs
+   :texspec ()))
 
 (flow:define-port-value-slot texture-port texture texture)
 
@@ -86,9 +89,10 @@
   (when (framebuffer pass)
     (finalize (framebuffer pass))))
 
-(define-handler (shader-pass register-subject-for-enter enter) (ev entity)
-  (let ((pass (register-object-for-pass shader-pass entity)))
-    (when pass (load pass))))
+(define-handler (shader-pass register-entity-for-enter enter) (ev entity)
+  (unless (typep entity 'shader-pass)
+    (let ((pass (register-object-for-pass shader-pass entity)))
+      (when pass (load pass)))))
 
 (defmacro define-shader-pass (&environment env name direct-superclasses direct-slots &rest options)
   (unless (find-if (lambda (c) (c2mop:subclassp (find-class c T env) 'shader-pass)) direct-superclasses)

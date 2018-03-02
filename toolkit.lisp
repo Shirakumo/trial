@@ -67,6 +67,14 @@
                          until (lambda-keyword-p arg)
                          collect (if (listp arg) (second arg) T))))))))
 
+(defun class-default-initargs (class-ish)
+  (let ((class (etypecase class-ish
+                 (symbol (find-class class-ish))
+                 (standard-class class-ish))))
+    (unless (c2mop:class-finalized-p class)
+      (c2mop:finalize-inheritance class))
+    (c2mop:class-default-initargs class)))
+
 (defun executable-directory ()
   (pathname-utils:to-directory
    (or (first (uiop:command-line-arguments))
