@@ -419,7 +419,7 @@
 (defmacro define-enum-check (name &body cases)
   (let ((list (intern (format NIL "*~a-~a*" name '#:list)))
         (func (intern (Format NIL "~a-~a" '#:check name))))
-    `(progn (defvar ,list '(,@cases))
+    `(progn (defparameter ,list '(,@cases))
             (defun ,func (enum)
               (unless (find enum ,list)
                 (error "~a is not a valid ~a. Needs to be one of the following:~%~a"
@@ -457,8 +457,8 @@
   :rgba16 :rgba16f :rgba16i :rgba16ui
   :rgba32f :rgba32i :rgba32ui
   :srgb8 :srgb8-alpha8
-  :depth-component :depth-component-16 :depth-component-24
-  :depth-component-32 :depth-component-32f
+  :depth-component :depth-component16 :depth-component24 :depth-component32 :depth-component32f
+  :stencil-index :stencil-index1 :stencil-index4 :stencil-index8 :stencil-index16
   :depth-stencil :depth24-stencil8 :depth32f-stencil8
   :compressed-red :compressed-red-rgtc1 :compressed-signed-red-rgtc1
   :compressed-rg :compressed-rg-rgtc2 :compressed-signed-rg-rgtc2
@@ -482,7 +482,8 @@
   :unsigned-short-4-4-4-4 :unsigned-short-4-4-4-4-rev
   :unsigned-short-5-5-5-1 :unsigned-short-1-5-5-5-rev
   :unsigned-int-8-8-8-8 :unsigned-int-8-8-8-8-rev
-  :unsigned-int-10-10-10-2 :unsigned-int-2-10-10-10-rev)
+  :unsigned-int-10-10-10-2 :unsigned-int-2-10-10-10-rev
+  :unsigned-int-24-8 :float-32-unsigned-int-24-8-rev)
 
 (define-enum-check shader-type
   :compute-shader :vertex-shader
