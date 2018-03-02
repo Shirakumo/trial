@@ -24,7 +24,7 @@
 
 (defmethod load ((font font))
   (setf (gl-name font)
-        (cl-fond:make-font (input font)
+        (cl-fond:make-font (coerce-asset-input font T)
                            (charset font)
                            :size (size font)
                            :oversample 2)))
