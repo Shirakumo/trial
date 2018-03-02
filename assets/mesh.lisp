@@ -36,9 +36,9 @@
                  (setf buffer-offset (fill-vertex-attribute vertex attribute buffer buffer-offset))))
       ;; Construct the buffers and specs
       (let* ((vbo (make-instance 'vertex-buffer :buffer-data buffer :buffer-type :array-buffer
-                                                :data-usage data-usage :element-type :float))
+                                                :data-usage (data-usage mesh) :element-type :float))
              (ebo (make-instance 'vertex-buffer :buffer-data (faces mesh) :buffer-type :element-array-buffer
-                                                :data-usage data-usage :element-type :uint))
+                                                :data-usage (data-usage mesh) :element-type :uint))
              (specs (loop with stride = (reduce #'+ sizes)
                           for offset = 0 then (+ offset size)
                           for size in sizes
