@@ -6,14 +6,11 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-;; ASCII
+;; LATIN-1
 (defparameter *default-charset*
   #.(with-output-to-string (out)
-      (loop for i from 32 to 126
-            do (write-char (code-char i) out))
-      (write-string "öäüçèàéê§°" out)
-      (write-char #\Return out)
-      (write-char #\Linefeed out)))
+      (loop for i from #x0000 to #x00FF
+            do (write-char (code-char i) out))))
 
 (defclass font (gl-asset)
   ((charset :initarg :charset :accessor charset)
