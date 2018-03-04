@@ -58,20 +58,20 @@
           (vector-push (if (= 0 (frame-time (handler *context*))) 1 (/ (frame-time (handler *context*)))) fps-buffer)
           
           (setf (vy (location text))
-                (- (getf (cl-fond:compute-extent (gl-name (font text)) "a") :t)))
+                (- (getf (text-extent text "a") :t)))
           (setf (vx (location text)) 5)
           (setf (text text) (format NIL "TIME  [s]: ~8,2f~%~
                                          FPS  [Hz]: ~8,2f~%~
                                          RAM  [KB]: ~8d (~2d%)~%~
                                          VRAM [KB]: ~8d (~2d%)~%~
-                                         ASSETS   : ~8d"
+                                         RESOURCES: ~8d"
                                     (clock (scene (display controller)))
                                     (/ (loop for i from 0 below (array-total-size fps-buffer)
                                              sum (aref fps-buffer i))
                                        (array-total-size fps-buffer))
                                     (- ctotal cfree) (floor (/ (- ctotal cfree) ctotal 0.01))
                                     (- gtotal gfree) (floor (/ (- gtotal gfree) gtotal 0.01))
-                                    (hash-table-count (assets *context*)))))))))
+                                    (hash-table-count (resources *context*)))))))))
 
 (defmethod paint ((controller controller) target)
   (when (show-overlay controller)
