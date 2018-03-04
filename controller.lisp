@@ -58,7 +58,7 @@
           (vector-push (if (= 0 (frame-time (handler *context*))) 1 (/ (frame-time (handler *context*)))) fps-buffer)
           
           (setf (vy (location text))
-                (- (getf (text-extent text "a") :t)))
+                (- -5 (getf (text-extent text "a") :t)))
           (setf (vx (location text)) 5)
           (setf (text text) (format NIL "TIME  [s]: ~8,2f~%~
                                          FPS  [Hz]: ~8,2f~%~
