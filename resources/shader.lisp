@@ -22,7 +22,7 @@
 
 (defmethod destructor ((shader shader))
   (let ((shdr (gl-name shader)))
-    (lambda () (gl:delete-shader shdr))))
+    (lambda () (when shdr (gl:delete-shader shdr)))))
 
 (defmethod allocate ((shader shader))
   (let ((source (shader-source shader))

@@ -29,7 +29,7 @@
 
 (defmethod destructor ((buffer vertex-buffer))
   (let ((vbo (gl-name buffer)))
-    (lambda () (gl:delete-buffers (list vbo)))))
+    (lambda () (when vbo (gl:delete-buffers (list vbo))))))
 
 (defmethod allocate ((buffer vertex-buffer))
   (with-slots (element-type buffer-type buffer-data data-usage) buffer

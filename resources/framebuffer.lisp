@@ -17,7 +17,7 @@
 
 (defmethod destructor ((framebuffer framebuffer))
   (let ((fbo (gl-name framebuffer)))
-    (lambda () (gl:delete-framebuffers (list fbo)))))
+    (lambda () (when fbo (gl:delete-framebuffers (list fbo))))))
 
 (defmethod dependencies ((framebuffer framebuffer))
   (mapcar #'second (attachments framebuffer)))

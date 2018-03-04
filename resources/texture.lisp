@@ -76,7 +76,7 @@
 
 (defmethod destructor ((texture texture))
   (let ((tex (gl-name texture)))
-    (lambda () (gl:delete-textures (list tex)))))
+    (lambda () (when tex (gl:delete-textures (list tex))))))
 
 (defun allocate-texture-storage (texture)
   (with-slots (target storage level internal-format width height depth samples pixel-format pixel-type pixel-data) texture

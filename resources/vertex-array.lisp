@@ -14,7 +14,7 @@
 
 (defmethod destructor ((array vertex-array))
   (let ((vao (gl-name array)))
-    (lambda () (gl:delete-vertex-arrays (list vao)))))
+    (lambda () (when vao (gl:delete-vertex-arrays (list vao))))))
 
 (defmethod dependencies ((array vertex-array))
   (mapcar #'unlist (bindings array)))

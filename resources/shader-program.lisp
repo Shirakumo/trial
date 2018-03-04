@@ -23,7 +23,7 @@
 
 (defmethod destructor ((program shader-program))
   (let ((prog (gl-name program)))
-    (lambda () (gl:delete-program prog))))
+    (lambda () (when prog (gl:delete-program prog)))))
 
 (defmethod dependencies ((program shader-program))
   (copy-list (shaders program)))
