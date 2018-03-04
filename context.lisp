@@ -39,7 +39,7 @@
    (waiting :initform 0 :accessor context-waiting)
    (lock :initform (bt:make-lock "Context lock") :reader context-lock)
    (wait-lock :initform (bt:make-lock "Context wait lock") :reader context-wait-lock)
-   (assets :initform (make-hash-table :test 'eq) :accessor assets)
+   (resources :initform (make-hash-table :test 'eq) :accessor resources)
    (handler :initarg :handler :accessor handler)
    (shared-with :initarg :share-with :reader shared-with))
   (:default-initargs
@@ -97,8 +97,9 @@
     (with-context (context :force T)
       (v:info :trial.context "Destroying context.")
       (hide context)
-      (loop for asset being the hash-values of (assets context)
-            do (deallocate asset))
+      (loop for resource being the hash-values of (resources context)
+            do (when (allocated-p resource) (v:info :test "~a" resource) (deallocate resource)))
+      (clrhash (resources context))
       (call-next-method))))
 
 (defmethod create-context :around ((context context))
