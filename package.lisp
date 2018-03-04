@@ -11,12 +11,86 @@
   (:shadow #:scene #:entity #:load #:update)
   (:import-from #:static-vectors #:static-vector-pointer)
   (:import-from #:flow #:port)
+  ;; assets/font.lisp
+  (:export
+   #:*default-charset*
+   #:font
+   #:charset
+   #:index
+   #:size
+   #:oversample
+   #:fit-size
+   #:text-extent)
+  ;; assets/image.lisp
+  (:export
+   #:image
+   #:resize)
+  ;; assets/mesh.lisp
+  (:export
+   #:mesh
+   #:geometry-name
+   #:attributes
+   #:data-usage)
+  ;; formats/collada.lisp
+  (:export)
+  ;; formats/vertex-format.lisp
+  (:export)
+  ;; resources/framebuffer.lisp
+  (:export
+   #:framebuffer
+   #:attachments
+   #:resize)
+  ;; resources/shader-program.lisp
+  (:export
+   #:shader-program
+   #:uniform-map
+   #:shaders
+   #:uniform)
+  ;; resources/shader.lisp
+  (:export
+   #:shader
+   #:shader-type
+   #:shader-source)
+  ;; resources/texture.lisp
+  (:export
+   #:texture
+   #:width
+   #:height
+   #:depth
+   #:target
+   #:level
+   #:samples
+   #:internal-format
+   #:pixel-format
+   #:pixel-type
+   #:pixel-data
+   #:mag-filter
+   #:min-filter
+   #:anisotropy
+   #:wrapping
+   #:storage
+   #:allocate-texture-storage
+   #:resize)
+  ;; resources/vertex-array.lisp
+  (:export
+   #:vertex-array
+   #:size
+   #:bindings)
+  ;; resources/vertex-buffer.lisp
+  (:export
+   #:vertex-buffer
+   #:buffer-type
+   #:buffer-data
+   #:element-type
+   #:data-usage
+   #:size)
   ;; array-container.lisp
   (:export
-   #:array-container)
+   #:array-container
+   #:objects)
   ;; asset-pool.lisp
   (:export
-   #:pool
+   #:find-pool
    #:remove-pool
    #:list-pools
    #:pool
@@ -27,33 +101,20 @@
    #:asset
    #:list-assets
    #:pool-path
-   #:load-request
-   #:asset
-   #:action
-   #:define-asset
    #:trial)
   ;; asset.lisp
   (:export
-   #:load
-   #:offload
    #:asset
-   #:inputs
-   #:resource
-   #:finalize-resource
-   #:install-finalizer
-   #:coerce-input
-   #:coerced-inputs
+   #:pool
+   #:name
+   #:input
+   #:load
    #:reload
-   #:make-asset
-   #:with-assets
-   #:clear-asset-cache
-   #:with-assets*)
+   #:coerce-asset-input
+   #:define-asset
+   #:gl-asset)
   ;; attributes.lisp
   (:export
-   #:*gl-attributes*
-   #:*default-enabled-gl-attributes*
-   #:reset-attributes
-   #:attribute-table
    #:enable
    #:disable
    #:push-attribs
@@ -67,8 +128,9 @@
    #:project-view
    #:setup-perspective
    #:2d-camera
-   #:sidescroll-camera
+   #:slidescroll-camera
    #:zoom
+   #:target
    #:3d-camera
    #:fov
    #:target-camera
@@ -95,18 +157,19 @@
    #:context-waiting
    #:context-lock
    #:context-wait-lock
-   #:assets
+   #:resources
    #:handler
-   #:shared-with
+   #:shared-width
    #:create-context
    #:destroy-context
    #:valid-p
    #:make-current
+   #:current-p
    #:done-current
    #:hide
    #:show
-   #:quit
    #:resize
+   #:quit
    #:swap-buffers
    #:show-cursor
    #:hide-cursor
@@ -117,24 +180,25 @@
    #:height
    #:profile
    #:version
-   #:acquire-context
-   #:release-context
    #:resize
    #:gain-focus
    #:lose-focus
-   #:context-info
-   #:context-note-debug-info)
+   #:context-info)
   ;; controller.lisp
   (:export
    #:system-action
    #:save-game
    #:load-game
-   #:quit-game
-   #:reload-assets
    #:reload-scene
+   #:quit-game
    #:toggle-overlay
+   #:noto-sans
+   #:noto-mono
    #:controller
    #:display
+   #:text
+   #:show-overlay
+   #:load-request
    #:maybe-reload-scene)
   ;; deploy.lisp
   (:export)
@@ -143,7 +207,6 @@
    #:display
    #:context
    #:clear-color
-   #:handle
    #:setup-rendering
    #:render)
   ;; effects.lisp
@@ -165,18 +228,23 @@
    #:radial-blur-pass
    #:fxaa-pass
    #:blend-pass
+   #:a-pass
+   #:b-pass
+   #:color
    #:high-pass-filter
    #:low-pass-filter
-   #:chromatic-aberration-effect
+   #:chromatic-aberration-filter
    #:black-render-pass
-   #:light-scatter-pass)
+   #:light-scatter-pass
+   #:previous-pass
+   #:black-render-pass
+   #:color)
   ;; entity.lisp
   (:export
    #:matches
    #:entity)
   ;; event-loop.lisp
   (:export
-   #:*loop*
    #:add-handler
    #:remove-handler
    #:handle
@@ -184,14 +252,11 @@
    #:handlers
    #:priority
    #:event-loop
-   #:queue
-   #:queue-index
    #:issue
    #:process
    #:discard-events
    #:handler
    #:event-type
-   #:container
    #:delivery-function
    #:priority
    #:event
@@ -206,41 +271,29 @@
   ;; flare.lisp
   (:export
    #:paint
-   #:paint-with)
+   #:paint-width
+   #:finalize)
   ;; fullscreenable.lisp
   (:export
    #:fullscreenable
    #:original-mode
    #:resolution
    #:fullscreen)
-  ;; gamepad-db.lisp
-  (:export
-   #:xbox-360
-   #:logitech-f310
-   #:dualshock-3
-   #:buffalo-bsgp801
-   #:steam-controller)
-  ;; gamepad-info.lisp
-  (:export
-   #:gamepad-info
-   #:gamepad-info-id
-   #:gamepad-info-name
-   #:gamepad-info-axis-table
-   #:gamepad-info-button-table
-   #:gamepad-info
-   #:remove-gamepad-info
-   #:gamepad-info-options
-   #:define-gamepad)
   ;; gamepad.lisp
-  (:export
-   #:add-gamepad-handler
-   #:remove-gamepad-handler)
+  (:export)
+  ;; geometry-clipmap.lisp
+  (:export)
   ;; geometry-shapes.lisp
   (:export
-   #:geometry
-   #:fullscreen-square
    #:make-rectangle
-   #:make-cube)
+   #:make-cube
+   #:make-quad-grid
+   #:make-line-grid
+   #:make-sphere
+   #:make-disc
+   #:make-cylinder
+   #:make-cone
+   #:make-tube)
   ;; geometry.lisp
   (:export
    #:geometry
@@ -254,13 +307,14 @@
    #:vertex-type
    #:faces
    #:vertices
-   #:padd-vertex
+   #:add-vertex
    #:triangulate
    #:check-mesh-valid
    #:pack
    #:with-vertex-filling
    #:vertex
    #:location
+   #:fill-vector-data
    #:vertex-attribute-size
    #:fill-vertex-attribute
    #:vertex-attributes
@@ -282,31 +336,28 @@
    #:rotated-entity
    #:rotation
    #:axis-rotated-entity
+   #:axis
+   #:angle
    #:pivoted-entity
    #:pivot
    #:clocked-subject
    #:vertex-entity
-   #:vertex-array
-   #:vertex-form
    #:colored-entity
-   #:color
    #:vertex-colored-entity
-   #:textured-subject
+   #:textured-entity
    #:texture)
   ;; input.lisp
   (:export
    #:input-event
    #:keyboard-event
+   #:key-event
    #:key
-   #:text
    #:modifiers
    #:key-press
    #:key-release
    #:text-entered
    #:mouse-event
-   #:pos
    #:mouse-button-event
-   #:button
    #:mouse-press
    #:mouse-release
    #:mouse-scroll
@@ -320,6 +371,7 @@
    #:gamepad-press
    #:button
    #:gamepad-release
+   #:button
    #:gamepad-move
    #:axis
    #:old-pos
@@ -333,26 +385,24 @@
    #:layer
    #:active
    #:layer-set
-   #:unit
-   #:enter
-   #:leave
-   #:layer-active-p
+   #:objects
+   #:index-map
    #:layered-unit
    #:layer)
   ;; loader.lisp
   (:export
-   #:compute-assets
+   #:compute-resources
    #:bake
    #:baked-p
    #:transition
+   #:dependencies
    #:bakable)
   ;; main.lisp
   (:export
    #:main
    #:scene
-   #:pipeline
+   #:controller
    #:setup-scene
-   #:setup-pipeline
    #:launch)
   ;; mapping.lisp
   (:export
@@ -364,24 +414,43 @@
    #:action
    #:remove-action-mappings
    #:define-action)
+  ;; phong.lisp
+  (:export)
   ;; pipeline.lisp
   (:export
    #:pipeline
    #:nodes
    #:passes
    #:textures
-   #:register
-   #:deregister
-   #:clear
+   #:clear-pipeline
    #:connect
    #:check-consistent
+   #:resize
    #:pack-pipeline)
+  ;; pipelined-scene.lisp
+  (:export
+   #:pipelined-scene)
+  ;; rails.lisp
+  (:export
+   #:rail
+   #:target
+   #:rail-points
+   #:duration
+   #:rail-location
+   #:linear-rail
+   #:rail-times)
+  ;; redefinition-notifying-class.lisp
+  (:export
+   #:redefinition-notifying-class
+   #:class-redefinition-listeners
+   #:add-class-redefinition-listener
+   #:remove-class-redefinition-listener)
   ;; render-texture.lisp
   (:export
    #:render-texture
    #:width
    #:height
-   #:pack
+   #:clear-color
    #:texture)
   ;; renderable.lisp
   (:export
@@ -392,8 +461,18 @@
    #:start
    #:stop
    #:render
-   #:update
-   #:reset-render-loop)
+   #:update)
+  ;; resource.lisp
+  (:export
+   #:resource
+   #:allocate
+   #:deallocate
+   #:allocated-p
+   #:check-allocated
+   #:foreign-resource
+   #:data-pointer
+   #:destructor
+   #:gl-resource)
   ;; retention.lisp
   (:export
    #:retained
@@ -417,7 +496,11 @@
    #:entity
    #:leave
    #:register
-   #:deregister)
+   #:deregister
+   #:paint
+   #:process)
+  ;; sdl2-gamepad-map.lisp
+  (:export)
   ;; selection-buffer.lisp
   (:export
    #:ensure-selection-color
@@ -435,43 +518,44 @@
    #:shader-entity-class
    #:effective-shaders
    #:direct-shaders
-   #:inhibit-shaders
+   #:inhibited-shaders
    #:compute-effective-shaders
    #:class-shader
    #:remove-class-shader
    #:make-class-shader-program
    #:define-class-shader
    #:shader-entity
-   #:define-shader-entity)
+   #:define-shader-entity
+   #:determine-effective-shader-class)
   ;; shader-pass.lisp
   (:export
    #:shader-pass-class
-   #:port
-   #:input
-   #:uniform-name
+   #:texture-port
    #:texture
+   #:texspec
+   #:uniform-port
+   #:uniform-name
+   #:input
    #:output
    #:attachment
-   #:texture
-   #:uniforms
+   #:check-consistent
+   #:buffer
    #:shader-pass
    #:framebuffer
+   #:uniforms
    #:register-object-for-pass
    #:shader-program-for-pass
+   #:make-pass-shader-program
+   #:coerce-pass-shader
    #:define-shader-pass
+   #:generate-pass-program
+   #:prepare-pass-program
    #:per-object-pass
    #:assets
-   #:update-shader-for-redefined-subject
-   #:shader-program-for-pass
-   #:coerce-pass-shader
-   #:multisampled-pass
-   #:multisample-fbo
-   #:samples
-   #:multisampled-per-object-pass
+   #:notify-class-redefinition
    #:single-shader-pass
    #:shader-program
-   #:post-effect-pass
-   #:vertex-array)
+   #:post-effect-pass)
   ;; shader-subject.lisp
   (:export
    #:shader-subject-class
@@ -480,7 +564,8 @@
   ;; skybox.lisp
   (:export
    #:skybox
-   #:texture)
+   #:texture
+   #:vertex-array)
   ;; sprite.lisp
   (:export
    #:sprite-entity
@@ -488,45 +573,55 @@
    #:size
    #:animated-sprite-subject
    #:animations
+   #:clock
    #:frame
    #:animation
-   #:clock)
+   #:update-sprite-animation)
   ;; static-vector.lisp
   (:export
    #:make-static-vector
    #:static-vector-p
    #:static-vector
-   #:maybe-free-static-vector
-   #:static-vector-pointer)
+   #:maybe-free-static-vector)
   ;; subject.lisp
   (:export
-   #:subject-class-redefined
    #:subject-class
    #:effective-handlers
-   #:compute-effective-handlers
+   #:compute-effective-handelrs
    #:subject
-   #:event-loop
+   #:event-loops
    #:regenerate-handlers
    #:define-subject
+   #:subject-handler
+   #:subject
    #:define-handler
    #:define-generic-handler)
+  ;; text.lisp
+  (:export
+   #:text
+   #:font
+   #:text
+   #:size
+   #:extent
+   #:text-extent)
   ;; toolkit.lisp
   (:export
    #:finalize
-   #:single-float-negative-infinity
-   #:single-float-positive-infinity
+   #:gl-property
    #:with-float-traps-masked
    #:current-time
    #:executable-directory
    #:enlist
    #:unlist
-   #:one-of
    #:remf*
-   #:deg->rad
-   #:rad->deg
+   #:one-of
+   #:input-source
+   #:input-value
+   #:input-literal
    #:with-retry-restart
    #:with-new-value-restart
    #:with-cleanup-on-failure
+   #:acquire-lock-with-starvation-test
    #:*standalone*
    #:standalone-error-handler
    #:standalone-logging-handler
@@ -535,20 +630,32 @@
    #:wait-for-thread-exit
    #:with-thread-exit
    #:with-error-logging
+   #:with-timing-report
+   #:ensure-class
    #:with-slots-bound
    #:with-all-slots-bound
    #:minimize
+   #:def->rad
+   #:rad->deg
    #:symbol->c-name
    #:check-gl-type
    #:cl-type->gl-type
    #:gl-type->cl-type
    #:gl-coerce
+   #:texture-internal-format->pixel-format
+   #:pixel-format->pixel-type
+   #:gpu-room
+   #:cpu-room
+   #:gl-vendor
    #:check-texture-size
    #:define-enum-check
    #:check-texture-target
    #:check-texture-mag-filter
    #:check-texture-min-filter
    #:check-texture-wrapping
+   #:check-texture-internal-format
+   #:check-texture-pixel-format
+   #:check-texture-pixel-type
    #:check-shader-type
    #:check-vertex-buffer-type
    #:check-vertex-buffer-element-type
@@ -578,67 +685,13 @@
   ;; window.lisp
   (:export
    #:window
+   #:register-window
+   #:deregister-window
    #:list-windows
-   #:remove-window
    #:window
    #:name)
-  ;; assets
-  ;;; font.lisp
-  (:export
-   #:*default-charset*
-   #:font
-   #:charset
-   #:size
-   #:text-extent
-   #:text
-   #:font
-   #:text
-   #:color
-   #:size
-   #:extent)
-  ;;; framebuffer.lisp
-  (:export
-   #:framebuffer
-   #:resize
-   #:framebuffer-bundle
-   #:width
-   #:height
-   #:framebuffer
-   #:textures)
-  ;;; mesh.lisp
-  (:export
-   #:mesh)
-  ;;; shader-program.lisp
-  (:export
-   #:shader-program
-   #:uniform-map
-   #:uniform-location
-   #:uniform)
-  ;;; shader.lisp
-  (:export
-   #:shader
-   #:shader-type)
-  ;;; texture.lisp
-  (:export
-   #:texture
-   #:target
-   #:mag-filter
-   #:min-filter
-   #:anisotropy
-   #:wrapping
-   #:resize)
-  ;;; vertex-array.lisp
-  (:export
-   #:vertex-array
-   #:size
-   #:packed-vertex-array)
-  ;;; vertex-buffer.lisp
-  (:export
-   #:vertex-buffer
-   #:buffer-type
-   #:element-type
-   #:data-usage
-   #:size))
+  ;; workbench.lisp
+  (:export))
 
 (defpackage #:cl+trial
   (:nicknames #:org.shirakumo.fraf.trial.cl+trial)
