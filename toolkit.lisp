@@ -19,6 +19,7 @@
     (error (err) (declare (ignore err))
       :unavailable)))
 
+;; FIXME: put into a library
 (defconstant single-float-positive-infinity
   #+sbcl sb-ext:single-float-positive-infinity
   #-sbcl most-positive-single-float)

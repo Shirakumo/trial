@@ -186,6 +186,8 @@
     (prepare-pass-program pass program)
     (call-next-method)))
 
+;; FIXME: this is probably unnecessary now that we can specify
+;;        the multisampling in the texspec.
 (define-shader-pass multisampled-pass (bakable)
   ((multisample-fbo :initform NIL :accessor multisample-fbo)
    (samples :initarg :samples :accessor samples))
