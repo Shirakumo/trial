@@ -37,10 +37,10 @@
            (bytes (* size (cffi:foreign-type-size element-type)))
            (vbo (gl:gen-buffer)))
       (with-cleanup-on-failure (gl:delete-buffers (list vbo))
-        (flet ((bind-data (buffer-data)
+        (flet ((bind-data (pointer)
                  (gl:bind-buffer buffer-type vbo)
                  (unwind-protect
-                      (%gl:buffer-data buffer-type bytes buffer-data data-usage)
+                      (%gl:buffer-data buffer-type bytes pointer data-usage)
                    (gl:bind-buffer buffer-type 0))))
           (etypecase buffer-data
             (vector
@@ -51,12 +51,13 @@
                               (unsigned-byte 32) (signed-byte 32))
                             :test 'equal))
                  ;; Arrays that already fit types can be shared directly on SBCL.
-                 (cffi:with-pointer-to-vector-data (buffer-data buffer-data)
-                   (bind-data buffer-data))
-                 (cffi:with-foreign-object (array element-type size)
-                   (loop for i from 0 for el across buffer-data
-                         do (setf (cffi:mem-aref array i) (gl-coerce el element-type)))
-                   (bind-data array))))
+                 (cffi:with-pointer-to-vector-data (pointer buffer-data)
+                   (bind-data pointer))
+                 (cffi:with-foreign-object (pointer element-type size)
+                   (loop for i from 0 below size
+                         do (setf (cffi:mem-aref pointer element-type i)
+                                  (gl-coerce (aref buffer-data i) element-type)))
+                   (bind-data pointer))))
             (static-vector
              (bind-data (static-vector-pointer buffer-data)))
             (cffi:foreign-pointer
