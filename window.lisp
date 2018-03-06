@@ -34,5 +34,5 @@
 (defmethod initialize-instance :after ((window window) &key)
   (register-window window))
 
-(defmethod finalize ((window window))
+(defmethod finalize :after ((window window))
   (deregister-window window))
