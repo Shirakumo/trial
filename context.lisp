@@ -98,7 +98,7 @@
       (v:info :trial.context "Destroying context.")
       (hide context)
       (loop for resource being the hash-values of (resources context)
-            do (when (allocated-p resource) (v:info :test "~a" resource) (deallocate resource)))
+            do (when (allocated-p resource) (deallocate resource)))
       (clrhash (resources context))
       (call-next-method))))
 
