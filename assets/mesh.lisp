@@ -27,8 +27,9 @@
   (let* ((input (coerce-asset-input mesh T))
          (vao (etypecase input
                 (pathname (gethash (geometry-name mesh) (meshes (read-geometry input T))))
+                (vertex-mesh (change-class (copy-instance input) 'vertex-array))
                 (vertex-array input))))
-    (setf (bindings mesh) (bindings vao))
+    (setf (bindings mesh) (mapcar #'enlist (bindings vao)))
     (setf (size mesh) (size vao))
     (loop for (buffer) in (bindings mesh)
           do (setf (data-usage buffer) (data-usage mesh))
