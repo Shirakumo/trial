@@ -64,6 +64,9 @@
                         (:height 'height)
                         (T val))))))
 
+(defmethod normalized-texspec ((port texture-port))
+  (normalized-texspec (texspec port)))
+
 (defmethod normalized-texspec ((port output))
   (normalized-texspec
    (append (texspec port)
@@ -82,7 +85,8 @@
               (list :internal-format :rgba))))))
 
 (defun allocate-textures (passes textures texspec)
-  (flet ((kind (port) (join-texspec texspec (normalized-texspec port))))
+  (flet ((kind (port)
+           (and (typep port 'output) (join-texspec texspec (normalized-texspec port)))))
     (flow:allocate-ports passes :sort NIL :test #'kind :attribute :texid)
     (let* ((texture-count (loop for pass in passes
                                 when (flow:ports pass)
@@ -111,7 +115,9 @@
   (v:info :trial.pipeline "~a packing for ~a (~ax~a)" pipeline target (width target) (height target))
   (let* ((passes (flow:topological-sort (nodes pipeline)))
          (textures (make-array 0 :initial-element NIL :adjustable T))
-         (texspecs (mapcar #'normalized-texspec (mapcan #'flow:ports passes))))
+         (texspecs (loop for port in (mapcan #'flow:ports passes)
+                         when (typep port 'output)
+                         collect (normalized-texspec port))))
     (clear-pipeline pipeline)
     ;; Compute texture set
     (dolist (texspec (join-texspecs texspecs))
