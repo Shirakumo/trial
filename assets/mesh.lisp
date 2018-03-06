@@ -8,63 +8,38 @@
 
 (defclass mesh (gl-asset vertex-array)
   ((geometry-name :initarg :geometry-name :accessor geometry-name)
-   (attributes :initarg :attributes :accessor attributes)
    (data-usage :initarg :data-usage :accessor data-usage))
   (:default-initargs
    :bindings NIL
    :geometry-name NIL
-   :data-usage :static-draw
-   :attributes T))
+   :data-usage :static-draw))
 
-(defun vertex-mesh->vertex-array (mesh)
-  )
+(defmethod destructor ((mesh mesh))
+  (let ((prev (call-next-method))
+        (bindings (bindings mesh)))
+    (lambda ()
+      (funcall prev)
+      (loop for (buffer) in bindings
+            do (when (allocated-p buffer) (deallocate buffer))
+               (maybe-free-static-vector (buffer-data buffer))))))
 
-;;; FIXME FIXME FIXME FIXME
 (defmethod load ((mesh mesh))
   (let* ((input (coerce-asset-input mesh T))
-         (mesh* (etypecase input
-                  (pathname (gethash (geometry-name mesh) (meshes (read-geometry input T))))
-                  (geometry (gethash (geometry-name mesh) (meshes input)))
-                  (vertex-mesh input))))
-    (etypecase mesh*
-      (vertex-array
-       (setf (bindings mesh) (copy-tree (bindings mesh*)))
-       (allocate mesh)
-       (setf (bindings mesh) NIL))
-      (vertex-mesh
-       (let* ((vertices (vertices mesh*))
-              (primer (aref vertices 0))
-              (attributes (etypecase (attributes mesh*)
-                            ((eql T) (vertex-attributes primer))
-                            (list (attributes mesh*))))
-              (sizes (loop for attr in attributes collect (vertex-attribute-size primer attr)))
-              (total-size (* (length vertices) (reduce #'+ sizes)))
-              (buffer (make-static-vector total-size :element-type 'single-float)))
-         ;; Copy the contents of the mesh into the data buffer, packed.
-         (loop with buffer-offset = 0
-               for vertex across vertices
-               do (dolist (attribute attributes)
-                    (setf buffer-offset (fill-vertex-attribute vertex attribute buffer buffer-offset))))
-         ;; Construct the buffers and specs
-         (let* ((vbo (make-instance 'vertex-buffer :buffer-data buffer :buffer-type :array-buffer
-                                                   :data-usage (data-usage mesh) :element-type :float))
-                (ebo (make-instance 'vertex-buffer :buffer-data (faces mesh*) :buffer-type :element-array-buffer
-                                                   :data-usage (data-usage mesh) :element-type :uint))
-                (specs (loop with stride = (reduce #'+ sizes)
-                             for offset = 0 then (+ offset size)
-                             for size in sizes
-                             for index from 0
-                             collect (list vbo :stride (* stride (cffi:foreign-type-size :float))
-                                               :offset (* offset (cffi:foreign-type-size :float))
-                                               :size size
-                                               :index index))))
-           (setf (bindings mesh) (list* ebo specs))
-           (setf (size mesh) (length vertices))
-           (allocate mesh)
-           ;; Clean up
-           (deallocate vbo)
-           (deallocate ebo)
-           (setf (buffer-data vbo) NIL)
-           (setf (buffer-data ebo) NIL)
-           (setf (bindings mesh) NIL)
-           (static-vectors:free-static-vector buffer)))))))
+         (vao (etypecase input
+                (pathname (gethash (geometry-name mesh) (meshes (read-geometry input T))))
+                (vertex-array input))))
+    (setf (bindings mesh) (bindings vao))
+    (setf (size mesh) (size vao))
+    (loop for (buffer) in (bindings mesh)
+          do (setf (data-usage buffer) (data-usage mesh))
+             (allocate buffer))
+    (allocate mesh)
+    (case (data-usage mesh)
+      (:static-draw
+       ;; Free buffers again to avoid leaving garbage around.
+       ;; We can do this safely because we know the data is fresh
+       ;; and won't be used in the future due to static-draw.
+       (loop for (buffer) in (bindings mesh)
+             do (deallocate buffer)
+                (maybe-free-static-vector (buffer-data buffer)))))
+    (setf (bindings mesh) NIL)))
