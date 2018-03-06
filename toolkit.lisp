@@ -76,6 +76,14 @@
       (c2mop:finalize-inheritance class))
     (c2mop:class-default-initargs class)))
 
+(defmethod copy-instance ((instance standard-object) &key deep)
+  (let ((copy (allocate-instance (class-of instance))))
+    (loop for slot in (c2mop:class-slots (class-of instance))
+          for name = (c2mop:slot-definition-name slot)
+          for value = (slot-value instance name)
+          do (setf (slot-value copy name) (if deep (copy-instance value) value)))
+    copy))
+
 (defun executable-directory ()
   (pathname-utils:to-directory
    (or (first (uiop:command-line-arguments))
