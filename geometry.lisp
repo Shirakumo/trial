@@ -165,12 +165,12 @@
 
 ;;;; Translation
 
-(defmethod update-instance-for-different-class ((mesh vertex-mesh) (array vertex-array) &key (data-usage :static-draw))
+(defmethod update-instance-for-different-class ((mesh vertex-mesh) (array vertex-array) &key (data-usage :static-draw) (attributes T))
   (let* ((vertices (vertices mesh))
          (primer (aref vertices 0))
-         (attributes (etypecase (attributes mesh)
+         (attributes (etypecase attributes
                        ((eql T) (vertex-attributes primer))
-                       (list (attributes mesh))))
+                       (list attributes)))
          (sizes (loop for attr in attributes collect (vertex-attribute-size primer attr)))
          (total-size (* (length vertices) (reduce #'+ sizes)))
          (buffer (make-static-vector total-size :element-type 'single-float)))
@@ -193,4 +193,4 @@
                                           :size size
                                           :index index))))
       (setf (bindings array) (list* ebo specs))
-      (setf (size array) (length vertices)))))
+      (setf (size array) (length (faces mesh))))))
