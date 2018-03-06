@@ -38,12 +38,12 @@
   ())
 
 (defmethod check-consistent ((input input))
+  ;; FIXME: Check whether texspecs are joinable.
   (unless (flow:connections input)
     (error "Pipeline is not consistent.~%~
             Pass ~s is missing a connection to its input ~s."
            (flow:node input) input)))
 
-;; FIXME: Allow specifying all sorts of texture options
 (defclass output (flow:out-port flow:n-port texture-port)
   ((attachment :initarg :attachment :accessor attachment))
   (:default-initargs :attachment :color-attachment0))
@@ -142,7 +142,7 @@
     (flet ((refresh (class)
              (let ((prev (gethash class assets))
                    (new (make-pass-shader-program pass class)))
-               (if (allocated-p prev)
+               (if (and prev (allocated-p prev))
                    (with-context ((context (window :main))) ; FUCK
                      (with-simple-restart (continue "Ignore the change and continue with the hold shader.")
                        (allocate new)
@@ -221,8 +221,8 @@
 (define-shader-pass multisampled-per-object-pass (multisampled-pass per-object-pass)
   ())
 
-(define-shader-pass single-shader-pass ()
-  ((shader-program :initform (make-instance 'shader-program) :accessor shader-program)))
+(define-shader-pass single-shader-pass (bakable)
+  ((shader-program :initform NIL :accessor shader-program)))
 
 (defmethod notify-class-redefinition ((pass single-shader-pass) class)
   (when (eql class (class-of pass))
@@ -234,7 +234,7 @@
         (with-context ((context (window :main))) ; FUCK
           (load (shader-program pass)))))))
 
-(defmethod load progn ((pass single-shader-pass))
+(defmethod bake ((pass single-shader-pass))
   (setf (shader-program pass) (make-class-shader-program pass)))
 
 (defmethod register-object-for-pass ((pass single-shader-pass) o))
