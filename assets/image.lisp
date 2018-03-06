@@ -11,7 +11,7 @@
 
 (defmethod load ((image image))
   (unwind-protect
-       (let ((input (coerce-asset-input (input image))))
+       (let ((input (coerce-asset-input image T)))
          (multiple-value-bind (bits width height)
              (cl-soil:load-image (unlist input))
            (setf (pixel-data image) bits)
