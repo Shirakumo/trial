@@ -31,7 +31,8 @@
 (defmethod notify-class-redefinition ((class redefinition-notifying-class) redef)
   (loop for pointer in (%class-redefinition-listeners class)
         for listener = (tg:weak-pointer-value pointer)
-        when listener do (notify-class-redefinition listener redef)))
+        when listener do (with-simple-restart (continue "Ignore redefinition listener.")
+                           (notify-class-redefinition listener redef))))
 
 (defmethod class-redefinition-listeners ((class symbol))
   (class-redefinition-listeners (find-class class)))
