@@ -41,7 +41,7 @@
                (:file "gamepad" :depends-on ("package" "event-loop" "toolkit"))
                (:file "geometry" :depends-on ("package" "toolkit" "static-vector" ("assets" "vertex-array")))
                (:file "geometry-clipmap" :depends-on ("package" "geometry-shapes" "shader-subject"))
-               (:file "geometry-shapes" :depends-on ("package" "geometry" "asset-pool"))
+               (:file "geometry-shapes" :depends-on ("package" "geometry" "asset-pool" ("assets" "mesh")))
                (:file "helpers" :depends-on ("package" "entity" "transforms" "shader-subject" "shader-pass" "asset" "resources"))
                (:file "input" :depends-on ("package" "event-loop" "retention"))
                (:file "layer-set" :depends-on ("package"))
