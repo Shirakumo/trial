@@ -311,6 +311,11 @@
         (vformat-write buffer thing))
       file)))
 
+;; FIXME: Allow reading only specific parts of a vertex format to avoid
+;;        having to load the entire file in when only one particular mesh
+;;        is used. Will need a way to calculate the size of a part, and a
+;;        global parts table that can index to file positions that denote
+;;        the beginning of a part.
 (defmethod read-geometry (file (format (eql :vf)) &key (if-does-not-exist :error))
   (with-open-file (stream file :direction :input
                                :element-type '(unsigned-byte 8)
