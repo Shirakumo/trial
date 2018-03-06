@@ -61,4 +61,5 @@
   (v:info :trial.main "GENESIS")
   (handler-bind ((error #'standalone-error-handler))
     (apply #'launch-with-context main initargs))
+  (setf *context* NIL)
   (tg:gc :full T))

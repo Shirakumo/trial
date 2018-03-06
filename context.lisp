@@ -100,7 +100,8 @@
       (loop for resource being the hash-values of (resources context)
             do (when (allocated-p resource) (deallocate resource)))
       (clrhash (resources context))
-      (call-next-method))))
+      (call-next-method)
+      (setf *context* NIL))))
 
 (defmethod create-context :around ((context context))
   (unless (valid-p context)
