@@ -159,7 +159,7 @@
    #:context-wait-lock
    #:resources
    #:handler
-   #:shared-width
+   #:shared-with
    #:create-context
    #:destroy-context
    #:valid-p
