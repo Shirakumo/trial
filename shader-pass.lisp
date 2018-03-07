@@ -27,6 +27,7 @@
 
 (flow:define-port-value-slot texture-port texture texture)
 
+;; FIXME: check for duplicate inputs/outputs.
 (defclass uniform-port (flow:port)
   ((uniform-name :initarg :uniform :initform NIL :accessor uniform-name)))
 
@@ -38,11 +39,17 @@
   ())
 
 (defmethod check-consistent ((input input))
-  ;; FIXME: Check whether texspecs are joinable.
   (unless (flow:connections input)
     (error "Pipeline is not consistent.~%~
             Pass ~s is missing a connection to its input ~s."
-           (flow:node input) input)))
+           (flow:node input) input))
+  (let ((other (flow:left (first (flow:connections input)))))
+    (unless (or (not (texspec input))
+                (join-texspec (texspec input)
+                              (texspec other)))
+      (error "Pipeline is not consistent.~%~
+              Pass ~s' input ~s is not texture compatible with output ~s."
+             (flow:node input) input other))))
 
 (defclass output (flow:out-port flow:n-port texture-port)
   ((attachment :initarg :attachment :accessor attachment))
@@ -65,8 +72,6 @@
 
 (define-class-shader (shader-pass :fragment-shader)
   "#version 330 core")
-
-;; FIXME: check for duplicate inputs/outputs.
 
 (defgeneric register-object-for-pass (pass object))
 (defgeneric shader-program-for-pass (pass object))
@@ -186,41 +191,6 @@
     (prepare-pass-program pass program)
     (call-next-method)))
 
-;; FIXME: this is probably unnecessary now that we can specify
-;;        the multisampling in the texspec.
-(define-shader-pass multisampled-pass (bakable)
-  ((multisample-fbo :initform NIL :accessor multisample-fbo)
-   (samples :initarg :samples :accessor samples))
-  (:default-initargs :samples 8))
-
-(defmethod bake ((pass multisampled-pass))
-  (setf (multisample-fbo pass)
-        ;; FIXME!!!
-        (make-instance 'framebuffer-bundle
-                       `((:attachment :color-attachment0 :bits ,(samples pass) :target :texture-2d-multisample)
-                         (:attachment :depth-stencil-attachment :bits ,(samples pass) :target :texture-2d-multisample))
-                       :width (width *context*) :height (height *context*))))
-
-(defmethod paint-with :around ((pass multisampled-pass) target)
-  (let ((original-framebuffer (gl-name (framebuffer pass))))
-    (gl:bind-framebuffer :framebuffer (gl-name (multisample-fbo pass)))
-    (gl:clear :color-buffer :depth-buffer :stencil-buffer)
-    (call-next-method)
-    (gl:bind-framebuffer :draw-framebuffer original-framebuffer)
-    (%gl:blit-framebuffer 0 0 (width target) (height target) 0 0 (width target) (height target)
-                          (logior (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
-                                  (cffi:foreign-bitfield-value '%gl::ClearBufferMask :depth-buffer)
-                                  (cffi:foreign-bitfield-value '%gl::ClearBufferMask :stencil-buffer))
-                          (cffi:foreign-enum-value '%gl:enum :nearest))
-    (gl:bind-framebuffer :framebuffer original-framebuffer)))
-
-(define-handler (multisampled-pass resize) (ev width height)
-  (when (multisample-fbo multisampled-pass)
-    (resize (multisample-fbo multisampled-pass) width height)))
-
-(define-shader-pass multisampled-per-object-pass (multisampled-pass per-object-pass)
-  ())
-
 (define-shader-pass single-shader-pass (bakable)
   ((shader-program :initform NIL :accessor shader-program)))
 
@@ -231,7 +201,7 @@
       (when loaded (deallocate program))
       (setf (shader-program pass) (make-class-shader-program pass))
       (when loaded
-        (with-context ((context (window :main))) ; FUCK
+        (with-context ((context (window :main))) ; FIXME: FUCK
           (load (shader-program pass)))))))
 
 (defmethod bake ((pass single-shader-pass))
@@ -273,3 +243,16 @@ void main(){
 (define-class-shader (post-effect-pass :fragment-shader)
   "
 in vec2 tex_coord;")
+
+(define-shader-pass sample-reduction-pass (post-effect-pass)
+  ((previous-pass :port-type input :texspec (:target :texture-2d-multisample))
+   (color :port-type output :texspec (:target :texture-2d))))
+
+(define-class-shader (sample-reduction-pass :fragment-shader)
+  "uniform sampler2DMS previous_pass;
+in vec2 tex_coord;
+out vec4 color;
+
+void main(){
+  color = texture(previous_pass, tex_coord);
+}")

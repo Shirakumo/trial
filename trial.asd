@@ -4,8 +4,6 @@
  Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
-
-
 (defmethod asdf/find-component:resolve-dependency-combination (component (combinator (eql :..)) args)
   (asdf/find-component:resolve-dependency-spec
    (asdf:component-parent component) (first args)))
@@ -54,7 +52,7 @@
                (:file "redefinition-notifying-class" :depends-on ("package"))
                (:file "render-texture" :depends-on ("package" "pipeline" "entity"))
                (:file "renderable" :depends-on ("package" "toolkit"))
-               (:file "resource" :depends-on ("package"))
+               (:file "resource" :depends-on ("package" "context"))
                (:file "retention" :depends-on ("package" "event-loop"))
                (:file "scene-buffer" :depends-on ("package" "scene" "render-texture"))
                (:file "scene" :depends-on ("package" "event-loop" "entity"))

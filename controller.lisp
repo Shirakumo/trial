@@ -23,7 +23,6 @@
 (define-action toggle-overlay (system-action)
   (key-press (one-of key :section :grave)))
 
-;; FIXME
 (define-asset (trial noto-sans) font
     #p"noto-sans-regular.ttf")
 

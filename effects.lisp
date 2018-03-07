@@ -13,9 +13,6 @@
   ((color :port-type output :attachment :color-attachment0)
    (depth :port-type output :attachment :depth-stencil-attachment)))
 
-(define-shader-pass msaa-pass (render-pass multisampled-per-object-pass)
-  ())
-
 (define-shader-pass simple-post-effect-pass (post-effect-pass)
   ((previous-pass :port-type input)
    (color :port-type output)))
