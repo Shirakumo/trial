@@ -148,8 +148,10 @@
              (let ((prev (gethash class assets))
                    (new (make-pass-shader-program pass class)))
                (if (and prev (allocated-p prev))
-                   (with-context ((context (window :main))) ; FUCK
+                   (with-context (*context*)
                      (with-simple-restart (continue "Ignore the change and continue with the hold shader.")
+                       (dolist (shader (shaders new))
+                         (unless (allocated-p shader) (allocate shader)))
                        (allocate new)
                        (deallocate prev)
                        (setf (gethash class assets) new)))
@@ -201,7 +203,7 @@
       (when loaded (deallocate program))
       (setf (shader-program pass) (make-class-shader-program pass))
       (when loaded
-        (with-context ((context (window :main))) ; FIXME: FUCK
+        (with-context (*context*)
           (load (shader-program pass)))))))
 
 (defmethod bake ((pass single-shader-pass))
