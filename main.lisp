@@ -40,7 +40,8 @@
     (call-next-method))
   (start scene)
   ;; Cause camera to refresh
-  (issue scene 'resize :width (width main) :height (height main)))
+  (issue scene 'resize :width (width main) :height (height main))
+  scene)
 
 (defmethod setup-scene ((main main) scene)
   ())
