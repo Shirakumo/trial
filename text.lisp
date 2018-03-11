@@ -13,7 +13,8 @@
    (vbo) (ebo))
   (:default-initargs
    :color (vec 0 0 0 1)
-   :text "")
+   :text ""
+   :font (error "FONT required."))
   (:inhibit-shaders (colored-entity :fragment-shader)))
 
 (defmethod initialize-instance :after ((text text) &key size)
