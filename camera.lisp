@@ -47,6 +47,7 @@
                            (near-plane camera) (far-plane camera)))
 
 (defmethod project-view ((camera 2d-camera) ev)
+  (reset-matrix *view-matrix*)
   (translate (v- (location camera)) *view-matrix*))
 
 (define-subject sidescroll-camera (2d-camera)
