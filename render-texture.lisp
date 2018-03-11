@@ -18,6 +18,10 @@
 (defmethod pack ((render-texture render-texture))
   (pack-pipeline render-texture render-texture))
 
+(defmethod resize :after ((render-texture render-texture) width height)
+  (setf (width render-texture) width)
+  (setf (height render-texture) height))
+
 (defmethod texture ((render-texture render-texture))
   (let ((pass (aref (passes render-texture) (1- (length (passes render-texture))))))
     (texture (find :color-attachment0 (flow:ports pass)
