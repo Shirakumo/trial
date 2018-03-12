@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-shader-entity text (located-entity vertex-entity colored-entity textured-entity)
+(define-shader-entity text (located-entity vertex-entity colored-entity textured-entity readied)
   ((texture :initarg :font :accessor font)
    (text :initarg :text :accessor text)
    (size :initarg :size :accessor size)
@@ -51,10 +51,9 @@ void main(){
   (when (allocated-p font)
     (setf (text text) (text text))))
 
-;; FIXME: How to ensure that the update-text gets called as soon as
-;;        the font is ready and loaded? We can't do it like this as
-;;        texts that are static would never get their update and thus
-;;        appear invisible.
+(defmethod resources-ready ((text text))
+  (setf (text text) (text text)))
+
 (defmethod (setf text) :before (string (text text))
   (let ((vao (vertex-array text))
         (vbo (slot-value text 'vbo))

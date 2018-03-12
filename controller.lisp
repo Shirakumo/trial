@@ -37,8 +37,8 @@
   (:default-initargs
    :name :controller))
 
-(defmethod compute-resources ((controller controller) cache)
-  (compute-resources (text controller) cache))
+(defmethod compute-resources ((controller controller) resources readying cache)
+  (compute-resources (text controller) resources readying cache))
 
 (defmethod register-object-for-pass :after (pass (controller controller))
   (register-object-for-pass pass (text controller)))

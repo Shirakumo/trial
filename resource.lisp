@@ -16,7 +16,8 @@
 (defgeneric allocated-p (resource))
 
 (defmethod load ((resource resource))
-  (allocate resource))
+  (unless (allocated-p resource)
+    (allocate resource)))
 
 (defmethod allocate :around ((resource resource))
   (call-next-method)
