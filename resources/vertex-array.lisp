@@ -12,6 +12,10 @@
   (:default-initargs
    :bindings (error "BINDINGS required.")))
 
+(defmethod print-object ((array vertex-array) stream)
+  (print-unreadable-object (array stream :type T :identity T)
+    (format stream "~@[~a~]" (size array))))
+
 (defmethod destructor ((array vertex-array))
   (let ((vao (gl-name array)))
     (lambda () (when vao (gl:delete-vertex-arrays (list vao))))))
