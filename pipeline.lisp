@@ -86,6 +86,9 @@
 
 (defun allocate-textures (passes textures texspec)
   (flet ((kind (port)
+           ;; FIXME: This is really dumb and inefficient. If we could remember which port belongs
+           ;;        to which joined texspec instead it could be much better and wouldn't need to
+           ;;        recompute everything all the time.
            (and (typep port 'output) (join-texspec texspec (normalized-texspec port)))))
     (flow:allocate-ports passes :sort NIL :test #'kind :attribute :texid)
     (let* ((texture-count (loop for pass in passes
@@ -121,9 +124,6 @@
     (clear-pipeline pipeline)
     ;; Compute texture set
     (dolist (texspec (join-texspecs texspecs))
-      ;; FIXME: This is really dumb and inefficient. If we could remember which port belongs
-      ;;        to which joined texspec instead it could be much better and wouldn't need to
-      ;;        recompute everything all the time.
       (allocate-textures passes textures texspec))
     ;; Discretize texture size
     (loop for texture across textures
@@ -134,6 +134,7 @@
                                ,size))))
                (setf (width texture) (eval-size (width texture)))
                (setf (height texture) (eval-size (height texture)))))
+    ;; FIXME: Replace textures with existing ones if they match to save on re-allocation.
     ;; Compute frame buffers
     (dolist (pass passes)
       (add-handler pass pipeline)
