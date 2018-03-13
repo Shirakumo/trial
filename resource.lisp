@@ -17,6 +17,7 @@
 
 (defmethod load ((resource resource))
   (unless (allocated-p resource)
+    (v:trace :trial.resource "Loading ~a" resource)
     (allocate resource)))
 
 (defmethod allocate :around ((resource resource))
