@@ -129,8 +129,8 @@
 
 (defmethod transition ((from scene) (to scene))
   (v:info :trial.loader "Transitioning from ~a to ~a" from to)
-  (multiple-value-bind (from to-ready) (compute-resources-for from)
-    (let* ((to (compute-resources-for to))
+  (multiple-value-bind (to to-ready) (compute-resources-for to)
+    (let* ((from (compute-resources-for from))
            (to-load (stable-set-difference-eq to from))
            (to-deallocate (stable-set-difference-eq from to)))
       (%transition to-load to-deallocate to-ready)
