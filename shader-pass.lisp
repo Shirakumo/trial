@@ -94,6 +94,10 @@
   (when (framebuffer pass)
     (finalize (framebuffer pass))))
 
+(defmethod register-object-for-pass :after ((pass shader-pass) (object container))
+  (for:for ((item over object))
+    (register-object-for-pass pass item)))
+
 (define-handler (shader-pass register-entity-for-enter enter) (ev entity)
   (unless (typep entity 'shader-pass)
     (let ((pass (register-object-for-pass shader-pass entity)))
