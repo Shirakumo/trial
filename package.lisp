@@ -403,6 +403,7 @@
    #:scene
    #:controller
    #:setup-scene
+   #:change-scene
    #:launch)
   ;; mapping.lisp
   (:export

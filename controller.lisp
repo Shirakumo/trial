@@ -91,18 +91,7 @@
   (retain-event ev))
 
 (define-handler (controller reload-scene reload-scene 99) (ev)
-  (let* ((display (display controller))
-         (old (scene display)))
-    (stop old)
-    (restart-case
-        (let ((new (make-instance (type-of old))))
-          (setf (clock new) (clock old))
-          (setup-scene display new)
-          (transition old new)
-          (setf (scene display) new))
-      (abort ()
-        :report "Give up reloading the scene and continue with the old."
-        (start old)))))
+  (change-scene (display controller) (make-instance (type-of old) :clock (clock old))))
 
 (defclass load-request (event)
   ((asset :initarg :asset)
