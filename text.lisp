@@ -85,8 +85,8 @@ void main(){
                              (#\Space
                               (complete-word))
                              (#\Linefeed
-                              (setf current-width width)
-                              (complete-word))
+                              (complete-word)
+                              (setf current-width width))
                              (T
                               (write-char c buffer)))
                         finally (complete-word))))
