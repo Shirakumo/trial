@@ -48,6 +48,10 @@
         when (slot-boundp object name)
         do (compute-resources (slot-value object name) resources readying cache)))
 
+(defmethod compute-resources ((queue flare-queue:queue) resources readying cache)
+  (for:for ((item flare-queue:in-queue queue))
+    (compute-resources item resources readying cache)))
+
 (defmethod compute-resources ((resource resource) resources readying cache)
   (call-next-method)
   (vector-push-extend resource resources)
