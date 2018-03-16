@@ -589,7 +589,7 @@
   (:export
    #:subject-class
    #:effective-handlers
-   #:compute-effective-handelrs
+   #:compute-effective-handlers
    #:subject
    #:event-loops
    #:regenerate-handlers
