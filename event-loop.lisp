@@ -6,8 +6,6 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defvar *loop*)
-
 (defgeneric add-handler (handler handler-container))
 (defgeneric remove-handler (handler handler-container))
 (defgeneric handle (event handler))
@@ -91,7 +89,7 @@
 ;;        beyond the point of the index where the recursive call happens.
 ;;        The check will assume nothing has changed and it'll continue from
 ;;        where it left off, thus missing events before the current index.
-(defun process (loop)
+(defmethod process ((loop event-loop))
   (loop for i = (1- (incf (queue-index loop)))
         while (< i (length (queue loop)))
         do (let ((event (aref (queue loop) i)))
@@ -109,9 +107,8 @@
         (queue-index loop) 0))
 
 (defmethod handle (event (loop event-loop))
-  (let ((*loop* loop))
-    (with-simple-restart (skip-event "Skip handling the event entirely.")
-      (call-next-method))))
+  (with-simple-restart (skip-event "Skip handling the event entirely.")
+    (call-next-method)))
 
 ;; Force adding the loop directly.
 (defmethod add-handler ((loop event-loop) (container handler-container))

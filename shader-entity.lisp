@@ -6,10 +6,10 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass shader-entity-class (standard-class)
+(defclass shader-entity-class (redefinition-notifying-class)
   ((effective-shaders :initform () :accessor effective-shaders)
    (direct-shaders :initform () :initarg :shaders :accessor direct-shaders)
-   (inhibit-shaders :initform () :initarg :inhibit-shaders :accessor inhibit-shaders)))
+   (inhibited-shaders :initform () :initarg :inhibit-shaders :accessor inhibited-shaders)))
 
 (defmethod c2mop:validate-superclass ((class shader-entity-class) (superclass t))
   NIL)
@@ -25,7 +25,7 @@
 
 (defmethod compute-effective-shaders ((class shader-entity-class))
   (let ((effective-shaders ())
-        (inhibited (inhibit-shaders class))
+        (inhibited (inhibited-shaders class))
         (superclasses (remove 'shader-entity-class
                               (c2mop:compute-class-precedence-list class)
                               :test-not (lambda (type class) (typep class type)))))
@@ -34,13 +34,13 @@
           for super = (find name superclasses :key #'class-name)
           do (cond ((not super)
                     (warn "No superclass ~s in hierarchy of ~s. Cannot inhibit its shader ~s." name (class-of super) (class-name class))
-                    (setf (inhibit-shaders class) (remove (list name type) inhibited :test #'equal)))
+                    (setf (inhibited-shaders class) (remove (list name type) inhibited :test #'equal)))
                    ((not (getf (direct-shaders super) type))
                     (warn "No shader of type ~s is defined on ~s. Cannot inhibit it for ~s." type name (class-name class))
-                    (setf (inhibit-shaders class) (remove (list name type) inhibited :test #'equal)))))
+                    (setf (inhibited-shaders class) (remove (list name type) inhibited :test #'equal)))))
     ;; Compute effective inhibited list
     (loop for super in superclasses
-          do (setf inhibited (append inhibited (inhibit-shaders super))))
+          do (setf inhibited (append inhibited (inhibited-shaders super))))
     ;; Make all direct shaders effective
     (loop for (type shader) on (direct-shaders class) by #'cddr
           do (setf (getf effective-shaders type)
@@ -74,11 +74,23 @@
       (c2mop:finalize-inheritance super)))
   (compute-effective-shaders class))
 
+(defmethod (setf effective-shaders) :after (value (class shader-entity-class))
+  (notify-class-redefinition class class))
+
+(defmethod (setf direct-shaders) :after (value (class shader-entity-class))
+  (compute-effective-shaders class))
+
 (defmethod effective-shaders ((class symbol))
   (effective-shaders (find-class class)))
 
+(defmethod (setf effective-shaders) (value (class symbol))
+  (setf (effective-shaders (find-class class)) value))
+
 (defmethod direct-shaders ((class symbol))
   (direct-shaders (find-class class)))
+
+(defmethod (setf direct-shaders) (value (class symbol))
+  (setf (direct-shaders (find-class class)) value))
 
 (defmethod class-shader (type (class shader-entity-class))
   (getf (direct-shaders class) type))
@@ -92,22 +104,16 @@
 (defmethod (setf class-shader) (shader type (class symbol))
   (setf (class-shader type (find-class class)) shader))
 
-(defmethod (setf class-shader) :after (shader type (class shader-entity-class))
-  (compute-effective-shaders class))
-
 (defmethod remove-class-shader (type (class shader-entity-class))
   (remf (direct-shaders class) type))
 
 (defmethod remove-class-shader (type (class symbol))
   (remove-class-shader type (find-class class)))
 
-(defmethod remove-class-shader :after (type (class shader-entity-class))
-  (compute-effective-shaders class))
-
 (defmethod make-class-shader-program ((class shader-entity-class))
-  (make-asset 'shader-program
-              (loop for (type source) on (effective-shaders class) by #'cddr
-                    collect (make-asset 'shader (list source) :type type))))
+  (make-instance 'shader-program
+                 :shaders (loop for (type source) on (effective-shaders class) by #'cddr
+                                collect (make-instance 'shader :source source :type type))))
 
 (defmacro define-class-shader ((class type &optional (priority 0)) &body definitions)
   `(setf (class-shader ,type ',class)
@@ -120,8 +126,14 @@
 (defmethod effective-shaders ((subject shader-entity))
   (effective-shaders (class-of subject)))
 
+(defmethod (setf effective-shaders) (value (subject shader-entity))
+  (setf (effective-shaders (class-of subject)) value))
+
 (defmethod direct-shaders ((subject shader-entity))
   (direct-shaders (class-of subject)))
+
+(defmethod (setf direct-shaders) (value (subject shader-entity))
+  (setf (direct-shaders (class-of subject)) value))
 
 (defmethod class-shader (type (subject shader-entity))
   (class-shader type (class-of subject)))
@@ -155,3 +167,28 @@ out vec4 color;
 void main(){
   color = vec4(1.0, 1.0, 1.0, 1.0);
 }")
+
+(defmethod determine-effective-shader-class ((name symbol))
+  (determine-effective-shader-class (find-class name)))
+
+(defmethod determine-effective-shader-class ((object shader-entity))
+  (determine-effective-shader-class (class-of object)))
+
+(defmethod determine-effective-shader-class ((class standard-class))
+  NIL)
+
+(defmethod determine-effective-shader-class ((class shader-entity-class))
+  (if (direct-shaders class)
+      class
+      (let* ((effective-superclasses (list (find-class 'shader-entity))))
+        ;; Loop through superclasses and push new, effective superclasses.
+        (loop for superclass in (c2mop:class-direct-superclasses class)
+              for effective-class = (determine-effective-shader-class superclass)
+              do (when (and effective-class (not (find effective-class effective-superclasses)))
+                   (push effective-class effective-superclasses)))
+        ;; If we have one or two --one always being the shader-entity class--
+        ;; then we just return the more specific of the two, as there's no class
+        ;; combination happening that would produce new shaders.
+        (if (<= (length effective-superclasses) 2)
+            (first effective-superclasses)
+            class))))

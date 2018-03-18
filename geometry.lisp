@@ -65,42 +65,6 @@
     (setf (vertices mesh) new-verts))
   mesh)
 
-(defmethod update-instance-for-different-class :after ((mesh vertex-mesh) (vao vertex-array) &key pack load (data-usage :static-draw) attributes)
-  (when pack (pack mesh))
-  (let* ((vertices (vertices mesh))
-         (primer (aref vertices 0))
-         (attributes (or attributes (vertex-attributes primer)))
-         (sizes (loop for attr in attributes collect (vertex-attribute-size primer attr)))
-         (total-size (* (length vertices) (reduce #'+ sizes)))
-         (buffer (make-static-vector total-size :element-type 'single-float)))
-    (loop with offset = 0
-          for vertex across vertices
-          do (dolist (attribute attributes)
-               (setf offset (fill-vertex-attribute vertex attribute buffer offset))))
-    (let* ((vbo (make-asset 'vertex-buffer buffer
-                            :data-usage data-usage :element-type :float :buffer-type :array-buffer))
-           (ebo (make-asset 'vertex-buffer (faces mesh)
-                            :data-usage data-usage :element-type :uint :buffer-type :element-array-buffer))
-           (specs (loop with stride = (reduce #'+ sizes)
-                        for offset = 0 then (+ offset size)
-                        for size in sizes
-                        for index from 0
-                        collect (list vbo :stride (* stride (cffi:foreign-type-size :float))
-                                          :offset (* offset (cffi:foreign-type-size :float))
-                                          :size size
-                                          :index index))))
-      (setf (inputs vao) (list* ebo specs))
-      (when load
-        (load vao)
-        ;; Clean up
-        (offload vbo)
-        (offload ebo)
-        (setf (inputs vbo) NIL)
-        (setf (inputs ebo) NIL)
-        (setf (inputs vao) NIL)
-        (static-vectors:free-static-vector buffer))
-      vao)))
-
 (defmacro with-vertex-filling ((mesh &key pack) &body body)
   (let ((meshg (gensym "MESH")))
     `(let ((,meshg ,mesh))
@@ -198,3 +162,35 @@
 
 (defclass basic-vertex (normal-vertex textured-vertex)
   ())
+
+;;;; Translation
+
+(defmethod update-instance-for-different-class ((mesh vertex-mesh) (array vertex-array) &key (data-usage :static-draw) (attributes T))
+  (let* ((vertices (vertices mesh))
+         (primer (aref vertices 0))
+         (attributes (etypecase attributes
+                       ((eql T) (vertex-attributes primer))
+                       (list attributes)))
+         (sizes (loop for attr in attributes collect (vertex-attribute-size primer attr)))
+         (total-size (* (length vertices) (reduce #'+ sizes)))
+         (buffer (make-static-vector total-size :element-type 'single-float)))
+    ;; Copy the contents of the mesh into the data buffer, packed.
+    (loop with buffer-offset = 0
+          for vertex across vertices
+          do (dolist (attribute attributes)
+               (setf buffer-offset (fill-vertex-attribute vertex attribute buffer buffer-offset))))
+    ;; Construct the buffers and specs
+    (let* ((vbo (make-instance 'vertex-buffer :buffer-data buffer :buffer-type :array-buffer
+                                              :data-usage data-usage :element-type :float))
+           (ebo (make-instance 'vertex-buffer :buffer-data (faces mesh) :buffer-type :element-array-buffer
+                                              :data-usage data-usage :element-type :uint))
+           (specs (loop with stride = (reduce #'+ sizes)
+                        for offset = 0 then (+ offset size)
+                        for size in sizes
+                        for index from 0
+                        collect (list vbo :stride (* stride (cffi:foreign-type-size :float))
+                                          :offset (* offset (cffi:foreign-type-size :float))
+                                          :size size
+                                          :index index))))
+      (setf (bindings array) (list* ebo specs))
+      (setf (size array) (length (faces mesh))))))

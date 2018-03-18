@@ -4,8 +4,6 @@
  Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
-
-
 (defmethod asdf/find-component:resolve-dependency-combination (component (combinator (eql :..)) args)
   (asdf/find-component:resolve-dependency-spec
    (asdf:component-parent component) (first args)))
@@ -24,12 +22,12 @@
   :homepage "https://github.com/Shirakumo/trial"
   :components ((:file "package")
                (:file "array-container" :depends-on ("package"))
-               (:file "asset" :depends-on ("package" "toolkit" "context"))
-               (:file "asset-pool" :depends-on ("package" "asset" "window"))
+               (:file "asset" :depends-on ("package" "toolkit" "resource" "context"))
+               (:file "asset-pool" :depends-on ("package" "asset"))
                (:file "attributes" :depends-on ("package"))
                (:file "camera" :depends-on ("package" "subject" "helpers"))
                (:file "context" :depends-on ("package"))
-               (:file "controller" :depends-on ("package" "mapping" "input" "subject" ("assets" "font")))
+               (:file "controller" :depends-on ("package" "mapping" "input" "subject" "asset" "text"))
                (:file "deploy" :depends-on ("package" "gamepad"))
                (:file "display" :depends-on ("package" "context" "renderable"))
                (:file "effects" :depends-on ("package" "shader-pass"))
@@ -41,29 +39,32 @@
                (:file "gamepad" :depends-on ("package" "event-loop" "toolkit"))
                (:file "geometry" :depends-on ("package" "toolkit" "static-vector" ("assets" "vertex-array")))
                (:file "geometry-clipmap" :depends-on ("package" "geometry-shapes" "shader-subject"))
-               (:file "geometry-shapes" :depends-on ("package" "geometry" "asset-pool"))
-               (:file "helpers" :depends-on ("package" "entity" "transforms" "shader-subject" "shader-pass" "asset"))
+               (:file "geometry-shapes" :depends-on ("package" "geometry" "asset-pool" ("assets" "mesh")))
+               (:file "helpers" :depends-on ("package" "entity" "transforms" "shader-subject" "shader-pass" "asset" "resources"))
                (:file "input" :depends-on ("package" "event-loop" "retention"))
                (:file "layer-set" :depends-on ("package"))
-               (:file "loader" :depends-on ("package" "scene" "asset"))
-               (:file "main" :depends-on ("package" "display" "window" "toolkit" "scene" "pipeline"))
+               (:file "loader" :depends-on ("package" "scene" "resource"))
+               (:file "main" :depends-on ("package" "display" "toolkit" "scene" "pipeline" "window"))
                (:file "mapping" :depends-on ("package" "event-loop" "toolkit"))
                (:file "pipeline" :depends-on ("package" "event-loop" "toolkit"))
                (:file "pipelined-scene" :depends-on ("package" "pipeline" "scene" "loader"))
                (:file "rails" :depends-on ("package" "subject" "helpers"))
+               (:file "redefinition-notifying-class" :depends-on ("package"))
                (:file "render-texture" :depends-on ("package" "pipeline" "entity"))
                (:file "renderable" :depends-on ("package" "toolkit"))
+               (:file "resource" :depends-on ("package" "context"))
                (:file "retention" :depends-on ("package" "event-loop"))
                (:file "scene-buffer" :depends-on ("package" "scene" "render-texture"))
                (:file "scene" :depends-on ("package" "event-loop" "entity"))
                (:file "selection-buffer" :depends-on ("package" "render-texture" "scene" "effects" "loader"))
-               (:file "shader-entity" :depends-on ("package" "entity"))
-               (:file "shader-pass" :depends-on ("package" "shader-subject" "asset" "scene" "loader"))
+               (:file "shader-entity" :depends-on ("package" "entity" "redefinition-notifying-class"))
+               (:file "shader-pass" :depends-on ("package" "shader-subject" "resource" "scene" "loader" "context"))
                (:file "shader-subject" :depends-on ("package" "shader-entity" "subject"))
                (:file "skybox" :depends-on ("package" "shader-subject" "transforms"))
                (:file "sprite" :depends-on ("package" "shader-subject" "helpers"))
                (:file "static-vector" :depends-on ("package"))
                (:file "subject" :depends-on ("package" "event-loop"))
+               (:file "text" :depends-on ("package" "shader-entity" "helpers" ("assets" "font")))
                (:file "toolkit" :depends-on ("package"))
                (:file "transforms" :depends-on ("package"))
                (:file "window" :depends-on ("package"))
@@ -84,16 +85,19 @@
                              (:file "elements" :depends-on ("package" "widget" "input"))
                              (:file "text-field" :depends-on ("package" "elements"))
                              (:file "ui-window" :depends-on ("package" "pane" "elements"))))
-               (:module "assets"
-                :depends-on ("package" "asset" "toolkit")
-                :components ((:file "texture")
+               (:module "resources"
+                :depends-on ("package" "resource" "toolkit")
+                :components ((:file "framebuffer")
+                             (:file "shader-program")
                              (:file "shader")
-                             (:file "shader-program" :depends-on ("shader"))
-                             (:file "vertex-buffer" :depends-on ((:.. "static-vector")))
-                             (:file "vertex-array" :depends-on ("vertex-buffer"))
-                             (:file "framebuffer" :depends-on ("vertex-array" "texture"))
-                             (:file "mesh" :depends-on ((:.. "geometry") (:.. "static-vector")))
-                             (:file "font" :depends-on ((:.. "shader-pass") (:.. "helpers")))))
+                             (:file "texture")
+                             (:file "vertex-array")
+                             (:file "vertex-buffer")))
+               (:module "assets"
+                :depends-on ("package" "asset" "resources")
+                :components ((:file "font")
+                             (:file "image")
+                             (:file "mesh")))
                (:module "formats"
                 :depends-on ("package" "geometry" "static-vector")
                 :components ((:file "vertex-format")
@@ -112,6 +116,7 @@
                :cl-monitors
                :cl-soil
                :cl-fond
+               :cl-ppcre
                :pathname-utils
                :flare
                :for

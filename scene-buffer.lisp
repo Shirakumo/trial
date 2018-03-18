@@ -6,19 +6,12 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass scene-buffer (render-texture scene)
+(defclass scene-buffer (render-texture pipelined-scene)
   ((render-pass :initform (make-instance 'render-pass) :accessor render-pass))
   (:default-initargs
    :width (error "WIDTH required.")
    :height (error "HEIGHT required.")))
 
 (defmethod initialize-instance :after ((buffer scene-buffer) &key)
-  (register (render-pass buffer) buffer)
+  (enter (render-pass buffer) buffer)
   (pack buffer))
-
-(defmethod enter :after ((subject shader-entity) (buffer scene-buffer))
-  (register-object-for-pass buffer subject))
-
-(defmethod paint ((pass shader-pass) (buffer scene-buffer))
-  (for:for ((object over buffer))
-    (paint object pass)))

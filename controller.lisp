@@ -14,9 +14,6 @@
 (define-action load-game (system-action)
   (key-press (eql key :f3)))
 
-(define-action reload-assets (system-action)
-  (key-press (eql key :f5)))
-
 (define-action reload-scene (system-action)
   (key-press (eql key :f6)))
 
@@ -27,10 +24,10 @@
   (key-press (one-of key :section :grave)))
 
 (define-asset (trial noto-sans) font
-    (#p"noto-sans-regular.ttf"))
+    #p"noto-sans-regular.ttf")
 
 (define-asset (trial noto-mono) font
-    (#p"noto-mono-regular.ttf"))
+    #p"noto-mono-regular.ttf")
 
 (define-subject controller ()
   ((display :initform NIL :accessor display)
@@ -40,8 +37,8 @@
   (:default-initargs
    :name :controller))
 
-(defmethod compute-assets ((controller controller) cache)
-  (compute-assets (text controller) cache))
+(defmethod compute-resources ((controller controller) resources readying cache)
+  (compute-resources (text controller) resources readying cache))
 
 (defmethod register-object-for-pass :after (pass (controller controller))
   (register-object-for-pass pass (text controller)))
@@ -56,23 +53,24 @@
         (with-slots (fps-buffer text) controller
           (when (= (array-total-size fps-buffer) (fill-pointer fps-buffer))
             (setf (fill-pointer fps-buffer) 0))
+          ;; FIXME: Yeesh. Don't like these (handler *context*) accesses.
           (vector-push (if (= 0 (frame-time (handler *context*))) 1 (/ (frame-time (handler *context*)))) fps-buffer)
           
           (setf (vy (location text))
-                (- (getf (cl-fond:compute-extent (resource (font text)) "a") :t)))
+                (- -5 (getf (text-extent text "a") :t)))
           (setf (vx (location text)) 5)
           (setf (text text) (format NIL "TIME  [s]: ~8,2f~%~
                                          FPS  [Hz]: ~8,2f~%~
                                          RAM  [KB]: ~8d (~2d%)~%~
                                          VRAM [KB]: ~8d (~2d%)~%~
-                                         ASSETS   : ~8d"
+                                         RESOURCES: ~8d"
                                     (clock (scene (display controller)))
                                     (/ (loop for i from 0 below (array-total-size fps-buffer)
                                              sum (aref fps-buffer i))
                                        (array-total-size fps-buffer))
                                     (- ctotal cfree) (floor (/ (- ctotal cfree) ctotal 0.01))
                                     (- gtotal gfree) (floor (/ (- gtotal gfree) gtotal 0.01))
-                                    (hash-table-count (assets *context*)))))))))
+                                    (hash-table-count (resources *context*)))))))))
 
 (defmethod paint ((controller controller) target)
   (when (show-overlay controller)
@@ -89,33 +87,23 @@
   (quit *context*))
 
 (define-handler (controller mapping T 100) (ev)
-  (map-event ev *loop*)
+  (map-event ev *scene*)
   (retain-event ev))
 
-;; (define-handler (controller reload-assets reload-assets 99) (ev)
-;;   (loop for asset being the hash-keys of (assets *context*)
-;;         do (load (offload asset))))
-
 (define-handler (controller reload-scene reload-scene 99) (ev)
-  (let* ((display (display controller))
-         (old (scene display)))
-    (stop old)
-    (restart-case
-        (let ((new (make-instance (type-of old))))
-          (setf (clock new) (clock old))
-          (setup-scene display new)
-          (transition old new)
-          (setf (scene display) new))
-      (abort ()
-        :report "Give up reloading the scene and continue with the old."
-        (start old)))))
+  (let ((old (scene (display controller))))
+    (change-scene (display controller) (make-instance (type-of old) :clock (clock old)))))
+
+(defclass load-request (event)
+  ((asset :initarg :asset)
+   (action :initarg :action :initform 'reload)))
 
 (define-handler (controller load-request) (ev asset action)
   (ecase action
-    (offload (offload asset))
-    (load    (load asset))
-    (reload  (reload asset))))
+    (deallocate (deallocate asset))
+    (load (load asset))
+    (reload (reload asset))))
 
-(defun maybe-reload-scene (&optional (window (or (window :main) (when *context* (handler *context*)))))
-  (when window
+(defun maybe-reload-scene (&optional (window (list-windows)))
+  (dolist (window (enlist window))
     (issue (scene window) 'reload-scene)))

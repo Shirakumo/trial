@@ -10,18 +10,21 @@
 
 (defmacro with-context ((context &key force reentrant) &body body)
   (let* ((cont (gensym "CONTEXT"))
+         (thunk (gensym "THUNK"))
          (acquiring-body `(progn
                             (acquire-context ,cont :force ,force)
                             (unwind-protect
-                                 (progn ,@body)
+                                 (,thunk)
                               (release-context ,cont :reentrant ,reentrant)))))
     `(let ((,cont ,context))
-       ,(if reentrant
-            acquiring-body
-            `(if (eql *context* ,cont)
-                 (progn ,@body)
-                 (let ((*context* *context*))
-                   ,acquiring-body))))))
+       (flet ((,thunk ()
+                ,@body))
+         ,(if reentrant
+              acquiring-body
+              `(if (current-p ,cont)
+                   (,thunk)
+                   (let ((*context* ,cont))
+                     ,acquiring-body)))))))
 
 (defun launch-with-context (&optional main &rest initargs)
   (apply #'make-instance main initargs))
@@ -36,7 +39,7 @@
    (waiting :initform 0 :accessor context-waiting)
    (lock :initform (bt:make-lock "Context lock") :reader context-lock)
    (wait-lock :initform (bt:make-lock "Context wait lock") :reader context-wait-lock)
-   (assets :initform (make-hash-table :test 'eq) :accessor assets)
+   (resources :initform (make-hash-table :test 'eq) :accessor resources)
    (handler :initarg :handler :accessor handler)
    (shared-with :initarg :share-with :reader shared-with))
   (:default-initargs
@@ -66,6 +69,7 @@
 (defgeneric destroy-context (context))
 (defgeneric valid-p (context))
 (defgeneric make-current (context))
+(defgeneric current-p (context &optional thread))
 (defgeneric done-current (context))
 (defgeneric hide (context))
 (defgeneric show (context &key fullscreen))
@@ -90,13 +94,14 @@
 
 (defmethod destroy-context :around ((context context))
   (when (valid-p context)
-    (with-context (context)
+    (with-context (context :force T)
       (v:info :trial.context "Destroying context.")
       (hide context)
-      (clear-asset-cache)
-      (loop for asset being the hash-values of (assets context)
-            do (offload asset))
-      (call-next-method))))
+      (loop for resource being the hash-values of (resources context)
+            do (when (allocated-p resource) (deallocate resource)))
+      (clrhash (resources context))
+      (call-next-method)
+      (setf *context* NIL))))
 
 (defmethod create-context :around ((context context))
   (unless (valid-p context)
@@ -105,6 +110,9 @@
     (make-current context)
     (context-note-debug-info context)
     (show context)))
+
+(defmethod current-p ((context context) &optional (thread (bt:current-thread)))
+  (eql thread (current-thread context)))
 
 (defmethod acquire-context ((context context) &key force)
   (let ((current (current-thread context))
@@ -141,7 +149,7 @@
              (bt:release-lock (context-lock context))
              (setf *context* NIL))
             (T
-             (v:warn :trial.context "~a attempted to release ~a even through ~a is active."
+             (v:warn :trial.context "~a attempted to release ~a even though ~a is active."
                      this context *context*))))))
 
 (defclass resize (event)
@@ -156,10 +164,6 @@
 
 (defmethod describe-object :after ((context context) stream)
   (context-info context stream))
-
-(defun gl-property (name)
-  (handler-case (gl:get* name)
-    (error (err) :unavailable)))
 
 (defun context-info (context stream)
   (format stream "~&~%Running GL~a.~a ~a~%~

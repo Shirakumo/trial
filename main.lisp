@@ -9,9 +9,7 @@
 ;; FIXME: Fullscreenable seems to cause really bad behaviour, idk
 (defclass main (display window)
   ((scene :initform (make-instance 'pipelined-scene) :accessor scene)
-   (controller :initform (make-instance 'controller) :accessor controller))
-  (:default-initargs
-   :name :main))
+   (controller :initform (make-instance 'controller) :accessor controller)))
 
 (defmethod initialize-instance :after ((main main) &key)
   (with-slots (scene controller) main
@@ -42,13 +40,27 @@
     (call-next-method))
   (start scene)
   ;; Cause camera to refresh
-  (issue scene 'resize :width (width main) :height (height main)))
+  (issue scene 'resize :width (width main) :height (height main))
+  scene)
 
 (defmethod setup-scene ((main main) scene)
   ())
 
 (defmethod setup-scene :after ((main main) (scene scene))
   (enter (controller main) scene))
+
+(defmethod change-scene ((main main) (new scene))
+  (let ((old (scene main)))
+    (stop old)
+    (restart-case
+        (progn
+          (setup-scene main new)
+          (transition old new)
+          (setf (scene main) new))
+      (abort ()
+        :report "Give up changing the scene and continue with the old."
+        (start old)))
+    (values new old)))
 
 (defmethod paint ((source main) (target main))
   (paint (scene source) target)
@@ -63,4 +75,5 @@
   (v:info :trial.main "GENESIS")
   (handler-bind ((error #'standalone-error-handler))
     (apply #'launch-with-context main initargs))
+  (setf *context* NIL)
   (tg:gc :full T))

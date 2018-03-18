@@ -6,44 +6,41 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass mesh (asset)
-  ((mesh :initarg :mesh :accessor mesh)
-   (size :initform 0 :accessor size))
-  (:default-initargs :mesh NIL))
+(defclass mesh (gl-asset vertex-array)
+  ((geometry-name :initarg :geometry-name :accessor geometry-name)
+   (data-usage :initarg :data-usage :accessor data-usage))
+  (:default-initargs
+   :bindings NIL
+   :geometry-name NIL
+   :data-usage :static-draw))
 
-(defmethod coerce-input ((asset mesh) (input pathname))
-  (read-geometry input T))
+(defmethod destructor ((mesh mesh))
+  (let ((prev (call-next-method))
+        (bindings (bindings mesh)))
+    (lambda ()
+      (funcall prev)
+      (loop for (buffer) in bindings
+            do (when (allocated-p buffer) (deallocate buffer))
+               (maybe-free-static-vector (buffer-data buffer))))))
 
-(defmethod coerce-input ((asset mesh) (input string))
-  (read-geometry (pathname input) T))
-
-(defmethod coerce-input ((asset mesh) (input geometry))
-  input)
-
-(defmethod coerce-input ((asset mesh) (input vertex-mesh))
-  input)
-
-(defmethod coerce-input ((asset mesh) (input vertex-array))
-  input)
-
-(defmethod finalize-resource ((type (eql 'mesh)) resource)
-  (finalize-resource 'vertex-array resource))
-
-(defmethod load progn ((asset mesh))
-  (let* ((geometry (first (coerced-inputs asset)))
-         (mesh (etypecase geometry
-                 (geometry (or (gethash (mesh asset) (meshes geometry))
-                               (error "~a does not contain a mesh named ~a."
-                                      geometry (mesh asset))))
-                 (T geometry))))
-    (etypecase mesh
-      (vertex-mesh
-       (let ((new (make-instance 'vertex-mesh :face-length (face-length mesh))))
-         (setf (faces new) (faces mesh))
-         (setf (vertices new) (vertices mesh))
-         (change-class new 'vertex-array :load T)
-         (setf (resource asset) (resource new))
-         (setf (size asset) (size new))))
-      (vertex-array
-       (setf (resource asset) (resource (load mesh)))
-       (setf (size asset) (size mesh))))))
+(defmethod load ((mesh mesh))
+  (let* ((input (coerce-asset-input mesh T))
+         (vao (etypecase input
+                (pathname (gethash (geometry-name mesh) (meshes (read-geometry input T))))
+                (vertex-mesh (change-class (copy-instance input) 'vertex-array))
+                (vertex-array input))))
+    (setf (bindings mesh) (mapcar #'enlist (bindings vao)))
+    (setf (size mesh) (size vao))
+    (loop for (buffer) in (bindings mesh)
+          do (setf (data-usage buffer) (data-usage mesh))
+             (allocate buffer))
+    (allocate mesh)
+    (case (data-usage mesh)
+      (:static-draw
+       ;; Free buffers again to avoid leaving garbage around.
+       ;; We can do this safely because we know the data is fresh
+       ;; and won't be used in the future due to static-draw.
+       (loop for (buffer) in (bindings mesh)
+             do (deallocate buffer)
+                (maybe-free-static-vector (buffer-data buffer)))))
+    (setf (bindings mesh) NIL)))

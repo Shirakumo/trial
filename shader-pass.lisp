@@ -20,10 +20,14 @@
   T)
 
 (defclass texture-port (flow:port)
-  ((texture :initform NIL :accessor texture)))
+  ((texture :initform NIL :accessor texture)
+   (texspec :initarg :texspec :accessor texspec))
+  (:default-initargs
+   :texspec ()))
 
 (flow:define-port-value-slot texture-port texture texture)
 
+;; FIXME: check for duplicate inputs/outputs.
 (defclass uniform-port (flow:port)
   ((uniform-name :initarg :uniform :initform NIL :accessor uniform-name)))
 
@@ -38,7 +42,14 @@
   (unless (flow:connections input)
     (error "Pipeline is not consistent.~%~
             Pass ~s is missing a connection to its input ~s."
-           (flow:node input) input)))
+           (flow:node input) input))
+  (let ((other (flow:left (first (flow:connections input)))))
+    (unless (or (not (texspec input))
+                (join-texspec (texspec input)
+                              (texspec other)))
+      (error "Pipeline is not consistent.~%~
+              Pass ~s' input ~s is not texture compatible with output ~s."
+             (flow:node input) input other))))
 
 (defclass output (flow:out-port flow:n-port texture-port)
   ((attachment :initarg :attachment :accessor attachment))
@@ -56,23 +67,41 @@
   (:metaclass shader-pass-class)
   (:inhibit-shaders (shader-entity :fragment-shader)))
 
+(defmethod initialize-instance :after ((pass shader-pass) &key)
+  (add-class-redefinition-listener pass (class-of pass)))
+
 (define-class-shader (shader-pass :fragment-shader)
   "#version 330 core")
 
-;; FIXME: check for duplicate inputs/outputs.
-
 (defgeneric register-object-for-pass (pass object))
 (defgeneric shader-program-for-pass (pass object))
+(defgeneric make-pass-shader-program (pass class))
 (defgeneric coerce-pass-shader (pass class type spec))
-(defgeneric determine-effective-shader-class (class))
+
+(defmethod make-pass-shader-program ((pass shader-pass) (class symbol))
+  (make-pass-shader-program pass (find-class class)))
+
+(defmethod make-pass-shader-program ((pass shader-pass) (class shader-entity-class))
+  (let ((shaders ()))
+    ;; FIXME: What if the pass defines types that the class does not?
+    (loop for (type spec) on (effective-shaders class) by #'cddr
+          for inputs = (coerce-pass-shader pass class type spec)
+          for shader = (make-instance 'shader :source inputs :type type)
+          do (push shader shaders))
+    (make-instance 'shader-program :shaders shaders)))
 
 (defmethod finalize :after ((pass shader-pass))
   (when (framebuffer pass)
     (finalize (framebuffer pass))))
 
-(define-handler (shader-pass register-subject-for-enter enter) (ev entity)
-  (let ((pass (register-object-for-pass shader-pass entity)))
-    (when pass (load pass))))
+(defmethod register-object-for-pass :after ((pass shader-pass) (object container))
+  (for:for ((item over object))
+    (register-object-for-pass pass item)))
+
+(define-handler (shader-pass register-entity-for-enter enter) (ev entity)
+  (unless (typep entity 'shader-pass)
+    (let ((pass (register-object-for-pass shader-pass entity)))
+      (when pass (load pass)))))
 
 (defmacro define-shader-pass (&environment env name direct-superclasses direct-slots &rest options)
   (unless (find-if (lambda (c) (c2mop:subclassp (find-class c T env) 'shader-pass)) direct-superclasses)
@@ -95,7 +124,7 @@
              do (when (typep port 'uniform-port)
                   (setf (uniform program (uniform-name port)) (pop texture-index))
                   (gl:active-texture (pop texture-name))
-                  (gl:bind-texture :texture-2d (resource (texture port)))))
+                  (gl:bind-texture :texture-2d (gl-name (texture port)))))
        (loop for (name value) in (uniforms pass)
              do (setf (uniform program name) value)))))
 
@@ -106,46 +135,9 @@
 (define-shader-pass per-object-pass ()
   ((assets :initform (make-hash-table :test 'eql) :accessor assets)))
 
-(define-handler (per-object-pass update-shader-for-redefined-subject subject-class-redefined) (ev subject-class)
-  (let ((assets (assets per-object-pass)))
-    (flet ((refresh (class)
-             (let ((previous (gethash class assets)))
-               (remhash class assets)
-               (register-object-for-pass per-object-pass class)
-               (let ((new (gethash class assets)))
-                 (when (and previous (resource previous)
-                            (not (eql previous new)))
-                   (restart-case
-                       (progn
-                         (load new)
-                         (offload previous))
-                     (continue ()
-                       :report "Ignore the change and continue with the hold shader."
-                       (setf (gethash class assets) previous))))))))
-      (cond ((eql subject-class (class-of per-object-pass))
-             ;; Pass changed, recompile everything
-             (loop for class being the hash-keys of assets
-                   do (refresh class)))
-            ((and (typep subject-class 'shader-entity-class)
-                  (not (typep subject-class 'shader-pass-class)))
-             ;; Object changed, recompile it
-             (refresh subject-class))))))
-
-(defmethod shader-program-for-pass ((pass per-object-pass) (subject shader-entity))
-  (gethash (class-of subject) (assets pass)))
-
-(defmethod coerce-pass-shader ((pass per-object-pass) class type spec)
-  (glsl-toolkit:merge-shader-sources
-   (list spec (getf (effective-shaders pass) type))))
-
-(defmethod determine-effective-shader-class ((name symbol))
-  (determine-effective-shader-class (find-class name)))
-
-(defmethod determine-effective-shader-class ((object shader-entity))
-  (determine-effective-shader-class (class-of object)))
-
-(defmethod determine-effective-shader-class ((class standard-class))
-  NIL)
+(defmethod register-object-for-pass :after ((pass per-object-pass) (object shader-entity))
+  (add-class-redefinition-listener pass (determine-effective-shader-class object))
+  (add-class-redefinition-listener pass (class-of object)))
 
 ;; FIXME: Maybe consider determining effective class for each
 ;;        individual shader stage as they might each change
@@ -153,21 +145,36 @@
 ;;        effectively.
 ;; FIXME: Share SHADER assets between shader programs by caching
 ;;        them... somewhere somehow?
-(defmethod determine-effective-shader-class ((class shader-entity-class))
-  (if (direct-shaders class)
-      class
-      (let* ((effective-superclasses (list (find-class 'shader-entity))))
-        ;; Loop through superclasses and push new, effective superclasses.
-        (loop for superclass in (c2mop:class-direct-superclasses class)
-              for effective-class = (determine-effective-shader-class superclass)
-              do (when (and effective-class (not (find effective-class effective-superclasses)))
-                   (push effective-class effective-superclasses)))
-        ;; If we have one or two --one always being the shader-entity class--
-        ;; then we just return the more specific of the two, as there's no class
-        ;; combination happening that would produce new shaders.
-        (if (<= (length effective-superclasses) 2)
-            (first effective-superclasses)
-            class))))
+(defmethod notify-class-redefinition ((pass per-object-pass) (class shader-entity-class))
+  ;; FIXME: What happens if the effective shader class changes?
+  (let ((assets (assets pass)))
+    (flet ((refresh (class)
+             (let ((prev (gethash class assets))
+                   (new (make-pass-shader-program pass class)))
+               (if (and prev (allocated-p prev))
+                   (with-context (*context*)
+                     (with-simple-restart (continue "Ignore the change and continue with the hold shader.")
+                       (dolist (shader (shaders new))
+                         (unless (allocated-p shader) (allocate shader)))
+                       (allocate new)
+                       (deallocate prev)
+                       (setf (gethash class assets) new)))
+                   (setf (gethash class assets) new)))))
+      (cond ((eql class (class-of pass))
+             ;; Pass changed, recompile everything
+             (loop for class being the hash-keys of assets
+                   do (refresh class)))
+            ((eql class (determine-effective-shader-class class))
+             ;; Object changed, recompile it
+             (refresh class))))))
+
+(defmethod shader-program-for-pass ((pass per-object-pass) (subject shader-entity))
+  ;; FIXME: FIXME: FIXME: FIXME: THIS REALLY NEEDS A FIX AS IT IS SUPER INEFFICIENT!
+  (gethash (determine-effective-shader-class subject) (assets pass)))
+
+(defmethod coerce-pass-shader ((pass per-object-pass) class type spec)
+  (glsl-toolkit:merge-shader-sources
+   (list spec (getf (effective-shaders pass) type))))
 
 (defmethod register-object-for-pass ((pass per-object-pass) o))
 
@@ -176,70 +183,34 @@
     (register-object-for-pass pass object)))
 
 (defmethod register-object-for-pass ((pass per-object-pass) (class shader-entity-class))
-  (let ((shaders ()))
-    (let ((effective-class (determine-effective-shader-class class)))
-      (unless (gethash effective-class (assets pass))
-        (loop for (type spec) on (effective-shaders effective-class) by #'cddr
-              for inputs = (coerce-pass-shader pass effective-class type spec)
-              for shader = (make-asset 'shader inputs :type type)
-              do (push shader shaders))
-        (setf (gethash effective-class (assets pass))
-              (make-asset 'shader-program shaders)))
-      (setf (gethash class (assets pass)) (gethash effective-class (assets pass))))))
+  (let ((effective-class (determine-effective-shader-class class)))
+    (unless (gethash effective-class (assets pass))
+      (setf (gethash effective-class (assets pass))
+            (make-pass-shader-program pass effective-class)))))
 
 (defmethod register-object-for-pass ((pass per-object-pass) (subject shader-entity))
   (register-object-for-pass pass (class-of subject)))
 
 (defmethod paint :around ((subject shader-entity) (pass per-object-pass))
   (let ((program (shader-program-for-pass pass subject)))
-    (gl:use-program (resource program))
+    (gl:use-program (gl-name program))
     (prepare-pass-program pass program)
     (call-next-method)))
 
-(define-shader-pass multisampled-pass (bakable)
-  ((multisample-fbo :initform NIL :accessor multisample-fbo)
-   (samples :initarg :samples :accessor samples))
-  (:default-initargs :samples 8))
+(define-shader-pass single-shader-pass (bakable)
+  ((shader-program :initform NIL :accessor shader-program)))
 
-(defmethod bake ((pass multisampled-pass))
-  (setf (multisample-fbo pass)
-        (make-asset 'framebuffer-bundle
-                    `((:attachment :color-attachment0 :bits ,(samples pass) :target :texture-2d-multisample)
-                      (:attachment :depth-stencil-attachment :bits ,(samples pass) :target :texture-2d-multisample))
-                    :width (width *context*) :height (height *context*))))
+(defmethod notify-class-redefinition ((pass single-shader-pass) class)
+  (when (eql class (class-of pass))
+    (let* ((program (shader-program pass))
+           (loaded (and program (gl-name program))))
+      (when loaded (deallocate program))
+      (setf (shader-program pass) (make-class-shader-program pass))
+      (when loaded
+        (with-context (*context*)
+          (load (shader-program pass)))))))
 
-(defmethod paint-with :around ((pass multisampled-pass) target)
-  (let ((original-framebuffer (resource (framebuffer pass))))
-    (gl:bind-framebuffer :framebuffer (resource (multisample-fbo pass)))
-    (gl:clear :color-buffer :depth-buffer :stencil-buffer)
-    (call-next-method)
-    (gl:bind-framebuffer :draw-framebuffer original-framebuffer)
-    (%gl:blit-framebuffer 0 0 (width target) (height target) 0 0 (width target) (height target)
-                          (logior (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
-                                  (cffi:foreign-bitfield-value '%gl::ClearBufferMask :depth-buffer)
-                                  (cffi:foreign-bitfield-value '%gl::ClearBufferMask :stencil-buffer))
-                          (cffi:foreign-enum-value '%gl:enum :nearest))
-    (gl:bind-framebuffer :framebuffer original-framebuffer)))
-
-(define-handler (multisampled-pass resize) (ev width height)
-  (when (multisample-fbo multisampled-pass)
-    (resize (multisample-fbo multisampled-pass) width height)))
-
-(define-shader-pass multisampled-per-object-pass (multisampled-pass per-object-pass)
-  ())
-
-(define-shader-pass single-shader-pass ()
-  ((shader-program :initform (make-instance 'shader-program) :accessor shader-program)))
-
-(define-handler (single-shader-pass update-shader-for-redefined-subject subject-class-redefined) (ev subject-class)
-  (when (eql subject-class (class-of single-shader-pass))
-    (let* ((program (shader-program single-shader-pass))
-           (loaded (and program (resource program))))
-      (when loaded (offload program))
-      (setf (shader-program single-shader-pass) (make-class-shader-program single-shader-pass))
-      (when loaded (load (shader-program single-shader-pass))))))
-
-(defmethod load progn ((pass single-shader-pass))
+(defmethod bake ((pass single-shader-pass))
   (setf (shader-program pass) (make-class-shader-program pass)))
 
 (defmethod register-object-for-pass ((pass single-shader-pass) o))
@@ -249,7 +220,7 @@
 
 (defmethod paint-with :around ((pass single-shader-pass) thing)
   (let ((program (shader-program pass)))
-    (gl:use-program (resource program))
+    (gl:use-program (gl-name program))
     (prepare-pass-program pass program)
     (call-next-method)))
 
@@ -260,7 +231,7 @@
   (let ((vao (vertex-array pass)))
     (with-pushed-attribs
       (disable :depth-test)
-      (gl:bind-vertex-array (resource vao))
+      (gl:bind-vertex-array (gl-name vao))
       (%gl:draw-elements :triangles (size vao) :unsigned-int (cffi:null-pointer))
       (gl:bind-vertex-array 0))))
 
@@ -278,3 +249,16 @@ void main(){
 (define-class-shader (post-effect-pass :fragment-shader)
   "
 in vec2 tex_coord;")
+
+(define-shader-pass sample-reduction-pass (post-effect-pass)
+  ((previous-pass :port-type input :texspec (:target :texture-2d-multisample))
+   (color :port-type output :texspec (:target :texture-2d))))
+
+(define-class-shader (sample-reduction-pass :fragment-shader)
+  "uniform sampler2DMS previous_pass;
+in vec2 tex_coord;
+out vec4 color;
+
+void main(){
+  color = texture(previous_pass, tex_coord);
+}")

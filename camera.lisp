@@ -10,6 +10,7 @@
   ((near-plane :initarg :near-plane :accessor near-plane)
    (far-plane :initarg :far-plane :accessor far-plane))
   (:default-initargs
+   :name :camera
    :location (vec 0 30 200)
    :near-plane 0.01f0
    :far-plane 1000000.0f0))
@@ -46,6 +47,7 @@
                            (near-plane camera) (far-plane camera)))
 
 (defmethod project-view ((camera 2d-camera) ev)
+  (reset-matrix *view-matrix*)
   (translate (v- (location camera)) *view-matrix*))
 
 (define-subject sidescroll-camera (2d-camera)

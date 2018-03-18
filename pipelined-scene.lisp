@@ -19,7 +19,6 @@
 (defmethod enter :after ((entity entity) (scene pipelined-scene))
   (register-object-for-pass scene entity))
 
-
 (defmethod leave :after ((entity entity) (scene pipelined-scene))
   ;; FIXME: A system for figuring out when we can GC shader programs
   ;; (deregister-object-for-pass scene entity)
@@ -29,3 +28,6 @@
   (pack-pipeline scene *context*)
   (for:for ((element over scene))
     (register-object-for-pass scene element)))
+
+(defmethod handle :after ((event resize) (scene pipelined-scene))
+  (resize scene (width event) (height event)))

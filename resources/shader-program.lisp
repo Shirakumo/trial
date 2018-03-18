@@ -6,11 +6,11 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass shader-program (asset)
-  ((uniform-map :initform NIL :accessor uniform-map)))
-
-(defmethod coerce-input ((asset shader-program) (shader shader))
-  shader)
+(defclass shader-program (gl-resource)
+  ((uniform-map :initform (make-hash-table :test 'equal) :accessor uniform-map)
+   (shaders :initarg :shaders :accessor shaders))
+  (:default-initargs
+   :shaders (error "SHADERS required.")))
 
 (defun check-shader-compatibility (shaders)
   (loop with table = (make-hash-table :test 'eql)
@@ -21,26 +21,32 @@
                (setf (gethash (shader-type shader) table) shader))
         finally (return shaders)))
 
-(defmethod finalize-resource ((type (eql 'shader-program)) resource)
-  (gl:delete-program resource))
+(defmethod destructor ((program shader-program))
+  (let ((prog (gl-name program)))
+    (lambda () (when prog (gl:delete-program prog)))))
 
-(defmethod load progn ((asset shader-program))
-  (let ((shaders (coerced-inputs asset)))
+(defmethod dependencies ((program shader-program))
+  (copy-list (shaders program)))
+
+(defmethod allocate ((program shader-program))
+  (let ((shaders (shaders program)))
     (check-shader-compatibility shaders)
-    (let ((program (gl:create-program)))
-      (setf (resource asset) program)
-      (setf (uniform-map asset) (make-hash-table :test 'equal))
-      (with-cleanup-on-failure (offload asset)
+    (let ((prog (gl:create-program)))
+      (with-cleanup-on-failure (gl:delete-program prog)
         (dolist (shader shaders)
-          (load shader)
-          (gl:attach-shader program (resource shader)))
-        (gl:link-program program)
+          (check-allocated shader)
+          (gl:attach-shader prog (gl-name shader)))
+        (gl:link-program prog)
         (dolist (shader shaders)
-          (gl:detach-shader program (resource shader)))
-        (unless (gl:get-program program :link-status)
+          (gl:detach-shader prog (gl-name shader)))
+        (unless (gl:get-program prog :link-status)
           (error "Failed to link ~a: ~%~a"
-                 asset (gl:get-program-info-log program)))
-        (v:debug :trial.asset "Linked ~a with ~a." program shaders)))))
+                 program (gl:get-program-info-log prog)))
+        (v:debug :trial.asset "Linked ~a with ~a." program shaders)
+        (setf (data-pointer program) prog)))))
+
+(defmethod deallocate :after ((program shader-program))
+  (clrhash (uniform-map program)))
 
 (declaim (inline %set-uniform))
 (defun %set-uniform (location data)
@@ -89,7 +95,7 @@
                  (symbol (symbol->c-name name))))
          (location (or (gethash name (uniform-map asset))
                        (setf (gethash name (uniform-map asset))
-                             (gl:get-uniform-location (resource asset) name)))))
+                             (gl:get-uniform-location (gl-name asset) name)))))
     (%set-uniform location data)))
 
 (define-compiler-macro (setf uniform) (&whole whole &environment env data asset name)
@@ -102,7 +108,7 @@
                   (,assetg ,asset))
               (%set-uniform (or (gethash ,nameg (uniform-map ,assetg))
                                 (setf (gethash ,nameg (uniform-map ,assetg))
-                                      (gl:get-uniform-location (resource ,assetg) ,nameg)))
+                                      (gl:get-uniform-location (gl-name ,assetg) ,nameg)))
                             ,data))))
         (T
          whole)))

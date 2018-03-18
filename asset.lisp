@@ -4,125 +4,92 @@
  Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
-;; FIXME: configurable defaults
-
 (in-package #:org.shirakumo.fraf.trial)
 
-(defgeneric load (object)
-  (:method-combination progn :most-specific-last))
+(defclass asset (resource)
+  ((pool :initform NIL :accessor pool)
+   (name :initform NIL :accessor name)
+   (input :initarg :input :accessor input)))
 
-(defmethod load progn (object)
-  (v:trace :trial.asset "Loading ~a" object))
+(defmethod initialize-instance :after ((asset asset) &key pool name)
+  (check-type name symbol)
+  (setf (name asset) name)
+  (setf (pool asset) (etypecase pool
+                       (null (error "POOL required."))
+                       (symbol (find-pool pool T))
+                       (pool pool)))
+  (setf (asset pool name) asset))
 
-(defmethod load :around (object)
-  (call-next-method)
-  object)
+(defmethod reinitialize-instance :after ((asset asset) &key)
+  (when (allocated-p asset)
+    (reload asset)))
 
-(defgeneric offload (object)
-  (:method-combination progn :most-specific-first))
-
-(defmethod offload progn (object)
-  (v:trace :trial.asset "Offloaded ~a" object))
-
-(defmethod offload :around (object)
-  (call-next-method)
-  object)
-
-(defclass asset ()
-  ((inputs :initarg :inputs :accessor inputs)
-   (resource :initform NIL :initarg :resource :accessor resource))
-  (:default-initargs :inputs ()))
-
-(defmethod initialize-instance :around ((asset asset) &rest args &key input inputs)
-  (when input (setf (getf args :inputs) (list* input inputs)))
-  (apply #'call-next-method asset args))
+(defmethod update-instance-for-different-class :around ((previous asset) (current asset) &key)
+  ;; FIXME: Error recovery?
+  (cond ((allocated-p current)
+         (deallocate current)
+         (call-next-method)
+         (load current))
+        (T
+         (call-next-method))))
 
 (defmethod print-object ((asset asset) stream)
-  (print-unreadable-object (asset stream :type T :identity T)))
+  (print-unreadable-object (asset stream :type T)
+    (format stream "~a/~a" (name (pool asset)) (name asset))))
 
-(defmethod finalize-resource ((asset asset) resource)
-  (finalize-resource (type-of asset) resource))
-
-(defmethod finalize-resource :before ((type symbol) resource)
-  (v:trace :trial.asset "Finalising resource ~a of type ~a"
-           resource type))
-
-(defmethod install-finalizer ((asset asset))
-  (let ((type (type-of asset))
-        (resource (resource asset)))
-    (tg:cancel-finalization asset)
-    (tg:finalize asset (lambda () (finalize-resource type resource)))))
-
-(defmethod (setf resource) :after (value (asset asset))
-  (if value
-      (install-finalizer asset)
-      (tg:cancel-finalization asset)))
-
-(defmethod coerce-input ((asset asset) input)
-  (error "Incompatible input type ~s for asset of type ~s."
-         (type-of input) (type-of asset)))
-
-(defmethod coerced-inputs ((asset asset))
-  (loop for input in (inputs asset)
-        collect (coerce-input asset input)))
-
-(defmethod load :around ((asset asset))
-  (unless (resource asset)
-    (call-next-method)
-    (setf (gethash asset (assets *context*)) asset))
-  asset)
-
-(defmethod offload :around ((asset asset))
-  (when (resource asset)
-    (call-next-method)
-    (remhash asset (assets *context*)))
-  asset)
-
-(defmethod offload progn ((asset asset))
-  (finalize-resource asset (resource asset))
-  (setf (resource asset) NIL))
+(defgeneric load (asset))
+(defgeneric reload (asset))
 
 (defmethod reload ((asset asset))
-  (let ((resource (resource asset)))
-    (setf (resource asset) NIL)
-    (with-cleanup-on-failure (setf (resource asset) resource)
-      (load asset)
-      (finalize-resource asset resource))
-    asset))
+  (deallocate asset)
+  (load asset))
 
-(defmethod finalize :after ((asset asset))
-  (offload asset))
+(defmethod load :around ((asset asset))
+  (unless (allocated-p asset)
+    (v:trace :trial.asset "Loading ~a/~a" (name (pool asset)) (name asset))
+    (call-next-method)))
 
-(defun make-asset (type inputs &rest initargs)
-  (apply #'make-instance type :inputs (enlist inputs) initargs))
+(defmethod deallocate :around ((asset asset))
+  (when (allocated-p asset)
+    (v:trace :trial.asset "Deallocating ~a/~a" (name (pool asset)) (name asset))
+    (call-next-method)))
 
-(defmacro with-assets (asset-specs &body body)
-  (if asset-specs
-      (destructuring-bind (variable . initform) (first asset-specs)
-        `(let ((,variable (make-asset ,@initform)))
-           (load ,variable)
-           (unwind-protect
-                (with-assets ,(rest asset-specs)
-                  ,@body)
-             (offload ,variable))))
-      `(progn ,@body)))
+(defmethod coerce-asset-input ((asset asset) (input (eql T)))
+  (coerce-asset-input asset (input asset)))
 
-(defvar *asset-cache* (tg:make-weak-hash-table :weakness :key :test 'eq))
+(defmethod coerce-asset-input ((asset asset) thing)
+  thing)
 
-(defun clear-asset-cache ()
-  (loop for table being the hash-values of *asset-cache*
-        do (loop for asset being the hash-values of table
-                 do (offload asset)))
-  (clrhash *asset-cache*))
+(defmethod coerce-asset-input ((asset asset) (path pathname))
+  (pool-path (pool asset) path))
 
-(defmacro with-assets* (asset-specs &body body)
-  (let ((index (gensym "INDEX"))
-        (table (gensym "TABLE")))
-    `(let* ((,table (or (gethash ',index *asset-cache*)
-                        (setf (gethash ',index *asset-cache*)
-                              (make-hash-table :test 'eq))))
-            ,@(loop for (variable . initform) in asset-specs
-                    collect `(,variable (or (gethash ',variable ,table)
-                                            (setf (gethash ',variable ,table)
-                                                  (load (make-asset ,@initform)))))))
-       ,@body)))
+(defmethod coerce-asset-input ((asset asset) (list list))
+  (loop for item in list collect (coerce-asset-input asset item)))
+
+(defmacro define-asset ((pool name) type input &rest options)
+  (check-type pool symbol)
+  (check-type name symbol)
+  (check-type type symbol)
+  `(let ((,name (asset ',pool ',name NIL)))
+     (cond ((and ,name (eql (type-of ,name) ',type))
+            (reinitialize-instance ,name ,@options :input ,input))
+           (,name
+            (change-class ,name ',type ,@options :input ,input))
+           (T
+            (make-instance ',type ,@options :input ,input :name ',name :pool ',pool)))))
+
+(trivial-indent:define-indentation define-asset (4 6 4 &body))
+
+(defclass gl-asset (asset gl-resource) ())
+
+(defmethod load :around ((asset gl-asset))
+  (with-context (*context*)
+    (call-next-method)))
+
+(defmethod deallocate :around ((asset gl-asset))
+  (with-context (*context*)
+    (call-next-method)))
+
+(defmethod reload :around ((asset gl-asset))
+  (with-context (*context*)
+    (call-next-method)))

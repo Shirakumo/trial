@@ -6,20 +6,6 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-asset (trial fullscreen-square) packed-vertex-array
-    (#(0 2 1 2 0 3)
-     3 #(+1.0 +1.0 +0.0
-         +1.0 -1.0 +0.0
-         -1.0 -1.0 +0.0
-         -1.0 +1.0 +0.0)
-     2 #(1.0 1.0
-         1.0 0.0
-         0.0 0.0
-         0.0 1.0)))
-
-(define-asset (trial empty-vertex-array) vertex-array
-    ())
-
 ;; FIXME: Allow specifying which attributes to include
 ;; FIXME: Generate normals
 ;; FIXME: Generate UVs
@@ -47,49 +33,50 @@
       (vertex :position (vec r u z) :uv (vec 1.0 1.0)))))
 
 (defun make-cube (size &key mesh pack (x 0) (y 0) (z 0))
-  (let ((s (/ size 2)))
-    (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'textured-vertex)) :pack pack)
-      (vertex :position (vec (+ x s) (+ y s) (- z s)) :uv (vec 1.0 1.0))
-      (vertex :position (vec (- x s) (+ y s) (- z s)) :uv (vec 0.0 1.0))
-      (vertex :position (vec (- x s) (+ y s) (+ z s)) :uv (vec 0.0 0.0))
-      (vertex :position (vec (- x s) (+ y s) (+ z s)) :uv (vec 0.0 0.0))
-      (vertex :position (vec (+ x s) (+ y s) (+ z s)) :uv (vec 1.0 0.0))
-      (vertex :position (vec (+ x s) (+ y s) (- z s)) :uv (vec 1.0 1.0))
+  (destructuring-bind (w d h) (enlist size size size)
+    (let ((w (/ w 2)) (d (/ d 2)) (h (/ h 2)))
+      (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'basic-vertex)) :pack pack)
+        (vertex :position (vec (+ x w) (+ y h) (- z d)) :uv (vec 1.0 1.0) :normal (vec 0 1 0))
+        (vertex :position (vec (- x w) (+ y h) (- z d)) :uv (vec 0.0 1.0) :normal (vec 0 1 0))
+        (vertex :position (vec (- x w) (+ y h) (+ z d)) :uv (vec 0.0 0.0) :normal (vec 0 1 0))
+        (vertex :position (vec (- x w) (+ y h) (+ z d)) :uv (vec 0.0 0.0) :normal (vec 0 1 0))
+        (vertex :position (vec (+ x w) (+ y h) (+ z d)) :uv (vec 1.0 0.0) :normal (vec 0 1 0))
+        (vertex :position (vec (+ x w) (+ y h) (- z d)) :uv (vec 1.0 1.0) :normal (vec 0 1 0))
 
-      (vertex :position (vec (+ x s) (- y s) (+ z s)) :uv (vec 1.0 1.0))
-      (vertex :position (vec (- x s) (- y s) (+ z s)) :uv (vec 0.0 1.0))
-      (vertex :position (vec (- x s) (- y s) (- z s)) :uv (vec 0.0 0.0))
-      (vertex :position (vec (- x s) (- y s) (- z s)) :uv (vec 0.0 0.0))
-      (vertex :position (vec (+ x s) (- y s) (- z s)) :uv (vec 1.0 0.0))
-      (vertex :position (vec (+ x s) (- y s) (+ z s)) :uv (vec 1.0 1.0))
+        (vertex :position (vec (+ x w) (- y h) (+ z d)) :uv (vec 1.0 1.0) :normal (vec 0 -1 0))
+        (vertex :position (vec (- x w) (- y h) (+ z d)) :uv (vec 0.0 1.0) :normal (vec 0 -1 0))
+        (vertex :position (vec (- x w) (- y h) (- z d)) :uv (vec 0.0 0.0) :normal (vec 0 -1 0))
+        (vertex :position (vec (- x w) (- y h) (- z d)) :uv (vec 0.0 0.0) :normal (vec 0 -1 0))
+        (vertex :position (vec (+ x w) (- y h) (- z d)) :uv (vec 1.0 0.0) :normal (vec 0 -1 0))
+        (vertex :position (vec (+ x w) (- y h) (+ z d)) :uv (vec 1.0 1.0) :normal (vec 0 -1 0))
 
-      (vertex :position (vec (+ x s) (+ y s) (+ z s)) :uv (vec 1.0 1.0))
-      (vertex :position (vec (- x s) (+ y s) (+ z s)) :uv (vec 0.0 1.0))
-      (vertex :position (vec (- x s) (- y s) (+ z s)) :uv (vec 0.0 0.0))
-      (vertex :position (vec (- x s) (- y s) (+ z s)) :uv (vec 0.0 0.0))
-      (vertex :position (vec (+ x s) (- y s) (+ z s)) :uv (vec 1.0 0.0))
-      (vertex :position (vec (+ x s) (+ y s) (+ z s)) :uv (vec 1.0 1.0))
+        (vertex :position (vec (+ x w) (+ y h) (+ z d)) :uv (vec 1.0 1.0) :normal (vec 0 0 1))
+        (vertex :position (vec (- x w) (+ y h) (+ z d)) :uv (vec 0.0 1.0) :normal (vec 0 0 1))
+        (vertex :position (vec (- x w) (- y h) (+ z d)) :uv (vec 0.0 0.0) :normal (vec 0 0 1))
+        (vertex :position (vec (- x w) (- y h) (+ z d)) :uv (vec 0.0 0.0) :normal (vec 0 0 1))
+        (vertex :position (vec (+ x w) (- y h) (+ z d)) :uv (vec 1.0 0.0) :normal (vec 0 0 1))
+        (vertex :position (vec (+ x w) (+ y h) (+ z d)) :uv (vec 1.0 1.0) :normal (vec 0 0 1))
 
-      (vertex :position (vec (+ x s) (- y s) (- z s)) :uv (vec 1.0 1.0))
-      (vertex :position (vec (- x s) (- y s) (- z s)) :uv (vec 0.0 1.0))
-      (vertex :position (vec (- x s) (+ y s) (- z s)) :uv (vec 0.0 0.0))
-      (vertex :position (vec (- x s) (+ y s) (- z s)) :uv (vec 0.0 0.0))
-      (vertex :position (vec (+ x s) (+ y s) (- z s)) :uv (vec 1.0 0.0))
-      (vertex :position (vec (+ x s) (- y s) (- z s)) :uv (vec 1.0 1.0))
+        (vertex :position (vec (+ x w) (- y h) (- z d)) :uv (vec 1.0 1.0) :normal (vec 0 0 -1))
+        (vertex :position (vec (- x w) (- y h) (- z d)) :uv (vec 0.0 1.0) :normal (vec 0 0 -1))
+        (vertex :position (vec (- x w) (+ y h) (- z d)) :uv (vec 0.0 0.0) :normal (vec 0 0 -1))
+        (vertex :position (vec (- x w) (+ y h) (- z d)) :uv (vec 0.0 0.0) :normal (vec 0 0 -1))
+        (vertex :position (vec (+ x w) (+ y h) (- z d)) :uv (vec 1.0 0.0) :normal (vec 0 0 -1))
+        (vertex :position (vec (+ x w) (- y h) (- z d)) :uv (vec 1.0 1.0) :normal (vec 0 0 -1))
 
-      (vertex :position (vec (- x s) (+ y s) (+ z s)) :uv (vec 1.0 1.0))
-      (vertex :position (vec (- x s) (+ y s) (- z s)) :uv (vec 0.0 1.0))
-      (vertex :position (vec (- x s) (- y s) (- z s)) :uv (vec 0.0 0.0))
-      (vertex :position (vec (- x s) (- y s) (- z s)) :uv (vec 0.0 0.0))
-      (vertex :position (vec (- x s) (- y s) (+ z s)) :uv (vec 1.0 0.0))
-      (vertex :position (vec (- x s) (+ y s) (+ z s)) :uv (vec 1.0 1.0))
+        (vertex :position (vec (- x w) (+ y h) (+ z d)) :uv (vec 1.0 1.0) :normal (vec -1 0 0))
+        (vertex :position (vec (- x w) (+ y h) (- z d)) :uv (vec 0.0 1.0) :normal (vec -1 0 0))
+        (vertex :position (vec (- x w) (- y h) (- z d)) :uv (vec 0.0 0.0) :normal (vec -1 0 0))
+        (vertex :position (vec (- x w) (- y h) (- z d)) :uv (vec 0.0 0.0) :normal (vec -1 0 0))
+        (vertex :position (vec (- x w) (- y h) (+ z d)) :uv (vec 1.0 0.0) :normal (vec -1 0 0))
+        (vertex :position (vec (- x w) (+ y h) (+ z d)) :uv (vec 1.0 1.0) :normal (vec -1 0 0))
 
-      (vertex :position (vec (+ x s) (+ y s) (- z s)) :uv (vec 1.0 1.0))
-      (vertex :position (vec (+ x s) (+ y s) (+ z s)) :uv (vec 0.0 1.0))
-      (vertex :position (vec (+ x s) (- y s) (+ z s)) :uv (vec 0.0 0.0))
-      (vertex :position (vec (+ x s) (- y s) (+ z s)) :uv (vec 0.0 0.0))
-      (vertex :position (vec (+ x s) (- y s) (- z s)) :uv (vec 1.0 0.0))
-      (vertex :position (vec (+ x s) (+ y s) (- z s)) :uv (vec 1.0 1.0)))))
+        (vertex :position (vec (+ x w) (+ y h) (- z d)) :uv (vec 1.0 1.0) :normal (vec 1 0 0))
+        (vertex :position (vec (+ x w) (+ y h) (+ z d)) :uv (vec 0.0 1.0) :normal (vec 1 0 0))
+        (vertex :position (vec (+ x w) (- y h) (+ z d)) :uv (vec 0.0 0.0) :normal (vec 1 0 0))
+        (vertex :position (vec (+ x w) (- y h) (+ z d)) :uv (vec 0.0 0.0) :normal (vec 1 0 0))
+        (vertex :position (vec (+ x w) (- y h) (- z d)) :uv (vec 1.0 0.0) :normal (vec 1 0 0))
+        (vertex :position (vec (+ x w) (+ y h) (- z d)) :uv (vec 1.0 1.0) :normal (vec 1 0 0))))))
 
 (defun make-quad-grid (size x-count z-count &key mesh pack (x 0) (y 0) (z 0))
   (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
@@ -230,6 +217,8 @@
           (vertex :position f2b)
           (vertex :position f2t))))
 
-(defun make-torus (size thickness &key mesh pack (x 0) (y 0) (z 0))
-  (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
-    ))
+(define-asset (trial fullscreen-square) mesh
+    (make-rectangle 2 2 :pack T))
+
+(define-asset (trial empty-vertex-array) mesh
+    (make-instance 'vertex-mesh))

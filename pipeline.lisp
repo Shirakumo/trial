@@ -45,80 +45,118 @@
     (dolist (port (flow:ports node))
       (check-consistent port))))
 
-(defun allocate-textures (pipeline passes textures kind width height)
-  (flow:allocate-ports passes :sort NIL :test kind)
-  (flet ((texpsec (port)
-           (list NIL width height
-                 (case (attachment port)
-                   (:depth-attachment :depth-component)
-                   (:depth-stencil-attachment :depth-stencil)
-                   (T :rgba)))))
+(defmethod resize ((pipeline pipeline) width height)
+  (gl:scissor 0 0 width height)
+  ;; FIXME: keep width/height according to desired texspec
+  (loop for texture across (textures pipeline)
+        do (resize texture width height)))
+
+(defmethod normalized-texspec ((texspec list))
+  (assert (= 0 (getf texspec :level 0)))
+  (assert (eql :dynamic (getf texspec :storage :dynamic)))
+  (let ((initargs (loop for (key val) in (class-default-initargs 'texture)
+                        collect key collect val)))
+    (loop for (key val) on initargs by #'cddr
+          collect key
+          collect (or (getf texspec key)
+                      (case key
+                        (:width 'width)
+                        (:height 'height)
+                        (T val))))))
+
+(defmethod normalized-texspec ((port texture-port))
+  (normalized-texspec (texspec port)))
+
+(defmethod normalized-texspec ((port output))
+  (normalized-texspec
+   (append (texspec port)
+           ;; Default internal format for attachments
+           (case (attachment port)
+             (:depth-attachment
+              (list :internal-format :depth-component
+                    :min-filter :linear))
+             (:stencil-attachment
+              (list :internal-format :stencil-index
+                    :min-filter :linear))
+             (:depth-stencil-attachment
+              (list :internal-format :depth-stencil
+                    :min-filter :linear))
+             (T
+              (list :internal-format :rgba))))))
+
+(defun allocate-textures (passes textures texspec)
+  (flet ((kind (port)
+           ;; FIXME: This is really dumb and inefficient. If we could remember which port belongs
+           ;;        to which joined texspec instead it could be much better and wouldn't need to
+           ;;        recompute everything all the time.
+           (and (typep port 'output) (join-texspec texspec (normalized-texspec port)))))
+    (flow:allocate-ports passes :sort NIL :test #'kind :attribute :texid)
     (let* ((texture-count (loop for pass in passes
                                 when (flow:ports pass)
                                 maximize (loop for port in (flow:ports pass)
-                                               when (and (flow:attribute port :color)
-                                                         (funcall kind port))
-                                               maximize (1+ (flow:attribute port :color)))))
+                                               when (and (flow:attribute port :texid)
+                                                         (kind port))
+                                               maximize (1+ (flow:attribute port :texid)))))
            (offset (length textures)))
       (adjust-array textures (+ offset texture-count) :initial-element NIL)
       (dolist (pass passes textures)
-        (loop for port in (flow:ports pass)
-              do (when (funcall kind port)
-                   (let ((color (+ offset (flow:attribute port :color))))
-                     (unless (aref textures color)
-                       (setf (aref textures color)
-                             (load (make-asset 'texture (list (texpsec port))))))
-                     (setf (texture port) (aref textures color))
-                     (dolist (connection (flow:connections port))
-                       (setf (texture (flow:right connection)) (aref textures color))))))))))
-
-(defun %color-port-p (port)
-  (and (typep port 'output)
-       (not (eql :depth-attachment (attachment port)))
-       (not (eql :depth-stencil-attachment (attachment port)))))
-
-(defun %depth-port-p (port)
-  (and (typep port 'output)
-       (eql :depth-attachment (attachment port))))
-
-(defun %depth-stencil-port-p (port)
-  (and (typep port 'output)
-       (eql :depth-stencil-attachment (attachment port))))
-
-(defmethod resize ((pipeline pipeline) width height)
-  (loop for texture across (textures pipeline)
-        do (resize texture width height)))
+        (dolist (port (flow:ports pass))
+          (when (kind port)
+            ;; FIXME: Recompute the minimal upgraded texspec across all shared
+            ;;        ports, as the partitioning done by the allocation mechanism
+            ;;        might have broken up texspecs that were initially grouped.
+            (let* ((texid (+ offset (flow:attribute port :texid)))
+                   (texture (or (aref textures texid)
+                                (apply #'make-instance 'texture texspec))))
+              (setf (aref textures texid) texture)
+              (setf (texture port) texture)
+              (dolist (connection (flow:connections port))
+                (setf (texture (flow:right connection)) texture)))))))))
 
 (defmethod pack-pipeline ((pipeline pipeline) target)
   (check-consistent pipeline)
   (v:info :trial.pipeline "~a packing for ~a (~ax~a)" pipeline target (width target) (height target))
-  ;; FIXME: How to ensure algorithm distinguishes depth and colour buffers?
   (let* ((passes (flow:topological-sort (nodes pipeline)))
-         (textures (make-array 0 :initial-element NIL :adjustable T)))
+         (textures (make-array 0 :initial-element NIL :adjustable T))
+         (texspecs (loop for port in (mapcan #'flow:ports passes)
+                         when (typep port 'output)
+                         collect (normalized-texspec port))))
     (clear-pipeline pipeline)
-    (allocate-textures pipeline passes textures #'%color-port-p (width target) (height target))
-    (allocate-textures pipeline passes textures #'%depth-port-p (width target) (height target))
-    (allocate-textures pipeline passes textures #'%depth-stencil-port-p (width target) (height target))
+    ;; Compute texture set
+    (dolist (texspec (join-texspecs texspecs))
+      (allocate-textures passes textures texspec))
+    ;; Discretize texture size
+    (loop for texture across textures
+          do (flet ((eval-size (size)
+                      (eval `(let ((width ,(width target))
+                                   (height ,(height target)))
+                               (declare (ignorable width height))
+                               ,size))))
+               (setf (width texture) (eval-size (width texture)))
+               (setf (height texture) (eval-size (height texture)))))
+    ;; FIXME: Replace textures with existing ones if they match to save on re-allocation.
+    ;; Compute frame buffers
+    (dolist (pass passes)
+      (add-handler pass pipeline)
+      (setf (framebuffer pass)
+            (make-instance 'framebuffer
+                           :attachments (loop for port in (flow:ports pass)
+                                              when (typep port '(and output (not buffer)))
+                                              collect (list (attachment port) (texture port))))))
+    ;; All done.
     (v:info :trial.pipeline "~a pass order: ~a" pipeline passes)
     (v:info :trial.pipeline "~a texture count: ~a" pipeline (length textures))
     (v:info :trial.pipeline "~a texture allocation: ~:{~%~a~:{~%    ~a: ~a~}~}" pipeline
             (loop for pass in passes
                   collect (list pass (loop for port in (flow:ports pass)
                                            collect (list (flow:name port) (texture port))))))
-    (dolist (pass passes)
-      (add-handler pass pipeline)
-      (setf (framebuffer pass)
-            (load (make-asset 'framebuffer
-                              (loop for port in (flow:ports pass)
-                                    when (typep port '(and output (not buffer)))
-                                    collect (list (texture port) :attachment (attachment port)))))))
     (setf (passes pipeline) (coerce passes 'vector))
     (setf (textures pipeline) textures)))
 
 (defmethod paint-with ((pipeline pipeline) source)
   (loop for pass across (passes pipeline)
         for fbo = (framebuffer pass)
-        do (gl:bind-framebuffer :framebuffer (resource fbo))
+        do (gl:bind-framebuffer :framebuffer (gl-name fbo))
            ;; FIXME: Figure out which to clear depending on framebuffer attachments
            (gl:clear :color-buffer :depth-buffer :stencil-buffer)
            (paint-with pass source)))
