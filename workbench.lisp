@@ -6,7 +6,7 @@
   :base 'trial)
 
 (define-asset (workbench box) mesh
-    ((make-rectangle 10 10)))
+    (make-cube '(10 10 2)))
 
 (define-shader-subject box-collection ()
   ((boxes :initform NIL :accessor boxes)))
