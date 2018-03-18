@@ -91,7 +91,8 @@
   (retain-event ev))
 
 (define-handler (controller reload-scene reload-scene 99) (ev)
-  (change-scene (display controller) (make-instance (type-of old) :clock (clock old))))
+  (let ((old (scene (display controller))))
+    (change-scene (display controller) (make-instance (type-of old) :clock (clock old)))))
 
 (defclass load-request (event)
   ((asset :initarg :asset)
