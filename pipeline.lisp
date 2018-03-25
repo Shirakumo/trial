@@ -137,7 +137,8 @@
     ;; FIXME: Replace textures with existing ones if they match to save on re-allocation.
     ;; Compute frame buffers
     (dolist (pass passes)
-      (add-handler pass pipeline)
+      (when (typep pipeline 'event-loop)
+        (add-handler pass pipeline))
       (setf (framebuffer pass)
             (make-instance 'framebuffer
                            :attachments (loop for port in (flow:ports pass)
