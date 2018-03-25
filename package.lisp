@@ -392,6 +392,7 @@
   ;; loader.lisp
   (:export
    #:compute-resources
+   #:resources-ready
    #:bake
    #:baked-p
    #:transition
