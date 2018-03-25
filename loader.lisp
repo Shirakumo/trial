@@ -58,7 +58,7 @@
   (dolist (dep (dependencies resource))
     (compute-resources dep resources readying cache)))
 
-(defclass bakable ()
+(defclass bakable (entity)
   ((baked-p :initform NIL :accessor baked-p)))
 
 (defmethod compute-resources :before ((bakable bakable) resources readying cache)
