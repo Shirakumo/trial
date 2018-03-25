@@ -42,7 +42,7 @@
    :scene (error "SCENE required.")))
 
 (defmethod initialize-instance :after ((buffer selection-buffer) &key scene)
-  (register (make-instance 'selection-buffer-pass) buffer)
+  (enter (make-instance 'selection-buffer-pass) buffer)
   (add-handler buffer scene))
 
 (defmethod bake ((buffer selection-buffer))
@@ -54,7 +54,7 @@
   (remove-handler buffer (scene buffer)))
 
 (defmethod object-at-point ((point vec2) (buffer selection-buffer))
-  (color->object (gl:read-pixels (round (vx point)) (- (height buffer) (round (vy point))) 1 1 :rgba :unsigned-byte)
+  (color->object (gl:read-pixels (round (vx point)) (round (vy point)) 1 1 :rgba :unsigned-byte)
                  buffer))
 
 (defmethod color->object (color (buffer selection-buffer))
@@ -79,7 +79,7 @@
 (defmethod handle ((enter enter) (buffer selection-buffer))
   (let ((entity (entity enter)))
     (when (typep entity 'selectable)
-      (load (register-object-for-pass (aref (passes buffer) 0) entity)))))
+      (register-object-for-pass (aref (passes buffer) 0) entity))))
 
 (defmethod handle ((leave leave) (buffer selection-buffer))
   (let ((entity (entity leave)))
