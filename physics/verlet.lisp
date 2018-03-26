@@ -34,19 +34,16 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
    (constraints :initform NIL :accessor constraints)
    (center :initform NIL :accessor center)))
 
-(defmethod initialize-instance :after ((entity verlet-entity) &key mass-points vertex-array location)
+(defmethod initialize-instance :after ((entity verlet-entity) &key mass-points vertex-array
+                                                                   location constrain)
   (let* ((point-array (or mass-points vertex-array))
          (mass-points (etypecase point-array
-                        (mesh (vertices (first (inputs vertex-array))))
+                        (mesh (vertices (input vertex-array)))
                         (vertex-mesh (mass-points point-array))
                         ((or list array) point-array))))
     (unless (< 3 (length mass-points))
       (error "MASS-POINTS or VERTEX-ARRAY required"))
-    (let ((mass-points (quick-hull (for:for ((point over mass-points)
-                                             (v collecting (v+ location
-                                                               (if (typep point 'textured-vertex)
-                                                                   (location point)
-                                                                   point))))))))
+    (let ((mass-points (quick-hull mass-points)))
       (setf (mass-points entity) (mapcar #'(lambda (v) (make-instance 'verlet-point :location v))
                                          mass-points)
             (constraints entity)
@@ -65,7 +62,15 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
       (setf (center entity) (list point-a (vlength (v- center (location point-a)))
                                   point-b (vlength (v- center (location point-b)))
                                   point-c (vlength (v- center (location point-c))))))
-    (setf (slot-value entity 'location) location)))
+    (setf (slot-value entity 'location) location)
+    (when constrain
+      (let ((constraint-class (ecase (first constrain)
+                                (:pin 'pin-constraint)
+                                (:frame 'frame-constraint)))
+            (args (rest constrain)))
+        (for:for ((point in (mass-points entity)))
+          (push (apply #'make-instance constraint-class (append (list :point point) args))
+                (constraints entity)))))))
 
 (defmethod location :around ((entity verlet-entity))
   (let ((center (triangulate-center entity)))
@@ -103,7 +108,7 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
 
 
 (defun verlet-simulation (entities delta &key forces (iterations *iterations*))
-    ;; Simulations
+  ;; Simulations
   (for:for ((entity in entities)
             (static-forces = (static-forces entity))
             (all-forces = (when (or forces static-forces)

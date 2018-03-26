@@ -20,7 +20,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   #+(and ecl (not infinity-not-available)) si:single-float-negative-infinity
   #+lispworks (coerce #.(read-from-string "-10E999") 'single-float)
   #+scl ext:single-float-negative-infinity
-  #+t most-negative-single-float)
+  #+t cl:most-negative-single-float)
 
 (defconstant +positive-infinity+
   #+sbcl sb-ext:single-float-positive-infinity
@@ -36,7 +36,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   #+(and ecl (not infinity-not-available)) si:single-float-positive-infinity
   #+lispworks (coerce #.(read-from-string "10E999") 'single-float)
   #+scl ext:single-float-positive-infinity
-  #+t most-positive-single-float)
+  #+t cl:most-positive-single-float)
 
 (defun vangle (a b &optional c)
   "Calculates the angle between vectors A and B where both vectors start from the origin.

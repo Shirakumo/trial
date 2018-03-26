@@ -25,12 +25,24 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 ;; Below this is the calculation for Convex Hull. BE WARNED! It currently works only in 2D!
 ;; TODO: Read http://thomasdiewald.com/blog/?p=1888 for using QuickHull algorithm for 3D
 
+(defun ensure-point (point)
+  (etypecase point
+    ((or textured-vertex located-entity) (location point))
+    (vec point)))
+
+(defun ensure-list (list)
+  (etypecase list
+    (array (for:for ((value across list)
+                     (l collecting value))))
+    (list list)))
+
 (defun min-max-axis (points &key (axis-f #'vx))
   "Finds the minimum and maximum point in the VEC axis."
-  (let* ((min-point (first points))
-         (max-point (first points))
+  (let* ((min-point (ensure-point (first points)))
+         (max-point min-point)
          (other ()))
-    (for:for ((point in (rest points))
+    (for:for ((point-like in (rest points))
+              (point = (ensure-point point-like))
               (x = (funcall axis-f point)))
       (cond
         ((< x (funcall axis-f min-point))
@@ -54,7 +66,8 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
         (highest-left-z -1)
         (highest-right-z -1)
         (delta (v- end start)))
-    (for:for ((point in points) ;; Check winding via cross product of (B - A) x (C - A)
+    (for:for ((point-like in points) ;; Check winding via cross product of (B - A) x (C - A)
+              (point = (ensure-point point-like))
               (z = (vz (vc delta (v- point start)))))
       (cond
         ((< 0 z)
@@ -77,8 +90,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   (when (and points near far)
     (multiple-value-bind (left right on-line highest-left)
         (points-relative-to-line near far points)
-      (declare (ignore on-line))
-      (declare (ignore right))
+      (declare (ignore right on-line))
       (when highest-left
         (append
          (when left (find-hull left near highest-left))
@@ -88,11 +100,12 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 (defun quick-hull (points)
   "Calculates the Convex Hull points using QuickHull algorithm."
   (when (<= 2 (length points))
-    (multiple-value-bind (near far)
-        (min-max-axis points)
-      (multiple-value-bind (left right)
-          (points-relative-to-line near far points)
-        (append (list near) ;; Upper hull
-                (find-hull left near far)
-                (list far) ;; Lower hull
-                (find-hull right far near))))))
+    (let ((points (ensure-list points)))
+      (multiple-value-bind (near far)
+          (min-max-axis points)
+        (multiple-value-bind (left right)
+            (points-relative-to-line near far points)
+          (append (list near) ;; Upper hull
+                  (find-hull left near far)
+                  (list far) ;; Lower hull
+                  (find-hull right far near)))))))
