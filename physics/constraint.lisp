@@ -27,6 +27,8 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   (setf (target constraint) (or target (vlength (v- (location (point-b constraint))
                                                     (location (point-a constraint)))))))
 
+(defvar *bluh* T)
+
 (defmethod relax ((constraint distance-constraint) delta)
   (let* ((point-a (point-a constraint))
          (point-b (point-b constraint))
@@ -45,12 +47,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
     (when (and (/= 0 diff) (/= 0 (vlength normal)))
       (let ((move (v* (vunit normal) diff)))
         (setf (location point-a) (v+ loc-a (v* move mass-a))
-              (location point-b) (v- loc-b (v* move mass-b)))))
-    (when (or (v/= loc-a (location point-a))
-              (v/= loc-b (location point-b)))
-      (v:debug :distance-relax "point-a: ~a->~a ; point-b: ~a->~a"
-               loc-a (location point-a)
-               loc-b (location point-b)))))
+              (location point-b) (v- loc-b (v* move mass-b)))))))
 
 (defclass pin-constraint ()
   ((point :initarg :point :reader point)
@@ -124,6 +121,4 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
             (vec4 (vec4 (min (vx max) (max (vx min) (vx loc)))
                         (min (vy max) (max (vy min) (vy loc)))
                         (min (vz max) (max (vz min) (vz loc)))
-                        (min (vw max) (max (vw min) (vw loc)))))))
-    (when (v/= loc (location point))
-      (v:debug :frame-relax "~a->~a" loc (location point)))))
+                        (min (vw max) (max (vw min) (vw loc)))))))))
