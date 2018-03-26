@@ -8,28 +8,38 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 
 (defconstant +negative-infinity+
   #+sbcl sb-ext:single-float-negative-infinity
-  #+clozure (coerce -infinity$$ 'single-float)
   #+abcl ext:single-float-negative-infinity
   #+allegro excl::*negative-infinity-single*
+  #+clozure (coerce #.(unwind-protect
+                           (progn
+                             (ccl:set-fpu-mode :division-by-zero nil)
+                             (/ -0d0))
+                        (ccl:set-fpu-mode :division-by-zero t))
+                    'single-float)
   #+cmu ext:single-float-negative-infinity
   #+(and ecl (not infinity-not-available)) si:single-float-negative-infinity
-  #+lispworks (coerce -infinity$$ 'single-float)
+  #+lispworks (coerce #.(read-from-string "-10E999") 'single-float)
   #+scl ext:single-float-negative-infinity
   #+t most-negative-single-float)
 
 (defconstant +positive-infinity+
   #+sbcl sb-ext:single-float-positive-infinity
-  #+clozure (coerce infinity$$ 'single-float)
   #+abcl ext:single-float-positive-infinity
   #+allegro excl::*infinity-single*
   #+cmu ext:single-float-positive-infinity
+  #+clozure (coerce #.(unwind-protect
+                           (progn
+                             (ccl:set-fpu-mode :division-by-zero nil)
+                             (/ 0d0))
+                        (ccl:set-fpu-mode :division-by-zero t))
+                    'single-float)
   #+(and ecl (not infinity-not-available)) si:single-float-positive-infinity
-  #+lispworks (coerce infinity$$ 'single-float)
+  #+lispworks (coerce #.(read-from-string "10E999") 'single-float)
   #+scl ext:single-float-positive-infinity
   #+t most-positive-single-float)
 
 (defun vangle (a b &optional c)
-  "Calculates the angle between vectors A and B.
+  "Calculates the angle between vectors A and B where both vectors start from the origin.
 If C is provided, then A, B, and C are points where B->A and B->C are the vectors."
   (let ((vector (if c (v- a b) a))
         (other (if c (v- c b) b)))
