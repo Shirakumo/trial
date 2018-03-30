@@ -25,11 +25,7 @@
                 (box = (make-instance 'box :location (vec (+ 5 (random (- (width main) 10)))
                                                           (+ 5 (random (- (height main) 10)))
                                                           10)
-                                           :static-forces (vec 0 -10 0)
-                                           :constrain `(:frame :min ,(vec 0 0 10)
-                                                               :max ,(vec (width main)
-                                                                          (height main)
-                                                                          10)))))
+                                           :static-forces (vec 0 -10 0))))
         (setf (color box)
               (case (mod i 7)
                 (1 (vec 0 1 0 1)) ;; Green
