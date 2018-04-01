@@ -49,8 +49,8 @@
 out vec4 color;
 
 void main(){
-   float intensity = color.r;
-   color = objectcolor*intensity;
+  float intensity = color.r;
+  color = objectcolor*intensity;
 }")
 
 (defmethod (setf font) :after (font (text text))
@@ -121,3 +121,79 @@ void main(){
   (destructuring-bind (&key l r ((:t u)) b gap) (text-extent (font text) string)
     (let ((s (/ (size text) (size (font text)))))
       (list :l (* l s) :r (* r s) :t (* u s) :b (* b s) :gap (* gap s)))))
+
+(define-shader-entity highlighted-text (text)
+  ((cbo)
+   (color-regions :initarg :color-regions :accessor color-regions))
+  (:default-initargs :color-regions ())
+  (:inhibit-shaders (text :fragment-shader)))
+
+(defmethod initialize-instance :after ((text highlighted-text) &key)
+  (let* ((cbo (make-instance 'vertex-buffer :buffer-type :array-buffer
+                                            :data-usage :dynamic-draw
+                                            :size 0))
+         (ebo (slot-value text 'ebo))
+         (vbo (slot-value text 'vbo))
+         (vao (vertex-array text)))
+    (setf (slot-value text 'cbo) cbo)
+    (setf (bindings vao) `((,vbo :size 2 :stride 16 :offset 0)
+                           (,vbo :size 2 :stride 16 :offset 8)
+                           (,cbo :size 4 :stride 16 :offset 0)
+                           ,ebo))))
+
+(defun %update-highlight-buffer (text length)
+  (let ((cbo (slot-value text 'cbo))
+        (size (* 4 4 length))
+        (unit (color text)))
+    (cffi:with-foreign-object (array :float size)
+      (loop with regions = (color-regions text)
+            for i from 0 below length
+            do (flet ((insert (c)
+                        ;; FIXME: Ahead-of-time translation of colors to buffers
+                        ;;        and then simply use memcpy here.
+                        (loop for j from (* 4 4 i) by 4 repeat 4
+                              do (setf (cffi:mem-aref array :float (+ j 0)) (vx c))
+                                 (setf (cffi:mem-aref array :float (+ j 1)) (vy c))
+                                 (setf (cffi:mem-aref array :float (+ j 2)) (vz c))
+                                 (setf (cffi:mem-aref array :float (+ j 3)) (vw c)))))
+                 (if regions
+                     (destructuring-bind (s e c) (first regions)
+                       (cond ((< i s)
+                              (insert unit))
+                             ((< i e)
+                              (insert c))
+                             (T
+                              (pop regions)
+                              (insert unit))))
+                     (insert unit))))
+      (update-buffer-data cbo array size))))
+
+(defmethod (setf color-regions) :around (regions (text highlighted-text))
+  (let ((regions (sort regions #'< :key #'first)))
+    (call-next-method regions text)
+    (when (allocated-p (slot-value text 'cbo))
+      (%update-highlight-buffer text (length (text text))))))
+
+(defmethod (setf text) :before (string (text highlighted-text))
+  (let ((cbo (slot-value text 'cbo))
+        (font (font text)))
+    (when (and (allocated-p font)
+               (allocated-p cbo))
+      (%update-highlight-buffer text (length string)))))
+
+(define-class-shader (highlighted-text :vertex-shader)
+  "layout (location = 2) in vec4 color;
+out vec4 character_color;
+
+void main(){
+  character_color = color;
+}")
+
+(define-class-shader (highlighted-text :fragment-shader)
+  "in vec4 character_color;
+out vec4 color;
+
+void main(){
+  float intensity = color.r;
+  color = character_color*intensity;
+}")

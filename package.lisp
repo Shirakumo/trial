@@ -607,7 +607,9 @@
    #:text
    #:size
    #:extent
-   #:text-extent)
+   #:text-extent
+   #:highlighted-text
+   #:color-regions)
   ;; toolkit.lisp
   (:export
    #:finalize
