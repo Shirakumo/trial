@@ -83,7 +83,8 @@
    #:buffer-data
    #:element-type
    #:data-usage
-   #:size)
+   #:size
+   #:update-buffer-data)
   ;; array-container.lisp
   (:export
    #:array-container
