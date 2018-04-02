@@ -21,7 +21,8 @@
    :width NIL
    :height NIL
    :font (error "FONT required."))
-  (:inhibit-shaders (colored-entity :fragment-shader)))
+  (:inhibit-shaders (colored-entity :fragment-shader)
+                    (textured-entity :fragment-shader)))
 
 (defmethod initialize-instance :after ((text text) &key size)
   (let* ((vbo (make-instance 'vertex-buffer :buffer-type :array-buffer
@@ -46,11 +47,13 @@
 
 (define-class-shader (text :fragment-shader)
   "uniform vec4 objectcolor;
+uniform sampler2D texture_image;
+in vec2 texcoord;
 out vec4 color;
 
 void main(){
-  float intensity = color.r;
-  color = objectcolor*intensity;
+  float intensity = texture(texture_image, texcoord, -0.65).r;
+  color = objectcolor * intensity;
 }")
 
 (defmethod (setf font) :after (font (text text))
@@ -192,10 +195,12 @@ void main(){
 }")
 
 (define-class-shader (highlighted-text :fragment-shader)
-  "in vec4 character_color;
+  "uniform sampler2D texture_image;
+in vec2 texcoord;
+in vec4 character_color;
 out vec4 color;
 
 void main(){
-  float intensity = color.r;
+  float intensity = texture(texture_image, texcoord, -0.65).r;
   color = character_color*intensity;
 }")
