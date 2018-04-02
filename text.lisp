@@ -124,11 +124,11 @@ void main(){
 
 (define-shader-entity highlighted-text (text)
   ((cbo)
-   (color-regions :initarg :color-regions :accessor color-regions))
+   (color-regions :accessor color-regions))
   (:default-initargs :color-regions ())
   (:inhibit-shaders (text :fragment-shader)))
 
-(defmethod initialize-instance :after ((text highlighted-text) &key)
+(defmethod initialize-instance :after ((text highlighted-text) &key color-regions)
   (let* ((cbo (make-instance 'vertex-buffer :buffer-type :array-buffer
                                             :data-usage :dynamic-draw
                                             :size 0))
@@ -139,7 +139,8 @@ void main(){
     (setf (bindings vao) `((,vbo :size 2 :stride 16 :offset 0)
                            (,vbo :size 2 :stride 16 :offset 8)
                            (,cbo :size 4 :stride 16 :offset 0)
-                           ,ebo))))
+                           ,ebo))
+    (setf (color-regions text) color-regions)))
 
 (defun %update-highlight-buffer (text length)
   (let ((cbo (slot-value text 'cbo))
@@ -164,11 +165,12 @@ void main(){
                               (insert c))
                              (T
                               (pop regions)
-                              (insert unit))))
+                              (decf i))))
                      (insert unit))))
       (update-buffer-data cbo array size))))
 
 (defmethod (setf color-regions) :around (regions (text highlighted-text))
+  ;; FIXME: Check for overlapping regions.
   (let ((regions (sort regions #'< :key #'first)))
     (call-next-method regions text)
     (when (allocated-p (slot-value text 'cbo))
