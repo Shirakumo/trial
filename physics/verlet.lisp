@@ -26,8 +26,9 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
 (defmethod simulate ((point verlet-point) delta &key forces)
   (let ((velocity (v- (location point) (old-location point))))
     (setf (old-location point) (location point))
-    (nv+ (location point) (v* (if forces (v+ forces velocity) velocity)
-                              delta))))
+    (nv+ (location point) (vapply (v* (if forces (v+ forces velocity) velocity)
+                                      delta)
+                                  round-to 4 4 4 4))))
 
 (define-shader-entity verlet-entity (physical-entity vertex-entity)
   ((mass-points :initform NIL :accessor mass-points)
@@ -53,13 +54,7 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
                   for next = (or (second points) first)
                   collect (make-instance 'distance-constraint :point-a current
                                                               :point-b next))))
-    (let ((center (make-instance 'verlet-point
-                                 :location (for:for ((point in (mass-points entity))
-                                                     (i counting point)
-                                                     (sum = (if sum
-                                                                (v+ sum (location point))
-                                                                (location point))))
-                                             (returning (v/ sum i))))))
+    (let ((center (make-instance 'verlet-point :location location)))
       (push (make-instance 'distance-constraint :point-a center
                                                 :point-b (first (mass-points entity)))
             (constraints entity))
@@ -84,6 +79,15 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
     (for:for ((point in (mass-points entity)))
       (nv+ (location point) diff)))
   (call-next-method))
+
+(defmethod constrain ((entity verlet-entity) type &rest args)
+  (let* ((type (ensure-constraint type))
+         (args (if (or (eql type 'distance-constraint)
+                       (eql type 'angle-constraint)
+                       (getf args :point))
+                   args
+                   (append args (list :point (center entity))))))
+    (push (apply #'make-instance type args) (constraints entity))))
 
 (defun verlet-simulation (entities delta &key forces (iterations *iterations*))
   ;; Simulations

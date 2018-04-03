@@ -9,7 +9,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 (defgeneric simulate (entity delta &key forces))
 
 
-(define-shader-entity physical-entity (located-entity rotated-entity pivoted-entity)
+(define-shader-entity physical-entity (located-entity rotated-entity)
   ((mass :initarg :mass :accessor mass)
    (static-p :initarg :static-p :accessor static-p)
    (rotates-p  :initarg :rotates-p :accessor rotates-p)

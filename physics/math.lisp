@@ -89,3 +89,9 @@ If C is provided, then A, B, and C are points where B->A and B->C are the vector
         (vec4 (vec (vx vector) (vy vector)
                    (if (vec3-p vector) (vz vector) (vz default))
                    (vw default))))))
+
+(defun round-to (number precision &optional (round-f #'round))
+  (if (/= 0 number)
+      (let ((div (expt 10 precision)))
+        (/ (funcall round-f (* number div)) div))
+      0.0))
