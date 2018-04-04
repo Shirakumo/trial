@@ -217,7 +217,7 @@
 (defmethod vformat-write (buffer (vbo vertex-buffer))
   (fast-io:writeu8 (vertex-buffer-type->int (buffer-type vbo)) buffer)
   (fast-io:writeu8 (vertex-buffer-usage->int (data-usage vbo)) buffer)
-  (vformat-write-vector buffer (input vbo) (element-type vbo)))
+  (vformat-write-vector buffer (buffer-data vbo) (element-type vbo)))
 
 (defmethod vformat-read (buffer (vbo vertex-buffer))
   (let ((btype (int->vertex-buffer-type (fast-io:readu8 buffer)))
@@ -233,14 +233,15 @@
   (fast-io:write32-le (or (size vao) -1) buffer)
   (let* ((bindings (bindings vao))
          (count (length bindings))
-         (buffers (remove-duplicates (mapcar #'first bindings))))
+         (buffers (remove-duplicates (mapcar #'unlist bindings))))
     (when (< 256 count)
       (error "More than 2⁸ buffers are not supported."))
     ;; Write input list
     (fast-io:writeu8 count buffer)
     (loop for i from 0
           for binding in bindings
-          do (destructuring-bind (vbo &key (index i) (size 3) (stride 0) (offset 0) (normalized NIL)) bindings
+          do (destructuring-bind (vbo &key (index i) (size 3) (stride 0) (offset 0) (normalized NIL))
+                 (enlist binding)
                (fast-io:writeu8 (position vbo buffers) buffer)
                (fast-io:writeu8 index buffer)
                (fast-io:writeu8 size buffer)
