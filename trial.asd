@@ -46,6 +46,7 @@
                (:file "loader" :depends-on ("package" "scene" "resource"))
                (:file "main" :depends-on ("package" "display" "toolkit" "scene" "pipeline" "window"))
                (:file "mapping" :depends-on ("package" "event-loop" "toolkit"))
+               (:file "phong" :depends-on ("package" "helpers"))
                (:file "pipeline" :depends-on ("package" "event-loop" "toolkit"))
                (:file "pipelined-scene" :depends-on ("package" "pipeline" "scene" "loader"))
                (:file "rails" :depends-on ("package" "subject" "helpers"))
