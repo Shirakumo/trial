@@ -124,9 +124,10 @@
              (bt:with-lock-held ((context-wait-lock context))
                (incf (context-waiting context))
                (v:info :trial.context "~a waiting to acquire ~a (~a in queue)..." this context (context-waiting context)))
-             (bt:acquire-lock (context-lock context))
-             (bt:with-lock-held ((context-wait-lock context))
-               (decf (context-waiting context))))
+             (unwind-protect
+                  (bt:acquire-lock (context-lock context))
+               (bt:with-lock-held ((context-wait-lock context))
+                 (decf (context-waiting context)))))
             (T
              (bt:acquire-lock (context-lock context))))
       (unless (valid-p context)
