@@ -119,14 +119,15 @@ void main(){
           (/ (ldb (byte 8 8) num) 255.0)
           (/ (ldb (byte 8 0) num) 255.0))))
 
-(defmethod paint :around ((subject subject) (pass selection-buffer))
-  (when (or (typep subject 'selectable)
-            (typep subject 'container))
+(defmethod paint :around ((entity entity) (pass selection-buffer-pass))
+  (when (or (typep entity 'selectable)
+            (typep entity 'container))
     (call-next-method)))
 
-(defmethod paint :before ((subject selectable) (pass selection-buffer-pass))
-  (let ((shader (shader-program-for-pass pass subject)))
-    (setf (uniform shader "selection_color") (selection-color subject))))
+(defmethod paint :before ((entity selectable) (pass selection-buffer-pass))
+  (let ((shader (shader-program-for-pass pass entity)))
+    (setf (uniform shader "selection_color") (selection-color entity))))
 
 (defmethod register-object-for-pass :after ((buffer selection-buffer) (selectable selectable))
   (setf (color->object (selection-color selectable) buffer) selectable))
+
