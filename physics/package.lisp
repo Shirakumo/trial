@@ -38,4 +38,12 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
    #:distance-constraint
    #:pin-constraint
    #:angle-constraint
-   #:frame-constraint))
+   #:frame-constraint)
+  (:export
+   ;; collision.lisp
+   #:collidable-verlet-entity
+   #:collidable-box-entity
+   #:collidable-sphere-entity
+   #:collidable-point-entity
+   #:collides-p
+   #:resolve))

@@ -21,36 +21,36 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
                      :tear NIL
                      :stiffness 2.1))
 
-(defmethod initialize-instance :after ((constraint distance-constraint) &key target)
+(defmethod initialize-instance :after ((constraint distance-constraint) &key)
   (when (v= (location (point-a constraint)) (location (point-b constraint)))
     (error "Point locations are the same!"))
-  (setf (target constraint) (or target (vlength (v- (location (point-b constraint))
-                                                    (location (point-a constraint)))))))
+  (let ((point-a (location (point-a constraint)))
+        (point-b (location (point-b constraint))))
+    (setf (target constraint) (square-dist point-a point-b))))
 
 (defmethod relax ((constraint distance-constraint) delta &optional preserve-impulse)
-  (declare (ignore delta preserve-impulse))
-  (let* ((point-a (point-a constraint))
-         (point-b (point-b constraint))
-         (loc-a (location point-a))
-         (loc-b (location point-b))
-         (normal (v- loc-b loc-a))
-         (distance (vlength normal))
-         (diff (- distance (target constraint)))
-         (total-mass (+ (mass point-a) (mass point-b)))
-         (mass-a (if (< 0.01 total-mass) ;; tiny masses are worthless
-                     (/ (mass point-a) total-mass)
-                     1/2))
-         (mass-b (if (< 0.01 total-mass)
-                     (/ (mass point-b) total-mass)
-                     1/2)))
-    (when (and (< 0.01 (abs diff)) (< 0.01 (abs distance))) ;; ignore tiny sub-pixels
-      (let* ((move (v* normal (/ diff (* distance (stiffness constraint)))))
-             (move-a (v* move mass-a))
-             (move-b (v* move mass-b -1)))
-        (nv+ (location point-a) move-a)
-        (nv+ (old-location point-a) move-a)
-        (nv+ (location point-b) move-b)
-        (nv+ (old-location point-b) move-b)))))
+  (declare (ignore preserve-impulse))
+  (unless delta
+    ;; FIXME: For some reason the locations on constraint points are completely non-sensical.
+    ;;        So this basically "comments" the functionality out. Fix it once debugging is done.
+    (let* ((point-a (point-a constraint))
+           (point-b (point-b constraint))
+           (loc-a (location point-a))
+           (loc-b (location point-b))
+           (diff (v- loc-b loc-a))
+           (dlt (- (/ (target constraint) (+ (square-dist loc-a loc-b)
+                                             (target constraint)))
+                   0.5)))
+      (setf (vz diff) 0.0)
+      (nv* diff dlt)
+      (nv- (location point-a) diff)
+      (nv+ (location point-b) diff))))
+
+(defun square-dist (point-a point-b)
+  (let* ((diff (v- point-a point-b))
+         (x (vx diff))
+         (y (vy diff)))
+    (+ (* x x) (* y y))))
 
 (defclass pin-constraint ()
   ((point :initarg :point :reader point)
@@ -139,7 +139,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
                          (min (vw max) (max (vw min) (vw loc))))))))
     (when (v/= move-to loc)
       (if preserve-impulse
-          (let ((velocity (v* (v- (old-location point) loc) 0.5))) ;; 0.5 for damping
+          (let ((velocity (v/ (v- (old-location point) loc) 2.0))) ;; / 2.0 for damping
             (setf (location point) move-to
                   (old-location point) (v- (location point) velocity)))
           (setf (location point) move-to)))))

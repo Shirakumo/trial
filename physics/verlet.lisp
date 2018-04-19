@@ -33,8 +33,9 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
                                    force))))
 
 (defmethod accelerate ((point verlet-point) delta)
-  (let ((acc (acceleration point)))
-    (when acc (nv+ (location point) (v* acc delta delta))))
+  (let ((delta (when (vec-p (acceleration point))
+                 (acceleration point))))
+    (when delta (nv+ (location point) delta)))
   (setf (acceleration point) (v* (location point) 0.0)))
 
 (defmethod inertia ((point verlet-point) delta)
@@ -60,7 +61,7 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
     (let ((mass-points (quick-hull mass-points)))
       (setf (mass-points entity) (mapcar #'(lambda (loc)
                                              (make-instance 'verlet-point
-                                                            :location loc
+                                                            :location (v+ location loc)
                                                             :viscosity (viscosity entity)))
                                          mass-points)
             (constraints entity)
@@ -114,29 +115,38 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
 
 (defun verlet-simulation (entities delta &key forces (iterations *iterations*))
   ;; Simulations
-  (let ((delta (/ delta iterations))
-        (half-delta (/ delta 2)))
+  (let ((delta (/ (coerce delta 'single-float) iterations))
+        (half-delta (/ delta 2))
+        (forces
+          (let ((forces (if (vec-p forces) (list forces) forces)))
+            (for:for ((entity in entities)
+                      (static-forces = (static-forces entity))
+                      (all-forces = (when (or forces static-forces)
+                                      (apply #'v+ (append forces
+                                                          (if (vec-p static-forces)
+                                                              (list static-forces)
+                                                              static-forces)))))
+                      (force-list collecting all-forces))
+              (returning force-list)))))
     (dotimes (i iterations)
+      ;; Apply forces
       (for:for ((entity in entities)
-                (static-forces = (static-forces entity))
-                (all-forces = (when (or forces static-forces)
-                                (apply #'v+ (append (if (vec-p forces)
-                                                        (list forces)
-                                                        forces)
-                                                    (if (vec-p static-forces)
-                                                        (list static-forces)
-                                                        static-forces))))))
-        (for:for ((point in (mass-points entity)))
-          (apply-force point all-forces)
-          (accelerate point delta)))
+                (force in forces)
+                (center = (center entity)))
+        (apply-force center force)
+        (accelerate center delta))
       ;; TODO: collision checks without preserving impulse here
+      ;; Check constraints
       (for:for ((entity in entities))
         (for:for ((constraint in (constraints entity)))
+          (when (typep constraint 'frame-constraint))
           (relax constraint half-delta)))
+      ;; Handle inertia based on old location
       (for:for ((entity in entities))
-        (for:for ((point in (mass-points entity)))
-          (inertia point delta)))
+        (inertia (center entity) delta))
       ;; TODO: collision checks with preserving impulse here
+      ;; Finalise constraints
       (for:for ((entity in entities))
         (for:for ((constraint in (constraints entity)))
-          (relax constraint half-delta T))))))
+          (when (typep constraint 'frame-constraint)
+            (relax constraint half-delta T)))))))

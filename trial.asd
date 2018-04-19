@@ -73,6 +73,7 @@
                (:file "physics/physics" :depends-on ("physics/math"))
                (:file "physics/constraint" :depends-on ("physics/math"))
                (:file "physics/verlet" :depends-on ("physics/physics" "physics/constraint"))
+               (:file "physics/collision" :depends-on ("physics/verlet"))
                ;; Testing, remove for production.
                (:file "workbench" :depends-on ("assets" "asset-pool" "formats" "main" "helpers" "geometry-clipmap" "ui"))
                (:module "ui"
