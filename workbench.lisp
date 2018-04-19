@@ -23,7 +23,7 @@
     (let ((box-collection (make-instance 'box-collection))
           (min-loc (vec 5 5 10))
           (max-loc (vec (- (width main) 5) (- (height main) 5) 10)))
-      (for:for ((i repeat 4)
+      (for:for ((i repeat 100)
                 (box = (make-instance 'box :location (vec (+ (vx min-loc)
                                                              (random (- (vx max-loc)
                                                                         (vx min-loc))))
@@ -31,7 +31,7 @@
                                                              (random (- (vy max-loc)
                                                                         (vy min-loc))))
                                                           10)
-                                           :static-forces (vec 0 -20 0))))
+                                           :static-forces (vec 0 -800.0 0))))
         (setf (color box)
               (case (mod i 7)
                 (1 (vec 0 1 0 1)) ;; Green

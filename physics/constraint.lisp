@@ -7,7 +7,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 (in-package #:org.shirakumo.fraf.trial.physics)
 
 
-(defgeneric relax (constraint delta)
+(defgeneric relax (constraint delta &optional preserve-impulse)
   (:documentation "Relaxes the constraint towards its resting position."))
 
 (defclass distance-constraint ()
@@ -19,7 +19,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   (:default-initargs :point-a (error "POINT-A required.")
                      :point-b (error "POINT-B required.")
                      :tear NIL
-                     :stiffness 1.0))
+                     :stiffness 2.1))
 
 (defmethod initialize-instance :after ((constraint distance-constraint) &key target)
   (when (v= (location (point-a constraint)) (location (point-b constraint)))
@@ -27,7 +27,8 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   (setf (target constraint) (or target (vlength (v- (location (point-b constraint))
                                                     (location (point-a constraint)))))))
 
-(defmethod relax ((constraint distance-constraint) delta)
+(defmethod relax ((constraint distance-constraint) delta &optional preserve-impulse)
+  (declare (ignore delta preserve-impulse))
   (let* ((point-a (point-a constraint))
          (point-b (point-b constraint))
          (loc-a (location point-a))
@@ -35,27 +36,33 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
          (normal (v- loc-b loc-a))
          (distance (vlength normal))
          (diff (- distance (target constraint)))
-         (mass-a (if (and (= 0 (mass point-a)) (= 0 (mass point-b)))
-                     1/2
-                     (/ (mass point-a) (+ (mass point-a) (mass point-b)))))
-         (mass-b (if (and (= 0 (mass point-a)) (= 0 (mass point-b)))
-                     1/2
-                     (/ (mass point-b) (+ (mass point-a) (mass point-b))))))
-    (when (and (/= 0 diff) (/= 0 distance))
-      (let ((move (v* (vunit normal) diff)))
-        (setf (location point-a) (vapply (v+ loc-a (v* move mass-a))
-                                         round-to 4 4 4 4)
-              (location point-b) (vapply (v- loc-b (v* move mass-b))
-                                         round-to 4 4 4 4))))))
+         (total-mass (+ (mass point-a) (mass point-b)))
+         (mass-a (if (< 0.01 total-mass) ;; tiny masses are worthless
+                     (/ (mass point-a) total-mass)
+                     1/2))
+         (mass-b (if (< 0.01 total-mass)
+                     (/ (mass point-b) total-mass)
+                     1/2)))
+    (when (and (< 0.01 (abs diff)) (< 0.01 (abs distance))) ;; ignore tiny sub-pixels
+      (let* ((move (v* normal (/ diff (* distance (stiffness constraint)))))
+             (move-a (v* move mass-a))
+             (move-b (v* move mass-b -1)))
+        (nv+ (location point-a) move-a)
+        (nv+ (old-location point-a) move-a)
+        (nv+ (location point-b) move-b)
+        (nv+ (old-location point-b) move-b)))))
 
 (defclass pin-constraint ()
   ((point :initarg :point :reader point)
    (location :initarg :location :accessor location))
   (:default-initargs :point (error "POINT required.")))
 
-(defmethod relax ((constraint pin-constraint) delta)
-  (declare (ignore delta))
-  (setf (location (point constraint)) (location constraint)))
+(defmethod relax ((constraint pin-constraint) delta &optional preserve-impulse)
+  (declare (ignore delta preserve-impulse))
+  (let ((point (point constraint))
+        (pin-to (location constraint)))
+    (setf (location point) pin-to
+          (old-location point) pin-to)))
 
 (defclass angle-constraint ()
   ((point-a :initarg :point-a :accessor point-a)
@@ -74,7 +81,8 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
                                              (location (point-c constraint))))))
 
 
-(defmethod relax ((constraint angle-constraint) delta)
+(defmethod relax ((constraint angle-constraint) delta &optional preserve-impulse)
+  (declare (ignore preserve-impulse))
   (let* ((point-a (location (point-a constraint)))
          (point-b (location (point-b constraint)))
          (point-c (location (point-c constraint)))
@@ -85,24 +93,20 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
        (incf diff (* 2 PI)))
       ((<= PI diff)
        (incf diff (* -2 PI))))
-    (unless (= 0 diff)
+    (unless (< 0.01 (abs diff)) ;; Ignore tiny sub-pixels
       (let ((diff (* diff delta (stiffness constraint))))
-        (setf (location point-a) (vapply (vrot (location point-a)
-                                               (location point-b)
-                                               diff)
-                                         round-to 4 4 4 4)
-              (location point-c) (vapply (vrot (location point-c)
-                                               (location point-b)
-                                               (- diff))
-                                         round-to 4 4 4 4)
-              (location point-b) (vapply (vrot (location point-b)
-                                               (location point-a)
-                                               diff)
-                                         round-to 4 4 4 4)
-              (location point-b) (vapply (vrot (location point-b)
-                                               (location point-c)
-                                               (- diff))
-                                         round-to 4 4 4 4))))))
+        (setf (location point-a) (vrot (location point-a)
+                                       (location point-b)
+                                       diff)
+              (location point-c) (vrot (location point-c)
+                                       (location point-b)
+                                       (- diff))
+              (location point-b) (vrot (location point-b)
+                                       (location point-a)
+                                       diff)
+              (location point-b) (vrot (location point-b)
+                                       (location point-c)
+                                       (- diff)))))))
 
 (defclass frame-constraint ()
   ((point :initarg :point :accessor point)
@@ -112,7 +116,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
                      :min NIL
                      :max NIL))
 
-(defmethod relax ((constraint frame-constraint) delta)
+(defmethod relax ((constraint frame-constraint) delta &optional preserve-impulse)
   (declare (ignore delta))
   (let* ((point (point constraint))
          (loc (location point))
@@ -121,18 +125,24 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
                                   loc))
          (max (ensure-vector-type (or (max-point constraint) loc)
                                   (type-of loc)
-                                  loc)))
-    (setf (location point)
-          (etypecase loc
-            (vec2 (vec2 (min (vx max) (max (vx min) (vx loc)))
-                        (min (vy max) (max (vy min) (vy loc)))))
-            (vec3 (vec3 (min (vx max) (max (vx min) (vx loc)))
-                        (min (vy max) (max (vy min) (vy loc)))
-                        (min (vz max) (max (vz min) (vz loc)))))
-            (vec4 (vec4 (min (vx max) (max (vx min) (vx loc)))
-                        (min (vy max) (max (vy min) (vy loc)))
-                        (min (vz max) (max (vz min) (vz loc)))
-                        (min (vw max) (max (vw min) (vw loc)))))))))
+                                  loc))
+         (move-to 
+           (etypecase loc
+             (vec2 (vec2 (min (vx max) (max (vx min) (vx loc)))
+                         (min (vy max) (max (vy min) (vy loc)))))
+             (vec3 (vec3 (min (vx max) (max (vx min) (vx loc)))
+                         (min (vy max) (max (vy min) (vy loc)))
+                         (min (vz max) (max (vz min) (vz loc)))))
+             (vec4 (vec4 (min (vx max) (max (vx min) (vx loc)))
+                         (min (vy max) (max (vy min) (vy loc)))
+                         (min (vz max) (max (vz min) (vz loc)))
+                         (min (vw max) (max (vw min) (vw loc))))))))
+    (when (v/= move-to loc)
+      (if preserve-impulse
+          (let ((velocity (v* (v- (old-location point) loc) 0.5))) ;; 0.5 for damping
+            (setf (location point) move-to
+                  (old-location point) (v- (location point) velocity)))
+          (setf (location point) move-to)))))
 
 (defun ensure-constraint (type)
   (etypecase type
