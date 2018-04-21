@@ -6,6 +6,10 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 
 (in-package #:org.shirakumo.fraf.trial.physics)
 
+(defclass distance-constraint () ())
+(defclass pin-constraint () ())
+(defclass angle-constraint () ())
+(defclass frame-constraint () ())
 
 (defgeneric relax (constraint delta &optional preserve-impulse)
   (:documentation "Relaxes the constraint towards its resting position."))
@@ -26,29 +30,31 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
     (error "Point locations are the same!"))
   (let ((point-a (location (point-a constraint)))
         (point-b (location (point-b constraint))))
-    (setf (target constraint) (vlength (v- point-a point-b)))))
+    (setf (target constraint) (vlength (v- point-b point-a)))))
 
 (defmethod relax ((constraint distance-constraint) delta &optional preserve-impulse)
-  (declare (ignore preserve-impulse))
   (let* ((point-a (point-a constraint))
          (point-b (point-b constraint))
-         (total-mass (+ (mass point-a) (mass point-b)))
-         (mass-a (/ (mass point-a) total-mass))
-         (mass-b (/ (mass point-b) total-mass))
          (loc-a (location point-a))
          (loc-b (location point-b))
          (diff (v- loc-b loc-a))
-         (dist (vlength diff))
-         (normal (vunit diff))
-         (move (- dist (target constraint)))
-         (move-a (* move mass-a))
-         (move-b (* move mass-b))
-         (vec-a (v* normal move-a))
-         (vec-b (v* normal move-b)))
-    (nv+ (location (point-a constraint)) vec-a)
-    (nv+ (old-location (point-a constraint)) vec-a)
-    (nv- (location (point-b constraint)) vec-b)
-    (nv- (old-location (point-b constraint)) vec-b)))
+         (dist (vlength diff)))
+    (when (< 0.01 dist)
+      (let* ((normal (vunit diff))
+             (move (- dist (target constraint)))
+             (total-mass (+ (mass point-a) (mass point-b)))
+             (mass-a (/ (mass point-a) total-mass))
+             (mass-b (/ (mass point-b) total-mass))
+             (move-a (* move mass-a))
+             (move-b (* move mass-b))
+             (vec-a (v* normal move-a))
+             (vec-b (v* normal move-b)))
+        (nv+ (location (point-a constraint)) vec-a)
+        (nv- (location (point-b constraint)) vec-b)
+        (when preserve-impulse
+          (nv+ (old-location (point-a constraint)) vec-a)
+          (nv- (old-location (point-b constraint)) vec-b))))))
+
 
 (defclass pin-constraint ()
   ((point :initarg :point :reader point)
@@ -141,6 +147,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
             (setf (location point) move-to
                   (old-location point) (v- (location point) velocity)))
           (setf (location point) move-to)))))
+
 
 (defun ensure-constraint (type)
   (etypecase type

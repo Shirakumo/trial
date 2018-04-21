@@ -6,10 +6,12 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 
 (in-package #:org.shirakumo.fraf.trial.physics)
 
+(defclass physical-entity (located-entity rotated-entity) ())
+
 (defgeneric simulate (entity delta &key forces))
 
 
-(define-shader-entity physical-entity (located-entity rotated-entity)
+(defclass physical-entity (located-entity rotated-entity)
   ((mass :initarg :mass :accessor mass)
    (static-p :initarg :static-p :accessor static-p)
    (rotates-p  :initarg :rotates-p :accessor rotates-p)

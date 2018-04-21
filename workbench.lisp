@@ -33,13 +33,12 @@
                                                           10)
                                            :static-forces (vec 0.0 -0.004 0.0))))
         (setf (color box)
-              (case (mod i 7)
+              (case (mod i 6)
                 (1 (vec 0 1 0 1)) ;; Green
                 (2 (vec 1 0 1 1)) ;; Magenta
                 (3 (vec 0 1 1 1)) ;; Cyan
                 (4 (vec 1 1 0 1)) ;; Yellow
-                (5 (vec 1 1 1 1)) ;; White
-                (6 (vec 0 0 1 1)) ;; Blue
+                (5 (vec 0 0 1 1)) ;; Blue
                 (0 (vec 1 0 0 1)))) ;; Red
         (trial-physics:constrain box :frame :min min-loc :max max-loc)
         (push box (boxes box-collection))
