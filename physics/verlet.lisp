@@ -71,12 +71,12 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
                                        for next = (or (second points) first)
                                        collect (make-instance 'distance-constraint :point-a current
                                                                                    :point-b next))))
-    (let ((center (make-instance 'verlet-point :location location)))
+    (let ((center (make-instance 'verlet-point :location location :mass 0)))
       (push (make-instance 'distance-constraint :point-a center
                                                 :point-b (first (mass-points entity)))
             (constraints entity))
       (push (make-instance 'distance-constraint :point-a center
-                                                :point-b (second (mass-points entity)))
+                                                :point-b (third (mass-points entity)))
             (constraints entity))
       (push (make-instance 'distance-constraint :point-a center
                                                 :point-b (third (mass-points entity)))
