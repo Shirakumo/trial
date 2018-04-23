@@ -28,20 +28,24 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
 
 (defmethod apply-force ((point verlet-point) force)
   (when force
-    (setf (acceleration point) (v+ (or (acceleration point)
-                                       (v* (location point) 0.0))
-                                   force))))
+    (if (vec-p (acceleration point))
+        (nv+ (acceleration point) force)
+        (setf (acceleration point) (v+ (v* (location point) 0.0) force)))))
 
-(defmethod accelerate ((point verlet-point) delta)
-  (let ((delta (when (vec-p (acceleration point))
-                 (acceleration point))))
-    (when delta (nv+ (location point) delta)))
-  (setf (acceleration point) (v* (location point) 0.0)))
-
-(defmethod inertia ((point verlet-point) delta)
-  (let ((loc (v- (v* (location point) 2.0) (old-location point))))
-    (setf (old-location point) (location point)
-          (location point) loc)))
+(defmethod inertia ((point verlet-point))
+  (let ((move (vcopy (location point)))
+        (viscosity (viscosity point))
+        (old (old-location point)))
+    (setf (old-location point) (vcopy move))
+    (nv* move viscosity)
+    (nv* old viscosity)
+    (when (acceleration point)
+      (nv+ move (acceleration point)))
+    (nv+ (location point) move)
+    (nv- (location point) old)
+    (if (acceleration point)
+        (nv* (acceleration point) 0.0)
+        (setf (acceleration point) (nv* move 0.0)))))
 
 (define-shader-entity verlet-entity (physical-entity vertex-entity)
   ((mass-points :initform NIL :accessor mass-points)
@@ -50,7 +54,8 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
    (viscosity :initarg :viscosity :reader viscosity))
   (:default-initargs :viscosity 1.0))
 
-(defmethod initialize-instance :after ((entity verlet-entity) &key mass-points vertex-array location)
+(defmethod initialize-instance :after ((entity verlet-entity)
+                                       &key mass-points vertex-array location (viscosity 1.0))
   (let* ((point-array (or mass-points vertex-array))
          (mass-points (etypecase point-array
                         (mesh (vertices (input vertex-array)))
@@ -62,7 +67,7 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
       (setf (mass-points entity) (mapcar #'(lambda (loc)
                                              (make-instance 'verlet-point
                                                             :location (v+ location loc)
-                                                            :viscosity (viscosity entity)))
+                                                            :viscosity viscosity))
                                          mass-points))
       (setf (constraints entity) (loop with first = (first (mass-points entity))
                                        for points = (mass-points entity) then (rest points)
@@ -71,7 +76,7 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
                                        for next = (or (second points) first)
                                        collect (make-instance 'distance-constraint :point-a current
                                                                                    :point-b next))))
-    (let ((center (make-instance 'verlet-point :location location :mass 0)))
+    (let ((center (make-instance 'verlet-point :location location)))
       (push (make-instance 'distance-constraint :point-a center
                                                 :point-b (first (mass-points entity)))
             (constraints entity))
@@ -103,59 +108,49 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
   (for:for ((point in (mass-points entity)))
     (setf (viscosity point) value)))
 
-(defmethod constrain ((entity verlet-entity) type &rest args)
-  (let* ((type (ensure-constraint type))
-         (args (if (or (eql type 'distance-constraint)
-                       (eql type 'angle-constraint)
-                       (getf args :point))
-                   args
-                   (append args (list :point (center entity))))))
-    (push (apply #'make-instance type args) (constraints entity))))
+(defmethod apply-force ((entity verlet-entity) force)
+  (let ((static (static-forces entity)))
+    (when (or force static)
+      (let ((force (if (and static force)
+                       (nv+ force static)
+                       (if force force static))))
+        (for:for ((point in (mass-points entity)))
+          (apply-force point force))))))
+
+(defmethod inertia ((entity verlet-entity))
+  (for:for ((point in (mass-points entity)))
+    (inertia point)))
+
+(defmethod constrain-to-frame ((entity verlet-entity) min max)
+  (let ((center (location (center entity))))
+    (for:for ((point in (mass-points entity))
+              (diff = (v- (location point) center)))
+      (push (make-instance 'frame-constraint :min (v+ min diff)
+                                             :max (v+ max diff)
+                                             :point point)
+            (constraints entity)))))
 
 
-(defun verlet-simulation (entities delta &key forces (iterations *iterations*))
+(defun verlet-simulation (entities &key forces (iterations *iterations*))
   ;; Simulations
-  (let ((collidables ()))
-    (let ((delta (/ (coerce delta 'single-float) iterations))
-          (half-delta (/ delta 2))
-          (forces
-            (let ((forces (if (vec-p forces) (list forces) forces)))
-              (for:for ((entity in entities)
-                        (static-forces = (static-forces entity))
-                        (all-forces = (when (or forces static-forces)
-                                        (apply #'v+ (append forces
-                                                            (if (vec-p static-forces)
-                                                                (list static-forces)
-                                                                static-forces)))))
-                        (force-list collecting all-forces))
-                (when (typep entity 'collidable-entity)
-                  (push entity collidables))
-                (returning force-list)))))
-      (dotimes (i iterations)
-        ;; Apply forces
-        (for:for ((entity in entities)
-                  (force in forces)
-                  (center = (center entity)))
-          (apply-force center force)
-          (accelerate center delta))
-        ;; Collision checks without preserving impulse
-        (loop for entity-list = collidables then (rest entity-list)
-              while (rest entity-list)
-              for entity = (first entity-list)
-              do (for:for ((other in (rest entity-list)))
-                   (let ((data (collides-p entity other)))
-                     (when data (resolve entity other :data data)))))
-        ;; Check constraints
-        (for:for ((entity in entities))
-          (for:for ((constraint in (constraints entity)))
-            (when (typep constraint 'frame-constraint))
-            (relax constraint half-delta)))
-        ;; Handle inertia based on old location
-        (for:for ((entity in entities))
-          (inertia (center entity) delta))
-        ;; TODO: collision checks with preserving impulse here
-        ;; Finalise constraints with impulse preservation
-        (for:for ((entity in entities))
-          (for:for ((constraint in (constraints entity)))
-            (when (typep constraint 'frame-constraint)
-              (relax constraint half-delta T))))))))
+  (let* ((collidables ())) ;; TODO: <--
+    (dotimes (i iterations)
+      ;; Collision checks without preserving impulse
+      (loop for entity-list = collidables then (rest entity-list)
+            while (rest entity-list)
+            for entity = (first entity-list)
+            do (for:for ((other in (rest entity-list)))
+                 (let ((data (collides-p entity other)))
+                   (when data (resolve entity other :data data)))))
+      ;; Check constraints
+      (for:for ((entity in entities))
+        (for:for ((constraint in (constraints entity)))
+          (relax constraint)))
+      ;; Handle inertia based on old location
+      (for:for ((entity in entities))
+        (apply-force entity forces)
+        (inertia entity))
+      ;; Check constraints and preserve impulse
+      (for:for ((entity in entities))
+        (for:for ((constraint in (constraints entity)))
+          (relax constraint T))))))

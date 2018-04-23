@@ -32,7 +32,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
    #:center
    #:mass-points
    #:constraints
-   #:constrain)
+   #:constrain-to-frame)
   (:export
    ;; constraint.lisp
    #:distance-constraint

@@ -15,7 +15,7 @@
    :vertex-array (asset 'workbench 'box)))
 
 (define-handler (box-collection tick) (ev)
-  (trial-physics:verlet-simulation (boxes box-collection) (dt ev)))
+  (trial-physics:verlet-simulation (boxes box-collection)))
 
 (progn
   (defmethod setup-scene ((main main) scene)
@@ -24,12 +24,12 @@
           (min-loc (vec 5 5 10))
           (max-loc (vec (- (width main) 5) (- (height main) 5) 10)))
       (for:for ((i repeat 10)
-                (box = (make-instance 'box :location (vec (+ (vx min-loc)
-                                                             (random (- (vx max-loc)
-                                                                        (vx min-loc))))
-                                                          (+ (vy min-loc)
-                                                             (random (- (vy max-loc)
-                                                                        (vy min-loc))))
+                (box = (make-instance 'box :location (vec (floor (+ (vx min-loc)
+                                                                    (random (- (vx max-loc)
+                                                                               (vx min-loc)))))
+                                                          (floor (+ (vy min-loc)
+                                                                    (random (- (vy max-loc)
+                                                                               (vy min-loc)))))
                                                           10)
                                            :static-forces (vec 0.0 -0.004 0.0))))
         (setf (color box)
@@ -40,7 +40,7 @@
                 (4 (vec 1 1 0 1)) ;; Yellow
                 (5 (vec 0 0 1 1)) ;; Blue
                 (0 (vec 1 0 0 1)))) ;; Red
-        (trial-physics:constrain box :frame :min min-loc :max max-loc)
+        (trial-physics:constrain-to-frame box min-loc max-loc)
         (push box (boxes box-collection))
         (enter box scene))
       (enter box-collection scene))
