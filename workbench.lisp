@@ -10,7 +10,7 @@
   ((boxes :initform NIL :accessor boxes))
   (:default-initargs :name :box-collection))
 
-(define-shader-subject box (colored-entity trial-physics:verlet-entity) ()
+(define-shader-subject box (colored-entity trial-physics:collidable-verlet-entity) ()
   (:default-initargs
    :vertex-array (asset 'workbench 'box)))
 
@@ -23,7 +23,7 @@
     (let ((box-collection (make-instance 'box-collection))
           (min-loc (vec 5 5 10))
           (max-loc (vec (- (width main) 5) (- (height main) 5) 10)))
-      (for:for ((i repeat 10)
+      (for:for ((i repeat 20)
                 (box = (make-instance 'box :location (vec (floor (+ (vx min-loc)
                                                                     (random (- (vx max-loc)
                                                                                (vx min-loc)))))

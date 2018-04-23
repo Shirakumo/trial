@@ -108,3 +108,9 @@ If C is provided, then A, B, and C are points where B->A and B->C are the vector
                (- (vw vec-a) (vw vec-b))
                0.0)))
     (+ (* x x) (* y y) (* z z) (* w w))))
+
+(defun perpendicular (vec-a vec-b)
+  ;; TODO: more than 2D?
+  (let ((x (- (vy vec-a) (vy vec-b)))
+        (y (- (vx vec-b) (vx vec-a))))
+    (nv* (vec2 x y) (/ (sqrt (+ (* x x) (* y y)))))))
