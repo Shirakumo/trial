@@ -221,16 +221,10 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
                         ret-point point)))
               (append data (list :depth smallest-dist :vertex ret-point)))))))))
 
-(defvar *dudu* NIL)
-(progn
-  (setf *dudu* T))
 (defmethod resolve ((entity collidable-verlet-entity) (other collidable-verlet-entity)
                     &key data preserve-impulse)
   ;; FIXME: support 3D
   (when data
-    (when *dudu*
-      (v:warn :dudu "~%~a~%" data)
-      (setf *dudu* NIL))
     (let* ((edge (getf data :edge))
            (edge-start (location (car edge)))
            (edge-end (location (cdr edge)))
