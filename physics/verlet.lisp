@@ -133,19 +133,23 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
 
 (defun verlet-simulation (entities &key forces (iterations *iterations*))
   ;; Simulations
-  (let* ((collidables ())) ;; TODO: <--
+  (let ((collidables ()))
+    (for:for ((entity in entities))
+      (when (typep entity 'collidable-entity)
+        (push entity collidables)))
     (dotimes (i iterations)
-      ;; Collision checks without preserving impulse
-      (loop for entity-list = collidables then (rest entity-list)
-            while (rest entity-list)
-            for entity = (first entity-list)
-            do (for:for ((other in (rest entity-list)))
-                 (let ((data (collides-p entity other)))
-                   (when data (resolve entity other :data data)))))
       ;; Check constraints
       (for:for ((entity in entities))
         (for:for ((constraint in (constraints entity)))
           (relax constraint)))
+      ;; Collision checks without preserving impulse
+      (when collidables
+        (loop for entity-list = collidables then (rest entity-list)
+              while (rest entity-list)
+              for entity = (first entity-list)
+              do (for:for ((other in (rest entity-list))
+                           (data = (collides-p entity other)))
+                   (when data (resolve entity other :data data)))))
       ;; Handle inertia based on old location
       (for:for ((entity in entities))
         (apply-force entity forces)
@@ -153,4 +157,14 @@ In general, 4 is minimum for an alright accuracy, 8 is enough for a good accurac
       ;; Check constraints and preserve impulse
       (for:for ((entity in entities))
         (for:for ((constraint in (constraints entity)))
-          (relax constraint T))))))
+          (relax constraint T)))
+      ;; Collision checks and preserve impulse
+      (when collidables
+        (loop for entity-list = collidables then (rest entity-list)
+              while (rest entity-list)
+              for entity = (first entity-list)
+              do (for:for ((other in (rest entity-list))
+                           (data = (collides-p entity other)))
+                   (when data
+                     (resolve entity other :data data
+                                           :preserve-impulse T))))))))
