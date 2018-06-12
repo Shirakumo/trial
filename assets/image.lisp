@@ -14,6 +14,7 @@
        (flet ((load-image (path)
                 (with-new-value-restart (path) (new-path "Specify a new image path.")
                   (with-retry-restart (retry "Retry loading the image path.")
+                    ;; FIXME: restrict channels based on texture data format specs.
                     (cl-soil:load-image path)))))
          (let ((input (coerce-asset-input image T)))
            (multiple-value-bind (bits width height)

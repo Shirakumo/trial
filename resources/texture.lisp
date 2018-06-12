@@ -89,6 +89,7 @@
   (with-slots (target storage level internal-format width height depth samples pixel-format pixel-type pixel-data) texture
     (let ((internal-format (cffi:foreign-enum-value '%gl:enum internal-format))
           (pixel-data (etypecase pixel-data
+                        (cons pixel-data)
                         (cffi:foreign-pointer pixel-data)
                         (null (cffi:null-pointer)))))
       (case target
@@ -113,8 +114,13 @@
                     (:static (%gl:tex-storage-2d target level internal-format width height)))))
         ((:texture-3d :texture-2d-array)
          (ecase storage
-           (:dynamic (%gl:tex-image-3d target level internal-format width height depth 0 pixel-format pixel-type pixel-data))
-           (:static (%gl:tex-storage-3d target level internal-format width height depth))))
+           (:dynamic (%gl:tex-image-3d target level internal-format width height depth 0 pixel-format pixel-type
+                                       (if (consp pixel-data) (cffi:null-pointer) pixel-data)))
+           (:static (%gl:tex-storage-3d target level internal-format width height depth)))
+         (when (consp pixel-data)
+           (loop for z from 0
+                 for data in pixel-data
+                 do (%gl:tex-sub-image-3d target level 0 0 z width height 1 pixel-format pixel-type data))))
         ((:texture-2d-multisample)
          (%gl:tex-storage-2d-multisample target samples internal-format width height 1))
         ((:texture-2d-multisample-array)
