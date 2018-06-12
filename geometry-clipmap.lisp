@@ -6,170 +6,136 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-shader-subject clipmap ()
-  ((n :initarg :n)
-   (levels :initarg :levels)
-   (clipmap-block :accessor clipmap-block)
-   (clipmap-fixup :accessor clipmap-fixup)
-   (clipmap-trims :accessor clipmap-trims)
-   (clipmap-center :accessor clipmap-center)
-   (texture :initarg :texture :accessor texture)))
+(define-shader-entity geometry-clipmap ()
+  ((clipmap-block :accessor clipmap-block)
+   (levels :initarg :levels :accessor levels)
+   (texture :initarg :texture :accessor texture))
+  (:default-initargs
+   :levels 5))
 
-(defmethod initialize-instance :after ((clipmap clipmap) &key n)
-  (setf (clipmap-center clipmap) (make-instance 'mesh :input (make-quad-grid (/ (1- n)) (1- n) (1- n))))
-  (setf (clipmap-block clipmap) (make-instance 'mesh :input (make-clipmap-block n)))
-  (setf (clipmap-fixup clipmap) (make-instance 'mesh :input (make-clipmap-fixup n)))
-  (let ((trims (make-clipmap-trim n)))
-    (setf (clipmap-trims clipmap) (loop for trim in trims
-                                      collect (make-instance 'mesh :input trim)))))
+(defmethod initialize-instance :after ((clipmap geometry-clipmap) &key (n 64))
+  (setf (clipmap-block clipmap) (make-clipmap-block n)))
 
-(defmethod paint ((clipmap clipmap) (pass shader-pass))
-  (gl:active-texture :texture0)
-  (gl:bind-texture :texture-2d-array (gl-name (texture clipmap)))
-  (let* ((n (slot-value clipmap 'n))
-         (w (/ n 10))
-         (m (1- (/ (1+ n) 4)))
-         (s (/ (1- n)))
-         (shader (shader-program-for-pass pass clipmap)))
-    (setf (uniform shader "view_matrix") (view-matrix))
-    (setf (uniform shader "projection_matrix") (projection-matrix))
-    (loop for scale = 1 then (/ scale 2)
-          for offp = 0 then off
-          for off = 0 then (+ off (* s scale))
-          for level from 0 below (1- (slot-value clipmap 'levels))
-          do (draw-ring clipmap m s shader level scale off offp 1)
-          finally (setf (uniform shader "level") (float level 0s0))
-                  (setf (uniform shader "scale") (float scale 0s0))
-                  (setf (uniform shader "offset") (float off 0s0))
-                  (setf (uniform shader "offsetp") (float offp 0s0))
-                  (setf (uniform shader "block") (vec 0 0))
-                  (gl:bind-vertex-array (gl-name (clipmap-center clipmap)))
-                  (%gl:draw-elements :triangles (size (clipmap-center clipmap)) :unsigned-int 0))))
+(defmethod paint ((clipmap geometry-clipmap) (pass shader-pass))
+  (gl:polygon-mode :front-and-back :fill)
+  (let ((program (shader-program-for-pass pass clipmap))
+        (levels (levels clipmap))
+        (texture (texture clipmap))
+        (clipmap (clipmap-block clipmap)))
+    (gl:active-texture :texture0)
+    (gl:bind-texture :texture-2d-array (gl-name texture))
+    (gl:bind-vertex-array (gl-name clipmap))
+    (setf (uniform program "view_matrix") (view-matrix))
+    (setf (uniform program "projection_matrix") (projection-matrix))
+    (setf (uniform program "level") 0)
+    (setf (uniform program "scale") 16.0)
+    (setf (uniform program "levels") levels)
+    (flet ((paint (x z)
+             (setf (uniform program "offset") (vec x z))
+             (%gl:draw-elements :triangles (size clipmap) :unsigned-int 0)))
+      (paint +0.5 +0.5)
+      (paint +0.5 -0.5)
+      (paint -0.5 -0.5)
+      (paint -0.5 +0.5)
+      (loop for scale = 16.0s0 then (* scale 2.0s0)
+            for level from 0 below levels
+            do (setf (uniform program "level") level)
+               (setf (uniform program "scale") scale)
+               (paint +1.5 +1.5)
+               (paint +0.5 +1.5)
+               (paint -0.5 +1.5)
+               (paint -1.5 +1.5)
+               (paint -1.5 +0.5)
+               (paint -1.5 -0.5)
+               (paint -1.5 -1.5)
+               (paint -0.5 -1.5)
+               (paint +0.5 -1.5)
+               (paint +1.5 -1.5)
+               (paint +1.5 -0.5)
+               (paint +1.5 +0.5))))) 
 
-(defun draw-ring (clipmap m s shader level scale off offp f)
-  (setf (uniform shader "level") (float level 0s0))
-  (setf (uniform shader "scale") (float scale 0s0))
-  (setf (uniform shader "offset") (float off 0s0))
-  (setf (uniform shader "offsetp") (float offp 0s0))
-  (setf (uniform shader "block") (vec 0 0))
-  (gl:bind-vertex-array (gl-name (clipmap-fixup clipmap)))
-  (%gl:draw-elements :triangles (size (clipmap-fixup clipmap)) :unsigned-int 0)
-  (gl:bind-vertex-array (gl-name (nth f (clipmap-trims clipmap))))
-  (%gl:draw-elements :triangles (size (nth f (clipmap-trims clipmap))) :unsigned-int 0)
-  (gl:bind-vertex-array (gl-name (clipmap-block clipmap)))
-  (flet ((d (x z)
-           (setf (uniform shader "block") (vec x z))
-           (%gl:draw-elements :triangles (size (clipmap-block clipmap)) :unsigned-int 0)))
-    (d (- 0.5 (* s m 0.5)) (- 0.5 (* s m 0.5)))
-    (d (- 0.5 (* s m 0.5)) (- 0.5 (* s m 1.5)))
-    (d (- 0.5 (* s m 0.5)) (- 0.5 (* s m 1.5)))
-    (d (- 0.5 (* s m 0.5)) (- (* s m 1.5) 0.5))
-    (d (- 0.5 (* s m 0.5)) (- (* s m 0.5) 0.5))
-    (d (- (* s m 0.5) 0.5) (- 0.5 (* s m 0.5)))
-    (d (- (* s m 0.5) 0.5) (- 0.5 (* s m 1.5)))
-    (d (- (* s m 0.5) 0.5) (- 0.5 (* s m 1.5)))
-    (d (- (* s m 0.5) 0.5) (- (* s m 1.5) 0.5))
-    (d (- (* s m 0.5) 0.5) (- (* s m 0.5) 0.5))
-    (d (- (* s m 1.5) 0.5) (- (* s m 0.5) 0.5))
-    (d (- (* s m 1.5) 0.5) (- 0.5 (* s m 0.5)))
-    (d (- 0.5 (* s m 1.5)) (- 0.5 (* s m 0.5)))
-    (d (- 0.5 (* s m 1.5)) (- (* s m 0.5) 0.5))))
-
-(define-class-shader (clipmap :vertex-shader)
+(define-class-shader (geometry-clipmap :vertex-shader)
   "layout (location = 0) in vec3 position;
 
 uniform mat4 view_matrix;
 uniform mat4 projection_matrix;
 uniform sampler2DArray texture_image;
-uniform float level, scale, offset, offsetp;
-uniform vec2 block;
+uniform int levels;
+uniform int level;
+uniform float scale;
+uniform vec2 offset;
 
-out vec3 normal;
 out float z;
 
 void main(){
-   float level_o = max(level-1, 0);
-   vec2 world = (position.xz + block) * scale + offset;
-   vec2 uv_inner = position.xz + block + offset + 0.5;
-   vec2 uv_outer = (position.xz + block + offsetp)/2 + offset + 0.5;
+  float border = 10;
+  float n = textureSize(texture_image, 0).x;
+  vec2 map_pos = position.xz + offset;
+  vec2 tex_off = (map_pos/4+0.5);
 
-   vec2 alpha = clamp(abs(world/scale)*10-3.8, 0, 1);
-   float a = max(alpha.x, alpha.y);
-   if(level == 0) a = 0;
+  z = texelFetch(texture_image, ivec3(tex_off*n, level), 0).r;
+  if(level+1 < levels){
+    // Inter-level blending factor
+    vec2 alpha = clamp(abs(map_pos)*border-(border*2)-1, 0, 1);
+    float a = max(alpha.x, alpha.y);
+  
+    // Retrieve outer Z factor by interpolated texel read.
+    vec2 tex_off_i = (map_pos/8+0.5)+0.5/n;
+    float zo = texture(texture_image, vec3(tex_off_i, level+1)).r;
 
-   float zi = texture(texture_image, vec3(uv_inner, level)).r;
-   float zo = texture(texture_image, vec3(uv_outer, level_o)).r;
-   z = ((1-a) * zi + a * zo) * 0.3;
+    // Interpolate final Z
+    z = mix(z, zo, a);
+  }
 
-   gl_Position = projection_matrix * view_matrix * vec4(world.x, z, world.y, 1.0);
-
-   // deduce terrain normal
-   vec3 off = vec3(0.0078125, 0.0078125, 0.0);
-   float hLi = texture(texture_image, vec3(uv_inner - off.xz, level)).r*100;
-   float hRi = texture(texture_image, vec3(uv_inner + off.xz, level)).r*100;
-   float hDi = texture(texture_image, vec3(uv_inner - off.zy, level)).r*100;
-   float hUi = texture(texture_image, vec3(uv_inner + off.zy, level)).r*100;
-   float hLo = texture(texture_image, vec3(uv_outer - off.xz, level_o)).r*100;
-   float hRo = texture(texture_image, vec3(uv_outer + off.xz, level_o)).r*100;
-   float hDo = texture(texture_image, vec3(uv_outer - off.zy, level_o)).r*100;
-   float hUo = texture(texture_image, vec3(uv_outer + off.zy, level_o)).r*100;
-   float hL = ((1-a) * hLi + a * hLo);
-   float hR = ((1-a) * hRi + a * hRo);
-   float hD = ((1-a) * hDi + a * hDo);
-   float hU = ((1-a) * hUi + a * hUo);
-
-   normal.x = hL - hR;
-   normal.y = hD - hU;
-   normal.z = 2.0;
-   normal = normalize(normal);
+  vec2 world = map_pos * scale;
+  gl_Position = projection_matrix * view_matrix * vec4(world.x, z*200, world.y, 1.0);
 }")
 
-(define-class-shader (clipmap :fragment-shader)
+(define-class-shader (geometry-clipmap :fragment-shader)
   "
-uniform vec3 light = vec3(0.5, 1.0, 2.0);
-uniform sampler2DArray texture_image;
-
-in vec3 normal;
 in float z;
 out vec4 color;
 
 void main(){
-    float v = z*3+abs(normal.y)/2.5;
-    float s = clamp(dot(normal, normalize(light)), 0, 1);
-    vec3 c = vec3(1,1,1);
-    if(v < 0.5){
-      c = vec3(0.2, 0.7, 0.2);
-    }else if(v < 0.75){
-      c = mix(vec3(0.2, 0.7, 0.2), vec3(0.6,0.6,0.6), (v-0.5)/0.25);
-    }else if(v < 0.9){
-      c = mix(vec3(0.6,0.6,0.6), vec3(1.0,1.0,1.0), (v-0.75)/0.15);
-    }else{
-      c = vec3(1,1,1);
-    }
-    color = vec4(s * c, 1.0);
+  color = vec4(z, z, z, 1);
 }")
 
 (defun make-clipmap-block (n)
-  (let ((m (1- (/ (1+ n) 4)))
-        (s (/ (1- n))))
-    (make-quad-grid s m m)))
+  (let ((m (/ n 4))
+        (s (/ 4 n)))
+    (change-class (make-quad-grid s m m) 'vertex-array)))
 
-(defun make-clipmap-fixup (n)
-  (let ((m (1- (/ (1+ n) 4)))
-        (s (/ (1- n)))
-        (mesh (make-instance 'vertex-mesh)))
-    (make-quad-grid s m 2 :x (- 0.5 (* s m 0.5)) :z 0 :mesh mesh)
-    (make-quad-grid s 2 m :x 0 :z (- 0.5 (* s m 0.5)) :mesh mesh)
-    (make-quad-grid s m 2 :x (- (* s m 0.5) 0.5) :z 0 :mesh mesh)
-    (make-quad-grid s 2 m :x 0 :z (- (* s m 0.5) 0.5) :mesh mesh)))
-
-(defun make-clipmap-trim (n)
-  (let ((m (1- (/ (1+ n) 4)))
-        (s (/ (1- n)))
-        (ne (make-instance 'vertex-mesh))
-        (sw (make-instance 'vertex-mesh)))
-    (make-quad-grid s (* 2 (1+ m)) 1 :x 0 :z (* s (+ m 0.5)) :mesh ne)
-    (make-quad-grid s 1 (* 2 (1+ m)) :x (* s (+ m 0.5)) :z 0 :mesh ne)
-    (make-quad-grid s (* 2 (1+ m)) 1 :x 0 :z (* s -1 (+ m 0.5)) :mesh sw)
-    (make-quad-grid s 1 (* 2 (1+ m)) :x (* s -1 (+ m 0.5)) :z 0 :mesh sw)
-    (list ne sw)))
+(defun generate-clipmaps (input output &key (n 64) (levels 5))
+  (let ((total (loop for l from 0 below levels
+                     sum (expt (1+ (expt 2 l)) 2)))
+        (counter 0) (printed 0)
+        (levels (1- levels)))
+    (flet ((clipmap (o x y s)
+             (let ((o (make-pathname :name (format NIL "~d,~d" x y) :type "png" :defaults o)))
+               (uiop:run-program (list "magick" "convert"
+                                       (uiop:native-namestring input)
+                                       "-gravity" "center"
+                                       "-crop" (format NIL "~dx~:*~d+~d+~d!" s x y)
+                                       "-background" "black"
+                                       "-flatten"
+                                       "-scale" (format NIL "~dx~d!" n n)
+                                       (uiop:native-namestring o))
+                                 :error-output T)
+               (incf counter)
+               (let ((percentage (round (/ counter total 0.01))))
+                 (when (and (/= percentage printed) (= 0 (mod percentage 10)))
+                   (setf printed percentage)
+                   (format T "~& ~2d%~%" percentage))))))
+      (multiple-value-bind (d w h) (cl-soil:load-image input)
+        (cl-soil:free-image-data d)
+        (dotimes (l levels output)
+          (let ((s (* n (expt 2 l)))
+                (o (pathname-utils:subdirectory output (princ-to-string l))))
+            (ensure-directories-exist o)
+            (loop for x from (/ w -2) to (/ w 2) by s
+                  do (loop for y from (/ h -2) to (/ h 2) by s
+                           do (clipmap o x y s)))))
+        (let ((o (pathname-utils:subdirectory output (princ-to-string levels))))
+          (ensure-directories-exist o)
+          (clipmap o 0 0 w)))
+      (values counter total))))
