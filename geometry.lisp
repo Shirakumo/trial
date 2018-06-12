@@ -174,6 +174,7 @@
          (sizes (loop for attr in attributes collect (vertex-attribute-size primer attr)))
          (total-size (* (length vertices) (reduce #'+ sizes)))
          (buffer (make-static-vector total-size :element-type 'single-float)))
+    (setf (data-pointer array) NIL)
     ;; Copy the contents of the mesh into the data buffer, packed.
     (loop with buffer-offset = 0
           for vertex across vertices
