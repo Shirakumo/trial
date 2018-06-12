@@ -55,7 +55,11 @@
                (paint +1.5 +0.5))))) 
 
 (define-class-shader (geometry-clipmap :vertex-shader)
-  "layout (location = 0) in vec3 position;
+  "
+// Factor for the width of the blending border. Higher means smaller.
+#define BORDER 10.0
+
+layout (location = 0) in vec3 position;
 
 uniform mat4 view_matrix;
 uniform mat4 projection_matrix;
@@ -68,7 +72,6 @@ uniform vec2 offset;
 out float z;
 
 void main(){
-  float border = 10;
   float n = textureSize(texture_image, 0).x;
   vec2 map_pos = position.xz + offset;
   vec2 tex_off = (map_pos/4+0.5);
@@ -76,7 +79,7 @@ void main(){
   z = texelFetch(texture_image, ivec3(tex_off*n, level), 0).r;
   if(level+1 < levels){
     // Inter-level blending factor
-    vec2 alpha = clamp(abs(map_pos)*border-(border*2)-1, 0, 1);
+    vec2 alpha = clamp((abs(map_pos)-2)*BORDER+1, 0, 1);
     float a = max(alpha.x, alpha.y);
   
     // Retrieve outer Z factor by interpolated texel read.
