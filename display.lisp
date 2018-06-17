@@ -60,6 +60,7 @@
       (let ((c (clear-color target)))
         (gl:clear-color (vx c) (vy c) (vz c) (if (vec4-p c) (vw c) 0.0)))
       (gl:clear :color-buffer :depth-buffer :stencil-buffer)
+      (gl:viewport 0 0 (width context) (height context))
       (call-next-method)
       (swap-buffers context))))
 

@@ -29,9 +29,6 @@
 (defmethod setup-perspective :before ((camera camera) ev)
   (reset-matrix *projection-matrix*))
 
-(defmethod setup-perspective :after ((camera camera) ev)
-  (gl:viewport 0 0 (width ev) (height ev)))
-
 (defmethod project-view :before ((camera camera) ev)
   (reset-matrix))
 
