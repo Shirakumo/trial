@@ -6,80 +6,12 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-shader-entity geometry-clipmap-updater ()
-  ((texture :initform (make-instance 'texture :width 128 :height 128) :accessor texture))
-  (:inhibit-shaders (shader-entity :fragment-shader)))
-
-(defmethod paint ((updater geometry-clipmap-updater) (pass shader-pass))
-  (let ((vao (gl:create-vertex-array)))
-    (gl:bind-texture :texture-2d (gl-name (texture updater)))
-    (let* ((r 64)
-           (s (* r (expt 2 3)))
-           (x (- 128 (/ s 2)))
-           (y (- 128 (/ s 2)))
-           (l (* s (floor x s)))
-           (u (* s (floor y s)))
-           (dir #p"~/clipmaps/"))
-      ;; Update the texture buffer
-      (flet ((picture (file x y)
-               (let ((data (cl-soil:load-image file)))
-                 (unwind-protect
-                      (%gl:tex-sub-image-2d :texture-2d 0 x y r r :rgba :unsigned-byte data)
-                   (cl-soil:free-image-data data))))
-             (path (x y)
-               (merge-pathnames (make-pathname :name (format NIL "~d,~d" x y) :type "png"
-                                               :directory `(:relative ,(princ-to-string s)))
-                                dir)))
-        (picture (path (+ l 0) (+ u 0)) 0 0)
-        (picture (path (+ l s) (+ u 0)) r 0)
-        (picture (path (+ l s) (+ u s)) r r)
-        (picture (path (+ l 0) (+ u s)) 0 r))
-      ;; Draw into the clipmap layer
-      (setf (uniform (shader-program-for-pass pass updater) "offset")
-            (vec2 (/ (- l x) s) (/ (- u y) s))))
-    (gl:bind-vertex-array vao)
-    (gl:draw-arrays :triangle-strip 0 4)
-    (gl:delete-vertex-arrays (list vao))))
-
-(progn
-  (define-class-shader (geometry-clipmap-updater :vertex-shader)
-    "uniform vec2 offset;
-const vec2 pos[4] = vec2[4](
-  vec2(0.0, 0.0),
-  vec2(1.0, 0.0),
-  vec2(0.0, 1.0),
-  vec2(1.0, 1.0)
-);
-
-out vec2 uv;
-
-void main(){
-  gl_Position = vec4((pos[gl_VertexID]+offset)*4, 0, 1);
-  uv = pos[gl_VertexID];
-  uv.y = 1-uv.y;
-}")
-
-  (define-class-shader (geometry-clipmap-updater :fragment-shader)
-    "#version 330
-
-uniform sampler2D texbuf;
-
-in vec2 uv;
-out vec4 color;
-
-void main(){
-  color = texture(texbuf, uv);
-}")
-  (maybe-reload-scene))
-
 (define-shader-entity geometry-clipmap ()
   ((clipmap-block :accessor clipmap-block)
    (levels :initarg :levels :accessor levels)
    (resolution :initarg :resolution :accessor resolution)
    (maps :accessor maps)
    (texture-buffer :accessor texture-buffer)
-   (framebuffer :accessor framebuffer)
-   (update-program :accessor update-program)
    (data-directory :initarg :data-directory :accessor data-directory))
   (:default-initargs
    :levels 5
@@ -88,17 +20,14 @@ void main(){
 
 (defmethod initialize-instance :after ((clipmap geometry-clipmap) &key resolution levels)
   (setf (clipmap-block clipmap) (make-clipmap-block resolution))
-  (let* ((maps (make-instance 'texture :target :texture-2d-array
-                                       :depth levels))
-         (attach (loop for i from 0 below levels
-                       collect (list (find-symbol (format NIL "~a~a" :color-attachment i) "KEYWORD")
-                                     maps :layer i))))
-    (setf (maps clipmap) maps)
-    (setf (framebuffer clipmap) (make-instance 'framebuffer :attachments attach))
-    (setf (texture-buffer clipmap) (make-instance 'texture :target :texture-2d
-                                                           :width (* 2 resolution)
-                                                           :height (* 2 resolution)))
-    (setf (update-program clipmap) (make-class-shader-program 'geometry-clipmap-updater))))
+  (setf (maps clipmap) (make-instance 'texture :target :texture-2d-array
+                                               :min-filter :linear
+                                               :width resolution
+                                               :height resolution
+                                               :depth levels))
+  (setf (texture-buffer clipmap) (make-instance 'texture :target :texture-2d
+                                                         :width (* 2 resolution)
+                                                         :height (* 2 resolution))))
 
 (defmethod show-level ((clipmap geometry-clipmap) x y level)
   (let* ((r (resolution clipmap))
@@ -110,11 +39,10 @@ void main(){
          (dir (data-directory clipmap)))
     ;; Update the texture buffer
     (flet ((picture (file x y)
-             (when (probe-file file)
-               (let ((data (cl-soil:load-image file)))
-                 (unwind-protect
-                      (%gl:tex-sub-image-2d :texture-2d 0 x y r r :rgba :unsigned-byte data)
-                   (cl-soil:free-image-data data)))))
+             (let ((data (cl-soil:load-image (if (probe-file file) file #p"~/clipmaps/zero.png"))))
+               (unwind-protect
+                    (%gl:tex-sub-image-2d :texture-2d 0 x y r r :rgba :unsigned-byte data)
+                 (cl-soil:free-image-data data))))
            (path (x y)
              (merge-pathnames (make-pathname :name (format NIL "~d,~d" x y) :type "png"
                                              :directory `(:relative ,(princ-to-string s)))
@@ -124,34 +52,16 @@ void main(){
       (picture (path (+ l s) (+ u s)) r r)
       (picture (path (+ l 0) (+ u s)) 0 r))
     ;; Draw into the clipmap layer
-    (setf (uniform (update-program clipmap) "offset")
-          (vec2 (/ (- l x) s) (/ (- u y) s)))
-    (gl:draw-arrays :triangle-strip 0 4)))
+    (%gl:copy-image-sub-data (gl-name (texture-buffer clipmap)) :texture-2d 0 (/ (- x l) (expt 2 level)) (/ (- y u) (expt 2 level)) 0
+                             (gl-name (maps clipmap)) :texture-2d-array 0 0 0 level r r 1)))
 
 (defmethod show-region ((clipmap geometry-clipmap) x y)
   ;; FIXME: Remember what levels show and only redraw ones
   ;;        that need updating.
-  (let ((program (gl-name (update-program clipmap)))
-        (res (resolution clipmap)))
-    (with-pushed-attribs
-      (disable :depth-test :scissor-test :cull-face)
-      (gl:active-texture :texture0)
-      (gl:bind-texture :texture-2d (gl-name (texture-buffer clipmap)))
-      (gl:bind-framebuffer :framebuffer (gl-name (framebuffer clipmap)))
-      (gl:bind-vertex-array (gl-name (clipmap-block clipmap)))
-      (gl:use-program program)
-      (gl:viewport 0 0 res res)
-      (dotimes (l (levels clipmap) clipmap)
-        (gl:draw-buffers (list (+ (load-time-value
-                                   (cffi:foreign-enum-value
-                                    '%gl:enum :color-attachment0))
-                                  l)))
-        (with-simple-restart (continue "Ignore level ~d." l)
-          (show-level clipmap x y l)))
-      (gl:use-program 0)
-      (gl:bind-vertex-array 0)
-      (gl:bind-framebuffer :framebuffer 0)
-      (gl:bind-texture :texture-2d 0))))
+  (gl:bind-texture :texture-2d (gl-name (texture-buffer clipmap)))
+  (dotimes (l (levels clipmap) clipmap)
+    (with-simple-restart (continue "Ignore level ~d." l)
+      (show-level clipmap x y l))))
 
 (defmethod paint ((clipmap geometry-clipmap) (pass shader-pass))
   (let ((program (shader-program-for-pass pass clipmap))
@@ -248,7 +158,7 @@ void main(){
 ;; in full-scale pixel coordinates. This means that the pixel sizes are assumed to
 ;; correspond to in-game unit sizes. If not, scaling must be applied to account
 ;; for the difference.
-(defun generate-clipmaps (input output &key (n 64) (levels 5))
+(defun generate-clipmaps (input output &key (n 64) (levels 5) ((:x xoff) 0) ((:y yoff) 0))
   (let ((total (loop for l from 0 below levels
                      sum (expt (expt 2 l) 2)))
         (counter 0) (printed 0))
@@ -275,6 +185,6 @@ void main(){
             (ensure-directories-exist o)
             (loop for x from (/ w -2) below (/ w 2) by s
                   do (loop for y from (/ h -2) below (/ h 2) by s
-                           for f = (make-pathname :name (format NIL "~d,~d" x y) :type "png" :defaults o)
+                           for f = (make-pathname :name (format NIL "~d,~d" (+ x xoff) (+ y yoff)) :type "png" :defaults o)
                            do (clipmap f (+ x (/ s 2)) (+ y (/ s 2)) s))))))
       (values counter total))))

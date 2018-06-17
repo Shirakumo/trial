@@ -4,7 +4,7 @@
   :base 'trial)
 
 (define-asset (workbench cube) mesh
-    (make-cube 100))
+    (make-cube 200))
 
 (define-asset (workbench cat) image
     #p"cat.png")
@@ -21,11 +21,16 @@ out vec4 color;
 uniform sampler2D texture_image;
 
 void main(){
-  color *= texture(texture_image, texcoord);
+  color = texture(texture_image, texcoord);
 }")
 
 (defmethod update :after ((main main) tt dt)
-  (show-region (unit :clipmap (scene main)) 0 0))
+  (let ((clipmap (unit :clipmap (scene main))))
+    (when clipmap
+      ;(show-region clipmap -512 -512)
+      ;(show-region clipmap (- (mod (* 100 tt) 1024) 1024) -512)
+      (show-region clipmap (+ -512 (* 64 (sin (* 2 tt)))) (+ -512 (* 64 (cos (* 2 tt)))))
+      )))
 
 (progn
   (defmethod setup-scene ((main main) scene)
@@ -38,7 +43,8 @@ void main(){
                                                 :location (VEC3 -0.79987687 497.58453 775.5049)) scene)
            (let ((clipmap (make-instance 'geometry-clipmap :data-directory #p"~/clipmaps/" :name :clipmap)))
              (enter clipmap scene)
-             (enter (make-instance 'tester :texture (texture-buffer clipmap)) scene))))
+             ;;(enter (make-instance 'tester :texture (texture-buffer clipmap)) scene)
+             )))
     (enter (make-instance 'render-pass) scene))
 
   (maybe-reload-scene))
