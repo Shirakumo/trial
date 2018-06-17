@@ -115,6 +115,9 @@
                  :shaders (loop for (type source) on (effective-shaders class) by #'cddr
                                 collect (make-instance 'shader :source source :type type))))
 
+(defmethod make-class-shader-program ((class symbol))
+  (make-class-shader-program (find-class class)))
+
 (defmacro define-class-shader ((class type &optional (priority 0)) &body definitions)
   `(setf (class-shader ,type ',class)
          (list ,priority (progn ,@definitions))))

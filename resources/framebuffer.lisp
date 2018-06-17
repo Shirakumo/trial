@@ -32,7 +32,8 @@
                (check-framebuffer-attachment attachment)
                (check-type texture texture)
                (check-allocated texture)
-               (v:debug :trial.framebuffer "Attaching ~a as ~a to ~a." texture attachment framebuffer)
+               (v:debug :trial.framebuffer "Attaching ~a~@[:~a~] as ~a to ~a."
+                        texture layer attachment framebuffer)
                (if layer
                    (%gl:framebuffer-texture-layer :framebuffer attachment (gl-name texture) level layer)
                    (%gl:framebuffer-texture :framebuffer attachment (gl-name texture) level))
