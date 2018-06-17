@@ -55,7 +55,7 @@
   (assert (= 0 (getf texspec :level 0)))
   (assert (eql :dynamic (getf texspec :storage :dynamic)))
   (let ((initargs (loop for (key val) in (class-default-initargs 'texture)
-                        collect key collect val)))
+                        collect key collect (eval val))))
     (loop for (key val) on initargs by #'cddr
           collect key
           collect (or (getf texspec key)
