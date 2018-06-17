@@ -19,7 +19,7 @@
    (pixel-data :initarg :pixel-data :accessor pixel-data)
    (mag-filter :initarg :mag-filter :accessor mag-filter)
    (min-filter :initarg :min-filter :accessor min-filter)
-   (mipmap-level :initarg :mipmap-levels :accessor mipmap-levels)
+   (mipmap-levels :initarg :mipmap-levels :accessor mipmap-levels)
    (mipmap-lod :initarg :mipmap-lod :accessor mipmap-lod)
    (anisotropy :initarg :anisotropy :accessor anisotropy)
    (wrapping :initarg :wrapping :accessor wrapping)
@@ -139,25 +139,25 @@
         (allocate-texture-storage texture)
         (unless (or (eql target :texture-2d-multisample)
                     (find internal-format '(:depth-component :depth-stencil)))
-          (destructuring-bind (&optional (min -1000) (max 1000) (bias 0.0)) mipmap-lod
-            (gl:tex-parameter target :texture-min-lod min)
-            (gl:tex-parameter target :texture-max-lod max)
-            (gl:tex-parameter target :texture-lod-bias bias))
-          (destructuring-bind (&optional (min 0) (max 1000)) mipmap-levels
-            (gl:tex-parameter target :texture-min-level min)
-            (gl:tex-parameter target :texture-max-level max))
-          (when (find min-filter '(:linear-mipmap-linear :linear-mipmap-nearest
-                                   :nearest-mipmap-linear :nearest-mipmap-nearest))
-            (gl:generate-mipmap target))
-          (when anisotropy
-            (gl:tex-parameter target :texture-max-anisotropy-ext anisotropy))
           (gl:tex-parameter target :texture-min-filter min-filter)
           (gl:tex-parameter target :texture-mag-filter mag-filter)
           (gl:tex-parameter target :texture-wrap-s (first wrapping))
           (unless (find target '(:texture-1d-array :texture-1d))
             (gl:tex-parameter target :texture-wrap-t (second wrapping)))
           (when (eql target :texture-cube-map)
-            (gl:tex-parameter target :texture-wrap-r (third wrapping))))
+            (gl:tex-parameter target :texture-wrap-r (third wrapping)))
+          (when (find min-filter '(:linear-mipmap-linear :linear-mipmap-nearest
+                                   :nearest-mipmap-linear :nearest-mipmap-nearest))
+            (destructuring-bind (&optional (base 0) (max 1000)) mipmap-levels
+              (gl:tex-parameter target :texture-base-level base)
+              (gl:tex-parameter target :texture-max-level max))
+            (destructuring-bind (&optional (min -1000) (max 1000) (bias 0.0)) mipmap-lod
+              (gl:tex-parameter target :texture-min-lod min)
+              (gl:tex-parameter target :texture-max-lod max)
+              (gl:tex-parameter target :texture-lod-bias bias))
+            (gl:generate-mipmap target))
+          (when anisotropy
+            (gl:tex-parameter target :texture-max-anisotropy-ext anisotropy)))
         (gl:bind-texture target 0)
         (setf (data-pointer texture) tex)))))
 
