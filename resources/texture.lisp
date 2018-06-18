@@ -25,9 +25,9 @@
    (wrapping :initarg :wrapping :accessor wrapping)
    (storage :initarg :storage :reader storage))
   (:default-initargs
-   :width 1
-   :height 1
-   :depth 1
+   :width NIL
+   :height NIL
+   :depth NIL
    :target :texture-2d
    :level 0
    :samples 1
