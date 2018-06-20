@@ -110,7 +110,6 @@
                :cl-opengl
                :cl-gamepad
                :cl-monitors
-               :cl-soil
                :cl-fond
                :cl-ppcre
                :pathname-utils
@@ -121,4 +120,8 @@
                :fast-io
                :ieee-floats
                :lquery
-               :static-vectors))
+               :static-vectors
+               :pngload
+               :cl-tga
+               :cl-jpeg
+               :retrospectiff))
