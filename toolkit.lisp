@@ -145,6 +145,11 @@
                    (setf ,place ,value)
                    (go ,tag)))))))
 
+(defmacro with-unwind-protection (cleanup &body body)
+  `(unwind-protect
+        (progn ,@body)
+     ,cleanup))
+
 (defmacro with-cleanup-on-failure (cleanup-form &body body)
   (let ((success (gensym "SUCCESS")))
     `(let ((,success NIL))

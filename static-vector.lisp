@@ -8,6 +8,10 @@
 
 (defvar *static-vector-map* (tg:make-weak-hash-table :weakness :key :test 'eq))
 
+(declaim (inline mark-static-vector))
+(defun mark-static-vector (vector)
+  (setf (gethash vector *static-vector-map*) T))
+
 (defun make-static-vector (length &rest args)
   (let ((vec (apply #'static-vectors:make-static-vector length args)))
     (setf (gethash vec *static-vector-map*) T)

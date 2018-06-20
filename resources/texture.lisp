@@ -89,13 +89,21 @@
   (let ((tex (gl-name texture)))
     (lambda () (when tex (gl:delete-textures (list tex))))))
 
+(defun coerce-pixel-data (pixel-data)
+  (etypecase pixel-data
+    (null
+     (cffi:null-pointer))
+    (cffi:foreign-pointer
+     pixel-data)
+    ((satisfies static-vector-p)
+     (static-vectors:static-vector-pointer pixel-data))))
+
 (defun allocate-texture-storage (texture)
   (with-slots (target storage level internal-format width height depth samples pixel-format pixel-type pixel-data) texture
     (let ((internal-format (cffi:foreign-enum-value '%gl:enum internal-format))
-          (pixel-data (etypecase pixel-data
-                        (cons pixel-data)
-                        (cffi:foreign-pointer pixel-data)
-                        (null (cffi:null-pointer)))))
+          (pixel-data (if (consp pixel-data)
+                          (mapcar #'coerce-pixel-data pixel-data)
+                          (coerce-pixel-data pixel-data))))
       (case target
         ((:texture-1d)
          (ecase storage
