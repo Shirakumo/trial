@@ -78,6 +78,25 @@
 (defmethod load-image (path (type (eql :jpg)))
   (load-image path :jpeg))
 
+(defmethod load-image (path (type (eql :raw)))
+  (with-open-file (stream path :element-type '(unsigned-byte 8))
+    (let ((data (make-static-vector (file-length stream))))
+      (loop for reached = 0 then (read-sequence data stream :start reached)
+            while (< reached (length data))
+            finally (return data)))))
+
+(defmethod load-image (path (type (eql :r16)))
+  (values (load-image path :raw)
+          NIL
+          NIL
+          'short-float))
+
+(defmethod load-image (path (type (eql :r32)))
+  (values (load-image path :raw)
+          NIL
+          NIL
+          'single-float))
+
 (defmethod load-image (path (type (eql T)))
   (let ((type (pathname-type path)))
     (load-image path (intern (string-upcase type) "KEYWORD"))))
@@ -91,32 +110,42 @@
 
 (defun infer-internal-format (bittage pixel-format)
   (ecase pixel-format
-    ((:red)
+    ((:r :red)
      (ecase bittage
        (8 :r8)
        (16 :r16)
-       (32 :r32)))
-    ((:rg)
+       (32 :r32)
+       (short-float :r16f)
+       (single-float :r32f)))
+    ((:rg :gr)
      (ecase bittage
        (8 :r8)
        (16 :r16)
-       (32 :r32)))
+       (32 :r32)
+       (short-float :rg16f)
+       (single-float :rg32f)))
     ((:rgb :bgr)
      (ecase bittage
        (8 :rgb8)
        (16 :rgb16)
-       (32 :rgb32)))
+       (32 :rgb32)
+       (short-float :rgb16f)
+       (single-float :rgb32f)))
     ((:rgba :bgra)
      (ecase bittage
        (8 :rgba8)
        (16 :rgba16)
-       (32 :rgba32)))))
+       (32 :rgba32)
+       (short-float :rgba16f)
+       (single-float :rgba32f)))))
 
 (defun infer-pixel-type (bittage)
   (ecase bittage
     (8 :unsigned-byte)
     (16 :unsigned-short)
-    (32 :unsigned-int)))
+    (32 :unsigned-int)
+    (short-float :half-float)
+    (single-float :float)))
 
 (defmethod load ((image image))
   ;; FIXME: Convert pixel data to raw buffer.
@@ -126,23 +155,23 @@
                (load-image path T)))))
     (let ((input (coerce-asset-input image T)))
       (multiple-value-bind (bits width height bittage pixel-format) (load-image (unlist input))
+        (assert (not (null bits)))
         (with-unwind-protection (mapcar #'free-image-data (enlist (pixel-data image)))
           ;; FIXME: Maybe attempt to reconcile user-provided data?
           (setf (pixel-data image) bits)
-          (setf (pixel-format image) pixel-format)
-          (setf (internal-format image)
-                (infer-internal-format bittage pixel-format))
-          (setf (pixel-type image) (infer-pixel-type bittage))
-          (setf (width image) width)
-          (setf (height image) height)
+          (when pixel-format (setf (pixel-format image) pixel-format))
+          (when (and bittage pixel-format) (setf (internal-format image) (infer-internal-format bittage pixel-format)))
+          (when bittage (setf (pixel-type image) (infer-pixel-type bittage)))
+          (when width (setf (width image) width))
+          (when height (setf (height image) height))
           (when (listp input)
             (setf (pixel-data image) (list (pixel-data image)))
             (dolist (input (rest input))
               (multiple-value-bind (bits width height bittage pixel-format) (load-image input)
-                (assert (= width (width image)))
-                (assert (= height (height image)))
-                (assert (eq pixel-format (pixel-format image)))
-                (assert (eq (infer-internal-format bittage pixel-format) (internal-format image)))
+                (assert (or (null width) (= width (width image))))
+                (assert (or (null height) (= height (height image))))
+                (assert (or (null pixel-format) (eq pixel-format (pixel-format image))))
+                (assert (or (null bittage) (null pixel-format) (eq (infer-internal-format bittage pixel-format) (internal-format image))))
                 (push bits (pixel-data image))))
             (setf (pixel-data image) (nreverse (pixel-data image))))
           (allocate image))))))
