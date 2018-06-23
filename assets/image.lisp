@@ -89,13 +89,22 @@
   (values (load-image path :raw)
           NIL
           NIL
-          'short-float))
+          :f16))
 
 (defmethod load-image (path (type (eql :r32)))
   (values (load-image path :raw)
           NIL
           NIL
-          'single-float))
+          :f32))
+
+(defmethod load-image (path (type (eql :ter)))
+  (let ((terrain (terrable:read-terragen path)))
+    (tg:cancel-finalization terrain)
+    (values (terrable:data terrain)
+            (terrable:width terrain)
+            (terrable:height terrain)
+            :s16
+            :red)))
 
 (defmethod load-image (path (type (eql T)))
   (let ((type (pathname-type path)))
@@ -109,43 +118,33 @@
      (maybe-free-static-vector data))))
 
 (defun infer-internal-format (bittage pixel-format)
-  (ecase pixel-format
-    ((:r :red)
-     (ecase bittage
-       (8 :r8)
-       (16 :r16)
-       (32 :r32)
-       (short-float :r16f)
-       (single-float :r32f)))
-    ((:rg :gr)
-     (ecase bittage
-       (8 :r8)
-       (16 :r16)
-       (32 :r32)
-       (short-float :rg16f)
-       (single-float :rg32f)))
-    ((:rgb :bgr)
-     (ecase bittage
-       (8 :rgb8)
-       (16 :rgb16)
-       (32 :rgb32)
-       (short-float :rgb16f)
-       (single-float :rgb32f)))
-    ((:rgba :bgra)
-     (ecase bittage
-       (8 :rgba8)
-       (16 :rgba16)
-       (32 :rgba32)
-       (short-float :rgba16f)
-       (single-float :rgba32f)))))
+  (intern
+   (format NIL "~a~a"
+           (ecase pixel-format
+             ((:r :red) :r)
+             ((:rg :gr) :rg)
+             ((:rgb :bgr) :rgb)
+             ((:rgba :bgra) :rgba))
+           (ecase bittage
+             ((:u8 8) :8)
+             ((:u16 16) :16)
+             ((:u32 32) :32)
+             ((:s8) :8i)
+             ((:s16) :16i)
+             ((:s32) :32i)
+             ((:f16) :16f)
+             ((:f32) :32f)))))
 
 (defun infer-pixel-type (bittage)
   (ecase bittage
-    (8 :unsigned-byte)
-    (16 :unsigned-short)
-    (32 :unsigned-int)
-    (short-float :half-float)
-    (single-float :float)))
+    ((:u8 8) :unsigned-byte)
+    ((:u16 16) :unsigned-short)
+    ((:u32 32) :unsigned-int)
+    ((:s8) :byte)
+    ((:s16) :short)
+    ((:s32) :int)
+    ((:f16) :half-float)
+    ((:f32) :float)))
 
 (defmethod load ((image image))
   ;; FIXME: Convert pixel data to raw buffer.

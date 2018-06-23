@@ -124,4 +124,5 @@
                :pngload
                :cl-tga
                :cl-jpeg
-               :retrospectiff))
+               :retrospectiff
+               :terrable))
