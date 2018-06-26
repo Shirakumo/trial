@@ -9,35 +9,32 @@
 (define-shader-entity geometry-clipmap (located-entity)
   ((clipmap-block :accessor clipmap-block)
    (levels :initarg :levels :accessor levels)
-   (resolution :accessor resolution)
+   (resolution :initarg :resolution :accessor resolution)
    (maps :accessor maps)
    (texture-buffer :accessor texture-buffer)
    (data-directory :initarg :data-directory :accessor data-directory))
   (:default-initargs
    :levels 5
+   :resolution 64
    :data-directory (error "DATA-DIRECTORY required.")))
 
-(defmethod initialize-instance :after ((clipmap geometry-clipmap) &key levels data-directory)
-  (multiple-value-bind (data width height bittage pixel-format) (load-image (make-pathname :name "zero" :type "png" :defaults data-directory) T)
-    (assert (= width height))
-    (free-image-data data)
-    (setf (resolution clipmap) width)
-    (setf (clipmap-block clipmap) (make-clipmap-block width))
-    (setf (maps clipmap) (make-instance 'texture :target :texture-2d-array
-                                                 :min-filter :linear
-                                                 :pixel-format pixel-format
-                                                 :pixel-type (infer-pixel-type bittage)
-                                                 :internal-format (infer-internal-format bittage pixel-format)
-                                                 :width width
-                                                 :height width
-                                                 :depth levels))
-    (setf (texture-buffer clipmap) (make-instance 'texture :target :texture-2d
-                                                           :min-filter :linear
-                                                           :pixel-format pixel-format
-                                                           :pixel-type (infer-pixel-type bittage)
-                                                           :internal-format (infer-internal-format bittage pixel-format)
-                                                           :width (* 2 width)
-                                                           :height (* 2 width)))))
+(defmethod initialize-instance :after ((clipmap geometry-clipmap) &key levels data-directory resolution)
+  (setf (clipmap-block clipmap) (make-clipmap-block resolution))
+  (setf (maps clipmap) (make-instance 'texture :target :texture-2d-array
+                                               :min-filter :linear
+                                               :pixel-format pixel-format
+                                               :pixel-type (infer-pixel-type bittage)
+                                               :internal-format (infer-internal-format bittage pixel-format)
+                                               :width resolution
+                                               :height resolution
+                                               :depth levels))
+  (setf (texture-buffer clipmap) (make-instance 'texture :target :texture-2d
+                                                         :min-filter :linear
+                                                         :pixel-format pixel-format
+                                                         :pixel-type (infer-pixel-type bittage)
+                                                         :internal-format (infer-internal-format bittage pixel-format)
+                                                         :width (* 2 resolution)
+                                                         :height (* 2 resolution))))
 
 (defmethod show-level ((clipmap geometry-clipmap) x y level)
   (let* ((r (resolution clipmap))
@@ -46,19 +43,19 @@
          (y (- y (/ s 2)))
          (l (* s (floor x s)))
          (u (* s (floor y s)))
-         (dir (data-directory clipmap)))
+         (dir (data-directory clipmap))
+         (tex (texture-buffer clipmap)))
     ;; Update the texture buffer
     (flet ((picture (file x y)
-             (multiple-value-bind (data w h bittage pixel-format)
-                 (load-image (if (probe-file file)
-                                 file
-                                 (make-pathname :name "zero" :type "png" :defaults dir))
-                             T)
-               (declare (ignore w h))
-               (v:info :test "~a" file)
-               (unwind-protect
-                    (%gl:tex-sub-image-2d :texture-2d 0 x y r r pixel-format (infer-pixel-type bittage) (coerce-pixel-data data))
-                 (free-image-data data))))
+             (if (probe-file file)
+                 (let ((data (load-image file T)))
+                   (unwind-protect
+                        (%gl:tex-sub-image-2d :texture-2d 0 x y r r (pixel-format tex) (pixel-type tex) (coerce-pixel-data data))
+                     (free-image-data data)))
+                 ;; FIXME: Requires GL 4.4
+                 (cffi:with-foreign-object (data :uint64 4)
+                   (dotimes (i 4) (setf (cffi:mem-aref data :uint64 i) 0))
+                   (%gl:clear-tex-sub-image (gl-name tex) 0 x y 0 r r 1 (pixel-format tex) (pixel-type tex) data))))
            (path (x y)
              (merge-pathnames (make-pathname :name (format NIL "~d,~d" x y) :type "png"
                                              :directory `(:relative ,(princ-to-string s)))
@@ -67,8 +64,8 @@
       (picture (path (+ l s) (+ u 0)) r r)
       (picture (path (+ l s) (+ u s)) r 0)
       (picture (path (+ l 0) (+ u s)) 0 0))
-    ;; Draw into the clipmap layer
-    (%gl:copy-image-sub-data (gl-name (texture-buffer clipmap)) :texture-2d 0 (/ (- x l) (expt 2 level)) (/ (- y u) (expt 2 level)) 0
+    ;; FIXME: Requires GL 4.3
+    (%gl:copy-image-sub-data (gl-name tex) :texture-2d 0 (/ (- x l) (expt 2 level)) (/ (- y u) (expt 2 level)) 0
                              (gl-name (maps clipmap)) :texture-2d-array 0 0 0 level r r 1)))
 
 (defmethod show-region ((clipmap geometry-clipmap) x y)
@@ -176,77 +173,8 @@ void main(){
 
 (define-class-shader (geometry-clipmap :fragment-shader)
   "
-in vec4 pos;
-out vec4 color;
-
-const int firstOctave = 3;
-const int octaves = 8;
-const float persistence = 0.6;
-
-//Not able to use bit operator like <<, so use alternative noise function from YoYo
-//
-//https://www.shadertoy.com/view/Mls3RS
-//
-//And it is a better realization I think
-float noise(int x,int y)
-{   
-    float fx = float(x);
-    float fy = float(y);
-    
-    return 2.0 * fract(sin(dot(vec2(fx, fy) ,vec2(12.9898,78.233))) * 43758.5453) - 1.0;
-}
-
-float smoothNoise(int x,int y)
-{
-    return noise(x,y)/4.0+(noise(x+1,y)+noise(x-1,y)+noise(x,y+1)+noise(x,y-1))/8.0+(noise(x+1,y+1)+noise(x+1,y-1)+noise(x-1,y+1)+noise(x-1,y-1))/16.0;
-}
-
-float COSInterpolation(float x,float y,float n)
-{
-    float r = n*3.1415926;
-    float f = (1.0-cos(r))*0.5;
-    return x*(1.0-f)+y*f;
-    
-}
-
-float InterpolationNoise(float x, float y)
-{
-    int ix = int(x);
-    int iy = int(y);
-    float fracx = x-float(int(x));
-    float fracy = y-float(int(y));
-    
-    float v1 = smoothNoise(ix,iy);
-    float v2 = smoothNoise(ix+1,iy);
-    float v3 = smoothNoise(ix,iy+1);
-    float v4 = smoothNoise(ix+1,iy+1);
-    
-   	float i1 = COSInterpolation(v1,v2,fracx);
-    float i2 = COSInterpolation(v3,v4,fracx);
-    
-    return COSInterpolation(i1,i2,fracy);
-    
-}
-
-float PerlinNoise2D(float x,float y)
-{
-    float sum = 0.0;
-    float frequency =0.0;
-    float amplitude = 0.0;
-    for(int i=firstOctave;i<octaves + firstOctave;i++)
-    {
-        frequency = pow(2.0,float(i));
-        amplitude = pow(persistence,float(i));
-        sum = sum + InterpolationNoise(x*frequency,y*frequency)*amplitude;
-    }
-    
-    return sum;
-}
-
 void main(){
-  float noise = PerlinNoise2D(pos.x,pos.z);
-  float s = 3-(pos.y+noise)/100;
-  color = vec4((225-noise*30)/255*s, (191-noise*60)/255*s, (146-noise*80)/255*s, 1);
+  
 }")
 
 (defun make-clipmap-block (n)
@@ -254,46 +182,73 @@ void main(){
         (s (/ 4 n)))
     (change-class (make-quad-grid s m m) 'vertex-array)))
 
-;; Files generated as X,Y.png where X and Y are offset from the center of the map
-;; in full-scale pixel coordinates. This means that the pixel sizes are assumed to
-;; correspond to in-game unit sizes. If not, scaling must be applied to account
-;; for the difference.
-(defun generate-clipmaps (input output &key (n 64) (levels 5) ((:x xoff) 0) ((:y yoff) 0))
-  (let ((args ()))
-    (flet ((clipmap (o x y s)
-             (push (list "(" "+clone"
-                         "-crop" (format NIL "~dx~:*~d+~d+~d!" s x y)
-                         "-flatten"
-                         "-scale" (format NIL "~dx~d!" n n)
-                         "-write" (uiop:native-namestring o)
-                         "+delete" ")")
-                   args))
-           (convert ()
-             (push (list "-fill" "black"
-                         "-draw" "color 0,0 reset"
-                         "-scale" (format NIL "~dx~d!" n n)
-                         (format NIL "png64:~a" (uiop:native-namestring (make-pathname :name "zero" :type "png" :defaults output))))
-                   args)
-             (uiop:run-program (list* "magick" "convert"
-                                      (uiop:native-namestring input)
-                                      "-background" "black"
-                                      "-gravity" "center"
-                                      "-alpha" "off"
-                                      (loop for arg in (nreverse args)
-                                            nconc arg))
-                               :error-output T)
-             (setf args ())))
-      (destructuring-bind (w h) (read-from-string
-                                 (uiop:run-program (list "magick" "identify" "-format" "(%w %h)"
-                                                         (uiop:native-namestring input))
-                                                   :output :string))
+(defun sub-image (pixels ow c x y w h &optional out-pixels)
+  (let ((out-pixels (or out-pixels (make-array (* w h c)
+                                               :element-type (array-element-type pixels)))))
+    (loop for i from 0 below h
+          do (loop for j from 0 below w
+                   for oi = (* (+ (* i w) j) c)
+                   for ii = (* (+ (* (+ i y) ow) j x) c)
+                   do (loop for k from 0 below c
+                            do (setf (aref out-pixels (+ oi k)) (aref pixels (+ ii k))))))
+    out-pixels))
+
+(defun halve-image (pixels ow oh c &optional out-pixels)
+  (let* ((w (/ ow 2))
+         (h (/ oh 2))
+         (out-pixels (or out-pixels (make-array (* w h c)
+                                                :element-type (array-element-type pixels))))
+         (fit (cond ((eq (array-element-type pixels) 'single-float)
+                     (lambda (a) (coerce a 'single-float)))
+                    ((eq (array-element-type pixels) 'double-float)
+                     (lambda (a) (coerce a 'double-float)))
+                    (T
+                     (lambda (a) (round a))))))
+    (loop for i from 0 below h
+          do (loop for j from 0 below w
+                   for oi = (* (+ (* i w) j) c)
+                   for ii = (* (+ (* i 2 ow) (* j 2)) c)
+                   do (loop for k from 0 below c
+                            for p1 = (aref pixels (+ k ii))
+                            for p2 = (aref pixels (+ k ii c))
+                            for p3 = (aref pixels (+ k ii (* ow c)))
+                            for p4 = (aref pixels (+ k ii (* ow c) c))
+                            do (setf (aref out-pixels (+ oi k)) (funcall fit (/ (+ p1 p2 p3 p4) 4))))))
+    out-pixels))
+
+(defun generate-clipmaps (input output &key (n 64) (levels 5) ((:x xoff) 0) ((:y yoff) 0)
+                                            depth pixel-type (format :red) (bank "height"))
+  (multiple-value-bind (bits w h depth type format) (load-image input T :depth depth
+                                                                        :pixel-type pixel-type
+                                                                        :format format)
+    (declare (ignore depth type))
+    ;; FIXME: remove this constraint
+    (assert (eql w h))
+    (let* ((w (or w (sqrt (length bits))))
+           (h (or h w))
+           (c (format-components format))
+           (sub (make-array (* n n c) :element-type (array-element-type bits)))
+           (bits bits))
+      (flet ((clipmap (o x y s)
+               (sub-image bits (/ w s) c (/ x s) (/ y s) n n sub)
+               (with-open-file (out o :direction :output
+                                      :if-exists :supersede
+                                      :element-type (array-element-type sub))
+                 (write-sequence sub out))))
         (dotimes (l levels output)
-          (let* ((s (* n (expt 2 l)))
-                 (o (pathname-utils:subdirectory output (princ-to-string s))))
-            (format T "~& Generating level ~d (~d tile~:p)...~%" l (expt (/ w s) 2))
+          (let* ((s (expt 2 l))
+                 (o (pathname-utils:subdirectory output (princ-to-string (* n s)))))
+            (format T "~& Generating level ~d (~d tile~:p)...~%" l (expt (/ w s n) 2))
             (ensure-directories-exist o)
-            (loop for x from (/ w -2) below (/ w 2) by s
-                  do (loop for y from (/ h -2) below (/ h 2) by s
-                           for f = (make-pathname :name (format NIL "~d,~d" (+ x xoff) (+ y yoff)) :type "png" :defaults o)
-                           do (clipmap f (+ x (/ s 2)) (+ y (/ s 2)) s)))
-            (convert)))))))
+            (loop for x from 0 below w by (* n s)
+                  do (loop for y from 0 below h by (* n s)
+                           for f = (make-pathname :name (format NIL "~a-~d,~d"
+                                                                bank
+                                                                (- (+ x xoff) (/ w 2))
+                                                                (- (+ y yoff) (/ h 2)))
+                                                  :type "raw"
+                                                  :defaults o)
+                           do (clipmap f x y s)))
+            ;; Shrink by a factor of 2.
+            (setf bits (halve-image bits (/ w s) (/ h s) c))))))
+    (free-image-data bits)))
