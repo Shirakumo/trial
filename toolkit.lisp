@@ -521,7 +521,10 @@
   :geometry-shader :fragment-shader
   :tess-control-shader :tess-evaluation-shader)
 
-(define-enum-check vertex-buffer-type
+(define-enum-check vertex-buffer-element-type
+  :double :float :int :uint :char)
+
+(define-enum-check buffer-object-type
   :array-buffer :atomic-counter-buffer
   :copy-read-buffer :copy-write-buffer
   :dispatch-indirect-buffer :draw-indirect-buffer
@@ -530,10 +533,7 @@
   :shader-storage-buffer :texture-buffer
   :transform-feedback-buffer :uniform-buffer)
 
-(define-enum-check vertex-buffer-element-type
-  :double :float :int :uint :char)
-
-(define-enum-check vertex-buffer-data-usage
+(define-enum-check buffer-object-data-usage
   :stream-draw :stream-read :stream-copy :static-draw
   :static-read :static-copy :dynamic-draw :dynamic-read
   :dynamic-copy)

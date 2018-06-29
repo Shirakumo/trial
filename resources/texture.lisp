@@ -362,7 +362,9 @@
              (32 32))
            (ecase type
              (:signed :i)
-             (:unsigned :u)
+             ;; KLUDGE: For some fucking reason if I put :ui I here GL refuses
+             ;;         to upload the texture data with tex-image-2d.
+             (:unsigned "")
              (:float :f)))
    "KEYWORD"))
 

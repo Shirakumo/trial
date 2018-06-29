@@ -40,10 +40,7 @@
      (with-slots (buffer-type data-usage size) buffer
        (gl:bind-buffer buffer-type (gl-name buffer))
        (unwind-protect
-            (let* ((pointer (if data-start
-                                (cffi:inc-pointer data data-start)
-                                data))
-                   (buffer-start (or buffer-start 0)))
+            (let ((pointer (if data-start (cffi:inc-pointer data data-start) data)))
               (if (or buffer-start buffer-end)
                   (%gl:buffer-sub-data buffer-type (or buffer-start 0) (- (or data-end buffer-end size) data-start) pointer)
                   (%gl:buffer-data buffer-type size pointer data-usage)))
@@ -118,6 +115,7 @@
                                :buffer-start buffer-start
                                :buffer-end buffer-end))
           ((and #+sbcl T #-sbcl NIL
+                (typep buffer-data 'simple-array)
                 (find (array-element-type buffer-data) *native-array-element-types* :test 'equal))
            (sb-sys:with-pinned-objects (buffer-data)
              (update-buffer-data buffer (sb-sys:vector-sap buffer-data)

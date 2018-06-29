@@ -12,6 +12,9 @@
    :buffer-type :array-buffer
    :element-type :float))
 
+(defmethod initialize-instance :before ((buffer vertex-buffer) &key element-type)
+  (check-vertex-buffer-element-type element-type))
+
 (defmethod update-buffer-data ((buffer vertex-buffer) data &rest args)
   (let ((element-type (getf args :element-type)))
     (when (and element-type (not (equal element-type (element-type buffer))))
