@@ -6,6 +6,15 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(defvar *native-array-element-types*
+  (remove T (remove-duplicates
+             (mapcar #'upgraded-array-element-type
+                     (append '(fixnum short-float single-float double-float long-float)
+                             (loop for i from 1 to 64 collect `(signed-byte ,i))
+                             (loop for i from 1 to 64 collect `(unsigned-byte ,i))
+                             '(base-char extended-char character)))
+             :test #'equal)))
+
 (defgeneric finalize (object))
 
 (defmethod finalize :before (object)

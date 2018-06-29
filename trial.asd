@@ -88,7 +88,8 @@
                              (:file "shader")
                              (:file "texture")
                              (:file "vertex-array")
-                             (:file "vertex-buffer")))
+                             (:file "buffer-object")
+                             (:file "vertex-buffer" :depends-on ("buffer-object"))))
                (:module "assets"
                 :depends-on ("package" "asset" "resources")
                 :components ((:file "font")
