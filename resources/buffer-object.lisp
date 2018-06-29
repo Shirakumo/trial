@@ -53,6 +53,55 @@
   (declare (ignore data-start data-end))
   (update-buffer-data buffer (cffi:null-pointer) :buffer-start buffer-start :buffer-end buffer-end))
 
+(defmethod update-buffer-data ((buffer buffer-object) (data real) &key data-start data-end buffer-start buffer-end)
+  (declare (ignore data-start data-end buffer-end))
+  (cffi:with-foreign-object (data (element-type buffer) 1)
+    (let ((buffer-start (or buffer-start 0))
+          (buffer-end (+ buffer-start (cffi:foreign-type-size (element-type buffer)))))
+      (setf (cffi:mem-ref data (element-type buffer)) (gl-coerce data (element-type buffer)))
+      (update-buffer-data buffer data :buffer-start buffer-start :buffer-end buffer-end))))
+
+(defmethod update-buffer-data ((buffer buffer-object) (buffer-data mat2) &rest args)
+  (apply #'update-buffer-data buffer (marr buffer-data) args))
+
+(defmethod update-buffer-data ((buffer buffer-object) (buffer-data mat3) &rest args)
+  (apply #'update-buffer-data buffer (marr buffer-data) args))
+
+(defmethod update-buffer-data ((buffer buffer-object) (buffer-data mat4) &rest args)
+  (apply #'update-buffer-data buffer (marr buffer-data) args))
+
+(defmethod update-buffer-data ((buffer buffer-object) (buffer-data matn) &rest args)
+  (apply #'update-buffer-data buffer (marr buffer-data) args))
+
+;; FIXME: Directly fill a CFFI array to bypass unneeded calculations in the
+;;        generic case variant
+(defmethod update-buffer-data ((buffer buffer-object) (data vec2) &rest args)
+  (let ((arr (make-static-vector 2 :element-type '#.3d-vectors::*float-type*)))
+    (with-unwind-protection
+        (maybe-free-static-vector arr)
+      (setf (aref arr 0) (vx2 data))
+      (setf (aref arr 1) (vy2 data))
+      (apply #'update-buffer-data buffer arr args))))
+
+(defmethod update-buffer-data ((buffer buffer-object) (data vec3) &rest args)
+  (let ((arr (make-static-vector 3 :element-type '#.3d-vectors::*float-type*)))
+    (with-unwind-protection
+        (maybe-free-static-vector arr)
+      (setf (aref arr 0) (vx3 data))
+      (setf (aref arr 1) (vy3 data))
+      (setf (aref arr 2) (vz3 data))
+      (apply #'update-buffer-data buffer arr args))))
+
+(defmethod update-buffer-data ((buffer buffer-object) (data vec4) &rest args)
+  (let ((arr (make-static-vector 4 :element-type '#.3d-vectors::*float-type*)))
+    (with-unwind-protection
+        (maybe-free-static-vector arr)
+      (setf (aref arr 0) (vx4 data))
+      (setf (aref arr 1) (vy4 data))
+      (setf (aref arr 2) (vz4 data))
+      (setf (aref arr 3) (vw4 data))
+      (apply #'update-buffer-data buffer arr args))))
+
 (defmethod update-buffer-data ((buffer buffer-object) (buffer-data vector) &key (data-start 0) (data-end (length buffer-data)) buffer-start buffer-end)
   (let* ((element-type (element-type buffer))
          (element-size (cffi:foreign-type-size (element-type buffer)))
