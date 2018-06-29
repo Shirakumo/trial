@@ -146,7 +146,5 @@
     (with-cleanup-on-failure (progn (gl:delete-buffers (list vbo))
                                     (setf (data-pointer buffer) NIL))
       (setf (data-pointer buffer) vbo)
-      (when (and (not (size buffer)) (vectorp buffer-data))
-        (setf (size buffer) (length buffer-data)))
       (assert (not (null (size buffer))))
       (update-buffer-data buffer buffer-data))))
