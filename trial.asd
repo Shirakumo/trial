@@ -83,12 +83,13 @@
                              (:file "ui-window" :depends-on ("package" "pane" "elements"))))
                (:module "resources"
                 :depends-on ("package" "resource" "toolkit")
-                :components ((:file "framebuffer")
+                :components ((:file "buffer-object")
+                             (:file "framebuffer")
+                             (:file "gl-struct")
                              (:file "shader-program")
                              (:file "shader")
                              (:file "texture")
                              (:file "vertex-array")
-                             (:file "buffer-object")
                              (:file "vertex-buffer" :depends-on ("buffer-object"))))
                (:module "assets"
                 :depends-on ("package" "asset" "resources")
