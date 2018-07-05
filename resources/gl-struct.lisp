@@ -31,11 +31,11 @@
 (defmethod gl-source ((gl-declaration gl-declaration))
   `(glsl-toolkit:struct-declarator
     (glsl-toolkit:type-qualifier
-     ,@(qualifiers gl-declaration)
      ,@(when (layout gl-declaration)
          `((glsl-toolkit:layout-qualifier
             ,@(loop for id in (enlist (layout gl-declaration))
-                    collect `(glsl-toolkit:layout-qualifier-id ,@(enlist id)))))))
+                    collect `(glsl-toolkit:layout-qualifier-id ,@(enlist id))))))
+     ,@(qualifiers gl-declaration))
     (glsl-toolkit:type-specifier
      ,(let ((type (gl-type gl-declaration)))
         (if (and (listp type) (eq (first type) :struct))
@@ -104,15 +104,8 @@
                             :fields (list ,@(translate-gl-struct-field-info fields))
                             ,@initargs)))))
 
-(defclass gl-interface-block (gl-struct gl-declaration)
-  ()
-  (:default-initargs
-   :layout :shared
-   :type NIL
-   :qualifiers '(:uniform)))
+;; (defmethod compute-offsets ((struct gl-struct) (layout (eql :std140)))
+;;   )
 
-(defmethod initialize-instance :after ((gl-struct gl-interface-block) &key name type gl-name)
-  (unless type
-    (setf (gl-type gl-struct) (format NIL "~@(~a~)" (cffi:translate-underscore-separated-name name))))
-  (unless gl-name
-    (setf (gl-name gl-struct) (cffi:translate-underscore-separated-name name))))
+;; (defmethod compute-offsets ((struct gl-struct) (layout (eql :std430)))
+;;   )
