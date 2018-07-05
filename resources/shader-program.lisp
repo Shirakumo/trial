@@ -8,9 +8,11 @@
 
 (defclass shader-program (gl-resource)
   ((uniform-map :initform (make-hash-table :test 'equal) :accessor uniform-map)
-   (shaders :initarg :shaders :accessor shaders))
+   (shaders :initarg :shaders :accessor shaders)
+   (buffers :initarg :buffers :accessor buffers))
   (:default-initargs
-   :shaders (error "SHADERS required.")))
+   :shaders (error "SHADERS required.")
+   :buffers ()))
 
 (defun check-shader-compatibility (shaders)
   (loop with table = (make-hash-table :test 'eql)
@@ -43,6 +45,9 @@
           (error "Failed to link ~a: ~%~a"
                  program (gl:get-program-info-log prog)))
         (v:debug :trial.asset "Linked ~a with ~a." program shaders)
+        (loop for buffer in (buffers program)
+              for i from 0
+              do (bind buffer program i))
         (setf (data-pointer program) prog)))))
 
 (defmethod deallocate :after ((program shader-program))

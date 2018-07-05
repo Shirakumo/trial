@@ -360,10 +360,9 @@
              (8 8)
              (16 16)
              (32 32))
+           ;; KLUDGE: If we have signed formats, the pixel-format needs to be *-integer
            (ecase type
              (:signed :i)
-             ;; KLUDGE: For some fucking reason if I put :ui I here GL refuses
-             ;;         to upload the texture data with tex-image-2d.
              (:unsigned "")
              (:float :f)))
    "KEYWORD"))

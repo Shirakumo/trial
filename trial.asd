@@ -95,7 +95,8 @@
                 :depends-on ("package" "asset" "resources")
                 :components ((:file "font")
                              (:file "image")
-                             (:file "mesh")))
+                             (:file "mesh")
+                             (:file "uniform-buffer")))
                (:module "formats"
                 :depends-on ("package" "geometry" "static-vector")
                 :components ((:file "vertex-format")
