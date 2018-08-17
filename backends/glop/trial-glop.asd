@@ -11,7 +11,9 @@
   :maintainer "Nicolas Hafner <shinmera@tymoon.eu>"
   :license "Artistic"
   :description "GLOP backend for Trial."
-  :homepage "https://github.com/Shirakumo/trial"
+  :homepage "https://Shirakumo.github.io/trial/"
+  :bug-tracker "https://github.com/Shirakumo/trial/issues"
+  :source-control (:git "https://github.com/Shirakumo/trial.git")
   :serial T
   :components ((:file "package")
                (:file "context"))
