@@ -81,38 +81,36 @@
 
 (defmethod maybe-show-region ((clipmap geometry-clipmap) x y)
   (gl:bind-texture :texture-2d (gl-name (texture-buffer clipmap)))
-  (let ((old (location clipmap))
-        (s (resolution clipmap)))
+  (let ((loc (location clipmap))
+        (s 1))
     (dotimes (l (levels clipmap) clipmap)
+      ;(v:info :test "~a ~a ~a ~a" x y (floor (- x (/ s 2)) s) (floor (- (vx loc) (/ s 2)) s))
       (with-simple-restart (continue "Ignore level ~d." l)
-        (when (or (/= (floor x s) (floor (vx old) s))
-                  (/= (floor y s) (floor (vy old) s)))
+        (when (or (/= (floor (- x (/ s 2)) s) (floor (- (vx loc) (/ s 2)) s))
+                  (/= (floor (+ y (/ s 2)) s) (floor (+ (vz loc) (/ s 2)) s)))
           (show-level clipmap x y l)))
-      (setf s (* s 2)))))
-
-(defmethod (setf location) :before (new (clipmap geometry-clipmap))
-  ;; FIXME: Weird semantics, not sure how to reconcile.
-  (if (eql new (location clipmap))
-      (maybe-show-region clipmap (vx new) (vy new))
-      (show-region clipmap (vx new) (vy new))))
+      (setf s (* s 2)))
+    (setf (vx loc) x)
+    (setf (vz loc) y)))
 
 (defmethod paint ((clipmap geometry-clipmap) (pass shader-pass))
   (let ((program (shader-program-for-pass pass clipmap))
         (levels (levels clipmap))
         (maps (maps clipmap))
-        (clipmap (clipmap-block clipmap)))
+        (block (clipmap-block clipmap)))
     (gl:active-texture :texture0)
     (gl:bind-texture :texture-2d-array (gl-name maps))
-    (gl:bind-vertex-array (gl-name clipmap))
-    (setf (uniform program "model_matrix") (model-matrix))
+    (gl:bind-vertex-array (gl-name block))
     (setf (uniform program "view_matrix") (view-matrix))
     (setf (uniform program "projection_matrix") (projection-matrix))
     (setf (uniform program "level") 0)
     (setf (uniform program "scale") 16.0)
     (setf (uniform program "levels") levels)
+    (setf (uniform program "world_pos") (location clipmap))
+    (gl:polygon-mode :front-and-back :fill)
     (flet ((paint (x z)
              (setf (uniform program "offset") (vec x z))
-             (%gl:draw-elements :triangles (size clipmap) :unsigned-int 0)))
+             (%gl:draw-elements :triangles (size block) :unsigned-int 0)))
       (paint +0.5 +0.5)
       (paint +0.5 -0.5)
       (paint -0.5 -0.5)
@@ -132,16 +130,15 @@
                (paint +0.5 -1.5)
                (paint +1.5 -1.5)
                (paint +1.5 -0.5)
-               (paint +1.5 +0.5))))) 
+               (paint +1.5 +0.5)))))
 
 (define-class-shader (geometry-clipmap :vertex-shader)
   "
 // Factor for the width of the blending border. Higher means smaller.
-#define BORDER 10.0
+#define BORDER 1.0
 
 layout (location = 0) in vec3 position;
 
-uniform mat4 model_matrix;
 uniform mat4 view_matrix;
 uniform mat4 projection_matrix;
 uniform sampler2DArray texture_image;
@@ -149,43 +146,51 @@ uniform int levels;
 uniform int level;
 uniform float scale;
 uniform vec2 offset;
+uniform vec3 world_pos;
 
-out vec4 pos;
+out float z;
+out float a;
 
 void main(){
   float n = textureSize(texture_image, 0).x;
   vec2 map_pos = position.xz + offset;
-  vec2 tex_off = (map_pos/4+0.5);
+  vec2 tex_off = (map_pos/4+0.5)-1/(n+1);
 
-  float z = texelFetch(texture_image, ivec3(tex_off*n, level), 0).r;
+  z = texelFetch(texture_image, ivec3(tex_off*n, level), 0).r;
+  vec3 off = mod(world_pos, scale/16);
+  a = 0;
   if(level+1 < levels){
     // Inter-level blending factor
     vec2 alpha = clamp((abs(map_pos)-2)*BORDER+1, 0, 1);
-    float a = max(alpha.x, alpha.y);
+    a = max(alpha.x, alpha.y);
   
     // Retrieve outer Z factor by interpolated texel read.
-    vec2 tex_off_i = (map_pos/8+0.5)+0.5/n;
+    vec2 tex_off_i = (map_pos/8+0.5)+0.5/n-1/(n+1);
     float zo = texture(texture_image, vec3(tex_off_i, level+1)).r;
+    vec3 offo = mod(world_pos, scale/8);
 
     // Interpolate final Z
     z = mix(z, zo, a);
+    off = mix(off, offo, a);
   }
 
+  // FIXME: Actually handle the offset right
   vec2 world = map_pos * scale;
-  pos = vec4(world.x, z*200, world.y, 1.0);
-  gl_Position =  projection_matrix * view_matrix * model_matrix * pos;
+  vec3 pos = vec3(world.x, 0, world.y)*2;
+  gl_Position =  projection_matrix * view_matrix * vec4(pos, 1);
 }")
 
 (define-class-shader (geometry-clipmap :fragment-shader)
   "
-in vec4 pos;
+in float a;
+in float z;
 out vec4 color;
 
 void main(){
-  if(pos.y == 0){
+  if(z == 0){
     color = vec4(1,0,0,1);
   } else {
-    color = vec4(pos.y/200,pos.y/200,pos.y/200,1);
+    color = vec4(z*5-2.5,z*5-2.5,z*5-2.5,1);
   }
 }")
 
