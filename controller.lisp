@@ -47,7 +47,8 @@
   (setf (show-overlay controller) (not (show-overlay controller))))
 
 (define-handler (controller tick) (ev tt)
-  (when (show-overlay controller)
+  (when (and (show-overlay controller)
+             *context*)
     (multiple-value-bind (gfree gtotal) (gpu-room)
       (multiple-value-bind (cfree ctotal) (cpu-room)
         (with-slots (fps-buffer text) controller
