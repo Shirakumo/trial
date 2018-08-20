@@ -6,6 +6,8 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(defvar *default-clipmap-resolution* 128)
+
 (define-shader-entity geometry-clipmap (located-entity)
   ((clipmap-block :accessor clipmap-block)
    (levels :initarg :levels :accessor levels)
@@ -15,55 +17,56 @@
    (data-directory :initarg :data-directory :accessor data-directory))
   (:default-initargs
    :levels 5
-   :resolution 64
+   :resolution *default-clipmap-resolution*
    :data-directory (error "DATA-DIRECTORY required.")))
 
-(defmethod initialize-instance :after ((clipmap geometry-clipmap) &key levels data-directory resolution)
+(defmethod initialize-instance :after ((clipmap geometry-clipmap) &key levels resolution)
   (setf (clipmap-block clipmap) (make-clipmap-block resolution))
   (setf (maps clipmap) (make-instance 'texture :target :texture-2d-array
                                                :min-filter :linear
-                                               :pixel-format pixel-format
-                                               :pixel-type (infer-pixel-type bittage)
-                                               :internal-format (infer-internal-format bittage pixel-format)
+                                               :internal-format :r16
                                                :width resolution
                                                :height resolution
-                                               :depth levels))
+                                               :depth levels
+                                               :storage :static))
   (setf (texture-buffer clipmap) (make-instance 'texture :target :texture-2d
                                                          :min-filter :linear
-                                                         :pixel-format pixel-format
-                                                         :pixel-type (infer-pixel-type bittage)
-                                                         :internal-format (infer-internal-format bittage pixel-format)
+                                                         :pixel-format :red
+                                                         :pixel-type :unsigned-short
+                                                         :internal-format :r16
                                                          :width (* 2 resolution)
-                                                         :height (* 2 resolution))))
+                                                         :height (* 2 resolution)
+                                                         :storage :static)))
 
 (defmethod show-level ((clipmap geometry-clipmap) x y level)
   (let* ((r (resolution clipmap))
          (s (* r (expt 2 level)))
          (x (- x (/ s 2)))
-         (y (- y (/ s 2)))
+         (y (+ y (/ s 2)))
          (l (* s (floor x s)))
          (u (* s (floor y s)))
          (dir (data-directory clipmap))
          (tex (texture-buffer clipmap)))
     ;; Update the texture buffer
     (flet ((picture (file x y)
-             (if (probe-file file)
-                 (let ((data (load-image file T)))
-                   (unwind-protect
-                        (%gl:tex-sub-image-2d :texture-2d 0 x y r r (pixel-format tex) (pixel-type tex) (coerce-pixel-data data))
-                     (free-image-data data)))
-                 ;; FIXME: Requires GL 4.4
-                 (cffi:with-foreign-object (data :uint64 4)
-                   (dotimes (i 4) (setf (cffi:mem-aref data :uint64 i) 0))
-                   (%gl:clear-tex-sub-image (gl-name tex) 0 x y 0 r r 1 (pixel-format tex) (pixel-type tex) data))))
+             (cond ((probe-file file)
+                    (let ((data (load-image file T :format :red)))
+                      (unwind-protect
+                           (%gl:tex-sub-image-2d :texture-2d 0 x y r r (pixel-format tex) (pixel-type tex) (coerce-pixel-data data))
+                        (free-image-data data))))
+                   (T
+                    ;; FIXME: Requires GL 4.4
+                    (cffi:with-foreign-object (data :uint64 4)
+                      (dotimes (i 4) (setf (cffi:mem-aref data :uint64 i) 0))
+                      (%gl:clear-tex-sub-image (gl-name tex) 0 x y 0 r r 1 (pixel-format tex) (pixel-type tex) data)))))
            (path (x y)
-             (merge-pathnames (make-pathname :name (format NIL "~d,~d" x y) :type "png"
+             (merge-pathnames (make-pathname :name (format NIL "height ~d ~d" x y) :type "raw"
                                              :directory `(:relative ,(princ-to-string s)))
                               dir)))
       (picture (path (+ l 0) (+ u 0)) 0 r)
       (picture (path (+ l s) (+ u 0)) r r)
-      (picture (path (+ l s) (+ u s)) r 0)
-      (picture (path (+ l 0) (+ u s)) 0 0))
+      (picture (path (+ l s) (- u s)) r 0)
+      (picture (path (+ l 0) (- u s)) 0 0))
     ;; FIXME: Requires GL 4.3
     (%gl:copy-image-sub-data (gl-name tex) :texture-2d 0 (/ (- x l) (expt 2 level)) (/ (- y u) (expt 2 level)) 0
                              (gl-name (maps clipmap)) :texture-2d-array 0 0 0 level r r 1)))
@@ -74,7 +77,7 @@
     (with-simple-restart (continue "Ignore level ~d." l)
       (show-level clipmap x y l)))
   (setf (vx (location clipmap)) x)
-  (setf (vy (location clipmap)) y))
+  (setf (vz (location clipmap)) y))
 
 (defmethod maybe-show-region ((clipmap geometry-clipmap) x y)
   (gl:bind-texture :texture-2d (gl-name (texture-buffer clipmap)))
@@ -101,6 +104,7 @@
     (gl:active-texture :texture0)
     (gl:bind-texture :texture-2d-array (gl-name maps))
     (gl:bind-vertex-array (gl-name clipmap))
+    (setf (uniform program "model_matrix") (model-matrix))
     (setf (uniform program "view_matrix") (view-matrix))
     (setf (uniform program "projection_matrix") (projection-matrix))
     (setf (uniform program "level") 0)
@@ -137,6 +141,7 @@
 
 layout (location = 0) in vec3 position;
 
+uniform mat4 model_matrix;
 uniform mat4 view_matrix;
 uniform mat4 projection_matrix;
 uniform sampler2DArray texture_image;
@@ -168,13 +173,20 @@ void main(){
 
   vec2 world = map_pos * scale;
   pos = vec4(world.x, z*200, world.y, 1.0);
-  gl_Position =  projection_matrix * view_matrix * pos;
+  gl_Position =  projection_matrix * view_matrix * model_matrix * pos;
 }")
 
 (define-class-shader (geometry-clipmap :fragment-shader)
   "
+in vec4 pos;
+out vec4 color;
+
 void main(){
-  
+  if(pos.y == 0){
+    color = vec4(1,0,0,1);
+  } else {
+    color = vec4(pos.y/200,pos.y/200,pos.y/200,1);
+  }
 }")
 
 (defun make-clipmap-block (n)
@@ -216,7 +228,7 @@ void main(){
                             do (setf (aref out-pixels (+ oi k)) (funcall fit (/ (+ p1 p2 p3 p4) 4))))))
     out-pixels))
 
-(defun generate-clipmaps (input output &key (n 64) (levels 5) ((:x xoff) 0) ((:y yoff) 0)
+(defun generate-clipmaps (input output &key (n *default-clipmap-resolution*) (levels 5) ((:x xoff) 0) ((:y yoff) 0)
                                             depth pixel-type (format :red) (bank "height"))
   (multiple-value-bind (bits w h depth type format) (load-image input T :depth depth
                                                                         :pixel-type pixel-type
@@ -242,7 +254,7 @@ void main(){
             (ensure-directories-exist o)
             (loop for x from 0 below w by (* n s)
                   do (loop for y from 0 below h by (* n s)
-                           for f = (make-pathname :name (format NIL "~a-~d,~d"
+                           for f = (make-pathname :name (format NIL "~a ~d ~d"
                                                                 bank
                                                                 (- (+ x xoff) (/ w 2))
                                                                 (- (+ y yoff) (/ h 2)))
