@@ -11,7 +11,7 @@
    (height :initarg :height :accessor height)
    (depth :initarg :depth :accessor depth)
    (target :initarg :target :accessor target)
-   (level :initarg :level :accessor level)
+   (levels :initarg :levels :accessor levels)
    (samples :initarg :samples :accessor samples)
    (internal-format :initarg :internal-format :accessor internal-format)
    (pixel-format :initarg :pixel-format :accessor pixel-format)
@@ -29,7 +29,7 @@
    :height NIL
    :depth NIL
    :target :texture-2d
-   :level 0
+   :levels 1
    :samples 1
    :internal-format :rgba
    :pixel-format NIL
@@ -44,13 +44,17 @@
    :storage :dynamic))
 
 (defmethod shared-initialize :around ((texture texture) slots &rest args)
-  (when (or (getf args :wrapping) (not (slot-boundp texture 'wrapping)))
+  (when (or (getf args :wrapping)
+            (not (slot-boundp texture 'wrapping)))
     (setf (getf args :wrapping) (enlist (getf args :wrapping)
                                         (getf args :wrapping)
                                         (getf args :wrapping))))
-  (when (and (getf args :internal-format) (not (slot-boundp texture 'pixel-format)))
+  (when (and (getf args :internal-format)
+             (not (getf args :pixel-format))
+             (not (slot-boundp texture 'pixel-format)))
     (setf (getf args :pixel-format) (texture-internal-format->pixel-format (getf args :internal-format))))
-  (unless (and (getf args :pixel-type) (not (slot-boundp texture 'pixel-type)))
+  (when (and (not (getf args :pixel-type))
+             (not (slot-boundp texture 'pixel-type)))
     (setf (getf args :pixel-type) (pixel-format->pixel-type (getf args :pixel-format))))
   (apply #'call-next-method texture slots args))
 
@@ -99,7 +103,7 @@
      (static-vectors:static-vector-pointer pixel-data))))
 
 (defun allocate-texture-storage (texture)
-  (with-slots (target storage level internal-format width height depth samples pixel-format pixel-type pixel-data) texture
+  (with-slots (target storage levels internal-format width height depth samples pixel-format pixel-type pixel-data) texture
     (let ((internal-format (cffi:foreign-enum-value '%gl:enum internal-format))
           (pixel-data (if (consp pixel-data)
                           (mapcar #'coerce-pixel-data pixel-data)
@@ -107,12 +111,12 @@
       (case target
         ((:texture-1d)
          (ecase storage
-           (:dynamic (%gl:tex-image-1d target level internal-format width 0 pixel-format pixel-type pixel-data))
-           (:static (%gl:tex-storage-1d target level internal-format width))))
+           (:dynamic (%gl:tex-image-1d target 0 internal-format width 0 pixel-format pixel-type pixel-data))
+           (:static (%gl:tex-storage-1d target levels internal-format width))))
         ((:texture-2d :texture-1d-array)
          (ecase storage
-           (:dynamic (%gl:tex-image-2d target level internal-format width height 0 pixel-format pixel-type pixel-data))
-           (:static (%gl:tex-storage-2d target level internal-format width height))))
+           (:dynamic (%gl:tex-image-2d target 0 internal-format width height 0 pixel-format pixel-type pixel-data))
+           (:static (%gl:tex-storage-2d target levels internal-format width height))))
         ((:texture-cube-map)
          (loop for target in '(:texture-cube-map-positive-x :texture-cube-map-negative-x
                                :texture-cube-map-positive-y :texture-cube-map-negative-y
@@ -122,24 +126,24 @@
                                (let ((c (cons pixel-data NIL)))
                                  (setf (cdr c) c)))
                do (ecase storage
-                    (:dynamic (%gl:tex-image-2d target level internal-format width height 0 pixel-format pixel-type data))
-                    (:static (%gl:tex-storage-2d target level internal-format width height)))))
+                    (:dynamic (%gl:tex-image-2d target 0 internal-format width height 0 pixel-format pixel-type data))
+                    (:static (%gl:tex-storage-2d target levels internal-format width height)))))
         ((:texture-3d :texture-2d-array)
          (ecase storage
-           (:dynamic (%gl:tex-image-3d target level internal-format width height depth 0 pixel-format pixel-type
+           (:dynamic (%gl:tex-image-3d target 0 internal-format width height depth 0 pixel-format pixel-type
                                        (if (consp pixel-data) (cffi:null-pointer) pixel-data)))
-           (:static (%gl:tex-storage-3d target level internal-format width height depth)))
+           (:static (%gl:tex-storage-3d target levels internal-format width height depth)))
          (when (consp pixel-data)
            (loop for z from 0
                  for data in pixel-data
-                 do (%gl:tex-sub-image-3d target level 0 0 z width height 1 pixel-format pixel-type data))))
+                 do (%gl:tex-sub-image-3d target 0 0 0 z width height 1 pixel-format pixel-type data))))
         ((:texture-2d-multisample)
          (%gl:tex-storage-2d-multisample target samples internal-format width height 1))
         ((:texture-2d-multisample-array)
          (%gl:tex-storage-3d-multisample target samples internal-format width height depth 1))))))
 
 (defmethod allocate ((texture texture))
-  (with-slots (width height depth target level samples internal-format pixel-format pixel-type pixel-data mag-filter min-filter mipmap-levels mipmap-lod anisotropy wrapping storage)
+  (with-slots (width height depth target samples internal-format pixel-format pixel-type pixel-data mag-filter min-filter mipmap-levels mipmap-lod anisotropy wrapping storage)
       texture
     (let ((tex (gl:create-texture target)))
       (with-cleanup-on-failure (gl:delete-textures (list tex))
