@@ -4,26 +4,45 @@
   :base 'trial)
 
 (define-asset (workbench cube) mesh
-    (make-cube 20))
+    (make-cube 10))
 
 (define-asset (workbench cat) image
     #p"cat.png")
 
-(define-shader-entity tester (vertex-entity textured-entity)
-  ())
+(define-shader-subject player (vertex-entity textured-entity located-entity)
+  ()
+  (:default-initargs
+   :vertex-array (asset 'workbench 'cube)
+   :texture (asset 'workbench 'cat)))
+
+(define-handler (player mouse-move) (ev pos)
+  ;; (let ((world (screen->vec pos (width *context*) (height *context*))))
+  ;;   (setf (vx (location player)) (* 30000 (vx world)))
+  ;;   (setf (vz (location player)) (vy world)))
+  )
 
 (defmethod update :after ((main main) tt dt)
-  (let ((clipmap (unit :clipmap (scene main))))
+  (let ((clipmap (unit :clipmap (scene main)))
+        (camera (unit :camera (scene main))))
     (when clipmap
-      (case 0
-        (0 (setf (location clipmap) (load-time-value (vec 0 0 0))))
-        (1 (maybe-show-region clipmap (- (mod (* 100 tt) 1024) 512) 0))
-        (2 (maybe-show-region clipmap (* 64 (sin (* 2 tt))) (* 64 (cos (* 2 tt)))))))))
+      (let ((loc (case 2
+                   (0 (vec 0 0))
+                   (1 (vec (- (mod (* 100 tt) 256) 128) 0))
+                   (2 (vec (* 128 (sin (* 0.5 tt))) 0))
+                   (3 (vec (vx (location player)) (vz (location player)))))))
+        (maybe-show-region clipmap (vx loc) (vy loc))
+        ;(setf (vx (location camera)) (vx loc))
+        ;(setf (vz (location camera)) (vy loc))
+        ))))
 
 (progn
   (defmethod setup-scene ((main main) scene)
-    (enter (make-instance 'tester :vertex-array (asset 'workbench 'cube) :texture (asset 'workbench 'cat)) scene)
-    (enter (make-instance 'target-camera :location (vec 50 50 0)) scene)
+    (enter (make-instance 'geometry-clipmap :name :clipmap
+                                            :resolution 16
+                                            :data-directory #p"~/clipmaps/") scene)
+    (enter (make-instance 'player :name :player) scene)
+    (enter (make-instance 'target-camera :name :camera
+                                         :location (vec 0 2000 0.0001)) scene)
     (enter (make-instance 'render-pass) scene))
 
   (maybe-reload-scene))
