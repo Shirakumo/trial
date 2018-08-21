@@ -135,7 +135,7 @@
 (define-class-shader (geometry-clipmap :vertex-shader)
   "
 // Factor for the width of the blending border. Higher means smaller.
-#define BORDER 1.0
+#define BORDER 2.0
 
 layout (location = 0) in vec3 position;
 
@@ -157,7 +157,7 @@ void main(){
   vec2 tex_off = (map_pos/4+0.5)-1/(n+1);
 
   z = texelFetch(texture_image, ivec3(tex_off*n, level), 0).r;
-  vec3 off = mod(world_pos, scale/16);
+  vec3 off = mod(world_pos+scale/32, scale/16)*(64/n);
   a = 0;
   if(level+1 < levels){
     // Inter-level blending factor
@@ -167,16 +167,15 @@ void main(){
     // Retrieve outer Z factor by interpolated texel read.
     vec2 tex_off_i = (map_pos/8+0.5)+0.5/n-1/(n+1);
     float zo = texture(texture_image, vec3(tex_off_i, level+1)).r;
-    vec3 offo = mod(world_pos, scale/8);
+    vec3 offo = mod(world_pos+scale/16, scale/8)*(64/n);
 
     // Interpolate final Z
     z = mix(z, zo, a);
     off = mix(off, offo, a);
   }
 
-  // FIXME: Actually handle the offset right
   vec2 world = map_pos * scale;
-  vec3 pos = vec3(world.x, 0, world.y)*2;
+  vec3 pos = vec3(world.x-off.x, 0, world.y-off.z)*2;
   gl_Position =  projection_matrix * view_matrix * vec4(pos, 1);
 }")
 
@@ -190,7 +189,7 @@ void main(){
   if(z == 0){
     color = vec4(1,0,0,1);
   } else {
-    color = vec4(z*5-2.5,z*5-2.5,z*5-2.5,1);
+    color = vec4(z,z,z,1);
   }
 }")
 
