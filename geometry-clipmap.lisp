@@ -86,8 +86,8 @@
     (dotimes (l (levels clipmap) clipmap)
       ;(v:info :test "~a ~a ~a ~a" x y (floor (- x (/ s 2)) s) (floor (- (vx loc) (/ s 2)) s))
       (with-simple-restart (continue "Ignore level ~d." l)
-        (when (or (/= (floor (- x (/ s 2)) s) (floor (- (vx loc) (/ s 2)) s))
-                  (/= (floor (+ y (/ s 2)) s) (floor (+ (vz loc) (/ s 2)) s)))
+        (when (or (/= (floor x s) (floor (vx loc) s))
+                  (/= (floor y s) (floor (vz loc) s)))
           (show-level clipmap x y l)))
       (setf s (* s 2)))
     (setf (vx loc) x)
@@ -157,7 +157,7 @@ void main(){
   vec2 tex_off = (map_pos/4+0.5)-1/(n+1);
 
   z = texelFetch(texture_image, ivec3(tex_off*n, level), 0).r;
-  vec3 off = mod(world_pos+scale/32, scale/16)*(64/n);
+  vec3 off = mod(world_pos, scale/16)*(64/n);
   a = 0;
   if(level+1 < levels){
     // Inter-level blending factor
@@ -167,7 +167,7 @@ void main(){
     // Retrieve outer Z factor by interpolated texel read.
     vec2 tex_off_i = (map_pos/8+0.5)+0.5/n-1/(n+1);
     float zo = texture(texture_image, vec3(tex_off_i, level+1)).r;
-    vec3 offo = mod(world_pos+scale/16, scale/8)*(64/n);
+    vec3 offo = mod(world_pos, scale/8)*(64/n);
 
     // Interpolate final Z
     z = mix(z, zo, a);

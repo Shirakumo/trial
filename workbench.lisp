@@ -25,10 +25,10 @@
   (let ((clipmap (unit :clipmap (scene main)))
         (camera (unit :camera (scene main))))
     (when clipmap
-      (let ((loc (case 1
+      (let ((loc (case 2
                    (0 (vec 0 0))
-                   (1 (vec (- (mod (* 20 tt) 100) 512) (- (mod (* 10 tt) 100) 512)))
-                   (2 (vec (* 128 (sin (* 0.5 tt))) (* 128 (cos (* 0.5 tt)))))
+                   (1 (vec (- (mod (* 10 tt) 100) 512) (- (mod (* 20 tt) 100) 512)))
+                   (2 (vec (* 512 (sin (* 0.5 tt))) (* 512 (cos (* 0.5 tt)))))
                    (3 (vec (vx (location player)) (vz (location player)))))))
         (maybe-show-region clipmap (vx loc) (vy loc))
         ;(setf (vx (location camera)) (vx loc))
