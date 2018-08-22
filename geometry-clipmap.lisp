@@ -13,8 +13,10 @@
    (levels :initarg :levels :accessor levels)
    (resolution :initarg :resolution :accessor resolution)
    (map-scale :initarg :map-scale :accessor map-scale)
-   (maps :accessor maps)
-   (texture-buffer :accessor texture-buffer)
+   (height-map :accessor height-map)
+   (height-buffer :accessor height-buffer)
+   (splat-map :accessor splat-map)
+   (splat-buffer :accessor splat-buffer)
    (data-directory :initarg :data-directory :accessor data-directory))
   (:default-initargs
    :levels 5
@@ -24,21 +26,36 @@
 
 (defmethod initialize-instance :after ((clipmap geometry-clipmap) &key levels resolution)
   (setf (clipmap-block clipmap) (make-clipmap-block resolution))
-  (setf (maps clipmap) (make-instance 'texture :target :texture-2d-array
-                                               :min-filter :linear
-                                               :internal-format :r16
-                                               :width resolution
-                                               :height resolution
-                                               :depth levels
-                                               :storage :static))
-  (setf (texture-buffer clipmap) (make-instance 'texture :target :texture-2d
-                                                         :min-filter :linear
-                                                         :pixel-format :red
-                                                         :pixel-type :unsigned-short
-                                                         :internal-format :r16
-                                                         :width (* 2 resolution)
-                                                         :height (* 2 resolution)
-                                                         :storage :static)))
+  (setf (height-map clipmap) (make-instance 'texture :target :texture-2d-array
+                                                     :min-filter :linear
+                                                     :internal-format :r16
+                                                     :width resolution
+                                                     :height resolution
+                                                     :depth levels
+                                                     :storage :static))
+  (setf (height-buffer clipmap) (make-instance 'texture :target :texture-2d
+                                                        :min-filter :linear
+                                                        :pixel-format :red
+                                                        :pixel-type :unsigned-short
+                                                        :internal-format :r16
+                                                        :width (* 2 resolution)
+                                                        :height (* 2 resolution)
+                                                        :storage :static))
+  (setf (splat-map clipmap) (make-instance 'texture :target :texture-2d-array
+                                                     :min-filter :linear
+                                                     :internal-format :rgba8
+                                                     :width resolution
+                                                     :height resolution
+                                                     :depth levels
+                                                     :storage :static))
+  (setf (splat-buffer clipmap) (make-instance 'texture :target :texture-2d
+                                                       :min-filter :linear
+                                                       :pixel-format :rgba
+                                                       :pixel-type :unsigned-byte
+                                                       :internal-format :rgba8
+                                                       :width (* 2 resolution)
+                                                       :height (* 2 resolution)
+                                                       :storage :static)))
 
 (defmethod show-level ((clipmap geometry-clipmap) x y level)
   (let* ((r (resolution clipmap))
@@ -47,34 +64,36 @@
          (y (+ y (/ s 2)))
          (l (* s (floor x s)))
          (u (* s (floor y s)))
-         (dir (data-directory clipmap))
-         (tex (texture-buffer clipmap)))
+         (dir (data-directory clipmap)))
     ;; Update the texture buffer
-    (flet ((picture (file x y)
-             (cond ((probe-file file)
-                    (let ((data (load-image file T :format :red)))
-                      (unwind-protect
-                           (%gl:tex-sub-image-2d :texture-2d 0 x y r r (pixel-format tex) (pixel-type tex) (coerce-pixel-data data))
-                        (free-image-data data))))
-                   (T
-                    ;; FIXME: Requires GL 4.4
-                    (cffi:with-foreign-object (data :uint64 4)
-                      (dotimes (i 4) (setf (cffi:mem-aref data :uint64 i) 0))
-                      (%gl:clear-tex-sub-image (gl-name tex) 0 x y 0 r r 1 (pixel-format tex) (pixel-type tex) data)))))
-           (path (x y)
-             (merge-pathnames (make-pathname :name (format NIL "height ~d ~d" x y) :type "raw"
-                                             :directory `(:relative ,(princ-to-string s)))
-                              dir)))
-      (picture (path (+ l 0) (+ u 0)) 0 r)
-      (picture (path (+ l s) (+ u 0)) r r)
-      (picture (path (+ l s) (- u s)) r 0)
-      (picture (path (+ l 0) (- u s)) 0 0))
-    ;; FIXME: Requires GL 4.3
-    (%gl:copy-image-sub-data (gl-name tex) :texture-2d 0 (/ (- x l) (expt 2 level)) (/ (- y u) (expt 2 level)) 0
-                             (gl-name (maps clipmap)) :texture-2d-array 0 0 0 level r r 1)))
+    (labels ((picture (tex file x y)
+               (cond ((probe-file file)
+                      (let ((data (load-image file T :format (pixel-format tex))))
+                        (unwind-protect
+                             (%gl:tex-sub-image-2d :texture-2d 0 x y r r (pixel-format tex) (pixel-type tex) (coerce-pixel-data data))
+                          (free-image-data data))))
+                     (T
+                      ;; FIXME: Requires GL 4.4
+                      (cffi:with-foreign-object (data :uint64 4)
+                        (dotimes (i 4) (setf (cffi:mem-aref data :uint64 i) 0))
+                        (%gl:clear-tex-sub-image (gl-name tex) 0 x y 0 r r 1 (pixel-format tex) (pixel-type tex) data)))))
+             (path (bank x y)
+               (merge-pathnames (make-pathname :name (format NIL "~a ~d ~d" bank x y) :type "raw"
+                                               :directory `(:relative ,(princ-to-string s)))
+                                dir))
+             (show-map (bank tex target)
+               (gl:bind-texture :texture-2d (gl-name tex))
+               (picture tex (path bank (+ l 0) (+ u 0)) 0 r)
+               (picture tex (path bank (+ l s) (+ u 0)) r r)
+               (picture tex (path bank (+ l s) (- u s)) r 0)
+               (picture tex (path bank (+ l 0) (- u s)) 0 0)
+               ;; FIXME: Requires GL 4.3
+               (%gl:copy-image-sub-data (gl-name tex) :texture-2d 0 (/ (- x l) (expt 2 level)) (/ (- y u) (expt 2 level)) 0
+                                        (gl-name target) :texture-2d-array 0 0 0 level r r 1)))
+      (show-map "height" (height-buffer clipmap) (height-map clipmap))
+      (show-map "splat" (splat-buffer clipmap) (splat-map clipmap)))))
 
 (defmethod show-region ((clipmap geometry-clipmap) x y)
-  (gl:bind-texture :texture-2d (gl-name (texture-buffer clipmap)))
   (dotimes (l (levels clipmap) clipmap)
     (with-simple-restart (continue "Ignore level ~d." l)
       (show-level clipmap x y l)))
@@ -82,7 +101,6 @@
   (setf (vz (location clipmap)) y))
 
 (defmethod maybe-show-region ((clipmap geometry-clipmap) x y)
-  (gl:bind-texture :texture-2d (gl-name (texture-buffer clipmap)))
   (let ((loc (location clipmap))
         (s 1))
     (dotimes (l (levels clipmap) clipmap)
@@ -100,8 +118,12 @@
         (levels (levels clipmap))
         (block (clipmap-block clipmap)))
     (gl:active-texture :texture0)
-    (gl:bind-texture :texture-2d-array (gl-name (maps clipmap)))
+    (gl:bind-texture :texture-2d-array (gl-name (height-map clipmap)))
+    (gl:active-texture :texture1)
+    (gl:bind-texture :texture-2d-array (gl-name (splat-map clipmap)))
     (gl:bind-vertex-array (gl-name block))
+    (setf (uniform program "height_map") 0)
+    (setf (uniform program "splat_map") 1)
     (setf (uniform program "view_matrix") (view-matrix))
     (setf (uniform program "projection_matrix") (projection-matrix))
     (setf (uniform program "world_pos") (location clipmap))
@@ -140,7 +162,8 @@ layout (location = 0) in vec3 position;
 
 uniform mat4 view_matrix;
 uniform mat4 projection_matrix;
-uniform sampler2DArray texture_image;
+uniform sampler2DArray height_map;
+uniform sampler2DArray splat_map;
 uniform int levels;
 uniform int level;
 uniform vec2 offset;
@@ -148,41 +171,55 @@ uniform vec3 world_pos;
 uniform vec3 map_scale = vec3(1,1,1);
 
 out CLIPMAP_DATA{
-  float y;
   float a;
+  vec3 world;
+  vec3 normal;
+  vec4 splat;
 } clipmap_out;
 
 void main(){
   float level_scale = pow(2.0, level);
-  float n = textureSize(texture_image, 0).x;
+  float n = textureSize(height_map, 0).x;
   vec2 map_pos = position.xz + offset;
   
   float a = 0;
   // Current level texture fetch
-  vec2 tex_off = (map_pos/4+0.5)-1/(n+1);
+  vec2 tex_off = ((map_pos/4+0.5)-1/(n+1))*n;
   vec2 mov_off = mod(world_pos.xz, level_scale)*(4/n);
-  float y = texelFetch(texture_image, ivec3(tex_off*n, level), 0).r;
+  vec4 splat = texelFetch(splat_map, ivec3(tex_off, level), 0);
+  float y = texelFetch(height_map, ivec3(tex_off, level), 0).r;
+  float yu = texelFetch(height_map, ivec3(min(n-1, tex_off.x+1), tex_off.y, level), 0).r;
+  float yv = texelFetch(height_map, ivec3(tex_off.x, min(n-1, tex_off.y+1), level), 0).r;
   
   if(level+1 < levels){
-    // Outer level texture fetch
+    // Outer level texture read
     vec2 tex_off_o = (map_pos/8+0.5)+0.5/n-1/(n+1);
     vec2 mov_off_o = mod(world_pos.xz, level_scale*2)*(4/n);
-    float y_o = texture(texture_image, vec3(tex_off_o, level+1)).r;
+    vec4 splat_o = texture(splat_map, vec3(tex_off_o, level+1));
+    float y_o = texture(height_map, vec3(tex_off_o, level+1)).r;
+    float yu_o = texture(height_map, vec3(tex_off_o+vec2(1/n,0), level+1)).r;
+    float yv_o = texture(height_map, vec3(tex_off_o+vec2(0,1/n), level+1)).r;
     
     // Inter-level blending factor
     vec2 alpha = clamp((abs(map_pos)-2)*BORDER+1, 0, 1);
     a = max(alpha.x, alpha.y);
     
     // Interpolate final Y
-    y = mix(y, y_o, a);
     mov_off = mix(mov_off, mov_off_o, a);
+    splat = mix(splat, splat_o, a);
+    y = mix(y, y_o, a);
+    yu = mix(yu, yu_o, a);
+    yv = mix(yv, yv_o, a);
   }
   
   vec2 world_2d = (map_pos * level_scale) - mov_off;
-  vec3 world = world_pos + vec3(world_2d.x, y, world_2d.y)*map_scale;
-  gl_Position =  projection_matrix * view_matrix * vec4(world, 1);
-  clipmap_out.y = y;
+
   clipmap_out.a = a;
+  clipmap_out.world = world_pos + vec3(world_2d.x, y, world_2d.y)*map_scale;
+  clipmap_out.normal = normalize(vec3(y-yu, 0.5, y-yv));
+  clipmap_out.splat = splat;
+
+  gl_Position =  projection_matrix * view_matrix * vec4(clipmap_out.world, 1);
 }")
 
 ;; This shader ensures that zerod heights get a hole punched.
@@ -191,20 +228,26 @@ void main(){
 layout(triangles) in;
 layout(triangle_strip, max_vertices = 3) out;
 in CLIPMAP_DATA{
-  float y;
   float a;
+  vec3 world;
+  vec3 normal;
+  vec4 splat;
 } clipmap_in[];
 out CLIPMAP_DATA{
-  float y;
   float a;
+  vec3 world;
+  vec3 normal;
+  vec4 splat;
 } clipmap_out;
 
 void main(){
-  if(clipmap_in[0].y*clipmap_in[1].y*clipmap_in[2].y != 0){
+  if(clipmap_in[0].world.y*clipmap_in[1].world.y*clipmap_in[2].world.y != 0){
     int i;
     for(i = 0;i < gl_in.length();i++){
       clipmap_out.a = clipmap_in[i].a;
-      clipmap_out.y = clipmap_in[i].y;
+      clipmap_out.world = clipmap_in[i].world;
+      clipmap_out.normal = clipmap_in[i].normal;
+      clipmap_out.splat = clipmap_in[i].splat;
       gl_Position = gl_in[i].gl_Position;
       EmitVertex();
     }
@@ -215,18 +258,19 @@ void main(){
 (define-class-shader (geometry-clipmap :fragment-shader)
   "
 in CLIPMAP_DATA{
-  float y;
   float a;
+  vec3 world;
+  vec3 normal;
+  vec4 splat;
 } clipmap_in;
 out vec4 color;
 
 void main(){
-  float y = clipmap_in.y;
-  if(y == 0){
-    color = vec4(1,0,0,1);
-  } else {
-    color = vec4(y,y,y,1);
-  }
+  vec3 light = vec3(1, 0, 1);
+  vec3 light_dir = normalize(light);
+  float diff = max(dot(clipmap_in.normal, light_dir), 0.0)*8+0.3;
+  vec3 diffuse = (clipmap_in.splat.g*vec3(1,1,1)+clipmap_in.splat.b*vec3(0.5,0.4,0.4)) * diff;
+  color = vec4(diffuse, 1.0);
 }")
 
 (defun make-clipmap-block (n)
@@ -273,7 +317,8 @@ void main(){
   (multiple-value-bind (bits w h depth type format) (load-image input T :depth depth
                                                                         :pixel-type pixel-type
                                                                         :format format)
-    (declare (ignore depth type))
+    
+    (print (list w h depth type format (array-element-type bits)))
     ;; FIXME: remove this constraint
     (assert (eql w h))
     (let* ((w (or w (sqrt (length bits))))
