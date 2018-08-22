@@ -48,6 +48,7 @@
                (:file "loader" :depends-on ("package" "scene" "resource"))
                (:file "main" :depends-on ("package" "display" "toolkit" "scene" "pipeline" "window"))
                (:file "mapping" :depends-on ("package" "event-loop" "toolkit"))
+               (:file "mmap" :depends-on ("package"))
                (:file "phong" :depends-on ("package" "helpers"))
                (:file "pipeline" :depends-on ("package" "event-loop" "toolkit"))
                (:file "pipelined-scene" :depends-on ("package" "pipeline" "scene" "loader"))
@@ -130,4 +131,5 @@
                :cl-tga
                :cl-jpeg
                :retrospectiff
-               :terrable))
+               :terrable
+               :osicat))
