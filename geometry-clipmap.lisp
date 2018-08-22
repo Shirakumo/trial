@@ -12,11 +12,13 @@
   ((clipmap-block :accessor clipmap-block)
    (levels :initarg :levels :accessor levels)
    (resolution :initarg :resolution :accessor resolution)
+   (map-scale :initarg :map-scale :accessor map-scale)
    (maps :accessor maps)
    (texture-buffer :accessor texture-buffer)
    (data-directory :initarg :data-directory :accessor data-directory))
   (:default-initargs
    :levels 5
+   :map-scale (vec 1 1 1)
    :resolution *default-clipmap-resolution*
    :data-directory (error "DATA-DIRECTORY required.")))
 
@@ -96,17 +98,17 @@
 (defmethod paint ((clipmap geometry-clipmap) (pass shader-pass))
   (let ((program (shader-program-for-pass pass clipmap))
         (levels (levels clipmap))
-        (maps (maps clipmap))
         (block (clipmap-block clipmap)))
     (gl:active-texture :texture0)
-    (gl:bind-texture :texture-2d-array (gl-name maps))
+    (gl:bind-texture :texture-2d-array (gl-name (maps clipmap)))
     (gl:bind-vertex-array (gl-name block))
     (setf (uniform program "view_matrix") (view-matrix))
     (setf (uniform program "projection_matrix") (projection-matrix))
-    (setf (uniform program "level") 0)
-    (setf (uniform program "scale") 16.0)
-    (setf (uniform program "levels") levels)
     (setf (uniform program "world_pos") (location clipmap))
+    (setf (uniform program "levels") levels)
+    (setf (uniform program "level") 0)
+    (setf (uniform program "level_scale") 1.0)
+    (setf (uniform program "map_scale") (map-scale clipmap))
     (gl:polygon-mode :front-and-back :fill)
     (flet ((paint (x z)
              (setf (uniform program "offset") (vec x z))
@@ -115,10 +117,10 @@
       (paint +0.5 -0.5)
       (paint -0.5 -0.5)
       (paint -0.5 +0.5)
-      (loop for scale = 16.0s0 then (* scale 2.0s0)
+      (loop for level_scale = 1.0 then (* level_scale 2.0)
             for level from 0 below levels
             do (setf (uniform program "level") level)
-               (setf (uniform program "scale") scale)
+               (setf (uniform program "level_scale") level_scale)
                (paint +1.5 +1.5)
                (paint +0.5 +1.5)
                (paint -0.5 +1.5)
@@ -144,52 +146,55 @@ uniform mat4 projection_matrix;
 uniform sampler2DArray texture_image;
 uniform int levels;
 uniform int level;
-uniform float scale;
+uniform float level_scale;
 uniform vec2 offset;
 uniform vec3 world_pos;
+uniform vec3 map_scale = vec3(1,1,1);
 
-out float z;
+out float y;
 out float a;
 
 void main(){
   float n = textureSize(texture_image, 0).x;
   vec2 map_pos = position.xz + offset;
-  vec2 tex_off = (map_pos/4+0.5)-1/(n+1);
 
-  z = texelFetch(texture_image, ivec3(tex_off*n, level), 0).r;
-  vec3 off = mod(world_pos, scale/16)*(64/n);
   a = 0;
+  // Current level texture fetch
+  vec2 tex_off = (map_pos/4+0.5)-1/(n+1);
+  vec2 mov_off = mod(world_pos.xz, level_scale)*(4/n);
+  y = texelFetch(texture_image, ivec3(tex_off*n, level), 0).r;
+
   if(level+1 < levels){
     // Inter-level blending factor
     vec2 alpha = clamp((abs(map_pos)-2)*BORDER+1, 0, 1);
     a = max(alpha.x, alpha.y);
   
-    // Retrieve outer Z factor by interpolated texel read.
-    vec2 tex_off_i = (map_pos/8+0.5)+0.5/n-1/(n+1);
-    float zo = texture(texture_image, vec3(tex_off_i, level+1)).r;
-    vec3 offo = mod(world_pos, scale/8)*(64/n);
+    // Retrieve outer Y factor by interpolated texel read.
+    vec2 tex_off_o = (map_pos/8+0.5)+0.5/n-1/(n+1);
+    vec2 mov_off_o = mod(world_pos.xz, level_scale*2)*(4/n);
+    float y_o = texture(texture_image, vec3(tex_off_o, level+1)).r;
 
-    // Interpolate final Z
-    z = mix(z, zo, a);
-    off = mix(off, offo, a);
+    // Interpolate final Y
+    y = mix(y, y_o, a);
+    mov_off = mix(mov_off, mov_off_o, a);
   }
 
-  vec2 world = map_pos * scale;
-  vec3 pos = vec3(world.x-off.x, 0, world.y-off.z)*2;
-  gl_Position =  projection_matrix * view_matrix * vec4(pos, 1);
+  vec2 world_2d = (map_pos * level_scale) - mov_off;
+  vec3 world = world_pos + vec3(world_2d.x, y, world_2d.y)*map_scale;
+  gl_Position =  projection_matrix * view_matrix * vec4(world, 1);
 }")
 
 (define-class-shader (geometry-clipmap :fragment-shader)
   "
 in float a;
-in float z;
+in float y;
 out vec4 color;
 
 void main(){
-  if(z == 0){
+  if(y == 0){
     color = vec4(1,0,0,1);
   } else {
-    color = vec4(z,z,z,1);
+    color = vec4(y,y,y,1);
   }
 }")
 

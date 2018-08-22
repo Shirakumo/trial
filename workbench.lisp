@@ -25,23 +25,26 @@
   (let ((clipmap (unit :clipmap (scene main)))
         (camera (unit :camera (scene main))))
     (when clipmap
-      (let ((loc (case 2
+      (let ((loc (case 1
                    (0 (vec 0 0))
-                   (1 (vec (- (mod (* 10 tt) 100) 512) (- (mod (* 20 tt) 100) 512)))
+                   (1 (vec 0 (- (- (mod (* 100 tt) 2048) 1024))))
                    (2 (vec (* 512 (sin (* 0.5 tt))) (* 512 (cos (* 0.5 tt)))))
                    (3 (vec (vx (location player)) (vz (location player)))))))
         (maybe-show-region clipmap (vx loc) (vy loc))
-        ;(setf (vx (location camera)) (vx loc))
-        ;(setf (vz (location camera)) (vy loc))
+        (setf (vx (location camera)) (vx loc))
+        (setf (vz (location camera)) (+ 100 (vy loc)))
+        (setf (vx (target camera)) (vx loc))
+        (setf (vz (target camera)) (vy loc))
         ))))
 
 (progn
   (defmethod setup-scene ((main main) scene)
     (enter (make-instance 'geometry-clipmap :name :clipmap
+                                            :map-scale (vec 50 70 50)
                                             :data-directory #p"~/clipmaps/") scene)
     (enter (make-instance 'player :name :player) scene)
     (enter (make-instance 'target-camera :name :camera
-                                         :location (vec 0 1000 0.0001)) scene)
+                                         :location (vec 0 50 1100)) scene)
     (enter (make-instance 'render-pass) scene))
 
   (maybe-reload-scene))
