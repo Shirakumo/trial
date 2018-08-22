@@ -34,6 +34,6 @@
         (unless (gl:get-shader shdr :compile-status)
           (error "Failed to compile ~a: ~%~a~%Shader source:~%~a"
                  shader (gl:get-shader-info-log shdr)
-                 source))
+                 (format-with-line-numbers source)))
         (v:debug :trial.asset "Compiled shader ~a: ~%~a" shader source)
         (setf (data-pointer shader) shdr)))))

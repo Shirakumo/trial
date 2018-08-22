@@ -310,6 +310,14 @@
                        (setf minimal current))
                   finally (return minimal))))))
 
+(defun format-with-line-numbers (text)
+  (with-output-to-string (out)
+    (with-input-from-string (in text)
+      (loop for i from 1
+            for line = (read-line in NIL)
+            while line
+            do (format out "~3d ~a~%" i line)))))
+
 (declaim (inline deg->rad rad->deg))
 (defun deg->rad (deg)
   (* deg PI 1/180))
