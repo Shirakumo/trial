@@ -107,9 +107,7 @@
     (setf (uniform program "world_pos") (location clipmap))
     (setf (uniform program "levels") levels)
     (setf (uniform program "level") 0)
-    (setf (uniform program "level_scale") 1.0)
     (setf (uniform program "map_scale") (map-scale clipmap))
-    (gl:polygon-mode :front-and-back :fill)
     (flet ((paint (x z)
              (setf (uniform program "offset") (vec x z))
              (%gl:draw-elements :triangles (size block) :unsigned-int 0)))
@@ -117,10 +115,9 @@
       (paint +0.5 -0.5)
       (paint -0.5 -0.5)
       (paint -0.5 +0.5)
-      (loop for level_scale = 1.0 then (* level_scale 2.0)
-            for level from 0 below levels
+      (loop for level from 0 below levels
             do (setf (uniform program "level") level)
-               (setf (uniform program "level_scale") level_scale)
+               ;; FIXME: use instancing for this
                (paint +1.5 +1.5)
                (paint +0.5 +1.5)
                (paint -0.5 +1.5)
@@ -146,51 +143,85 @@ uniform mat4 projection_matrix;
 uniform sampler2DArray texture_image;
 uniform int levels;
 uniform int level;
-uniform float level_scale;
 uniform vec2 offset;
 uniform vec3 world_pos;
 uniform vec3 map_scale = vec3(1,1,1);
 
-out float y;
-out float a;
+out CLIPMAP_DATA{
+  float y;
+  float a;
+} clipmap_out;
 
 void main(){
+  float level_scale = pow(2.0, level);
   float n = textureSize(texture_image, 0).x;
   vec2 map_pos = position.xz + offset;
-
-  a = 0;
+  
+  float a = 0;
   // Current level texture fetch
   vec2 tex_off = (map_pos/4+0.5)-1/(n+1);
   vec2 mov_off = mod(world_pos.xz, level_scale)*(4/n);
-  y = texelFetch(texture_image, ivec3(tex_off*n, level), 0).r;
-
-  if(level+1 < levels){
-    // Inter-level blending factor
-    vec2 alpha = clamp((abs(map_pos)-2)*BORDER+1, 0, 1);
-    a = max(alpha.x, alpha.y);
+  float y = texelFetch(texture_image, ivec3(tex_off*n, level), 0).r;
   
-    // Retrieve outer Y factor by interpolated texel read.
+  if(level+1 < levels){
+    // Outer level texture fetch
     vec2 tex_off_o = (map_pos/8+0.5)+0.5/n-1/(n+1);
     vec2 mov_off_o = mod(world_pos.xz, level_scale*2)*(4/n);
     float y_o = texture(texture_image, vec3(tex_off_o, level+1)).r;
-
+    
+    // Inter-level blending factor
+    vec2 alpha = clamp((abs(map_pos)-2)*BORDER+1, 0, 1);
+    a = max(alpha.x, alpha.y);
+    
     // Interpolate final Y
     y = mix(y, y_o, a);
     mov_off = mix(mov_off, mov_off_o, a);
   }
-
+  
   vec2 world_2d = (map_pos * level_scale) - mov_off;
   vec3 world = world_pos + vec3(world_2d.x, y, world_2d.y)*map_scale;
   gl_Position =  projection_matrix * view_matrix * vec4(world, 1);
+  clipmap_out.y = y;
+  clipmap_out.a = a;
+}")
+
+;; This shader ensures that zerod heights get a hole punched.
+(define-class-shader (geometry-clipmap :geometry-shader)
+  "#version 330 core
+layout(triangles) in;
+layout(triangle_strip, max_vertices = 3) out;
+in CLIPMAP_DATA{
+  float y;
+  float a;
+} clipmap_in[];
+out CLIPMAP_DATA{
+  float y;
+  float a;
+} clipmap_out;
+
+void main(){
+  if(clipmap_in[0].y*clipmap_in[1].y*clipmap_in[2].y != 0){
+    int i;
+    for(i = 0;i < gl_in.length();i++){
+      clipmap_out.a = clipmap_in[i].a;
+      clipmap_out.y = clipmap_in[i].y;
+      gl_Position = gl_in[i].gl_Position;
+      EmitVertex();
+    }
+    EndPrimitive();
+  }
 }")
 
 (define-class-shader (geometry-clipmap :fragment-shader)
   "
-in float a;
-in float y;
+in CLIPMAP_DATA{
+  float y;
+  float a;
+} clipmap_in;
 out vec4 color;
 
 void main(){
+  float y = clipmap_in.y;
   if(y == 0){
     color = vec4(1,0,0,1);
   } else {
