@@ -9,7 +9,8 @@
 (defvar *default-clipmap-resolution* 128)
 
 (define-shader-entity geometry-clipmap (located-entity)
-  ((clipmap-block :accessor clipmap-block)
+  ((previous-update-location :initform (vec2 0 0) :accessor previous-update-location)
+   (clipmap-block :accessor clipmap-block)
    (levels :initarg :levels :accessor levels)
    (resolution :initarg :resolution :accessor resolution)
    (map-scale :initarg :map-scale :accessor map-scale)
@@ -95,23 +96,25 @@
   (dotimes (l (levels clipmap) clipmap)
     (with-simple-restart (continue "Ignore level ~d." l)
       (show-level clipmap x y l)))
-  (setf (vx (location clipmap)) x)
-  (setf (vz (location clipmap)) y))
+  (setf (vx (previous-update-location clipmap)) x)
+  (setf (vz (previous-update-location clipmap)) y))
 
-(defmethod maybe-show-region ((clipmap geometry-clipmap) x y)
-  (let ((loc (location clipmap))
+(defmethod maybe-update-region ((clipmap geometry-clipmap))
+  (let ((prev (previous-update-location clipmap))
+        (x (vx (location clipmap)))
+        (y (vz (location clipmap)))
         (s 1))
     (dotimes (l (levels clipmap) clipmap)
-      ;(v:info :test "~a ~a ~a ~a" x y (floor (- x (/ s 2)) s) (floor (- (vx loc) (/ s 2)) s))
       (with-simple-restart (continue "Ignore level ~d." l)
-        (when (or (/= (floor x s) (floor (vx loc) s))
-                  (/= (floor y s) (floor (vz loc) s)))
+        (when (or (/= (floor x s) (floor (vx prev) s))
+                  (/= (floor y s) (floor (vy prev) s)))
           (show-level clipmap x y l)))
       (setf s (* s 2)))
-    (setf (vx loc) x)
-    (setf (vz loc) y)))
+    (setf (vx prev) x)
+    (setf (vy prev) y)))
 
 (defmethod paint ((clipmap geometry-clipmap) (pass shader-pass))
+  (maybe-update-region clipmap)
   (let ((program (shader-program-for-pass pass clipmap))
         (levels (levels clipmap))
         (block (clipmap-block clipmap)))
@@ -161,7 +164,6 @@ layout (location = 0) in vec3 position;
 uniform mat4 view_matrix;
 uniform mat4 projection_matrix;
 uniform sampler2DArray height_map;
-uniform sampler2DArray splat_map;
 uniform int levels;
 uniform int level;
 uniform vec2 offset;
@@ -172,7 +174,8 @@ out CLIPMAP_DATA{
   float a;
   vec3 world;
   vec3 normal;
-  vec4 splat;
+  vec3 tex_i;
+  vec3 tex_o;
 } clipmap_out;
 
 void main(){
@@ -184,19 +187,20 @@ void main(){
   // Current level texture fetch
   vec2 tex_off = ((map_pos/4+0.5)-1/(n+1))*n;
   vec2 mov_off = mod(world_pos.xz, level_scale)*(4/n);
-  vec4 splat = texelFetch(splat_map, ivec3(tex_off, level), 0);
   float y = texelFetch(height_map, ivec3(tex_off, level), 0).r;
   float yu = texelFetch(height_map, ivec3(min(n-1, tex_off.x+1), tex_off.y, level), 0).r;
   float yv = texelFetch(height_map, ivec3(tex_off.x, min(n-1, tex_off.y+1), level), 0).r;
+  clipmap_out.tex_i = vec3(tex_off/n, level);
+  clipmap_out.tex_o = clipmap_out.tex_i;
   
   if(level+1 < levels){
     // Outer level texture read
     vec2 tex_off_o = (map_pos/8+0.5)+0.5/n-1/(n+1);
     vec2 mov_off_o = mod(world_pos.xz, level_scale*2)*(4/n);
-    vec4 splat_o = texture(splat_map, vec3(tex_off_o, level+1));
     float y_o = texture(height_map, vec3(tex_off_o, level+1)).r;
     float yu_o = texture(height_map, vec3(tex_off_o+vec2(1/n,0), level+1)).r;
     float yv_o = texture(height_map, vec3(tex_off_o+vec2(0,1/n), level+1)).r;
+    clipmap_out.tex_o = vec3(tex_off_o, level+1);
     
     // Inter-level blending factor
     vec2 alpha = clamp((abs(map_pos)-2)*BORDER+1, 0, 1);
@@ -204,7 +208,6 @@ void main(){
     
     // Interpolate final Y
     mov_off = mix(mov_off, mov_off_o, a);
-    splat = mix(splat, splat_o, a);
     y = mix(y, y_o, a);
     yu = mix(yu, yu_o, a);
     yv = mix(yv, yv_o, a);
@@ -215,59 +218,65 @@ void main(){
   clipmap_out.a = a;
   clipmap_out.world = world_pos + vec3(world_2d.x, y, world_2d.y)*map_scale;
   clipmap_out.normal = normalize(vec3(y-yu, 0.5, y-yv));
-  clipmap_out.splat = splat;
 
   gl_Position =  projection_matrix * view_matrix * vec4(clipmap_out.world, 1);
 }")
 
 ;; This shader ensures that zerod heights get a hole punched.
-(define-class-shader (geometry-clipmap :geometry-shader)
-  "#version 330 core
-layout(triangles) in;
-layout(triangle_strip, max_vertices = 3) out;
-in CLIPMAP_DATA{
-  float a;
-  vec3 world;
-  vec3 normal;
-  vec4 splat;
-} clipmap_in[];
-out CLIPMAP_DATA{
-  float a;
-  vec3 world;
-  vec3 normal;
-  vec4 splat;
-} clipmap_out;
+;; (define-class-shader (geometry-clipmap :geometry-shader)
+;;   "#version 330 core
+;; layout(triangles) in;
+;; layout(triangle_strip, max_vertices = 3) out;
+;; in CLIPMAP_DATA{
+;;   float a;
+;;   vec3 world;
+;;   vec3 normal;
+;;   vec3 tex_i;
+;;   vec3 tex_o;
+;; } clipmap_in[];
+;; out CLIPMAP_DATA{
+;;   float a;
+;;   vec3 world;
+;;   vec3 normal;
+;;   vec3 tex_i;
+;;   vec3 tex_o;
+;; } clipmap_out;
 
-void main(){
-  if(clipmap_in[0].world.y*clipmap_in[1].world.y*clipmap_in[2].world.y != 0){
-    int i;
-    for(i = 0;i < gl_in.length();i++){
-      clipmap_out.a = clipmap_in[i].a;
-      clipmap_out.world = clipmap_in[i].world;
-      clipmap_out.normal = clipmap_in[i].normal;
-      clipmap_out.splat = clipmap_in[i].splat;
-      gl_Position = gl_in[i].gl_Position;
-      EmitVertex();
-    }
-    EndPrimitive();
-  }
-}")
+;; void main(){
+;;   if(clipmap_in[0].world.y*clipmap_in[1].world.y*clipmap_in[2].world.y != 0){
+;;     int i;
+;;     for(i = 0;i < gl_in.length();i++){
+;;       clipmap_out.a = clipmap_in[i].a;
+;;       clipmap_out.world = clipmap_in[i].world;
+;;       clipmap_out.normal = clipmap_in[i].normal;
+;;       clipmap_out.tex_i = clipmap_in[i].tex_i;
+;;       clipmap_out.tex_o = clipmap_in[i].tex_o;
+;;       gl_Position = gl_in[i].gl_Position;
+;;       EmitVertex();
+;;     }
+;;     EndPrimitive();
+;;   }
+;; }")
 
 (define-class-shader (geometry-clipmap :fragment-shader)
   "
+uniform sampler2DArray splat_map;
+
 in CLIPMAP_DATA{
   float a;
   vec3 world;
   vec3 normal;
-  vec4 splat;
-} clipmap_in;
+  vec3 tex_i;
+  vec3 tex_o;
+} clipmap;
 out vec4 color;
 
 void main(){
-  vec3 light = vec3(1, 0, 1);
+  vec3 light = vec3(1, 0.5, 0.8);
   vec3 light_dir = normalize(light);
-  float diff = max(dot(clipmap_in.normal, light_dir), 0.0)*8+0.3;
-  vec3 diffuse = (clipmap_in.splat.g*vec3(1,1,1)+clipmap_in.splat.b*vec3(0.5,0.4,0.4)) * diff;
+  float diff = max(dot(clipmap.normal, light_dir)*10-2.7, 0.0);
+  vec4 splat = mix(texture(splat_map, clipmap.tex_i), texture(splat_map, clipmap.tex_o), clipmap.a);
+  vec3 diffuse = (splat.g*vec3(1,1,1)+(1-splat.g)*vec3(0.239,0.275,0.191)*0.7) * diff;
   color = vec4(diffuse, 1.0);
 }")
 
