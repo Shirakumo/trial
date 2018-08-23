@@ -3,23 +3,15 @@
 (define-pool workbench
   :base 'trial)
 
-(define-asset (workbench cube) mesh
-    (make-cube 10))
-
-(define-asset (workbench cat) image
-    #p"cat.png")
-
-(define-shader-subject player (vertex-entity textured-entity located-entity)
-  ()
-  (:default-initargs
-   :vertex-array (asset 'workbench 'cube)
-   :texture (asset 'workbench 'cat)))
-
-(define-handler (player mouse-move) (ev pos)
-  ;; (let ((world (screen->vec pos (width *context*) (height *context*))))
-  ;;   (setf (vx (location player)) (* 30000 (vx world)))
-  ;;   (setf (vz (location player)) (vy world)))
-  )
+(define-asset (workbench skybox) image
+    (list #p"masko-naive/posx.jpg"
+          #p"masko-naive/negx.jpg"
+          #p"masko-naive/posy.jpg"
+          #p"masko-naive/negy.jpg"
+          #p"masko-naive/posz.jpg"
+          #p"masko-naive/negz.jpg")
+  :target :texture-cube-map
+  :min-filter :linear)
 
 (defmethod update :after ((main main) tt dt)
   (let ((clipmap (unit :clipmap (scene main)))
@@ -30,16 +22,19 @@
                    (1 (vec 0 (- (- (mod (* 2 tt) 2048) 1024))))
                    (2 (vec (* 512 (sin (* 0.5 tt))) (* 512 (cos (* 0.5 tt)))))
                    (3 (vec (vx (location camera)) (vz (location camera)))))))
-        (maybe-show-region clipmap (vx loc) (vy loc))))))
+        (setf (vx (location clipmap)) (vx loc)
+              (vz (location clipmap)) (vy loc))))))
 
 (progn
   (defmethod setup-scene ((main main) scene)
+    (enter (make-instance 'skybox :texture (asset 'workbench 'skybox)) scene)
     (enter (make-instance 'geometry-clipmap :name :clipmap
                                             :map-scale (vec 2048 (* 12 2048) 2048)
-                                            :data-directory #p"~/clipmaps/") scene)
-    (enter (make-instance 'player :name :player) scene)
+                                            :resolution 1024
+                                            :data-directory #p"~/mountain/") scene)
     (enter (make-instance 'editor-camera :name :camera
-                                         :location (vec 0 (* 8 2048) 0)) scene)
+                                         :move-speed 0.1
+                                         :location (vec 0 (* 4 2048) 0)) scene)
     (enter (make-instance 'render-pass) scene))
 
   (maybe-reload-scene))
