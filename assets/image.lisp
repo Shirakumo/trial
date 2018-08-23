@@ -65,29 +65,22 @@
 
 (defmethod load-image (path (type (eql :jpeg)) &key)
   (multiple-value-bind (height width components) (jpeg:jpeg-file-dimensions path)
-    (let ((buffer (make-static-vector (* height width components) :element-type '(unsigned-byte 8))))
-      (with-cleanup-on-failure (maybe-free-static-vector buffer)
-        (let ((buf (jpeg:decode-image path)))
-          (dotimes (i height)
-            (dotimes (j width)
-              (dotimes (k components)
-                (setf (aref buffer (+ (* i width) (* j components) k))
-                      (aref buf (+ (* i height) (* j components) k)))))))
-        (values buffer
-                width
-                height
-                8
-                :unsigned
-                (ecase components
-                  (1 :red)
-                  (2 :rg)
-                  (3 :bgr)
-                  (4 :bgra)))))))
+    (values (jpeg:decode-image path)
+            width
+            height
+            8
+            :unsigned
+            (ecase components
+              (1 :red)
+              (2 :rg)
+              (3 :bgr)
+              (4 :bgra)))))
 
 (defmethod load-image (path (type (eql :jpg)) &rest args)
   (apply #'load-image path :jpeg args))
 
 (defmethod load-image (path (type (eql :raw)) &key width height depth pixel-type format)
+  (declare (optimize speed))
   (let ((depth (or depth 8)))
     (with-open-file (stream path :element-type (ecase pixel-type
                                                  ((NIL :unsigned) `(unsigned-byte ,depth))
@@ -100,6 +93,8 @@
              (c (format-components format))
              (width (or width (when height (/ (length data) height c)) (floor (sqrt (/ (length data) c)))))
              (height (or height (when width (/ (length data) width c)) (floor (sqrt (/ (length data) c))))))
+        (declare (type (unsigned-byte 8) c))
+        (declare (type (simple-array * (*)) data))
         (loop for reached = 0 then (read-sequence data stream :start reached)
               while (< reached (length data)))
         (values data
@@ -161,6 +156,7 @@
             (setf (pixel-data image) (list (pixel-data image)))
             (dolist (input (rest input))
               (multiple-value-bind (bits width height depth type pixel-format) (load-image input)
+                (assert (not (null bits)))
                 (when width
                   (assert (= width (width image))))
                 (when height

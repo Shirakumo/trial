@@ -93,30 +93,36 @@
   (let ((tex (gl-name texture)))
     (lambda () (when tex (gl:delete-textures (list tex))))))
 
-(defun coerce-pixel-data (pixel-data)
-  (etypecase pixel-data
-    (null
-     (cffi:null-pointer))
-    (cffi:foreign-pointer
-     pixel-data)
-    ((satisfies static-vector-p)
-     (static-vectors:static-vector-pointer pixel-data))))
+(defmacro with-pixel-data-pointer ((ptr data) &body body)
+  (let ((datag (gensym "DATA")))
+    `(let ((,datag ,data))
+       (flet ((thunk (,ptr) () ,@body))
+         (etypecase ,datag
+           (null
+            (thunk (cffi:null-pointer)))
+           (cffi:foreign-pointer
+            (thunk ,datag))
+           (vector
+            (if (static-vector-p ,datag)
+                (thunk (static-vectors:static-vector-pointer ,datag))
+                (with-pointer-to-vector-data (,ptr ,datag)
+                  (thunk ,ptr)))))))))
 
 (defun allocate-texture-storage (texture)
   (with-slots (target storage levels internal-format width height depth samples pixel-format pixel-type pixel-data) texture
-    (let ((internal-format (cffi:foreign-enum-value '%gl:enum internal-format))
-          (pixel-data (if (consp pixel-data)
-                          (mapcar #'coerce-pixel-data pixel-data)
-                          (coerce-pixel-data pixel-data))))
+    (let ((internal-format (cffi:foreign-enum-value '%gl:enum internal-format)))
+      ;; FIXME: Handle array cases better, factor this out into an update routine.
       (case target
         ((:texture-1d)
-         (ecase storage
-           (:dynamic (%gl:tex-image-1d target 0 internal-format width 0 pixel-format pixel-type pixel-data))
-           (:static (%gl:tex-storage-1d target levels internal-format width))))
+         (with-pixel-data-pointer (ptr pixel-data)
+           (ecase storage
+             (:dynamic (%gl:tex-image-1d target 0 internal-format width 0 pixel-format pixel-type ptr))
+             (:static (%gl:tex-storage-1d target levels internal-format width)))))
         ((:texture-2d :texture-1d-array)
-         (ecase storage
-           (:dynamic (%gl:tex-image-2d target 0 internal-format width height 0 pixel-format pixel-type pixel-data))
-           (:static (%gl:tex-storage-2d target levels internal-format width height))))
+         (with-pixel-data-pointer (ptr pixel-data)
+           (ecase storage
+             (:dynamic (%gl:tex-image-2d target 0 internal-format width height 0 pixel-format pixel-type ptr))
+             (:static (%gl:tex-storage-2d target levels internal-format width height)))))
         ((:texture-cube-map)
          (loop for target in '(:texture-cube-map-positive-x :texture-cube-map-negative-x
                                :texture-cube-map-positive-y :texture-cube-map-negative-y
@@ -125,18 +131,23 @@
                                pixel-data
                                (let ((c (cons pixel-data NIL)))
                                  (setf (cdr c) c)))
-               do (ecase storage
-                    (:dynamic (%gl:tex-image-2d target 0 internal-format width height 0 pixel-format pixel-type data))
-                    (:static (%gl:tex-storage-2d target levels internal-format width height)))))
+               do (with-pixel-data-pointer (ptr data)
+                    (ecase storage
+                      (:dynamic (%gl:tex-image-2d target 0 internal-format width height 0 pixel-format pixel-type ptr))
+                      (:static (%gl:tex-storage-2d target levels internal-format width height))))))
         ((:texture-3d :texture-2d-array)
          (ecase storage
-           (:dynamic (%gl:tex-image-3d target 0 internal-format width height depth 0 pixel-format pixel-type
-                                       (if (consp pixel-data) (cffi:null-pointer) pixel-data)))
+           (:dynamic (%gl:tex-image-3d target 0 internal-format width height depth 0 pixel-format pixel-type (cffi:null-pointer)))
            (:static (%gl:tex-storage-3d target levels internal-format width height depth)))
-         (when (consp pixel-data)
-           (loop for z from 0
-                 for data in pixel-data
-                 do (%gl:tex-sub-image-3d target 0 0 0 z width height 1 pixel-format pixel-type data))))
+         (typecase pixel-data
+           (list
+            (loop for z from 0
+                  for data in pixel-data
+                  do (with-pixel-data-pointer (ptr data)
+                       (%gl:tex-sub-image-3d target 0 0 0 z width height 1 pixel-format pixel-type ptr))))
+           ((not null)
+            (with-pixel-data-pointer (ptr pixel-data)
+              (%gl:tex-sub-image-3d target 0 0 0 0 width height depth pixel-format pixel-type ptr)))))
         ((:texture-2d-multisample)
          (%gl:tex-storage-2d-multisample target samples internal-format width height 1))
         ((:texture-2d-multisample-array)

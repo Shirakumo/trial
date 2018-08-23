@@ -348,9 +348,22 @@
   (cond ((subtypep type '(signed-byte 8)) :char)
         ((subtypep type '(unsigned-byte 32)) :uint)
         ((subtypep type '(signed-byte 32)) :int)
+        ((subtypep type '(unsigned-byte 64)) :ulong)
+        ((subtypep type '(signed-byte 64)) :long)
         ((subtypep type 'single-float) :float)
         ((subtypep type 'double-float) :double)
         (T (error "Don't know how to convert ~s to a GL type." type))))
+
+(defmacro with-pointer-to-vector-data ((ptr data) &body body)
+  (let ((datag (gensym "DATA")))
+    `(let ((,datag ,data))
+       #+sbcl
+       (sb-sys:with-pinned-objects (,datag)
+         (let ((,ptr (sb-sys:vector-sap ,datag)))
+           ,@body))
+       #-sbcl
+       (cffi:with-foreign-array (,ptr ,datag (cl-type->gl-type (array-element-type ,datag)))
+         ,@body))))
 
 (defun gl-type->cl-type (type)
   (ecase type
