@@ -65,7 +65,8 @@
          (y (+ y (/ s 2)))
          (l (* s (floor x s)))
          (u (* s (floor y s)))
-         (dir (data-directory clipmap)))
+         (dir (append (pathname-directory (data-directory clipmap))
+                      (list (princ-to-string s)))))
     ;; Update the texture buffer
     (labels ((picture (tex file x y)
                (cond ((probe-file file)
@@ -77,9 +78,7 @@
                         (dotimes (i 4) (setf (cffi:mem-aref data :uint64 i) 0))
                         (%gl:clear-tex-sub-image (gl-name tex) 0 x y 0 r r 1 (pixel-format tex) (pixel-type tex) data)))))
              (path (bank x y)
-               (merge-pathnames (make-pathname :name (format NIL "~a ~d ~d" bank x y) :type "raw"
-                                               :directory `(:relative ,(princ-to-string s)))
-                                dir))
+               (make-pathname :name (format NIL "~a ~d ~d" bank x y) :type "raw" :directory dir))
              (show-map (bank tex target)
                (gl:bind-texture :texture-2d (gl-name tex))
                (picture tex (path bank (+ l 0) (+ u 0)) 0 r)
