@@ -337,6 +337,8 @@
                    (T (write-char #\_ out))))))
 
 (defun check-gl-type (thing size &optional unsigned)
+  (declare (type (unsigned-byte 8) size))
+  (declare (optimize speed))
   (if unsigned
       (unless (<= 0 thing (expt 2 size))
         (error "~a does not fit within [0,2^~a]." thing size))
@@ -374,6 +376,7 @@
     (:double 'double-float)))
 
 (defun gl-coerce (thing type)
+  (declare (optimize speed))
   (ecase type
     ((:double :double-float)
      (float thing 0.0d0))
@@ -391,6 +394,33 @@
     ((:uchar :unsigned-char :unsigned-byte)
      (check-gl-type thing 8 T)
      (values (round thing)))))
+
+(define-compiler-macro gl-coerce (&whole whole &environment env thing type)
+  (if (constantp type env)
+      `(funcall (load-time-value
+                 (ecase ,type
+                   ((:double :double-float)
+                    (lambda (thing) (float thing 0.0d0)))
+                   ((:float :single-float)
+                    (lambda (thing) (float thing 0.0s0)))
+                   ((:int)
+                    (lambda (thing)
+                      (check-gl-type thing 32)
+                      (values (round thing))))
+                   ((:uint :unsigned-int)
+                    (lambda (thing)
+                      (check-gl-type thing 32 T)
+                      (values (round thing))))
+                   ((:char :byte)
+                    (lambda (thing)
+                      (check-gl-type thing 8)
+                      (values (round thing))))
+                   ((:uchar :unsigned-char :unsigned-byte)
+                    (lambda (thing)
+                      (check-gl-type thing 8 T)
+                      (values (round thing))))))
+                ,thing)
+      whole))
 
 (defun texture-internal-format->pixel-format (format)
   (ecase format
