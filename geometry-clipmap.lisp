@@ -9,7 +9,8 @@
 (defvar *default-clipmap-resolution* 128)
 
 (define-shader-entity geometry-clipmap (located-entity)
-  ((previous-update-location :initform (vec2 0 0) :accessor previous-update-location)
+  ((previous-update-location :initform (vec2 most-positive-single-float most-positive-single-float)
+                             :accessor previous-update-location)
    (clipmap-block :accessor clipmap-block)
    (levels :initarg :levels :accessor levels)
    (resolution :initarg :resolution :accessor resolution)
