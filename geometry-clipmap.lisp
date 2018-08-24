@@ -17,9 +17,7 @@
    (resolution :initarg :resolution :accessor resolution)
    (map-scale :initarg :map-scale :accessor map-scale)
    (height-map :accessor height-map)
-   (height-buffer :accessor height-buffer)
    (splat-map :accessor splat-map)
-   (splat-buffer :accessor splat-buffer)
    (data-directory :initarg :data-directory :accessor data-directory))
   (:default-initargs
    :levels 5
@@ -33,67 +31,66 @@
   (setf (clipmap-block clipmap) (make-clipmap-block resolution levels))
   (setf (height-map clipmap) (make-instance 'texture :target :texture-2d-array
                                                      :min-filter :linear
+                                                     :pixel-format :red
+                                                     :pixel-type :unsigned-short
                                                      :internal-format :r16
                                                      :width resolution
                                                      :height resolution
                                                      :depth levels
                                                      :storage :static))
-  (setf (height-buffer clipmap) (make-instance 'texture :target :texture-2d
-                                                        :min-filter :linear
-                                                        :pixel-format :red
-                                                        :pixel-type :unsigned-short
-                                                        :internal-format :r16
-                                                        :width (* 2 resolution)
-                                                        :height (* 2 resolution)
-                                                        :storage :static))
   (setf (splat-map clipmap) (make-instance 'texture :target :texture-2d-array
-                                                     :min-filter :linear
-                                                     :internal-format :rgba8
-                                                     :width resolution
-                                                     :height resolution
-                                                     :depth levels
-                                                     :storage :static))
-  (setf (splat-buffer clipmap) (make-instance 'texture :target :texture-2d
-                                                       :min-filter :linear
-                                                       :pixel-format :rgba
-                                                       :pixel-type :unsigned-byte
-                                                       :internal-format :rgba8
-                                                       :width (* 2 resolution)
-                                                       :height (* 2 resolution)
-                                                       :storage :static)))
+                                                    :min-filter :linear
+                                                    :pixel-format :rgba
+                                                    :pixel-type :unsigned-byte
+                                                    :internal-format :rgba8
+                                                    :width resolution
+                                                    :height resolution
+                                                    :depth levels
+                                                    :storage :static)))
 
-(defmethod show-level ((clipmap geometry-clipmap) x y level)
+(defmethod show-level ((clipmap geometry-clipmap) wcx wcy level)
   (let* ((cache (aref (mmap-cache clipmap) level))
-         (r (resolution clipmap))
-         (s (* r (expt 2 level)))
-         (x (- x (/ s 2)))
-         (y (+ y (/ s 2)))
-         (l (* s (floor x s)))
-         (u (* s (floor y s)))
+         (scale (expt 2 level))
+         (ts (resolution clipmap))
+         (ws (* ts scale))
+         (wx (- wcx (/ ws 2)))
+         (wy (- wcy (/ ws 2)))
+         (wl (* ws (floor wx ws)))
+         (wu (* ws (floor wy ws)))
+         (tx (floor wx scale))
+         (ty (floor wy scale))
+         (tl (floor wl scale))
+         (tu (floor wu scale))
+         (sx (- tx tl))
+         (sy (- ty tu))
+         (sw (- ts sx))
+         (sh (- ts sy))
          (new-cache ())
          (dir (data-directory clipmap)))
-    ;; Update the texture buffer
-    (labels ((picture (tex file x y)
-               (handler-case
-                   (let ((cached (or (assoc file cache :test #'equal)
-                                     (list* file (multiple-value-list (mmap:mmap file))))))
-                     (push cached new-cache)
-                     (%gl:tex-sub-image-2d :texture-2d 0 x y r r (pixel-format tex) (pixel-type tex) (second cached)))
-                 (mmap:mmap-error (e)
-                   (declare (ignore e)))))
-             (path (bank x y)
-               (format NIL "~a/~d/~a ~d ~d.raw" dir s bank x y))
-             (show-map (bank tex target)
-               (gl:bind-texture :texture-2d (gl-name tex))
-               (picture tex (path bank (+ l 0) (+ u 0)) 0 r)
-               (picture tex (path bank (+ l s) (+ u 0)) r r)
-               (picture tex (path bank (+ l s) (- u s)) r 0)
-               (picture tex (path bank (+ l 0) (- u s)) 0 0)
-               ;; FIXME: Requires GL 4.3
-               (%gl:copy-image-sub-data (gl-name tex) :texture-2d 0 (/ (- x l) (expt 2 level)) (/ (- y u) (expt 2 level)) 0
-                                        (gl-name target) :texture-2d-array 0 0 0 level r r 1)))
-      (show-map "height" (height-buffer clipmap) (height-map clipmap))
-      (show-map "splat" (splat-buffer clipmap) (splat-map clipmap))
+    (labels ((path (bank wx wy)
+               (format NIL "~a/~d/~a ~d ~d.raw" dir ws bank wx wy))
+             (picture (tex file sx sy x y w h bpp)
+               (when (and (< 0 w) (< 0 h))
+                 (handler-case
+                     (let ((cached (or (assoc file cache :test #'equal)
+                                       (list* file (multiple-value-list (mmap:mmap file))))))
+                       (push cached new-cache)
+                       (%gl:tex-sub-image-3d :texture-2d-array 0 x y level w h 1 (pixel-format tex) (pixel-type tex)
+                                             (cffi:inc-pointer (second cached) (* (+ (* ts sy) sx) bpp))))
+                   (mmap:mmap-error (e)
+                     (declare (ignore e))))))
+             (show-map (bank tex bpp)
+               (gl:bind-texture :texture-2d-array (gl-name tex))
+               (picture tex (path bank (+ wl  0) (+ wu  0)) sx sy   0  0  sw sh  bpp)
+               (picture tex (path bank (+ wl ws) (+ wu  0))  0 sy  sw  0  sx sh  bpp)
+               (picture tex (path bank (+ wl  0) (+ wu ws)) sx  0   0 sh  sw sy  bpp)
+               (picture tex (path bank (+ wl ws) (+ wu ws))  0  0  sw sh  sx sy  bpp)))
+      ;; Update the texture buffer
+      (gl:pixel-store :unpack-row-length ts)
+      (show-map "height" (height-map clipmap) 2)
+      (show-map "splat" (splat-map clipmap) 4)
+      (gl:pixel-store :unpack-row-length 0)
+      ;; Update mmap cache
       (let ((to-unmap (set-difference cache new-cache)))
         (loop for cached in to-unmap do (apply #'mmap:munmap (rest cached))))
       (setf (aref (mmap-cache clipmap) level) new-cache))))
