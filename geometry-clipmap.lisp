@@ -11,6 +11,7 @@
 (define-shader-entity geometry-clipmap (located-entity)
   ((previous-update-location :initform (vec2 most-positive-single-float most-positive-single-float)
                              :accessor previous-update-location)
+   (mmap-cache :accessor mmap-cache)
    (clipmap-block :accessor clipmap-block)
    (levels :initarg :levels :accessor levels)
    (resolution :initarg :resolution :accessor resolution)
@@ -26,7 +27,9 @@
    :resolution *default-clipmap-resolution*
    :data-directory (error "DATA-DIRECTORY required.")))
 
-(defmethod initialize-instance :after ((clipmap geometry-clipmap) &key levels resolution)
+(defmethod initialize-instance :after ((clipmap geometry-clipmap) &key levels resolution data-directory)
+  (setf (data-directory clipmap) (uiop:native-namestring (make-pathname :name NIL :type NIL :defaults data-directory)))
+  (setf (mmap-cache clipmap) (make-array levels :initial-element ()))
   (setf (clipmap-block clipmap) (make-clipmap-block resolution levels))
   (setf (height-map clipmap) (make-instance 'texture :target :texture-2d-array
                                                      :min-filter :linear
@@ -60,26 +63,26 @@
                                                        :storage :static)))
 
 (defmethod show-level ((clipmap geometry-clipmap) x y level)
-  (let* ((r (resolution clipmap))
+  (let* ((cache (aref (mmap-cache clipmap) level))
+         (r (resolution clipmap))
          (s (* r (expt 2 level)))
          (x (- x (/ s 2)))
          (y (+ y (/ s 2)))
          (l (* s (floor x s)))
          (u (* s (floor y s)))
-         (dir (append (pathname-directory (data-directory clipmap))
-                      (list (princ-to-string s)))))
+         (new-cache ())
+         (dir (data-directory clipmap)))
     ;; Update the texture buffer
     (labels ((picture (tex file x y)
-               (cond ((probe-file file)
-                      (mmap:with-mmap (ptr fd size file)
-                        (%gl:tex-sub-image-2d :texture-2d 0 x y r r (pixel-format tex) (pixel-type tex) ptr)))
-                     (T
-                      ;; FIXME: Requires GL 4.4
-                      (cffi:with-foreign-object (data :uint64 4)
-                        (dotimes (i 4) (setf (cffi:mem-aref data :uint64 i) 0))
-                        (%gl:clear-tex-sub-image (gl-name tex) 0 x y 0 r r 1 (pixel-format tex) (pixel-type tex) data)))))
+               (handler-case
+                   (let ((cached (or (assoc file cache :test #'equal)
+                                     (list* file (multiple-value-list (mmap:mmap file))))))
+                     (push cached new-cache)
+                     (%gl:tex-sub-image-2d :texture-2d 0 x y r r (pixel-format tex) (pixel-type tex) (second cached)))
+                 (mmap:mmap-error (e)
+                   (declare (ignore e)))))
              (path (bank x y)
-               (make-pathname :name (format NIL "~a ~d ~d" bank x y) :type "raw" :directory dir))
+               (format NIL "~a/~d/~a ~d ~d.raw" dir s bank x y))
              (show-map (bank tex target)
                (gl:bind-texture :texture-2d (gl-name tex))
                (picture tex (path bank (+ l 0) (+ u 0)) 0 r)
@@ -90,7 +93,10 @@
                (%gl:copy-image-sub-data (gl-name tex) :texture-2d 0 (/ (- x l) (expt 2 level)) (/ (- y u) (expt 2 level)) 0
                                         (gl-name target) :texture-2d-array 0 0 0 level r r 1)))
       (show-map "height" (height-buffer clipmap) (height-map clipmap))
-      (show-map "splat" (splat-buffer clipmap) (splat-map clipmap)))))
+      (show-map "splat" (splat-buffer clipmap) (splat-map clipmap))
+      (let ((to-unmap (set-difference cache new-cache)))
+        (loop for cached in to-unmap do (apply #'mmap:munmap (rest cached))))
+      (setf (aref (mmap-cache clipmap) level) new-cache))))
 
 (defmethod show-region ((clipmap geometry-clipmap) x y)
   (dotimes (l (levels clipmap) clipmap)
