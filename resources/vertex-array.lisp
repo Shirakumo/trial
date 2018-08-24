@@ -34,7 +34,8 @@
                                                      (size 3)
                                                      (stride 0)
                                                      (offset 0)
-                                                     (normalized NIL))
+                                                     (normalized NIL)
+                                                     (instancing 0))
                         (enlist binding)
                       (check-allocated buffer)
                       (gl:bind-buffer (buffer-type buffer) (gl-name buffer))
@@ -45,6 +46,7 @@
                          (decf i))
                         (:array-buffer
                          (gl:vertex-attrib-pointer index size (element-type buffer) normalized stride offset)
-                         (gl:enable-vertex-attrib-array index)))))
+                         (gl:enable-vertex-attrib-array index)
+                         (%gl:vertex-attrib-divisor index instancing)))))
         (gl:bind-vertex-array 0)
         (setf (data-pointer array) vao)))))
