@@ -26,7 +26,7 @@
    :data-directory (error "DATA-DIRECTORY required.")))
 
 (defmethod initialize-instance :after ((clipmap geometry-clipmap) &key levels resolution)
-  (setf (clipmap-block clipmap) (make-clipmap-block resolution))
+  (setf (clipmap-block clipmap) (make-clipmap-block resolution levels))
   (setf (height-map clipmap) (make-instance 'texture :target :texture-2d-array
                                                      :min-filter :linear
                                                      :internal-format :r16
@@ -129,30 +129,9 @@
     (setf (uniform program "projection_matrix") (projection-matrix))
     (setf (uniform program "world_pos") (location clipmap))
     (setf (uniform program "levels") levels)
-    (setf (uniform program "level") 0)
     (setf (uniform program "map_scale") (map-scale clipmap))
-    (flet ((paint (x z)
-             (setf (uniform program "offset") (vec x z))
-             (%gl:draw-elements :triangles (size block) :unsigned-int 0)))
-      (paint +0.5 +0.5)
-      (paint +0.5 -0.5)
-      (paint -0.5 -0.5)
-      (paint -0.5 +0.5)
-      (loop for level from 0 below levels
-            do (setf (uniform program "level") level)
-               ;; FIXME: use instancing for this
-               (paint +1.5 +1.5)
-               (paint +0.5 +1.5)
-               (paint -0.5 +1.5)
-               (paint -1.5 +1.5)
-               (paint -1.5 +0.5)
-               (paint -1.5 -0.5)
-               (paint -1.5 -1.5)
-               (paint -0.5 -1.5)
-               (paint +0.5 -1.5)
-               (paint +1.5 -1.5)
-               (paint +1.5 -0.5)
-               (paint +1.5 +0.5)))))
+    (%gl:draw-elements-instanced :triangles (size block) :unsigned-int 0
+                                 (+ 4 (* 12 levels)))))
 
 (define-class-shader (geometry-clipmap :vertex-shader)
   "
@@ -160,13 +139,13 @@
 #define BORDER 2.0
 
 layout (location = 0) in vec3 position;
+layout (location = 1) in float level;
+layout (location = 2) in vec2 offset;
 
 uniform mat4 view_matrix;
 uniform mat4 projection_matrix;
 uniform sampler2DArray height_map;
 uniform int levels;
-uniform int level;
-uniform vec2 offset;
 uniform vec3 world_pos;
 uniform vec3 map_scale = vec3(1,1,1);
 
@@ -280,10 +259,37 @@ void main(){
   color = vec4(diffuse, 1.0);
 }")
 
-(defun make-clipmap-block (n)
-  (let ((m (/ n 4))
-        (s (/ 4 n)))
-    (change-class (make-quad-grid s m m) 'vertex-array)))
+(defun make-clipmap-block (n levels)
+  (let* ((m (/ n 4))
+         (s (/ 4 n))
+         (vao (change-class (make-quad-grid s m m) 'vertex-array))
+         (array (make-array (* 3 (+ 4 (* 12 levels))) :element-type 'single-float))
+         (vbo (make-instance 'vertex-buffer :buffer-data array))
+         (i -1))
+    (flet ((entry (i l x y)
+             (setf (aref array (+ (* i 3) 0)) (float l 0f0))
+             (setf (aref array (+ (* i 3) 1)) x)
+             (setf (aref array (+ (* i 3) 2)) y)))
+      (entry (incf i) 0 +0.5 +0.5)
+      (entry (incf i) 0 +0.5 -0.5)
+      (entry (incf i) 0 -0.5 -0.5)
+      (entry (incf i) 0 -0.5 +0.5)
+      (loop for l from 0 below levels
+            do (entry (incf i) l +1.5 +1.5)
+               (entry (incf i) l +0.5 +1.5)
+               (entry (incf i) l -0.5 +1.5)
+               (entry (incf i) l -1.5 +1.5)
+               (entry (incf i) l -1.5 +0.5)
+               (entry (incf i) l -1.5 -0.5)
+               (entry (incf i) l -1.5 -1.5)
+               (entry (incf i) l -0.5 -1.5)
+               (entry (incf i) l +0.5 -1.5)
+               (entry (incf i) l +1.5 -1.5)
+               (entry (incf i) l +1.5 -0.5)
+               (entry (incf i) l +1.5 +0.5)))
+    (push (list vbo :index 1 :offset 0 :size 1 :stride (* 3 4) :instancing 1) (bindings vao))
+    (push (list vbo :index 2 :offset 4 :size 2 :stride (* 3 4) :instancing 1) (bindings vao))
+    vao))
 
 (defun sub-image (pixels ow c x y w h &optional out-pixels)
   (let ((out-pixels (or out-pixels (make-array (* w h c)
