@@ -12,7 +12,7 @@
   (:default-initargs
    :name :camera
    :location (vec 0 30 200)
-   :near-plane 0.01f0
+   :near-plane 1f0
    :far-plane 1000000.0f0))
 
 (define-generic-handler (camera project-view tick -100))
