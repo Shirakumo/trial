@@ -95,13 +95,6 @@
         (loop for cached in to-unmap do (apply #'mmap:munmap (rest cached))))
       (setf (aref (mmap-cache clipmap) level) new-cache))))
 
-(defmethod show-region ((clipmap geometry-clipmap) x y)
-  (dotimes (l (levels clipmap) clipmap)
-    (with-simple-restart (continue "Ignore level ~d." l)
-      (show-level clipmap x y l)))
-  (setf (vx (previous-update-location clipmap)) x)
-  (setf (vz (previous-update-location clipmap)) y))
-
 (defmethod maybe-update-region ((clipmap geometry-clipmap))
   (let ((prev (previous-update-location clipmap))
         (x (vx (location clipmap)))
@@ -115,6 +108,11 @@
       (setf s (* s 2)))
     (setf (vx prev) x)
     (setf (vy prev) y)))
+
+(defmethod show-region ((clipmap geometry-clipmap) x y)
+  (setf (vx (location clipmap)) x)
+  (setf (vz (location clipmap)) y)
+  (maybe-update-region clipmap))
 
 (defmethod paint ((clipmap geometry-clipmap) (pass shader-pass))
   (maybe-update-region clipmap)
