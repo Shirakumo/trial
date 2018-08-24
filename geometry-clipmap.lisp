@@ -70,7 +70,7 @@
     ;; Update the texture buffer
     (labels ((picture (tex file x y)
                (cond ((probe-file file)
-                      (with-mmap (ptr size file)
+                      (mmap:with-mmap (ptr size file)
                         (%gl:tex-sub-image-2d :texture-2d 0 x y r r (pixel-format tex) (pixel-type tex) ptr)))
                      (T
                       ;; FIXME: Requires GL 4.4
