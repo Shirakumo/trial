@@ -70,7 +70,7 @@
     ;; Update the texture buffer
     (labels ((picture (tex file x y)
                (cond ((probe-file file)
-                      (mmap:with-mmap (ptr size file)
+                      (mmap:with-mmap (ptr fd size file)
                         (%gl:tex-sub-image-2d :texture-2d 0 x y r r (pixel-format tex) (pixel-type tex) ptr)))
                      (T
                       ;; FIXME: Requires GL 4.4
@@ -117,6 +117,7 @@
   (let ((program (shader-program-for-pass pass clipmap))
         (levels (levels clipmap))
         (block (clipmap-block clipmap)))
+    ;; (gl:polygon-mode :front-and-back :fill)
     (gl:active-texture :texture0)
     (gl:bind-texture :texture-2d-array (gl-name (height-map clipmap)))
     (gl:active-texture :texture1)
