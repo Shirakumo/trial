@@ -137,8 +137,10 @@
 
 (define-class-shader (geometry-clipmap :vertex-shader)
   "
-// Factor for the width of the blending border. Higher means smaller.
-#define BORDER 2.0
+// These factors are in [0,1], denoting the range between the
+// outer ring (0) and the inner ring (1).
+#define BORDER_OFFSET 0.1
+#define BORDER_WIDTH 0.25
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in float level;
@@ -162,12 +164,12 @@ out CLIPMAP_DATA{
 void main(){
   float level_scale = pow(2.0, level);
   float n = textureSize(height_map, 0).x;
-  vec2 map_pos = position.xz + offset;
+  vec2 map_pos = (position.xz + offset)/4;
   
   float a = 0;
   // Current level texture fetch
-  vec2 tex_off = ((map_pos/4+0.5)-1/(n+1))*n;
-  vec2 mov_off = mod(world_pos.xz, level_scale)*(4/n);
+  vec2 tex_off = ((map_pos+0.5)-1/(n+1))*n;
+  vec2 mov_off = mod(world_pos.xz, level_scale)/n;
   float y = texelFetch(height_map, ivec3(tex_off, level), 0).r;
   float yu = texelFetch(height_map, ivec3(min(n-1, tex_off.x+1), tex_off.y, level), 0).r;
   float yv = texelFetch(height_map, ivec3(tex_off.x, min(n-1, tex_off.y+1), level), 0).r;
@@ -176,16 +178,22 @@ void main(){
   
   if(level+1 < levels){
     // Outer level texture read
-    vec2 tex_off_o = (map_pos/8+0.5)+0.5/n-1/(n+1);
-    vec2 mov_off_o = mod(world_pos.xz, level_scale*2)*(4/n);
+    vec2 tex_off_o = (map_pos/2+0.5)-0.5/n;
+    vec2 mov_off_o = mod(world_pos.xz, level_scale*2)/n;
     float y_o = texture(height_map, vec3(tex_off_o, level+1)).r;
     float yu_o = texture(height_map, vec3(tex_off_o+vec2(1/n,0), level+1)).r;
     float yv_o = texture(height_map, vec3(tex_off_o+vec2(0,1/n), level+1)).r;
-    clipmap_out.tex_o = vec3(tex_off_o, level+1);
     
     // Inter-level blending factor
-    vec2 alpha = clamp((abs(map_pos)-2)*BORDER+1, 0, 1);
+    vec2 alpha = (abs(map_pos)*2-0.5)*2;
+    alpha = clamp((alpha+BORDER_OFFSET-(1-BORDER_WIDTH))/BORDER_WIDTH, 0, 1);
     a = max(alpha.x, alpha.y);
+    
+    // This is ALMOST perfect. There's a slight problem that's only really well
+    // visible at low resolutions where off by 2 factors between regions cause the
+    // blended region to pop. I have experimented for a while and haven't found a
+    // perfect formula to remedy that yet, unfortunately.
+    clipmap_out.tex_o = vec3(tex_off_o-a/(2*n), level+1);
     
     // Interpolate final Y
     mov_off = mix(mov_off, mov_off_o, a);
@@ -203,42 +211,6 @@ void main(){
   gl_Position =  projection_matrix * view_matrix * vec4(clipmap_out.world, 1);
 }")
 
-;; This shader ensures that zerod heights get a hole punched.
-;; (define-class-shader (geometry-clipmap :geometry-shader)
-;;   "#version 330 core
-;; layout(triangles) in;
-;; layout(triangle_strip, max_vertices = 3) out;
-;; in CLIPMAP_DATA{
-;;   float a;
-;;   vec3 world;
-;;   vec3 normal;
-;;   vec3 tex_i;
-;;   vec3 tex_o;
-;; } clipmap_in[];
-;; out CLIPMAP_DATA{
-;;   float a;
-;;   vec3 world;
-;;   vec3 normal;
-;;   vec3 tex_i;
-;;   vec3 tex_o;
-;; } clipmap_out;
-
-;; void main(){
-;;   if(clipmap_in[0].world.y*clipmap_in[1].world.y*clipmap_in[2].world.y != 0){
-;;     int i;
-;;     for(i = 0;i < gl_in.length();i++){
-;;       clipmap_out.a = clipmap_in[i].a;
-;;       clipmap_out.world = clipmap_in[i].world;
-;;       clipmap_out.normal = clipmap_in[i].normal;
-;;       clipmap_out.tex_i = clipmap_in[i].tex_i;
-;;       clipmap_out.tex_o = clipmap_in[i].tex_o;
-;;       gl_Position = gl_in[i].gl_Position;
-;;       EmitVertex();
-;;     }
-;;     EndPrimitive();
-;;   }
-;; }")
-
 (define-class-shader (geometry-clipmap :fragment-shader)
   "
 uniform sampler2DArray splat_map;
@@ -253,7 +225,7 @@ in CLIPMAP_DATA{
 out vec4 color;
 
 void main(){
-  vec3 light = vec3(1, 0.5, 0.8);
+  vec3 light = vec3(0.8, 0.45, 0.9);
   vec3 light_dir = normalize(light);
   float diff = max(dot(clipmap.normal, light_dir)*10-2.7, 0.0);
   vec4 splat = mix(texture(splat_map, clipmap.tex_i), texture(splat_map, clipmap.tex_o), clipmap.a);
@@ -329,11 +301,10 @@ void main(){
 
 (defun generate-clipmaps (input output &key (n *default-clipmap-resolution*) (levels 5) ((:x xoff) 0) ((:y yoff) 0)
                                             depth pixel-type (format :red) (bank "height"))
+  (format T "~& Reading image data ~a ...~%" input)
   (multiple-value-bind (bits w h depth type format) (load-image input T :depth depth
                                                                         :pixel-type pixel-type
                                                                         :format format)
-    
-    (print (list w h depth type format (array-element-type bits)))
     ;; FIXME: remove this constraint
     (assert (eql w h))
     (let* ((w (or w (sqrt (length bits))))
