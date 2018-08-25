@@ -11,6 +11,7 @@
 (define-shader-entity geometry-clipmap (located-entity)
   ((previous-update-location :initform (vec2 most-positive-single-float most-positive-single-float)
                              :accessor previous-update-location)
+   (current-height :accessor current-height)
    (mmap-cache :accessor mmap-cache)
    (clipmap-block :accessor clipmap-block)
    (levels :initarg :levels :accessor levels)
@@ -75,6 +76,15 @@
                      (let ((cached (or (assoc file cache :test #'equal)
                                        (list* file (multiple-value-list (mmap:mmap file))))))
                        (push cached new-cache)
+                       ;; Pretty dumb.
+                       (when (and (= 0 level) (= 2 bpp)
+                                  (<= (/ ts 2) w) (<= (/ ts 2) h))
+                         (setf (current-height clipmap)
+                               (* (cffi:mem-aref (second cached) :uint16
+                                                 (+ (* ts (+ (/ ts 2) (if (= 0 y) sy (- y))))
+                                                    (+ (/ ts 2) (if (= 0 x) sx (- x)))))
+                                  (/ (expt 2.0 16))
+                                  (vy (map-scale clipmap)))))
                        (%gl:tex-sub-image-3d :texture-2d-array 0 x y level w h 1 (pixel-format tex) (pixel-type tex)
                                              (cffi:inc-pointer (second cached) (* (+ (* ts sy) sx) bpp))))
                    (mmap:mmap-error (e)

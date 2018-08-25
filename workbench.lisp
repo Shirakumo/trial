@@ -21,20 +21,22 @@
                    (0 (vec 0 0))
                    (1 (vec 0 (- (- (mod (* 2 tt) 2048) 1024))))
                    (2 (vec (* 512 (sin (* 0.5 tt))) (* 512 (cos (* 0.5 tt)))))
-                   (3 (vec (vx (location camera)) (vz (location camera)))))))
+                   (3 (vec (vx (location camera)) (vz (location camera))))
+                   (4 (vec (vx (location clipmap)) (vz (location clipmap)))))))
         (setf (vx (location clipmap)) (vx loc)
-              (vz (location clipmap)) (vy loc))))))
+              (vz (location clipmap)) (vy loc))
+        (setf (vy (location camera)) (+ 10 (current-height clipmap)))))))
 
 (progn
   (defmethod setup-scene ((main main) scene)
     (enter (make-instance 'skybox :texture (asset 'workbench 'skybox)) scene)
     (enter (make-instance 'geometry-clipmap :name :clipmap
-                                            :map-scale (vec 2048 (* 12 2048) 2048)
+                                            :map-scale (vec 128 512 128)
                                             :resolution 1024
                                             :data-directory #p"~/mountain/") scene)
     (enter (make-instance 'editor-camera :name :camera
-                                         :move-speed 0.1
-                                         :location (vec 0 (* 4 2048) 0)) scene)
+                                         :move-speed 0.5
+                                         :location (vec 0 128 0)) scene)
     (enter (make-instance 'render-pass) scene))
 
   (maybe-reload-scene))
