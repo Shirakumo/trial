@@ -9,7 +9,7 @@
 (defclass image (gl-asset texture)
   ())
 
-(defgeneric load-image (path type &key width height depth pixel-type format &allow-other-keys))
+(defgeneric load-image (path type &key width height pixel-type pixel-format &allow-other-keys))
 
 (defmethod load-image (path (type (eql :tga)) &key)
   (let* ((tga (tga:read-tga path))
@@ -19,9 +19,7 @@
       (values buffer
               (tga:image-width tga)
               (tga:image-height tga)
-              (/ (tga:image-bpp tga)
-                 (tga:image-channels tga))
-              :unsigned
+              (infer-pixel-type (tga:image-bpp tga) :unsigned)
               (ecase (tga:image-channels tga)
                 (3 :bgr)
                 (4 :bgra))))))
@@ -33,15 +31,12 @@
       (values (pngload:data png)
               (pngload:width png)
               (pngload:height png)
-              (pngload:bit-depth png)
-              :unsigned
+              (infer-pixel-type (pngload:bit-depth png) :unsigned)
               (ecase (pngload:color-type png)
                 (:greyscale :red)
                 (:greyscale-alpha :rg)
                 (:truecolour :rgb)
-                (:truecolour-alpha :rgba)
-                (:indexed-colour
-                 (error "FIXME: Can't deal with indexed colour.")))))))
+                (:truecolour-alpha :rgba))))))
 
 (defmethod load-image (path (type (eql :tiff)) &key)
   (let* ((tiff (retrospectiff:read-tiff-file path))
@@ -53,8 +48,7 @@
       (values buffer
               (retrospectiff:tiff-image-width tiff)
               (retrospectiff:tiff-image-length tiff)
-              bits
-              :unsigned
+              (infer-pixel-type bits :unsigned)
               (ecase (retrospectiff:tiff-image-samples-per-pixel tiff)
                 (1 :red)
                 (3 :rgb)
@@ -68,8 +62,7 @@
     (values (jpeg:decode-image path)
             width
             height
-            8
-            :unsigned
+            :unsigned-byte
             (ecase components
               (1 :red)
               (2 :rg)
@@ -79,36 +72,44 @@
 (defmethod load-image (path (type (eql :jpg)) &rest args)
   (apply #'load-image path :jpeg args))
 
-(defmethod load-image (path (type (eql :raw)) &key width height depth pixel-type format)
+(defmethod load-image (path (type (eql :raw)) &key width height pixel-type pixel-format)
   (declare (optimize speed))
-  (let ((depth (or depth 8)))
-    (with-open-file (stream path :element-type (ecase pixel-type
-                                                 ((NIL :unsigned) `(unsigned-byte ,depth))
-                                                 (:signed `(signed-byte ,depth))
-                                                 (:float (ecase depth
-                                                           (16 'short-float)
-                                                           (32 'single-float)
-                                                           (64 'double-float)))))
-      (let* ((data (make-static-vector (file-length stream) :element-type (stream-element-type stream)))
-             (c (format-components format))
-             (width (or width (when height (/ (length data) height c)) (floor (sqrt (/ (length data) c)))))
-             (height (or height (when width (/ (length data) width c)) (floor (sqrt (/ (length data) c))))))
-        (declare (type (unsigned-byte 8) c))
-        (declare (type (simple-array * (*)) data))
-        (loop for reached = 0 then (read-sequence data stream :start reached)
-              while (< reached (length data)))
-        (values data
-                width
-                height
-                depth
-                pixel-type
-                format)))))
+  (with-open-file (stream path :element-type '(unsigned-byte 8))
+    (let* ((data (make-static-vector (file-length stream) :element-type (ecase pixel-type
+                                                                          (:float 'single-float)
+                                                                          (:byte '(signed-byte 8))
+                                                                          (:short '(signed-byte 16))
+                                                                          (:int '(signed-byte 32))
+                                                                          (:unsigned-byte '(unsigned-byte 8))
+                                                                          (:unsigned-short '(unsigned-byte 16))
+                                                                          (:unsigned-int '(unsigned-byte 32)))))
+           (c (internal-format-components pixel-format))
+           (width (or width (when height (/ (length data) height c)) (floor (sqrt (/ (length data) c)))))
+           (height (or height (when width (/ (length data) width c)) (floor (sqrt (/ (length data) c)))))
+           (reader (ecase pixel-type
+                     (:float (lambda (b) (ieee-floats:decode-float32 (fast-io:readu32-le b))))
+                     (:byte #'fast-io:read8-le)
+                     (:short #'fast-io:read16-le)
+                     (:int #'fast-io:read32-le)
+                     (:unsigned-byte #'fast-io:readu8-le)
+                     (:unsigned-short #'fast-io:readu16-le)
+                     (:unsigned-int #'fast-io:readu32-le))))
+      (declare (type (unsigned-byte 8) c))
+      (declare (type (simple-array * (*)) data))
+      (fast-io:with-fast-input (buffer NIL stream)
+        (loop for i from 0 below (length data)
+              do (setf (aref data i) (funcall reader buffer))))
+      (values data
+              width
+              height
+              pixel-type
+              pixel-format))))
 
 (defmethod load-image (path (type (eql :r16)) &rest args)
-  (apply #'load-image path :raw :depth 16 :pixel-type :float args))
+  (apply #'load-image path :raw :pixel-type :half-float args))
 
 (defmethod load-image (path (type (eql :r32)) &rest args)
-  (apply #'load-image path :raw :depth 32 :pixel-type :float args))
+  (apply #'load-image path :raw :pixel-type :float args))
 
 (defmethod load-image (path (type (eql :ter)) &key)
   (let ((terrain (terrable:read-terrain path)))
@@ -116,8 +117,7 @@
     (values (terrable:data terrain)
             (terrable:width terrain)
             (terrable:height terrain)
-            16
-            :signed
+            :signed-short
             :red)))
 
 (defmethod load-image (path (type (eql T)) &rest args)
@@ -137,10 +137,11 @@
              (with-retry-restart (retry "Retry loading the image path.")
                (load-image path T)))))
     (let ((input (coerce-asset-input image T)))
-      (multiple-value-bind (bits width height depth type pixel-format) (load-image (unlist input))
+      (multiple-value-bind (bits width height pixel-type pixel-format) (load-image (unlist input))
         (assert (not (null bits)))
         (with-unwind-protection (mapcar #'free-image-data (enlist (pixel-data image)))
           ;; FIXME: Maybe attempt to reconcile/compare user-provided data?
+          ;; FIXME: This whole crap needs to be revised to allow updates anyway
           (setf (pixel-data image) bits)
           (when width
             (setf (width image) width))
@@ -148,14 +149,14 @@
             (setf (height image) height))
           (when pixel-format
             (setf (pixel-format image) pixel-format))
-          (when (and depth type)
-            (setf (pixel-type image) (infer-pixel-type depth type)))
-          (when (and depth type pixel-format)
-            (setf (internal-format image) (infer-internal-format depth type pixel-format)))
+          (when pixel-type
+            (setf (pixel-type image) pixel-type))
+          (when (and pixel-format pixel-type)
+            (setf (internal-format image) (infer-internal-format pixel-type pixel-format)))
           (when (listp input)
             (setf (pixel-data image) (list (pixel-data image)))
             (dolist (input (rest input))
-              (multiple-value-bind (bits width height depth type pixel-format) (load-image input)
+              (multiple-value-bind (bits width height pixel-type pixel-format) (load-image input)
                 (assert (not (null bits)))
                 (when width
                   (assert (= width (width image))))
@@ -163,10 +164,8 @@
                   (assert (= height (height image))))
                 (when pixel-format
                   (assert (eq pixel-format (pixel-format image))))
-                (when (and depth type)
-                  (assert (eq (infer-pixel-type depth type) (pixel-type image))))
-                (when (and depth type pixel-format)
-                  (assert (eq (infer-internal-format depth type pixel-format) (internal-format image))))
+                (when pixel-type
+                  (assert (eq pixel-type (pixel-type image))))
                 (push bits (pixel-data image))))
             (setf (pixel-data image) (nreverse (pixel-data image))))
           (allocate image))))))

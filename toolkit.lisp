@@ -593,3 +593,101 @@
   :color-attachment0 :color-attachment1 :color-attachment2 :color-attachment3
   :color-attachment4 :color-attachment5 :color-attachment6 :color-attachment7
   :depth-attachment :stencil-attachment :depth-stencil-attachment)
+
+(defun internal-format-components (format)
+  (case format
+    ((:red :r8 :r8-snorm :r8i :r8ui
+      :r16 :r16-snorm :r16f :r16i :r16ui
+      :r32f :r32i :r32ui
+      :compressed-red :compressed-red-rgtc1
+      :compressed-signed-red-rgtc1) 1)
+    ((:rg :rg8 :rg8-snorm :rg8i :rg8ui
+      :rg16 :rg16-snorm :rg16f :rg16i :rg16ui
+      :compressed-rg :compressed-rg-rgtc2 :compressed-signed-rg-rgtc2) 2)
+    ((:rg32f :rg32i :rg32ui
+      :rgb :rgb8 :rgb8-snorm :rgb8i :rgb8ui
+      :r3-g3-b2 :rgb4 :rgb5 :rgb9-e5 :rgb10 :r11f-g11f-b10f :rgb12
+      :rgb16-snorm :rgb16f :rgb16i :rgb16ui
+      :rgb32f :rgb32i :rgb32ui :srgb8
+      :compressed-rgb :compressed-rgb-bptc-signed-float
+      :compressed-rgb-bptc-unsigned-float :compressed-srgb) 3)
+    ((:rgba :rgba2 :rgba4 :rgb5-a1 :rgb10-a2 :rgb10-a2ui :rgba12
+      :rgba8 :rgba8-snorm :rgba8i :rgba8ui
+      :rgba16 :rgba16f :rgba16i :rgba16ui
+      :rgba32f :rgba32i :rgba32ui :srgb8-alpha8
+      :compressed-rgba :compressed-rgba-bptc-unorm
+      :compressed-srgb-alpha :compressed-srgb-alpha-bptc-unorm) 4)
+    ((:depth-component :depth-component16 :depth-component24 :depth-component32 :depth-component32f
+      :stencil-index :stencil-index1 :stencil-index4 :stencil-index8 :stencil-index16) 1)
+    ((:depth-stencil :depth24-stencil8 :depth32f-stencil8) 2)))
+
+(defun internal-format-pixel-size (format)
+  (case format
+    ((:red :r8 :r8-snorm :r8i :r8ui) 8)
+    ((:r16 :r16-snorm :r16f :r16i :r16ui) 16)
+    ((:r32f :r32i :r32ui) 32)
+    ((:rg :rg8 :rg8-snorm :rg8i :rg8ui) 16)
+    ((:rg16 :rg16-snorm :rg16f :rg16i :rg16ui) 32)
+    ((:rg32f :rg32i :rg32ui) 64)
+    ((:rgb :rgb8 :rgb8-snorm :rgb8i :rgb8ui) 24)
+    (:r3-g3-b2 8)
+    (:rgb9-e5 32)
+    (:r11f-g11f-b10f 32)
+    (:rgb12 32)
+    (:rgb4 12)
+    (:rgb5 15)
+    (:rgb10 30)
+    ((:rgb16-snorm :rgb16f :rgb16i :rgb16ui) 48)
+    ((:rgb32f :rgb32i :rgb32ui) 96)
+    (:rgba2 8)
+    (:rgba4 16)
+    (:rgb5-a1 16)
+    (:rgb10-a2 32)
+    (:rgb10-a2ui 32)
+    (:rgba12 48)
+    ((:rgba :rgba8 :rgba8-snorm :rgba8i :rgba8ui) 32)
+    ((:rgba16 :rgba16f :rgba16i :rgba16ui) 64)
+    ((:rgba32f :rgba32i :rgba32ui) 128)
+    (:srgb8 24) (:srgb8-alpha8 32)
+    (:depth-component 8)
+    (:depth-component16 16)
+    (:depth-component24 24)
+    ((:depth-component32 :depth-component32f) 32)
+    (:stencil-index 8)
+    (:stencil-index1 1)
+    (:stencil-index4 4)
+    (:stencil-index8 8)
+    (:stencil-index16 16)
+    (:depth-stencil 8)
+    (:depth24-stencil8 32)
+    (:depth32f-stencil8 40)))
+
+(defun infer-internal-format (pixel-type pixel-format)
+  (intern
+   (format NIL "~a~a"
+           (ecase pixel-format
+             ((:r :red) :r)
+             ((:rg :gr) :rg)
+             ((:rgb :bgr) :rgb)
+             ((:rgba :bgra) :rgba))
+           (ecase pixel-type
+             ((:byte :unsigned-byte) :8)
+             ((:short :unsigned-short) :16)
+             ((:int :unsigned-int) :32)
+             ((:short-float) :16f)
+             ((:float) :32f)))
+   "KEYWORD"))
+
+(defun infer-pixel-type (depth type)
+  (ecase depth
+    ( 8 (ecase type
+          (:signed :byte)
+          (:unsigned :unsigned-byte)))
+    (16 (ecase type
+          (:signed :short)
+          (:unsigned :unsigned-short)
+          (:float :half-float)))
+    (32 (ecase type
+          (:signed :int)
+          (:unsigned :unsigned-int)
+          (:float :float)))))
