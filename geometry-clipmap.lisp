@@ -8,46 +8,52 @@
 
 (defvar *default-clipmap-resolution* 128)
 
+(defstruct (geometry-clipmap-map
+            (:constructor make-clipmap-map (index bank uniform texture)))
+  (index 0 :type (unsigned-byte 8))
+  (bank NIL :type string)
+  (uniform NIL :type string)
+  (texture NIL :type texture))
+
+(defmethod compute-resources ((clipmap geometry-clipmap-map) resources readying cache)
+  (vector-push-extend (geometry-clipmap-map-texture clipmap) resources))
+
 (define-shader-entity geometry-clipmap (located-entity)
   ((previous-update-location :initform (vec2 most-positive-single-float most-positive-single-float)
                              :accessor previous-update-location)
    (current-height :accessor current-height)
    (mmap-cache :accessor mmap-cache)
    (clipmap-block :accessor clipmap-block)
-   (levels :initarg :levels :accessor levels)
-   (resolution :initarg :resolution :accessor resolution)
+   (levels :accessor levels)
+   (resolution :accessor resolution)
    (map-scale :initarg :map-scale :accessor map-scale)
-   (height-map :accessor height-map)
-   (splat-map :accessor splat-map)
+   (maps :initform () :accessor maps)
    (data-directory :initarg :data-directory :accessor data-directory))
   (:default-initargs
-   :levels 5
    :map-scale (vec 1 1 1)
-   :resolution *default-clipmap-resolution*
+   :maps '("height")
    :data-directory (error "DATA-DIRECTORY required.")))
 
-(defmethod initialize-instance :after ((clipmap geometry-clipmap) &key levels resolution data-directory)
+(defmethod initialize-instance :after ((clipmap geometry-clipmap) &key maps data-directory)
+  (loop for i from 0
+        for map in maps
+        do (destructuring-bind (bank &key (index i) (uniform (format NIL "~a_map" bank)))
+               (enlist map)
+             (with-open-file (stream (make-pathname :name bank :type "lisp" :defaults data-directory))
+               (push (make-clipmap-map index bank uniform
+                                       (apply #'make-instance 'texture
+                                              :target :texture-2d-array
+                                              :min-filter :linear
+                                              :storage :static
+                                              (read stream)))
+                     (maps clipmap)))))
+  (setf (maps clipmap) (sort (maps clipmap) #'< :key #'geometry-clipmap-map-index))
   (setf (data-directory clipmap) (uiop:native-namestring (make-pathname :name NIL :type NIL :defaults data-directory)))
-  (setf (mmap-cache clipmap) (make-array levels :initial-element ()))
-  (setf (clipmap-block clipmap) (make-clipmap-block resolution levels))
-  (setf (height-map clipmap) (make-instance 'texture :target :texture-2d-array
-                                                     :min-filter :linear
-                                                     :pixel-format :red
-                                                     :pixel-type :unsigned-short
-                                                     :internal-format :r16
-                                                     :width resolution
-                                                     :height resolution
-                                                     :depth levels
-                                                     :storage :static))
-  (setf (splat-map clipmap) (make-instance 'texture :target :texture-2d-array
-                                                    :min-filter :linear
-                                                    :pixel-format :rgba
-                                                    :pixel-type :unsigned-byte
-                                                    :internal-format :rgba8
-                                                    :width resolution
-                                                    :height resolution
-                                                    :depth levels
-                                                    :storage :static)))
+  (let ((base-texture (geometry-clipmap-map-texture (first (maps clipmap)))))
+    (setf (resolution clipmap) (width base-texture))
+    (setf (levels clipmap) (depth base-texture)))
+  (setf (mmap-cache clipmap) (make-array (levels clipmap) :initial-element ()))
+  (setf (clipmap-block clipmap) (make-clipmap-block (resolution clipmap) (levels clipmap))))
 
 (defmethod show-level ((clipmap geometry-clipmap) wcx wcy level)
   (let* ((cache (aref (mmap-cache clipmap) level))
@@ -70,35 +76,39 @@
          (dir (data-directory clipmap)))
     (labels ((path (bank wx wy)
                (format NIL "~a/~d/~a ~d ~d.raw" dir ws bank wx wy))
-             (picture (tex file sx sy x y w h bpp)
+             (picture (tex file sx sy x y w h)
                (when (and (< 0 w) (< 0 h))
                  (handler-case
                      (let ((cached (or (assoc file cache :test #'equal)
                                        (list* file (multiple-value-list (mmap:mmap file))))))
                        (push cached new-cache)
-                       ;; Pretty dumb.
-                       (when (and (= 0 level) (= 2 bpp)
-                                  (<= (/ ts 2) w) (<= (/ ts 2) h))
-                         (setf (current-height clipmap)
-                               (* (cffi:mem-aref (second cached) :uint16
-                                                 (+ (* ts (+ (/ ts 2) (if (= 0 y) sy (- y))))
-                                                    (+ (/ ts 2) (if (= 0 x) sx (- x)))))
-                                  (/ (expt 2.0 16))
-                                  (vy (map-scale clipmap)))))
+                       ;; FIXME: Calculate height and slope in a non-retarded way.
+                       ;; (when (and (= 0 level) (= 2 bpp)
+                       ;;            (<= (/ ts 2) w) (<= (/ ts 2) h))
+                       ;;   (setf (current-height clipmap)
+                       ;;         (* (cffi:mem-aref (second cached) :uint16
+                       ;;                           (+ (* ts (+ (/ ts 2) (if (= 0 y) sy (- y))))
+                       ;;                              (+ (/ ts 2) (if (= 0 x) sx (- x)))))
+                       ;;            (/ (expt 2.0 16))
+                       ;;            (vy (map-scale clipmap)))))
                        (%gl:tex-sub-image-3d :texture-2d-array 0 x y level w h 1 (pixel-format tex) (pixel-type tex)
-                                             (cffi:inc-pointer (second cached) (* (+ (* ts sy) sx) bpp))))
+                                             (cffi:inc-pointer (second cached) (* (+ (* ts sy) sx)
+                                                                                  (/ (internal-format-pixel-size
+                                                                                      (internal-format tex))
+                                                                                     8)))))
                    (mmap:mmap-error (e)
                      (declare (ignore e))))))
-             (show-map (bank tex bpp)
+             (show-map (bank tex)
                (gl:bind-texture :texture-2d-array (gl-name tex))
-               (picture tex (path bank (+ wl  0) (+ wu  0)) sx sy   0  0  sw sh  bpp)
-               (picture tex (path bank (+ wl ws) (+ wu  0))  0 sy  sw  0  sx sh  bpp)
-               (picture tex (path bank (+ wl  0) (+ wu ws)) sx  0   0 sh  sw sy  bpp)
-               (picture tex (path bank (+ wl ws) (+ wu ws))  0  0  sw sh  sx sy  bpp)))
+               (picture tex (path bank (+ wl  0) (+ wu  0)) sx sy   0  0  sw sh)
+               (picture tex (path bank (+ wl ws) (+ wu  0))  0 sy  sw  0  sx sh)
+               (picture tex (path bank (+ wl  0) (+ wu ws)) sx  0   0 sh  sw sy)
+               (picture tex (path bank (+ wl ws) (+ wu ws))  0  0  sw sh  sx sy)))
       ;; Update the texture buffer
       (gl:pixel-store :unpack-row-length ts)
-      (show-map "height" (height-map clipmap) 2)
-      (show-map "splat" (splat-map clipmap) 4)
+      ;; FIXME: What about different resolution banks?
+      (dolist (map (maps clipmap))
+        (show-map (geometry-clipmap-map-bank map) (geometry-clipmap-map-texture map)))
       (gl:pixel-store :unpack-row-length 0)
       ;; Update mmap cache
       (let ((to-unmap (set-difference cache new-cache)))
@@ -130,13 +140,12 @@
         (levels (levels clipmap))
         (block (clipmap-block clipmap)))
     ;; (gl:polygon-mode :front-and-back :fill)
-    (gl:active-texture :texture0)
-    (gl:bind-texture :texture-2d-array (gl-name (height-map clipmap)))
-    (gl:active-texture :texture1)
-    (gl:bind-texture :texture-2d-array (gl-name (splat-map clipmap)))
+    (dolist (map (maps clipmap))
+      (gl:active-texture (+ (load-time-value (cffi:foreign-enum-value '%gl:enum :texture0))
+                            (geometry-clipmap-map-index map)))
+      (gl:bind-texture :texture-2d-array (gl-name (geometry-clipmap-map-texture map)))
+      (setf (uniform program (geometry-clipmap-map-uniform map)) (geometry-clipmap-map-index map)))
     (gl:bind-vertex-array (gl-name block))
-    (setf (uniform program "height_map") 0)
-    (setf (uniform program "splat_map") 1)
     (setf (uniform program "view_matrix") (view-matrix))
     (setf (uniform program "projection_matrix") (projection-matrix))
     (setf (uniform program "world_pos") (location clipmap))
@@ -309,17 +318,28 @@ void main(){
                             do (setf (aref out-pixels (+ oi k)) (funcall fit (/ (+ p1 p2 p3 p4) 4))))))
     out-pixels))
 
-(defun generate-clipmaps (input output &key (n *default-clipmap-resolution*) (levels 5) ((:x xoff) 0) ((:y yoff) 0)
-                                            depth pixel-type (format :red) (bank "height"))
-  (format T "~& Reading image data ~a ...~%" input)
-  (multiple-value-bind (bits w h depth type format) (load-image input T :depth depth
-                                                                        :pixel-type pixel-type
-                                                                        :format format)
+(defun generate-clipmaps (input output &key (resolution *default-clipmap-resolution*) (levels 5) ((:x xoff) 0) ((:y yoff) 0)
+                                            pixel-type (pixel-format :red) (bank "height"))
+  (format T "~&Reading image data ~a ...~%" input)
+  (multiple-value-bind (bits w h pixel-type pixel-format)
+      (load-image input T :pixel-type pixel-type :pixel-format pixel-format)
+    (format T "~&Image is ~dx~d ~a~%" w h pixel-format)
     ;; FIXME: remove this constraint
     (assert (eql w h))
+    (with-open-file (out (make-pathname :name bank :type "lisp" :defaults output)
+                         :direction :output
+                         :if-exists :supersede)
+      (format out "(~@{~(~s~) ~s~^~% ~})"
+              :internal-format (infer-internal-format pixel-type pixel-format)
+              :pixel-format pixel-format
+              :pixel-type pixel-type
+              :width resolution
+              :height resolution
+              :depth levels))
     (let* ((w (or w (sqrt (length bits))))
            (h (or h w))
-           (c (format-components format))
+           (c (internal-format-components pixel-format))
+           (n resolution)
            (sub (make-array (* n n c) :element-type (array-element-type bits)))
            (bits bits))
       (flet ((clipmap (o x y s)
@@ -331,7 +351,7 @@ void main(){
         (dotimes (l levels output)
           (let* ((s (expt 2 l))
                  (o (pathname-utils:subdirectory output (princ-to-string (* n s)))))
-            (format T "~& Generating level ~d (~d tile~:p)...~%" l (expt (/ w s n) 2))
+            (format T "~&Generating level ~d (~d tile~:p)...~%" l (expt (/ w s n) 2))
             (ensure-directories-exist o)
             (loop for x from 0 below w by (* n s)
                   do (loop for y from 0 below h by (* n s)
