@@ -601,17 +601,17 @@
       :r32f :r32i :r32ui
       :compressed-red :compressed-red-rgtc1
       :compressed-signed-red-rgtc1) 1)
-    ((:rg :rg8 :rg8-snorm :rg8i :rg8ui
+    ((:rg :rg8 :rg8-snorm :rg8i :rg8ui :gr
       :rg16 :rg16-snorm :rg16f :rg16i :rg16ui
       :compressed-rg :compressed-rg-rgtc2 :compressed-signed-rg-rgtc2) 2)
-    ((:rg32f :rg32i :rg32ui
+    ((:rg32f :rg32i :rg32ui :bgr
       :rgb :rgb8 :rgb8-snorm :rgb8i :rgb8ui
       :r3-g3-b2 :rgb4 :rgb5 :rgb9-e5 :rgb10 :r11f-g11f-b10f :rgb12
       :rgb16-snorm :rgb16f :rgb16i :rgb16ui
       :rgb32f :rgb32i :rgb32ui :srgb8
       :compressed-rgb :compressed-rgb-bptc-signed-float
       :compressed-rgb-bptc-unsigned-float :compressed-srgb) 3)
-    ((:rgba :rgba2 :rgba4 :rgb5-a1 :rgb10-a2 :rgb10-a2ui :rgba12
+    ((:rgba :bgra :rgba2 :rgba4 :rgb5-a1 :rgb10-a2 :rgb10-a2ui :rgba12
       :rgba8 :rgba8-snorm :rgba8i :rgba8ui
       :rgba16 :rgba16f :rgba16i :rgba16ui
       :rgba32f :rgba32i :rgba32ui :srgb8-alpha8
