@@ -25,8 +25,7 @@
                    (4 (vec (vx (location clipmap)) (vz (location clipmap)))))))
         (setf (vx (location clipmap)) (vx loc)
               (vz (location clipmap)) (vy loc))
-        ;;(setf (vy (location camera)) (+ 10 (current-height clipmap)))
-        ))))
+        (setf (vy (location camera)) (+ 10 (current-height clipmap)))))))
 
 (progn
   (defmethod setup-scene ((main main) scene)

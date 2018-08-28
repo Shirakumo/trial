@@ -76,20 +76,21 @@
          (dir (data-directory clipmap)))
     (labels ((path (bank wx wy)
                (format NIL "~a/~d/~a ~d ~d.raw" dir ws bank wx wy))
-             (picture (tex file sx sy x y w h)
+             (picture (bank tex file sx sy x y w h)
                (when (and (< 0 w) (< 0 h))
                  (handler-case
                      (let ((cached (or (assoc file cache :test #'equal)
                                        (list* file (multiple-value-list (mmap:mmap file))))))
                        (push cached new-cache)
                        ;; FIXME: Calculate height and slope in a non-retarded way.
-                       ;; (when (and (= 0 level) (<= (/ ts 2) w) (<= (/ ts 2) h))
-                       ;;   (setf (current-height clipmap)
-                       ;;         (* (cffi:mem-aref (second cached) :uint16
-                       ;;                           (+ (* ts (+ (/ ts 2) (if (= 0 y) sy (- y))))
-                       ;;                              (+ (/ ts 2) (if (= 0 x) sx (- x)))))
-                       ;;            (/ (expt 2.0 16))
-                       ;;            (vy (map-scale clipmap)))))
+                       (when (and (= 0 level) (<= (/ ts 2) w) (<= (/ ts 2) h)
+                                  (string= bank "height"))
+                         (setf (current-height clipmap)
+                               (* (cffi:mem-aref (second cached) :uint16
+                                                 (+ (* ts (+ (/ ts 2) (if (= 0 y) sy (- y))))
+                                                    (+ (/ ts 2) (if (= 0 x) sx (- x)))))
+                                  (/ (expt 2.0 16))
+                                  (vy (map-scale clipmap)))))
                        (%gl:tex-sub-image-3d :texture-2d-array 0 x y level w h 1 (pixel-format tex) (pixel-type tex)
                                              (cffi:inc-pointer (second cached) (* (+ (* ts sy) sx)
                                                                                   (/ (internal-format-pixel-size
@@ -99,10 +100,10 @@
                      (declare (ignore e))))))
              (show-map (bank tex)
                (gl:bind-texture :texture-2d-array (gl-name tex))
-               (picture tex (path bank (+ wl  0) (+ wu  0)) sx sy   0  0  sw sh)
-               (picture tex (path bank (+ wl ws) (+ wu  0))  0 sy  sw  0  sx sh)
-               (picture tex (path bank (+ wl  0) (+ wu ws)) sx  0   0 sh  sw sy)
-               (picture tex (path bank (+ wl ws) (+ wu ws))  0  0  sw sh  sx sy)))
+               (picture bank tex (path bank (+ wl  0) (+ wu  0)) sx sy   0  0  sw sh)
+               (picture bank tex (path bank (+ wl ws) (+ wu  0))  0 sy  sw  0  sx sh)
+               (picture bank tex (path bank (+ wl  0) (+ wu ws)) sx  0   0 sh  sw sy)
+               (picture bank tex (path bank (+ wl ws) (+ wu ws))  0  0  sw sh  sx sy)))
       ;; Update the texture buffer
       (gl:pixel-store :unpack-row-length ts)
       ;; FIXME: What about different resolution banks?
