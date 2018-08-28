@@ -19,7 +19,9 @@
       (values buffer
               (tga:image-width tga)
               (tga:image-height tga)
-              (infer-pixel-type (tga:image-bpp tga) :unsigned)
+              (infer-pixel-type (/ (tga:image-bpp tga)
+                                   (tga:image-channels tga))
+                                :unsigned)
               (ecase (tga:image-channels tga)
                 (3 :bgr)
                 (4 :bgra))))))
