@@ -25,19 +25,19 @@
                    (4 (vec (vx (location clipmap)) (vz (location clipmap)))))))
         (setf (vx (location clipmap)) (vx loc)
               (vz (location clipmap)) (vy loc))
-        ;(setf (vy (location camera)) (+ 10 (current-height clipmap)))
+        ;;(setf (vy (location camera)) (+ 10 (current-height clipmap)))
         ))))
 
 (progn
   (defmethod setup-scene ((main main) scene)
     (enter (make-instance 'skybox :texture (asset 'workbench 'skybox)) scene)
     (enter (make-instance 'geometry-clipmap :name :clipmap
-                                            :map-scale (vec 128 128 128)
+                                            :map-scale (vec 1024 2048 1024)
                                             :maps '("height" "splat")
-                                            :data-directory #p"~/spiral/") scene)
+                                            :data-directory #p"~/simple-mountain/") scene)
     (enter (make-instance 'editor-camera :name :camera
-                                         :move-speed 0.5
-                                         :location (vec 0 0 0)) scene)
+                                         :move-speed 0.01
+                                         :location (vec -2048 2048 -2048)) scene)
     (enter (make-instance 'render-pass) scene))
 
   (maybe-reload-scene))

@@ -83,8 +83,7 @@
                                        (list* file (multiple-value-list (mmap:mmap file))))))
                        (push cached new-cache)
                        ;; FIXME: Calculate height and slope in a non-retarded way.
-                       ;; (when (and (= 0 level) (= 2 bpp)
-                       ;;            (<= (/ ts 2) w) (<= (/ ts 2) h))
+                       ;; (when (and (= 0 level) (<= (/ ts 2) w) (<= (/ ts 2) h))
                        ;;   (setf (current-height clipmap)
                        ;;         (* (cffi:mem-aref (second cached) :uint16
                        ;;                           (+ (* ts (+ (/ ts 2) (if (= 0 y) sy (- y))))
@@ -119,7 +118,7 @@
   (let ((prev (previous-update-location clipmap))
         (x (vx (location clipmap)))
         (y (vz (location clipmap)))
-        (s 1))
+        (s 1.0))
     (dotimes (l (levels clipmap) clipmap)
       (with-simple-restart (continue "Ignore level ~d." l)
         (when (or (/= (floor x s) (floor (vx prev) s))
@@ -139,7 +138,8 @@
   (let ((program (shader-program-for-pass pass clipmap))
         (levels (levels clipmap))
         (block (clipmap-block clipmap)))
-    ;; (gl:polygon-mode :front-and-back :fill)
+    ;;(gl:polygon-mode :front-and-back :fill)
+    ;;(gl:polygon-mode :front-and-back :line)
     (dolist (map (maps clipmap))
       (gl:active-texture (+ (load-time-value (cffi:foreign-enum-value '%gl:enum :texture0))
                             (geometry-clipmap-map-index map)))
@@ -248,7 +248,7 @@ void main(){
   vec3 light_dir = normalize(light);
   float diff = max(dot(clipmap.normal, light_dir)*10-2.7, 0.0);
   vec4 splat = mix(texture(splat_map, clipmap.tex_i), texture(splat_map, clipmap.tex_o), clipmap.a);
-  vec3 diffuse = (splat.g*vec3(1,1,1)+(1-splat.g)*vec3(0.239,0.275,0.191)*0.7) * diff;
+  vec3 diffuse = (splat.g*vec3(1,1,1)+(1-splat.g)*vec3(0.30,0.27,0.27)*0.7) * diff;
   color = vec4(diffuse, 1.0);
 }")
 
@@ -323,7 +323,7 @@ void main(){
   (format T "~&Reading image data ~a ...~%" input)
   (multiple-value-bind (bits w h pixel-type pixel-format)
       (load-image input T :pixel-type pixel-type :pixel-format pixel-format)
-    (format T "~&Image is ~dx~d ~a~%" w h pixel-format)
+    (format T "~&Image is ~dx~d ~a ~a~%" w h pixel-type pixel-format)
     ;; FIXME: remove this constraint
     (assert (eql w h))
     (with-open-file (out (make-pathname :name bank :type "lisp" :defaults output)
