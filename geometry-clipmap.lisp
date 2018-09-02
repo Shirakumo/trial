@@ -245,12 +245,15 @@ in CLIPMAP_DATA{
 out vec4 color;
 
 void main(){
+  vec3 fog = vec3(1,1,1);
+  vec3 sky = vec3(112.0/255,175.0/255,224.0/255);
   vec3 light = vec3(0.8, 0.45, 0.9);
   vec3 light_dir = normalize(light);
   float diff = max(dot(clipmap.normal, light_dir)*10-2.7, 0.0);
   vec4 splat = mix(texture(splat_map, clipmap.tex_i), texture(splat_map, clipmap.tex_o), clipmap.a);
   vec3 diffuse = (splat.g*vec3(1,1,1)+(1-splat.g)*vec3(0.30,0.27,0.27)*0.7) * diff;
-  color = vec4(diffuse, 1.0);
+  float d = clamp(pow(1.0/((1-gl_FragCoord.z)*8000), 2), 0, 1);
+  color = vec4(mix(diffuse, sky, d), 1);
 }")
 
 (defun make-clipmap-block (n levels)
