@@ -170,7 +170,7 @@ void main(){
                               (pop regions)
                               (decf i))))
                      (insert unit))))
-      (update-buffer-data cbo array size))))
+      (update-buffer-data cbo array :data-end size))))
 
 (defmethod (setf color-regions) :around (regions (text highlighted-text))
   ;; FIXME: Check for overlapping regions.
