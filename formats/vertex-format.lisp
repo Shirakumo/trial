@@ -98,16 +98,16 @@
     (intern name package)))
 
 (defun vertex-buffer-type->int (type)
-  (position type *vertex-buffer-type-list*))
+  (position type *buffer-object-type-list*))
 
 (defun int->vertex-buffer-type (int)
-  (elt *vertex-buffer-type-list* int))
+  (elt *buffer-object-type-list* int))
 
 (defun vertex-buffer-usage->int (type)
-  (position type *vertex-buffer-data-usage-list*))
+  (position type *buffer-object-data-usage-list*))
 
 (defun int->vertex-buffer-usage (int)
-  (elt *vertex-buffer-data-usage-list* int))
+  (elt *buffer-object-data-usage-list* int))
 
 (defun vformat-write-type (buffer value type)
   (ecase type
