@@ -14,11 +14,11 @@
 (defmethod initialize-instance :after ((asset asset) &key pool name)
   (check-type name symbol)
   (setf (name asset) name)
-  (setf (pool asset) (etypecase pool
-                       (null (error "POOL required."))
-                       (symbol (find-pool pool T))
-                       (pool pool)))
-  (setf (asset pool name) asset))
+  (when pool
+    (setf (pool asset) (etypecase pool
+                         (symbol (find-pool pool T))
+                         (pool pool)))
+    (setf (asset pool name) asset)))
 
 (defmethod reinitialize-instance :after ((asset asset) &key)
   (when (allocated-p asset)
@@ -35,7 +35,7 @@
 
 (defmethod print-object ((asset asset) stream)
   (print-unreadable-object (asset stream :type T)
-    (format stream "~a/~a" (name (pool asset)) (name asset))))
+    (format stream "~a/~a" (when (pool asset) (name (pool asset))) (name asset))))
 
 (defgeneric load (asset))
 (defgeneric reload (asset))
@@ -46,12 +46,12 @@
 
 (defmethod load :around ((asset asset))
   (unless (allocated-p asset)
-    (v:trace :trial.asset "Loading ~a/~a" (name (pool asset)) (name asset))
+    (v:trace :trial.asset "Loading ~a/~a" (when (pool asset) (name (pool asset))) (name asset))
     (call-next-method)))
 
 (defmethod deallocate :around ((asset asset))
   (when (allocated-p asset)
-    (v:trace :trial.asset "Deallocating ~a/~a" (name (pool asset)) (name asset))
+    (v:trace :trial.asset "Deallocating ~a/~a" (when (pool asset) (name (pool asset))) (name asset))
     (call-next-method)))
 
 (defmethod coerce-asset-input ((asset asset) (input (eql T)))
@@ -61,7 +61,9 @@
   thing)
 
 (defmethod coerce-asset-input ((asset asset) (path pathname))
-  (pool-path (pool asset) path))
+  (if (pool asset)
+      (pool-path (pool asset) path)
+      path))
 
 (defmethod coerce-asset-input ((asset asset) (list list))
   (loop for item in list collect (coerce-asset-input asset item)))
