@@ -646,6 +646,7 @@
    #:rad->deg
    #:symbol->c-name
    #:check-gl-type
+   #:gl-type-size
    #:cl-type->gl-type
    #:gl-type->cl-type
    #:gl-coerce

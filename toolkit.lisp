@@ -367,6 +367,22 @@
        (cffi:with-foreign-array (,ptr ,datag (cl-type->gl-type (array-element-type ,datag)))
          ,@body))))
 
+(defun gl-type-size (type)
+  (ecase type
+    (:boolean 1)
+    ((:ubyte :byte) 8)
+    ((:ushort :short) 16)
+    ((:uint :int) 32)
+    (:fixed 32)
+    ((:uint64 :int64) 64)
+    (:sizei 32)
+    (:enum 32)
+    ((:intptr :sizeiptr :sync) #+x86 32 #+x86-64 64)
+    (:bitfield 32)
+    (:half 16)
+    ((:float :clampf) 32)
+    ((:double :clampd) 64)))
+
 (defun gl-type->cl-type (type)
   (ecase type
     (:char '(signed-byte 8))
