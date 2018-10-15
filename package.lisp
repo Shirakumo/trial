@@ -475,7 +475,8 @@
    #:foreign-resource
    #:data-pointer
    #:destructor
-   #:gl-resource)
+   #:gl-resource
+   #:gl-name)
   ;; retention.lisp
   (:export
    #:retained
