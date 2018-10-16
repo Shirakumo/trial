@@ -26,4 +26,4 @@
   (let ((buffer-data (buffer-data buffer)))
     (when (and (not (size buffer)) (vectorp buffer-data))
       (setf (size buffer) (* (length buffer-data)
-                             (cffi:foreign-type-size (element-type buffer)))))))
+                             (gl-type-size (element-type buffer)))))))

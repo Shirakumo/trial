@@ -55,9 +55,9 @@
                           (etypecase data
                             (single-float :float)
                             (double-float :double)
-                            (T :integer))))
+                            (T :int))))
         (buffer-start (or buffer-start 0))
-        (buffer-end (+ buffer-start (cffi:foreign-type-size (element-type buffer)))))
+        (buffer-end (+ buffer-start (gl-type-size (element-type buffer)))))
     (cffi:with-foreign-object (data element-type 1)
       (setf (cffi:mem-ref data element-type) (gl-coerce data element-type))
       (update-buffer-data buffer data :buffer-start buffer-start :buffer-end buffer-end))))
@@ -105,7 +105,7 @@
 
 (defmethod update-buffer-data ((buffer buffer-object) (buffer-data vector) &key (data-start 0) (data-end (length buffer-data)) buffer-start buffer-end element-type)
   (let* ((element-type (or element-type (array-element-type buffer-data)))
-         (element-size (cffi:foreign-type-size element-type))
+         (element-size (gl-type-size element-type))
          (buffer-start (when buffer-start (* buffer-start element-size)))
          (buffer-end (when buffer-end (* buffer-end element-size))))
     (cond ((static-vector-p buffer-data)

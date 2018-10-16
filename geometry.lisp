@@ -184,10 +184,10 @@
         ;; Construct the buffers and specs
         (let* ((vbo (make-instance 'vertex-buffer :buffer-data buffer :buffer-type :array-buffer
                                                   :data-usage data-usage :element-type :float
-                                                  :size (* total-size #.(cffi:foreign-type-size :float))))
+                                                  :size (* total-size #.(gl-type-size :float))))
                (ebo (make-instance 'vertex-buffer :buffer-data (faces mesh) :buffer-type :element-array-buffer
-                                                  :data-usage data-usage :element-type :uint
-                                                  :size (* total-size #.(cffi:foreign-type-size :uint))))
+                                                  :data-usage data-usage :element-type :unsigned-int
+                                                  :size (* total-size #.(gl-type-size :unsigned-int))))
                (specs (loop with stride = (reduce #'+ sizes)
                             for offset = 0 then (+ offset size)
                             for size in sizes

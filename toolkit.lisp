@@ -370,16 +370,16 @@
 (defun gl-type-size (type)
   (ecase type
     (:boolean 1)
-    ((:ubyte :byte) 8)
-    ((:ushort :short) 16)
-    ((:uint :int) 32)
+    ((:ubyte :unsigned-byte :byte) 8)
+    ((:ushort :unsigned-short :short) 16)
+    ((:uint :unsigned-int :int) 32)
     (:fixed 32)
     ((:uint64 :int64) 64)
     (:sizei 32)
     (:enum 32)
     ((:intptr :sizeiptr :sync) #+x86 32 #+x86-64 64)
     (:bitfield 32)
-    (:half 16)
+    ((:half :half-float) 16)
     ((:float :clampf) 32)
     ((:double :clampd) 64)))
 
@@ -589,7 +589,8 @@
   :tess-control-shader :tess-evaluation-shader)
 
 (define-enum-check vertex-buffer-element-type
-  :double :float :int :uint :char)
+  :byte :unsigned-byte :short :unsigned-short :int :unsigned-int
+  :half-float :float :double :fixed)
 
 (define-enum-check buffer-object-type
   :array-buffer :atomic-counter-buffer
