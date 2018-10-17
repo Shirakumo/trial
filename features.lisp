@@ -28,3 +28,16 @@
   (asdf:load-system :trial :force T :verbose NIL))
 
 ;; FIXME: Put all the consistency checks and such during loading etc under features.
+
+(when (char= #\Return (char "
+" 0))
+  (error "!! GIT FUCKED YOU OVER !!
+
+Fix GIT to not convert line endings to CRLF:
+
+  git config --global core.autocrlf false
+
+And reclone the project.
+
+By the way, I'd like to punch whoever added that feature to
+GIT and made it default in the fucking throat."))
