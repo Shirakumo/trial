@@ -9,7 +9,7 @@
 (defvar *window-table* (tg:make-weak-hash-table :test 'eq :weakness :value))
 
 (defclass context (trial:context)
-  ((title :initform "" :accessor title)
+  ((title :initarg :title :accessor title)
    (cursor-visible :initform T :accessor cursor-visible)
    (mouse-pos :initform (vec 0 0) :accessor mouse-pos)
    (initargs :initform NIL :accessor initargs)
@@ -48,7 +48,6 @@
                     (setf (g ,name) ,var))))
       (maybe-set width)
       (maybe-set height)
-      (maybe-set title)
       (maybe-set double-buffering)
       (maybe-set stereo-buffer)
       (maybe-set resizable)
@@ -92,6 +91,7 @@
        (:opengl-profile '%glfw::opengl-profile)
        ;; This option is not in cl-glfw3 for some reason.
        (:double-buffering :boolean #x00021010))
+      (v:info :trial.backend.glfw "Creating context ~a" context)
       (let ((window (%glfw:create-window (getf initargs :width)
                                          (getf initargs :height)
                                          (title context)
