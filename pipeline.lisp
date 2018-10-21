@@ -165,3 +165,7 @@
 (defmethod register-object-for-pass ((pipeline pipeline) object)
   (loop for pass across (passes pipeline)
         do (register-object-for-pass pass object)))
+
+(defmethod compute-resources ((pipeline pipeline) resources readying cache)
+  (compute-resources (passes pipeline) resources readying cache)
+  (compute-resources (textures pipeline) resources readying cache))

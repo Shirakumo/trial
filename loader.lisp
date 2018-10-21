@@ -6,6 +6,8 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(defgeneric banned-slots (object)
+  (:method-combination append))
 (defgeneric compute-resources (object resource-vector readying-vector traversal-cache))
 (defgeneric bake (bakable))
 (defgeneric baked-p (bakable))
@@ -34,7 +36,7 @@
   (compute-resources (cdr cons) resources readying cache))
 
 (defmethod compute-resources ((vector vector) resources readying cache)
-  (unless (typep vector 'string)
+  (when (eql T (array-element-type vector))
     (loop for object across vector
           do (compute-resources object resources readying cache))))
 
@@ -42,10 +44,14 @@
   (loop for value being the hash-values of table
         do (compute-resources value resources readying cache)))
 
+(defmethod banned-slots append ((object entity))
+  ())
+
 (defmethod compute-resources ((object entity) resources readying cache)
-  (loop for slot in (c2mop:class-slots (class-of object))
+  (loop with banned = (banned-slots object)
+        for slot in (c2mop:class-slots (class-of object))
         for name = (c2mop:slot-definition-name slot)
-        when (slot-boundp object name)
+        when (and (not (find name banned :test 'eq)) (slot-boundp object name))
         do (compute-resources (slot-value object name) resources readying cache)))
 
 (defmethod compute-resources ((queue flare-queue:queue) resources readying cache)
@@ -74,11 +80,6 @@
 
 (defmethod compute-resources :before ((readied readied) resources readying cache)
   (vector-push-extend readied readying))
-
-(defun stable-set-difference-eq (a b)
-  (let ((table (make-hash-table :test 'eq :size (length b))))
-    (loop for item across b do (setf (gethash item table) T))
-    (remove-if (lambda (item) (gethash item table)) a)))
 
 (defun topological-sort-by-dependencies (resources)
   (let ((status (make-hash-table :test 'eq))
@@ -130,6 +131,11 @@
   (let ((to-deallocate (compute-resources-for to)))
     (%transition NIL to-deallocate NIL)
     to))
+
+(defun stable-set-difference-eq (a b)
+  (let ((table (make-hash-table :test 'eq :size (length b))))
+    (loop for item across b do (setf (gethash item table) T))
+    (remove-if (lambda (item) (gethash item table)) a)))
 
 (defmethod transition ((from scene) (to scene))
   (v:info :trial.loader "Transitioning from ~a to ~a" from to)

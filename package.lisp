@@ -392,6 +392,7 @@
    #:layer)
   ;; loader.lisp
   (:export
+   #:banned-slots
    #:compute-resources
    #:resources-ready
    #:bake

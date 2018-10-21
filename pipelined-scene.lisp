@@ -29,5 +29,10 @@
   (for:for ((element over scene))
     (register-object-for-pass scene element)))
 
+(defmethod compute-resources ((scene pipelined-scene) resources readying cache)
+  (compute-resources (objects scene) resources readying cache)
+  (compute-resources (textures scene) resources readying cache)
+  (compute-resources (passes scene) resources readying cache))
+
 (defmethod handle :after ((event resize) (scene pipelined-scene))
   (resize scene (width event) (height event)))

@@ -60,6 +60,9 @@
   ((event-loops :initarg :event-loops :initform NIL :accessor event-loops))
   (:metaclass subject-class))
 
+(defmethod banned-slots append ((object subject))
+  '(event-loops))
+
 (defmethod initialize-instance :after ((subject subject) &key)
   (regenerate-handlers subject))
 

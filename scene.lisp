@@ -48,6 +48,9 @@
   (let ((*scene* scene))
     (call-next-method)))
 
+(defmethod banned-slots append ((object scene))
+  '(queue handlers))
+
 ;; Since we have a tick event, we don't want to dupe that here.
 ;; animations and clock update are already handled by the method
 ;; combination, but defining a noop primary method prevents update
