@@ -119,11 +119,13 @@
   (setf (handlers container) (delete loop (handlers container) :test #'matches))
   loop)
 
-(defclass handler (entity)
-  ((event-type :initarg :event-type :accessor event-type)
+(defclass handler ()
+  ((name :initarg :name :accessor name)
+   (event-type :initarg :event-type :accessor event-type)
    (delivery-function :initarg :delivery-function :accessor delivery-function)
    (priority :initarg :priority :accessor priority))
   (:default-initargs
+   :name (error "NAME needed.")
    :event-type 'event
    :delivery-function (error "DELIVERY-FUNCTION needed.")
    :priority 0))
