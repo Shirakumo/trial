@@ -202,13 +202,15 @@
 
 (defmethod notify-class-redefinition ((pass single-shader-pass) class)
   (when (eql class (class-of pass))
-    (let* ((program (shader-program pass))
-           (loaded (and program (gl-name program))))
-      (when loaded (deallocate program))
-      (setf (shader-program pass) (make-class-shader-program pass))
-      (when loaded
+    (let* ((old (shader-program pass))
+           (new (make-class-shader-program pass)))
+      (when (and old (gl-name old))
         (with-context (*context*)
-          (load (shader-program pass)))))))
+          (dolist (shader (dependencies new))
+            (unless (gl-name shader) (load shader)))
+          (load new)
+          (deallocate old)))
+      (setf (shader-program pass) new))))
 
 (defmethod bake ((pass single-shader-pass))
   (setf (shader-program pass) (make-class-shader-program pass)))
