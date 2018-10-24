@@ -147,8 +147,7 @@
              (setf (current-thread context) NIL)
              (when (valid-p context)
                (done-current context))
-             (bt:release-lock (context-lock context))
-             (setf *context* NIL))
+             (bt:release-lock (context-lock context)))
             (T
              (v:warn :trial.context "~a attempted to release ~a even though ~a is active."
                      this context *context*))))))
