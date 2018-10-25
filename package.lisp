@@ -272,7 +272,7 @@
   ;; flare.lisp
   (:export
    #:paint
-   #:paint-width
+   #:paint-with
    #:finalize)
   ;; fullscreenable.lisp
   (:export
