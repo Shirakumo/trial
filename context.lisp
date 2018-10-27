@@ -121,6 +121,7 @@
       (cond ((and force current)
              (v:warn :trial.context "~a stealing ~a from ~a." this context current))
             (current
+             ;; FIXME: deadlocks somewhere
              (bt:with-lock-held ((context-wait-lock context))
                (incf (context-waiting context))
                (v:info :trial.context "~a waiting to acquire ~a (~a in queue)..." this context (context-waiting context)))

@@ -536,6 +536,7 @@
   ;; shader-pass.lisp
   (:export
    #:shader-pass-class
+   #:paint-with
    #:texture-port
    #:texture
    #:texspec
