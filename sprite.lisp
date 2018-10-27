@@ -34,13 +34,13 @@ void main(){
   // Determine size of a single sprite in the sheet.
   vec2 sprite_size = size / textureSize(texture_image, 0);
   // Determine position of the \"start\" coordinates for this frame.
-  vec2 frame_start = sprite_size * tile;
+  vec2 frame_start = vec2(sprite_size.x*tile.x, 0);
   // Maybe add 1 if we're at the other edges.
   texcoord = frame_start + in_texcoord * sprite_size;
 }")
 
 (define-shader-subject animated-sprite-subject (sprite-entity)
-  ((animations :initform NIL :accessor animations)
+  ((animations :accessor animations)
    (clock :initform 0.0d0 :accessor clock)))
 
 (defmethod shared-initialize :after ((subject animated-sprite-subject) slots &key animation frame animations)
@@ -60,27 +60,31 @@ void main(){
 (defmethod (setf animation) (value (subject animated-sprite-subject))
   (when (/= value (animation subject))
     (setf (vy (tile subject)) value)
-    (setf (vx (tile subject)) (first (nth value (animations subject))))))
+    (setf (vx (tile subject)) (first (svref (animations subject) value)))))
 
 (defmethod (setf animations) (value (subject animated-sprite-subject))
   (setf (slot-value subject 'animations)
-        (loop for spec in value
-              for i from 0
-              collect (destructuring-bind (duration frames &key (start 0) (next i) (loop-to start))
-                          spec
-                        (list start duration frames next loop-to)))))
+        (coerce
+         (loop with idx = 0
+               for spec in value
+               for i from 0
+               collect (destructuring-bind (duration frames &key start (next i) loop-to) spec
+                         (let ((start (or start idx)))
+                           (prog1 (list start duration frames next (+ start (or loop-to 0)))
+                             (setf idx (+ start frames))))))
+         'simple-vector)))
 
 (define-handler (animated-sprite-subject update-sprite-animation tick) (ev dt)
   (let ((tile (tile animated-sprite-subject)))
-    (destructuring-bind (duration frames next-anim loop-to)
-        (rest (nth (round (vy tile)) (animations animated-sprite-subject)))
+    (destructuring-bind (start duration frames next-anim loop-to)
+        (svref (animations animated-sprite-subject) (round (vy tile)))
       (let ((per-frame-duration (/ duration frames)))
         (incf (clock animated-sprite-subject) dt)
         (when (<= per-frame-duration (clock animated-sprite-subject))
           (decf (clock animated-sprite-subject) per-frame-duration)
           (incf (vx tile)))
-        (when (<= frames (frame animated-sprite-subject))
+        (when (<= (+ start frames) (vx tile))
           (cond ((= (vy tile) next-anim)
                  (setf (vx tile) loop-to))
                 (T
-                 (setf (vy tile) next-anim))))))))
+                 (setf (animation tile) next-anim))))))))
