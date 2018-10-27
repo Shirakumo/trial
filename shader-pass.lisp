@@ -185,8 +185,11 @@
 (defmethod register-object-for-pass ((pass per-object-pass) (class shader-entity-class))
   (let ((effective-class (determine-effective-shader-class class)))
     (unless (gethash effective-class (assets pass))
-      (setf (gethash effective-class (assets pass))
-            (make-pass-shader-program pass effective-class)))))
+      (let ((program (make-pass-shader-program pass effective-class)))
+        (when (gl-name (framebuffer pass))
+          (mapc #'load (dependencies program))
+          (load program))
+        (setf (gethash effective-class (assets pass)) program)))))
 
 (defmethod register-object-for-pass ((pass per-object-pass) (subject shader-entity))
   (register-object-for-pass pass (class-of subject)))
