@@ -87,4 +87,4 @@ void main(){
           (cond ((= (vy tile) next-anim)
                  (setf (vx tile) loop-to))
                 (T
-                 (setf (animation tile) next-anim))))))))
+                 (setf (animation animated-sprite-subject) next-anim))))))))
