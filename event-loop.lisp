@@ -59,7 +59,7 @@
     (call-next-method)))
 
 (defclass event-loop (handler-container)
-  ((queue :initform (make-array 0 :initial-element NIL :adjustable T :fill-pointer T) :reader queue)
+  ((queue :initform (make-array 64 :initial-element NIL :adjustable T :fill-pointer 0) :reader queue)
    (queue-index :initform 0 :accessor queue-index)))
 
 (defun issue (loop event-type &rest args)
