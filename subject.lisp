@@ -28,27 +28,21 @@
         do (when (typep super 'subject-class)
              (dolist (handler (effective-handlers super))
                (pushnew handler effective-handlers :key #'name)))
-        finally (setf (effective-handlers class) effective-handlers))
-  (make-instances-obsolete class))
-
-(defmethod compute-effective-handlers :after ((class subject-class))
-  ;; Propagate
-  (loop for sub-class in (c2mop:class-direct-subclasses class)
-        when (and (typep sub-class 'subject-class)
-                  (c2mop:class-finalized-p sub-class))
-        do (compute-effective-handlers sub-class)))
+        finally (return effective-handlers)))
 
 (defmethod c2mop:finalize-inheritance :after ((class subject-class))
   (dolist (super (c2mop:class-direct-superclasses class))
     (unless (c2mop:class-finalized-p super)
       (c2mop:finalize-inheritance super)))
-  (compute-effective-handlers class))
+  (setf (effective-handlers class) (compute-effective-handlers class)))
 
 (defmethod add-handler :after (handler (class subject-class))
-  (compute-effective-handlers class))
+  (when (c2mop:class-finalized-p class)
+    (reinitialize-instance class)))
 
 (defmethod remove-handler :after (handler (class subject-class))
-  (compute-effective-handlers class))
+  (when (c2mop:class-finalized-p class)
+    (reinitialize-instance class)))
 
 (defmethod add-handler (handler (class symbol))
   (add-handler handler (find-class class)))
@@ -110,14 +104,12 @@
   (setf (event-loops subject) (remove loop (event-loops subject))))
 
 (defmacro define-subject (&environment env name direct-superclasses direct-slots &rest options)
-  (unless (find-if (lambda (c) (c2mop:subclassp (find-class c T env) 'subject)) direct-superclasses)
-    (setf direct-superclasses (append direct-superclasses (list 'subject))))
+  (setf direct-superclasses (append direct-superclasses (list 'subject)))
   (unless (find :metaclass options :key #'first)
     (push '(:metaclass subject-class) options))
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
-     (defclass ,name ,direct-superclasses
-       ,direct-slots
-       ,@options)))
+  `(defclass ,name ,direct-superclasses
+     ,direct-slots
+     ,@options))
 
 (defclass subject-handler (handler)
   ((subject :initarg :subject :accessor subject))

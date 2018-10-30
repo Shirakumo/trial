@@ -6,10 +6,11 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass shader-entity-class (redefinition-notifying-class)
+(defclass shader-entity-class (standard-class)
   ((effective-shaders :initform () :accessor effective-shaders)
    (direct-shaders :initform () :initarg :shaders :accessor direct-shaders)
-   (inhibited-shaders :initform () :initarg :inhibit-shaders :accessor inhibited-shaders)))
+   (inhibited-shaders :initform () :initarg :inhibit-shaders :accessor inhibited-shaders)
+   (effective-shader-class :accessor effective-shader-class)))
 
 (defmethod c2mop:validate-superclass ((class shader-entity-class) (superclass t))
   NIL)
@@ -59,26 +60,34 @@
                                     (string shader)
                                     (list (destructuring-bind (pool path) shader
                                             (pool-path pool path))))))))
-    (setf (effective-shaders class) effective-shaders)))
+    effective-shaders))
 
-(defmethod compute-effective-shaders :after ((class shader-entity-class))
-  ;; Propagate
-  (loop for sub-class in (c2mop:class-direct-subclasses class)
-        when (and (typep sub-class 'shader-entity-class)
-                  (c2mop:class-finalized-p sub-class))
-        do (compute-effective-shaders sub-class)))
+(defmethod compute-effective-shader-class ((class shader-entity-class))
+  (if (direct-shaders class)
+      class
+      (let* ((effective-superclasses (list (find-class 'shader-entity))))
+        ;; Loop through superclasses and push new, effective superclasses.
+        (loop for superclass in (c2mop:class-direct-superclasses class)
+              for effective-class = (effective-shader-class superclass)
+              do (when (and effective-class (not (find effective-class effective-superclasses)))
+                   (push effective-class effective-superclasses)))
+        ;; If we have one or two --one always being the shader-entity class--
+        ;; then we just return the more specific of the two, as there's no class
+        ;; combination happening that would produce new shaders.
+        (if (<= (length effective-superclasses) 2)
+            (first effective-superclasses)
+            class))))
 
 (defmethod c2mop:finalize-inheritance :after ((class shader-entity-class))
   (dolist (super (c2mop:class-direct-superclasses class))
     (unless (c2mop:class-finalized-p super)
       (c2mop:finalize-inheritance super)))
-  (compute-effective-shaders class))
-
-(defmethod (setf effective-shaders) :after (value (class shader-entity-class))
-  (notify-class-redefinition class class))
+  (setf (effective-shaders class) (compute-effective-shaders class))
+  (setf (effective-shader-class class) (compute-effective-shader-class class)))
 
 (defmethod (setf direct-shaders) :after (value (class shader-entity-class))
-  (compute-effective-shaders class))
+  (when (c2mop:class-finalized-p class)
+    (reinitialize-instance class)))
 
 (defmethod effective-shaders ((class symbol))
   (effective-shaders (find-class class)))
@@ -109,6 +118,12 @@
 
 (defmethod remove-class-shader (type (class symbol))
   (remove-class-shader type (find-class class)))
+
+(defmethod effective-shader-class ((name symbol))
+  (effective-shader-class (find-class name)))
+
+(defmethod effective-shader-class ((class standard-class))
+  NIL)
 
 (defmethod make-class-shader-program ((class shader-entity-class))
   (make-instance 'shader-program
@@ -147,18 +162,19 @@
 (defmethod remove-class-shader (type (subject shader-entity))
   (remove-class-shader type (class-of subject)))
 
+(defmethod effective-shader-class ((object shader-entity))
+  (effective-shader-class (class-of object)))
+
 (defmethod make-class-shader-program ((subject shader-entity))
   (make-class-shader-program (class-of subject)))
 
 (defmacro define-shader-entity (&environment env name direct-superclasses direct-slots &rest options)
-  (unless (find-if (lambda (c) (c2mop:subclassp (find-class c T env) 'shader-entity)) direct-superclasses)
-    (setf direct-superclasses (append direct-superclasses (list 'shader-entity))))
+  (setf direct-superclasses (append direct-superclasses (list 'shader-entity)))
   (unless (find :metaclass options :key #'first)
     (push '(:metaclass shader-entity-class) options))
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
-     (defclass ,name ,direct-superclasses
-       ,direct-slots
-       ,@options)))
+  `(defclass ,name ,direct-superclasses
+     ,direct-slots
+     ,@options))
 
 (define-class-shader (shader-entity :vertex-shader)
   "#version 330 core")
@@ -170,28 +186,3 @@ out vec4 color;
 void main(){
   color = vec4(1.0, 1.0, 1.0, 1.0);
 }")
-
-(defmethod determine-effective-shader-class ((name symbol))
-  (determine-effective-shader-class (find-class name)))
-
-(defmethod determine-effective-shader-class ((object shader-entity))
-  (determine-effective-shader-class (class-of object)))
-
-(defmethod determine-effective-shader-class ((class standard-class))
-  NIL)
-
-(defmethod determine-effective-shader-class ((class shader-entity-class))
-  (if (direct-shaders class)
-      class
-      (let* ((effective-superclasses (list (find-class 'shader-entity))))
-        ;; Loop through superclasses and push new, effective superclasses.
-        (loop for superclass in (c2mop:class-direct-superclasses class)
-              for effective-class = (determine-effective-shader-class superclass)
-              do (when (and effective-class (not (find effective-class effective-superclasses)))
-                   (push effective-class effective-superclasses)))
-        ;; If we have one or two --one always being the shader-entity class--
-        ;; then we just return the more specific of the two, as there's no class
-        ;; combination happening that would produce new shaders.
-        (if (<= (length effective-superclasses) 2)
-            (first effective-superclasses)
-            class))))

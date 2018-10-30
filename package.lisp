@@ -443,12 +443,6 @@
    #:rail-location
    #:linear-rail
    #:rail-times)
-  ;; redefinition-notifying-class.lisp
-  (:export
-   #:redefinition-notifying-class
-   #:class-redefinition-listeners
-   #:add-class-redefinition-listener
-   #:remove-class-redefinition-listener)
   ;; render-texture.lisp
   (:export
    #:render-texture
@@ -532,7 +526,8 @@
    #:define-class-shader
    #:shader-entity
    #:define-shader-entity
-   #:determine-effective-shader-class)
+   #:effective-shader-class
+   #:compute-effective-shader-class)
   ;; shader-pass.lisp
   (:export
    #:shader-pass-class
@@ -559,7 +554,6 @@
    #:prepare-pass-program
    #:per-object-pass
    #:assets
-   #:notify-class-redefinition
    #:single-shader-pass
    #:shader-program
    #:post-effect-pass)

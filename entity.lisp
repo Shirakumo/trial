@@ -20,3 +20,5 @@
 
 (defmethod matches (a (b entity))
   (matches b a))
+
+;; FIXME: send out redefinition signals

@@ -146,3 +146,6 @@
 (defclass tick (event)
   ((tt :initarg :tt :accessor tt)
    (dt :initarg :dt :accessor dt)))
+
+(defclass class-changed (event)
+  ((changed-class :initarg :changed-class :accessor changed-class)))
