@@ -83,11 +83,12 @@
     (unless (c2mop:class-finalized-p super)
       (c2mop:finalize-inheritance super)))
   (setf (effective-shaders class) (compute-effective-shaders class))
-  (setf (effective-shader-class class) (compute-effective-shader-class class)))
+  (setf (effective-shader-class class) (compute-effective-shader-class class))
+  (handle (make-instance 'class-changed :changed-class class) T))
 
 (defmethod (setf direct-shaders) :after (value (class shader-entity-class))
   (when (c2mop:class-finalized-p class)
-    (reinitialize-instance class)))
+    (c2mop:finalize-inheritance class)))
 
 (defmethod effective-shaders ((class symbol))
   (effective-shaders (find-class class)))

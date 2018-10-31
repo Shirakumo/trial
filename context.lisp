@@ -154,7 +154,7 @@
                      this context *context*))))))
 
 (defmethod handle (event (global (eql T)))
-  (unless (boundp *context*)
+  (when (boundp '*context*)
     (handle event (handler *context*))))
 
 (defclass resize (event)
