@@ -60,6 +60,10 @@
 (defmethod shared-initialize :after ((subject subject) slots &key)
   (regenerate-handlers subject))
 
+(defmethod update-instance-for-redefined-class ((subject subject) aslots dslots plist &key)
+  (declare (ignore aslots dslots plist))
+  (regenerate-handlers subject))
+
 (defmethod regenerate-handlers ((subject subject))
   (setf (handlers subject)
         (remove-if (lambda (handler)
