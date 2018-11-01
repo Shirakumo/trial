@@ -79,8 +79,7 @@
             class))))
 
 (defmethod reinitialize-instance :after ((class subject-class) &key)
-  (cascade-class-changes class (lambda (class)
-                                 (setf (effective-handlers class) (compute-effective-handlers class)))))
+  (apply-class-changes class))
 
 (defmethod c2mop:finalize-inheritance :after ((class shader-entity-class))
   (dolist (super (c2mop:class-direct-superclasses class))
