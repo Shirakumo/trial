@@ -57,14 +57,7 @@
 (defmethod banned-slots append ((object subject))
   '(event-loops))
 
-(defmethod initialize-instance :after ((subject subject) &key)
-  (regenerate-handlers subject))
-
-(defmethod reinitialize-instance :after ((subject subject) &key)
-  (regenerate-handlers subject))
-
-(defmethod update-instance-for-redefined-class ((subject subject) aslots dslots plist &key)
-  (declare (ignore aslots dslots plist))
+(defmethod shared-initialize :after ((subject subject) slots &key)
   (regenerate-handlers subject))
 
 (defmethod regenerate-handlers ((subject subject))
