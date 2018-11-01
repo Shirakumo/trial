@@ -28,6 +28,18 @@
     (error (err) (declare (ignore err))
       :unavailable)))
 
+(defmethod apply-class-changes ((class standard-class)))
+
+(defmethod apply-class-changes :before ((class standard-class))
+  (dolist (super (c2mop:class-direct-superclasses class))
+    (unless (c2mop:class-finalized-p super)
+      (c2mop:finalize-inheritance super))))
+
+(defmethod apply-class-changes :after ((class standard-class))
+  (make-instances-obsolete class)
+  (dolist (sub (c2mop:class-direct-subclasses class))
+    (apply-class-changes sub)))
+
 ;; FIXME: put into a library
 (defconstant single-float-positive-infinity
   #+sbcl sb-ext:single-float-positive-infinity

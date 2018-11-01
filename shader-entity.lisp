@@ -78,6 +78,10 @@
             (first effective-superclasses)
             class))))
 
+(defmethod reinitialize-instance :after ((class subject-class) &key)
+  (cascade-class-changes class (lambda (class)
+                                 (setf (effective-handlers class) (compute-effective-handlers class)))))
+
 (defmethod c2mop:finalize-inheritance :after ((class shader-entity-class))
   (dolist (super (c2mop:class-direct-superclasses class))
     (unless (c2mop:class-finalized-p super)
@@ -86,9 +90,15 @@
   (setf (effective-shader-class class) (compute-effective-shader-class class))
   (handle (make-instance 'class-changed :changed-class class) T))
 
+(defmethod apply-class-changes ((class shader-entity-class))
+  (call-next-method)
+  (setf (effective-shaders class) (compute-effective-shaders class))
+  (setf (effective-shader-class class) (compute-effective-shader-class class))
+  (handle (make-instance 'class-changed :changed-class class) T))
+
 (defmethod (setf direct-shaders) :after (value (class shader-entity-class))
   (when (c2mop:class-finalized-p class)
-    (c2mop:finalize-inheritance class)))
+    (apply-class-changes class)))
 
 (defmethod effective-shaders ((class symbol))
   (effective-shaders (find-class class)))

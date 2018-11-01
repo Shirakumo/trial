@@ -30,19 +30,26 @@
                (pushnew handler effective-handlers :key #'name)))
         finally (return effective-handlers)))
 
+(defmethod reinitialize-instance :after ((class subject-class) &key)
+  (apply-class-changes class))
+
 (defmethod c2mop:finalize-inheritance :after ((class subject-class))
   (dolist (super (c2mop:class-direct-superclasses class))
     (unless (c2mop:class-finalized-p super)
       (c2mop:finalize-inheritance super)))
   (setf (effective-handlers class) (compute-effective-handlers class)))
 
+(defmethod apply-class-changes ((class subject-class))
+  (call-next-method)
+  (setf (effective-handlers class) (compute-effective-handlers class)))
+
 (defmethod add-handler :after (handler (class subject-class))
   (when (c2mop:class-finalized-p class)
-    (reinitialize-instance class)))
+    (apply-class-changes class)))
 
 (defmethod remove-handler :after (handler (class subject-class))
   (when (c2mop:class-finalized-p class)
-    (reinitialize-instance class)))
+    (apply-class-changes class)))
 
 (defmethod add-handler (handler (class symbol))
   (add-handler handler (find-class class)))
