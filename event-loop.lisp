@@ -10,8 +10,20 @@
 (defgeneric remove-handler (handler handler-container))
 (defgeneric handle (event handler))
 
+;; Default priority
+(defmethod priority (object)
+  0)
+
+(defmethod handle :around (event handler)
+  (with-simple-restart (abort "Don't handle ~a in ~a." event handler)
+    (call-next-method)))
+
 (defclass handler-container ()
   ((handlers :initform () :accessor handlers)))
+
+(defmethod handle (event (container handler-container))
+  (dolist (handler (handlers container))
+    (handle event handler)))
 
 (defmethod add-handler (handler (container handler-container))
   (setf (handlers container)
@@ -28,14 +40,6 @@
     (setf (handlers container) (sort (nconc handlers (handlers container)) #'> :key #'priority)))
   handlers)
 
-;; Default priority
-(defmethod priority (object)
-  0)
-
-(defmethod add-handler ((source handler-container) (container handler-container))
-  (add-handler (handlers source) container)
-  source)
-
 (defmethod remove-handler (handler (container handler-container))
   (setf (handlers container)
         (delete handler (handlers container) :test #'matches))
@@ -47,16 +51,12 @@
                                         (handlers container)))
   handlers)
 
+(defmethod add-handler ((source handler-container) (container handler-container))
+  (add-handler (handlers source) container)
+  source)
+
 (defmethod remove-handler ((source handler-container) (container handler-container))
   (remove-handler (handlers source) container))
-
-(defmethod handle (event (container handler-container))
-  (dolist (handler (handlers container))
-    (handle event handler)))
-
-(defmethod handle :around (event handler)
-  (with-simple-restart (abort "Don't handle ~a in ~a." event handler)
-    (call-next-method)))
 
 (defclass event-loop (handler-container)
   ((queue :initform (make-array 64 :initial-element NIL :adjustable T :fill-pointer 0) :reader queue)
