@@ -42,7 +42,8 @@
                       (ecase (buffer-type buffer)
                         (:element-array-buffer
                          (unless (size array)
-                           (setf (size array) (size buffer)))
+                           (setf (size array) (/ (size buffer)
+                                                 (gl-type-size (element-type buffer)))))
                          (decf i))
                         (:array-buffer
                          (if (or normalize (find (element-type buffer) '(:half-float :float :double)))
