@@ -15,7 +15,7 @@
   (key-press (eql key :f3)))
 
 (define-action reload-scene (system-action)
-  (key-press (eql key :f6)))
+  (key-press (eql key :f4)))
 
 (define-action quit-game (system-action)
   (key-press (and (eql key :q) (find :control modifiers))))
