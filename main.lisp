@@ -51,15 +51,16 @@
 
 (defmethod change-scene ((main main) (new scene))
   (let ((old (scene main)))
-    (stop old)
-    (restart-case
-        (progn
-          (setup-scene main new)
-          (transition old new)
-          (setf (scene main) new))
-      (abort ()
-        :report "Give up changing the scene and continue with the old."
-        (start old)))
+    (unless (eq old new)
+      (stop old)
+      (restart-case
+          (progn
+            (setup-scene main new)
+            (transition old new)
+            (setf (scene main) new))
+        (abort ()
+          :report "Give up changing the scene and continue with the old."
+          (start old))))
     (values new old)))
 
 (defmethod paint ((source main) (target main))
