@@ -434,6 +434,11 @@
   ;; pipelined-scene.lisp
   (:export
    #:pipelined-scene)
+  ;; prompt.lisp
+  (:export
+   #:prompt-font
+   #:prompt-char
+   #:prompt)
   ;; rails.lisp
   (:export
    #:rail
