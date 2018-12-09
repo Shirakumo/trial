@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (define-shader-entity text (located-entity vertex-entity colored-entity textured-entity readied)
-  ((texture :initarg :font :accessor font)
+  ((texture :initarg :font :initform (error "FONT required.") :accessor font)
    (text :initarg :text :accessor text)
    (size :initarg :size :accessor size)
    (wrap :initarg :wrap :accessor wrap)
@@ -19,8 +19,7 @@
    :text ""
    :wrap NIL
    :width NIL
-   :height NIL
-   :font (error "FONT required."))
+   :height NIL)
   (:inhibit-shaders (colored-entity :fragment-shader)
                     (textured-entity :fragment-shader)))
 

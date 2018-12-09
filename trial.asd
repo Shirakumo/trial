@@ -51,6 +51,7 @@
                (:file "phong" :depends-on ("package" "helpers"))
                (:file "pipeline" :depends-on ("package" "event-loop" "toolkit"))
                (:file "pipelined-scene" :depends-on ("package" "pipeline" "scene" "loader"))
+               (:file "prompt" :depends-on ("package" "text"))
                (:file "rails" :depends-on ("package" "subject" "helpers"))
                (:file "render-texture" :depends-on ("package" "pipeline" "entity"))
                (:file "renderable" :depends-on ("package" "toolkit"))
