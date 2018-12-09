@@ -98,7 +98,7 @@ void main(){
   (when (wrap text)
     (setf (text text) (text text))))
 
-(defmethod (setf text) :before (string (text text))
+(defmethod (setf text) :before ((string string) (text text))
   (let ((vao (vertex-array text))
         (vbo (slot-value text 'vbo))
         (ebo (slot-value text 'ebo))
