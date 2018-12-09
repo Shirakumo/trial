@@ -45,8 +45,8 @@
            (flow:node input) input))
   (let ((other (flow:left (first (flow:connections input)))))
     (unless (or (not (texspec input))
-                (join-texspec (texspec input)
-                              (texspec other)))
+                (join-texspec (normalized-texspec (texspec input))
+                              (normalized-texspec (texspec other))))
       (error "Pipeline is not consistent.~%~
               Pass ~s' input ~s is not texture compatible with output ~s."
              (flow:node input) input other))))
