@@ -9,7 +9,7 @@
 (define-asset (trial prompt-font) font
     #p"PromptFont.ttf"
   :charset " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~↞↟↠↡↤↥↦↧↰↱↲↳↺↻↼↽↾↿⇀⇁⇂⇃⇇⇈⇉⇊⇖⇗⇘⇙⇷⇸⇹␧␨␩␪␫␬␭␮␯␰␱␲␳␴␵␶␷␸␹①②③④⑤⑥⑦⑧⑨⑩⑪⑫"
-  :font-size 32)
+  :size 32)
 
 (defun prompt-char (thing)
   (etypecase thing
@@ -82,7 +82,7 @@
        (:f12 #\⑫)))))
 
 (define-shader-subject prompt (text)
-  ((tetxure :initform (asset 'trial 'prompt-font))))
+  ((texture :initform (asset 'trial 'prompt-font))))
 
 (defmethod (setf text) ((character character) (prompt prompt))
   (setf (text prompt) (string character)))
