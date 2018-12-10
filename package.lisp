@@ -439,7 +439,8 @@
    #:prompt-string
    #:prompt-charset
    #:prompt-font
-   #:prompt)
+   #:prompt
+   #:prompt-icon)
   ;; rails.lisp
   (:export
    #:rail

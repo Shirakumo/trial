@@ -162,7 +162,7 @@
                         (:SCROLL-U      #x27F0)
                         (:SCROLL-D      #x27F1)))))
 
-(defun prompt-string (thing &key (bank :gamepad))
+(defun prompt-char (thing &key (bank :gamepad))
   (let ((table (getf *prompt-char-table* bank)))
     (when table (gethash thing table))))
 
@@ -188,5 +188,5 @@
 (defmethod (setf text) ((symbol symbol) (prompt prompt))
   (setf (text prompt) (prompt-string symbol)))
 
-(defmethod (setf text) ((cons cons) (prompt prompt))
-  (setf (text prompt) (prompt-string (cdr cons) :bank (car cons))))
+(defmethod (setf prompt-icon) (char (prompt prompt) &key (bank :gamepad))
+  (setf (text prompt) (prompt-string char :bank bank)))
