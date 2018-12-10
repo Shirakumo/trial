@@ -162,15 +162,16 @@
                         (:SCROLL-U      #x27F0)
                         (:SCROLL-D      #x27F1)))))
 
-(defun prompt-char (thing &key (bank :gamepad))
+(defun prompt-string (thing &key (bank :gamepad))
   (let ((table (getf *prompt-char-table* bank)))
     (when table (gethash thing table))))
 
 (defun prompt-charset ()
-  (sort (with-output-to-string (out)
-          (loop for (bank table) on *prompt-char-table* by #'cddr
-                do (loop for string being the hash-values of table
-                         do (write-string string out))))
+  (sort (delete-duplicates
+         (with-output-to-string (out)
+           (loop for (bank table) on *prompt-char-table* by #'cddr
+                 do (loop for string being the hash-values of table
+                          do (write-string string out)))))
         #'char<))
 
 (define-asset (trial prompt-font) font
@@ -185,4 +186,7 @@
   (setf (text prompt) (string character)))
 
 (defmethod (setf text) ((symbol symbol) (prompt prompt))
-  (setf (text prompt) (string (prompt-char symbol))))
+  (setf (text prompt) (prompt-string symbol)))
+
+(defmethod (setf text) ((cons cons) (prompt prompt))
+  (setf (text prompt) (prompt-string (cdr cons) :bank (car cons))))
