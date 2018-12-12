@@ -69,7 +69,8 @@
 
 (defmethod update-instance-for-redefined-class ((subject subject) aslots dslots plist &key)
   (declare (ignore aslots dslots plist))
-  (regenerate-handlers subject))
+  (when (slot-boundp subject 'handlers)
+    (regenerate-handlers subject)))
 
 (defmethod regenerate-handlers ((subject subject))
   (setf (handlers subject)
