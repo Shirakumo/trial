@@ -436,7 +436,7 @@
    #:pipelined-scene)
   ;; prompt.lisp
   (:export
-   #:prompt-string
+   #:prompt-char
    #:prompt-charset
    #:prompt-font
    #:prompt

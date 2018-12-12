@@ -10,7 +10,7 @@
   (macrolet ((-> (&rest entries)
                `(let ((tab (make-hash-table :test 'eq)))
                   ,@(loop for (k c) in entries
-                          collect `(setf (gethash ',k tab) ,(string (code-char c))))
+                          collect `(setf (gethash ',k tab) ,(code-char c)))
                   tab)))
     (list :devices  (-> (:GAMEPAD       #x243C)
                         (:KEYBOARD      #x243D)
@@ -171,7 +171,7 @@
          (with-output-to-string (out)
            (loop for (bank table) on *prompt-char-table* by #'cddr
                  do (loop for string being the hash-values of table
-                          do (write-string string out)))))
+                          do (write-char string out)))))
         #'char<))
 
 (define-asset (trial prompt-font) font
@@ -186,7 +186,7 @@
   (setf (text prompt) (string character)))
 
 (defmethod (setf text) ((symbol symbol) (prompt prompt))
-  (setf (text prompt) (prompt-string symbol)))
+  (setf (text prompt) (string (prompt-char symbol))))
 
 (defmethod (setf prompt-icon) (char (prompt prompt) &key (bank :gamepad))
-  (setf (text prompt) (prompt-string char :bank bank)))
+  (setf (text prompt) (string (prompt-char char :bank bank))))
