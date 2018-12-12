@@ -10,11 +10,8 @@
 ;;; and a frame in the animation for every column.
 
 (define-shader-entity sprite-entity (vertex-entity textured-entity)
-  ((tile :initarg :tile :accessor tile)
-   (size :initarg :size :accessor size))
-  (:default-initargs
-   :size (vec2 32 32)
-   :tile (vec2 0 0))
+  ((tile :initarg :tile :initform (vec 0 0) :accessor tile)
+   (size :initarg :size :initform (error "SIZE required.") :accessor size))
   (:inhibit-shaders
    (textured-entity :vertex-shader)))
 
@@ -34,13 +31,14 @@ void main(){
   // Determine size of a single sprite in the sheet.
   vec2 sprite_size = size / textureSize(texture_image, 0);
   // Determine position of the \"start\" coordinates for this frame.
-  vec2 frame_start = vec2(sprite_size.x*tile.x, 0);
+  vec2 frame_start = vec2(sprite_size.x*tile.x, sprite_size.y*tile.y);
   // Maybe add 1 if we're at the other edges.
   texcoord = frame_start + in_texcoord * sprite_size;
 }")
 
 (define-shader-subject animated-sprite-subject (sprite-entity)
   ((animations :accessor animations)
+   (animation :initform 0 :accessor animation)
    (clock :initform 0.0d0 :accessor clock)))
 
 (defmethod shared-initialize :after ((subject animated-sprite-subject) slots &key animation frame animations)
@@ -49,17 +47,14 @@ void main(){
   (when frame (setf (frame subject) frame)))
 
 (defmethod frame ((subject animated-sprite-subject))
-  (vx (tile subject)))
+  (- (vx (tile subject))
+     (first (svref (animations subject) (animation subject)))))
 
-(defmethod (setf frame) (value (subject animated-sprite-subject))
-  (setf (vx (tile subject)) value))
+(defmethod (setf frame) :after (value (subject animated-sprite-subject))
+  (setf (vx (tile subject)) (+ value (first (svref (animations subject) (animation subject))))))
 
-(defmethod animation ((subject animated-sprite-subject))
-  (vy (tile subject)))
-
-(defmethod (setf animation) (value (subject animated-sprite-subject))
+(defmethod (setf animation) :before (value (subject animated-sprite-subject))
   (when (/= value (animation subject))
-    (setf (vy (tile subject)) value)
     (setf (vx (tile subject)) (first (svref (animations subject) value)))))
 
 (defmethod (setf animations) (value (subject animated-sprite-subject))
@@ -77,14 +72,14 @@ void main(){
 (define-handler (animated-sprite-subject update-sprite-animation tick) (ev dt)
   (let ((tile (tile animated-sprite-subject)))
     (destructuring-bind (start duration frames next-anim loop-to)
-        (svref (animations animated-sprite-subject) (round (vy tile)))
+        (svref (animations animated-sprite-subject) (animation animated-sprite-subject))
       (let ((per-frame-duration (/ duration frames)))
         (incf (clock animated-sprite-subject) dt)
         (when (<= per-frame-duration (clock animated-sprite-subject))
           (decf (clock animated-sprite-subject) per-frame-duration)
           (incf (vx tile)))
         (when (<= (+ start frames) (vx tile))
-          (cond ((= (vy tile) next-anim)
+          (cond ((= (animation animated-sprite-subject) next-anim)
                  (setf (vx tile) loop-to))
                 (T
                  (setf (animation animated-sprite-subject) next-anim))))))))
