@@ -50,7 +50,7 @@ void main(){
   (- (vx (tile subject))
      (first (svref (animations subject) (animation subject)))))
 
-(defmethod (setf frame) :after (value (subject animated-sprite-subject))
+(defmethod (setf frame) (value (subject animated-sprite-subject))
   (setf (vx (tile subject)) (+ value (first (svref (animations subject) (animation subject))))))
 
 (defmethod (setf animation) :before (value (subject animated-sprite-subject))
