@@ -707,7 +707,7 @@
 (defpackage #:cl+trial
   (:nicknames #:org.shirakumo.fraf.trial.cl+trial)
   (:shadowing-import-from #:trial #:scene #:entity #:load #:update)
-  (:use #:cl #:trial #:3d-vectors #:flare))
+  (:use #:cl #:trial #:3d-vectors #:3d-matrices #:flare))
 
 (do-symbols (symb '#:cl+trial)
   (export (list symb) '#:cl+trial))
