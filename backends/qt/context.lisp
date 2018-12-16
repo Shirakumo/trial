@@ -47,7 +47,8 @@
   (with-accessors ((format glformat)) context
     (unless format (setf format (q+:make-qglformat)))
     (macrolet ((maybe-set (variable setter)
-                 `(when ,(intern (format NIL "~a-~a" variable :p))
+                 `(when ,(let ((*print-case* (readtable-case *readtable*)))
+                           (intern (format NIL "~a-~a" variable :p)))
                     (setf (q+ ,setter format) ,variable))))
       (maybe-set accumulation-buffer accum)
       (maybe-set alpha-buffer alpha)

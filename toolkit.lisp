@@ -527,8 +527,9 @@
              width height max))))
 
 (defmacro define-enum-check (name &body cases)
-  (let ((list (intern (format NIL "*~a-~a*" name '#:list)))
-        (func (intern (Format NIL "~a-~a" '#:check name))))
+  (let* ((*print-case* (readtable-case *readtable*))
+         (list (intern (format NIL "*~a-~a*" name '#:list)))
+         (func (intern (Format NIL "~a-~a" '#:check name))))
     `(progn (defparameter ,list '(,@cases))
             (defun ,func (enum)
               (unless (find enum ,list)

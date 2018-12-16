@@ -110,7 +110,8 @@
 
 (defun generate-prepare-pass-program (&optional (units (gl:get* :max-texture-image-units)))
   (check-type units (integer 1))
-  (let ((units (loop for i downfrom (1- units) to 0 collect i)))
+  (let ((*print-case* (readtable-case *readtable*))
+        (units (loop for i downfrom (1- units) to 0 collect i)))
     `(lambda (pass program)
        (loop with texture-index = ',units
              with texture-name = ',(loop for unit in units collect

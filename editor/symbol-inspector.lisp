@@ -16,8 +16,9 @@
   (refresh-instances symbol-inspector))
 
 (defmacro define-symbol-attr (name &key reader accessor bound-test unbinder)
-  (let ((set-name (intern (format NIL "~a-~a" 'set name)))
-        (unbind-name (intern (format NIL "~a-~a" 'unbind name))))
+  (let* ((*print-case* (readtable-case *readtable*))
+         (set-name (intern (format NIL "~a-~a" 'set name)))
+         (unbind-name (intern (format NIL "~a-~a" 'unbind name))))
     `(progn
        (define-subwidget (symbol-inspector ,name)
            ,(if reader
