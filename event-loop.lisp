@@ -90,12 +90,13 @@
 ;;        The check will assume nothing has changed and it'll continue from
 ;;        where it left off, thus missing events before the current index.
 (defmethod process ((loop event-loop))
-  (loop for i = (1- (incf (queue-index loop)))
-        while (< i (length (queue loop)))
-        do (let ((event (aref (queue loop) i)))
-             (when event
-               (handle event loop)
-               (setf (aref (queue loop) i) NIL))))
+  (with-simple-restart (discard-events "Discard all events.")
+    (loop for i = (1- (incf (queue-index loop)))
+          while (< i (length (queue loop)))
+          do (let ((event (aref (queue loop) i)))
+               (when event
+                 (handle event loop)
+                 (setf (aref (queue loop) i) NIL)))))
   (setf (fill-pointer (queue loop)) 0
         (queue-index loop) 0))
 

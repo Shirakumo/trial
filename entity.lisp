@@ -8,6 +8,10 @@
 
 (defgeneric matches (a b))
 
+(defmethod matches :around (a b)
+  (or (eq a b)
+      (call-next-method)))
+
 (defmethod matches (a b)
   (equal a b))
 
