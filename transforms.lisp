@@ -103,13 +103,13 @@
 (defun vec->screen (vec width height)
   (let ((clip-pos (m* (projection-matrix) (view-matrix) (model-matrix) (vxyz_ vec))))
     (let ((w (vw clip-pos)))
-      (if (= 0.0s0 w)
+      (if (= 0.0f0 w)
           (vec -1 -1 0)
-          (let* ((norm-pos (nv+ (nv* (vxyz clip-pos) (/ 0.5s0 w)) 0.5s0)))
+          (let* ((norm-pos (nv+ (nv* (vxyz clip-pos) (/ 0.5f0 w)) 0.5f0)))
             (vsetf norm-pos
                    (* width (vx norm-pos))
                    (* height (- 1 (vy norm-pos)))
-                   0.0s0))))))
+                   0.0f0))))))
 
 (defun screen->vec (vec width height)
   (let* ((x (- (* 2 (/ (vx vec) width)) 1))

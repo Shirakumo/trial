@@ -31,7 +31,7 @@
   (let ((total (loop for i from 1 below (length points)
                      sum (vlength (v- (aref points i) (aref points (1- i))))))
         (times (make-array (length points) :element-type 'single-float
-                                           :initial-element 0.0s0)))
+                                           :initial-element 0.0f0)))
     (loop for i from 1 below (length points)
           for v = (v- (aref points i) (aref points (1- i)))
           for d = (vlength v) then (+ d (vlength v))
