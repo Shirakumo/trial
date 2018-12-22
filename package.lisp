@@ -31,6 +31,18 @@
    #:geometry-name
    #:attributes
    #:data-usage)
+  ;; assets/uniform-buffer.lisp
+  (:export
+   #:uniform-buffer
+   #:layout
+   #:qualifiers
+   #:binding
+   #:offsets
+   #:gl-type
+   #:gl-source
+   #:compute-offsets
+   #:bind
+   #:buffer-field)
   ;; formats/collada.lisp
   (:export)
   ;; formats/vertex-format.lisp
@@ -40,6 +52,21 @@
    #:framebuffer
    #:attachments
    #:resize)
+  ;; resources/gl-struct.lisp
+  (:export
+   #:gl-declaration
+   #:name
+   #:gl-name
+   #:gl-type
+   #:qualifiers
+   #:layout
+   #:compute-dependant-types
+   #:gl-source
+   #:gl-struct-field
+   #:array-size
+   #:gl-struct
+   #:fields
+   #:define-gl-struct)
   ;; resources/shader-program.lisp
   (:export
    #:shader-program

@@ -28,6 +28,11 @@
   (print-unreadable-object (gl-declaration stream :type T)
     (format stream "~s" (name gl-declaration))))
 
+(defmethod compute-dependant-types ((gl-declaration gl-declaration))
+  (let ((type (gl-type gl-declaration)))
+    (when (and (listp type) (eq (first type) :struct))
+      (list (second type)))))
+
 (defmethod gl-source ((gl-declaration gl-declaration))
   `(glsl-toolkit:struct-declarator
     (glsl-toolkit:type-qualifier
@@ -66,7 +71,7 @@
 
 (defmethod initialize-instance :after ((gl-struct gl-struct) &key name gl-type)
   (unless gl-type
-    (setf (gl-type gl-struct) (format NIL "~@(~a~)" (cffi:translate-underscore-separated-name name)))))
+    (setf (gl-type gl-struct) (cffi:translate-camelcase-name name :upper-initial-p T))))
 
 (defmethod print-object ((gl-struct gl-struct) stream)
   (print-unreadable-object (gl-struct stream :type T)
@@ -87,6 +92,9 @@
 
 (defun remove-gl-struct (name)
   (remhash name *gl-structs*))
+
+(defmethod compute-dependant-types ((gl-struct gl-struct))
+  (mapcan #'compute-dependant-types (fields gl-struct)))
 
 (defun translate-gl-struct-field-info (fields)
   (loop for field in fields

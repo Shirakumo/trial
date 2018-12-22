@@ -34,43 +34,43 @@ void main(){
   ())
 
 (define-class-shader (negative-pass :fragment-shader)
-  '(effects #p"negative.frag"))
+  (pool-path 'effects #p"negative.frag"))
 
 (define-shader-pass grayscale-pass (simple-post-effect-pass)
   ())
 
 (define-class-shader (grayscale-pass :fragment-shader)
-  '(effects #p"gray-filter.frag"))
+  (pool-path 'effects #p"gray-filter.frag"))
 
 (define-shader-pass box-blur-pass (simple-post-effect-pass)
   ())
 
 (define-class-shader (box-blur-pass :fragment-shader)
-  '(effects #p"box-blur.frag"))
+  (pool-path 'effects #p"box-blur.frag"))
 
 (define-shader-pass sobel-pass (simple-post-effect-pass)
   ())
 
 (define-class-shader (sobel-pass :fragment-shader)
-  '(effects #p"sobel.frag"))
+  (pool-path 'effects #p"sobel.frag"))
 
 (define-shader-pass gaussian-blur-pass (simple-post-effect-pass)
   ())
 
 (define-class-shader (gaussian-blur-pass :fragment-shader)
-  '(effects #p"gaussian.frag"))
+  (pool-path 'effects #p"gaussian.frag"))
 
 (define-shader-pass radial-blur-pass (simple-post-effect-pass)
   ())
 
 (define-class-shader (radial-blur-pass :fragment-shader)
-  '(effects #p"radial-blur.frag"))
+  (pool-path 'effects #p"radial-blur.frag"))
 
 (define-shader-pass fxaa-pass (simple-post-effect-pass)
   ())
 
 (define-class-shader (fxaa-pass :fragment-shader)
-  '(effects #p"fxaa.frag"))
+  (pool-path 'effects #p"fxaa.frag"))
 
 (define-shader-pass blend-pass (post-effect-pass)
   ((a-pass :port-type input)
@@ -78,25 +78,25 @@ void main(){
    (color :port-type output)))
 
 (define-class-shader (blend-pass :fragment-shader)
-  '(effects #p"blend.frag"))
+  (pool-path 'effects #p"blend.frag"))
 
 (define-shader-pass high-pass-filter (simple-post-effect-pass)
   ())
 
 (define-class-shader (high-pass-filter :fragment-shader)
-  '(effects #p"high-pass-filter.frag"))
+  (pool-path 'effects #p"high-pass-filter.frag"))
 
 (define-shader-pass low-pass-filter (simple-post-effect-pass)
   ())
 
 (define-class-shader (low-pass-filter :fragment-shader)
-  '(effects #p"low-pass-filter.frag"))
+  (pool-path 'effects #p"low-pass-filter.frag"))
 
 (define-shader-pass chromatic-aberration-filter (simple-post-effect-pass)
   ())
 
 (define-class-shader (chromatic-aberration-filter :fragment-shader)
-  '(effects #p"aberration.frag"))
+  (pool-path 'effects #p"aberration.frag"))
 
 (define-shader-pass black-render-pass (render-pass)
   ((color :port-type output)))
@@ -114,4 +114,4 @@ void main(){
    (color :port-type output)))
 
 (define-class-shader (light-scatter-pass :fragment-shader)
-  '(effects #p"light-scatter.frag"))
+  (pool-path 'effects #p"light-scatter.frag"))

@@ -55,11 +55,7 @@
     (loop for (type shaders) on effective-shaders by #'cddr
           do (setf (getf effective-shaders type)
                    (glsl-toolkit:merge-shader-sources
-                    (loop for (priority shader) in (stable-sort shaders #'> :key #'first)
-                          collect (etypecase shader
-                                    (string shader)
-                                    (list (destructuring-bind (pool path) shader
-                                            (pool-path pool path))))))))
+                    (mapcar #'second (stable-sort shaders #'> :key #'first)))))
     effective-shaders))
 
 (defmethod compute-effective-shader-class ((class shader-entity-class))
@@ -143,9 +139,20 @@
 (defmethod make-class-shader-program ((class symbol))
   (make-class-shader-program (find-class class)))
 
+(defun combine-shader-sources (&rest sources)
+  (list* 'glsl-toolkit:shader
+         (loop for source in sources
+               for parsed = (etypecase source
+                              (cons source)
+                              (T (glsl-toolkit:parse source)))
+               append (case (car parsed)
+                        (glsl-toolkit:shader
+                         (cdr parsed))
+                        (T (list parsed))))))
+
 (defmacro define-class-shader ((class type &optional (priority 0)) &body definitions)
   `(setf (class-shader ,type ',class)
-         (list ,priority (progn ,@definitions))))
+         (list ,priority (combine-shader-sources ,@definitions))))
 
 (defclass shader-entity (entity)
   ()
