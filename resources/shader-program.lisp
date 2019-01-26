@@ -93,14 +93,18 @@
                  (2 (gl:uniform-matrix-4x2-fv location (marrn data)))
                  (3 (gl:uniform-matrix-4x3-fv location (marrn data)))))))))
 
+(declaim (inline uniform-location))
+(defun uniform-location (program name)
+  (or (gethash name (uniform-map program))
+      (setf (gethash name (uniform-map program))
+            (gl:get-uniform-location (gl-name program) name))))
+
 (defun (setf uniform) (data asset name)
   (declare (optimize speed))
   (let* ((name (etypecase name
                  (string name)
                  (symbol (symbol->c-name name))))
-         (location (or (gethash name (uniform-map asset))
-                       (setf (gethash name (uniform-map asset))
-                             (gl:get-uniform-location (gl-name asset) name)))))
+         (location (uniform-location asset name)))
     (%set-uniform location data)))
 
 (define-compiler-macro (setf uniform) (&whole whole &environment env data asset name)
@@ -111,9 +115,16 @@
                              (string ,name)
                              (symbol (symbol->c-name ,name)))))
                   (,assetg ,asset))
-              (%set-uniform (or (gethash ,nameg (uniform-map ,assetg))
-                                (setf (gethash ,nameg (uniform-map ,assetg))
-                                      (gl:get-uniform-location (gl-name ,assetg) ,nameg)))
-                            ,data))))
+              (%set-uniform (uniform-location ,assetg ,nameg) ,data))))
         (T
          whole)))
+
+(defmethod uniforms ((program shader-program))
+  (let ((count (gl:get-program (gl-name program) :active-uniforms)))
+    (loop for i from 0 below count
+          collect (multiple-value-bind (size type name) (gl:get-active-uniform (gl-name program) i)
+                    (list :index i
+                          :size size
+                          :type type
+                          :name name
+                          :location (uniform-location program name))))))
