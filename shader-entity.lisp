@@ -142,7 +142,8 @@
   (make-instance 'shader-program
                  :shaders (loop for (type source) on (effective-shaders class) by #'cddr
                                 collect (make-instance 'shader :source source :type type))
-                 :buffers (effective-buffers class)))
+                 :buffers (loop for asset-spec in (effective-buffers class)
+                                collect (apply #'asset asset-spec))))
 
 (defmethod make-class-shader-program ((class symbol))
   (make-class-shader-program (find-class class)))
