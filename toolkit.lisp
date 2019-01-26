@@ -136,6 +136,14 @@
 (defun input-literal (&optional (stream *query-io*))
   (read stream))
 
+(defmacro define-accessor-wrapper-methods (name &body wrappers)
+  `(progn ,@(loop with value = (gensym "VALUE")
+                  for (type resolution) in wrappers
+                  collect `(defmethod ,name ((,type ,type))
+                             (,name ,resolution))
+                  collect `(defmethod (setf ,name) (,value (,type ,type))
+                             (setf (,name ,resolution) ,value)))))
+
 (defmacro with-retry-restart ((name report &rest report-args) &body body)
   (let ((tag (gensym "RETRY-TAG"))
         (return (gensym "RETURN"))

@@ -75,17 +75,27 @@
 (defgeneric make-pass-shader-program (pass class))
 (defgeneric coerce-pass-shader (pass class type spec))
 
-(defmethod make-pass-shader-program ((pass shader-pass) (class symbol))
+(defmethod make-pass-shader-program (pass (class symbol))
   (make-pass-shader-program pass (find-class class)))
 
+(defmethod make-pass-shader-program (pass (object shader-entity))
+  (make-pass-shader-program pass (class-of object)))
+
 (defmethod make-pass-shader-program ((pass shader-pass) (class shader-entity-class))
-  (let ((shaders ()))
+  (let ((shaders ())
+        (buffers ()))
     ;; FIXME: What if the pass defines types that the class does not?
     (loop for (type spec) on (effective-shaders class) by #'cddr
           for inputs = (coerce-pass-shader pass class type spec)
           for shader = (make-instance 'shader :source inputs :type type)
           do (push shader shaders))
-    (make-instance 'shader-program :shaders shaders)))
+    (loop for asset-spec in (effective-buffers class)
+          do (push (apply #'asset asset-spec) buffers))
+    (loop for asset-spec in (effective-buffers pass)
+          do (pushnew (apply #'asset asset-spec) buffers))
+    (make-instance 'shader-program
+                   :shaders shaders
+                   :buffers buffers)))
 
 (defmethod finalize :after ((pass shader-pass))
   (when (framebuffer pass)

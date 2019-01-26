@@ -10,6 +10,8 @@
   ((effective-shaders :initform () :accessor effective-shaders)
    (direct-shaders :initform () :initarg :shaders :accessor direct-shaders)
    (inhibited-shaders :initform () :initarg :inhibit-shaders :accessor inhibited-shaders)
+   (effective-buffers :initform () :accessor effective-buffers)
+   (direct-buffers :initform () :initarg :buffers :accessor direct-buffers)
    (effective-shader-class :accessor effective-shader-class)))
 
 (defmethod c2mop:validate-superclass ((class shader-entity-class) (superclass t))
@@ -58,6 +60,17 @@
                     (mapcar #'second (stable-sort shaders #'> :key #'first)))))
     effective-shaders))
 
+(defmethod compute-effective-buffers ((class shader-entity-class))
+  (let ((effective-buffers ())
+        (superclasses (remove 'shader-entity-class
+                              (c2mop:compute-class-precedence-list class)
+                              :test-not (lambda (type class) (typep class type)))))
+    ;; FIXME: inhibition logic
+    (loop for super in superclasses
+          do (loop for buffer in (direct-buffers super)
+                   do (pushnew buffer effective-buffers :test #'equal)))
+    effective-buffers))
+
 (defmethod compute-effective-shader-class ((class shader-entity-class))
   (if (direct-shaders class)
       class
@@ -82,12 +95,14 @@
     (unless (c2mop:class-finalized-p super)
       (c2mop:finalize-inheritance super)))
   (setf (effective-shaders class) (compute-effective-shaders class))
+  (setf (effective-buffers class) (compute-effective-buffers class))
   (setf (effective-shader-class class) (compute-effective-shader-class class))
   (handle (make-instance 'class-changed :changed-class class) T))
 
 (defmethod apply-class-changes ((class shader-entity-class))
   (call-next-method)
   (setf (effective-shaders class) (compute-effective-shaders class))
+  (setf (effective-buffers class) (compute-effective-buffers class))
   (setf (effective-shader-class class) (compute-effective-shader-class class))
   (handle (make-instance 'class-changed :changed-class class) T))
 
@@ -95,17 +110,9 @@
   (when (c2mop:class-finalized-p class)
     (apply-class-changes class)))
 
-(defmethod effective-shaders ((class symbol))
-  (effective-shaders (find-class class)))
-
-(defmethod (setf effective-shaders) (value (class symbol))
-  (setf (effective-shaders (find-class class)) value))
-
-(defmethod direct-shaders ((class symbol))
-  (direct-shaders (find-class class)))
-
-(defmethod (setf direct-shaders) (value (class symbol))
-  (setf (direct-shaders (find-class class)) value))
+(defmethod (setf direct-buffers) :after (value (class shader-entity-class))
+  (when (c2mop:class-finalized-p class)
+    (apply-class-changes class)))
 
 (defmethod class-shader (type (class shader-entity-class))
   (getf (direct-shaders class) type))
@@ -134,7 +141,8 @@
 (defmethod make-class-shader-program ((class shader-entity-class))
   (make-instance 'shader-program
                  :shaders (loop for (type source) on (effective-shaders class) by #'cddr
-                                collect (make-instance 'shader :source source :type type))))
+                                collect (make-instance 'shader :source source :type type))
+                 :buffers (effective-buffers class)))
 
 (defmethod make-class-shader-program ((class symbol))
   (make-class-shader-program (find-class class)))
@@ -158,17 +166,21 @@
   ()
   (:metaclass shader-entity-class))
 
-(defmethod effective-shaders ((subject shader-entity))
-  (effective-shaders (class-of subject)))
+(define-accessor-wrapper-methods effective-shaders
+  (symbol (find-class symbol))
+  (shader-entity (class-of shader-entity)))
 
-(defmethod (setf effective-shaders) (value (subject shader-entity))
-  (setf (effective-shaders (class-of subject)) value))
+(define-accessor-wrapper-methods direct-shaders
+  (symbol (find-class symbol))
+  (shader-entity (class-of shader-entity)))
 
-(defmethod direct-shaders ((subject shader-entity))
-  (direct-shaders (class-of subject)))
+(define-accessor-wrapper-methods effective-buffers
+  (symbol (find-class symbol))
+  (shader-entity (class-of shader-entity)))
 
-(defmethod (setf direct-shaders) (value (subject shader-entity))
-  (setf (direct-shaders (class-of subject)) value))
+(define-accessor-wrapper-methods direct-buffers
+  (symbol (find-class symbol))
+  (shader-entity (class-of shader-entity)))
 
 (defmethod class-shader (type (subject shader-entity))
   (class-shader type (class-of subject)))
