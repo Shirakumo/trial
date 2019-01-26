@@ -104,7 +104,7 @@
       (apply #'update-buffer-data buffer arr args))))
 
 (defmethod update-buffer-data ((buffer buffer-object) (buffer-data vector) &key (data-start 0) (data-end (length buffer-data)) buffer-start buffer-end element-type)
-  (let* ((element-type (or element-type (array-element-type buffer-data)))
+  (let* ((element-type (or element-type (cl-type->gl-type (array-element-type buffer-data))))
          (element-size (gl-type-size element-type))
          (buffer-start (when buffer-start (* buffer-start element-size)))
          (buffer-end (when buffer-end (* buffer-end element-size))))
