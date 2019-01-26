@@ -62,7 +62,7 @@
                                                (format NIL "~a~a." prefix (gl-name field))))
                                (T
                                 (list (format NIL "~a~a" prefix (gl-name field))))))))
-    (gather-fields (gl-struct (input buffer)) (format NIL "~@[~a.~]" (binding buffer)))))
+    (gather-fields (gl-struct (input buffer)) (format NIL "~@[~a.~]" (gl-type buffer)))))
 
 (defmethod compute-offsets ((buffer uniform-buffer) (program shader-program))
   (let* ((struct (gl-struct (input buffer)))
@@ -75,7 +75,7 @@
                                 (params :int 1))
       (dolist (field fields)
         (cffi:with-foreign-string (name field)
-          (setf (cffi:mem-ref names :pointer) name)
+          (setf (cffi:mem-aref names :pointer 0) name)
           (%gl:get-uniform-indices (gl-name program) 1 names indices)
           (%gl:get-active-uniforms-iv (gl-name program) 1 indices :uniform-offset params)
           (setf (gethash field offsets) (cffi:mem-ref params :int)))))
