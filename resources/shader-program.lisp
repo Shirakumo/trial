@@ -34,7 +34,8 @@
   (let ((shaders (shaders program)))
     (check-shader-compatibility shaders)
     (let ((prog (gl:create-program)))
-      (with-cleanup-on-failure (gl:delete-program prog)
+      (with-cleanup-on-failure (progn (gl:delete-program prog)
+                                      (setf (data-pointer program) NIL))
         (dolist (shader shaders)
           (check-allocated shader)
           (gl:attach-shader prog (gl-name shader)))
@@ -45,10 +46,10 @@
           (error "Failed to link ~a: ~%~a"
                  program (gl:get-program-info-log prog)))
         (v:debug :trial.asset "Linked ~a with ~a." program shaders)
+        (setf (data-pointer program) prog)
         (loop for buffer in (buffers program)
               for i from 0
-              do (bind buffer program i))
-        (setf (data-pointer program) prog)))))
+              do (bind buffer program i))))))
 
 (defmethod deallocate :after ((program shader-program))
   (clrhash (uniform-map program)))
