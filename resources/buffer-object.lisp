@@ -46,7 +46,10 @@
        (unwind-protect
             (let ((pointer (if data-start (cffi:inc-pointer data data-start) data)))
               (if (or buffer-start buffer-end)
-                  (%gl:buffer-sub-data buffer-type (or buffer-start 0) (- (or data-end buffer-end size) data-start) pointer)
+                  (let ((size (cond (data-end (- data-end (or data-start 0)))
+                                    (buffer-end (- buffer-end (or buffer-start 0)))
+                                    (buffer-start (- size buffer-start)))))
+                    (%gl:buffer-sub-data buffer-type (or buffer-start 0) size pointer))
                   (%gl:buffer-data buffer-type size pointer data-usage)))
          (gl:bind-buffer buffer-type 0))))))
 
@@ -55,16 +58,16 @@
 
 (defmethod update-buffer-data ((buffer buffer-object) (data real) &key data-start data-end buffer-start buffer-end element-type)
   (declare (ignore data-start data-end buffer-end))
-  (let ((element-type (or element-type
-                          (etypecase data
-                            (single-float :float)
-                            (double-float :double)
-                            (T :int))))
-        (buffer-start (or buffer-start 0))
-        (buffer-end (+ buffer-start (gl-type-size (element-type buffer)))))
-    (cffi:with-foreign-object (data element-type 1)
-      (setf (cffi:mem-ref data element-type) (gl-coerce data element-type))
-      (update-buffer-data buffer data :buffer-start buffer-start :buffer-end buffer-end))))
+  (let* ((element-type (or element-type
+                           (etypecase data
+                             (single-float :float)
+                             (double-float :double)
+                             (T :int))))
+         (buffer-start (or buffer-start 0))
+         (buffer-end (+ buffer-start (gl-type-size element-type))))
+    (cffi:with-foreign-object (pointer element-type 1)
+      (setf (cffi:mem-ref pointer element-type) (gl-coerce data element-type))
+      (update-buffer-data buffer pointer :buffer-start buffer-start :buffer-end buffer-end))))
 
 (defmethod update-buffer-data ((buffer buffer-object) (buffer-data mat2) &rest args)
   (apply #'update-buffer-data buffer (marr buffer-data) args))
