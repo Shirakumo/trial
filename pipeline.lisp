@@ -158,6 +158,8 @@
   (loop for pass across (passes pipeline)
         for fbo = (framebuffer pass)
         do (gl:bind-framebuffer :framebuffer (gl-name fbo))
+           ;; FIXME: crutch for deferred
+           (gl:clear-color 0 0 0 0)
            ;; FIXME: Figure out which to clear depending on framebuffer attachments
            (gl:clear :color-buffer :depth-buffer :stencil-buffer)
            (paint-with pass source)))

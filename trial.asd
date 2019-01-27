@@ -30,6 +30,7 @@
                (:file "camera" :depends-on ("package" "subject" "helpers"))
                (:file "context" :depends-on ("package"))
                (:file "controller" :depends-on ("package" "mapping" "input" "subject" "asset" "text"))
+               (:file "deferred" :depends-on ("package" "shader-entity" "shader-pass" "helpers" ("resources" "gl-struct") ("assets" "uniform-buffer")))
                (:file "deploy" :depends-on ("package" "gamepad"))
                (:file "display" :depends-on ("package" "context" "renderable"))
                (:file "effects" :depends-on ("package" "shader-pass"))
