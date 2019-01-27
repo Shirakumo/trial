@@ -28,6 +28,10 @@
   (let ((vbo (gl-name buffer)))
     (lambda () (when vbo (gl:delete-buffers (list vbo))))))
 
+
+;; FIXME: It's a mess about which sizes and offsets are in elements and which are
+;;        in bytes. Currently a buffer's SIZE is expected to be in elements, but
+;;        the BUFFER-START/END in UPDATE-BUFFER-DATA are in bytes.
 ;; ELEMENT-TYPE is forced to (UNSIGNED-BYTE 8) for data pointers.
 ;; DATA-START and DATA-END are in units of the size of ELEMENT-TYPE.
 ;; BUFFER-START and BUFFER-END are always in (UNSIGNED-BYTE 8) units.
@@ -105,9 +109,7 @@
 
 (defmethod update-buffer-data ((buffer buffer-object) (buffer-data vector) &key (data-start 0) (data-end (length buffer-data)) buffer-start buffer-end element-type)
   (let* ((element-type (or element-type (cl-type->gl-type (array-element-type buffer-data))))
-         (element-size (gl-type-size element-type))
-         (buffer-start (when buffer-start (* buffer-start element-size)))
-         (buffer-end (when buffer-end (* buffer-end element-size))))
+         (element-size (gl-type-size element-type)))
     (cond ((static-vector-p buffer-data)
            (update-buffer-data buffer (static-vector-pointer buffer-data)
                                :data-start (* data-start element-size)
@@ -124,7 +126,8 @@
                                  :buffer-start buffer-start
                                  :buffer-end buffer-end)))
           (T
-           (let* ((data-size (or (size buffer) (- buffer-end (or buffer-start 0))))
+           (let* ((data-size (or (size buffer) (/ (- buffer-end (or buffer-start 0))
+                                                  element-size)))
                   (elements (min (- data-end data-start) data-size)))
              (cffi:with-foreign-object (pointer element-type data-size)
                (loop for i from 0 below elements
