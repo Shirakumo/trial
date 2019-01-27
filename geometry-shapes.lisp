@@ -222,3 +222,7 @@
 
 (define-asset (trial empty-vertex-array) mesh
     (make-instance 'vertex-mesh))
+
+(define-asset (trial teapot) mesh
+    #p"teapot.vf"
+  :geometry-name :teapotmesh)
