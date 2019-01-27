@@ -26,6 +26,8 @@
   (let ((fbo (gl:gen-framebuffer)))
     (with-cleanup-on-failure (gl:delete-framebuffers (list fbo))
       (gl:bind-framebuffer :framebuffer fbo)
+      (unless (attachments framebuffer)
+        (error "~a does not have any attachments." framebuffer))
       (unwind-protect
            (dolist (attachment (attachments framebuffer))
              (destructuring-bind (attachment texture &key (level 0) layer &allow-other-keys) attachment
@@ -41,6 +43,9 @@
                  (unless (find completeness '(:framebuffer-complete :framebuffer-complete-oes))
                    (error "Failed to attach ~a as ~s to ~a: ~s"
                           texture attachment framebuffer completeness)))))
+        (gl:draw-buffers (loop for attachment in (attachments framebuffer)
+                               unless (find (first attachment) '(:depth-attachment :stencil-attachment :depth-stencil-attachment))
+                               collect (first attachment)))
         (gl:bind-framebuffer :framebuffer 0)
         (setf (data-pointer framebuffer) fbo)))))
 
