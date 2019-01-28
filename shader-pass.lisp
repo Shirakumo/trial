@@ -19,6 +19,9 @@
 (defmethod c2mop:validate-superclass ((class shader-pass-class) (superclass standard-class))
   T)
 
+
+;; FIXME: change texspec on per-instance basis to allow customising stuff
+;;        like texture size.
 (defclass texture-port (flow:port)
   ((texture :initform NIL :accessor texture)
    (texspec :initarg :texspec :accessor texspec))

@@ -6,6 +6,10 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+;; FIXME: allow parametrising class-shaders so that things like
+;;        constants can be backed-in, but still be changed for each
+;;        instance without needing to change source code
+
 (defclass shader-entity-class (standard-class)
   ((effective-shaders :initform () :accessor effective-shaders)
    (direct-shaders :initform () :initarg :shaders :accessor direct-shaders)
