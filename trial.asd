@@ -64,6 +64,7 @@
                (:file "shader-entity" :depends-on ("package" "entity"))
                (:file "shader-pass" :depends-on ("package" "shader-subject" "resource" "scene" "loader" "context"))
                (:file "shader-subject" :depends-on ("package" "shader-entity" "subject"))
+               (:file "shadow-map" :depends-on ("package" "shader-pass" "transforms"))
                (:file "skybox" :depends-on ("package" "shader-subject" "transforms"))
                (:file "sprite" :depends-on ("package" "shader-subject" "helpers"))
                (:file "static-vector" :depends-on ("package"))
