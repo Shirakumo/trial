@@ -65,10 +65,11 @@
                                   ((*projection-matrix* projection-matrix) '*projection-matrix*)
                                   ((*model-matrix* model-matrix) '*model-matrix*))
                  collect `(,variable
-                           ,(ecase fill
+                           ,(case fill
                               (:zero `(mat4))
                               (:identity `(meye 4))
-                              ((:copy NIL) `(mcopy4 ,variable)))))
+                              ((:copy NIL) `(mcopy4 ,variable))
+                              (T fill))))
        ,@body)))
 
 (defun translate (v &optional (matrix (model-matrix)))
