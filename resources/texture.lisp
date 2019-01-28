@@ -23,6 +23,7 @@
    (mipmap-lod :initarg :mipmap-lod :accessor mipmap-lod)
    (anisotropy :initarg :anisotropy :accessor anisotropy)
    (wrapping :initarg :wrapping :accessor wrapping)
+   (border-color :initarg :border-color :accessor border-color)
    (storage :initarg :storage :reader storage))
   (:default-initargs
    :width NIL
@@ -41,6 +42,7 @@
    :mipmap-lod (list -1000 1000 0.0)
    :anisotropy NIL
    :wrapping :clamp-to-edge
+   :border-color (vec 0 0 0 0)
    :storage :dynamic))
 
 (defmethod shared-initialize :around ((texture texture) slots &rest args)
@@ -154,7 +156,7 @@
          (%gl:tex-storage-3d-multisample target samples internal-format width height depth 1))))))
 
 (defmethod allocate ((texture texture))
-  (with-slots (width height depth target samples internal-format pixel-format pixel-type pixel-data mag-filter min-filter mipmap-levels mipmap-lod anisotropy wrapping storage)
+  (with-slots (width height depth target samples internal-format pixel-format pixel-type pixel-data mag-filter min-filter mipmap-levels mipmap-lod anisotropy wrapping border-color storage)
       texture
     (let ((tex (gl:create-texture target)))
       (with-cleanup-on-failure (gl:delete-textures (list tex))
@@ -165,6 +167,9 @@
           (gl:tex-parameter target :texture-wrap-t (second wrapping)))
         (when (eql target :texture-cube-map)
           (gl:tex-parameter target :texture-wrap-r (third wrapping)))
+        (when (find :clamp-to-border wrapping)
+          (gl:tex-parameter target :texture-border-color
+                            (list (vx border-color) (vy border-color) (vz border-color))))
         (gl:tex-parameter target :texture-min-filter min-filter)
         (gl:tex-parameter target :texture-mag-filter mag-filter)
         (unless (or (eql target :texture-2d-multisample)
