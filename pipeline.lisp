@@ -74,13 +74,16 @@
            (case (attachment port)
              (:depth-attachment
               (list :internal-format :depth-component
-                    :min-filter :linear))
+                    :min-filter :nearest
+                    :mag-filter :nearest))
              (:stencil-attachment
               (list :internal-format :stencil-index
-                    :min-filter :linear))
+                    :min-filter :nearest
+                    :mag-filter :nearest))
              (:depth-stencil-attachment
               (list :internal-format :depth-stencil
-                    :min-filter :linear))
+                    :min-filter :nearest
+                    :mag-filter :nearest))
              (T
               (list :internal-format :rgba))))))
 
