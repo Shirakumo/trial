@@ -31,8 +31,7 @@
   (process (scene main)))
 
 (defmethod setup-rendering :after ((main main))
-  (setup-scene main (scene main))
-  (transition NIL (scene main)))
+  (change-scene main (setup-scene main (scene main)) :old NIL))
 
 (defmethod setup-scene :around ((main main) (scene scene))
   (v:info :trial.main "Setting up ~a" scene)
@@ -49,19 +48,18 @@
 (defmethod setup-scene :after ((main main) (scene scene))
   (enter (controller main) scene))
 
-(defmethod change-scene ((main main) (new scene))
-  (let ((old (scene main)))
-    (unless (eq old new)
-      (stop old)
-      (restart-case
-          (progn
-            (setup-scene main new)
-            (transition old new)
-            (setf (scene main) new))
-        (abort ()
-          :report "Give up changing the scene and continue with the old."
-          (start old))))
-    (values new old)))
+(defmethod change-scene ((main main) (new scene) &key (old (scene main)))
+  (unless (eq old new)
+    (when old (stop old))
+    (restart-case
+        (progn
+          (setup-scene main new)
+          (transition old new)
+          (setf (scene main) new))
+      (abort ()
+        :report "Give up changing the scene and continue with the old."
+        (when old (start old)))))
+  (values new old))
 
 (defmethod paint ((source main) (target main))
   (paint (scene source) target)
