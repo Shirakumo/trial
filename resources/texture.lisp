@@ -70,6 +70,7 @@
                   (value (getf initargs prop temp)))
              (unless (eq value temp)
                (funcall func (funcall mod (getf initargs prop)))))))
+    (check-type (getf initargs :border-color) vec4)
     (test #'check-texture-target :target)
     (test #'check-texture-internal-format :internal-format)
     (test #'check-texture-pixel-format :pixel-format)
@@ -169,7 +170,7 @@
           (gl:tex-parameter target :texture-wrap-r (third wrapping)))
         (when (find :clamp-to-border wrapping)
           (gl:tex-parameter target :texture-border-color
-                            (list (vx border-color) (vy border-color) (vz border-color))))
+                            (list (vx border-color) (vy border-color) (vz border-color) (vw border-color))))
         (gl:tex-parameter target :texture-min-filter min-filter)
         (gl:tex-parameter target :texture-mag-filter mag-filter)
         (unless (or (eql target :texture-2d-multisample)
