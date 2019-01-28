@@ -12,7 +12,9 @@
            :texspec (:width 1024
                      :height 1024
                      :wrapping :clamp-to-border
-                     :border-color #.(vec 1 1 1 1))))
+                     :border-color #.(vec 1 1 1 1)))
+   (projection-matrix :initarg :projection-matrix :accessor shadow-projection-matrix)
+   (view-matrix :initarg :view-matrix :accessor shadow-view-matrix))
   (:inhibit-shaders (shader-entity :fragment-shader)))
 
 (define-class-shader (shadow-map-pass :fragment-shader)
@@ -23,20 +25,23 @@ void main(){}")
   (getf (effective-shaders pass) type))
 
 (defmethod paint-with ((pass shadow-map-pass) target)
-  (with-pushed-matrix ((projection-matrix (mortho -50 50 -50 50 1.0 100))
-                       (view-matrix (mlookat (vec 20 20 10) (vec 0 0 0) (vec 0 1 0))))
+  (with-pushed-matrix ((projection-matrix (shadow-projection-matrix pass))
+                       (view-matrix (shadow-view-matrix pass)))
     (gl:cull-face :front)
     (call-next-method)
     (gl:cull-face :back)))
 
 (define-shader-pass shadow-render-pass ()
-  ((shadow-map :port-type input)))
+  ((shadow-map :port-type input)
+   (shadow-map-pass :initarg :shadow-map-pass
+                    :initform (error "SHADOW-MAP-PASS required.")
+                    :accessor shadow-map-pass)))
 
 (defmethod paint-with :before ((pass shadow-render-pass) thing)
   (let ((program (shader-program-for-pass pass thing))
-        (projection-matrix (mortho -50 50 -50 50 1.0 100))
-        (view-matrix (mlookat (vec 20 20 10) (vec 0 0 0) (vec 0 1 0))))
-    (setf (uniform program "light_space_matrix") (nm* projection-matrix view-matrix))))
+        (shadow (shadow-map-pass pass)))
+    (setf (uniform program "light_space_matrix") (m* (shadow-projection-matrix shadow)
+                                                     (shadow-view-matrix shadow)))))
 
 (define-class-shader (shadow-render-pass :fragment-shader)
   "
