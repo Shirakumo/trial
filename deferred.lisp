@@ -88,7 +88,7 @@ void main(){
    (color :port-type output :attachment :color-attachment0))
   (:buffers (trial light-block)))
 
-(defmethod paint :before ((pass deferred-render-pass) target)
+(defmethod paint-with :before ((pass deferred-render-pass) target)
   (let ((program (shader-program pass)))
     (setf (uniform program "view_position") (location (unit :camera *scene*)))))
 
@@ -114,7 +114,6 @@ uniform sampler2D position_map;
 uniform sampler2D normal_map;
 uniform sampler2D albedo_map;
 uniform vec3 view_position;
-uniform float gamma = 2.2;
 float lighting_strength = 1.0;
 const float PI = 3.14159265;
 
@@ -134,7 +133,7 @@ vec3 point_light(Light light, vec3 view_direction, vec3 position, vec3 normal, v
   float energy = (8.0 + 32) / (8.0 * PI);
   float specular = pow(max(dot(normal, halfway_direction), 0.0), 32) * albedo.a * energy;
   float distance = length(light.position - position);
-  float attenuation = 1.0 / (1.0 + 0.014 * distance + 0.0007 * distance * distance);
+  float attenuation = 1.0 / (1.0 + 0.07 * distance + 0.017 * distance * distance);
   return (diffuse + specular) * light.color * attenuation;
 }
 
@@ -155,5 +154,4 @@ void main(){
   }
   
   color = vec4(lighting*lighting_strength + albedo.rgb*0.1, 1.0);
-  color.rgb = pow(color.rgb, vec3(1.0/gamma));
 }")
