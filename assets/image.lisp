@@ -153,6 +153,8 @@
             (setf (pixel-format image) pixel-format))
           (when pixel-type
             (setf (pixel-type image) pixel-type))
+          ;; KLUDGE: disable this override for now to allow sRGB textures.
+          #+(or)
           (when (and pixel-format pixel-type)
             (setf (internal-format image) (infer-internal-format pixel-type pixel-format)))
           (when (listp input)
