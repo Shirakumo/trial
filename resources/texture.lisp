@@ -70,7 +70,7 @@
                   (value (getf initargs prop temp)))
              (unless (eq value temp)
                (funcall func (funcall mod (getf initargs prop)))))))
-    (check-type (getf initargs :border-color) vec4)
+    (test (lambda (x) (check-type x vec4)) :border-color)
     (test #'check-texture-target :target)
     (test #'check-texture-internal-format :internal-format)
     (test #'check-texture-pixel-format :pixel-format)
