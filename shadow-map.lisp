@@ -98,5 +98,5 @@ float shadow_factor(vec3 position, float bias){
 }
 
 float shadow_bias(vec3 normal, vec3 light_direction){
-  return max(0.05 * (1-dot(normal, light_direction)), 0.005);
+  return max(0.05 * (dot(normal, light_direction)), 0.001);
 }")
