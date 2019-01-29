@@ -114,20 +114,25 @@ uniform sampler2D position_map;
 uniform sampler2D normal_map;
 uniform sampler2D albedo_map;
 uniform vec3 view_position;
+uniform float gamma = 2.2;
+float lighting_strength = 1.0;
+const float PI = 3.14159265;
 
 vec3 directional_light(Light light, vec3 view_direction, vec3 position, vec3 normal, vec4 albedo){
   vec3 light_direction = normalize(-light.direction);
-  vec3 reflect_direction = reflect(-light_direction, normal);
+  vec3 halfway_direction = normalize(light_direction+view_direction);
   vec3 diffuse = max(dot(normal, light_direction), 0.0) * albedo.rgb;
-  float specular = pow(max(dot(view_direction, reflect_direction), 0.0), 32) * albedo.a;
+  float energy = (8.0 + 32) / (8.0 * PI);
+  float specular = pow(max(dot(normal, halfway_direction), 0.0), 32) * albedo.a * energy;
   return (diffuse + specular) * light.color;
 }
 
 vec3 point_light(Light light, vec3 view_direction, vec3 position, vec3 normal, vec4 albedo){
   vec3 light_direction = normalize(light.position - position);
-  vec3 reflect_direction = reflect(-light_direction, normal);
+  vec3 halfway_direction = normalize(light_direction+view_direction);
   vec3 diffuse = max(dot(normal, light_direction), 0.0) * albedo.rgb;
-  float specular = pow(max(dot(view_direction, reflect_direction), 0.0), 32) * albedo.a;
+  float energy = (8.0 + 32) / (8.0 * PI);
+  float specular = pow(max(dot(normal, halfway_direction), 0.0), 32) * albedo.a * energy;
   float distance = length(light.position - position);
   float attenuation = 1.0 / (1.0 + 0.014 * distance + 0.0007 * distance * distance);
   return (diffuse + specular) * light.color * attenuation;
@@ -138,7 +143,7 @@ void main(){
   vec3 normal = texture(normal_map, tex_coord).rgb;
   vec4 albedo = texture(albedo_map, tex_coord).rgba;
   
-  vec3 lighting = albedo.rgb * 0.1;
+  vec3 lighting = vec3(0);
   vec3 view_direction = normalize(position - view_position);
   for(int i=0; i<light_block.count; ++i){
     Light light = light_block.lights[i];
@@ -149,5 +154,6 @@ void main(){
     }
   }
   
-  color = vec4(lighting, 1.0);
+  color = vec4(lighting*lighting_strength + albedo.rgb*0.1, 1.0);
+  color.rgb = pow(color.rgb, vec3(1.0/gamma));
 }")
