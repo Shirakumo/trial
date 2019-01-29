@@ -44,6 +44,7 @@
                (:file "geometry-clipmap" :depends-on ("package" "geometry-shapes" "shader-subject"))
                (:file "geometry-shapes" :depends-on ("package" "geometry" "asset-pool" ("assets" "mesh")))
                (:file "helpers" :depends-on ("package" "entity" "transforms" "shader-subject" "shader-pass" "asset" "resources"))
+               (:file "hdr" :depends-on ("package" "shader-pass"))
                (:file "input" :depends-on ("package" "event-loop" "retention"))
                (:file "layer-set" :depends-on ("package"))
                (:file "loader" :depends-on ("package" "scene" "resource"))
