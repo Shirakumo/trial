@@ -1,7 +1,7 @@
 in vec2 tex_coord;
 out vec4 color;
 uniform sampler2D previous_pass;
-uniform float intensity = 2.0;
+uniform float intensity = 1.0;
 uniform vec2 dir = vec2(1.0, 0.0);
 uniform float weight[5] = float[] (0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
 
