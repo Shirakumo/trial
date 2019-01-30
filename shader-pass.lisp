@@ -75,8 +75,8 @@
 
 (defgeneric register-object-for-pass (pass object))
 (defgeneric shader-program-for-pass (pass object))
-(defgeneric make-pass-shader-program (pass class))
-(defgeneric coerce-pass-shader (pass class type spec))
+(defgeneric make-pass-shader-program (pass object))
+(defgeneric coerce-pass-shader (pass object type))
 
 (defmethod make-pass-shader-program (pass (class symbol))
   (make-pass-shader-program pass (find-class class)))
@@ -87,11 +87,10 @@
 (defmethod make-pass-shader-program ((pass shader-pass) (class shader-entity-class))
   (let ((shaders ())
         (buffers ()))
-    ;; FIXME: What if the pass defines types that the class does not?
-    (loop for (type spec) on (effective-shaders class) by #'cddr
-          for inputs = (coerce-pass-shader pass class type spec)
+    (loop for type in *shader-type-list*
+          for inputs = (coerce-pass-shader pass class type)
           for shader = (make-instance 'shader :source inputs :type type)
-          do (push shader shaders))
+          do (when inputs (push shader shaders)))
     (loop for asset-spec in (effective-buffers class)
           do (push (apply #'asset asset-spec) buffers))
     (loop for asset-spec in (effective-buffers pass)
@@ -180,9 +179,11 @@
 (defmethod shader-program-for-pass ((pass per-object-pass) (subject shader-entity))
   (gethash (effective-shader-class subject) (assets pass)))
 
-(defmethod coerce-pass-shader ((pass per-object-pass) class type spec)
-  (glsl-toolkit:merge-shader-sources
-   (list spec (getf (effective-shaders pass) type))))
+(defmethod coerce-pass-shader ((pass per-object-pass) class type)
+  (let ((sources (remove NIL (list (effective-shader type class)
+                                   (effective-shader type pass)))))
+    (when sources
+      (glsl-toolkit:merge-shader-sources sources))))
 
 (defmethod register-object-for-pass ((pass per-object-pass) o))
 

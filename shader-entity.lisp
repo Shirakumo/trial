@@ -136,6 +136,9 @@
 (defmethod remove-class-shader (type (class symbol))
   (remove-class-shader type (find-class class)))
 
+(defmethod effective-shader (type thing)
+  (getf (effective-shaders thing) type))
+
 (defmethod effective-shader-class ((name symbol))
   (effective-shader-class (find-class name)))
 

@@ -21,8 +21,8 @@
   "#version 330 core
 void main(){}")
 
-(defmethod coerce-pass-shader ((pass shadow-map-pass) class (type (eql :fragment-shader)) spec)
-  (getf (effective-shaders pass) type))
+(defmethod coerce-pass-shader ((pass shadow-map-pass) class (type (eql :fragment-shader)))
+  (effective-shader type pass))
 
 (defmethod paint-with ((pass shadow-map-pass) target)
   (with-pushed-matrix ((projection-matrix (shadow-projection-matrix pass))
