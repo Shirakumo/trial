@@ -127,6 +127,7 @@
                :glsl-toolkit
                :fast-io
                :ieee-floats
+               :float-features
                :lquery
                :static-vectors
                :pngload

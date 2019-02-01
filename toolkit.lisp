@@ -40,15 +40,6 @@
   (dolist (sub (c2mop:class-direct-subclasses class))
     (apply-class-changes sub)))
 
-;; FIXME: put into a library
-(defconstant single-float-positive-infinity
-  #+sbcl sb-ext:single-float-positive-infinity
-  #-sbcl most-positive-single-float)
-
-(defconstant single-float-negative-infinity
-  #+sbcl sb-ext:single-float-negative-infinity
-  #-sbcl most-negative-single-float)
-
 (defmacro with-float-traps-masked (args &body body)
   (declare (ignorable args))
   #+sbcl `(sb-int:with-float-traps-masked ,(or args '(:overflow :underflow :inexact))
