@@ -25,7 +25,7 @@
     (if (q+:is-valid glcontext)
         (v:info :trial.context "~a successfully created context." context)
         (error "Failed to create context."))
-    (acquire-context context)))
+    (make-current context)))
 
 (defmethod shared-initialize :after ((context context)
                                      slots
@@ -207,12 +207,26 @@
 
 (defun launch-with-context (&optional (main 'main) &rest initargs)
   #+linux (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
-  (let ((context))
-    (with-main-window (main (apply #'make-instance main initargs)
-                       :on-error #'standalone-error-handler
-                       :show NIL
-                       :finalize NIL)
-      (setf context (trial:context main))
-      (show context)
-      (start main))
-    (finalize context)))
+  (flet ((thunk ()
+           (ensure-qapplication :main-thread NIL)
+           (let* ((main (apply #'make-instance main initargs))
+                  (context (trial:context main)))
+             (handler-bind ((error #'standalone-error-handler))
+               #+windows
+               (when (or (find :swank *features*)
+                         (find :slynk *features*))
+                 (qtools::fix-slime))
+               (q+:qcoreapplication-set-application-name (q+:window-title context))
+               (unwind-protect
+                    (progn
+                      (show context)
+                      (start main)
+                      (#_exec *qapplication*))
+                 (finalize context))))))
+    #+darwin
+    (let ((out *standard-output*))
+      (tmt:with-body-in-main-thread (:blocking T)
+        (let ((*standard-output* out))
+          (qtools::with-traps-masked (thunk)))))
+    #-darwin
+    (qtools::with-traps-masked (thunk))))
