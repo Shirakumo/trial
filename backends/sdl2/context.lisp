@@ -70,6 +70,7 @@
                                     (:compatibility SDL2-FFI:+SDL-GL-CONTEXT-PROFILE-COMPATIBILITY+)))))))
 
 (defmethod create-context ((context context))
+  (v:info :trial.barkend.sdl2 "Creating context ~a" context)
   (let ((initargs (initargs context)))
     (flet ((arg (name) (getf initargs name))
            (bitarg (name bit) (if (getf initargs name) bit 0)))
@@ -155,16 +156,15 @@
   (nth-value 1 (sdl2:get-window-size (window context))))
 
 (defmethod profile ((context context))
-  (let ((attr (sdl2:gl-get-attr :gl-context-profile-mask)))
-    (case attr
+  (let ((attr (sdl2:gl-get-attr :context-profile-mask)))
+    (ecase attr
       (0 NIL)
-      (SDL2-FFI:+SDL-GL-CONTEXT-PROFILE-CORE+ :core)
-      (SDL2-FFI:+SDL-GL-CONTEXT-PROFILE-COMPATIBILITY+ :compatibility)
-      (T attr))))
+      (#.SDL2-FFI:+SDL-GL-CONTEXT-PROFILE-CORE+ :core)
+      (#.SDL2-FFI:+SDL-GL-CONTEXT-PROFILE-COMPATIBILITY+ :compatibility))))
 
 (defmethod version ((context context))
-  (list (sdl2:gl-get-attr :gl-context-major-version)
-        (sdl2:gl-get-attr :gl-context-minor-version)))
+  (list (sdl2:gl-get-attr :context-major-version)
+        (sdl2:gl-get-attr :context-minor-version)))
 
 (defun make-context (&optional handler &rest initargs)
   (apply #'make-instance 'context :handler handler initargs))
