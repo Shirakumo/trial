@@ -27,7 +27,9 @@
                      ,acquiring-body)))))))
 
 (defun launch-with-context (&optional main &rest initargs)
-  (apply #'make-instance main initargs))
+  (declare (ignore handler initargs))
+  (error "No context implementation is present.~%~
+          Please load a Trial backend."))
 
 (defun make-context (&optional handler &rest initargs)
   (declare (ignore handler initargs))
