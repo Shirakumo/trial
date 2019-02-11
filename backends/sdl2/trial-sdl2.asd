@@ -15,6 +15,7 @@
   :source-control (:git "https://github.com/Shirakumo/trial.git")
   :serial T
   :components ((:file "package")
+               (:file "keycodes")
                (:file "context"))
   :depends-on (:sdl2
                :trial

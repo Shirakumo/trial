@@ -197,70 +197,75 @@
       (loop until quit
             for event = (sdl2:next-event ev :wait)
             for type = (sdl2:get-event-type ev)
-            do (case type
-                 (:keydown
-                  (let* ((keysym (plus-c:c-ref ev sdl2-ffi:sdl-event :key :keysym))
-                         (sym (sdl2:sym-value keysym))
-                         (mod-value (sdl2:mod-value keysym)))
-                    (handle (make-instance 'key-press
-                                           :key (sdl2-key->key sym)
-                                           :modifiers (sdl2-mod->mod mod-value))
-                            (handler context))))
-                 (:keyup
-                  (let* ((keysym (plus-c:c-ref ev sdl2-ffi:sdl-event :key :keysym))
-                         (sym (sdl2:sym-value keysym))
-                         (mod-value (sdl2:mod-value keysym)))
-                    (handle (make-instance 'key-release
-                                           :key (sdl2-key->key sym)
-                                           :modifiers (sdl2-mod->mod mod-value))
-                            (handler context))))
-                 (:mousebuttondown
-                  (let ((button (plus-c:c-ref ev sdl2-ffi:sdl-event :button :button))
-                        (x (plus-c:c-ref ev sdl2-ffi:sdl-event :button :x))
-                        (y (plus-c:c-ref ev sdl2-ffi:sdl-event :button :y)))
-                    (vsetf (mouse-pos context) x y)
-                    (handle (make-instance 'mouse-press
+            do (with-simple-restart (abort "Don't handle the event.")
+                 (case type
+                   (:keydown
+                    (let* ((keysym (plus-c:c-ref ev sdl2-ffi:sdl-event :key :keysym))
+                           (sym (sdl2:scancode-value keysym))
+                           (mod (sdl2:mod-keywords (sdl2:mod-value keysym))))
+                      (handle (make-instance 'key-press
+                                             :key (sdl2-key->key sym)
+                                             :modifiers (mapcar #'sdl2-mod->mod mod))
+                              (handler context))))
+                   (:keyup
+                    (let* ((keysym (plus-c:c-ref ev sdl2-ffi:sdl-event :key :keysym))
+                           (sym (sdl2:scancode-value keysym))
+                           (mod (sdl2:mod-keywords (sdl2:mod-value keysym))))
+                      (handle (make-instance 'key-release
+                                             :key (sdl2-key->key sym)
+                                             :modifiers (mapcar #'sdl2-mod->mod mod))
+                              (handler context))))
+                   (:mousebuttondown
+                    (let ((button (plus-c:c-ref ev sdl2-ffi:sdl-event :button :button))
+                          (x (plus-c:c-ref ev sdl2-ffi:sdl-event :button :x))
+                          (y (plus-c:c-ref ev sdl2-ffi:sdl-event :button :y)))
+                      (vsetf (mouse-pos context) x y)
+                      (handle (make-instance 'mouse-press
+                                             :pos (mouse-pos context)
+                                             :button (sdl2-button->button button))
+                              (handler context))))
+                   (:mousebuttonup
+                    (let ((button (plus-c:c-ref ev sdl2-ffi:sdl-event :button :button))
+                          (x (plus-c:c-ref ev sdl2-ffi:sdl-event :button :x))
+                          (y (plus-c:c-ref ev sdl2-ffi:sdl-event :button :y)))
+                      (vsetf (mouse-pos context) x y)
+                      (handle (make-instance 'mouse-release
+                                             :pos (mouse-pos context)
+                                             :button (sdl2-button->button button))
+                              (handler context))))
+                   (:mousemotion
+                    (let* ((new (vec2 (plus-c:c-ref ev sdl2-ffi:sdl-event :motion :x)
+                                      (plus-c:c-ref ev sdl2-ffi:sdl-event :motion :y)))
+                           (old (shiftf (mouse-pos context) new)))
+                      (handle (make-instance 'mouse-move
+                                             :pos new
+                                             :old-pos old)
+                              (handler context))))
+                   (:mousewheel
+                    (handle (make-instance 'mouse-scroll
                                            :pos (mouse-pos context)
-                                           :button (sdl2-button->button button))
-                            (handler context))))
-                 (:mousebuttonup
-                  (let ((button (plus-c:c-ref ev sdl2-ffi:sdl-event :button :button))
-                        (x (plus-c:c-ref ev sdl2-ffi:sdl-event :button :x))
-                        (y (plus-c:c-ref ev sdl2-ffi:sdl-event :button :y)))
-                    (vsetf (mouse-pos context) x y)
-                    (handle (make-instance 'mouse-release
-                                           :pos (mouse-pos context)
-                                           :button (sdl2-button->button button))
-                            (handler context))))
-                 (:mousemotion
-                  (let* ((new (vec2 (plus-c:c-ref ev sdl2-ffi:sdl-event :motion :x)
-                                    (plus-c:c-ref ev sdl2-ffi:sdl-event :motion :y)))
-                         (old (shiftf (mouse-pos context) new)))
-                    (handle (make-instance 'mouse-move
-                                           :pos new
-                                           :old-pos old)
-                            (handler context))))
-                 (:mousewheel
-                  (handle (make-instance 'mouse-scroll
-                                         :pos (mouse-pos context)
-                                         :delta (plus-c:c-ref ev sdl2-ffi:sdl-event :wheel :y))
-                          (handler context)))
-                 (:textediting
-                  ;; FIXME: Don't know what to do with this, yet.
-                  )
-                 (:textinput
-                  (handle (make-instance 'text-entered
-                                         :text (plus-c:c-ref ev sdl2-ffi:sdl-event :text :text))
-                          (handler context)))
-                 (:quit
-                  (setf quit T)))))))
+                                           :delta (plus-c:c-ref ev sdl2-ffi:sdl-event :wheel :y))
+                            (handler context)))
+                   (:textediting
+                    ;; FIXME: Don't know what to do with this, yet.
+                    )
+                   (:textinput
+                    (handle (make-instance 'text-entered
+                                           :text (plus-c:c-ref ev sdl2-ffi:sdl-event :text :text))
+                            (handler context)))
+                   (:quit
+                    (setf quit T))))))))
 
 (defun sdl2-button->button (button)
-  ;; FIXME: I think this is already right?
   button)
 
 (defun sdl2-key->key (key)
-  key)
+  (aref *sdl2-scancode-map* key))
 
 (defun sdl2-mod->mod (mod)
-  ())
+  (case mod
+    ((:lshift :rshift) :shift)
+    ((:lctrl :rctrl) :ctrl)
+    ((:lalt :ralt) :alt)
+    ((:lgui :rgui) :super)
+    (T mod)))
