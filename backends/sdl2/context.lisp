@@ -114,8 +114,7 @@
   (sdl2:gl-make-current (window context) (gl-ctx context)))
 
 (defmethod done-current ((context context))
-  ;; SDL2 offers no variant for this.
-  )
+  (sdl2:gl-make-current (window context) (cffi:null-pointer)))
 
 (defmethod hide ((context context))
   (sdl2:hide-window (window context)))
