@@ -20,7 +20,7 @@
   (trial:add-handler selector (scene selector)))
 
 (define-finalizer (selector teardown)
-  (trial:issue (scene selector) 'trial:load-request :asset (buffer selector) :action 'trial:offload)
+  ;; FIXME: leak (buffer selector)
   (trial:remove-handler selector (scene selector)))
 
 (define-subwidget (selector empty-text)
@@ -53,7 +53,8 @@
   (trial:handle event (buffer selector)))
 
 (defmethod trial:handle ((ev trial:reload-scene) (selector selector))
-  (trial:load (trial:offload (buffer selector))))
+  ;; FIXME: leak (buffer selector)
+  )
 
 (defmethod trial:handle ((ev trial:mouse-release) (selector selector))
   (trial:paint (buffer selector) (buffer selector))
