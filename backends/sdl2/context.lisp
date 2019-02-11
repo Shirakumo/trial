@@ -250,9 +250,12 @@
                     ;; FIXME: Don't know what to do with this, yet.
                     )
                    (:textinput
-                    (handle (make-instance 'text-entered
-                                           :text (plus-c:c-ref ev sdl2-ffi:sdl-event :text :text))
-                            (handler context)))
+                    (let ((text (cffi:foreign-string-to-lisp
+                                 (plus-c:c-ref ev sdl2-ffi:sdl-event :text :text plus-c:&)
+                                 :encoding :utf-8)))
+                      (handle (make-instance 'text-entered
+                                             :text text)
+                              (handler context))))
                    (:quit
                     (setf quit T))))))))
 
