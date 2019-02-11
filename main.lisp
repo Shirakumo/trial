@@ -31,7 +31,7 @@
   (process (scene main)))
 
 (defmethod setup-rendering :after ((main main))
-  (change-scene main (setup-scene main (scene main)) :old NIL))
+  (change-scene main (scene main) :old NIL))
 
 (defmethod setup-scene :around ((main main) (scene scene))
   (v:info :trial.main "Setting up ~a" scene)
