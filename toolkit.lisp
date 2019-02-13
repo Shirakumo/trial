@@ -60,8 +60,8 @@
              (+ (- s current-time-start)
                 (* ms
                    (coerce 1/1000000 'double-float)))))
-  #-sbcl (/ (get-internal-real-time)
-            internal-time-units-per-second))
+  #-sbcl (* (get-internal-real-time)
+            (coerce (/ internal-time-units-per-second) 'double-float)))
 
 (defmacro undefmethod (name &rest args)
   (flet ((lambda-keyword-p (symbol)
