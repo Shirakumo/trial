@@ -142,21 +142,19 @@
       (multiple-value-bind (bits width height pixel-type pixel-format) (load-image (unlist input))
         (assert (not (null bits)))
         (with-unwind-protection (mapcar #'free-image-data (enlist (pixel-data image)))
-          ;; FIXME: Maybe attempt to reconcile/compare user-provided data?
-          ;; FIXME: This whole crap needs to be revised to allow updates anyway
+          ;; FIXME: This whole crap needs to be revised to allow updates.
+          ;;        Maybe instead of setting things, we should pass an arglist
+          ;;        to ALLOCATE instead.
           (setf (pixel-data image) bits)
-          (when width
-            (setf (width image) width))
-          (when height
-            (setf (height image) height))
-          (when pixel-format
-            (setf (pixel-format image) pixel-format))
-          (when pixel-type
-            (setf (pixel-type image) pixel-type))
-          ;; KLUDGE: disable this override for now to allow sRGB textures.
-          #+(or)
-          (when (and pixel-format pixel-type)
-            (setf (internal-format image) (infer-internal-format pixel-type pixel-format)))
+          (macrolet ((maybe-set (var)
+                       `(when (and ,var (not (slot-boundp image ',var)))
+                          (setf (,var image) ,var))))
+            (maybe-set width)
+            (maybe-set height)
+            (maybe-set pixel-format)
+            (maybe-set pixel-type)
+            (when (and pixel-format pixel-type (not (slot-boundp image 'internal-format)))
+              (setf (internal-format image) (infer-internal-format pixel-type pixel-format))))
           (when (listp input)
             (setf (pixel-data image) (list (pixel-data image)))
             (dolist (input (rest input))

@@ -54,15 +54,12 @@
 (defmethod normalized-texspec ((texspec list))
   (assert (= 0 (getf texspec :level 0)))
   (assert (eql :dynamic (getf texspec :storage :dynamic)))
-  (let ((initargs (loop for (key val) in (class-default-initargs 'texture)
-                        collect key collect (eval val))))
-    (loop for (key val) on initargs by #'cddr
-          collect key
-          collect (or (getf texspec key)
-                      (case key
-                        (:width 'width)
-                        (:height 'height)
-                        (T val))))))
+  (let ((texspec (copy-list texspec)))
+    (unless (getf texspec :width)
+      (setf (getf texspec :width) 'width))
+    (unless (getf texspec :height)
+      (setf (getf texspec :height) 'height))
+    texspec))
 
 (defmethod normalized-texspec ((port texture-port))
   (normalized-texspec (texspec port)))

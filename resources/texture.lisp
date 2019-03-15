@@ -7,47 +7,46 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass texture (gl-resource)
-  ((width :initarg :width :accessor width)
-   (height :initarg :height :accessor height)
-   (depth :initarg :depth :accessor depth)
-   (target :initarg :target :accessor target)
-   (levels :initarg :levels :accessor levels)
-   (samples :initarg :samples :accessor samples)
-   (internal-format :initarg :internal-format :accessor internal-format)
-   (pixel-format :initarg :pixel-format :accessor pixel-format)
-   (pixel-type :initarg :pixel-type :accessor pixel-type)
-   (pixel-data :initarg :pixel-data :accessor pixel-data)
-   (mag-filter :initarg :mag-filter :accessor mag-filter)
-   (min-filter :initarg :min-filter :accessor min-filter)
-   (mipmap-levels :initarg :mipmap-levels :accessor mipmap-levels)
-   (mipmap-lod :initarg :mipmap-lod :accessor mipmap-lod)
-   (anisotropy :initarg :anisotropy :accessor anisotropy)
-   (wrapping :initarg :wrapping :accessor wrapping)
-   (border-color :initarg :border-color :accessor border-color)
-   (storage :initarg :storage :reader storage))
-  (:default-initargs
-   :width NIL
-   :height NIL
-   :depth NIL
-   :target :texture-2d
-   :levels 1
-   :samples 1
-   :internal-format :rgba
-   :pixel-format NIL
-   :pixel-type NIL
-   :pixel-data NIL
-   :mag-filter :linear
-   :min-filter :linear-mipmap-linear
-   :mipmap-levels (list 0 1000)
-   :mipmap-lod (list -1000 1000 0.0)
-   :anisotropy NIL
-   :wrapping :clamp-to-edge
-   :border-color (vec 0 0 0 0)
-   :storage :dynamic))
+  ((width :initarg :width :writer (setf width))
+   (height :initarg :height :writer (setf height))
+   (depth :initarg :depth :writer (setf depth))
+   (target :initarg :target :writer (setf target))
+   (levels :initarg :levels :writer (setf levels))
+   (samples :initarg :samples :writer (setf samples))
+   (internal-format :initarg :internal-format :writer (setf internal-format))
+   (pixel-format :initarg :pixel-format :writer (setf pixel-format))
+   (pixel-type :initarg :pixel-type :writer (setf pixel-type))
+   (pixel-data :initarg :pixel-data :writer (setf pixel-data))
+   (mag-filter :initarg :mag-filter :writer (setf mag-filter))
+   (min-filter :initarg :min-filter :writer (setf min-filter))
+   (mipmap-levels :initarg :mipmap-levels :writer (setf mipmap-levels))
+   (mipmap-lod :initarg :mipmap-lod :writer (setf mipmap-lod))
+   (anisotropy :initarg :anisotropy :writer (setf anisotropy))
+   (wrapping :initarg :wrapping :writer (setf wrapping))
+   (border-color :initarg :border-color :writer (setf border-color))
+   (storage :initarg :storage)))
+
+(define-unbound-reader texture width NIL)
+(define-unbound-reader texture height NIL)
+(define-unbound-reader texture depth NIL)
+(define-unbound-reader texture target :texture-2d)
+(define-unbound-reader texture levels 1)
+(define-unbound-reader texture samples 1)
+(define-unbound-reader texture internal-format :rgba)
+(define-unbound-reader texture pixel-format NIL)
+(define-unbound-reader texture pixel-type NIL)
+(define-unbound-reader texture pixel-data NIL)
+(define-unbound-reader texture mag-filter :linear)
+(define-unbound-reader texture min-filter :linear-mipmap-linear)
+(define-unbound-reader texture mipmap-levels (list 0 1000))
+(define-unbound-reader texture mipmap-lod (list -1000 1000 0.0))
+(define-unbound-reader texture anisotropy NIL)
+(define-unbound-reader texture wrapping '(:clamp-to-edge :clamp-to-edge :clamp-to-edge))
+(define-unbound-reader texture border-color (vec 0 0 0 0))
+(define-unbound-reader texture storage :dynamic)
 
 (defmethod shared-initialize :around ((texture texture) slots &rest args)
-  (when (or (getf args :wrapping)
-            (not (slot-boundp texture 'wrapping)))
+  (when (getf args :wrapping)
     (setf (getf args :wrapping) (enlist (getf args :wrapping)
                                         (getf args :wrapping)
                                         (getf args :wrapping))))
@@ -55,7 +54,8 @@
              (not (getf args :pixel-format))
              (not (slot-boundp texture 'pixel-format)))
     (setf (getf args :pixel-format) (texture-internal-format->pixel-format (getf args :internal-format))))
-  (when (and (not (getf args :pixel-type))
+  (when (and (getf args :pixel-format)
+             (not (getf args :pixel-type))
              (not (slot-boundp texture 'pixel-type)))
     (setf (getf args :pixel-type) (pixel-format->pixel-type (getf args :pixel-format))))
   (apply #'call-next-method texture slots args))
@@ -112,7 +112,9 @@
                   (thunk ,ptr)))))))))
 
 (defun allocate-texture-storage (texture)
-  (with-slots (target storage levels internal-format width height depth samples pixel-format pixel-type pixel-data) texture
+  (with-accessors* (target storage levels internal-format width height depth
+                           samples pixel-format pixel-type pixel-data) texture
+    (v:info :FUCK "~a " (list internal-format width height pixel-format pixel-type))
     (let ((internal-format (cffi:foreign-enum-value '%gl:enum internal-format)))
       ;; FIXME: Handle array cases better, factor this out into an update routine.
       (case target
@@ -157,7 +159,8 @@
          (%gl:tex-storage-3d-multisample target samples internal-format width height depth 1))))))
 
 (defmethod allocate ((texture texture))
-  (with-slots (width height depth target samples internal-format pixel-format pixel-type pixel-data mag-filter min-filter mipmap-levels mipmap-lod anisotropy wrapping border-color storage)
+  (with-accessors* (width height depth target samples internal-format pixel-format pixel-type pixel-data
+                          mag-filter min-filter mipmap-levels mipmap-lod anisotropy wrapping border-color storage)
       texture
     (let ((tex (gl:create-texture target)))
       (with-cleanup-on-failure (gl:delete-textures (list tex))
@@ -340,8 +343,8 @@
       ;; FIXME: width and height handling
       (let ((texspec (copy-list a)))
         (setf (getf texspec :samples)
-              (max (getf a :samples)
-                   (getf b :samples)))
+              (max* (getf a :samples)
+                    (getf b :samples)))
         (setf (getf texspec :anisotropy)
               (max* (getf a :anisotropy)
                     (getf b :anisotropy)))

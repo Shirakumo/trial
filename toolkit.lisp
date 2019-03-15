@@ -80,6 +80,14 @@
                          until (lambda-keyword-p arg)
                          collect (if (listp arg) (second arg) T))))))))
 
+(defmacro define-unbound-reader (class method &body default)
+  (destructuring-bind (method slot) (enlist method method)
+    `(defmethod ,method ((,class ,class))
+       (cond ((slot-boundp ,class ',slot)
+              (slot-value ,class ',slot))
+             (T
+              ,@default)))))
+
 (defun class-default-initargs (class-ish)
   (let ((class (etypecase class-ish
                  (symbol (find-class class-ish))
@@ -180,6 +188,12 @@
               (setf ,success T))
          (unless ,success
            ,cleanup-form)))))
+
+(defmacro with-accessors* (accessors instance &body body)
+  `(with-accessors ,(loop for accessor in accessors
+                          collect (enlist accessor accessor))
+       ,instance
+     ,@body))
 
 (defun acquire-lock-with-starvation-test (lock &key (warn-time 10) timeout)
   (assert (or (null timeout) (< warn-time timeout)))
