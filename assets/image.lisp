@@ -59,15 +59,25 @@
 (defmethod load-image (path (type (eql :tif)) &rest args)
   (apply #'load-image path :tiff args))
 
+(defun flip-image-vertically (image width height components)
+  (let ((stride (* width components)))
+    (loop for y1 from 0 below (floor height 2)
+          for y2 downfrom (1- height)
+          do (loop for x1 from (* y1 stride)
+                   for x2 from (* y2 stride)
+                   repeat stride
+                   do (rotatef (aref image x1) (aref image x2))))))
+
 (defmethod load-image (path (type (eql :jpeg)) &key)
-  (multiple-value-bind (height width components) (jpeg:jpeg-file-dimensions path)
-    (values (jpeg:decode-image path)
+  (multiple-value-bind (image height width components) (jpeg:decode-image path)
+    (flip-image-vertically image width height components)
+    (values image
             width
             height
             :unsigned-byte
             (ecase components
               (1 :red)
-              (2 :rg)
+              (2 :gr)
               (3 :bgr)
               (4 :bgra)))))
 
