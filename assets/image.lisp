@@ -147,12 +147,15 @@
           ;;        to ALLOCATE instead.
           (setf (pixel-data image) bits)
           (macrolet ((maybe-set (var)
-                       `(when (and ,var (not (slot-boundp image ',var)))
-                          (setf (,var image) ,var))))
+                       `(when ,var (setf (,var image) ,var))))
+            ;; These values /must/ be set in order to actually be able to load the image
+            ;; If the user had specified incompatible values the loading would not produce
+            ;; expected values.
             (maybe-set width)
             (maybe-set height)
             (maybe-set pixel-format)
             (maybe-set pixel-type)
+            ;; The internal format on the other hand should be user-customisable.
             (when (and pixel-format pixel-type (not (slot-boundp image 'internal-format)))
               (setf (internal-format image) (infer-internal-format pixel-type pixel-format))))
           (when (listp input)
