@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass geometry ()
-  ((meshes :initform (make-hash-table :test 'eql) :accessor meshes)))
+  ((meshes :initform (make-hash-table :test 'equal) :accessor meshes)))
 
 (defgeneric read-geometry (file format &key &allow-other-keys))
 

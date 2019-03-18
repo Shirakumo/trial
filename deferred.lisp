@@ -96,7 +96,9 @@ void main(){
   (type :int)
   (position :vec3)
   (direction :vec3)
-  (color :vec3))
+  (color :vec3)
+  (outer :float)
+  (cutoff :float))
 
 (define-gl-struct light-block
   (lights (:struct light) :array-size 32)
@@ -119,7 +121,7 @@ const float PI = 3.14159265;
 
 vec3 directional_light(Light light, vec3 view_direction, vec3 position, vec3 normal, vec4 albedo){
   vec3 light_direction = normalize(-light.direction);
-  vec3 halfway_direction = normalize(light_direction+view_direction);
+  vec3 halfway_direction = normalize(light_direction + view_direction);
   vec3 diffuse = max(dot(normal, light_direction), 0.0) * albedo.rgb;
   float energy = (8.0 + 32) / (8.0 * PI);
   float specular = pow(max(dot(normal, halfway_direction), 0.0), 32) * albedo.a * energy;
@@ -128,12 +130,31 @@ vec3 directional_light(Light light, vec3 view_direction, vec3 position, vec3 nor
 
 vec3 point_light(Light light, vec3 view_direction, vec3 position, vec3 normal, vec4 albedo){
   vec3 light_direction = normalize(light.position - position);
-  vec3 halfway_direction = normalize(light_direction+view_direction);
+  vec3 halfway_direction = normalize(light_direction + view_direction);
   vec3 diffuse = max(dot(normal, light_direction), 0.0) * albedo.rgb;
   float energy = (8.0 + 32) / (8.0 * PI);
   float specular = pow(max(dot(normal, halfway_direction), 0.0), 32) * albedo.a * energy;
   float distance = length(light.position - position);
   float attenuation = 1.0 / (1.0 + 0.07 * distance + 0.017 * distance * distance);
+  return (diffuse + specular) * light.color * attenuation;
+}
+
+vec3 spot_light(Light light, vec3 view_direction, vec3 position, vec3 normal, vec4 albedo){
+  vec3 light_direction = normalize(light.position - position);
+  vec3 halfway_direction = normalize(light_direction + view_direction);
+  float distance = length(light.position - position);
+  float attenuation = 1.0 / (1.0 + 0.07 * distance + 0.017 * distance * distance);
+  float theta = dot(light_direction, normalize(-light.direction));
+
+  vec3 diffuse = vec3(0,0,0);
+  float specular = 0;
+  if(theta > light.outer) {
+    float epsilon = light.cutoff - light.outer;
+    float intensity = clamp((theta - light.outer) / epsilon, 0.0, 1.0); 
+    diffuse = max(dot(normal, light_direction), 0) * intensity * albedo.rgb;
+    specular = pow(max(dot(normal, halfway_direction), 0.0), 32) * intensity * albedo.a;
+  }
+
   return (diffuse + specular) * light.color * attenuation;
 }
 
@@ -143,13 +164,14 @@ void main(){
   vec4 albedo = texture(albedo_map, tex_coord).rgba;
   
   vec3 lighting = vec3(0);
-  vec3 view_direction = normalize(position - view_position);
+  vec3 view_direction = normalize(view_position - position);
   for(int i=0; i<light_block.count; ++i){
     Light light = light_block.lights[i];
     switch(light.type){
     case 0: break;
     case 1: lighting += directional_light(light, view_direction, position, normal, albedo); break;
     case 2: lighting += point_light(light, view_direction, position, normal, albedo); break;
+    case 3: lighting += spot_light(light, view_direction, position, normal, albedo); break;
     }
   }
   

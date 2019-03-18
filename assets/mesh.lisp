@@ -25,8 +25,11 @@
 
 (defmethod load ((mesh mesh))
   (let* ((input (coerce-asset-input mesh T))
+         (input (typecase input
+                  (geometry (gethash (geometry-name mesh) (meshes input)))
+                  (pathname (gethash (geometry-name mesh) (meshes (read-geometry input T))))
+                  (T input)))
          (vao (etypecase input
-                (pathname (gethash (geometry-name mesh) (meshes (read-geometry input T))))
                 (vertex-mesh (change-class (copy-instance input) 'vertex-array))
                 (vertex-array input))))
     (setf (bindings mesh) (mapcar #'enlist (bindings vao)))

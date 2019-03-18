@@ -27,7 +27,7 @@ void main(){}")
 (defmethod paint-with ((pass shadow-map-pass) target)
   (with-pushed-matrix ((projection-matrix (shadow-projection-matrix pass))
                        (view-matrix (shadow-view-matrix pass)))
-    (gl:cull-face :front)
+    ;;(gl:cull-face :front)
     (call-next-method)
     (gl:cull-face :back)))
 
@@ -45,8 +45,8 @@ void main(){}")
 
 (define-class-shader (shadow-render-pass :fragment-shader)
   "
-#define SHADOW_SAMPLES 4
-#define SHADOW_SAMPLE_SPREAD 0.0005
+#define SHADOW_SAMPLES 16
+#define SHADOW_SAMPLE_SPREAD 0.002
 uniform sampler2D shadow_map;
 uniform mat4 light_space_matrix;
 
@@ -84,7 +84,7 @@ float shadow_factor(vec3 position, float bias){
   float shadow = 0;
   vec2 texel_size = 1.0 / textureSize(shadow_map, 0);
   for(int i=0; i<SHADOW_SAMPLES; ++i){
-    int index = int(16.0*random(vec4(gl_FragCoord.xyy, i)))%16;
+    int index = int(16*random(vec4(gl_FragCoord.xyy, i)))%16;
     vec2 poisson = poisson_disk[index]*SHADOW_SAMPLE_SPREAD;
     for(int x=-1; x<=1; ++x){
       for(int y=-1; y<=1; ++y){
@@ -94,10 +94,9 @@ float shadow_factor(vec3 position, float bias){
       }
     }
   }
-  return clamp(shadow, 0, 1);
+  return shadow;
 }
 
 float shadow_bias(vec3 normal, vec3 light_direction){
   return max(0.05 * (1-dot(normal, light_direction)), 0.001);
-}"
-  )
+}")

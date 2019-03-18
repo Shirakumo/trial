@@ -136,3 +136,6 @@
                :retrospectiff
                :terrable
                :mmap))
+
+;; FIXME: factor out dependencies into systems
+;;        like for image, model formats, etc.
