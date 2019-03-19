@@ -27,7 +27,7 @@ void main(){}")
 (defmethod paint-with ((pass shadow-map-pass) target)
   (with-pushed-matrix ((projection-matrix (shadow-projection-matrix pass))
                        (view-matrix (shadow-view-matrix pass)))
-    ;;(gl:cull-face :front)
+    (gl:cull-face :front)
     (call-next-method)
     (gl:cull-face :back)))
 
@@ -43,10 +43,10 @@ void main(){}")
     (setf (uniform program "light_space_matrix") (m* (shadow-projection-matrix shadow)
                                                      (shadow-view-matrix shadow)))))
 
-(define-class-shader (shadow-render-pass :fragment-shader)
+(define-class-shader (shadow-render-pass :fragment-shader 10)
   "
 #define SHADOW_SAMPLES 16
-#define SHADOW_SAMPLE_SPREAD 0.002
+#define SHADOW_SAMPLE_SPREAD 0.001
 uniform sampler2D shadow_map;
 uniform mat4 light_space_matrix;
 
