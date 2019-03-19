@@ -20,6 +20,10 @@
   (unless binding
     (setf (binding buffer) (cffi:translate-underscore-separated-name name))))
 
+(defmethod reinitialize-instance :after ((buffer uniform-buffer) &key)
+  ;; Clear offsets as the underlying struct might have changed.
+  (setf (offsets buffer) ()))
+
 (defmethod gl-type ((buffer uniform-buffer))
   (gl-type (gl-struct (input buffer))))
 
@@ -104,7 +108,6 @@
   (let ((index (gl:get-uniform-block-index (gl-name program) (gl-type buffer))))
     (%gl:uniform-block-binding (gl-name program) index binding-point)
     (%gl:bind-buffer-base :uniform-buffer binding-point (gl-name buffer))))
-
 
 (defmethod buffer-field ((buffer uniform-buffer) field)
   (error "FIXME"))
