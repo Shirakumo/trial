@@ -6,6 +6,8 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(defconstant MAX-LIGHTS 128)
+
 (define-shader-pass geometry-pass (per-object-pass)
   ((depth    :port-type output
              :attachment :depth-stencil-attachment)
@@ -97,27 +99,36 @@ void main(){
   (position :vec3)
   (direction :vec3)
   (color :vec3)
+  (attenuation-linear :float)
+  (attenuation-quadratic :float)
   (outer :float)
   (cutoff :float))
 
 (define-gl-struct light-block
-  (lights (:struct light) :array-size 32)
+  (lights (:struct light) :array-size MAX-LIGHTS)
   (count :int))
 
 (define-asset (trial light-block) uniform-buffer
     'light-block)
 
 (define-class-shader (deferred-render-pass :fragment-shader)
-  (gl-source (asset 'trial 'light-block))
+  ;; KLUDGE
+  ;; (gl-source (asset 'trial 'light-block))
   "out vec4 color;
 in vec2 tex_coord;
+// KLUDGE
+// float lighting_strength = 1.0;
 
 uniform sampler2D position_map;
 uniform sampler2D normal_map;
 uniform sampler2D albedo_map;
 uniform vec3 view_position;
-float lighting_strength = 1.0;
 const float PI = 3.14159265;
+
+float light_attenuation(Light light, vec3 position){
+  float distance = length(light.position - position);
+  return 1.0 / (1.0 + light.attenuation_linear * distance + light.attenuation_quadratic * distance * distance);
+}
 
 vec3 directional_light(Light light, vec3 view_direction, vec3 position, vec3 normal, vec4 albedo){
   vec3 light_direction = normalize(-light.direction);
@@ -134,16 +145,13 @@ vec3 point_light(Light light, vec3 view_direction, vec3 position, vec3 normal, v
   vec3 diffuse = max(dot(normal, light_direction), 0.0) * albedo.rgb;
   float energy = (8.0 + 32) / (8.0 * PI);
   float specular = pow(max(dot(normal, halfway_direction), 0.0), 32) * albedo.a * energy;
-  float distance = length(light.position - position);
-  float attenuation = 1.0 / (1.0 + 0.07 * distance + 0.017 * distance * distance);
+  float attenuation = light_attenuation(light, position);
   return (diffuse + specular) * light.color * attenuation;
 }
 
 vec3 spot_light(Light light, vec3 view_direction, vec3 position, vec3 normal, vec4 albedo){
   vec3 light_direction = normalize(light.position - position);
   vec3 halfway_direction = normalize(light_direction + view_direction);
-  float distance = length(light.position - position);
-  float attenuation = 1.0 / (1.0 + 0.07 * distance + 0.017 * distance * distance);
   float theta = dot(light_direction, normalize(-light.direction));
 
   vec3 diffuse = vec3(0,0,0);
@@ -155,6 +163,7 @@ vec3 spot_light(Light light, vec3 view_direction, vec3 position, vec3 normal, ve
     specular = pow(max(dot(normal, halfway_direction), 0.0), 32) * intensity * albedo.a;
   }
 
+  float attenuation = light_attenuation(light, position);
   return (diffuse + specular) * light.color * attenuation;
 }
 
