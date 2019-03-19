@@ -93,5 +93,6 @@
     (call-next-method)))
 
 (defmethod reload :around ((asset gl-asset))
-  (with-context (*context*)
-    (call-next-method)))
+  (when *context*
+    (with-context (*context*)
+      (call-next-method))))
