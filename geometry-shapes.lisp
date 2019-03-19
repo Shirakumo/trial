@@ -106,7 +106,7 @@
 
 (defun make-sphere (size &key (segments 32) mesh pack (x 0) (y 0) (z 0))
   (let ((lat segments) (lng segments))
-    (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
+    (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'basic-vertex)) :pack pack)
       (loop for i from lat downto 1
             for lat0 = (* PI (- (/ (1- i) lat) 0.5))
             for lat1 = (* PI (- (/ i lat) 0.5))
@@ -118,13 +118,15 @@
                      for l1 = (* 2 PI (/ (- j 1) lng)) for l2 = (* 2 PI (/ (- j 2) lng))
                      for x1 = (cos l1) for x2 = (cos l2)
                      for y1 = (sin l1) for y2 = (sin l2)
-                     do (vertex :position (vec (+ x (* x1 zr0 size)) (+ y (* y1 zr0 size)) (+ z (* z0 size))))
-                        (vertex :position (vec (+ x (* x1 zr1 size)) (+ y (* y1 zr1 size)) (+ z (* z1 size))))
-                        (vertex :position (vec (+ x (* x2 zr0 size)) (+ y (* y2 zr0 size)) (+ z (* z0 size))))
-                     
-                        (vertex :position (vec (+ x (* x2 zr0 size)) (+ y (* y2 zr0 size)) (+ z (* z0 size))))
-                        (vertex :position (vec (+ x (* x1 zr1 size)) (+ y (* y1 zr1 size)) (+ z (* z1 size))))
-                        (vertex :position (vec (+ x (* x2 zr1 size)) (+ y (* y2 zr1 size)) (+ z (* z1 size)))))))))
+                     do (flet ((vertex (position)
+                                 (vertex :position position :normal (vunit position) :uv (vec 0 0))))
+                          (vertex (vec (+ x (* x1 zr0 size)) (+ y (* y1 zr0 size)) (+ z (* z0 size))))
+                          (vertex (vec (+ x (* x1 zr1 size)) (+ y (* y1 zr1 size)) (+ z (* z1 size))))
+                          (vertex (vec (+ x (* x2 zr0 size)) (+ y (* y2 zr0 size)) (+ z (* z0 size))))
+                          
+                          (vertex (vec (+ x (* x2 zr0 size)) (+ y (* y2 zr0 size)) (+ z (* z0 size))))
+                          (vertex (vec (+ x (* x1 zr1 size)) (+ y (* y1 zr1 size)) (+ z (* z1 size))))
+                          (vertex (vec (+ x (* x2 zr1 size)) (+ y (* y2 zr1 size)) (+ z (* z1 size))))))))))
 
 (defun make-disc (size &key (segments 32) mesh pack (x 0) (y 0) (z 0))
   (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
