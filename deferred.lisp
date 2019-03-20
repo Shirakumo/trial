@@ -78,7 +78,7 @@ void main(){
     (gl:active-texture :texture1)
     (gl:bind-texture :texture-2d (gl-name (specular-map entity)))))
 
-(defmethod paint :around ((entity geometry-shaded) (pass geometry-pass))
+(defmethod paint-with :around ((pass geometry-pass) (scene scene))
   (with-pushed-attribs
     (disable :blend)
     (call-next-method)))
@@ -178,11 +178,11 @@ void main(){
     Light light = light_block.lights[i];
     switch(light.type){
     case 0: break;
-    case 1: lighting += directional_light(light, view_direction, position, normal, albedo); break;
+    case 1: lighting += directional_light(light, view_direction, position, normal, albedo)*lighting_strength; break;
     case 2: lighting += point_light(light, view_direction, position, normal, albedo); break;
     case 3: lighting += spot_light(light, view_direction, position, normal, albedo); break;
     }
   }
   
-  color = vec4(lighting*lighting_strength + albedo.rgb*0.1, 1.0);
+  color = vec4(lighting + albedo.rgb*0.01, 1.0);
 }")

@@ -28,6 +28,11 @@
    (faces :initform (make-array 0 :element-type 'fixnum :adjustable T :fill-pointer T) :accessor faces)
    (vertices :initform (make-array 0 :adjustable T :fill-pointer T) :accessor vertices)))
 
+(defmethod update-vertices (function (mesh vertex-mesh))
+  (loop for vertex across (vertices mesh)
+        do (funcall function vertex))
+  mesh)
+
 (defun push-mesh-vertex (vertex mesh)
   (let ((vertices (vertices mesh)))
     (vector-push-extend (length vertices) (faces mesh))

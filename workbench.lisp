@@ -6,51 +6,47 @@
 (define-pool workbench
   :base 'trial)
 
-(define-asset (workbench coffee) image
-    #p"/home/linus/models/ark_coffee/ark_coffee.png"
+(define-asset (workbench skybox) image
+    (list #p"masko-naive/posx.jpg"
+          #p"masko-naive/negx.jpg"
+          #p"masko-naive/posy.jpg"
+          #p"masko-naive/negy.jpg"
+          #p"masko-naive/posz.jpg"
+          #p"masko-naive/negz.jpg")
+  :target :texture-cube-map
+  :min-filter :linear)
+
+;; Wood house
+(define-asset (workbench wood-house) mesh
+    #p"/home/linus/models/wood_house/hatka_local_.obj"
+  :geometry-name "fence")
+
+(define-asset (workbench wood-house-ambient) image
+    #p"/home/linus/models/wood_house/home_hatka_Base_Color.png"
   :internal-format :srgb)
 
-(define-asset (workbench coffee-spec) image
-    #p"/home/linus/models/ark_coffee/ark_coffee_specular.png")
+(define-asset (workbench wood-house-specular) image
+    #p"/home/linus/models/wood_house/home_hatka_Metallic.png")
 
-(define-asset (workbench white) image
-    #p"/home/linus/models/ark_coffee/ark_cup.png")
+(define-asset (workbench wood-ground) mesh
+    #p"/home/linus/models/wood_house/hatka_local_.obj"
+  :geometry-name "grount")
 
-(define-asset (workbench gray) image
-    #p"/home/linus/models/ark_coffee/ark_spoon.png")
-
-(define-asset (workbench black) image
-    #p"/home/linus/models/ark_coffee/ark_black.png")
-
-(define-asset (workbench countertop) image
-    #p"/home/linus/models/ark_coffee/countertop.jpg"
+(define-asset (workbench wood-ground-ambient) image
+    #p"/home/linus/models/wood_house/grunt_Base_Color.png"
   :internal-format :srgb)
 
-;; FIXME: this is real fuckin' dumb
-(define-asset (workbench cappuccino) mesh
-    #p"/home/linus/models/ark_coffee/ARK_COFFEE_CUP.obj"
-  :geometry-name "cappuccino")
+(define-asset (workbench wood-ground-specular) image
+    #p"/home/linus/models/wood_house/grunt_Metallic.png")
 
-(define-asset (workbench cup) mesh
-    #p"/home/linus/models/ark_coffee/ARK_COFFEE_CUP.obj"
-  :geometry-name "cup")
-
-(define-asset (workbench plate) mesh
-    #p"/home/linus/models/ark_coffee/ARK_COFFEE_CUP.obj"
-  :geometry-name "plate")
-
-(define-asset (workbench spoon) mesh
-    #p"/home/linus/models/ark_coffee/ARK_COFFEE_CUP.obj"
-  :geometry-name "spoon")
-
-(define-asset (workbench floor) mesh
-    (make-cube '(30 30 1)))
-
+;; Extra
 (define-asset (workbench sphere) mesh
-    (make-sphere 0.03))
+    (make-sphere 1))
 
 (define-asset (workbench big-sphere) mesh
     (make-sphere 1))
+
+(defparameter *scene-size* 800)
 
 (define-shader-subject point-light (geometry-shaded located-entity)
   ((index :initarg :index :initform 0 :accessor index)
@@ -75,14 +71,14 @@
       (setf (buffer-field buffer (field i 'attenuation_quadratic)) (second (attenuation point-light))))
     (let ((dir (direction point-light))
           (loc (location point-light)))
-      (setf (vx dir) (random (* 2 dt)))
+      (setf (vx dir) (random (* 30 dt)))
       (setf (vy dir) (+ (vy dir) (random (* 2 dt))))
       (setf (vz dir) (+ (vz dir) (random (* 2 dt))))
       (flet ((wrap (x)
-               (- (mod (+ x 15) 30) 15)))
+               (- (mod (+ x *scene-size*) (* 2 *scene-size*)) *scene-size*)))
         (vsetf loc
                (wrap (+ (vx loc) (* (vx dir) (sin (vy dir)) (cos (vz dir)))))
-               (mod (+ (vy loc) (* (vx dir) (sin (vy dir)) (sin (vz dir)))) 15)
+               (mod (+ (vy loc) (* (vx dir) (sin (vy dir)) (sin (vz dir)))) *scene-size*)
                (wrap (+ (vz loc) (* (vx dir) (cos (vy dir))))))))))
 
 (defmethod paint ((point-light point-light) (pass shadow-map-pass)))
@@ -113,36 +109,27 @@ void main(){
 
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
-    (enter (make-instance 'editor-camera :location (VEC3 -4.5441413 12.507906 8.965087)
-                                         :rotation (VEC3 0.8199995 0.5300003 0.0)
-                                         :move-speed 0.1) scene)
-    (flet ((add (diff spec vert &rest initargs)
+    (enter (make-instance 'editor-camera :location (VEC3 982.9328 651.59686 -957.8825)
+                                         :rotation (VEC3 0.4599998 3.9599707 0.0))
+           scene)
+    (enter (make-instance 'skybox :texture (asset 'workbench 'skybox)) scene)
+    (flet ((add (vert diff spec &rest initargs)
              (enter (apply #'make-instance 'geometry-shaded
                            :specular-map (asset 'workbench spec)
                            :diffuse-map (asset 'workbench diff)
                            :vertex-array (asset 'workbench vert)
                            initargs)
                     scene)))
-      (add 'white 'gray 'cup)
-      (add 'white 'gray 'plate)
-      (add 'gray 'white 'spoon)
-      (add 'coffee 'black 'cappuccino)
-      (add 'countertop 'black 'floor))
-    (enter (make-instance 'point-light :index 0
-                                       :location (vec -20 20 -20)
-                                       :color (vec 10 10 10)
-                                       :attenuation '(.07 0.017)
-                                       :vertex-array (asset 'workbench 'big-sphere)
-                                       :name :sunlight)
-           scene)
+      (add 'wood-ground 'wood-ground-ambient 'wood-ground-specular)
+      (add 'wood-house 'wood-house-ambient 'wood-house-specular))
     (dotimes (i (1- MAX-LIGHTS))
       (enter (make-instance 'point-light :index (1+ i)
-                                         :location (vec3-random -10 +10)
-                                         :color (nv* (nvunit (vec3-random 1 10)) 1.5)
-                                         :attenuation '(.7 3.0))
+                                         :location (vec3-random (- *scene-size*) *scene-size*)
+                                         :color (nv* (nvunit (vec3-random 1 10)) 10)
+                                         :attenuation '(0.07 0.017))
              scene))
-    (let* ((shadow (make-instance 'shadow-map-pass :projection-matrix (mortho -20 20 -20 20 1.0 50)
-                                                   :view-matrix (mlookat (vec -20 20 -20) (vec 0 0 0) (vec 0 1 0))
+    (let* ((shadow (make-instance 'shadow-map-pass :projection-matrix (mortho -800 800 -800 800 1.0 1500)
+                                                   :view-matrix (mlookat (vec 600 600 -600) (vec 0 0 0) (vec 0 1 0))
                                                    :name :shadow-map-pass))
            (geometry (make-instance 'geometry-pass))
            (lighting (make-instance 'deferred+shadow-pass :shadow-map-pass shadow))
@@ -151,10 +138,11 @@ void main(){
            (h-blur2 (make-instance 'gaussian-blur-pass :uniforms `(("dir" ,(vec 1 0)))))
            (v-blur2 (make-instance 'gaussian-blur-pass :uniforms `(("dir" ,(vec 0 1)))))
            (tone-map (make-instance 'bloom-pass)))
+      ;;(connect (port shadow 'shadow) (port (make-instance 'copy-pass) 'previous-pass) scene)
+      (connect (port shadow 'shadow) (port lighting 'shadow-map) scene)
       (connect (port geometry 'position) (port lighting 'position-map) scene)
       (connect (port geometry 'normal) (port lighting 'normal-map) scene)
       (connect (port geometry 'albedo) (port lighting 'albedo-map) scene)
-      (connect (port shadow 'shadow) (port lighting 'shadow-map) scene)
       (connect (port lighting 'high-pass) (port h-blur 'previous-pass) scene)
       (connect (port h-blur 'color) (port v-blur 'previous-pass) scene)
       (connect (port v-blur 'color) (port h-blur2 'previous-pass) scene)
@@ -165,6 +153,11 @@ void main(){
   (defmethod change-scene :after ((workbench workbench) scene &key old)
     (declare (ignore old))
     (let ((buffer (asset 'trial 'light-block)))
+      (flet ((field (i field)
+               (format NIL "LightBlock.lights[~d].~(~a~)" i field)))
+        (setf (buffer-field buffer (field 0 'type)) 1)
+        (setf (buffer-field buffer (field 0 'direction)) (nvunit (nv- (vec 600 600 -600))))
+        (setf (buffer-field buffer (field 0 'color)) (vec 1.2 1.1 1)))
       (setf (buffer-field buffer "LightBlock.count") MAX-LIGHTS)))
   (maybe-reload-scene))
 
@@ -175,6 +168,6 @@ void main(){
         (camera (unit :camera (scene workbench))))
     ;;(setf (buffer-field buffer "LightBlock.lights[1].color") (vec 15 15 15))
     ;;(setf (buffer-field buffer "LightBlock.lights[1].position") light)
-    (setf (shadow-view-matrix shadow) (mlookat (location light) (vec 0 0 0) (vec 0 1 0)))
+    ;;(setf (shadow-view-matrix shadow) (mlookat (location light) (vec 0 0 0) (vec 0 1 0)))
     ;;(vsetf (location camera) (* (sin (/ tt -1)) 20) 20 (* (cos (/ tt 1)) 20))
     ))

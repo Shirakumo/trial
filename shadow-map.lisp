@@ -45,7 +45,7 @@ void main(){}")
 
 (define-class-shader (shadow-render-pass :fragment-shader 10)
   "
-#define SHADOW_SAMPLES 16
+#define SHADOW_SAMPLES 4
 #define SHADOW_SAMPLE_SPREAD 0.001
 uniform sampler2D shadow_map;
 uniform mat4 light_space_matrix;
@@ -98,5 +98,5 @@ float shadow_factor(vec3 position, float bias){
 }
 
 float shadow_bias(vec3 normal, vec3 light_direction){
-  return max(0.05 * (1-dot(normal, light_direction)), 0.001);
+  return clamp(0.005*tan(acos(dot(normal, light_direction))), 0, 0.001);
 }")

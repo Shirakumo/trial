@@ -9,26 +9,20 @@ void main(){
   vec4 b = texture(b_pass, tex_coord);
   
   switch(blend_type){
-  case 0: // Add
+  case 0: // b-over
+    color = mix(a, b, b.a);
+    break;
+  case 1: // a-over
+    color = mix(a, b, a.a);
+    break;
+  case 2: // Add
     color = a+b;
     break;
-  case 1: // Subtract
+  case 3: // Subtract
     color = a-b;
     break;
-  case 2: // Multiply
+  case 4: // Multiply
     color = a*b;
-    break;
-  case 3: // 
-    break;
-  case 4: // 
-    break;
-  case 5: // 
-    break;
-  case 6: // 
-    break;
-  case 7: // 
-    break;
-  case 8: // 
     break;
   }
 }
