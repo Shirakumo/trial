@@ -27,7 +27,7 @@
                 (4 :bgra))))))
 
 (defmethod load-image (path (type (eql :png)) &key)
-  (let ((png (pngload:load-file path :flatten T :flip-y T :static-vector T)))
+  (let ((png (pngload:load-file path :flatten T :flip-y NIL :static-vector T)))
     (mark-static-vector (pngload:data png))
     (with-cleanup-on-failure (maybe-free-static-vector (pngload:data png))
       (values (pngload:data png)
@@ -70,7 +70,7 @@
 
 (defmethod load-image (path (type (eql :jpeg)) &key)
   (multiple-value-bind (image height width components) (jpeg:decode-image path)
-    (flip-image-vertically image width height components)
+;;    (flip-image-vertically image width height components)
     (values image
             width
             height
