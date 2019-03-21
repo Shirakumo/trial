@@ -9,6 +9,11 @@
 (defclass image (gl-asset texture)
   ())
 
+(defmethod shared-initialize :after ((image image) slots &key &allow-other-keys)
+  (dolist (file (enlist (coerce-asset-input image T)))
+    (unless (probe-file file)
+      (alexandria:simple-style-warning "Input image file ~s does not exist." file))))
+
 (defgeneric load-image (path type &key width height pixel-type pixel-format &allow-other-keys))
 
 (defmethod load-image (path (type (eql :tga)) &key)
