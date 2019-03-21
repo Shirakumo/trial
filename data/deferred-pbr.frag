@@ -66,6 +66,7 @@ void main(){
   vec3 position = texture(position_map, tex_coord).rgb;
   vec3 normal = texture(normal_map, tex_coord).rgb;
   vec3 albedo = texture(albedo_map, tex_coord).rgb;
+  if(albedo.x <= 0) discard;
   // r = metalness, g = roughness, b = occlusion;
   vec3 metal = texture(metal_map, tex_coord).rgb;
   

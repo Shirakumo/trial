@@ -122,7 +122,8 @@ void main(){
    (normal-map :port-type input)
    (albedo-map :port-type input)
    (metal-map :port-type input)
-   (color :port-type output :attachment :color-attachment0))
+   (color :port-type output :attachment :color-attachment0
+          :texspec (:internal-format :rgba)))
   (:buffers (trial light-block)))
 
 (defmethod paint-with :before ((pass deferred-render-pass) target)

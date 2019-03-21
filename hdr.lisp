@@ -21,10 +21,10 @@ uniform float gamma = 2.2;
 uniform float exposure = 0.5;
 
 void main(){
-  vec3 hdr = texture(previous_pass, tex_coord).rgb;
-  vec3 mapped = vec3(1.0) - exp((-hdr) * exposure);
+  vec4 source = texture(previous_pass, tex_coord);
+  vec3 mapped = vec3(1.0) - exp((-source.rgb) * exposure);
   mapped = pow(mapped, vec3(1.0 / gamma));
-  color = vec4(mapped, 1.0);
+  color = vec4(mapped, source.a);
 }")
 
 (define-shader-pass high-color-pass ()
@@ -61,9 +61,10 @@ uniform float gamma = 2.2;
 uniform float exposure = 0.5;
 
 void main(){
-  vec3 hdr = texture(previous_pass, tex_coord).rgb;
-  hdr += texture(high_pass, tex_coord).rgb;
+  vec4 source = texture(previous_pass, tex_coord);
+  vec4 bloom = texture(high_pass, tex_coord);
+  vec3 hdr = source.rgb + bloom.rgb;
   vec3 mapped = vec3(1.0) - exp((-hdr) * exposure);
   mapped = pow(mapped, vec3(1.0 / gamma));
-  color = vec4(mapped, 1.0);
+  color = vec4(mapped, source.a);
 }")
