@@ -165,7 +165,25 @@
 (defmethod fill-vertex-attribute ((vertex colored-vertex) (attribute (eql 'color)) data offset)
   (fill-vector-data (color vertex) 'vec4 data offset))
 
+(defclass tangent-vertex (vertex)
+  ((tangent :initform (vec 0 0 0) :initarg :tangent :accessor tangent :type vec3)))
+
+(defmethod vertex= and ((a tangent-vertex) (b tangent-vertex))
+  (v= (tangent a) (tangent b)))
+
+(defmethod vertex-attribute-size ((vertex tangent-vertex) (attribute (eql 'tangent)))
+  3)
+
+(defmethod vertex-attributes append ((vertex tangent-vertex))
+  '(tangent))
+
+(defmethod fill-vertex-attribute ((vertex tangent-vertex) (attribute (eql 'tangent)) data offset)
+  (fill-vector-data (tangent vertex) 'vec3 data offset))
+
 (defclass basic-vertex (normal-vertex textured-vertex)
+  ())
+
+(defclass basic+-vertex (tangent-vertex normal-vertex textured-vertex)
   ())
 
 ;;;; Translation
