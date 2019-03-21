@@ -21,18 +21,23 @@
                        :pixel-type :float))
    (albedo   :port-type output
              :attachment :color-attachment2
-             :texspec (:internal-format :rgba)))
+             :texspec (:internal-format :rgb))
+   (metal    :port-type output
+             :attachment :color-attachment3
+             :texspec (:internal-format :rgb)))
   (:inhibit-shaders (shader-entity :fragment-shader)))
 
 (define-class-shader (geometry-pass :vertex-shader)
   "layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 texcoord;
 layout (location = 2) in vec3 normal;
+layout (location = 3) in vec3 tangent;
 
 out GEOM{
   vec3 position;
   vec2 texcoord;
   vec3 normal;
+  mat3 TBN;
 } geom;
 
 uniform mat4 model_matrix;
@@ -41,33 +46,53 @@ void main(){
   geom.position = vec3(model_matrix * vec4(position, 1.0));
   geom.texcoord = texcoord;
   geom.normal = mat3(transpose(inverse(model_matrix))) * normal;
+
+  vec3 T = normalize(vec3(model_matrix * vec4(tangent, 0.0)));
+  vec3 N = normalize(vec3(model_matrix * vec4(normal, 0.0)));
+  T = normalize(T - dot(T, N) * N);
+  vec3 B = cross(N, T);
+  geom.TBN = mat3(T, B, N);
 }")
 
 (define-class-shader (geometry-pass :fragment-shader)
   "#version 330 core
 layout (location = 0) out vec3 position_map;
 layout (location = 1) out vec3 normal_map;
-layout (location = 2) out vec4 albedo_map;
+layout (location = 2) out vec3 albedo_map;
+layout (location = 3) out vec3 metal_map;
 
 in GEOM{
   vec3 position;
   vec2 texcoord;
   vec3 normal;
+  mat3 TBN;
 } geom;
 
 uniform sampler2D diffuse;
 uniform sampler2D specular;
+uniform sampler2D normal;
+uniform sampler2D roughness;
+uniform sampler2D occlusion;
 
 void main(){
+    vec3 local_normal = texture(normal, geom.texcoord).rgb;
+    local_normal = normalize(local_normal * 2.0 - 1.0);   
+    local_normal = normalize(geom.TBN * local_normal);
+
     position_map = geom.position;
-    normal_map = normalize(geom.normal);
+    normal_map = local_normal;
     albedo_map.rgb = texture(diffuse, geom.texcoord).rgb;
-    albedo_map.a = texture(specular, geom.texcoord).r;
+    metal_map.r = texture(specular, geom.texcoord).r;
+    metal_map.g = texture(roughness, geom.texcoord).r;
+    metal_map.b = texture(occlusion, geom.texcoord).r;
 }")
 
 (define-shader-entity geometry-shaded (vertex-entity)
   ((diffuse-map :initarg :diffuse-map :accessor diffuse-map)
-   (specular-map :initarg :specular-map :accessor specular-map)))
+   (specular-map :initarg :specular-map :accessor specular-map)
+   (normal-map :initarg :normal-map :accessor normal-map)
+   (roughness-map :initarg :roughness-map :accessor roughness-map)
+   (occlusion-map :initarg :occlusion-map :accessor occlusion-map)))
 
 (defmethod paint :before ((entity geometry-shaded) (pass geometry-pass))
   (let ((program (shader-program-for-pass pass entity)))
@@ -76,7 +101,16 @@ void main(){
     (gl:bind-texture :texture-2d (gl-name (diffuse-map entity)))
     (setf (uniform program "specular") 1)
     (gl:active-texture :texture1)
-    (gl:bind-texture :texture-2d (gl-name (specular-map entity)))))
+    (gl:bind-texture :texture-2d (gl-name (specular-map entity)))
+    (setf (uniform program "normal") 2)
+    (gl:active-texture :texture2)
+    (gl:bind-texture :texture-2d (gl-name (normal-map entity)))
+    (setf (uniform program "roughness") 3)
+    (gl:active-texture :texture3)
+    (gl:bind-texture :texture-2d (gl-name (roughness-map entity)))
+    (setf (uniform program "occlusion") 4)
+    (gl:active-texture :texture4)
+    (gl:bind-texture :texture-2d (gl-name (occlusion-map entity)))))
 
 (defmethod paint-with :around ((pass geometry-pass) (scene scene))
   (with-pushed-attribs
@@ -87,6 +121,7 @@ void main(){
   ((position-map :port-type input)
    (normal-map :port-type input)
    (albedo-map :port-type input)
+   (metal-map :port-type input)
    (color :port-type output :attachment :color-attachment0))
   (:buffers (trial light-block)))
 
@@ -114,75 +149,4 @@ void main(){
 (define-class-shader (deferred-render-pass :fragment-shader)
   ;; KLUDGE
   ;; (gl-source (asset 'trial 'light-block))
-  "out vec4 color;
-in vec2 tex_coord;
-// KLUDGE
-// float lighting_strength = 1.0;
-
-uniform sampler2D position_map;
-uniform sampler2D normal_map;
-uniform sampler2D albedo_map;
-uniform vec3 view_position;
-const float PI = 3.14159265;
-
-float light_attenuation(Light light, vec3 position){
-  float distance = length(light.position - position);
-  return 1.0 / (1.0 + light.attenuation_linear * distance + light.attenuation_quadratic * distance * distance);
-}
-
-vec3 directional_light(Light light, vec3 view_direction, vec3 position, vec3 normal, vec4 albedo){
-  vec3 light_direction = normalize(-light.direction);
-  vec3 halfway_direction = normalize(light_direction + view_direction);
-  vec3 diffuse = max(dot(normal, light_direction), 0.0) * albedo.rgb;
-  float energy = (8.0 + 32) / (8.0 * PI);
-  float specular = pow(max(dot(normal, halfway_direction), 0.0), 32) * albedo.a * energy;
-  return (diffuse + specular) * light.color;
-}
-
-vec3 point_light(Light light, vec3 view_direction, vec3 position, vec3 normal, vec4 albedo){
-  vec3 light_direction = normalize(light.position - position);
-  vec3 halfway_direction = normalize(light_direction + view_direction);
-  vec3 diffuse = max(dot(normal, light_direction), 0.0) * albedo.rgb;
-  float energy = (8.0 + 32) / (8.0 * PI);
-  float specular = pow(max(dot(normal, halfway_direction), 0.0), 32) * albedo.a * energy;
-  float attenuation = light_attenuation(light, position);
-  return (diffuse + specular) * light.color * attenuation;
-}
-
-vec3 spot_light(Light light, vec3 view_direction, vec3 position, vec3 normal, vec4 albedo){
-  vec3 light_direction = normalize(light.position - position);
-  vec3 halfway_direction = normalize(light_direction + view_direction);
-  float theta = dot(light_direction, normalize(-light.direction));
-
-  vec3 diffuse = vec3(0,0,0);
-  float specular = 0;
-  if(theta > light.outer) {
-    float epsilon = light.cutoff - light.outer;
-    float intensity = clamp((theta - light.outer) / epsilon, 0.0, 1.0); 
-    diffuse = max(dot(normal, light_direction), 0) * intensity * albedo.rgb;
-    specular = pow(max(dot(normal, halfway_direction), 0.0), 32) * intensity * albedo.a;
-  }
-
-  float attenuation = light_attenuation(light, position);
-  return (diffuse + specular) * light.color * attenuation;
-}
-
-void main(){
-  vec3 position = texture(position_map, tex_coord).rgb;
-  vec3 normal = texture(normal_map, tex_coord).rgb;
-  vec4 albedo = texture(albedo_map, tex_coord).rgba;
-  
-  vec3 lighting = vec3(0);
-  vec3 view_direction = normalize(view_position - position);
-  for(int i=0; i<light_block.count; ++i){
-    Light light = light_block.lights[i];
-    switch(light.type){
-    case 0: break;
-    case 1: lighting += directional_light(light, view_direction, position, normal, albedo)*lighting_strength; break;
-    case 2: lighting += point_light(light, view_direction, position, normal, albedo); break;
-    case 3: lighting += spot_light(light, view_direction, position, normal, albedo); break;
-    }
-  }
-  
-  color = vec4(lighting + albedo.rgb*0.01, 1.0);
-}")
+  (asdf:system-relative-pathname :trial "data/deferred-pbr.frag"))

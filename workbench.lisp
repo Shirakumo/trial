@@ -16,35 +16,80 @@
   :target :texture-cube-map
   :min-filter :linear)
 
+(define-asset (workbench white) image
+    #p"white.png")
+
+(define-asset (workbench black) image
+    #p"black.png")
+
+(define-asset (workbench neutral-normal) image
+    #p"neutral-normal.png")
+
+;; Chalet
+(define-asset (workbench chalet) mesh
+    #p"/home/linus/models/alpine_chalet/Alpine_chalet.obj"
+  :geometry-name "Alpine_chalet.obj")
+
+(define-asset (workbench chalet-albedo) image
+    #p"/home/linus/models/alpine_chalet/Diffuse_map.png"
+  :internal-fromat :srgb)
+
+(define-asset (workbench chalet-specular) image
+    #p"/home/linus/models/alpine_chalet/Metallic_map.png")
+
+(define-asset (workbench chalet-normal) image
+    #p"/home/linus/models/alpine_chalet/Normal_map.png")
+
+(define-asset (workbench chalet-roughness) image
+    #p"/home/linus/models/alpine_chalet/Roughness_map.png")
+
 ;; Wood house
 (define-asset (workbench wood-house) mesh
     #p"/home/linus/models/wood_house/hatka_local_.obj"
   :geometry-name "fence")
 
-(define-asset (workbench wood-house-ambient) image
+(define-asset (workbench wood-house-albedo) image
     #p"/home/linus/models/wood_house/home_hatka_Base_Color.png"
   :internal-format :srgb)
 
 (define-asset (workbench wood-house-specular) image
     #p"/home/linus/models/wood_house/home_hatka_Metallic.png")
 
+(define-asset (workbench wood-house-normal) image
+    #p"/home/linus/models/wood_house/home_hatka_Normal_OpenGL.png")
+
+(define-asset (workbench wood-house-roughness) image
+    #p"/home/linus/models/wood_house/home_hatka_Roughness.png")
+
+(define-asset (workbench wood-house-occlusion) image
+    #p"/home/linus/models/wood_house/home_hatka_Mixed_AO.png")
+
 (define-asset (workbench wood-ground) mesh
     #p"/home/linus/models/wood_house/hatka_local_.obj"
   :geometry-name "grount")
 
-(define-asset (workbench wood-ground-ambient) image
+(define-asset (workbench wood-ground-albedo) image
     #p"/home/linus/models/wood_house/grunt_Base_Color.png"
   :internal-format :srgb)
 
 (define-asset (workbench wood-ground-specular) image
     #p"/home/linus/models/wood_house/grunt_Metallic.png")
 
+(define-asset (workbench wood-ground-normal) image
+    #p"/home/linus/models/wood_house/grunt_Normal_OpenGL.png")
+
+(define-asset (workbench wood-ground-roughness) image
+    #p"/home/linus/models/wood_house/grunt_Roughness.png")
+
+(define-asset (workbench wood-ground-occlusion) image
+    #p"/home/linus/models/wood_house/grunt_Mixed_AO.png")
+
 ;; Extra
 (define-asset (workbench sphere) mesh
     (make-sphere 1))
 
-(define-asset (workbench big-sphere) mesh
-    (make-sphere 1))
+(define-asset (workbench ground) mesh
+    (update-vertices (lambda (v) (nv* (uv v) 10)) (make-cube '(1000 1000 10))))
 
 (defparameter *scene-size* 800)
 
@@ -57,6 +102,9 @@
    :direction (vec3-random -3 +3)
    :diffuse-map (asset 'workbench 'white)
    :specular-map (asset 'workbench 'black)
+   :normal-map (asset 'workbench 'neutral-normal)
+   :roughness-map (asset 'workbench 'black)
+   :occlusion-map (asset 'workbench 'black)
    :vertex-array (asset 'workbench 'sphere)))
 
 (define-handler (point-light tick) (ev dt tt)
@@ -82,6 +130,9 @@
                (wrap (+ (vz loc) (* (vx dir) (cos (vy dir))))))))))
 
 (defmethod paint ((point-light point-light) (pass shadow-map-pass)))
+
+(define-shader-entity test (geometry-shaded located-entity scaled-entity)
+  ())
 
 (define-shader-pass deferred+shadow-pass (high-color-pass
                                           hdr-output-pass
@@ -112,22 +163,38 @@ void main(){
     (enter (make-instance 'editor-camera :location (VEC3 982.9328 651.59686 -957.8825)
                                          :rotation (VEC3 0.4599998 3.9599707 0.0))
            scene)
-    (enter (make-instance 'skybox :texture (asset 'workbench 'skybox)) scene)
-    (flet ((add (vert diff spec &rest initargs)
-             (enter (apply #'make-instance 'geometry-shaded
+    ;; (enter (make-instance 'skybox :texture (asset 'workbench 'skybox)) scene)
+    (flet ((add (vert diff spec norm rough ao &rest initargs)
+             (enter (apply #'make-instance 'test
                            :specular-map (asset 'workbench spec)
                            :diffuse-map (asset 'workbench diff)
+                           :normal-map (asset 'workbench norm)
+                           :roughness-map (asset 'workbench rough)
+                           :occlusion-map (asset 'workbench ao)
                            :vertex-array (asset 'workbench vert)
                            initargs)
                     scene)))
-      (add 'wood-ground 'wood-ground-ambient 'wood-ground-specular)
-      (add 'wood-house 'wood-house-ambient 'wood-house-specular))
-    (dotimes (i (1- MAX-LIGHTS))
-      (enter (make-instance 'point-light :index (1+ i)
-                                         :location (vec3-random (- *scene-size*) *scene-size*)
-                                         :color (nv* (nvunit (vec3-random 1 10)) 10)
-                                         :attenuation '(0.07 0.017))
-             scene))
+      (add 'wood-ground
+           'wood-ground-albedo
+           'wood-ground-specular
+           'wood-ground-normal
+           'wood-ground-roughness
+           'wood-ground-occlusion)
+      (add 'chalet
+           'chalet-albedo
+           'chalet-specular
+           'chalet-normal
+           'chalet-roughness
+           'white
+           :name :chalet
+           :location (vec 100 177 -300)
+           :scaling (vec 80 80 80)))
+    ;; (dotimes (i (1- MAX-LIGHTS))
+    ;;   (enter (make-instance 'point-light :index (1+ i)
+    ;;                                      :location (vec3-random (- *scene-size*) *scene-size*)
+    ;;                                      :color (nv* (nvunit (vec3-random 1 10)) 10)
+    ;;                                      :attenuation '(0.07 0.017))
+    ;;          scene))
     (let* ((shadow (make-instance 'shadow-map-pass :projection-matrix (mortho -800 800 -800 800 1.0 1500)
                                                    :view-matrix (mlookat (vec 600 600 -600) (vec 0 0 0) (vec 0 1 0))
                                                    :name :shadow-map-pass))
@@ -143,6 +210,7 @@ void main(){
       (connect (port geometry 'position) (port lighting 'position-map) scene)
       (connect (port geometry 'normal) (port lighting 'normal-map) scene)
       (connect (port geometry 'albedo) (port lighting 'albedo-map) scene)
+      (connect (port geometry 'metal) (port lighting 'metal-map) scene)
       (connect (port lighting 'high-pass) (port h-blur 'previous-pass) scene)
       (connect (port h-blur 'color) (port v-blur 'previous-pass) scene)
       (connect (port v-blur 'color) (port h-blur2 'previous-pass) scene)
@@ -155,19 +223,27 @@ void main(){
     (let ((buffer (asset 'trial 'light-block)))
       (flet ((field (i field)
                (format NIL "LightBlock.lights[~d].~(~a~)" i field)))
-        (setf (buffer-field buffer (field 0 'type)) 1)
+        (setf (buffer-field buffer (field 0 'type)) 2)
         (setf (buffer-field buffer (field 0 'direction)) (nvunit (nv- (vec 600 600 -600))))
-        (setf (buffer-field buffer (field 0 'color)) (vec 1.2 1.1 1)))
-      (setf (buffer-field buffer "LightBlock.count") MAX-LIGHTS)))
+        (setf (buffer-field buffer (field 0 'color)) (vec 0.9 0.85 0.6)))
+      (setf (buffer-field buffer "LightBlock.count") 1)))
   (maybe-reload-scene))
 
+(defun daytime-color (tt)
+  (if (< 0 tt)
+      (vec (ease (min 1 (* tt 3)) 'quint-in-out 0 1.4)
+           (* tt 1.2)
+           tt)
+      (vec 0 0 0)))
+
 (defmethod update :after ((workbench workbench) tt dt)
-  (let ((buffer (asset 'trial 'light-block))
-        (shadow (unit :shadow-map-pass (scene workbench)))
-        (light (unit :sunlight (scene workbench)))
-        (camera (unit :camera (scene workbench))))
-    ;;(setf (buffer-field buffer "LightBlock.lights[1].color") (vec 15 15 15))
-    ;;(setf (buffer-field buffer "LightBlock.lights[1].position") light)
-    ;;(setf (shadow-view-matrix shadow) (mlookat (location light) (vec 0 0 0) (vec 0 1 0)))
-    ;;(vsetf (location camera) (* (sin (/ tt -1)) 20) 20 (* (cos (/ tt 1)) 20))
-    ))
+  (let* ((buffer (asset 'trial 'light-block))
+         (shadow (unit :shadow-map-pass (scene workbench)))
+         (light ;(vec (* 600 (sin tt)) (* 600 (cos tt)) 600)
+           (vec 400 400 200))
+         (color ;(v* (daytime-color (/ (vy light) -600)) 100)
+           (nv* (vec 8 7 6) 0.3)))
+    (setf (buffer-field buffer "LightBlock.lights[0].type") 1)
+    (setf (buffer-field buffer "LightBlock.lights[0].color") color)
+    (setf (buffer-field buffer "LightBlock.lights[0].direction") light)
+    (setf (shadow-view-matrix shadow) (mlookat light (vec 0 0 0) (vec 0 1 0)))))
