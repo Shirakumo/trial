@@ -31,7 +31,11 @@
   (process (scene main)))
 
 (defmethod setup-rendering :after ((main main))
-  (change-scene main (scene main) :old NIL))
+  (restart-case
+      (change-scene main (scene main) :old NIL)
+    (abort ()
+      :report "Don't set up the scene, leaving it empty."
+      (clear (scene main)))))
 
 (defmethod setup-scene :around ((main main) (scene scene))
   (v:info :trial.main "Setting up ~a" scene)
