@@ -51,3 +51,9 @@ out vec4 color;
 void main() {
     color = texture(texture_image, eye);
 }")
+
+(define-shader-pass skybox-pass (single-shader-pass skybox)
+  ((color :port-type output)))
+
+(defmethod paint-with ((pass skybox-pass) thing)
+  (paint pass pass))
