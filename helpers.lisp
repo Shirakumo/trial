@@ -51,6 +51,14 @@
     (translate (pivot obj))
     (call-next-method)))
 
+(defclass scaled-entity (entity)
+  ((scaling :initarg :scaling :initform (vec 1 1 1) :accessor scaling)))
+
+(defmethod paint :around ((obj scaled-entity) target)
+  (with-pushed-matrix ()
+    (scale (scaling obj))
+    (call-next-method)))
+
 (define-subject clocked-subject (clock)
   ())
 
