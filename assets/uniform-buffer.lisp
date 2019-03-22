@@ -117,7 +117,7 @@
   ;;        write the values in there ourselves, and then call an update call
   ;;        instead of going through the slow, generic variants of buffer-object?
   (let ((offset (gethash field (offsets buffer))))
-    ;; FIXME: Feature tag to remove this check
+    #-elide-buffer-access-checks
     (unless offset
       (error "Field ~s not found in ~a." field buffer))
-    (update-buffer-data buffer value :buffer-start offset )))
+    (update-buffer-data buffer value :buffer-start offset)))
