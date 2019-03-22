@@ -102,6 +102,10 @@
   ;; FIXME: at this point we could compile an optimised accessor for the fields
   ;;        that has the offsets and such rolled out so that there's no lookup
   ;;        costs beyond calling the function from a slot.
+  ;;        The problem with this approach is the presence of arrays, as the index
+  ;;        to access will very very likely not be constant...
+  ;;        It should be possible to infer the stride between array bases and reduce
+  ;;        the access functions to a number of multiplications and additions.
   ;; Allocate the buffer with the correct sizing information.
   (load buffer)
   ;; Bind the buffer to the program's specified binding point.
