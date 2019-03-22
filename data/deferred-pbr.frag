@@ -10,7 +10,8 @@ uniform sampler2D metal_map;
 uniform vec3 view_position;
 const float PI = 3.14159265;
 
-float NDF_ggx(vec3 N, vec3 H, float a){
+float NDF_ggx(vec3 N, vec3 H, float roughness){
+  float a      = roughness*roughness;
   float a2     = a*a;
   float NdotH  = max(dot(N, H), 0.0);
   float NdotH2 = NdotH*NdotH;
@@ -18,13 +19,15 @@ float NDF_ggx(vec3 N, vec3 H, float a){
   return a2 / (PI * denom * denom);
 }
 
-float G_sggx(float NdotV, float k){
+float G_sggx(float NdotV, float roughness){
+  float r = (roughness + 1.0);
+  float k = (r*r) / 8.0;
   return NdotV / (NdotV * (1.0 - k) + k);
 }
   
-float G_smith(vec3 N, vec3 V, vec3 L, float k){
-  float ggx1 = G_sggx(max(dot(N, V), 0.0), k);
-  float ggx2 = G_sggx(max(dot(N, L), 0.0), k);	
+float G_smith(vec3 N, vec3 V, vec3 L, float roughness){
+  float ggx1 = G_sggx(max(dot(N, V), 0.0), roughness);
+  float ggx2 = G_sggx(max(dot(N, L), 0.0), roughness);	
   return ggx1 * ggx2;
 }
 
@@ -66,7 +69,7 @@ void main(){
   vec3 position = texture(position_map, tex_coord).rgb;
   vec3 normal = texture(normal_map, tex_coord).rgb;
   vec3 albedo = texture(albedo_map, tex_coord).rgb;
-  if(albedo.x <= 0) discard;
+  if(albedo.x <= 0 && position.x == 0) discard;
   // r = metalness, g = roughness, b = occlusion;
   vec3 metal = texture(metal_map, tex_coord).rgb;
   
