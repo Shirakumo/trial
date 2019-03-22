@@ -8,7 +8,7 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *debug-features* '(:trial-debug-controller))
-  (defvar *optimize-features* '())
+  (defvar *optimize-features* '(:elide-buffer-access-checks))
 
   #+trial-debug-all
   (setf *features* (union *features* *debug-features*))
@@ -41,3 +41,6 @@ And reclone the project.
 
 By the way, I'd like to punch whoever added that feature to
 GIT and made it default in the fucking throat."))
+
+#+3d-vectors-double-floats
+(error "Trial does not work with double-float vectors.")
