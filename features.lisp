@@ -8,7 +8,8 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *debug-features* '(:trial-debug-controller))
-  (defvar *optimize-features* '(:elide-buffer-access-checks))
+  (defvar *optimize-features* '(:elide-buffer-access-checks
+                                :elide-coercion-size-checks))
 
   #+trial-debug-all
   (setf *features* (union *features* *debug-features*))

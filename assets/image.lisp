@@ -141,13 +141,6 @@
   (let ((type (pathname-type path)))
     (apply #'load-image path (intern (string-upcase type) "KEYWORD") args)))
 
-(defun free-image-data (data)
-  (etypecase data
-    (cffi:foreign-pointer
-     (cffi:foreign-free data))
-    (vector
-     (maybe-free-static-vector data))))
-
 (defmethod load ((image image))
   (flet ((load-image (path)
            (with-new-value-restart (path) (new-path "Specify a new image path.")
@@ -156,7 +149,7 @@
     (let ((input (coerce-asset-input image T)))
       (multiple-value-bind (bits width height pixel-type pixel-format) (load-image (unlist input))
         (assert (not (null bits)))
-        (with-unwind-protection (mapcar #'free-image-data (enlist (pixel-data image)))
+        (with-unwind-protection (mapcar #'free-data (enlist (pixel-data image)))
           ;; FIXME: This whole crap needs to be revised to allow updates.
           ;;        Maybe instead of setting things, we should pass an arglist
           ;;        to ALLOCATE instead.

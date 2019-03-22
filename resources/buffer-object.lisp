@@ -39,95 +39,28 @@
          (%gl:buffer-sub-data buffer-type buffer-start count data)
       (gl:bind-buffer buffer-type 0))))
 
-(defun resize-buffer (buffer size &optional (data (cffi:null-pointer)))
+(defun resize-buffer/ptr (buffer size &optional (data (cffi:null-pointer)))
   (let ((buffer-type (buffer-type buffer)))
     (gl:bind-buffer buffer-type (gl-name buffer))
     (unwind-protect
          (%gl:buffer-data buffer-type size data (data-usage buffer))
       (gl:bind-buffer buffer-type 0))))
 
-(defgeneric call-with-data-ptr (function data &optional offset))
+(defmethod update-buffer-data ((buffer buffer-object) data &key (buffer-start 0) (data-start 0) count gl-type)
+  (with-data-ptr (ptr data-size data :offset data-start :gl-type gl-type)
+    #-elide-buffer-access-checks
+    (when (and count (< data-size count))
+      (error "Attempting to update ~d bytes from ~a, when it has only ~d bytes available."
+             count data data-size))
+    (update-buffer-data/ptr buffer ptr (or count data-size) buffer-start)))
 
-(defmethod call-with-data-ptr (function data &optional (offset 0))
-  #-elide-buffer-access-checks
-  (unless (typep data 'cffi:foreign-pointer)
-    (no-applicable-method #'call-with-data-ptr function data :offset offset))
-  (funcall function (cffi:inc-pointer data offset) 0))
-
-(defmethod call-with-data-ptr (function (data real) &optional (offset 0))
-  #-elide-buffer-access-checks
-  (when (/= offset 0) (error "OFFSET must be zero for reals."))
-  (let ((type (cl-type->gl-type (type-of data))))
-    (cffi:with-foreign-object (ptr type)
-      (setf (cffi:mem-ref ptr type) data)
-      (funcall function ptr (gl-type-size type)))))
-
-(defmethod call-with-data-ptr (function (data vec2) &optional (offset 0))
-  #-elide-buffer-access-checks
-  (when (/= offset 0) (error "OFFSET must be zero for vectors."))
-  (cffi:with-foreign-object (ptr :float 2)
-    (setf (cffi:mem-aref ptr :float 0) (vx2 data))
-    (setf (cffi:mem-aref ptr :float 1) (vy2 data))
-    (funcall function ptr (g-type-size :vec2))))
-
-(defmethod call-with-data-ptr (function (data vec3) &optional (offset 0))
-  #-elide-buffer-access-checks
-  (when (/= offset 0) (error "OFFSET must be zero for vectors."))
-  (cffi:with-foreign-object (ptr :float 3)
-    (setf (cffi:mem-aref ptr :float 0) (vx3 data))
-    (setf (cffi:mem-aref ptr :float 1) (vy3 data))
-    (setf (cffi:mem-aref ptr :float 2) (vz3 data))
-    (funcall function ptr (g-type-size :vec3))))
-
-(defmethod call-with-data-ptr (function (data vec4) &optional (offset 0))
-  #-elide-buffer-access-checks
-  (when (/= offset 0) (error "OFFSET must be zero for vectors."))
-  (cffi:with-foreign-object (ptr :float 4)
-    (setf (cffi:mem-aref ptr :float 0) (vx4 data))
-    (setf (cffi:mem-aref ptr :float 1) (vy4 data))
-    (setf (cffi:mem-aref ptr :float 2) (vz4 data))
-    (setf (cffi:mem-aref ptr :float 3) (vw4 data))
-    (funcall function ptr (g-type-size :vec4))))
-
-(defmethod call-with-data-ptr (function (data mat2) &optional (offset 0))
-  (call-with-data-ptr function (marr2 data) offset))
-
-(defmethod call-with-data-ptr (function (data mat3) &optional (offset 0))
-  (call-with-data-ptr function (marr3 data) offset))
-
-(defmethod call-with-data-ptr (function (data mat4) &optional (offset 0))
-  (call-with-data-ptr function (marr4 data) offset))
-
-(defmethod call-with-data-ptr (function (data matn) &optional (offset 0))
-  (call-with-data-ptr function (marrn data) offset))
-
-(defmethod call-with-data-ptr (function (data vector) &optional (offset 0))
-  (let* ((type (cl-type->gl-type element-type))
-         (type-size (gl-type-size type))
-         (offset (* offset type-size))
-         (size (- (* (length data) type-size) offset)))
-    (cond #+sbcl
-          ((typep data 'simple-array)
-           (sb-sys:with-pinned-objects (data)
-             (funcall function (sb-sys:sap+ (sb-sys:vector-sap data) offset) size)))
-          ((static-vector-p data)
-           (funcall function (cffi:inc-pointer (static-vector-pointer data) offset) size))
-          (T
-           (cffi:with-foreign-array (ptr data type)
-             (funcall function (cffi:inc-pointer ptr offset) size))))))
-
-(defmacro with-data-ptr ((ptr size data &rest args &optional offset) &body body)
-  (declare (ignore offset))
-  (let ((thunk (gensym "THUNK")))
-    `(flet ((,thunk (,ptr ,size)
-              (declare (type cffi:foreign-pointer ,ptr))
-              (declare (type fixnum ,size))
-              ,@body))
-       (call-with-data-ptr #',thunk ,data ,@args))))
-
-(defmethod update-buffer-data ((buffer buffer-object) data &key buffer-start data-start count)
-  (with-data-ptr (ptr size data data-start)
-    (update-buffer-data/ptr buffer ptr (or count size) buffer-start)))
+(defmethod resize-buffer ((buffer buffer-object) size &key data (data-start 0) gl-type)
+  (with-data-ptr (ptr data-size (or data (cffi:null-pointer)) :offset data-start :gl-type gl-type)
+    #-elide-buffer-access-checks
+    (when (and size (< data-size size))
+      (error "Attempting to update ~d bytes from ~a, when it has only ~d bytes available."
+             size data data-size))
+    (resize-buffer/ptr buffer size ptr)))
 
 (defmethod allocate ((buffer buffer-object))
   (let ((vbo (gl:gen-buffer))
@@ -136,5 +69,4 @@
                                     (setf (data-pointer buffer) NIL))
       (setf (data-pointer buffer) vbo)
       (assert (not (null (size buffer))))
-      (with-data-ptr (ptr buffer-data)
-        (resize-buffer vbo (size buffer) ptr)))))
+      (resize-buffer buffer (size buffer) :data buffer-data))))

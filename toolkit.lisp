@@ -315,6 +315,19 @@
        (declare (ignorable ,@slots))
        ,@body)))
 
+(defmacro define-constant-fold-function (name (arg) &body body)
+  (let ((whole (gensym "WHOLE"))
+        (env (gensym "ENV"))
+        (thunk (intern (format NIL "%~a" (string name)) (symbol-package name))))
+    `(progn
+       (defun ,thunk (,arg)
+         ,@body)
+       (setf (fdefinition ',name) #',thunk)
+       (define-compiler-macro ,name (&whole ,whole &environment ,env ,arg)
+         (if (constantp ,arg ,env)
+             `(load-time-value (,',thunk ,,arg))
+             ,whole)))))
+
 (defun minimize (sequence test &key (key #'identity))
   (etypecase sequence
     (vector (when (< 0 (length sequence))
@@ -350,17 +363,6 @@
 (defun rad->deg (rad)
   (* rad 180 (/ PI)))
 
-(defmacro with-pointer-to-vector-data ((ptr data) &body body)
-  (let ((datag (gensym "DATA")))
-    `(let ((,datag ,data))
-       #+sbcl
-       (sb-sys:with-pinned-objects (,datag)
-         (let ((,ptr (sb-sys:vector-sap ,datag)))
-           ,@body))
-       #-sbcl
-       (cffi:with-foreign-array (,ptr ,datag (cl-type->gl-type (array-element-type ,datag)))
-         ,@body))))
-
 (defvar *c-chars* "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")
 
 (defun symbol->c-name (symbol)
@@ -371,164 +373,6 @@
                    ((find c *c-chars*)
                     (write-char (char-downcase c) out))
                    (T (write-char #\_ out))))))
-
-(defun check-gl-type (thing size &optional unsigned)
-  (declare (type (unsigned-byte 8) size))
-  (declare (optimize speed))
-  (if unsigned
-      (unless (<= 0 thing (expt 2 size))
-        (error "~a does not fit within [0,2^~a]." thing size))
-      (let ((size (1- size)))
-        (unless (<= (- (expt 2 size)) thing (1- (expt 2 size)))
-          (error "~a does not fit within [-2^~a,2^~:*~a-1]." thing size)))))
-
-(defun cl-type->gl-type (type)
-  (cond ((subtypep type '(signed-byte 8)) :char)
-        ((subtypep type '(unsigned-byte 32)) :uint)
-        ((subtypep type '(signed-byte 32)) :int)
-        ((subtypep type '(unsigned-byte 64)) :ulong)
-        ((subtypep type '(signed-byte 64)) :long)
-        ((subtypep type 'single-float) :float)
-        ((subtypep type 'double-float) :double)
-        ((eql type 'vec2) :vec2)
-        ((eql type 'vec3) :vec3)
-        ((eql type 'vec4) :vec4)
-        ((eql type 'mat2) :mat2)
-        ((eql type 'mat3) :mat3)
-        ((eql type 'mat4) :mat4)
-        (T (error "Don't know how to convert ~s to a GL type." type))))
-
-(define-compiler-macro cl-type->gl-type (&whole whole &environment env type)
-  (if (constantp type env)
-      `(load-time-value ,whole)
-      whole))
-
-(defun gl-type->cl-type (type)
-  (ecase type
-    ((:boolean :ubyte :unsigned-byte :char :unsigned-char) '(unsigned-byte 8))
-    ((:byte :char) '(signed-byte 8))
-    ((:ushort :unsigned-short) '(unsigned-byte 16))
-    (:short '(signed-byte 16))
-    ((:uint :unsigend-int) '(unsigned-byte 32))
-    ((:int :fixed :sizei :enum :bitfield) '(signed-byte 32))
-    (:uint64 '(unsigned-byte 64))
-    (:int64 '(signed-byte 64))
-    ((:half :half-float) 'short-float)
-    ((:float :clampf) 'single-float)
-    ((:double :clampd) 'double-float)
-    (:vec2 'vec2)
-    (:vec3 'vec3)
-    (:vec4 'vec4)
-    (:mat2 'mat2)
-    (:mat3 'mat3)
-    (:mat4 'mat4)))
-
-(define-compiler-macro gl-type->cl-type (&whole whole &environment env type)
-  (if (constantp type env)
-      `(load-time-value ,whole)
-      whole))
-
-(defun gl-coerce (thing type)
-  (declare (optimize speed))
-  (ecase type
-    ((:double :double-float)
-     (float thing 0.0d0))
-    ((:float :single-float)
-     (float thing 0.0f0))
-    ((:int)
-     (check-gl-type thing 32)
-     (values (round thing)))
-    ((:uint :unsigned-int)
-     (check-gl-type thing 32 T)
-     (values (round thing)))
-    ((:char :byte)
-     (check-gl-type thing 8)
-     (values (round thing)))
-    ((:uchar :unsigned-char :unsigned-byte)
-     (check-gl-type thing 8 T)
-     (values (round thing)))))
-
-(define-compiler-macro gl-coerce (&whole whole &environment env thing type)
-  (if (constantp type env)
-      `(funcall (load-time-value
-                 (ecase ,type
-                   ((:double :double-float)
-                    (lambda (thing) (float thing 0.0d0)))
-                   ((:float :single-float)
-                    (lambda (thing) (float thing 0.0f0)))
-                   ((:int)
-                    (lambda (thing)
-                      (check-gl-type thing 32)
-                      (values (round thing))))
-                   ((:uint :unsigned-int)
-                    (lambda (thing)
-                      (check-gl-type thing 32 T)
-                      (values (round thing))))
-                   ((:char :byte)
-                    (lambda (thing)
-                      (check-gl-type thing 8)
-                      (values (round thing))))
-                   ((:uchar :unsigned-char :unsigned-byte)
-                    (lambda (thing)
-                      (check-gl-type thing 8 T)
-                      (values (round thing))))))
-                ,thing)
-      whole))
-
-(defun gl-type-size (type)
-  (ecase type
-    (:boolean 1)
-    ((:ubyte :unsigned-byte :byte :char) 1)
-    ((:ushort :unsigned-short :short) 2)
-    ((:uint :unsigned-int :int) 4)
-    (:fixed 4)
-    ((:uint64 :int64) 8)
-    (:sizei 4)
-    (:enum 4)
-    ((:intptr :sizeiptr :sync) #+x86 4 #+x86-64 8)
-    (:bitfield 4)
-    ((:half :half-float) 2)
-    ((:float :clampf) 4)
-    ((:double :clampd) 8)
-    (:vec2 (* 2 4))
-    (:vec3 (* 3 4))
-    (:vec4 (* 4 4))
-    (:mat2 (* 2 2 4))
-    (:mat3 (* 3 3 4))
-    (:mat4 (* 4 44))))
-
-(define-compiler-macro gl-type-size (&whole whole &environment env type)
-  (if (constantp type env)
-      `(load-time-value ,whole)
-      whole))
-
-(defun texture-internal-format->pixel-format (format)
-  (ecase format
-    ((:stencil-index :stencil-index1 :stencil-index4 :stencil-index8 :stencil-index16)
-     :stencil-index)
-    ((:depth-component :depth-component16 :depth-component24 :depth-component32 :depth-component32f)
-     :depth-component)
-    ((:depth-stencil :depth32f-stencil8 :depth24-stencil8)
-     :depth-stencil)
-    ((:red :r8 :r8-snorm :r16 :r16-snorm :r16f :r32f :r8i :r8ui :r16i :r16ui :r32i :r32ui :compressed-red :compressed-red-rgtc1 :compressed-signed-red-rgtc1)
-     :red)
-    ((:rg :rg8 :rg8-snorm :rg16 :rg16-snorm :rg16f :rg32f :rg8i :rg8ui :rg16i :rg16ui :rg32i :rg32ui :compressed-rg :compressed-rg-rgtc2 :compressed-signed-rg-rgtc2)
-     :rg)
-    ((:rgb :r3-g3-b2 :rgb4 :rgb5 :rgb8 :rgb8-snorm :rgb10 :rgb12 :rgb16-snorm :rgba2 :rgba4 :rgb16f :rgb32f
-      :r11f-g11f-b10f :rgb9-e5 :rgb8i :rgb8ui :rgb16i :rgb16ui :rgb32i :rgb32ui :srgb :srgb8
-      :compressed-rgb :compressed-srgb :compressed-rgb-bptc-signed-float :compressed-rgb-bptc-unsigned-float)
-     :rgb)
-    ((:rgba :rgb5-a1 :rgba8 :rgba8-snorm :rgb10-a2 :rgb10-a2ui :rgba12 :rgba16 :srgb-alpha :srgb8-alpha8
-      :rgba16f :rgba32f :rgba8i :rgba8ui :rgba16i :rgba16ui :rgba32i :rgba32ui
-      :compressed-rgba :compressed-srgb-alpha :compressed-rgba-bptc-unorm :compressed-srgb-alpha-bptc-unorm)
-     :rgba)))
-
-(defun pixel-format->pixel-type (format)
-  (case format
-    (:depth-stencil :unsigned-int-24-8)
-    (:depth24-stencil8 :unsigned-int-24-8)
-    (:depth32f-stencil8 :unsigned-int-32-8)
-    (T :unsigned-byte)))
 
 ;; https://www.khronos.org/registry/OpenGL/extensions/ATI/ATI_meminfo.txt
 (defun gpu-room-ati ()
@@ -591,6 +435,34 @@
               (unless (find enum ,list)
                 (error "~a is not a valid ~a. Needs to be one of the following:~%~a"
                        enum ',name ,list))))))
+
+(defun texture-internal-format->pixel-format (format)
+  (ecase format
+    ((:stencil-index :stencil-index1 :stencil-index4 :stencil-index8 :stencil-index16)
+     :stencil-index)
+    ((:depth-component :depth-component16 :depth-component24 :depth-component32 :depth-component32f)
+     :depth-component)
+    ((:depth-stencil :depth32f-stencil8 :depth24-stencil8)
+     :depth-stencil)
+    ((:red :r8 :r8-snorm :r16 :r16-snorm :r16f :r32f :r8i :r8ui :r16i :r16ui :r32i :r32ui :compressed-red :compressed-red-rgtc1 :compressed-signed-red-rgtc1)
+     :red)
+    ((:rg :rg8 :rg8-snorm :rg16 :rg16-snorm :rg16f :rg32f :rg8i :rg8ui :rg16i :rg16ui :rg32i :rg32ui :compressed-rg :compressed-rg-rgtc2 :compressed-signed-rg-rgtc2)
+     :rg)
+    ((:rgb :r3-g3-b2 :rgb4 :rgb5 :rgb8 :rgb8-snorm :rgb10 :rgb12 :rgb16-snorm :rgba2 :rgba4 :rgb16f :rgb32f
+           :r11f-g11f-b10f :rgb9-e5 :rgb8i :rgb8ui :rgb16i :rgb16ui :rgb32i :rgb32ui :srgb :srgb8
+           :compressed-rgb :compressed-srgb :compressed-rgb-bptc-signed-float :compressed-rgb-bptc-unsigned-float)
+     :rgb)
+    ((:rgba :rgb5-a1 :rgba8 :rgba8-snorm :rgb10-a2 :rgb10-a2ui :rgba12 :rgba16 :srgb-alpha :srgb8-alpha8
+      :rgba16f :rgba32f :rgba8i :rgba8ui :rgba16i :rgba16ui :rgba32i :rgba32ui
+      :compressed-rgba :compressed-srgb-alpha :compressed-rgba-bptc-unorm :compressed-srgb-alpha-bptc-unorm)
+     :rgba)))
+
+(defun pixel-format->pixel-type (format)
+  (case format
+    (:depth-stencil :unsigned-int-24-8)
+    (:depth24-stencil8 :unsigned-int-24-8)
+    (:depth32f-stencil8 :unsigned-int-32-8)
+    (T :unsigned-byte)))
 
 (define-enum-check texture-target
   :texture-1d :texture-2d :texture-3d

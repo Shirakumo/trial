@@ -30,6 +30,7 @@
                (:file "camera" :depends-on ("package" "subject" "helpers"))
                (:file "context" :depends-on ("package"))
                (:file "controller" :depends-on ("package" "mapping" "input" "subject" "asset" "text"))
+               (:file "data-pointer" :depends-on ("package" "type-info" "static-vector"))
                (:file "deferred" :depends-on ("package" "shader-entity" "shader-pass" "helpers" ("resources" "gl-struct") ("assets" "uniform-buffer")))
                (:file "deploy" :depends-on ("package" "gamepad"))
                (:file "display" :depends-on ("package" "context" "renderable"))
@@ -40,7 +41,7 @@
                (:file "flare" :depends-on ("package" "transforms"))
                (:file "fullscreenable" :depends-on ("package" "display"))
                (:file "gamepad" :depends-on ("package" "event-loop" "toolkit"))
-               (:file "geometry" :depends-on ("package" "toolkit" "static-vector" ("assets" "vertex-array")))
+               (:file "geometry" :depends-on ("package" "toolkit" "type-info" "static-vector" ("assets" "vertex-array")))
                (:file "geometry-clipmap" :depends-on ("package" "geometry-shapes" "shader-subject"))
                (:file "geometry-shapes" :depends-on ("package" "geometry" "asset-pool" ("assets" "mesh")))
                (:file "helpers" :depends-on ("package" "entity" "transforms" "shader-subject" "shader-pass" "asset" "resources"))
@@ -73,21 +74,12 @@
                (:file "text" :depends-on ("package" "shader-entity" "helpers" ("assets" "font")))
                (:file "toolkit" :depends-on ("package"))
                (:file "transforms" :depends-on ("package"))
+               (:file "type-info" :depends-on ("package" "toolkit"))
                (:file "window" :depends-on ("package"))
                ;; Testing, remove for production.
-               (:file "workbench" :depends-on ("assets" "asset-pool" "formats" "main" "helpers" "geometry-clipmap" "ui"))
-               (:module "ui"
-                :depends-on ("package" "shader-entity" "helpers" "input")
-                :components ((:file "package")
-                             (:file "widget" :depends-on ("package"))
-                             (:file "pane" :depends-on ("package" "widget"))
-                             (:file "layout" :depends-on ("package" "widget"))
-                             (:file "input" :depends-on ("package" "widget"))
-                             (:file "elements" :depends-on ("package" "widget" "input"))
-                             (:file "text-field" :depends-on ("package" "elements"))
-                             (:file "ui-window" :depends-on ("package" "pane" "elements"))))
+               (:file "workbench" :depends-on ("assets" "asset-pool" "formats" "main" "helpers"))
                (:module "resources"
-                :depends-on ("package" "resource" "toolkit")
+                :depends-on ("package" "resource" "toolkit" "data-pointer")
                 :components ((:file "buffer-object")
                              (:file "framebuffer")
                              (:file "gl-struct")
@@ -97,7 +89,7 @@
                              (:file "vertex-array")
                              (:file "vertex-buffer" :depends-on ("buffer-object"))))
                (:module "assets"
-                :depends-on ("package" "asset" "resources")
+                :depends-on ("package" "asset" "resources" "data-pointer")
                 :components ((:file "font")
                              (:file "image")
                              (:file "mesh")
@@ -135,7 +127,9 @@
                :cl-jpeg
                :retrospectiff
                :terrable
-               :mmap))
+               :mmap
+               :form-fiddle
+               :lambda-fiddle))
 
 ;; FIXME: factor out dependencies into systems
 ;;        like for image, model formats, etc.

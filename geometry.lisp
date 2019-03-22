@@ -25,7 +25,7 @@
 (defclass vertex-mesh ()
   ((face-length :initarg :face-length :initform 3 :accessor face-length)
    (vertex-type :initform 'vertex :initarg :vertex-type :reader vertex-type)
-   (faces :initform (make-array 0 :element-type 'fixnum :adjustable T :fill-pointer T) :accessor faces)
+   (faces :initform (make-array 0 :element-type '(unsigned-byte 32) :adjustable T :fill-pointer T) :accessor faces)
    (vertices :initform (make-array 0 :adjustable T :fill-pointer T) :accessor vertices)))
 
 (defmethod update-vertices (function (mesh vertex-mesh))
@@ -207,10 +207,10 @@
         ;; Construct the buffers and specs
         (let* ((vbo (make-instance 'vertex-buffer :buffer-data buffer :buffer-type :array-buffer
                                                   :data-usage data-usage :element-type :float
-                                                  :size (* total-size #.(gl-type-size :float))))
+                                                  :size (* total-size (gl-type-size :float))))
                (ebo (make-instance 'vertex-buffer :buffer-data (faces mesh) :buffer-type :element-array-buffer
                                                   :data-usage data-usage :element-type :unsigned-int
-                                                  :size (* total-size #.(gl-type-size :unsigned-int))))
+                                                  :size (* (length (faces mesh)) (gl-type-size :unsigned-int))))
                (specs (loop with stride = (reduce #'+ sizes)
                             for offset = 0 then (+ offset size)
                             for size in sizes

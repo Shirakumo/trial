@@ -1,0 +1,131 @@
+#|
+ This file is a part of trial
+ (c) 2016 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
+ Author: Nicolas Hafner <shinmera@tymoon.eu>
+|#
+
+(in-package #:org.shirakumo.fraf.trial)
+
+(defun check-integer-size (thing size &optional unsigned)
+  (declare (type (unsigned-byte 8) size))
+  (declare (optimize speed))
+  (if unsigned
+      (unless (<= 0 thing (expt 2 size))
+        (error "~a does not fit within [0,2^~a]." thing size))
+      (let ((size (1- size)))
+        (unless (<= (- (expt 2 size)) thing (1- (expt 2 size)))
+          (error "~a does not fit within [-2^~a,2^~:*~a-1]." thing size)))))
+
+(define-constant-fold-function cl-type->gl-type (type)
+  (cond ((eql type 'fixnum) :int)
+        ((subtypep type '(signed-byte 8)) :char)
+        ((subtypep type '(unsigned-byte 32)) :uint)
+        ((subtypep type '(signed-byte 32)) :int)
+        ((subtypep type '(unsigned-byte 64)) :ulong)
+        ((subtypep type '(signed-byte 64)) :long)
+        ((subtypep type 'single-float) :float)
+        ((subtypep type 'double-float) :double)
+        ((eql type 'vec2) :vec2)
+        ((eql type 'vec3) :vec3)
+        ((eql type 'vec4) :vec4)
+        ((eql type 'mat2) :mat2)
+        ((eql type 'mat3) :mat3)
+        ((eql type 'mat4) :mat4)
+        (T (error "Don't know how to convert ~s to a GL type." type))))
+
+(define-constant-fold-function gl-type->cl-type (type)
+  (ecase type
+    ((:boolean :ubyte :unsigned-byte :unsigned-char) '(unsigned-byte 8))
+    ((:byte :char) '(signed-byte 8))
+    ((:ushort :unsigned-short) '(unsigned-byte 16))
+    (:short '(signed-byte 16))
+    ((:uint :unsigend-int) '(unsigned-byte 32))
+    ((:int :fixed :sizei :enum :bitfield) '(signed-byte 32))
+    ((:uint64 :ulong :unsigned-long) '(unsigned-byte 64))
+    ((:int64 :long) '(signed-byte 64))
+    ((:half :half-float) 'short-float)
+    ((:float :clampf) 'single-float)
+    ((:double :clampd) 'double-float)
+    (:vec2 'vec2)
+    (:vec3 'vec3)
+    (:vec4 'vec4)
+    (:mat2 'mat2)
+    (:mat3 'mat3)
+    (:mat4 'mat4)))
+
+(defun gl-coerce (thing type)
+  (declare (optimize speed))
+  (ecase type
+    ((:double :double-float)
+     (float thing 0.0d0))
+    ((:float :single-float)
+     (float thing 0.0f0))
+    ((:int)
+     #-elide-coercion-size-checks
+     (check-integer-size thing 32)
+     (values (round thing)))
+    ((:uint :unsigned-int)
+     #-elide-coercion-size-checks
+     (check-integer-size thing 32 T)
+     (values (round thing)))
+    ((:char :byte)
+     #-elide-coercion-size-checks
+     (check-integer-size thing 8)
+     (values (round thing)))
+    ((:uchar :unsigned-char :unsigned-byte)
+     #-elide-coercion-size-checks
+     (check-integer-size thing 8 T)
+     (values (round thing)))))
+
+(define-compiler-macro gl-coerce (&whole whole &environment env thing type)
+  (if (constantp type env)
+      `(funcall (load-time-value
+                 (ecase ,type
+                   ((:double :double-float)
+                    (lambda (thing) (float thing 0.0d0)))
+                   ((:float :single-float)
+                    (lambda (thing) (float thing 0.0f0)))
+                   ((:int)
+                    (lambda (thing)
+                      #-elide-coercion-size-checks
+                      (check-integer-size thing 32)
+                      (values (round thing))))
+                   ((:uint :unsigned-int)
+                    (lambda (thing)
+                      #-elide-coercion-size-checks
+                      (check-integer-size thing 32 T)
+                      (values (round thing))))
+                   ((:char :byte)
+                    (lambda (thing)
+                      #-elide-coercion-size-checks
+                      (check-integer-size thing 8)
+                      (values (round thing))))
+                   ((:uchar :unsigned-char :unsigned-byte)
+                    (lambda (thing)
+                      #-elide-coercion-size-checks
+                      (check-integer-size thing 8 T)
+                      (values (round thing))))))
+                ,thing)
+      whole))
+
+(define-constant-fold-function gl-type-size (type)
+  (ecase type
+    (:boolean 1)
+    ((:ubyte :unsigned-byte :byte :char) 1)
+    ((:ushort :unsigned-short :short) 2)
+    ((:uint :unsigned-int :int) 4)
+    (:fixed 4)
+    ((:ulong :unsigned-long :uint64 :int64) 8)
+    (:sizei 4)
+    (:enum 4)
+    ((:intptr :sizeiptr :sync) #+x86 4 #+x86-64 8)
+    (:bitfield 4)
+    ((:half :half-float) 2)
+    ((:float :clampf) 4)
+    ((:double :clampd) 8)
+    (:vec2 (* 2 4))
+    (:vec3 (* 3 4))
+    (:vec4 (* 4 4))
+    (:mat2 (* 2 2 4))
+    (:mat3 (* 3 3 4))
+    (:mat4 (* 4 44))))
