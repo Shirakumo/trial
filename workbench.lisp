@@ -155,7 +155,7 @@ void main(){
   vec3 light_direction = light_block.lights[0].position-position;
   float bias = shadow_bias(normal, light_direction);
   float shadow = shadow_factor(position, bias);
-  lighting_strength = 1-shadow;
+  lighting_strength = 1-(0.9 * shadow);
 }")
 
 (progn
@@ -180,6 +180,12 @@ void main(){
            'wood-ground-normal
            'wood-ground-roughness
            'wood-ground-occlusion)
+      ;; (add 'wood-house
+      ;;      'wood-house-albedo
+      ;;      'wood-house-specular
+      ;;      'wood-house-normal
+      ;;      'wood-house-roughness
+      ;;      'wood-house-occlusion)
       (add 'chalet
            'chalet-albedo
            'chalet-specular
@@ -243,10 +249,9 @@ void main(){
 (defmethod update :after ((workbench workbench) tt dt)
   (let* ((buffer (asset 'trial 'light-block))
          (shadow (unit :shadow-map-pass (scene workbench)))
-         (light ;(vec (* 600 (sin tt)) (* 600 (cos tt)) 600)
-           (vec 400 400 120))
-         (color ;(v* (daytime-color (/ (vy light) -600)) 100)
-           (nv* (vec 10 8 6) 0.4)))
+         (tt (/ PI 3))
+         (light (vec (* 600 (sin tt)) (* 600 (cos tt)) 600))
+         (color (v* (daytime-color (/ (vy light) 600)) 4)))
     (setf (buffer-field buffer "LightBlock.lights[0].type") 1)
     (setf (buffer-field buffer "LightBlock.lights[0].color") color)
     (setf (buffer-field buffer "LightBlock.lights[0].direction") light)
