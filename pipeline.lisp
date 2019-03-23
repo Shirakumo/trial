@@ -46,7 +46,6 @@
       (check-consistent port))))
 
 (defmethod resize ((pipeline pipeline) width height)
-  (gl:scissor 0 0 width height)
   ;; FIXME: keep width/height according to desired texspec
   (loop for texture across (textures pipeline)
         do (resize texture width height)))
