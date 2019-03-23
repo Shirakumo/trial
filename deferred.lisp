@@ -36,7 +36,6 @@ layout (location = 3) in vec3 tangent;
 out GEOM{
   vec3 position;
   vec2 texcoord;
-  vec3 normal;
   mat3 TBN;
 } geom;
 
@@ -45,10 +44,9 @@ uniform mat4 model_matrix;
 void main(){
   geom.position = vec3(model_matrix * vec4(position, 1.0));
   geom.texcoord = texcoord;
-  geom.normal = mat3(transpose(inverse(model_matrix))) * normal;
 
-  vec3 T = normalize(vec3(model_matrix * vec4(tangent, 0.0)));
-  vec3 N = normalize(vec3(model_matrix * vec4(normal, 0.0)));
+  vec3 T = normalize(mat3(model_matrix) * tangent);
+  vec3 N = normalize(mat3(model_matrix) * normal);
   T = normalize(T - dot(T, N) * N);
   vec3 B = cross(N, T);
   geom.TBN = mat3(T, B, N);
@@ -64,7 +62,6 @@ layout (location = 3) out vec3 metal_map;
 in GEOM{
   vec3 position;
   vec2 texcoord;
-  vec3 normal;
   mat3 TBN;
 } geom;
 
@@ -81,7 +78,7 @@ void main(){
 
     position_map = geom.position;
     normal_map = local_normal;
-    albedo_map.rgb = texture(diffuse, geom.texcoord).rgb;
+    albedo_map = texture(diffuse, geom.texcoord).rgb;
     metal_map.r = texture(specular, geom.texcoord).r;
     metal_map.g = texture(roughness, geom.texcoord).r;
     metal_map.b = texture(occlusion, geom.texcoord).r;

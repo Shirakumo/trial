@@ -58,7 +58,7 @@ uniform sampler2D high_pass;
 in vec2 tex_coord;
 out vec4 color;
 uniform float gamma = 2.2;
-uniform float exposure = 0.5;
+uniform float exposure = 0.75;
 
 void main(){
   vec4 source = texture(previous_pass, tex_coord);

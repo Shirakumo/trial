@@ -8,7 +8,7 @@ uniform sampler2D normal_map;
 uniform sampler2D albedo_map;
 uniform sampler2D metal_map;
 uniform vec3 view_position;
-const float PI = 3.14159265;
+const float PI = 3.14159265359;
 
 float NDF_ggx(vec3 N, vec3 H, float roughness){
   float a      = roughness*roughness;
@@ -32,7 +32,7 @@ float G_smith(vec3 N, vec3 V, vec3 L, float roughness){
 }
 
 vec3 F_s(float cos_theta, vec3 F0){
-    return F0 + (1.0 - F0) * pow(1.0 - cos_theta, 5.0);
+  return F0 + (1.0 - F0) * pow(1.0 - cos_theta, 5.0);
 }
 
 float light_attenuation(Light light, vec3 position){
@@ -70,11 +70,15 @@ void main(){
   vec3 normal = texture(normal_map, tex_coord).rgb;
   vec3 albedo = texture(albedo_map, tex_coord).rgb;
   if(albedo.x <= 0 && position.x == 0) discard;
-  // r = metalness, g = roughness, b = occlusion;
+  
   vec3 metal = texture(metal_map, tex_coord).rgb;
+  float metallic = metal.r;
+  float roughness = metal.g;
+  float occlusion = metal.b;
   
   vec3 N = normalize(normal);
   vec3 V = normalize(view_position - position);
+  vec3 F0 = mix(vec3(0.04), albedo, metallic);
   vec3 Lo = vec3(0);
   for(int i=0; i<light_block.count; ++i){
     Light light = light_block.lights[i];
@@ -91,14 +95,13 @@ void main(){
     vec3 radiance = data.radiance;
     
     // Cook-Torrance BRDF
-    vec3 F0 = mix(vec3(0.04), albedo, metal.r);
+    float NDF = NDF_ggx(N, H, roughness);
+    float G = G_smith(N, V, L, roughness);
     vec3 F = F_s(max(dot(H, V), 0.0), F0);
-    float NDF = NDF_ggx(N, H, metal.g);
-    float G = G_smith(N, V, L, metal.g);
     
     vec3 kS = F;
     vec3 kD = vec3(1.0) - kS;
-    kD *= 1.0 - metal.r;
+    kD *= 1.0 - metallic;
     
     vec3 numerator = NDF * G * F;
     float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
@@ -110,6 +113,6 @@ void main(){
   }
   
   // Add ambient part
-  vec3 ambient = vec3(0.03) * albedo * metal.b;
+  vec3 ambient = vec3(0.03) * albedo * occlusion;
   color = vec4(ambient + (Lo*lighting_strength), 1);
 }
