@@ -45,6 +45,15 @@
 (define-unbound-reader texture border-color (vec 0 0 0 0))
 (define-unbound-reader texture storage :dynamic)
 
+(defun texture-texspec (texture)
+  (loop for slot in '(width height depth target levels samples internal-format
+                      pixel-format pixel-type pixel-data
+                      mag-filter min-filter mipmap-levels mipmap-lod
+                      anisotropy wrapping border-color storage)
+        when (slot-boundp texture slot)
+        collect (intern (string slot) "KEYWORD")
+        and collect (slot-value texture slot)))
+
 (defmethod shared-initialize :around ((texture texture) slots &rest args)
   (when (getf args :wrapping)
     (setf (getf args :wrapping) (enlist (getf args :wrapping)
@@ -195,10 +204,10 @@
 (defmethod resize ((texture texture) width height)
   (when (or (/= width (width texture))
             (/= height (height texture)))
-    (assert (eql :dynamic (storage texture)))
     (setf (width texture) width)
     (setf (height texture) height)
     (when (allocated-p texture)
+      (assert (eql :dynamic (storage texture)))
       (gl:bind-texture (target texture) (gl-name texture))
       (allocate-texture-storage texture)
       (when (find (min-filter texture) '(:linear-mipmap-linear :linear-mipmap-nearest
