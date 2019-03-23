@@ -9,7 +9,8 @@
 (defclass pipeline ()
   ((nodes :initform NIL :accessor nodes)
    (passes :initform #() :accessor passes)
-   (textures :initform #() :accessor textures)))
+   (textures :initform #() :accessor textures)
+   (texspecs :initform #() :accessor texspecs)))
 
 (defmethod finalize ((pipeline pipeline))
   (clear pipeline))
@@ -30,7 +31,8 @@
            (remove-handler pass pipeline))
   (setf (nodes pipeline) ())
   (setf (passes pipeline) #())
-  (setf (textures pipeline) #()))
+  (setf (textures pipeline) #())
+  (setf (texspecs pipeline) #()))
 
 (defmethod connect ((source flow:port) (target flow:port) (pipeline pipeline))
   (unless (find (flow:node source) (nodes pipeline))
@@ -45,10 +47,20 @@
     (dolist (port (flow:ports node))
       (check-consistent port))))
 
+(defun texspec-real-size (texspec width height)
+  (flet ((eval-size (size)
+           (eval `(let ((width ,width)
+                        (height ,height))
+                    (declare (ignorable width height))
+                    ,size))))
+    (values (eval-size (getf texspec :width))
+            (eval-size (getf texspec :height)))))
+
 (defmethod resize ((pipeline pipeline) width height)
-  ;; FIXME: keep width/height according to desired texspec
   (loop for texture across (textures pipeline)
-        do (resize texture width height)))
+        for texspec across (texspecs pipeline)
+        do (multiple-value-bind (width height) (texspec-real-size texspec width height)
+             (resize texture width height))))
 
 (defmethod normalized-texspec ((texspec list))
   (assert (= 0 (getf texspec :level 0)))
@@ -116,42 +128,44 @@
   (check-consistent pipeline)
   (v:info :trial.pipeline "~a packing for ~a (~ax~a)" pipeline target (width target) (height target))
   (let* ((passes (flow:topological-sort (nodes pipeline)))
-         (textures (make-array 0 :initial-element NIL :adjustable T))
-         (texspecs (loop for port in (mapcan #'flow:ports passes)
-                         when (typep port 'output)
-                         collect (normalized-texspec port))))
-    (clear-pipeline pipeline)
+         (textures (make-array 0 :initial-element NIL :adjustable T)))
     ;; Compute texture set
-    (dolist (texspec (join-texspecs texspecs))
-      (allocate-textures passes textures texspec))
-    ;; Discretize texture size
-    (loop for texture across textures
-          do (flet ((eval-size (size)
-                      (eval `(let ((width ,(width target))
-                                   (height ,(height target)))
-                               (declare (ignorable width height))
-                               ,size))))
-               (setf (width texture) (eval-size (width texture)))
-               (setf (height texture) (eval-size (height texture)))))
-    ;; FIXME: Replace textures with existing ones if they match to save on re-allocation.
-    ;; Compute frame buffers
-    (dolist (pass passes)
-      (when (typep pipeline 'event-loop)
-        (add-handler pass pipeline))
-      (setf (framebuffer pass)
-            (make-instance 'framebuffer
-                           :attachments (loop for port in (flow:ports pass)
-                                              when (typep port '(and output (not buffer)))
-                                              collect (list (attachment port) (texture port))))))
-    ;; All done.
-    (v:info :trial.pipeline "~a pass order: ~a" pipeline passes)
-    (v:info :trial.pipeline "~a texture count: ~a" pipeline (length textures))
-    (v:info :trial.pipeline "~a texture allocation: ~:{~%~a~:{~%    ~a: ~a~}~}" pipeline
-            (loop for pass in passes
-                  collect (list pass (loop for port in (flow:ports pass)
-                                           collect (list (flow:name port) (texture port))))))
-    (setf (passes pipeline) (coerce passes 'vector))
-    (setf (textures pipeline) textures)))
+    (let ((texspecs (loop for port in (mapcan #'flow:ports passes)
+                          when (typep port 'output)
+                          collect (normalized-texspec port))))
+      (dolist (texspec (join-texspecs texspecs))
+        (allocate-textures passes textures texspec)))
+    ;; Extract texspecs
+    (let ((texspecs (make-array (length textures))))
+      (loop for i from 0 below (length textures)
+            for texture = (aref textures i)
+            for texspec = (texture-texspec texture)
+            do (setf (aref texspecs i) texspec)
+               (multiple-value-bind (width height) (texspec-real-size texspec (width target) (height target))
+                 (setf (width texture) width)
+                 (setf (height texture) height)))
+      ;; Compute frame buffers
+      (dolist (pass passes)
+        (when (typep pipeline 'event-loop)
+          (add-handler pass pipeline))
+        (setf (framebuffer pass)
+              (make-instance 'framebuffer
+                             :attachments (loop for port in (flow:ports pass)
+                                                when (typep port '(and output (not buffer)))
+                                                collect (list (attachment port) (texture port))))))
+      ;; All done.
+      (v:info :trial.pipeline "~a pass order: ~a" pipeline passes)
+      (v:info :trial.pipeline "~a texture count: ~a" pipeline (length textures))
+      (v:info :trial.pipeline "~a texture allocation: ~:{~%~a~:{~%    ~a: ~a~}~}" pipeline
+              (loop for pass in passes
+                    collect (list pass (loop for port in (flow:ports pass)
+                                             collect (list (flow:name port) (texture port))))))
+      
+      ;; FIXME: Replace textures with existing ones if they match to save on re-allocation.
+      (clear-pipeline pipeline)
+      (setf (passes pipeline) (coerce passes 'vector))
+      (setf (textures pipeline) textures)
+      (setf (texspecs pipeline) texspecs))))
 
 (defmethod paint-with ((pipeline pipeline) source)
   (loop for pass across (passes pipeline)
