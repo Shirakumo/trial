@@ -9,8 +9,10 @@
 (define-shader-pass shadow-map-pass (per-object-pass)
   ((shadow :port-type output
            :attachment :depth-attachment
-           :texspec (:width 1024
-                     :height 1024
+           :texspec (:width 2048
+                     :height 2048
+                     :min-filter :nearest
+                     :mag-filter :nearest
                      :wrapping :clamp-to-border
                      :border-color #.(vec 1 1 1 1)))
    (projection-matrix :initarg :projection-matrix :accessor shadow-projection-matrix)
@@ -27,9 +29,11 @@ void main(){}")
 (defmethod paint-with ((pass shadow-map-pass) target)
   (with-pushed-matrix ((projection-matrix (shadow-projection-matrix pass))
                        (view-matrix (shadow-view-matrix pass)))
-    (gl:cull-face :front)
+    (gl:viewport 0 0 2048 2048)
+    ;(gl:cull-face :front)
     (call-next-method)
-    (gl:cull-face :back)))
+    (gl:cull-face :back)
+    (gl:viewport 0 0 (width *context*) (height *context*))))
 
 (define-shader-pass shadow-render-pass ()
   ((shadow-map :port-type input)
@@ -46,7 +50,7 @@ void main(){}")
 (define-class-shader (shadow-render-pass :fragment-shader 10)
   "
 #define SHADOW_SAMPLES 4
-#define SHADOW_SAMPLE_SPREAD 0.001
+#define SHADOW_SAMPLE_SPREAD 0.0002
 uniform sampler2D shadow_map;
 uniform mat4 light_space_matrix;
 
@@ -82,7 +86,7 @@ float shadow_factor(vec3 position, float bias){
   float closest = texture(shadow_map, projected.xy).r;
   float current = projected.z;
   float shadow = 0;
-  vec2 texel_size = 1.0 / textureSize(shadow_map, 0);
+  vec2 texel_size = 0.5 / textureSize(shadow_map, 0);
   for(int i=0; i<SHADOW_SAMPLES; ++i){
     int index = int(16*random(vec4(gl_FragCoord.xyy, i)))%16;
     vec2 poisson = poisson_disk[index]*SHADOW_SAMPLE_SPREAD;
@@ -94,7 +98,7 @@ float shadow_factor(vec3 position, float bias){
       }
     }
   }
-  return shadow;
+  return clamp(shadow, 0, 1);
 }
 
 float shadow_bias(vec3 normal, vec3 light_direction){
