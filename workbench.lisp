@@ -105,7 +105,7 @@
                                           hdr-output-pass
                                           deferred-render-pass
                                           shadow-render-pass)
-  ())
+  ((occlusion-map :port-type input)))
 
 (define-class-shader (deferred+shadow-pass :fragment-shader 5)
   (gl-source (asset 'trial 'light-block))
@@ -114,8 +114,10 @@
 uniform sampler2D position_map;
 uniform sampler2D normal_map;
 uniform sampler2D albedo_map;
+uniform sampler2D occlusion_map;
 
 float lighting_strength = 1.0;
+vec3 ambient_light = vec3(0.1);
 void main(){
   vec3 position = texture(position_map, tex_coord).rgb;
   vec3 normal = texture(normal_map, tex_coord).rgb;
@@ -123,6 +125,7 @@ void main(){
   float bias = shadow_bias(normal, light_direction);
   float shadow = shadow_factor(position, bias);
   lighting_strength = 1-(0.9 * shadow);
+  ambient_light *= texture(occlusion_map, tex_coord).r;
 }")
 
 ;; (print (list :location (location (unit :camera (scene (handler *context*))))
@@ -181,32 +184,32 @@ void main(){
            (blend (make-instance 'blend-pass)))
       (connect (port geometry 'position) (port ssao 'position-map) scene)
       (connect (port geometry 'normal) (port ssao 'normal-map) scene)
-      (connect (port ssao 'occlusion) (port (make-instance 'copy-pass) 'previous-pass) scene)
-      ;; (connect (port shadow 'shadow) (port lighting 'shadow-map) scene)
-      ;; (connect (port geometry 'position) (port lighting 'position-map) scene)
-      ;; (connect (port geometry 'normal) (port lighting 'normal-map) scene)
-      ;; (connect (port geometry 'albedo) (port lighting 'albedo-map) scene)
-      ;; (connect (port geometry 'metal) (port lighting 'metal-map) scene)
-      ;; (connect (port lighting 'high-pass) (port h-blur 'previous-pass) scene)
-      ;; (connect (port h-blur 'color) (port v-blur 'previous-pass) scene)
-      ;; (connect (port v-blur 'color) (port h-blur2 'previous-pass) scene)
-      ;; (connect (port h-blur2 'color) (port v-blur2 'previous-pass) scene)
-      ;; (connect (port v-blur2 'color) (port tone-map 'high-pass) scene)
-      ;; (connect (port lighting 'color) (port tone-map 'previous-pass) scene)
-      ;; (connect (port skybox 'color) (port blend 'a-pass) scene)
-      ;; (connect (port tone-map 'color) (port blend 'b-pass) scene)
-      ))
+      ;; (connect (port ssao 'occlusion) (port (make-instance 'copy-pass) 'previous-pass) scene)
+      (connect (port shadow 'shadow) (port lighting 'shadow-map) scene)
+      (connect (port geometry 'position) (port lighting 'position-map) scene)
+      (connect (port geometry 'normal) (port lighting 'normal-map) scene)
+      (connect (port geometry 'albedo) (port lighting 'albedo-map) scene)
+      (connect (port geometry 'metal) (port lighting 'metal-map) scene)
+      (connect (port ssao 'occlusion) (port h-blur2 'previous-pass) scene)
+      (connect (port h-blur2 'color) (port v-blur2 'previous-pass) scene)
+      (connect (port v-blur2 'color) (port lighting 'occlusion-map) scene)
+      (connect (port lighting 'high-pass) (port h-blur 'previous-pass) scene)
+      (connect (port h-blur 'color) (port v-blur 'previous-pass) scene)
+      (connect (port v-blur 'color) (port tone-map 'high-pass) scene)
+      (connect (port lighting 'color) (port tone-map 'previous-pass) scene)
+      (connect (port skybox 'color) (port blend 'a-pass) scene)
+      (connect (port tone-map 'color) (port blend 'b-pass) scene)))
   
   (defmethod change-scene :after ((workbench workbench) scene &key old)
     (declare (ignore old))
-    ;; (let ((buffer (asset 'trial 'light-block)))
-    ;;   (flet ((field (i field)
-    ;;            (format NIL "LightBlock.lights[~d].~(~a~)" i field)))
-    ;;     (setf (buffer-field buffer (field 0 'type)) 1)
-    ;;     (setf (buffer-field buffer (field 0 'direction)) (nv- (vec 400 300 150)))
-    ;;     (setf (buffer-field buffer (field 0 'color)) ;(vec 0.9 0.85 0.6)
-    ;;           (v* (vunit (vec 9 8 5)) 10)))
-    ;;   (setf (buffer-field buffer "LightBlock.count") 1))
+    (let ((buffer (asset 'trial 'light-block)))
+      (flet ((field (i field)
+               (format NIL "LightBlock.lights[~d].~(~a~)" i field)))
+        (setf (buffer-field buffer (field 0 'type)) 1)
+        (setf (buffer-field buffer (field 0 'direction)) (nv- (vec 400 300 150)))
+        (setf (buffer-field buffer (field 0 'color)) ;(vec 0.9 0.85 0.6)
+              (v* (vunit (vec 9 8 5)) 10)))
+      (setf (buffer-field buffer "LightBlock.count") 1))
     )
   (maybe-reload-scene))
 

@@ -70,8 +70,8 @@ uniform mat4 view_matrix;
 uniform vec2 viewport_size;
 uniform vec3 samples[64];
 uniform int kernel_size = 64;
-uniform float radius = 0.5;
-uniform float bias = 0.025;
+uniform float radius = 0.8;
+uniform float bias = 1;
 
 void main(){
   vec2 noiseScale = viewport_size / 4.0;
@@ -97,7 +97,7 @@ void main(){
     vec4 offset = vec4(ssample, 1.0);
     offset = projection_matrix * offset; // from view to clip-space
     offset.xyz /= offset.w; // perspective divide
-    offset.xyz = offset.xyz * 0.5 + 0.5; // transform to range 0.0 - 1.0
+    offset.xy = offset.xy * 0.5 + 0.5; // transform to range 0.0 - 1.0
     
     // get sample depth
     vec3 samplePos = texture(position_map, offset.xy).xyz;
@@ -110,5 +110,5 @@ void main(){
   }
   occlusion = 1.0 - (occlusion / kernel_size);
   
-  color = vec4(occlusion);
+  color = vec4(pow(occlusion, 2));
 }")

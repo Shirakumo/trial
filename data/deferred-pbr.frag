@@ -2,13 +2,13 @@ out vec4 color;
 in vec2 tex_coord;
 // KLUDGE
 // float lighting_strength = 1.0;
+// uniform vec3 ambient_light = vec3(0.1);
 
 uniform sampler2D position_map;
 uniform sampler2D normal_map;
 uniform sampler2D albedo_map;
 uniform sampler2D metal_map;
 uniform vec3 view_position;
-uniform vec3 ambient_light = vec3(0.1);
 const float PI = 3.14159265359;
 
 float NDF_ggx(vec3 N, vec3 H, float roughness){
