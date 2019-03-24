@@ -22,8 +22,8 @@
              :attachment :color-attachment1
              :texspec (:internal-format :rgb16f
                        :pixel-type :float
-                       :min-filter :nearest
-                       :mag-filter :nearest))
+                       :min-filter :linear
+                       :mag-filter :linear))
    (albedo   :port-type output
              :attachment :color-attachment2
              :texspec (:internal-format :rgb))

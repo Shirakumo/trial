@@ -7,12 +7,12 @@
   :base 'trial)
 
 (define-asset (workbench skybox) image
-    (list #p"masko-naive/posx.jpg"
-          #p"masko-naive/negx.jpg"
-          #p"masko-naive/posy.jpg"
-          #p"masko-naive/negy.jpg"
-          #p"masko-naive/posz.jpg"
-          #p"masko-naive/negz.jpg")
+    (list #p"/home/linus/models/skycube_tga/posx.tga"
+          #p"/home/linus/models/skycube_tga/negx.tga"
+          #p"/home/linus/models/skycube_tga/posy.tga"
+          #p"/home/linus/models/skycube_tga/negy.tga"
+          #p"/home/linus/models/skycube_tga/posz.tga"
+          #p"/home/linus/models/skycube_tga/negz.tga")
   :target :texture-cube-map
   :min-filter :linear)
 
@@ -125,13 +125,13 @@ void main(){
   lighting_strength = 1-(0.9 * shadow);
 }")
 
-(print (list :location (location (unit :camera (scene (handler *context*))))
-             :rotation (rotation (unit :camera (scene (handler *context*))))))
+;; (print (list :location (location (unit :camera (scene (handler *context*))))
+;;              :rotation (rotation (unit :camera (scene (handler *context*))))))
 
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
-    (enter (make-instance 'editor-camera :LOCATION (VEC3 588.8497 96.14274 479.87396)
-                                         :ROTATION (VEC3 0.11000238 5.4900184 0.0))
+    (enter (make-instance 'editor-camera :LOCATION (VEC3 -178.21268 68.54084 121.44603)
+                                         :ROTATION (VEC3 0.060004286 1.976846 0.0))
            scene)
     ;; (enter (make-instance 'skybox :texture (asset 'workbench 'skybox)) scene)
     (flet ((add (vert diff spec norm rough ao &rest initargs)
@@ -170,6 +170,7 @@ void main(){
                                                    :view-matrix (mlookat (vec 400 300 150) (vec 0 0 0) (vec 0 1 0))
                                                    :name :shadow-map-pass))
            (geometry (make-instance 'geometry-pass))
+           (ssao (make-instance 'ssao-pass))
            (lighting (make-instance 'deferred+shadow-pass :shadow-map-pass shadow))
            (h-blur (make-instance 'gaussian-blur-pass :uniforms `(("dir" ,(vec 1 0)))))
            (v-blur (make-instance 'gaussian-blur-pass :uniforms `(("dir" ,(vec 0 1)))))
@@ -178,31 +179,35 @@ void main(){
            (skybox (make-instance 'skybox-pass :texture (asset 'workbench 'skybox)))
            (tone-map (make-instance 'bloom-pass))
            (blend (make-instance 'blend-pass)))
-      ;;(connect (port geometry 'normal) (port (make-instance 'copy-pass) 'previous-pass) scene)
-      (connect (port shadow 'shadow) (port lighting 'shadow-map) scene)
-      (connect (port geometry 'position) (port lighting 'position-map) scene)
-      (connect (port geometry 'normal) (port lighting 'normal-map) scene)
-      (connect (port geometry 'albedo) (port lighting 'albedo-map) scene)
-      (connect (port geometry 'metal) (port lighting 'metal-map) scene)
-      (connect (port lighting 'high-pass) (port h-blur 'previous-pass) scene)
-      (connect (port h-blur 'color) (port v-blur 'previous-pass) scene)
-      (connect (port v-blur 'color) (port h-blur2 'previous-pass) scene)
-      (connect (port h-blur2 'color) (port v-blur2 'previous-pass) scene)
-      (connect (port v-blur2 'color) (port tone-map 'high-pass) scene)
-      (connect (port lighting 'color) (port tone-map 'previous-pass) scene)
-      (connect (port skybox 'color) (port blend 'a-pass) scene)
-      (connect (port tone-map 'color) (port blend 'b-pass) scene)
+      (connect (port geometry 'position) (port ssao 'position-map) scene)
+      (connect (port geometry 'normal) (port ssao 'normal-map) scene)
+      (connect (port ssao 'occlusion) (port (make-instance 'copy-pass) 'previous-pass) scene)
+      ;; (connect (port shadow 'shadow) (port lighting 'shadow-map) scene)
+      ;; (connect (port geometry 'position) (port lighting 'position-map) scene)
+      ;; (connect (port geometry 'normal) (port lighting 'normal-map) scene)
+      ;; (connect (port geometry 'albedo) (port lighting 'albedo-map) scene)
+      ;; (connect (port geometry 'metal) (port lighting 'metal-map) scene)
+      ;; (connect (port lighting 'high-pass) (port h-blur 'previous-pass) scene)
+      ;; (connect (port h-blur 'color) (port v-blur 'previous-pass) scene)
+      ;; (connect (port v-blur 'color) (port h-blur2 'previous-pass) scene)
+      ;; (connect (port h-blur2 'color) (port v-blur2 'previous-pass) scene)
+      ;; (connect (port v-blur2 'color) (port tone-map 'high-pass) scene)
+      ;; (connect (port lighting 'color) (port tone-map 'previous-pass) scene)
+      ;; (connect (port skybox 'color) (port blend 'a-pass) scene)
+      ;; (connect (port tone-map 'color) (port blend 'b-pass) scene)
       ))
   
   (defmethod change-scene :after ((workbench workbench) scene &key old)
     (declare (ignore old))
-    (let ((buffer (asset 'trial 'light-block)))
-      (flet ((field (i field)
-               (format NIL "LightBlock.lights[~d].~(~a~)" i field)))
-        (setf (buffer-field buffer (field 0 'type)) 1)
-        (setf (buffer-field buffer (field 0 'direction)) (nv- (vec 400 300 150)))
-        (setf (buffer-field buffer (field 0 'color)) (vec 0.9 0.85 0.6)))
-      (setf (buffer-field buffer "LightBlock.count") 1)))
+    ;; (let ((buffer (asset 'trial 'light-block)))
+    ;;   (flet ((field (i field)
+    ;;            (format NIL "LightBlock.lights[~d].~(~a~)" i field)))
+    ;;     (setf (buffer-field buffer (field 0 'type)) 1)
+    ;;     (setf (buffer-field buffer (field 0 'direction)) (nv- (vec 400 300 150)))
+    ;;     (setf (buffer-field buffer (field 0 'color)) ;(vec 0.9 0.85 0.6)
+    ;;           (v* (vunit (vec 9 8 5)) 10)))
+    ;;   (setf (buffer-field buffer "LightBlock.count") 1))
+    )
   (maybe-reload-scene))
 
 (defmethod update :after ((workbench workbench) tt dt)
