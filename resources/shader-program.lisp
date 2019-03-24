@@ -108,17 +108,23 @@
          (location (uniform-location asset name)))
     (%set-uniform location data)))
 
-(define-compiler-macro (setf uniform) (&whole whole &environment env data asset name)
-  (cond ((constantp name env)
-         (let ((nameg (gensym "NAME")) (assetg (gensym "ASSET")))
+(define-compiler-macro (setf uniform) (&environment env data asset name)
+  (let ((nameg (gensym "NAME"))
+        (assetg (gensym "ASSET"))
+        (locationg (gensym "LOCATION")))
+    (cond ((constantp name env)
            `(let ((,nameg (load-time-value
                            (etypecase ,name
                              (string ,name)
                              (symbol (symbol->c-name ,name)))))
                   (,assetg ,asset))
-              (%set-uniform (uniform-location ,assetg ,nameg) ,data))))
-        (T
-         whole)))
+              (%set-uniform (uniform-location ,assetg ,nameg) ,data)))
+          (T
+           `(let* ((,nameg (etypecase ,name
+                             (string ,name)
+                             (symbol (symbol->c-name ,name))))
+                   (,locationg (uniform-location ,asset ,nameg)))
+              (%set-uniform ,locationg ,data))))))
 
 (defmethod uniforms ((program shader-program))
   (let ((count (gl:get-program (gl-name program) :active-uniforms)))

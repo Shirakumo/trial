@@ -14,11 +14,16 @@
    (position :port-type output
              :attachment :color-attachment0
              :texspec (:internal-format :rgb16f
-                       :pixel-type :float))
+                       :pixel-type :float
+                       :min-filter :linear
+                       :mag-filter :linear
+                       :wrapping :clamp-to-edge))
    (normal   :port-type output
              :attachment :color-attachment1
              :texspec (:internal-format :rgb16f
-                       :pixel-type :float))
+                       :pixel-type :float
+                       :min-filter :nearest
+                       :mag-filter :nearest))
    (albedo   :port-type output
              :attachment :color-attachment2
              :texspec (:internal-format :rgb))
