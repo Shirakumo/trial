@@ -143,7 +143,7 @@
          (rot (rotation freeroam-camera))
          (speed (* (move-speed freeroam-camera)
                    (if (retained 'key :left-shift) 5 1)
-                   (if (retained 'key :left-alt) 5 1))))
+                   (if (retained 'key :left-alt) 1/5 1))))
     (cond ((retained 'key :a)
            (decf (vx loc) (* speed (cos (vy rot))))
            (decf (vz loc) (* speed (sin (vy rot)))))
