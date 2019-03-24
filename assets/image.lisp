@@ -14,12 +14,22 @@
     (unless (probe-file file)
       (alexandria:simple-style-warning "Input image file ~s does not exist." file))))
 
+(defun flip-image-vertically (image width height components)
+  (let ((stride (* width components)))
+    (loop for y1 from 0 below (floor height 2)
+          for y2 downfrom (1- height)
+          do (loop for x1 from (* y1 stride)
+                   for x2 from (* y2 stride)
+                   repeat stride
+                   do (rotatef (aref image x1) (aref image x2))))))
+
 (defgeneric load-image (path type &key width height pixel-type pixel-format &allow-other-keys))
 
 (defmethod load-image (path (type (eql :tga)) &key)
   (let* ((tga (tga:read-tga path))
          (buffer (make-static-vector (length (tga:image-data tga))
                                      :initial-contents (tga:image-data tga))))
+    (flip-image-vertically buffer (tga:image-width tga) (tga:image-height tga) (tga:image-channels tga))
     (with-cleanup-on-failure (maybe-free-static-vector buffer)
       (values buffer
               (tga:image-width tga)
@@ -64,18 +74,8 @@
 (defmethod load-image (path (type (eql :tif)) &rest args)
   (apply #'load-image path :tiff args))
 
-(defun flip-image-vertically (image width height components)
-  (let ((stride (* width components)))
-    (loop for y1 from 0 below (floor height 2)
-          for y2 downfrom (1- height)
-          do (loop for x1 from (* y1 stride)
-                   for x2 from (* y2 stride)
-                   repeat stride
-                   do (rotatef (aref image x1) (aref image x2))))))
-
 (defmethod load-image (path (type (eql :jpeg)) &key)
   (multiple-value-bind (image height width components) (jpeg:decode-image path)
-;;    (flip-image-vertically image width height components)
     (values image
             width
             height
