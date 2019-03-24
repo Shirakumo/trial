@@ -170,7 +170,7 @@ void main(){
                               (decf i))))
                      (insert unit))))
       (setf (size cbo) (* 4 size))
-      (update-buffer-data/ptr cbo array (size cbo)))))
+      (resize-buffer/ptr cbo (size cbo) array))))
 
 (defmethod (setf color-regions) :around (regions (text highlighted-text))
   ;; FIXME: Check for overlapping regions.
