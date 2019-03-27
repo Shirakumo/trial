@@ -36,15 +36,17 @@
                         :wrapping :repeat
                         :internal-format :rgb32f
                         :pixel-format :rgb
-                        :pixel-type :float
-                        :pixel-data #.(generate-ssao-noise)))
+                        :pixel-type :float))
    (occlusion :port-type output
               :attachment :color-attachment0
               :texspec (:internal-format :rgb
                         :min-filter :nearest
                         :mag-filter :nearest))
    (kernel :initform (generate-ssao-kernel) :accessor kernel))
-  (:inhibit-shaders (shader-entity :fragment-shader)))
+  (:inhibit-shaders (shader-entity :fragment-shader (generate-ssao-noise))))
+
+(defmethod initialize-instance :after ((pass ssao-pass) &key)
+  (setf (getf (texspec (port pass 'noise-map)) :pixel-data) (generate-ssao-noise)))
 
 (defmethod paint-with :before ((pass ssao-pass) target)
   (let ((program (shader-program pass))
