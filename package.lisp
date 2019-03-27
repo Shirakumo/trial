@@ -391,6 +391,8 @@
    #:angle
    #:pivoted-entity
    #:pivot
+   #:scaled-entity
+   #:scaling
    #:clocked-subject
    #:vertex-entity
    #:colored-entity
@@ -594,6 +596,7 @@
    #:compute-effective-shader-class)
   ;; shader-pass.lisp
   (:export
+   #:port
    #:shader-pass-class
    #:paint-with
    #:texture-port
@@ -626,6 +629,15 @@
    #:shader-subject-class
    #:shader-subject
    #:define-shader-subject)
+  ;; shadow-map.lisp
+  (:export
+   #:shadow-map-pass
+   #:shadow
+   #:shadow-projection-matrix
+   #:shadow-view-matrix
+   #:shadow-render-pass
+   #:shadow-map
+   #:shadow-map-pass)
   ;; skybox.lisp
   (:export
    #:skybox
