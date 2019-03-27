@@ -228,6 +228,27 @@
    #:show-overlay
    #:load-request
    #:maybe-reload-scene)
+  ;; deferred.lisp
+  (:export
+   #:geometry-pass
+   #:depth
+   #:position
+   #:normal
+   #:albedo
+   #:metal
+   #:geometry-shaded
+   #:diffuse-map
+   #:specular-map
+   #:normal-map
+   #:roughness-map
+   #:occlusion-map
+   #:deferred-render-pass
+   #:position-map
+   #:normal-map
+   #:albedo-map
+   #:metal-map
+   #:light
+   #:light-block)
   ;; deploy.lisp
   (:export)
   ;; display.lisp
@@ -266,7 +287,9 @@
    #:light-scatter-pass
    #:previous-pass
    #:black-render-pass
-   #:color)
+   #:color
+   #:visualizer-pass
+   #:t[0] #:t[1] #:t[2] #:t[3])
   ;; entity.lisp
   (:export
    #:matches
@@ -374,6 +397,13 @@
    #:vertex-colored-entity
    #:textured-entity
    #:texture)
+  ;; hdr.lisp
+  (:export
+   #:hdr-output-pass
+   #:tone-mapping-pass
+   #:high-color-pass
+   #:bloom-pass
+   #:high-pass)
   ;; input.lisp
   (:export
    #:input-event
@@ -612,6 +642,12 @@
    #:frame
    #:animation
    #:update-sprite-animation)
+  ;; ssao,lisp
+  (:export
+   #:ssao-pass
+   #:position-map
+   #:normal-map
+   #:occlusion)
   ;; static-vector.lisp
   (:export
    #:make-static-vector
