@@ -82,7 +82,7 @@ float shadow_factor(vec3 position, float bias){
   vec4 light_space_position = light_space_matrix * vec4(position, 1);
   vec3 projected = light_space_position.xyz / light_space_position.w;
   projected = (projected+1)*0.5;
-  if(projected.z > 1) return 0;
+  if(projected.z > 1) return 0.0;
   float closest = texture(shadow_map, projected.xy).r;
   float current = projected.z;
   float shadow = 0;
@@ -98,9 +98,9 @@ float shadow_factor(vec3 position, float bias){
       }
     }
   }
-  return clamp(shadow, 0, 1);
+  return clamp(shadow, 0.0, 1.0);
 }
 
 float shadow_bias(vec3 normal, vec3 light_direction){
-  return clamp(0.005*tan(acos(dot(normal, light_direction))), 0, 0.001);
+  return clamp(0.005*tan(acos(dot(normal, light_direction))), 0.0, 0.001);
 }")

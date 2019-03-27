@@ -642,7 +642,8 @@
   (:export
    #:skybox
    #:texture
-   #:vertex-array)
+   #:vertex-array
+   #:skybox-pass)
   ;; sprite.lisp
   (:export
    #:sprite-entity
