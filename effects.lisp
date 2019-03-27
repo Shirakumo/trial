@@ -115,3 +115,42 @@ void main(){
 
 (define-class-shader (light-scatter-pass :fragment-shader)
   (pool-path 'effects #p"light-scatter.frag"))
+
+(define-shader-pass visualizer-pass (post-effect-pass)
+  ((t[0] :port-type input)
+   (t[1] :port-type input)
+   (t[2] :port-type input)
+   (t[3] :port-type input)))
+
+(defmethod check-consistent ((pass visualizer-pass))
+  ;; Skip consistency checks to allow optional inputs
+  T)
+
+(define-class-shader (visualizer-pass :fragment-shader)
+  "out vec4 color;
+in vec2 tex_coord;
+uniform sampler2D t[4];
+uniform int channel_count[4] = int[4](4,4,4,4);
+uniform int texture_count[2] = int[2](1, 1);
+
+void main(){
+  // Determine which texture we're currently in.
+  int x = floor(tex_coord*texture_count[0]);
+  int y = floor(tex_coord*texture_count[1]);
+
+  // Compute texture and local UV
+  sampler2D tex = t[x+y*texture_count[0]];
+  vec2 uv = vec2(tex_coord.x/texture_count[0]+float(x)/texture_count[0],
+                 tex_coord.y/texture_count[1]+float(y)/texture_count[0]);
+
+  // Sample the texture
+  vec4 local = texture(tex, uv);
+  int channels = channels[x+y*texture_count[0]];
+  switch(channels){
+  case 0: color = vec4(0); break;
+  case 1: color = vec4(local.r, local.r, local.r, 1); break;
+  case 2: color = vec4(local.rg, 0, 1); break;
+  case 3: color = vec2(local.rgb, 1); break;
+  case 4: color = local; break;
+  }
+}")

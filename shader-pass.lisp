@@ -73,6 +73,10 @@
 (define-class-shader (shader-pass :fragment-shader)
   "#version 330 core")
 
+(defmethod check-consistent ((pass shader-pass))
+  (dolist (port (flow:ports pass))
+    (check-consistent port)))
+
 (defgeneric register-object-for-pass (pass object))
 (defgeneric shader-program-for-pass (pass object))
 (defgeneric make-pass-shader-program (pass object))

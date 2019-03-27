@@ -44,8 +44,7 @@
 
 (defmethod check-consistent ((pipeline pipeline))
   (dolist (node (nodes pipeline))
-    (dolist (port (flow:ports node))
-      (check-consistent port))))
+    (check-consistent node)))
 
 (defun texspec-real-size (texspec width height)
   (flet ((eval-size (size)
