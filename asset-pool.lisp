@@ -10,7 +10,9 @@
   (destructuring-bind (base &rest sub) (if (listp base) base (list base))
     (if *standalone*
         (merge-pathnames (format NIL "pool/~(~a~)/~{~a/~}" base sub) (deploy:data-directory))
-        (merge-pathnames (format NIL "data/~{~a/~}" sub) (asdf:system-source-directory base)))))
+        (merge-pathnames (format NIL "data/~{~a/~}" sub) (etypecase base
+                                                           (symbol (asdf:system-source-directory base))
+                                                           (pathname base))))))
 
 (defvar *pools* (make-hash-table :test 'eql))
 
