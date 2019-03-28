@@ -132,17 +132,18 @@ void main(){
 in vec2 tex_coord;
 uniform sampler2D t[4];
 uniform int channel_count[4] = int[4](4,4,4,4);
-uniform int texture_count[2] = int[2](1, 1);
+uniform int textures_per_line = 1;
 
 void main(){
   // Determine which texture we're currently in.
-  int x = int(floor(tex_coord.x*texture_count[0]));
-  int y = int(floor(tex_coord.y*texture_count[1]));
-  int i = x+y*texture_count[0];
+  int x = int(mod(tex_coord.x*textures_per_line, textures_per_line));
+  int y = int(mod(tex_coord.y*textures_per_line, textures_per_line));
+  int i = x+y*textures_per_line;
 
   // Compute texture and local UV
-  vec2 uv = vec2(tex_coord.x/texture_count[0]+float(x)/texture_count[0],
-                 tex_coord.y/texture_count[1]+float(y)/texture_count[0]);
+  vec2 uv = vec2(mod(tex_coord.x, textures_per_line)-float(x)/textures_per_line,
+                 mod(tex_coord.y, textures_per_line)-float(y)/textures_per_line)
+            *textures_per_line;
 
   // Sample the texture
   vec4 local = vec4(0);
