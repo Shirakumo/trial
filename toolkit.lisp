@@ -363,7 +363,7 @@
 (defun rad->deg (rad)
   (* rad 180 (/ PI)))
 
-(defvar *c-chars* "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")
+(defparameter *c-chars* "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_[]")
 
 (defun symbol->c-name (symbol)
   (with-output-to-string (out)
