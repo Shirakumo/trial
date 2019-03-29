@@ -26,10 +26,14 @@
                        :mag-filter :linear))
    (albedo   :port-type output
              :attachment :color-attachment2
-             :texspec (:internal-format :rgb))
+             :texspec (:internal-format :rgb
+                       :min-filter :linear
+                       :mag-filter :linear))
    (metal    :port-type output
              :attachment :color-attachment3
-             :texspec (:internal-format :rgb)))
+             :texspec (:internal-format :rgb
+                       :min-filter :linear
+                       :mag-filter :linear)))
   (:inhibit-shaders (shader-entity :fragment-shader)))
 
 (define-class-shader (geometry-pass :vertex-shader)
