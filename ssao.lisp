@@ -72,8 +72,8 @@ uniform mat4 view_matrix;
 uniform vec2 viewport_size;
 uniform vec3 samples[64];
 uniform int kernel_size = 64;
-uniform float radius = 0.8;
-uniform float bias = 1;
+uniform float radius = 8;
+uniform float bias = 5;
 
 void main(){
   vec2 noiseScale = viewport_size / 4.0;
