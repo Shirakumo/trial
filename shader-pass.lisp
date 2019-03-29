@@ -133,7 +133,7 @@
              with texture-name = ',(loop for unit in units collect
                                          (intern (format NIL "~a~a" :texture unit) "KEYWORD"))
              for port in (flow:ports pass)
-             do (when (typep port 'uniform-port)
+             do (when (and (typep port 'uniform-port) (texture port))
                   (setf (uniform program (uniform-name port)) (pop texture-index))
                   (gl:active-texture (pop texture-name))
                   (gl:bind-texture :texture-2d (gl-name (texture port)))))
