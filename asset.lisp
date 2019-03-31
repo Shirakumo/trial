@@ -11,14 +11,15 @@
    (name :initform NIL :accessor name)
    (input :initarg :input :accessor input)))
 
-(defmethod initialize-instance :after ((asset asset) &key pool name)
+(defmethod initialize-instance ((asset asset) &key pool name)
   (check-type name symbol)
   (setf (name asset) name)
   (when pool
     (setf (pool asset) (etypecase pool
                          (symbol (find-pool pool T))
                          (pool pool)))
-    (setf (asset pool name) asset)))
+    (setf (asset pool name) asset))
+  (call-next-method))
 
 (defmethod reinitialize-instance :after ((asset asset) &key)
   (when (allocated-p asset)
