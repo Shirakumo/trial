@@ -156,4 +156,5 @@ void main(){
 (define-class-shader (deferred-render-pass :fragment-shader)
   ;; KLUDGE
   ;; (gl-source (asset 'trial 'light-block))
+  ;; KLUDGE
   (asdf:system-relative-pathname :trial "data/deferred-pbr.frag"))

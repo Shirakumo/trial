@@ -8,7 +8,7 @@
 
 (defmethod coerce-base (base)
   (destructuring-bind (base &rest sub) (if (listp base) base (list base))
-    (if *standalone*
+    (if (and *standalone* (not (pathnamep base)))
         (merge-pathnames (format NIL "pool/~(~a~)/~{~a/~}" base sub) (deploy:data-directory))
         (merge-pathnames (format NIL "data/~{~a/~}" sub) (etypecase base
                                                            (symbol (asdf:system-source-directory base))
