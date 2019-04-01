@@ -28,3 +28,6 @@
 
 (deploy:define-library cl-opengl-bindings::opengl
   :dont-deploy T)
+
+(deploy:define-library osicat-posix::librt
+  :dont-deploy T)
