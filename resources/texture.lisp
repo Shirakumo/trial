@@ -170,7 +170,7 @@
   (with-accessors* (width height depth target samples internal-format pixel-format pixel-type pixel-data
                           mag-filter min-filter mipmap-levels mipmap-lod anisotropy wrapping border-color storage)
       texture
-    (let ((tex (gl:create-texture target)))
+    (let ((tex (gl:gen-texture)))
       (with-cleanup-on-failure (gl:delete-textures (list tex))
         (gl:bind-texture target tex)
         (allocate-texture-storage texture)
