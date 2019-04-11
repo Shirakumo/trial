@@ -368,4 +368,4 @@ void main(){
                            do (clipmap f x y s)))
             ;; Shrink by a factor of 2.
             (setf bits (halve-image bits (/ w s) (/ h s) c))))))
-    (free-image-data bits)))
+    (free-data bits)))
