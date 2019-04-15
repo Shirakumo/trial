@@ -694,7 +694,6 @@
   (:export
    #:finalize
    #:gl-property
-   #:with-float-traps-masked
    #:current-time
    #:executable-directory
    #:enlist
