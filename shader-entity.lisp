@@ -76,7 +76,9 @@
     effective-buffers))
 
 (defmethod compute-effective-shader-class ((class shader-entity-class))
-  (if (direct-shaders class)
+  (if (or (direct-shaders class)
+          ;; break-out path for shader-entity.
+          (null (find-class 'shader-entity NIL)))
       class
       (let* ((effective-superclasses (list (find-class 'shader-entity))))
         ;; Loop through superclasses and push new, effective superclasses.
