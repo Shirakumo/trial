@@ -19,11 +19,11 @@
   (let (l r u b)
     (ecase align
       (:center (setf l (- (/ w 2)) r (+ (/ w 2))
-                     u (- (/ h 2)) b (+ (/ h 2))))
+                     b (- (/ h 2)) u (+ (/ h 2))))
       (:topleft (setf l 0 r w
-                      u 0 b h))
+                      b (- h) u 0))
       (:bottomleft (setf l 0 r w
-                         u (- h) b 0)))
+                         b 0 u h)))
     (incf l x) (incf r x) (incf u y) (incf b y)
     (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'textured-vertex)) :pack pack)
       (vertex :position (vec r u z) :uv (vec 1.0 1.0))
