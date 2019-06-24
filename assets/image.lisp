@@ -29,7 +29,6 @@
   (let* ((tga (tga:read-tga path))
          (buffer (make-static-vector (length (tga:image-data tga))
                                      :initial-contents (tga:image-data tga))))
-    (flip-image-vertically buffer (tga:image-width tga) (tga:image-height tga) (tga:image-channels tga))
     (with-cleanup-on-failure (maybe-free-static-vector buffer)
       (values buffer
               (tga:image-width tga)
@@ -42,7 +41,7 @@
                 (4 :bgra))))))
 
 (defmethod load-image (path (type (eql :png)) &key)
-  (let ((png (pngload:load-file path :flatten T :flip-y NIL :static-vector T)))
+  (let ((png (pngload:load-file path :flatten T :flip-y T :static-vector T)))
     (mark-static-vector (pngload:data png))
     (with-cleanup-on-failure (maybe-free-static-vector (pngload:data png))
       (values (pngload:data png)
@@ -76,6 +75,11 @@
 
 (defmethod load-image (path (type (eql :jpeg)) &key)
   (multiple-value-bind (image height width components) (jpeg:decode-image path)
+    (flip-image-vertically image width height (ecase components
+                                                (1 :red)
+                                                (2 :gr)
+                                                (3 :bgr)
+                                                (4 :bgra)))
     (values image
             width
             height
