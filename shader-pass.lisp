@@ -191,10 +191,6 @@
 
 (defmethod register-object-for-pass ((pass per-object-pass) o))
 
-(defmethod register-object-for-pass ((pass per-object-pass) (container container))
-  (for:for ((object over container))
-    (register-object-for-pass pass object)))
-
 (defmethod register-object-for-pass ((pass per-object-pass) (class shader-entity-class))
   (let ((effective-class (effective-shader-class class)))
     (unless (gethash effective-class (assets pass))

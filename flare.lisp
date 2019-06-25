@@ -21,7 +21,3 @@
   (with-pushed-matrix ()
     (translate vec)
     (funcall func)))
-
-(defmethod register-object-for-pass (pass (container container))
-  (for:for ((object over container))
-    (register-object-for-pass pass object)))
