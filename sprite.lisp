@@ -38,7 +38,7 @@ void main(){
 
 (define-shader-subject animated-sprite-subject (sprite-entity)
   ((animations :accessor animations)
-   (animation :initform 0 :accessor animation)
+   (animation :initform NIL :accessor animation)
    (clock :initform 0.0d0 :accessor clock)))
 
 (defmethod shared-initialize :after ((subject animated-sprite-subject) slots &key animation frame animations)
@@ -46,40 +46,59 @@ void main(){
   (when animation (setf (animation subject) animation))
   (when frame (setf (frame subject) frame)))
 
+(defstruct (sprite-animation (:constructor make-sprite-animation (name start end step next loop)))
+  (name NIL :type symbol)
+  (start 0 :type (unsigned-byte 32))
+  (end 0 :type (unsigned-byte 32))
+  (step 0 :type single-float)
+  (next 0 :type (unsigned-byte 32))
+  (loop 0 :type (unsigned-byte 32)))
+
 (defmethod frame ((subject animated-sprite-subject))
-  (- (vx (tile subject))
-     (first (svref (animations subject) (animation subject)))))
-
-(defmethod (setf frame) (value (subject animated-sprite-subject))
-  (setf (vx (tile subject)) (+ value (first (svref (animations subject) (animation subject))))))
-
-(defmethod (setf animation) :before (value (subject animated-sprite-subject))
-  (when (/= value (animation subject))
-    (setf (vx (tile subject)) (first (svref (animations subject) value)))))
+  (vx (tile subject)))
 
 (defmethod (setf animations) (value (subject animated-sprite-subject))
   (setf (slot-value subject 'animations)
         (coerce
-         (loop with idx = 0
-               for spec in value
+         (loop for spec in value
                for i from 0
-               collect (destructuring-bind (duration frames &key start (next i) loop-to) spec
-                         (let ((start (or start idx)))
-                           (prog1 (list start duration frames next (+ start (or loop-to 0)))
-                             (setf idx (+ start frames))))))
-         'simple-vector)))
+               collect (destructuring-bind (name start end &key duration step (next i) loop-to) spec
+                         (assert (< start end))
+                         (let ((step (coerce (cond (step step)
+                                                   (duration (/ duration (- end start)))
+                                                   (T 0.1))
+                                             'single-float))
+                               (next (etypecase next
+                                       ((integer 0) next)
+                                       (symbol (position next value :key #'first)))))
+                           (make-sprite-animation name start end step next (or loop-to start)))))
+         'simple-vector))
+  (setf (animation subject) 0))
+
+(defmethod (setf frame) (value (subject animated-sprite-subject))
+  (setf (vx (tile subject)) value))
+
+(defmethod (setf animation) ((index integer) (subject animated-sprite-subject))
+  (setf (animation subject) (aref (animations subject) index)))
+
+(defmethod (setf animation) ((name symbol) (subject animated-sprite-subject))
+  (setf (animation subject) (find name (animations subject) :key #'sprite-animation-name)))
+
+(defmethod (setf animation) :before ((animation sprite-animation) (subject animated-sprite-subject))
+  (unless (eql animation (animation subject))
+    (setf (vx (tile subject)) (sprite-animation-start animation))))
 
 (define-handler (animated-sprite-subject update-sprite-animation tick) (ev dt)
-  (let ((tile (tile animated-sprite-subject)))
-    (destructuring-bind (start duration frames next-anim loop-to)
-        (svref (animations animated-sprite-subject) (animation animated-sprite-subject))
-      (let ((per-frame-duration (/ duration frames)))
-        (incf (clock animated-sprite-subject) dt)
-        (when (<= per-frame-duration (clock animated-sprite-subject))
-          (decf (clock animated-sprite-subject) per-frame-duration)
-          (incf (vx tile)))
-        (when (<= (+ start frames) (vx tile))
-          (cond ((= (animation animated-sprite-subject) next-anim)
-                 (setf (vx tile) loop-to))
-                (T
-                 (setf (animation animated-sprite-subject) next-anim))))))))
+  (let* ((tile (tile animated-sprite-subject))
+         (animations (animations animated-sprite-subject))
+         (animation (animation animated-sprite-subject)))
+    (incf (clock animated-sprite-subject) dt)
+    (when (<= (sprite-animation-step animation) (clock animated-sprite-subject))
+      (decf (clock animated-sprite-subject) (sprite-animation-step animation))
+      (incf (vx tile)))
+    (when (<= (sprite-animation-end animation) (vx tile))
+      (let ((next (aref animations (sprite-animation-next animation))))
+        (cond ((eq animation next)
+               (setf (vx tile) (sprite-animation-loop animation)))
+              (T
+               (setf (animation animated-sprite-subject) next)))))))
