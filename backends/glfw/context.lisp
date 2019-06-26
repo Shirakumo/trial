@@ -185,17 +185,18 @@
 
 (defun launch-with-context (&optional main &rest initargs)
   (flet ((body ()
-           (cl-glfw3:with-init
-             (let ((main (apply #'make-instance main initargs)))
-               (start main)
-               (unwind-protect
-                    (loop with window = (window (trial:context main))
-                          until (cl-glfw3:window-should-close-p window)
-                          do (cl-glfw3:poll-events)
-                             ;; Apparently bt:thread-yield is a no-op sometimes,
-                             ;; making this loop consume the core. Sleep instead.
-                             (sleep 0.001))
-                 (finalize main))))))
+           (cl-glfw3:initialize)
+           (let ((main (apply #'make-instance main initargs)))
+             (start main)
+             (unwind-protect
+                  (loop with window = (window (trial:context main))
+                        until (cl-glfw3:window-should-close-p window)
+                        do (cl-glfw3:poll-events)
+                           ;; Apparently bt:thread-yield is a no-op sometimes,
+                           ;; making this loop consume the core. Sleep instead.
+                           (sleep 0.001))
+               (finalize main)
+               (%glfw:terminate)))))
     #+darwin
     (tmt:with-body-in-main-thread ()
       (body))
