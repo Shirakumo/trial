@@ -652,8 +652,11 @@
    #:animated-sprite-subject
    #:animations
    #:clock
+   #:playback-speed
+   #:playback-direction
    #:frame
    #:animation
+   #:reset-animation
    #:update-sprite-animation)
   ;; ssao,lisp
   (:export
