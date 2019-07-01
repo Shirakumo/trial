@@ -29,9 +29,14 @@
     (format stream "~s" (name gl-declaration))))
 
 (defmethod compute-dependant-types ((gl-declaration gl-declaration))
-  (let ((type (gl-type gl-declaration)))
-    (when (and (listp type) (eq (first type) :struct))
-      (list (second type)))))
+  (labels ((compute (type)
+             (when (listp type)
+               (ecase (first type)
+                 (:struct
+                  (list (second type)))
+                 (:array
+                  (compute (second type)))))))
+    (compute (gl-type gl-declaration))))
 
 (defmethod gl-source ((gl-declaration gl-declaration))
   `(glsl-toolkit:struct-declarator
@@ -42,23 +47,16 @@
                     collect `(glsl-toolkit:layout-qualifier-id ,@(enlist id))))))
      ,@(qualifiers gl-declaration))
     (glsl-toolkit:type-specifier
-     ,(let ((type (gl-type gl-declaration)))
-        (if (and (listp type) (eq (first type) :struct))
-            (gl-type (gl-struct (second type)))
-            type)))
+     ,@(labels ((translate-type (type)
+                  (etypecase type
+                    (cons
+                     (ecase (first type)
+                       (:struct (list (gl-type (gl-struct (second type)))))
+                       (:array (append (translate-type (second type))
+                                       `((glsl-toolkit:array-specifier ,(third type)))))))
+                    (symbol (list type)))))
+         (translate-type (gl-type gl-declaration))))
     ,(gl-name gl-declaration)))
-
-(defclass gl-struct-field (gl-declaration)
-  ((array-size :initarg :count :initarg :array-size :accessor array-size))
-  (:default-initargs
-   :type (error "TYPE required.")
-   :array-size NIL))
-
-(defmethod gl-source ((gl-struct-field gl-struct-field))
-  (let ((source (call-next-method gl-struct-field)))
-    (when (array-size gl-struct-field)
-      (setf (third source) (append (third source) `((glsl-toolkit:array-specifier ,(array-size gl-struct-field))))))
-    source))
 
 (defclass gl-struct ()
   ((name :initarg :name :accessor name)
@@ -98,8 +96,14 @@
 
 (defun translate-gl-struct-field-info (fields)
   (loop for field in fields
-        collect (destructuring-bind (name type &rest args) field
-                  `(make-instance 'gl-struct-field :name ',name :type ',type ,@args))))
+        collect (destructuring-bind (name type &key gl-name qualifiers layout count) field
+                  `(make-instance 'gl-declaration :name ',name
+                                                  :type ,(if count
+                                                             `(list :array ',type ,count)
+                                                             `',type)
+                                                  :gl-name ',gl-name
+                                                  :qualifiers ',qualifiers
+                                                  :layout ,layout))))
 
 (defmacro define-gl-struct (name/options &body fields)
   (destructuring-bind (name &rest initargs &key (type 'gl-struct))

@@ -52,20 +52,21 @@
   (compute-dependant-types (gl-struct (input buffer))))
 
 (defun compute-uniform-buffer-fields (buffer)
-  (labels ((gather-fields (struct prefix)
+  (labels ((gather-for-type (type name prefix)
+             (etypecase type
+               (cons
+                (ecase (first type)
+                  (:array
+                   (loop for i from 0 below (third type)
+                         nconc (gather-for-type (second type) ""
+                                                (format NIL "~a~a[~d]" prefix name i))))
+                  (:struct
+                   (gather-fields (gl-struct (second type))
+                                  (format NIL "~a~a." prefix name)))))
+               (symbol (list (format NIL "~a~a" prefix name)))))
+           (gather-fields (struct prefix)
              (loop for field in (fields struct)
-                   nconc (cond ((and (array-size field) (listp (gl-type field)))
-                                (loop for i from 0 below (array-size field)
-                                      nconc (gather-fields (gl-struct (second (gl-type field)))
-                                                           (format NIL "~a~a[~d]." prefix (gl-name field) i))))
-                               ((array-size field)
-                                (loop for i from 0 below (array-size field)
-                                      collect (format NIL "~a~a[~d]." prefix (gl-name field) i)))
-                               ((listp (gl-type field))
-                                (gather-fields (gl-struct (second (gl-type field)))
-                                               (format NIL "~a~a." prefix (gl-name field))))
-                               (T
-                                (list (format NIL "~a~a" prefix (gl-name field))))))))
+                   nconc (gather-for-type (gl-type field) (gl-name field) prefix))))
     (gather-fields (gl-struct (input buffer)) (format NIL "~@[~a.~]" (gl-type buffer)))))
 
 (defmethod compute-offsets ((buffer uniform-buffer) (program shader-program))
