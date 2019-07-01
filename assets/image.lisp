@@ -75,11 +75,7 @@
 
 (defmethod load-image (path (type (eql :jpeg)) &key)
   (multiple-value-bind (image height width components) (jpeg:decode-image path)
-    (flip-image-vertically image width height (ecase components
-                                                (1 :red)
-                                                (2 :gr)
-                                                (3 :bgr)
-                                                (4 :bgra)))
+    (flip-image-vertically image width height components)
     (values image
             width
             height
