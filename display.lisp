@@ -64,6 +64,11 @@
       (call-next-method)
       (swap-buffers context))))
 
+(defmethod render-loop :around ((display display))
+  (unwind-protect
+       (call-next-method)
+    (release-context (context display))))
+
 (defmethod width ((display display))
   (width (context display)))
 

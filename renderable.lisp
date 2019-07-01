@@ -30,7 +30,7 @@
 (defmethod render (thing (renderable renderable)))
 (defmethod update ((renderable renderable) tt dt))
 
-(defun render-loop (renderable)
+(defmethod render-loop ((renderable renderable))
   (with-retry-restart (reset-render-loop "Reset the render loop timing, not catching up with lost frames.")
     (let ((tt 0.0d0)
           (dt (coerce (delta-time renderable) 'double-float))
