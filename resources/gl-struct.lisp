@@ -112,8 +112,10 @@
                             :fields (list ,@(translate-gl-struct-field-info fields))
                             ,@initargs)))))
 
-;; (defmethod compute-offsets ((struct gl-struct) (layout (eql :std140)))
-;;   )
+(defmethod compute-offsets ((struct gl-struct) (layout (eql :std140)))
+  ;; TODO: this
+  (error "Not implemented"))
 
-;; (defmethod compute-offsets ((struct gl-struct) (layout (eql :std430)))
-;;   )
+(defmethod compute-offsets ((struct gl-struct) (layout (eql :std430)))
+  ;; TODO: this
+  (error "Not implemented"))

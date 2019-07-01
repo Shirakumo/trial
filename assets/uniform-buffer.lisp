@@ -85,13 +85,27 @@
           (setf (gethash field offsets) (cffi:mem-ref params :int)))))
     (values offsets size)))
 
+(defmethod compute-offsets ((buffer uniform-buffer) (standard symbol))
+  (compute-offsets (gl-struct (input buffer)) standard))
+
 (defmethod load ((buffer uniform-buffer))
-  ;; If the layout is std140, we can compute the size and offsets without a program.
-  (when (find :std140 (enlist (layout buffer)))
+  ;; If the layout is std140 we can compute the size and offsets without a program.
+  (when (and (find :std140 (enlist (layout buffer)))
+             (null (offsets buffer)))
     (multiple-value-bind (offsets size) (compute-offsets (input buffer) :std140)
       (setf (offsets buffer) offsets)
       (setf (size buffer) size)))
-  (allocate buffer))
+  (allocate buffer)
+  ;; If we have no buffer data supplied already, or bad data, create a data vector so we
+  ;; can do easy batch updates. We do this after allocation to not waste time uploading the data
+  ;; and no earlier because we might not know the size.
+  (cond ((null (buffer-data buffer))
+         (setf (buffer-data buffer) (make-static-vector (size buffer) :initial-element 0)))
+        ((/= (size buffer) (length (buffer-data buffer)))
+         (let ((old (buffer-data buffer))
+               (new (make-static-vector (size buffer) :initial-element 0)))
+           (setf (buffer-data buffer) (replace new old))
+           (maybe-free-static-vector old)))))
 
 (defmethod bind ((buffer uniform-buffer) (program shader-program) (binding-point integer))
   ;; Calculate size and offsets now.
@@ -114,7 +128,13 @@
     (%gl:bind-buffer-base :uniform-buffer binding-point (gl-name buffer))))
 
 (defmethod buffer-field ((buffer uniform-buffer) field)
-  (error "FIXME"))
+  (let ((offset (gethash field (offsets buffer)))
+        (type :FIXME))
+    #-elide-buffer-access-checks
+    (unless offset
+      (error "Field ~s not found in ~a." field buffer))
+    (with-pointer-to-vector-data (ptr (buffer-data buffer))
+      (gl-memref (cffi:inc-pointer ptr offset) type))))
 
 (defmethod (setf buffer-field) (value (buffer uniform-buffer) field)
   ;; FIXME: wouldn't it be better to keep the C-memory block for the UBO around,
@@ -125,3 +145,25 @@
     (unless offset
       (error "Field ~s not found in ~a." field buffer))
     (update-buffer-data buffer value :buffer-start offset)))
+
+(defun gl-memref (ptr type)
+  (etypecase type
+    (symbol
+     (ecase type
+       ;; FIXME: stride and layout of matrices is dependant on layout used!
+       (:int (cffi:mem-ref ptr :int))
+       (:uint (cffi:mem-ref ptr :uint))
+       (:float (cffi:mem-ref ptr :float))
+       (:double (cffi:mem-ref ptr :double))
+       (:vec2 (vec2 (cffi:mem-aref ptr :float 0)
+                    (cffi:mem-aref ptr :float 1)))
+       (:vec3 (vec3 (cffi:mem-aref ptr :float 0)
+                    (cffi:mem-aref ptr :float 1)
+                    (cffi:mem-aref ptr :float 2)))
+       (:vec4 (vec4 (cffi:mem-aref ptr :float 0)
+                    (cffi:mem-aref ptr :float 1)
+                    (cffi:mem-aref ptr :float 2)
+                    (cffi:mem-aref ptr :float 3)))))
+    (cons
+     ;; TODO: this
+     (error "Cannot handle compound types at this point."))))
