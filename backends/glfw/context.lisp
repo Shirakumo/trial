@@ -186,6 +186,7 @@
 (defun launch-with-context (&optional main &rest initargs)
   (flet ((body ()
            (cl-glfw3:initialize)
+           (cl-glfw3:set-error-callback 'ctx-error)
            (let ((main (apply #'make-instance main initargs)))
              (start main)
              (unwind-protect
@@ -206,6 +207,9 @@
 (defmacro %with-context (&body body)
   `(let ((context (gethash (cffi:pointer-address window) *window-table*)))
      ,@body))
+
+(cl-glfw3:def-error-callback ctx-error (message)
+  (v:severe :trial.backend.glfw "~a" message))
 
 (cl-glfw3:def-window-size-callback ctx-size (window w h)
   (%with-context
