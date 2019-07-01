@@ -161,6 +161,7 @@
                                              collect (list (flow:name port) (texture port))))))
       
       ;; FIXME: Replace textures with existing ones if they match to save on re-allocation.
+      ;; FIXME: When transitioning between scenes we should try to re-use existing textures and fbos to reduce the amount of unnecessary allocation.
       (clear-pipeline pipeline)
       (setf (passes pipeline) (coerce passes 'vector))
       (setf (textures pipeline) textures)
