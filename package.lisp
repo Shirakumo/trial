@@ -34,15 +34,10 @@
   ;; assets/uniform-buffer.lisp
   (:export
    #:uniform-buffer
-   #:layout
    #:qualifiers
    #:binding
-   #:offsets
-   #:gl-type
-   #:gl-source
-   #:compute-offsets
-   #:bind
-   #:buffer-field)
+   #:struct
+   #:with-buffer-tx)
   ;; formats/collada.lisp
   (:export)
   ;; formats/vertex-format.lisp
@@ -52,21 +47,6 @@
    #:framebuffer
    #:attachments
    #:resize)
-  ;; resources/gl-struct.lisp
-  (:export
-   #:gl-declaration
-   #:name
-   #:gl-name
-   #:gl-type
-   #:qualifiers
-   #:layout
-   #:compute-dependant-types
-   #:gl-source
-   #:gl-struct-field
-   #:array-size
-   #:gl-struct
-   #:fields
-   #:define-gl-struct)
   ;; resources/shader-program.lisp
   (:export
    #:shader-program
@@ -377,6 +357,19 @@
    #:colored-vertex
    #:color
    #:basic-vertex)
+  ;; gl-struct.lisp
+  (:export
+   #:gl-struct
+   #:storage-ptr
+   #:compute-depedent-types
+   #:gl-source
+   #:gl-struct-class
+   #:gl-type
+   #:layout-standard
+   #:struct-fields
+   #:define-gl-struct
+   #:gl-vector
+   #:element-type)
   ;; helpers.lisp
   (:export
    #:located-entity

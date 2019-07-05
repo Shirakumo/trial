@@ -35,7 +35,7 @@
 
 (define-constant-fold-function gl-type->cl-type (type)
   (ecase type
-    ((:boolean :ubyte :unsigned-byte :unsigned-char) '(unsigned-byte 8))
+    ((:boolean :bool :ubyte :unsigned-byte :unsigned-char) '(unsigned-byte 8))
     ((:byte :char) '(signed-byte 8))
     ((:ushort :unsigned-short) '(unsigned-byte 16))
     (:short '(signed-byte 16))
@@ -129,3 +129,133 @@
     (:mat2 (* 2 2 4))
     (:mat3 (* 3 3 4))
     (:mat4 (* 4 44))))
+
+(defgeneric buffer-field-base (type standard)
+  (:method ((type symbol) standard)
+    (buffer-field-base (find-class type) standard)))
+
+(defmethod buffer-field-base ((type (eql :int)) (standard (eql :std140))) 4)
+(defmethod buffer-field-base ((type (eql :bool)) (standard (eql :std140))) 4)
+(defmethod buffer-field-base ((type (eql :float)) (standard (eql :std140))) 4)
+(defmethod buffer-field-base ((type (eql :vec2)) (standard (eql :std140))) 8)
+(defmethod buffer-field-base ((type (eql :vec3)) (standard (eql :std140))) 16)
+(defmethod buffer-field-base ((type (eql :vec4)) (standard (eql :std140))) 16)
+(defmethod buffer-field-base ((type (eql :mat2)) (standard (eql :std140))) (buffer-field-base :vec4 standard))
+(defmethod buffer-field-base ((type (eql :mat3)) (standard (eql :std140))) (buffer-field-base :vec4 standard))
+(defmethod buffer-field-base ((type (eql :mat4)) (standard (eql :std140))) (buffer-field-base :vec4 standard))
+(defmethod buffer-field-base ((type cons) (standard (eql :std140))) (buffer-field-base :vec4 standard))
+
+(defgeneric buffer-field-size (type standard base)
+  (:method ((type symbol) standard base)
+    (buffer-field-size (find-class type) standard base)))
+
+(defmethod buffer-field-size ((type (eql :int)) (standard (eql :std140)) base) 4)
+(defmethod buffer-field-size ((type (eql :bool)) (standard (eql :std140)) base) 4)
+(defmethod buffer-field-size ((type (eql :float)) (standard (eql :std140)) base) 4)
+(defmethod buffer-field-size ((type (eql :vec2)) (standard (eql :std140)) base) 8)
+(defmethod buffer-field-size ((type (eql :vec3)) (standard (eql :std140)) base) 16)
+(defmethod buffer-field-size ((type (eql :vec4)) (standard (eql :std140)) base) 16)
+(defmethod buffer-field-size ((type (eql :mat2)) (standard (eql :std140)) base) (buffer-field-size '(:array :vec4 2) standard base))
+(defmethod buffer-field-size ((type (eql :mat3)) (standard (eql :std140)) base) (buffer-field-size '(:array :vec4 3) standard base))
+(defmethod buffer-field-size ((type (eql :mat4)) (standard (eql :std140)) base) (buffer-field-size '(:array :vec4 4) standard base))
+(defmethod buffer-field-size ((type cons) (standard (eql :std140)) base)
+  (ecase (first type)
+    (:struct (buffer-field-size (second type) standard base))
+    (:array (destructuring-bind (identifier type count) type
+              (declare (ignore identifier))
+              (if (listp type)
+                  (* count (buffer-field-size type standard base))
+                  (round-to
+                   (buffer-field-base :vec4 standard)
+                   (* count (round-to (buffer-field-base :vec4 standard)
+                                      (buffer-field-base type standard)))))))))
+
+(defgeneric buffer-field-stride (type standard)
+  (:method ((type symbol) standard)
+    (buffer-field-stride (find-class type) standard)))
+
+(defmethod buffer-field-stride ((type (eql :int)) (standard (eql :std140))) 16)
+(defmethod buffer-field-stride ((type (eql :bool)) (standard (eql :std140))) 16)
+(defmethod buffer-field-stride ((type (eql :float)) (standard (eql :std140))) 16)
+(defmethod buffer-field-stride ((type (eql :vec2)) (standard (eql :std140))) 16)
+(defmethod buffer-field-stride ((type (eql :vec3)) (standard (eql :std140))) 16)
+(defmethod buffer-field-stride ((type (eql :vec4)) (standard (eql :std140))) 16)
+(defmethod buffer-field-stride ((type (eql :mat2)) (standard (eql :std140))) (* 2 (buffer-field-stride :vec4)))
+(defmethod buffer-field-stride ((type (eql :mat3)) (standard (eql :std140))) (* 3 (buffer-field-stride :vec4)))
+(defmethod buffer-field-stride ((type (eql :mat4)) (standard (eql :std140))) (* 4 (buffer-field-stride :vec4)))
+(defmethod buffer-field-stride ((type cons) (standard (eql :std140)))
+  (ecase (first type)
+    (:struct (buffer-field-size (second type) standard 0))))
+
+(defun gl-memref-std140 (ptr type)
+  (flet ((%ref (i)
+           (cffi:mem-aref ptr :float i)))
+    (declare (inline %ref))
+    (ecase type
+      (:int (cffi:mem-ref ptr :int))
+      (:uint (cffi:mem-ref ptr :uint))
+      (:float (cffi:mem-ref ptr :float))
+      (:double (cffi:mem-ref ptr :double))
+      (:vec2 (vec2 (%ref 0) (%ref 1)))
+      (:vec3 (vec3 (%ref 0) (%ref 1) (%ref 2)))
+      (:vec4 (vec4 (%ref 0) (%ref 1) (%ref 2) (%ref 3)))
+      (:mat2 (mat2 (%ref 0) (%ref 1)
+                   (%ref 4) (%ref 5)))
+      (:mat3 (mat3 (%ref 0) (%ref 1) (%ref 2)
+                   (%ref 4) (%ref 5) (%ref 6)
+                   (%ref 8) (%ref 9) (%ref 10)))
+      ;; FIXME: could copy raw array with memcpy.
+      (:mat4 (mat4 (%ref 0) (%ref 1) (%ref 2) (%ref 3)
+                   (%ref 4) (%ref 5) (%ref 6) (%ref 7)
+                   (%ref 8) (%ref 9) (%ref 10) (%ref 11))))))
+
+(defun gl-memref (ptr type &key (layout :std140))
+  (ecase layout
+    (:std140 (gl-memref-std140 ptr type))
+    ;; TODO: (:std430)
+    ))
+
+(defun (setf gl-memref-std140) (value ptr type)
+  (flet (((setf %ref) (value i)
+           (setf (cffi:mem-aref ptr :float i) value)))
+    (declare (inline (setf %ref)))
+    (ecase type
+      (:int
+       (setf (cffi:mem-ref ptr :int) value))
+      (:uint
+       (setf (cffi:mem-ref ptr :uint) value))
+      (:float
+       (setf (cffi:mem-ref ptr :float) value))
+      (:double
+       (setf (cffi:mem-ref ptr :double) value))
+      (:vec2
+       (setf (%ref 0) (vx2 value))
+       (setf (%ref 1) (vy2 value)))
+      (:vec3
+       (setf (%ref 0) (vx3 value))
+       (setf (%ref 1) (vy3 value))
+       (setf (%ref 2) (vz3 value)))
+      (:vec4
+       (setf (%ref 0) (vx4 value))
+       (setf (%ref 1) (vy4 value))
+       (setf (%ref 2) (vz4 value))
+       (setf (%ref 3) (vw4 value)))
+      (:mat2
+       (loop with idx = #(0 1 4 5)
+             for i from 0 below 4
+             do (setf (%ref (aref idx i)) (miref2 value i))))
+      (:mat3
+       (loop with idx = #(0 1 2 4 5 6 8 9 10)
+             for i from 0 below 9
+             do (setf (%ref (aref idx i)) (miref3 value i))))
+      (:mat4
+       ;; FIXME: could copy raw array with memcpy.
+       (loop for i from 0 below 16
+             do (setf (%ref i) (miref4 value i))))))
+  value)
+
+(defun (setf gl-memref) (value ptr type &key (layout :std140))
+  (ecase layout
+    (:std140 (setf (gl-memref-std140 ptr type) value))
+    ;; TODO: (:std430)
+    ))

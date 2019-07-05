@@ -23,6 +23,9 @@
 (defmethod finalize (object)
   object)
 
+(defun round-to (base number)
+  (* base (ceiling number base)))
+
 (defun gl-property (name)
   (handler-case (gl:get* name)
     (error (err) (declare (ignore err))
