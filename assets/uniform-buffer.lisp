@@ -98,6 +98,7 @@
   (update-buffer-data/ptr buffer (static-vector-pointer (buffer-data buffer)) (size buffer)))
 
 (defmacro with-buffer-tx ((struct buffer) &body body)
+  ;; FIXME: Usurp nested transactions on same buffer.
   (let ((bufferg (gensym "BUFFER")))
     `(let* ((,bufferg ,buffer)
             (,struct (struct ,bufferg)))
