@@ -100,11 +100,6 @@
 (defmethod register :after ((subject subject) (loop event-loop))
   (push loop (event-loops subject)))
 
-(defmethod deregister :before ((subject subject) (loop event-loop))
-  (unless (find loop (event-loops subject))
-    (error "~s is not registered on the event-loop ~s."
-           subject loop)))
-
 (defmethod deregister :after ((subject subject) (loop event-loop))
   (setf (event-loops subject) (remove loop (event-loops subject))))
 
