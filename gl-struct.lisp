@@ -130,6 +130,12 @@
 (defmethod buffer-field-size ((class gl-struct-class) (standard (eql T)) base)
   (buffer-field-size class (layout-standard class) base))
 
+(defmethod buffer-field-stride ((class gl-struct-class) (standard (eql :std140)))
+  (buffer-field-size class standard 0))
+
+(defmethod buffer-field-stride ((class gl-struct-class) (standard (eql T)))
+  (buffer-field-stride class (layout-standard class)))
+
 (defvar *indentation* 0)
 (defmethod describe-memory-layout ((class gl-struct-class) stream offset standard)
   (let ((offset (round-to (buffer-field-base class T) offset)))
