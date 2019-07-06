@@ -97,12 +97,14 @@
 (defmethod update-buffer-data ((buffer uniform-buffer) (data (eql T)) &key)
   (update-buffer-data/ptr buffer (static-vector-pointer (buffer-data buffer)) (size buffer)))
 
+(defvar *buffers-in-tx* ())
 (defmacro with-buffer-tx ((struct buffer) &body body)
-  ;; FIXME: Usurp nested transactions on same buffer.
   (let ((bufferg (gensym "BUFFER")))
-    `(let* ((,bufferg ,buffer)
-            (,struct (struct ,bufferg)))
+    `(let ((,bufferg ,buffer))
        (multiple-value-prog1
-           (progn ,@body)
-         (with-context (*context*)
-           (update-buffer-data ,bufferg T))))))
+           (let ((*buffers-in-tx* (list* ,bufferg *buffers-in-tx*))
+                 (,struct (struct ,bufferg)))
+             ,@body)
+         (unless (find ,bufferg *buffers-in-tx*)
+           (with-context (*context*)
+             (update-buffer-data ,bufferg T)))))))
