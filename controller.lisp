@@ -33,7 +33,8 @@
   ((display :initform NIL :accessor display)
    (text :initform (make-instance 'text :font (asset 'trial 'noto-mono) :size 18) :accessor text)
    (fps-buffer :initform (make-array 100 :fill-pointer T :initial-element 1))
-   (show-overlay :initform NIL :accessor show-overlay))
+   (show-overlay :initform NIL :accessor show-overlay)
+   (observers :initform (make-array 0 :adjustable T :fill-pointer T) :accessor observers))
   (:default-initargs
    :name :controller))
 
@@ -60,18 +61,28 @@
           (setf (vy (location text))
                 (- -5 (getf (text-extent text "a") :t)))
           (setf (vx (location text)) 5)
-          (setf (text text) (format NIL "TIME  [s]: ~8,2f~%~
-                                         FPS  [Hz]: ~8,2f~%~
-                                         RAM  [KB]: ~8d (~2d%)~%~
-                                         VRAM [KB]: ~8d (~2d%)~%~
-                                         RESOURCES: ~8d"
-                                    (clock (scene (display controller)))
-                                    (/ (loop for i from 0 below (array-total-size fps-buffer)
-                                             sum (aref fps-buffer i))
-                                       (array-total-size fps-buffer))
-                                    (- ctotal cfree) (floor (/ (- ctotal cfree) ctotal 0.01))
-                                    (- gtotal gfree) (floor (/ (- gtotal gfree) gtotal 0.01))
-                                    (hash-table-count (resources *context*)))))))))
+          (let ((stream (make-string-output-stream)))
+            (format stream "TIME  [s]: ~8,2f~%~
+                            FPS  [Hz]: ~8,2f~%~
+                            RAM  [KB]: ~8d (~2d%)~%~
+                            VRAM [KB]: ~8d (~2d%)~%~
+                            RESOURCES: ~8d"
+                    (clock (scene (display controller)))
+                    (/ (loop for i from 0 below (array-total-size fps-buffer)
+                             sum (aref fps-buffer i))
+                       (array-total-size fps-buffer))
+                    (- ctotal cfree) (floor (/ (- ctotal cfree) ctotal 0.01))
+                    (- gtotal gfree) (floor (/ (- gtotal gfree) gtotal 0.01))
+                    (hash-table-count (resources *context*)))
+            (loop with observers = (observers controller)
+                  for i from 0 below (length observers)
+                  for (title . func) = (aref observers i)
+                  when func
+                  do (restart-case (format stream "~%~a:~16t~a" title (funcall func ev))
+                       (remove-observer ()
+                         :report "Remove the offending observer."
+                         (setf (aref observers i) NIL))))
+            (setf (text text) (get-output-stream-string stream))))))))
 
 (defmethod paint ((controller controller) target)
   (when (show-overlay controller)
@@ -94,6 +105,27 @@
 (define-handler (controller reload-scene reload-scene 99) (ev)
   (let ((old (scene (display controller))))
     (change-scene (display controller) (make-instance (type-of old) :clock (clock old)))))
+
+(defun find-controller ()
+  (or (when *context* (unit :controller (scene (handler *context*))))
+      (error "No reachable controller found.")))
+
+(defmethod observe ((func function) &key title (controller (find-controller)))
+  (let ((title (or title (format NIL "~d" (length (observers controller))))))
+    (vector-push-extend (cons title func) (observers controller))
+    func))
+
+(defmethod observe (thing &rest args)
+  (apply #'observe (compile NIL `(lambda (ev)
+                                   (declare (ignorable ev))
+                                   ,thing))
+         args))
+
+(defmethod stop-observing (&optional controller)
+  (let ((observers (observers (or controller (find-controller)))))
+    (setf (fill-pointer observers) 0)
+    (loop for i from 0 below (array-total-size observers)
+          do (setf (aref observers i) NIL))))
 
 (defclass load-request (event)
   ((asset :initarg :asset)

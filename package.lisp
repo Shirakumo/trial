@@ -206,6 +206,8 @@
    #:display
    #:text
    #:show-overlay
+   #:observe
+   #:stop-observing
    #:load-request
    #:maybe-reload-scene)
   ;; deferred.lisp
