@@ -132,17 +132,18 @@
 (defmacro define-handler ((class name &optional (event-type name) (priority 0)) args &body body)
   (let ((event (first args))
         (args (rest args)))
-    `(add-handler (make-instance
-                   'subject-handler
-                   :name ',name
-                   :event-type ',event-type
-                   :subject ',class
-                   :priority ,priority
-                   :delivery-function (lambda (,class ,event)
-                                        (declare (ignorable ,class ,event))
-                                        (with-slots ,args ,event
-                                          ,@body)))
-                  ',class)))
+    (destructuring-bind (var class) (enlist class class)
+      `(add-handler (make-instance
+                     'subject-handler
+                     :name ',name
+                     :event-type ',event-type
+                     :subject ',class
+                     :priority ,priority
+                     :delivery-function (lambda (,var ,event)
+                                          (declare (ignorable ,var ,event))
+                                          (with-slots ,args ,event
+                                            ,@body)))
+                    ',class))))
 
 (defmacro define-generic-handler ((class name &optional (event-type name) (priority 0)) &body options)
   `(progn
