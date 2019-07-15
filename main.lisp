@@ -26,8 +26,8 @@
 (defmethod handle (event (main main))
   (issue (scene main) event))
 
-(defmethod update ((main main) tt dt)
-  (issue (scene main) 'tick :tt tt :dt dt)
+(defmethod update ((main main) tt dt fc)
+  (issue (scene main) 'tick :tt tt :dt dt :fc fc)
   (process (scene main)))
 
 (defmethod setup-rendering :after ((main main))

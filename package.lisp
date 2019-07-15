@@ -295,7 +295,8 @@
    #:event
    #:tick
    #:tt
-   #:dt)
+   #:dt
+   #:fc)
   ;; features.lisp
   (:export
    #:*debug-features*
