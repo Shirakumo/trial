@@ -6,13 +6,15 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defmethod coerce-base (base)
-  (destructuring-bind (base &rest sub) (if (listp base) base (list base))
-    (if (and *standalone* (not (pathnamep base)))
-        (merge-pathnames (format NIL "pool/~(~a~)/~{~a/~}" base sub) (deploy:data-directory))
-        (merge-pathnames (format NIL "data/~{~a/~}" sub) (etypecase base
-                                                           (symbol (asdf:system-source-directory base))
-                                                           (pathname base))))))
+(defmethod coerce-base ((system symbol))
+  (pathname-utils:subdirectory (asdf:system-source-directory system) "data"))
+
+(defmethod coerce-base ((pathname pathname))
+  pathname)
+
+(defmethod coerce-base ((list cons))
+  (destructuring-bind (base &rest sub) list
+    (apply #'pathname-utils:subdirectory (coerce-base base) sub)))
 
 (defvar *pools* (make-hash-table :test 'eql))
 
@@ -74,10 +76,13 @@
   (mapc #'finalize (list-assets pool)))
 
 (defmethod pool-path ((pool pool) (null null))
-  (coerce-base (base pool)))
+  (if *standalone*
+      (pathname-utils:subdirectory (deploy:data-directory) "pool"
+                                   (package-name (symbol-package (name pool))) (string-downcase (name pool)))
+      (coerce-base (base pool))))
 
 (defmethod pool-path ((pool pool) pathname)
-  (merge-pathnames pathname (coerce-base (base pool))))
+  (merge-pathnames pathname (pool-path pool NIL)))
 
 (defmethod pool-path ((name symbol) pathname)
   (pool-path (find-pool name T) pathname))

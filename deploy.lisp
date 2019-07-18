@@ -11,7 +11,7 @@
     (deploy:status 1 "Copying pool ~a from ~a" (name pool) (base pool))
     (deploy:copy-directory-tree
      (pool-path pool NIL)
-     (pathname-utils:subdirectory directory "pool" (string-downcase (base pool)))
+     (pathname-utils:subdirectory directory "pool" (package-name (symbol-package (name pool))) (string-downcase (name pool)))
      :copy-root NIL))
   (setf *standalone* T))
 
