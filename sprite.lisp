@@ -90,7 +90,8 @@ void main(){
   (setf (animation subject) (aref (animations subject) index)))
 
 (defmethod (setf animation) ((name symbol) (subject animated-sprite-subject))
-  (setf (animation subject) (find name (animations subject) :key #'sprite-animation-name)))
+  (setf (animation subject) (or (find name (animations subject) :key #'sprite-animation-name)
+                                (error "No animation named ~s found." name))))
 
 (defmethod (setf animation) ((animation sprite-animation) (subject animated-sprite-subject))
   (unless (eql animation (animation subject))
