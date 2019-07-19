@@ -47,6 +47,9 @@
 (defmethod banned-slots append ((object entity))
   ())
 
+(defmethod banned-slots append ((object container-unit))
+  '(scene-graph))
+
 (defmethod compute-resources ((object entity) resources readying cache)
   (loop with banned = (banned-slots object)
         for slot in (c2mop:class-slots (class-of object))
@@ -114,19 +117,19 @@
     (v:debug :trial.loader "Deallocating:~%~a" to-deallocate)
     (map NIL #'deallocate to-deallocate)))
 
-(defmethod transition ((from entity) (to scene))
+(defmethod transition ((from entity) (to container))
   (v:info :trial.loader "Transitioning ~a into ~a." from to)
   (multiple-value-bind (to-load to-ready) (compute-resources-for from)
     (%transition to-load NIL to-ready)
     to))
 
-(defmethod transition ((from null) (to scene))
+(defmethod transition ((from null) (to container))
   (v:info :trial.loader "Transitioning to ~a" to)
   (multiple-value-bind (to-load to-ready) (compute-resources-for to)
     (%transition to-load NIL to-ready)
     to))
 
-(defmethod transition ((from scene) (to null))
+(defmethod transition ((from container) (to null))
   (v:info :trial.loader "Transitioning from ~a" from)
   (let ((to-deallocate (compute-resources-for to)))
     (%transition NIL to-deallocate NIL)
@@ -137,7 +140,7 @@
     (loop for item across b do (setf (gethash item table) T))
     (remove-if (lambda (item) (gethash item table)) a)))
 
-(defmethod transition ((from scene) (to scene))
+(defmethod transition ((from container) (to container))
   (v:info :trial.loader "Transitioning from ~a to ~a" from to)
   (multiple-value-bind (to to-ready) (compute-resources-for to)
     (let* ((from (compute-resources-for from))
