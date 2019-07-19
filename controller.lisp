@@ -8,14 +8,7 @@
 
 (define-action system-action ())
 
-(define-action save-game (system-action)
-  (key-press (eql key :f2)))
-
-(define-action load-game (system-action)
-  (key-press (eql key :f3)))
-
-(define-action reload-scene (system-action)
-  (key-press (eql key :f4)))
+(define-action reload-scene (system-action))
 
 (define-action quit-game (system-action)
   (key-press (and (eql key :q) (find :control modifiers))))
