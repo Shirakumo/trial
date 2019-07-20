@@ -27,7 +27,6 @@
       (setf (last-device-probe handler) (get-internal-real-time))
       (cl-gamepad:detect-devices))))
 
-(setf (v:repl-level) :trace)
 (defun cl-gamepad:device-attached (device)
   (v:info :trial.input.gamepad "Attached ~s"
           (cl-gamepad:print-device device NIL))
