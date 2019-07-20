@@ -16,12 +16,10 @@
   (setf *standalone* T))
 
 (deploy:define-hook (:build trial) ()
-  (cl-monitors:deinit)
   (v:remove-global-controller))
 
 (deploy:define-hook (:boot trial) ()
   (v:restart-global-controller)
-  (cl-monitors:init)
   (setf *random-state* (make-random-state T)))
 
 (deploy:define-library cl-opengl-bindings::opengl

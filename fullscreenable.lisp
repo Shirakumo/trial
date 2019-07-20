@@ -8,19 +8,24 @@
 
 (defclass fullscreenable (display)
   ((original-mode :initform NIL :accessor original-mode)
-   (resolution :accessor resolution)
-   (fullscreen :accessor fullscreen))
+   (resolution :initarg :resolution :accessor resolution)
+   (fullscreen :initarg :fullscreen :accessor fullscreen))
   (:default-initargs
    :resolution (list 800 600)
    :fullscreen NIL))
 
-(defmethod initialize-instance :after ((fullscreenable fullscreenable) &key resolution fullscreen)
-  (setf (original-mode fullscreenable) (cl-monitors:mode
-                                (dolist (monitor (cl-monitors:detect))
-                                  (when (cl-monitors:primary-p monitor)
-                                    (return monitor)))))
-  (setf (resolution fullscreenable) resolution)
-  (setf (fullscreen fullscreenable) fullscreen))
+(defmethod start :after ((fullscreenable fullscreenable))
+  (cl-monitors:init)
+  (setf (original-mode fullscreenable)
+        (cl-monitors:mode
+         (dolist (monitor (cl-monitors:detect))
+           (when (cl-monitors:primary-p monitor)
+             (return monitor)))))
+  (setf (resolution fullscreenable) (resolution fullscreenable))
+  (setf (fullscreen fullscreenable) (fullscreen fullscreenable)))
+
+(defmethod stop :after ((fullscreenable fullscreenable))
+  (cl-monitors:deinit))
 
 (defmethod finalize :after ((fullscreenable fullscreenable))
   (setf (resolution fullscreenable) NIL))
@@ -41,5 +46,3 @@
 
 (defmethod (setf fullscreen) :before (fullscreen (fullscreenable fullscreenable))
   (show (context fullscreenable) :fullscreen fullscreen))
-
-(cl-monitors:init)
