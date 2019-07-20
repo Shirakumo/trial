@@ -20,12 +20,10 @@
                       when keep collect k when keep collect v)))
       (setf context (setf (context display) (apply #'make-context NIL args)))))
   (setf (handler context) display)
-  (add-gamepad-handler display)
   (with-context ((context display))
     (setup-rendering display)))
 
 (defmethod finalize :after ((display display))
-  (remove-gamepad-handler display)
   (finalize (context display)))
 
 (defmethod handle (event (display display)))
@@ -48,6 +46,10 @@
   (enable :blend :multisample :cull-face :line-smooth :depth-test :depth-clamp))
 
 (defmethod paint (source (target display)))
+
+(defgeneric poll-input (target))
+
+(defmethod poll-input ((target display)))
 
 (defmethod render (source (target display))
   (paint source target))

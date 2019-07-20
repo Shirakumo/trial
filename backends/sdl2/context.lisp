@@ -182,7 +182,7 @@
                     (unwind-protect
                          (progn
                            (start main)
-                           (sdl2-event-loop (trial:context main)))
+                           (sdl2-event-loop main))
                       (finalize main))))
              (sdl2-ffi.functions:sdl-quit))))
     #+darwin
@@ -191,73 +191,76 @@
     #-darwin
     (thunk)))
 
-(defun sdl2-event-loop (context)
-  (let ((quit NIL))
+(defun sdl2-event-loop (main)
+  (let ((context (trial:context main))
+        (quit NIL))
     (sdl2:with-sdl-event (ev)
       (loop until quit
-            for event = (sdl2:next-event ev :wait)
-            for type = (sdl2:get-event-type ev)
-            do (with-simple-restart (abort "Don't handle the event.")
-                 (case type
-                   (:keydown
-                    (let* ((keysym (plus-c:c-ref ev sdl2-ffi:sdl-event :key :keysym))
-                           (sym (sdl2:scancode-value keysym))
-                           (mod (sdl2:mod-keywords (sdl2:mod-value keysym))))
-                      (handle (make-instance 'key-press
-                                             :key (sdl2-key->key sym)
-                                             :modifiers (mapcar #'sdl2-mod->mod mod))
-                              (handler context))))
-                   (:keyup
-                    (let* ((keysym (plus-c:c-ref ev sdl2-ffi:sdl-event :key :keysym))
-                           (sym (sdl2:scancode-value keysym))
-                           (mod (sdl2:mod-keywords (sdl2:mod-value keysym))))
-                      (handle (make-instance 'key-release
-                                             :key (sdl2-key->key sym)
-                                             :modifiers (mapcar #'sdl2-mod->mod mod))
-                              (handler context))))
-                   (:mousebuttondown
-                    (let ((button (plus-c:c-ref ev sdl2-ffi:sdl-event :button :button))
-                          (x (plus-c:c-ref ev sdl2-ffi:sdl-event :button :x))
-                          (y (plus-c:c-ref ev sdl2-ffi:sdl-event :button :y)))
-                      (vsetf (mouse-pos context) x y)
-                      (handle (make-instance 'mouse-press
+            for event = (sdl2:next-event ev)
+            do (poll-input main)
+               (when event
+                 (with-simple-restart (abort "Don't handle the event.")
+                   (case (sdl2:get-event-type ev)
+                     (:keydown
+                      (let* ((keysym (plus-c:c-ref ev sdl2-ffi:sdl-event :key :keysym))
+                             (sym (sdl2:scancode-value keysym))
+                             (mod (sdl2:mod-keywords (sdl2:mod-value keysym))))
+                        (handle (make-instance 'key-press
+                                               :key (sdl2-key->key sym)
+                                               :modifiers (mapcar #'sdl2-mod->mod mod))
+                                (handler context))))
+                     (:keyup
+                      (let* ((keysym (plus-c:c-ref ev sdl2-ffi:sdl-event :key :keysym))
+                             (sym (sdl2:scancode-value keysym))
+                             (mod (sdl2:mod-keywords (sdl2:mod-value keysym))))
+                        (handle (make-instance 'key-release
+                                               :key (sdl2-key->key sym)
+                                               :modifiers (mapcar #'sdl2-mod->mod mod))
+                                (handler context))))
+                     (:mousebuttondown
+                      (let ((button (plus-c:c-ref ev sdl2-ffi:sdl-event :button :button))
+                            (x (plus-c:c-ref ev sdl2-ffi:sdl-event :button :x))
+                            (y (plus-c:c-ref ev sdl2-ffi:sdl-event :button :y)))
+                        (vsetf (mouse-pos context) x y)
+                        (handle (make-instance 'mouse-press
+                                               :pos (mouse-pos context)
+                                               :button (sdl2-button->button button))
+                                (handler context))))
+                     (:mousebuttonup
+                      (let ((button (plus-c:c-ref ev sdl2-ffi:sdl-event :button :button))
+                            (x (plus-c:c-ref ev sdl2-ffi:sdl-event :button :x))
+                            (y (plus-c:c-ref ev sdl2-ffi:sdl-event :button :y)))
+                        (vsetf (mouse-pos context) x y)
+                        (handle (make-instance 'mouse-release
+                                               :pos (mouse-pos context)
+                                               :button (sdl2-button->button button))
+                                (handler context))))
+                     (:mousemotion
+                      (let* ((new (vec2 (plus-c:c-ref ev sdl2-ffi:sdl-event :motion :x)
+                                        (plus-c:c-ref ev sdl2-ffi:sdl-event :motion :y)))
+                             (old (shiftf (mouse-pos context) new)))
+                        (handle (make-instance 'mouse-move
+                                               :pos new
+                                               :old-pos old)
+                                (handler context))))
+                     (:mousewheel
+                      (handle (make-instance 'mouse-scroll
                                              :pos (mouse-pos context)
-                                             :button (sdl2-button->button button))
-                              (handler context))))
-                   (:mousebuttonup
-                    (let ((button (plus-c:c-ref ev sdl2-ffi:sdl-event :button :button))
-                          (x (plus-c:c-ref ev sdl2-ffi:sdl-event :button :x))
-                          (y (plus-c:c-ref ev sdl2-ffi:sdl-event :button :y)))
-                      (vsetf (mouse-pos context) x y)
-                      (handle (make-instance 'mouse-release
-                                             :pos (mouse-pos context)
-                                             :button (sdl2-button->button button))
-                              (handler context))))
-                   (:mousemotion
-                    (let* ((new (vec2 (plus-c:c-ref ev sdl2-ffi:sdl-event :motion :x)
-                                      (plus-c:c-ref ev sdl2-ffi:sdl-event :motion :y)))
-                           (old (shiftf (mouse-pos context) new)))
-                      (handle (make-instance 'mouse-move
-                                             :pos new
-                                             :old-pos old)
-                              (handler context))))
-                   (:mousewheel
-                    (handle (make-instance 'mouse-scroll
-                                           :pos (mouse-pos context)
-                                           :delta (plus-c:c-ref ev sdl2-ffi:sdl-event :wheel :y))
-                            (handler context)))
-                   (:textediting
-                    ;; FIXME: Don't know what to do with this, yet.
-                    )
-                   (:textinput
-                    (let ((text (cffi:foreign-string-to-lisp
-                                 (plus-c:c-ref ev sdl2-ffi:sdl-event :text :text plus-c:&)
-                                 :encoding :utf-8)))
-                      (handle (make-instance 'text-entered
-                                             :text text)
-                              (handler context))))
-                   (:quit
-                    (setf quit T))))))))
+                                             :delta (plus-c:c-ref ev sdl2-ffi:sdl-event :wheel :y))
+                              (handler context)))
+                     (:textediting
+                      ;; FIXME: Don't know what to do with this, yet.
+                      )
+                     (:textinput
+                      (let ((text (cffi:foreign-string-to-lisp
+                                   (plus-c:c-ref ev sdl2-ffi:sdl-event :text :text plus-c:&)
+                                   :encoding :utf-8)))
+                        (handle (make-instance 'text-entered
+                                               :text text)
+                                (handler context))))
+                     (:quit
+                      (setf quit T)))))
+            (sleep 0.001)))))
 
 (defun sdl2-button->button (button)
   button)

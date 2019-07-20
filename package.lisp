@@ -236,6 +236,7 @@
   ;; display.lisp
   (:export
    #:display
+   #:poll-input
    #:context
    #:clear-color
    #:setup-rendering

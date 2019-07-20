@@ -176,7 +176,8 @@
              (unwind-protect
                   (catch 'escape
                     (start main)
-                    (loop (glop:dispatch-events context :blocking T :on-foo NIL)))
+                    (loop (glop:dispatch-events context :blocking T :on-foo NIL)
+                          (poll-input main)))
                (finalize main))))
       #+darwin
       (tmt:with-body-in-main-thread (:blocking T)

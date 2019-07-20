@@ -230,3 +230,5 @@
           (qtools::with-traps-masked (thunk)))))
     #-darwin
     (qtools::with-traps-masked (thunk))))
+
+;; FIXME: Call (poll-input main) frequently!

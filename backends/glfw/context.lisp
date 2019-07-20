@@ -193,6 +193,7 @@
                   (loop with window = (window (trial:context main))
                         until (cl-glfw3:window-should-close-p window)
                         do (cl-glfw3:poll-events)
+                           (poll-input main)
                            ;; Apparently bt:thread-yield is a no-op sometimes,
                            ;; making this loop consume the core. Sleep instead.
                            (sleep 0.001))

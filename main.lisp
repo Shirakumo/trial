@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 ;; FIXME: Fullscreenable seems to cause really bad behaviour, idk
-(defclass main (display window)
+(defclass main (display window gamepad-input-handler)
   ((scene :initform (make-instance 'pipelined-scene) :accessor scene)
    (controller :initform (make-instance 'controller) :accessor controller)))
 
