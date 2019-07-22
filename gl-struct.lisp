@@ -124,8 +124,8 @@
 
 (defmethod buffer-field-size ((class gl-struct-class) standard base)
   (round-to (buffer-field-base class standard)
-            (loop for field in (struct-fields class)
-                  sum (buffer-field-size (gl-type field) standard base))))
+            (let ((field (car (last (struct-fields class)))))
+              (+ (base-offset field) (buffer-field-size (gl-type field) standard base)))))
 
 (defmethod buffer-field-size ((class gl-struct-class) (standard (eql T)) base)
   (buffer-field-size class (layout-standard class) base))
@@ -143,8 +143,7 @@
             offset  *indentation* 0 (gl-type class) (buffer-field-size class T offset))
     (let ((*indentation* (1+ *indentation*)))
       (loop for field in (struct-fields class)
-            for start = offset then (+ start size)
-            for size = (describe-memory-layout field stream start standard)))))
+            do (setf offset (describe-memory-layout field stream offset standard))))))
 
 (defmethod describe-object :after ((class gl-struct-class) stream)
   (format stream "~&~%Memory Layout (~a):~%"
@@ -190,7 +189,8 @@
     ,(gl-name slot)))
 
 (defmethod describe-memory-layout ((slot gl-struct-slot) stream offset standard)
-  (let ((size (buffer-field-size (gl-type slot) standard offset)))
+  (let* ((offset (round-to (buffer-field-base (gl-type slot) standard) offset))
+         (size (buffer-field-size (gl-type slot) standard offset)))
     (format stream "~5d ~v{ ~} ~a ~a ~64t(~5dB)~%"
             offset *indentation* 0 (gl-name slot) (gl-type slot) size)
     (when (listp (gl-type slot))
@@ -205,7 +205,7 @@
                         (describe-memory-layout (find-class (second (second (gl-type slot)))) stream start standard)
                         (format stream "~5d ~v{ ~} ~a ~64t(~5dB)~%"
                                 start *indentation* 0 (second (gl-type slot)) (buffer-field-size (second (gl-type slot)) standard start))))))))
-    size))
+    (+ offset size)))
 
 (defclass gl-struct-direct-slot (gl-struct-slot c2mop:standard-direct-slot-definition)
   ())

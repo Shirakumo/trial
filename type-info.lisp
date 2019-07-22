@@ -153,7 +153,7 @@
 (defmethod buffer-field-size ((type (eql :bool)) (standard (eql :std140)) base) 4)
 (defmethod buffer-field-size ((type (eql :float)) (standard (eql :std140)) base) 4)
 (defmethod buffer-field-size ((type (eql :vec2)) (standard (eql :std140)) base) 8)
-(defmethod buffer-field-size ((type (eql :vec3)) (standard (eql :std140)) base) 16)
+(defmethod buffer-field-size ((type (eql :vec3)) (standard (eql :std140)) base) 12)
 (defmethod buffer-field-size ((type (eql :vec4)) (standard (eql :std140)) base) 16)
 (defmethod buffer-field-size ((type (eql :mat2)) (standard (eql :std140)) base) (buffer-field-size '(:array :vec4 2) standard base))
 (defmethod buffer-field-size ((type (eql :mat3)) (standard (eql :std140)) base) (buffer-field-size '(:array :vec4 3) standard base))
