@@ -44,7 +44,8 @@
     (gl:bind-buffer buffer-type (gl-name buffer))
     (unwind-protect
          (%gl:buffer-data buffer-type size data (data-usage buffer))
-      (gl:bind-buffer buffer-type 0))))
+      (gl:bind-buffer buffer-type 0))
+    (setf (size buffer) size)))
 
 (defmethod update-buffer-data ((buffer buffer-object) data &key (buffer-start 0) (data-start 0) count gl-type)
   (with-data-ptr (ptr data-size data :offset data-start :gl-type gl-type)

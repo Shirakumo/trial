@@ -42,6 +42,15 @@
   (:export)
   ;; formats/vertex-format.lisp
   (:export)
+  ;; resources/buffer-object.lisp
+  (:export
+   #:buffer-object
+   #:buffer-type
+   #:buffer-data
+   #:data-usage
+   #:size
+   #:update-buffer-data
+   #:resize-buffer)
   ;; resources/framebuffer.lisp
   (:export
    #:framebuffer
@@ -360,7 +369,9 @@
    #:normal
    #:colored-vertex
    #:color
-   #:basic-vertex)
+   #:basic-vertex
+   #:replace-vertex-data
+   #:make-vertex-data)
   ;; gl-struct.lisp
   (:export
    #:gl-struct
