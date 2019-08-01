@@ -30,8 +30,10 @@
                   (pathname (gethash (geometry-name mesh) (meshes (read-geometry input T))))
                   (T input)))
          (vao (etypecase input
+                ;; FIXME: pass vertex-attributes
                 (vertex-mesh (change-class (copy-instance input) 'vertex-array))
                 (vertex-array input))))
+    (setf (vertex-form mesh) (vertex-form vao))
     (setf (bindings mesh) (mapcar #'enlist (bindings vao)))
     (setf (size mesh) (size vao))
     (loop for (buffer) in (bindings mesh)

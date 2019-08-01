@@ -209,16 +209,16 @@
   (replace-vertex-data (make-array 0 :adjustable T :element-type 'single-float)
                        mesh :attributes attributes))
 
-(defmethod update-instance-for-different-class ((mesh vertex-mesh) (array vertex-array) &key (data-usage :static-draw) (attributes T))
+(defmethod update-instance-for-different-class ((mesh vertex-mesh) (array vertex-array) &key (data-usage :static-draw) (vertex-attributes T))
   (setf (vertex-form array) (ecase (face-length mesh)
                               (1 :points)
                               (2 :lines)
                               (3 :triangles)))
   (if (< 0 (length (vertices mesh)))
       (let* ((primer (aref (vertices mesh) 0))
-             (attributes (etypecase attributes
+             (attributes (etypecase vertex-attributes
                            ((eql T) (vertex-attributes primer))
-                           (list attributes)))
+                           (list vertex-attributes)))
              (sizes (loop for attr in attributes collect (vertex-attribute-size primer attr)))
              (buffer (make-vertex-data mesh :attributes attributes)))
         (setf (data-pointer array) NIL)
@@ -233,8 +233,8 @@
                             for offset = 0 then (+ offset size)
                             for size in sizes
                             for index from 0
-                            collect (list vbo :stride (* stride (cffi:foreign-type-size :float))
-                                              :offset (* offset (cffi:foreign-type-size :float))
+                            collect (list vbo :stride (* stride (gl-type-size :float))
+                                              :offset (* offset (gl-type-size :float))
                                               :size size
                                               :index index))))
           (setf (bindings array) (list* ebo specs))
