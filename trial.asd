@@ -51,6 +51,7 @@
                (:file "layer-set" :depends-on ("package"))
                (:file "loader" :depends-on ("package" "scene" "resource"))
                (:file "main" :depends-on ("package" "display" "toolkit" "scene" "pipeline" "window"))
+               (:file "particle" :depends-on ("package" "shader-subject" "resources"))
                (:file "mapping" :depends-on ("package" "event-loop" "toolkit"))
                (:file "phong" :depends-on ("package" "helpers"))
                (:file "pipeline" :depends-on ("package" "event-loop" "toolkit"))

@@ -6,45 +6,85 @@
 (define-pool workbench
   :base 'trial)
 
-(define-asset (workbench cube) mesh
-    (make-cube 20))
+(define-asset (workbench particles) mesh
+    (make-particle-storage (make-cube 5) :vertex-attributes '(location))
+  :data-usage :stream-draw)
 
 (define-asset (workbench grid) mesh
     (make-line-grid 10 200 200))
-
-(define-asset (workbench cat) image
-    #p"cat.png")
-
-(define-asset (workbench skybox) image
-    '(#p"nissi-beach/posx.jpg"
-      #p"nissi-beach/negx.jpg"
-      #p"nissi-beach/posy.jpg"
-      #p"nissi-beach/negy.jpg"
-      #p"nissi-beach/posz.jpg"
-      #p"nissi-beach/negz.jpg")
-  :target :texture-cube-map)
-
-(define-shader-subject cube (vertex-entity colored-entity textured-entity located-entity rotated-entity selectable)
-  ((vel :initform (/ (random 1.0) (+ 10 (random 20))) :accessor vel))
-  (:default-initargs :vertex-array (asset 'workbench 'cube)
-                     :texture (asset 'workbench 'cat)
-                     :rotation (vec (/ PI -2) 0 0)
-                     :color (vec4-random 0.2 0.8)
-                     :location (vx_z (vec3-random -100 100))))
 
 (define-shader-subject grid (vertex-entity colored-entity)
   ()
   (:default-initargs :vertex-array (asset 'workbench 'grid)))
 
-(define-handler (cube tick) (ev)
-  (incf (vz (rotation cube)) (vel cube)))
+(define-shader-subject fireworks (particle-emitter)
+  ()
+  (:default-initargs :vertex-array (asset 'workbench 'particles)))
+
+(defmethod initial-particle-state ((fireworks fireworks) tick loc vel)
+  (vsetf loc 0 0 0)
+  (vsetf vel (- (random 1.0) 0.5) 3.0 (- (random 1.0) 0.5))
+  (nv* vel 2)
+  (+ 1.0 (random 1.0)))
+
+(defmethod update-particle-state ((fireworks fireworks) tick loc vel life)
+  (nv+ loc vel)
+  ;;(decf (vy3 vel) 0.1)
+  (- life (dt tick)))
+
+(defmethod new-particle-count ((fireworks fireworks) tick)
+  (if (= 0 (mod (fc tick) 60))
+      100000
+      0))
+
+(defmethod paint :before ((fireworks fireworks) (pass shader-pass))
+  (let ((program (shader-program-for-pass pass fireworks)))
+    (setf (uniform program "view_matrix") (view-matrix))
+    (setf (uniform program "projection_matrix") (projection-matrix))
+    (setf (uniform program "model_matrix") (model-matrix))))
+
+(define-class-shader (fireworks :vertex-shader)
+  "layout (location = 0) in vec3 vtx_location;
+layout (location = 1) in vec3 location;
+layout (location = 2) in vec3 velocity;
+layout (location = 3) in float lifetime;
+
+uniform mat4 model_matrix;
+uniform mat4 view_matrix;
+uniform mat4 projection_matrix;
+
+out PARTICLE_DATA{
+  vec3 location;
+  vec3 velocity;
+  float lifetime;
+} particle_out;
+
+void main(){
+  vec3 position = vtx_location + location;
+  gl_Position = projection_matrix * view_matrix * model_matrix * vec4(position, 1.0f);
+
+  particle_out.location = location;
+  particle_out.velocity = velocity;
+  particle_out.lifetime = lifetime;
+}")
+
+(define-class-shader (fireworks :fragment-shader)
+  "out vec4 color;
+
+in PARTICLE_DATA{
+  vec3 location;
+  vec3 velocity;
+  float lifetime;
+} particle;
+
+void main(){
+  color = vec4(clamp(particle.lifetime, 0, 1));
+}")
 
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
-    (enter (make-instance 'skybox :texture (asset 'workbench 'skybox)) scene)
     (enter (make-instance 'grid) scene)
-    (dotimes (i 5)
-      (enter (make-instance 'cube) scene))
+    (enter (make-instance 'fireworks) scene)
     (enter (make-instance 'editor-camera :location (vec 0 100 150)) scene)
     (enter (make-instance 'render-pass) scene))
 
