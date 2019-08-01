@@ -34,8 +34,7 @@
 
 (define-shader-subject grid (vertex-entity colored-entity)
   ()
-  (:default-initargs :vertex-array (asset 'workbench 'grid)
-                     :vertex-form :lines))
+  (:default-initargs :vertex-array (asset 'workbench 'grid)))
 
 (define-handler (cube tick) (ev)
   (incf (vz (rotation cube)) (vel cube)))

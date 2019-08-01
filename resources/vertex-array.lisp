@@ -8,9 +8,11 @@
 
 (defclass vertex-array (gl-resource)
   ((size :initarg :size :initform NIL :accessor size)
-   (bindings :initarg :bindings :accessor bindings))
+   (bindings :initarg :bindings :accessor bindings)
+   (vertex-form :initarg :vertex-form :accessor vertex-form))
   (:default-initargs
-   :bindings (error "BINDINGS required.")))
+   :bindings (error "BINDINGS required.")
+   :vertex-form :triangles))
 
 (defmethod print-object ((array vertex-array) stream)
   (print-unreadable-object (array stream :type T :identity T)

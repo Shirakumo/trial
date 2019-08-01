@@ -66,8 +66,7 @@
   (flare:update clocked-subject))
 
 (define-shader-entity vertex-entity ()
-  ((vertex-array :initarg :vertex-array :accessor vertex-array)
-   (vertex-form :initarg :vertex-form :initform :triangles :accessor vertex-form)))
+  ((vertex-array :initarg :vertex-array :accessor vertex-array)))
 
 (defmethod paint ((subject vertex-entity) (pass shader-pass))
   (let ((program (shader-program-for-pass pass subject)))
@@ -76,7 +75,7 @@
     (setf (uniform program "projection_matrix") (projection-matrix)))
   (let ((vao (vertex-array subject)))
     (gl:bind-vertex-array (gl-name vao))
-    (%gl:draw-elements (vertex-form subject) (size vao) :unsigned-int 0)
+    (%gl:draw-elements (vertex-form vao) (size vao) :unsigned-int 0)
     (gl:bind-vertex-array 0)))
 
 (define-class-shader (vertex-entity :vertex-shader)
