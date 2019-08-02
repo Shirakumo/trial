@@ -71,7 +71,7 @@
                   for i from 0 below (length observers)
                   for (title . func) = (aref observers i)
                   when func
-                  do (restart-case (format stream "~%~a:~16t~a" title (funcall func ev))
+                  do (restart-case (format stream "~%~a:~12t~a" title (funcall func ev))
                        (remove-observer ()
                          :report "Remove the offending observer."
                          (setf (aref observers i) NIL))))

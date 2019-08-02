@@ -31,6 +31,14 @@
     (error (err) (declare (ignore err))
       :unavailable)))
 
+(defun polar->cartesian (vec)
+  (etypecase vec
+    (vec2 (vec2 (* (vx2 vec) (cos (vy2 vec)))
+                (* (vx2 vec) (sin (vy2 vec)))))
+    (vec3 (vec3 (* (vx3 vec) (cos (vy3 vec)) (sin (vz3 vec)))
+                (* (vx3 vec) (sin (vy3 vec)) (sin (vz3 vec)))
+                (* (vx3 vec)                 (cos (vz3 vec)))))))
+
 (defmethod apply-class-changes ((class standard-class)))
 
 (defmethod apply-class-changes :before ((class standard-class))
