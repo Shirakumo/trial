@@ -69,6 +69,9 @@
 (defmethod coerce-asset-input ((asset asset) (list list))
   (loop for item in list collect (coerce-asset-input asset item)))
 
+(defmethod input* ((asset asset))
+  (coerce-asset-input asset (input asset)))
+
 (defmacro define-asset ((pool name) type input &rest options)
   (check-type pool symbol)
   (check-type name symbol)

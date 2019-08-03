@@ -95,7 +95,9 @@
                 :components ((:file "font")
                              (:file "image")
                              (:file "mesh")
-                             (:file "uniform-buffer" :depends-on ((:.. "gl-struct")))))
+                             (:file "struct-buffer" :depends-on ((:.. "gl-struct")))
+                             (:file "uniform-buffer" :depends-on ("struct-buffer"))
+                             (:file "vertex-struct-buffer" :depends-on ("struct-buffer"))))
                (:module "formats"
                 :depends-on ("package" "geometry" "static-vector")
                 :components ((:file "vertex-format")

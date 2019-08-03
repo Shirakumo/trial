@@ -9,6 +9,10 @@
 (define-asset (workbench grid) mesh
     (make-line-grid 10 200 200))
 
+(define-asset (workbench particles) vertex-struct-buffer
+    'simple-particle
+  :struct-count 1024)
+
 (define-shader-subject grid (vertex-entity colored-entity)
   ()
   (:default-initargs :vertex-array (asset 'workbench 'grid)))
@@ -16,28 +20,37 @@
 (define-shader-subject fireworks (particle-emitter)
   ()
   (:default-initargs :name :fireworks
-                     :vertex-array (make-particle-storage (make-sphere 2)
-                                                          :max-particles 16384
-                                                          :vertex-attributes '(location))))
+                     :vertex-array (add-vertex-bindings
+                                    (asset 'workbench 'particles)
+                                    (change-class (make-sphere 1) 'vertex-array
+                                                  :vertex-attributes '(location)))))
 
-(defmethod initial-particle-state ((fireworks fireworks) tick loc vel life)
-  (vsetf loc 0 0 0)
+(defmethod initial-particle-state ((fireworks fireworks) tick particle)
+  (setf (location particle) (vec 0 0 0))
   (flet ((hash (x)
            (sxhash x)))
     (let ((dir (polar->cartesian (vec2 (/ (hash (fc tick)) (ash 2 60)) (mod (hash (fc tick)) 100)))))
-      (vsetf vel (vx dir) (+ 2.5 (mod (hash (fc tick)) 2)) (vy dir))))
-  (vsetf life 0 (+ 3.0 (random 1.0))))
+      (setf (velocity particle) (vec (vx dir) (+ 2.5 (mod (hash (fc tick)) 2)) (vy dir)))))
+  (setf (lifetime particle) (vec 0 (+ 3.0 (random 1.0)))))
 
-(defmethod update-particle-state ((fireworks fireworks) tick loc vel life)
-  (nv+ loc vel)
-  (decf (vy3 vel) 0.005)
-  (when (< (vy loc) 0)
-    (setf (vy vel) (- (vy vel)))
-    (setf (vy loc) 0))
-  (when (< (abs (- (vx life) 2.5)) 0.05)
-    (let ((dir (polar->cartesian (vec3 (+ 1.5 (random 0.125)) (random (* 2 PI)) (random (* 2 PI))))))
-      (vsetf vel (vx dir) (vy dir) (vz dir))))
-  (incf (vx2 life) (dt tick)))
+(defmethod update-particle-state ((fireworks fireworks) tick particle)
+  (let ((loc (location particle))
+        (vel (velocity particle))
+        (life (lifetime particle)))
+    (nv+ loc vel)
+    (decf (vy3 vel) 0.005)
+    (when (< (vy loc) 0)
+      (setf (vy vel) (- (vy vel)))
+      (setf (vy loc) 0))
+    (when (< (abs (- (vx life) 2.5)) 0.05)
+      (let ((dir (polar->cartesian (vec3 (+ 1.5 (random 0.125)) (random (* 2 PI)) (random (* 2 PI))))))
+        (vsetf vel (vx dir) (vy dir) (vz dir))))
+    (incf (vx2 life) (dt tick))
+    
+    (setf (location particle) loc)
+    (setf (velocity particle) vel)
+    (setf (lifetime particle) life)
+    (< (vx2 life) (vy2 life))))
 
 (defmethod new-particle-count ((fireworks fireworks) tick)
   (if (= 0 (mod (fc tick) (* 10 1)))

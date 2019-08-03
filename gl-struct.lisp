@@ -50,12 +50,17 @@
 
 (defclass gl-struct-class (standard-class)
   ((gl-type :initarg :gl-type :accessor gl-type)
-   (layout-standard :initarg :layout-standard :initform :std140 :reader layout-standard)))
+   (layout-standard :initform :std140 :reader layout-standard)))
 
 (defmethod initialize-instance :after ((class gl-struct-class) &key)
   (unless (slot-boundp class 'gl-type)
     (setf (gl-type class) (cffi:translate-camelcase-name (class-name class)
                                                          :upper-initial-p T))))
+
+(defmethod shared-initialize :after ((class gl-struct-class) slots &key layout-standard)
+  (when layout-standard
+    (setf (slot-value class 'layout-standard)
+          (unlist layout-standard))))
 
 (defmethod c2mop:validate-superclass ((a gl-struct-class) (b T))  NIL)
 (defmethod c2mop:validate-superclass ((a gl-struct-class) (b standard-class)) T)
@@ -89,9 +94,26 @@
     ,(gl-type class)
     ,@(mapcar #'gl-source (struct-fields class))))
 
+(defmethod vertex-layout ((class gl-struct-class))
+  (let ((stride (buffer-field-stride class :vertex-buffer)))
+    (values (loop for offset = 0 then (+ offset size)
+                  for field in (struct-fields class)
+                  for size = (buffer-field-size (gl-type field) :vertex-buffer 0)
+                  collect (list :offset offset
+                                :size (ecase (gl-type field)
+                                        ((:float :int) 1)
+                                        ((:vec2) 2)
+                                        ((:vec3) 3)
+                                        ((:vec4) 4)
+                                        ((:mat2) 4)
+                                        ((:mat3) 9)
+                                        ((:mat4) 16))
+                                :stride stride))
+            stride)))
+
 (defmethod c2mop:compute-slots ((class gl-struct-class))
   (let ((slots (call-next-method))
-        (standard (layout-standard class))
+        (standard (slot-value class 'layout-standard))
         (offset 0))
     ;; Compute discrete slot offsets.
     (loop for slot in slots
@@ -119,6 +141,9 @@
             (loop for field in (struct-fields class)
                   maximize (buffer-field-base (gl-type field) standard))))
 
+(defmethod buffer-field-base ((class gl-struct-class) (standard (eql :vertex-buffer)))
+  1)
+
 (defmethod buffer-field-base ((class gl-struct-class) (standard (eql T)))
   (buffer-field-base class (layout-standard class)))
 
@@ -131,6 +156,9 @@
   (buffer-field-size class (layout-standard class) base))
 
 (defmethod buffer-field-stride ((class gl-struct-class) (standard (eql :std140)))
+  (buffer-field-size class standard 0))
+
+(defmethod buffer-field-stride ((class gl-struct-class) (standard (eql :vertex-buffer)))
   (buffer-field-size class standard 0))
 
 (defmethod buffer-field-stride ((class gl-struct-class) (standard (eql T)))
@@ -298,10 +326,12 @@
 ;; FIXME: Figure out direct accessor functions
 
 (defmacro define-gl-struct (name &body slots)
-  `(defclass ,name (gl-struct)
-     ,(loop for (slot type . args) in slots
-            collect (list* slot :gl-type type args))
-     (:metaclass gl-struct-class)))
+  (destructuring-bind (name . options) (enlist name)
+    `(defclass ,name (,@(cdr (assoc :include options)) gl-struct)
+       ,(loop for (slot type . args) in slots
+              collect (list* slot :gl-type type args))
+       (:metaclass gl-struct-class)
+       ,@(remove :include options :key #'car))))
 
 ;;; Only for primitive types.
 ;;; FIXME: factor out into trivial-* library

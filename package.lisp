@@ -8,7 +8,7 @@
 (defpackage #:trial
   (:nicknames #:org.shirakumo.fraf.trial)
   (:use #:cl #:3d-vectors #:3d-matrices #:flare)
-  (:shadow #:scene #:entity #:load #:update)
+  (:shadow #:scene #:entity #:load #:update #:particle)
   (:import-from #:static-vectors #:static-vector-pointer)
   (:import-from #:flow #:port)
   ;; assets/font.lisp
