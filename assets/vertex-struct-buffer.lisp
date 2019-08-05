@@ -10,6 +10,9 @@
   ((struct-count :initarg :struct-count :initform (error "STRUCT-COUNT required.") :accessor struct-count)
    (struct-vector :accessor struct-vector)))
 
+(defmethod reinitialize-instance :after ((buffer vertex-struct-buffer) &key struct-count)
+  (when struct-count (c2mop:update-dependent (input* buffer) buffer)))
+
 (defmethod vertex-layout ((buffer vertex-struct-buffer))
   (vertex-layout (input* buffer)))
 

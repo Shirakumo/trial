@@ -14,21 +14,16 @@
   (location :vec3 :accessor location)
   (velocity :vec3 :accessor velocity))
 
-(define-shader-subject particle-emitter (bakable)
+(define-shader-subject particle-emitter ()
   ((live-particles :initform 0 :accessor live-particles)
-   (vertex-array :initarg :vertex-array :accessor vertex-array)
-   (vertex-buffer  :initform NIL :accessor vertex-buffer)))
+   (vertex-array :accessor vertex-array)
+   (particle-buffer :initarg :particle-buffer :accessor particle-buffer)))
 
-(defmethod bake ((emitter particle-emitter))
-  (let ((array (etypecase (vertex-array emitter)
-                 (mesh (input (vertex-array emitter)))
-                 (vertex-array (vertex-array emitter)))))
-    (setf (vertex-buffer emitter)
-          (loop for binding in (bindings array)
-                do (when (and (listp binding)
-                              (eql 1 (getf (rest binding) :instancing)))
-                     (return (first binding)))
-                finally (error "No instanced binding found in ~a" array)))))
+(defmethod initialize-instance :after ((emitter particle-emitter) &key particle-mesh particle-buffer)
+  (setf (vertex-array emitter)
+        (add-vertex-bindings
+         particle-buffer
+         (change-class particle-mesh 'vertex-array))))
 
 (defmethod paint ((emitter particle-emitter) pass)
   (let ((vao (vertex-array emitter)))
@@ -36,18 +31,18 @@
     (%gl:draw-elements-instanced (vertex-form vao) (size vao) :unsigned-int 0 (live-particles emitter))))
 
 (defgeneric initial-particle-state (emitter tick particle))
-(defgeneric update-particle-state (emitter tick particle))
+(defgeneric update-particle-state (emitter tick input output))
 (defgeneric new-particle-count (emitter tick)) ; => N
 
 (define-handler (particle-emitter tick) (ev)
-  (let ((vbo (vertex-buffer particle-emitter))
+  (let ((vbo (particle-buffer particle-emitter))
         (write-offset 0))
     (let ((data (struct-vector vbo)))
       (declare (type simple-vector data))
       (loop for read-offset from 0 below (live-particles particle-emitter)
             for particle = (aref data read-offset)
             do (when (< (vx2 (lifetime particle)) (vy2 (lifetime particle)))
-                 (when (update-particle-state particle-emitter ev particle)
+                 (when (update-particle-state particle-emitter ev particle (aref data write-offset))
                    (incf write-offset))))
       (loop repeat (new-particle-count particle-emitter ev)
             while (< write-offset (length data))

@@ -20,10 +20,9 @@
 (define-shader-subject fireworks (particle-emitter)
   ()
   (:default-initargs :name :fireworks
-                     :vertex-array (add-vertex-bindings
-                                    (asset 'workbench 'particles)
-                                    (change-class (make-sphere 1) 'vertex-array
-                                                  :vertex-attributes '(location)))))
+                     :particle-mesh (change-class (make-sphere 1) 'vertex-array
+                                                  :vertex-attributes '(location))
+                     :particle-buffer (asset 'workbench 'particles)))
 
 (defmethod initial-particle-state ((fireworks fireworks) tick particle)
   (setf (location particle) (vec 0 0 0))
@@ -33,7 +32,7 @@
       (setf (velocity particle) (vec (vx dir) (+ 2.5 (mod (hash (fc tick)) 2)) (vy dir)))))
   (setf (lifetime particle) (vec 0 (+ 3.0 (random 1.0)))))
 
-(defmethod update-particle-state ((fireworks fireworks) tick particle)
+(defmethod update-particle-state ((fireworks fireworks) tick particle output)
   (let ((loc (location particle))
         (vel (velocity particle))
         (life (lifetime particle)))
@@ -47,9 +46,9 @@
         (vsetf vel (vx dir) (vy dir) (vz dir))))
     (incf (vx2 life) (dt tick))
     
-    (setf (location particle) loc)
-    (setf (velocity particle) vel)
-    (setf (lifetime particle) life)
+    (setf (location output) loc)
+    (setf (velocity output) vel)
+    (setf (lifetime output) life)
     (< (vx2 life) (vy2 life))))
 
 (defmethod new-particle-count ((fireworks fireworks) tick)
