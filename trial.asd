@@ -17,7 +17,7 @@
   :version "1.2.0"
   :author "Nicolas Hafner <shinmera@tymoon.eu>"
   :maintainer "Nicolas Hafner <shinmera@tymoon.eu>"
-  :license "Artistic"
+  :license "zlib"
   :description "A flexible and extensible video game engine."
   :homepage "https://Shirakumo.github.io/trial/"
   :bug-tracker "https://github.com/Shirakumo/trial/issues"
