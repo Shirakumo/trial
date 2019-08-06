@@ -9,97 +9,56 @@
 (define-asset (workbench grid) mesh
     (make-line-grid 10 200 200))
 
-(define-asset (workbench particles) vertex-struct-buffer
-    'simple-particle
-  :struct-count 1024)
-
 (define-shader-subject grid (vertex-entity colored-entity)
   ()
   (:default-initargs :vertex-array (asset 'workbench 'grid)))
 
-(define-shader-subject fireworks (particle-emitter)
+(define-asset (workbench particles) vertex-struct-buffer
+    'simple-particle
+  :struct-count 1024)
+
+(define-shader-subject fireworks (simple-particle-emitter)
   ()
-  (:default-initargs :name :fireworks
-                     :particle-mesh (change-class (make-sphere 1) 'vertex-array
-                                                  :vertex-attributes '(location))
+  (:default-initargs :particle-mesh (change-class (make-sphere 1) 'vertex-array :vertex-attributes '(location))
                      :particle-buffer (asset 'workbench 'particles)))
 
 (defmethod initial-particle-state ((fireworks fireworks) tick particle)
-  (setf (location particle) (vec 0 0 0))
-  (flet ((hash (x)
-           (sxhash x)))
-    (let ((dir (polar->cartesian (vec2 (/ (hash (fc tick)) (ash 2 60)) (mod (hash (fc tick)) 100)))))
-      (setf (velocity particle) (vec (vx dir) (+ 2.5 (mod (hash (fc tick)) 2)) (vy dir)))))
+  (let ((dir (polar->cartesian (vec2 (/ (sxhash (fc tick)) (ash 2 60)) (mod (sxhash (fc tick)) 100)))))
+    (setf (velocity particle) (vec (vx dir) (+ 2.5 (mod (sxhash (fc tick)) 2)) (vy dir))))
   (setf (lifetime particle) (vec 0 (+ 3.0 (random 1.0)))))
 
-(defmethod update-particle-state ((fireworks fireworks) tick particle output)
-  (let ((loc (location particle))
-        (vel (velocity particle))
-        (life (lifetime particle)))
-    (nv+ loc vel)
+(defmethod update-particle-state :before ((fireworks fireworks) tick particle output)
+  (let ((vel (velocity particle)))
     (decf (vy3 vel) 0.005)
-    (when (< (vy loc) 0)
-      (setf (vy vel) (- (vy vel)))
-      (setf (vy loc) 0))
-    (when (< (abs (- (vx life) 2.5)) 0.05)
+    (when (< (abs (- (vx (lifetime particle)) 2.5)) 0.05)
       (let ((dir (polar->cartesian (vec3 (+ 1.5 (random 0.125)) (random (* 2 PI)) (random (* 2 PI))))))
         (vsetf vel (vx dir) (vy dir) (vz dir))))
-    (incf (vx2 life) (dt tick))
-    
-    (setf (location output) loc)
-    (setf (velocity output) vel)
-    (setf (lifetime output) life)
-    (< (vx2 life) (vy2 life))))
+    (setf (velocity output) vel)))
 
 (defmethod new-particle-count ((fireworks fireworks) tick)
   (if (= 0 (mod (fc tick) (* 10 1)))
       128 0))
 
-(defmethod paint :before ((fireworks fireworks) (pass shader-pass))
-  (let ((program (shader-program-for-pass pass fireworks)))
-    (setf (uniform program "view_matrix") (view-matrix))
-    (setf (uniform program "projection_matrix") (projection-matrix))
-    (setf (uniform program "model_matrix") (model-matrix))))
-
-(define-class-shader (fireworks :vertex-shader)
-  "layout (location = 0) in vec3 vtx_location;
-layout (location = 1) in vec2 lifetime;
+(define-class-shader (fireworks :vertex-shader 1)
+  "layout (location = 1) in vec2 in_lifetime;
 layout (location = 2) in vec3 location;
-layout (location = 3) in vec3 velocity;
 
-uniform mat4 model_matrix;
-uniform mat4 view_matrix;
-uniform mat4 projection_matrix;
-
-out PARTICLE_DATA{
-  vec2 lifetime;
-  vec3 location;
-  vec3 velocity;
-} particle_out;
+out vec2 lifetime;
 
 void main(){
-  vec3 position = vtx_location + location;
-  gl_Position = projection_matrix * view_matrix * model_matrix * vec4(position, 1.0f);
-
-  particle_out.lifetime = lifetime;
-  particle_out.location = location;
-  particle_out.velocity = velocity;
+  lifetime = in_lifetime;
 }")
 
 (define-class-shader (fireworks :fragment-shader)
   "out vec4 color;
 
-in PARTICLE_DATA{
-  vec2 lifetime;
-  vec3 location;
-  vec3 velocity;
-} particle;
+in vec2 lifetime;
 
 void main(){
-  if(particle.lifetime.x <= 2.5)
+  if(lifetime.x <= 2.5)
     color = vec4(1);
   else{
-    float lt = particle.lifetime.y-particle.lifetime.x;
+    float lt = lifetime.y-lifetime.x;
     color = vec4(lt*2, lt, 0, 1);
   }
 }")

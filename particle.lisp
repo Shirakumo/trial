@@ -6,13 +6,8 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-gl-struct particle
+(define-gl-struct (particle (:layout-standard :vertex-buffer))
   (lifetime :vec2 :accessor lifetime))
-
-(define-gl-struct (simple-particle (:include particle)
-                                   (:layout-standard :vertex-buffer))
-  (location :vec3 :accessor location)
-  (velocity :vec3 :accessor velocity))
 
 (define-shader-subject particle-emitter ()
   ((live-particles :initform 0 :accessor live-particles)
@@ -50,3 +45,39 @@
                (incf write-offset))
       (setf (live-particles particle-emitter) write-offset)
       (update-buffer-data vbo T))))
+
+(define-gl-struct (simple-particle (:include particle)
+                                   (:layout-standard :vertex-buffer))
+  (location :vec3 :accessor location)
+  (velocity :vec3 :accessor velocity))
+
+(define-shader-subject simple-particle-emitter (particle-emitter)
+  ())
+
+(defmethod initial-particle-state :before ((emitter simple-particle-emitter) tick particle)
+  (setf (location particle) (vec 0 0 0)))
+
+(defmethod update-particle-state ((emitter simple-particle-emitter) tick particle output)
+  (setf (location output) (v+ (location particle) (velocity particle)))
+  (let ((life (lifetime particle)))
+    (incf (vx2 life) (dt tick))
+    (setf (lifetime output) life)
+    (< (vx2 life) (vy2 life))))
+
+(defmethod paint :before ((emitter simple-particle-emitter) (pass shader-pass))
+  (let ((program (shader-program-for-pass pass emitter)))
+    (setf (uniform program "view_matrix") (view-matrix))
+    (setf (uniform program "projection_matrix") (projection-matrix))
+    (setf (uniform program "model_matrix") (model-matrix))))
+
+(define-class-shader (simple-particle-emitter :vertex-shader)
+  "layout (location = 0) in vec3 vtx_location;
+
+uniform mat4 model_matrix;
+uniform mat4 view_matrix;
+uniform mat4 projection_matrix;
+
+void main(){
+  vec3 position = vtx_location + location;
+  gl_Position = projection_matrix * view_matrix * model_matrix * vec4(position, 1.0f);
+}")
