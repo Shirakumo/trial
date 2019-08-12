@@ -61,7 +61,9 @@
    #:shader-program
    #:uniform-map
    #:shaders
-   #:uniform)
+   #:uniform
+   #:uniform-location
+   #:uniforms)
   ;; resources/shader.lisp
   (:export
    #:shader

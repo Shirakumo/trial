@@ -46,7 +46,7 @@
 
 (defmethod load ((font font))
   (let ((handle (cl-fond::calloc '(:struct cl-fond-cffi:font)))
-        (file (uiop:native-namestring (coerce-asset-input font T))))
+        (file (uiop:native-namestring (input* font))))
     (with-cleanup-on-failure (deallocate font)
       (setf (cl-fond:handle font) handle)
       (setf (cl-fond-cffi:font-file handle) (cffi:foreign-string-alloc file :encoding :utf-8))
