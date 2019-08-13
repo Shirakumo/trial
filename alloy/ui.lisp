@@ -42,3 +42,24 @@
 (define-event-translator trial:mouse-scroll alloy:scroll
   :delta (trial:delta ev)
   :location (vec->point (trial:pos ev)))
+
+(define-event-translator trial:text-entered alloy:text-event
+  :text (trial:text ev))
+
+(define-event-translator trial:key-press alloy:key-down
+  :key (trial:key ev)
+  :code 0)
+
+(define-event-translator trial:key-release alloy:key-up
+  :key (trial:key ev)
+  :code 0)
+
+(define-event-translator trial:gamepad-press alloy:button-down
+  :device (trial:device ev)
+  :button (trial:button ev))
+
+(define-event-translator trial:gamepad-release alloy:button-up
+  :device (trial:device ev)
+  :button (trial:button ev))
+
+;; paste-event?
