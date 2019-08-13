@@ -98,7 +98,10 @@
 
 (defmethod opengl:draw-vertex-array ((array trial:vertex-array) primitive-type count)
   (gl:bind-vertex-array (trial:gl-name array))
-  (%gl:draw-arrays primitive-type 0 count))
+  (if (loop for binding in (trial:bindings array)
+            thereis (typep binding 'trial:vertex-buffer))
+      (%gl:draw-elements primitive-type count :unsigned-int 0)
+      (%gl:draw-arrays primitive-type 0 count)))
 
 (defmethod alloy:allocate ((array trial:vertex-array))
   (trial:allocate array))

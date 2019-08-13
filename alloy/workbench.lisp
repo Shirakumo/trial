@@ -15,14 +15,25 @@
            (focus (alloy:focus-tree ui))
            (layout (alloy:layout-tree ui))
            (button (make-instance 'alloy:button :text "Foo"))
-           (button2 (make-instance 'alloy:button :text "Bar")))
+           (button2 (make-instance 'alloy:button :text "Bar"))
+           (button3 (make-instance 'alloy:button :text "Baz")))
       (let ((layout (make-instance 'alloy:vertical-linear-layout :parent layout
                                                                  :min-size (alloy:size 200 30))))
         (alloy:enter button layout)
-        (alloy:enter button2 layout))
+        (let ((inner (make-instance 'alloy:horizontal-linear-layout :parent layout
+                                                                    :min-size (alloy:size 200 30))))
+          (alloy:enter inner layout)
+          (alloy:enter button2 inner)
+          (let ((layout (make-instance 'alloy:vertical-linear-layout :parent inner
+                                                                     :min-size (alloy:size 200 30))))
+            (alloy:enter layout inner)
+            (alloy:enter button3 layout)
+            (alloy:enter (make-instance 'alloy:label :text "Bam") layout)))
+        (alloy:enter (make-instance 'alloy:label :text "Boof") layout))
       (let ((focus (make-instance 'alloy:focus-list :parent focus)))
         (alloy:enter button focus)
-        (alloy:enter button2 focus)))
+        (alloy:enter button2 focus)
+        (alloy:enter button3 focus)))
     (trial:enter (make-instance 'trial:2d-camera) scene)
     (trial:enter (make-instance 'trial:render-pass) scene))
 
