@@ -42,5 +42,3 @@
 (define-event-translator trial:mouse-scroll alloy:scroll
   :delta (trial:delta ev)
   :location (vec->point (trial:pos ev)))
-
-(trace alloy:handle (setf alloy:focus))

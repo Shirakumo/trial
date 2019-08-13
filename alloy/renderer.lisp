@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial.alloy)
 
-(defclass renderer (opengl:renderer trial:resource)
+(defclass renderer (org.shirakumo.alloy.renderers.opengl.fond:renderer trial:resource)
   ())
 
 (defmethod alloy:allocate ((renderer renderer))
@@ -74,10 +74,12 @@
 (defmethod alloy:deallocate ((shader trial:shader-program))
   (trial:deallocate shader))
 
-(defmethod opengl:make-vertex-buffer ((renderer renderer) contents &key (data-usage :static-draw))
+(defmethod opengl:make-vertex-buffer ((renderer renderer) contents &key (data-usage :static-draw)
+                                                                        (buffer-type :array-buffer))
   (make-instance 'trial:vertex-buffer
                  :buffer-data contents
-                 :data-usage data-usage))
+                 :data-usage data-usage
+                 :buffer-type buffer-type))
 
 (defmethod opengl:update-vertex-buffer ((buffer trial:vertex-buffer) contents)
   (trial:update-buffer-data buffer contents))
@@ -87,6 +89,9 @@
 
 (defmethod alloy:deallocate ((buffer trial:vertex-buffer))
   (trial:deallocate buffer))
+
+(defmethod opengl:gl-name ((buffer trial:vertex-buffer))
+  (trial:gl-name buffer))
 
 (defmethod opengl:make-vertex-array ((renderer renderer) bindings)
   (make-instance 'trial:vertex-array :bindings bindings :vertex-form NIL))
@@ -113,24 +118,7 @@
 (defmethod simple:size ((image trial:image))
   (alloy:size (trial:width image) (trial:height image)))
 
-(defmethod (setf simple:font) ((font trial:font) (style simple:style))
-  (setf (slot-value style 'simple:font) font))
+(defmethod trial:dependencies ((font simple:font)))
 
-(defmethod simple:request-font ((renderer renderer) (fontspec pathname))
-  (make-instance 'trial:font :input fontspec))
-
-(defmethod simple:request-font ((renderer renderer) (fontspec (eql :default)))
-  (trial:asset 'trial:trial 'trial:noto-sans))
-
-(defmethod alloy:allocate ((font trial:font))
-  (trial:allocate font))
-
-(defmethod alloy:deallocate ((font trial:font))
-  (trial:deallocate font))
-
-(defmethod simple:text ((renderer renderer) point string &key (font (simple:font renderer))
-                                                              (size (simple:font-size renderer))
-                                                              (align :start)
-                                                              (direction :right)
-                                                              (vertical-align :bottom))
-  )
+(defmethod simple:request-font ((renderer renderer) (font (eql :default)))
+  (simple:request-font renderer (trial::input* (trial:asset 'trial:trial 'trial:noto-sans))))

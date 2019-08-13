@@ -13,6 +13,8 @@
   :bug-tracker "https://github.com/Shirakumo/trial/issues"
   :source-control (:git "https://github.com/Shirakumo/trial.git")
   :components ((:file "package")
-               (:file "renderer"))
+               (:file "renderer")
+               (:file "ui"))
   :depends-on (:trial
-               :alloy-opengl))
+               :alloy-opengl
+               :alloy-opengl-fond))
