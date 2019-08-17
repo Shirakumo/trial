@@ -43,7 +43,7 @@
   (gl:front-face :ccw)
   (gl:cull-face :back)
   (gl:hint :line-smooth-hint :nicest)
-  (enable :blend :multisample :cull-face :line-smooth :depth-test :depth-clamp))
+  (enable :blend :multisample :cull-face :stencil-test :line-smooth :depth-test :depth-clamp))
 
 (defmethod paint (source (target display)))
 
