@@ -75,7 +75,10 @@
     (setf (uniform program "projection_matrix") (projection-matrix)))
   (let ((vao (vertex-array subject)))
     (gl:bind-vertex-array (gl-name vao))
-    (%gl:draw-elements (vertex-form vao) (size vao) :unsigned-int 0)
+    ;; KLUDGE: Bad for performance!
+    (if (find 'vertex-buffer (bindings vao) :key #'type-of)
+        (%gl:draw-elements (vertex-form vao) (size vao) :unsigned-int 0)
+        (%gl:draw-arrays (vertex-form vao) 0 (size vao)))
     (gl:bind-vertex-array 0)))
 
 (define-class-shader (vertex-entity :vertex-shader)
