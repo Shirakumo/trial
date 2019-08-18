@@ -92,6 +92,7 @@
   ;; resources/vertex-array.lisp
   (:export
    #:vertex-array
+   #:vertex-form
    #:size
    #:bindings)
   ;; resources/vertex-buffer.lisp
