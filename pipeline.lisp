@@ -69,6 +69,8 @@
       (setf (getf texspec :width) 'width))
     (unless (getf texspec :height)
       (setf (getf texspec :height) 'height))
+    (unless (getf texspec :target)
+      (setf (getf texspec :target) :texture-2d))
     texspec))
 
 (defmethod normalized-texspec ((port texture-port))

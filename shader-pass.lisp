@@ -51,8 +51,9 @@
                 (join-texspec (normalized-texspec (texspec input))
                               (normalized-texspec (texspec other))))
       (error "Pipeline is not consistent.~%~
-              Pass ~s' input ~s is not texture compatible with output ~s."
-             (flow:node input) input other))))
+              Pass ~s' input ~s~%  ~s~%is not texture compatible with output ~s'~%  ~s."
+             (flow:node input) input (normalized-texspec (texspec input))
+             other (normalized-texspec (texspec other))))))
 
 (defclass output (flow:out-port flow:n-port texture-port)
   ((attachment :initarg :attachment :accessor attachment))
