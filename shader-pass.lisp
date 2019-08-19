@@ -43,9 +43,6 @@
 (defclass image-out (image-port flow:out-port flow:n-port)
   ((access :initform :write-only)))
 
-(defclass image-in-out (image-port flow:n-port)
-  ((access :initform :read-write)))
-
 ;; FIXME: check for duplicate inputs/outputs.
 (defclass uniform-port (flow:port)
   ((uniform-name :initarg :uniform :initform NIL :accessor uniform-name)))

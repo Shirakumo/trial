@@ -298,18 +298,27 @@
                       "KEYWORD"))))))
 
 (defun join-texture-format-typespec (a b)
-  (flet ((same (a b)
-           (cond ((eql a b) (values a T)) ((null a) (values b T)) ((null b) (values a T))))
-         (max* (a b)
-           (cond ((and a b) (max a b)) (a a) (b b))))
-    (cond ((and a b)
-           (when (and (nth-value 1 (same (second a) (second b)))
-                      (nth-value 1 (same (third a) (third b))))
-             (list (max* (first a) (first b))
-                   (same (second a) (second b))
-                   (same (third a) (third b)))))
-          (a a)
-          (b b))))
+  (flet ((max* (a b)
+           (cond ((and a b) (max a b))
+                 (a a)
+                 (b b))))
+    (cond ((null b) (values a T))
+          ((null a) (values b T))
+          ((equal a b) (values a T))
+          (T
+           (destructuring-bind (a-b a-t a-s) a
+             (destructuring-bind (b-b b-t b-s) b
+               (cond ((and (member a-t '(:float NIL))
+                           (member b-t '(:float NIL)))
+                      (values (list (max* a-b b-b)
+                                    (or a-t b-t)
+                                    (or a-s b-s))
+                              T))
+                     ((and (eq a-t b-t) (eq a-s b-s))
+                      (values (list (max* a-b b-b)
+                                    a-t
+                                    a-s)
+                              T)))))))))
 
 (defun join-texture-format (a b)
   (let ((a (destructure-texture-format a))
@@ -317,7 +326,10 @@
     (flet ((same (field)
              (equal (getf a field) (getf b field)))
            (join-texture-format-typespec* (f)
-             (join-texture-format-typespec (getf a f) (getf b f))))
+             (multiple-value-bind (spec joinable) (join-texture-format-typespec (getf a f) (getf b f))
+               (if joinable
+                   spec
+                   (return-from join-texture-format NIL)))))
       (when (and (same :features)
                  (same :shared))
         (cond ((and (getf a :depth) (getf b :depth))
