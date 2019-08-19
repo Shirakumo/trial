@@ -63,10 +63,10 @@
              (not (getf args :pixel-format))
              (not (slot-boundp texture 'pixel-format)))
     (setf (getf args :pixel-format) (texture-internal-format->pixel-format (getf args :internal-format))))
-  (when (and (getf args :pixel-format)
+  (when (and (getf args :internal-format)
              (not (getf args :pixel-type))
              (not (slot-boundp texture 'pixel-type)))
-    (setf (getf args :pixel-type) (pixel-format->pixel-type (getf args :pixel-format))))
+    (setf (getf args :pixel-type) (texture-internal-format->pixel-type (getf args :internal-format))))
   (apply #'call-next-method texture slots args))
 
 (defmethod shared-initialize :before ((texture texture) slots &rest initargs)
