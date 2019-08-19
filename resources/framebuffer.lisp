@@ -23,8 +23,6 @@
   (mapcar #'second (attachments framebuffer)))
 
 (defmethod allocate ((framebuffer framebuffer))
-  (unless (attachments framebuffer)
-    (error "~a does not have any attachments." framebuffer))
   (let ((fbo (gl:gen-framebuffer))
         (color-attachments (loop for attachment in (attachments framebuffer)
                                  unless (find (first attachment) '(:depth-attachment :stencil-attachment :depth-stencil-attachment))
