@@ -101,7 +101,8 @@
            ;; FIXME: This is really dumb and inefficient. If we could remember which port belongs
            ;;        to which joined texspec instead it could be much better and wouldn't need to
            ;;        recompute everything all the time.
-           (and (typep port 'output) (join-texspec texspec (normalized-texspec port)))))
+           (and (and (typep port 'flow:out-port))
+                (join-texspec texspec (normalized-texspec port)))))
     (flow:allocate-ports passes :sort NIL :test #'kind :attribute :texid)
     (let* ((texture-count (loop for pass in passes
                                 when (flow:ports pass)
@@ -132,7 +133,8 @@
          (textures (make-array 0 :initial-element NIL :adjustable T)))
     ;; Compute texture set
     (let ((texspecs (loop for port in (mapcan #'flow:ports passes)
-                          when (typep port 'output)
+                          when (and (typep port 'flow:out-port)
+                                    (typep port 'texture-port))
                           collect (normalized-texspec port))))
       (dolist (texspec (join-texspecs texspecs))
         (allocate-textures passes textures texspec)))
@@ -152,7 +154,7 @@
         (setf (framebuffer pass)
               (make-instance 'framebuffer
                              :attachments (loop for port in (flow:ports pass)
-                                                when (typep port '(and output (not buffer)))
+                                                when (typep port 'output)
                                                 collect (list (attachment port) (texture port))))))
       ;; All done.
       (v:info :trial.pipeline "~a pass order: ~a" pipeline passes)

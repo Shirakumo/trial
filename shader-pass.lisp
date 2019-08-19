@@ -30,6 +30,22 @@
 
 (flow:define-port-value-slot texture-port texture texture)
 
+;; FIXME: What about binding multiple levels and layers of the same texture?
+(defclass image-port (texture-port)
+  ((binding :initarg :binding :initform 0 :accessor binding)
+   (access :initarg :access :initform (error "ACCESS required.") :accessor access)))
+
+(defmethod check-consistent ((port image-port)))
+
+(defclass image-in (image-port flow:in-port flow:1-port)
+  ((access :initform :read-only)))
+
+(defclass image-out (image-port flow:out-port flow:n-port)
+  ((access :initform :write-only)))
+
+(defclass image-in-out (image-port flow:n-port)
+  ((access :initform :read-write)))
+
 ;; FIXME: check for duplicate inputs/outputs.
 (defclass uniform-port (flow:port)
   ((uniform-name :initarg :uniform :initform NIL :accessor uniform-name)))
@@ -60,9 +76,6 @@
   (:default-initargs :attachment :color-attachment0))
 
 (defmethod check-consistent ((output output))
-  ())
-
-(defclass buffer (output uniform-port)
   ())
 
 (define-shader-subject shader-pass (flow:static-node)
@@ -134,10 +147,16 @@
              with texture-name = ',(loop for unit in units collect
                                          (intern (format NIL "~a~a" :texture unit) "KEYWORD"))
              for port in (flow:ports pass)
-             do (when (and (typep port 'uniform-port) (texture port))
-                  (setf (uniform program (uniform-name port)) (pop texture-index))
-                  (gl:active-texture (pop texture-name))
-                  (gl:bind-texture :texture-2d (gl-name (texture port)))))
+             do (typecase port
+                  (uniform-port
+                   (when (texture port)
+                     (setf (uniform program (uniform-name port)) (pop texture-index))
+                     (gl:active-texture (pop texture-name))
+                     (gl:bind-texture :texture-2d (gl-name (texture port)))))
+                  (image-port
+                   (when (texture port)
+                     (%gl:bind-image-texture (binding port) (gl-name (texture port)) 0 T 0 (access port)
+                                             (internal-format (texture port)))))))
        (loop for (name value) in (uniforms pass)
              do (setf (uniform program name) value)))))
 
