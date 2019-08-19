@@ -153,6 +153,8 @@
           (add-handler pass pipeline))
         (setf (framebuffer pass)
               (make-instance 'framebuffer
+                             :width (width pass)
+                             :height (height pass)
                              :attachments (loop for port in (flow:ports pass)
                                                 when (typep port 'output)
                                                 collect (list (attachment port) (texture port))))))

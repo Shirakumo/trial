@@ -80,9 +80,15 @@
 
 (define-shader-subject shader-pass (flow:static-node)
   ((framebuffer :initform NIL :accessor framebuffer)
+   (width :initarg :width :initform NIL :accessor width)
+   (height :initarg :height :initform NIL :accessor height)
    (uniforms :initarg :uniforms :initform () :accessor uniforms))
   (:metaclass shader-pass-class)
   (:inhibit-shaders (shader-entity :fragment-shader)))
+
+(defmethod (setf framebuffer) :after ((framebuffer framebuffer) (pass shader-pass))
+  (setf (width pass) (width framebuffer))
+  (setf (height pass) (height framebuffer)))
 
 (define-class-shader (shader-pass :fragment-shader)
   "#version 330 core")
