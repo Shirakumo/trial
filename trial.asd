@@ -66,7 +66,7 @@
                (:file "scene" :depends-on ("package" "event-loop" "entity"))
                (:file "selection-buffer" :depends-on ("package" "render-texture" "scene" "effects" "loader"))
                (:file "shader-entity" :depends-on ("package" "entity"))
-               (:file "shader-pass" :depends-on ("package" "shader-subject" "resource" "scene" "loader" "context"))
+               (:file "shader-pass" :depends-on ("package" "shader-subject" "resource" ("resources" "framebuffer") "scene" "loader" "context"))
                (:file "shader-subject" :depends-on ("package" "shader-entity" "subject"))
                (:file "shadow-map" :depends-on ("package" "shader-pass" "transforms"))
                (:file "skybox" :depends-on ("package" "shader-subject" "transforms"))
