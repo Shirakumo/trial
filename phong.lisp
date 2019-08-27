@@ -57,7 +57,7 @@ struct Material {
   sampler2D specular;
   sampler2D normal;
   float shininess;
-}
+};
 
 struct Light {
   vec3 position;
@@ -66,7 +66,7 @@ struct Light {
   float outer;
   vec3 color;
   float ambient;
-}
+};
 
 uniform vec3 camera_pos;
 uniform Light light;
