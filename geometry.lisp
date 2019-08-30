@@ -209,11 +209,13 @@
   (replace-vertex-data (make-array 0 :adjustable T :element-type 'single-float)
                        mesh :attributes attributes))
 
-(defmethod update-instance-for-different-class ((mesh vertex-mesh) (array vertex-array) &key (data-usage :static-draw) (vertex-attributes T))
-  (setf (vertex-form array) (ecase (face-length mesh)
-                              (1 :points)
-                              (2 :lines)
-                              (3 :triangles)))
+(defmethod update-instance-for-different-class ((mesh vertex-mesh) (array vertex-array) &key (data-usage :static-draw) (vertex-attributes T) vertex-form)
+  (setf (vertex-form array)
+        (or vertex-form
+            (ecase (face-length mesh)
+              (1 :points)
+              (2 :lines)
+              (3 :triangles))))
   (if (< 0 (length (vertices mesh)))
       (let* ((primer (aref (vertices mesh) 0))
              (attributes (etypecase vertex-attributes
