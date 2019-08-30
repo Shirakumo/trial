@@ -118,6 +118,9 @@
 (defmethod alloy:deallocate ((texture trial:texture))
   (trial:deallocate texture))
 
+(defmethod opengl:bind ((texture trial:texture))
+  (gl:bind-texture :texture-2D (trial:gl-name texture)))
+
 (defmethod simple:size ((image trial:image))
   (alloy:size (trial:width image) (trial:height image)))
 
