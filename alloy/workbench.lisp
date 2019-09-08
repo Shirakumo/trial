@@ -7,11 +7,14 @@
 (in-package #:org.shirakumo.fraf.trial.alloy)
 
 (defclass workbench (trial:main) ()
-  (:default-initargs :clear-color (vec 0.3 0.3 0.3)))
+  (:default-initargs :clear-color (vec 0.1 0.1 0.1)))
+
+(defclass dui (ui org.shirakumo.alloy.renderers.simple.presentations::default-look-and-feel)
+  ())
 
 (progn
   (defmethod trial:setup-scene ((workbench workbench) scene)
-    (let* ((ui (trial:enter (make-instance 'ui) scene))
+    (let* ((ui (trial:enter (make-instance 'dui) scene))
            (focus (alloy:focus-tree ui))
            (layout (alloy:layout-tree ui))
            (save (make-instance 'alloy:button :text "Save"))
@@ -32,7 +35,8 @@
       (let ((focus (make-instance 'alloy:focus-list :parent focus)))
         (alloy:enter autosave focus)
         (alloy:enter title focus)
-        (alloy:enter save focus)))
+        (alloy:enter save focus))
+      (alloy:register ui ui))
     (trial:enter (make-instance 'trial:2d-camera) scene)
     (trial:enter (make-instance 'trial:render-pass) scene))
 
