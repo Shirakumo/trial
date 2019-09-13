@@ -1,73 +1,98 @@
 (in-package #:trial)
 
 (defclass workbench (main) ()
-  (:default-initargs :clear-color (vec 0 0 0 0)))
+  (:default-initargs :clear-color (vec 1 1 1 0)))
 
 (define-pool workbench
   :base 'trial)
 
-(define-asset (workbench grid) mesh
-    (make-line-grid 10 200 200))
+(defclass msdf-font (gl-asset texture)
+  ((data :accessor data)))
 
-(define-shader-subject grid (vertex-entity colored-entity)
-  ()
-  (:default-initargs :vertex-array (asset 'workbench 'grid)))
+(defmethod load ((font msdf-font))
+  (let ((data (3b-bmfont:read-bmfont (input* font))))
+    (setf (data font) data)
+    (setf (internal-format font)
+          (cond ((3b-bmfont:alpha-chnl data) :RGBA)
+                ((3b-bmfont:blue-chnl data) :RGB)
+                ((3b-bmfont:green-chnl data) :RG)
+                ((3b-bmfont:red-chnl data) :R)
+                (T (error "WTF"))))
+    ;; FIXME: Multiple pages?
+    (let ((file (merge-pathnames (getf (aref (3b-bmfont:pages data) 0) :file) (input* font))))
+      (multiple-value-bind (data width height pixel-type pixel-format)
+          (load-image file T)
+        (setf (width font) width)
+        (setf (height font) height)
+        (setf (pixel-data font) data)
+        (setf (pixel-type font) pixel-type)
+        (setf (pixel-format font) pixel-format)
+        (allocate font)))))
 
-(define-asset (workbench particles) vertex-struct-buffer
-    'simple-particle
-  :struct-count 1024)
+(defmethod render-text ((text string) (vbo vertex-buffer) (font msdf-font))
+  (let ((mesh (make-instance 'vertex-mesh :vertex-type 'trial:textured-vertex)))
+    (with-vertex-filling (mesh)
+      (labels ((thunk (x- y- x+ y+ u- v- u+ v+)
+                 (vertex :location (vec2 x- y+) :uv (vec2 u- (- 1 v-)))
+                 (vertex :location (vec2 x- y-) :uv (vec2 u- (- 1 v+)))
+                 (vertex :location (vec2 x+ y+) :uv (vec2 u+ (- 1 v-)))
+                 (vertex :location (vec2 x+ y+) :uv (vec2 u+ (- 1 v-)))
+                 (vertex :location (vec2 x- y-) :uv (vec2 u- (- 1 v+)))
+                 (vertex :location (vec2 x+ y-) :uv (vec2 u+ (- 1 v+)))))
+        (3b-bmfont:map-glyphs (data font) #'thunk text :y-up T)))
+    (replace-vertex-data (buffer-data vbo) mesh)
+    (when (allocated-p vbo)
+      (resize-buffer vbo T))
+    (length (vertices mesh))))
 
-(define-shader-subject fireworks (simple-particle-emitter)
-  ()
-  (:default-initargs :particle-mesh (change-class (make-sphere 1) 'vertex-array :vertex-attributes '(location))
-                     :particle-buffer (asset 'workbench 'particles)))
+(define-shader-entity msdf-text (vertex-entity textured-entity readied)
+  ((text :initarg :text :accessor text)
+   (texture :initarg :font :accessor font))
+  (:inhibit-shaders (textured-entity :fragment-shader)))
 
-(defmethod initial-particle-state ((fireworks fireworks) tick particle)
-  (let ((dir (polar->cartesian (vec2 (/ (sxhash (fc tick)) (ash 2 60)) (mod (sxhash (fc tick)) 100)))))
-    (setf (velocity particle) (vec (vx dir) (+ 2.5 (mod (sxhash (fc tick)) 2)) (vy dir))))
-  (setf (lifetime particle) (vec 0 (+ 3.0 (random 1.0)))))
+(defmethod initialize-instance :after ((text msdf-text) &key)
+  (let ((vbo (make-instance 'vertex-buffer :buffer-data (make-array 0 :adjustable T :element-type 'single-float))))
+    (setf (vertex-array text) (make-instance 'vertex-array :bindings `((,vbo :size 2 :offset 0 :stride 16)
+                                                                       (,vbo :size 2 :offset 8 :stride 16))
+                                                           :vertex-form :triangles))))
 
-(defmethod update-particle-state :before ((fireworks fireworks) tick particle output)
-  (let ((vel (velocity particle)))
-    (decf (vy3 vel) 0.005)
-    (when (< (abs (- (vx (lifetime particle)) 2.5)) 0.05)
-      (let ((dir (polar->cartesian (vec3 (+ 1.5 (random 0.125)) (random (* 2 PI)) (random (* 2 PI))))))
-        (vsetf vel (vx dir) (vy dir) (vz dir))))
-    (setf (velocity output) vel)))
+(defmethod (setf text) :after ((string string) (text msdf-text))
+  (let ((verts (render-text string (caar (bindings (vertex-array text))) (font text))))
+    (setf (size (vertex-array text)) verts)
+    string))
 
-(defmethod new-particle-count ((fireworks fireworks) tick)
-  (if (= 0 (mod (fc tick) (* 10 1)))
-      128 0))
+(defmethod resources-ready ((text msdf-text))
+  (setf (text text) (text text)))
 
-(define-class-shader (fireworks :vertex-shader 1)
-  "layout (location = 1) in vec2 in_lifetime;
-layout (location = 2) in vec3 location;
+(define-class-shader (msdf-text :fragment-shader)
+  "in vec2 texcoord;
+uniform sampler2D texture_image;
+uniform float pxRange = 4;
+uniform vec4 bgColor = vec4(1, 0, 0, 0.5);
+uniform vec4 fgColor = vec4(0, 0, 0, 1);
 
-out vec2 lifetime;
+out vec4 color;
 
-void main(){
-  lifetime = in_lifetime;
+float median(float r, float g, float b) {
+    return max(min(r, g), min(max(r, g), b));
+}
+
+void main() {
+    vec2 msdfUnit = pxRange/vec2(textureSize(texture_image, 0));
+    vec3 msdfData = texture(texture_image, texcoord).rgb;
+    float sigDist = median(msdfData.r, msdfData.g, msdfData.b) - 0.5;
+    sigDist *= dot(msdfUnit, 0.5/fwidth(texcoord));
+    float opacity = clamp(sigDist + 0.5, 0.0, 1.0);
+    color = mix(bgColor, fgColor, opacity);
 }")
 
-(define-class-shader (fireworks :fragment-shader)
-  "out vec4 color;
-
-in vec2 lifetime;
-
-void main(){
-  if(lifetime.x <= 2.5)
-    color = vec4(1);
-  else{
-    float lt = lifetime.y-lifetime.x;
-    color = vec4(lt*2, lt, 0, 1);
-  }
-}")
+(define-asset (workbench font) msdf-font
+    #p"NotoMono-Regular.fnt")
 
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
-    (enter (make-instance 'grid) scene)
-    (enter (make-instance 'fireworks) scene)
-    (enter (make-instance 'editor-camera :location (vec 0 100 150)) scene)
+    (enter (make-instance 'msdf-text :font (asset 'workbench 'font) :text "Thanks for all your good work, |3b|!") scene)eo
+    (enter (make-instance 'editor-camera) scene)
     (enter (make-instance 'render-pass) scene))
 
   (maybe-reload-scene))

@@ -106,7 +106,7 @@
   3)
 
 (defmethod fill-vertex-attribute ((vertex vertex) (attribute (eql 'location)) data offset)
-  (fill-vector-data (location vertex) 'vec3 data offset))
+  (fill-vector-data (location vertex) (type-of (location vertex)) data offset))
 
 (defgeneric vertex-attributes (vertex)
   (:method-combination append :most-specific-last))
@@ -206,6 +206,7 @@
   buffer)
 
 (defmethod make-vertex-data ((mesh vertex-mesh) &key (attributes T))
+  ;; Would be better if we didn't have to create an adjustable vector...
   (replace-vertex-data (make-array 0 :adjustable T :element-type 'single-float)
                        mesh :attributes attributes))
 

@@ -23,7 +23,13 @@
   (call-next-method buffer size :data data :data-start data-start
                                 :gl-type (element-type buffer)))
 
-(defmethod allocate :before ((buffer buffer-object))
+(defmethod resize-buffer ((buffer vertex-buffer) (size (eql T)) &key data (data-start 0))
+  (let* ((data (or data (buffer-data buffer)))
+         (size (* (gl-type-size (element-type buffer))
+                  (- (length data) data-start))))
+    (call-next-method buffer size :data data :data-start data-start)))
+
+(defmethod allocate :before ((buffer vertex-buffer))
   (let ((buffer-data (buffer-data buffer)))
     (when (and (not (size buffer)) (vectorp buffer-data))
       (setf (size buffer) (* (length buffer-data)
