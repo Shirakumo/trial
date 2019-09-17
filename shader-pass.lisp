@@ -207,6 +207,8 @@
   (gethash (effective-shader-class subject) (assets pass)))
 
 (defmethod coerce-pass-shader ((pass per-object-pass) class type)
+  ;; FIXME: This re-introduces shaders from the pass that were suppressed in the
+  ;;        object and vice-versa
   (let ((sources (remove NIL (list (effective-shader type class)
                                    (effective-shader type pass)))))
     (when sources
