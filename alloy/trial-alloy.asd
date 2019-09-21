@@ -16,5 +16,6 @@
                (:file "renderer")
                (:file "ui"))
   :depends-on (:trial
+               :alloy-simple-presentations
                :alloy-opengl
                :alloy-opengl-fond))

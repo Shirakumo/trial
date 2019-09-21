@@ -15,28 +15,30 @@
 (progn
   (defmethod trial:setup-scene ((workbench workbench) scene)
     (let* ((ui (trial:enter (make-instance 'dui) scene))
+           (data (list NIL ""))
            (focus (alloy:focus-tree ui))
            (layout (alloy:layout-tree ui))
-           (save (make-instance 'alloy:button :text "Save"))
-           (autosave (make-instance 'alloy:switch))
-           (title (make-instance 'alloy:input-line)))
-      (let ((layout (make-instance 'alloy:vertical-linear-layout :parent layout
-                                                                 :min-size (alloy:size 200 30))))
+           (save (alloy:represent "Save" 'alloy:button :renderer ui
+                                                       :style `((:background :fill-color ,(simple:color 1 0 0)))))
+           (autosave (alloy:represent (first data) 'alloy:switch :renderer ui))
+           (title (alloy:represent (second data) 'alloy:input-line :renderer ui)))
+      (let* ((focus (make-instance 'alloy:focus-list :focus-parent focus))
+             (layout (make-instance 'alloy:vertical-linear-layout :layout-parent layout
+                                                                  :renderer ui
+                                                                  :min-size (alloy:size 200 30))))
         (alloy:enter save layout)
-        (let ((inner (make-instance 'alloy:grid-layout :parent layout
-                                                       :cell-margins (alloy:margins :l 2 :u 2 :r 2 :b 2)
-                                                       :col-sizes #(100 200)
-                                                       :row-sizes #(30 30))))
+        (let* ((inner (make-instance 'alloy:grid-layout :layout-parent layout
+                                                        :cell-margins (alloy:margins :l 2 :u 2 :r 2 :b 2)
+                                                        :col-sizes #(100 T)
+                                                        :row-sizes #(30 30))))
           (alloy:enter inner layout)
           (alloy:enter "Autosave" inner :col 0 :row 0)
           (alloy:enter autosave inner :col 1 :row 0)
           (alloy:enter "Title" inner :col 0 :row 1)
-          (alloy:enter title inner :col 1 :row 1)))
-      (let ((focus (make-instance 'alloy:focus-list :parent focus)))
-        (alloy:enter autosave focus)
-        (alloy:enter title focus)
-        (alloy:enter save focus))
-      (alloy:register ui ui))
+          (alloy:enter title inner :col 1 :row 1)
+          (alloy:enter autosave focus)
+          (alloy:enter title focus)
+          (alloy:enter save focus))))
     (trial:enter (make-instance 'trial:2d-camera) scene)
     (trial:enter (make-instance 'trial:render-pass) scene))
 
