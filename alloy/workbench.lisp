@@ -28,7 +28,7 @@
                                                                   :min-size (alloy:size 200 30))))
         (alloy:enter save layout)
         (let* ((inner (make-instance 'alloy:grid-layout :layout-parent layout
-                                                        :cell-margins (alloy:margins :l 2 :u 2 :r 2 :b 2)
+                                                        :cell-margins (alloy:margins 2)
                                                         :col-sizes #(100 T)
                                                         :row-sizes #(30 30))))
           (alloy:enter inner layout)
