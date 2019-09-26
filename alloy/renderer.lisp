@@ -39,7 +39,7 @@
 
     (setf (aref target 6) 0f0)
     (setf (aref target 7) 0f0)
-    (setf (aref target 8) 1f0)))
+    (setf (aref target 8) -1f0)))
 
 (defmethod opengl:make-shader ((renderer renderer) &key vertex-shader fragment-shader)
   (let ((vert (make-instance 'trial:shader :source vertex-shader
@@ -53,6 +53,8 @@
     (etypecase value
       (simple:color
        (%gl:uniform-4f loc (simple:r value) (simple:g value) (simple:b value) (simple:a value)))
+      (alloy:point
+       (%gl:uniform-2f loc (alloy:x value) (alloy:y value)))
       (vector
        #+sbcl
        (sb-sys:with-pinned-objects (value)
