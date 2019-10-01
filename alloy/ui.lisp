@@ -18,14 +18,14 @@
 (defmethod trial:handle ((ev trial:event) (ui ui)))
 
 (defmethod trial:handle ((ev trial:resize) (ui ui))
-  (alloy:suggest-bounds (alloy:extent 0 0 (trial:width ev) (trial:height ev)) ui))
+  (alloy:suggest-bounds (alloy:px-extent 0 0 (trial:width ev) (trial:height ev)) ui))
 
 (defmacro define-event-translator (trial-type alloy-type &body args)
   `(defmethod trial:handle ((ev ,trial-type) (ui ui))
      (alloy:handle (make-instance ',alloy-type ,@args) T ui)))
 
 (defun vec->point (vec)
-  (alloy:point (vx vec) (vy vec)))
+  (alloy:px-point (vx vec) (vy vec)))
 
 (define-event-translator trial:mouse-move alloy:pointer-move
   :old-location (vec->point (trial:old-pos ev))
