@@ -62,6 +62,7 @@
           (setf (scene main) new))
       (abort ()
         :report "Give up changing the scene and continue with the old."
+        :test (lambda (c) (declare (ignore c)) old)
         (when old (start old)))))
   (values new old))
 
