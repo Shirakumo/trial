@@ -14,7 +14,8 @@
   :source-control (:git "https://github.com/Shirakumo/trial.git")
   :components ((:file "package")
                (:file "renderer")
-               (:file "ui"))
+               (:file "ui")
+               (:file "workbench"))
   :depends-on (:trial
                :alloy-simple-presentations
                :alloy-opengl

@@ -26,12 +26,11 @@
            (option-a (alloy:represent-with 'alloy:radio option :active-value :on :renderer ui))
            (option-b (alloy:represent-with 'alloy:radio option :active-value :off :renderer ui))
            (volume (alloy:represent (fifth data) 'alloy:slider :renderer ui))
-           (voices (alloy:represent (sixth data) 'alloy::combo-set :renderer ui :value-set '(:male :female :none))))
-      (let* ((focus (make-instance 'alloy:focus-list :focus-parent focus))
-             (layout (make-instance 'alloy:vertical-linear-layout :layout-parent layout
-                                                                  :renderer ui
-                                                                  :cell-margins (alloy:margins 3)
-                                                                  :min-size (alloy:size 200 30))))
+           (voices (alloy:represent (sixth data) 'alloy::combo-set :renderer ui :value-set '(:none :male :female :skeleton))))
+      (let ((layout (make-instance 'alloy:vertical-linear-layout :layout-parent layout
+                                                                 :renderer ui
+                                                                 :cell-margins (alloy:margins 5)
+                                                                 :min-size (alloy:size 200 30))))
         (alloy:enter save layout)
         (alloy:enter progress layout)
         (let* ((inner (make-instance 'alloy:grid-layout :layout-parent layout
@@ -57,6 +56,7 @@
         (alloy:enter option-a focus)
         (alloy:enter option-b focus)
         (alloy:enter volume focus)
+        (alloy:enter voices focus)
         (alloy:enter save focus)))
     (trial:enter (make-instance 'trial:2d-camera) scene)
     (trial:enter (make-instance 'trial:render-pass) scene))
