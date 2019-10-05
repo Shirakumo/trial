@@ -6,6 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+;; FIXME: get rid of this shit or at least find a better way to do this stuff.
 (defvar *scene*)
 
 (defclass scene (flare:scene event-loop entity)
