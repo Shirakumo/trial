@@ -333,6 +333,7 @@
   ;; geometry-shapes.lisp
   (:export
    #:make-rectangle
+   #:make-triangle
    #:make-cube
    #:make-quad-grid
    #:make-line-grid

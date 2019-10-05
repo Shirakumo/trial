@@ -33,6 +33,22 @@
       (vertex :position (vec l u z) :uv (vec 0.0 1.0))
       (vertex :position (vec r u z) :uv (vec 1.0 1.0)))))
 
+(defun make-triangle (w h &key (orientation :right) mesh pack (x 0) (y 0) (z 0))
+  (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
+    (let ((l (- x (/ w 2)))
+          (r (+ x (/ w 2)))
+          (u (+ y (/ h 2)))
+          (b (- y (/ h 2))))
+      (ecase orientation
+        (:up
+         (vertex :position (vec l b z))
+         (vertex :position (vec r b z))
+         (vertex :position (vec x u z)))
+        (:right
+         (vertex :position (vec l u z))
+         (vertex :position (vec l b z))
+         (vertex :position (vec r y z)))))))
+
 (defun make-cube (size &key mesh pack (x 0) (y 0) (z 0))
   (destructuring-bind (w d h) (enlist size size size)
     (let ((w (/ w 2)) (d (/ d 2)) (h (/ h 2)))
