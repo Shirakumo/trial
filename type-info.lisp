@@ -230,15 +230,15 @@
       (:vec2 (vec2 (%ref 0) (%ref 1)))
       (:vec3 (vec3 (%ref 0) (%ref 1) (%ref 2)))
       (:vec4 (vec4 (%ref 0) (%ref 1) (%ref 2) (%ref 3)))
-      (:mat2 (mat2 (%ref 0) (%ref 1)
-                   (%ref 4) (%ref 5)))
-      (:mat3 (mat3 (%ref 0) (%ref 1) (%ref 2)
-                   (%ref 4) (%ref 5) (%ref 6)
-                   (%ref 8) (%ref 9) (%ref 10)))
+      (:mat2 (mat2 (list (%ref 0) (%ref 1)
+                         (%ref 4) (%ref 5))))
+      (:mat3 (mat3 (list (%ref 0) (%ref 1) (%ref 2)
+                         (%ref 4) (%ref 5) (%ref 6)
+                         (%ref 8) (%ref 9) (%ref 10))))
       ;; FIXME: could copy raw array with memcpy.
-      (:mat4 (mat4 (%ref 0) (%ref 1) (%ref 2) (%ref 3)
-                   (%ref 4) (%ref 5) (%ref 6) (%ref 7)
-                   (%ref 8) (%ref 9) (%ref 10) (%ref 11))))))
+      (:mat4 (mat4 (list (%ref 0) (%ref 1) (%ref 2) (%ref 3)
+                         (%ref 4) (%ref 5) (%ref 6) (%ref 7)
+                         (%ref 8) (%ref 9) (%ref 10) (%ref 11)))))))
 
 (defun gl-memref (ptr type &key (layout :std140))
   (ecase layout
