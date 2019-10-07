@@ -131,7 +131,7 @@
                :cl-jpeg
                :retrospectiff
                :terrable
-               :mmap
+               ;:mmap
                :form-fiddle
                :lambda-fiddle))
 

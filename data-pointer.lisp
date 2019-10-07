@@ -99,6 +99,7 @@
       (funcall function (cffi:inc-pointer ptr offset) size))))
 
 (defmethod call-with-data-ptr (function (data pathname) &key (offset 0))
+  #+trial-mmap
   (mmap:with-mmap (ptr fd size data)
     (funcall function (cffi:inc-pointer ptr offset) size)))
 

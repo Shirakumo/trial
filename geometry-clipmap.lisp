@@ -80,6 +80,7 @@
                (when (and (< 0 w) (< 0 h))
                  (handler-case
                      (let ((cached (or (assoc file cache :test #'equal)
+                                       #+trial-mmap
                                        (list* file (multiple-value-list (mmap:mmap file))))))
                        (push cached new-cache)
                        ;; FIXME: Calculate height and slope in a non-retarded way.
@@ -96,6 +97,7 @@
                                                                                   (/ (internal-format-pixel-size
                                                                                       (internal-format tex))
                                                                                      8)))))
+                   #+trial-mmap
                    (mmap:mmap-error (e)
                      (declare (ignore e))))))
              (show-map (bank tex)
@@ -111,6 +113,7 @@
         (show-map (geometry-clipmap-map-bank map) (geometry-clipmap-map-texture map)))
       (gl:pixel-store :unpack-row-length 0)
       ;; Update mmap cache
+      #+trial-mmap
       (let ((to-unmap (set-difference cache new-cache)))
         (loop for cached in to-unmap do (apply #'mmap:munmap (rest cached))))
       (setf (aref (mmap-cache clipmap) level) new-cache))))
