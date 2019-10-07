@@ -675,3 +675,18 @@
           (:signed :int)
           (:unsigned :unsigned-int)
           (:float :float)))))
+
+(defvar *gl-extensions* ())
+
+(defun cache-gl-extensions ()
+  (let ((*package* (find-package "KEYWORD")))
+    (setf *gl-extensions*
+          (loop for i from 0 below (gl:get* :num-extensions)
+                for name = (ignore-errors (gl:get-string-i :extensions i))
+                when name
+                collect (cffi:translate-name-from-foreign name *package*)))))
+
+(defmacro when-gl-extension (extension &body body)
+  ;; TODO: Optimise this by caching the test after first runtime.
+  `(when (find ,extension *gl-extensions*)
+     ,@body))

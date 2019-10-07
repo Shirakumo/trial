@@ -64,8 +64,9 @@
                     (gl:read-buffer :none)))
              (unless (and (width framebuffer) (height framebuffer))
                (error "The framebuffer has no attachments and no default width and height set!"))
-             (%gl:framebuffer-parameter-i :framebuffer :framebuffer-default-width (width framebuffer))
-             (%gl:framebuffer-parameter-i :framebuffer :framebuffer-default-height (height framebuffer)))
+             (when-gl-extension :gl-arb-framebuffer-no-attachments
+               (%gl:framebuffer-parameter-i :framebuffer :framebuffer-default-width (width framebuffer))
+               (%gl:framebuffer-parameter-i :framebuffer :framebuffer-default-height (height framebuffer))))
         (gl:bind-framebuffer :framebuffer 0)
         (setf (data-pointer framebuffer) fbo)))))
 
