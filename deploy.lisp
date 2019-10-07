@@ -9,6 +9,9 @@
 (deploy:define-hook (:deploy trial) (directory)
   (dolist (pool (list-pools))
     (deploy:status 1 "Copying pool ~a from ~a" (name pool) (base pool))
+    ;; FIXME: This is really, really bad. Pools that are based off the same thing
+    ;;        will copy all the assets every time, duplicating things a lot.
+    ;;        we also always deploy a bunch of shit that's not really needed.
     (deploy:copy-directory-tree
      (pool-path pool NIL)
      (pathname-utils:subdirectory directory "pool" (package-name (symbol-package (name pool))) (string-downcase (name pool)))
