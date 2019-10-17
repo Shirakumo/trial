@@ -27,7 +27,3 @@
 
 (deploy:define-library cl-opengl-bindings::opengl
   :dont-deploy T)
-
-#+(and trial-mmap (not windows))
-(deploy:define-library osicat-posix::librt
-  :dont-deploy T)
