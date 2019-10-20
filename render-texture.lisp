@@ -28,6 +28,5 @@
                    :key #'attachment))))
 
 (defmethod paint-with :before ((target render-texture) source)
-  (gl:viewport 0 0 (width target) (height target))
   (let ((c (clear-color target)))
     (gl:clear-color (vx c) (vy c) (vz c) (if (vec4-p c) (vw c) 0.0))))

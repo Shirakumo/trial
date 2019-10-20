@@ -59,7 +59,10 @@
   (loop for texture across (textures pipeline)
         for texspec across (texspecs pipeline)
         do (multiple-value-bind (width height) (texspec-real-size texspec width height)
-             (resize texture width height))))
+             (resize texture width height)))
+  (loop for pass across (passes pipeline)
+        do (setf (width (framebuffer pass)) width)
+           (setf (height (framebuffer pass)) height)))
 
 (defmethod normalized-texspec ((texspec list))
   (assert (= 0 (getf texspec :level 0)))
@@ -175,10 +178,7 @@
 
 (defmethod paint-with ((pipeline pipeline) source)
   (loop for pass across (passes pipeline)
-        for fbo = (framebuffer pass)
-        do (gl:bind-framebuffer :framebuffer (gl-name fbo))
-           ;; FIXME: Figure out which to clear depending on framebuffer attachments
-           (gl:clear :color-buffer :depth-buffer :stencil-buffer)
+        do (activate (framebuffer pass))
            (paint-with pass source)))
 
 (defmethod register-object-for-pass ((pipeline pipeline) object)
