@@ -25,7 +25,7 @@
 (define-subject controller ()
   ((display :initform NIL :accessor display)
    (text :initform (make-instance 'text :font (asset 'trial 'noto-mono) :size 18) :accessor text)
-   (fps-buffer :initform (make-array 100 :fill-pointer T :initial-element 1))
+   (fps-buffer :initform (make-array 100 :fill-pointer T :initial-element 1) :reader fps-buffer)
    (show-overlay :initform NIL :accessor show-overlay)
    (observers :initform (make-array 0 :adjustable T :fill-pointer T) :accessor observers))
   (:default-initargs
@@ -40,45 +40,53 @@
 (define-handler (controller toggle-overlay) (ev)
   (setf (show-overlay controller) (not (show-overlay controller))))
 
+(defun compute-fps-buffer-fps (fps-buffer)
+  (/ (loop for i from 0 below (array-total-size fps-buffer)
+           sum (aref fps-buffer i))
+     (array-total-size fps-buffer)))
+
+(defun compose-controller-debug-text (controller ev)
+  (multiple-value-bind (gfree gtotal) (gpu-room)
+    (multiple-value-bind (cfree ctotal) (cpu-room)
+      (with-output-to-string (stream)
+        (format stream "TIME  [s]: ~8,2f~%~
+                        FPS  [Hz]: ~8,2f~%~
+                        RAM  [KB]: ~8d (~2d%)~%~
+                        VRAM [KB]: ~8d (~2d%)~%~
+                        RESOURCES: ~8d"
+                (clock (scene (display controller)))
+                (compute-fps-buffer-fps (fps-buffer controller))
+                (- ctotal cfree) (floor (/ (- ctotal cfree) ctotal 0.01))
+                (- gtotal gfree) (floor (/ (- gtotal gfree) gtotal 0.01))
+                (hash-table-count (resources *context*)))
+        (loop with observers = (observers controller)
+              for i from 0 below (length observers)
+              for (title . func) = (aref observers i)
+              when func
+              do (restart-case (format stream "~%~a:~12t~a" title (funcall func ev))
+                   (remove-observer ()
+                     :report "Remove the offending observer."
+                     (setf (aref observers i) NIL))))))))
+
 (define-handler (controller tick) (ev tt)
   (when (and (show-overlay controller)
              *context*)
-    (multiple-value-bind (gfree gtotal) (gpu-room)
-      (multiple-value-bind (cfree ctotal) (cpu-room)
-        (with-slots (fps-buffer text) controller
-          (when (= (array-total-size fps-buffer) (fill-pointer fps-buffer))
-            (setf (fill-pointer fps-buffer) 0))
-          ;; FIXME: Yeesh. Don't like these (handler *context*) accesses.
-          (vector-push (if (= 0 (frame-time (handler *context*))) 1 (/ (frame-time (handler *context*)))) fps-buffer)
-          
-          (setf (vy (location text))
-                (- -5 (getf (text-extent text "a") :t)))
-          (setf (vx (location text)) 5)
-          (let ((stream (make-string-output-stream)))
-            (format stream "TIME  [s]: ~8,2f~%~
-                            FPS  [Hz]: ~8,2f~%~
-                            RAM  [KB]: ~8d (~2d%)~%~
-                            VRAM [KB]: ~8d (~2d%)~%~
-                            RESOURCES: ~8d"
-                    (clock (scene (display controller)))
-                    (/ (loop for i from 0 below (array-total-size fps-buffer)
-                             sum (aref fps-buffer i))
-                       (array-total-size fps-buffer))
-                    (- ctotal cfree) (floor (/ (- ctotal cfree) ctotal 0.01))
-                    (- gtotal gfree) (floor (/ (- gtotal gfree) gtotal 0.01))
-                    (hash-table-count (resources *context*)))
-            (loop with observers = (observers controller)
-                  for i from 0 below (length observers)
-                  for (title . func) = (aref observers i)
-                  when func
-                  do (restart-case (format stream "~%~a:~12t~a" title (funcall func ev))
-                       (remove-observer ()
-                         :report "Remove the offending observer."
-                         (setf (aref observers i) NIL))))
-            (setf (text text) (get-output-stream-string stream))))))))
+    (let ((text (text controller)))
+      (setf (vy (location text))
+            (- -5 (getf (text-extent text "a") :t)))
+      (setf (vx (location text)) 5)
+      (setf (text text) (compose-controller-debug-text controller ev)))))
 
 (defmethod paint ((controller controller) target)
   (when (show-overlay controller)
+    (let ((fps-buffer (fps-buffer controller)))
+      (when (= (array-total-size fps-buffer) (fill-pointer fps-buffer))
+        (setf (fill-pointer fps-buffer) 0))
+      ;; FIXME: Yeesh. Don't like these (handler *context*) accesses.
+      (vector-push (if (= 0 (frame-time (handler *context*)))
+                       1
+                       (/ (frame-time (handler *context*))))
+                   fps-buffer))
     (with-pushed-matrix ((*projection-matrix* :zero)
                          (*model-matrix* :identity)
                          (*view-matrix* :identity))
