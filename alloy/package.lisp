@@ -10,7 +10,8 @@
    (#:trial #:org.shirakumo.fraf.trial)
    (#:alloy #:org.shirakumo.alloy)
    (#:simple #:org.shirakumo.alloy.renderers.simple)
-   (#:opengl #:org.shirakumo.alloy.renderers.opengl))
+   (#:opengl #:org.shirakumo.alloy.renderers.opengl)
+   (#:colored #:org.shirakumo.alloy.colored))
   (:export
    #:renderer
    #:ui))

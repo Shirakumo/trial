@@ -51,8 +51,8 @@
 (defmethod (setf opengl:uniform) (value (shader trial:shader-program) uniform)
   (let ((loc (trial:uniform-location shader uniform)))
     (etypecase value
-      (simple:color
-       (%gl:uniform-4f loc (simple:r value) (simple:g value) (simple:b value) (simple:a value)))
+      (colored:color
+       (%gl:uniform-4f loc (colored:r value) (colored:g value) (colored:b value) (colored:a value)))
       (alloy:point
        (%gl:uniform-2f loc (alloy:x value) (alloy:y value)))
       (vector
@@ -105,13 +105,16 @@
       (%gl:draw-elements primitive-type count :unsigned-int 0)
       (%gl:draw-arrays primitive-type 0 count)))
 
+(defmethod opengl:make-texture ((renderer renderer) width height data)
+  (make-instance 'trial:texture :width width :height height :pixel-data data))
+
 (defmethod alloy:allocate ((array trial:vertex-array))
   (trial:allocate array))
 
 (defmethod alloy:deallocate ((array trial:vertex-array))
   (trial:deallocate array))
 
-(defmethod simple:request-image ((renderer renderer) (image pathname))
+(defmethod simple:request-image ((renderer renderer) (image pathname) &key)
   (make-instance 'trial:image :input image))
 
 (defmethod alloy:allocate ((texture trial:texture))
@@ -127,6 +130,3 @@
   (alloy:size (trial:width image) (trial:height image)))
 
 (defmethod trial:dependencies ((font simple:font)))
-
-(defmethod simple:request-font ((renderer renderer) (font (eql :default)))
-  (simple:request-font renderer (trial::input* (trial:asset 'trial:trial 'trial:noto-sans))))
