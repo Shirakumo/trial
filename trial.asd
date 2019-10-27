@@ -48,6 +48,7 @@
                (:file "helpers" :depends-on ("package" "entity" "transforms" "shader-subject" "shader-pass" "asset" "resources"))
                (:file "hdr" :depends-on ("package" "shader-pass"))
                (:file "input" :depends-on ("package" "event-loop" "retention"))
+               (:file "lines" :depends-on ("package" "helpers" "shader-entity" "geometry"))
                (:file "layer-set" :depends-on ("package"))
                (:file "loader" :depends-on ("package" "scene" "resource"))
                (:file "main" :depends-on ("package" "display" "toolkit" "scene" "pipeline" "window"))

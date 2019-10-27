@@ -236,6 +236,22 @@
           (vertex :position f2b)
           (vertex :position f2t))))
 
+(defclass line-vertex (colored-vertex normal-vertex)
+  ())
+
+(defun make-lines (points &key mesh)
+  (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'line-vertex)))
+    (loop for (a b) on points by #'cddr
+          while b
+          do (destructuring-bind (a ac) (enlist a (vec 0 0 0 1))
+               (destructuring-bind (b bc) (enlist b (vec 0 0 0 1))
+                 (vertex :location a :normal (v- a b) :color ac)
+                 (vertex :location b :normal (v- a b) :color bc)
+                 (vertex :location a :normal (v- b a) :color ac)
+                 (vertex :location b :normal (v- a b) :color bc)
+                 (vertex :location b :normal (v- b a) :color bc)
+                 (vertex :location a :normal (v- b a) :color ac))))))
+
 (define-asset (trial fullscreen-square) mesh
     (make-rectangle 2 2 :pack T))
 
@@ -245,3 +261,8 @@
 (define-asset (trial teapot) mesh
     #p"teapot.vf"
   :geometry-name :teapotmesh)
+
+(define-asset (trial axes) mesh
+    (make-lines (list (list (vec 0 0 0) (vec 1 0 0 1)) (list (vec 10 0 0) (vec 1 0 0 1))
+                      (list (vec 0 0 0) (vec 0 1 0 1)) (list (vec 0 10 0) (vec 0 1 0 1))
+                      (list (vec 0 0 0) (vec 0 0 1 1)) (list (vec 0 0 10) (vec 0 0 1 1)))))
