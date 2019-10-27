@@ -25,12 +25,8 @@
          (srad (+ (* (/ s 60) -2 PI) (/ PI 2)))
          (mesh (make-lines (list (vec 0 0 0) (vec (* (cos hrad) 70) (* (sin hrad) 70) 0)
                                  (vec 0 0 0) (vec (* (cos mrad) 90) (* (sin mrad) 90) 0)
-                                 (list (vec 0 0 0) (vec 1 0 0 1)) (list (vec (* (cos srad) 90) (* (sin srad) 90) 0) (vec 1 0 0 1)))))
-         (ebo (car (bindings (vertex-array simple-clock))))
-         (vbo (caadr (bindings (vertex-array simple-clock)))))
-    (replace-vertex-data ebo mesh :update T)
-    (replace-vertex-data vbo mesh :update T)
-    (setf (size (vertex-array simple-clock)) (length (buffer-data ebo)))))
+                                 (list (vec 0 0 0) (vec 1 0 0 1)) (list (vec (* (cos srad) 90) (* (sin srad) 90) 0) (vec 1 0 0 1))))))
+    (replace-vertex-data (vertex-array simple-clock) mesh :update T)))
 
 (progn
   (defmethod setup-scene ((workbench workbench) scene)

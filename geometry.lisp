@@ -219,6 +219,16 @@
     (resize-buffer buffer (* (length (buffer-data buffer)) (gl-type-size (element-type buffer))) :data (buffer-data buffer)))
   buffer)
 
+(defmethod replace-vertex-data ((array vertex-array) (mesh vertex-mesh) &key (attributes T) update)
+  (let ((buffers ()))
+    (dolist (binding (bindings array))
+      (pushnew (unlist binding) buffers))
+    (dolist (buffer buffers)
+      (replace-vertex-data buffer mesh :attributes attributes :update update)
+      (when (eq (buffer-type buffer) :element-array-buffer)
+        (setf (size array) (length (buffer-data buffer)))))
+    array))
+
 (defmethod make-vertex-data ((mesh vertex-mesh) &key (attributes T))
   ;; Would be better if we didn't have to create an adjustable vector...
   (replace-vertex-data (make-array 0 :adjustable T :element-type 'single-float)
