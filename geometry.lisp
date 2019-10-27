@@ -187,22 +187,36 @@
   ())
 
 ;;;; Translation
-(defmethod replace-vertex-data ((buffer vector) (mesh vertex-mesh) &key (attributes T))
-  (when (< 0 (length (vertices mesh)))
-    (let* ((vertices (vertices mesh))
-           (primer (aref vertices 0))
-           (attributes (etypecase attributes
-                         ((eql T) (vertex-attributes primer))
-                         (list attributes)))
-           (sizes (loop for attr in attributes collect (vertex-attribute-size primer attr)))
-           (total-size (* (length vertices) (reduce #'+ sizes))))
-      (when (/= (length buffer) total-size)
-        (adjust-array buffer total-size))
-      ;; Copy the contents of the mesh into the data buffer, packed.
-      (loop with buffer-offset = 0
-            for vertex across vertices
-            do (dolist (attribute attributes)
-                 (setf buffer-offset (fill-vertex-attribute vertex attribute buffer buffer-offset))))))
+(defmethod replace-vertex-data ((buffer vector) (mesh vertex-mesh) &key (attributes T) (buffer-type :array-buffer))
+  (cond ((< 0 (length (vertices mesh)))
+         (ecase buffer-type
+           (:element-array-buffer
+            (when (/= (length buffer) (length (faces mesh)))
+              (setf buffer (adjust-array buffer (length (faces mesh)) :fill-pointer (length (faces mesh)))))
+            (replace buffer (faces mesh)))
+           (:array-buffer
+            (let* ((vertices (vertices mesh))
+                   (primer (aref vertices 0))
+                   (attributes (etypecase attributes
+                                 ((eql T) (vertex-attributes primer))
+                                 (list attributes)))
+                   (sizes (loop for attr in attributes collect (vertex-attribute-size primer attr)))
+                   (total-size (* (length vertices) (reduce #'+ sizes))))
+              (when (/= (length buffer) total-size)
+                (setf buffer (adjust-array buffer total-size)))
+              ;; Copy the contents of the mesh into the data buffer, packed.
+              (loop with buffer-offset = 0
+                    for vertex across vertices
+                    do (dolist (attribute attributes)
+                         (setf buffer-offset (fill-vertex-attribute vertex attribute buffer buffer-offset))))))))
+        (T
+         (setf buffer (adjust-array buffer 0))))
+  buffer)
+
+(defmethod replace-vertex-data ((buffer vertex-buffer) (mesh vertex-mesh) &key (attributes T) update)
+  (setf (buffer-data buffer) (replace-vertex-data (buffer-data buffer) mesh :attributes attributes :buffer-type (buffer-type buffer)))
+  (when update
+    (resize-buffer buffer (* (length (buffer-data buffer)) (gl-type-size (element-type buffer))) :data (buffer-data buffer)))
   buffer)
 
 (defmethod make-vertex-data ((mesh vertex-mesh) &key (attributes T))
@@ -217,30 +231,29 @@
               (1 :points)
               (2 :lines)
               (3 :triangles))))
-  (if (< 0 (length (vertices mesh)))
-      (let* ((primer (aref (vertices mesh) 0))
-             (attributes (etypecase vertex-attributes
-                           ((eql T) (vertex-attributes primer))
-                           (list vertex-attributes)))
-             (sizes (loop for attr in attributes collect (vertex-attribute-size primer attr)))
-             (buffer (make-vertex-data mesh :attributes attributes)))
-        (setf (data-pointer array) NIL)
-        ;; Construct the buffers and specs
-        (let* ((vbo (make-instance 'vertex-buffer :buffer-data buffer :buffer-type :array-buffer
-                                                  :data-usage data-usage :element-type :float
-                                                  :size (* (length buffer) (gl-type-size :float))))
-               (ebo (make-instance 'vertex-buffer :buffer-data (faces mesh) :buffer-type :element-array-buffer
-                                                  :data-usage data-usage :element-type :unsigned-int
-                                                  :size (* (length (faces mesh)) (gl-type-size :unsigned-int))))
-               (specs (loop with stride = (reduce #'+ sizes)
-                            for offset = 0 then (+ offset size)
-                            for size in sizes
-                            for index from 0
-                            collect (list vbo :stride (* stride (gl-type-size :float))
-                                              :offset (* offset (gl-type-size :float))
-                                              :size size
-                                              :index index))))
-          (setf (bindings array) (list* ebo specs))
-          (setf (size array) (length (faces mesh)))))
-      (setf (bindings array) ()
-            (size array) 0)))
+  (let* ((primer (if (= 0 (length (vertices mesh)))
+                     (allocate-instance (find-class (vertex-type mesh)))
+                     (aref (vertices mesh) 0)))
+         (attributes (etypecase vertex-attributes
+                       ((eql T) (vertex-attributes primer))
+                       (list vertex-attributes)))
+         (sizes (loop for attr in attributes collect (vertex-attribute-size primer attr)))
+         (buffer (make-vertex-data mesh :attributes attributes)))
+    (setf (data-pointer array) NIL)
+    ;; Construct the buffers and specs
+    (let* ((vbo (make-instance 'vertex-buffer :buffer-data buffer :buffer-type :array-buffer
+                                              :data-usage data-usage :element-type :float
+                                              :size (* (length buffer) (gl-type-size :float))))
+           (ebo (make-instance 'vertex-buffer :buffer-data (faces mesh) :buffer-type :element-array-buffer
+                                              :data-usage data-usage :element-type :unsigned-int
+                                              :size (* (length (faces mesh)) (gl-type-size :unsigned-int))))
+           (specs (loop with stride = (reduce #'+ sizes)
+                        for offset = 0 then (+ offset size)
+                        for size in sizes
+                        for index from 0
+                        collect (list vbo :stride (* stride (gl-type-size :float))
+                                          :offset (* offset (gl-type-size :float))
+                                          :size size
+                                          :index index))))
+      (setf (bindings array) (list* ebo specs))
+      (setf (size array) (length (faces mesh))))))

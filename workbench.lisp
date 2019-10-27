@@ -7,76 +7,44 @@
   :base 'trial)
 
 (define-asset (workbench grid) mesh
-    (make-line-grid 10 200 200))
+    (make-line-grid 10 100 100))
 
 (define-shader-subject grid (vertex-entity colored-entity)
   ()
   (:default-initargs :vertex-array (asset 'workbench 'grid)))
 
-(define-shader-entity lines (vertex-entity)
-  ((line-width :initarg :line-width :initform 3.0 :accessor line-width))
-  (:inhibit-shaders (vertex-entity :vertex-shader)))
+(define-shader-subject simple-clock (lines) ()
+  (:default-initargs :vertex-array (change-class (make-lines ()) 'vertex-array :data-usage :stream-draw)))
 
-(defclass line-vertex (vertex)
-  ())
-
-(defmethod initialize-instance :after ((lines lines) &key points)
-  (let ((mesh (make-instance 'vertex-mesh :vertex-type 'normal-vertex)))
-    (with-vertex-filling (mesh)
-      (loop for (a b) on points
-            while b
-            do (vertex :location a :normal (v- a b))
-               (vertex :location b :normal (v- a b))
-               (vertex :location a :normal (v- b a))
-               (vertex :location b :normal (v- a b))
-               (vertex :location b :normal (v- b a))
-               (vertex :location a :normal (v- b a))))
-    (setf (vertex-array lines) (change-class mesh 'vertex-array :vertex-form :triangles))))
-
-(defmethod paint :before ((lines lines) (target shader-pass))
-  (let ((program (shader-program-for-pass target lines)))
-    (setf (uniform program "line_width") (float (line-width lines)))
-    (setf (uniform program "view_size") (vec (width *context*) (height *context*)))))
-
-(define-class-shader (lines :vertex-shader)
-  "layout(location = 0) in vec3 position;
-layout(location = 1) in vec3 direction;
-
-out vec2 line_normal;
-uniform float line_width = 3.0;
-uniform vec2 view_size = vec2(800,600);
-uniform mat4 model_matrix;
-uniform mat4 view_matrix;
-uniform mat4 projection_matrix;
-
-void main(){
-  float aspect = view_size.x/view_size.y;
-  mat4 PVM = projection_matrix * view_matrix * model_matrix;
-  vec4 screen1 = PVM * vec4(position, 1);
-  vec4 screen2 = PVM * vec4(position+direction, 1);
-  vec2 clip1 = screen1.xy/screen1.w;
-  vec2 clip2 = screen2.xy/screen2.w;
-  clip1.x *= aspect;
-  clip2.x *= aspect;
-  line_normal = normalize(clip2 - clip1);
-  line_normal = vec2(-line_normal.y, line_normal.x);
-  line_normal.x /= aspect;
-  gl_Position = screen1 + screen1.w * vec4(line_normal*line_width/view_size, 0, 0);
-}")
-
-(define-class-shader (lines :fragment-shader)
-  "in vec2 line_normal;
-uniform float feather = 0.2;
-out vec4 color;
-
-void main(){
-   color *= (1-length(line_normal))*16;
-}")
+(define-handler (simple-clock tick) (ev tt)
+  (let* ((h (mod (floor tt (* 60 60)) 24))
+         (m (mod (floor tt 60) 60))
+         (s (floor (mod tt 60)))
+         (hrad (+ (* (/ h 24) -2 PI) (/ PI 2)))
+         (mrad (+ (* (/ m 60) -2 PI) (/ PI 2)))
+         (srad (+ (* (/ s 60) -2 PI) (/ PI 2)))
+         (mesh (make-lines (list (vec 0 0 0) (vec (* (cos hrad) 70) (* (sin hrad) 70) 0)
+                                 (vec 0 0 0) (vec (* (cos mrad) 90) (* (sin mrad) 90) 0)
+                                 (list (vec 0 0 0) (vec 1 0 0 1)) (list (vec (* (cos srad) 90) (* (sin srad) 90) 0) (vec 1 0 0 1)))))
+         (ebo (car (bindings (vertex-array simple-clock))))
+         (vbo (caadr (bindings (vertex-array simple-clock)))))
+    (replace-vertex-data ebo mesh :update T)
+    (replace-vertex-data vbo mesh :update T)
+    (setf (size (vertex-array simple-clock)) (length (buffer-data ebo)))))
 
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
     (enter (make-instance 'grid) scene)
-    (enter (make-instance 'lines :points (list (vec 0 0 0) (vec 100 100 0) (vec 100 0 0))) scene)
+    (enter (make-instance 'lines :vertex-array (asset 'trial 'axes)) scene)
+    ;; Creating static lines
+    (let ((circle (loop for i from 0 to (* 2 PI) by (/ PI 30)
+                        collect (vec (* 100 (cos i)) (* 100 (sin i)) 0)
+                        collect (vec (* 100 (cos (+ i (/ PI 30)))) (* 100 (sin (+ i (/ PI 30)))) 0))))
+      (enter (make-instance 'lines :vertex-array (change-class (make-lines circle) 'vertex-array)
+                                   :line-width 5.0)
+             scene))
+    ;; Creating lines that change
+    (enter (make-instance 'simple-clock) scene)
     (enter (make-instance 'editor-camera) scene)
     (enter (make-instance 'render-pass) scene))
 
