@@ -86,7 +86,7 @@
                  :buffer-type buffer-type))
 
 (defmethod opengl:update-vertex-buffer ((buffer trial:vertex-buffer) contents)
-  (trial:update-buffer-data buffer contents))
+  (trial:resize-buffer buffer (* (length contents) (trial:gl-type-size :float)) :data contents))
 
 (defmethod alloy:allocate ((buffer trial:vertex-buffer))
   (trial:allocate buffer))
