@@ -54,7 +54,9 @@
       (colored:color
        (%gl:uniform-4f loc (colored:r value) (colored:g value) (colored:b value) (colored:a value)))
       (alloy:point
-       (%gl:uniform-2f loc (alloy:x value) (alloy:y value)))
+       (%gl:uniform-2f loc (alloy:pxx value) (alloy:pxy value)))
+      (alloy:size
+       (%gl:uniform-2f loc (alloy:pxw value) (alloy:pxh value)))
       (vector
        #+sbcl
        (sb-sys:with-pinned-objects (value)
