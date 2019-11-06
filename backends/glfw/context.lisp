@@ -165,10 +165,10 @@
   (cl-glfw3:set-window-title value (window context)))
 
 (defmethod width ((context context))
-  (first (cl-glfw3:get-window-size (window context))))
+  (first (cl-glfw3:get-framebuffer-size (window context))))
 
 (defmethod height ((context context))
-  (second (cl-glfw3:get-window-size (window context))))
+  (second (cl-glfw3:get-framebuffer-size (window context))))
 
 (defmethod profile ((context context))
   (ecase (cl-glfw3:get-window-attribute :opengl-profile (window context))
@@ -212,7 +212,7 @@
 (cl-glfw3:def-error-callback ctx-error (message)
   (v:severe :trial.backend.glfw "~a" message))
 
-(cl-glfw3:def-window-size-callback ctx-size (window w h)
+(cl-glfw3:def-framebuffer-size-callback ctx-size (window w h)
   (%with-context
     (handle (make-instance 'resize
                            :width w
