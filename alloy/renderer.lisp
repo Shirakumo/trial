@@ -28,7 +28,7 @@
   (alloy:deallocate renderer))
 
 (defmethod alloy:render :before ((renderer renderer) (ui (eql T)))
-  (let ((target (simple:transform-matrix (simple:transform renderer))))
+  (let ((target (simple:transform-matrix renderer)))
     (setf (aref target 0) (/ 2f0 (trial:width trial:*context*)))
     (setf (aref target 1) 0f0)
     (setf (aref target 2) -1f0)
