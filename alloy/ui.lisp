@@ -10,7 +10,7 @@
   ())
 
 (defmethod trial:paint ((ui ui) target)
-  (alloy:render ui T))
+  (alloy:render ui ui))
 
 (defmethod trial:register :after ((ui ui) (loop trial:event-loop))
   (trial:add-handler ui loop))
@@ -40,17 +40,20 @@
   :location (vec->point (trial:pos ev)))
 
 (define-event-translator trial:mouse-scroll alloy:scroll
-  :delta (trial:delta ev)
+  :dy (trial:delta ev)
+  :dx 0
   :location (vec->point (trial:pos ev)))
 
 (define-event-translator trial:text-entered alloy:text-event
   :text (trial:text ev))
 
 (define-event-translator trial:key-press alloy:key-down
+  :modifiers (trial:modifiers ev)
   :key (trial:key ev)
   :code 0)
 
 (define-event-translator trial:key-release alloy:key-up
+  :modifiers (trial:modifiers ev)
   :key (trial:key ev)
   :code 0)
 

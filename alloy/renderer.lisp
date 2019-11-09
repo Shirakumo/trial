@@ -27,7 +27,7 @@
 (defmethod trial:deallocate ((renderer renderer))
   (alloy:deallocate renderer))
 
-(defmethod alloy:render :before ((renderer renderer) (ui (eql T)))
+(defmethod alloy:render :before ((renderer renderer) (ui alloy:ui))
   (let ((target (simple:transform-matrix renderer)))
     (setf (aref target 0) (/ 2f0 (trial:width trial:*context*)))
     (setf (aref target 1) 0f0)
@@ -116,8 +116,17 @@
 (defmethod alloy:deallocate ((array trial:vertex-array))
   (trial:deallocate array))
 
+(defclass image (trial:image simple:image)
+  ())
+
+(defmethod simple:size ((image image))
+  (alloy:px-size (trial:width image) (trial:height image)))
+
+(defmethod simple:data ((image image))
+  (trial:pixel-data image))
+
 (defmethod simple:request-image ((renderer renderer) (image pathname) &key)
-  (make-instance 'trial:image :input image))
+  (trial:load (make-instance 'image :input image)))
 
 (defmethod alloy:allocate ((texture trial:texture))
   (trial:allocate texture))
