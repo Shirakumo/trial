@@ -22,7 +22,7 @@
 
 (defmacro define-event-translator (trial-type alloy-type &body args)
   `(defmethod trial:handle ((ev ,trial-type) (ui ui))
-     (alloy:handle (make-instance ',alloy-type ,@args) T ui)))
+     (alloy:handle (make-instance ',alloy-type ,@args) ui)))
 
 (defun vec->point (vec)
   (alloy:px-point (vx vec) (vy vec)))
