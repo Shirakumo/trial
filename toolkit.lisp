@@ -261,6 +261,9 @@
                  (error "Thread ~s did not exit after ~a s." (bt:thread-name thread) (* i interval))
                (continue ()
                  :report "Continue waiting.")
+               (debug ()
+                 :report "Try to interrupt the thread with a break."
+                 (bt:interrupt-thread thread (lambda () (break))))
                (abort ()
                  :report "Kill the thread and exit, risking corrupting the image."
                  (bt:destroy-thread thread)
