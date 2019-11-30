@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial.alloy)
 
-(defclass renderer (org.shirakumo.alloy.renderers.opengl.fond:renderer trial:resource)
+(defclass renderer (org.shirakumo.alloy.renderers.opengl.msdf:renderer trial:resource)
   ())
 
 (defmethod alloy:allocate ((renderer renderer))
@@ -107,8 +107,14 @@
       (%gl:draw-elements primitive-type count :unsigned-int 0)
       (%gl:draw-arrays primitive-type 0 count)))
 
-(defmethod opengl:make-texture ((renderer renderer) width height data)
-  (make-instance 'trial:texture :width width :height height :pixel-data data))
+(defmethod opengl:make-texture ((renderer renderer) width height data &key (channels 4) (filtering :linear))
+  (let ((format (ecase channels (1 :r) (2 :rg) (3 :rgb) (4 :rgba))))
+    (make-instance 'trial:texture :width width :height height
+                                  :internal-format format
+                                  :pixel-format format
+                                  :pixel-data data
+                                  :min-filter filtering
+                                  :mag-filter filtering)))
 
 (defmethod alloy:allocate ((array trial:vertex-array))
   (trial:allocate array))
@@ -125,8 +131,15 @@
 (defmethod simple:data ((image image))
   (trial:pixel-data image))
 
-(defmethod simple:request-image ((renderer renderer) (image pathname) &key)
-  (trial:load (make-instance 'image :input image)))
+(defmethod simple:channels ((image image))
+  (ecase (trial:internal-format image)
+    ((:red :r8) 1)
+    ((:rg :rg8) 2)
+    ((:rgb :rgb8) 3)
+    ((:rgba :rgba8) 4)))
+
+(defmethod simple:request-image ((renderer renderer) (image pathname) &key (filtering :linear))
+  (trial:load (make-instance 'image :input image :min-filter filtering :mag-filter filtering)))
 
 (defmethod alloy:allocate ((texture trial:texture))
   (trial:allocate texture))
@@ -135,6 +148,7 @@
   (trial:deallocate texture))
 
 (defmethod opengl:bind ((texture trial:texture))
+  (gl:active-texture :texture0)
   (gl:bind-texture :texture-2D (trial:gl-name texture)))
 
 (defmethod simple:size ((image trial:image))

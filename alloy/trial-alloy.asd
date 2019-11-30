@@ -19,4 +19,4 @@
   :depends-on (:trial
                :alloy-simple-presentations
                :alloy-opengl
-               :alloy-opengl-fond))
+               :alloy-opengl-msdf))
