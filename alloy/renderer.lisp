@@ -39,7 +39,13 @@
 
     (setf (aref target 6) 0f0)
     (setf (aref target 7) 0f0)
-    (setf (aref target 8) -1f0)))
+    (setf (aref target 8) 1f0)))
+
+(defmethod simple:z-index ((renderer renderer))
+  (- (call-next-method)))
+
+(defmethod (setf simple:z-index) (value (renderer renderer))
+  (call-next-method (- value) renderer))
 
 (defmethod opengl:make-shader ((renderer renderer) &key vertex-shader fragment-shader)
   (let ((vert (make-instance 'trial:shader :source vertex-shader
