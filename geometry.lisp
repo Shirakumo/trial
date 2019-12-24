@@ -203,20 +203,27 @@
                    (sizes (loop for attr in attributes collect (vertex-attribute-size primer attr)))
                    (total-size (* (length vertices) (reduce #'+ sizes))))
               (when (/= (length buffer) total-size)
-                (setf buffer (adjust-array buffer total-size)))
+                (setf buffer (if (array-has-fill-pointer-p buffer)
+                                 (adjust-array buffer total-size :fill-pointer total-size)
+                                 (adjust-array buffer total-size))))
               ;; Copy the contents of the mesh into the data buffer, packed.
               (loop with buffer-offset = 0
                     for vertex across vertices
                     do (dolist (attribute attributes)
                          (setf buffer-offset (fill-vertex-attribute vertex attribute buffer buffer-offset))))))))
         (T
-         (setf buffer (adjust-array buffer 0))))
+         (setf buffer (if (array-has-fill-pointer-p buffer)
+                          (adjust-array buffer 0 :fill-pointer 0)
+                          (make-array 0 :adjustable T :fill-pointer T :element-type (array-element-type buffer))))))
   buffer)
 
 (defmethod replace-vertex-data ((buffer vertex-buffer) (mesh vertex-mesh) &key (attributes T) update)
   (setf (buffer-data buffer) (replace-vertex-data (buffer-data buffer) mesh :attributes attributes :buffer-type (buffer-type buffer)))
   (when update
-    (resize-buffer buffer (* (length (buffer-data buffer)) (gl-type-size (element-type buffer))) :data (buffer-data buffer)))
+    (let ((new-size (* (length (buffer-data buffer)) (gl-type-size (element-type buffer)))))
+      (if (/= (size buffer) new-size)
+          (resize-buffer buffer new-size :data (buffer-data buffer))
+          (update-buffer-data buffer T))))
   buffer)
 
 (defmethod replace-vertex-data ((array vertex-array) (mesh vertex-mesh) &key (attributes T) update)
