@@ -14,8 +14,8 @@
   (unless vertex-array
     (setf (vertex-array lines) (change-class (make-lines ()) 'vertex-array :data-usage :dynamic-draw))))
 
-(defmethod replace-vertex-data ((lines lines) points &key (update T))
-  (replace-vertex-data (vertex-array lines) (make-lines points) :update update))
+(defmethod replace-vertex-data ((lines lines) points &key (update T) (default-color (vec 0 0 0 1)))
+  (replace-vertex-data (vertex-array lines) (make-lines points :default-color default-color) :update update))
 
 (defmethod paint :before ((lines lines) (target shader-pass))
   (let ((program (shader-program-for-pass target lines)))

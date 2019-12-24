@@ -239,12 +239,12 @@
 (defclass line-vertex (colored-vertex normal-vertex)
   ())
 
-(defun make-lines (points &key mesh)
+(defun make-lines (points &key mesh (default-color (vec 0 0 0 1)))
   (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'line-vertex)))
     (loop for (a b) on points by #'cddr
           while b
-          do (destructuring-bind (a ac) (enlist a (vec 0 0 0 1))
-               (destructuring-bind (b bc) (enlist b (vec 0 0 0 1))
+          do (destructuring-bind (a ac) (enlist a default-color)
+               (destructuring-bind (b bc) (enlist b default-color)
                  (vertex :location a :normal (v- a b) :color ac)
                  (vertex :location b :normal (v- a b) :color bc)
                  (vertex :location a :normal (v- b a) :color ac)
