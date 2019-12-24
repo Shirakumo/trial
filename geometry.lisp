@@ -221,9 +221,12 @@
   (setf (buffer-data buffer) (replace-vertex-data (buffer-data buffer) mesh :attributes attributes :buffer-type (buffer-type buffer)))
   (when update
     (let ((new-size (* (length (buffer-data buffer)) (gl-type-size (element-type buffer)))))
-      (if (/= (size buffer) new-size)
-          (resize-buffer buffer new-size :data (buffer-data buffer))
-          (update-buffer-data buffer T))))
+      (cond ((= 0 new-size)
+             (setf (size buffer) 0))
+            ((/= (size buffer) new-size)
+             (resize-buffer buffer new-size :data (buffer-data buffer)))
+            (T
+             (update-buffer-data buffer T)))))
   buffer)
 
 (defmethod replace-vertex-data ((array vertex-array) (mesh vertex-mesh) &key (attributes T) update)
