@@ -10,6 +10,13 @@
   ((line-width :initarg :line-width :initform 3.0 :accessor line-width))
   (:inhibit-shaders (vertex-entity :vertex-shader)))
 
+(defmethod initialize-instance :after ((lines lines) &key vertex-array)
+  (unless vertex-array
+    (setf (vertex-array lines) (change-class (make-lines ()) 'vertex-array :data-usage :dynamic-draw))))
+
+(defmethod replace-vertex-data ((lines lines) points &key (update T))
+  (replace-vertex-data (vertex-array lines) (make-lines points) :update update))
+
 (defmethod paint :before ((lines lines) (target shader-pass))
   (let ((program (shader-program-for-pass target lines)))
     (setf (uniform program "line_width") (float (line-width lines)))
