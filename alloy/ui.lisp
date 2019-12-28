@@ -32,7 +32,7 @@
      (alloy:handle (make-instance ',alloy-type ,@args) ui)))
 
 (defun vec->point (vec)
-  (alloy:px-point (vx vec) (vy vec)))
+  (alloy:px-point (3d-vectors:vx vec) (3d-vectors:vy vec)))
 
 (define-event-translator trial:mouse-move alloy:pointer-move
   :old-location (vec->point (trial:old-pos ev))

@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial.alloy)
 
 (defclass workbench (trial:main) ()
-  (:default-initargs :clear-color (vec 0.1 0.1 0.1)))
+  (:default-initargs :clear-color (3d-vectors:vec 0.1 0.1 0.1)))
 
 (defclass dui (ui org.shirakumo.alloy.renderers.simple.presentations::default-look-and-feel)
   ())

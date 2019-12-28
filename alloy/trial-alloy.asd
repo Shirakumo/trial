@@ -15,6 +15,7 @@
   :components ((:file "package")
                (:file "renderer")
                (:file "ui")
+               (:file "components")
                (:file "workbench"))
   :depends-on (:trial
                :alloy-simple-presentations

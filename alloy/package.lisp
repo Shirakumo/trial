@@ -5,7 +5,7 @@
 |#
 
 (defpackage #:org.shirakumo.fraf.trial.alloy
-  (:use #:cl #:3d-vectors #:3d-matrices)
+  (:use #:cl)
   (:local-nicknames
    (#:trial #:org.shirakumo.fraf.trial)
    (#:alloy #:org.shirakumo.alloy)
