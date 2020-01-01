@@ -9,7 +9,9 @@
 (defclass workbench (trial:main) ()
   (:default-initargs :clear-color (3d-vectors:vec 0.1 0.1 0.1)))
 
-(defclass dui (ui org.shirakumo.alloy.renderers.simple.presentations::default-look-and-feel)
+(defclass dui (ui
+               alloy:smooth-scaling-ui
+               org.shirakumo.alloy.renderers.simple.presentations::default-look-and-feel)
   ())
 
 (progn

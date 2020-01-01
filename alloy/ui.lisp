@@ -9,9 +9,6 @@
 (defclass ui (renderer alloy:ui trial:entity)
   ())
 
-(defclass scaling-ui (ui)
-  ())
-
 (defmethod trial:paint ((ui ui) target)
   (alloy:render ui ui))
 
@@ -21,10 +18,6 @@
 (defmethod trial:handle ((ev trial:event) (ui ui)))
 
 (defmethod trial:handle ((ev trial:resize) (ui ui))
-  (setf (alloy:visible-bounds ui) (alloy:px-extent 0 0 (trial:width ev) (trial:height ev)))
-  (alloy:suggest-bounds (alloy:visible-bounds ui) (alloy:layout-tree ui)))
-
-(defmethod trial:handle ((ev trial:resize) (ui scaling-ui))
   (alloy:suggest-bounds (alloy:px-extent 0 0 (trial:width ev) (trial:height ev)) ui))
 
 (defmacro define-event-translator (trial-type alloy-type &body args)
