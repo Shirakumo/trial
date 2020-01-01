@@ -157,13 +157,16 @@
       (dolist (pass passes)
         (when (typep pipeline 'event-loop)
           (add-handler pass pipeline))
-        (setf (framebuffer pass)
-              (make-instance 'framebuffer
-                             :width (width pass)
-                             :height (height pass)
-                             :attachments (loop for port in (flow:ports pass)
-                                                when (typep port 'output)
-                                                collect (list (attachment port) (texture port))))))
+        (let ((output (find :color-attachment0 (flow:ports pass) :key #'attachment)))
+          (flet ((dimension (func)
+                   (or (funcall func pass) (funcall func (texture output)))))
+            (setf (framebuffer pass)
+                  (make-instance 'framebuffer
+                                 :width (dimension #'width)
+                                 :height (dimension #'height)
+                                 :attachments (loop for port in (flow:ports pass)
+                                                    when (typep port 'output)
+                                                    collect (list (attachment port) (texture port))))))))
       ;; All done.
       (v:info :trial.pipeline "~a pass order: ~a" pipeline passes)
       (v:info :trial.pipeline "~a texture count: ~a" pipeline (length textures))
