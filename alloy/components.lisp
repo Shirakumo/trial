@@ -57,11 +57,33 @@
 
 (defmethod alloy:component-class-for-object ((_ 3d-vectors:vec4)) (find-class 'vec4))
 
-(defclass asset (alloy:button)
+(defclass asset-item (alloy:combo-item)
   ())
 
-(defmethod activate :after ((asset asset))
+(defmethod alloy:text ((asset asset-item))
+  (format NIL "~a / ~a"
+          (trial:name (trial:pool (alloy:value asset)))
+          (trial:name (alloy:value asset))))
+
+(defclass asset (alloy:combo)
   ())
+
+(defmethod (setf alloy:value) :before ((value trial:asset) (asset asset))
+  (trial:load value))
+
+(defmethod alloy:value-set ((asset asset))
+  (let ((type (if (alloy:value asset) (type-of (alloy:value asset)) 'trial:asset)))
+    (loop for pool in (trial:list-pools)
+          nconc (loop for asset in (trial:list-assets pool)
+                      when (typep asset type)
+                      collect asset))))
+
+(defmethod alloy:text ((asset asset))
+  (format NIL "~a / ~a"
+          (trial:name (trial:pool (alloy:value asset)))
+          (trial:name (alloy:value asset))))
+
+(defmethod alloy:combo-item (item (asset asset))
+  (make-instance 'asset-item :value item))
 
 (defmethod alloy:component-class-for-object ((_ trial:asset)) (find-class 'asset))
-
