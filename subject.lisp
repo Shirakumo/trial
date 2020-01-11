@@ -92,13 +92,8 @@
            (dolist (event-loop (event-loops subject))
              (add-handler handler event-loop))))
 
-(defmethod register :before ((subject subject) (loop event-loop))
-  (when (find loop (event-loops subject))
-    (error "~s is already registered on the event-loop ~s."
-           subject loop)))
-
 (defmethod register :after ((subject subject) (loop event-loop))
-  (push loop (event-loops subject)))
+  (pushnew loop (event-loops subject)))
 
 (defmethod deregister :after ((subject subject) (loop event-loop))
   (setf (event-loops subject) (remove loop (event-loops subject))))
