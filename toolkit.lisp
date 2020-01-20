@@ -475,7 +475,7 @@
   (case format
     (:depth-stencil :unsigned-int-24-8)
     (:depth24-stencil8 :unsigned-int-24-8)
-    (:depth32f-stencil8 :unsigned-int-32-8)
+    (:depth32f-stencil8 :float-32-unsigned-int-24-8-rev)
     (T :unsigned-byte)))
 
 (defun texture-internal-format->pixel-type (format)
