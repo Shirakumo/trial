@@ -8,10 +8,8 @@
 
 (defclass renderable ()
   ((thread :initform NIL :accessor thread)
-   (delta-time :initarg :delta-time :accessor delta-time)
-   (frame-time :initform 0.0d0 :accessor frame-time))
-  (:default-initargs
-   :delta-time 0.01d0))
+   (delta-time :initarg :delta-time :initform 0.01d0 :accessor delta-time)
+   (frame-time :initform 0.0d0 :accessor frame-time)))
 
 (defmethod start ((renderable renderable))
   (setf (thread renderable) T)
