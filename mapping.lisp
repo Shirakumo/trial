@@ -25,15 +25,13 @@
                (with-slots ,(rest args) ,ev
                  ,@body))))))
 
-(defmacro define-simple-mapping (name (from to) &body tests)
-  (let ((ev (gensym "EVENT"))
-        (to (enlist to)))
-    `(setf (mapping ',name)
-           (lambda (,ev)
-             (when (typep ,ev ',from)
-               (with-all-slots-bound (,ev ,from)
-                 (when (and ,@tests)
-                   (make-instance ',(first to) ,@(rest to)))))))))
+(defmacro define-simple-mapping (name (from to &rest to-args) &body tests)
+  `(setf (mapping ',name)
+         (lambda (,from)
+           (when (typep ,from ',from)
+             (with-all-slots-bound (,from ,from)
+               (when (and ,@tests)
+                 (make-instance ',to ,@to-args)))))))
 
 ;; Currently this system is very unoptimised as it has to
 ;; loop through all potential mappers every time. Optimisation
@@ -44,7 +42,7 @@
         do (when result (issue loop result))))
 
 (defclass action (event)
-  ())
+  ((source-event :initarg :source-event :initform NIL :accessor source-event)))
 
 (defun remove-action-mappings (action)
   (loop for k being the hash-keys of *mappings*
@@ -54,7 +52,7 @@
 (defmacro define-action (name superclasses &body mappings)
   (flet ((compile-mapping (mapping)
            (destructuring-bind (type &rest tests) mapping
-             `(define-simple-mapping (,name ,type) (,type ,name)
+             `(define-simple-mapping (,name ,type) (,type ,name :source-event ,type)
                 ,@tests))))
     `(progn
        (defclass ,name ,(or superclasses '(action))
