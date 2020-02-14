@@ -127,7 +127,7 @@
                :float-features
                :lquery
                :static-vectors
-               :pngload
+               :pngload-fast
                :cl-tga
                :cl-jpeg
                :retrospectiff
