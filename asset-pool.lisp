@@ -7,7 +7,9 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defmethod coerce-base ((system symbol))
-  (pathname-utils:subdirectory (asdf:system-source-directory system) "data"))
+  (if *standalone*
+      (pathname-utils:subdirectory (deploy:data-directory) "pool" (string system))
+      (pathname-utils:subdirectory (asdf:system-source-directory system) "data")))
 
 (defmethod coerce-base ((pathname pathname))
   pathname)
@@ -76,10 +78,7 @@
   (mapc #'finalize (list-assets pool)))
 
 (defmethod pool-path ((pool pool) (null null))
-  (if *standalone*
-      (pathname-utils:subdirectory (deploy:data-directory) "pool"
-                                   (package-name (symbol-package (name pool))) (string-downcase (name pool)))
-      (coerce-base (base pool))))
+  (coerce-base (base pool)))
 
 (defmethod pool-path ((pool pool) pathname)
   (merge-pathnames pathname (pool-path pool NIL)))

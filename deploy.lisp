@@ -7,15 +7,23 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (deploy:define-hook (:deploy trial) (directory)
-  (dolist (pool (list-pools))
-    (deploy:status 1 "Copying pool ~a from ~a" (name pool) (base pool))
-    ;; FIXME: This is really, really bad. Pools that are based off the same thing
-    ;;        will copy all the assets every time, duplicating things a lot.
-    ;;        we also always deploy a bunch of shit that's not really needed.
-    (deploy:copy-directory-tree
-     (pool-path pool NIL)
-     (pathname-utils:subdirectory directory "pool" (package-name (symbol-package (name pool))) (string-downcase (name pool)))
-     :copy-root NIL))
+  (let ((bases (make-hash-table :test 'equalp)))
+    ;; FIXME: This is bad. We always deploy a bunch of shit that's not really needed.
+    (dolist (pool (list-pools))
+      (push pool (gethash (base pool) bases)))
+    (loop for base being the hash-keys of bases
+          for pools being the hash-values of bases
+          do ;; FIXME: We're potentially introducing conflicts here by eagerly coercing names.
+             (let ((base-name (if (pathnamep base)
+                                  (intern (string (name (first pools))) "KEYWORD")
+                                  base)))
+               (dolist (pool pools)
+                 (setf (base pool) base-name))
+               (deploy:status 1 "Copying pool ~{~a ~}from ~a" pools (coerce-base base))
+               (deploy:copy-directory-tree
+                (coerce-base base)
+                (pathname-utils:subdirectory directory "pool" (string base-name))
+                :copy-root NIL))))
   (setf *standalone* T))
 
 (deploy:define-hook (:build trial) ()
