@@ -77,12 +77,6 @@
   (:default-initargs
    :device (error "DEVICE required.")))
 
-(defclass gamepad-attach (gamepad-event)
-  ())
-
-(defclass gamepad-remove (gamepad-event)
-  ())
-
 (defclass gamepad-press (gamepad-event)
   ((button :initarg :button :reader button))
   (:default-initargs

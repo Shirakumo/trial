@@ -11,6 +11,8 @@
   (:shadow #:scene #:entity #:load #:update #:particle)
   (:import-from #:static-vectors #:static-vector-pointer)
   (:import-from #:flow #:port)
+  (:local-nicknames
+   (#:gamepad #:org.shirakumo.fraf.gamepad))
   ;; assets/font.lisp
   (:export
    #:*default-charset*
