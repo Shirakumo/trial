@@ -39,7 +39,7 @@
                (:file "event-loop" :depends-on ("package" "entity"))
                (:file "features" :depends-on ("package"))
                (:file "flare" :depends-on ("package" "transforms"))
-               (:file "fullscreenable" :depends-on ("package" "display"))
+               ;;(:file "fullscreenable" :depends-on ("package" "display"))
                (:file "gamepad" :depends-on ("package" "event-loop" "toolkit"))
                (:file "geometry" :depends-on ("package" "toolkit" "type-info" "static-vector" ("assets" "vertex-array")))
                (:file "geometry-clipmap" :depends-on ("package" "geometry-shapes" "shader-subject"))
@@ -114,7 +114,6 @@
                :bordeaux-threads
                :cl-opengl
                :cl-gamepad
-               :cl-monitors
                :cl-fond
                :cl-ppcre
                :pathname-utils
