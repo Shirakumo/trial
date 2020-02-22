@@ -9,6 +9,17 @@
 (defclass renderer (org.shirakumo.alloy.renderers.opengl.msdf:renderer trial:resource)
   ())
 
+(defmethod org.shirakumo.alloy.renderers.opengl.msdf:fontcache-directory ((renderer renderer))
+  (if trial:*standalone*
+      (pathname-utils:subdirectory (deploy:data-directory) "pool" "font-cache")
+      (call-next-method)))
+
+(deploy:define-hook (:deploy alloy) (directory)
+  (deploy:status 1 "Copying fonts")
+  (deploy:copy-directory-tree (org.shirakumo.alloy.renderers.opengl.msdf:fontcache-default-directory)
+                              (pathname-utils:subdirectory directory "pool" "font-cache")
+                              :copy-root NIL))
+
 (defmethod alloy:allocate ((renderer renderer))
   (loop for res across (trial::topological-sort-by-dependencies
                         (loop for v being the hash-values of (opengl::resources renderer)
