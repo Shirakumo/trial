@@ -1,0 +1,34 @@
+#|
+ This file is a part of trial
+ (c) 2016 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
+ Author: Nicolas Hafner <shinmera@tymoon.eu>
+|#
+
+(defpackage #:org.shirakumo.fraf.trial.steam
+  (:use #:cl)
+  (:export #:main #:steam-required-p)
+  (:local-nicknames
+   (#:trial #:org.shirakumo.fraf.trial)
+   (#:steam #:org.shirakumo.fraf.steamworks)))
+(in-package #:org.shirakumo.fraf.trial.steam)
+
+(defclass main (trial:main)
+  ())
+
+(defmethod steam-required-p ((main main)) NIL)
+
+(defmethod initialize-instance :after ((main main) &key app-id)
+  (handler-bind ((steam:initialization-failed
+                   (lambda (e)
+                     (when trial:*standalone*
+                       (if (steam-required-p main)
+                           (invoke-restart 'steam:restart)
+                           (invoke-restart 'ignore))))))
+    (when (or (steam-required-p main)
+              trial:*standalone*)
+      (with-simple-restart (ignore "Ignore the steamworks failure.")
+        (make-instance 'steam:steamworks-client :app-id app-id)))))
+
+(defmethod trial:finalize :after ((main main))
+  (when (steam:steamworks)
+    (steam:free (steam:steamworks))))
