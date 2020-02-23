@@ -136,7 +136,7 @@
   (fill-vector-data (uv vertex) 'vec2 data offset))
 
 (defclass normal-vertex (vertex)
-  ((normal :initform (vec 0 0 0 1) :initarg :normal :accessor normal :type vec3)))
+  ((normal :initform (vec 0 0 1) :initarg :normal :accessor normal :type vec3)))
 
 (defmethod vertex= and ((a normal-vertex) (b normal-vertex))
   (v= (normal a) (normal b)))
