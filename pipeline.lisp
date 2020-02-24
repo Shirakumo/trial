@@ -64,8 +64,8 @@
         for binding = (first (attachments (framebuffer pass)))
         when binding ;; We have to do it like this to prevent updating FBOs with
                      ;; texspecs that are not window-size.
-        do (setf (width (framebuffer pass)) (width (second binding)))
-           (setf (height (framebuffer pass)) (height (second binding)))))
+        do (setf (width pass) (setf (width (framebuffer pass)) (width (second binding))))
+           (setf (height pass) (setf (height (framebuffer pass)) (height (second binding))))))
 
 (defmethod normalized-texspec ((texspec list))
   (assert (= 0 (getf texspec :level 0)))
