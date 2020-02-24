@@ -30,5 +30,6 @@
         (make-instance 'steam:steamworks-client :app-id app-id)))))
 
 (defmethod trial:finalize :after ((main main))
-  (when (steam:steamworks)
-    (steam:free (steam:steamworks))))
+  (handler-case
+      (steam:free (steam:steamworks))
+    (steam:steamworks-not-initialized ())))
