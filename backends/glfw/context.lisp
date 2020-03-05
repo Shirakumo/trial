@@ -202,7 +202,8 @@
                (%glfw:terminate)))))
     #+darwin
     (tmt:with-body-in-main-thread ()
-      (body))
+      (handler-bind ((error #'trial:standalone-error-handler))
+        (body)))
     #-darwin
     (body)))
 
