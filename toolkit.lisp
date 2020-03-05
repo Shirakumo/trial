@@ -224,8 +224,8 @@
   (when *standalone*
     (v:error :trial err)
     (v:fatal :trial "Encountered unhandled error in ~a, bailing." (bt:current-thread))
-    (if (and (uiop:getenv "TRIAL_DEBUG")
-             (string/= "" (uiop:getenv "TRIAL_DEBUG")))
+    (if (and (uiop:getenv "DEPLOY_DEBUG_BOOT")
+             (string/= "" (uiop:getenv "DEPLOY_DEBUG_BOOT")))
         (invoke-debugger err)
         (deploy:quit))))
 
