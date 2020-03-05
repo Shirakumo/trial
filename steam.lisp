@@ -33,3 +33,10 @@
   (handler-case
       (steam:free (steam:steamworks))
     (steam:steamworks-not-initialized ())))
+
+(deploy:define-hook (:build check-steamworks) ()
+  (unless steam::*low-level-present*
+    (error "CL-STEAMWORKS has not been set up properly!
+Please check the CL-STEAMWORKS setup instructions.
+
+Refusing to deploy as the game would not launch properly anyway.")))
