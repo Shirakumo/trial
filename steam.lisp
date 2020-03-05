@@ -20,12 +20,12 @@
 (defmethod initialize-instance :after ((main main) &key app-id)
   (handler-bind ((steam:initialization-failed
                    (lambda (e)
-                     (when trial:*standalone*
+                     (when (deploy:deployed-p)
                        (if (steam-required-p main)
                            (invoke-restart 'steam:restart)
                            (invoke-restart 'ignore))))))
     (when (or (steam-required-p main)
-              trial:*standalone*)
+              (deploy:deployed-p))
       (with-simple-restart (ignore "Ignore the steamworks failure.")
         (make-instance 'steam:steamworks-client :app-id app-id)))))
 

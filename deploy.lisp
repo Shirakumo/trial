@@ -23,8 +23,7 @@
                (deploy:copy-directory-tree
                 (coerce-base base)
                 (pathname-utils:subdirectory directory "pool" (string base-name))
-                :copy-root NIL))))
-  (setf *standalone* T))
+                :copy-root NIL)))))
 
 (deploy:define-hook (:build trial) ()
   (v:remove-global-controller))

@@ -724,7 +724,6 @@
    #:with-new-value-restart
    #:with-cleanup-on-failure
    #:acquire-lock-with-starvation-test
-   #:*standalone*
    #:standalone-error-handler
    #:standalone-logging-handler
    #:make-thread

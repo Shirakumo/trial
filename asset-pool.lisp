@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defmethod coerce-base ((system symbol))
-  (if *standalone*
+  (if (deploy:deployed-p)
       (pathname-utils:subdirectory (deploy:data-directory) "pool" (string system))
       (pathname-utils:subdirectory (asdf:system-source-directory system) "data")))
 

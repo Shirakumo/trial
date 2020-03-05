@@ -219,18 +219,17 @@
                       (return NIL))
                     (bt:thread-yield))))
 
-(defvar *standalone* NIL)
 (defun standalone-error-handler (err)
-  (when *standalone*
+  (when (deploy:deployed-p)
     (v:error :trial err)
     (v:fatal :trial "Encountered unhandled error in ~a, bailing." (bt:current-thread))
-    (if (and (uiop:getenv "DEPLOY_DEBUG_BOOT")
-             (string/= "" (uiop:getenv "DEPLOY_DEBUG_BOOT")))
-        (invoke-debugger err)
-        (deploy:quit))))
+    (cond ((and (uiop:getenv "DEPLOY_DEBUG_BOOT")
+                (string/= "" (uiop:getenv "DEPLOY_DEBUG_BOOT")))
+           (invoke-debugger err)
+           (deploy:quit)))))
 
 (defun standalone-logging-handler ()
-  (when *standalone*
+  (when (deploy:deployed-p)
     (let ((log (uiop:getenv "TRIAL_LOGFILE")))
       (unless (and log (string/= "" log))
         (setf log (merge-pathnames "trial.log" (or (uiop:argv0) (user-homedir-pathname)))))

@@ -10,7 +10,7 @@
   ())
 
 (defmethod org.shirakumo.alloy.renderers.opengl.msdf:fontcache-directory ((renderer renderer))
-  (if trial:*standalone*
+  (if (deploy:deployed-p)
       (pathname-utils:subdirectory (deploy:data-directory) "pool" "font-cache")
       (call-next-method)))
 
