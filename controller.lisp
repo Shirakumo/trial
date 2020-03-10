@@ -116,7 +116,7 @@
     (vector-push-extend (cons title func) (observers controller))
     func))
 
-(defmethod observe (thing &rest args)
+(defmethod observe (thing &rest args &key &allow-other-keys)
   (apply #'observe (compile NIL `(lambda (ev)
                                    (declare (ignorable ev))
                                    ,thing))
