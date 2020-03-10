@@ -299,3 +299,27 @@
   (case key
     (:grave-accent :section)
     (T key)))
+
+;; Runtime support for Wayland and X11
+#+linux
+(progn
+  (cffi:define-foreign-library glfw-x11
+    (T "libglfw-x11.so"))
+  (cffi:define-foreign-library glfw-wayland
+    (T "libglfw-wayland.so"))
+  
+  (deploy:define-library %glfw::glfw
+    :dont-open T
+    :dont-deploy T)
+  (deploy:define-library glfw-x11
+    :dont-open T)
+  (deploy:define-library glfw-wayland
+    :dont-open T)
+
+  (deploy:define-hook (:boot load-glfw) ()
+    (cond ((deploy:env-set-p "WAYLAND_DISPLAY")
+           (deploy:status 1 "Detected Wayland, loading GLFW3-Wayland.")
+           (deploy:open-library 'glfw-wayland))
+          (T
+           (deploy:status 1 "Assuming X11, loading GLFW3-X11.")
+           (deploy:open-library 'glfw-x11)))))
