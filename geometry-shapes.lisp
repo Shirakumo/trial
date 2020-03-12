@@ -266,3 +266,11 @@
     (make-lines (list (list (vec 0 0 0) (vec 1 0 0 1)) (list (vec 10 0 0) (vec 1 0 0 1))
                       (list (vec 0 0 0) (vec 0 1 0 1)) (list (vec 0 10 0) (vec 0 1 0 1))
                       (list (vec 0 0 0) (vec 0 0 1 1)) (list (vec 0 0 10) (vec 0 0 1 1)))))
+
+(define-asset (trial 2d-axes) mesh
+    (with-vertex-filling ((make-instance 'vertex-mesh :face-length 2))
+      ;; KLUDGE: for whatever reason using most-positive/negative-single-float does not work.
+      (vertex :location (vec 0 -1000000 0))
+      (vertex :location (vec 0 +1000000 0))
+      (vertex :location (vec -1000000 0 0))
+      (vertex :location (vec +1000000 0 0))))
