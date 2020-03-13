@@ -99,6 +99,10 @@ void main(){
     (reset-animation subject))
   animation)
 
+(defmethod switch-animation ((subject animated-sprite-subject) (animation sprite-animation))
+  (setf (slot-value subject 'animation) animation)
+  (reset-animation subject))
+
 (define-handler (animated-sprite-subject update-sprite-animation tick) (ev dt)
   (let* ((tile (tile animated-sprite-subject))
          (animations (animations animated-sprite-subject))
@@ -112,10 +116,10 @@ void main(){
              (cond ((eq animation next)
                     (setf (vx tile) (sprite-animation-loop animation)))
                    (T
-                    (setf (animation animated-sprite-subject) next)))))
+                    (switch-animation animated-sprite-subject next)))))
           ((< (vx tile) (sprite-animation-start animation))
            (let ((next (aref animations (sprite-animation-next animation))))
              (cond ((eq animation next)
                     (setf (vx tile) (1- (sprite-animation-end animation))))
                    (T
-                    (setf (animation animated-sprite-subject) next))))))))
+                    (switch-animation animated-sprite-subject next))))))))

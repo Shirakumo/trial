@@ -670,7 +670,15 @@
    #:playback-direction
    #:frame
    #:animation
+   #:sprite-animation
+   #:sprite-animation-name
+   #:sprite-animation-start
+   #:sprite-animation-end
+   #:sprite-animation-step
+   #:sprite-animation-next
+   #:sprite-animation-loop
    #:reset-animation
+   #:switch-animation
    #:update-sprite-animation)
   ;; ssao,lisp
   (:export
