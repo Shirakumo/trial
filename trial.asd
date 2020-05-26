@@ -96,6 +96,7 @@
                 :components ((:file "font")
                              (:file "image")
                              (:file "mesh")
+                             (:file "sprite-data" :depends-on ("image"))
                              (:file "struct-buffer" :depends-on ((:.. "gl-struct")))
                              (:file "uniform-buffer" :depends-on ("struct-buffer"))
                              (:file "vertex-struct-buffer" :depends-on ("struct-buffer"))))
@@ -133,7 +134,8 @@
                :terrable
                :mmap
                :form-fiddle
-               :lambda-fiddle))
+               :lambda-fiddle
+               :jsown))
 
 ;; FIXME: factor out dependencies into systems
 ;;        like for image, model formats, etc.

@@ -13,7 +13,9 @@
 ;;        - Box
 ;;        - Torus
 ;;        - Arrow
+;; FIXME: Normalise interface (vectors instead of x/y/z args?)
 ;; NOTE: UV convention is U is pointing RIGHT, V is pointing UP
+;; NOTE: Should generate triangle vertices in CCW order
 
 (defun make-rectangle (w h &key (align :center) mesh pack (x 0) (y 0) (z 0))
   (let (l r u b)

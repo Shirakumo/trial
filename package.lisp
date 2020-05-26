@@ -33,6 +33,14 @@
    #:geometry-name
    #:attributes
    #:data-usage)
+  ;; assets/sprite-data.lisp
+  (:export
+   #:sprite-data
+   #:vertex-array
+   #:texture
+   #:animations
+   #:frames
+   #:load-animations)
   ;; assets/uniform-buffer.lisp
   (:export
    #:uniform-buffer
@@ -660,26 +668,29 @@
    #:skybox-pass)
   ;; sprite.lisp
   (:export
+   #:sprite-frame
+   #:xy
+   #:uv
+   #:duration
+   #:sprite-animation
+   #:name
+   #:start
+   #:end
+   #:next-animation
+   #:loop-to
    #:sprite-entity
-   #:tile
-   #:size
+   #:frame-idx
+   #:frames
+   #:make-sprite-frame-mesh
+   #:frame
    #:animated-sprite-subject
-   #:animations
    #:clock
+   #:animations
+   #:animation
    #:playback-speed
    #:playback-direction
-   #:frame
-   #:animation
-   #:sprite-animation
-   #:sprite-animation-name
-   #:sprite-animation-start
-   #:sprite-animation-end
-   #:sprite-animation-step
-   #:sprite-animation-next
-   #:sprite-animation-loop
    #:reset-animation
-   #:switch-animation
-   #:update-sprite-animation)
+   #:switch-animation)
   ;; ssao,lisp
   (:export
    #:ssao-pass
