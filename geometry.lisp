@@ -218,9 +218,13 @@
   buffer)
 
 (defmethod replace-vertex-data ((buffer vertex-buffer) (mesh vertex-mesh) &key (attributes T) update)
-  (setf (buffer-data buffer) (replace-vertex-data (buffer-data buffer) mesh :attributes attributes :buffer-type (buffer-type buffer)))
+  (setf (buffer-data buffer) (replace-vertex-data (or (buffer-data buffer) (make-array 0 :adjustable T :element-type 'single-float)) mesh
+                                                  :attributes attributes :buffer-type (buffer-type buffer)))
   (when update
-    (resize-buffer buffer (* (length (buffer-data buffer)) (gl-type-size (element-type buffer))) :data (buffer-data buffer)))
+    (let ((size (* (length (buffer-data buffer)) (gl-type-size (element-type buffer)))))
+      (if (gl-name buffer)
+          (resize-buffer buffer size :data (buffer-data buffer))
+          (setf (size buffer) size))))
   buffer)
 
 (defmethod replace-vertex-data ((array vertex-array) (mesh vertex-mesh) &key (attributes T) update)
