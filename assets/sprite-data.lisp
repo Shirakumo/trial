@@ -52,8 +52,8 @@
 (defun decode-aseprite-tag (data)
   (make-instance 'sprite-animation
                  :name (intern (string-upcase (jsown:val data "name")))
-                 :from (jsown:val data "from")
-                 :to (1+ (jsown:val data "to"))
+                 :start (jsown:val data "from")
+                 :end (1+ (jsown:val data "to"))
                  :next-animation (when (jsown:keyp data "next")
                                    (intern (string-upcase (jsown:val data "next"))))
                  :loop-to (when (jsown:keyp data "loop")
