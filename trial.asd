@@ -71,7 +71,7 @@
                (:file "shader-subject" :depends-on ("package" "shader-entity" "subject"))
                (:file "shadow-map" :depends-on ("package" "shader-pass" "transforms"))
                (:file "skybox" :depends-on ("package" "shader-subject" "transforms"))
-               (:file "sprite" :depends-on ("package" "shader-subject" "helpers"))
+               (:file "sprite" :depends-on ("package" "shader-subject" "helpers" ("assets" "sprite-data")))
                (:file "ssao" :depends-on ("package" "shader-pass" "transforms"))
                (:file "static-vector" :depends-on ("package"))
                (:file "subject" :depends-on ("package" "event-loop"))

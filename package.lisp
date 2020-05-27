@@ -140,6 +140,9 @@
    #:input
    #:load
    #:reload
+   #:register-load-observer
+   #:clear-observers
+   #:observe-load
    #:coerce-asset-input
    #:define-asset
    #:gl-asset)

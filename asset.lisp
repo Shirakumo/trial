@@ -9,7 +9,8 @@
 (defclass asset (resource)
   ((pool :initform NIL :accessor pool)
    (name :initform NIL :accessor name)
-   (input :initarg :input :accessor input)))
+   (input :initarg :input :accessor input)
+   (observers :initform (tg:make-weak-hash-table :weakness :key) :accessor observers)))
 
 (defmethod initialize-instance ((asset asset) &key pool name)
   (check-type name symbol)
@@ -50,10 +51,23 @@
     (v:trace :trial.asset "Loading ~a/~a" (when (pool asset) (name (pool asset))) (name asset))
     (call-next-method)))
 
+(defmethod load :after ((asset asset))
+  (observe-load T asset))
+
 (defmethod deallocate :around ((asset asset))
   (when (allocated-p asset)
     (v:trace :trial.asset "Deallocating ~a/~a" (when (pool asset) (name (pool asset))) (name asset))
     (call-next-method)))
+
+(defmethod register-load-observer (observer (asset asset))
+  (setf (gethash observer (observers asset)) T))
+
+(defmethod clear-observers ((asset asset))
+  (clrhash (observers asset)))
+
+(defmethod observe-load ((_ (eql T)) (asset asset))
+  (loop for k being the hash-keys of (observers asset)
+        do (observe-load k asset)))
 
 (defmethod coerce-asset-input ((asset asset) (input (eql T)))
   (coerce-asset-input asset (input asset)))

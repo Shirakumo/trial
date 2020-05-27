@@ -66,7 +66,11 @@
    (playback-speed :initarg :playback-speed :initform 1.0 :accessor playback-speed)
    (playback-direction :initarg :playback-direction :initform +1 :accessor playback-direction)))
 
-(defmethod initialize-instance ((sprite animated-sprite-subject) &key sprite-data)
+(defmethod initialize-instance :after ((sprite animated-sprite-subject) &key sprite-data)
+  (when sprite-data
+    (register-load-observer sprite sprite-data)))
+
+(defmethod observe-load ((sprite animated-sprite-subject) (data sprite-data))
   (setf (animations sprite) (animations sprite-data))
   (setf (frames sprite) (frames sprite-data))
   (setf (texture sprite) (texture sprite-data))
