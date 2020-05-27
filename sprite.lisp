@@ -24,6 +24,10 @@
   (unless (loop-to animation)
     (setf (loop-to animation) (start animation))))
 
+(defmethod print-object ((animation sprite-animation) stream)
+  (print-unreadable-object (animation stream :type T)
+    (format stream "~s" (name animation))))
+
 (define-shader-entity sprite-entity (vertex-entity textured-entity)
   ((frame-idx :initarg :frame-idx :initform 0 :accessor frame-idx)
    (frames :initarg :frames :initform #() :accessor frames)

@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass sprite-data (asset)
+(defclass sprite-data (gl-asset)
   ((vertex-array :initform (change-class (make-instance 'vertex-mesh :vertex-type 'textured-vertex) 'vertex-array) :accessor vertex-array)
    (texture :initform NIL :accessor texture)
    (animations :initform #() :accessor animations)
@@ -19,8 +19,25 @@
 (defmethod (setf frames) :after ((frames vector) (sprite sprite-data))
   (replace-vertex-data (vertex-array sprite) (make-sprite-frame-mesh frames) :update T))
 
+(defmethod allocated-p ((data sprite-data))
+  (and (/= 0 (length (frames data)))
+       (texture data)
+       (allocated-p (texture data))
+       (vertex-array data)
+       (allocated-p (vertex-array data))))
+
 (defmethod load ((data sprite-data))
-  (load-animations (input* data) data))
+  (load-animations (input* data) data)
+  (load (texture data))
+  (mapc #'load (dependencies (vertex-array data)))
+  (load (vertex-array data)))
+
+(defmethod deallocate ((data sprite-data))
+  (deallocate (texture data))
+  (mapc #'deallocate (dependencies (vertex-array data)))
+  (deallocate (vertex-array data))
+  (setf (animations data) #())
+  (setf (frames data) #()))
 
 (defun decode-json-vec (data)
   (cond ((and (jsown:keyp data "x") (jsown:keyp data "w"))
@@ -49,9 +66,16 @@
                    ;; Durations are given in milliseconds
                    :duration (/ (jsown:val data "duration") 1000f0))))
 
+(defun decode-aseprite-name (name)
+  (intern (with-output-to-string (out)
+            (loop for char across name
+                  do (case char
+                       ((#\  #\_) (write-char #\- out))
+                       (T (write-char (char-upcase char) out)))))))
+
 (defun decode-aseprite-tag (data)
   (make-instance 'sprite-animation
-                 :name (intern (string-upcase (jsown:val data "name")))
+                 :name (decode-aseprite-name (jsown:val data "name"))
                  :start (jsown:val data "from")
                  :end (1+ (jsown:val data "to"))
                  :next-animation (when (jsown:keyp data "next")
