@@ -138,6 +138,7 @@
    #:pool
    #:name
    #:input
+   #:input*
    #:load
    #:reload
    #:register-load-observer
