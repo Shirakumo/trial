@@ -59,21 +59,21 @@
     (scale (scaling obj))
     (call-next-method)))
 
-(define-subject clocked-subject (clock)
+(defclass clocked-entity (clock listener)
   ())
 
-(define-handler (clocked-subject advance-time tick) (ev)
-  (flare:update clocked-subject))
+(defmethod handle :before ((ev tick) (entity clocked-entity))
+  (flare:update entity))
 
 (define-shader-entity vertex-entity ()
   ((vertex-array :initarg :vertex-array :accessor vertex-array)))
 
-(defmethod paint ((subject vertex-entity) (pass shader-pass))
-  (let ((program (shader-program-for-pass pass subject)))
+(defmethod paint ((entity vertex-entity) (pass shader-pass))
+  (let ((program (shader-program-for-pass pass entity)))
     (setf (uniform program "model_matrix") (model-matrix))
     (setf (uniform program "view_matrix") (view-matrix))
     (setf (uniform program "projection_matrix") (projection-matrix)))
-  (let ((vao (vertex-array subject)))
+  (let ((vao (vertex-array entity)))
     (gl:bind-vertex-array (gl-name vao))
     ;; KLUDGE: Bad for performance!
     (if (find 'vertex-buffer (bindings vao) :key #'type-of)

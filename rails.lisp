@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-subject rail (clocked-subject)
+(defclass rail (clocked-entity)
   ((target :initarg :target :accessor target)
    (rail-points :accessor rail-points)
    (duration :initarg :duration :accessor duration))
@@ -17,14 +17,14 @@
 (defmethod initialize-instance :after ((rail rail) &key rail-points)
   (setf (rail-points rail) (coerce rail-points 'vector)))
 
-(define-handler (rail tick) (ev)
+(defmethod handle ((ev tick) (rail rail))
   (when (and (target rail) (running rail))
     (setf (location (target rail))
           (rail-location rail (min 1 (/ (clock rail) (duration rail)))))))
 
 (defgeneric rail-location (rail x))
 
-(define-subject linear-rail (rail)
+(defclass linear-rail (rail)
   ((rail-times :accessor rail-times)))
 
 (defmethod (setf rail-points) :after (points (rail linear-rail))

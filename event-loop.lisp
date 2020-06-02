@@ -6,61 +6,27 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defgeneric add-handler (handler handler-container))
-(defgeneric remove-handler (handler handler-container))
-(defgeneric handle (event handler))
+(defclass event ()
+  ())
 
-;; Default priority
-(defmethod priority (object)
-  0)
+(defclass listener ()
+  ())
 
-(defmethod handle :around (event handler)
-  (with-simple-restart (abort "Don't handle ~a in ~a." event handler)
+(defgeneric add-listener (listener event-loop))
+(defgeneric remove-listener (listener event-loop))
+(defgeneric handle (event listener))
+
+(defmethod handle :around ((event event) listener)
+  (with-simple-restart (abort "Don't handle ~a in ~a." event listener)
     (call-next-method)))
 
-(defclass handler-container ()
-  ((handlers :initform () :accessor handlers)))
+;; Default to doing nothing.
+(defmethod handle ((event event) (listener listener)))
 
-(defmethod handle (event (container handler-container))
-  (dolist (handler (handlers container))
-    (handle event handler)))
-
-(defmethod add-handler (handler (container handler-container))
-  (setf (handlers container)
-        (sort (cons handler (delete handler (handlers container) :test #'matches))
-              #'> :key #'priority)))
-
-(defmethod add-handler ((handlers list) (container handler-container))
-  (let ((handlers (copy-list handlers)))
-    (loop for cons on (handlers container)
-          for handler = (find (car cons) handlers :test #'matches)
-          do (when handler
-               (setf (car cons) handler)
-               (setf handlers (delete handler handlers))))
-    (setf (handlers container) (sort (nconc handlers (handlers container)) #'> :key #'priority)))
-  handlers)
-
-(defmethod remove-handler (handler (container handler-container))
-  (setf (handlers container)
-        (delete handler (handlers container) :test #'matches))
-  handler)
-
-(defmethod remove-handler ((handlers list) (container handler-container))
-  (setf (handlers container) (delete-if (lambda (el)
-                                          (find el handlers :test #'matches))
-                                        (handlers container)))
-  handlers)
-
-(defmethod add-handler ((source handler-container) (container handler-container))
-  (add-handler (handlers source) container)
-  source)
-
-(defmethod remove-handler ((source handler-container) (container handler-container))
-  (remove-handler (handlers source) container))
-
-(defclass event-loop (handler-container)
+(defclass event-loop ()
   ((queue :initform (make-array 64 :initial-element NIL :adjustable T :fill-pointer 0) :reader queue)
-   (queue-index :initform 0 :accessor queue-index)))
+   (queue-index :initform 0 :accessor queue-index)
+   (listeners :initform (make-hash-table :test 'eq) :accessor listeners)))
 
 (defun issue (loop event-type &rest args)
   (let ((event (etypecase event-type
@@ -107,42 +73,31 @@
   (setf (fill-pointer (queue loop)) 0
         (queue-index loop) 0))
 
-(defmethod handle (event (loop event-loop))
+(defmethod handle ((event event) (loop event-loop))
   (with-simple-restart (skip-event "Skip handling the event entirely.")
-    (call-next-method)))
+    (unless (typep event 'tick)
+      (print event))
+    (loop for listener being the hash-keys of (listeners loop)
+          do (handle event listener))))
 
-;; Force adding the loop directly.
-(defmethod add-handler ((loop event-loop) (container handler-container))
-  (setf (handlers container) (cons loop (delete loop (handlers container) :test #'matches)))
-  loop)
+(defmethod add-listener (listener (loop event-loop))
+  (setf (gethash listener (listeners loop)) listener))
 
-(defmethod remove-handler ((loop event-loop) (container handler-container))
-  (setf (handlers container) (delete loop (handlers container) :test #'matches))
-  loop)
+(defmethod remove-listener (listener (loop event-loop))
+  (remhash listener (listeners loop)))
 
-(defclass handler ()
-  ((name :initarg :name :accessor name)
-   (event-type :initarg :event-type :accessor event-type)
-   (delivery-function :initarg :delivery-function :accessor delivery-function)
-   (priority :initarg :priority :accessor priority))
-  (:default-initargs
-   :name (error "NAME needed.")
-   :event-type 'event
-   :delivery-function (error "DELIVERY-FUNCTION needed.")
-   :priority 0))
+(defmethod clear ((loop event-loop))
+  (discard-events loop)
+  (clrhash (listeners loop)))
 
-(defmethod matches ((a handler) (b handler))
-  (eql (name a) (name b)))
-
-(defmethod handle :around (event (handler handler))
-  (when (typep event (event-type handler))
-    (call-next-method)))
-
-(defmethod handle (event (handler handler))
-  (funcall (delivery-function handler) event))
-
-(defclass event ()
-  ())
+(defmacro define-handler ((class event &rest qualifiers) slots &body body)
+  (destructuring-bind (instance class) (enlist class class)
+    (destructuring-bind (variable event) (enlist event event)
+      `(defmethod handle ,@qualifiers ((,variable ,event) (,instance ,class))
+         (let ,(loop for slot in slots
+                     for (var name) = (enlist slot slot)
+                     collect `(,var (slot-value ,variable ',name)))
+           ,@body)))))
 
 (defclass tick (event)
   ((tt :initarg :tt :accessor tt)

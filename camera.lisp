@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-subject camera (located-entity)
+(defclass camera (located-entity listener)
   ((near-plane :initarg :near-plane :accessor near-plane)
    (far-plane :initarg :far-plane :accessor far-plane))
   (:default-initargs
@@ -15,8 +15,14 @@
    :near-plane 1f0
    :far-plane 1000000.0f0))
 
-(define-generic-handler (camera project-view tick -100))
-(define-generic-handler (camera setup-perspective resize))
+(defgeneric project-view (camera))
+(defgeneric setup-perspective (camera width height))
+
+(defmethod handle ((ev tick) (camera camera))
+  (project-view camera))
+
+(defmethod handle ((ev resize) (camera camera))
+  (setup-perspective camera (width ev) (height ev)))
 
 (defmethod (setf near-plane) :after (val (camera camera))
   (setup-perspective camera))
@@ -24,88 +30,84 @@
 (defmethod (setf far-plane) :after (val (camera camera))
   (setup-perspective camera))
 
-(defmethod paint :around ((camera camera) target))
-
-(defmethod setup-perspective :before ((camera camera) ev)
+(defmethod setup-perspective :before ((camera camera) w h)
   (reset-matrix *projection-matrix*))
 
-(defmethod project-view :before ((camera camera) ev)
+(defmethod project-view :before ((camera camera))
   (reset-matrix))
 
-(define-subject 2d-camera (camera)
+(defclass 2d-camera (camera)
   ()
   (:default-initargs
    :near-plane 0.0
    :far-plane 100.0
    :location (vec 0 0 200)))
 
-(defmethod setup-perspective ((camera 2d-camera) ev)
-  (orthographic-projection 0 (width ev) 0 (height ev)
-                           (near-plane camera) (far-plane camera)))
+(defmethod setup-perspective ((camera 2d-camera) width height)
+  (orthographic-projection 0 width 0 height (near-plane camera) (far-plane camera)))
 
-(defmethod project-view ((camera 2d-camera) ev)
+(defmethod project-view ((camera 2d-camera))
   (reset-matrix *view-matrix*)
   (translate (v- (location camera)) *view-matrix*))
 
-(define-subject sidescroll-camera (2d-camera)
+(defclass sidescroll-camera (2d-camera)
   ((zoom :initarg :zoom :accessor zoom)
    (target :initarg :target :accessor target))
   (:default-initargs
    :zoom 1.0
    :target NIL))
 
-(defmethod project-view ((camera sidescroll-camera) ev)
+(defmethod project-view ((camera sidescroll-camera))
   (let ((z (zoom camera)))
     (reset-matrix *view-matrix*)
     (scale-by z z z *view-matrix*)
     (translate (v- (location camera) (location (target camera))) *view-matrix*)))
 
-(define-subject 3d-camera (camera)
+(defclass 3d-camera (camera)
   ((fov :initarg :fov :accessor fov))
   (:default-initargs
    :fov 75))
 
 (defmethod (setf fov) :after (val (camera 3d-camera))
-  (setup-perspective camera))
+  (setup-perspective camera (width *context*) (height *context*)))
 
-(defmethod setup-perspective  ((camera 3d-camera) ev)
-  (perspective-projection (fov camera) (/ (width ev) (max 1 (height ev)))
-                          (near-plane camera) (far-plane camera)))
+(defmethod setup-perspective ((camera 3d-camera) width height)
+  (perspective-projection (fov camera) (/ width (max 1 height)) (near-plane camera) (far-plane camera)))
 
-(define-subject target-camera (3d-camera)
+(defclass target-camera (3d-camera)
   ((target :initarg :target :accessor target)
    (up :initarg :up :accessor up))
   (:default-initargs
    :target (vec 0 0 0)
    :up (vec 0 1 0)))
 
-(defmethod project-view ((camera target-camera) ev)
+(defmethod project-view ((camera target-camera))
   (look-at (location camera) (target camera) (up camera)))
 
-(define-subject pivot-camera (target-camera)
+(defclass pivot-camera (target-camera)
   ()
   (:default-initargs
    :target NIL))
 
-(defmethod project-view ((camera pivot-camera) ev)
+(defmethod project-view ((camera pivot-camera))
   (when (target camera)
     (look-at (location camera)
              (location (target camera))
              (up camera))))
 
-(define-subject following-camera (target-camera)
+(defclass following-camera (target-camera)
   ()
   (:default-initargs
    :target NIL))
 
-(defmethod project-view ((camera following-camera) ev)
+(defmethod project-view ((camera following-camera))
   (when (target camera)
     (look-at (v+ (location camera)
                  (location (target camera)))
              (location (target camera))
              (up camera))))
 
-(define-subject fps-camera (3d-camera)
+(defclass fps-camera (3d-camera)
   ((rotation :initarg :rotation :accessor rotation)
    (acceleration :initarg :acceleration :accessor acceleration)
    (x-inverted :initarg :x-inverted :accessor x-inverted)
@@ -116,7 +118,7 @@
    :x-inverted NIL
    :y-inverted NIL))
 
-(defmethod project-view ((camera fps-camera) ev)
+(defmethod project-view ((camera fps-camera))
   (reset-matrix (view-matrix))
   (rotate +vx+ (vx (rotation camera)) (view-matrix))
   (rotate +vy+ (vy (rotation camera)) (view-matrix))
@@ -130,15 +132,15 @@
                                 (acceleration camera)))
     (nvmod (rotation camera) (* 2 PI))))
 
-(define-handler (fps-camera mouse-move) (ev old-pos pos)
+(define-handler (fps-camera mouse-move) (old-pos pos)
   (do-fps-movement fps-camera old-pos pos))
 
-(define-subject freeroam-camera (fps-camera)
+(defclass freeroam-camera (fps-camera)
   ((move-speed :initarg :move-speed :accessor move-speed))
   (:default-initargs
    :move-speed 1))
 
-(define-handler (freeroam-camera tick) (ev)
+(define-handler (freeroam-camera tick :after) ()
   (let* ((loc (location freeroam-camera))
          (rot (rotation freeroam-camera))
          (speed (* (move-speed freeroam-camera)
@@ -163,10 +165,10 @@
           ((retained 'key :c)
            (decf (vy loc) speed)))))
 
-(define-subject editor-camera (freeroam-camera)
+(defclass editor-camera (freeroam-camera)
   ())
 
-(define-handler (editor-camera mouse-move) (ev old-pos pos)
+(define-handler (editor-camera mouse-move) (old-pos pos)
   (when (or (retained 'mouse :middle)
             (retained 'key :left-control))
     (do-fps-movement editor-camera old-pos pos)))

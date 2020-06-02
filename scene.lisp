@@ -35,11 +35,11 @@
 (defmethod deregister :after ((entity entity) (scene scene))
   (issue scene 'leave :scene scene :entity entity))
 
-(defmethod register :after ((container handler-container) (scene scene))
-  (add-handler container scene))
+(defmethod register :after ((listener listener) (scene scene))
+  (add-listener listener scene))
 
 (defmethod deregister :after (thing (scene scene))
-  (remove-handler thing scene))
+  (remove-listener thing scene))
 
 (defmethod paint :around ((scene scene) target)
   (let ((*scene* scene))
@@ -50,7 +50,7 @@
     (call-next-method)))
 
 (defmethod banned-slots append ((object scene))
-  '(queue handlers))
+  '(queue listeners))
 
 ;; Since we have a tick event, we don't want to dupe that here.
 ;; animations and clock update are already handled by the method

@@ -93,9 +93,6 @@
             (first effective-superclasses)
             class))))
 
-(defmethod reinitialize-instance :after ((class subject-class) &key)
-  (apply-class-changes class))
-
 (defmethod c2mop:finalize-inheritance :after ((class shader-entity-class))
   (dolist (super (c2mop:class-direct-superclasses class))
     (unless (c2mop:class-finalized-p super)
@@ -192,20 +189,20 @@
   (symbol (find-class symbol))
   (shader-entity (class-of shader-entity)))
 
-(defmethod class-shader (type (subject shader-entity))
-  (class-shader type (class-of subject)))
+(defmethod class-shader (type (entity shader-entity))
+  (class-shader type (class-of entity)))
 
-(defmethod (setf class-shader) (source type (subject shader-entity))
-  (setf (class-shader type (class-of subject)) source))
+(defmethod (setf class-shader) (source type (entity shader-entity))
+  (setf (class-shader type (class-of entity)) source))
 
-(defmethod remove-class-shader (type (subject shader-entity))
-  (remove-class-shader type (class-of subject)))
+(defmethod remove-class-shader (type (entity shader-entity))
+  (remove-class-shader type (class-of entity)))
 
 (defmethod effective-shader-class ((object shader-entity))
   (effective-shader-class (class-of object)))
 
-(defmethod make-class-shader-program ((subject shader-entity))
-  (make-class-shader-program (class-of subject)))
+(defmethod make-class-shader-program ((entity shader-entity))
+  (make-class-shader-program (class-of entity)))
 
 (defmacro define-shader-entity (&environment env name direct-superclasses direct-slots &rest options)
   (setf direct-superclasses (append direct-superclasses (list 'shader-entity)))

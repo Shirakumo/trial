@@ -305,21 +305,16 @@
    #:entity)
   ;; event-loop.lisp
   (:export
-   #:add-handler
-   #:remove-handler
+   #:event
+   #:listener
+   #:add-listener
+   #:remove-listener
    #:handle
-   #:handler-container
-   #:handlers
-   #:priority
    #:event-loop
    #:issue
    #:process
    #:discard-events
-   #:handler
-   #:event-type
-   #:delivery-function
-   #:priority
-   #:event
+   #:define-handler
    #:tick
    #:tt
    #:dt
@@ -419,7 +414,7 @@
    #:pivot
    #:scaled-entity
    #:scaling
-   #:clocked-subject
+   #:clocked-entity
    #:vertex-entity
    #:colored-entity
    #:vertex-colored-entity
@@ -650,11 +645,6 @@
    #:single-shader-pass
    #:shader-program
    #:post-effect-pass)
-  ;; shader-subject.lisp
-  (:export
-   #:shader-subject-class
-   #:shader-subject
-   #:define-shader-subject)
   ;; shadow-map.lisp
   (:export
    #:shadow-map-pass
@@ -687,7 +677,7 @@
    #:frames
    #:make-sprite-frame-mesh
    #:frame
-   #:animated-sprite-subject
+   #:animated-sprite
    #:clock
    #:animations
    #:animation
@@ -707,19 +697,6 @@
    #:static-vector-p
    #:static-vector
    #:maybe-free-static-vector)
-  ;; subject.lisp
-  (:export
-   #:subject-class
-   #:effective-handlers
-   #:compute-effective-handlers
-   #:subject
-   #:event-loops
-   #:regenerate-handlers
-   #:define-subject
-   #:subject-handler
-   #:subject
-   #:define-handler
-   #:define-generic-handler)
   ;; text.lisp
   (:export
    #:text
