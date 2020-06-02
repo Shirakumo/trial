@@ -13,7 +13,7 @@
   (alloy:render ui ui))
 
 (defmethod trial:register :after ((ui ui) (loop trial:event-loop))
-  (trial:add-handler ui loop))
+  (trial:add-listener ui loop))
 
 (defmethod trial:handle ((ev trial:event) (ui ui)))
 

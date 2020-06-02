@@ -9,7 +9,7 @@
 (define-asset (workbench grid) mesh
     (make-line-grid 10 100 100))
 
-(define-shader-subject grid (vertex-entity)
+(define-shader-entity grid (vertex-entity)
   ((vertex-array :initform (asset 'workbench 'grid))))
 
 (progn

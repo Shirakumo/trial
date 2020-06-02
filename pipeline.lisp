@@ -28,7 +28,7 @@
         do (when (framebuffer pass)
              (finalize (framebuffer pass))
              (setf (framebuffer pass) NIL))
-           (remove-handler pass pipeline))
+           (remove-listener pass pipeline))
   (setf (nodes pipeline) ())
   (setf (passes pipeline) #())
   (setf (textures pipeline) #())
@@ -156,7 +156,7 @@
       ;; Compute frame buffers
       (dolist (pass passes)
         (when (typep pipeline 'event-loop)
-          (add-handler pass pipeline))
+          (add-listener pass pipeline))
         (let ((output (loop for port in (flow:ports pass)
                             do (when (and (typep port 'output)
                                           (eql :color-attachment0 (attachment port)))

@@ -9,7 +9,7 @@
 (define-gl-struct (particle (:layout-standard :vertex-buffer))
   (lifetime :vec2 :accessor lifetime))
 
-(define-shader-subject particle-emitter ()
+(define-shader-entity particle-emitter (listener)
   ((live-particles :initform 0 :accessor live-particles)
    (vertex-array :accessor vertex-array)
    (particle-buffer :initarg :particle-buffer :accessor particle-buffer)))
@@ -29,21 +29,21 @@
 (defgeneric update-particle-state (emitter tick input output))
 (defgeneric new-particle-count (emitter tick)) ; => N
 
-(define-handler (particle-emitter tick) (ev)
-  (let ((vbo (particle-buffer particle-emitter))
+(defmethod handle ((ev tick) (emitter particle-emitter))
+  (let ((vbo (particle-buffer emitter))
         (write-offset 0))
     (let ((data (struct-vector vbo)))
       (declare (type simple-vector data))
-      (loop for read-offset from 0 below (live-particles particle-emitter)
+      (loop for read-offset from 0 below (live-particles emitter)
             for particle = (aref data read-offset)
             do (when (< (vx2 (lifetime particle)) (vy2 (lifetime particle)))
-                 (when (update-particle-state particle-emitter ev particle (aref data write-offset))
+                 (when (update-particle-state emitter ev particle (aref data write-offset))
                    (incf write-offset))))
-      (loop repeat (new-particle-count particle-emitter ev)
+      (loop repeat (new-particle-count emitter ev)
             while (< write-offset (length data))
-            do (initial-particle-state particle-emitter ev (aref data write-offset))
+            do (initial-particle-state emitter ev (aref data write-offset))
                (incf write-offset))
-      (setf (live-particles particle-emitter) write-offset)
+      (setf (live-particles emitter) write-offset)
       (update-buffer-data vbo T))))
 
 (define-gl-struct (simple-particle (:include particle)
@@ -51,7 +51,7 @@
   (location :vec3 :accessor location)
   (velocity :vec3 :accessor velocity))
 
-(define-shader-subject simple-particle-emitter (particle-emitter)
+(define-shader-entity simple-particle-emitter (particle-emitter)
   ())
 
 (defmethod initial-particle-state :before ((emitter simple-particle-emitter) tick particle)

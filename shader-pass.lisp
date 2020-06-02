@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defclass shader-pass-class (shader-subject-class flow:static-node-class)
+  (defclass shader-pass-class (shader-entity-class flow:static-node-class)
     ()))
 
 (defmethod c2mop:validate-superclass ((class shader-pass-class) (superclass T))
@@ -75,7 +75,7 @@
 (defmethod check-consistent ((output output))
   ())
 
-(define-shader-subject shader-pass (flow:static-node)
+(define-shader-entity shader-pass (listener flow:static-node)
   ((framebuffer :initform NIL :accessor framebuffer)
    (width :initarg :width :initform NIL :accessor width)
    (height :initarg :height :initform NIL :accessor height)
@@ -128,7 +128,7 @@
   (for:for ((item over object))
     (register-object-for-pass pass item)))
 
-(define-handler (shader-pass register-entity-for-enter enter) (ev entity)
+(define-handler (shader-pass enter) (entity)
   (unless (typep entity 'shader-pass)
     (let ((pass (register-object-for-pass shader-pass entity)))
       (when pass (load pass)))))
@@ -176,10 +176,9 @@
 ;;        effectively.
 ;; FIXME: Share SHADER assets between shader programs by caching
 ;;        them... somewhere somehow?
-(define-handler (per-object-pass class-changed) (ev)
-  (let* ((pass per-object-pass)
-         (class (changed-class ev))
-         (assets (assets pass)))
+(defmethod handle ((ev class-changed) (pass per-object-pass))
+  (let ((class (changed-class ev))
+        (assets (assets pass)))
     (when (typep class 'shader-entity-class)
       ;; FIXME: What happens if the effective shader class changes?
       (flet ((refresh (class)
@@ -203,8 +202,8 @@
                ;; Object changed, recompile it
                (refresh class)))))))
 
-(defmethod shader-program-for-pass ((pass per-object-pass) (subject shader-entity))
-  (gethash (effective-shader-class subject) (assets pass)))
+(defmethod shader-program-for-pass ((pass per-object-pass) (entity shader-entity))
+  (gethash (effective-shader-class entity) (assets pass)))
 
 (defmethod coerce-pass-shader ((pass per-object-pass) class type)
   ;; FIXME: This re-introduces shaders from the pass that were suppressed in the
@@ -225,11 +224,11 @@
           (load program))
         (setf (gethash effective-class (assets pass)) program)))))
 
-(defmethod register-object-for-pass ((pass per-object-pass) (subject shader-entity))
-  (register-object-for-pass pass (class-of subject)))
+(defmethod register-object-for-pass ((pass per-object-pass) (entity shader-entity))
+  (register-object-for-pass pass (class-of entity)))
 
-(defmethod paint :around ((subject shader-entity) (pass per-object-pass))
-  (let ((program (shader-program-for-pass pass subject)))
+(defmethod paint :around ((entity shader-entity) (pass per-object-pass))
+  (let ((program (shader-program-for-pass pass entity)))
     (gl:use-program (gl-name program))
     (prepare-pass-program pass program)
     (call-next-method)))
@@ -237,18 +236,17 @@
 (define-shader-pass single-shader-pass (bakable)
   ((shader-program :initform NIL :accessor shader-program)))
 
-(define-handler (single-shader-pass class-changed) (ev)
-  (let ((pass single-shader-pass))
-    (when (eql (changed-class ev) (class-of pass))
-      (let* ((old (shader-program pass))
-             (new (make-class-shader-program pass)))
-        (when (and old (gl-name old))
-          (with-context (*context*)
-            (dolist (shader (dependencies new))
-              (unless (gl-name shader) (load shader)))
-            (load new)
-            (deallocate old)))
-        (setf (shader-program pass) new)))))
+(defmethod handle ((ev class-changed) (pass single-shader-pass))
+  (when (eql (changed-class ev) (class-of pass))
+    (let* ((old (shader-program pass))
+           (new (make-class-shader-program pass)))
+      (when (and old (gl-name old))
+        (with-context (*context*)
+          (dolist (shader (dependencies new))
+            (unless (gl-name shader) (load shader)))
+          (load new)
+          (deallocate old)))
+      (setf (shader-program pass) new))))
 
 (defmethod bake ((pass single-shader-pass))
   (setf (shader-program pass) (make-class-shader-program pass)))

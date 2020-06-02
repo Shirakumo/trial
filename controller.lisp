@@ -22,7 +22,7 @@
 (define-asset (trial noto-mono) font
     #p"noto-mono-regular.ttf")
 
-(define-subject controller ()
+(defclass controller (entity listener)
   ((display :initform NIL :accessor display)
    (text :initform (make-instance 'text :font (asset 'trial 'noto-mono) :size 18) :accessor text)
    (fps-buffer :initform (make-array 100 :fill-pointer T :initial-element 1) :reader fps-buffer)
@@ -37,7 +37,7 @@
 (defmethod register-object-for-pass :after (pass (controller controller))
   (register-object-for-pass pass (text controller)))
 
-(define-handler (controller toggle-overlay) (ev)
+(defmethod handle ((ev toggle-overlay) (controller controller))
   (setf (show-overlay controller) (not (show-overlay controller))))
 
 (defun compute-fps-buffer-fps (fps-buffer)
@@ -68,7 +68,7 @@
                      :report "Remove the offending observer."
                      (setf (aref observers i) NIL))))))))
 
-(define-handler (controller tick) (ev tt)
+(defmethod handle ((ev tick) (controller controller))
   (when (and (show-overlay controller)
              *context*)
     (let ((text (text controller)))
@@ -96,14 +96,14 @@
       (translate-by 0 (height *context*) 0)
       (paint (text controller) target))))
 
-(define-handler (controller quit-game) (ev)
+(defmethod handle ((ev quit-game) (controller controller))
   (quit *context*))
 
-(define-handler (controller mapping T 100) (ev)
+(defmethod handle ((ev event) (controller controller))
   (map-event ev *scene*)
   (retain-event ev))
 
-(define-handler (controller reload-scene reload-scene 99) (ev)
+(defmethod handle ((ev reload-scene) (controller controller))
   (let ((old (scene (display controller))))
     (change-scene (display controller) (make-instance (type-of old) :clock (clock old)))))
 
@@ -132,7 +132,7 @@
   ((asset :initarg :asset)
    (action :initarg :action :initform 'reload)))
 
-(define-handler (controller load-request) (ev asset action)
+(define-handler (controller load-request) (asset action)
   (ecase action
     (deallocate (deallocate asset))
     (load (load asset))

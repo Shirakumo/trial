@@ -205,7 +205,7 @@
   :charset (prompt-charset)
   :size 64)
 
-(define-shader-subject prompt (text)
+(define-shader-entity prompt (text)
   ((texture :initform (asset 'trial 'prompt-font))))
 
 (defmethod (setf text) ((character character) (prompt prompt))
