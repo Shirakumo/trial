@@ -16,24 +16,32 @@
   ((scene :initarg :scene :accessor scene)))
 
 (defclass enter (scene-event)
-  ((entity :initarg :entity :accessor entity)))
+  ((container :initarg :container)
+   (entity :initarg :entity :accessor entity)))
 
 (defmethod print-object ((enter enter) stream)
   (print-unreadable-object (enter stream :type T)
     (format stream "~a => ~a" (entity enter) (scene enter))))
 
 (defclass leave (scene-event)
-  ((entity :initarg :entity :accessor entity)))
+  ((container :initarg :container)
+   (entity :initarg :entity :accessor entity)))
 
 (defmethod print-object ((leave leave) stream)
   (print-unreadable-object (leave stream :type T)
     (format stream "~a => ~a" (scene leave) (entity leave))))
 
-(defmethod register :after ((entity entity) (scene scene))
-  (issue scene 'enter :scene scene :entity entity))
+(defmethod enter :after ((entity entity) (container container-unit))
+  (issue (scene-graph container) 'enter :scene (scene-graph container) :container container :entity entity))
 
-(defmethod deregister :after ((entity entity) (scene scene))
-  (issue scene 'leave :scene scene :entity entity))
+(defmethod leave :after ((entity entity) (container container-unit))
+  (issue (scene-graph container) 'leave :scene (scene-graph container) :container container :entity entity))
+
+(defmethod enter :after ((entity entity) (scene scene))
+  (issue scene 'enter :scene scene :container scene :entity entity))
+
+(defmethod leave :after ((entity entity) (scene scene))
+  (issue scene 'leave :scene scene :container scene :entity entity))
 
 (defmethod register :after ((listener listener) (scene scene))
   (add-listener listener scene))
