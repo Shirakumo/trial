@@ -28,6 +28,7 @@
 (defvar *view-matrix* (meye 4))
 (defvar *projection-matrix* (meye 4))
 (defvar *model-matrix* (meye 4))
+(defvar *matrix-stack* (make-array 32 :fill-pointer 0))
 
 (defun view-matrix ()
   *view-matrix*)
@@ -55,6 +56,15 @@
 
 (defun orthographic-projection (left right bottom top near far)
   (setf *projection-matrix* (mortho left right bottom top near far)))
+
+(defun push-matrix ()
+  (vector-push (list *projection-matrix* *view-matrix* *model-matrix*) *matrix-stack*))
+
+(defun pop-matrix ()
+  (destructuring-bind (p v m) (vector-pop *matrix-stack*)
+    (setf *projection-matrix* p
+          *view-matrix* v
+          *model-matrix* m)))
 
 (defmacro with-pushed-matrix (specs &body body)
   (let ((specs (or specs '(((model-matrix) :copy)))))
