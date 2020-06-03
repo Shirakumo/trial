@@ -537,9 +537,9 @@
    #:height
    #:clear-color
    #:texture)
-  ;; renderable.lisp
+  ;; render-loop.lisp
   (:export
-   #:renderable
+   #:render-loop
    #:thread
    #:delta-time
    #:frame-time
