@@ -80,5 +80,12 @@
 (defmethod activate ((framebuffer framebuffer))
   (gl:bind-framebuffer :framebuffer (gl-name framebuffer))
   (gl:viewport 0 0 (width framebuffer) (height framebuffer))
-  ;; FIXME: Figure out which to clear depending on framebuffer attachments
+  ;; FIXME: Figure out which to clearq depending on framebuffer attachments
   (gl:clear :color-buffer :depth-buffer :stencil-buffer))
+
+(defmethod blit-to-screen ((framebuffer framebuffer))
+  (gl:bind-framebuffer :read-framebuffer (gl-name framebuffer))
+  (gl:bind-framebuffer :draw-framebuffer 0)
+  (%gl:blit-framebuffer 0 0 (width framebuffer) (height framebuffer) 0 0 (width *context*) (height *context*)
+                        (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
+                        (cffi:foreign-enum-value '%gl:enum :nearest)))
