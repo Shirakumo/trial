@@ -187,8 +187,7 @@
 
 (defmethod render ((pipeline pipeline) target)
   (loop for pass across (passes pipeline)
-        do (activate (framebuffer pass))
-           (render pass target)))
+        do (render pass target)))
 
 (defmethod blit-to-screen ((pipeline pipeline))
   (let ((passes (passes pipeline)))
@@ -198,6 +197,10 @@
 (defmethod register-object-for-pass ((pipeline pipeline) object)
   (loop for pass across (passes pipeline)
         do (register-object-for-pass pass object)))
+
+(defmethod compile-to-pass (object (pipeline pipeline))
+  (loop for pass across (passes pipeline)
+        do (compile-to-pass object pass)))
 
 (defmethod compute-resources ((pipeline pipeline) resources readying cache)
   (compute-resources (passes pipeline) resources readying cache)
