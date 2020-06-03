@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass array-container (container)
+(defclass array-container (container-unit)
   ((objects :initform (make-array 0 :adjustable T :fill-pointer T) :accessor objects)))
 
 (defmethod paint ((container array-container) target)
