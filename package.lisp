@@ -210,6 +210,7 @@
    #:lock-cursor
    #:unlock-cursor
    #:title
+   #:vsync
    #:width
    #:height
    #:profile

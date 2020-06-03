@@ -13,7 +13,8 @@
    (cursor-visible :initform T :accessor cursor-visible)
    (mouse-pos :initform (vec 0 0) :accessor mouse-pos)
    (initargs :initform NIL :accessor initargs)
-   (window :initform NIL :accessor window))
+   (window :initform NIL :accessor window)
+   (vsync :initarg :vsync :accessor vsync))
   (:default-initargs
    :resizable T
    :visible T
@@ -57,9 +58,8 @@
       (maybe-set robustness :context-robustness)
       (maybe-set forward-compat :opengl-forward-compat)
       (maybe-set debug-context :opengl-debug-context)
-      (when vsync-p
-        (setf (g :refresh-rate)
-              (ecase vsync (:off 0) (:on 1) (:adaptive -1))))
+      (setf (g :refresh-rate)
+            (ecase vsync ((NIL :off) 0) ((T :on) 1) (:adaptive -1)))
       (when version-p
         (setf (g :context-version-major) (first version))
         (setf (g :context-version-minor) (second version)))
@@ -106,6 +106,7 @@
           (setf (gethash (cffi:pointer-address window) *window-table*) context)
           (setf (window context) window)
           (cl-glfw3:make-context-current window)
+          (cl-glfw3:swap-interval (getf initargs :refresh-rate))
           (cl-glfw3:set-window-size-callback 'ctx-size window)
           (cl-glfw3:set-window-focus-callback 'ctx-focus window)
           (cl-glfw3:set-key-callback 'ctx-key window)
@@ -164,6 +165,9 @@
 
 (defmethod (setf title) :before (value (context context))
   (cl-glfw3:set-window-title value (window context)))
+
+(defmethod (setf vsync) :before (value (context context))
+  (cl-glfw3:swap-interval (ecase value ((NIL :off) 0) ((:on T) 1) (:adaptive -1))))
 
 (defmethod width ((context context))
   (first (cl-glfw3:get-framebuffer-size (window context))))
