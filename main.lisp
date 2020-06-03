@@ -66,12 +66,10 @@
         (when old (start old)))))
   (values new old))
 
-(defmethod paint ((source main) (target main))
-  (paint (scene source) target)
-  (gl:bind-framebuffer :draw-framebuffer 0)
-  (%gl:blit-framebuffer 0 0 (width source) (height source) 0 0 (width *context*) (height *context*)
-                        (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
-                        (cffi:foreign-enum-value '%gl:enum :nearest)))
+(defmethod render ((source main) (target main))
+  (render (scene source) target)
+  ;; KLUDGE: This assumes a pipelined scene
+  (blit-to-screen (scene source)))
 
 (defun launch (&optional (main 'main) &rest initargs)
   (standalone-logging-handler)

@@ -43,26 +43,19 @@
   (gl:front-face :ccw)
   (gl:cull-face :back)
   (gl:hint :line-smooth-hint :nicest)
+  (with-vec (r g b a) (clear-color display)
+    (gl:clear-color r g b a))
   (enable :blend :multisample :cull-face :stencil-test :line-smooth :depth-test :depth-clamp))
-
-(defmethod paint (source (target display)))
 
 (defgeneric poll-input (target))
 
 (defmethod poll-input ((target display)))
-
-(defmethod render (source (target display))
-  (paint source target))
 
 (defmethod render :around (source (target display))
   ;; Potentially release context every time to allow
   ;; other threads to grab it.
   (let ((context (context target)))
     (with-context (context :reentrant T)
-      (gl:viewport 0 0 (width context) (height context))
-      (let ((c (clear-color target)))
-        (gl:clear-color (vx c) (vy c) (vz c) (if (vec4-p c) (vw c) 0.0)))
-      (gl:clear :color-buffer :depth-buffer :stencil-buffer)
       (call-next-method)
       (swap-buffers context))))
 

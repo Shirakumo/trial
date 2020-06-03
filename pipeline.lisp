@@ -162,7 +162,7 @@
                                           (eql :color-attachment0 (attachment port)))
                                  (return port)))))
           (flet ((dimension (func)
-                   (or (funcall func pass) (funcall func (texture output)))))
+                   (funcall func (texture output))))
             (setf (framebuffer pass)
                   (make-instance 'framebuffer
                                  :width (dimension #'width)
@@ -185,10 +185,15 @@
       (setf (textures pipeline) textures)
       (setf (texspecs pipeline) texspecs))))
 
-(defmethod paint-with ((pipeline pipeline) source)
+(defmethod render ((pipeline pipeline) target)
   (loop for pass across (passes pipeline)
         do (activate (framebuffer pass))
-           (paint-with pass source)))
+           (render pass target)))
+
+(defmethod blit-to-screen ((pipeline pipeline))
+  (let ((passes (passes pipeline)))
+    (when (< 0 (length passes))
+      (blit-to-screen (aref passes (1- (length passes)))))))
 
 (defmethod register-object-for-pass ((pipeline pipeline) object)
   (loop for pass across (passes pipeline)

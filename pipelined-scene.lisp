@@ -9,25 +9,13 @@
 (defclass pipelined-scene (scene pipeline bakable)
   ())
 
-(defmethod paint ((scene pipelined-scene) target)
-  (paint-with scene scene))
-
-(defmethod paint ((scene pipelined-scene) (target shader-pass))
-  (for:for ((element over scene))
-    (paint-with target element)))
-
-(defmethod enter :after ((entity entity) (scene pipelined-scene))
-  (register-object-for-pass scene entity))
-
 (defmethod leave :after ((entity entity) (scene pipelined-scene))
   ;; FIXME: A system for figuring out when we can GC shader programs
-  ;; (deregister-object-for-pass scene entity)
   )
 
 (defmethod bake ((scene pipelined-scene))
   (pack-pipeline scene *context*)
-  (for:for ((element over scene))
-    (register-object-for-pass scene element)))
+  (compile-to-pass scene scene))
 
 (defmethod compute-resources ((scene pipelined-scene) resources readying cache)
   (compute-resources (objects scene) resources readying cache)

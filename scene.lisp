@@ -13,23 +13,23 @@
   ())
 
 (defclass scene-event (event)
-  ((scene :initarg :scene :accessor scene)))
+  ((scene :initarg :scene :reader scene)))
 
 (defclass enter (scene-event)
-  ((container :initarg :container)
-   (entity :initarg :entity :accessor entity)))
+  ((container :initarg :container :reader container)
+   (entity :initarg :entity :reader entity)))
 
-(defmethod print-object ((enter enter) stream)
-  (print-unreadable-object (enter stream :type T)
-    (format stream "~a => ~a" (entity enter) (scene enter))))
+(defmethod print-object ((ev enter) stream)
+  (print-unreadable-object (ev stream :type T)
+    (format stream "~a => ~a" (entity ev) (container ev))))
 
 (defclass leave (scene-event)
-  ((container :initarg :container)
-   (entity :initarg :entity :accessor entity)))
+  ((container :initarg :container :reader container)
+   (entity :initarg :entity :reader entity)))
 
-(defmethod print-object ((leave leave) stream)
-  (print-unreadable-object (leave stream :type T)
-    (format stream "~a => ~a" (scene leave) (entity leave))))
+(defmethod print-object ((ev leave) stream)
+  (print-unreadable-object (ev stream :type T)
+    (format stream "~a <= ~a" (entity ev) (container ev))))
 
 (defmethod enter :after ((entity entity) (container container-unit))
   (issue (scene-graph container) 'enter :scene (scene-graph container) :container container :entity entity))
