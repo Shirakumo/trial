@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass layer-container (container)
+(defclass layer-container (container-unit)
   ((layer :initarg :layer :accessor layer)
    (active :initarg :active :accessor active))
   (:default-initargs
@@ -17,9 +17,7 @@
   (when (active layer)
     (call-next-method)))
 
-;; FIXME: should be a container-unit, but things get recursive in the HUD
-;;        if that is the case. BAD!
-(defclass layer-set (container unit)
+(defclass layer-set (container-unit)
   ((objects :initform (make-array 0 :adjustable T :fill-pointer T))
    (index-map :initform (make-hash-table :test 'eql) :accessor index-map)))
 
