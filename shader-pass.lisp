@@ -76,8 +76,7 @@
   ())
 
 (define-shader-entity shader-pass (listener flow:static-node)
-  ((framebuffer :initform NIL :accessor framebuffer)
-   (uniforms :initarg :uniforms :initform () :accessor uniforms))
+  ((framebuffer :initform NIL :accessor framebuffer))
   (:metaclass shader-pass-class)
   (:inhibit-shaders (shader-entity :fragment-shader)))
 
@@ -153,9 +152,7 @@
                   (image-port
                    (when (texture port)
                      (%gl:bind-image-texture (binding port) (gl-name (texture port)) 0 T 0 (access port)
-                                             (internal-format (texture port)))))))
-       (loop for (name value) in (uniforms pass)
-             do (setf (uniform program name) value)))))
+                                             (internal-format (texture port))))))))))
 
 (defun prepare-pass-program (pass program)
   (funcall (compile 'prepare-pass-program (generate-prepare-pass-program))
