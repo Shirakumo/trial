@@ -90,7 +90,6 @@
                        1
                        (/ (frame-time (handler *context*))))
                    fps-buffer))
-    (print (compute-fps-buffer-fps (fps-buffer controller)))
     (with-pushed-matrix ((*projection-matrix* :zero)
                          (*model-matrix* :identity)
                          (*view-matrix* :identity))

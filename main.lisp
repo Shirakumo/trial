@@ -67,7 +67,7 @@
   (values new old))
 
 (defmethod render ((source main) (target main))
-  (render (scene source) target)
+  (render (scene source) NIL)
   ;; KLUDGE: This assumes a pipelined scene
   (blit-to-screen (scene source)))
 
