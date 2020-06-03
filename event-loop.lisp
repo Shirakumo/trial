@@ -75,8 +75,6 @@
 
 (defmethod handle ((event event) (loop event-loop))
   (with-simple-restart (skip-event "Skip handling the event entirely.")
-    (unless (typep event 'tick)
-      (print event))
     (loop for listener being the hash-keys of (listeners loop)
           do (handle event listener))))
 
