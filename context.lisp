@@ -84,6 +84,8 @@
 (defgeneric unlock-cursor (context))
 (defgeneric title (context))
 (defgeneric (setf title) (value context))
+(defgeneric vsync (context))
+(defgeneric (setf vsync) (mode context))
 
 (defgeneric width (context))
 (defgeneric height (context))
