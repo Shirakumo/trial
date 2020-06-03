@@ -22,11 +22,11 @@
 (define-asset (trial noto-mono) font
     #p"noto-mono-regular.ttf")
 
-(defclass controller (entity listener)
+(defclass controller (entity renderable listener)
   ((display :initform NIL :accessor display)
    (text :initform (make-instance 'text :font (asset 'trial 'noto-mono) :size 18) :accessor text)
    (fps-buffer :initform (make-array 100 :fill-pointer T :initial-element 1) :reader fps-buffer)
-   (show-overlay :initform NIL :accessor show-overlay)
+   (show-overlay :initform T :accessor show-overlay)
    (observers :initform (make-array 0 :adjustable T :fill-pointer T) :accessor observers))
   (:default-initargs
    :name :controller))
@@ -77,7 +77,10 @@
       (setf (vx (location text)) 5)
       (setf (text text) (compose-controller-debug-text controller ev)))))
 
-(defmethod paint ((controller controller) target)
+(defmethod register-object-for-pass ((pass per-object-pass) (controller controller))
+  (register-object-for-pass pass (text controller)))
+
+(defmethod render ((controller controller) program)
   (when (show-overlay controller)
     (let ((fps-buffer (fps-buffer controller)))
       (when (= (array-total-size fps-buffer) (fill-pointer fps-buffer))
@@ -87,6 +90,7 @@
                        1
                        (/ (frame-time (handler *context*))))
                    fps-buffer))
+    (print (compute-fps-buffer-fps (fps-buffer controller)))
     (with-pushed-matrix ((*projection-matrix* :zero)
                          (*model-matrix* :identity)
                          (*view-matrix* :identity))
@@ -94,7 +98,7 @@
                                0 (height *context*)
                                0 10)
       (translate-by 0 (height *context*) 0)
-      (paint (text controller) target))))
+      (render (text controller) program))))
 
 (defmethod handle ((ev quit-game) (controller controller))
   (quit *context*))

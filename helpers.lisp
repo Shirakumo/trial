@@ -9,55 +9,43 @@
 (defclass located-entity (entity)
   ((location :initarg :location :initform (vec 0 0 0) :accessor location)))
 
-(defmethod paint :around ((obj located-entity) target)
-  (with-pushed-matrix ()
-    (translate (location obj))
-    (call-next-method)))
+(defmethod apply-transforms progn ((obj located-entity))
+  (translate (location obj)))
 
 (defclass oriented-entity (entity)
   ((orientation :initarg :orientation :initform (vec 1 0 0) :accessor orientation)
    (up :initarg :up :initform (vec 0 1 0) :accessor up)))
 
-(defmethod paint :around ((obj oriented-entity) target)
-  (with-pushed-matrix ()
-    (rotate (vc (up obj) (orientation obj))
-            (* 180 (/ (acos (v. (up obj) (orientation obj))) PI)))
-    (call-next-method)))
+(defmethod apply-transforms progn ((obj oriented-entity))
+  (rotate (vc (up obj) (orientation obj))
+          (* 180 (/ (acos (v. (up obj) (orientation obj))) PI))))
 
 (defclass rotated-entity (entity)
   ((rotation :initarg :rotation :initform (vec 0 0 0) :accessor rotation)))
 
-(defmethod paint :around ((obj rotated-entity) target)
-  (with-pushed-matrix ()
-    (rotate +vx+ (vx (rotation obj)))
-    (rotate +vy+ (vy (rotation obj)))
-    (rotate +vz+ (vz (rotation obj)))
-    (call-next-method)))
+(defmethod apply-transforms progn ((obj rotated-entity))
+  (rotate +vx+ (vx (rotation obj)))
+  (rotate +vy+ (vy (rotation obj)))
+  (rotate +vz+ (vz (rotation obj))))
 
 (defclass axis-rotated-entity (entity)
   ((axis :initarg :axis :initform (vec 0 1 0) :accessor axis)
    (angle :initarg :angle :initform 0 :accessor angle)))
 
-(defmethod paint :around ((obj axis-rotated-entity) target)
-  (with-pushed-matrix ()
-    (rotate (axis obj) (angle obj))
-    (call-next-method)))
+(defmethod apply-transforms progn ((obj axis-rotated-entity))
+  (rotate (axis obj) (angle obj)))
 
 (defclass pivoted-entity (entity)
   ((pivot :initarg :pivot :initform (vec 0 0 0) :accessor pivot)))
 
-(defmethod paint :around ((obj pivoted-entity) target)
-  (with-pushed-matrix ()
-    (translate (pivot obj))
-    (call-next-method)))
+(defmethod apply-transforms progn ((obj pivoted-entity))
+  (translate (pivot obj)))
 
 (defclass scaled-entity (entity)
   ((scaling :initarg :scaling :initform (vec 1 1 1) :accessor scaling)))
 
-(defmethod paint :around ((obj scaled-entity) target)
-  (with-pushed-matrix ()
-    (scale (scaling obj))
-    (call-next-method)))
+(defmethod apply-transforms progn ((obj scaled-entity))
+  (scale (scaling obj)))
 
 (defclass clocked-entity (clock listener)
   ())
@@ -65,14 +53,13 @@
 (defmethod handle :before ((ev tick) (entity clocked-entity))
   (flare:update entity))
 
-(define-shader-entity vertex-entity ()
+(define-shader-entity vertex-entity (renderable)
   ((vertex-array :initarg :vertex-array :accessor vertex-array)))
 
-(defmethod paint ((entity vertex-entity) (pass shader-pass))
-  (let ((program (shader-program-for-pass pass entity)))
-    (setf (uniform program "model_matrix") (model-matrix))
-    (setf (uniform program "view_matrix") (view-matrix))
-    (setf (uniform program "projection_matrix") (projection-matrix)))
+(defmethod render ((entity vertex-entity) (program shader-program))
+  (setf (uniform program "model_matrix") (model-matrix))
+  (setf (uniform program "view_matrix") (view-matrix))
+  (setf (uniform program "projection_matrix") (projection-matrix))
   (let ((vao (vertex-array entity)))
     (gl:bind-vertex-array (gl-name vao))
     ;; KLUDGE: Bad for performance!
@@ -104,9 +91,8 @@ void main(){
 (defmethod (setf color) ((color vec4) (entity colored-entity))
   (setf (slot-value entity 'color) color))
 
-(defmethod paint :before ((obj colored-entity) (pass shader-pass))
-  (let ((shader (shader-program-for-pass pass obj)))
-    (setf (uniform shader "objectcolor") (color obj))))
+(defmethod render :before ((obj colored-entity) (program shader-program))
+  (setf (uniform program "objectcolor") (color obj)))
 
 (define-class-shader (colored-entity :fragment-shader)
   "uniform vec4 objectcolor;
@@ -138,7 +124,7 @@ void main(){
 (define-shader-entity textured-entity ()
   ((texture :initform NIL :initarg :texture :accessor texture)))
 
-(defmethod paint :around ((obj textured-entity) target)
+(defmethod render :around ((obj textured-entity) (program shader-program))
   (let ((tex (texture obj)))
     (when tex
       (gl:active-texture :texture0)
