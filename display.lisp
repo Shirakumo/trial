@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass display (renderable)
+(defclass display (render-loop)
   ((context :initarg :context :accessor context)
    (clear-color :initarg :clear-color :accessor clear-color))
   (:default-initargs
