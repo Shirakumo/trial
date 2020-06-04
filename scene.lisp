@@ -51,10 +51,6 @@
 (defmethod deregister :after (thing (scene scene))
   (remove-listener thing scene))
 
-(defmethod paint :around ((scene scene) target)
-  (let ((*scene* scene))
-    (call-next-method)))
-
 (defmethod process :around ((scene scene))
   (let ((*scene* scene))
     (call-next-method)))

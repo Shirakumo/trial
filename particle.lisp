@@ -20,7 +20,7 @@
          particle-buffer
          (change-class particle-mesh 'vertex-array))))
 
-(defmethod paint ((emitter particle-emitter) pass)
+(defmethod render ((emitter particle-emitter) target)
   (let ((vao (vertex-array emitter)))
     (gl:bind-vertex-array (gl-name vao))
     (%gl:draw-elements-instanced (vertex-form vao) (size vao) :unsigned-int 0 (live-particles emitter))))
@@ -64,11 +64,10 @@
     (setf (lifetime output) life)
     (< (vx2 life) (vy2 life))))
 
-(defmethod paint :before ((emitter simple-particle-emitter) (pass shader-pass))
-  (let ((program (shader-program-for-pass pass emitter)))
-    (setf (uniform program "view_matrix") (view-matrix))
-    (setf (uniform program "projection_matrix") (projection-matrix))
-    (setf (uniform program "model_matrix") (model-matrix))))
+(defmethod render :before ((emitter simple-particle-emitter) (program shader-program))
+  (setf (uniform program "view_matrix") (view-matrix))
+  (setf (uniform program "projection_matrix") (projection-matrix))
+  (setf (uniform program "model_matrix") (model-matrix)))
 
 (define-class-shader (simple-particle-emitter :vertex-shader)
   "layout (location = 0) in vec3 vtx_location;

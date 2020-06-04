@@ -13,7 +13,7 @@
    :layer 0
    :active T))
 
-(defmethod paint :around ((layer layer-container) target)
+(defmethod render :around ((layer layer-container) target)
   (when (active layer)
     (call-next-method)))
 
@@ -39,9 +39,9 @@
 (defmethod leave ((unit unit) (layer-set layer-set))
   (leave unit (unit 0 layer-set)))
 
-(defmethod paint ((layer-set layer-set) target)
+(defmethod render ((layer-set layer-set) target)
   (for:for ((layer across (objects layer-set)))
-    (paint layer target)))
+    (render layer target)))
 
 (defmethod layer-active-p (n (layer-set layer-set))
   (active (unit n layer-set)))

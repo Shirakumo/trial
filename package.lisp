@@ -327,8 +327,6 @@
    #:reload-with-features)
   ;; flare.lisp
   (:export
-   #:paint
-   #:paint-with
    #:finalize)
   ;; fullscreenable.lisp
   (:export
@@ -585,7 +583,6 @@
    #:leave
    #:register
    #:deregister
-   #:paint
    #:process)
   ;; sdl2-gamepad-map.lisp
   (:export)
@@ -620,7 +617,6 @@
   (:export
    #:port
    #:shader-pass-class
-   #:paint-with
    #:texture-port
    #:texture
    #:texspec

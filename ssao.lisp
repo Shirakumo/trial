@@ -48,9 +48,8 @@
 (defmethod initialize-instance :after ((pass ssao-pass) &key)
   (setf (getf (texspec (port pass 'noise-map)) :pixel-data) (generate-ssao-noise)))
 
-(defmethod paint-with :before ((pass ssao-pass) target)
-  (let ((program (shader-program pass))
-        (kernel (kernel pass)))
+(defmethod render :before ((pass ssao-pass) (program shader-program))
+  (let ((kernel (kernel pass)))
     (loop for i from 0 below (length kernel)
           for vec of-type vec3 = (aref kernel i)
           do (setf (uniform program (format NIL "samples[~d]" i)) vec))

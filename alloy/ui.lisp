@@ -9,7 +9,7 @@
 (defclass ui (renderer alloy:ui trial:entity)
   ())
 
-(defmethod trial:paint ((ui ui) target)
+(defmethod trial:render ((ui ui) target)
   (alloy:render ui ui))
 
 (defmethod trial:register :after ((ui ui) (loop trial:event-loop))

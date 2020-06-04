@@ -11,9 +11,8 @@
    (vertex-array :initform (asset 'trial 'empty-vertex-array) :Accessor vertex-array))
   (:default-initargs :texture (error "TEXTURE required.")))
 
-(defmethod paint ((skybox skybox) (pass shader-pass))
-  (let ((shader (shader-program-for-pass pass skybox))
-        (texture (texture skybox)))
+(defmethod render ((skybox skybox) (shader shader-program))
+  (let ((texture (texture skybox)))
     (setf (uniform shader "view_matrix") (view-matrix))
     (setf (uniform shader "projection_matrix") (projection-matrix))
     (gl:depth-mask NIL)
@@ -54,6 +53,3 @@ void main() {
 
 (define-shader-pass skybox-pass (single-shader-pass skybox)
   ((color :port-type output)))
-
-(defmethod paint-with ((pass skybox-pass) thing)
-  (paint pass pass))
