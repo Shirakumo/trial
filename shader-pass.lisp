@@ -288,15 +288,12 @@
       (flet ((refresh (class)
                (let ((prev (gethash class assets)))
                  (when prev
+                   (v:info :trial.shader-pass "Refreshing shader program for ~a" class)
                    (let ((new (make-pass-shader-program pass class)))
                      (if (allocated-p prev)
                          (with-context (*context*)
-                           (with-simple-restart (continue "Ignore the change and continue with the hold shader.")
-                             (dolist (shader (shaders new))
-                               (unless (allocated-p shader) (allocate shader)))
-                             (allocate new)
-                             (deallocate prev)
-                             (setf (gethash class assets) new)))
+                           (setf (buffers prev) (buffers new))
+                           (setf (shaders prev) (shaders new)))
                          (setf (gethash class assets) new)))))))
         (cond ((eql class (class-of pass))
                ;; Pass changed, recompile everything
