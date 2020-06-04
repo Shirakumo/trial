@@ -32,10 +32,12 @@
     (format stream "~a <= ~a" (entity ev) (container ev))))
 
 (defmethod enter :after ((entity entity) (container container-unit))
-  (issue (scene-graph container) 'enter :scene (scene-graph container) :container container :entity entity))
+  (when (scene-graph container)
+    (issue (scene-graph container) 'enter :scene (scene-graph container) :container container :entity entity)))
 
 (defmethod leave :after ((entity entity) (container container-unit))
-  (issue (scene-graph container) 'leave :scene (scene-graph container) :container container :entity entity))
+  (when (scene-graph container)
+    (issue (scene-graph container) 'leave :scene (scene-graph container) :container container :entity entity)))
 
 (defmethod enter :after ((entity entity) (scene scene))
   (issue scene 'enter :scene scene :container scene :entity entity))
