@@ -8,6 +8,11 @@
 
 ;; FIXME: configurable defaults
 
+(define-condition resource-not-allocated (error)
+  ((resource :initarg :resource))
+  (:report (lambda (c s) (format s "The resource~%  ~s~%is required to be allocated, but was not yet."
+                                 (slot-value c 'resource)))))
+
 (defclass resource ()
   ())
 
@@ -36,7 +41,11 @@
 
 (defun check-allocated (resource)
   (unless (allocated-p resource)
-    (error "~s is not yet allocated." resource)))
+    (restart-case
+        (error 'resource-not-allocated :resource resource)
+      (continue ()
+        :report "Allocate the resource now and continue."
+        (allocate resource)))))
 
 (defclass foreign-resource (resource)
   ((data-pointer :initform NIL :initarg :data-pointer :accessor data-pointer)))
