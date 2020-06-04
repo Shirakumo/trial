@@ -194,6 +194,11 @@
          (unless ,success
            ,cleanup-form)))))
 
+(defun constantly-restart (restart &rest values)
+  (lambda (&rest args)
+    (declare (ignore args))
+    (apply #'invoke-restart restart values)))
+
 (defmacro with-accessors* (accessors instance &body body)
   `(with-accessors ,(loop for accessor in accessors
                           collect (enlist accessor accessor))
