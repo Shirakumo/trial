@@ -58,7 +58,7 @@
   (setf *projection-matrix* (mortho left right bottom top near far)))
 
 (defun push-matrix ()
-  (vector-push (list *projection-matrix* *view-matrix* *model-matrix*) *matrix-stack*))
+  (vector-push (list (mcopy *projection-matrix*) (mcopy *view-matrix*) (mcopy *model-matrix*)) *matrix-stack*))
 
 (defun pop-matrix ()
   (destructuring-bind (p v m) (vector-pop *matrix-stack*)
