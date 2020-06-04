@@ -36,6 +36,10 @@
 (defmethod project-view :before ((camera camera))
   (reset-matrix))
 
+;;; Make sure we don't get anything emitted into a scene-pass, as that would
+;;; only be wasteful. The camera itself is never drawn, after all.
+(defmethod compile-to-pass :around ((object camera) (pass scene-pass)))
+
 (defclass 2d-camera (camera)
   ()
   (:default-initargs
