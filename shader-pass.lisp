@@ -231,7 +231,7 @@
   (flare-queue:clear-queue (actions pass))
   (clrhash (group-pointers pass))
   (setf (group pass) (cons (flare-queue:queue-last (actions pass))
-                            (flare-queue:queue-last (actions pass))))
+                           (flare-queue:queue-last (actions pass))))
   (call-next-method)
   (finish-pass-group pass scene))
 
@@ -319,12 +319,12 @@
 
 (defmethod register-object-for-pass ((pass per-object-pass) (class shader-entity-class))
   (let ((effective-class (effective-shader-class class)))
-    (unless (gethash effective-class (assets pass))
-      (let ((program (make-pass-shader-program pass effective-class)))
-        (when (gl-name (framebuffer pass))
-          (mapc #'load (dependencies program))
-          (load program))
-        (setf (gethash effective-class (assets pass)) program)))))
+    (or (gethash effective-class (assets pass))
+        (let ((program (make-pass-shader-program pass effective-class)))
+          (when (gl-name (framebuffer pass))
+            (mapc #'load (dependencies program))
+            (load program))
+          (setf (gethash effective-class (assets pass)) program)))))
 
 (defmethod register-object-for-pass ((pass per-object-pass) (entity shader-entity))
   (register-object-for-pass pass (class-of entity)))
