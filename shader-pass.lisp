@@ -182,9 +182,13 @@
   (activate (framebuffer pass))
   (bind-pass-textures pass))
 
-(define-shader-pass per-object-pass (listener)
-  ((assets :initform (make-hash-table :test 'eq) :accessor assets)
-   (actions :initform (make-instance 'flare-queue:queue) :accessor actions)
+(defmethod render (object (pass shader-pass))
+  (let ((program (shader-program-for-pass pass object)))
+    (prepare-pass-program pass program)
+    (render object program)))
+
+(define-shader-pass scene-pass (listener)
+  ((actions :initform (make-instance 'flare-queue:queue) :accessor actions)
    (group-pointers :initform (make-hash-table :test 'eq) :accessor group-pointers)
    (group :initform (cons NIL NIL) :accessor group)))
 
@@ -208,26 +212,26 @@
   (setf (gethash object (group-pointers pass)) (group pass))
   (setf (group pass) (cons (cdr (group pass)) (cdr (group pass)))))
 
-(defmethod compile-to-pass (object (pass per-object-pass))
+(defmethod compile-to-pass (object (pass scene-pass))
   (when (object-renderable-p object pass)
     (let ((program (register-object-for-pass pass object)))
       (push-pass-action pass `(prepare-pass-program ,pass ,program))
       (push-pass-action pass `(render ,object ,program)))))
 
-(defmethod compile-to-pass :around ((object transformed) (pass per-object-pass))
+(defmethod compile-to-pass :around ((object transformed) (pass scene-pass))
   (push-pass-action pass `(push-matrix))
   (push-pass-action pass `(apply-transforms ,object))
   (call-next-method)
   (push-pass-action pass `(pop-matrix)))
 
-(defmethod compile-to-pass :after ((object container) (pass per-object-pass))
+(defmethod compile-to-pass :after ((object container) (pass scene-pass))
   (for:for ((child over object))
     (compile-to-pass child pass)
     ;; KLUDGE: We can't do this in another method for the OBJECT, as the
     ;;         AROUND for TRANSFORMED must happen before we finish the group.
     (finish-pass-group pass child)))
 
-(defmethod compile-to-pass :around ((scene scene) (pass per-object-pass))
+(defmethod compile-to-pass :around ((scene scene) (pass scene-pass))
   (flare-queue:clear-queue (actions pass))
   (clrhash (group-pointers pass))
   (setf (group pass) (cons (flare-queue:queue-last (actions pass))
@@ -235,14 +239,14 @@
   (call-next-method)
   (finish-pass-group pass scene))
 
-(defmethod handle ((ev leave) (pass per-object-pass))
+(defmethod handle ((ev leave) (pass scene-pass))
   (when (gethash (entity ev) (group-pointers pass))
     (destructuring-bind (start . end) (gethash (entity ev) (group-pointers pass))
       ;; We know START is the cell before our content, and END the last cell of our content.
       (flare-queue:remove-cells start (flare-queue:right end))
       (remhash (entity ev) (group-pointers pass)))))
 
-(defmethod handle ((ev enter) (pass per-object-pass))
+(defmethod handle ((ev enter) (pass scene-pass))
   (unless (gethash (entity ev) (group-pointers pass))
     ;; KLUDGE: We don't actually know /where/ exactly the entity was inserted.
     ;;         Figuring out where would either involve recomputing the entire container
@@ -259,14 +263,21 @@
       (setf (group pass) (cons end end))
       (compile-to-pass (entity ev) pass))))
 
-(defmethod render (object (pass shader-pass))
-  (let ((program (shader-program-for-pass pass object)))
-    (prepare-pass-program pass program)
-    (render object program)))
+(defmethod handle ((ev class-changed) (pass scene-pass))
+  (call-next-method)
+  ;; FIXME: Need to re-evaluate groups, but this can be difficult.
+  ;;        If a class changes to be one that should now be included in the actions
+  ;;        somehow, but was not before, it will not have a group that we can update.
+  ;;        We'd also not know 'where' to insert the new group, but parent relations
+  ;;        are typically not kept. What to do?
+  )
 
-(defmethod render ((pass per-object-pass) target)
+(defmethod render ((pass scene-pass) target)
   (flare-queue:do-queue (action (actions pass))
     (apply (car action) (cdr action))))
+
+(define-shader-pass per-object-pass ()
+  ((assets :initform (make-hash-table :test 'eq) :accessor assets)))
 
 ;; FIXME: Maybe consider determining effective class for each
 ;;        individual shader stage as they might each change
@@ -275,13 +286,9 @@
 ;; FIXME: Share SHADER assets between shader programs by caching
 ;;        them... somewhere somehow?
 (defmethod handle ((ev class-changed) (pass per-object-pass))
+  (call-next-method)
   (let ((class (changed-class ev))
         (assets (assets pass)))
-    ;; FIXME: Need to re-evaluate groups, but this can be difficult.
-    ;;        If a class changes to be one that should now be included in the actions
-    ;;        somehow, but was not before, it will not have a group that we can update.
-    ;;        We'd also not know 'where' to insert the new group, but parent relations
-    ;;        are typically not kept. What to do?
     (when (typep class 'shader-entity-class)
       ;; FIXME: What happens if the effective shader class changes?
       ;;        We might be leaking shader programs for stale classes then.
@@ -347,18 +354,22 @@
 (defmethod shader-program-for-pass ((pass single-shader-pass) o)
   (shader-program pass))
 
-(defmethod paint-with :around ((pass single-shader-pass) thing)
-  (let ((program (shader-program pass)))
-    (gl:use-program (gl-name program))
-    (prepare-pass-program pass program)
-    (call-next-method)))
+(defmethod render ((pass single-shader-pass) thing)
+  (render pass (shader-program pass)))
+
+(defmethod render :before ((pass single-shader-pass) (program shader-program))
+  (gl:use-program (gl-name program))
+  (prepare-pass-program pass program))
+
+(define-shader-pass single-shader-scene-pass (single-shader-pass scene-pass)
+  ())
 
 (define-shader-pass post-effect-pass (single-shader-pass)
   ((vertex-array :initform (asset 'trial 'fullscreen-square) :accessor vertex-array)))
 
 (defmethod compile-to-pass (object (pass post-effect-pass)))
 
-(defmethod paint-with ((pass post-effect-pass) thing)
+(defmethod render ((pass post-effect-pass) thing)
   (let ((vao (vertex-array pass)))
     (with-pushed-attribs
       (disable :depth-test)
