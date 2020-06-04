@@ -26,7 +26,7 @@ void main(){}")
 (defmethod coerce-pass-shader ((pass shadow-map-pass) class (type (eql :fragment-shader)))
   (effective-shader type pass))
 
-(defmethod paint-with ((pass shadow-map-pass) target)
+(defmethod render ((pass shadow-map-pass) target)
   (with-pushed-matrix ((projection-matrix (shadow-projection-matrix pass))
                        (view-matrix (shadow-view-matrix pass)))
     ;(gl:cull-face :front)
@@ -39,7 +39,8 @@ void main(){}")
                     :initform (error "SHADOW-MAP-PASS required.")
                     :accessor shadow-map-pass)))
 
-(defmethod paint-with :before ((pass shadow-render-pass) thing)
+;; FIXME: how do we do this with the new render system?
+(defmethod render :before ((pass shadow-render-pass) thing)
   (let ((program (shader-program-for-pass pass thing))
         (shadow (shadow-map-pass pass)))
     (setf (uniform program "light_space_matrix") (m* (shadow-projection-matrix shadow)

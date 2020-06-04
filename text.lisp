@@ -38,7 +38,7 @@
     (setf (vertex-array text) vao)
     (unless size (setf (size text) (size (font text))))))
 
-(defmethod paint ((text text) (pass shader-pass))
+(defmethod render ((text text) target)
   (let ((r (/ (size text) (size (font text)))))
     (with-pushed-matrix (*model-matrix*)
       (scale-by r r r)

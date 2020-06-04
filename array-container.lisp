@@ -9,10 +9,6 @@
 (defclass array-container (container-unit)
   ((objects :initform (make-array 0 :adjustable T :fill-pointer T) :accessor objects)))
 
-(defmethod paint ((container array-container) target)
-  (for:for ((item across (objects container)))
-    (paint item target)))
-
 (defmethod flare:update ((container array-container))
   (for:for ((item across (objects container)))
     (update item)))
@@ -42,7 +38,3 @@
 (defmethod finalize ((container array-container))
   (for:for ((object across (objects container)))
     (finalize object)))
-
-(defmethod register-object-for-pass (pass (container array-container))
-  (for:for ((object across (objects container)))
-    (register-object-for-pass pass object)))

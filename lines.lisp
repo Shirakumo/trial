@@ -17,10 +17,9 @@
 (defmethod replace-vertex-data ((lines lines) points &key (update T) (default-color (vec 0 0 0 1)))
   (replace-vertex-data (vertex-array lines) (make-lines points :default-color default-color) :update update))
 
-(defmethod paint :before ((lines lines) (target shader-pass))
-  (let ((program (shader-program-for-pass target lines)))
-    (setf (uniform program "line_width") (float (line-width lines)))
-    (setf (uniform program "view_size") (vec (width *context*) (height *context*)))))
+(defmethod render :before ((lines lines) (program shader-program))
+  (setf (uniform program "line_width") (float (line-width lines)))
+  (setf (uniform program "view_size") (vec (width *context*) (height *context*))))
 
 (define-class-shader (lines :vertex-shader)
   "layout(location = 0) in vec3 position;

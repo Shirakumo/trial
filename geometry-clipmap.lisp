@@ -134,10 +134,9 @@
   (setf (vz (location clipmap)) y)
   (maybe-update-region clipmap))
 
-(defmethod paint ((clipmap geometry-clipmap) (pass shader-pass))
+(defmethod render ((clipmap geometry-clipmap) (program shader-program))
   (maybe-update-region clipmap)
-  (let ((program (shader-program-for-pass pass clipmap))
-        (levels (levels clipmap))
+  (let ((levels (levels clipmap))
         (block (clipmap-block clipmap)))
     ;;(gl:polygon-mode :front-and-back :fill)
     ;;(gl:polygon-mode :front-and-back :line)

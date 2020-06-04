@@ -86,14 +86,15 @@
     (when (typep entity 'selectable)
       (setf (color->object (selection-color entity) buffer) NIL))))
 
-(defmethod paint ((source selection-buffer) (buffer selection-buffer))
-  (paint-with buffer (scene source))
-  (gl:bind-framebuffer :draw-framebuffer 0)
-  (%gl:blit-framebuffer 0 0 (width source) (height source) 0 0 (width source) (height source)
-                        (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
-                        (cffi:foreign-enum-value '%gl:enum :nearest)))
+;; FIXME: How do we do this stuff with the new system?
+;; (defmethod render ((source selection-buffer) (buffer selection-buffer))
+;;   (paint-with buffer (scene source))
+;;   (gl:bind-framebuffer :draw-framebuffer 0)
+;;   (%gl:blit-framebuffer 0 0 (width source) (height source) 0 0 (width source) (height source)
+;;                         (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
+;;                         (cffi:foreign-enum-value '%gl:enum :nearest)))
 
-(defmethod paint-with :around ((buffer selection-buffer) thing)
+(defmethod render :around ((buffer selection-buffer) thing)
   (with-pushed-attribs
     (disable :blend)
     (call-next-method)))
@@ -109,7 +110,7 @@ void main(){
   color = selection_color;
 }")
 
-(define-shader-entity selectable ()
+(define-shader-entity selectable (renderable)
   ((selection-color :initarg :selection-color :initform (find-new-selection-color) :accessor selection-color)))
 
 (defun find-new-selection-color ()
@@ -119,14 +120,11 @@ void main(){
           (/ (ldb (byte 8 8) num) 255.0)
           (/ (ldb (byte 8 0) num) 255.0))))
 
-(defmethod paint :around ((entity entity) (pass selection-buffer-pass))
-  (when (or (typep entity 'selectable)
-            (typep entity 'container))
-    (call-next-method)))
+(defmethod object-renderable-p ((renderable renderable) (pass selection-buffer-pass))
+  (typep renderable 'selectable))
 
-(defmethod paint :before ((entity selectable) (pass selection-buffer-pass))
-  (let ((shader (shader-program-for-pass pass entity)))
-    (setf (uniform shader "selection_color") (selection-color entity))))
+(defmethod render :before ((entity selectable) (shader shader-program))
+  (setf (uniform shader "selection_color") (selection-color entity)))
 
 (defmethod register-object-for-pass :after ((buffer selection-buffer) (selectable selectable))
   (setf (color->object (selection-color selectable) buffer) selectable))
