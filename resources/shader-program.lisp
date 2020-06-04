@@ -30,26 +30,42 @@
 (defmethod dependencies ((program shader-program))
   (copy-list (shaders program)))
 
+(defun link-program (program shaders)
+  (let ((prog (gl-name program)))
+    (dolist (shader shaders)
+      (check-allocated shader)
+      (gl:attach-shader prog (gl-name shader)))
+    (gl:link-program prog)
+    (dolist (shader shaders)
+      (gl:detach-shader prog (gl-name shader)))
+    (unless (gl:get-program prog :link-status)
+      (error "Failed to link ~a: ~%~a"
+             program (gl:get-program-info-log prog)))
+    (v:debug :trial.asset "Linked ~a with ~a." program shaders)
+    (loop for buffer in (buffers program)
+          for i from 0
+          do (bind buffer program i))))
+
+(defmethod (setf shaders) :before (shaders (program shader-program))
+  (when (allocated-p program)
+    ;; If we're already hot, relink immediately.
+    (handler-bind ((resource-not-allocated (constantly-restart 'continue)))
+      (link-program program shaders))))
+
+(defmethod (setf buffers) :before (buffers (program shader-program))
+  (when (allocated-p program)
+    (loop for buffer in buffers
+          for i from 0
+          do (bind buffer program i))))
+
 (defmethod allocate ((program shader-program))
   (let ((shaders (shaders program)))
     (check-shader-compatibility shaders)
     (let ((prog (gl:create-program)))
       (with-cleanup-on-failure (progn (gl:delete-program prog)
                                       (setf (data-pointer program) NIL))
-        (dolist (shader shaders)
-          (check-allocated shader)
-          (gl:attach-shader prog (gl-name shader)))
-        (gl:link-program prog)
-        (dolist (shader shaders)
-          (gl:detach-shader prog (gl-name shader)))
-        (unless (gl:get-program prog :link-status)
-          (error "Failed to link ~a: ~%~a"
-                 program (gl:get-program-info-log prog)))
-        (v:debug :trial.asset "Linked ~a with ~a." program shaders)
         (setf (data-pointer program) prog)
-        (loop for buffer in (buffers program)
-              for i from 0
-              do (bind buffer program i))))))
+        (link-program program shaders)))))
 
 (defmethod deallocate :after ((program shader-program))
   (clrhash (uniform-map program)))
