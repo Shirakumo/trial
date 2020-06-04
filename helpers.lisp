@@ -6,13 +6,13 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass located-entity (entity)
+(defclass located-entity (transformed entity)
   ((location :initarg :location :initform (vec 0 0 0) :accessor location)))
 
 (defmethod apply-transforms progn ((obj located-entity))
   (translate (location obj)))
 
-(defclass oriented-entity (entity)
+(defclass oriented-entity (transformed entity)
   ((orientation :initarg :orientation :initform (vec 1 0 0) :accessor orientation)
    (up :initarg :up :initform (vec 0 1 0) :accessor up)))
 
@@ -20,7 +20,7 @@
   (rotate (vc (up obj) (orientation obj))
           (* 180 (/ (acos (v. (up obj) (orientation obj))) PI))))
 
-(defclass rotated-entity (entity)
+(defclass rotated-entity (transformed entity)
   ((rotation :initarg :rotation :initform (vec 0 0 0) :accessor rotation)))
 
 (defmethod apply-transforms progn ((obj rotated-entity))
@@ -28,20 +28,20 @@
   (rotate +vy+ (vy (rotation obj)))
   (rotate +vz+ (vz (rotation obj))))
 
-(defclass axis-rotated-entity (entity)
+(defclass axis-rotated-entity (transformed entity)
   ((axis :initarg :axis :initform (vec 0 1 0) :accessor axis)
    (angle :initarg :angle :initform 0 :accessor angle)))
 
 (defmethod apply-transforms progn ((obj axis-rotated-entity))
   (rotate (axis obj) (angle obj)))
 
-(defclass pivoted-entity (entity)
+(defclass pivoted-entity (transformed entity)
   ((pivot :initarg :pivot :initform (vec 0 0 0) :accessor pivot)))
 
 (defmethod apply-transforms progn ((obj pivoted-entity))
   (translate (pivot obj)))
 
-(defclass scaled-entity (entity)
+(defclass scaled-entity (transformed entity)
   ((scaling :initarg :scaling :initform (vec 1 1 1) :accessor scaling)))
 
 (defmethod apply-transforms progn ((obj scaled-entity))
