@@ -9,7 +9,7 @@
 (define-pool effects
   :base 'trial)
 
-(define-shader-pass render-pass (per-object-pass)
+(define-shader-pass render-pass (scene-pass per-object-pass)
   ((color :port-type output :attachment :color-attachment0)
    (depth :port-type output :attachment :depth-stencil-attachment)))
 
