@@ -299,6 +299,14 @@
                 (/ (- (get-internal-run-time) ,run) INTERNAL-TIME-UNITS-PER-SECOND)
                 (/ (- (get-internal-real-time) ,real) INTERNAL-TIME-UNITS-PER-SECOND))))))
 
+(defun ensure-instance (object type &rest initargs)
+  (cond ((null object)
+         (apply #'make-instance 'type initargs))
+        ((eql (type-of object) type)
+         (apply #'reinitialize-instance object initargs))
+        (T
+         (apply #'change-class object type initargs))))
+
 (defun ensure-class (class-ish)
   (etypecase class-ish
     (symbol (find-class class-ish))

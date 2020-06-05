@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass mesh (gl-asset vertex-array)
+(defclass mesh (asset vertex-array)
   ((geometry-name :initarg :geometry-name :accessor geometry-name)
    (data-usage :initarg :data-usage :accessor data-usage))
   (:default-initargs

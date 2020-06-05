@@ -6,20 +6,58 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass asset (resource)
+(defclass placeholder-resource (resource)
+  ((asset :initarg :asset :initform (error "ASSET required."))
+   (name :initarg :name :initform T :reader name)))
+
+(defmethod print-object ((resource placeholder-resource) stream)
+  (let ((asset (slot-value resource 'asset)))
+    (print-unreadable-object (resource stream :type T)
+      (format stream "~a/~a[~a]" (name (pool asset)) (name asset) (name resource)))))
+
+(defmethod allocated-p ((resource placeholder-resource)) NIL)
+
+(defmethod allocate ((resource placeholder-resource))
+  (load (slot-value resource 'asset))
+  (cond ((typep resource 'placeholder-resource)
+         (error "Loading the asset~%  ~a~%did not generate the resource~%  ~a"
+                (slot-value resource 'asset) resource))
+        (T
+         ;; We should have been change class'd by now, so re-call.
+         (allocate resource))))
+
+(defclass asset (resource-generator)
   ((pool :initform NIL :accessor pool)
    (name :initform NIL :accessor name)
    (input :initarg :input :accessor input)
-   (observers :initform (tg:make-weak-hash-table :weakness :key) :accessor observers)))
+   (loaded-p :initform NIL :accessor loaded-p)
+   (generation-arguments :initform () :initarg :generation-arguments :accessor generation-arguments)))
+
+(defgeneric load (asset))
+(defgeneric reload (asset))
+(defgeneric unload (asset))
+(defgeneric resource (asset identifier))
+(defgeneric list-resources (asset))
+
+(defun @r (pool asset resource)
+  (resource (asset pool asset) resource))
+
+(define-compiler-macro @r (&whole whole pool asset resource &environment env)
+  ;; We can do this because an asset's generated resources must be updated in place.
+  (if (and (constantp pool env)
+           (constantp asset env))
+      (if (constantp resource env)
+          `(load-time-value (resource (asset ,pool ,asset) ,resource))
+          `(resource (asset ,pool ,asset) ,resource))
+      whole))
 
 (defmethod initialize-instance ((asset asset) &key pool name)
   (check-type name symbol)
   (setf (name asset) name)
-  (when pool
-    (setf (pool asset) (etypecase pool
-                         (symbol (find-pool pool T))
-                         (pool pool)))
-    (setf (asset pool name) asset))
+  (setf (pool asset) (etypecase pool
+                       (symbol (find-pool pool T))
+                       (pool pool)))
+  (setf (asset pool name) asset)
   (call-next-method))
 
 (defmethod reinitialize-instance :after ((asset asset) &key)
@@ -27,9 +65,8 @@
     (reload asset)))
 
 (defmethod update-instance-for-different-class :around ((previous asset) (current asset) &key)
-  ;; FIXME: Error recovery?
-  (cond ((allocated-p current)
-         (deallocate current)
+  (cond ((allocated-p previous)
+         (unload previous)
          (call-next-method)
          (load current))
         (T
@@ -37,37 +74,33 @@
 
 (defmethod print-object ((asset asset) stream)
   (print-unreadable-object (asset stream :type T)
-    (format stream "~a/~a" (when (pool asset) (name (pool asset))) (name asset))))
+    (format stream "~a/~a" (name (pool asset)) (name asset))))
 
-(defgeneric load (asset))
-(defgeneric reload (asset))
+(defmethod resource ((asset asset) id)
+  (error "The asset~%  ~a~%does not hold a resource named~%  ~a"
+         asset id))
 
 (defmethod reload ((asset asset))
-  (deallocate asset)
-  (load asset))
+  (apply #'generate-resources asset (input* asset) (generation-arguments asset)))
+
+(defmethod load ((asset asset))
+  (apply #'generate-resources asset (input* asset) (generation-arguments asset)))
 
 (defmethod load :around ((asset asset))
-  (unless (allocated-p asset)
-    (v:trace :trial.asset "Loading ~a/~a" (when (pool asset) (name (pool asset))) (name asset))
+  (unless (loaded-p asset)
+    (v:trace :trial.asset "Loading ~a/~a" (name (pool asset)) (name asset))
     (call-next-method)))
 
-(defmethod load :after ((asset asset))
-  (observe-load T asset))
+(defmethod generate-resources :after ((asset asset) input &key)
+  (setf (loaded-p asset) T))
 
-(defmethod deallocate :around ((asset asset))
-  (when (allocated-p asset)
-    (v:trace :trial.asset "Deallocating ~a/~a" (when (pool asset) (name (pool asset))) (name asset))
+(defmethod unload :around ((asset asset))
+  (when (loaded-p asset)
+    (v:trace :trial.asset "Unloading ~a/~a" (name (pool asset)) (name asset))
     (call-next-method)))
 
-(defmethod register-load-observer (observer (asset asset))
-  (setf (gethash observer (observers asset)) T))
-
-(defmethod clear-observers ((asset asset))
-  (clrhash (observers asset)))
-
-(defmethod observe-load ((_ (eql T)) (asset asset))
-  (loop for k being the hash-keys of (observers asset)
-        do (observe-load k asset)))
+(defmethod unload :after ((asset asset))
+  (setf (loaded-p asset) NIL))
 
 (defmethod coerce-asset-input ((asset asset) (input (eql T)))
   (coerce-asset-input asset (input asset)))
@@ -90,27 +123,58 @@
   (check-type pool symbol)
   (check-type name symbol)
   (check-type type symbol)
-  `(let ((,name (asset ',pool ',name NIL)))
-     (cond ((and ,name (eql (type-of ,name) ',type))
-            (reinitialize-instance ,name ,@options :input ,input))
-           (,name
-            (change-class ,name ',type ,@options :input ,input))
-           (T
-            (make-instance ',type ,@options :input ,input :name ',name :pool ',pool)))))
+  `(ensure-instance (asset ',pool ',name NIL) ',type
+                    :input ,input
+                    :name ',name
+                    :pool ',pool
+                    :generation-arguments (list ,@options)))
 
 (trivial-indent:define-indentation define-asset (4 6 4 &body))
 
-(defclass gl-asset (asset gl-resource) ())
+(defclass single-resource-asset (asset)
+  ((resource)))
 
-(defmethod load :around ((asset gl-asset))
-  (with-context (*context*)
-    (call-next-method)))
+(defmethod initialize-instance :after ((asset single-resource-asset) &key)
+  (setf (slot-value asset 'resource) (make-instance 'placeholder-resource :asset asset)))
 
-(defmethod deallocate :around ((asset gl-asset))
-  (with-context (*context*)
-    (call-next-method)))
+(defmethod resource ((asset single-resource-asset) (id (eql T)))
+  (slot-value asset 'resource))
 
-(defmethod reload :around ((asset gl-asset))
-  (when *context*
-    (with-context (*context*)
-      (call-next-method))))
+(defmethod list-resources ((asset single-resource-asset))
+  (list (resource asset T)))
+
+(defmethod generate-resources ((asset single-resource-asset) path &rest initargs)
+  (apply #'call-next-method asset path :resource (resource asset T) initargs))
+
+(defmethod unload ((asset single-resource-asset))
+  (let ((resource (resource asset T)))
+    (when (allocated-p resource)
+      (deallocate resource))
+    (change-class resource 'placeholder-resource :asset asset)))
+
+(defclass multi-resource-asset (asset)
+  ((resources :initform (make-hash-table :test 'equal))))
+
+(defmethod resource ((asset single-resource-asset) id)
+  (let ((table (slot-value asset 'resources)))
+    (or (gethash id table)
+        (setf (gethash id table)
+              (make-instance 'placeholder-resource :asset asset)))))
+
+(defmethod list-resources ((asset single-resource-asset))
+  (loop for resource being the hash-values of (slot-value asset 'resources)
+        collect resource))
+
+(defmethod unload ((asset single-resource-asset))
+  (loop for resource being the hash-values of (slot-value asset 'resources)
+        do (when (allocated-p resource)
+             (deallocate resource))
+           (change-class resource 'placeholder-resource :asset asset)))
+
+(defclass file-input-asset (asset)
+  ())
+
+(defmethod shared-initialize :after ((asset file-input-asset) slots &key &allow-other-keys)
+  (dolist (file (enlist (input* asset)))
+    (unless (probe-file file)
+      (alexandria:simple-style-warning "Input file~% ~s~%for asset~%  ~s~%does not exist." file asset))))

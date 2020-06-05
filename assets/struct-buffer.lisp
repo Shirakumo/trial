@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass struct-buffer (gl-asset buffer-object)
+(defclass struct-buffer (asset buffer-object)
   ((struct :accessor struct))
   (:default-initargs
    :data-usage :stream-draw))

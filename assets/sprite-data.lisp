@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass sprite-data (gl-asset)
+(defclass sprite-data (asset)
   ((vertex-array :initform (change-class (make-instance 'vertex-mesh :vertex-type 'textured-vertex) 'vertex-array) :accessor vertex-array)
    (texture :initform NIL :accessor texture)
    (animations :initform #() :accessor animations)
