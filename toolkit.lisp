@@ -301,7 +301,7 @@
 
 (defun ensure-instance (object type &rest initargs)
   (cond ((null object)
-         (apply #'make-instance 'type initargs))
+         (apply #'make-instance type initargs))
         ((eql (type-of object) type)
          (apply #'reinitialize-instance object initargs))
         (T
