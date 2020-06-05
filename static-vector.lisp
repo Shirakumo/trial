@@ -10,17 +10,14 @@
 
 (declaim (inline mark-static-vector))
 (defun mark-static-vector (vector)
-  (setf (gethash vector *static-vector-map*) T))
+  (setf (gethash vector *static-vector-map*) T)
+  vector)
 
 (defun make-static-vector (length &rest args)
-  (let ((vec (apply #'static-vectors:make-static-vector length args)))
-    (setf (gethash vec *static-vector-map*) T)
-    vec))
+  (mark-static-vector (apply #'static-vectors:make-static-vector length args)))
 
 (define-compiler-macro make-static-vector (length &rest args)
-  `(let ((vec (static-vectors:make-static-vector ,length ,@args)))
-     (setf (gethash vec *static-vector-map*) T)
-     vec))
+  `(mark-static-vector (static-vectors:make-static-vector ,length ,@args)))
 
 (declaim (inline static-vector-p))
 (defun static-vector-p (vec)
