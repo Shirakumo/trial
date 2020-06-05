@@ -6,38 +6,9 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass sprite-data (asset)
-  ((vertex-array :initform (change-class (make-instance 'vertex-mesh :vertex-type 'textured-vertex) 'vertex-array) :accessor vertex-array)
-   (texture :initform NIL :accessor texture)
-   (animations :initform #() :accessor animations)
+(defclass sprite-data (multi-resource-asset file-input-asset)
+  ((animations :initform #() :accessor animations)
    (frames :initform #() :accessor frames)))
-
-(defmethod allocated-p ((data sprite-data))
-  (and (texture data)
-       (allocated-p (texture data))))
-
-(defmethod (setf frames) :after ((frames vector) (sprite sprite-data))
-  (replace-vertex-data (vertex-array sprite) (make-sprite-frame-mesh frames) :update T))
-
-(defmethod allocated-p ((data sprite-data))
-  (and (/= 0 (length (frames data)))
-       (texture data)
-       (allocated-p (texture data))
-       (vertex-array data)
-       (allocated-p (vertex-array data))))
-
-(defmethod load ((data sprite-data))
-  (load-animations (input* data) data)
-  (load (texture data))
-  (mapc #'load (dependencies (vertex-array data)))
-  (load (vertex-array data)))
-
-(defmethod deallocate ((data sprite-data))
-  (deallocate (texture data))
-  (mapc #'deallocate (dependencies (vertex-array data)))
-  (deallocate (vertex-array data))
-  (setf (animations data) #())
-  (setf (frames data) #()))
 
 (defun decode-json-vec (data)
   (cond ((and (jsown:keyp data "x") (jsown:keyp data "w"))
@@ -83,12 +54,17 @@
                  :loop-to (when (jsown:keyp data "loop")
                             (jsown:val data "loop"))))
 
-(defmethod load-animations ((path pathname) (sprite sprite-data))
+(defmethod generate-resources ((sprite sprite-data) (path pathname) &key)
   (let* ((data (jsown:parse (alexandria:read-file-into-string path)))
          (meta (jsown:val data "meta"))
          (size (decode-json-vec (jsown:val meta "size"))))
     (setf (frames sprite) (map 'vector (lambda (f) (decode-aseprite-frame f size)) (jsown:val data "frames")))
     (setf (animations sprite) (map 'vector #'decode-aseprite-tag (jsown:val meta "frameTags")))
-    (setf (texture sprite) (make-instance 'image :input (merge-pathnames (jsown:val meta "image") path)
-                                                 :min-filter :nearest
-                                                 :mag-filter :nearest))))
+    (ensure-instance (resource sprite 'texture) 'image
+                     :input (merge-pathnames (jsown:val meta "image") path)
+                     :min-filter :nearest
+                     :mag-filter :nearest)
+    (generate-resources (make-instance 'mesh-loader) (make-sprite-frame-mesh (frames sprite))
+                        :resource (resource sprite 'vertex-array))
+    (list (resource sprite 'texture)
+          (resource sprite 'vertex-array))))

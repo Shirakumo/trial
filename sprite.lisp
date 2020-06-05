@@ -71,22 +71,13 @@
 
 (defmethod initialize-instance :after ((sprite animated-sprite) &key sprite-data)
   (when sprite-data
-    ;; KLUDGE: This is really really bad.
-    ;;         In order to make sure the loader system still picks up our dependency
-    ;;         on the sprite-data asset without forcing us to waste another slot we
-    ;;         just abuse the frames slot here.
-    ;;
-    ;;         A better loader system would perhaps not do an automatic scan, but
-    ;;         instead allow us to record dependencies explicitly within a 'loading
-    ;;         context' or some such.
-    (setf (frames sprite) sprite-data)
+    (setf (texture sprite) (resource data 'texture))
+    (setf (vertex-array sprite) (resource data 'vertex-array))
     (register-load-observer sprite sprite-data)))
 
-(defmethod observe-load ((sprite animated-sprite) (data sprite-data))
+(defmethod observe-generation ((sprite animated-sprite) (data sprite-data) result)
   (setf (animations sprite) (animations data))
   (setf (frames sprite) (frames data))
-  (setf (texture sprite) (texture data))
-  (setf (vertex-array sprite) (vertex-array data))
   (setf (animation sprite) 0))
 
 (defmethod reset-animation ((sprite animated-sprite))
