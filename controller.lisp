@@ -17,10 +17,11 @@
   (key-press (one-of key :section :grave)))
 
 (define-asset (trial noto-sans) static
-    (make-instance 'font :file #p"noto-sans-regular.ttf"))
+    ;; FIXME: This naturally won't work once deployed as the path won't update.
+    (make-instance 'font :file (pool-path 'trial #p"noto-sans-regular.ttf")))
 
 (define-asset (trial noto-mono) static
-    (make-instance 'font :file #p"noto-mono-regular.ttf"))
+    (make-instance 'font :file (pool-path 'trial #p"noto-mono-regular.ttf")))
 
 (defclass controller (entity renderable listener)
   ((display :initform NIL :accessor display)

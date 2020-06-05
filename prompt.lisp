@@ -201,7 +201,7 @@
         #'char<))
 
 (define-asset (trial prompt-font) static
-    (make-instance 'font :file #p"PromptFont.ttf")
+    (make-instance 'font :file (pool-path 'trial #p"PromptFont.ttf"))
   :charset (prompt-charset)
   :size 64)
 
