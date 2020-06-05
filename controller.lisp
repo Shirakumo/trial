@@ -24,7 +24,7 @@
 
 (defclass controller (entity renderable listener)
   ((display :initform NIL :accessor display)
-   (text :initform (make-instance 'text :font (asset 'trial 'noto-mono) :size 18) :accessor text)
+   (text :initform (make-instance 'text :font (@r 'trial 'noto-mono) :size 18) :accessor text)
    (fps-buffer :initform (make-array 100 :fill-pointer T :initial-element 1) :reader fps-buffer)
    (show-overlay :initform T :accessor show-overlay)
    (observers :initform (make-array 0 :adjustable T :fill-pointer T) :accessor observers))

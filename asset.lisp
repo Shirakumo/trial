@@ -151,7 +151,7 @@
 (defclass multi-resource-asset (asset)
   ((resources :initform (make-hash-table :test 'equal))))
 
-(defmethod resource ((asset single-resource-asset) id)
+(defmethod resource ((asset multi-resource-asset) id)
   (let ((table (slot-value asset 'resources)))
     (or (gethash id table)
         (setf (gethash id table)
