@@ -93,7 +93,8 @@
                              (:file "vertex-buffer" :depends-on ("buffer-object"))))
                (:module "assets"
                 :depends-on ("package" "asset" "resources" "data-pointer")
-                :components ((:file "image")
+                :components ((:file "static")
+                             (:file "image")
                              (:file "mesh")
                              (:file "sprite-data" :depends-on ("image"))
                              (:file "struct-buffer" :depends-on ((:.. "gl-struct")))
