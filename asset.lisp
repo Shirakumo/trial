@@ -36,7 +36,6 @@
 (defgeneric load (asset))
 (defgeneric reload (asset))
 (defgeneric unload (asset))
-(defgeneric resource (asset identifier))
 (defgeneric list-resources (asset))
 
 (defun @r (pool asset &optional (resource T))
@@ -143,9 +142,6 @@
 (defmethod list-resources ((asset single-resource-asset))
   (list (resource asset T)))
 
-(defmethod generate-resources ((asset single-resource-asset) path &rest initargs)
-  (apply #'call-next-method asset path :resource (resource asset T) initargs))
-
 (defmethod unload ((asset single-resource-asset))
   (let ((resource (resource asset T)))
     (when (allocated-p resource)
@@ -175,6 +171,6 @@
   ())
 
 (defmethod shared-initialize :after ((asset file-input-asset) slots &key &allow-other-keys)
-  (dolist (file (enlist (input* asset)))
+  (dolist (file (input* asset))
     (unless (probe-file file)
       (alexandria:simple-style-warning "Input file~% ~s~%for asset~%  ~s~%does not exist." file asset))))
