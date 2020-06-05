@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass image (gl-asset texture)
+(defclass image (asset texture)
   ())
 
 (defmethod shared-initialize :after ((image image) slots &key &allow-other-keys)

@@ -11,7 +11,7 @@
   " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~
 ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ")
 
-(defclass font (gl-asset texture)
+(defclass font (asset texture)
   ((handle :initform NIL :accessor cl-fond:handle)
    (charset :initarg :charset :reader charset)
    (index :initarg :index :reader index)
