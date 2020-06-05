@@ -29,7 +29,7 @@
                (:file "attributes" :depends-on ("package"))
                (:file "camera" :depends-on ("package" "entity" "helpers" "input"))
                (:file "context" :depends-on ("package"))
-               (:file "controller" :depends-on ("package" "mapping" "input" "entity" "asset" "text"))
+               (:file "controller" :depends-on ("package" "mapping" "input" "entity" "asset" "text" ("assets" "static")))
                (:file "data-pointer" :depends-on ("package" "type-info" "static-vector"))
                (:file "deferred" :depends-on ("package" "shader-entity" "shader-pass" "helpers" ("resources" "uniform-buffer")))
                (:file "deploy" :depends-on ("package" "gamepad"))

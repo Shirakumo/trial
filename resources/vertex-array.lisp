@@ -59,7 +59,7 @@
 
 (defmethod (setf bindings) :after (bindings (array vertex-array))
   (when (allocated-p array)
-    (update-array-bindings arary bindings)))
+    (update-array-bindings array bindings)))
 
 (defmethod allocate ((array vertex-array))
   (let ((vao (gl:gen-vertex-array)))
