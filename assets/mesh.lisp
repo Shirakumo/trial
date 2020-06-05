@@ -6,46 +6,48 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass mesh (asset vertex-array)
-  ((geometry-name :initarg :geometry-name :accessor geometry-name)
-   (data-usage :initarg :data-usage :accessor data-usage))
-  (:default-initargs
-   :bindings NIL
-   :geometry-name NIL
-   :data-usage :static-draw))
+(defclass mesh-loader (resource-generator)
+  ())
 
-(defmethod destructor ((mesh mesh))
-  (let ((prev (call-next-method))
-        (bindings (bindings mesh)))
-    (lambda ()
-      (funcall prev)
-      (loop for (buffer) in bindings
-            do (when (allocated-p buffer) (deallocate buffer))
-               (maybe-free-static-vector (buffer-data buffer))))))
+(defmethod generate-resources ((generator mesh-loader) (mesh vertex-mesh) &key (data-usage :static-draw) (vertex-attributes T) vertex-form (resource (resource generator T)))
+  (let* ((vao (ensure-instance resource 'vertex-array
+                               :vertex-form (or vertex-form
+                                                (ecase (face-length mesh)
+                                                  (1 :points)
+                                                  (2 :lines)
+                                                  (3 :triangles)))))
+         (primer (if (= 0 (length (vertices mesh)))
+                     (allocate-instance (find-class (vertex-type mesh)))
+                     (aref (vertices mesh) 0)))
+         (attributes (etypecase vertex-attributes
+                       ((eql T) (vertex-attributes primer))
+                       (list vertex-attributes)))
+         (sizes (loop for attr in attributes collect (vertex-attribute-size primer attr)))
+         (buffer (make-vertex-data mesh :attributes attributes))
+         ;; FIXME: The assumption of float-only packing here is too primitive.
+         ;;        The same problem exists in geometry.lisp, though.
+         (vbo (make-instance 'vertex-buffer :buffer-data buffer :buffer-type :array-buffer
+                                            :data-usage data-usage :element-type :float
+                                            :size (* (length buffer) (gl-type-size :float))))
+         (ebo (make-instance 'vertex-buffer :buffer-data (faces mesh) :buffer-type :element-array-buffer
+                                            :data-usage data-usage :element-type :unsigned-int
+                                            :size (* (length (faces mesh)) (gl-type-size :unsigned-int))))
+         (specs (loop with stride = (reduce #'+ sizes)
+                      for offset = 0 then (+ offset size)
+                      for size in sizes
+                      for index from 0
+                      collect (list vbo :stride (* stride (gl-type-size :float))
+                                        :offset (* offset (gl-type-size :float))
+                                        :size size
+                                        :index index))))
+    (setf (bindings vao) (list* ebo specs))
+    vao))
 
-(defmethod load ((mesh mesh))
-  (let* ((input (coerce-asset-input mesh T))
-         (input (typecase input
-                  (geometry (gethash (geometry-name mesh) (meshes input)))
-                  (pathname (gethash (geometry-name mesh) (meshes (read-geometry input T))))
-                  (T input)))
-         (vao (etypecase input
-                ;; FIXME: pass vertex-attributes
-                (vertex-mesh (change-class (copy-instance input) 'vertex-array))
-                (vertex-array input))))
-    (setf (vertex-form mesh) (vertex-form vao))
-    (setf (bindings mesh) (mapcar #'enlist (bindings vao)))
-    (setf (size mesh) (size vao))
-    (loop for (buffer) in (bindings mesh)
-          do (setf (data-usage buffer) (data-usage mesh))
-             (allocate buffer))
-    (allocate mesh)
-    (case (data-usage mesh)
-      (:static-draw
-       ;; Free buffers again to avoid leaving garbage around.
-       ;; We can do this safely because we know the data is fresh
-       ;; and won't be used in the future due to static-draw.
-       (loop for (buffer) in (bindings mesh)
-             do (deallocate buffer)
-                (maybe-free-static-vector (buffer-data buffer)))))
-    (setf (bindings mesh) NIL)))
+(defmethod generate-resources ((generator mesh-loader) (path pathname) &key (format T))
+  (let ((meshes (meshes (read-geometry path format))))
+    (loop for name being the hash-keys of meshes
+          for mesh being the hash-values of meshes
+          collect (generate-resources generator mesh :resource (resource generator name)))))
+
+(defclass mesh (multi-resource-asset mesh-loader)
+  ())

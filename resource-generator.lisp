@@ -13,6 +13,7 @@
 (defgeneric register-generation-observer (observer generator))
 (defgeneric clear-observers (generator))
 (defgeneric observe-generation (observer generator result))
+(defgeneric resource (generator identifier))
 
 (defmethod register-generation-observer (observer (generator resource-generator))
   (setf (gethash observer (observers generator)) T))

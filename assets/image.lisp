@@ -33,7 +33,8 @@
                 (4 :bgra))))))
 
 (defmethod load-image (path (type (eql :png)) &key)
-  (let ((png (pngload:load-file path :flatten T :flip-y T)))
+  (let ((png (pngload:load-file path :flatten T :flip-y T :static-vector T)))
+    (mark-static-vector (pngload:data png))
     (values (pngload:data png)
             (pngload:width png)
             (pngload:height png)
@@ -95,7 +96,7 @@
 (defclass image-loader (resource-generator)
   ())
 
-(defmethod generate-resources ((generator image-loader) path &rest texture-args &key (type T) resource internal-format)
+(defmethod generate-resources ((generator image-loader) path &rest texture-args &key (type T) internal-format (resource (resource generator T)))
   (multiple-value-bind (bits width height pixel-type pixel-format)
       (with-new-value-restart (path) (new-path "Specify a new image path.")
         (with-retry-restart (retry "Retry loading the image path.")
@@ -111,7 +112,7 @@
                                   (infer-internal-format pixel-type pixel-format))
              (remf* texture-args :type :resource)))))
 
-(defclass image (image-loader single-resource-asset file-input-asset)
+(defclass image (single-resource-asset file-input-asset image-loader)
   ())
 
 ;; FIXME: multi-image textures such as cube maps
