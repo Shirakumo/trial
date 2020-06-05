@@ -62,6 +62,7 @@
                (:file "render-loop" :depends-on ("package" "toolkit"))
                (:file "render-texture" :depends-on ("package" "pipeline" "entity"))
                (:file "resource" :depends-on ("package" "context"))
+               (:file "resource-generator" :depends-on ("package"))
                (:file "retention" :depends-on ("package" "event-loop"))
                (:file "scene-buffer" :depends-on ("package" "scene" "render-texture"))
                (:file "scene" :depends-on ("package" "event-loop" "entity"))
