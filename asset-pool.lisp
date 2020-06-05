@@ -62,6 +62,15 @@
   (let ((pool (find-pool pool errorp)))
     (when pool (asset pool name errorp))))
 
+(define-compiler-macro asset (&whole whole pool name &optional (errorp T) &environment env)
+  ;; We can do this because assets get updated in place rather than being recreated.
+  (if (and (constantp pool env)
+           (constantp name env))
+      `(load-time-value
+        (or (gethash ,name (assets (find-pool ,pool ,errorp)))
+            (when ,errorp (error "No asset with name ~s on pool ~a." ,name ,pool))))
+      whole))
+
 (defmethod (setf asset) (asset (pool symbol) name)
   (setf (asset (find-pool pool T) name) asset))
 
