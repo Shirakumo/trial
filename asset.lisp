@@ -39,10 +39,10 @@
 (defgeneric resource (asset identifier))
 (defgeneric list-resources (asset))
 
-(defun @r (pool asset resource)
+(defun @r (pool asset &optional (resource T))
   (resource (asset pool asset) resource))
 
-(define-compiler-macro @r (&whole whole pool asset resource &environment env)
+(define-compiler-macro @r (&whole whole pool asset &optional (resource T) &environment env)
   ;; We can do this because an asset's generated resources must be updated in place.
   (if (and (constantp pool env)
            (constantp asset env))
