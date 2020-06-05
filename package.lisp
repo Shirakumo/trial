@@ -13,16 +13,6 @@
   (:import-from #:flow #:port)
   (:local-nicknames
    (#:gamepad #:org.shirakumo.fraf.gamepad))
-  ;; assets/font.lisp
-  (:export
-   #:*default-charset*
-   #:font
-   #:charset
-   #:index
-   #:size
-   #:oversample
-   #:fit-size
-   #:text-extent)
   ;; assets/image.lisp
   (:export
    #:image
@@ -61,6 +51,16 @@
    #:size
    #:update-buffer-data
    #:resize-buffer)
+  ;; resources/font.lisp
+  (:export
+   #:*default-charset*
+   #:font
+   #:charset
+   #:index
+   #:size
+   #:oversample
+   #:fit-size
+   #:text-extent)
   ;; resources/framebuffer.lisp
   (:export
    #:framebuffer

@@ -11,8 +11,9 @@
   " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~
 ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ")
 
-(defclass font (asset texture)
-  ((handle :initform NIL :accessor cl-fond:handle)
+(defclass font (texture)
+  ((file :initarg :file :initform NIL :accessor file)
+   (handle :initform NIL :accessor cl-fond:handle)
    (charset :initarg :charset :reader charset)
    (index :initarg :index :reader index)
    (size :initarg :size :reader size)
@@ -44,9 +45,9 @@
         (cl-fond-cffi:free-font handle)
         (cffi:foreign-free handle)))))
 
-(defmethod load ((font font))
+(defmethod allocate ((font font))
   (let ((handle (cl-fond::calloc '(:struct cl-fond-cffi:font)))
-        (file (uiop:native-namestring (input* font))))
+        (file (uiop:native-namestring (file font))))
     (with-cleanup-on-failure (deallocate font)
       (setf (cl-fond:handle font) handle)
       (setf (cl-fond-cffi:font-file handle) (cffi:foreign-string-alloc file :encoding :utf-8))
@@ -57,7 +58,7 @@
         (let ((max (if (fit-size font)
                        (cl-opengl:get* :max-texture-size)
                        (min width height))))
-          (allocate font)
+          (call-next-method)
           (gl:bind-texture :texture-2d (gl-name font))
           (gl:tex-parameter :texture-2d :texture-lod-bias -0.65)
           (loop (setf (cl-fond-cffi:font-width handle) width)

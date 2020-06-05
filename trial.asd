@@ -74,7 +74,7 @@
                (:file "sprite" :depends-on ("package" "shader-entity" "helpers" ("assets" "sprite-data")))
                (:file "ssao" :depends-on ("package" "shader-pass" "transforms"))
                (:file "static-vector" :depends-on ("package"))
-               (:file "text" :depends-on ("package" "shader-entity" "helpers" ("assets" "font")))
+               (:file "text" :depends-on ("package" "shader-entity" "helpers" ("resources" "font")))
                (:file "toolkit" :depends-on ("package"))
                (:file "transforms" :depends-on ("package"))
                (:file "type-info" :depends-on ("package" "toolkit"))
@@ -84,6 +84,7 @@
                (:module "resources"
                 :depends-on ("package" "resource" "toolkit" "data-pointer")
                 :components ((:file "buffer-object")
+                             (:file "font")
                              (:file "framebuffer")
                              (:file "shader-program")
                              (:file "shader")
@@ -92,8 +93,7 @@
                              (:file "vertex-buffer" :depends-on ("buffer-object"))))
                (:module "assets"
                 :depends-on ("package" "asset" "resources" "data-pointer")
-                :components ((:file "font")
-                             (:file "image")
+                :components ((:file "image")
                              (:file "mesh")
                              (:file "sprite-data" :depends-on ("image"))
                              (:file "struct-buffer" :depends-on ((:.. "gl-struct")))
