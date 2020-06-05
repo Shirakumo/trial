@@ -50,14 +50,15 @@
           `(resource (asset ,pool ,asset) ,resource))
       whole))
 
-(defmethod initialize-instance ((asset asset) &key pool name)
+(defmethod shared-initialize :after ((asset asset) slots &key pool name)
   (check-type name symbol)
-  (setf (name asset) name)
-  (setf (pool asset) (etypecase pool
-                       (symbol (find-pool pool T))
-                       (pool pool)))
-  (setf (asset pool name) asset)
-  (call-next-method))
+  (when name
+    (setf (name asset) name))
+  (when pool
+    (setf (pool asset) (etypecase pool
+                         (symbol (find-pool pool T))
+                         (pool pool))))
+  (setf (asset pool name) asset))
 
 (defmethod reinitialize-instance :after ((asset asset) &key)
   (when (allocated-p asset)
