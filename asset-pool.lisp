@@ -78,7 +78,7 @@
   (setf (gethash name (assets pool)) asset))
 
 (defmethod (setf asset) ((null null) (pool pool) name)
-  (deallocate (remhash name (assets pool))))
+  (unload (remhash name (assets pool))))
 
 (defmethod list-assets ((pool pool))
   (alexandria:hash-table-values (assets pool)))
