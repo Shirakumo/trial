@@ -200,8 +200,8 @@
                           do (write-char string out)))))
         #'char<))
 
-(define-asset (trial prompt-font) font
-    #p"PromptFont.ttf"
+(define-asset (trial prompt-font) static
+    (make-instance 'font :file #p"PromptFont.ttf")
   :charset (prompt-charset)
   :size 64)
 
