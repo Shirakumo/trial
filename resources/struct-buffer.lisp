@@ -6,32 +6,27 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass struct-buffer (asset buffer-object)
-  ((struct :accessor struct))
+(defclass struct-buffer (buffer-object)
+  ((struct :accessor struct)
+   (struct-class :accessor struct-class))
   (:default-initargs
    :data-usage :stream-draw))
 
-(defmethod print-object ((buffer struct-buffer) stream)
-  (print-unreadable-object (buffer stream :type T :identity T)
-    (format stream "~a/~a ~a ~a"
-            (when (pool buffer) (name (pool buffer))) (name buffer)
-            (buffer-type buffer) (data-usage buffer))))
+(defmethod initialize-instance :after ((buffer struct-buffer) &key struct-class)
+  (setf (struct-class buffer) (ensure-class struct-class)))
 
-(defmethod coerce-asset-input ((asset struct-buffer) (input symbol))
-  (find-class input))
-
-(defmethod reinitialize-instance :before ((buffer struct-buffer) &key input)
-  (when (and (not (equal input (input buffer)))
+(defmethod reinitialize-instance :before ((buffer struct-buffer) &key struct-class)
+  (when (and (not (equal struct-class (struct-class buffer)))
              (allocated-p buffer))
-    (c2mop:remove-dependent (find-class (input buffer)) buffer)
-    (c2mop:add-dependent (find-class input) buffer)))
+    (c2mop:remove-dependent (struct-class buffer) buffer)
+    (c2mop:add-dependent (ensure-class struct-class) buffer)))
 
 (defmethod reinitialize-instance :after ((buffer struct-buffer) &key)
   (when (allocated-p buffer)
-    (c2mop:update-dependent (input* buffer) buffer)))
+    (c2mop:update-dependent (struct-class buffer) buffer)))
 
 (defmethod buffer-field-size ((buffer struct-buffer) standard base)
-  (buffer-field-size (input* buffer) standard 0))
+  (buffer-field-size (struct-class buffer) standard 0))
 
 ;;; FIXME: we update the buffer just fine, but what about the shader programs?
 (defmethod c2mop:update-dependent ((class gl-struct-class) (buffer struct-buffer) &rest _)
@@ -50,28 +45,27 @@
             (resize-buffer buffer new-size :data new)))))))
 
 (defmethod (setf buffer-data) :after (data (buffer struct-buffer))
-  (setf (struct buffer) (make-instance (input buffer) :storage-ptr (static-vector-pointer data))))
+  (setf (struct buffer) (make-instance (struct-class buffer) :storage-ptr (static-vector-pointer data))))
 
 (defmethod gl-type ((buffer struct-buffer))
-  (gl-type (input* buffer)))
+  (gl-type (struct-class buffer)))
 
 (defmethod struct-fields ((buffer struct-buffer))
-  (struct-fields (input* buffer)))
+  (struct-fields (struct-class buffer)))
 
 (defmethod compute-dependent-types ((buffer struct-buffer))
-  (compute-dependent-types (input* buffer)))
+  (compute-dependent-types (struct-class buffer)))
 
-(defmethod load ((buffer struct-buffer))
+(defmethod allocate :before ((buffer struct-buffer))
   (unless (size buffer)
     (setf (size buffer) (buffer-field-size buffer T 0))
-    (setf (buffer-data buffer) (make-static-vector (size buffer) :initial-element 0)))
-  (allocate buffer))
+    (setf (buffer-data buffer) (make-static-vector (size buffer) :initial-element 0))))
 
 (defmethod allocate :after ((buffer struct-buffer))
-  (c2mop:add-dependent (input* buffer) buffer))
+  (c2mop:add-dependent (struct-class buffer) buffer))
 
 (defmethod deallocate :after ((buffer struct-buffer))
-  (c2mop:remove-dependent (input* buffer) buffer)
+  (c2mop:remove-dependent (struct-class buffer) buffer)
   (maybe-free-static-vector (buffer-data buffer))
   (setf (size buffer) NIL)
   (setf (buffer-data buffer) NIL)
