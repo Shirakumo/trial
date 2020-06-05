@@ -24,7 +24,7 @@
     (glsl-toolkit:interface-declaration
      (glsl-toolkit:type-qualifier
       (glsl-toolkit:layout-qualifier
-       (glsl-toolkit:layout-qualifier-id ,(layout-standard (find-class (input buffer)))))
+       (glsl-toolkit:layout-qualifier-id ,(layout-standard (struct-class buffer))))
       :uniform
       ,@(qualifiers buffer))
      ,(gl-type buffer)

@@ -31,13 +31,6 @@
    #:animations
    #:frames
    #:load-animations)
-  ;; assets/uniform-buffer.lisp
-  (:export
-   #:uniform-buffer
-   #:qualifiers
-   #:binding
-   #:struct
-   #:with-buffer-tx)
   ;; formats/collada.lisp
   (:export)
   ;; formats/vertex-format.lisp
@@ -99,6 +92,13 @@
    #:storage
    #:allocate-texture-storage
    #:resize)
+  ;; resources/uniform-buffer.lisp
+  (:export
+   #:uniform-buffer
+   #:qualifiers
+   #:binding
+   #:struct
+   #:with-buffer-tx)
   ;; resources/vertex-array.lisp
   (:export
    #:vertex-array

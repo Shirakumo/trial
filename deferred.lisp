@@ -148,8 +148,8 @@ void main(){
   (lights (:array (:struct light) #.MAX-LIGHTS))
   (count :int))
 
-(define-asset (trial light-block) uniform-buffer
-    'light-block)
+(define-asset (trial light-block) static
+    (make-instance 'uniform-buffer :struct-class 'light-block))
 
 (define-class-shader (deferred-render-pass :fragment-shader)
   ;; KLUDGE

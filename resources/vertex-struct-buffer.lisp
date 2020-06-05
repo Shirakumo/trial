@@ -11,10 +11,10 @@
    (struct-vector :accessor struct-vector)))
 
 (defmethod reinitialize-instance :after ((buffer vertex-struct-buffer) &key struct-count)
-  (when struct-count (c2mop:update-dependent (input* buffer) buffer)))
+  (when struct-count (c2mop:update-dependent (struct-class buffer) buffer)))
 
 (defmethod vertex-layout ((buffer vertex-struct-buffer))
-  (vertex-layout (input* buffer)))
+  (vertex-layout (struct-class buffer)))
 
 (defmethod add-vertex-bindings ((vbo vertex-struct-buffer) (vao vertex-array))
   (let ((idx (loop for i from 0
@@ -31,10 +31,10 @@
      (struct-count buffer)))
 
 (defmethod (setf struct-count) :after (value (buffer vertex-struct-buffer))
-  (c2mop:update-dependent (input* buffer) buffer))
+  (c2mop:update-dependent (struct-class buffer) buffer))
 
 (defmethod (setf buffer-data) :after (data (buffer vertex-struct-buffer))
-  (loop with struct = (input* buffer)
+  (loop with struct = (struct-class buffer)
         with vector = (make-array (struct-count buffer))
         with size = (buffer-field-stride struct :vertex-buffer)
         for i from 0 below (length vector)
