@@ -471,14 +471,16 @@
    #:layer)
   ;; loader.lisp
   (:export
-   #:banned-slots
-   #:compute-resources
-   #:resources-ready
-   #:bake
-   #:baked-p
-   #:transition
+   #:staging-area
    #:dependencies
-   #:bakable)
+   #:stage
+   #:unstage
+   #:compute-load-sequence
+   #:loader
+   #:commit
+   #:abort-commit
+   #:load-with
+   #:progress)
   ;; main.lisp
   (:export
    #:main

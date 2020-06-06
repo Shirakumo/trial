@@ -6,14 +6,14 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass pipelined-scene (scene pipeline bakable)
+(defclass pipelined-scene (scene pipeline)
   ())
 
 (defmethod leave :after ((entity entity) (scene pipelined-scene))
   ;; FIXME: A system for figuring out when we can GC shader programs
   )
 
-(defmethod bake ((scene pipelined-scene))
+(defmethod stage :before ((scene pipelined-scene) area)
   (pack-pipeline scene *context*)
   (compile-to-pass scene scene))
 

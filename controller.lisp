@@ -31,9 +31,6 @@
   (:default-initargs
    :name :controller))
 
-(defmethod banned-slots append ((object entity))
-  '(display fps-buffer))
-
 (defmethod register-object-for-pass :after (pass (controller controller))
   (register-object-for-pass pass (text controller)))
 

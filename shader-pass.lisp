@@ -333,8 +333,11 @@
 (defmethod register-object-for-pass ((pass per-object-pass) (entity shader-entity))
   (register-object-for-pass pass (class-of entity)))
 
-(define-shader-pass single-shader-pass (bakable)
+(define-shader-pass single-shader-pass ()
   ((shader-program :initform NIL :accessor shader-program)))
+
+(defmethod allocate-instance :after ((pass single-shader-pass) &key)
+  (setf (shader-program pass) (make-class-shader-program pass)))
 
 (defmethod handle ((ev class-changed) (pass single-shader-pass))
   (when (eql (changed-class ev) (class-of pass))
@@ -348,8 +351,7 @@
           (deallocate old)))
       (setf (shader-program pass) new))))
 
-(defmethod bake ((pass single-shader-pass))
-  (setf (shader-program pass) (make-class-shader-program pass)))
+(defmethod register-object-for-pass ((pass single-shader-pass) o))
 
 (defmethod shader-program-for-pass ((pass single-shader-pass) o)
   (shader-program pass))
