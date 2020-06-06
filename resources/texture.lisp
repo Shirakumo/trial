@@ -101,10 +101,6 @@
        (format stream "~ax~ax~a" (width texture) (height texture) (depth texture))))
     (format stream " ~a" (internal-format texture))))
 
-(defmethod destructor ((texture texture))
-  (let ((tex (gl-name texture)))
-    (lambda () (when tex (gl:delete-textures (list tex))))))
-
 (defmacro with-pixel-data-pointer ((ptr data) &body body)
   (let ((datag (gensym "DATA")))
     `(let ((,datag ,data))
@@ -200,6 +196,9 @@
             (gl:tex-parameter target :texture-max-anisotropy-ext anisotropy)))
         (gl:bind-texture target 0)
         (setf (data-pointer texture) tex)))))
+
+(defmethod deallocate ((texture texture))
+  (gl:delete-textures (list (gl-name texture))))
 
 (defmethod resize ((texture texture) width height)
   (when (or (/= width (width texture))

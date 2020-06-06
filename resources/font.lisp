@@ -32,19 +32,6 @@
    :mag-filter :linear
    :wrapping :clamp-to-border))
 
-(defmethod destructor ((font font-atlas))
-  (let ((prev (call-next-method))
-        (handle (cl-fond:handle font)))
-    (lambda ()
-      (funcall prev)
-      (when handle
-        (unless (cffi:null-pointer-p (cl-fond-cffi:font-file handle))
-          (cffi:foreign-string-free (cl-fond-cffi:font-file handle)))
-        (unless (cffi:null-pointer-p (cl-fond-cffi:font-codepoints handle))
-          (cffi:foreign-string-free (cl-fond-cffi:font-codepoints handle)))
-        (cl-fond-cffi:free-font handle)
-        (cffi:foreign-free handle)))))
-
 (defmethod allocate ((font font-atlas))
   (let ((handle (cl-fond::calloc '(:struct cl-fond-cffi:font)))
         (file (uiop:native-namestring (file font))))
@@ -75,6 +62,16 @@
                              (allocate-texture-storage font))
                             (T
                              (cl-fond::show-error)))))))))))
+
+(defmethod deallocate ((font font-atlas))
+  (call-next-method)
+  (let ((handle (cl-fond:handle font)))
+    (unless (cffi:null-pointer-p (cl-fond-cffi:font-file handle))
+      (cffi:foreign-string-free (cl-fond-cffi:font-file handle)))
+    (unless (cffi:null-pointer-p (cl-fond-cffi:font-codepoints handle))
+      (cffi:foreign-string-free (cl-fond-cffi:font-codepoints handle)))
+    (cl-fond-cffi:free-font handle)
+    (cffi:foreign-free handle)))
 
 (defmethod text-extent ((font font-atlas) text)
   (if (allocated-p font)

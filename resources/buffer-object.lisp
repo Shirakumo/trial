@@ -24,10 +24,6 @@
   (print-unreadable-object (buffer stream :type T :identity T)
     (format stream "~a ~a" (buffer-type buffer) (data-usage buffer))))
 
-(defmethod destructor ((buffer buffer-object))
-  (let ((vbo (gl-name buffer)))
-    (lambda () (when vbo (gl:delete-buffers (list vbo))))))
-
 (defun update-buffer-data/ptr (buffer data count &optional (buffer-start 0))
   (let ((buffer-type (buffer-type buffer)))
     #-elide-buffer-access-checks
@@ -74,3 +70,6 @@
       (setf (data-pointer buffer) vbo)
       (assert (not (null (size buffer))))
       (resize-buffer buffer (size buffer) :data buffer-data))))
+
+(defmethod deallocate ((buffer buffer-object))
+  (gl:delete-buffers (list (gl-name buffer))))

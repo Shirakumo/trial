@@ -20,10 +20,6 @@
   (print-unreadable-object (shader stream :type T :identity T)
     (format stream "~a" (shader-type shader))))
 
-(defmethod destructor ((shader shader))
-  (let ((shdr (gl-name shader)))
-    (lambda () (when shdr (gl:delete-shader shdr)))))
-
 (defmethod allocate ((shader shader))
   (let ((source (shader-source shader))
         (shdr (gl:create-shader (shader-type shader))))
@@ -37,3 +33,6 @@
                  (format-with-line-numbers source)))
         (v:debug :trial.asset "Compiled shader ~a: ~%~a" shader source)
         (setf (data-pointer shader) shdr)))))
+
+(defmethod deallocate ((shader shader))
+  (gl:delete-shader (gl-name shader)))

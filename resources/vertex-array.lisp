@@ -18,10 +18,6 @@
   (print-unreadable-object (array stream :type T :identity T)
     (format stream "~@[~a~]" (size array))))
 
-(defmethod destructor ((array vertex-array))
-  (let ((vao (gl-name array)))
-    (lambda () (when vao (gl:delete-vertex-arrays (list vao))))))
-
 (defmethod dependencies ((array vertex-array))
   (mapcar #'unlist (bindings array)))
 
@@ -67,3 +63,6 @@
                                     (setf (data-pointer array) NIL))
       (setf (data-pointer array) vao)
       (update-array-bindings array (bindings array)))))
+
+(defmethod deallocate ((array vertex-array))
+  (gl:delete-vertex-arrays (list (gl-name array))))

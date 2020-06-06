@@ -23,10 +23,6 @@
                (setf (gethash (shader-type shader) table) shader))
         finally (return shaders)))
 
-(defmethod destructor ((program shader-program))
-  (let ((prog (gl-name program)))
-    (lambda () (when prog (gl:delete-program prog)))))
-
 (defmethod dependencies ((program shader-program))
   (copy-list (shaders program)))
 
@@ -67,8 +63,9 @@
         (setf (data-pointer program) prog)
         (link-program program shaders)))))
 
-(defmethod deallocate :after ((program shader-program))
-  (clrhash (uniform-map program)))
+(defmethod deallocate ((program shader-program))
+  (clrhash (uniform-map program))
+  (gl:delete-program (gl-name program)))
 
 (declaim (inline %set-uniform))
 (defun %set-uniform (location data)
