@@ -41,7 +41,6 @@
    (waiting :initform 0 :accessor context-waiting)
    (lock :initform (bt:make-lock "Context lock") :reader context-lock)
    (wait-lock :initform (bt:make-lock "Context wait lock") :reader context-wait-lock)
-   (resources :initform (make-hash-table :test 'eq) :accessor resources)
    (handler :initarg :handler :accessor handler)
    (shared-with :initarg :share-with :reader shared-with))
   (:default-initargs
@@ -101,10 +100,6 @@
     (with-context (context :force T)
       (v:info :trial.context "Destroying context.")
       (hide context)
-      (loop for resource being the hash-values of (resources context)
-            do (when (allocated-p resource) (deallocate resource))
-               (when (typep resource 'asset) (clear-observers resource)))
-      (clrhash (resources context))
       (call-next-method)
       (setf *context* NIL))))
 
