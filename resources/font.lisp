@@ -11,7 +11,7 @@
   " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~
 ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ")
 
-(defclass font (texture)
+(defclass font-atlas (texture)
   ((file :initarg :file :initform NIL :accessor file)
    (handle :initform NIL :accessor cl-fond:handle)
    (charset :initarg :charset :reader charset)
@@ -32,7 +32,7 @@
    :mag-filter :linear
    :wrapping :clamp-to-border))
 
-(defmethod destructor ((font font))
+(defmethod destructor ((font font-atlas))
   (let ((prev (call-next-method))
         (handle (cl-fond:handle font)))
     (lambda ()
@@ -45,7 +45,7 @@
         (cl-fond-cffi:free-font handle)
         (cffi:foreign-free handle)))))
 
-(defmethod allocate ((font font))
+(defmethod allocate ((font font-atlas))
   (let ((handle (cl-fond::calloc '(:struct cl-fond-cffi:font)))
         (file (uiop:native-namestring (file font))))
     (with-cleanup-on-failure (deallocate font)
@@ -76,7 +76,7 @@
                             (T
                              (cl-fond::show-error)))))))))))
 
-(defmethod text-extent ((font font) text)
+(defmethod text-extent ((font font-atlas) text)
   (if (allocated-p font)
       (cl-fond:compute-extent font text)
       '(:l 0 :r 0 :t 0 :b 0 :gap 0)))

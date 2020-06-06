@@ -97,6 +97,7 @@
                (:module "assets"
                 :depends-on ("package" "asset" "resources" "data-pointer")
                 :components ((:file "static")
+                             (:file "font")
                              (:file "image")
                              (:file "mesh")
                              (:file "sprite-data" :depends-on ("image"))))
