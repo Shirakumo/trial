@@ -9,7 +9,8 @@
 ;; FIXME: Fullscreenable seems to cause really bad behaviour, idk
 (defclass main (display window gamepad-input-handler)
   ((scene :initform (make-instance 'pipelined-scene) :accessor scene)
-   (controller :initform (make-instance 'controller) :accessor controller)))
+   (controller :initform (make-instance 'controller) :accessor controller)
+   (loader :initform (make-instance 'loader) :accessor loader)))
 
 (defmethod initialize-instance :after ((main main) &key)
   (with-slots (scene controller) main
@@ -17,11 +18,12 @@
     (start scene)))
 
 (defmethod finalize ((main main))
-  (with-slots (scene controller) main
+  (with-slots (scene controller loader) main
     (v:info :trial.main "RAPTURE")
     (acquire-context (context main) :force T)
     (finalize controller)
-    (finalize scene)))
+    (finalize scene)
+    (finalize loader)))
 
 (defmethod handle (event (main main))
   (issue (scene main) event))
@@ -55,15 +57,12 @@
 (defmethod change-scene ((main main) (new scene) &key (old (scene main)))
   (unless (eq old new)
     (when old (stop old))
-    (restart-case
-        (progn
-          (setup-scene main new)
-          (transition old new)
-          (setf (scene main) new))
-      (abort ()
-        :report "Give up changing the scene and continue with the old."
-        :test (lambda (c) (declare (ignore c)) old)
-        (when old (start old)))))
+    (let ((area (make-instance 'staging-area)))
+      (setup-scene main new)
+      (stage scene area)
+      (if (commit area (loader main))
+          (setf (scene main) new)
+          (start old))))
   (values new old))
 
 (defmethod render ((source main) (target main))
