@@ -165,7 +165,8 @@
                       (unload-with loader resource)
                       (remhash resource resources))
                      (:keep
-                      (setf (gethash resource resources) :loaded)))))
+                      (setf (gethash resource resources) :loaded))))
+          T)
       (abort-commit ()
         :report "Abort the commit and roll back any changes."
         ;; Unload the newly loaded resources we didn't need before, and reset the state.
@@ -178,4 +179,5 @@
                    (:to-load
                     (remhash resource resources))
                    ((:to-unload :keep)
-                    (setf (gethash resource resources) :loaded))))))))
+                    (setf (gethash resource resources) :loaded))))
+        NIL))))
