@@ -121,11 +121,13 @@
       (error "Not currently within a load transaction -- cannot abort.")))
 
 (defmethod process-loads ((loader loader) loads)
-  (loop with resources = (loaded loader)
+  (loop with resource-states = (loaded loader)
         for i from 0 below (length loads)
         for resource = (aref loads i)
-        do (load-with loader resource)
-           (progress loader i (length loads))))
+        do (case (gethash resource resource-states)
+             (:to-load
+              (load-with loader resource)
+              (progress loader i (length loads))))))
 
 (defmethod load-with ((loader loader) (resource resource))
   (unless (allocated-p resource)
