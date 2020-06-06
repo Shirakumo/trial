@@ -555,7 +555,6 @@
    #:check-allocated
    #:foreign-resource
    #:data-pointer
-   #:destructor
    #:gl-resource
    #:gl-name)
   ;; retention.lisp

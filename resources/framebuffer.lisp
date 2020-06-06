@@ -17,10 +17,6 @@
   (print-unreadable-object (framebuffer stream :type T :identity T)
     (format stream "~:{~a ~}" (attachments framebuffer))))
 
-(defmethod destructor ((framebuffer framebuffer))
-  (let ((fbo (gl-name framebuffer)))
-    (lambda () (when fbo (gl:delete-framebuffers (list fbo))))))
-
 (defmethod dependencies ((framebuffer framebuffer))
   (mapcar #'second (attachments framebuffer)))
 
@@ -70,6 +66,9 @@
                  (%gl:framebuffer-parameter-i :framebuffer :framebuffer-default-height (height framebuffer)))))
         (gl:bind-framebuffer :framebuffer 0)
         (setf (data-pointer framebuffer) fbo)))))
+
+(defmethod deallocate ((framebuffer framebuffer))
+  (gl:delete-framebuffers (list (gl-name framebuffer))))
 
 (defmethod resize ((framebuffer framebuffer) width height)
   (dolist (attachment (attachments framebuffer))

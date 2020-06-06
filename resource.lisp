@@ -44,22 +44,10 @@
 (defclass foreign-resource (resource)
   ((data-pointer :initform NIL :initarg :data-pointer :accessor data-pointer)))
 
-(defgeneric destructor (foreign-resource))
-
-(defmethod destructor ((resource foreign-resource))
-  (lambda ()))
-
 (defmethod allocated-p ((resource foreign-resource))
   (data-pointer resource))
 
-(defmethod allocate :after ((resource foreign-resource))
-  (tg:finalize resource (destructor resource)))
-
-(defmethod deallocate ((resource foreign-resource))
-  (funcall (destructor resource)))
-
 (defmethod deallocate :after ((resource foreign-resource))
-  (tg:cancel-finalization resource)
   (setf (data-pointer resource) NIL))
 
 (defclass gl-resource (foreign-resource)
