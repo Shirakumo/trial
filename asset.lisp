@@ -26,6 +26,9 @@
          ;; We should have been change class'd by now, so re-call.
          (allocate resource))))
 
+(defmethod dependencies ((resource placeholder-resource))
+  (list (slot-value resource 'asset)))
+
 (defclass asset (resource-generator)
   ((pool :initform NIL :accessor pool)
    (name :initform NIL :accessor name)

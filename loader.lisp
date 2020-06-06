@@ -6,145 +6,176 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defgeneric banned-slots (object)
-  (:method-combination append))
-(defgeneric compute-resources (object resource-vector readying-vector traversal-cache))
-(defgeneric bake (bakable))
-(defgeneric baked-p (bakable))
-(defgeneric resources-ready (readying))
-(defgeneric transition (from to))
-(defgeneric dependencies (resource))
+(define-condition resource-depended-on (error)
+  ((resource :initarg :resource)
+   (dependents :initarg :dependents))
+  (:report (lambda (c s) (format s "The resource~%  ~a~%cannot be unstaged as it is depended on by~{~%  ~a~}"
+                                 (slot-value c 'resource) (slot-value c 'dependents)))))
 
-(defun compute-resources-for (thing)
-  (let ((resources (make-array 0 :adjustable T :fill-pointer T))
-        (readying (make-array 0 :adjustable T :fill-pointer T)))
-    (compute-resources thing resources readying (make-hash-table :test 'eq))
-    (values resources readying)))
+(defclass staging-area ()
+  ((staged :initform (make-hash-table :test 'eq) :reader staged)))
 
-(defmethod dependencies ((resource resource))
-  ())
+(defgeneric dependencies (object))
+(defgeneric stage (object staging-area))
+(defgeneric unstage (object staging-area))
+(defgeneric mark-dependent (dependency object staging-area))
+(defgeneric compute-load-sequence (staging-area))
+(defgeneric load-before (a b))
 
-(defmethod compute-resources :around (object resources readying (cache hash-table))
-  (unless (gethash object cache)
-    (setf (gethash object cache) T)
+(defmethod dependencies (object) ())
+
+(defmethod mark-dependent (dependency object (area staging-area))
+  (stage dependency area)
+  ;; CAR: things this object depends on
+  ;; CDR: things that depend on this object
+  (pushnew dependency (car (gethash object (staged area))))
+  (pushnew object (cdr (gethash dependency (staged area)))))
+
+(defmethod load-before (a b) NIL)
+(defmethod load-before ((generator resource-generator) (resource resource)) T)
+
+(defmethod stage :around (object (area staging-area))
+  (unless (gethash object (staged area))
     (call-next-method)))
 
-(defmethod compute-resources ((anything T) resources readying cache))
+(defmethod stage :after (object (area staging-area))
+  (dolist (dependency (dependencies object))
+    (mark-dependent dependency object)))
 
-(defmethod compute-resources ((cons cons) resources readying cache)
-  (compute-resources (car cons) resources readying cache)
-  (compute-resources (cdr cons) resources readying cache))
+(defmethod stage ((resource resource) (area staging-area))
+  (setf (gethash resource (staged area) (cons NIL NIL))))
 
-(defmethod compute-resources ((vector vector) resources readying cache)
-  (when (eql T (array-element-type vector))
-    (loop for object across vector
-          do (compute-resources object resources readying cache))))
+(defmethod stage ((asset asset) (area staging-area))
+  (setf (gethash resource (staged area) (cons NIL NIL))))
 
-(defmethod compute-resources ((table hash-table) resources readying cache)
-  (loop for value being the hash-values of table
-        do (compute-resources value resources readying cache)))
+(defmethod stage ((container container) (area staging-area))
+  (for:for ((child over container))
+    (stage child area)))
 
-(defmethod banned-slots append ((object entity))
-  ())
+(defmethod unstage ((resource resource) (area staging-area))
+  (let ((data (gethash resource (staged area))))
+    (when (cdr data)
+      (restart-case (error 'resource-depended-on :resource resource :dependents (cdr data))
+        (continue ()
+          :report "Unstage the dependents too"
+          (dolist (resource (cdr data))
+            (unstage resource area)))
+        (ignore ()
+          :report "Don't unstage the resource"
+          (return-from unstage))))
+    ;; Remove self from dependents list
+    (dolist (dependency (car data))
+      (let ((data (gethash dependency (staged area))))
+        (setf data (remove resource data))))
+    ;; Remove entry completely
+    (remhash resource (staged area))))
 
-(defmethod banned-slots append ((object container-unit))
-  '(scene-graph))
-
-(defmethod compute-resources ((object entity) resources readying cache)
-  (loop with banned = (banned-slots object)
-        for slot in (c2mop:class-slots (class-of object))
-        for name = (c2mop:slot-definition-name slot)
-        when (and (not (find name banned :test 'eq)) (slot-boundp object name))
-        do (compute-resources (slot-value object name) resources readying cache)))
-
-(defmethod compute-resources ((queue flare-queue:queue) resources readying cache)
-  (for:for ((item flare-queue:in-queue queue))
-    (compute-resources item resources readying cache)))
-
-(defmethod compute-resources ((resource resource) resources readying cache)
-  (call-next-method)
-  (vector-push-extend resource resources)
-  (dolist (dep (dependencies resource))
-    (compute-resources dep resources readying cache)))
-
-(defclass bakable (entity)
-  ((baked-p :initform NIL :accessor baked-p)))
-
-(defmethod compute-resources :before ((bakable bakable) resources readying cache)
-  (bake bakable))
-
-(defmethod bake :around ((bakable bakable))
-  (unless (baked-p bakable)
-    (call-next-method))
-  (setf (baked-p bakable) T))
-
-(defclass readied ()
-  ())
-
-(defmethod compute-resources :before ((readied readied) resources readying cache)
-  (vector-push-extend readied readying))
-
-(defun topological-sort-by-dependencies (resources)
-  (let ((status (make-hash-table :test 'eq))
-        (sorted (make-array (length resources) :fill-pointer 0)))
-    (labels ((visit (resource)
-               (case (gethash resource status :unvisited)
-                 (:temporary
-                  (warn "Dependency loop detected on ~a." resource))
-                 (:unvisited
-                  (setf (gethash resource status) :temporary)
-                  (dolist (dependency (dependencies resource))
-                    ;; Avoid injecting dependencies that are not part of the
-                    ;; resource loading list to avoid duplicate loading.
-                    ;; FIXME: maybe use the cache from the traversal for quicker lookup.
-                    (when (find dependency resources)
-                      (visit dependency)))
-                  (setf (gethash resource status) :done)
-                  (vector-push resource sorted)))))
-      (map NIL #'visit resources))
+(defmethod compute-load-sequence ((area staging-area))
+  (let ((sorted (make-array (hash-table-count (staged area)))))
+    ;; First push all into the sequence, unsorted.
+    (loop for object being the hash-keys of (staged area)
+          for i from 0
+          do (setf (aref sorted i) object))
+    ;; Now sort to ensure assets and other generators come first.
+    (sort sorted #'load-before)
+    ;; Now perform Tarjan, which happens to be "stable-sorting".
+    (let ((status (make-hash-table :test 'eq))
+          (i 0))
+      (labels ((visit (object)
+                 (case (gethash object status :unvisited)
+                   (:temporary
+                    (warn "Dependency loop detected on ~a." object))
+                   (:unvisited
+                    (setf (gethash object status) :temporary)
+                    (dolist (dependency (car (gethash object objects)))
+                      (visit dependency))
+                    (setf (gethash object status) :done)
+                    (setf (aref sorted i) object)
+                    (incf i)))))
+        ;; Have to copy the sequence here to avoid overwriting as we
+        ;; sort by dependencies.
+        (loop for object across (copy-seq sorted)
+              do (visit object))))
     sorted))
 
-(defun %transition (to-load to-deallocate to-ready)
-  (when to-load
-    (let ((to-load (topological-sort-by-dependencies to-load)))
-      (v:info :trial.loader "Loading ~a asset~:p." (length to-load))
-      (v:debug :trial.loader "Loading:~%~a" to-load)
-      (map NIL #'load to-load)))
-  (when to-ready
-    (map NIL #'resources-ready to-ready))
-  (when to-deallocate
-    (v:info :trial.loader "Deallocating ~a asset~:p." (length to-deallocate))
-    (v:debug :trial.loader "Deallocating:~%~a" to-deallocate)
-    (map NIL #'deallocate to-deallocate)))
+(defclass loader ()
+  ((loaded :initform (make-hash-table :test 'eq) :reader loaded)))
 
-(defmethod transition ((from entity) (to container))
-  (v:info :trial.loader "Transitioning ~a into ~a." from to)
-  (multiple-value-bind (to-load to-ready) (compute-resources-for from)
-    (%transition to-load NIL to-ready)
-    to))
+(defgeneric commit (staging-area loader))
+(defgeneric abort-commit (loader))
+(defgeneric load-with (loader object))
+(defgeneric unload-with (loader object))
+(defgeneric progress (loader so-far total))
 
-(defmethod transition ((from null) (to container))
-  (v:info :trial.loader "Transitioning to ~a" to)
-  (multiple-value-bind (to-load to-ready) (compute-resources-for to)
-    (%transition to-load NIL to-ready)
-    to))
+(defmethod finalize ((loader loader))
+  (loop for resource being the hash-keys of (loaded loader)
+        for status being the hash-values of (loaded loader)
+        do (case state
+             ((:to-unload :keep :loaded)
+              (unload-with loader resource))))
+  (clrhash (loaded loader)))
 
-(defmethod transition ((from container) (to null))
-  (v:info :trial.loader "Transitioning from ~a" from)
-  (let ((to-deallocate (compute-resources-for to)))
-    (%transition NIL to-deallocate NIL)
-    to))
+(defmethod abort-commit ((loader loader))
+  (if (find-restart 'abort-commit)
+      (invoke-restart 'abort-commit)
+      (error "Not currently within a load transaction -- cannot abort.")))
 
-(defun stable-set-difference-eq (a b)
-  (let ((table (make-hash-table :test 'eq :size (length b))))
-    (loop for item across b do (setf (gethash item table) T))
-    (remove-if (lambda (item) (gethash item table)) a)))
+(defmethod process-loads ((loader loader) loads)
+  (loop with resources = (loaded loader)
+        for i from 0 below (length loads)
+        for resource = (aref loads i)
+        do (load-with loader resource)
+           (progress loader i (length loads))))
 
-(defmethod transition ((from container) (to container))
-  (v:info :trial.loader "Transitioning from ~a to ~a" from to)
-  (multiple-value-bind (to to-ready) (compute-resources-for to)
-    (let* ((from (compute-resources-for from))
-           (to-load (stable-set-difference-eq to from))
-           (to-deallocate (stable-set-difference-eq from to)))
-      (%transition to-load to-deallocate to-ready)
-      to)))
+(defmethod load-with ((loader loader) (resource resource))
+  (unless (allocated-p resource)
+    (allocate resource)))
+
+(defmethod load-with ((loader loader) (asset asset))
+  (load asset))
+
+(defmethod unload-with ((loader loader) (resource resource))
+  (when (allocated-p resource)
+    (deallocate resource)))
+
+(defmethod unload-with ((loader loader) (asset asset))
+  (unload asset))
+
+(defmethod progress ((loader loader) so-far total))
+
+(defmethod commit ((area staging-area) (loader loader))
+  (let ((load-sequence (compute-load-sequence area))
+        (resources (loaded loader)))
+    ;; First, mark all resources as to-unload
+    (loop for resource being the hash-keys of resources
+          do (setf (gethash resource resources) :to-unload))
+    ;; Next re-mark resources as keep if already loaded or to-load if new
+    (loop for resource across load-sequence
+          do (if (gethash resource resources)
+                 (setf (gethash resource resources) :keep)
+                 (setf (gethash resource resources) :to-load)))
+    (restart-case
+        (progn
+          (process-loads loader load-sequence)
+          ;; Now unload the ones we no longer need and reset state.
+          (loop for resource being the hash-keys of resources
+                for state being the hash-values of resources
+                do (case state
+                     (:to-unload
+                      (unload-with loader resource)
+                      (remhash resource resources))
+                     (:keep
+                      (setf (gethash resource resources) :loaded)))))
+      (abort-commit ()
+        :report "Abort the commit and roll back any changes."
+        ;; Unload the newly loaded resources we didn't need before, and reset the state.
+        (loop for resource being the hash-keys of resources
+              for state being the hash-values of resources
+              do (case state
+                   (:loaded
+                    (unload-with loader resource)
+                    (remhash resource resources))
+                   (:to-load
+                    (remhash resource resources))
+                   ((:to-unload :keep)
+                    (setf (gethash resource resources) :loaded))))))))

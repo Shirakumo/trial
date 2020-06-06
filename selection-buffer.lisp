@@ -33,7 +33,8 @@
        (setf (ldb (byte 8 24) id) (aref color 0))
        id))))
 
-(defclass selection-buffer (render-texture bakable)
+;; FIXME: redo this all for the new systems
+(defclass selection-buffer (render-texture)
   ((scene :initarg :scene :accessor scene)
    (color->object-map :initform (make-hash-table :test 'eql) :accessor color->object-map))
   (:default-initargs
@@ -44,11 +45,6 @@
 (defmethod initialize-instance :after ((buffer selection-buffer) &key scene)
   (enter (make-instance 'selection-buffer-pass) buffer)
   (add-listener buffer scene))
-
-(defmethod bake ((buffer selection-buffer))
-  (pack buffer)
-  (for:for ((object over (scene buffer)))
-    (register-object-for-pass buffer object)))
 
 (defmethod finalize :after ((buffer selection-buffer))
   (remove-listener buffer (scene buffer)))
