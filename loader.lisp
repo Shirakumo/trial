@@ -111,7 +111,7 @@
   (loop for resource being the hash-keys of (loaded loader)
         for status being the hash-values of (loaded loader)
         do (case state
-             ((:to-unload :keep :loaded)
+             ((:to-unload :to-keep :loaded)
               (unload-with loader resource))))
   (clrhash (loaded loader)))
 
@@ -154,7 +154,7 @@
     ;; Next re-mark resources as keep if already loaded or to-load if new
     (loop for resource across load-sequence
           do (if (gethash resource resources)
-                 (setf (gethash resource resources) :keep)
+                 (setf (gethash resource resources) :to-keep)
                  (setf (gethash resource resources) :to-load)))
     (restart-case
         (progn
@@ -166,7 +166,7 @@
                      (:to-unload
                       (unload-with loader resource)
                       (remhash resource resources))
-                     (:keep
+                     (:to-keep
                       (setf (gethash resource resources) :loaded))))
           T)
       (abort-commit ()
@@ -180,7 +180,7 @@
                     (remhash resource resources))
                    (:to-load
                     (remhash resource resources))
-                   ((:to-unload :keep)
+                   ((:to-unload :to-keep)
                     (setf (gethash resource resources) :loaded))))
         NIL))))
 
