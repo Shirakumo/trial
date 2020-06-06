@@ -129,6 +129,12 @@
               (load-with loader resource)
               (progress loader i (length loads))))))
 
+(defmethod load-with :after ((loader loader) thing)
+  (setf (gethash thing (loaded loader)) :loaded))
+
+(defmethod unload-with :after ((loader loader) thing)
+  (remhash thing (loaded loader)))
+
 (defmethod load-with ((loader loader) (resource resource))
   (unless (allocated-p resource)
     (allocate resource)))
@@ -164,8 +170,7 @@
                 for state being the hash-values of resources
                 do (case state
                      (:to-unload
-                      (unload-with loader resource)
-                      (remhash resource resources))
+                      (unload-with loader resource))
                      (:to-keep
                       (setf (gethash resource resources) :loaded))))
           T)
@@ -176,8 +181,7 @@
               for state being the hash-values of resources
               do (case state
                    (:loaded
-                    (unload-with loader resource)
-                    (remhash resource resources))
+                    (unload-with loader resource))
                    (:to-load
                     (remhash resource resources))
                    ((:to-unload :to-keep)
