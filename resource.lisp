@@ -33,12 +33,6 @@
   (call-next-method)
   resource)
 
-(defmethod allocate :after ((resource resource))
-  (setf (gethash resource (resources *context*)) resource))
-
-(defmethod deallocate :after ((resource resource))
-  (remhash resource (resources *context*)))
-
 (defun check-allocated (resource)
   (unless (allocated-p resource)
     (restart-case
