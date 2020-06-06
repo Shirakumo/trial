@@ -181,3 +181,8 @@
                    ((:to-unload :keep)
                     (setf (gethash resource resources) :loaded))))
         NIL))))
+
+(defmethod commit (object (loader loader))
+  (let ((area (make-instance 'staging-area)))
+    (stage object area)
+    (commit area loader)))
