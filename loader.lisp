@@ -75,12 +75,7 @@
         (i start))
     (labels ((visit (object)
                (case (gethash object status :invalid)
-                 ;; KLUDGE: We allow :TO-LOAD and :INVALID as status here in order to allow
-                 ;;         us to pass the loader's LOADED set here when re-sorting,
-                 ;;         which will contain :TO-LOAD or :INVALID for future resources.
-                 ;;         Any other state should either be irrelevant or in the
-                 ;;         past of the sequence, so we can just ignore it here.
-                 ((:invalid :to-load)
+                 (:invalid
                   (setf (gethash object status) :temporary)
                   (dolist (dependency (car (gethash object objects)))
                     (visit dependency))
@@ -130,22 +125,27 @@
       (error "Not currently within a load transaction -- cannot abort.")))
 
 (defmethod process-loads ((loader loader) (area staging-area) loads)
-  (labels ((process-entry (i)
-             (let ((resource (aref loads i)))
-               (case (gethash resource resource-states)
-                 ;; The invalid state occurs when the resource might not be
-                 ;; properly sorted yet due to late dependency information.
-                 (:invalid
-                  (dependency-sort-loads area loads :start i :status resource-states)
-                  (process-entry i))
-                 ;; The validated state occurs after a late sorting has changed
-                 ;; the sequence for objects that should be loaded new.
-                 ((:to-load :validated)
-                  (load-with loader resource)
-                  (progress loader i (length loads)))))))
-    (loop with resource-states = (loaded loader)
-          for i from 0 below (length loads)
-          do (process-entry i))))
+  (let ((states (loaded loader)))
+    (labels ((process-entry (i)
+               (let ((resource (aref loads i)))
+                 (case (gethash resource states)
+                   ;; The invalid state occurs when the resource might not be
+                   ;; properly sorted yet due to late dependency information.
+                   (:invalid
+                    ;; We /have/ to mark all future entries as :invalid first in order
+                    ;; to avoid problems with entries that are marked as :validated from
+                    ;; a previous re-sorting interfering with tarjan.
+                    (loop for j from (1+ i) below (length loads)
+                          do (setf (gethash (aref loads j) states) :invalid))
+                    (dependency-sort-loads area loads :start i :status states)
+                    (process-entry i))
+                   ;; The validated state occurs after a late sorting has changed
+                   ;; the sequence for objects that should be loaded new.
+                   ((:to-load :validated)
+                    (load-with loader resource)
+                    (progress loader i (length loads)))))))
+      (dotimes (i (length loads))
+        (process-entry i)))))
 
 (defmethod load-with :after ((loader loader) thing)
   (setf (gethash thing (loaded loader)) :loaded))
