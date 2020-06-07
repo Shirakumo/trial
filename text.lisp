@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-shader-entity text (located-entity vertex-entity colored-entity textured-entity readied)
+(define-shader-entity text (located-entity vertex-entity colored-entity textured-entity)
   ((texture :initarg :font :initform (error "FONT required.") :accessor font)
    (text :initarg :text :accessor text)
    (size :initarg :size :accessor size)
@@ -59,8 +59,9 @@ void main(){
   (when (allocated-p font)
     (setf (text text) (text text))))
 
-(defmethod resources-ready ((text text))
-  (setf (text text) (text text)))
+;; FIXME: this is no longer usable.
+;; (defmethod resources-ready ((text text))
+;;   (setf (text text) (text text)))
 
 (defun wrap-text (font string width)
   ;; FIXME: This is really primitive.
