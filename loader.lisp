@@ -70,33 +70,42 @@
     ;; Remove entry completely
     (remhash resource (staged area))))
 
+(defun dependency-sort-loads (area sequence &key (status (make-hash-table :test 'eq)) (start 0) (end (length sequence)))
+  (let ((objects (staged area))
+        (i start))
+    (labels ((visit (object)
+               (case (gethash object status :invalid)
+                 ;; KLUDGE: We allow :TO-LOAD and :INVALID as status here in order to allow
+                 ;;         us to pass the loader's LOADED set here when re-sorting,
+                 ;;         which will contain :TO-LOAD or :INVALID for future resources.
+                 ;;         Any other state should either be irrelevant or in the
+                 ;;         past of the sequence, so we can just ignore it here.
+                 ((:invalid :to-load)
+                  (setf (gethash object status) :temporary)
+                  (dolist (dependency (car (gethash object objects)))
+                    (visit dependency))
+                  (setf (gethash object status) :validated)
+                  (setf (aref sequence i) object)
+                  (incf i))
+                 (:temporary
+                  (warn "Dependency loop detected on ~a." object)))))
+      ;; TODO: It's possible we might be able to perform tarjan in-place
+      ;;       to avoid potentially copying thousands of elements here.
+      (loop for object across (subseq sequence start end)
+            do (visit object))
+      sequence)))
+
 (defmethod compute-load-sequence ((area staging-area))
-  (let ((sorted (make-array (hash-table-count (staged area)))))
+  (let ((sorted (make-array (hash-table-count (staged area))))
+        (objects (staged area)))
     ;; First push all into the sequence, unsorted.
-    (loop for object being the hash-keys of (staged area)
+    (loop for object being the hash-keys of objects
           for i from 0
           do (setf (aref sorted i) object))
     ;; Now sort to ensure assets and other generators come first.
     (sort sorted #'load-before)
     ;; Now perform Tarjan, which happens to be "stable-sorting".
-    (let ((status (make-hash-table :test 'eq))
-          (i 0))
-      (labels ((visit (object)
-                 (case (gethash object status :unvisited)
-                   (:temporary
-                    (warn "Dependency loop detected on ~a." object))
-                   (:unvisited
-                    (setf (gethash object status) :temporary)
-                    (dolist (dependency (car (gethash object objects)))
-                      (visit dependency))
-                    (setf (gethash object status) :done)
-                    (setf (aref sorted i) object)
-                    (incf i)))))
-        ;; Have to copy the sequence here to avoid overwriting as we
-        ;; sort by dependencies.
-        (loop for object across (copy-seq sorted)
-              do (visit object))))
-    sorted))
+    (dependency-sort-loads area sorted)))
 
 (defclass loader ()
   ((loaded :initform (make-hash-table :test 'eq) :reader loaded)))
@@ -120,14 +129,23 @@
       (invoke-restart 'abort-commit)
       (error "Not currently within a load transaction -- cannot abort.")))
 
-(defmethod process-loads ((loader loader) loads)
-  (loop with resource-states = (loaded loader)
-        for i from 0 below (length loads)
-        for resource = (aref loads i)
-        do (case (gethash resource resource-states)
-             (:to-load
-              (load-with loader resource)
-              (progress loader i (length loads))))))
+(defmethod process-loads ((loader loader) (area staging-area) loads)
+  (labels ((process-entry (i)
+             (let ((resource (aref loads i)))
+               (case (gethash resource resource-states)
+                 ;; The invalid state occurs when the resource might not be
+                 ;; properly sorted yet due to late dependency information.
+                 (:invalid
+                  (dependency-sort-loads area loads :start i :status resource-states)
+                  (process-entry i))
+                 ;; The validated state occurs after a late sorting has changed
+                 ;; the sequence for objects that should be loaded new.
+                 ((:to-load :validated)
+                  (load-with loader resource)
+                  (progress loader i (length loads)))))))
+    (loop with resource-states = (loaded loader)
+          for i from 0 below (length loads)
+          do (process-entry i))))
 
 (defmethod load-with :after ((loader loader) thing)
   (setf (gethash thing (loaded loader)) :loaded))
@@ -140,7 +158,10 @@
     (allocate resource)))
 
 (defmethod load-with ((loader loader) (asset asset))
-  (load asset))
+  (load asset)
+  (loop with state = (loaded loader)
+        for resource in (list-resources loader)
+        do (setf (gethash resource state) :invalid)))
 
 (defmethod unload-with ((loader loader) (resource resource))
   (when (allocated-p resource)
@@ -164,7 +185,7 @@
                  (setf (gethash resource resources) :to-load)))
     (restart-case
         (progn
-          (process-loads loader load-sequence)
+          (process-loads loader area load-sequence)
           ;; Now unload the ones we no longer need and reset state.
           (loop for resource being the hash-keys of resources
                 for state being the hash-values of resources
