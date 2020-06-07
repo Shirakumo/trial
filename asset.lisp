@@ -64,11 +64,11 @@
   (setf (asset pool name) asset))
 
 (defmethod reinitialize-instance :after ((asset asset) &key)
-  (when (allocated-p asset)
+  (when (loaded-p asset)
     (reload asset)))
 
 (defmethod update-instance-for-different-class :around ((previous asset) (current asset) &key)
-  (cond ((allocated-p previous)
+  (cond ((loaded-p previous)
          (unload previous)
          (call-next-method)
          (load current))
@@ -175,6 +175,6 @@
   ())
 
 (defmethod shared-initialize :after ((asset file-input-asset) slots &key &allow-other-keys)
-  (dolist (file (input* asset))
+  (let ((file (input* asset)))
     (unless (probe-file file)
       (alexandria:simple-style-warning "Input file~% ~s~%for asset~%  ~s~%does not exist." file asset))))

@@ -43,10 +43,10 @@
     (mark-dependent dependency object)))
 
 (defmethod stage ((resource resource) (area staging-area))
-  (setf (gethash resource (staged area) (cons NIL NIL))))
+  (setf (gethash resource (staged area)) (cons NIL NIL)))
 
 (defmethod stage ((asset asset) (area staging-area))
-  (setf (gethash resource (staged area) (cons NIL NIL))))
+  (setf (gethash resource (staged area)) (cons NIL NIL)))
 
 (defmethod stage ((container container) (area staging-area))
   (for:for ((child over container))

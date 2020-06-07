@@ -9,7 +9,7 @@
 (defclass font (single-resource-asset file-input-asset)
   ())
 
-(defmethod generate-resources ((font font) input &key (charset *default-charset*) (index 0) :size 24 :oversample NIL :width 64 :height 64)
+(defmethod generate-resources ((font font) input &key (charset *default-charset*) (index 0) (size 24) (oversample NIL) (width 64) (height 64))
   (ensure-instance (resource font T) 'font-atlas
                    :file input
                    :charset charset
