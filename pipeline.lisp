@@ -202,6 +202,8 @@
   (loop for pass across (passes pipeline)
         do (compile-to-pass object pass)))
 
-(defmethod compute-resources ((pipeline pipeline) resources readying cache)
-  (compute-resources (passes pipeline) resources readying cache)
-  (compute-resources (textures pipeline) resources readying cache))
+(defmethod stage ((pipeline pipeline) (area staging-area))
+  (loop for texture across (textures pipeline)
+        do (stage texture area))
+  (loop for pass across (passes pipeline)
+        do (stage pass area)))

@@ -205,6 +205,12 @@
        ,instance
      ,@body))
 
+(defmacro with-accessor-values (bindings instance &body body)
+  `(let ,(loop for binding in bindings
+               for (var acc) = (enlist binding binding)
+               collect `(,var (,acc ,instance)))
+     ,@body))
+
 (defun acquire-lock-with-starvation-test (lock &key (warn-time 10) timeout)
   (assert (or (null timeout) (< warn-time timeout)))
   (flet ((do-warn () (v:warn :trial.core "Failed to acquire ~a for ~s seconds. Possible starvation!"

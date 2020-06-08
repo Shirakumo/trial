@@ -15,9 +15,6 @@
   (uniform NIL :type string)
   (texture NIL :type texture))
 
-(defmethod compute-resources ((clipmap geometry-clipmap-map) resources readying cache)
-  (vector-push-extend (geometry-clipmap-map-texture clipmap) resources))
-
 (define-shader-entity geometry-clipmap (located-entity)
   ((previous-update-location :initform (vec2 most-positive-single-float most-positive-single-float)
                              :accessor previous-update-location)

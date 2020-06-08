@@ -117,8 +117,8 @@
                   (thunk ,ptr)))))))))
 
 (defun allocate-texture-storage (texture)
-  (with-accessors* (target storage levels internal-format width height depth
-                           samples pixel-format pixel-type pixel-data) texture
+  (with-accessor-values (target storage levels internal-format width height depth
+                                samples pixel-format pixel-type pixel-data) texture
     (let ((internal-format (cffi:foreign-enum-value '%gl:enum internal-format)))
       ;; FIXME: Handle array cases better, factor this out into an update routine.
       (case target
