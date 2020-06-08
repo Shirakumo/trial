@@ -40,13 +40,15 @@
 
 (defmethod stage :after (object (area staging-area))
   (dolist (dependency (dependencies object))
-    (mark-dependent dependency object)))
+    (mark-dependent dependency object area)))
 
-(defmethod stage ((resource resource) (area staging-area))
-  (setf (gethash resource (staged area)) (cons NIL NIL)))
+(defmethod stage (object (area staging-area)))
 
-(defmethod stage ((asset asset) (area staging-area))
-  (setf (gethash resource (staged area)) (cons NIL NIL)))
+(defmethod stage ((object resource) (area staging-area))
+  (setf (gethash object (staged area)) (cons NIL NIL)))
+
+(defmethod stage ((object asset) (area staging-area))
+  (setf (gethash object (staged area)) (cons NIL NIL)))
 
 (defmethod stage ((container container) (area staging-area))
   (for:for ((child over container))
@@ -79,10 +81,12 @@
                (case (gethash object status :invalid)
                  (:invalid
                   (setf (gethash object status) :temporary)
-                  (dolist (dependency (car (gethash object objects)))
+                  (dolist (dependency (dependencies object))
                     (visit dependency))
                   (setf (gethash object status) :validated)
-                  (setf (aref sequence i) object)
+                  (if (< i (length sequence))
+                      (setf (aref sequence i) object)
+                      (vector-push-extend object sequence))
                   (incf i))
                  (:temporary
                   (warn "Dependency loop detected on ~a." object)))))
@@ -93,7 +97,7 @@
       sequence)))
 
 (defmethod compute-load-sequence ((area staging-area))
-  (let ((sorted (make-array (hash-table-count (staged area))))
+  (let ((sorted (make-array (hash-table-count (staged area)) :fill-pointer T :adjustable T))
         (objects (staged area)))
     ;; First push all into the sequence, unsorted.
     (loop for object being the hash-keys of objects
@@ -116,7 +120,7 @@
 (defmethod finalize ((loader loader))
   (loop for resource being the hash-keys of (loaded loader)
         for status being the hash-values of (loaded loader)
-        do (case state
+        do (case status
              ((:to-unload :to-keep :loaded)
               (unload-with loader resource))))
   (clrhash (loaded loader)))
@@ -146,8 +150,11 @@
                    ((:to-load :validated)
                     (load-with loader resource)
                     (progress loader i (length loads)))))))
-      (dotimes (i (length loads))
-        (process-entry i)))))
+      ;; The load sequence can be longer after an invalid resorting,
+      ;; so we need to check the length at every step.
+      (loop for i from 0
+            while (< i (length loads))
+            do (process-entry i)))))
 
 (defmethod load-with :after ((loader loader) thing)
   (setf (gethash thing (loaded loader)) :loaded))
@@ -160,9 +167,12 @@
     (allocate resource)))
 
 (defmethod load-with ((loader loader) (asset asset))
-  (load asset)
+  (unless (loaded-p asset)
+    (load asset)))
+
+(defmethod load-with :after ((loader loader) (asset asset))
   (loop with state = (loaded loader)
-        for resource in (list-resources loader)
+        for resource in (list-resources asset)
         do (setf (gethash resource state) :invalid)))
 
 (defmethod unload-with ((loader loader) (resource resource))
@@ -170,7 +180,7 @@
     (deallocate resource)))
 
 (defmethod unload-with ((loader loader) (asset asset))
-  (unload asset))
+  (deallocate asset))
 
 (defmethod progress ((loader loader) so-far total))
 
@@ -189,6 +199,8 @@
         (progn
           (process-loads loader area load-sequence)
           ;; Now unload the ones we no longer need and reset state.
+          ;; TODO: Consider UNLOADing assets always here, since that'll just throw
+          ;;       away allocation input state rather than deallocating the resources.
           (loop for resource being the hash-keys of resources
                 for state being the hash-values of resources
                 do (case state
