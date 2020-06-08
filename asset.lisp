@@ -107,6 +107,9 @@
 (defmethod unload :after ((asset asset))
   (setf (loaded-p asset) NIL))
 
+(defmethod deallocate :after ((asset asset))
+  (setf (loaded-p asset) NIL))
+
 (defmethod coerce-asset-input ((asset asset) (input (eql T)))
   (coerce-asset-input asset (input asset)))
 
@@ -151,6 +154,11 @@
 (defmethod unload ((asset single-resource-asset))
   (unload (resource asset T)))
 
+(defmethod deallocate ((asset single-resource-asset))
+  (when (allocated-p (resource asset T))
+    (deallocate (resource asset T)))
+  (change-class (resource asset T) 'placeholder-resource :asset asset))
+
 (defclass multi-resource-asset (asset)
   ((resources :initform (make-hash-table :test 'equal))))
 
@@ -167,6 +175,13 @@
 (defmethod unload ((asset multi-resource-asset))
   (loop for resource being the hash-values of (slot-value asset 'resources)
         do (unload resource)))
+
+(defmethod deallocate ((asset multi-resource-asset))
+  (loop for name being the hash-keys of (slot-value asset 'resources)
+        for resource being the hash-values of (slot-value asset 'resources)
+        do (when (allocated-p resource)
+             (deallocate resource))
+           (change-class resource 'placeholder-resource :name name :asset asset)))
 
 (defclass file-input-asset (asset)
   ())
