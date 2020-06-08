@@ -56,6 +56,9 @@
 (define-shader-entity vertex-entity (renderable)
   ((vertex-array :initarg :vertex-array :accessor vertex-array)))
 
+(defmethod stage :after ((entity vertex-entity) (area staging-area))
+  (stage (vertex-array entity) area))
+
 (defmethod render ((entity vertex-entity) (program shader-program))
   (setf (uniform program "model_matrix") (model-matrix))
   (setf (uniform program "view_matrix") (view-matrix))
@@ -123,6 +126,9 @@ void main(){
 
 (define-shader-entity textured-entity ()
   ((texture :initform NIL :initarg :texture :accessor texture)))
+
+(defmethod stage :after ((entity textured-entity) (area staging-area))
+  (stage (texture entity) area))
 
 (defmethod render :around ((obj textured-entity) (program shader-program))
   (let ((tex (texture obj)))
