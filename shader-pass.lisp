@@ -93,6 +93,9 @@
 (defmethod object-renderable-p (object (pass shader-pass)) NIL)
 (defmethod object-renderable-p ((renderable renderable) (pass shader-pass)) T)
 
+(defmethod stage ((pass shader-pass) (area staging-area))
+  (stage (framebuffer pass) area))
+
 (define-class-shader (shader-pass :fragment-shader)
   "#version 330 core")
 
@@ -279,6 +282,11 @@
 (define-shader-pass per-object-pass ()
   ((assets :initform (make-hash-table :test 'eq) :accessor assets)))
 
+(defmethod stage ((pass per-object-pass) (area staging-area))
+  (call-next-method)
+  (loop for asset being the hash-values of (assets pass)
+        do (stage asset area)))
+
 ;; FIXME: Maybe consider determining effective class for each
 ;;        individual shader stage as they might each change
 ;;        at different levels and could thus be cached more
@@ -336,8 +344,12 @@
 (define-shader-pass single-shader-pass ()
   ((shader-program :initform NIL :accessor shader-program)))
 
-(defmethod allocate-instance :after ((pass single-shader-pass) &key)
+(defmethod initialize-instance :after ((pass single-shader-pass) &key)
   (setf (shader-program pass) (make-class-shader-program pass)))
+
+(defmethod stage ((pass single-shader-pass) (area staging-area))
+  (call-next-method)
+  (stage (shader-program pass) area))
 
 (defmethod handle ((ev class-changed) (pass single-shader-pass))
   (when (eql (changed-class ev) (class-of pass))

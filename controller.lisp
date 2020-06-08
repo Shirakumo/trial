@@ -34,6 +34,9 @@
 (defmethod register-object-for-pass :after (pass (controller controller))
   (register-object-for-pass pass (text controller)))
 
+(defmethod stage ((controller controller) (area staging-area))
+  (stage (text controller) area))
+
 (defmethod handle ((ev toggle-overlay) (controller controller))
   (setf (show-overlay controller) (not (show-overlay controller))))
 
@@ -55,7 +58,7 @@
                 (compute-fps-buffer-fps (fps-buffer controller))
                 (- ctotal cfree) (floor (/ (- ctotal cfree) ctotal 0.01))
                 (- gtotal gfree) (floor (/ (- gtotal gfree) gtotal 0.01))
-                (hash-table-count (resources *context*)))
+                (hash-table-count (loaded (loader (display controller)))))
         (loop with observers = (observers controller)
               for i from 0 below (length observers)
               for (title . func) = (aref observers i)

@@ -14,23 +14,16 @@
 (defclass font-atlas (texture)
   ((file :initarg :file :initform NIL :accessor file)
    (handle :initform NIL :accessor cl-fond:handle)
-   (charset :initarg :charset :reader charset)
-   (index :initarg :index :reader index)
-   (size :initarg :size :reader size)
-   (oversample :initarg :oversample :reader oversample)
-   (fit-size :initarg :fit-size :reader fit-size))
-  (:default-initargs
-   :charset *default-charset*
-   :index 0
-   :size 24
-   :oversample NIL
-   :width 64
-   :height 64
-   :fit-size T
-   :internal-format :r8
-   :min-filter :linear-mipmap-linear
-   :mag-filter :linear
-   :wrapping :clamp-to-border))
+   (charset :initarg :charset :initform *default-charset* :reader charset)
+   (index :initarg :index :initform 0 :reader index)
+   (size :initarg :size :initform 24 :reader size)
+   (oversample :initarg :oversample :initform NIL :reader oversample)
+   (fit-size :initarg :fit-size :initform T :reader fit-size)
+   (internal-format :initform :r8)
+   (pixel-format :initform :red)
+   (min-filter :initform :linear-mipmap-linear)
+   (mag-filter :initform :linear)
+   (wrapping :initform (list :clamp-to-border :clamp-to-border :clamp-to-border))))
 
 (defmethod allocate ((font font-atlas))
   (let ((handle (cl-fond::calloc '(:struct cl-fond-cffi:font)))

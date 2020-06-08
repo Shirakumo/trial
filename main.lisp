@@ -58,7 +58,7 @@
   (unless (eq old new)
     (when old (stop old))
     (setup-scene main new)
-    (if (commit scene (loader main))
+    (if (commit new (loader main))
         (setf (scene main) new)
         (start old)))
   (values new old))

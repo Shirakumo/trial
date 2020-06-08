@@ -50,7 +50,7 @@
                (:file "input" :depends-on ("package" "event-loop" "retention"))
                (:file "lines" :depends-on ("package" "helpers" "shader-entity" "geometry"))
                (:file "layer-set" :depends-on ("package"))
-               (:file "loader" :depends-on ("package" "scene" "resource" "asset"))
+               (:file "loader" :depends-on ("package" "resource" "asset"))
                (:file "main" :depends-on ("package" "display" "toolkit" "scene" "pipeline" "window"))
                (:file "particle" :depends-on ("package" "shader-entity" "resources"))
                (:file "mapping" :depends-on ("package" "event-loop" "toolkit"))
