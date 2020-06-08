@@ -197,6 +197,7 @@
                  (setf (gethash resource resources) :to-load)))
     (restart-case
         (progn
+          (v:info :trial.loader "About to load the following:~%  ~a" load-sequence)
           (process-loads loader area load-sequence)
           ;; Now unload the ones we no longer need and reset state.
           ;; TODO: Consider UNLOADing assets always here, since that'll just throw
