@@ -26,6 +26,8 @@
          ;; We should have been change class'd by now, so re-call.
          (allocate resource))))
 
+(defmethod unload ((resource placeholder-resource)))
+
 (defmethod dependencies ((resource placeholder-resource))
   (list (slot-value resource 'asset)))
 
@@ -147,10 +149,7 @@
   (list (resource asset T)))
 
 (defmethod unload ((asset single-resource-asset))
-  (let ((resource (resource asset T)))
-    (when (allocated-p resource)
-      (deallocate resource))
-    (change-class resource 'placeholder-resource :asset asset)))
+  (unload (resource asset T)))
 
 (defclass multi-resource-asset (asset)
   ((resources :initform (make-hash-table :test 'equal))))
@@ -161,15 +160,13 @@
         (setf (gethash id table)
               (make-instance 'placeholder-resource :asset asset)))))
 
-(defmethod list-resources ((asset single-resource-asset))
+(defmethod list-resources ((asset multi-resource-asset))
   (loop for resource being the hash-values of (slot-value asset 'resources)
         collect resource))
 
-(defmethod unload ((asset single-resource-asset))
+(defmethod unload ((asset multi-resource-asset))
   (loop for resource being the hash-values of (slot-value asset 'resources)
-        do (when (allocated-p resource)
-             (deallocate resource))
-           (change-class resource 'placeholder-resource :asset asset)))
+        do (unload resource)))
 
 (defclass file-input-asset (asset)
   ())
