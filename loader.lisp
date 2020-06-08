@@ -52,6 +52,8 @@
   (for:for ((child over container))
     (stage child area)))
 
+(defmethod stage ((entity entity) (area staging-area)))
+
 (defmethod unstage ((resource resource) (area staging-area))
   (let ((data (gethash resource (staged area))))
     (when (cdr data)
