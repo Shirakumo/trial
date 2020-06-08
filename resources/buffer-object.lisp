@@ -73,3 +73,6 @@
 
 (defmethod deallocate ((buffer buffer-object))
   (gl:delete-buffers (list (gl-name buffer))))
+
+(defmethod unload ((buffer buffer-object))
+  (setf (buffer-data buffer) NIL))

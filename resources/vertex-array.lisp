@@ -66,3 +66,9 @@
 
 (defmethod deallocate ((array vertex-array))
   (gl:delete-vertex-arrays (list (gl-name array))))
+
+(defmethod unload ((array vertex-array))
+  (loop for binding in (bindings array)
+        do (if (listp binding)
+               (unload (first binding))
+               (unload binding))))

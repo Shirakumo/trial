@@ -200,6 +200,9 @@
 (defmethod deallocate ((texture texture))
   (gl:delete-textures (list (gl-name texture))))
 
+(defmethod unload ((texture texture))
+  (setf (pixel-data texture) NIL))
+
 (defmethod resize ((texture texture) width height)
   (when (or (/= width (width texture))
             (/= height (height texture)))
