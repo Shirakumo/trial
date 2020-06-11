@@ -12,39 +12,6 @@
 (defclass scene (flare:scene event-loop)
   ())
 
-(defclass scene-event (event)
-  ((scene :initarg :scene :reader scene)))
-
-(defclass enter (scene-event)
-  ((container :initarg :container :reader container)
-   (entity :initarg :entity :reader entity)))
-
-(defmethod print-object ((ev enter) stream)
-  (print-unreadable-object (ev stream :type T)
-    (format stream "~a => ~a" (entity ev) (container ev))))
-
-(defclass leave (scene-event)
-  ((container :initarg :container :reader container)
-   (entity :initarg :entity :reader entity)))
-
-(defmethod print-object ((ev leave) stream)
-  (print-unreadable-object (ev stream :type T)
-    (format stream "~a <= ~a" (entity ev) (container ev))))
-
-(defmethod enter :after ((entity entity) (container container-unit))
-  (when (scene-graph container)
-    (issue (scene-graph container) 'enter :scene (scene-graph container) :container container :entity entity)))
-
-(defmethod leave :after ((entity entity) (container container-unit))
-  (when (scene-graph container)
-    (issue (scene-graph container) 'leave :scene (scene-graph container) :container container :entity entity)))
-
-(defmethod enter :after ((entity entity) (scene scene))
-  (issue scene 'enter :scene scene :container scene :entity entity))
-
-(defmethod leave :after ((entity entity) (scene scene))
-  (issue scene 'leave :scene scene :container scene :entity entity))
-
 (defmethod register :after ((listener listener) (scene scene))
   (add-listener listener scene))
 
