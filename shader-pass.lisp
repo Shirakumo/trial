@@ -86,6 +86,8 @@
   (:method-combination progn :most-specific-last))
 (defgeneric object-renderable-p (object pass))
 (defgeneric compile-to-pass (scene pass))
+(defgeneric compile-into-pass (scene container pass))
+(defgeneric remove-from-pass (object pass))
 (defgeneric shader-program-for-pass (pass object))
 (defgeneric make-pass-shader-program (pass object))
 (defgeneric coerce-pass-shader (pass object type))
@@ -242,29 +244,28 @@
   (call-next-method)
   (finish-pass-group pass scene))
 
-(defmethod handle ((ev leave) (pass scene-pass))
-  (when (gethash (entity ev) (group-pointers pass))
-    (destructuring-bind (start . end) (gethash (entity ev) (group-pointers pass))
+(defmethod remove-from-pass ((entity entity) (pass scene-pass))
+  (when (gethash entity (group-pointers pass))
+    (destructuring-bind (start . end) (gethash entity (group-pointers pass))
       ;; We know START is the cell before our content, and END the last cell of our content.
       (flare-queue:remove-cells start (flare-queue:right end))
-      (remhash (entity ev) (group-pointers pass)))))
+      (remhash entity (group-pointers pass)))))
 
-(defmethod handle ((ev enter) (pass scene-pass))
-  (unless (gethash (entity ev) (group-pointers pass))
-    ;; KLUDGE: We don't actually know /where/ exactly the entity was inserted.
-    ;;         Figuring out where would either involve recomputing the entire container
-    ;;         which is very costly especially at the scene root, or finding the next
-    ;;         neighbour within the container that has a group and inserting before,
-    ;;         which is better but still involves a linear search through the container.
-    ;;         We opt for guessing that the entity is inserted at the end of the group.
-    (destructuring-bind (start . end) (gethash (container ev) (group-pointers pass))
-      (declare (ignore start))
-      ;; KLUDGE: If it is a transformed container the last action is a pop-matrix.
-      ;;         We need to insert before that.
-      (when (typep (container ev) 'transformed)
-        (setf end (flare-queue:left end)))
-      (setf (group pass) (cons end end))
-      (compile-to-pass (entity ev) pass))))
+(defmethod compile-into-pass ((entity entity) (container flare:container) (pass scene-pass))
+  ;; KLUDGE: We don't actually know /where/ exactly the entity was inserted.
+  ;;         Figuring out where would either involve recomputing the entire container
+  ;;         which is very costly especially at the scene root, or finding the next
+  ;;         neighbour within the container that has a group and inserting before,
+  ;;         which is better but still involves a linear search through the container.
+  ;;         We opt for guessing that the entity is inserted at the end of the group.
+  (destructuring-bind (start . end) (gethash container (group-pointers pass))
+    (declare (ignore start))
+    ;; KLUDGE: If it is a transformed container the last action is a pop-matrix.
+    ;;         We need to insert before that.
+    (when (typep container 'transformed)
+      (setf end (flare-queue:left end)))
+    (setf (group pass) (cons end end))
+    (compile-to-pass entity pass)))
 
 (defmethod handle ((ev class-changed) (pass scene-pass))
   (call-next-method)
