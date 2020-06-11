@@ -10,6 +10,6 @@
   (:use #:cl+qt #:trial #:3d-vectors)
   (:shadow #:context)
   (:shadowing-import-from #:cl+qt #:finalize #:connect #:with-slots-bound #:with-all-slots-bound #:ensure-class)
-  (:shadowing-import-from #:trial #:load)
+  (:shadowing-import-from #:trial #:load #://)
   (:export
    #:context))

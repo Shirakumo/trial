@@ -10,7 +10,7 @@
   (make-line-grid 10 100 100))
 
 (define-shader-entity grid (vertex-entity)
-  ((vertex-array :initform (@r 'workbench 'grid))))
+  ((vertex-array :initform (// 'workbench 'grid))))
 
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
