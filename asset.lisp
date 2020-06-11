@@ -42,11 +42,12 @@
 (defgeneric reload (asset))
 (defgeneric unload (asset))
 (defgeneric list-resources (asset))
+(defgeneric coerce-asset-input* (asset input))
 
-(defun @r (pool asset &optional (resource T))
+(defun // (pool asset &optional (resource T))
   (resource (asset pool asset) resource))
 
-(define-compiler-macro @r (&whole whole pool asset &optional (resource T) &environment env)
+(define-compiler-macro // (&whole whole pool asset &optional (resource T) &environment env)
   ;; We can do this because an asset's generated resources must be updated in place.
   (if (and (constantp pool env)
            (constantp asset env))

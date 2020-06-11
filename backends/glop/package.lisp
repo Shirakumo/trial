@@ -7,7 +7,7 @@
 (in-package #:cl-user)
 (defpackage #:trial-glop
   (:nicknames #:org.shirakumo.fraf.trial.glop)
-  (:use #:cl #:trial #:3d-vectors)
+  (:use #:cl+trial #:3d-vectors)
   (:shadow #:context)
   (:shadowing-import-from #:trial #:load)
   (:export

@@ -8,11 +8,14 @@
 (defpackage #:trial
   (:nicknames #:org.shirakumo.fraf.trial)
   (:use #:cl #:3d-vectors #:3d-matrices #:flare)
-  (:shadow #:scene #:entity #:container #:load #:update #:particle)
+  (:shadow #:// #:scene #:entity #:container #:load #:update #:particle)
   (:import-from #:static-vectors #:static-vector-pointer)
   (:import-from #:flow #:port)
   (:local-nicknames
    (#:gamepad #:org.shirakumo.fraf.gamepad))
+  ;; assets/font.lisp
+  (:export
+   #:font)
   ;; assets/image.lisp
   (:export
    #:image
@@ -31,6 +34,9 @@
    #:animations
    #:frames
    #:load-animations)
+  ;; assets/static.lisp
+  (:export
+   #:static)
   ;; formats/collada.lisp
   (:export)
   ;; formats/vertex-format.lisp
@@ -47,7 +53,7 @@
   ;; resources/font.lisp
   (:export
    #:*default-charset*
-   #:font
+   #:font-atlas
    #:charset
    #:index
    #:size
@@ -134,19 +140,23 @@
    #:trial)
   ;; asset.lisp
   (:export
+   #:placeholder-resource
    #:asset
    #:pool
    #:name
    #:input
-   #:input*
+   #:loaded-p
    #:load
    #:reload
-   #:register-load-observer
-   #:clear-observers
-   #:observe-load
+   #:unload
+   #:list-resources
+   #://
    #:coerce-asset-input
+   #:input*
    #:define-asset
-   #:gl-asset)
+   #:single-resource-asset
+   #:multi-resource-asset
+   #:file-input-asset)
   ;; attributes.lisp
   (:export
    #:enable
@@ -560,6 +570,14 @@
    #:data-pointer
    #:gl-resource
    #:gl-name)
+  ;; resource-generator.lisp
+  (:export
+   #:resource-generator
+   #:generate-resources
+   #:register-generation-observer
+   #:clear-observers
+   #:observe-generation
+   #:resource)
   ;; retention.lisp
   (:export
    #:retained
@@ -801,7 +819,7 @@
 
 (defpackage #:cl+trial
   (:nicknames #:org.shirakumo.fraf.trial.cl+trial)
-  (:shadowing-import-from #:trial #:scene #:entity #:container #:load #:update)
+  (:shadowing-import-from #:trial #:// #:scene #:entity #:container #:load #:update)
   (:use #:cl #:trial #:3d-vectors #:3d-matrices #:flare))
 
 (do-symbols (symb '#:cl+trial)
