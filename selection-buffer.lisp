@@ -72,16 +72,6 @@
         (height buffer) (height resize))
   (resize buffer (width resize) (height resize)))
 
-(defmethod handle ((enter enter) (buffer selection-buffer))
-  (let ((entity (entity enter)))
-    (when (typep entity 'selectable)
-      (register-object-for-pass (aref (passes buffer) 0) entity))))
-
-(defmethod handle ((leave leave) (buffer selection-buffer))
-  (let ((entity (entity leave)))
-    (when (typep entity 'selectable)
-      (setf (color->object (selection-color entity) buffer) NIL))))
-
 ;; FIXME: How do we do this stuff with the new system?
 ;; (defmethod render ((source selection-buffer) (buffer selection-buffer))
 ;;   (paint-with buffer (scene source))
