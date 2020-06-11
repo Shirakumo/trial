@@ -488,6 +488,7 @@
    #:controller
    #:setup-scene
    #:change-scene
+   #:enter-and-load
    #:launch)
   ;; mapping.lisp
   (:export
@@ -631,6 +632,11 @@
    #:shader-pass
    #:framebuffer
    #:uniforms
+   #:apply-transforms
+   #:object-renderable-p
+   #:compile-to-pass
+   #:compile-into-pass
+   #:remove-from-pass
    #:register-object-for-pass
    #:shader-program-for-pass
    #:make-pass-shader-program

@@ -63,6 +63,17 @@
         (start old)))
   (values new old))
 
+(defun enter-and-load (object container main)
+  (let ((area (make-instance 'staging-area)))
+    (stage object area)
+    (enter object container)
+    (loop for pass across (passes (scene main))
+          do (compile-into-pass object container pass)
+             (stage pass area))
+    (unless (commit area main)
+      (remove-from-pass (scene main))
+      (leave object container))))
+
 (defmethod render ((source main) (target main))
   (render (scene source) NIL)
   ;; KLUDGE: This assumes a pipelined scene

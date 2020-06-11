@@ -202,6 +202,14 @@
   (loop for pass across (passes pipeline)
         do (compile-to-pass object pass)))
 
+(defmethod compile-into-pass (object container (pipeline pipeline))
+  (loop for pass across (passes pipeline)
+        do (compile-into-pass object container pass)))
+
+(defmethod remove-from-pass (object (pipeline pipeline))
+  (loop for pass across (passes pipeline)
+        do (remove-from-pass object pass)))
+
 (defmethod stage ((pipeline pipeline) (area staging-area))
   (loop for texture across (textures pipeline)
         do (stage texture area))
