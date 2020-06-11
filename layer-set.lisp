@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass layer-container (container-unit)
+(defclass layer-container (container)
   ((layer :initarg :layer :accessor layer)
    (active :initarg :active :accessor active))
   (:default-initargs
@@ -17,7 +17,7 @@
   (when (active layer)
     (call-next-method)))
 
-(defclass layer-set (container-unit)
+(defclass layer-set (container)
   ((objects :initform (make-array 0 :adjustable T :fill-pointer T))
    (index-map :initform (make-hash-table :test 'eql) :accessor index-map)))
 

@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass array-container (container-unit)
+(defclass array-container (container)
   ((objects :initform (make-array 0 :adjustable T :fill-pointer T) :accessor objects)))
 
 (defmethod flare:update ((container array-container))

@@ -8,7 +8,7 @@
 (defpackage #:trial
   (:nicknames #:org.shirakumo.fraf.trial)
   (:use #:cl #:3d-vectors #:3d-matrices #:flare)
-  (:shadow #:scene #:entity #:load #:update #:particle)
+  (:shadow #:scene #:entity #:container #:load #:update #:particle)
   (:import-from #:static-vectors #:static-vector-pointer)
   (:import-from #:flow #:port)
   (:local-nicknames
@@ -302,8 +302,8 @@
    #:t[0] #:t[1] #:t[2] #:t[3])
   ;; entity.lisp
   (:export
-   #:matches
-   #:entity)
+   #:entity
+   #:container)
   ;; event-loop.lisp
   (:export
    #:event
@@ -795,7 +795,7 @@
 
 (defpackage #:cl+trial
   (:nicknames #:org.shirakumo.fraf.trial.cl+trial)
-  (:shadowing-import-from #:trial #:scene #:entity #:load #:update)
+  (:shadowing-import-from #:trial #:scene #:entity #:container #:load #:update)
   (:use #:cl #:trial #:3d-vectors #:3d-matrices #:flare))
 
 (do-symbols (symb '#:cl+trial)

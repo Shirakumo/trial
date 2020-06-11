@@ -6,21 +6,27 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defgeneric matches (a b))
-
-(defmethod matches :around (a b)
-  (or (eq a b)
-      (call-next-method)))
-
-(defmethod matches (a b)
-  (equal a b))
-
 (defclass entity (unit)
+  ((container :accessor container)))
+
+(defmethod enter :after ((entity entity) (container flare:container))
+  (setf (container entity) container))
+
+(defmethod leave :after ((entity entity) (container flare:container))
+  (slot-makunbound entity 'container))
+
+#-elide-container-checks
+(defmethod enter :before ((entity entity) (container flare:container))
+  (when (slot-boundp entity 'container)
+    (error "The entity~%  ~a~%cannot be entered into~%  ~a~%as it is already contained in~%  ~a"
+           entity container (container entity))))
+
+#-elide-container-checks
+(defmethod leave :before ((entity entity) (container flare:container))
+  (unless (and (slot-boundp entity 'container)
+               (eq container (container entity)))
+    (error "The entity~%  ~a~%cannot be left from~%  ~a~%as it is contained in~%  ~a"
+           entity container (container entity))))
+
+(defclass container (flare:container entity)
   ())
-
-(defmethod matches ((a entity) b)
-  (or (eql a b)
-      (matches (name a) b)))
-
-(defmethod matches (a (b entity))
-  (matches b a))
