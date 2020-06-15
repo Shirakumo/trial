@@ -79,7 +79,7 @@
   ;; KLUDGE: This assumes a pipelined scene
   (blit-to-screen (scene source)))
 
-(defun launch (&optional (main 'main) &rest initargs)
+(defun launch (main &rest initargs)
   (standalone-logging-handler)
   (v:output-here)
   (v:info :trial.main "GENESIS")
