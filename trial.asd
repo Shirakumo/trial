@@ -88,23 +88,24 @@
                              (:file "framebuffer")
                              (:file "shader-program")
                              (:file "shader")
+                             (:file "struct-buffer" :depends-on ("buffer-object" (:.. "gl-struct")))
                              (:file "texture")
+                             (:file "uniform-buffer" :depends-on ("struct-buffer"))
                              (:file "vertex-array")
                              (:file "vertex-buffer" :depends-on ("buffer-object"))
-                             (:file "struct-buffer" :depends-on ("buffer-object" (:.. "gl-struct")))
-                             (:file "uniform-buffer" :depends-on ("struct-buffer"))
                              (:file "vertex-struct-buffer" :depends-on ("struct-buffer"))))
                (:module "assets"
                 :depends-on ("package" "asset" "resources" "data-pointer")
-                :components ((:file "static")
-                             (:file "font")
+                :components ((:file "font")
                              (:file "image")
                              (:file "mesh")
-                             (:file "sprite-data" :depends-on ("image"))))
+                             (:file "sprite-data" :depends-on ("image"))
+                             (:file "static")
+                             (:file "uniform-block")))
                (:module "formats"
                 :depends-on ("package" "geometry" "static-vector")
-                :components ((:file "vertex-format")
-                             (:file "collada"))))
+                :components ((:file "collada")
+                             (:file "vertex-format"))))
   :depends-on (:alexandria
                :3d-vectors
                :3d-matrices

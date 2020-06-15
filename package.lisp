@@ -39,6 +39,9 @@
   ;; assets/static.lisp
   (:export
    #:static)
+  ;; assets/uniform-block.lisp
+  (:export
+   #:uniform-block)
   ;; formats/collada.lisp
   (:export)
   ;; formats/vertex-format.lisp

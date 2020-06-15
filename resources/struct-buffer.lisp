@@ -12,8 +12,9 @@
   (:default-initargs
    :data-usage :stream-draw))
 
-(defmethod initialize-instance :after ((buffer struct-buffer) &key struct-class)
-  (setf (struct-class buffer) (ensure-class struct-class)))
+(defmethod shared-initialize :after ((buffer struct-buffer) slots &key struct-class)
+  (when struct-class
+    (setf (struct-class buffer) (ensure-class struct-class))))
 
 (defmethod reinitialize-instance :before ((buffer struct-buffer) &key struct-class)
   (when (and (not (equal struct-class (struct-class buffer)))
