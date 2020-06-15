@@ -201,6 +201,7 @@
   (gl:delete-textures (list (gl-name texture))))
 
 (defmethod unload ((texture texture))
+  (maybe-free-static-vector (pixel-data texture))
   (setf (pixel-data texture) NIL))
 
 (defmethod resize ((texture texture) width height)

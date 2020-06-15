@@ -75,4 +75,5 @@
   (gl:delete-buffers (list (gl-name buffer))))
 
 (defmethod unload ((buffer buffer-object))
+  (maybe-free-static-vector (buffer-data buffer))
   (setf (buffer-data buffer) NIL))
