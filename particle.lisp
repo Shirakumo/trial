@@ -18,7 +18,7 @@
   (setf (vertex-array emitter)
         (add-vertex-bindings
          particle-buffer
-         (change-class particle-mesh 'vertex-array))))
+         (generate-resources 'mesh-loader particle-mesh))))
 
 (defmethod render ((emitter particle-emitter) target)
   (let ((vao (vertex-array emitter)))

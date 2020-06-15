@@ -26,3 +26,6 @@
     (loop for observer being the hash-keys of (observers generator)
           do (observe-generation observer generator result))
     result))
+
+(defmethod generate-resources ((generator symbol) input &rest args)
+  (apply #'generate-resources (make-instance generator) input args))

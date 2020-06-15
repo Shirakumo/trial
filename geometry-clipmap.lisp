@@ -255,7 +255,7 @@ void main(){
 (defun make-clipmap-block (n levels)
   (let* ((m (/ n 4))
          (s (/ 4 n))
-         (vao (change-class (make-quad-grid s m m) 'vertex-array))
+         (vao (generate-resources 'mesh-loader (make-quad-grid s m m)))
          (array (make-array (* 3 (+ 4 (* 12 levels))) :element-type 'single-float))
          (vbo (make-instance 'vertex-buffer :buffer-data array))
          (i -1))
