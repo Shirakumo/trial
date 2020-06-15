@@ -7,10 +7,9 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass struct-buffer (buffer-object)
-  ((struct :accessor struct)
-   (struct-class :accessor struct-class))
-  (:default-initargs
-   :data-usage :stream-draw))
+  ((data-usage :initform :stream-draw)
+   (struct :accessor struct)
+   (struct-class :accessor struct-class)))
 
 (defmethod shared-initialize :after ((buffer struct-buffer) slots &key struct-class)
   (when struct-class

@@ -13,9 +13,8 @@
   (load generator)
   (gl-source (resource generator T)))
 
-(defmethod generate-resources ((generator uniform-block) input &key binding name qualifiers)
+(defmethod generate-resources ((generator uniform-block) input &key binding qualifiers)
   (ensure-instance (resource generator T) 'uniform-buffer
                    :binding binding
-                   :name name
                    :qualifiers qualifiers
                    :struct-class (ensure-class input)))

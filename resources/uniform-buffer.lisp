@@ -7,15 +7,14 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass uniform-buffer (struct-buffer)
-  ((qualifiers :initarg :qualifiers :accessor qualifiers)
-   (binding :initarg :binding :accessor binding))
-  (:default-initargs
-   :buffer-type :uniform-buffer
-   :qualifiers ()))
+  ((buffer-type :initform :uniform-buffer)
+   (qualifiers :initarg :qualifiers :initform () :accessor qualifiers)
+   (binding :initarg :binding :initform NIL :accessor binding)))
 
-(defmethod initialize-instance :after ((buffer uniform-buffer) &key name binding)
-  (unless binding
-    (setf (binding buffer) (cffi:translate-underscore-separated-name name))))
+(defmethod shared-initialize :after ((buffer uniform-buffer) slots &key struct-class binding)
+  (when (or binding (null (binding buffer)))
+    (setf (binding buffer) (cffi:translate-underscore-separated-name
+                            (class-name (ensure-class struct-class))))))
 
 (defmethod gl-source ((buffer uniform-buffer))
   `(glsl-toolkit:shader

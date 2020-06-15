@@ -118,10 +118,10 @@
           for inputs = (coerce-pass-shader pass class type)
           for shader = (make-instance 'shader :source inputs :type type)
           do (when inputs (push shader shaders)))
-    (loop for asset-spec in (effective-buffers class)
-          do (push (apply #'asset asset-spec) buffers))
-    (loop for asset-spec in (effective-buffers pass)
-          do (pushnew (apply #'asset asset-spec) buffers))
+    (loop for resource-spec in (effective-buffers class)
+          do (push (apply #'// resource-spec) buffers))
+    (loop for resource-spec in (effective-buffers pass)
+          do (pushnew (apply #'// resource-spec) buffers))
     (make-instance 'shader-program
                    :shaders shaders
                    :buffers buffers)))
