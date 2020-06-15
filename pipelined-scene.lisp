@@ -18,8 +18,6 @@
   (compile-to-pass scene scene))
 
 (defmethod stage :after ((scene pipelined-scene) area)
-  (loop for texture across (textures scene)
-        do (stage texture area))
   (loop for pass across (passes scene)
         do (stage pass area)))
 

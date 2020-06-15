@@ -89,7 +89,7 @@
 (defclass image-loader (resource-generator)
   ())
 
-(defmethod generate-resources ((generator image-loader) path &rest texture-args &key (type T) internal-format (resource (resource generator T)))
+(defmethod generate-resources ((generator image-loader) path &rest texture-args &key (type T) internal-format (resource (resource generator T)) &allow-other-keys)
   (multiple-value-bind (bits width height pixel-type pixel-format)
       (with-new-value-restart (path) (new-path "Specify a new image path.")
         (with-retry-restart (retry "Retry loading the image path.")

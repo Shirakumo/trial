@@ -15,6 +15,8 @@
 (defgeneric observe-generation (observer generator result))
 (defgeneric resource (generator identifier))
 
+(defmethod resource ((generator resource-generator) id) NIL)
+
 (defmethod register-generation-observer (observer (generator resource-generator))
   (setf (gethash observer (observers generator)) T))
 

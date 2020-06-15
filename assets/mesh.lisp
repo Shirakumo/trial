@@ -10,13 +10,7 @@
   ())
 
 (defmethod generate-resources ((generator mesh-loader) (mesh vertex-mesh) &key (data-usage :static-draw) (vertex-attributes T) vertex-form (resource (resource generator T)))
-  (let* ((vao (ensure-instance resource 'vertex-array
-                               :vertex-form (or vertex-form
-                                                (ecase (face-length mesh)
-                                                  (1 :points)
-                                                  (2 :lines)
-                                                  (3 :triangles)))))
-         (primer (if (= 0 (length (vertices mesh)))
+  (let* ((primer (if (= 0 (length (vertices mesh)))
                      (allocate-instance (find-class (vertex-type mesh)))
                      (aref (vertices mesh) 0)))
          (attributes (etypecase vertex-attributes
@@ -40,8 +34,13 @@
                                         :offset (* offset (gl-type-size :float))
                                         :size size
                                         :index index))))
-    (setf (bindings vao) (list* ebo specs))
-    vao))
+    (ensure-instance resource 'vertex-array
+                     :bindings (list* ebo specs)
+                     :vertex-form (or vertex-form
+                                      (ecase (face-length mesh)
+                                        (1 :points)
+                                        (2 :lines)
+                                        (3 :triangles))))))
 
 (defmethod generate-resources ((generator mesh-loader) (path pathname) &key (format T))
   (let ((meshes (meshes (read-geometry path format))))

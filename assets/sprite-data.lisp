@@ -60,11 +60,11 @@
          (size (decode-json-vec (jsown:val meta "size"))))
     (setf (frames sprite) (map 'vector (lambda (f) (decode-aseprite-frame f size)) (jsown:val data "frames")))
     (setf (animations sprite) (map 'vector #'decode-aseprite-tag (jsown:val meta "frameTags")))
-    (ensure-instance (resource sprite 'texture) 'image
-                     :input (merge-pathnames (jsown:val meta "image") path)
-                     :min-filter :nearest
-                     :mag-filter :nearest)
-    (generate-resources (make-instance 'mesh-loader) (make-sprite-frame-mesh (frames sprite))
+    (generate-resources 'image-loader (merge-pathnames (jsown:val meta "image") path)
+                        :resource (resource sprite 'texture)
+                        :min-filter :nearest
+                        :mag-filter :nearest)
+    (generate-resources 'mesh-loader (make-sprite-frame-mesh (frames sprite))
                         :resource (resource sprite 'vertex-array))
     (list (resource sprite 'texture)
           (resource sprite 'vertex-array))))

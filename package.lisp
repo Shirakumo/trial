@@ -18,10 +18,12 @@
    #:font)
   ;; assets/image.lisp
   (:export
+   #:image-loader
    #:image
    #:resize)
   ;; assets/mesh.lisp
   (:export
+   #:mesh-loader
    #:mesh
    #:geometry-name
    #:attributes

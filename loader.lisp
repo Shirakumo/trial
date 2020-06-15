@@ -50,7 +50,7 @@
 (defmethod stage ((object asset) (area staging-area))
   (setf (gethash object (staged area)) (cons NIL NIL)))
 
-(defmethod stage ((container container) (area staging-area))
+(defmethod stage ((container flare:container) (area staging-area))
   (for:for ((child over container))
     (stage child area)))
 

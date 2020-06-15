@@ -133,7 +133,8 @@
 (defun remf* (list &rest keys)
   (loop for (k v) on list by #'cddr
         for x = (member k keys)
-        unless x collect k))
+        unless x collect k
+        unless x collect v))
 
 (defun one-of (thing &rest options)
   (find thing options))

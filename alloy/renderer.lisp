@@ -139,16 +139,13 @@
 (defmethod alloy:deallocate ((array trial:vertex-array))
   (trial:deallocate array))
 
-(defclass image (trial:image simple:image)
-  ())
-
-(defmethod simple:size ((image image))
+(defmethod simple:size ((image trial:texture))
   (alloy:px-size (trial:width image) (trial:height image)))
 
-(defmethod simple:data ((image image))
+(defmethod simple:data ((image trial:texture))
   (trial:pixel-data image))
 
-(defmethod simple:channels ((image image))
+(defmethod simple:channels ((image trial:texture))
   (ecase (trial:internal-format image)
     ((:red :r8) 1)
     ((:rg :rg8) 2)
@@ -156,7 +153,7 @@
     ((:rgba :rgba8) 4)))
 
 (defmethod simple:request-image ((renderer renderer) (image pathname) &key (filtering :linear))
-  (trial:load (make-instance 'image :input image :min-filter filtering :mag-filter filtering)))
+  (trial:generate-resources 'trial:image-loader image :min-filter filtering :mag-filter filtering))
 
 (defmethod alloy:allocate ((texture trial:texture))
   (trial:allocate texture))
