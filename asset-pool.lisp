@@ -6,53 +6,46 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defmethod coerce-base ((system symbol))
-  (if (deploy:deployed-p)
-      (pathname-utils:subdirectory (deploy:data-directory) "pool" (string system))
-      (pathname-utils:subdirectory (asdf:system-source-directory system) "data")))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar *pools* (make-hash-table :test 'eql))
 
-(defmethod coerce-base ((pathname pathname))
-  pathname)
+  (defun find-pool (name &optional errorp)
+    (or (gethash name *pools*)
+        (when errorp (error "No pool with name ~s." name))))
 
-(defmethod coerce-base ((list cons))
-  (destructuring-bind (base &rest sub) list
-    (apply #'pathname-utils:subdirectory (coerce-base base) sub)))
+  (defun (setf find-pool) (pool name)
+    (setf (gethash name *pools*) pool))
 
-(defvar *pools* (make-hash-table :test 'eql))
+  (defun remove-pool (name)
+    (remhash name *pools*))
 
-(defun find-pool (name &optional errorp)
-  (or (gethash name *pools*)
-      (when errorp (error "No pool with name ~s." name))))
+  (defun list-pools ()
+    (alexandria:hash-table-values *pools*))
 
-(defun (setf find-pool) (pool name)
-  (setf (gethash name *pools*) pool))
+  (defclass pool ()
+    ((name :initarg :name :accessor name)
+     (base :initarg :base :accessor base)
+     (assets :initform (make-hash-table :test 'eq) :accessor assets))
+    (:default-initargs
+     :name (error "NAME required.")))
 
-(defun remove-pool (name)
-  (remhash name *pools*))
-
-(defun list-pools ()
-  (alexandria:hash-table-values *pools*))
-
-(defclass pool ()
-  ((name :initarg :name :accessor name)
-   (base :initarg :base :accessor base)
-   (assets :initform (make-hash-table :test 'eq) :accessor assets))
-  (:default-initargs
-   :name (error "NAME required.")
-   :base (error "BASE required.")))
-
-(defmethod print-object ((pool pool) stream)
-  (print-unreadable-object (pool stream :type T)
-    (format stream "~a ~s" (name pool) (base pool))))
+  (defmethod print-object ((pool pool) stream)
+    (print-unreadable-object (pool stream :type T)
+      (format stream "~a ~s" (name pool) (base pool)))))
 
 (defmacro define-pool (name &body initargs)
   (check-type name symbol)
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
-     (cond ((find-pool ',name)
-            (reinitialize-instance (find-pool ',name) ,@initargs))
-           (T
-            (setf (find-pool ',name) (make-instance 'pool :name ',name ,@initargs))))
-     ',name))
+  (let ((path (or *compile-file-pathname* *load-pathname*)))
+    (cond (path
+           (setf path (pathname-utils:subdirectory path "data")))
+          ((null (getf initargs :base))
+           (warn "Don't know where the pool~%  ~s~%should be based." name)))
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
+       (cond ((find-pool ',name)
+              (reinitialize-instance (find-pool ',name) ,@initargs))
+             (T
+              (setf (find-pool ',name) (make-instance 'pool :name ',name ,@initargs :base ,path))))
+       ',name)))
 
 (defmethod asset ((pool pool) name &optional (errorp T))
   (or (gethash name (assets pool))
@@ -87,7 +80,7 @@
   (mapc #'finalize (list-assets pool)))
 
 (defmethod pool-path ((pool pool) (null null))
-  (coerce-base (base pool)))
+  (merge-pathnames (base pool) (deploy:data-directory)))
 
 (defmethod pool-path ((pool pool) pathname)
   (merge-pathnames pathname (pool-path pool NIL)))
@@ -95,5 +88,4 @@
 (defmethod pool-path ((name symbol) pathname)
   (pool-path (find-pool name T) pathname))
 
-(eval '(define-pool trial
-        :base :trial))
+(define-pool trial)

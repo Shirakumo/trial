@@ -6,8 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-pool effects
-  :base 'trial)
+(define-pool effects)
 
 (define-shader-pass render-pass (scene-pass per-object-pass)
   ((color :port-type output :attachment :color-attachment0)

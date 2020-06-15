@@ -3,8 +3,7 @@
 (defclass workbench (main) ()
   (:default-initargs :clear-color (vec 0.25 0.3 0.35 0)))
 
-(define-pool workbench
-  :base 'trial)
+(define-pool workbench)
 
 (define-asset (workbench grid) mesh
   (make-line-grid 10 100 100))

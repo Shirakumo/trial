@@ -7,23 +7,16 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (deploy:define-hook (:deploy trial) (directory)
-  (let ((bases (make-hash-table :test 'equalp)))
-    ;; FIXME: This is bad. We always deploy a bunch of shit that's not really needed.
-    (dolist (pool (list-pools))
-      (push pool (gethash (base pool) bases)))
-    (loop for base being the hash-keys of bases
-          for pools being the hash-values of bases
-          do ;; FIXME: We're potentially introducing conflicts here by eagerly coercing names.
-             (let ((base-name (if (pathnamep base)
-                                  (intern (string (name (first pools))) "KEYWORD")
-                                  base)))
-               (dolist (pool pools)
-                 (setf (base pool) base-name))
-               (deploy:status 1 "Copying pool ~{~a ~}from ~a" pools (coerce-base base))
-               (deploy:copy-directory-tree
-                (coerce-base base)
-                (pathname-utils:subdirectory directory "pool" (string base-name))
-                :copy-root NIL)))))
+  ;; FIXME: This is bad. We always deploy a bunch of shit that's not really needed.
+  (dolist (pool (list-pools))
+    (let ((source (base pool)))
+      ;; FIXME: We're potentially introducing conflicts here by eagerly coercing names.
+      (setf (base pool) (make-pathname :directory (list :relative "pool" (string (name pool)))))
+      (deploy:status 1 "Copying pool ~{~a ~}from ~a" pools source)
+      (deploy:copy-directory-tree
+       source
+       (merge-pathnames (base pool) directory)
+       :copy-root NIL))))
 
 (deploy:define-hook (:build trial) ()
   (v:remove-global-controller))
