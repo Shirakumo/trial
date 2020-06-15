@@ -71,9 +71,9 @@
 
 (defmethod initialize-instance :after ((sprite animated-sprite) &key sprite-data)
   (when sprite-data
-    (setf (texture sprite) (resource data 'texture))
-    (setf (vertex-array sprite) (resource data 'vertex-array))
-    (register-load-observer sprite sprite-data)))
+    (setf (texture sprite) (resource sprite-data 'texture))
+    (setf (vertex-array sprite) (resource sprite-data 'vertex-array))
+    (register-generation-observer sprite sprite-data)))
 
 (defmethod observe-generation ((sprite animated-sprite) (data sprite-data) result)
   (setf (animations sprite) (animations data))
