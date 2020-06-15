@@ -647,6 +647,8 @@
    #:shader-pass
    #:framebuffer
    #:uniforms
+   #:renderable
+   #:transformed
    #:apply-transforms
    #:object-renderable-p
    #:compile-to-pass
