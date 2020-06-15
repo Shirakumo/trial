@@ -15,6 +15,13 @@
                              '(base-char extended-char character)))
              :test #'equal)))
 
+(defmacro define-global (name value)
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (if (boundp ',name)
+         (setf ,name ,value)
+         #+sbcl (sb-ext:defglobal ,name ,value)
+         #-sbcl (defvar ,name ,value))))
+
 (defgeneric finalize (object))
 
 (defmethod finalize :before (object)
@@ -113,6 +120,9 @@
   (pathname-utils:to-directory
    (or (first (uiop:command-line-arguments))
        *default-pathname-defaults*)))
+
+(defun kw (thing)
+  (intern (string-upcase thing) "KEYWORD"))
 
 (defun enlist (item &rest items)
   (if (listp item) item (list* item items)))
@@ -381,6 +391,18 @@
             for line = (read-line in NIL)
             while line
             do (format out "~3d ~a~%" i line)))))
+
+(defun clamp (low mid high)
+  (max low (min mid high)))
+
+(defun lerp (from to n)
+  (+ (* from (- 1 n)) (* to n)))
+
+(defun damp* (damp &rest factors)
+  (- 1 (apply #'* (- 1 damp) factors)))
+
+(define-compiler-macro damp* (damp &rest factors)
+  `(- 1 (* (- 1 ,damp) ,@factors)))
 
 (declaim (inline deg->rad rad->deg))
 (defun deg->rad (deg)

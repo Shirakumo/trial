@@ -726,10 +726,12 @@
    #:color-regions)
   ;; toolkit.lisp
   (:export
+   #:define-global
    #:finalize
    #:gl-property
    #:current-time
    #:executable-directory
+   #:kw
    #:enlist
    #:unlist
    #:remf*
@@ -753,7 +755,10 @@
    #:with-slots-bound
    #:with-all-slots-bound
    #:minimize
-   #:def->rad
+   #:clamp
+   #:lerp
+   #:damp*
+   #:deg->rad
    #:rad->deg
    #:symbol->c-name
    #:check-gl-type
