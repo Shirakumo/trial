@@ -469,16 +469,11 @@
    #:key
    #:mouse
    #:gamepad)
-  ;; layer-set.lisp
+  ;; layered-container.lisp
   (:export
-   #:layer-container
-   #:layer
-   #:active
-   #:layer-set
-   #:objects
-   #:index-map
-   #:layered-unit
-   #:layer)
+   #:layered-container
+   #:layer-index
+   #:layer-count)
   ;; loader.lisp
   (:export
    #:staging-area

@@ -49,7 +49,7 @@
                (:file "hdr" :depends-on ("package" "shader-pass"))
                (:file "input" :depends-on ("package" "event-loop" "retention"))
                (:file "lines" :depends-on ("package" "helpers" "shader-entity" "geometry"))
-               (:file "layer-set" :depends-on ("package"))
+               (:file "layered-container" :depends-on ("package" "entity"))
                (:file "loader" :depends-on ("package" "resource" "asset"))
                (:file "main" :depends-on ("package" "display" "toolkit" "scene" "pipeline" "window"))
                (:file "particle" :depends-on ("package" "shader-entity" "resources"))
