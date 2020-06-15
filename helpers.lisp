@@ -124,7 +124,7 @@ void main(){
   color *= vertexcolor;
 }")
 
-(define-shader-entity textured-entity ()
+(define-shader-entity textured-entity (renderable)
   ((texture :initform NIL :initarg :texture :accessor texture)))
 
 (defmethod stage :after ((entity textured-entity) (area staging-area))

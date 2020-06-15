@@ -229,7 +229,7 @@
   (call-next-method)
   (push-pass-action pass `(pop-matrix)))
 
-(defmethod compile-to-pass :after ((object container) (pass scene-pass))
+(defmethod compile-to-pass :after ((object flare:container) (pass scene-pass))
   (for:for ((child over object))
     (compile-to-pass child pass)
     ;; KLUDGE: We can't do this in another method for the OBJECT, as the
