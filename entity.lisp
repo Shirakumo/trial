@@ -28,5 +28,5 @@
     (error "The entity~%  ~a~%cannot be left from~%  ~a~%as it is contained in~%  ~a"
            entity container (container entity))))
 
-(defclass container (flare:container entity)
+(defclass container (flare:container-unit entity)
   ())
