@@ -24,7 +24,8 @@
         finally (return shaders)))
 
 (defmethod dependencies ((program shader-program))
-  (copy-list (shaders program)))
+  (append (shaders program)
+          (buffers program)))
 
 (defun link-program (program shaders)
   (let ((prog (gl-name program)))
