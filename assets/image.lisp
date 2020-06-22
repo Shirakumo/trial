@@ -84,7 +84,7 @@
 
 (defmethod load-image (path (type (eql T)) &rest args)
   (let ((type (pathname-type path)))
-    (apply #'load-image path (intern (string-upcase type) "KEYWORD") args)))
+    (apply #'load-image path (kw type) args)))
 
 (defclass image-loader (resource-generator)
   ())

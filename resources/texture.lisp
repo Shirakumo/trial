@@ -51,7 +51,7 @@
                       mag-filter min-filter mipmap-levels mipmap-lod
                       anisotropy wrapping border-color storage)
         when (slot-boundp texture slot)
-        collect (intern (string slot) "KEYWORD")
+        collect (kw slot)
         and collect (slot-value texture slot)))
 
 (defmethod shared-initialize :around ((texture texture) slots &rest args)
@@ -235,8 +235,8 @@
   (cl-ppcre:register-groups-bind (compression signed super r r-size r-type g g-size g-type b b-size b-type rg rg-size rg-type rgb rgb-size rgb-type rgba rgba-size rgba-type a a-size a-type e e-size d d-size d-type s s-size s-type rgtc bptc floatage snorm unorm) ("^(compressed-)?(signed-)?(s)?((?:red|r)(\\d+)?(ui|i|f)?)?(-g(\\d+)?(ui|i|f)?)?(-b(\\d+)?(ui|i|f)?)?(rg(\\d+)?(ui|i|f)?)?(rgb(\\d+)?(ui|i|f)?)?(rgba(\\d+)?(ui|i|f)?)?(-(?:a|alpha)(\\d+)?(ui|i|f)?)?(-e(\\d+)?)?(depth(?:-component-?)?(\\d+)?(f)?)?(-stencil(\\d+)?(ui|i|f)?)?(-rgtc\\d)?(-bptc)?(-signed-float|-unsigned-float)?(-snorm)?(-unorm)?$" (string-downcase format))
     (macrolet ((parse-part (part)
                  (let* ((*print-case* (readtable-case *readtable*))
-                        (type (intern (format NIL "~a-~a" part 'type)))
-                        (size (intern (format NIL "~a-~a" part 'size))))
+                        (type (mksym *package* part "-" 'type))
+                        (size (mksym *package* part "-" 'size)))
                    `(when ,part
                       (list (when ,size (parse-integer ,size))
                             (cond ((or (equalp ,type "f") floatage) :float)

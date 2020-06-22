@@ -36,7 +36,7 @@
              (aref data (+ 3 offset))))))
 
 (defun collada-semantic->vertex-keyword (string)
-  (intern string :keyword))
+  (kw string))
 
 (defun read-collada-source-value (input sources vertices offset)
   (destructuring-bind (semantic source-id) (rest input)
@@ -78,6 +78,6 @@
          (geometry (make-instance 'geometry)))
     (loop for geom across (lquery:$ collada "geometry")
           for name = (plump:attribute geom "name")
-          do (setf (gethash (intern (string-upcase name) :keyword) (meshes geometry))
+          do (setf (gethash (kw name) (meshes geometry))
                    (read-collada-mesh (lquery:$ geom "mesh" (node)))))
     geometry))

@@ -147,7 +147,7 @@
         (units (loop for i downfrom (1- units) to 0 collect i)))
     `(lambda (pass)
        (loop with texture-name = ',(loop for unit in units collect
-                                         (intern (format NIL "~a~a" :texture unit) "KEYWORD"))
+                                         (kw (format NIL "~a~a" :texture unit)))
              for port in (flow:ports pass)
              do (typecase port
                   (uniform-port

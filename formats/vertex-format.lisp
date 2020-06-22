@@ -187,7 +187,7 @@
   (let* ((size (fast-io:readu32-le buffer))
          (map (vformat-slot-data type))
          (initargs (loop repeat (fast-io:readu8 buffer)
-                         collect (intern (vformat-read-string buffer) :keyword)))
+                         collect (kw (vformat-read-string buffer))))
          (vertices (make-array size)))
     (loop for i from 0 below size
           do (setf (aref vertices i)
