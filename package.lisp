@@ -364,7 +364,12 @@
    #:make-disc
    #:make-cylinder
    #:make-cone
-   #:make-tube)
+   #:make-tube
+   #:make-lines
+   #:fullscreen-square
+   #:empty-vertex-array
+   #:axes
+   #:2d-axes)
   ;; geometry.lisp
   (:export
    #:geometry

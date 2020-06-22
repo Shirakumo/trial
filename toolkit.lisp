@@ -121,12 +121,13 @@
    (or (first (uiop:command-line-arguments))
        *default-pathname-defaults*)))
 
-(defun kw (thing)
-  (intern (string-upcase thing) "KEYWORD"))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun kw (thing)
+    (intern (string-upcase thing) "KEYWORD"))
 
-(defun mksym (package &rest parts)
-  (let ((*print-case* (readtable-case *readtable*)))
-    (intern (format NIL "~{~a~}" parts) package)))
+  (defun mksym (package &rest parts)
+    (let ((*print-case* (readtable-case *readtable*)))
+      (intern (format NIL "~{~a~}" parts) package))))
 
 (defun enlist (item &rest items)
   (if (listp item) item (list* item items)))
