@@ -133,6 +133,12 @@
 (defmethod render (object (pass shader-pass))
   (render object (shader-program-for-pass pass object)))
 
+(defmethod width ((pass shader-pass))
+  (width (framebuffer pass)))
+
+(defmethod height ((pass shader-pass))
+  (height (framebuffer pass)))
+
 (defmacro define-shader-pass (&environment env name direct-superclasses direct-slots &rest options)
   (setf direct-superclasses (append direct-superclasses (list 'shader-pass)))
   (unless (find :metaclass options :key #'car)
@@ -364,12 +370,13 @@
           (deallocate old)))
       (setf (shader-program pass) new))))
 
-(defmethod register-object-for-pass ((pass single-shader-pass) o))
+(defmethod register-object-for-pass ((pass single-shader-pass) o)
+  (shader-program pass))
 
 (defmethod shader-program-for-pass ((pass single-shader-pass) o)
   (shader-program pass))
 
-(defmethod render ((pass single-shader-pass) thing)
+(defmethod render ((pass single-shader-pass) (_ null))
   (render pass (shader-program pass)))
 
 (defmethod render :before ((pass single-shader-pass) (program shader-program))
