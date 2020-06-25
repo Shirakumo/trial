@@ -669,9 +669,11 @@
    #:define-shader-pass
    #:generate-pass-program
    #:prepare-pass-program
+   #:scene-pass
    #:per-object-pass
    #:assets
    #:single-shader-pass
+   #:single-shader-scene-pass
    #:shader-program
    #:post-effect-pass)
   ;; shadow-map.lisp
