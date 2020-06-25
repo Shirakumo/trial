@@ -21,13 +21,10 @@
                               :copy-root NIL))
 
 (defmethod alloy:allocate ((renderer renderer))
-  (loop for res across (trial::topological-sort-by-dependencies
-                        (loop for v being the hash-values of (opengl::resources renderer)
-                              append (typecase v
-                                       (trial:shader-program
-                                        (list* v (trial:shaders v)))
-                                       (T (list v)))))
-        do (alloy:allocate res)))
+  )
+
+(defmethod trial:dependencies ((renderer renderer))
+  (alexandria:hash-table-values (opengl::resources renderer)))
 
 (defmethod trial:allocate ((renderer renderer))
   (alloy:allocate renderer))
