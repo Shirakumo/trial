@@ -6,6 +6,8 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(defvar *observers* (make-array 0 :adjustable T :fill-pointer T))
+
 (define-action system-action ())
 
 (define-action reload-scene (system-action))
@@ -26,8 +28,7 @@
   ((display :initform NIL :accessor display)
    (text :initform (make-instance 'text :font (// 'trial 'noto-mono) :size 18) :accessor text)
    (fps-buffer :initform (make-array 100 :fill-pointer T :initial-element 1) :reader fps-buffer)
-   (show-overlay :initform T :accessor show-overlay)
-   (observers :initform (make-array 0 :adjustable T :fill-pointer T) :accessor observers))
+   (show-overlay :initform T :accessor show-overlay))
   (:default-initargs
    :name :controller))
 
@@ -59,7 +60,7 @@
                 (- ctotal cfree) (floor (/ (- ctotal cfree) ctotal 0.01))
                 (- gtotal gfree) (floor (/ (- gtotal gfree) gtotal 0.01))
                 (hash-table-count (loaded (loader (display controller)))))
-        (loop with observers = (observers controller)
+        (loop with observers = *observers*
               for i from 0 below (length observers)
               for (title . func) = (aref observers i)
               when func
@@ -114,9 +115,9 @@
   (or (when *context* (unit :controller (scene (handler *context*))))
       (error "No reachable controller found.")))
 
-(defmethod observe ((func function) &key title (controller (find-controller)))
-  (let ((title (or title (format NIL "~d" (length (observers controller))))))
-    (vector-push-extend (cons title func) (observers controller))
+(defmethod observe ((func function) &key title)
+  (let ((title (or title (format NIL "~d" (length *observers*)))))
+    (vector-push-extend (cons title func) *observers*)
     func))
 
 (defmethod observe (thing &rest args &key &allow-other-keys)
@@ -125,11 +126,14 @@
                                    ,thing))
          args))
 
-(defmethod stop-observing (&optional controller)
-  (let ((observers (observers (or controller (find-controller)))))
-    (setf (fill-pointer observers) 0)
-    (loop for i from 0 below (array-total-size observers)
-          do (setf (aref observers i) NIL))))
+(defmethod stop-observing (&optional title)
+  (let ((observers *observers*))
+    (if title
+        (let ((pos (position title observers :key #'car)))
+          (when pos (array-utils:vector-pop-position observers pos)))
+        (loop for i from 0 below (array-total-size observers)
+              do (setf (aref observers i) NIL)
+              finally (setf (fill-pointer observers) 0)))))
 
 (defclass load-request (event)
   ((asset :initarg :asset)
