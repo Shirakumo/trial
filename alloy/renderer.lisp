@@ -20,11 +20,15 @@
                               (pathname-utils:subdirectory directory "pool" "font-cache")
                               :copy-root NIL))
 
-(defmethod alloy:allocate ((renderer renderer))
-  )
+(defmethod alloy:allocate ((renderer renderer)))
+
+(defmethod trial:stage :before ((renderer renderer) (area trial:staging-area))
+  ;; FIXME: This is BAD, but Alloy gives us no way of generating the resource stubs.
+  (alloy:allocate renderer))
 
 (defmethod trial:dependencies ((renderer renderer))
-  (alexandria:hash-table-values (opengl::resources renderer)))
+  (append (alexandria:hash-table-values (org.shirakumo.alloy.renderers.opengl.msdf:fontcache renderer))
+          (alexandria:hash-table-values (opengl::resources renderer))))
 
 (defmethod trial:allocate ((renderer renderer))
   (alloy:allocate renderer))
@@ -165,4 +169,15 @@
 (defmethod simple:size ((image trial:image))
   (alloy:size (trial:width image) (trial:height image)))
 
-(defmethod trial:dependencies ((font simple:font)))
+(defmethod trial:dependencies ((font simple:font))
+  (list (org.shirakumo.alloy.renderers.opengl.msdf:atlas font)))
+
+(defmethod trial:stage :before ((font simple:font) (area trial:staging-area))
+  ;; FIXME: This is BAD, but Alloy gives us no way of generating the resource stubs.
+  (alloy:allocate font))
+
+(defmethod trial:stage ((object simple:font) (area trial:staging-area))
+  (setf (gethash object (trial:staged area)) (cons NIL NIL)))
+
+(defmethod trial:load-with (loader (object simple:font)))
+(defmethod trial:unload-with (loader (object simple:font)))

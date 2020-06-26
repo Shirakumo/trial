@@ -496,6 +496,7 @@
    #:commit
    #:abort-commit
    #:load-with
+   #:unload-with
    #:progress)
   ;; main.lisp
   (:export
