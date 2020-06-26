@@ -312,11 +312,8 @@
                  (when prev
                    (v:info :trial.shader-pass "Refreshing shader program for ~a" class)
                    (let ((new (make-pass-shader-program pass class)))
-                     (if (allocated-p prev)
-                         (with-context (*context*)
-                           (setf (buffers prev) (buffers new))
-                           (setf (shaders prev) (shaders new)))
-                         (setf (gethash class assets) new)))))))
+                     (setf (buffers prev) (buffers new))
+                     (setf (shaders prev) (shaders new)))))))
         (cond ((eql class (class-of pass))
                ;; Pass changed, recompile everything
                (loop for class being the hash-keys of assets
@@ -360,15 +357,11 @@
 
 (defmethod handle ((ev class-changed) (pass single-shader-pass))
   (when (eql (changed-class ev) (class-of pass))
-    (let* ((old (shader-program pass))
-           (new (make-class-shader-program pass)))
-      (when (and old (gl-name old))
-        (with-context (*context*)
-          (dolist (shader (dependencies new))
-            (unless (gl-name shader) (load shader)))
-          (load new)
-          (deallocate old)))
-      (setf (shader-program pass) new))))
+    (let ((prev (shader-program pass))
+          (new (make-class-shader-program pass)))
+      (v:info :trial.shader-pass "Refreshing shader program for ~a" (class-of pass))
+      (setf (buffers prev) (buffers new))
+      (setf (shaders prev) (shaders new)))))
 
 (defmethod register-object-for-pass ((pass single-shader-pass) o)
   (shader-program pass))
