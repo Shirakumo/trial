@@ -111,7 +111,7 @@
 (defclass loader ()
   ((loaded :initform (make-hash-table :test 'eq) :reader loaded)))
 
-(defgeneric commit (staging-area loader))
+(defgeneric commit (staging-area loader &key unload))
 (defgeneric abort-commit (loader))
 (defgeneric load-with (loader object))
 (defgeneric unload-with (loader object))
@@ -184,12 +184,15 @@
 
 (defmethod progress ((loader loader) so-far total))
 
-(defmethod commit ((area staging-area) (loader loader))
+(defmethod commit ((area staging-area) (loader loader) &key (unload T))
   (let ((load-sequence (compute-load-sequence area))
         (resources (loaded loader)))
-    ;; First, mark all resources as to-unload
-    (loop for resource being the hash-keys of resources
-          do (setf (gethash resource resources) :to-unload))
+    (if unload
+        ;; First, mark all resources as to-unload
+        (loop for resource being the hash-keys of resources
+              do (setf (gethash resource resources) :to-unload))
+        (loop for resource being the hash-keys of resources
+              do (setf (gethash resource resources) :to-keep)))
     ;; Next re-mark resources as keep if already loaded or to-load if new
     (loop for resource across load-sequence
           do (if (gethash resource resources)
@@ -224,7 +227,7 @@
                     (setf (gethash resource resources) :loaded))))
         NIL))))
 
-(defmethod commit (object (loader loader))
+(defmethod commit (object (loader loader) &rest args)
   (let ((area (make-instance 'staging-area)))
     (stage object area)
-    (commit area loader)))
+    (apply #'commit area loader args)))

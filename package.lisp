@@ -487,6 +487,7 @@
   ;; loader.lisp
   (:export
    #:staging-area
+   #:staged
    #:dependencies
    #:stage
    #:unstage

@@ -70,8 +70,8 @@
     (loop for pass across (passes (scene main))
           do (compile-into-pass object container pass)
              (stage pass area))
-    (unless (commit area main)
-      (remove-from-pass (scene main))
+    (unless (commit area main :unload NIL)
+      (remove-from-pass object (scene main))
       (leave object container))))
 
 (defmethod render ((source main) (target main))
