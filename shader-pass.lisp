@@ -182,9 +182,12 @@
   (funcall (compile 'bind-pass-textures (generate-bind-pass-textures))
            pass))
 
-(defun prepare-pass-program (pass program)
-  (funcall (compile 'prepare-pass-program (generate-prepare-pass-program))
+(defun %prepare-pass-program (pass program)
+  (funcall (compile '%prepare-pass-program (generate-prepare-pass-program))
            pass program))
+
+(defmethod prepare-pass-program ((pass shader-pass) (program shader-program))
+  (%prepare-pass-program pass program))
 
 (defmethod blit-to-screen ((pass shader-pass))
   (blit-to-screen (framebuffer pass)))
