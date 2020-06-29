@@ -117,7 +117,10 @@
 
 (defmethod observe ((func function) &key title)
   (let ((title (or title (format NIL "~d" (length *observers*)))))
-    (vector-push-extend (cons title func) *observers*)
+    (let ((position (position title *observers* :key #'car :test #'equal)))
+      (if position
+          (setf (aref *observers* position) (cons title func))
+          (vector-push-extend (cons title func) *observers*)))
     func))
 
 (defmethod observe (thing &rest args &key &allow-other-keys)
