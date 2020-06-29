@@ -39,6 +39,9 @@
 (defmethod trial:deallocate ((renderer renderer))
   (alloy:deallocate renderer))
 
+(defmethod trial:compile-to-pass ((renderer renderer) (pass trial:scene-pass))
+  (trial::push-pass-action pass `(alloy:render ,renderer ,renderer)))
+
 (defmethod alloy:render :before ((renderer renderer) (ui alloy:ui))
   (let ((target (simple:transform-matrix renderer)))
     (setf (aref target 0) (/ 2f0 (trial:width trial:*context*)))
