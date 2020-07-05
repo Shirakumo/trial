@@ -40,7 +40,7 @@
    org.shirakumo.fraf.gamepad.impl::forcefeedback)
   #+windows
   (dont-deploy
-   org.shirakumo.fraf.gamepad.impl::ole32
+   org.shirakumo.com-on.cffi::ole32
    org.shirakumo.fraf.gamepad.impl::user32
    org.shirakumo.fraf.gamepad.impl::xinput
    org.shirakumo.fraf.gamepad.impl::dinput))
