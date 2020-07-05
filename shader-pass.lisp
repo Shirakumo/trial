@@ -86,7 +86,7 @@
   (:method-combination progn :most-specific-last))
 (defgeneric object-renderable-p (object pass))
 (defgeneric compile-to-pass (scene pass))
-(defgeneric compile-into-pass (scene container pass))
+(defgeneric compile-into-pass (object container pass))
 (defgeneric remove-from-pass (object pass))
 (defgeneric shader-program-for-pass (pass object))
 (defgeneric make-pass-shader-program (pass object))

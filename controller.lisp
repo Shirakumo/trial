@@ -132,7 +132,7 @@
 (defmethod stop-observing (&optional title)
   (let ((observers *observers*))
     (if title
-        (let ((pos (position title observers :key #'car)))
+        (let ((pos (position title observers :key #'car :test #'equal)))
           (when pos (array-utils:vector-pop-position observers pos)))
         (loop for i from 0 below (array-total-size observers)
               do (setf (aref observers i) NIL)
