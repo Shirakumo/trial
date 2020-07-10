@@ -72,6 +72,7 @@
 (defun %set-uniform (location data)
   (declare (optimize speed))
   (declare (type (signed-byte 32) location))
+  #+sbcl (declare (sb-ext:muffle-conditions sb-ext:compiler-note))
   (etypecase data
     (vec4 (%gl:uniform-4f location (vx data) (vy data) (vz data) (vw data)))
     (vec3 (%gl:uniform-3f location (vx data) (vy data) (vz data)))
@@ -128,9 +129,10 @@
         (locationg (gensym "LOCATION")))
     (cond ((constantp name env)
            `(let ((,nameg (load-time-value
-                           (etypecase ,name
-                             (string ,name)
-                             (symbol (symbol->c-name ,name)))))
+                           (locally #+sbcl (declare (sb-ext:muffle-conditions sb-ext:compiler-note))
+                             (etypecase ,name
+                               (string ,name)
+                               (symbol (symbol->c-name ,name))))))
                   (,assetg ,asset))
               (%set-uniform (uniform-location ,assetg ,nameg) ,data)))
           (T
