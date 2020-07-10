@@ -78,9 +78,6 @@
       (setf (vx (location text)) 5)
       (setf (text text) (compose-controller-debug-text controller ev)))))
 
-(defmethod register-object-for-pass ((pass per-object-pass) (controller controller))
-  (register-object-for-pass pass (text controller)))
-
 (defmethod render ((controller controller) program)
   (when (show-overlay controller)
     (let ((fps-buffer (fps-buffer controller)))

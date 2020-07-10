@@ -29,6 +29,12 @@
 (defgeneric update-particle-state (emitter tick input output))
 (defgeneric new-particle-count (emitter tick)) ; => N
 
+(defmethod update-particle-state ((emitter particle-emitter) tick particle output)
+  (let ((life (lifetime particle)))
+    (incf (vx2 life) (dt tick))
+    (setf (lifetime output) life)
+    (< (vx2 life) (vy2 life))))
+
 (defmethod handle ((ev tick) (emitter particle-emitter))
   (let ((vbo (particle-buffer emitter))
         (write-offset 0))
@@ -57,12 +63,8 @@
 (defmethod initial-particle-state :before ((emitter simple-particle-emitter) tick particle)
   (setf (location particle) (vec 0 0 0)))
 
-(defmethod update-particle-state ((emitter simple-particle-emitter) tick particle output)
-  (setf (location output) (v+ (location particle) (velocity particle)))
-  (let ((life (lifetime particle)))
-    (incf (vx2 life) (dt tick))
-    (setf (lifetime output) life)
-    (< (vx2 life) (vy2 life))))
+(defmethod update-particle-state :before ((emitter simple-particle-emitter) tick particle output)
+  (setf (location output) (v+ (location particle) (velocity particle))))
 
 (defmethod render :before ((emitter simple-particle-emitter) (program shader-program))
   (setf (uniform program "view_matrix") (view-matrix))
