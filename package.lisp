@@ -249,6 +249,7 @@
    #:text
    #:show-overlay
    #:observe
+   #:observe!
    #:stop-observing
    #:load-request
    #:maybe-reload-scene)

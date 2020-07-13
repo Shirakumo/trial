@@ -126,6 +126,10 @@
                                    ,thing))
          args))
 
+(defmacro observe! (form &rest args)
+  (let ((ev (gensym "EV")))
+    `(observe (lambda (,ev) (declare (ignore ,ev)) ,form) ,@args)))
+
 (defmethod stop-observing (&optional title)
   (let ((observers *observers*))
     (if title
