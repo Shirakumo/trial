@@ -32,7 +32,7 @@
   (:default-initargs
    :name :controller))
 
-(defmethod register-object-for-pass :after (pass (controller controller))
+(defmethod register-object-for-pass (pass (controller controller))
   (register-object-for-pass pass (text controller)))
 
 (defmethod stage ((controller controller) (area staging-area))
