@@ -104,6 +104,9 @@
   (map-event ev *scene*)
   (retain-event ev))
 
+(defmethod handle ((ev lose-focus) (controller controller))
+  (clear-retained))
+
 (defmethod handle ((ev reload-scene) (controller controller))
   (let ((old (scene (display controller))))
     (change-scene (display controller) (make-instance (type-of old) :clock (clock old)))))
