@@ -87,7 +87,11 @@
          asset id))
 
 (defmethod reload ((asset asset))
-  (apply #'generate-resources asset (input* asset) (generation-arguments asset)))
+  (when (loaded-p asset)
+    (with-context (*context*)
+      (deallocate asset)
+      (loop for resource in (enlist (apply #'generate-resources asset (input* asset) (generation-arguments asset)))
+            do (allocate resource)))))
 
 (defmethod load ((asset asset))
   (apply #'generate-resources asset (input* asset) (generation-arguments asset)))
