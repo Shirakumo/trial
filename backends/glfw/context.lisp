@@ -320,6 +320,16 @@
   (deploy:define-library glfw-wayland
     :dont-open T)
 
+  (deploy:define-hook (:deploy copy-glfw) (directory)
+    (let ((path (deploy:library-path (deploy:ensure-library '%glfw::glfw)))
+          (target (make-pathname :name (if (deploy:env-set-p "WAYLAND_DISPLAY")
+                                           "libglfw-wayland"
+                                           "libglfw-x11")
+                                 :type "so"
+                                 :defaults directory)))
+      (unless (uiop:file-exists-p target)
+        (uiop:copy-file path target))))
+
   (deploy:define-hook (:boot load-glfw) ()
     (cond ((deploy:env-set-p "WAYLAND_DISPLAY")
            (deploy:status 1 "Detected Wayland, loading GLFW3-Wayland.")
