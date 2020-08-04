@@ -6,7 +6,18 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(define-global +retention-table* (make-hash-table :test 'eql))
 (defvar *mappings* (make-hash-table :test 'equal))
+
+(declaim (inline retained (setf retained) clear-retained))
+(defun retained (id)
+  (gethash id +retention-table*))
+
+(defun (setf retained) (bool id)
+  (setf (gethash id +retention-table*) bool))
+
+(defun clear-retained ()
+  (clrhash +retention-table*))
 
 (defun mapping (name)
   (gethash name *mappings*))
@@ -17,28 +28,22 @@
 (defun remove-mapping (name)
   (remhash name *mappings*))
 
-(defmacro define-mapping ((name event-type) args &body body)
-  (let ((ev (or (first args) (gensym "EVENT"))))
-    `(setf (mapping ',name)
-           (lambda (,ev)
-             (when (typep ,ev ',event-type)
-               (with-slots ,(rest args) ,ev
-                 ,@body))))))
+(defmacro define-mapping (name (loop ev) &body body)
+  `(setf (mapping ',name)
+         (lambda (,loop ,ev)
+           ,@body)))
 
 (defmacro define-simple-mapping (name (from to &rest to-args) &body tests)
-  `(setf (mapping ',name)
-         (lambda (,from)
-           (when (typep ,from ',from)
-             (with-all-slots-bound (,from ,from)
-               (when (and ,@tests)
-                 (make-instance ',to ,@to-args)))))))
+  (let ((loop (gensym "LOOP")))
+    `(define-mapping ,name (,loop ,from)
+       (when (typep ,from ',from)
+         (with-all-slots-bound (,from ,from)
+           (when (and ,@tests)
+             (issue ,loop (make-instance ',to ,@to-args))))))))
 
-;; Currently this system is very unoptimised as it has to
-;; loop through all potential mappers every time. Optimisation
-;; could be done by separating out the event-type test somehow.
 (defun map-event (event loop)
   (loop for function being the hash-values of *mappings*
-        for result = (funcall function event)
+        do (funcall function loop event)
         do (when result (issue loop result))))
 
 (defclass action (event)

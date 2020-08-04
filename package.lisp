@@ -510,6 +510,8 @@
    #:launch)
   ;; mapping.lisp
   (:export
+   #:retained
+   #:clear-retained
    #:mapping
    #:remove-mapping
    #:define-mapping
@@ -586,16 +588,6 @@
    #:clear-observers
    #:observe-generation
    #:resource)
-  ;; retention.lisp
-  (:export
-   #:retained
-   #:clear-retained
-   #:retention-function
-   #:remove-retention-function
-   #:retain-event
-   #:define-retention
-   #:define-coupled-retention
-   #:define-uniform-retention)
   ;; scene-buffer.lisp
   (:export
    #:scene-buffer
