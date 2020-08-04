@@ -43,8 +43,7 @@
 
 (defun map-event (event loop)
   (loop for function being the hash-values of *mappings*
-        do (funcall function loop event)
-        do (when result (issue loop result))))
+        do (funcall function loop event)))
 
 (defclass action (event)
   ((source-event :initarg :source-event :initform NIL :accessor source-event)))
@@ -115,7 +114,7 @@
              for (evtype condition) = (apply #'process-trigger-form ev trigger)
              collect (list evtype
                            `(when ,condition
-                              (issue ,loop (make-instance ',action))))))
+                              (issue ,loop (make-instance ',action :source-event ,ev))))))
       (retain
        (loop for trigger in triggers
              for (evup evdn cdup cddn) = (apply #'process-retain-form ev trigger)

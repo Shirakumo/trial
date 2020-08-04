@@ -101,8 +101,7 @@
   (quit *context*))
 
 (defmethod handle ((ev event) (controller controller))
-  (map-event ev *scene*)
-  (retain-event ev))
+  (map-event ev *scene*))
 
 (defmethod handle ((ev lose-focus) (controller controller))
   (clear-retained))
