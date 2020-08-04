@@ -117,12 +117,14 @@
                               (issue ,loop (make-instance ',action :source-event ,ev))))))
       (retain
        (loop for trigger in triggers
-             for (evup evdn cdup cddn) = (apply #'process-retain-form ev trigger)
-             collect (list evup
-                           `(when ,cdup
-                              (setf (retained ',action) T)))
+             for (evdn evup cddn cdup) = (apply #'process-retain-form ev trigger)
              collect (list evdn
-                           `(when ,(or cddn cdup)
+                           `(when ,cddn
+                              ,@(when (find-class action NIL)
+                                  `((issue ,loop (make-instance ',action :source-event ,ev))))
+                              (setf (retained ',action) T)))
+             collect (list evup
+                           `(when ,(or cdup cddn)
                               (setf (retained ',action) NIL))))))))
 
 ;; TODO: could optimise this further by combining ONE-OF tests.

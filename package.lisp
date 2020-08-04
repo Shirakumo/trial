@@ -520,7 +520,9 @@
    #:action
    #:remove-action-mappings
    #:define-action
-   #:load-mapping)
+   #:load-mapping
+   #:trigger
+   #:retain)
   ;; phong.lisp
   (:export)
   ;; pipeline.lisp
