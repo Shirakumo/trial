@@ -103,6 +103,14 @@
     (mouse-release
      (setf (retained (button ev)) NIL))
     (key-press
-     (setf (retained (key ev)) T))
+     (setf (retained (key ev)) T)
+     (case (key ev)
+       ((:left-control :right-control) (setf (ratained :control) T))
+       ((:left-shift :right-shift) (setf (ratained :shift) T))
+       ((:left-alt :right-alt) (setf (ratained :alt) T))))
     (key-release
-     (setf (retained (key ev)) NIL))))
+     (setf (retained (key ev)) NIL)
+     (case (key ev)
+       ((:left-control :right-control) (setf (ratained :control) NIL))
+       ((:left-shift :right-shift) (setf (ratained :shift) NIL))
+       ((:left-alt :right-alt) (setf (ratained :alt) NIL))))))
