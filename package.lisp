@@ -519,7 +519,8 @@
    #:map-event
    #:action
    #:remove-action-mappings
-   #:define-action)
+   #:define-action
+   #:load-mapping)
   ;; phong.lisp
   (:export)
   ;; pipeline.lisp

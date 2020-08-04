@@ -141,8 +141,27 @@
         unless x collect k
         unless x collect v))
 
+(defmacro xor (a &rest options)
+  (cond ((null options) a)
+        (T
+         (let ((found (gensym "FOUND")))
+           `(let ((,found NIL))
+              (block NIL
+                ,@(loop for option in (list* a options)
+                        collect `(when ,option
+                                   (if ,found
+                                       (return NIL)
+                                       (setf ,found T))))
+                ,found))))))
+
 (defun one-of (thing &rest options)
   (find thing options))
+
+(define-compiler-macro one-of (thing &rest options)
+  (let ((thingg (gensym "THING")))
+    `(let ((,thingg ,thing))
+       (or ,@(loop for option in options
+                   collect `(eql ,thingg ,option))))))
 
 (defun input-source (&optional (stream *query-io*))
   (with-output-to-string (out)
