@@ -280,7 +280,8 @@
       (unless (and log (string/= "" log))
         (setf log (merge-pathnames "trial.log" (or (uiop:argv0) (user-homedir-pathname)))))
       (v:define-pipe ()
-        (v:file-faucet :file log)))))
+        (v:file-faucet :file log)))
+    (v:info :trial "Running on ~a ~a ~a" (machine-type) (machine-instance) (machine-version))))
 
 (defun make-thread (name func)
   (bt:make-thread (lambda ()
