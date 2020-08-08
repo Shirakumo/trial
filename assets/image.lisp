@@ -26,6 +26,8 @@
                                  (tga:image-channels tga))
                               :unsigned)
             (ecase (tga:image-channels tga)
+              (1 :red)
+              (2 :gr)
               (3 :bgr)
               (4 :bgra)))))
 
@@ -42,13 +44,12 @@
               (:truecolour-alpha :rgba)))))
 
 (defmethod load-image (path (type (eql :tiff)) &key)
-  (let* ((tiff (retrospectiff:read-tiff-file path))
-         (bits (aref (retrospectiff:tiff-image-bits-per-sample tiff) 1)))
+  (let* ((tiff (retrospectiff:read-tiff-file path)))
     ;; FIXME: higher bittage than 8 still returns an ub8 array, but GL doesn't like it.
     (values (retrospectiff:tiff-image-data tiff)
             (retrospectiff:tiff-image-width tiff)
             (retrospectiff:tiff-image-length tiff)
-            (infer-pixel-type bits :unsigned)
+            (infer-pixel-type (retrospectiff:tiff-image-bits-per-sample tiff) :unsigned)
             (ecase (retrospectiff:tiff-image-samples-per-pixel tiff)
               (1 :red)
               (3 :rgb)
