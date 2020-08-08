@@ -375,9 +375,10 @@
 (defmethod render ((pass single-shader-pass) (_ null))
   (render pass (shader-program pass)))
 
-(defmethod render :before ((pass single-shader-pass) (program shader-program))
+(defmethod render :around ((pass single-shader-pass) (program shader-program))
   (gl:use-program (gl-name program))
-  (prepare-pass-program pass program))
+  (prepare-pass-program pass program)
+  (call-next-method))
 
 (define-shader-pass single-shader-scene-pass (single-shader-pass scene-pass)
   ())
