@@ -296,7 +296,9 @@
                                       (*debug-io* . ,*debug-io*))))
 
 (defmacro with-thread ((name) &body body)
-  `(make-thread ,name (lambda () ,@body)))
+  `(make-thread ,name (lambda ()
+                        (handler-bind ((error #'standalone-error-handler))
+                          ,@body))))
 
 (defun wait-for-thread-exit (thread &key (timeout 1) (interval 0.1))
   (loop for i from 0
