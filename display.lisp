@@ -43,6 +43,7 @@
   (gl:front-face :ccw)
   (gl:cull-face :back)
   (gl:hint :line-smooth-hint :nicest)
+  (gl:pixel-store :unpack-alignment 1)
   (with-vec (r g b a) (clear-color display)
     (gl:clear-color r g b a))
   (enable :blend :multisample :cull-face :stencil-test :line-smooth :depth-test :depth-clamp))
