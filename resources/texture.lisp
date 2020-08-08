@@ -358,6 +358,8 @@
          (max* (a b)
            (cond ((and a b) (max a b)) (a a) (b b))))
     (when (and (same :target)
+               (same :width)
+               (same :height)
                (same :pixel-type)
                (same :pixel-data)
                (same :mag-filter)
