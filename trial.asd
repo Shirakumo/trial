@@ -134,6 +134,7 @@
                :retrospectiff
                :terrable
                :mmap
+               :messagebox
                :form-fiddle
                :lambda-fiddle
                :jsown))
