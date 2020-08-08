@@ -751,6 +751,19 @@
           (:unsigned :unsigned-int)
           (:float :float)))))
 
+(defun pixel-type->cl-type (type)
+  (case type
+    (:byte '(signed-byte 8))
+    (:unsigned-byte '(unsigned-byte 8))
+    (:short '(signed-byte 16))
+    (:unsigned-short '(unsigned-byte 16))
+    (:int '(signed-byte 32))
+    (:unsigned-int '(unsigned-byte 32))
+    (:half-float 'short-flfoat)
+    (:float 'single-float)
+    (:double 'double-float)
+    (T T)))
+
 (defvar *gl-extensions* ())
 
 (defun cache-gl-extensions ()
