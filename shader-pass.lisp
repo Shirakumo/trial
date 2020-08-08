@@ -383,11 +383,11 @@
   ())
 
 (define-shader-pass post-effect-pass (single-shader-pass)
-  ((vertex-array :initform (asset 'trial 'fullscreen-square) :accessor vertex-array)))
+  ((vertex-array :initform (// 'trial 'fullscreen-square) :accessor vertex-array)))
 
 (defmethod compile-to-pass (object (pass post-effect-pass)))
 
-(defmethod render ((pass post-effect-pass) thing)
+(defmethod render ((pass post-effect-pass) (program shader-program))
   (let ((vao (vertex-array pass)))
     (with-pushed-attribs
       (disable :depth-test)
