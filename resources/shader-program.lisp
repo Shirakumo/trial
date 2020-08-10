@@ -41,7 +41,8 @@
     (v:debug :trial.asset "Linked ~a with ~a." program shaders)
     (loop for buffer in (buffers program)
           for i from 0
-          do (bind buffer program i))))
+          do (bind buffer program i))
+    (clrhash (uniform-map program))))
 
 (defmethod (setf shaders) :before (shaders (program shader-program))
   (when (allocated-p program)

@@ -376,7 +376,6 @@
   (render pass (shader-program pass)))
 
 (defmethod render :around ((pass single-shader-pass) (program shader-program))
-  (gl:use-program (gl-name program))
   (prepare-pass-program pass program)
   (call-next-method))
 

@@ -20,14 +20,14 @@
        (flet ((,thunk (,ptr)
                 (declare (type cffi:foreign-pointer ,ptr))
                 ,@body))
-         (cond #+sbcl
+         (cond ((static-vector-p ,datag)
+                (let ((,ptr (static-vector-pointer ,datag)))
+                  (,thunk ,ptr)))
+               #+sbcl
                ((typep ,datag 'sb-kernel:simple-unboxed-array)
                 (sb-sys:with-pinned-objects (,datag)
                   (let ((,ptr (sb-sys:vector-sap ,datag)))
                     (,thunk ,ptr))))
-               ((static-vector-p ,datag)
-                (let ((,ptr (static-vector-pointer ,datag)))
-                  (,thunk ,ptr)))
                (T
                 (let ((,type (cl-type->gl-type ,(or element-type `(array-element-type ,datag)))))
                   (cffi:with-foreign-object (,ptr ,type (length ,datag))
