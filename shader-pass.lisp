@@ -75,7 +75,8 @@
   ())
 
 (define-shader-entity shader-pass (flow:static-node)
-  ((framebuffer :initform NIL :accessor framebuffer))
+  ((framebuffer :initform NIL :accessor framebuffer)
+   (active-p :initform T :accessor active-p))
   (:metaclass shader-pass-class)
   (:inhibit-shaders (shader-entity :fragment-shader)))
 

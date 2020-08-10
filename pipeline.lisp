@@ -189,12 +189,16 @@
 
 (defmethod render ((pipeline pipeline) target)
   (loop for pass across (passes pipeline)
-        do (render pass target)))
+        do (when (active-p pass)
+             (render pass target))))
 
 (defmethod blit-to-screen ((pipeline pipeline))
   (let ((passes (passes pipeline)))
-    (when (< 0 (length passes))
-      (blit-to-screen (aref passes (1- (length passes)))))))
+    (loop for i downfrom (1- (length passes)) to 0
+          for pass = (aref passes i)
+          do (when (active-p pass)
+               (blit-to-screen pass)
+               (return)))))
 
 (defmethod register-object-for-pass ((pipeline pipeline) object)
   (loop for pass across (passes pipeline)

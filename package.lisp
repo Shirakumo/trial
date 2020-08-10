@@ -652,7 +652,7 @@
    #:buffer
    #:shader-pass
    #:framebuffer
-   #:uniforms
+   #:active-p
    #:renderable
    #:transformed
    #:apply-transforms
