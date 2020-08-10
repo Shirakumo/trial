@@ -94,7 +94,7 @@
       (orthographic-projection 0 (width *context*)
                                0 (height *context*)
                                0 10)
-      (translate-by 0 (height *context*) 0)
+      (translate-by 2 (- (height *context*) 14) 0)
       (render (text controller) program))))
 
 (defmethod handle ((ev quit-game) (controller controller))

@@ -10,9 +10,9 @@
   ((line-width :initarg :line-width :initform 3.0 :accessor line-width))
   (:inhibit-shaders (vertex-entity :vertex-shader)))
 
-(defmethod initialize-instance :after ((lines lines) &key vertex-array)
+(defmethod initialize-instance :after ((lines lines) &key vertex-array points)
   (unless vertex-array
-    (setf (vertex-array lines) (generate-resources 'mesh-loader (make-lines ()) :data-usage :dynamic-draw))))
+    (setf (vertex-array lines) (generate-resources 'mesh-loader (make-lines points) :data-usage :dynamic-draw))))
 
 (defmethod replace-vertex-data ((lines lines) points &key (update T) (default-color (vec 0 0 0 1)))
   (replace-vertex-data (vertex-array lines) (make-lines points :default-color default-color) :update update))
