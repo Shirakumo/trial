@@ -100,7 +100,9 @@
                     :min-filter :nearest
                     :mag-filter :nearest))
              (T
-              (list :internal-format :rgba))))))
+              (list :internal-format :rgba
+                    :min-filter :linear
+                    :mag-filter :linear))))))
 
 (defun allocate-textures (passes textures texspec)
   (flet ((kind (port)
