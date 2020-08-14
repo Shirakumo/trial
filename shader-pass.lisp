@@ -387,6 +387,7 @@
   ((vertex-array :initform (// 'trial 'fullscreen-square) :accessor vertex-array)))
 
 (defmethod compile-to-pass (object (pass post-effect-pass)))
+(defmethod compile-into-pass (object container (pass post-effect-pass)))
 
 (defmethod render ((pass post-effect-pass) (program shader-program))
   (let ((vao (vertex-array pass)))

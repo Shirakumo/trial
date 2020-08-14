@@ -32,6 +32,8 @@
                      b (- (/ h 2)) u (+ (/ h 2))))
       (:topleft (setf l 0 r w
                       b (- h) u 0))
+      (:topcenter (setf l (- (/ w 2)) r (+ (/ w 2))
+                        b (- h) u 0))
       (:bottomleft (setf l 0 r w
                          b 0 u h)))
     (incf l x) (incf r x) (incf u y) (incf b y)
@@ -267,10 +269,6 @@
 
 (define-asset (trial empty-vertex-array) mesh
     (make-instance 'vertex-mesh))
-
-(define-asset (trial teapot) mesh
-    #p"teapot.vf"
-  :geometry-name :teapotmesh)
 
 (define-asset (trial axes) mesh
     (make-lines (list (list (vec 0 0 0) (vec 1 0 0 1)) (list (vec 10 0 0) (vec 1 0 0 1))
