@@ -9,15 +9,27 @@
 (defclass gamepad-input-handler ()
   ((last-device-probe :initform 0 :accessor last-device-probe)))
 
+(defmacro with-gamepad-failure-handling ((&key (restart ''ignore-gamepad-failure)) &body body)
+  `(with-simple-restart (ignore-gamepad-failure "Ignore the gamepad failure.")
+     (handler-bind ((gamepad:gamepad-error
+                      (lambda (e)
+                        (declare (ignore e))
+                        (when (find-restart 'gamepad:drop-device)
+                          (invoke-restart 'gamepad:drop-device))
+                        ,(when restart
+                           `(invoke-restart ,restart)))))
+       ,@body)))
+
 (defmethod start :after ((handler gamepad-input-handler))
-  (gamepad:init))
+  (with-gamepad-failure-handling (:restart NIL)
+    (gamepad:init)))
 
 (defmethod stop :after ((handler gamepad-input-handler))
-  (gamepad:shutdown))
+  (with-gamepad-failure-handling ()
+    (gamepad:shutdown)))
 
 (defmethod poll-input :after ((handler gamepad-input-handler))
-  (handler-bind ((gamepad:gamepad-error (lambda (e)
-                                          (invoke-restart 'gamepad:drop-device))))
+  (with-gamepad-failure-handling ()
     (flet ((process (event)
              (typecase event
                (gamepad:button-down
