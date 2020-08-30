@@ -20,52 +20,58 @@
 (defmethod dependencies ((framebuffer framebuffer))
   (mapcar #'second (attachments framebuffer)))
 
-(defmethod allocate ((framebuffer framebuffer))
-  (let ((fbo (gl:gen-framebuffer))
-        (color-attachments (loop for attachment in (attachments framebuffer)
+(defun bind-framebuffer-attachments (framebuffer attachments)
+  (let ((color-attachments (loop for attachment in attachments
                                  unless (find (first attachment) '(:depth-attachment :stencil-attachment :depth-stencil-attachment))
                                  collect (first attachment))))
+    (gl:bind-framebuffer :framebuffer (gl-name framebuffer))
+    (with-unwind-protection (gl:bind-framebuffer :framebuffer 0)
+      (dolist (attachment attachments)
+        (destructuring-bind (attachment texture &key (level 0) layer &allow-other-keys) attachment
+          (check-framebuffer-attachment attachment)
+          (check-type texture texture)
+          (check-allocated texture)
+          (v:debug :trial.framebuffer "Attaching ~a~@[:~a~] as ~a to ~a."
+                   texture layer attachment framebuffer)
+          (cond ((null (width framebuffer))
+                 (setf (width framebuffer) (width texture)))
+                ((/= (width framebuffer) (width texture))
+                 (error "Cannot attach~%  ~a~%to~%  ~a~%, as the width is mismatched."
+                        texture framebuffer)))
+          (cond ((null (height framebuffer))
+                 (setf (height framebuffer) (height texture)))
+                ((/= (height framebuffer) (height texture))
+                 (error "Cannot attach~%  ~a~%to~%  ~a~%, as the height is mismatched."
+                        texture framebuffer)))
+          (if layer
+              (%gl:framebuffer-texture-layer :framebuffer attachment (gl-name texture) level layer)
+              (%gl:framebuffer-texture :framebuffer attachment (gl-name texture) level))
+          (let ((completeness (gl:check-framebuffer-status :framebuffer)))
+            (unless (find completeness '(:framebuffer-complete :framebuffer-complete-oes))
+              (error "Failed to attach ~a as ~s to ~a: ~s"
+                     texture attachment framebuffer completeness)))))
+      (cond (color-attachments
+             (gl:draw-buffers color-attachments))
+            (T
+             (gl:draw-buffer :none)
+             (gl:read-buffer :none)))
+      (unless (and (width framebuffer) (height framebuffer))
+        (error "The framebuffer has no attachments and no default width and height set!"))
+      (unless attachments
+        (when-gl-extension :gl-arb-framebuffer-no-attachments
+          (%gl:framebuffer-parameter-i :framebuffer :framebuffer-default-width (width framebuffer))
+          (%gl:framebuffer-parameter-i :framebuffer :framebuffer-default-height (height framebuffer)))))))
+
+(defmethod (setf attachments) :before (attachments (framebuffer framebuffer))
+  (when (allocated-p framebuffer)
+    (with-cleanup-on-failure (bind-framebuffer-attachments framebuffer (attachments framebuffer))
+      (bind-framebuffer-attachments framebuffer attachments))))
+
+(defmethod allocate ((framebuffer framebuffer))
+  (let ((fbo (gl:gen-framebuffer)))
     (with-cleanup-on-failure (gl:delete-framebuffers (list fbo))
-      (gl:bind-framebuffer :framebuffer fbo)
-      (unwind-protect
-           (progn
-             (dolist (attachment (attachments framebuffer))
-               (destructuring-bind (attachment texture &key (level 0) layer &allow-other-keys) attachment
-                 (check-framebuffer-attachment attachment)
-                 (check-type texture texture)
-                 (check-allocated texture)
-                 (v:debug :trial.framebuffer "Attaching ~a~@[:~a~] as ~a to ~a."
-                          texture layer attachment framebuffer)
-                 (cond ((null (width framebuffer))
-                        (setf (width framebuffer) (width texture)))
-                       ((/= (width framebuffer) (width texture))
-                        (error "Cannot attach~%  ~a~%to~%  ~a~%, as the width is mismatched."
-                               texture framebuffer)))
-                 (cond ((null (height framebuffer))
-                        (setf (height framebuffer) (height texture)))
-                       ((/= (height framebuffer) (height texture))
-                        (error "Cannot attach~%  ~a~%to~%  ~a~%, as the height is mismatched."
-                               texture framebuffer)))
-                 (if layer
-                     (%gl:framebuffer-texture-layer :framebuffer attachment (gl-name texture) level layer)
-                     (%gl:framebuffer-texture :framebuffer attachment (gl-name texture) level))
-                 (let ((completeness (gl:check-framebuffer-status :framebuffer)))
-                   (unless (find completeness '(:framebuffer-complete :framebuffer-complete-oes))
-                     (error "Failed to attach ~a as ~s to ~a: ~s"
-                            texture attachment framebuffer completeness)))))
-             (cond (color-attachments
-                    (gl:draw-buffers color-attachments))
-                   (T
-                    (gl:draw-buffer :none)
-                    (gl:read-buffer :none)))
-             (unless (and (width framebuffer) (height framebuffer))
-               (error "The framebuffer has no attachments and no default width and height set!"))
-             (unless (attachments framebuffer)
-               (when-gl-extension :gl-arb-framebuffer-no-attachments
-                 (%gl:framebuffer-parameter-i :framebuffer :framebuffer-default-width (width framebuffer))
-                 (%gl:framebuffer-parameter-i :framebuffer :framebuffer-default-height (height framebuffer)))))
-        (gl:bind-framebuffer :framebuffer 0)
-        (setf (data-pointer framebuffer) fbo)))))
+      (setf (data-pointer framebuffer) fbo)
+      (bind-framebuffer-attachments framebuffer (attachments framebuffer)))))
 
 (defmethod deallocate ((framebuffer framebuffer))
   (gl:delete-framebuffers (list (gl-name framebuffer))))
