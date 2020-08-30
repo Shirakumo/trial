@@ -74,6 +74,17 @@
 (defmethod check-consistent ((output output))
   ())
 
+(defmethod (setf texture) :after ((new-texture texture) (port output))
+  (let ((fb (framebuffer (flow:node port))))
+    (when fb
+      (setf (attachments fb)
+            (loop for (attachment texture . args) in (attachments fb)
+                  collect (list* attachment
+                                 (if (eql attachment (attachment port))
+                                     new-texture
+                                     texture)
+                                 args))))))
+
 (define-shader-entity shader-pass (flow:static-node)
   ((framebuffer :initform NIL :accessor framebuffer)
    (active-p :initform T :accessor active-p))
