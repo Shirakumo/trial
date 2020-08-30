@@ -172,6 +172,9 @@
                                  :attachments (loop for port in (flow:ports pass)
                                                     when (typep port 'output)
                                                     collect (list (attachment port) (texture port))))))))
+      ;; Now re-set the activation to short-modify the pipeline as necessary.
+      (dolist (pass passes)
+        (setf (active-p pass) (active-p pass)))
       ;; All done.
       (v:info :trial.pipeline "~a pass order: ~a" pipeline passes)
       (v:info :trial.pipeline "~a texture count: ~a" pipeline (length textures))
@@ -179,9 +182,10 @@
               (loop for pass in passes
                     collect (list pass (loop for port in (flow:ports pass)
                                              collect (list (flow:name port) (texture port))))))
-      
       ;; FIXME: Replace textures with existing ones if they match to save on re-allocation.
-      ;; FIXME: When transitioning between scenes we should try to re-use existing textures and fbos to reduce the amount of unnecessary allocation.
+      ;; FIXME: When transitioning between scenes we should try to re-use existing textures
+      ;;        and fbos to reduce the amount of unnecessary allocation. This is separate
+      ;;        from the previous issue as the scenes typically have separate pipelines.
       (clear-pipeline pipeline)
       (setf (passes pipeline) (coerce passes 'vector))
       (setf (textures pipeline) textures)
