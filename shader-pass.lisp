@@ -234,10 +234,13 @@
       (push-pass-action pass `(render ,object ,program)))))
 
 (defmethod compile-to-pass :around ((object transformed) (pass scene-pass))
-  (push-pass-action pass `(push-matrix))
-  (push-pass-action pass `(apply-transforms ,object))
-  (call-next-method)
-  (push-pass-action pass `(pop-matrix)))
+  ;; KLUDGE: early out to avoid allocating pointless push/pop pairs.
+  (when (or (object-renderable-p object pass)
+            (typep object 'flare:container))
+    (push-pass-action pass `(push-matrix))
+    (push-pass-action pass `(apply-transforms ,object))
+    (call-next-method)
+    (push-pass-action pass `(pop-matrix))))
 
 (defmethod compile-to-pass :after ((object flare:container) (pass scene-pass))
   (for:for ((child over object))

@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial.alloy)
 
-(defclass renderer (org.shirakumo.alloy.renderers.opengl.msdf:renderer trial:resource)
+(defclass renderer (org.shirakumo.alloy.renderers.opengl.msdf:renderer trial:renderable trial:resource)
   ())
 
 (defmethod org.shirakumo.alloy.renderers.opengl.msdf:fontcache-directory ((renderer renderer))
@@ -40,7 +40,8 @@
   (alloy:deallocate renderer))
 
 (defmethod trial:compile-to-pass ((renderer renderer) (pass trial:scene-pass))
-  (trial::push-pass-action pass `(alloy:render ,renderer ,renderer)))
+  (when (trial:object-renderable-p renderer pass)
+    (trial::push-pass-action pass `(alloy:render ,renderer ,renderer))))
 
 (defmethod alloy:render :before ((renderer renderer) (ui alloy:ui))
   (let ((target (simple:transform-matrix renderer)))

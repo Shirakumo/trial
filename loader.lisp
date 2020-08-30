@@ -28,7 +28,7 @@
   (stage dependency area)
   ;; CAR: things this object depends on
   ;; CDR: things that depend on this object
-  (pushnew dependency (car (gethash object (staged area))))
+  (pushnew dependency (car (gethash object (staged area) (cons NIL NIL))))
   (pushnew object (cdr (gethash dependency (staged area)))))
 
 (defmethod load-before (a b) NIL)
