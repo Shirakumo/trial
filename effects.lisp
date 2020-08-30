@@ -17,12 +17,10 @@
    (color :port-type output)))
 
 (defmethod (setf active-p) :after (value (pass simple-post-effect-pass))
-  (let ((predecessor-port (flow:left (first (flow:connections (flow:port pass 'previous-pass)))))
-        (descendant-port (flow:right (first (flow:connections (flow:port pass 'color))))))
+  (let ((predecessor-port (flow:left (first (flow:connections (flow:port pass 'previous-pass))))))
     (if value
-        (setf (texture descendant-port) (texture (flow:port pass 'color)))
-        (setf (texture descendant-port) (texture predecessor-port)))
-    (print (list predecessor-port descendant-port))))
+        (setf (texture predecessor-port) (texture (flow:port pass 'previous-pass)))
+        (setf (texture predecessor-port) (texture (flow:port pass 'color))))))
 
 (define-shader-pass copy-pass (simple-post-effect-pass)
   ())
