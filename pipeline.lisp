@@ -139,13 +139,21 @@
   (v:info :trial.pipeline "~a packing for ~a (~ax~a)" pipeline target (width target) (height target))
   (let* ((passes (flow:topological-sort (nodes pipeline)))
          (textures (make-array 0 :initial-element NIL :adjustable T)))
-    ;; Compute texture set
-    (let ((texspecs (loop for port in (mapcan #'flow:ports passes)
-                          when (and (typep port 'flow:out-port)
-                                    (typep port 'texture-port))
-                          collect (normalized-texspec port))))
-      (dolist (texspec (join-texspecs texspecs))
-        (allocate-textures passes textures texspec)))
+    ;; Compute minimised texture set
+    ;; (let ((texspecs (loop for port in (mapcan #'flow:ports passes)
+    ;;                       when (and (typep port 'flow:out-port)
+    ;;                                 (typep port 'texture-port))
+    ;;                       collect (normalized-texspec port))))
+    ;;   (dolist (texspec (join-texspecs texspecs))
+    ;;     (allocate-textures passes textures texspec)))
+    ;; Compute full texture set
+    (loop for port in (mapcan #'flow:ports passes)
+          for texture = (apply #'make-instance 'texture (normalized-texspec port))
+          when (typep port '(and flow:out-port texture-port))
+          do (setf (texture port) texture)
+             (dolist (connection (flow:connections port))
+               (setf (texture (flow:right connection)) texture))
+             (vector-push-extend texture textures))
     ;; Extract texspecs
     (let ((texspecs (make-array (length textures))))
       (loop for i from 0 below (length textures)
