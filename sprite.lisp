@@ -75,6 +75,13 @@
     (setf (vertex-array sprite) (resource sprite-data 'vertex-array))
     (register-generation-observer sprite sprite-data)))
 
+(defmethod (setf sprite-data) ((data sprite-data) (sprite animated-sprite))
+  (setf (texture sprite) (resource data 'texture))
+  (setf (vertex-array sprite) (resource data 'vertex-array))
+  (setf (animations sprite) (animations data))
+  (setf (frames sprite) (frames data))
+  (setf (animation sprite) 0))
+
 (defmethod observe-generation ((sprite animated-sprite) (data sprite-data) result)
   (setf (animations sprite) (animations data))
   (setf (frames sprite) (frames data))
