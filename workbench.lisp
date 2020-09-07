@@ -28,13 +28,17 @@
   ((vertex-array :initform (// 'workbench 'cone))
    (voice :accessor voice)))
 
-(defmethod initialize-instance :after ((voice voice) &key)
-  (setf (voice voice) (harmony:play #p "~/Media/Celeste Original Soundtrack/Lena Raine - Celeste Original Soundtrack - 03 Resurrections.mp3"
-                                    :mixer :effect :repeat T)))
+(defmethod initialize-instance :after ((voice voice) &key file)
+  (setf (voice voice) (harmony:play file :mixer :effect :repeat T :effects '((mixed:speed-change :speed-factor 1.0))
+                                         :location (list (vx (location voice)) (vy (location voice)) (vz (location voice))))))
 
 (defmethod handle ((ev tick) (voice voice))
   (setf (harmony:location (voice voice))
         (list (vx (location voice)) (vy (location voice)) (vz (location voice)))))
+
+(defmethod handle ((ev mouse-scroll) (voice voice))
+  (incf (mixed:field :speed-factor (harmony:segment 2 (voice voice)))
+        (/ (delta ev) 10)))
 
 (define-shader-entity guy (listener vertex-entity located-entity)
   ((vertex-array :initform (// 'workbench 'sphere))))
@@ -69,7 +73,8 @@
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
     (enter (make-instance 'grid) scene)
-    (enter (make-instance 'voice :location (vec 100 0 100)) scene)
+    (enter (make-instance 'voice :location (vec 100 0 100) :file #p "~/Media/Celeste Original Soundtrack/Lena Raine - Celeste Original Soundtrack - 03 Resurrections.mp3") scene)
+    (enter (make-instance 'voice :location (vec -100 0) :file #p "~/Media/Celeste Original Soundtrack/Lena Raine - Celeste Original Soundtrack - 04 Awake.mp3") scene)
     (enter (make-instance 'guy :name :guy) scene)
     (enter (make-instance 'following-camera :target (unit :guy scene) :location (vec 0 100 -100)) scene)
     (enter (make-instance 'render-pass) scene))
