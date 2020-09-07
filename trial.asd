@@ -78,8 +78,6 @@
                (:file "transforms" :depends-on ("package"))
                (:file "type-info" :depends-on ("package" "toolkit"))
                (:file "window" :depends-on ("package"))
-               ;; Testing, remove for production.
-               (:file "workbench" :depends-on ("assets" "asset-pool" "formats" "main" "helpers"))
                (:module "resources"
                 :depends-on ("package" "resource" "toolkit" "data-pointer")
                 :components ((:file "buffer-object")
