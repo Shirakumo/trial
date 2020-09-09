@@ -100,12 +100,17 @@
 (defgeneric capture (thing &key &allow-other-keys))
 (defmethod capture ((framebuffer framebuffer) &key (x 0) (y 0) (width (width framebuffer)) (height (height framebuffer)) file)
   (gl:bind-framebuffer :read-framebuffer (gl-name framebuffer))
-  (let ((data (gl:read-pixels x y width height :rgb :unsigned-byte)))
-    (if file
-        (zpng:write-png (make-instance 'zpng:png :color-type :truecolor
-                                                 :width width
-                                                 :height height
-                                                 :image-data data)
-                        file)
-        data))
-  (gl:bind-framebuffer :read-framebuffer 0))
+  (let* ((size (* width height 3))
+         (array (static-vectors:make-static-vector size)))
+    (unwind-protect
+         (progn
+           (%gl:read-pixels x y width height :rgb :unsigned-byte (static-vectors:static-vector-pointer array))
+           (if file
+               (zpng:write-png (make-instance 'zpng:png :color-type :truecolor
+                                                        :width width
+                                                        :height height
+                                                        :image-data (flip-image-vertically array width height 3))
+                               file)
+               array))
+      (static-vectors:free-static-vector array)
+      (gl:bind-framebuffer :read-framebuffer 0))))

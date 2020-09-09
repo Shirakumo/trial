@@ -13,7 +13,8 @@
           do (loop for x1 from (* y1 stride)
                    for x2 from (* y2 stride)
                    repeat stride
-                   do (rotatef (aref image x1) (aref image x2))))))
+                   do (rotatef (aref image x1) (aref image x2))))
+    image))
 
 (defgeneric load-image (path type &key width height pixel-type pixel-format &allow-other-keys))
 
