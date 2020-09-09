@@ -69,7 +69,9 @@
   (:export
    #:framebuffer
    #:attachments
-   #:resize)
+   #:resize
+   #:capture
+   #:blit-to-screen)
   ;; resources/shader-program.lisp
   (:export
    #:shader-program

@@ -88,9 +88,24 @@
   ;; FIXME: Figure out which to clearq depending on framebuffer attachments
   (gl:clear :color-buffer :depth-buffer :stencil-buffer))
 
+;; FIXME: this should ideally be more generic, with blitting from one to another framebuffer
+;;        and handling the screen as a special framebuffer instance that's always around.
 (defmethod blit-to-screen ((framebuffer framebuffer))
   (gl:bind-framebuffer :read-framebuffer (gl-name framebuffer))
   (gl:bind-framebuffer :draw-framebuffer 0)
   (%gl:blit-framebuffer 0 0 (width framebuffer) (height framebuffer) 0 0 (width *context*) (height *context*)
                         (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
                         (cffi:foreign-enum-value '%gl:enum :nearest)))
+
+(defgeneric capture (thing &key &allow-other-keys))
+(defmethod capture ((framebuffer framebuffer) &key (x 0) (y 0) (width (width framebuffer)) (height (height framebuffer)) file)
+  (gl:bind-framebuffer :read-framebuffer (gl-name framebuffer))
+  (let ((data (gl:read-pixels x y width height :rgb :unsigned-byte)))
+    (if file
+        (zpng:write-png (make-instance 'zpng:png :color-type :truecolor
+                                                 :width width
+                                                 :height height
+                                                 :image-data data)
+                        file)
+        data))
+  (gl:bind-framebuffer :read-framebuffer 0))

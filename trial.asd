@@ -135,7 +135,8 @@
                :messagebox
                :form-fiddle
                :lambda-fiddle
-               :jsown))
+               :jsown
+               :zpng))
 
-;; FIXME: factor out dependencies into systems
-;;        like for image, model formats, etc.
+;; TODO: factor out dependencies into systems
+;;       like for image, model formats, etc.

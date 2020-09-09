@@ -204,6 +204,9 @@
 (defmethod blit-to-screen ((pass shader-pass))
   (blit-to-screen (framebuffer pass)))
 
+(defmethod capture ((pass shader-pass) &rest args)
+  (apply #'capture (framebuffer pass) args))
+
 (defmethod render :before ((pass shader-pass) target)
   (activate (framebuffer pass))
   (bind-pass-textures pass))
