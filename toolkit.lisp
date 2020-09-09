@@ -265,6 +265,25 @@
                       (return NIL))
                     (bt:thread-yield))))
 
+(defun tempdir ()
+  (pathname
+   #+windows
+   (or (uiop:getenv "TEMP")
+       (merge-pathnames "AppData/Local/Temp/" (user-homedir-pathname)))
+   #+darwin
+   (or (uiop:getenv "TMPDIR")
+       "/tmp/")
+   #+linux
+   (or (uiop:getenv "XDG_RUNTIME_DIR")
+       "/tmp/")
+   #-(or windows darwin linux)
+   "/tmp/"))
+
+(defun tempfile ()
+  (make-pathname :name (format NIL "trial-~a-~a" (get-universal-time) (random 1000))
+                 :type "tmp"
+                 :directory (tempdir)))
+
 (defun logfile ()
   (let ((log (or (uiop:getenv "TRIAL_LOGFILE") "")))
     (if (string= "" log)
