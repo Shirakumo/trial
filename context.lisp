@@ -73,7 +73,7 @@
 (defgeneric current-p (context &optional thread))
 (defgeneric done-current (context))
 (defgeneric hide (context))
-(defgeneric show (context &key fullscreen))
+(defgeneric show (context &key &allow-other-keys))
 (defgeneric resize (context width height))
 (defgeneric quit (context))
 (defgeneric swap-buffers (context))

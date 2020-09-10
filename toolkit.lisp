@@ -282,7 +282,7 @@
 (defun tempfile ()
   (make-pathname :name (format NIL "trial-~a-~a" (get-universal-time) (random 1000))
                  :type "tmp"
-                 :directory (tempdir)))
+                 :defaults (tempdir)))
 
 (defun logfile ()
   (let ((log (or (uiop:getenv "TRIAL_LOGFILE") "")))
