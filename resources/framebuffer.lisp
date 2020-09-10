@@ -116,4 +116,8 @@
       (gl:bind-framebuffer :read-framebuffer 0))))
 
 (defmethod capture ((framebuffer null) &rest args)
-  (apply #'capture (make-instance 'framebuffer :data-pointer 0 :width (width *context*) :height (height *context*)) args))
+  (apply #'capture (make-instance 'framebuffer :data-pointer 0
+                                               :attachments ()
+                                               :width (width *context*)
+                                               :height (height *context*))
+         args))
