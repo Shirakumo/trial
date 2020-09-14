@@ -20,6 +20,9 @@
 (defmethod trial:handle ((ev trial:resize) (ui ui))
   (alloy:suggest-bounds (alloy:px-extent 0 0 (trial:width ev) (trial:height ev)) ui))
 
+(defmethod trial:stage ((ui ui) (area trial:staging-area))
+  (trial:stage (alloy:layout-tree ui) area))
+
 (defmacro define-event-translator (trial-type alloy-type &body args)
   `(defmethod trial:handle ((ev ,trial-type) (ui ui))
      (alloy:handle (make-instance ',alloy-type ,@args) ui)))

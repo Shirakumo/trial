@@ -26,6 +26,14 @@
   ;; FIXME: This is BAD, but Alloy gives us no way of generating the resource stubs.
   (alloy:allocate renderer))
 
+(defmethod trial:stage ((tree alloy:layout-tree) (area trial:staging-area))
+  (trial:stage (alloy:root tree) area)
+  (trial:stage (alloy:popups tree) area))
+
+(defmethod trial:stage ((layout alloy:layout) (area trial:staging-area))
+  (alloy:do-elements (element layout)
+    (trial:stage element area)))
+
 (defmethod trial:dependencies ((renderer renderer))
   (append (alexandria:hash-table-values (org.shirakumo.alloy.renderers.opengl.msdf:fontcache renderer))
           (alexandria:hash-table-values (opengl::resources renderer))))
