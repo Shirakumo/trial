@@ -14,8 +14,7 @@
 
 (defmethod initialize-instance :after ((main main) &key)
   (with-slots (scene controller) main
-    (setf (display controller) main)
-    (start scene)))
+    (setf (display controller) main)))
 
 (defmethod finalize ((main main))
   (with-slots (scene controller loader) main
@@ -43,7 +42,6 @@
   (v:info :trial.main "Setting up ~a" scene)
   (with-timing-report (info :trial.main "Scene setup took ~fs run time, ~fs clock time.")
     (call-next-method))
-  (start scene)
   ;; Cause camera to refresh
   (issue scene 'resize :width (width main) :height (height main))
   scene)
@@ -58,9 +56,9 @@
   (unless (eq old new)
     (when old (stop old))
     (setup-scene main new)
-    (if (commit new (loader main))
-        (setf (scene main) new)
-        (start old)))
+    (when (commit new (loader main))
+      (setf (scene main) new))
+    (start (scene main)))
   (values new old))
 
 (defun enter-and-load (object container main)
