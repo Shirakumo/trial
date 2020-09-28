@@ -10,9 +10,9 @@
   ())
 
 (defmethod trial:generate-resources ((generator sound-loader) path &key (mixer :effect) effects repeat (repeat-start 0) (volume 1.0) (resource (trial:resource generator T)))
-  (apply #'trial::ensure-instance resource 'voice
-         :mixer mixer :source path :effects effects :volume volume
-         :repeat repeat :repeat-start repeat-start))
+  (trial::ensure-instance resource 'voice
+                          :mixer mixer :source path :effects effects :volume volume
+                          :repeat repeat :repeat-start repeat-start))
 
 (defclass sound (trial:single-resource-asset trial:file-input-asset sound-loader)
   ())
@@ -59,15 +59,17 @@
         (sources (harmony:segment :sources harmony:*server*))
         (mixer (harmony:segment (mixer voice) harmony:*server*))
         (location (ensure-vector location))
-        (velocity (ensure-vector velocity)))
+        (velocity (ensure-vector velocity))
+        (volume (or volume (volume voice))))
     (setf (mixed:volume voice) volume)
     (when reset
       (mixed:seek voice 0))
     ;; KLUDGE: possible race here.
     (unless (harmony:chain voice)
       (harmony:with-server (harmony:*server* :synchronize NIL)
-        (mixed:add voice sources)
-        (harmony:connect voice T mixer T)
+        (unless (harmony:chain voice)
+          (mixed:add voice sources)
+          (harmony:connect voice T mixer T))
         (when location (setf (mixed:location voice) location))
         (when velocity (setf (mixed:velocity voice) velocity))))
     voice))
