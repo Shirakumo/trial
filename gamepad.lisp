@@ -53,8 +53,8 @@
                                        :device (gamepad:event-device event))
                         handler)))))
       (dolist (device (gamepad:list-devices))
-        (gamepad:poll-events device #'process))))
-  (when (< internal-time-units-per-second
-           (- (get-internal-real-time) (last-device-probe handler)))
-    (setf (last-device-probe handler) (get-internal-real-time))
-    (gamepad:poll-devices)))
+        (gamepad:poll-events device #'process)))
+    (when (< internal-time-units-per-second
+             (- (get-internal-real-time) (last-device-probe handler)))
+      (setf (last-device-probe handler) (get-internal-real-time))
+      (gamepad:poll-devices))))
