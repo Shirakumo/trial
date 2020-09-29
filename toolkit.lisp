@@ -304,6 +304,9 @@
 
 (defun standalone-logging-handler ()
   (when (deploy:deployed-p)
+    (ignore-errors
+     (when (probe-file (logfile))
+       (delete-file (logfile))))
     (v:define-pipe ()
       (v:file-faucet :file (logfile)))
     (v:info :trial "Running on ~a ~a ~a" (machine-type) (machine-instance) (machine-version))))
