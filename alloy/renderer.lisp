@@ -53,12 +53,12 @@
 
 (defmethod alloy:render :before ((renderer renderer) (ui alloy:ui))
   (let ((target (simple:transform-matrix renderer)))
-    (setf (aref target 0) (/ 2f0 (trial:width trial:*context*)))
+    (setf (aref target 0) (/ 2f0 (max 1 (trial:width trial:*context*))))
     (setf (aref target 1) 0f0)
     (setf (aref target 2) -1f0)
     
     (setf (aref target 3) 0f0)
-    (setf (aref target 4) (/ 2f0 (trial:height trial:*context*)))
+    (setf (aref target 4) (/ 2f0 (max 1 (trial:height trial:*context*))))
     (setf (aref target 5) -1f0)
 
     (setf (aref target 6) 0f0)
