@@ -138,7 +138,7 @@
   (check-consistent pipeline)
   (v:info :trial.pipeline "~a packing for ~a (~ax~a)" pipeline target (width target) (height target))
   (let* ((passes (flow:topological-sort (nodes pipeline)))
-         (textures (make-array 0 :initial-element NIL :adjustable T)))
+         (textures (make-array 0 :initial-element NIL :fill-pointer 0 :adjustable T)))
     ;; Compute minimised texture set
     ;; (let ((texspecs (loop for port in (mapcan #'flow:ports passes)
     ;;                       when (and (typep port 'flow:out-port)

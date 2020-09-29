@@ -38,8 +38,7 @@
 Fix GIT to not convert line endings to CRLF:
 
   git config --global core.autocrlf false
-
-And reclone the project.
+  git add --renormalize .
 
 By the way, I'd like to punch whoever added that feature to
 GIT and made it default in the fucking throat."))
