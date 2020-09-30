@@ -291,6 +291,18 @@
         (merge-pathnames "trial.log" (or (uiop:argv0) (user-homedir-pathname)))
         log)))
 
+(defun config-directory (&rest app-path)
+  (apply #'pathname-utils:subdirectory
+         #+(or windows win32)
+         (or (uiop:getenv "AppData")
+             (merge-pathnames "AppData/" (user-homedir-pathname)))
+         #+(or windows win32) "Roaming"
+         #-(or windows win32)
+         (user-homedir-pathname)
+         #-(or windows win32)
+         ".config"
+         app-path))
+
 (defun standalone-error-handler (err)
   (when (deploy:deployed-p)
     (v:error :trial err)

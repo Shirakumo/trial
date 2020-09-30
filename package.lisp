@@ -760,6 +760,7 @@
    #:tempdir
    #:tempfile
    #:logfile
+   #:config-directory
    #:standalone-error-handler
    #:standalone-logging-handler
    #:make-thread
