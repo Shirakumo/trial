@@ -30,8 +30,9 @@
 
 (defmacro define-mapping (name (loop ev) &body body)
   `(setf (mapping ',name)
-         (lambda (,loop ,ev)
-           ,@body)))
+         (list (lambda (,loop ,ev)
+                 ,@body)
+               ())))
 
 (defmacro define-simple-mapping (name (from to &rest to-args) &body tests)
   (let ((loop (gensym "LOOP")))
@@ -42,7 +43,7 @@
              (issue ,loop (make-instance ',to ,@to-args))))))))
 
 (defun map-event (event loop)
-  (loop for function being the hash-values of *mappings*
+  (loop for (function) being the hash-values of *mappings*
         do (funcall function loop event)))
 
 (defclass action (event)
@@ -145,11 +146,26 @@
          (loop for (type body) in (process-mapping-form 'loop 'event form)
                do (push body (gethash type bits))))
        (setf (mapping name)
-             (compile NIL `(lambda (loop event)
-                             (typecase event
-                               ,@(loop for event being the hash-keys of bits
-                                       for bodies being the hash-values of bits
-                                       collect `(,event ,@bodies))))))))))
+             (list
+              (compile NIL `(lambda (loop event)
+                              (typecase event
+                                ,@(loop for event being the hash-keys of bits
+                                        for bodies being the hash-values of bits
+                                        collect `(,event ,@bodies)))))
+              input))))))
+
+(defun event-trigger (event &optional (base-event 'input-event))
+  (loop for (_function mapping) being the hash-values of *mappings*
+        do (loop for (_type target . sources) in mapping
+                 do (when (eql event target)
+                      (loop for (source . args) in sources
+                            for source-event = (case source
+                                                 (key 'key-event)
+                                                 (mouse 'mouse-button-event)
+                                                 (button 'gamepad-event))
+                            do (when (subtypep source-event base-event)
+                                 (return-from event-trigger
+                                   (values (getf args :one-of) source))))))))
 
 #| Keymap should have the following syntax:
 
