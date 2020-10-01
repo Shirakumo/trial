@@ -132,7 +132,6 @@
 
 ;; FIXME: separate things out so that a commit can be done in steps
 ;;        to allow the load to happen without blocking.
-
 (defmethod process-loads ((loader loader) (area staging-area) loads)
   (let ((states (loaded loader)))
     (labels ((process-entry (i)
@@ -203,6 +202,7 @@
                  (setf (gethash resource resources) :to-load)))
     (restart-case
         (progn
+          (v:info :trial.loader "Loading about ~d resources." (length load-sequence))
           (v:debug :trial.loader "About to load the following:~%  ~a" load-sequence)
           (process-loads loader area load-sequence)
           ;; Now unload the ones we no longer need and reset state.

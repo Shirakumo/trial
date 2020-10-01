@@ -34,6 +34,9 @@
   (alloy:do-elements (element layout)
     (trial:stage element area)))
 
+(defmethod trial:stage ((structure alloy:structure) (area trial:staging-area))
+  (trial:stage (alloy:layout-element structure) area))
+
 (defmethod trial:dependencies ((renderer renderer))
   (append (alexandria:hash-table-values (org.shirakumo.alloy.renderers.opengl.msdf:fontcache renderer))
           (alexandria:hash-table-values (opengl::resources renderer))))
