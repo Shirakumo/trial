@@ -87,3 +87,41 @@
   (make-instance 'asset-item :value item))
 
 (defmethod alloy:component-class-for-object ((_ trial:asset)) (find-class 'asset))
+
+(defclass resource-item (alloy:combo-item)
+  ())
+
+(defmethod alloy:text ((resource resource-item))
+  (let ((resource (alloy:value resource)))
+    (cond ((trial:generator resource)
+           (format NIL "~a / ~a~@[ / ~a~]"
+                   (trial:name (trial:pool (trial:generator resource)))
+                   (trial:name (trial:generator resource))
+                   (unless (eq T (trial:name resource))
+                     (trial:name resource))))
+          ((trial:name resource)
+           (format NIL "~a" (trial:name resource)))
+          (T
+           (format NIL "<~a>" (type-of resource))))))
+
+(defclass resource (alloy:combo)
+  ())
+
+(defmethod alloy:value-set ((resource resource))
+  (let ((type (if (alloy:value resource) (type-of (alloy:value resource)) 'trial:resource))
+        (values ()))
+    (when (eql type 'trial:placeholder-resource)
+      (setf type 'trial:resource))
+    (dolist (pool (trial:list-pools) values)
+      (dolist (asset (trial:list-assets pool))
+        (dolist (resource (trial:list-resources asset))
+          (when (typep resource type)
+            (push resource values)))))))
+
+(defmethod alloy:text ((resource resource))
+  (call-next-method))
+
+(defmethod alloy:combo-item (item (resource resource))
+  (make-instance 'resource-item :value item))
+
+(defmethod alloy:component-class-for-object ((_ trial:resource)) (find-class 'resource))

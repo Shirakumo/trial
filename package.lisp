@@ -577,6 +577,8 @@
   ;; resource.lisp
   (:export
    #:resource
+   #:generator
+   #:name
    #:allocate
    #:deallocate
    #:allocated-p

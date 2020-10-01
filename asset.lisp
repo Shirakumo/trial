@@ -7,21 +7,21 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass placeholder-resource (resource)
-  ((asset :initarg :asset :initform (error "ASSET required."))
-   (name :initarg :name :initform T :reader name)))
+  ((generator :initform (error "GENERATOR required."))
+   (name :initform T)))
 
 (defmethod print-object ((resource placeholder-resource) stream)
-  (let ((asset (slot-value resource 'asset)))
+  (let ((asset (generator resource)))
     (print-unreadable-object (resource stream :type T)
       (format stream "~a/~a[~a]" (name (pool asset)) (name asset) (name resource)))))
 
 (defmethod allocated-p ((resource placeholder-resource)) NIL)
 
 (defmethod allocate ((resource placeholder-resource))
-  (load (slot-value resource 'asset))
+  (load (generator resource))
   (cond ((typep resource 'placeholder-resource)
          (error "Loading the asset~%  ~a~%did not generate the resource~%  ~a"
-                (slot-value resource 'asset) resource))
+                (generator resource) resource))
         (T
          ;; We should have been change class'd by now, so re-call.
          (allocate resource))))
@@ -29,7 +29,7 @@
 (defmethod unload ((resource placeholder-resource)))
 
 (defmethod dependencies ((resource placeholder-resource))
-  (list (slot-value resource 'asset)))
+  (list (generator resource)))
 
 (defclass asset (resource-generator)
   ((pool :initform NIL :accessor pool)
@@ -150,7 +150,7 @@
   ((resource)))
 
 (defmethod initialize-instance :after ((asset single-resource-asset) &key)
-  (setf (slot-value asset 'resource) (make-instance 'placeholder-resource :asset asset)))
+  (setf (slot-value asset 'resource) (make-instance 'placeholder-resource :generator asset)))
 
 (defmethod resource ((asset single-resource-asset) (id (eql T)))
   (slot-value asset 'resource))
@@ -164,7 +164,7 @@
 (defmethod deallocate ((asset single-resource-asset))
   (when (allocated-p (resource asset T))
     (deallocate (resource asset T)))
-  (change-class (resource asset T) 'placeholder-resource :asset asset))
+  (change-class (resource asset T) 'placeholder-resource :generator asset))
 
 (defclass multi-resource-asset (asset)
   ((resources :initform (make-hash-table :test 'equal))))
@@ -173,7 +173,7 @@
   (let ((table (slot-value asset 'resources)))
     (or (gethash id table)
         (setf (gethash id table)
-              (make-instance 'placeholder-resource :asset asset)))))
+              (make-instance 'placeholder-resource :generator asset)))))
 
 (defmethod list-resources ((asset multi-resource-asset))
   (loop for resource being the hash-values of (slot-value asset 'resources)
@@ -188,7 +188,7 @@
         for resource being the hash-values of (slot-value asset 'resources)
         do (when (allocated-p resource)
              (deallocate resource))
-           (change-class resource 'placeholder-resource :name name :asset asset)))
+           (change-class resource 'placeholder-resource :name name :generator asset)))
 
 (defclass file-input-asset (asset)
   ())

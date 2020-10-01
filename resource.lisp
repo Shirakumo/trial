@@ -14,7 +14,8 @@
                                  (slot-value c 'resource)))))
 
 (defclass resource ()
-  ())
+  ((generator :initarg :generator :initform NIL :reader generator)
+   (name :initarg :name :initform NIL :reader name)))
 
 (defgeneric allocate (resource))
 (defgeneric deallocate (resource))
