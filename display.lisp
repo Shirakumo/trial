@@ -12,11 +12,11 @@
   (:default-initargs
    :clear-color (vec 0.2 0.3 0.3)))
 
-(defmethod initialize-instance :after ((display display) &rest initargs &key context title width height version profile double-buffering stereo-buffer vsync)
-  (declare (ignore title width height version profile double-buffering stereo-buffer vsync))
+(defmethod initialize-instance :after ((display display) &rest initargs &key context title width height version profile double-buffering stereo-buffer vsync fullscreen)
+  (declare (ignore title width height version profile double-buffering stereo-buffer vsync fullscreen))
   (unless context
     (let ((args (loop for (k v) on initargs by #'cddr
-                      for keep = (find k '(:title :width :height :version :profile :double-buffering :stereo-buffer :vsync))
+                      for keep = (find k '(:title :width :height :version :profile :double-buffering :stereo-buffer :vsync :fullscreen))
                       when keep collect k when keep collect v)))
       (setf context (setf (context display) (apply #'make-context NIL args)))))
   (setf (handler context) display)
