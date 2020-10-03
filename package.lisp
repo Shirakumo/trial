@@ -235,6 +235,8 @@
    #:resize
    #:gain-focus
    #:lose-focus
+   #:window-hidden
+   #:window-shown
    #:context-info)
   ;; controller.lisp
   (:export

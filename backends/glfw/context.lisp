@@ -113,6 +113,7 @@
           (cl-glfw3:swap-interval (getf initargs :refresh-rate))
           (cl-glfw3:set-window-size-callback 'ctx-size window)
           (cl-glfw3:set-window-focus-callback 'ctx-focus window)
+          (cl-glfw3:set-window-iconify-callback 'ctx-iconify window)
           (cl-glfw3:set-key-callback 'ctx-key window)
           (cl-glfw3:set-char-callback 'ctx-char window)
           (cl-glfw3:set-mouse-button-callback 'ctx-button window)
@@ -232,6 +233,11 @@
 (cl-glfw3:def-window-focus-callback ctx-focus (window focusedp)
   (%with-context
     (handle (make-instance (if focusedp 'gain-focus 'lose-focus))
+            (handler context))))
+
+(cl-glfw3:def-window-iconify-callback ctx-iconify (window iconifiedp)
+  (%with-context
+    (handle (make-instance (if iconifiedp 'window-hidden 'window-shown))
             (handler context))))
 
 (cl-glfw3:def-key-callback ctx-key (window key scancode action modifiers)

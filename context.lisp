@@ -168,6 +168,12 @@
 (defclass lose-focus (event)
   ())
 
+(defclass window-hidden (event)
+  ())
+
+(defclass window-shown (event)
+  ())
+
 (defmethod describe-object :after ((context context) stream)
   (context-info context stream))
 
