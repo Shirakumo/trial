@@ -77,10 +77,12 @@
   (gl:delete-framebuffers (list (gl-name framebuffer))))
 
 (defmethod resize ((framebuffer framebuffer) width height)
-  (dolist (attachment (attachments framebuffer))
-    (resize (second attachment) width height))
-  (setf (width framebuffer) width)
-  (setf (height framebuffer) height))
+  (let ((width (max 1 width))
+        (height (max 1 height)))
+    (dolist (attachment (attachments framebuffer))
+      (resize (second attachment) width height))
+    (setf (width framebuffer) width)
+    (setf (height framebuffer) height)))
 
 (defmethod activate ((framebuffer framebuffer))
   (gl:bind-framebuffer :framebuffer (gl-name framebuffer))

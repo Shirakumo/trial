@@ -48,7 +48,7 @@
    :location (vec 0 0 200)))
 
 (defmethod setup-perspective ((camera 2d-camera) width height)
-  (orthographic-projection 0 width 0 height (near-plane camera) (far-plane camera)))
+  (orthographic-projection 0 (max 1 width) 0 (max 1 height) (near-plane camera) (far-plane camera)))
 
 (defmethod project-view ((camera 2d-camera))
   (reset-matrix *view-matrix*)
@@ -73,10 +73,10 @@
    :fov 75))
 
 (defmethod (setf fov) :after (val (camera 3d-camera))
-  (setup-perspective camera (width *context*) (height *context*)))
+  (setup-perspective camera (max 1 (width *context*)) (max 1 (height *context*))))
 
 (defmethod setup-perspective ((camera 3d-camera) width height)
-  (perspective-projection (fov camera) (/ width (max 1 height)) (near-plane camera) (far-plane camera)))
+  (perspective-projection (fov camera) (/ (max 1 width) (max 1 height)) (near-plane camera) (far-plane camera)))
 
 (defclass target-camera (3d-camera)
   ((target :initarg :target :accessor target)

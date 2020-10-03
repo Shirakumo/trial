@@ -56,16 +56,18 @@
             (eval-size (getf texspec :height)))))
 
 (defmethod resize ((pipeline pipeline) width height)
-  (loop for texture across (textures pipeline)
-        for texspec across (texspecs pipeline)
-        do (multiple-value-bind (width height) (texspec-real-size texspec width height)
-             (resize texture width height)))
-  (loop for pass across (passes pipeline)
-        for binding = (first (attachments (framebuffer pass)))
-        when binding ;; We have to do it like this to prevent updating FBOs with
-                     ;; texspecs that are not window-size.
-        do (setf (width (framebuffer pass)) (width (second binding)))
-           (setf (height (framebuffer pass)) (height (second binding)))))
+  (let ((width (max 1 width))
+        (height (max 1 height)))
+    (loop for texture across (textures pipeline)
+          for texspec across (texspecs pipeline)
+          do (multiple-value-bind (width height) (texspec-real-size texspec width height)
+               (resize texture width height)))
+    (loop for pass across (passes pipeline)
+          for binding = (first (attachments (framebuffer pass)))
+          when binding ;; We have to do it like this to prevent updating FBOs with
+                       ;; texspecs that are not window-size.
+          do (setf (width (framebuffer pass)) (width (second binding)))
+             (setf (height (framebuffer pass)) (height (second binding))))))
 
 (defmethod normalized-texspec ((texspec list))
   (assert (= 0 (getf texspec :level 0)))
