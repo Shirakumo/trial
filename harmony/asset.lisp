@@ -17,6 +17,13 @@
 (defclass sound (trial:single-resource-asset trial:file-input-asset sound-loader)
   ())
 
+(defmethod trial:reload ((sound sound))
+  (let ((resource (trial:resource sound T)))
+    (when (and (typep resource 'voice)
+               (voice resource))
+      (mixed:end (harmony:source (voice resource)))
+      (mixed:start (harmony:source (voice resource))))))
+
 ;; KLUDGE: This cannot be a harmony:voice since it does not handle the change-class/reinitialize-instance
 ;;         protocol we have going for voices gracefully. It would also cause allocation to happen at
 ;;         initialisation rather than at, well, allocation time.
