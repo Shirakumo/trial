@@ -113,7 +113,7 @@
                                                         :height height
                                                         :image-data (flip-image-vertically array width height 3))
                                file)
-               array))
+               (copy-seq array)))
       (static-vectors:free-static-vector array)
       (gl:bind-framebuffer :read-framebuffer 0))))
 
