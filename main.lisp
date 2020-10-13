@@ -31,6 +31,9 @@
   (issue (scene main) 'tick :tt tt :dt dt :fc fc)
   (process (scene main)))
 
+(defmethod commit (thing (main main) &rest args)
+  (apply #'commit thing (loader main) args))
+
 (defmethod setup-rendering :after ((main main))
   (restart-case
       (change-scene main (scene main) :old NIL)
