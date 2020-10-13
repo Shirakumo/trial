@@ -641,7 +641,9 @@
    #:shader-entity
    #:define-shader-entity
    #:effective-shader-class
-   #:compute-effective-shader-class)
+   #:compute-effective-shader-class
+   #:standalone-shader-entity
+   #:shader-program)
   ;; shader-pass.lisp
   (:export
    #:port

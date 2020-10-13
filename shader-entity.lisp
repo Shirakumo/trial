@@ -222,3 +222,18 @@ out vec4 color;
 void main(){
   color = vec4(1.0, 1.0, 1.0, 1.0);
 }")
+
+(defclass standalone-shader-entity (shader-entity)
+  ((shader-program :accessor shader-program))
+  (:metaclass shader-entity-class))
+
+(defmethod initialize-instance :after ((entity standalone-shader-entity) &key)
+  (setf (shader-program entity) (make-class-shader-program entity)))
+
+(defmethod stage :after ((entity standalone-shader-entity) (area staging-area))
+  (stage (shader-program entity) area))
+
+(defmethod render ((entity standalone-shader-entity) target)
+  (let ((program (shader-program entity)))
+    (gl:use-program (gl-name program))
+    (render entity program)))
