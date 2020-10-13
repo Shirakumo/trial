@@ -6,26 +6,12 @@
 
 (in-package #:org.shirakumo.fraf.trial.alloy)
 
-(defclass ui (renderer alloy:ui trial:entity)
+(defclass event-bridge ()
   ())
 
-(defmethod trial:render ((ui ui) target)
-  (alloy:render ui ui))
-
-(defmethod trial:register :after ((ui ui) (loop trial:event-loop))
-  (trial:add-listener ui loop))
-
-(defmethod trial:handle ((ev trial:event) (ui ui)))
-
-(defmethod trial:handle ((ev trial:resize) (ui ui))
-  (alloy:suggest-bounds (alloy:px-extent 0 0 (trial:width ev) (trial:height ev)) ui))
-
-(defmethod trial:stage ((ui ui) (area trial:staging-area))
-  (trial:stage (alloy:layout-tree ui) area))
-
 (defmacro define-event-translator (trial-type alloy-type &body args)
-  `(defmethod trial:handle ((ev ,trial-type) (ui ui))
-     (alloy:handle (make-instance ',alloy-type ,@args) ui)))
+  `(defmethod trial:handle ((ev ,trial-type) (bridge event-bridge))
+     (alloy:handle (make-instance ',alloy-type ,@args) bridge)))
 
 (defun vec->point (vec)
   (alloy:px-point (3d-vectors:vx vec) (3d-vectors:vy vec)))
@@ -67,5 +53,22 @@
 (define-event-translator trial:gamepad-release alloy:button-up
   :device (trial:device ev)
   :button (trial:button ev))
+
+(defclass ui (renderer event-bridge alloy:ui trial:entity)
+  ())
+
+(defmethod trial:render ((ui ui) target)
+  (alloy:render ui ui))
+
+(defmethod trial:register :after ((ui ui) (loop trial:event-loop))
+  (trial:add-listener ui loop))
+
+(defmethod trial:handle ((ev trial:event) (ui ui)))
+
+(defmethod trial:handle ((ev trial:resize) (ui ui))
+  (alloy:suggest-bounds (alloy:px-extent 0 0 (trial:width ev) (trial:height ev)) ui))
+
+(defmethod trial:stage ((ui ui) (area trial:staging-area))
+  (trial:stage (alloy:layout-tree ui) area))
 
 ;; paste-event?

@@ -15,4 +15,5 @@
    (#:colored #:org.shirakumo.alloy.colored))
   (:export
    #:renderer
+   #:event-bridge
    #:ui))
