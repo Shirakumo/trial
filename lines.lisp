@@ -45,7 +45,7 @@ void main(){
   clip2.x *= aspect;
   line_normal = normalize(clip2 - clip1);
   line_normal = vec2(-line_normal.y, line_normal.x);
-  gl_Position = screen1 + screen1.w * vec4(line_normal*line_width/view_size, 0, 0);
+  gl_Position = screen1 + screen1.w * vec4(line_normal*line_width/view_size, 10, 0);
   line_color = color;
 }")
 
