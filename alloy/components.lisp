@@ -25,6 +25,11 @@
   (defmethod alloy:handle ((event alloy:pointer-up) (vec vec))
     (handle event vec)))
 
+(defmethod alloy:value-changed ((vec vec))
+  (let ((els '(3d-vectors:vx 3d-vectors:vy 3d-vectors:vz 3d-vectors:vw)))
+    (alloy:do-elements (element vec)
+      (setf (alloy:value element) (funcall (pop els) (alloy:value vec))))))
+
 (defclass vec2 (vec)
   ())
 
