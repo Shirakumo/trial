@@ -13,11 +13,13 @@
   ;; FIXME: A system for figuring out when we can GC shader programs
   )
 
-(defmethod stage :before ((scene pipelined-scene) area)
-  (pack-pipeline scene *context*)
+(defmethod setup-scene :after (main (scene scene))
+  (pack-pipeline scene (context main)))
+
+(defmethod stage :before ((scene pipelined-scene) (area staging-area))
   (compile-to-pass scene scene))
 
-(defmethod stage :after ((scene pipelined-scene) area)
+(defmethod stage :after ((scene pipelined-scene) (area staging-area))
   (loop for texture across (textures scene)
         do (stage texture area))
   (loop for pass across (passes scene)
