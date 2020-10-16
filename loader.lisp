@@ -197,9 +197,14 @@
               do (setf (gethash resource resources) :to-keep)))
     ;; Next re-mark resources as keep if already loaded or to-load if new
     (loop for resource across load-sequence
-          do (if (gethash resource resources)
-                 (setf (gethash resource resources) :to-keep)
-                 (setf (gethash resource resources) :to-load)))
+          do (cond ((gethash resource resources)
+                    (setf (gethash resource resources) :to-keep)
+                    ;; Also mark source asset as to-keep, as unloading it would
+                    ;; cause the associated resource to be unloaded as well.
+                    (when (and (typep resource 'resource) (generator resource))
+                      (setf (gethash (generator resource) resources) :to-keep)))
+                   (T
+                    (setf (gethash resource resources) :to-load))))
     (restart-case
         (progn
           (v:info :trial.loader "Loading about ~d resources." (length load-sequence))
