@@ -92,6 +92,7 @@
 (defmethod gl-source ((class gl-struct-class))
   `(glsl-toolkit:struct-declaration
     ,(gl-type class)
+    NIL
     ,@(mapcar #'gl-source (struct-fields class))))
 
 (defmethod vertex-layout ((class gl-struct-class))
