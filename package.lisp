@@ -631,7 +631,9 @@
   (:export
    #:shader-entity-class
    #:effective-shaders
+   #:effective-buffers
    #:direct-shaders
+   #:direct-buffers
    #:inhibited-shaders
    #:compute-effective-shaders
    #:class-shader

@@ -40,8 +40,7 @@
              program (gl:get-program-info-log prog)))
     (v:debug :trial.asset "Linked ~a with ~a." program shaders)
     (loop for buffer in (buffers program)
-          for i from 0
-          do (bind buffer program i))
+          do (bind buffer program))
     (clrhash (uniform-map program))))
 
 (defmethod (setf shaders) :before (shaders (program shader-program))
@@ -53,8 +52,7 @@
 (defmethod (setf buffers) :before (buffers (program shader-program))
   (when (allocated-p program)
     (loop for buffer in buffers
-          for i from 0
-          do (bind buffer program i))))
+          do (bind buffer program))))
 
 (defmethod allocate ((program shader-program))
   (let ((shaders (shaders program)))

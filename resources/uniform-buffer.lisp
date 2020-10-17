@@ -6,10 +6,13 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(defvar *uniform-binding-point-counter* 0)
+
 (defclass uniform-buffer (struct-buffer)
   ((buffer-type :initform :uniform-buffer)
    (qualifiers :initarg :qualifiers :initform () :accessor qualifiers)
-   (binding :initarg :binding :initform NIL :accessor binding)))
+   (binding :initarg :binding :initform NIL :accessor binding)
+   (binding-point :initarg :binding-point :initform NIL :accessor binding-point)))
 
 (defmethod shared-initialize :after ((buffer uniform-buffer) slots &key struct-class binding)
   (when (or binding (null (binding buffer)))
@@ -32,11 +35,16 @@
           'glsl-toolkit:no-value)
      ,@(mapcar #'gl-source (struct-fields buffer)))))
 
-(defmethod bind ((buffer uniform-buffer) (program shader-program) (binding-point integer))
+(defmethod allocate :after ((buffer uniform-buffer))
+  (unless (binding-point buffer)
+    (setf (binding-point buffer) (incf *uniform-binding-point-counter*)))
+  (%gl:bind-buffer-base :uniform-buffer (binding-point buffer) (gl-name buffer)))
+
+(defmethod bind ((buffer uniform-buffer) (program shader-program))
   ;; TODO: Once we can do shared/packed, load offsets here.
   (load buffer)
   ;; Bind the buffer to the program's specified binding point.
-  (let ((index (gl:get-uniform-block-index (gl-name program) (gl-type buffer))))
-    (%gl:uniform-block-binding (gl-name program) index binding-point)
-    (%gl:bind-buffer-base :uniform-buffer binding-point (gl-name buffer))))
-
+  (%gl:uniform-block-binding
+   (gl-name program)
+   (gl:get-uniform-block-index (gl-name program) (gl-type buffer))
+   (binding-point buffer)))
