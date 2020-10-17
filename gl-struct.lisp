@@ -12,7 +12,8 @@
 (defun compound-struct-slot-initform (slot standard storage-ptr)
   (case (first (gl-type slot))
     (:struct
-     (make-instance (second (gl-type slot))))
+     (make-instance (second (gl-type slot)) :storage-ptr storage-ptr
+                                            :base-offset (base-offset slot)))
     (:array
      (destructuring-bind (identifier type count) (gl-type slot)
        (declare (ignore identifier))
