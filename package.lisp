@@ -778,6 +778,7 @@
    #:with-error-logging
    #:with-timing-report
    #:ensure-class
+   #:ensure-instance
    #:with-slots-bound
    #:with-all-slots-bound
    #:minimize
