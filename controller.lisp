@@ -142,14 +142,10 @@
               finally (setf (fill-pointer observers) 0)))))
 
 (defclass load-request (event)
-  ((asset :initarg :asset)
-   (action :initarg :action :initform 'reload)))
+  ((thing :initarg :thing)))
 
-(define-handler (controller load-request) (asset action)
-  (ecase action
-    (deallocate (deallocate asset))
-    (load (load asset))
-    (reload (reload asset))))
+(define-handler (controller load-request) (thing)
+  (commit thing (loader (display controller)) :unload NIL))
 
 (defun maybe-reload-scene (&optional (window (list-windows)))
   (dolist (window (enlist window))
