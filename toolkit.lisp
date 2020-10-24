@@ -460,11 +460,13 @@
             while line
             do (format out "~3d ~a~%" i line)))))
 
+(declaim (inline clamp))
 (defun clamp (low mid high)
   (max low (min mid high)))
 
+(declaim (inline lerp))
 (defun lerp (from to n)
-  (+ (* from (- 1 n)) (* to n)))
+  (+ (* from (- 1.0 n)) (* to n)))
 
 (defun damp* (damp &rest factors)
   (- 1 (apply #'* (- 1 damp) factors)))
