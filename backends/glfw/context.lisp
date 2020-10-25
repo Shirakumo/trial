@@ -8,6 +8,9 @@
 
 (defvar *window-table* (tg:make-weak-hash-table :test 'eq :weakness :value))
 
+(cffi:defcvar (optimus "NvOptimusEnablement") :uint32)
+(cffi:defcvar (xpress "AmdPowerXpressRequestHighPerformance") :int)
+
 (defclass context (trial:context)
   ((title :initarg :title :accessor title)
    (cursor-visible :initform T :accessor cursor-visible)
@@ -44,6 +47,8 @@
                                           (robustness NIL robustness-p)
                                           (forward-compat NIL forward-compat-p)
                                           (debug-context NIL debug-context-p))
+  #+windows (ignore-errors (setf optimus 1))
+  #+windows (ignore-errors (setf xpress 1))
   (flet (((setf g) (value name) (setf (getf (initargs context) name) value)))
     (macrolet ((maybe-set (var &optional (name (intern (string var) :keyword)))
                  `(when ,(let ((*print-case* (readtable-case *readtable*)))
