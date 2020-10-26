@@ -15,6 +15,9 @@
 (defmethod leave :after ((entity entity) (container flare:container))
   (slot-makunbound entity 'container))
 
+(defmethod leave ((entity entity) (container (eql T)))
+  (leave entity (container entity)))
+
 #-elide-container-checks
 (defmethod enter :before ((entity entity) (container flare:container))
   (when (slot-boundp entity 'container)
