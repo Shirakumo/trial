@@ -405,6 +405,7 @@
 
 (defmethod compile-to-pass (object (pass post-effect-pass)))
 (defmethod compile-into-pass (object container (pass post-effect-pass)))
+(defmethod remove-from-pass (object (pass post-effect-pass)))
 (defmethod handle ((event event) (pass post-effect-pass)))
 
 (defmethod render ((pass post-effect-pass) (program shader-program))

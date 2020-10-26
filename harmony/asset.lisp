@@ -107,3 +107,6 @@
 
 (defmethod mixed:seek ((voice voice) position &rest args)
   (apply #'mixed:seek (voice voice) position args))
+
+(defmethod harmony:segment (segment (voice voice) &optional (errorp T))
+  (harmony:segment segment (voice voice) errorp))
