@@ -219,18 +219,15 @@
 (define-shader-pass scene-pass (listener)
   ((actions :initform (make-instance 'flare-queue:queue) :accessor actions)
    (group-pointers :initform (make-hash-table :test 'eq) :accessor group-pointers)
-   (group :initform (cons NIL NIL) :accessor group)))
+   (guards :initform (cons NIL NIL) :accessor guards)))
 
 ;;; KLUDGE: The protocol that follows is EXTREMELY bad under parallel updates.
 ;;;         If we ever want to allow such (and it's very possible we do), this will
 ;;;         need to be revised thoroughly.
 (defun push-pass-action (pass action)
-  ;; Insert the new action after the end cell and update our end.
-  ;; The flare API does not have a clean way of doing this. Sad!
-  (setf (cdr (group pass))
-        (flare-queue:cell-insert-after
-         (flare-queue:make-cell action NIL NIL)
-         (cdr (group pass))))
+  (flare-queue:cell-insert-before
+   (flare-queue:make-cell (list* (fdefinition (first action)) (rest action)) NIL NIL)
+   (cdr (guards pass)))
   (incf (slot-value (actions pass) 'flare-queue::size)))
 
 (defun finish-pass-group (pass object)
@@ -238,8 +235,12 @@
   ;;       Though this might be bad for future dynamic inserts, so I'm not sure.
   ;;       Would have to reconstruct the context when a previously empty group
   ;;       becomes populated.
-  (setf (gethash object (group-pointers pass)) (group pass))
-  (setf (group pass) (cons (cdr (group pass)) (cdr (group pass)))))
+  (destructuring-bind (start . end) (guards pass)
+    ;; If the group is empty, insert a NOOP.
+    (when (eql (flare-queue:right start) end)
+      (push-pass-action pass '(null NIL)))
+    (setf (gethash object (group-pointers pass)) (cons (flare-queue:right start) (flare-queue:left end)))
+    (setf (guards pass) (cons (flare-queue:left end) end))))
 
 (defmethod compile-to-pass (object (pass scene-pass))
   (when (object-renderable-p object pass)
@@ -266,16 +267,17 @@
 (defmethod compile-to-pass :around ((scene scene) (pass scene-pass))
   (flare-queue:clear-queue (actions pass))
   (clrhash (group-pointers pass))
-  (setf (group pass) (cons (flare-queue:queue-last (actions pass))
-                           (flare-queue:queue-last (actions pass))))
+  (setf (guards pass) (cons (flare-queue::head (actions pass))
+                            (flare-queue::tail (actions pass))))
   (call-next-method)
   (finish-pass-group pass scene))
 
 (defmethod remove-from-pass ((entity entity) (pass scene-pass))
   (when (gethash entity (group-pointers pass))
     (destructuring-bind (start . end) (gethash entity (group-pointers pass))
-      ;; We know START is the cell before our content, and END the last cell of our content.
-      (flare-queue:remove-cells start (flare-queue:right end))
+      ;; The saved group is just a guard so fuse them together and the rest drops out magically.
+      ;; FIXME: this does not adjust the queue's size!
+      (flare-queue:remove-cells start end)
       (remhash entity (group-pointers pass)))))
 
 (defmethod compile-into-pass ((entity entity) (container flare:container) (pass scene-pass))
@@ -291,8 +293,9 @@
     ;;         We need to insert before that.
     (when (typep container 'transformed)
       (setf end (flare-queue:left end)))
-    (setf (group pass) (cons end end))
-    (compile-to-pass entity pass)))
+    (setf (guards pass) (cons (flare-queue:left end) end))
+    (compile-to-pass entity pass)
+    (finish-pass-group pass entity)))
 
 (defmethod handle ((ev class-changed) (pass scene-pass))
   (call-next-method)
@@ -304,8 +307,9 @@
   )
 
 (defmethod render ((pass scene-pass) target)
+  (declare (optimize speed))
   (flare-queue:do-queue (action (actions pass))
-    (apply (car action) (cdr action))))
+    (apply (the function (car action)) (the list (cdr action)))))
 
 (define-shader-pass per-object-pass ()
   ((assets :initform (make-hash-table :test 'eq) :accessor assets)))
