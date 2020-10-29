@@ -20,6 +20,8 @@
 (defmethod initialize-instance :after ((main main) &key app-id)
   (handler-bind ((error
                    (lambda (e)
+                     (v:severe :trial.steam "Failed to initialise steamworks: ~a" e)
+                     (v:info :trial.steam e)
                      (when (deploy:deployed-p)
                        (if (steam-required-p main)
                            (invoke-restart 'steam:restart)
