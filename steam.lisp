@@ -18,7 +18,7 @@
 (defmethod steam-required-p ((main main)) NIL)
 
 (defmethod initialize-instance :after ((main main) &key app-id)
-  (handler-bind ((steam:initialization-failed
+  (handler-bind ((error
                    (lambda (e)
                      (when (deploy:deployed-p)
                        (if (steam-required-p main)
