@@ -331,9 +331,11 @@
     :dont-open T
     :dont-deploy T)
   (deploy:define-library glfw-x11
-    :dont-open T)
+    :dont-open T
+    :dont-deploy T)
   (deploy:define-library glfw-wayland
-    :dont-open T)
+    :dont-open T
+    :dont-deploy T)
 
   (deploy:define-hook (:deploy copy-glfw) (directory)
     (let ((path (deploy:library-path (deploy:ensure-library '%glfw::glfw)))

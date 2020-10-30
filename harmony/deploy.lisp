@@ -6,8 +6,16 @@
 
 (in-package #:org.shirakumo.fraf.trial.harmony)
 
-(deploy:define-library org.shirakumo.fraf.mixed.coreaudio.cffi::audio-toolbox
-  :dont-deploy T)
-
-(deploy:define-library org.shirakumo.fraf.mixed.coreaudio.cffi::audio-unit
-  :dont-deploy T)
+#+linux
+(trial::dont-deploy
+ org.shirakumo.fraf.mixed.pulse.cffi::libpulse-simple
+ org.shirakumo.fraf.mixed.pulse.cffi::libpulse
+ org.shirakumo.fraf.mixed.alsa.cffi::libasound)
+#+darwin
+(trial::dont-deploy
+ org.shirakumo.fraf.mixed.coreaudio.cffi::audio-toolbox
+ org.shirakumo.fraf.mixed.coreaudio.cffi::audio-unit)
+#+windows
+(trial::dont-deploy
+ org.shirakumo.fraf.mixed.winmm.cffi::winmm
+ org.shirakumo.fraf.mixed.wasapi.cffi::avrt)

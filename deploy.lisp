@@ -25,25 +25,27 @@
   (v:restart-global-controller)
   (setf *random-state* (make-random-state T)))
 
-(macrolet ((dont-deploy (&rest libraries)
-             `(progn ,@(loop for lib in libraries
-                             collect `(deploy:define-library ,lib :dont-deploy T)))))
-  (dont-deploy
-   cl-opengl-bindings::opengl)
-  #+linux
-  (dont-deploy
-   org.shirakumo.fraf.gamepad.impl::evdev)
-  #+darwin
-  (dont-deploy
-   org.shirakumo.fraf.gamepad.impl::corefoundation
-   org.shirakumo.fraf.gamepad.impl::iokit
-   org.shirakumo.fraf.gamepad.impl::forcefeedback
-   org.shirakumo.messagebox::foundation
-   org.shirakumo.messagebox::appkit
-   org.shirakumo.messagebox::cocoa)
-  #+windows
-  (dont-deploy
-   org.shirakumo.com-on.cffi::ole32
-   org.shirakumo.fraf.gamepad.impl::user32
-   org.shirakumo.fraf.gamepad.impl::xinput
-   org.shirakumo.fraf.gamepad.impl::dinput))
+(defmacro dont-deploy (&rest libraries)
+  `(progn ,@(loop for lib in libraries
+                  collect `(deploy:define-library ,lib :dont-deploy T))))
+
+(dont-deploy
+ cl-opengl-bindings::opengl)
+#+linux
+(dont-deploy
+ org.shirakumo.fraf.gamepad.impl::evdev)
+#+darwin
+(dont-deploy
+ org.shirakumo.fraf.gamepad.impl::corefoundation
+ org.shirakumo.fraf.gamepad.impl::iokit
+ org.shirakumo.fraf.gamepad.impl::forcefeedback
+ org.shirakumo.messagebox::foundation
+ org.shirakumo.messagebox::appkit
+ org.shirakumo.messagebox::cocoa)
+#+windows
+(dont-deploy
+ org.shirakumo.com-on.cffi::ole32
+ org.shirakumo.fraf.gamepad.impl::user32
+ org.shirakumo.fraf.gamepad.impl::xinput
+ org.shirakumo.fraf.gamepad.impl::dinput
+ org.shirakumo.messagebox::user32)
