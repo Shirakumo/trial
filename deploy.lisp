@@ -37,7 +37,10 @@
   (dont-deploy
    org.shirakumo.fraf.gamepad.impl::corefoundation
    org.shirakumo.fraf.gamepad.impl::iokit
-   org.shirakumo.fraf.gamepad.impl::forcefeedback)
+   org.shirakumo.fraf.gamepad.impl::forcefeedback
+   org.shirakumo.messagebox::foundation
+   org.shirakumo.messagebox::appkit
+   org.shirakumo.messagebox::cocoa)
   #+windows
   (dont-deploy
    org.shirakumo.com-on.cffi::ole32

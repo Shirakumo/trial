@@ -13,6 +13,7 @@
   :bug-tracker "https://github.com/Shirakumo/trial/issues"
   :source-control (:git "https://github.com/Shirakumo/trial.git")
   :components ((:file "package")
-               (:file "asset"))
+               (:file "asset")
+               (:file "deploy"))
   :depends-on (:trial
                :harmony))
