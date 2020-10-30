@@ -21,7 +21,7 @@
   (handler-bind ((error
                    (lambda (e)
                      (v:severe :trial.steam "Failed to initialise steamworks: ~a" e)
-                     (v:info :trial.steam e)
+                     (v:debug :trial.steam e)
                      (when (deploy:deployed-p)
                        (if (steam-required-p main)
                            (invoke-restart 'steam:restart)
@@ -29,6 +29,7 @@
     (when (or (steam-required-p main)
               (deploy:deployed-p))
       (with-simple-restart (ignore "Ignore the steamworks failure.")
+        (v:info :trial.steam "Initialising steamworks")
         (make-instance 'steam:steamworks-client :app-id app-id)))))
 
 (defmethod trial:finalize :after ((main main))
