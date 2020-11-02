@@ -26,7 +26,8 @@
 (defclass event-loop ()
   ((queue :initform (make-array 64 :initial-element NIL :adjustable T :fill-pointer 0) :reader queue)
    (queue-index :initform 0 :accessor queue-index)
-   (listeners :initform (make-hash-table :test 'eq) :accessor listeners)))
+   (listeners :initform (make-hash-table :test 'eq) :accessor listeners)
+   (listener-queue :initform '(NIL) :accessor listener-queue)))
 
 (defun issue (loop event-type &rest args)
   (let ((event (etypecase event-type
@@ -75,18 +76,29 @@
 
 (defmethod handle ((event event) (loop event-loop))
   (with-simple-restart (skip-event "Skip handling the event entirely.")
-    (loop for listener being the hash-keys of (listeners loop)
+    (loop with queue = (listener-queue loop)
+          for listener = (pop queue)
+          while listener
           do (handle event listener))))
 
 (defmethod add-listener (listener (loop event-loop))
-  (setf (gethash listener (listeners loop)) listener))
+  (let ((cons (cons listener (listener-queue loop))))
+    (setf (gethash listener (listeners loop)) cons)
+    (setf (listener-queue loop) cons)
+    listener))
 
 (defmethod remove-listener (listener (loop event-loop))
-  (remhash listener (listeners loop)))
+  (let ((cons (gethash listener (listeners loop))))
+    (when cons
+      (setf (car cons) (cadr cons))
+      (setf (cdr cons) (cddr cons)))
+    (remhash listener (listeners loop))
+    listener))
 
 (defmethod clear ((loop event-loop))
   (discard-events loop)
-  (clrhash (listeners loop)))
+  (clrhash (listeners loop))
+  (setf (listener-queue loop) '(NIL)))
 
 (defmacro define-handler ((class event &rest qualifiers) slots &body body)
   (destructuring-bind (instance class) (enlist class class)
