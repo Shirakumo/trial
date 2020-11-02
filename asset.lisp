@@ -91,7 +91,9 @@
     (with-context (*context*)
       (deallocate asset)
       (loop for resource in (enlist (apply #'generate-resources asset (input* asset) (generation-arguments asset)))
-            do (allocate resource)))))
+            do (dolist (dependency (dependencies resource))
+                 (allocate dependency))
+               (allocate resource)))))
 
 (defmethod load ((asset asset))
   (apply #'generate-resources asset (input* asset) (generation-arguments asset)))
