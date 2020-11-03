@@ -62,7 +62,8 @@
      (list (3d-vectors:vx3 vec) (3d-vectors:vy3 vec) (3d-vectors:vz3 vec)))))
 
 (defmethod harmony:play ((voice voice) &key reset location velocity volume)
-  (let ((voice (voice voice))
+  (let ((voice (or (voice voice)
+                   (error "Voice has not been allocated.")))
         (sources (harmony:segment :sources harmony:*server*))
         (mixer (harmony:segment (mixer voice) harmony:*server*))
         (location (ensure-vector location))

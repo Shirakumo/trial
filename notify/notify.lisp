@@ -13,7 +13,8 @@
    #:watch
    #:notify
    #:files-to-watch
-   #:process-changes))
+   #:process-changes
+   #:main))
 (in-package #:org.shirakumo.fraf.trial.notify)
 
 (defvar *file-association-table* (make-hash-table :test 'equal))
@@ -63,6 +64,23 @@
 (defmethod files-to-watch append ((asset trial:file-input-asset))
   (list (trial:input* asset)))
 
-(defun process-changes ()
-  (notify:with-events (file change-type)
+(defun process-changes (&key timeout)
+  (notify:with-events (file change-type :timeout timeout)
     (notify T file)))
+
+(defclass main (trial:main)
+  ((file-watch-thread :initform NIL :accessor file-watch-thread)))
+
+(defmethod initialize-instance :after ((main main) &key (watch-files (not (deploy:deployed-p))))
+  (when watch-files
+    (watch T)
+    (flet ((thunk ()
+             (loop while (file-watch-thread main)
+                   do (with-simple-restart (abort "Ignore the error.")
+                        (process-changes :timeout 0.1)))))
+      (setf (file-watch-thread main) T)
+      (setf (file-watch-thread main) (bt:make-thread #'thunk :name "Asset notification thread")))))
+
+(defmethod trial:finalize :after ((main main))
+  (trial:with-thread-exit ((file-watch-thread main))
+    (setf (file-watch-thread main) NIL)))
