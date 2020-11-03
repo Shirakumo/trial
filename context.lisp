@@ -8,7 +8,7 @@
 
 (defvar *context* NIL)
 
-(defmacro with-context ((context &key force reentrant) &body body)
+(defmacro with-context ((&optional (context '*context*) &key force reentrant) &body body)
   (let* ((cont (gensym "CONTEXT"))
          (thunk (gensym "THUNK"))
          (acquiring-body `(progn
