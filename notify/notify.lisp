@@ -44,13 +44,15 @@
       (watch asset))))
 
 (defmethod notify ((asset trial:asset) file)
+  (v:info :trial.notify "Noticed file change for ~a, reloading." file)
   (trial:with-context ()
     (trial:reload asset)))
 
 (defmethod notify ((applicable (eql T)) file)
-  (let ((file (truename file)))
-    (dolist (asset (gethash file *file-association-table*))
-      (notify asset file))))
+  (trial:with-retry-restart (retry "Retry the notification")
+    (let ((file (truename file)))
+      (dolist (asset (gethash file *file-association-table*))
+        (notify asset file)))))
 
 (defmethod files-to-watch append ((asset trial:asset))
   ())
