@@ -35,7 +35,10 @@
   (dolist (file (files-to-watch asset))
     (let ((file (truename file)))
       (pushnew asset (gethash file *file-association-table*))
-      (notify:watch file :events '(:modify)))))
+      (handler-case
+          (notify:watch file :events '(:modify))
+        (notify:failure ()
+          (v:error :trial.notify "Failed to add watch for ~a" file))))))
 
 (defmethod watch ((all (eql T)))
   (notify:init)
