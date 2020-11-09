@@ -55,9 +55,10 @@
 
 (defmethod notify ((applicable (eql T)) file)
   (trial:with-retry-restart (retry "Retry the notification")
-    (let ((file (truename file)))
-      (dolist (asset (gethash file *file-association-table*))
-        (notify asset file)))))
+    (let ((file (probe-file file)))
+      (when file
+        (dolist (asset (gethash file *file-association-table*))
+          (notify asset file))))))
 
 (defmethod files-to-watch append ((asset trial:asset))
   ())
