@@ -256,7 +256,8 @@
    #:observe!
    #:stop-observing
    #:load-request
-   #:maybe-reload-scene)
+   #:maybe-reload-scene
+   #:display-controller)
   ;; deferred.lisp
   (:export
    #:geometry-pass
