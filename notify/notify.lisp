@@ -50,7 +50,7 @@
 (defmethod notify ((asset trial:asset) file)
   (v:info :trial.notify "Noticed file change for ~a, issuing reload." file)
   (when trial:*context*
-    (trial:issue (handler trial:*context*) 'trial:load-request :thing asset)))
+    (trial:issue (trial:scene (trial:handler trial:*context*)) 'trial:load-request :thing asset)))
 
 (defmethod notify ((applicable (eql T)) file)
   (trial:with-retry-restart (retry "Retry the notification")
