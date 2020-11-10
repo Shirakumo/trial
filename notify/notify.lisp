@@ -75,12 +75,12 @@
 (defmethod initialize-instance :after ((main main) &key (watch-files (not (deploy:deployed-p))))
   (when watch-files
     (watch T)
-    (flet ((thunk ()
-             (loop while (file-watch-thread main)
-                   do (with-simple-restart (abort "Ignore the error.")
-                        (process-changes :timeout 0.1)))))
-      (setf (file-watch-thread main) T)
-      (setf (file-watch-thread main) (bt:make-thread #'thunk :name "Asset notification thread")))))
+    (setf (file-watch-thread main) T)
+    (setf (file-watch-thread main)
+          (trial:with-thread ("Asset notification thread")
+            (loop while (file-watch-thread main)
+                  do (with-simple-restart (abort "Ignore the error.")
+                       (process-changes :timeout 0.1)))))))
 
 (defmethod trial:finalize :after ((main main))
   (trial:with-thread-exit ((file-watch-thread main))
