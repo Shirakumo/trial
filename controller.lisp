@@ -77,7 +77,16 @@
   ((thing :initarg :thing)))
 
 (define-handler (controller load-request) (thing)
-  (commit thing (loader (display controller)) :unload NIL))
+  (typecase thing
+    (asset
+     (if (loaded-p thing)
+         (reload thing)
+         (load thing)))
+    (resource
+     (unless (allocated-p thing)
+       (allocate thing)))
+    (T
+     (commit thing (loader (display controller)) :unload NIL))))
 
 (defun maybe-reload-scene (&optional (window (list-windows)))
   (dolist (window (enlist window))
