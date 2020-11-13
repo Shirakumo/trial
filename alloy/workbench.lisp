@@ -21,7 +21,7 @@
            (layout (make-instance 'alloy:vertical-linear-layout :layout-parent (alloy:layout-tree ui))))
       (let* ((data (3d-vectors:vec2 0 1))
              (vec (alloy:represent data 'vec2 :focus-parent focus :layout-parent layout)))
-        (alloy:on (setf alloy:value) (value vec)
+        (alloy:on alloy:value (value vec)
           (print value)))
       (alloy:register layout ui))
     (trial:enter (make-instance 'trial:2d-camera) scene)

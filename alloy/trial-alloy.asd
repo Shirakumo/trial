@@ -15,8 +15,7 @@
   :components ((:file "package")
                (:file "renderer")
                (:file "ui")
-               (:file "components")
-               (:file "workbench"))
+               (:file "components"))
   :depends-on (:trial
                :alloy-simple-presentations
                :alloy-opengl
