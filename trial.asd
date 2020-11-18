@@ -29,7 +29,7 @@
                (:file "attributes" :depends-on ("package"))
                (:file "camera" :depends-on ("package" "entity" "helpers" "input"))
                (:file "context" :depends-on ("package"))
-               (:file "controller" :depends-on ("package" "mapping" "input" "entity" "asset" "text" ("assets" "font")))
+               (:file "controller" :depends-on ("package" "mapping" "input" "entity" "asset" ("assets" "font")))
                (:file "data-pointer" :depends-on ("package" "type-info" "static-vector"))
                (:file "deferred" :depends-on ("package" "shader-entity" "shader-pass" "helpers" ("resources" "uniform-buffer") ("assets" "static")))
                (:file "deploy" :depends-on ("package" "gamepad"))
@@ -57,7 +57,7 @@
                (:file "phong" :depends-on ("package" "helpers"))
                (:file "pipeline" :depends-on ("package" "event-loop" "toolkit"))
                (:file "pipelined-scene" :depends-on ("package" "pipeline" "scene" "loader"))
-               (:file "prompt" :depends-on ("package" "text"))
+               (:file "prompt" :depends-on ("package"))
                (:file "rails" :depends-on ("package" "entity" "helpers"))
                (:file "render-loop" :depends-on ("package" "toolkit"))
                (:file "render-texture" :depends-on ("package" "pipeline" "entity"))
@@ -73,7 +73,6 @@
                (:file "sprite" :depends-on ("package" "shader-entity" "helpers" ("assets" "sprite-data")))
                (:file "ssao" :depends-on ("package" "shader-pass" "transforms"))
                (:file "static-vector" :depends-on ("package"))
-               (:file "text" :depends-on ("package" "shader-entity" "helpers" ("resources" "font")))
                (:file "toolkit" :depends-on ("package"))
                (:file "transforms" :depends-on ("package"))
                (:file "type-info" :depends-on ("package" "toolkit"))
@@ -81,7 +80,6 @@
                (:module "resources"
                 :depends-on ("package" "resource" "toolkit" "data-pointer")
                 :components ((:file "buffer-object")
-                             (:file "font")
                              (:file "framebuffer")
                              (:file "shader-program")
                              (:file "shader")
@@ -93,8 +91,7 @@
                              (:file "vertex-struct-buffer" :depends-on ("struct-buffer"))))
                (:module "assets"
                 :depends-on ("package" "asset" "resources" "data-pointer")
-                :components ((:file "font")
-                             (:file "image")
+                :components ((:file "image")
                              (:file "mesh")
                              (:file "sprite-data" :depends-on ("image"))
                              (:file "static")
@@ -114,7 +111,6 @@
                :bordeaux-threads
                :cl-opengl
                :cl-gamepad
-               :cl-fond
                :cl-ppcre
                :pathname-utils
                :flare

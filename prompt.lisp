@@ -208,13 +208,8 @@
                           do (write-char string out)))))
         #'char<))
 
-(define-asset (trial prompt-font) font
-    #p"PromptFont.ttf"
-  :charset (prompt-charset)
-  :size 64)
-
-(define-shader-entity prompt (text)
-  ((texture :initform (asset 'trial 'prompt-font))))
+(define-shader-entity prompt ()
+  ())
 
 (defmethod (setf text) ((character character) (prompt prompt))
   (setf (text prompt) (string character)))

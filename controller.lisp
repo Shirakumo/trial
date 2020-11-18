@@ -18,12 +18,6 @@
 (define-action toggle-overlay (system-action)
   (key-press (one-of key :section :grave)))
 
-(define-asset (trial noto-sans) font
-    #p"noto-sans-regular.ttf")
-
-(define-asset (trial noto-mono) font
-    #p"noto-mono-regular.ttf")
-
 (defclass controller (entity renderable listener)
   ((display :initform NIL :accessor display))
   (:default-initargs
@@ -93,7 +87,7 @@
     (issue (scene window) 'reload-scene)))
 
 (defclass display-controller (controller renderable)
-  ((text :initform (make-instance 'text :font (// 'trial 'noto-mono) :size 18) :accessor text)
+  ((text :initform NIL :accessor text)
    (fps-buffer :initform (make-array 100 :fill-pointer T :initial-element 1) :reader fps-buffer)
    (show-overlay :initform T :accessor show-overlay)))
 
