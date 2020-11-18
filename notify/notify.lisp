@@ -85,3 +85,8 @@
 (defmethod trial:finalize :after ((main main))
   (trial:with-thread-exit ((file-watch-thread main))
     (setf (file-watch-thread main) NIL)))
+
+#+darwin
+(trial::dont-deploy
+ org.shirakumo.file-notify::corefoundation
+ org.shirakumo.file-notify::coreservices)
