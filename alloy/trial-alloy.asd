@@ -15,7 +15,8 @@
   :components ((:file "package")
                (:file "renderer")
                (:file "ui")
-               (:file "components"))
+               (:file "components")
+               (:file "deploy"))
   :depends-on (:trial
                :alloy-simple-presentations
                :alloy-opengl
