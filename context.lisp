@@ -177,7 +177,7 @@
 (defmethod describe-object :after ((context context) stream)
   (context-info context stream))
 
-(defun context-info (context stream)
+(defun context-info (context stream &key (show-extensions T))
   (format stream "~&~%Running GL~a.~a ~a~%~
                     Sample buffers:     ~a (~a sample~:p)~%~
                     Max texture size:   ~a~%~
@@ -186,7 +186,7 @@
                     GL Renderer:        ~a~%~
                     GL Version:         ~a~%~
                     GL Shader Language: ~a~%~
-                    GL Extensions:      ~{~a~^ ~}~%"
+                    ~@[GL Extensions:      ~{~a~^ ~}~%~]"
           (gl-property :major-version)
           (gl-property :minor-version)
           (profile context)
@@ -204,9 +204,10 @@
           (gl-property :renderer)
           (gl-property :version)
           (gl-property :shading-language-version)
-          (ignore-errors
-           (loop for i from 0 below (gl:get* :num-extensions)
-                 collect (gl:get-string-i :extensions i)))))
+          (when show-extensions
+            (ignore-errors
+             (loop for i from 0 below (gl:get* :num-extensions)
+                   collect (gl:get-string-i :extensions i))))))
 
 (defun context-note-debug-info (context)
   (v:debug :trial.context "Context information: ~a"
