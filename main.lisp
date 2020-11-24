@@ -59,8 +59,9 @@
   (unless (eq old new)
     (when old (stop old))
     (setup-scene main new)
-    (when (commit new (loader main))
-      (setf (scene main) new))
+    (with-timing-report (info :trial.main "Commit took ~fs run time, ~fs clock time.")
+      (when (commit new (loader main))
+        (setf (scene main) new)))
     (start (scene main)))
   (values new old))
 
