@@ -154,10 +154,6 @@
              (v:warn :trial.context "~a attempted to release ~a even though ~a is active."
                      this context *context*))))))
 
-(defmethod handle (event (global (eql T)))
-  (when *context*
-    (handle event (handler *context*))))
-
 (defclass resize (event)
   ((width :initarg :width :reader width)
    (height :initarg :height :reader height)))
