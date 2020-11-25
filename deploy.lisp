@@ -19,7 +19,12 @@
        :copy-root NIL))))
 
 (deploy:define-hook (:build trial) ()
-  (v:remove-global-controller))
+  (v:remove-global-controller)
+  ;; Finalize all subclasses of shader-entity to avoid shader recompilations
+  (labels ((r (class)
+             (c2mop:finalize-inheritance class)
+             (mapc #'r (c2mop:class-direct-subclasses class))))
+    (r (find-class 'shader-entity))))
 
 (deploy:define-hook (:boot trial) ()
   (v:restart-global-controller)

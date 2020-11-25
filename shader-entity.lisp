@@ -100,14 +100,18 @@
   (setf (effective-shaders class) (compute-effective-shaders class))
   (setf (effective-buffers class) (compute-effective-buffers class))
   (setf (effective-shader-class class) (compute-effective-shader-class class))
-  (handle (make-instance 'class-changed :changed-class class) T))
+  (when *context*
+    (handle (make-instance 'class-changed :changed-class class)
+            (handler *context*))))
 
 (defmethod apply-class-changes ((class shader-entity-class))
   (call-next-method)
   (setf (effective-shaders class) (compute-effective-shaders class))
   (setf (effective-buffers class) (compute-effective-buffers class))
   (setf (effective-shader-class class) (compute-effective-shader-class class))
-  (handle (make-instance 'class-changed :changed-class class) T))
+  (when *context*
+    (handle (make-instance 'class-changed :changed-class class)
+            (handler *context*))))
 
 (defmethod (setf direct-shaders) :after (value (class shader-entity-class))
   (when (c2mop:class-finalized-p class)
