@@ -40,7 +40,7 @@
     (setf (size buffer) size)))
 
 (defmethod update-buffer-data ((buffer buffer-object) (data (eql T)) &rest args)
-  (apply #'call-next-method buffer (buffer-data buffer) args))
+  (apply #'update-buffer-data buffer (buffer-data buffer) args))
 
 (defmethod update-buffer-data ((buffer buffer-object) data &key (buffer-start 0) (data-start 0) count gl-type)
   (with-data-ptr (ptr data-size data :offset data-start :gl-type gl-type)
