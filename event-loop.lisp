@@ -88,11 +88,14 @@
     listener))
 
 (defmethod remove-listener (listener (loop event-loop))
-  (let ((cons (gethash listener (listeners loop))))
+  (let* ((listeners (listeners loop))
+         (cons (gethash listener listeners)))
+    (declare (type hash-table listeners))
     (when cons
       (setf (car cons) (cadr cons))
-      (setf (cdr cons) (cddr cons)))
-    (remhash listener (listeners loop))
+      (setf (cdr cons) (cddr cons))
+      (setf (gethash (car cons) listeners) cons))
+    (remhash listener listeners)
     listener))
 
 (defmethod clear ((loop event-loop))
