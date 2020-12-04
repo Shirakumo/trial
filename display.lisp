@@ -12,6 +12,11 @@
   (:default-initargs
    :clear-color (vec 0.2 0.3 0.3)))
 
+(defmethod initialize-instance :around ((display display) &key)
+  (with-cleanup-on-failure (when (context display)
+                             (finalize (context display)))
+    (call-next-method)))
+
 (defmethod initialize-instance :after ((display display) &rest initargs &key context title width height version profile double-buffering stereo-buffer vsync fullscreen)
   (declare (ignore title width height version profile double-buffering stereo-buffer vsync fullscreen))
   (unless context
