@@ -20,6 +20,7 @@
   (with-slots (scene controller loader) main
     (v:info :trial.main "RAPTURE")
     (acquire-context (context main) :force T)
+    (clear-retained)
     (finalize controller)
     (finalize scene)
     (finalize loader)))
