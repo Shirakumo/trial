@@ -18,7 +18,7 @@
 (define-action toggle-overlay (system-action)
   (key-press (one-of key :section :grave)))
 
-(defclass controller (entity renderable listener)
+(defclass controller (entity listener)
   ((display :initform NIL :accessor display))
   (:default-initargs
    :name :controller))
