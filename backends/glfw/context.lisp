@@ -262,6 +262,13 @@
                               :modifiers modifiers)
                (handler context))))))
 
+(cffi:defcallback ctx-char :void ((window :pointer) (char :unsigned-int))
+  (when (< char #x110000)
+    (let ((char (code-char char)))
+      (%with-context
+        (handle (make-instance 'text-entered :text (string char))
+                (handler context))))))
+
 (cl-glfw3:def-char-callback ctx-char (window char)
   (%with-context
     (handle (make-instance 'text-entered
