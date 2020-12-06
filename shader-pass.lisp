@@ -437,7 +437,7 @@ in vec2 tex_coord;")
 
 (define-shader-pass sample-reduction-pass (post-effect-pass)
   ((previous-pass :port-type input :texspec (:target :texture-2d-multisample))
-   (color :port-type output :texspec (:target :texture-2d))))
+   (color :port-type output :texspec (:target :texture-2d) :reader color)))
 
 (define-class-shader (sample-reduction-pass :fragment-shader)
   "uniform sampler2DMS previous_pass;

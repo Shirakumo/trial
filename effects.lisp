@@ -9,12 +9,12 @@
 (define-pool effects)
 
 (define-shader-pass render-pass (scene-pass per-object-pass)
-  ((color :port-type output :attachment :color-attachment0)
-   (depth :port-type output :attachment :depth-stencil-attachment)))
+  ((color :port-type output :attachment :color-attachment0 :reader color)
+   (depth :port-type output :attachment :depth-stencil-attachment :reader depth)))
 
 (define-shader-pass simple-post-effect-pass (post-effect-pass)
   ((previous-pass :port-type input)
-   (color :port-type output)))
+   (color :port-type output :reader color)))
 
 (defmethod (setf active-p) :before (value (pass simple-post-effect-pass))
   (let ((predecessor-port (flow:left (first (flow:connections (flow:port pass 'previous-pass))))))
@@ -80,7 +80,7 @@ void main(){
 (define-shader-pass blend-pass (post-effect-pass)
   ((a-pass :port-type input)
    (b-pass :port-type input)
-   (color :port-type output)))
+   (color :port-type output :reader color)))
 
 (define-class-shader (blend-pass :fragment-shader)
   (pool-path 'effects #p"blend.frag"))
