@@ -245,7 +245,8 @@
 (defmethod compile-to-pass (object (pass scene-pass))
   (when (object-renderable-p object pass)
     (let ((program (register-object-for-pass pass object)))
-      (push-pass-action pass `(prepare-pass-program ,pass ,program))
+      (when (typep pass 'per-object-pass)
+        (push-pass-action pass `(prepare-pass-program ,pass ,program)))
       (push-pass-action pass `(render ,object ,program)))))
 
 (defmethod compile-to-pass :around ((object transformed) (pass scene-pass))
