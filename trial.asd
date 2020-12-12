@@ -39,6 +39,7 @@
                (:file "event-loop" :depends-on ("package" "entity"))
                (:file "features" :depends-on ("package"))
                (:file "flare" :depends-on ("package" "transforms"))
+               (:file "fps" :depends-on ("package" ("assets" "image") ("assets" "mesh") "loader"))
                ;;(:file "fullscreenable" :depends-on ("package" "display"))
                (:file "gamepad" :depends-on ("package" "event-loop" "toolkit"))
                (:file "geometry" :depends-on ("package" "toolkit" "type-info" "static-vector" ("resources" "vertex-array") ("resources" "vertex-buffer")))

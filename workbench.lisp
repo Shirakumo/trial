@@ -15,13 +15,10 @@
 
 (define-pool workbench)
 
-(defmethod initialize-instance :before ((workbench workbench) &key)
-  (harmony:maybe-start-simple-server))
-
-(defmethod finalize ((workbench workbench))
-  (when harmony:*server*
-    (harmony:end harmony:*server*)))
-
 (progn
-  (defmethod setup-scene ((workbench workbench) scene))
+  (defmethod setup-scene ((workbench workbench) scene)
+    (disable :cull-face)
+    (disable :depth-test)
+    (enter (make-instance 'trial::fps-counter) scene)
+    (enter (make-instance 'render-pass) scene))
   (maybe-reload-scene))
