@@ -239,5 +239,6 @@
 
 (defmethod make-vertex-data ((mesh vertex-mesh) &key (attributes T))
   ;; TODO: Would be better if we didn't have to create an adjustable vector...
-  (replace-vertex-data (make-array 0 :adjustable T :element-type 'single-float)
-                       mesh :attributes attributes))
+  (simplify
+   (replace-vertex-data (make-array 0 :adjustable T :element-type 'single-float)
+                        mesh :attributes attributes)))

@@ -28,6 +28,7 @@
     #p"fps-texture.png"
   :mag-filter :nearest)
 
+(declaim (type (unsigned-byte 60) +frame-count+ +start-time+))
 (define-global +frame-count+ 0)
 (define-global +start-time+ 0)
 
@@ -39,6 +40,7 @@
   (stage (// 'trial 'fps-texture) area))
 
 (defmethod render ((counter fps-counter) (program shader-program))
+  (declare (optimize speed (safety 1)))
   (let* ((vao (// 'trial 'fps-counter))
          (now (get-internal-real-time))
          (dt (- now +start-time+)))
@@ -47,6 +49,8 @@
       (let* ((fps (floor (/ +frame-count+ (/ dt internal-time-units-per-second))))
              (buf (caadr (bindings vao)))
              (dat (buffer-data buf)))
+        (declare (type (simple-array single-float) dat))
+        (declare (type (unsigned-byte 32) fps))
         (setf +start-time+ now)
         (setf +frame-count+ 0)
         (flet ((set-rect (i d)

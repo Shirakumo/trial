@@ -383,6 +383,13 @@
                 (/ (- (get-internal-run-time) ,run) INTERNAL-TIME-UNITS-PER-SECOND)
                 (/ (- (get-internal-real-time) ,real) INTERNAL-TIME-UNITS-PER-SECOND))))))
 
+(defun simplify (array)
+  (if (typep array 'simple-array)
+      array
+      (make-array (array-dimensions array)
+                  :element-type (array-element-type array)
+                  :initial-contents array)))
+
 (defun ensure-instance (object type &rest initargs)
   (cond ((null object)
          (apply #'make-instance type initargs))
