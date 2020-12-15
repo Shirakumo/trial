@@ -127,6 +127,9 @@
    #:data-usage
    #:size
    #:update-buffer-data)
+  ;; resources/vertex-struct-buffer.lisp
+  (:export
+   #:vertex-struct-buffer)
   ;; array-container.lisp
   (:export
    #:array-container
@@ -528,6 +531,16 @@
    #:load-mapping
    #:trigger
    #:retain)
+  ;; particle.lisp
+  (:export
+   #:particle
+   #:lifetime
+   #:particle-emitter
+   #:initial-particle-state
+   #:update-particle-state
+   #:new-particle-count
+   #:simple-particle
+   #:simple-particle-emitter)
   ;; phong.lisp
   (:export)
   ;; pipeline.lisp
@@ -752,6 +765,7 @@
    #:define-global
    #:finalize
    #:gl-property
+   #:polar->cartesian
    #:current-time
    #:executable-directory
    #:kw
@@ -847,7 +861,7 @@
 
 (defpackage #:cl+trial
   (:nicknames #:org.shirakumo.fraf.trial.cl+trial)
-  (:shadowing-import-from #:trial #:// #:scene #:entity #:container #:load #:update)
+  (:shadowing-import-from #:trial #:// #:scene #:entity #:container #:load #:update #:particle)
   (:use #:cl #:trial #:3d-vectors #:3d-matrices #:flare))
 
 (do-symbols (symb '#:cl+trial)
