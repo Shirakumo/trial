@@ -49,6 +49,9 @@
 (defclass action (event)
   ((source-event :initarg :source-event :initform NIL :accessor source-event)))
 
+(defclass analog-action (action)
+  ((value :initarg :value :initform 0f0 :accessor value)))
+
 (defun remove-action-mappings (action)
   (loop for k being the hash-keys of *mappings*
         do (when (and (consp k) (eql (car k) action))
@@ -109,6 +112,36 @@
                 `(< (old-pos ,ev) ,threshold (pos ,ev))
                 `(< (pos ,ev) ,threshold (old-pos ,ev)))))))
 
+(defgeneric process-analog-form (ev event &key &allow-other-keys)
+  (:method (ev (_ (eql 'label)) &key &allow-other-keys))
+  (:method (ev (_ (eql 'key)) &key one-of (edge :rise) (value 1.0))
+    `(key-event
+      (one-of (key ,ev) ,@one-of)
+      (etypecase ,ev
+        (key-press ,(ecase edge (:rise value) (:fall 0.0)))
+        (key-release (ecase edge (:rise 0.0) (:fall ,value))))))
+  (:method (ev (_ (eql 'button)) &key one-of (edge :rise) (value 1.0))
+    `(button-event
+      (one-of (button ,ev) ,@one-of)
+      (etypecase ,ev
+        (button-press ,(ecase edge (:rise value) (:fall 0.0)))
+        (button-release (ecase edge (:rise 0.0) (:fall ,value))))))
+  (:method (ev (_ (eql 'mouse)) &key one-of (edge :rise) (value 1.0))
+    `(mouse-button-event
+      (one-of (button ,ev) ,@one-of)
+      (etypecase ,ev
+        (mouse-press ,(ecase edge (:rise value) (:fall 0.0)))
+        (mouse-release (ecase edge (:rise 0.0) (:fall ,value))))))
+  (:method (ev (_ (eql 'cursor)) &key (axis :x) (multiplier 1.0))
+    `(mouse-move
+      T
+      (* ,multiplier (,(ecase axis (:x 'vx2) (:y 'vy2)) (pos ,ev)))))
+  (:method (ev (_ (eql 'axis)) &key one-of (threshold 0.1) (multiplier 1.0))
+    `(gamepad-move
+      (and (one-of (axis ,ev) ,@one-of)
+           (< ,threshold (pos ,ev)))
+      (* ,multiplier (pos ,ev)))))
+
 (defun process-mapping-form (loop ev form)
   (destructuring-bind (type action &body triggers) form
     (ecase type
@@ -131,7 +164,14 @@
              when evup
              collect (list evup
                            `(when ,(or cdup cddn)
-                              (setf (retained ',action) NIL))))))))
+                              (setf (retained ',action) NIL)))))
+      (analog
+       (loop for trigger in triggers
+             for (evtype condition value) = (apply #'process-analog-form ev trigger)
+             when evtype
+             collect (list evtype
+                           `(when ,condition
+                              (issue ,loop (make-instance ',action :source-event ,ev :value ,value)))))))))
 
 ;; TODO: could optimise this further by combining ONE-OF tests.
 (defun load-mapping (input &key (name 'keymap) (package *package*))
