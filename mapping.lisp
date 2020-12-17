@@ -66,6 +66,7 @@
        ,@(mapcar #'compile-mapping mappings))))
 
 (defgeneric process-trigger-form (ev event &key &allow-other-keys)
+  (:method (ev (_ (eql 'label)) &key &allow-other-keys))
   (:method (ev (_ (eql 'key)) &key one-of (edge :rise))
     `(,(ecase edge (:rise 'key-press) (:fall 'key-release))
       (one-of (key ,ev) ,@one-of)))
@@ -83,6 +84,7 @@
                 `(< (old-pos ,ev) ,threshold (pos ,ev)))))))
 
 (defgeneric process-retain-form (ev event &key &allow-other-keys)
+  (:method (ev (_ (eql 'label)) &key &allow-other-keys))
   (:method (ev (_ (eql 'key)) &key one-of (edge :rise))
     `(,(ecase edge (:rise 'key-press) (:fall 'key-release))
       ,(ecase edge (:rise 'key-release) (:fall 'key-press))
@@ -113,17 +115,20 @@
       (trigger
        (loop for trigger in triggers
              for (evtype condition) = (apply #'process-trigger-form ev trigger)
+             when evtype
              collect (list evtype
                            `(when ,condition
                               (issue ,loop (make-instance ',action :source-event ,ev))))))
       (retain
        (loop for trigger in triggers
              for (evdn evup cddn cdup) = (apply #'process-retain-form ev trigger)
+             when evdn
              collect (list evdn
                            `(when ,cddn
                               ,@(when (find-class action NIL)
                                   `((issue ,loop (make-instance ',action :source-event ,ev))))
                               (setf (retained ',action) T)))
+             when evup
              collect (list evup
                            `(when ,(or cdup cddn)
                               (setf (retained ',action) NIL))))))))
@@ -185,8 +190,10 @@ label     --- a keyword naming a key or button label
 Examples:
 
 (trigger quicksave
+  (label :english "Quick Save")
   (key :one-of (:f5)))
 
 (retain dash
+  (label :english "Dash")
   (axis :one-of (:r2) :threshold 0.2))
 |#
