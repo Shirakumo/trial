@@ -45,7 +45,7 @@
          (now (get-internal-real-time))
          (dt (- now +start-time+)))
     (incf +frame-count+)
-    (when (<= internal-time-units-per-second dt)
+    (when (<= (/ internal-time-units-per-second 10) dt)
       (let* ((fps (floor (/ +frame-count+ (/ dt internal-time-units-per-second))))
              (buf (caadr (bindings vao)))
              (dat (buffer-data buf)))
