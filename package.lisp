@@ -526,6 +526,7 @@
    #:define-simple-mapping
    #:map-event
    #:action
+   #:action-set
    #:analog-action
    #:value
    #:directional-action

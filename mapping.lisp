@@ -49,6 +49,20 @@
 (defclass action (event)
   ((source-event :initarg :source-event :initform NIL :accessor source-event)))
 
+(defclass action-set () ()) ;; marker-class
+
+(defun action-set (action)
+  (let ((action (ensure-class action)))
+    (flet ((direct-action-set (base)
+             (loop for class in (c2mop:class-direct-superclasses base)
+                   do (when (eql class (find-class 'action-set))
+                        (return base)))))
+      (or (direct-action-set action)
+          (loop for class in (or (ignore-errors (c2mop:class-precedence-list action))
+                                 (c2mop:compute-class-precedence-list action))
+                thereis (direct-action-set class))
+          (find-class 'action)))))
+
 (defclass analog-action (action)
   ((value :initarg :value :initform 0f0 :accessor value)))
 
