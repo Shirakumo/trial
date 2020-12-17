@@ -526,6 +526,12 @@
    #:define-simple-mapping
    #:map-event
    #:action
+   #:analog-action
+   #:value
+   #:directional-action
+   #:x #:y
+   #:spatial-action
+   #:x #:y #:z
    #:remove-action-mappings
    #:define-action
    #:load-mapping
@@ -793,6 +799,8 @@
    #:with-error-logging
    #:with-timing-report
    #:ensure-class
+   #:list-subclasses
+   #:list-leaf-classes
    #:ensure-instance
    #:with-slots-bound
    #:with-all-slots-bound

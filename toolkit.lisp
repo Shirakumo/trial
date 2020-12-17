@@ -404,6 +404,19 @@
     (standard-class class-ish)
     (standard-object (class-of class-ish))))
 
+(defun list-subclasses (class)
+  (let ((sub (c2mop:class-direct-subclasses (ensure-class class))))
+    (loop for class in sub
+          nconc (list* class (list-subclasses class)))))
+
+(defun list-leaf-classes (root)
+  (let ((sub (c2mop:class-direct-subclasses (ensure-class root))))
+    (if sub
+        (remove-duplicates
+         (loop for class in sub
+               nconc (list-leaf-classes class)))
+        (list (ensure-class root)))))
+
 (defmacro with-slots-bound ((instance class) &body body)
   (let ((slots (loop for slot in (c2mop:class-direct-slots
                                   (let ((class (ensure-class class)))

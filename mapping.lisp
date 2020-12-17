@@ -52,6 +52,15 @@
 (defclass analog-action (action)
   ((value :initarg :value :initform 0f0 :accessor value)))
 
+(defclass directional-action (action)
+  ((x :initarg :value :initform 0f0 :accessor x)
+   (y :initarg :value :initform 0f0 :accessor y)))
+
+(defclass spatial-action (action)
+  ((x :initarg :value :initform 0f0 :accessor x)
+   (y :initarg :value :initform 0f0 :accessor y)
+   (z :initarg :value :initform 0f0 :accessor z)))
+
 (defun remove-action-mappings (action)
   (loop for k being the hash-keys of *mappings*
         do (when (and (consp k) (eql (car k) action))
