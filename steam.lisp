@@ -41,7 +41,6 @@
                        (cond ((steam-required-p main)
                               (invoke-restart 'steam:restart))
                              (T
-                              (setf (use-steaminput main) NIL)
                               (invoke-restart 'ignore)))))))
     (when (or (steam-required-p main)
               (deploy:deployed-p))
@@ -65,7 +64,11 @@
                      (let ((action (steam:find-digital-action input (action-label class))))
                        (when action (push (cons action class) digital))))))
             (setf (analog-actions main) (coerce analog 'vector))
-            (setf (digital-actions main) (coerce digital 'vector))))))))
+            (setf (digital-actions main) (coerce digital 'vector))))))
+    (handler-case (steam:steamworks)
+      (steam:steamworks-not-initialized ()
+        (v:info :trial.steam "Steamworks not initialised, disabling steam input.")
+        (setf (use-steaminput main) NIL)))))
 
 (defmethod trial:finalize :after ((main main))
   (handler-case
