@@ -6,7 +6,11 @@
 
 (defpackage #:org.shirakumo.fraf.trial.steam
   (:use #:cl)
-  (:export #:main #:steam-required-p)
+  (:export
+   #:main
+   #:steam-required-p
+   #:use-steaminput
+   #:generate-vdf)
   (:local-nicknames
    (#:trial #:org.shirakumo.fraf.trial)
    (#:steam #:org.shirakumo.fraf.steamworks)))
@@ -17,7 +21,9 @@
                   (symbol action)
                   (class (class-name action))
                   (trial:action (class-name (class-of action))))))
-    (format NIL "~a_~a" (package-name (symbol-package action)) (symbol-name action))))
+    (format NIL "~a_~a"
+            (cl-ppcre:regex-replace-all "[ -]" (package-name (symbol-package action)) "")
+            (cffi:translate-camelcase-name action))))
 
 (defclass main (trial:main)
   ((analog-actions :initform #() :accessor analog-actions)
@@ -48,7 +54,10 @@
                 (analog ())
                 (digital ()))
             (dolist (class (trial:list-leaf-classes (find-class 'trial:action)))
-              (cond ((or (c2mop:subclassp class (find-class 'trial:analog-action))
+              (cond ((or (eql class (find-class 'trial:analog-action))
+                         (eql class (find-class 'trial:directional-action))
+                         (eql class (find-class 'trial:spatial-action))))
+                    ((or (c2mop:subclassp class (find-class 'trial:analog-action))
                          (c2mop:subclassp class (find-class 'trial:directional-action)))
                      (let ((action (steam:find-analog-action input (action-label class))))
                        (when action (push (cons action class) analog))))
@@ -91,3 +100,76 @@
 Please check the CL-STEAMWORKS setup instructions.
 
 Refusing to deploy as the game would not launch properly anyway.")))
+
+
+(defun action-labels (action)
+  (let ((docstring (documentation action 'type))
+        (labels ()))
+    (or (cl-ppcre:register-groups-bind (groups) ("Labels:((\\n  *[^\\n]*)*)" docstring)
+          (dolist (label (cl-ppcre:split "\\n  *" groups) labels)
+            (cl-ppcre:register-groups-bind (language label) ("^(.*?): *(.*?) *$" label)
+              (push (list language label) labels))))
+        (list (list "english" (string-downcase (class-name (trial:ensure-class action))))))))
+
+(defun generate-vdf (file &key (actions T) (if-exists :error))
+  (let ((localization ())
+        (action-sets ())
+        (actions (etypecase actions
+                   (list
+                    actions)
+                   ((eql T)
+                    (loop for class in (trial:list-leaf-classes (find-class 'trial:action))
+                          unless (find class (list (find-class 'trial:analog-action)
+                                                   (find-class 'trial:directional-action)
+                                                   (find-class 'trial:spatial-action)))
+                          collect (class-name class)))
+                   (symbol
+                    (loop for mapping in (second (trial:mapping actions))
+                          collect (second mapping))))))
+    (loop for action in actions
+          for action-set = (trial:action-set action)
+          do (loop for (language label) in (action-labels action)
+                   do (setf (getf (getf localization language) (action-label action)) label))
+             (let ((set (assoc (action-label action-set) action-sets :test #'string=)))
+               (loop for (language label) in (action-labels action-set)
+                     unless (find (action-label action-set) (getf localization language) :test #'string=)
+                     do (setf (getf (getf localization language) (action-label action-set)) label))
+               (unless set
+                 (setf set (list (action-label (trial:action-set action))
+                                 (format NIL "#~a" (action-label action-set))
+                                 () () ()))
+                 (push set action-sets))
+               (cond ((c2mop:subclassp (trial:ensure-class action) (find-class 'trial:directional-action))
+                      (push (list (action-label action) (format NIL "#~a" (action-label action)) "joystick_move")
+                            (third set)))
+                     ((c2mop:subclassp (trial:ensure-class action) (find-class 'trial:analog-action))
+                      (push (list (action-label action) (format NIL "#~a" (action-label action)))
+                            (fourth set)))
+                     ((c2mop:subclassp (trial:ensure-class action) (find-class 'trial:action))
+                      (push (list (action-label action) (format NIL "#~a" (action-label action)))
+                            (fifth set)))
+                     (T (error "~s is not an action class." action)))))
+    (with-open-file (stream file :direction :output :if-exists if-exists)
+      (format stream "~
+\"In Game Actions\"{
+  \"actions\"{~{
+    ~{~s{
+      \"title\" ~s
+      \"StickPadGyro\"{~{
+        ~{~s {\"title\" ~s \"input_mode\" ~s}~}~}
+      }
+      \"AnalogTrigger\"{~{
+        ~{~s ~s~}~}
+      }
+      \"Button\"{~{
+        ~{~s ~s~}~}
+      }
+    }~}~}
+  }
+  \"localization\"{~{
+    ~s{~{
+      ~s ~s~}
+    }~}
+  }
+}"
+              action-sets localization))))

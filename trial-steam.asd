@@ -14,4 +14,6 @@
   :bug-tracker "https://github.com/Shirakumo/trial/issues"
   :source-control (:git "https://github.com/Shirakumo/trial.git")
   :components ((:file "steam"))
-  :depends-on (:trial :cl-steamworks))
+  :depends-on (:trial
+               :cl-ppcre
+               :cl-steamworks))
