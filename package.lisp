@@ -352,6 +352,9 @@
   ;; flare.lisp
   (:export
    #:finalize)
+  ;; fps.lisp
+  (:export
+   #:fps-counter)
   ;; fullscreenable.lisp
   (:export
    #:fullscreenable
