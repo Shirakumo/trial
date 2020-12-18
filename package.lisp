@@ -528,8 +528,9 @@
    #:define-mapping
    #:define-simple-mapping
    #:map-event
-   #:action
    #:action-set
+   #:define-action-set
+   #:action
    #:analog-action
    #:value
    #:directional-action

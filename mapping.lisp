@@ -46,22 +46,37 @@
   (loop for (function) being the hash-values of *mappings*
         do (funcall function loop event)))
 
-(defclass action (event)
-  ((source-event :initarg :source-event :initform NIL :accessor source-event)))
-
 (defclass action-set () ()) ;; marker-class
 
+(defun find-action-set (action)
+  (flet ((direct-action-set (base)
+           (loop for class in (c2mop:class-direct-superclasses base)
+                 do (when (eql class (find-class 'action-set))
+                      (return base)))))
+    (or (direct-action-set action)
+        (loop for class in (or (ignore-errors (c2mop:class-precedence-list action))
+                               (c2mop:compute-class-precedence-list action))
+              thereis (direct-action-set class))
+        (find-class 'action))))
+
 (defun action-set (action)
-  (let ((action (ensure-class action)))
-    (flet ((direct-action-set (base)
-             (loop for class in (c2mop:class-direct-superclasses base)
-                   do (when (eql class (find-class 'action-set))
-                        (return base)))))
-      (or (direct-action-set action)
-          (loop for class in (or (ignore-errors (c2mop:class-precedence-list action))
-                                 (c2mop:compute-class-precedence-list action))
-                thereis (direct-action-set class))
-          (find-class 'action)))))
+  (find-action-set (ensure-class action)))
+
+(define-compiler-macro action-set (action &environment env)
+  (if (constantp action env)
+      `(load-time-value (find-action-set (ensure-class ,action)))
+      `(find-action-set (ensure-class ,action))))
+
+(defmacro define-action-set (name)
+  `(progn (defclass ,name (action-set)
+            ((active-p :initform T :accessor active-p :allocation :class)))
+          (defmethod active-p ((class (eql (find-class ',name))))
+            (active-p (c2mop:class-prototype class)))
+          (defmethod (setf active-p) (value (class (eql (find-class ',name))))
+            (setf (active-p (c2mop:class-prototype class)) value))))
+
+(defclass action (event)
+  ((source-event :initarg :source-event :initform NIL :accessor source-event)))
 
 (defclass analog-action (action)
   ((value :initarg :value :initform 0f0 :accessor value)))
@@ -174,7 +189,8 @@
              for (evtype condition) = (apply #'process-trigger-form ev trigger)
              when evtype
              collect (list evtype
-                           `(when ,condition
+                           `(when (and ,condition
+                                       (active-p (action-set ',action)))
                               (issue ,loop (make-instance ',action :source-event ,ev))))))
       (retain
        (loop for trigger in triggers
@@ -183,18 +199,21 @@
              collect (list evdn
                            `(when ,cddn
                               ,@(when (find-class action NIL)
-                                  `((issue ,loop (make-instance ',action :source-event ,ev))))
+                                  `((when (active-p (action-set ',action))
+                                      (issue ,loop (make-instance ',action :source-event ,ev)))))
                               (setf (retained ',action) T)))
              when evup
              collect (list evup
-                           `(when ,(or cdup cddn)
+                           `(when (and ,(or cdup cddn)
+                                       (active-p (action-set ',action)))
                               (setf (retained ',action) NIL)))))
       (analog
        (loop for trigger in triggers
              for (evtype condition value) = (apply #'process-analog-form ev trigger)
              when evtype
              collect (list evtype
-                           `(when ,condition
+                           `(when (and ,condition
+                                       (active-p (action-set ',action)))
                               (issue ,loop (make-instance ',action :source-event ,ev :value ,value)))))))))
 
 ;; TODO: could optimise this further by combining ONE-OF tests.
