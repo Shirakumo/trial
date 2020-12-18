@@ -73,7 +73,8 @@
           (defmethod active-p ((class (eql (find-class ',name))))
             (active-p (c2mop:class-prototype class)))
           (defmethod (setf active-p) (value (class (eql (find-class ',name))))
-            (setf (active-p (c2mop:class-prototype class)) value))))
+            (setf (active-p (c2mop:class-prototype class)) value))
+          (c2mop:finalize-inheritance (find-class ',name))))
 
 (defclass action (event)
   ((source-event :initarg :source-event :initform NIL :accessor source-event)))
@@ -204,8 +205,7 @@
                               (setf (retained ',action) T)))
              when evup
              collect (list evup
-                           `(when (and ,(or cdup cddn)
-                                       (active-p (action-set ',action)))
+                           `(when ,(or cdup cddn)
                               (setf (retained ',action) NIL)))))
       (analog
        (loop for trigger in triggers
