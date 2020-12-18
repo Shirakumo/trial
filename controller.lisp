@@ -8,7 +8,7 @@
 
 (defvar *observers* (make-array 0 :adjustable T :fill-pointer T))
 
-(define-action system-action ())
+(defclass system-action (action-set) ())
 
 (define-action reload-scene (system-action))
 

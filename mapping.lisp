@@ -85,8 +85,9 @@
            (destructuring-bind (type &rest tests) mapping
              `(define-simple-mapping (,name ,type) (,type ,name :source-event ,type)
                 ,@tests))))
+    (setf superclasses (append superclasses '(action)))
     `(progn
-       (defclass ,name ,(or superclasses '(action))
+       (defclass ,name ,superclasses
          ())
        (remove-action-mappings ',name)
        ,@(mapcar #'compile-mapping mappings))))
