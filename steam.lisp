@@ -28,9 +28,8 @@
 (defclass main (trial:main)
   ((analog-actions :initform #() :accessor analog-actions)
    (digital-actions :initform #() :accessor digital-actions)
-   (use-steaminput :initform T :initarg :use-steaminput :accessor use-steaminput)))
-
-(defmethod steam-required-p ((main main)) NIL)
+   (use-steaminput :initform T :initarg :use-steaminput :accessor use-steaminput)
+   (steam-required-p :initform NIL :initarg :require-steam :accessor steam-required-p)))
 
 (defmethod initialize-instance :after ((main main) &key app-id)
   (handler-bind ((error
@@ -85,20 +84,20 @@
     (let ((input (steam:interface 'steam:steaminput T)))
       (steam:run-frame input)
       (macrolet ((fire (type &rest args)
-                   `(trial:handle (make-instance ,type :device controller ,@args) main)))
+                   `(progn (v:info :trial.steam "Firing from steaminput: ~a" ,type)
+                           (trial:handle (make-instance ,type :device controller ,@args) main))))
         (steam:do-controllers (controller input)
           (loop for (action . class) across (analog-actions main)
-                do (let ((px (getf (steam:previous-action-data action) :x))
-                         (py (getf (steam:previous-action-data action) :y)))
-                     (destructuring-bind (&key mode x y active) (steam:action-data action controller)
+                do (destructuring-bind (px py) (cddr (steam:previous-action-data action))
+                     (destructuring-bind (active mode x y) (steam:action-data action controller)
                        (declare (ignore mode))
                        (when active
                          (if (c2mop:subclassp class (find-class 'trial:directional-action))
                              (when (or (/= x px) (/= y py)) (fire class :x x :y y))
                              (when (/= x px) (fire class :value x)))))))
           (loop for (action . class) across (digital-actions main)
-                do (let ((previous (getf (steam:previous-action-data action) :state)))
-                     (destructuring-bind (&key state active) (steam:action-data action controller)
+                do (let ((previous (second (steam:previous-action-data action))))
+                     (destructuring-bind (active state) (steam:action-data action controller)
                        (when (and active (not (eql previous state)))
                          (fire class))))))))))
 
