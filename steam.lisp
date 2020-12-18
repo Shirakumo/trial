@@ -98,7 +98,7 @@
           (loop for (action . class) across (digital-actions main)
                 do (let ((previous (second (steam:previous-action-data action))))
                      (destructuring-bind (active state) (steam:action-data action controller)
-                       (when (and active (not (eql previous state)))
+                       (when (and active state (null previous))
                          (fire class))))))))))
 
 (deploy:define-hook (:build check-steamworks) ()
