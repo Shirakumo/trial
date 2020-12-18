@@ -20,7 +20,7 @@
   (let ((action (etypecase action
                   (symbol action)
                   (class (class-name action))
-                  (trial:action (class-name (class-of action))))))
+                  (standard-object (class-name (class-of action))))))
     (format NIL "~a_~a"
             (cl-ppcre:regex-replace-all "[ -]" (package-name (symbol-package action)) "")
             (cffi:translate-camelcase-name action))))
@@ -69,6 +69,11 @@
       (steam:steamworks-not-initialized ()
         (v:info :trial.steam "Steamworks not initialised, disabling steam input.")
         (setf (use-steaminput main) NIL)))))
+
+(defmethod (setf trial:active-p) :after (value (set trial:action-set))
+  (let ((label (action-label set)))
+    (v:info :trial.steam "Switching action set to ~s" label)
+    (steam:activate (steam:find-action-set (steam:interface 'steam:steaminput T) label) T)))
 
 (defmethod trial:finalize :after ((main main))
   (handler-case
