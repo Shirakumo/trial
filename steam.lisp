@@ -85,7 +85,7 @@
       (steam:run-frame input)
       (macrolet ((fire (type &rest args)
                    `(progn (v:info :trial.steam "Firing from steaminput: ~a" ,type)
-                           (trial:handle (make-instance ,type :device controller ,@args) main))))
+                           (trial:handle (make-instance ,type ,@args) main))))
         (steam:do-controllers (controller input)
           (loop for (action . class) across (analog-actions main)
                 do (destructuring-bind (px py) (cddr (steam:previous-action-data action))
