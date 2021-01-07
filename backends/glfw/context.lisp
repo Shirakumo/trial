@@ -269,12 +269,6 @@
         (handle (make-instance 'text-entered :text (string char))
                 (handler context))))))
 
-(cl-glfw3:def-char-callback ctx-char (window char)
-  (%with-context
-    (handle (make-instance 'text-entered
-                           :text (string char))
-            (handler context))))
-
 (cl-glfw3:def-mouse-button-callback ctx-button (window button action modifiers)
   (declare (ignore modifiers))
   (%with-context
