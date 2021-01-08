@@ -198,14 +198,14 @@
              for (evdn evup cddn cdup) = (apply #'process-retain-form ev trigger)
              when evdn
              collect (list evdn
-                           `(when ,cddn
-                              ,@(when (find-class action NIL)
-                                  `((when (active-p (action-set ',action))
-                                      (issue ,loop (make-instance ',action :source-event ,ev)))))
+                           `(when (and ,cddn
+                                       (active-p (action-set ',action)))
+                              (issue ,loop (make-instance ',action :source-event ,ev))
                               (setf (retained ',action) T)))
              when evup
              collect (list evup
-                           `(when ,(or cdup cddn)
+                           `(when (and ,(or cdup cddn)
+                                       (active-p (action-set ',action)))
                               (setf (retained ',action) NIL)))))
       (analog
        (loop for trigger in triggers
