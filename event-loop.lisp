@@ -82,10 +82,12 @@
           do (handle event listener))))
 
 (defmethod add-listener (listener (loop event-loop))
-  (let ((cons (cons listener (listener-queue loop))))
-    (setf (gethash listener (listeners loop)) cons)
-    (setf (listener-queue loop) cons)
-    listener))
+  (if (gethash listener (listeners loop))
+      listener
+      (let ((cons (cons listener (listener-queue loop))))
+        (setf (gethash listener (listeners loop)) cons)
+        (setf (listener-queue loop) cons)
+        listener)))
 
 (defmethod remove-listener (listener (loop event-loop))
   (let* ((listeners (listeners loop))
