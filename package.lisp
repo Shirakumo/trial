@@ -529,6 +529,7 @@
    #:define-simple-mapping
    #:map-event
    #:action-set
+   #:exclusive-action-set
    #:define-action-set
    #:action
    #:analog-action

@@ -70,7 +70,7 @@
         (setf (use-steaminput main) NIL)))))
 
 (defmethod (setf trial:active-p) :after (value (set trial:action-set))
-  (when (and trial:*context* (use-steaminput (trial:handler trial:*context*)))
+  (when (and value trial:*context* (use-steaminput (trial:handler trial:*context*)))
     (let ((label (action-label set)))
       (v:info :trial.steam "Switching action set to ~s" label)
       (steam:activate (steam:find-action-set (steam:interface 'steam:steaminput T) label) T))))

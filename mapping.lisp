@@ -47,6 +47,13 @@
         do (funcall function loop event)))
 
 (defclass action-set () ()) ;; marker-class
+(defclass exclusive-action-set () ())
+
+(defmethod (setf active-p) :after (value (set exclusive-action-set))
+  (when value
+    (dolist (other (c2mop:class-direct-subclasses (find-class 'exclusive-action-set)))
+      (unless (eql (class-of set) other)
+        (setf (active-p other) NIL)))))
 
 (defun find-action-set (action)
   (flet ((direct-action-set (base)
@@ -67,8 +74,8 @@
       `(load-time-value (find-action-set (ensure-class ,action)))
       `(find-action-set (ensure-class ,action))))
 
-(defmacro define-action-set (name)
-  `(progn (defclass ,name (action-set)
+(defmacro define-action-set (name &optional superclasses)
+  `(progn (defclass ,name (,@superclasses action-set)
             ((active-p :initform T :accessor active-p :allocation :class)))
           (defmethod active-p ((class (eql (find-class ',name))))
             (active-p (c2mop:class-prototype class)))
