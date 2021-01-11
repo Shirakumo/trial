@@ -86,6 +86,8 @@
 (defclass action (event)
   ((source-event :initarg :source-event :initform NIL :accessor source-event)))
 
+(defmethod active-p ((action (eql (find-class 'action)))) T)
+
 (defclass analog-action (action)
   ((value :initarg :value :initform 0f0 :accessor value)))
 
