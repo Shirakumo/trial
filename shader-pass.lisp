@@ -98,7 +98,7 @@
   (:method-combination progn :most-specific-last))
 (defgeneric object-renderable-p (object pass))
 (defgeneric compile-to-pass (scene pass))
-(defgeneric compile-into-pass (object container pass))
+(defgeneric compile-into-pass (object precedent pass))
 (defgeneric remove-from-pass (object pass))
 (defgeneric shader-program-for-pass (pass object))
 (defgeneric make-pass-shader-program (pass object))
@@ -281,22 +281,22 @@
       (flare-queue:remove-cells start end)
       (remhash entity (group-pointers pass)))))
 
-(defmethod compile-into-pass ((entity entity) (container flare:container) (pass scene-pass))
-  ;; KLUDGE: We don't actually know /where/ exactly the entity was inserted.
-  ;;         Figuring out where would either involve recomputing the entire container
-  ;;         which is very costly especially at the scene root, or finding the next
-  ;;         neighbour within the container that has a group and inserting before,
-  ;;         which is better but still involves a linear search through the container.
-  ;;         We opt for guessing that the entity is inserted at the end of the group.
-  (destructuring-bind (start . end) (gethash container (group-pointers pass))
+(defmethod compile-into-pass ((entity entity) (previous entity) (pass scene-pass))
+  (destructuring-bind (start . end) (gethash previous (group-pointers pass))
     (declare (ignore start))
-    ;; KLUDGE: If it is a transformed container the last action is a pop-matrix.
-    ;;         We need to insert before that.
-    (when (typep container 'transformed)
-      (setf end (flare-queue:left end)))
-    (setf (guards pass) (cons (flare-queue:left end) end))
+    (setf (guards pass) (cons end (flare-queue:right end)))
     (compile-to-pass entity pass)
     (finish-pass-group pass entity)))
+
+(defmethod compile-into-pass ((entity entity) (previous null) (pass scene-pass))
+  (let ((container (container entity)))
+    (destructuring-bind (start . end) (gethash container (group-pointers pass))
+      (declare (ignore end))
+      (when (typep container 'transformed)
+        (setf start (flare-queue:right (flare-queue:right start))))
+      (setf (guards pass) (cons start (flare-queue:right start)))
+      (compile-to-pass entity pass)
+      (finish-pass-group pass entity))))
 
 (defmethod handle ((ev class-changed) (pass scene-pass))
   (call-next-method)

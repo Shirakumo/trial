@@ -23,7 +23,7 @@
   :bug-tracker "https://github.com/Shirakumo/trial/issues"
   :source-control (:git "https://github.com/Shirakumo/trial.git")
   :components ((:file "package")
-               (:file "array-container" :depends-on ("package"))
+               (:file "array-container" :depends-on ("package" "entity"))
                (:file "asset" :depends-on ("package" "toolkit" "resource" "resource-generator"))
                (:file "asset-pool" :depends-on ("package" "asset"))
                (:file "attributes" :depends-on ("package"))

@@ -33,3 +33,12 @@
 
 (defclass container (flare:container-unit entity)
   ())
+
+(defmethod enter* ((thing entity) (container container))
+  (multiple-value-bind (last valid-p) (flare-indexed-set:set-last (objects container))
+    (enter thing container)
+    (compile-into-pass thing (when valid-p (flare-queue:value last)) *scene*)))
+
+(defmethod leave* ((thing entity) (container container))
+  (leave thing container)
+  (remove-from-pass thing *scene*))

@@ -29,9 +29,16 @@
 (defmethod leave (thing (container layered-container))
   (flare-indexed-set:set-remove thing (aref (objects container) (layer-index thing))))
 
-;; FIXME: insert in proper order.
-;; (defmethod compile-into-pass ((entity entity) (container layered-container) (pass scene-pass))
-;;   )
+(defmethod enter* ((thing entity) (container layered-container))
+  (let ((objects (objects container))
+        (preceding NIL))
+    (loop for index downfrom (layer-index thing)
+          for set = (aref objects index)
+          do (multiple-value-bind (last valid-p) (flare-indexed-set:set-last set)
+               (when valid-p
+                 (return (setf preceding (flare-queue:value last))))))
+    (enter thing container)
+    (compile-into-pass thing preceding *scene*)))
 
 (defclass layered-container-iterator (for:iterator)
   ())

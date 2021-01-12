@@ -38,3 +38,9 @@
 (defmethod finalize ((container array-container))
   (for:for ((object across (objects container)))
     (finalize object)))
+
+(defmethod enter* ((thing entity) (container array-container))
+  (enter thing container)
+  (if (= 1 (length (objects container)))
+      (compile-into-pass thing NIL *scene*)
+      (compile-into-pass thing (aref (objects container) (- (length (objects container)) 2)) *scene*)))
