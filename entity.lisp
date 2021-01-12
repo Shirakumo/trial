@@ -39,6 +39,9 @@
     (enter thing container)
     (compile-into-pass thing (when valid-p (flare-queue:value last)) *scene*)))
 
+(defmethod leave* ((thing entity) (container (eql T)))
+  (leave* thing (container thing)))
+
 (defmethod leave* ((thing entity) (container container))
   (leave thing container)
   (remove-from-pass thing *scene*))
