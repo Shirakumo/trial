@@ -90,11 +90,13 @@
 (defmethod call-with-data-ptr (function (data matn) &key (offset 0))
   (call-with-data-ptr function (marrn data) :offset offset))
 
-(defmethod call-with-data-ptr (function (data vector) &key (offset 0) gl-type)
+(defmethod call-with-data-ptr ((function function) (data vector) &key (offset 0) gl-type)
+  (declare (optimize speed))
+  (declare (type (unsigned-byte 32) offset))
   (let* ((type (or gl-type (cl-type->gl-type (array-element-type data))))
          (type-size (gl-type-size type))
          (offset (* offset type-size))
-         (size (- (* (length data) type-size) offset)))
+         (size (- (the (unsigned-byte 32) (* (length data) type-size)) offset)))
     (with-pointer-to-vector-data (ptr data)
       (funcall function (cffi:inc-pointer ptr offset) size))))
 

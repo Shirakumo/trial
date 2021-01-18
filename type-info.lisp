@@ -108,6 +108,7 @@
                 ,thing)
       whole))
 
+(declaim (ftype (function (keyword) (unsigned-byte 8)) gl-type-size))
 (define-constant-fold-function gl-type-size (type)
   (ecase type
     (:boolean 1)
