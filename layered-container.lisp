@@ -34,9 +34,13 @@
         (preceding NIL))
     (loop for index downfrom (layer-index thing)
           for set = (aref objects index)
-          do (multiple-value-bind (last valid-p) (flare-indexed-set:set-last set)
-               (when valid-p
-                 (return (setf preceding (flare-queue:value last))))))
+          for head = (flare-queue::head set)
+          for last = (flare-queue::left (flare-queue::tail set))
+          do (loop until (or (eq last head)
+                             (typep (flare-queue:value last) 'renderable))
+                   do (setf last (flare-queue::left last)))
+             (unless (eq last head)
+               (return (setf preceding (flare-queue:value last)))))
     (enter thing container)
     (compile-into-pass thing preceding *scene*)))
 
