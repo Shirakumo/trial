@@ -66,7 +66,7 @@
     (start (scene main)))
   (values new old))
 
-(defun enter-and-load (object container main)
+(defmethod enter-and-load ((object renderable) (container container) (main main))
   (let ((area (make-instance 'staging-area)))
     (stage object area)
     (enter* object container)
@@ -74,6 +74,13 @@
           do (stage pass area))
     (unless (commit area (loader main) :unload NIL)
       (remove-from-pass object (scene main))
+      (leave* object container))))
+
+(defmethod enter-and-load ((object entity) (container container) (main main))
+  (let ((area (make-instance 'staging-area)))
+    (stage object area)
+    (enter object container)
+    (unless (commit area (loader main) :unload NIL)
       (leave object container))))
 
 (defmethod render ((source main) (target main))
