@@ -85,6 +85,15 @@
                                      texture)
                                  args))))))
 
+(defclass fixed-input (input)
+  ())
+
+(defmethod shared-initialize :after ((input fixed-input) slots &key texture)
+  (when texture
+    (setf (texture input) (eval texture))))
+
+(defmethod check-consistent ((input fixed-input)))
+
 (define-shader-entity shader-pass (flow:static-node)
   ((framebuffer :initform NIL :accessor framebuffer)
    (active-p :initform T :accessor active-p))

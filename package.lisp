@@ -686,6 +686,7 @@
    #:input
    #:output
    #:attachment
+   #:fixed-input
    #:check-consistent
    #:buffer
    #:shader-pass
