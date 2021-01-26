@@ -9,9 +9,9 @@
 (defclass array-container (container)
   ((objects :initform (make-array 0 :adjustable T :fill-pointer T) :accessor objects)))
 
-(defmethod flare:update ((container array-container))
+(defmethod flare:update ((container array-container) dt)
   (for:for ((item across (objects container)))
-    (update item)))
+    (update item dt)))
 
 (defmethod enter (thing (container array-container))
   (vector-push-extend thing (objects container))
