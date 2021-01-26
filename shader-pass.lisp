@@ -417,6 +417,9 @@
 (define-shader-pass post-effect-pass (single-shader-pass)
   ((vertex-array :initform (// 'trial 'fullscreen-square) :accessor vertex-array)))
 
+(defmethod stage :after ((pass post-effect-pass) (area staging-area))
+  (stage (vertex-array pass) area))
+
 (defmethod compile-to-pass (object (pass post-effect-pass)))
 (defmethod compile-into-pass (object container (pass post-effect-pass)))
 (defmethod remove-from-pass (object (pass post-effect-pass)))
