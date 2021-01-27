@@ -19,7 +19,7 @@
   (key-press (one-of key :section :grave)))
 
 (defclass controller (entity listener)
-  ((display :initform NIL :accessor display))
+  ((display :initform NIL :initarg :display :accessor display))
   (:default-initargs
    :name :controller))
 

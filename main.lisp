@@ -9,19 +9,13 @@
 ;; FIXME: Fullscreenable seems to cause really bad behaviour, idk
 (defclass main (display window gamepad-input-handler)
   ((scene :initform (make-instance 'pipelined-scene) :accessor scene)
-   (controller :initform (make-instance 'controller) :accessor controller)
    (loader :initform (make-instance 'loader) :accessor loader)))
 
-(defmethod initialize-instance :after ((main main) &key)
-  (with-slots (scene controller) main
-    (setf (display controller) main)))
-
 (defmethod finalize ((main main))
-  (with-slots (scene controller loader) main
+  (with-slots (scene loader) main
     (v:info :trial.main "RAPTURE")
     (acquire-context (context main) :force T)
     (clear-retained)
-    (finalize controller)
     (finalize scene)
     (finalize loader)))
 
@@ -54,7 +48,7 @@
   ())
 
 (defmethod setup-scene :after ((main main) (scene scene))
-  (enter (controller main) scene))
+  (enter (make-instance 'controller :display main) scene))
 
 (defmethod change-scene ((main main) (new scene) &key (old (scene main)))
   (unless (eq old new)
