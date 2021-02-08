@@ -31,6 +31,10 @@
     (error "The entity~%  ~a~%cannot be left from~%  ~a~%as it is contained in~%  ~a"
            entity container (container entity))))
 
+(defmethod scene ((entity entity))
+  (when (slot-boundp entity 'container)
+    (scene (container entity))))
+
 (defclass container (flare:container-unit entity)
   ())
 
