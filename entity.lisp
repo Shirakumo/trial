@@ -7,7 +7,8 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass entity (unit)
-  ((container :accessor container)))
+  ((container :accessor container)
+   (name :accessor name)))
 
 (defmethod enter :after ((entity entity) (container flare:container))
   (setf (container entity) container))
@@ -17,6 +18,16 @@
 
 (defmethod leave ((entity entity) (container (eql T)))
   (leave entity (container entity)))
+
+(defmethod (setf name) :around (name (entity entity))
+  (unless (eq name (name entity))
+    (let ((scene (scene entity)))
+      (cond (scene
+             (deregister entity scene)
+             (call-next-method)
+             (register entity scene))
+            (T
+             (call-next-method))))))
 
 #-elide-container-checks
 (defmethod enter :before ((entity entity) (container flare:container))
