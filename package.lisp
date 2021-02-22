@@ -328,6 +328,7 @@
   (:export
    #:entity
    #:container
+   #:preceding-entity
    #:enter*
    #:leave*)
   ;; event-loop.lisp

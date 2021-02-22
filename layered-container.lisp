@@ -29,7 +29,7 @@
 (defmethod leave (thing (container layered-container))
   (flare-indexed-set:set-remove thing (aref (objects container) (layer-index thing))))
 
-(defmethod enter* ((thing entity) (container layered-container))
+(defmethod preceding-entity ((thing entity) (container layered-container))
   (let ((objects (objects container))
         (preceding NIL))
     (loop for index downfrom (layer-index thing)
@@ -41,8 +41,7 @@
                    do (setf last (flare-queue::left last)))
              (unless (eq last head)
                (return (setf preceding (flare-queue:value last)))))
-    (enter thing container)
-    (compile-into-pass thing preceding *scene*)))
+    preceding))
 
 (defclass layered-container-iterator (for:iterator)
   ())

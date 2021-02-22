@@ -39,8 +39,7 @@
   (for:for ((object across (objects container)))
     (finalize object)))
 
-(defmethod enter* ((thing entity) (container array-container))
-  (enter thing container)
+(defmethod preceding-entity ((thing entity) (container array-container))
   (if (= 1 (length (objects container)))
-      (compile-into-pass thing NIL *scene*)
-      (compile-into-pass thing (aref (objects container) (- (length (objects container)) 2)) *scene*)))
+      NIL
+      (aref (objects container) (- (length (objects container)) 2))))

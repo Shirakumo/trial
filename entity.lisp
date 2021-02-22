@@ -49,10 +49,14 @@
 (defclass container (flare:container-unit entity)
   ())
 
-(defmethod enter* ((thing entity) (container container))
+(defmethod preceding-entity ((thing entity) (container container))
   (multiple-value-bind (last valid-p) (flare-indexed-set:set-last (objects container))
+    (when valid-p (flare-queue:value last))))
+
+(defmethod enter* ((thing entity) (container container))
+  (let ((preceding (preceding-entity thing container)))
     (enter thing container)
-    (compile-into-pass thing (when valid-p (flare-queue:value last)) *scene*)))
+    (compile-into-pass thing preceding *scene*)))
 
 (defmethod leave* ((thing entity) (container (eql T)))
   (leave* thing (container thing)))
