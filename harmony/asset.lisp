@@ -69,11 +69,11 @@
         (location (ensure-vector location))
         (velocity (ensure-vector velocity))
         (volume (or volume (volume voice))))
-    (setf (mixed:volume voice) volume)
-    (when reset
-      (mixed:seek voice 0))
     ;; KLUDGE: possible race here.
     (unless (harmony:chain voice)
+      (setf (mixed:volume voice) volume)
+      (when reset
+        (mixed:seek voice 0))
       (harmony:with-server (harmony:*server* :synchronize NIL)
         (unless (harmony:chain voice)
           (mixed:add voice sources)
