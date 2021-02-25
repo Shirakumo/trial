@@ -749,6 +749,7 @@
    #:animated-sprite
    #:clock
    #:animations
+   #:find-animation
    #:animation
    #:playback-speed
    #:playback-direction

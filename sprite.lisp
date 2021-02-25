@@ -93,6 +93,10 @@
     (+1 (setf (frame sprite) (start (animation sprite))))
     (-1 (setf (frame sprite) (1- (end (animation sprite)))))))
 
+(defmethod find-animation (name (sprite animated-sprite) &optional (errorp T))
+  (or (find name (animations sprite) :key #'name)
+      (when errorp (error "No animation named ~s found." name))))
+
 (defmethod (setf animation) ((animation sprite-animation) (sprite animated-sprite))
   (unless (eql animation (animation sprite))
     (call-next-method)
