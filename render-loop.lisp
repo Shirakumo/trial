@@ -50,7 +50,9 @@
                             (setf current-time new-time)
                             (incf accumulator frame-time)
                             (loop while (<= dt accumulator)
-                                  do (update render-loop tt dt fc)
+                                  do (when (<= 10d0 accumulator)
+                                       (setf accumulator dt))
+                                     (update render-loop tt dt fc)
                                      (decf accumulator dt)
                                      (incf tt dt))
                             ;; FIXME: interpolate state
