@@ -499,6 +499,10 @@
    #:layered-container
    #:layer-index
    #:layer-count)
+  ;; lines.lisp
+  (:export
+   #:lines
+   #:line-width)
   ;; loader.lisp
   (:export
    #:staging-area
