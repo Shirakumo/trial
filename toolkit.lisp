@@ -486,7 +486,9 @@
 
 (declaim (inline lerp))
 (defun lerp (from to n)
-  (+ (* from (- 1.0 n)) (* to n)))
+  (etypecase from
+    (real (+ (* from (- 1.0 n)) (* to n)))
+    (vec (vlerp from to n))))
 
 (defun damp* (damp &rest factors)
   (- 1 (apply #'* (- 1 damp) factors)))
