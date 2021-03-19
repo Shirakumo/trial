@@ -86,6 +86,18 @@
   (dolist (window (enlist window))
     (issue (scene window) 'reload-scene)))
 
+(defclass eval-request (event)
+  ((func :initarg :func)))
+
+(define-handler (controller eval-request) (func)
+  (funcall func))
+
+(defun call-in-render-loop (function scene)
+  (issue scene 'eval-request :func function))
+
+(defmacro with-eval-in-render-loop ((scene) &body body)
+  `(call-in-render-loop (lambda () ,@body) ,scene))
+
 (defclass display-controller (controller renderable)
   ((text :initform NIL :accessor text)
    (fps-buffer :initform (make-array 100 :fill-pointer T :initial-element 1) :reader fps-buffer)

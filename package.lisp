@@ -260,6 +260,10 @@
    #:stop-observing
    #:load-request
    #:maybe-reload-scene
+   #:eval-request
+   #:func
+   #:call-in-render-loop
+   #:with-eval-in-render-loop
    #:display-controller)
   ;; deferred.lisp
   (:export
