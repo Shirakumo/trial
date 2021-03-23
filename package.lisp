@@ -633,7 +633,9 @@
    #:register-generation-observer
    #:clear-observers
    #:observe-generation
-   #:resource)
+   #:resource
+   #:compiled-generator
+   #:compile-resources)
   ;; scene-buffer.lisp
   (:export
    #:scene-buffer

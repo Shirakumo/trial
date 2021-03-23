@@ -199,3 +199,12 @@
   (let ((file (input* asset)))
     (unless (probe-file file)
       (alexandria:simple-style-warning "Input file~% ~s~%for asset~%  ~s~%does not exist." file asset))))
+
+(defmethod compile-resources ((asset asset) (source (eql T)))
+  (when (typep asset 'compiled-generator)
+    (compile-resources asset (input* asset))))
+
+(defmethod compile-resources ((all (eql T)) _)
+  (dolist (pool (list-pools))
+    (dolist (asset (list-assets pool))
+      (compile-resources asset T))))

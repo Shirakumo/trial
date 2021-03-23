@@ -31,3 +31,12 @@
 
 (defmethod generate-resources ((generator symbol) input &rest args)
   (apply #'generate-resources (make-instance generator) input args))
+
+(defclass compiled-generator (resource-generator)
+  ())
+
+(defgeneric compile-resources (generator source))
+
+(defmethod generate-resources :before ((generator compiled-generator) source &key compile)
+  (when compile
+    (compile-resources generator source)))
