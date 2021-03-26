@@ -789,6 +789,7 @@
    #:color-regions)
   ;; toolkit.lisp
   (:export
+   #:*inhibit-standalone-error-handler*
    #:define-global
    #:finalize
    #:gl-property

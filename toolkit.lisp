@@ -6,6 +6,8 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(defvar *inhibit-standalone-error-handler* NIL)
+
 (defvar *native-array-element-types*
   (remove T (remove-duplicates
              (mapcar #'upgraded-array-element-type
@@ -304,7 +306,7 @@
          app-path))
 
 (defun standalone-error-handler (err)
-  (when (deploy:deployed-p)
+  (when (and (deploy:deployed-p) (not *inhibit-standalone-error-handler*))
     (v:error :trial err)
     (v:fatal :trial "Encountered unhandled error in ~a, bailing." (bt:current-thread))
     (if (string/= "" (or (uiop:getenv "DEPLOY_DEBUG_BOOT") ""))
