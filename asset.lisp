@@ -200,11 +200,11 @@
     (unless (probe-file file)
       (alexandria:simple-style-warning "Input file~% ~s~%for asset~%  ~s~%does not exist." file asset))))
 
-(defmethod compile-resources ((asset asset) (source (eql T)))
+(defmethod compile-resources ((asset asset) (source (eql T)) &rest args &key &allow-other-keys)
   (when (typep asset 'compiled-generator)
-    (compile-resources asset (input* asset))))
+    (apply #'compile-resources asset (input* asset) args)))
 
-(defmethod compile-resources ((all (eql T)) _)
+(defmethod compile-resources ((all (eql T)) _ &rest args &key &allow-other-keys)
   (dolist (pool (list-pools))
     (dolist (asset (list-assets pool))
-      (compile-resources asset T))))
+      (apply #'compile-resources asset T args))))

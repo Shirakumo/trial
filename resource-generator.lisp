@@ -35,7 +35,7 @@
 (defclass compiled-generator (resource-generator)
   ())
 
-(defgeneric compile-resources (generator source))
+(defgeneric compile-resources (generator source &key))
 
 (defmethod generate-resources :before ((generator compiled-generator) source &key compile)
   (when compile
