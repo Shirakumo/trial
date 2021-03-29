@@ -37,12 +37,13 @@
       (clear (scene main)))))
 
 (defmethod setup-scene :around ((main main) (scene scene))
-  (v:info :trial.main "Setting up ~a" scene)
-  (with-timing-report (info :trial.main "Scene setup took ~fs run time, ~fs clock time.")
-    (call-next-method))
-  ;; Cause camera to refresh
-  (issue scene 'resize :width (width main) :height (height main))
-  scene)
+  (let ((*scene* scene))
+    (v:info :trial.main "Setting up ~a" scene)
+    (with-timing-report (info :trial.main "Scene setup took ~fs run time, ~fs clock time.")
+      (call-next-method))
+    ;; Cause camera to refresh
+    (issue scene 'resize :width (width main) :height (height main))
+    scene))
 
 (defmethod setup-scene ((main main) scene)
   ())
