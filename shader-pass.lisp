@@ -193,11 +193,13 @@
     `(lambda (pass program)
        (gl:use-program (gl-name program))
        (loop with texture-index = ',units
-             for port in (flow:ports pass)
-             do (typecase port
-                  (uniform-port
-                   (when (texture port)
-                     (setf (uniform program (uniform-name port)) (pop texture-index)))))))))
+             for slot in (c2mop:class-slots (class-of pass))
+             when (flow:port-type slot)
+             do (let ((port (flow::port-slot-value pass slot)))
+                  (typecase port
+                    (uniform-port
+                     (when (texture port)
+                       (setf (uniform program (uniform-name port)) (pop texture-index))))))))))
 
 (defun bind-pass-textures (pass)
   (funcall (compile 'bind-pass-textures (generate-bind-pass-textures))

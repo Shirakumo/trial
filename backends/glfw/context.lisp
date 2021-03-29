@@ -180,10 +180,16 @@
   (cl-glfw3:swap-interval (ecase value ((NIL :off) 0) ((:on T) 1) (:adaptive -1))))
 
 (defmethod width ((context context))
-  (first (cl-glfw3:get-framebuffer-size (window context))))
+  (cffi:with-foreign-objects ((w :int) (h :int))
+    (cffi:foreign-funcall "glfwGetFramebufferSize"
+		          %glfw::window (window context) :pointer w :pointer h :void)
+    (cffi:mem-ref w :int)))
 
 (defmethod height ((context context))
-  (second (cl-glfw3:get-framebuffer-size (window context))))
+  (cffi:with-foreign-objects ((w :int) (h :int))
+    (cffi:foreign-funcall "glfwGetFramebufferSize"
+		          %glfw::window (window context) :pointer w :pointer h :void)
+    (cffi:mem-ref h :int)))
 
 (defmethod profile ((context context))
   (ecase (cl-glfw3:get-window-attribute :opengl-profile (window context))
