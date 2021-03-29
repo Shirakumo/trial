@@ -22,13 +22,16 @@
 (declaim (ftype (function () mat4)
                 projection-matrix
                 view-matrix
-                model-matrix
-                pop-matrix))
+                model-matrix))
 
 (defvar *view-matrix* (meye 4))
 (defvar *projection-matrix* (meye 4))
 (defvar *model-matrix* (meye 4))
-(defvar *matrix-stack* (make-array 32 :fill-pointer 0))
+(define-global +matrix-index+ 0)
+(define-global +matrix-stack+
+    (let ((stack (make-array 30)))
+      (dotimes (i (length stack) stack)
+        (setf (aref stack i) (meye 4)))))
 
 (defun view-matrix ()
   *view-matrix*)
@@ -58,13 +61,16 @@
   (setf *projection-matrix* (mortho left right bottom top near far)))
 
 (defun push-matrix ()
-  (vector-push (list (mcopy *projection-matrix*) (mcopy *view-matrix*) (mcopy *model-matrix*)) *matrix-stack*))
+  (replace (marr4 (aref +matrix-stack+ (+ 0 +matrix-index+))) (marr4 *projection-matrix*))
+  (replace (marr4 (aref +matrix-stack+ (+ 1 +matrix-index+))) (marr4 *view-matrix*))
+  (replace (marr4 (aref +matrix-stack+ (+ 2 +matrix-index+))) (marr4 *model-matrix*))
+  (incf +matrix-index+ 3))
 
 (defun pop-matrix ()
-  (destructuring-bind (p v m) (vector-pop *matrix-stack*)
-    (setf *projection-matrix* p
-          *view-matrix* v
-          *model-matrix* m)))
+  (decf +matrix-index+ 3)
+  (replace (marr4 *projection-matrix*) (marr4 (aref +matrix-stack+ (+ 0 +matrix-index+))))
+  (replace (marr4 *view-matrix*) (marr4 (aref +matrix-stack+ (+ 1 +matrix-index+))))
+  (replace (marr4 *model-matrix*) (marr4 (aref +matrix-stack+ (+ 2 +matrix-index+)))))
 
 (defmacro with-pushed-matrix (specs &body body)
   (let ((specs (or specs '(((model-matrix) :copy)))))
