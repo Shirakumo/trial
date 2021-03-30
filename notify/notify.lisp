@@ -77,7 +77,7 @@
     (watch T)
     (setf (file-watch-thread main) T)
     (setf (file-watch-thread main)
-          (trial:with-thread ("Asset notification thread")
+          (trial:with-thread ("asset-watcher")
             (loop while (file-watch-thread main)
                   do (with-simple-restart (abort "Ignore the error.")
                        (process-changes :timeout 0.1)))))))

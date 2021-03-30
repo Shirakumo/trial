@@ -12,7 +12,9 @@
   (:import-from #:static-vectors #:static-vector-pointer)
   (:import-from #:flow #:port)
   (:local-nicknames
-   (#:gamepad #:org.shirakumo.fraf.gamepad))
+   (#:gamepad #:org.shirakumo.fraf.gamepad)
+   #+windows
+   (#:com #:org.shirakumo.com-on))
   ;; assets/font.lisp
   (:export
    #:font)

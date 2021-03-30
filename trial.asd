@@ -101,6 +101,7 @@
                 :depends-on ("package" "geometry" "static-vector")
                 :components ((:file "collada")
                              (:file "vertex-format"))))
+  :defsystem-depends-on (:trivial-features)
   :depends-on (:alexandria
                :3d-vectors
                :3d-matrices

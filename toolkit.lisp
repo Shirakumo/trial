@@ -327,7 +327,7 @@
 
 (defun rename-thread (name)
   #+windows
-  (com-on:with-wstring (name name)
+  (com:with-wstring (name name)
     (cffi:foreign-funcall "SetThreadDescription"
                           :size (cffi:foreign-funcall "GetCurrentThread" :size)
                           :string name
