@@ -57,6 +57,15 @@
         (v:info :trial.steam "Steamworks not initialised, disabling steam input.")
         (setf (use-steaminput main) NIL)))))
 
+#+windows
+(defmethod initialize-instance :around ((main main) &rest initargs &key require-steam)
+  ;; KLUDGE: Steam overlay on Windows seems to use terribly old GL commands, causing
+  ;;         spurious INVALID OPERATION errors in our code. Thanks, Valve!
+  (when (or require-steam (deploy:deployed-p))
+    (push :compatibility initargs)
+    (push :profile initargs))
+  (apply #'call-next-method initargs))
+
 (defmethod (setf trial:active-p) :after (value (set trial:action-set))
   (when (and value trial:*context* (use-steaminput (trial:handler trial:*context*)))
     (let ((label (action-label set)))
