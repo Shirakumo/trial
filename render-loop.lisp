@@ -14,7 +14,7 @@
 (defmethod start ((render-loop render-loop))
   (setf (thread render-loop) T)
   (setf (thread render-loop)
-        (with-thread ("render-loop thread")
+        (with-thread ("render-loop")
           (render-loop render-loop))))
 
 (defmethod stop ((render-loop render-loop))

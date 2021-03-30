@@ -814,6 +814,7 @@
    #:config-directory
    #:standalone-error-handler
    #:standalone-logging-handler
+   #:rename-thread
    #:make-thread
    #:with-thread
    #:wait-for-thread-exit

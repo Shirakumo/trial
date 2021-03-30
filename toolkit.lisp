@@ -325,6 +325,19 @@
       (v:file-faucet :file (logfile)))
     (v:info :trial "Running on ~a ~a ~a" (machine-type) (machine-instance) (machine-version))))
 
+(defun rename-thread (name)
+  #+windows
+  (com-on:with-wstring (name name)
+    (cffi:foreign-funcall "SetThreadDescription"
+                          :size (cffi:foreign-funcall "GetCurrentThread" :size)
+                          :string name
+                          :size))
+  #-windows
+  (cffi:foreign-funcall "pthread_setname_np"
+                        :size (cffi:foreign-funcall "pthread_self" :size)
+                        :string name
+                        :int))
+
 (defun make-thread (name func)
   (bt:make-thread (lambda ()
                     (handler-bind ((error #'standalone-error-handler))

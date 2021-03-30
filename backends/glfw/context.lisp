@@ -211,6 +211,7 @@
            (cl-glfw3:initialize)
            (cl-glfw3:set-error-callback 'ctx-error)
            (let ((main (apply #'make-instance main initargs)))
+             (trial:rename-thread "input-loop")
              (start main)
              (unwind-protect
                   (loop with window = (window (trial:context main))
