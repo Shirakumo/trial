@@ -93,21 +93,27 @@
   (nmtranslate matrix v))
 
 (defun translate-by (x y z &optional (matrix (model-matrix)))
-  (translate (vec3 x y z) matrix))
+  (let ((vec (3d-vectors::%vec3 (float x 0f0) (float y 0f0) (float z 0f0))))
+    (declare (dynamic-extent vec))
+    (nmtranslate matrix vec)))
 
 (defun rotate (v angle &optional (matrix (model-matrix)))
   (declare (type vec3 v) (type mat4 matrix))
   (nmrotate matrix v angle))
 
 (defun rotate-by (x y z angle &optional (matrix (model-matrix)))
-  (rotate (vec3 x y z) angle matrix))
+  (let ((vec (3d-vectors::%vec3 (float x 0f0) (float y 0f0) (float z 0f0))))
+    (declare (dynamic-extent vec))
+    (nmrotate matrix vec angle)))
 
 (defun scale (v &optional (matrix (model-matrix)))
   (declare (type vec3 v) (type mat4 matrix))
   (nmscale matrix v))
 
 (defun scale-by (x y z &optional (matrix (model-matrix)))
-  (scale (vec3 x y z) matrix))
+  (let ((vec (3d-vectors::%vec3 (float x 0f0) (float y 0f0) (float z 0f0))))
+    (declare (dynamic-extent vec))
+    (nmscale matrix vec)))
 
 (defun reset-matrix (&optional (matrix (model-matrix)))
   (with-fast-matref (a matrix 4)
