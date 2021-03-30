@@ -10,6 +10,8 @@
 
 (cffi:defcvar (optimus "NvOptimusEnablement") :uint32)
 (cffi:defcvar (xpress "AmdPowerXpressRequestHighPerformance") :int)
+(cffi:defcfun (wait-events-timeout "glfwWaitEventsTimeout") :void
+  (timeout :double))
 
 (defclass context (trial:context)
   ((title :initarg :title :accessor title)
@@ -213,11 +215,8 @@
              (unwind-protect
                   (loop with window = (window (trial:context main))
                         until (cl-glfw3:window-should-close-p window)
-                        do (cl-glfw3:poll-events)
-                           (poll-input main)
-                           ;; Apparently bt:thread-yield is a no-op sometimes,
-                           ;; making this loop consume the core. Sleep instead.
-                           (sleep 0.001))
+                        do (wait-events-timeout 0.02d0)
+                           (poll-input main))
                (finalize main)
                (%glfw:terminate)))))
     #+darwin
