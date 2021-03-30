@@ -76,7 +76,7 @@
         (setf (g :opengl-profile) (ecase profile
                                     ((NIL) :opengl-any-profile)
                                     (:core :opengl-core-profile)
-                                    (:compatibility :opengl-compatibility-profile)))))))
+                                    (:compatibility :opengl-compat-profile)))))))
 
 (defmethod create-context ((context context))
   (let ((initargs (initargs context)))
