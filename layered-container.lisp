@@ -43,11 +43,8 @@
                (return (setf preceding (flare-queue:value last)))))
     preceding))
 
-(defclass layered-container-iterator (for:iterator)
-  ())
-
-(defmethod for:step-functions ((iterator layered-container-iterator))
-  (let* ((layers (for:object iterator))
+(defmethod for:step-functions ((iterator layered-container))
+  (let* ((layers (objects iterator))
          (idx 0) layer cell tail)
     (flet ((update ()
              (setf layer (aref layers idx))
@@ -65,8 +62,10 @@
                              (return NIL))
                       finally (return T)))
               (lambda (value)
+                (declare (ignore value))
                 (error "Not supported"))
               (lambda ())))))
 
-(defmethod for:make-iterator ((container layered-container) &key)
-  (make-instance 'layered-container-iterator :object (objects container)))
+(defmethod for:object ((container layered-container)) container)
+
+(defmethod for:make-iterator ((container layered-container) &key) container)
