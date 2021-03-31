@@ -274,7 +274,7 @@
                           (recurse (bvh-node-r node))))))))
       (recurse (bvh-root bvh)))))
 
-(defmacro do-fitting ((entity bvh region) &body body)
+(defmacro do-fitting ((entity bvh region &optional result) &body body)
   (let ((thunk (gensym "THUNK"))
         (regiong (gensym "REGION")))
     `(block NIL
@@ -286,7 +286,8 @@
                      (declare (dynamic-extent ,regiong))
                      (call-with-contained #',thunk ,bvh ,regiong)))
              (vec4 (call-with-contained #',thunk ,bvh ,regiong))
-             (trial:entity (call-with-overlapping #',thunk ,bvh ,regiong))))))))
+             (trial:entity (call-with-overlapping #',thunk ,bvh ,regiong)))))
+       ,result)))
 
 (defstruct (bvh-iterator
             (:constructor make-bvh-iterator (bvh region))
