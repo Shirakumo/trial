@@ -8,7 +8,7 @@
 (defpackage #:trial
   (:nicknames #:org.shirakumo.fraf.trial)
   (:use #:cl #:3d-vectors #:3d-matrices #:flare)
-  (:shadow #:// #:scene #:entity #:container #:load #:update #:particle)
+  (:shadow #:// #:scene #:entity #:container #:load #:update #:particle #:oriented-entity #:sized-entity)
   (:import-from #:static-vectors #:static-vector-pointer)
   (:import-from #:flow #:port)
   (:local-nicknames
@@ -442,6 +442,8 @@
   (:export
    #:located-entity
    #:location
+   #:sized-entity
+   #:bsize
    #:oriented-entity
    #:orientation
    #:up
@@ -894,7 +896,7 @@
 
 (defpackage #:cl+trial
   (:nicknames #:org.shirakumo.fraf.trial.cl+trial)
-  (:shadowing-import-from #:trial #:// #:scene #:entity #:container #:load #:update #:particle)
+  (:shadowing-import-from #:trial #:// #:scene #:entity #:container #:load #:update #:particle #:oriented-entity #:sized-entity)
   (:use #:cl #:trial #:3d-vectors #:3d-matrices #:flare))
 
 (do-symbols (symb '#:cl+trial)

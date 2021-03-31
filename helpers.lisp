@@ -12,6 +12,9 @@
 (defmethod apply-transforms progn ((obj located-entity))
   (translate (location obj)))
 
+(defclass sized-entity (entity)
+  ((bsize :initarg :bsize :initform (vec 0 0 0) :accessor bsize)))
+
 (defclass oriented-entity (transformed entity)
   ((orientation :initarg :orientation :initform (vec 1 0 0) :accessor orientation)
    (up :initarg :up :initform (vec 0 1 0) :accessor up)))

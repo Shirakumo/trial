@@ -27,6 +27,7 @@
                (:file "asset" :depends-on ("package" "toolkit" "resource" "resource-generator"))
                (:file "asset-pool" :depends-on ("package" "asset"))
                (:file "attributes" :depends-on ("package"))
+               (:file "bvh2" :depends-on ("package" "helpers"))
                (:file "camera" :depends-on ("package" "entity" "helpers" "input"))
                (:file "context" :depends-on ("package"))
                (:file "controller" :depends-on ("package" "mapping" "input" "entity" "asset" ("assets" "font")))
