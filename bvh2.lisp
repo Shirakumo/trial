@@ -3,6 +3,7 @@
   (:import-from #:org.shirakumo.fraf.trial #:location #:bsize)
   (:export
    #:bvh
+   #:make-bvh
    #:bvh-insert
    #:bvh-remove
    #:bvh-update
@@ -13,6 +14,8 @@
    #:do-fitting))
 
 (in-package #:org.shirakumo.fraf.trial.bvh2)
+
+;; CF https://www.researchgate.net/publication/254007711_Fast_Effective_BVH_Updates_for_Animated_Scenes
 
 (defstruct (bvh-node
             (:include vec4)
@@ -206,6 +209,11 @@
 (defmethod trial:leave (object (bvh bvh))
   (bvh-remove bvh object))
 
+(defmethod trial::clear ((bvh bvh))
+  (clrhash (bvh-table bvh))
+  (setf (bvh-root bvh) (%make-bvh-node 0f0 0f0 0f0 0f0 0 NIL NIL NIL NIL))
+  bvh)
+
 (defun bvh-print (bvh)
   (format T "~&-------------------------")
   (labels ((recurse (node)
@@ -269,12 +277,16 @@
 (defmacro do-fitting ((entity bvh region) &body body)
   (let ((thunk (gensym "THUNK"))
         (regiong (gensym "REGION")))
-    `(flet ((,thunk (,entity)
-              ,@body))
-       (let ((,regiong ,region))
-         (etypecase ,regiong
-           (vec4 (call-with-contained #',thunk ,bvh ,regiong))
-           (entity (call-with-overlapping #',thunk ,bvh ,regiong)))))))
+    `(block NIL
+       (flet ((,thunk (,entity)
+                ,@body))
+         (let ((,regiong ,region))
+           (etypecase ,regiong
+             (vec2 (let ((,regiong (3d-vectors::%vec4 (vx2 ,regiong) (vy2 ,regiong) 0f0 0f0)))
+                     (declare (dynamic-extent ,regiong))
+                     (call-with-contained #',thunk ,bvh ,regiong)))
+             (vec4 (call-with-contained #',thunk ,bvh ,regiong))
+             (trial:entity (call-with-overlapping #',thunk ,bvh ,regiong))))))))
 
 (defstruct (bvh-iterator
             (:constructor make-bvh-iterator (bvh region))
