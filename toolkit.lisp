@@ -325,16 +325,18 @@
       (v:file-faucet :file (logfile)))
     (v:info :trial "Running on ~a ~a ~a" (machine-type) (machine-instance) (machine-version))))
 
+(cffi:defctype size_t #+64-bit :uint64 #+32-bit :uint32)
+
 (defun rename-thread (name)
   #+windows
   (com:with-wstring (name name)
     (cffi:foreign-funcall "SetThreadDescription"
-                          :size (cffi:foreign-funcall "GetCurrentThread" :size)
+                          size_t (cffi:foreign-funcall "GetCurrentThread" size_t)
                           :string name
-                          :size))
+                          size_t))
   #-windows
   (cffi:foreign-funcall "pthread_setname_np"
-                        :size (cffi:foreign-funcall "pthread_self" :size)
+                        size_t (cffi:foreign-funcall "pthread_self" size_t)
                         :string name
                         :int))
 
