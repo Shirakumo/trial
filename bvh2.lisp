@@ -7,6 +7,7 @@
    #:bvh-insert
    #:bvh-remove
    #:bvh-update
+   #:bvh-check
    #:bvh-print
    #:bvh-lines
    #:call-with-contained
@@ -30,7 +31,8 @@
 
 (defmethod print-object ((node bvh-node) stream)
   (print-unreadable-object (node stream :type T)
-    (format stream "~f ~f ~f ~f ~d" (vx4 node) (vy4 node) (vw4 node) (vz4 node) (bvh-node-d node))))
+    (let ((o (when (bvh-node-o node) (princ-to-string (bvh-node-o node)))))
+      (format stream "~f ~f ~f ~f ~d~@[ ~a~]" (vx4 node) (vy4 node) (vz4 node) (vw4 node) (bvh-node-d node) o))))
 
 (defun make-bvh-node-for (object parent)
   (let ((loc (location object))
@@ -84,7 +86,7 @@
     (setf (bvh-node-l node) l)
     (setf (bvh-node-r node) r)
     (node-refit node)
-    r))
+    node))
 
 (defun node-contains-p (node object)
   (declare (type vec4 node))
@@ -105,15 +107,21 @@
        (<= (vy4 node) (vw4 region))
        (<= (vy4 region) (vw4 node))))
 
+(defun node-sub-p (node sub)
+  (and (<= (vx4 node) (vx4 sub))
+       (<= (vy4 node) (vy4 sub))
+       (<= (vz4 sub) (vz4 node))
+       (<= (vw4 sub) (vw4 node))))
+
 (defun better-fit (a b object)
   (let ((ca (node-contains-p a object))
         (cb (node-contains-p b object)))
     (cond ((eq ca cb)
            ;; If it's in neither or in both, just see whose centroid we're closer to.
-           (let ((ax (- (vz4 a) (vx4 a)))
-                 (ay (- (vw4 a) (vy4 a)))
-                 (bx (- (vz4 b) (vx4 b)))
-                 (by (- (vw4 b) (vy4 b)))
+           (let ((ax (/ (+ (vz4 a) (vx4 a)) 2.0))
+                 (ay (/ (+ (vw4 a) (vy4 a)) 2.0))
+                 (bx (/ (+ (vz4 b) (vx4 b)) 2.0))
+                 (by (/ (+ (vw4 b) (vy4 b)) 2.0))
                  (loc (location object)))
              (if (< (+ (expt (- ax (vx loc)) 2)
                        (expt (- ay (vy loc)) 2))
@@ -130,6 +138,7 @@
          (node-insert (better-fit (bvh-node-l node) (bvh-node-r node) object) object))
         (T
          (setf (bvh-node-o node) object)
+         (node-refit-object node object)
          node)))
 
 (defun node-sibling (node)
@@ -243,6 +252,44 @@
                    (recurse (bvh-node-r node))))))
       (recurse (bvh-root bvh)))
     p))
+
+(defun bvh-check (bvh)
+  (labels ((recurse (node)
+             (cond ((bvh-node-l node)
+                    (unless (eq node (bvh-node-p (bvh-node-l node)))
+                      (error "The left child~%  ~a~%is not parented to~%  ~a"
+                             (bvh-node-l node) node))
+                    (unless (eq node (bvh-node-p (bvh-node-r node)))
+                      (error "The right child~%  ~a~%is not parented to~%  ~a"
+                             (bvh-node-r node) node))
+                    (unless (node-sub-p node (bvh-node-l node))
+                      (error "The parent node~%  ~a~%does not contain the left child~%  ~a"
+                             node (bvh-node-l node)))
+                    (unless (node-sub-p node (bvh-node-r node))
+                      (error "The parent node~%  ~a~%does not contain the right child~%  ~a"
+                             node (bvh-node-r node)))
+                    (recurse (bvh-node-l node))
+                    (recurse (bvh-node-r node)))
+                   ((bvh-node-o node)
+                    (unless (eq node (gethash (bvh-node-o node) (bvh-table bvh)))
+                      (error "The node~%  ~a~%is not assigned to object~%  ~a~%as it is assigned to~%  ~a"
+                             node (bvh-node-o node) (gethash (bvh-node-o node) (bvh-table bvh))))))))
+    (recurse (bvh-root bvh)))
+  (loop for o being the hash-keys of (bvh-table bvh)
+        for n being the hash-values of (bvh-table bvh)
+        do (unless (eq o (bvh-node-o n))
+             (error "The node~%  ~a~%does not refer to object~%  ~a~%and instead tracks~%  ~a"
+                    n o (bvh-node-o n)))))
+
+(defun bvh-refit (bvh)
+  (labels ((recurse (node)
+             (cond ((bvh-node-l node)
+                    (recurse (bvh-node-l node))
+                    (recurse (bvh-node-r node))
+                    (node-refit node))
+                   (T
+                    (node-refit-object node (bvh-node-o node))))))
+    (recurse (bvh-root bvh))))
 
 (defun call-with-contained (function bvh region)
   (declare (optimize speed))
