@@ -329,7 +329,7 @@
                 ,@body))
          (let ((,regiong ,region))
            (etypecase ,regiong
-             (vec2 (let ((,regiong (3d-vectors::%vec4 (vx2 ,regiong) (vy2 ,regiong) 0f0 0f0)))
+             (vec2 (let ((,regiong (3d-vectors::%vec4 (vx2 ,regiong) (vy2 ,regiong) (vx2 ,regiong) (vy2 ,regiong))))
                      (declare (dynamic-extent ,regiong))
                      (call-with-contained #',thunk ,bvh ,regiong)))
              (vec4 (call-with-contained #',thunk ,bvh ,regiong))
