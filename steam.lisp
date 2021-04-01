@@ -64,7 +64,7 @@
   (when (or require-steam (deploy:deployed-p))
     (push :compatibility initargs)
     (push :profile initargs))
-  (apply #'call-next-method initargs))
+  (apply #'call-next-method main initargs))
 
 (defmethod (setf trial:active-p) :after (value (set trial:action-set))
   (when (and value trial:*context* (use-steaminput (trial:handler trial:*context*)))
