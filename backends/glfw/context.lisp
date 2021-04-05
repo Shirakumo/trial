@@ -151,6 +151,7 @@
                                    w h :window (window context)))))
 
 (defmethod resize ((context context) width height)
+  (v:info :trial.backend.glfw "Resizing window to ~ax~a" width height)
   (cl-glfw3:set-window-size width height (window context)))
 
 (defmethod quit ((context context))
@@ -237,6 +238,7 @@
 
 (cl-glfw3:def-framebuffer-size-callback ctx-size (window w h)
   (%with-context
+    (v:debug :trial.input "Framebuffer resized to ~ax~a" w h)
     (handle (make-instance 'resize
                            :width w
                            :height h)
