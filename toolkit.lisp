@@ -330,10 +330,11 @@
 (defun rename-thread (name)
   #+windows
   (com:with-wstring (name name)
-    (cffi:foreign-funcall "SetThreadDescription"
-                          size_t (cffi:foreign-funcall "GetCurrentThread" size_t)
-                          :string name
-                          size_t))
+    (ignore-errors
+     (cffi:foreign-funcall "SetThreadDescription"
+                           size_t (cffi:foreign-funcall "GetCurrentThread" size_t)
+                           :string name
+                           size_t)))
   #-windows
   (cffi:foreign-funcall "pthread_setname_np"
                         size_t (cffi:foreign-funcall "pthread_self" size_t)
