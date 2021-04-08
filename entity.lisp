@@ -54,9 +54,8 @@
     (when valid-p (flare-queue:value last))))
 
 (defmethod enter* ((thing entity) (container container))
-  (let ((preceding (preceding-entity thing container)))
-    (enter thing container)
-    (compile-into-pass thing preceding *scene*)))
+  (compile-into-pass thing container *scene*)
+  (enter thing container))
 
 (defmethod leave* ((thing entity) (container (eql T)))
   (leave* thing (container thing)))

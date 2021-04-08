@@ -292,6 +292,13 @@
       (flare-queue:remove-cells start end)
       (remhash entity (group-pointers pass)))))
 
+(defmethod compile-into-pass :around ((entity entity) previous (pass scene-pass))
+  (when (object-renderable-p entity pass)
+    (call-next-method)))
+
+(defmethod compile-into-pass ((entity entity) (container container) (pass scene-pass))
+  (compile-into-pass entity (preceding-entity entity container) pass))
+
 (defmethod compile-into-pass ((entity entity) (previous entity) (pass scene-pass))
   (destructuring-bind (start . end) (gethash previous (group-pointers pass))
     (declare (ignore start))
