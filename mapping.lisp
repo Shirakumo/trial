@@ -46,6 +46,17 @@
   (loop for (function) being the hash-values of *mappings*
         do (funcall function loop event)))
 
+(defun action-definition (mapping action)
+  (find action (second (mapping mapping)) :key #'second))
+
+(defun action-input (mapping action &key (device :gamepad))
+  (let ((binds (cddr (action-definition mapping action))))
+    (ecase device
+      (:keyboard
+       (getf (rest (or (assoc 'key binds) (assoc 'mouse binds))) :one-of))
+      (:gamepad
+       (getf (rest (or (assoc 'button binds) (assoc 'axis binds))) :one-of)))))
+
 (defclass action-set () ()) ;; marker-class
 (defclass exclusive-action-set () ())
 

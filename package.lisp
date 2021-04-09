@@ -543,6 +543,8 @@
    #:define-mapping
    #:define-simple-mapping
    #:map-event
+   #:action-definition
+   #:action-input
    #:action-set
    #:exclusive-action-set
    #:define-action-set
