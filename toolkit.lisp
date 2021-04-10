@@ -123,6 +123,14 @@
    (or (first (uiop:command-line-arguments))
        *default-pathname-defaults*)))
 
+(defun open-in-browser (url)
+  #+windows
+  (uiop:run-program (list "explorer.exe" url))
+  #+linux
+  (uiop:run-program (list "xdg-open" url))
+  #+darwin
+  (uiop:run-program (list "open" url)))
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun kw (thing)
     (intern (string-upcase thing) "KEYWORD"))

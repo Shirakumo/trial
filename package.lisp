@@ -802,6 +802,7 @@
    #:polar->cartesian
    #:current-time
    #:executable-directory
+   #:open-in-browser
    #:kw
    #:enlist
    #:unlist
