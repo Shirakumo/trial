@@ -125,7 +125,7 @@
 
 (defun open-in-browser (url)
   #+windows
-  (uiop:run-program (list "explorer.exe" url))
+  (uiop:run-program (list "rundll32" "url.dll,FileProtocolHandler" url))
   #+linux
   (uiop:run-program (list "xdg-open" url))
   #+darwin
