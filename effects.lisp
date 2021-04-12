@@ -24,12 +24,14 @@
            (flow:right (first (flow:connections (flow:port pass 'color))))))
     (let ((pred (loop for prev = (previous pass) then (previous (flow:node prev))
                       do (when (active-p (flow:node prev)) (return prev))))
-          (succ (loop for next = (next pass) then (next (flow:node next))
-                      do (when (active-p (flow:node next)) (return next)))))
-      (if value
-          (setf (texture (flow:port pass 'previous-pass)) (texture pred)
-                (texture succ) (texture (flow:port pass 'color)))
-          (setf (texture succ) (texture pred))))))
+          (succ (when (flow:connections (flow:port pass 'color))
+                  (loop for next = (next pass) then (next (flow:node next))
+                        do (when (active-p (flow:node next)) (return next))))))
+      (cond (value
+             (setf (texture (flow:port pass 'previous-pass)) (texture pred))
+             (when succ (setf (texture succ) (texture (flow:port pass 'color)))))
+            (succ
+             (setf (texture succ) (texture pred)))))))
 
 (define-shader-pass copy-pass (simple-post-effect-pass)
   ())
