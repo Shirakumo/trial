@@ -26,10 +26,9 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   (vector-push-extend edge (edges obj)))
 
 (defmethod add-edges ((obj verlet-entity) indices)
-  (loop with verlets = (verlets obj)
-        for (index-a index-b) on indices by #'cddr
-        for verlet-a = (aref verlets index-a)
-        for verlet-b = (aref verlets index-b)
+  (loop for (index-a index-b) on indices by #'cddr
+        for verlet-a = (verlet obj index-a)
+        for verlet-b = (verlet obj index-b)
         for edge = (make-instance 'edge :verlet-a verlet-a :verlet-b verlet-b)
         do (add-edge obj edge)))
 
@@ -44,6 +43,12 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 (defmethod constrain ((obj verlet-entity))
   (loop for verlet across (verlets obj)
         do (constrain verlet)))
+
+(defmethod verlet ((obj verlet-entity) index)
+  (aref (verlets obj) index))
+
+(defmethod edge ((obj verlet-entity) index)
+  (aref (edges obj) index))
 
 (defmethod enter :around ((obj verlet-entity) (scene scene-graph))
   (loop for verlet across (verlets obj)
