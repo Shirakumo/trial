@@ -54,7 +54,7 @@
                  :loop-to (when (jsown:keyp data "loop")
                             (jsown:val data "loop"))))
 
-(defmethod generate-resources ((sprite sprite-data) (path pathname) &key)
+(defmethod generate-resources ((sprite sprite-data) (path pathname) &key (min-filter :nearest) (mag-filter :nearest))
   (let* ((data (jsown:parse (alexandria:read-file-into-string path)))
          (meta (jsown:val data "meta"))
          (size (decode-json-vec (jsown:val meta "size"))))
@@ -62,8 +62,8 @@
     (setf (animations sprite) (map 'vector #'decode-aseprite-tag (jsown:val meta "frameTags")))
     (generate-resources 'image-loader (merge-pathnames (jsown:val meta "image") path)
                         :resource (resource sprite 'texture)
-                        :min-filter :nearest
-                        :mag-filter :nearest)
+                        :min-filter min-filter
+                        :mag-filter mag-filter)
     (generate-resources 'mesh-loader (make-sprite-frame-mesh (frames sprite))
                         :resource (resource sprite 'vertex-array))
     (list (resource sprite 'texture)
