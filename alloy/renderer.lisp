@@ -162,6 +162,9 @@
     ((:rgb :rgb8) 3)
     ((:rgba :rgba8) 4)))
 
+(defmethod simple:icon ((renderer renderer) bounds (texture trial:texture) &rest initargs)
+  (apply #'make-instance 'simple:icon :image texture :bounds bounds initargs))
+
 (defmethod simple:request-image ((renderer renderer) (image pathname) &key (filtering :linear))
   (trial:generate-resources 'trial:image-loader image :min-filter filtering :mag-filter filtering))
 
