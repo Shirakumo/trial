@@ -1,20 +1,21 @@
 (in-package #:org.shirakumo.fraf.trial.release)
 
-(defvar *config* '(:build (:features ()
-                           :build-arguments ()
-                           :dynamic-space-size 4096
-                           :linux "sbcl-lin"
-                           :windows "sbcl-win"
-                           :macos "sbcl-mac"
-                           :targets '(:linux :windows))
-                   :itch (:user "CONFIGURE-ME"
-                          :project NIL)
-                   :steam (:branch "developer"
-                           :preview NIL
-                           :user "CONFIGURE-ME"
-                           :password NIL)
-                   :system "CONFIGURE-ME"
-                   :output "CONFIGURE-ME"))
+(defparameter *config*
+  '(:build (:features ()
+            :build-arguments ()
+            :dynamic-space-size 4096
+            :linux "sbcl-lin"
+            :windows "sbcl-win"
+            :macos "sbcl-mac"
+            :targets (:linux :windows))
+    :itch (:user "CONFIGURE-ME"
+           :project NIL)
+    :steam (:branch "developer"
+            :preview NIL
+            :user "CONFIGURE-ME"
+            :password NIL)
+    :system "CONFIGURE-ME"
+    :output "CONFIGURE-ME"))
 
 (defun map-leaf-config (function &optional (config *config*))
   (labels ((recurse (node rpath)
@@ -43,7 +44,7 @@
     (setf *config* (update *config* (first path) (rest path)))
     value))
 
-(defun set-config (&rest config)
+(defun set-config (config)
   (map-leaf-config
    (lambda (path value)
      (apply #'(setf config) value path))

@@ -9,10 +9,10 @@
 
 (defun build-args ()
   (let ((features (append *default-build-features* (config :build :features))))
-    (append (list "--dynamic-space-size" (config :build :dynamic-space-size)
-                  "--eval" (format NIL "(setf *features* (append *features* '~s))" (config :build :features)))
+    (append (list "--dynamic-space-size" (princ-to-string (config :build :dynamic-space-size))
+                  "--eval" (format NIL "(setf *features* (append *features* '~s))" features))
             (config :build :build-arguments)
-            (list "--eval" (format NIL "(asdf:make ~a :force T)" (config :system))
+            (list "--eval" (format NIL "(asdf:make :~a :force T)" (config :system))
                   "--disable-debugger" "--quit"))))
 
 (defmethod build ((target (eql :linux)))
