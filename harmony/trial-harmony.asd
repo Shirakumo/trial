@@ -7,7 +7,7 @@
 (asdf:defsystem trial-harmony
   :author "Nicolas Hafner <shinmera@tymoon.eu>"
   :maintainer "Nicolas Hafner <shinmera@tymoon.eu>"
-  :license "Artistic"
+  :license "zlib"
   :description "Integration with the Harmony sound engine"
   :homepage "https://Shirakumo.github.io/trial/"
   :bug-tracker "https://github.com/Shirakumo/trial/issues"

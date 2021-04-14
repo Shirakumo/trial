@@ -7,7 +7,7 @@
 (asdf:defsystem trial-alloy
   :author "Nicolas Hafner <shinmera@tymoon.eu>"
   :maintainer "Nicolas Hafner <shinmera@tymoon.eu>"
-  :license "Artistic"
+  :license "zlib"
   :description "Integration with the Alloy UI toolkit"
   :homepage "https://Shirakumo.github.io/trial/"
   :bug-tracker "https://github.com/Shirakumo/trial/issues"
