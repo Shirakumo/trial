@@ -88,6 +88,12 @@
   (v:output-here)
   (v:info :trial.main "GENESIS")
   (handler-bind ((error #'standalone-error-handler))
-    (apply #'launch-with-context main initargs))
+    (flet ((thunk ()
+             (apply #'launch-with-context main initargs)))
+      #+darwin
+      (float-features:with-float-traps-masked T
+        (thunk))
+      #-darwin
+      (thunk)))
   (setf *context* NIL)
   (tg:gc :full T))
