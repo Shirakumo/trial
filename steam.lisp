@@ -95,6 +95,8 @@
     (values (coerce analog 'vector) (coerce digital 'vector))))
 
 (defmethod trial:poll-input :after ((main main))
+  (when steam::*steamworks*
+    (steam:run-callbacks T))
   (when (use-steaminput main)
     (let ((input (steam:interface 'steam:steaminput T)))
       (steam:run-frame input)
