@@ -1,0 +1,99 @@
+# Using Trial-Release
+This is a system offering automation for pushing releases of your game to a zip, Steam, or Itch.io.
+
+## Getting Set Up
+First you'll want to create a new ASDF system for your game's release. The ASD file should be in a directory where your releases will be put, so ideally not in the game's source root. The ASD should be something like this:
+
+::
+(asdf:defsystem my-game-release
+  :components ((:file "release"))
+  :depends-on (:trial-release)
+  :perform (asdf:build-op (op c) (uiop:symbol-call :org.shirakumo.fraf.trial.release :make)))
+::
+
+The ``release`` file can just be:
+
+::
+(org.shirakumo.fraf.trial.release:configure
+ :itch (:user "my-itch-username")
+ :steam (:user "my-steam-username")
+ :system "my-game")
+::
+
+There are other configuration parameters you can set if necessary to customise the build and release process.
+
+Finally, you'll also want to configure your game's ASD system to include the following options:
+
+::
+  :build-operation "deploy-op"
+  :build-pathname #+linux "my-game-linux.run"
+                  #+darwin "my-game-macos.o"
+                  #+win32 "my-game-windows"
+                  #+(and bsd (not darwin)) "my-game-bsd.run"
+                  #-(or linux bsd win32) "my-game"
+  :entry-point "my-game::main"
+  :defsystem-depends-on (:deploy)
+::
+
+You can adapt the build pathnames as you wish, as long as the pathname types stay consistent: ``.run`` for Linux, ``.o`` for MacOS, and none for Windows (``.exe`` is added by default). You can also adapt the entry point as you choose.
+
+Outside of this, you'll have to have the following binaries set up in your PATH:
+
+- ``butler``
+  The itch.io release tool. You'll need this if you want to release to itch.
+- ``steamcmd.sh``
+  The steam command tool. You'll need this if you want to release to Steam.
+- ``sbcl-lin`` (linux)
+  The SBCL binary used to build the Linux version. This should be a binary that was compiled on the minimum linux kernel version you want to support. It's also recommended that you modify the ``LD_LIBRARY_PATH`` of it to include a directory with all necessary libraries also compiled on the same minimum kernel version.
+- ``sbcl-win`` (linux)
+  The SBCL Windows binary used to build the Windows version. This can be a wrapper using Wine, which works really well to build for Windows under Linux.
+- ``sbcl-mac`` (linux)
+  The SBCL binary used to build the Mac version. This is currently unsupported, but in the future once Darling works better this could be used to deploy to that platform from Linux as well.
+- ``pass`` (optional)
+  Used to retrieve the Steam account password automatically. If not present, will query for a password at the REPL.
+
+Once all of this is ready, you can run a build using ``(asdf:make :my-game-release)`` or manually invoking ``org.shirakumo.fraf.trial.release:make`` after loading that system.
+
+## Setting up Steam
+Steam will require some VDF files to configure your build in addition. Please consult the SteamWorks documentation on how to do that. However, be aware that the base file should be called ``app-build.vdf`` and should be in the same directory as your ``my-game-release.asd`` file, and should have several fields set specially so the Trial release mechanism can operate properly. Here's an example:
+
+::
+"appbuild"{
+  "appid" "1261430"
+  "desc" "Kandria developer build"
+  "buildoutput" "../steam/"
+  "contentroot" "$CONTENT"
+  "setlive" "$BRANCH"
+  "preview" "$PREVIEW"
+  "local" ""
+  "depots"{
+    "1261431" "../windows-depot.vdf"
+    "1261432" "../linux-depot.vdf"
+    "1261433" "../macos-depot.vdf"
+    "1261434" "../content-depot.vdf"
+  }
+}
+::
+
+The Trial release build will automatically take this file and replace the ``$`` variables, then copy it to a subdirectory where the upload happens, hence the ``../`` backrefs in the paths. The depot VDF files do not need any special configuration.
+
+## Config Options
+The configuration you can set is a tree of options, here shown with default values:
+
+::
+(:build (:features ()                    ; A list of symbols to push onto *features* when building
+         :build-arguments ()             ; A list of command line argmuents to pass on when building
+         :dynamic-space-size 4096        ; The max heap size to use when building
+         :linux "sbcl-lin"               ; The binary used to build for Linux from linux
+         :windows "sbcl-win"             ; The binary used to build for Windows from linux
+         :macos "sbcl-mac"               ; The binary used to build for MacOS form linux
+         :targets (:linux :windows))     ; Which targets to build by default (can include :linux, :windows, :macos)
+ :upload (:targets (:steam))             ; Which platforms to upload to by default (can include :steam, :itch)
+ :itch (:user "CONFIGURE-ME"             ; The user on which the itch project resides
+        :project NIL)                    ; The name of the project (defaults to your system name)
+ :steam (:branch "default"               ; The branch to which to push on Steam
+         :preview NIL                    ; Whether it should only preview the upload and not actually perform it
+         :user "CONFIGURE-ME"            ; The user with which you log in to perform the upload
+         :password NIL)                  ; The password for the user. If NIL will try to get it from pass or query for it.
+ :system "CONFIGURE-ME")                 ; The name of the ASDF system to build your game with.
+::

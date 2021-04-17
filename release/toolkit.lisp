@@ -8,9 +8,10 @@
             :windows "sbcl-win"
             :macos "sbcl-mac"
             :targets (:linux :windows))
+    :upload (:targets (:steam))
     :itch (:user "CONFIGURE-ME"
            :project NIL)
-    :steam (:branch "developer"
+    :steam (:branch "default"
             :preview NIL
             :user "CONFIGURE-ME"
             :password NIL)

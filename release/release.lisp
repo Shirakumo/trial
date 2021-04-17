@@ -55,10 +55,10 @@
          "+quit")))
 
 (defmethod upload ((service (eql T)) &rest args &key &allow-other-keys)
-  (dolist (service '(:itch :steam))
+  (dolist (service (config :upload :targets))
     (apply #'upload service args)))
 
-(defun make (&key (build T) (upload :steam))
+(defun make (&key (build T) (upload T))
   (deploy:status 0 "Building ~a" (version))
   (build build)
   (deploy:status 1 "Deploying to release directory")
