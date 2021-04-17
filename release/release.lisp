@@ -30,11 +30,11 @@
 
 (defun release-systems (release)
   (let ((systems ()))
-    (when (probe-file (make-pathname :name :wild :type "run" :defaults release))
+    (when (directory (make-pathname :name :wild :type "run" :defaults release))
       (push "linux" systems))
-    (when (probe-file (make-pathname :name :wild :type "o" :defaults release))
+    (when (directory (make-pathname :name :wild :type "o" :defaults release))
       (push "mac" systems))
-    (when (probe-file (make-pathname :name :wild :type "exe" :defaults release))
+    (when (directory (make-pathname :name :wild :type "exe" :defaults release))
       (push "windows" systems))
     systems))
 
