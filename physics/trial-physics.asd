@@ -16,5 +16,6 @@
                (:file "physics")
                (:file "verlet")
                (:file "edge")
-               (:file "entity"))
+               (:file "entity")
+               (:file "shape"))
   :depends-on (:trial))
