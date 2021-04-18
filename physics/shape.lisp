@@ -19,6 +19,12 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
                          :gravity (or gravity (vec3 0 -1 0))
                          :pinned pinned))
 
+(defun make-edge (start end &key stiffness thickness)
+  (make-instance 'edge :verlet-a start
+                       :verlet-b end
+                       :stiffness (or stiffness 1.88)
+                       :width (or thickness 1)))
+
 (defun make-circle (radius &key location constraint velocity
                                 friction ground-friction
                                 pinned mass gravity)
@@ -63,3 +69,30 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
         (setf (stiffness (edge obj i)) stiffness)
         (setf (width (edge obj i)) thickness)))
     obj))
+
+(defun make-rope (part-count part-length &key (location (vec3 0 0 0))
+                                              (direction (vec3 0 1 0))
+                                              (thickness 1) constraint velocity
+                                              friction ground-friction
+                                              stiffness pinned mass gravity)
+  (labels ((new-verlet (location pinned)
+             (make-verlet :radius (/ thickness 2)
+                          :location location
+                          :constraint constraint
+                          :velocity velocity
+                          :friction friction
+                          :ground-friction ground-friction
+                          :mass mass
+                          :gravity gravity
+                          :pinned pinned)))
+    (let ((obj (make-instance 'verlet-entity))
+          (move (nv* (vunit direction) part-length))
+          (pos (vcopy location)))
+      (add-verlet obj (new-verlet location T))
+      (dotimes (i part-count)
+        (nv+ pos move)
+        (add-verlet obj (new-verlet pos pinned))
+        (add-edge obj (make-edge (verlet obj i) (verlet obj (1+ i))
+                                 :stiffness stiffness
+                                 :thickness thickness)))
+      obj)))
