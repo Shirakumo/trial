@@ -6,6 +6,9 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 
 (in-package #:org.shirakumo.fraf.trial.physics)
 
+(defparameter +edge-default-width+ 1)
+(defparameter +edge-default-stiffness+ 1.88)
+
 (define-asset (physics box) mesh
   (make-cube +mesh-size+))
 
@@ -18,8 +21,8 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   (:default-initargs :color (vec4 1 0 0 1)
                      :vertex-array (// 'physics 'box)
                      :target NIL
-                     :width 1
-                     :stiffness 1.88
+                     :width +edge-default-width+
+                     :stiffness +edge-default-stiffness+
                      :verlet-a (error "VERLET-A required")
                      :verlet-b (error "VERLET-B required")))
 

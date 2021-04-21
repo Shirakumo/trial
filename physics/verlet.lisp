@@ -6,6 +6,12 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 
 (in-package #:org.shirakumo.fraf.trial.physics)
 
+(defparameter +verlet-default-gravity+ (vec3 0 -0.91 0))
+(defparameter +verlet-default-mass+ 1)
+(defparameter +verlet-default-friction+ 0.91)
+(defparameter +verlet-default-ground-friction+ 0.66)
+(defparameter +verlet-default-radius+ 5)
+
 (define-asset (physics dot) mesh
   (make-sphere +mesh-size+))
 
@@ -21,13 +27,13 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
    (pinned :initarg :pinned :reader pinned-p :writer pinned))
   (:default-initargs :color (vec4 1 0 0 1)
                      :vertex-array (// 'physics 'dot)
-                     :gravity (vec3 0 -0.9 0)
-                     :mass 1
-                     :friction 0.91
-                     :ground-friction 0.66
+                     :gravity +verlet-default-gravity+
+                     :mass +verlet-default-mass+
+                     :friction +verlet-default-friction+
+                     :ground-friction +verlet-default-ground-friction+
                      :pinned NIL))
 
-(defmethod initialize-instance :after ((verlet verlet) &key (radius 5)
+(defmethod initialize-instance :after ((verlet verlet) &key (radius +verlet-default-radius+)
                                                             (velocity (vec3 0 0 0))
                                                             constraint)
   (setf (radius verlet) radius)

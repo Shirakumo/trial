@@ -9,21 +9,22 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
 (defun make-verlet (&key radius location constraint velocity
                          friction ground-friction
                          pinned mass gravity)
-  (make-instance 'verlet :radius (or radius 5)
+  (make-instance 'verlet :radius (or radius +verlet-default-radius+)
                          :location (or location (vec3 0 0 0))
                          :constraint constraint
                          :velocity (or velocity (vec3 0 0 0))
-                         :friction (or friction 0.91)
-                         :ground-friction (or ground-friction 0.66)
-                         :mass (or mass 1)
-                         :gravity (or gravity (vec3 0 -1 0))
+                         :friction (or friction +verlet-default-friction+)
+                         :ground-friction (or ground-friction
+                                              +verlet-default-ground-friction+)
+                         :mass (or mass +verlet-default-mass+)
+                         :gravity (or gravity +verlet-default-gravity+)
                          :pinned pinned))
 
 (defun make-edge (start end &key stiffness thickness)
   (make-instance 'edge :verlet-a start
                        :verlet-b end
-                       :stiffness (or stiffness 1.88)
-                       :width (or thickness 1)))
+                       :stiffness (or stiffness +edge-default-stiffness+)
+                       :width (or thickness +edge-default-width+)))
 
 (defun make-circle (radius &key location constraint velocity
                                 friction ground-friction
@@ -42,7 +43,8 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
     obj))
 
 (defun make-box (width &key height
-                            (thickness 1) (location (vec3 0 0 0))
+                            (thickness 1)
+                            (location (vec3 0 0 0))
                             constraint velocity friction
                             ground-friction stiffness
                             pinned mass gravity)
@@ -64,14 +66,14 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
       (add-verlet obj (new-verlet (v+ location (vec3 width (- height) 0))))
       (add-verlet obj (new-verlet (v+ location (vec3 (- width) (- height) 0)))))
     (add-edges obj '(0 1  1 2  2 3  3 0  0 2  1 3))
-    (when (or stiffness (/= thickness 1))
-      (dotimes (i 6)
-        (setf (stiffness (edge obj i)) stiffness)
-        (setf (width (edge obj i)) thickness)))
+    (dotimes (i 6)
+      (setf (width (edge obj i)) thickness)
+      (when stiffness
+        (setf (stiffness (edge obj i)) stiffness)))
     obj))
 
 (defun make-rope (part-count part-length &key (location (vec3 0 0 0))
-                                              (direction (vec3 0 1 0))
+                                              (direction (vec3 0 -1 0))
                                               (thickness 1) constraint velocity
                                               friction ground-friction
                                               stiffness pinned mass gravity)
@@ -85,13 +87,13 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
                           :mass mass
                           :gravity gravity
                           :pinned pinned)))
-    (let ((obj (make-instance 'verlet-entity))
+    (let ((obj (make-instance 'verlet-entity :iterations 32))
           (move (nv* (vunit direction) part-length))
           (pos (vcopy location)))
       (add-verlet obj (new-verlet location T))
       (dotimes (i part-count)
         (nv+ pos move)
-        (add-verlet obj (new-verlet pos pinned))
+        (add-verlet obj (new-verlet (vcopy pos) pinned))
         (add-edge obj (make-edge (verlet obj i) (verlet obj (1+ i))
                                  :stiffness stiffness
                                  :thickness thickness)))
