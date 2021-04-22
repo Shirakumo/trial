@@ -78,7 +78,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
       (setf distance 0.000001)
       (setf delta (v* +vx3+ distance)))
     (let* ((difference (* (/ (- (target edge) distance) distance) (stiffness edge)))
-           (offset (v* delta difference 0.5))
+           (offset (v* delta difference))
            (mass-total (+ (mass v-a) (mass v-b)))
            (mass-a (cond
                      ((pinned-p v-a) 0)
