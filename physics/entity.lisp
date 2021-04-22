@@ -69,7 +69,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
         do (leave edge scene)))
 
 (define-handler (verlet-entity tick) (dt)
-  ;; Default physics calculations are done in 0.01, which is expected of the dt.
+  ;; Default physics calculations expect 0.01 second delta time.
   (let ((dt (/ dt 0.01)))
     (update-verlets verlet-entity dt)
     (let ((iterations (iterations verlet-entity)))
