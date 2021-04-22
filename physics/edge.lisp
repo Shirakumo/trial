@@ -27,7 +27,7 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
                      :verlet-b (error "VERLET-B required")))
 
 (defmethod initialize-instance :after ((edge edge) &key)
-  (let ((target (or (target edge) (distance edge))))
+  (let ((target (or (target edge) (magnitude edge))))
     (setf (target edge) target)
     (update-location edge)
     (update-rotation edge)
@@ -54,16 +54,17 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
   (rotation edge))
 
 (defmethod update-scaling ((edge edge))
-  (setf (vx (scaling edge)) (/ (distance edge) +mesh-size+))
+  (setf (vx (scaling edge)) (/ (magnitude edge) +mesh-size+))
   (setf (vy (scaling edge)) (/ (width edge) +mesh-size+))
-  (setf (vz (scaling edge)) 0.01))
+  (setf (vz (scaling edge)) 0.01)
+  (scaling edge))
 
 (defmethod proportions ((edge edge))
   (let ((proportions (v* (scaling edge) +mesh-size+)))
     (setf (vz proportions) 0)
     proportions))
 
-(defmethod distance ((edge edge))
+(defmethod magnitude ((edge edge))
   (vdistance (location (verlet-a edge)) (location (verlet-b edge))))
 
 (defmethod simulate ((edge edge) dt)
@@ -79,10 +80,16 @@ Author: Janne Pakarinen <gingeralesy@gmail.com>
     (let* ((difference (* (/ (- (target edge) distance) distance) (stiffness edge)))
            (offset (v* delta difference 0.5))
            (mass-total (+ (mass v-a) (mass v-b)))
-           (mass-a (/ (mass v-b) mass-total))
-           (mass-b (/ (mass v-a) mass-total)))
-      (unless (pinned-p v-a) (nv- pos-a (v* offset mass-a dt)))
-      (unless (pinned-p v-b) (nv+ pos-b (v* offset mass-b dt)))))
+           (mass-a (cond
+                     ((pinned-p v-a) 0)
+                     ((pinned-p v-b) 1)
+                     (T (/ (mass v-b) mass-total))))
+           (mass-b (cond
+                     ((pinned-p v-b) 0)
+                     ((pinned-p v-a) 1)
+                     (T (/ (mass v-a) mass-total)))))
+      (nv- pos-a (v* offset mass-a dt))
+      (nv+ pos-b (v* offset mass-b dt))))
   (update-location edge)
   (update-rotation edge)
   (update-scaling edge))
