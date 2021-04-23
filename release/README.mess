@@ -87,7 +87,12 @@ The configuration you can set is a tree of options, here shown with default valu
          :linux "sbcl-lin"               ; The binary used to build for Linux from linux
          :windows "sbcl-win"             ; The binary used to build for Windows from linux
          :macos "sbcl-mac"               ; The binary used to build for MacOS form linux
-         :targets (:linux :windows))     ; Which targets to build by default (can include :linux, :windows, :macos)
+         :targets (:linux :windows)      ; Which targets to build by default (can include :linux, :windows, :macos)
+         :prune ()                       ; Specify directories or files that should be removed before deploying.
+                                         ; Paths are relative to the target directory.
+         :copy ())                       ; Specify additional files that should be copied before deploying.
+                                         ; May be a path or a list of source and target. Source paths are relative
+                                         ; to the system root, target paths relative to the output directory.
  :upload (:targets (:steam))             ; Which platforms to upload to by default (can include :steam, :itch)
  :itch (:user "CONFIGURE-ME"             ; The user on which the itch project resides
         :project NIL)                    ; The name of the project (defaults to your system name)

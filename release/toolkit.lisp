@@ -7,7 +7,9 @@
             :linux "sbcl-lin"
             :windows "sbcl-win"
             :macos "sbcl-mac"
-            :targets (:linux :windows))
+            :targets (:linux :windows)
+            :prune ()
+            :copy ())
     :upload (:targets (:steam))
     :itch (:user "CONFIGURE-ME"
            :project NIL)
@@ -87,3 +89,22 @@
     (loop for (search replace) in replacements
           do (setf content (cl-ppcre:regex-replace-all search content replace)))
     (alexandria:write-string-into-file content out :if-exists :supersede)))
+
+(defun prune (file)
+  (cond ((listp file)
+         (mapc #'prune file))
+        ((wild-pathname-p file)
+         (prune (directory file)))
+        ((pathname-utils:directory-p file)
+         (uiop:delete-directory-tree file :validate (constantly T) :if-does-not-exist :ignore))
+        (T
+         (delete-file file))))
+
+(defun copy (file target)
+  (cond ((wild-pathname-p file)
+         (loop for file in (directory file)
+               do (copy file (merge-pathnames file target))))
+        ((pathname-utils:directory-p file)
+         (deploy:copy-directory-tree file target :copy-root NIL))
+        (T
+         (uiop:copy-file file target))))
