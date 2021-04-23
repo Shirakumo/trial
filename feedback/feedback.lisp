@@ -72,3 +72,12 @@
                                                   (uiop:native-namestring (trial:logfile)))
                                           :title "Unhandled Error" :type :error :modal T)))
     (deploy:quit)))
+
+#+linux
+(trial::dont-deploy
+ cl+ssl::libssl
+ cl+ssl::libcrypto)
+#+darwin
+(trial::dont-deploy)
+#+windows
+(trial::dont-deploy)
