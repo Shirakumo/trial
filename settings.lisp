@@ -36,7 +36,7 @@
       (uiop:copy-file (merge-pathnames "keymap.lisp" (root)) path)))
   (load-mapping path))
 
-(defun load-settings (&optional (path (setting-file-path)))
+(defmethod load-settings (&optional (path (setting-file-path)))
   (ignore-errors
    (with-error-logging (:trial.settings)
      (v:info :trial.settings "Loading settings from ~a" path)
@@ -53,7 +53,7 @@
                   collect k)))))))
   +settings+)
 
-(defun save-settings (&optional (path (setting-file-path)))
+(defmethod save-settings (&optional (path (setting-file-path)))
   (ignore-errors
    (with-error-logging (:trial.settings)
      (v:info :trial.settings "Saving settings to ~a" path)
