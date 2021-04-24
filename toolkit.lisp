@@ -308,9 +308,8 @@
              (merge-pathnames "AppData/" (user-homedir-pathname)))
          #+(or windows win32) "Roaming"
          #-(or windows win32)
-         (user-homedir-pathname)
-         #-(or windows win32)
-         ".config"
+         (or (uiop:getenv "XDG_CONFIG_HOME")
+             (pathname-utils:subdirectory (user-homedir-pathname) ".config"))
          app-path))
 
 (defun standalone-error-handler (err)
