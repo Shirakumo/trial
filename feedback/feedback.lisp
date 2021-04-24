@@ -7,14 +7,12 @@
 (defpackage #:org.shirakumo.fraf.trial.feedback
   (:use #:cl)
   (:export
-   #:*project*
    #:*client-args*
    #:report-files
    #:find-user-id
    #:submit-report))
 (in-package #:org.shirakumo.fraf.trial.feedback)
 
-(defvar *project*)
 (defvar *client-args* ())
 
 (defmacro error-or (&rest cases)
@@ -46,7 +44,7 @@
    (pathname-utils:directory-name (user-homedir-pathname))
    "anonymous"))
 
-(defun submit-report (&key (project *project*) (user (find-user-id)) (files () files-p) description version)
+(defun submit-report (&key (project trial:+app-system+) (user (find-user-id)) (files () files-p) description version)
   (let ((files (remove-if-not #'probe-file (if files-p files (report-files)) :key #'second)))
     (handler-bind ((error (lambda (e)
                             (v:debug :trial.report e)
