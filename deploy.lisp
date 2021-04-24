@@ -7,6 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (deploy:define-hook (:deploy trial) (directory)
+  (deploy:copy-directory-tree (pathname-utils:subdirectory (root) "lang") directory)
   ;; FIXME: This is bad. We always deploy a bunch of shit that's not really needed.
   (dolist (pool (list-pools))
     (let ((source (base pool)))
