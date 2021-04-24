@@ -24,6 +24,28 @@
          #+sbcl (sb-ext:defglobal ,name ,value)
          #-sbcl (defvar ,name ,value))))
 
+(define-global +app-system+ "trial")
+
+(defun git-repo-commit (dir)
+  (flet ((file (path)
+           (merge-pathnames path dir))
+         (trim (string)
+           (string-trim '(#\Return #\Linefeed #\Space) string)))
+    (let* ((head (trim (alexandria:read-file-into-string (file ".git/HEAD"))))
+           (path (subseq head (1+ (position #\Space head)))))
+      (trim (alexandria:read-file-into-string (file (merge-pathnames path ".git/")))))))
+
+(defmethod version ((_ (eql :app)))
+  (let ((dir (asdf:system-source-directory +app-system+)))
+    (format NIL "~a~@[-~a~]"
+            (asdf:component-version (asdf:find-system "findapet"))
+            (when (probe-file (merge-pathnames ".git/" dir)) (subseq (git-repo-commit dir) 0 7)))))
+
+(defun root (&optional (app +app-system+))
+  (if (deploy:deployed-p)
+      (deploy:runtime-directory)
+      (asdf:system-source-directory app)))
+
 (defgeneric finalize (object))
 
 (defmethod finalize :before (object)
@@ -275,6 +297,15 @@
                       (return NIL))
                     (bt:thread-yield))))
 
+(defmacro with-trial-io-syntax ((&optional (package '*package*)) &body body)
+  `(with-standard-io-syntax
+     (let ((*package* (etypecase ,package
+                        ((or string symbol) (find-package ,package))
+                        (package ,package)))
+           (*print-case* :downcase)
+           (*print-readably* NIL))
+       ,@body)))
+
 (defun tempdir ()
   (pathname
    (format NIL "~a/"
@@ -301,7 +332,7 @@
         (merge-pathnames "trial.log" (or (uiop:argv0) (user-homedir-pathname)))
         log)))
 
-(defun config-directory (&rest app-path)
+(defun config-directory (&optional (app +app-system+) &rest app-path)
   (apply #'pathname-utils:subdirectory
          #+(or windows win32)
          (or (uiop:getenv "AppData")
@@ -310,6 +341,7 @@
          #-(or windows win32)
          (or (uiop:getenv "XDG_CONFIG_HOME")
              (pathname-utils:subdirectory (user-homedir-pathname) ".config"))
+         app
          app-path))
 
 (defun standalone-error-handler (err)
@@ -428,6 +460,37 @@
     (symbol (find-class class-ish))
     (standard-class class-ish)
     (standard-object (class-of class-ish))))
+
+(defun type-prototype (type)
+  (case type
+    (character #\Nul)
+    (complex #c(0 0))
+    (cons '(NIL . NIL))
+    (float 0.0)
+    (function #'identity)
+    (hash-table (load-time-value (make-hash-table)))
+    (integer 0)
+    (null NIL)
+    (package #.*package*)
+    (pathname #p"")
+    (random-state (load-time-value (make-random-state)))
+    (readtable (load-time-value (copy-readtable)))
+    (stream (load-time-value (make-broadcast-stream)))
+    (string "string")
+    (symbol 'symbol)
+    (vector #(vector))
+    (T (let ((class (find-class type)))
+         (unless (c2mop:class-finalized-p class)
+           (c2mop:finalize-inheritance class))
+         (c2mop:class-prototype class)))))
+
+(defun maybe-finalize-inheritance (class)
+  (let ((class (etypecase class
+                 (class class)
+                 (symbol (find-class class)))))
+    (unless (c2mop:class-finalized-p class)
+      (c2mop:finalize-inheritance class))
+    class))
 
 (defun list-subclasses (class)
   (let ((sub (c2mop:class-direct-subclasses (ensure-class class))))

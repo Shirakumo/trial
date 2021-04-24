@@ -87,6 +87,7 @@
   (standalone-logging-handler)
   (v:output-here)
   (v:info :trial.main "GENESIS")
+  (v:info :trail.main "Launching version ~a" (version :app))
   (handler-bind ((error #'standalone-error-handler))
     (flet ((thunk ()
              (apply #'launch-with-context main initargs)))

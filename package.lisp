@@ -797,6 +797,10 @@
   (:export
    #:*inhibit-standalone-error-handler*
    #:define-global
+   #:+app-system+
+   #:git-repo-commit
+   #:version
+   #:toolkit
    #:finalize
    #:gl-property
    #:polar->cartesian
@@ -815,6 +819,7 @@
    #:with-new-value-restart
    #:with-cleanup-on-failure
    #:acquire-lock-with-starvation-test
+   #:with-trial-io-syntax
    #:tempdir
    #:tempfile
    #:logfile
@@ -832,6 +837,8 @@
    #:list-subclasses
    #:list-leaf-classes
    #:ensure-instance
+   #:type-prototype
+   #:maybe-finalize-inheritance
    #:with-slots-bound
    #:with-all-slots-bound
    #:minimize
