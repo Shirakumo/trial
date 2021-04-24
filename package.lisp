@@ -821,6 +821,7 @@
    #:*inhibit-standalone-error-handler*
    #:define-global
    #:+app-system+
+   #:root
    #:git-repo-commit
    #:version
    #:toolkit
