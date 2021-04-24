@@ -50,6 +50,7 @@
                (:file "helpers" :depends-on ("package" "entity" "transforms" "shader-entity" "shader-pass" "asset" "resources" "loader"))
                (:file "hdr" :depends-on ("package" "shader-pass"))
                (:file "input" :depends-on ("package" "event-loop" "mapping"))
+               (:file "language" :depends-on ("package" "toolkit" "settings"))
                (:file "lines" :depends-on ("package" "helpers" "shader-entity" "geometry"))
                (:file "layered-container" :depends-on ("package" "entity"))
                (:file "loader" :depends-on ("package" "resource" "asset"))

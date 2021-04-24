@@ -502,6 +502,17 @@
    #:key
    #:mouse
    #:gamepad)
+  ;; language.lisp
+  (:export
+   #:languages
+   #:language-file
+   #:language-files
+   #:load-language
+   #:save-language
+   #:language-string
+   #:@format
+   #:@formats
+   #:@)
   ;; layered-container.lisp
   (:export
    #:layered-container
