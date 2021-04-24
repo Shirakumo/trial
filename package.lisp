@@ -658,6 +658,18 @@
    #:register
    #:deregister
    #:process)
+  ;; settings.lisp
+  (:export
+   #:+settings+
+   #:setting-file-path
+   #:keymap-path
+   #:load-keymap
+   #:load-settings
+   #:save-settings
+   #:setting
+   #:observe-setting
+   #:remove-setting-observer
+   #:define-setting-observer)
   ;; sdl2-gamepad-map.lisp
   (:export)
   ;; selection-buffer.lisp
