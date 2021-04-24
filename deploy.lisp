@@ -8,6 +8,8 @@
 
 (deploy:define-hook (:deploy trial) (directory)
   (deploy:copy-directory-tree (pathname-utils:subdirectory (root) "lang") directory)
+  (when (probe-file (merge-pathnames "keymap.lisp" (root)))
+    (uiop:copy-file (merge-pathnames "keymap.lisp" (root)) (merge-pathnames "keymap.lisp" directory)))
   ;; FIXME: This is bad. We always deploy a bunch of shit that's not really needed.
   (dolist (pool (list-pools))
     (let ((source (base pool)))
