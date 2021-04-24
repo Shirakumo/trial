@@ -24,8 +24,8 @@
 
 (defmethod load-language (&optional (language (setting :language)))
   (let ((table (make-hash-table :test 'eq)))
-    (v:info :trial.language "Loading language ~s" language)
-    (with-trial-io-syntax (#.*package*)
+    (v:info :trial.language "Loading language ~s from ~a" language (language-file language))
+    (with-trial-io-syntax ()
       (with-open-file (stream (language-file language))
         (loop for k = (read stream NIL)
               for v = (read stream NIL)
@@ -35,8 +35,8 @@
 
 (defmethod save-language (&optional (language (setting :language)))
   (when +language-data+
-    (v:info :trial.language "Saving language ~s" language)
-    (with-trial-io-syntax (#.*package*)
+    (v:info :trial.language "Saving language ~s to ~s" language (language-file language))
+    (with-trial-io-syntax ()
       (with-open-file (stream (language-file language)
                               :direction :output
                               :if-exists :supersede)

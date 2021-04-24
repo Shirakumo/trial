@@ -820,6 +820,7 @@
   (:export
    #:*inhibit-standalone-error-handler*
    #:define-global
+   #:+app-vendor+
    #:+app-system+
    #:root
    #:git-repo-commit

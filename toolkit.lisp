@@ -24,6 +24,7 @@
          #+sbcl (sb-ext:defglobal ,name ,value)
          #-sbcl (defvar ,name ,value))))
 
+(define-global +app-vendor+ "shirakumo")
 (define-global +app-system+ "trial")
 
 (defun git-repo-commit (dir)
@@ -298,13 +299,15 @@
                     (bt:thread-yield))))
 
 (defmacro with-trial-io-syntax ((&optional (package '*package*)) &body body)
-  `(with-standard-io-syntax
-     (let ((*package* (etypecase ,package
-                        ((or string symbol) (find-package ,package))
-                        (package ,package)))
-           (*print-case* :downcase)
-           (*print-readably* NIL))
-       ,@body)))
+  (let ((pkg (gensym "PACKAGE")))
+    `(let ((,pkg (etypecase ,package
+                   ((or string symbol) (find-package ,package))
+                   (package ,package))))
+       (with-standard-io-syntax
+         (let ((*package* ,pkg)
+               (*print-case* :downcase)
+               (*print-readably* NIL))
+           ,@body)))))
 
 (defun tempdir ()
   (pathname
@@ -332,7 +335,7 @@
         (merge-pathnames "trial.log" (or (uiop:argv0) (user-homedir-pathname)))
         log)))
 
-(defun config-directory (&optional (app +app-system+) &rest app-path)
+(defun config-directory (&rest app-path)
   (apply #'pathname-utils:subdirectory
          #+(or windows win32)
          (or (uiop:getenv "AppData")
@@ -341,8 +344,7 @@
          #-(or windows win32)
          (or (uiop:getenv "XDG_CONFIG_HOME")
              (pathname-utils:subdirectory (user-homedir-pathname) ".config"))
-         app
-         app-path))
+         (or app-path (list +app-vendor+ +app-system+))))
 
 (defun standalone-error-handler (err)
   (when (and (deploy:deployed-p) (not *inhibit-standalone-error-handler*))
