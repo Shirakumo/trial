@@ -9,10 +9,12 @@
   (:export
    #:*client-args*
    #:report-files
+   #:define-report-hook
    #:find-user-id
    #:submit-report))
 (in-package #:org.shirakumo.fraf.trial.feedback)
 
+(defvar *report-hooks* ())
 (defvar *client-args* ())
 
 (defmacro error-or (&rest cases)
@@ -32,9 +34,20 @@
            (funcall ,symbolg ,@args)
            (error "No such symbol ~a:~a" ,package ,symbol)))))
 
-(defmethod report-files ()
+(defun report-files ()
+  (let ((files ()))
+    (dolist (hook *report-hooks* files)
+      (loop for (name file) in (funcall (second hook))
+            do (when (and file (probe-file file))
+                 (push (list name file) files))))))
+
+(defmacro define-report-hook (name () &body body)
+  `(setf *report-hooks* (list* (list ',name (lambda () ,@body))
+                               (remove ',name *report-hooks* :key #'first))))
+
+(define-report-hook trial ()
   `(("log" ,(trial:logfile))
-    ("screenshot" ,(trial:capture NIL :file (trial:tempfile)))))
+    ("screenshot" ,(when trial:*context* (trial:capture NIL :file (trial:tempfile))))))
 
 (defun find-user-id ()
   (error-or
@@ -45,7 +58,7 @@
    "anonymous"))
 
 (defun submit-report (&key (project trial:+app-system+) (user (find-user-id)) (files () files-p) description version)
-  (let ((files (remove-if-not #'probe-file (if files-p files (report-files)) :key #'second)))
+  (let ((files (if files-p files (report-files))))
     (handler-bind ((error (lambda (e)
                             (v:debug :trial.report e)
                             (v:error :trial.report "Failed to submit report: ~a" e))))
