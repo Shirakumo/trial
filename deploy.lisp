@@ -7,6 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (deploy:define-hook (:deploy trial) (directory)
+  #+asdf (asdf:clear-source-registry)
   (deploy:copy-directory-tree (pathname-utils:subdirectory (root) "lang") directory)
   (when (probe-file (merge-pathnames "keymap.lisp" (root)))
     (uiop:copy-file (merge-pathnames "keymap.lisp" (root)) (merge-pathnames "keymap.lisp" directory)))
