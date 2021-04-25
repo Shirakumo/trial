@@ -96,10 +96,9 @@
   (handler-bind ((error #'standalone-error-handler))
     (flet ((thunk ()
              (apply #'launch-with-context main initargs)))
-      #+darwin
-      (float-features:with-float-traps-masked T
-        (thunk))
-      #-darwin
-      (thunk)))
+      (if (or (find :darwin *features*) (deploy:deployed-p))
+          (float-features:with-float-traps-masked T
+            (thunk))
+          (thunk))))
   (setf *context* NIL)
   (tg:gc :full T))
