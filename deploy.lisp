@@ -27,7 +27,11 @@
   (labels ((r (class)
              (c2mop:finalize-inheritance class)
              (mapc #'r (c2mop:class-direct-subclasses class))))
-    (r (find-class 'shader-entity))))
+    (r (find-class 'shader-entity)))
+  ;; Fix version
+  (let ((version (version :app)))
+    (defmethod version ((_ (eql :app)))
+      version)))
 
 (deploy:define-hook (:boot trial) ()
   (v:restart-global-controller)
