@@ -64,7 +64,7 @@
                             (v:error :trial.report "Failed to submit report: ~a" e))))
       (apply #'org.shirakumo.feedback.client:submit
        project user
-       :version (or version (asdf:component-version (asdf:find-system project)))
+       :version (or version (version :app))
        :description description
        :attachments files
        *client-args*))))
