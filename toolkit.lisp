@@ -39,7 +39,7 @@
 (defmethod version ((_ (eql :app)))
   (let ((dir (asdf:system-source-directory +app-system+)))
     (format NIL "~a~@[-~a~]"
-            (asdf:component-version (asdf:find-system "findapet"))
+            (asdf:component-version (asdf:find-system +app-system+))
             (when (probe-file (merge-pathnames ".git/" dir)) (subseq (git-repo-commit dir) 0 7)))))
 
 (defun root (&optional (app +app-system+))
