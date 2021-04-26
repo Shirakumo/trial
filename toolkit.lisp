@@ -42,10 +42,11 @@
             (asdf:component-version (asdf:find-system +app-system+))
             (when (probe-file (merge-pathnames ".git/" dir)) (subseq (git-repo-commit dir) 0 7)))))
 
-(defun root (&optional (app +app-system+))
-  (if (deploy:deployed-p)
-      (deploy:runtime-directory)
-      (asdf:system-source-directory app)))
+(let ((cache NIL))
+  (defun root (&optional (app +app-system+))
+    (if (deploy:deployed-p)
+        (deploy:runtime-directory)
+        (or cache (setf cache (asdf:system-source-directory app))))))
 
 (defgeneric finalize (object))
 
