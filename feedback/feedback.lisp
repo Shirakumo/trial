@@ -64,7 +64,7 @@
                             (v:error :trial.report "Failed to submit report: ~a" e))))
       (apply #'org.shirakumo.feedback.client:submit
        project user
-       :version (or version (version :app))
+       :version (or version (trial:version :app))
        :description description
        :attachments files
        *client-args*))))
