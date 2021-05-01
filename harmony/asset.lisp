@@ -82,6 +82,10 @@
         (when velocity (setf (mixed:velocity voice) velocity))))
     voice))
 
+(defmethod harmony:stop ((resource trial:placeholder-resource)))
+(defmethod mixed:volume ((resource trial:placeholder-resource)) 1.0)
+(defmethod (setf mixed:volume) (volume (resource trial:placeholder-resource)) volume)
+
 (defmethod harmony:stop ((voice voice))
   (harmony:stop (voice voice)))
 
