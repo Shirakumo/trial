@@ -13,7 +13,8 @@
    #:generate-vdf)
   (:local-nicknames
    (#:trial #:org.shirakumo.fraf.trial)
-   (#:steam #:org.shirakumo.fraf.steamworks)))
+   (#:steam #:org.shirakumo.fraf.steamworks)
+   (#:steam* #:org.shirakumo.fraf.steamworks.cffi)))
 (in-package #:org.shirakumo.fraf.trial.steam)
 
 (defun action-label (action)
@@ -198,3 +199,8 @@ Refusing to deploy as the game would not launch properly anyway.")))
   }
 }"
               action-sets localization))))
+
+(steam:define-callback steam*::gamepad-text-input-dismissed (result submitted)
+  (when submitted
+    (let ((text (steam:input-text (steam:interface 'steam:steamutils T))))
+      (trial:handle (trial:handler trial:*context*) (make-instance 'trial:text-entered :text text)))))
