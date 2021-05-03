@@ -37,20 +37,20 @@
   (load-mapping path))
 
 (defmethod load-settings (&optional (path (setting-file-path)))
-  (ignore-errors
-   (with-error-logging (:trial.settings)
-     (v:info :trial.settings "Loading settings from ~a" path)
-     (with-open-file (stream path :direction :input
-                                  :element-type 'character
-                                  :if-does-not-exist :error)
-       (with-trial-io-syntax ()
-         (let ((*save-settings* NIL))
-           (map-leaf-settings
-            (lambda (path value)
-              (apply #'(setf setting) value path))
-            (loop for k = (read stream NIL '#1=#:eof)
-                  until (eq k '#1#)
-                  collect k)))))))
+  (with-error-logging (:trial.settings)
+    (v:info :trial.settings "Loading settings from ~a" path)
+    (with-open-file (stream path :direction :input
+                                 :element-type 'character
+                                 :if-does-not-exist NIL)
+      (when stream
+        (with-trial-io-syntax ()
+          (let ((*save-settings* NIL))
+            (map-leaf-settings
+             (lambda (path value)
+               (apply #'(setf setting) value path))
+             (loop for k = (read stream NIL '#1=#:eof)
+                   until (eq k '#1#)
+                   collect k)))))))
   +settings+)
 
 (defmethod save-settings (&optional (path (setting-file-path)))

@@ -12,15 +12,16 @@
   (mapcar #'pathname-utils:directory-name
           (directory (merge-pathnames "lang/*/" (root)))))
 
-(defun language-file (language)
-  (merge-pathnames (make-pathname :name "strings" :type "lisp"
-                                  :directory `(:relative "lang" ,(string-downcase language)))
+
+(defun language-dir (language)
+  (merge-pathnames (make-pathname :directory `(:relative "lang" ,(string-downcase language)))
                    (root)))
 
+(defun language-file (language)
+  (make-pathname :name "strings" :type "lisp" :defaults (language-dir language)))
+
 (defun language-files (language)
-  (directory (merge-pathnames (make-pathname :name :wild :type "lisp"
-                                             :directory `(:relative "lang" ,(string-downcase language)))
-                              (root))))
+  (directory (make-pathname :name :wild :type "lisp" :defaults (language-dir language))))
 
 (defmethod load-language (&optional (language (setting :language)))
   (let ((table (make-hash-table :test 'eq)))

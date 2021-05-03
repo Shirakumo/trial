@@ -505,6 +505,7 @@
   ;; language.lisp
   (:export
    #:languages
+   #:language-dir
    #:language-file
    #:language-files
    #:load-language
