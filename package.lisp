@@ -855,6 +855,7 @@
    #:rename-thread
    #:make-thread
    #:with-thread
+   #:thread-did-not-exit
    #:wait-for-thread-exit
    #:with-thread-exit
    #:with-error-logging

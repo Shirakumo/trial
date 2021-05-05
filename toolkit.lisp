@@ -351,11 +351,13 @@
   (when (and (deploy:deployed-p) (not *inhibit-standalone-error-handler*))
     (v:error :trial err)
     (v:fatal :trial "Encountered unhandled error in ~a, bailing." (bt:current-thread))
-    (if (string/= "" (or (uiop:getenv "DEPLOY_DEBUG_BOOT") ""))
-        (invoke-debugger err)
-        (org.shirakumo.messagebox:show (format NIL "An unhandled error occurred. Please send the application logfile to the developers. You can find it here:~%~%~a"
-                                               (uiop:native-namestring (logfile)))
-                                       :title "Unhandled Error" :type :error :modal T))
+    (cond ((string/= "" (or (uiop:getenv "DEPLOY_DEBUG_BOOT") ""))
+           (invoke-debugger err))
+          ((typep err 'trial:thread-did-not-exit))
+          (T
+           (org.shirakumo.messagebox:show (format NIL "An unhandled error occurred. Please send the application logfile to the developers. You can find it here:~%~%~a"
+                                                  (uiop:native-namestring (logfile)))
+                                          :title "Unhandled Error" :type :error :modal T)))
     (deploy:quit)))
 
 (defun standalone-logging-handler ()
@@ -400,13 +402,19 @@
                         (handler-bind ((error #'standalone-error-handler))
                           ,@body))))
 
+(define-condition thread-did-not-exit (error)
+  ((thread :initarg :thread)
+   (timeout :initarg :timeout))
+  (:report (lambda (c s) (format s "Thread~%  ~a~%did not exit after ~ds."
+                                 (slot-value c 'thread) (slot-value c 'timeout)))))
+
 (defun wait-for-thread-exit (thread &key (timeout 1) (interval 0.1))
   (loop for i from 0
         while (bt:thread-alive-p thread)
         do (sleep interval)
            (when (= i (/ timeout interval))
              (restart-case
-                 (error "Thread ~s did not exit after ~a s." (bt:thread-name thread) (* i interval))
+                 (error 'thread-did-not-exit :thread thread :timeout (* i interval))
                (continue ()
                  :report "Continue waiting.")
                (debug ()
