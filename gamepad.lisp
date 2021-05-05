@@ -21,7 +21,7 @@
        ,@body)))
 
 (defmethod start :after ((handler gamepad-input-handler))
-  (with-gamepad-failure-handling (:ignore-error NIL)
+  (with-gamepad-failure-handling (:ignore-error #-trial-optimize-all NIL #+trial-optimize-all T)
     (gamepad:init)))
 
 (defmethod stop :after ((handler gamepad-input-handler))
