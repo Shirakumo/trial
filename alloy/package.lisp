@@ -16,4 +16,12 @@
   (:export
    #:renderer
    #:event-bridge
-   #:ui))
+   #:ui)
+  (:export
+   #:vec
+   #:vec2
+   #:vec3
+   #:vec4
+   #:asset
+   #:resource
+   #:video-mode))

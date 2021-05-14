@@ -151,3 +151,19 @@
   (make-instance 'resource-item :value item))
 
 (defmethod alloy:component-class-for-object ((_ trial:resource)) (find-class 'resource))
+
+(defclass video-mode (alloy:combo)
+  ())
+
+(defmethod alloy:value-set ((video-mode video-mode))
+  (trial:list-video-modes trial:*context*))
+
+(defmethod alloy:combo-item (item (video-mode video-mode))
+  (make-instance 'video-mode-item :value item))
+
+(defclass video-mode-item (alloy:combo-item)
+  ())
+
+(defmethod alloy:text ((item video-mode-item))
+  (destructuring-bind (w h r) (alloy:value item)
+    (format NIL "~a x ~a @ ~aHz" w h r)))
