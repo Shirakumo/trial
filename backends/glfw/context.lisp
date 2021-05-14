@@ -143,12 +143,14 @@
 (defmethod hide ((context context))
   (cl-glfw3:hide-window (window context)))
 
-(defmethod show ((context context) &key (fullscreen NIL f-p))
+(defmethod show ((context context) &key (fullscreen NIL f-p) mode)
   (cl-glfw3:show-window (window context))
-  (when f-p
-    (destructuring-bind (w h) (cl-glfw3:get-window-size (window context))
-      (cl-glfw3:set-window-monitor (when fullscreen (cl-glfw3:get-primary-monitor))
-                                   w h :window (window context)))))
+  (cond (f-p
+         (destructuring-bind (w h &optional (r %glfw:+dont-care+)) (or mode (cl-glfw3:get-window-size (window context)))
+           (cl-glfw3:set-window-monitor (when fullscreen (cl-glfw3:get-primary-monitor))
+                                        w h :window (window context) :refresh-rate r)))
+        (mode
+         (cl-glfw3:set-window-size (first mode) (second mode) (window context)))))
 
 (defmethod resize ((context context) width height)
   (v:info :trial.backend.glfw "Resizing window to ~ax~a" width height)
@@ -205,21 +207,21 @@
         (cl-glfw3:get-window-attribute :context-version-minor (window context))))
 
 (defmethod list-video-modes ((context context))
-  (flet ((mode< (a b)
+  (flet ((mode> (a b)
            (destructuring-bind (aw ah ar) a
              (destructuring-bind (bw bh br) b
                (if (= aw bw)
                    (if (= ah bh)
-                       (< ar br)
-                       (< ah bh))
-                   (< aw bw))))))
+                       (> ar br)
+                       (> ah bh))
+                   (> aw bw))))))
     (sort (delete-duplicates
            (loop for mode in (cl-glfw3:get-video-modes (cl-glfw3:get-primary-monitor))
                  collect (list (getf mode '%CL-GLFW3:WIDTH)
                                (getf mode '%CL-GLFW3:HEIGHT)
                                (getf mode '%CL-GLFW3::REFRESH-RATE)))
            :test #'equal)
-          #'mode<)))
+          #'mode>)))
 
 (defun make-context (&optional handler &rest initargs)
   (apply #'make-instance 'context :handler handler initargs))
