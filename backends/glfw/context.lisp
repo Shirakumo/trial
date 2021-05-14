@@ -204,6 +204,23 @@
   (list (cl-glfw3:get-window-attribute :context-version-major (window context))
         (cl-glfw3:get-window-attribute :context-version-minor (window context))))
 
+(defmethod list-video-modes ((context context))
+  (flet ((mode< (a b)
+           (destructuring-bind (aw ah ar) a
+             (destructuring-bind (bw bh br) b
+               (if (= aw bw)
+                   (if (= ah bh)
+                       (< ar br)
+                       (< ah bh))
+                   (< aw bw))))))
+    (sort (delete-duplicates
+           (loop for mode in (cl-glfw3:get-video-modes (cl-glfw3:get-primary-monitor))
+                 collect (list (getf mode '%CL-GLFW3:WIDTH)
+                               (getf mode '%CL-GLFW3:HEIGHT)
+                               (getf mode '%CL-GLFW3::REFRESH-RATE)))
+           :test #'equal)
+          #'mode<)))
+
 (defun make-context (&optional handler &rest initargs)
   (apply #'make-instance 'context :handler handler initargs))
 

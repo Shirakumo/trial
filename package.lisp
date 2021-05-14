@@ -238,6 +238,7 @@
    #:profile
    #:version
    #:resize
+   #:list-video-modes
    #:gain-focus
    #:lose-focus
    #:window-hidden

@@ -85,6 +85,7 @@
 (defgeneric (setf title) (value context))
 (defgeneric vsync (context))
 (defgeneric (setf vsync) (mode context))
+(defgeneric list-video-modes (context))
 
 (defgeneric width (context))
 (defgeneric height (context))
