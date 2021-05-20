@@ -62,12 +62,13 @@
     (handler-bind ((error (lambda (e)
                             (v:debug :trial.report e)
                             (v:error :trial.report "Failed to submit report: ~a" e))))
+      (org.shirakumo.dns-client:query "feedback.tymoon.eu" :dns-servers org.shirakumo.dns-client:*google-servers*)
       (apply #'org.shirakumo.feedback.client:submit
-       project user
-       :version (or version (trial:version :app))
-       :description description
-       :attachments files
-       *client-args*))))
+             project user
+             :version (or version (trial:version :app))
+             :description description
+             :attachments files
+             *client-args*))))
 
 (defun trial:standalone-error-handler (err)
   (when (deploy:deployed-p)

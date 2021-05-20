@@ -15,5 +15,6 @@
   :source-control (:git "https://github.com/Shirakumo/trial.git")
   :components ((:file "feedback"))
   :depends-on (:trial
+               :dns-client
                :feedback-client
                :messagebox))
