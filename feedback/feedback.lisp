@@ -37,9 +37,10 @@
 (defun report-files ()
   (let ((files ()))
     (dolist (hook *report-hooks* files)
-      (loop for (name file) in (funcall (second hook))
-            do (when (and file (probe-file file))
-                 (push (list name file) files))))))
+      (with-simple-restart (continue "Ignore the hook ~s" (first hook))
+        (loop for (name file) in (funcall (second hook))
+              do (when (and file (probe-file file))
+                   (push (list name file) files)))))))
 
 (defmacro define-report-hook (name () &body body)
   `(setf *report-hooks* (list* (list ',name (lambda () ,@body))
@@ -58,7 +59,9 @@
    "anonymous"))
 
 (defun submit-report (&key (project trial:+app-system+) (user (find-user-id)) (files () files-p) description version)
-  (let ((files (if files-p files (report-files))))
+  (let ((files (if files-p files
+                   (handler-bind ((error #'continue))
+                     (report-files)))))
     (handler-bind ((error (lambda (e)
                             (v:debug :trial.report e)
                             (v:error :trial.report "Failed to submit report: ~a" e))))
