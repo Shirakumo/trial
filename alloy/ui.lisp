@@ -71,4 +71,10 @@
 (defmethod trial:stage ((ui ui) (area trial:staging-area))
   (trial:stage (alloy:layout-tree ui) area))
 
+(defmethod alloy:clipboard ((ui ui))
+  (trial:clipboard trial:*context*))
+
+(defmethod (setf alloy:clipboard) (value (ui ui))
+  (setf (trial:clipboard trial:*context*) value))
+
 ;; paste-event?

@@ -223,6 +223,12 @@
            :test #'equal)
           #'mode>)))
 
+(defmethod clipboard ((context context))
+  (glfw:get-clipboard-string (window context)))
+
+(defmethod (setf clipboard) ((text string) (context context))
+  (glfw:set-clipboard-string text (window context)))
+
 (defun make-context (&optional handler &rest initargs)
   (apply #'make-instance 'context :handler handler initargs))
 

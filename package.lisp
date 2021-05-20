@@ -239,6 +239,7 @@
    #:version
    #:resize
    #:list-video-modes
+   #:clipboard
    #:gain-focus
    #:lose-focus
    #:window-hidden

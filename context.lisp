@@ -86,6 +86,8 @@
 (defgeneric vsync (context))
 (defgeneric (setf vsync) (mode context))
 (defgeneric list-video-modes (context))
+(defgeneric clipboard (context))
+(defgeneric (setf clipboard) (value context))
 
 (defgeneric width (context))
 (defgeneric height (context))
