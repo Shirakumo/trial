@@ -77,4 +77,18 @@
 (defmethod (setf alloy:clipboard) (value (ui ui))
   (setf (trial:clipboard trial:*context*) value))
 
-;; paste-event?
+(defmethod trial:handle :after ((ev trial:key-release) (ui ui))
+  (case (trial:key ev)
+    (:insert
+     (when (find :shift (trial:modifiers ev))
+       (alloy:handle (make-instance 'alloy:paste-event :content (alloy:clipboard ui)) ui)))
+    (:v
+     (when (find :control (trial:modifiers ev))
+       (alloy:handle (make-instance 'alloy:paste-event :content (alloy:clipboard ui)) ui)))
+    (:c
+     (when (find :control (trial:modifiers ev))
+       (alloy:handle (make-instance 'alloy:copy-event) ui)))
+    (:x
+     (when (find :control (trial:modifiers ev))
+       (alloy:handle (make-instance 'alloy:cut-event) ui)))))
+
