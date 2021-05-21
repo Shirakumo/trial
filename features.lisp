@@ -10,7 +10,8 @@
   (defvar *debug-features* '(:trial-debug-controller))
   (defvar *optimize-features* '(:elide-buffer-access-checks
                                 :elide-coercion-size-checks
-                                :elide-container-checks))
+                                :elide-container-checks
+                                :elide-handler-restarts))
 
   #+trial-debug-all
   (setf *features* (union *features* *debug-features*))

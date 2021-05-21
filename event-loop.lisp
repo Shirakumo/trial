@@ -16,6 +16,7 @@
 (defgeneric remove-listener (listener event-loop))
 (defgeneric handle (event listener))
 
+#-elide-handler-restarts
 (defmethod handle :around ((event event) listener)
   (with-simple-restart (abort "Don't handle ~a in ~a." event listener)
     (call-next-method)))
