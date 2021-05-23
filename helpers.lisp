@@ -63,15 +63,19 @@
   (stage (vertex-array entity) area))
 
 (defmethod render ((entity vertex-entity) (program shader-program))
+  (declare (optimize speed))
   (setf (uniform program "model_matrix") (model-matrix))
   (setf (uniform program "view_matrix") (view-matrix))
   (setf (uniform program "projection_matrix") (projection-matrix))
-  (let ((vao (vertex-array entity)))
+  (let* ((vao (vertex-array entity))
+         (size (size vao)))
+    (declare (type (unsigned-byte 32) size))
     (gl:bind-vertex-array (gl-name vao))
     ;; KLUDGE: Bad for performance!
-    (if (find 'vertex-buffer (bindings vao) :key #'type-of)
-        (%gl:draw-elements (vertex-form vao) (size vao) :unsigned-int 0)
-        (%gl:draw-arrays (vertex-form vao) 0 (size vao)))
+    (if (loop for binding in (bindings vao)
+              thereis (typep binding 'vertex-buffer))
+        (%gl:draw-elements (vertex-form vao) size :unsigned-int 0)
+        (%gl:draw-arrays (vertex-form vao) 0 size))
     (gl:bind-vertex-array 0)))
 
 (define-class-shader (vertex-entity :vertex-shader)
