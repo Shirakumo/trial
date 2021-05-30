@@ -75,13 +75,13 @@
   (update-buffer-data/ptr buffer (static-vector-pointer (buffer-data buffer)) (size buffer)))
 
 (defvar *buffers-in-tx* ())
-(defmacro with-buffer-tx ((struct buffer) &body body)
+(defmacro with-buffer-tx ((struct buffer &key (update T)) &body body)
   (let ((bufferg (gensym "BUFFER")))
     `(let ((,bufferg ,buffer))
        (multiple-value-prog1
            (let ((*buffers-in-tx* (list* ,bufferg *buffers-in-tx*))
                  (,struct (struct ,bufferg)))
              ,@body)
-         (unless (find ,bufferg *buffers-in-tx*)
+         (when (and ,update (not (find ,bufferg *buffers-in-tx*)))
            (with-context (*context*)
              (update-buffer-data ,bufferg T)))))))
