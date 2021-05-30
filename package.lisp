@@ -574,6 +574,11 @@
    #:load-mapping
    #:trigger
    #:retain)
+  ;; parallax.lisp
+  (:export
+   #:parallax
+   #:parallax-background
+   #:change-background)
   ;; particle.lisp
   (:export
    #:particle
