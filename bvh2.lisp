@@ -322,6 +322,7 @@
       (recurse (bvh-root bvh)))))
 
 (defmacro do-fitting ((entity bvh region &optional result) &body body)
+  ;; REGION should be a vec2 for a point test, or a vec4 with left/bottom/right/top coordinates.
   (let ((thunk (gensym "THUNK"))
         (regiong (gensym "REGION")))
     `(block NIL
