@@ -347,10 +347,10 @@
              (pathname-utils:subdirectory (user-homedir-pathname) ".config"))
          (or app-path (list +app-vendor+ +app-system+))))
 
-(defun standalone-error-handler (err)
+(defun standalone-error-handler (err &optional (category :trial))
   (when (and (deploy:deployed-p) (not *inhibit-standalone-error-handler*))
-    (v:error :trial err)
-    (v:fatal :trial "Encountered unhandled error in ~a, bailing." (bt:current-thread))
+    (v:error category err)
+    (v:fatal category "Encountered unhandled error in ~a, bailing." (bt:current-thread))
     (cond ((string/= "" (or (uiop:getenv "DEPLOY_DEBUG_BOOT") ""))
            (invoke-debugger err))
           ((typep err 'trial:thread-did-not-exit))
