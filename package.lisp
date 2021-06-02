@@ -184,7 +184,7 @@
    #:project-view
    #:setup-perspective
    #:2d-camera
-   #:slidescroll-camera
+   #:sidescroll-camera
    #:zoom
    #:target
    #:3d-camera
