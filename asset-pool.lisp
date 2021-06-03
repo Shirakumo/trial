@@ -35,11 +35,11 @@
 
 (defmacro define-pool (name &body initargs)
   (check-type name symbol)
-  (let ((path (or *compile-file-pathname* *load-pathname*)))
-    (cond (path
-           (setf path (pathname-utils:subdirectory path "data")))
-          ((null (getf initargs :base))
-           (warn "Don't know where the pool~%  ~s~%should be based." name)))
+  (let ((path (or *compile-file-pathname* *load-pathname*
+                  (error "This needs to be compile-filed!"))))
+    (setf path (merge-pathnames (getf initargs :base #p"")
+                                (pathname-utils:subdirectory path "data")))
+    (remf initargs :base)
     `(eval-when (:compile-toplevel :load-toplevel :execute)
        (cond ((find-pool ',name)
               (reinitialize-instance (find-pool ',name) ,@initargs))
