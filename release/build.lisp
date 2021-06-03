@@ -30,4 +30,8 @@
   (dolist (target (config :build :targets))
     (build target)))
 
+(defmethod build ((targets cons))
+  (dolist (target targets)
+    (build target)))
+
 (defmethod build ((target null)))

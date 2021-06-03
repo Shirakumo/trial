@@ -65,6 +65,9 @@
          "+run_app_build" (uiop:native-namestring build)
          "+quit")))
 
+(defmethod upload ((service (eql :all)) &rest args &key &allow-other-keys)
+  (apply #'upload '(:itch :steam) args))
+
 (defmethod upload ((service (eql T)) &rest args &key &allow-other-keys)
   (dolist (service (config :upload :targets))
     (apply #'upload service args)))
