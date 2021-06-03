@@ -24,6 +24,35 @@
       (mixed:end (harmony:source (voice resource)))
       (mixed:start (harmony:source (voice resource))))))
 
+(defclass environment-loader (trial:resource-generator)
+  ())
+
+(defmethod trial:generate-resources ((generator environment-loader) sets &key (resource (trial:resource generator T)))
+  (trial::ensure-instance resource 'music :sets sets))
+
+(defclass environment (trial:single-resource-asset environment-loader)
+  ())
+
+(defmethod trial:reload ((asset environment))
+  )
+
+(defmethod trial:coerce-asset-input ((asset environment) (description cons))
+  (loop for (key . set) in description
+        collect (cons key (loop for track in set
+                                for (input . params) = (if (listp track) track (list track))
+                                collect (list* (trial:coerce-asset-input asset input) params)))))
+
+(defclass music (trial:resource harmony:environment)
+  ())
+
+(defmethod trial:allocated-p ((music music)) T)
+
+(defmethod trial:allocate ((music music)) music)
+
+(defmethod trial:deallocate ((music music))
+  (mixed:free music)
+  (change-class music 'trial:placeholder-resource))
+
 ;; KLUDGE: This cannot be a harmony:voice since it does not handle the change-class/reinitialize-instance
 ;;         protocol we have going for voices gracefully. It would also cause allocation to happen at
 ;;         initialisation rather than at, well, allocation time.

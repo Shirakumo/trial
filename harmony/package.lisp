@@ -12,4 +12,6 @@
    (#:mixed #:org.shirakumo.fraf.mixed))
   (:export
    #:sound
-   #:voice))
+   #:voice
+   #:environment
+   #:music))
