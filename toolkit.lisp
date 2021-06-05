@@ -583,6 +583,10 @@
 (defun clamp (low mid high)
   (max low (min mid high)))
 
+(declaim (inline deadzone))
+(defun deadzone (min thing)
+  (if (< (abs thing) min) 0.0 thing))
+
 (declaim (inline lerp))
 (defun lerp (from to n)
   (etypecase from

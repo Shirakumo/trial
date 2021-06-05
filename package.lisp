@@ -877,6 +877,7 @@
    #:with-all-slots-bound
    #:minimize
    #:clamp
+   #:deadzone
    #:lerp
    #:damp*
    #:deg->rad
