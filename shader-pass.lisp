@@ -297,7 +297,13 @@
     (call-next-method)))
 
 (defmethod compile-into-pass ((entity entity) (container container) (pass scene-pass))
-  (compile-into-pass entity (preceding-entity entity container) pass))
+  (let ((group-pointers (group-pointers pass)))
+    (loop for prev = (preceding-entity entity container) then (preceding-entity prev container)
+          for guards = (gethash prev group-pointers)
+          while prev
+          do (when guards
+               (return (compile-into-pass entity prev pass)))
+          finally (compile-into-pass entity NIL pass))))
 
 (defmethod compile-into-pass ((entity entity) (previous entity) (pass scene-pass))
   (destructuring-bind (start . end) (gethash previous (group-pointers pass))
