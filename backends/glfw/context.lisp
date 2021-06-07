@@ -49,7 +49,7 @@
                                           (robustness NIL robustness-p)
                                           (forward-compat NIL forward-compat-p)
                                           (debug-context NIL debug-context-p)
-                                          (api :opengl api-p))
+                                          (api :opengl-api))
   #+windows (ignore-errors (setf optimus 1))
   #+windows (ignore-errors (setf xpress 1))
   (flet (((setf g) (value name) (setf (getf (initargs context) name) value)))
@@ -68,7 +68,7 @@
       (maybe-set robustness :context-robustness)
       (maybe-set forward-compat :opengl-forward-compat)
       (maybe-set debug-context :opengl-debug-context)
-      (maybe-set api :client-api)
+      (setf (g :client-api) api)
       (setf (g :refresh-rate)
             (ecase vsync ((NIL :off) 0) ((T :on) 1) (:adaptive -1)))
       (when version-p
@@ -101,7 +101,7 @@
        (:opengl-forward-compat :boolean)
        (:opengl-debug-context :boolean)
        (:opengl-profile '%glfw::opengl-profile)
-       (:client-api %glfw::opengl-api)
+       (:client-api '%glfw::opengl-api)
        ;; This option is not in cl-glfw3 for some reason.
        (:double-buffering :boolean #x00021010))
       (v:info :trial.backend.glfw "Creating context ~a" context)
