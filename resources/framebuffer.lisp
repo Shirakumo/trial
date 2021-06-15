@@ -101,21 +101,19 @@
 
 (defgeneric capture (thing &key &allow-other-keys))
 (defmethod capture ((framebuffer framebuffer) &key (x 0) (y 0) (width (width framebuffer)) (height (height framebuffer)) file)
-  (gl:bind-framebuffer :read-framebuffer (gl-name framebuffer))
   (let* ((size (* width height 3))
-         (array (static-vectors:make-static-vector size)))
-    (unwind-protect
-         (progn
-           (%gl:read-pixels x y width height :rgb :unsigned-byte (static-vectors:static-vector-pointer array))
-           (if file
-               (zpng:write-png (make-instance 'zpng:png :color-type :truecolor
-                                                        :width width
-                                                        :height height
-                                                        :image-data (flip-image-vertically array width height 3))
-                               file)
-               (copy-seq array)))
-      (static-vectors:free-static-vector array)
-      (gl:bind-framebuffer :read-framebuffer 0))))
+         (array (make-array size :element-type '(unsigned-byte 8))))
+    (gl:bind-framebuffer :read-framebuffer (gl-name framebuffer))
+    (with-pointer-to-vector-data (ptr array)
+      (%gl:read-pixels x y width height :rgb :unsigned-byte ptr))
+    (gl:bind-framebuffer :read-framebuffer 0)
+    (if file
+        (zpng:write-png (make-instance 'zpng:png :color-type :truecolor
+                                                 :width width
+                                                 :height height
+                                                 :image-data (flip-image-vertically array width height 3))
+                        file)
+        array)))
 
 (defmethod capture ((framebuffer null) &rest args)
   (apply #'capture (make-instance 'framebuffer :data-pointer 0
