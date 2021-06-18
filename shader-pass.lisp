@@ -96,9 +96,13 @@
 
 (define-shader-entity shader-pass (flow:static-node)
   ((framebuffer :initform NIL :accessor framebuffer)
-   (active-p :initform T :accessor active-p))
+   (active-p :initform T :accessor active-p)
+   (prepare-pass-program-fun :initform NIL :accessor prepare-pass-program-fun))
   (:metaclass shader-pass-class)
   (:inhibit-shaders (shader-entity :fragment-shader)))
+
+(defmethod shared-initialize :after ((pass shader-pass) slots &key)
+  (setf (prepare-pass-program-fun pass) NIL))
 
 (defclass transformed () ())
 (defclass renderable () ())
@@ -186,31 +190,30 @@
                      (%gl:bind-image-texture (binding port) (gl-name (texture port)) 0 T 0 (access port)
                                              (internal-format (texture port))))))))))
 
-(defun generate-prepare-pass-program (&optional (units (gl:get* :max-texture-image-units)))
+(defun generate-prepare-pass-program (pass &optional (units (gl:get* :max-texture-image-units)))
   (check-type units (integer 1))
   (let ((*print-case* (readtable-case *readtable*))
         (units (loop for i downfrom (1- units) to 0 collect i)))
-    `(lambda (pass program)
+    `(lambda (program)
        (gl:use-program (gl-name program))
-       (loop with texture-index = ',units
-             for slot in (c2mop:class-slots (class-of pass))
-             when (flow:port-type slot)
-             do (let ((port (flow::port-slot-value pass slot)))
-                  (typecase port
-                    (uniform-port
-                     (when (texture port)
-                       (setf (uniform program (uniform-name port)) (pop texture-index))))))))))
+       ,@(loop with texture-index = units
+               for slot in (c2mop:class-slots (class-of pass))
+               when (flow:port-type slot)
+               collect (let ((port (flow::port-slot-value pass slot)))
+                         (typecase port
+                           (uniform-port
+                            (when (texture port)
+                              `(setf (uniform program ,(uniform-name port)) ,(pop texture-index))))))))))
 
 (defun bind-pass-textures (pass)
   (funcall (compile 'bind-pass-textures (generate-bind-pass-textures))
            pass))
 
-(defun %prepare-pass-program (pass program)
-  (funcall (compile '%prepare-pass-program (generate-prepare-pass-program))
-           pass program))
-
 (defmethod prepare-pass-program ((pass shader-pass) (program shader-program))
-  (%prepare-pass-program pass program))
+  (let ((fun (prepare-pass-program-fun pass)))
+    (unless fun
+      (setf fun (setf (prepare-pass-program-fun pass) (compile NIL (generate-prepare-pass-program pass)))))
+    (funcall fun program)))
 
 (defmethod blit-to-screen ((pass shader-pass))
   (blit-to-screen (framebuffer pass)))
