@@ -16,7 +16,7 @@
   (dolist (pool (list-pools))
     (let ((source (base pool)))
       ;; FIXME: We're potentially introducing conflicts here by eagerly coercing names.
-      (setf (base pool) (make-pathname :directory (list :relative "pool" (string (name pool)))))
+      (setf (base pool) (make-pathname :directory (list :relative "pool" (string-downcase (name pool)))))
       (deploy:status 1 "Copying pool ~a from ~a" pool source)
       (deploy:copy-directory-tree
        source
