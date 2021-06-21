@@ -70,11 +70,12 @@
              :attachments files
              *client-args*))))
 
-(defun trial:standalone-error-handler (err)
-  (when (deploy:deployed-p)
-    (v:error :trial err)
-    (v:fatal :trial "Encountered unhandled error in ~a, bailing." (bt:current-thread))
+(defun trial:standalone-error-handler (err &optional (category :trial))
+  (when (and (deploy:deployed-p) (not trial:*inhibit-standalone-error-handler*))
+    (v:error category err)
+    (v:fatal category "Encountered unhandled error in ~a, bailing." (bt:current-thread))
     (cond ((string/= "" (or (uiop:getenv "DEPLOY_DEBUG_BOOT") ""))
+           #+sbcl (sb-ext:enable-debugger)
            (invoke-debugger err))
           ((typep err 'trial:thread-did-not-exit))
           ((ignore-errors (submit-report :description (format NIL "Hard crash due to error:~%~a" err)))

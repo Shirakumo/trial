@@ -101,8 +101,7 @@
 
 (defgeneric capture (thing &key &allow-other-keys))
 (defmethod capture ((framebuffer framebuffer) &key (x 0) (y 0) (width (width framebuffer)) (height (height framebuffer)) file)
-  (let* ((size (* width height 3))
-         (array (make-array size :element-type '(unsigned-byte 8))))
+  (let ((array (make-array (* width height 3) :element-type '(unsigned-byte 8))))
     (gl:bind-framebuffer :read-framebuffer (gl-name framebuffer))
     (with-pointer-to-vector-data (ptr array)
       (%gl:read-pixels x y width height :rgb :unsigned-byte ptr))

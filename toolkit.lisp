@@ -352,6 +352,7 @@
     (v:error category err)
     (v:fatal category "Encountered unhandled error in ~a, bailing." (bt:current-thread))
     (cond ((string/= "" (or (uiop:getenv "DEPLOY_DEBUG_BOOT") ""))
+           #+sbcl (sb-ext:enable-debugger)
            (invoke-debugger err))
           ((typep err 'trial:thread-did-not-exit))
           (T
