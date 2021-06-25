@@ -151,13 +151,16 @@
   (cond (f-p
          (destructuring-bind (w h &optional (r %glfw:+dont-care+)) (or mode (cl-glfw3:get-window-size (window context)))
            (cl-glfw3:set-window-monitor (when fullscreen (cl-glfw3:get-primary-monitor))
-                                        w h :window (window context) :refresh-rate r)))
-        (mode
-         (cl-glfw3:set-window-size (first mode) (second mode) (window context)))))
+                                        w h :window (window context) :refresh-rate r))
+         (unless fullscreen
+           (center-window (window context))))
+        ((print mode)
+         (resize context (first mode) (second mode)))))
 
 (defmethod resize ((context context) width height)
   (v:info :trial.backend.glfw "Resizing window to ~ax~a" width height)
-  (cl-glfw3:set-window-size width height (window context)))
+  (cl-glfw3:set-window-size width height (window context))
+  (center-window (window context)))
 
 (defmethod quit ((context context))
   (cl-glfw3:set-window-should-close (window context) T))
@@ -356,6 +359,31 @@
   (case key
     (:grave-accent :section)
     (T key)))
+
+(defun find-best-monitor (window)
+  (let* ((monitors (glfw:get-monitors))
+         (best (first monitors)))
+    (destructuring-bind (ww wh) (glfw:get-window-size window)
+      (destructuring-bind (wx wy) (glfw:get-window-position window)
+        (flet ((monitor-area (monitor)
+                 (destructuring-bind (mx my) (glfw:get-monitor-position monitor)
+                   (let* ((mode (glfw:get-video-mode monitor))
+                          (x- (max wx mx))
+                          (y- (max wy my))
+                          (x+ (min (+ wx ww) (+ mx (getf mode '%glfw:width))))
+                          (y+ (min (+ wy wh) (+ my (getf mode '%glfw:height)))))
+                     (* (- x+ x-) (- y+ y-))))))
+          (dolist (monitor (rest monitors) best)
+            (when (< (monitor-area best) (monitor-area monitor))
+              (setf best monitor))))))))
+
+(defun center-window (window &optional (monitor (find-best-monitor window)))
+  (let ((mode (glfw:get-video-mode monitor)))
+    (destructuring-bind (x y) (glfw:get-monitor-position monitor)
+      (destructuring-bind (w h) (glfw:get-window-size window)
+        (glfw:set-window-position (+ x (floor (- (getf mode '%glfw:width) w) 2))
+                                  (+ y (floor (- (getf mode '%glfw:height) h) 2))
+                                  window)))))
 
 ;; Runtime support for Wayland and X11
 #+linux
