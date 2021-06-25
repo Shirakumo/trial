@@ -49,7 +49,7 @@
                                           (robustness NIL robustness-p)
                                           (forward-compat NIL forward-compat-p)
                                           (debug-context NIL debug-context-p)
-                                          (api :opengl-api))
+                                          (api #-arm :opengl-api #+arm :opengl-es-api))
   #+windows (ignore-errors (setf optimus 1))
   #+windows (ignore-errors (setf xpress 1))
   (flet (((setf g) (value name) (setf (getf (initargs context) name) value)))
