@@ -75,6 +75,9 @@
     (setf (vertex-array sprite) (resource sprite-data 'vertex-array))
     (register-generation-observer sprite sprite-data)))
 
+(defmethod sprite-data ((sprite animated-sprite))
+  (generator (texture sprite)))
+
 (defmethod (setf sprite-data) ((data sprite-data) (sprite animated-sprite))
   (setf (texture sprite) (resource data 'texture))
   (setf (vertex-array sprite) (resource data 'vertex-array))

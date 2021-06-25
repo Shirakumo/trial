@@ -112,7 +112,7 @@
 (defun remove-setting-observer (setting name)
   (remf (gethash setting +settings-observers+) name))
 
-(defmacro define-setting-observer (name &body setting)
+(defmacro define-setting-observer (name &rest setting)
   (let ((setting (loop for part = (first setting)
                        until (listp part)
                        collect (pop setting)))
