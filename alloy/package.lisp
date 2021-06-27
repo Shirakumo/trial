@@ -12,7 +12,8 @@
    (#:simple #:org.shirakumo.alloy.renderers.simple)
    (#:presentations #:org.shirakumo.alloy.renderers.simple.presentations)
    (#:opengl #:org.shirakumo.alloy.renderers.opengl)
-   (#:colored #:org.shirakumo.alloy.colored))
+   (#:colored #:org.shirakumo.alloy.colored)
+   (#:animation #:org.shirakumo.alloy.animation))
   (:export
    #:renderer
    #:event-bridge

@@ -65,6 +65,9 @@
 
 (defmethod trial:handle ((ev trial:event) (ui ui)))
 
+(defmethod trial:handle ((ev trial:tick) (ui ui))
+  (animation:update ui (trial:dt ev)))
+
 (defmethod trial:handle ((ev trial:resize) (ui ui))
   (alloy:suggest-bounds (alloy:px-extent 0 0 (trial:width ev) (trial:height ev)) ui))
 
