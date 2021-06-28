@@ -47,8 +47,8 @@
    :title "Trial"
    :width 800
    :height 600
-   :version '(3 3)
-   :profile :core
+   #-arm :version #-arm '(3 3)
+   #-arm :profile #-arm :core
    :double-buffering T
    :stereo-buffer NIL
    :vsync :off
