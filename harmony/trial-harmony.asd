@@ -16,4 +16,5 @@
                (:file "asset")
                (:file "deploy"))
   :depends-on (:trial
-               :harmony))
+               :harmony
+               :uiop))
