@@ -40,3 +40,10 @@
 (defmethod generate-resources :before ((generator compiled-generator) source &key compile)
   (when compile
     (compile-resources generator source)))
+
+(defun recompile-needed-p (targets sources)
+  (let ((latest (loop for source in (enlist sources)
+                      maximize (file-write-date source))))
+    (loop for target in (enlist targets)
+          thereis (or (null (probe-file target))
+                      (< (file-write-date target) latest)))))

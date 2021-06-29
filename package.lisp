@@ -660,7 +660,8 @@
    #:observe-generation
    #:resource
    #:compiled-generator
-   #:compile-resources)
+   #:compile-resources
+   #:recompile-needed-p)
   ;; scene-buffer.lisp
   (:export
    #:scene-buffer
