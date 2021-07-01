@@ -57,6 +57,9 @@
 (defmethod trial:reload ((asset environment))
   )
 
+(defmethod trial:coerce-asset-input ((asset environment) (input string))
+  (trial:coerce-asset-input asset (pathname input)))
+
 (defmethod trial:coerce-asset-input ((asset environment) (description cons))
   (loop for (key . set) in description
         collect (cons key (loop for track in set
