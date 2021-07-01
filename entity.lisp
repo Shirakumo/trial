@@ -49,7 +49,7 @@
 (defclass container (flare:container-unit entity)
   ())
 
-(defmethod preceding-entity ((thing entity) (container container))
+(defmethod preceding-entity ((thing entity) (container flare:container))
   (multiple-value-bind (last valid-p) (flare-indexed-set:set-last (objects container))
     (when valid-p (flare-queue:value last))))
 
