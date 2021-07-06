@@ -34,6 +34,7 @@
     #+linux
     (unless +X11-display+
       (setf +X11-display+ (cffi:foreign-funcall "XOpenDisplay" :pointer (cffi:null-pointer) :pointer)))
+    #+linux
     (cffi:foreign-funcall "XResetScreenSaver" :pointer +X11-display+ :int)))
 
 (defun restore-powersave ()
