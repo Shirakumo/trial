@@ -29,7 +29,8 @@
     (setup-rendering display)))
 
 (defmethod finalize :after ((display display))
-  (finalize (context display)))
+  (finalize (context display))
+  (restore-powersave))
 
 (defmethod handle (event (display display)))
 
@@ -52,6 +53,10 @@
   (with-vec (r g b a) (clear-color display)
     (gl:clear-color r g b a))
   (enable :blend :multisample :cull-face :stencil-test :line-smooth :depth-test :depth-clamp))
+
+(defmethod update :after ((display display) tt dt fc)
+  (declare (type double-float tt))
+  (prevent-powersave tt))
 
 (defgeneric poll-input (target))
 
