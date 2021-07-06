@@ -12,6 +12,8 @@
 (cffi:defcvar (xpress "AmdPowerXpressRequestHighPerformance") :int)
 (cffi:defcfun (wait-events-timeout "glfwWaitEventsTimeout") :void
   (timeout :double))
+(cffi:defcfun (window-hint-string "glfwWindowHintString") :void
+  (target :int) (hint :string))
 
 (defclass context (trial:context)
   ((title :initarg :title :accessor title)
@@ -104,6 +106,8 @@
        (:client-api '%glfw::opengl-api)
        ;; This option is not in cl-glfw3 for some reason.
        (:double-buffering :boolean #x00021010))
+      (window-hint-string 147457 "trial")
+      (window-hint-string 147458 trial:+app-system+)
       (v:info :trial.backend.glfw "Creating context ~a" context)
       (float-features:with-float-traps-masked T
         (let ((window (%glfw:create-window (getf initargs :width)
