@@ -6,50 +6,42 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(define-global +powersave-timer+ 0.0d0)
 #+darwin
 (progn
-  (org.shirakumo.fraf.gamepad.impl::define-lazy-constant PREVENT-SLEEP-NAME
-      (org.shirakumo.fraf.gamepad.impl::cfstr "PreventUserIdleDisplaySleep"))
   (org.shirakumo.fraf.gamepad.impl::define-lazy-constant SLEEP-REASON-NAME
       (org.shirakumo.fraf.gamepad.impl::cfstr "TrialGameRunning"))
-  (define-global +mac-power-id+ NIL))
+  (define-global +mac-power-id+ 0))
 #+linux
 (progn
-  (define-global +X11-display+ NIL)
-  (define-global +powersave-timer+ 0.0d0))
+  (define-global +X11-display+ NIL))
 
 (defun prevent-powersave (tt)
-  (declare (ignorable tt))
-  #+windows
-  (cffi:foreign-funcall "SetThreadExecutionState"
-                        :int #x80000003 :int)
-  #+darwin
-  (unless +mac-power-id+
+  (when (< (+ 10 +powersave-timer+) tt)
+    (setf +powersave-timer+ tt)
+    #+windows
+    (cffi:foreign-funcall "SetThreadExecutionState"
+                          :int #x80000003 :int)
+    #+darwin
     (cffi:with-foreign-object (id :uint32)
-      (cffi:foreign-funcall "IOPMAssertionCreateWithName"
-                            :pointer PREVENT-SLEEP-NAME
-                            :uint32 255
+      (setf (cffi:mem-ref id :uint32) +mac-power-id+)
+      (cffi:foreign-funcall "IOPMAssertionDeclareUserActivity"
                             :pointer SLEEP-REASON-NAME
+                            :uint 0
                             :pointer id
                             :int)
-      (setf +mac-power-id+ (cffi:mem-ref id :uint32))))
-  #+linux
-  (unless +X11-display+
-    (setf +X11-display+ (cffi:foreign-funcall "XOpenDisplay" :pointer (cffi:null-pointer) :pointer)))
-  (when (< (+ 10 +powersave-timer+) tt)
-    (cffi:foreign-funcall "XResetScreenSaver" :pointer +X11-display+ :int)
-    (setf +powersave-timer+ tt)))
+      (setf +mac-power-id+ (cffi:mem-ref id :uint32)))
+    #+linux
+    (unless +X11-display+
+      (setf +X11-display+ (cffi:foreign-funcall "XOpenDisplay" :pointer (cffi:null-pointer) :pointer)))
+    (cffi:foreign-funcall "XResetScreenSaver" :pointer +X11-display+ :int)))
 
 (defun restore-powersave ()
   #+windows
   (cffi:foreign-funcall "SetThreadExecutionState"
                         :int #x80000000 :int)
   #+darwin
-  (when +mac-power-id+
-    (cffi:foreign-funcall "IOPMAssertionRelease"
-                          :uint32 +mac-power-id+
-                          :int)
-    (setf +mac-power-id+ NIL))
+  (setf +mac-power-id+ 0)
   #+linux
   (when +X11-display+
     (cffi:foreign-funcall "XCloseDisplay" :pointer +X11-display+ :void)
