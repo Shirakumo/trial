@@ -21,7 +21,7 @@
     (setf +powersave-timer+ tt)
     #+windows
     (cffi:foreign-funcall "SetThreadExecutionState"
-                          :int #x80000003 :int)
+                          :uint #x80000003 :int)
     #+darwin
     (cffi:with-foreign-object (id :uint32)
       (setf (cffi:mem-ref id :uint32) +mac-power-id+)
@@ -39,7 +39,7 @@
 (defun restore-powersave ()
   #+windows
   (cffi:foreign-funcall "SetThreadExecutionState"
-                        :int #x80000000 :int)
+                        :uint #x80000000 :int)
   #+darwin
   (setf +mac-power-id+ 0)
   #+linux
