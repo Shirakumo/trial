@@ -299,7 +299,7 @@
   (when (object-renderable-p entity pass)
     (call-next-method)))
 
-(defmethod compile-into-pass ((entity entity) (container container) (pass scene-pass))
+(defmethod compile-into-pass ((entity entity) (container flare:container) (pass scene-pass))
   (let ((group-pointers (group-pointers pass)))
     (loop for prev = (preceding-entity entity container) then (preceding-entity prev container)
           for guards = (gethash prev group-pointers)
