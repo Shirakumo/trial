@@ -513,6 +513,7 @@
    #:load-language
    #:save-language
    #:language-string
+   #:ensure-language-string
    #:@format
    #:@formats
    #:@)

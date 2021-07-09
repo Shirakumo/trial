@@ -66,6 +66,11 @@
   (check-type identifier symbol)
   (setf (gethash identifier +language-data+) string))
 
+(defun ensure-language-string (thing)
+  (etypecase thing
+    (string thing)
+    (symbol (language-string thing))))
+
 (define-setting-observer load-language :language (value)
   (load-language value))
 
