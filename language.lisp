@@ -45,9 +45,10 @@
               for v being the hash-keys of +language-data+
               do (format stream "~s ~s~%" k v))))))
 
-(defun language-string (identifier)
+(defun language-string (identifier &optional (errorp T))
   (unless +language-data+ (load-language))
   (or (gethash identifier +language-data+)
+      (unless errorp (return-from language-string NIL))
       ;; Try loading again in case things changed.
       (progn (load-language)
              (gethash identifier +language-data+))
