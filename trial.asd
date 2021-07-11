@@ -140,6 +140,7 @@
                :lambda-fiddle
                :jsown
                :zpng
+               (:feature :linux :clx)
                (:feature :windows :com-on)))
 
 ;; TODO: factor out dependencies into systems

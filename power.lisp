@@ -33,9 +33,10 @@
       (setf +mac-power-id+ (cffi:mem-ref id :uint32)))
     #+linux
     (unless +X11-display+
-      (setf +X11-display+ (cffi:foreign-funcall "XOpenDisplay" :pointer (cffi:null-pointer) :pointer)))
+      (setf +X11-display+ (xlib:open-default-display))
+      (xlib/dpms:dpms-disable +X11-display+))
     #+linux
-    (cffi:foreign-funcall "XResetScreenSaver" :pointer +X11-display+ :int)))
+    (xlib:reset-screen-saver +X11-display+)))
 
 (defun restore-powersave ()
   #+windows
@@ -45,5 +46,6 @@
   (setf +mac-power-id+ 0)
   #+linux
   (when +X11-display+
-    (cffi:foreign-funcall "XCloseDisplay" :pointer +X11-display+ :void)
+    (xlib/dpms:dpms-enable +X11-display+)
+    (xlib:close-display +X11-display+)
     (setf +X11-display+ NIL)))
