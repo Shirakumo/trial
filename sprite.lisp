@@ -67,18 +67,17 @@
    (animations :initform #() :accessor animations)
    (animation :initform NIL :accessor animation)
    (playback-speed :initarg :playback-speed :initform 1.0 :accessor playback-speed)
-   (playback-direction :initarg :playback-direction :initform +1 :accessor playback-direction)))
+   (playback-direction :initarg :playback-direction :initform +1 :accessor playback-direction)
+   (sprite-data :initarg :sprite-data :initform NIL :accessor sprite-data)))
 
-(defmethod initialize-instance :after ((sprite animated-sprite) &key sprite-data)
-  (when sprite-data
-    (setf (texture sprite) (resource sprite-data 'texture))
-    (setf (vertex-array sprite) (resource sprite-data 'vertex-array))
-    (register-generation-observer sprite sprite-data)))
+(defmethod initialize-instance :after ((sprite animated-sprite) &key)
+  (let ((sprite-data (sprite-data sprite)))
+    (when sprite-data
+      (setf (texture sprite) (resource sprite-data 'texture))
+      (setf (vertex-array sprite) (resource sprite-data 'vertex-array))
+      (register-generation-observer sprite sprite-data))))
 
-(defmethod sprite-data ((sprite animated-sprite))
-  (generator (texture sprite)))
-
-(defmethod (setf sprite-data) ((data sprite-data) (sprite animated-sprite))
+(defmethod (setf sprite-data) :after ((data sprite-data) (sprite animated-sprite))
   (setf (texture sprite) (resource data 'texture))
   (setf (vertex-array sprite) (resource data 'vertex-array))
   (setf (animations sprite) (animations data))
