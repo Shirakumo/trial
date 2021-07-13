@@ -199,6 +199,20 @@
                         (:SCROLL-U      #x27F0)
                         (:SCROLL-D      #x27F1)))))
 
+(defun specific-char-for-event-trigger (thing &optional (type 'input-event))
+  (multiple-value-bind (alts type args) (event-trigger thing type)
+    (let ((symbol (first alts))
+          (threshold (getf args :threshold 0.0)))
+      (or (when (and (/= 0.0 threshold) (eql 'axis type))
+            (case symbol
+              (:l-h (if (< 0 threshold) :l-r :l-l))
+              (:l-v (if (< 0 threshold) :l-u :l-d))
+              (:r-h (if (< 0 threshold) :r-r :r-l))
+              (:r-v (if (< 0 threshold) :r-u :r-d))
+              (:dpad-h (if (< 0 threshold) :dpad-r :dpad-l))
+              (:dpad-v (if (< 0 threshold) :dpad-u :dpad-d))))
+          symbol))))
+
 (defun prompt-char (thing &key (bank :gamepad))
   (let ((table (getf *prompt-char-table* bank)))
     (when table
@@ -209,7 +223,7 @@
                               (:gamepad 'gamepad-event)
                               (:keyboard 'key-event)
                               (:mouse 'mouse-event))))
-                  (gethash (first (event-trigger thing type)) table)))))))
+                  (gethash (specific-char-for-event-trigger thing type) table)))))))
 
 (defun prompt-charset ()
   (sort (delete-duplicates

@@ -273,7 +273,7 @@
                                                  (button 'gamepad-event))
                             do (when (subtypep source-event base-event)
                                  (return-from event-trigger
-                                   (values (getf args :one-of) source))))))))
+                                   (values (getf args :one-of) source args))))))))
 
 #| Keymap should have the following syntax:
 
