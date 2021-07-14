@@ -25,6 +25,7 @@
                       when keep collect k when keep collect v)))
       (setf context (setf (context display) (apply #'make-context NIL args)))))
   (setf (handler context) display)
+  (prevent-powersave)
   (with-context ((context display))
     (setup-rendering display)))
 
@@ -56,7 +57,7 @@
 
 (defmethod update :after ((display display) tt dt fc)
   (declare (type double-float tt))
-  (prevent-powersave tt))
+  (ping-powersave tt))
 
 (defgeneric poll-input (target))
 

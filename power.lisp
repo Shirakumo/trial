@@ -16,7 +16,17 @@
 (progn
   (define-global +X11-display+ NIL))
 
-(defun prevent-powersave (tt)
+(defun prevent-powersave ()
+  (v:info :trial.power "Preventing powersaving.")
+  (setf +powersave-timer+ -100.0)
+  #+darwin
+  (setf +mac-power-id+ 0)
+  #+linux
+  (unless +X11-display+
+    (setf +X11-display+ (xlib:open-default-display))
+    (xlib/dpms:dpms-disable +X11-display+)))
+
+(defun ping-powersave (tt)
   (when (< (+ 10 +powersave-timer+) tt)
     (setf +powersave-timer+ tt)
     #+windows
@@ -32,13 +42,10 @@
                             :int)
       (setf +mac-power-id+ (cffi:mem-ref id :uint32)))
     #+linux
-    (unless +X11-display+
-      (setf +X11-display+ (xlib:open-default-display))
-      (xlib/dpms:dpms-disable +X11-display+))
-    #+linux
     (xlib:reset-screen-saver +X11-display+)))
 
 (defun restore-powersave ()
+  (v:info :trial.power "Restoring powersaving.")
   #+windows
   (cffi:foreign-funcall "SetThreadExecutionState"
                         :uint #x80000000 :int)
