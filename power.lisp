@@ -24,7 +24,10 @@
   #+linux
   (unless +X11-display+
     (setf +X11-display+ (xlib:open-default-display))
-    (xlib/dpms:dpms-disable +X11-display+)))
+    (xlib/dpms:dpms-disable +X11-display+)
+    (multiple-value-bind (timeout interval blank exposure) (xlib:screen-saver +X11-display+)
+      (declare (ignore timeout))
+      (xlib:set-screen-saver +X11-display+ 0 interval blank exposure))))
 
 (defun ping-powersave (tt)
   (when (< (+ 10 +powersave-timer+) tt)
@@ -33,7 +36,7 @@
     (cffi:foreign-funcall "SetThreadExecutionState"
                           :uint #x80000003 :int)
     #+darwin
-    (cffi:with-foreign-object (id :uint32)
+    (cffi:with-foreign-object (id :uint32)'q
       (setf (cffi:mem-ref id :uint32) +mac-power-id+)
       (cffi:foreign-funcall "IOPMAssertionDeclareUserActivity"
                             :pointer SLEEP-REASON-NAME
@@ -54,5 +57,8 @@
   #+linux
   (when +X11-display+
     (xlib/dpms:dpms-enable +X11-display+)
+    (multiple-value-bind (timeout interval blank exposure) (xlib:screen-saver +X11-display+)
+      (declare (ignore timeout))
+      (xlib:set-screen-saver +X11-display+ -1 interval blank exposure))
     (xlib:close-display +X11-display+)
     (setf +X11-display+ NIL)))
