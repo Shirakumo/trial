@@ -18,16 +18,17 @@
 
 (defun prevent-powersave ()
   (v:info :trial.power "Preventing powersaving.")
-  (setf +powersave-timer+ -100.0)
-  #+darwin
-  (setf +mac-power-id+ 0)
-  #+linux
-  (unless +X11-display+
-    (setf +X11-display+ (xlib:open-default-display))
-    (xlib/dpms:dpms-disable +X11-display+)
-    (multiple-value-bind (timeout interval blank exposure) (xlib:screen-saver +X11-display+)
-      (declare (ignore timeout))
-      (xlib:set-screen-saver +X11-display+ 0 interval blank exposure))))
+  (ignore-errors
+   (setf +powersave-timer+ -100.0)
+   #+darwin
+   (setf +mac-power-id+ 0)
+   #+linux
+   (unless +X11-display+
+     (setf +X11-display+ (xlib:open-default-display))
+     (xlib/dpms:dpms-disable +X11-display+)
+     (multiple-value-bind (timeout interval blank exposure) (xlib:screen-saver +X11-display+)
+       (declare (ignore timeout))
+       (xlib:set-screen-saver +X11-display+ 0 interval blank exposure)))))
 
 (defun ping-powersave (tt)
   (when (< (+ 10 +powersave-timer+) tt)
@@ -49,16 +50,17 @@
 
 (defun restore-powersave ()
   (v:info :trial.power "Restoring powersaving.")
-  #+windows
-  (cffi:foreign-funcall "SetThreadExecutionState"
-                        :uint #x80000000 :int)
-  #+darwin
-  (setf +mac-power-id+ 0)
-  #+linux
-  (when +X11-display+
-    (xlib/dpms:dpms-enable +X11-display+)
-    (multiple-value-bind (timeout interval blank exposure) (xlib:screen-saver +X11-display+)
-      (declare (ignore timeout))
-      (xlib:set-screen-saver +X11-display+ -1 interval blank exposure))
-    (xlib:close-display +X11-display+)
-    (setf +X11-display+ NIL)))
+  (ignore-errors
+   #+windows
+   (cffi:foreign-funcall "SetThreadExecutionState"
+                         :uint #x80000000 :int)
+   #+darwin
+   (setf +mac-power-id+ 0)
+   #+linux
+   (when +X11-display+
+     (xlib/dpms:dpms-enable +X11-display+)
+     (multiple-value-bind (timeout interval blank exposure) (xlib:screen-saver +X11-display+)
+       (declare (ignore timeout))
+       (xlib:set-screen-saver +X11-display+ -1 interval blank exposure))
+     (xlib:close-display +X11-display+)
+     (setf +X11-display+ NIL))))
