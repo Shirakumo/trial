@@ -13,8 +13,7 @@
    :clear-color (vec 0.2 0.3 0.3)))
 
 (defmethod initialize-instance :around ((display display) &key)
-  (with-cleanup-on-failure (when (context display)
-                             (finalize (context display)))
+  (with-cleanup-on-failure (finalize display)
     (call-next-method)))
 
 (defmethod initialize-instance :after ((display display) &rest initargs &key context title width height version profile double-buffering stereo-buffer vsync fullscreen)
@@ -30,7 +29,9 @@
     (setup-rendering display)))
 
 (defmethod finalize :after ((display display))
-  (finalize (context display))
+  (when (context display)
+    (finalize (context display))
+    (setf (context display) NIL))
   (restore-powersave))
 
 (defmethod handle (event (display display)))

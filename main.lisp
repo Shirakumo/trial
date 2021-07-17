@@ -14,7 +14,8 @@
 (defmethod finalize ((main main))
   (with-slots (scene loader) main
     (v:info :trial.main "RAPTURE")
-    (acquire-context (context main) :force T)
+    (when (context main)
+      (acquire-context (context main) :force T))
     (clear-retained)
     (finalize scene)
     (finalize loader)))
