@@ -14,4 +14,5 @@
    #:sound
    #:voice
    #:environment
-   #:music))
+   #:music
+   #:main))
