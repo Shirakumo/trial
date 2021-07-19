@@ -274,10 +274,12 @@
 (cl-glfw3:def-framebuffer-size-callback ctx-size (window w h)
   (%with-context
     (v:debug :trial.input "Framebuffer resized to ~ax~a" w h)
-    (handle (make-instance 'resize
-                           :width w
-                           :height h)
-            (handler context))))
+    (cffi:with-foreign-objects ((x-scale :float) (y-scale :float))
+      (cffi:foreign-funcall "glfwGetWindowContentScale" :pointer window :pointer x-scale :pointer y-scale :void)
+      (handle (make-instance 'resize
+                             :width (round (* (cffi:mem-ref x-scale :float) w))
+                             :height (round (* (cffi:mem-ref y-scale :float) h)))
+              (handler context)))))
 
 (cl-glfw3:def-window-focus-callback ctx-focus (window focusedp)
   (%with-context
