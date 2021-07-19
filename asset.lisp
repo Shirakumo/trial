@@ -151,11 +151,11 @@
 (defun pathname-asset-name (path &key ignore-directory)
   (flet ((rep (regex replace source)
            (cl-ppcre:regex-replace-all regex source replace)))
-    (let ((name (rep "[ _-.]+" "-" (pathname-name path)))
+    (let ((name (rep "[ _\\-.]+" "-" (pathname-name path)))
           (dirs (unless ignore-directory (rest (pathname-directory path)))))
       (format NIL "~:@(~{~a/~}~a~)" dirs name))))
 
-(defun generate-assets-from-path (pool type pathname &key attributes ignore-directory debug exclude)
+(defun generate-assets-from-path (pool type pathname &key (package *package*) attributes ignore-directory debug exclude)
   (let ((base (pool-path pool #p""))
         (default-options (rest (find T attributes :key #'first)))
         (exclude (enlist exclude)))
@@ -163,8 +163,7 @@
           unless (loop for exclusion in exclude
                        thereis (pathname-match-p path exclusion))
           collect (let* ((path (enough-namestring path base))
-                         (name (intern (pathname-asset-name path :ignore-directory ignore-directory)
-                                       (symbol-package pool)))
+                         (name (intern (pathname-asset-name path :ignore-directory ignore-directory) package))
                          (options (append (rest (find name attributes :key #'first)) default-options)))
                     (if debug
                         (print `(define-asset (,pool ,name) ,type
@@ -177,7 +176,7 @@
                                          :generation-arguments options))))))
 
 (defmacro define-assets-from-path ((pool type pathname &rest args) &body attributes)
-  `(generate-assets-from-path ',pool ',type ,pathname :attributes ',attributes ,@args))
+  `(generate-assets-from-path ',pool ',type ,pathname :attributes ',attributes :package ,*package* ,@args))
 
 (defclass single-resource-asset (asset)
   ((resource)))
