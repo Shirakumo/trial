@@ -340,12 +340,16 @@
 
 (cl-glfw3:def-cursor-pos-callback ctx-pos (window x y)
   (%with-context
-    (let ((current (vec x (- (second (cl-glfw3:get-window-size (window context))) y))))
-      (handle (make-instance 'mouse-move
-                             :pos current
-                             :old-pos (mouse-pos context))
-              (handler context))
-      (setf (mouse-pos context) current))))
+    (glfw:get-window-content-scale window)
+    (cffi:with-foreign-objects ((x-scale :float) (y-scale :float))
+      (cffi:foreign-funcall "glfwGetWindowContentScale" :pointer window :pointer x-scale :pointer y-scale :void)
+      (let ((current (vec (* (cffi:mem-ref x-scale :float) x)
+                          (* (cffi:mem-ref y-scale :float) (- (second (cl-glfw3:get-window-size window)) y)))))
+        (handle (make-instance 'mouse-move
+                               :pos current
+                               :old-pos (mouse-pos context))
+                (handler context))
+        (setf (mouse-pos context) current)))))
 
 (defun glfw-button->button (button)
   (case button
