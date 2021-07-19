@@ -9,8 +9,7 @@
 (define-global +powersave-timer+ 0.0d0)
 #+darwin
 (progn
-  (org.shirakumo.fraf.gamepad.impl::define-lazy-constant SLEEP-REASON-NAME
-      (org.shirakumo.fraf.gamepad.impl::cfstr "TrialGameRunning"))
+  (define-global +mac-sleep-reason-name+ NIL)
   (define-global +mac-power-id+ 0))
 #+linux
 (progn
@@ -21,6 +20,8 @@
   (ignore-errors
    (setf +powersave-timer+ -100.0)
    #+darwin
+   (unless +mac-sleep-reason-name+
+     (setf +mac-sleep-reason-name+ (org.shirakumo.fraf.gamepad.impl::cfstr "TrialGameRunning")))
    (setf +mac-power-id+ 0)
    #+linux
    (unless +X11-display+
@@ -40,7 +41,7 @@
     (cffi:with-foreign-object (id :uint32)'q
       (setf (cffi:mem-ref id :uint32) +mac-power-id+)
       (cffi:foreign-funcall "IOPMAssertionDeclareUserActivity"
-                            :pointer SLEEP-REASON-NAME
+                            :pointer +mac-sleep-reason-name+
                             :uint 0
                             :pointer id
                             :int)
