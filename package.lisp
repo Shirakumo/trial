@@ -166,6 +166,8 @@
    #:coerce-asset-input
    #:input*
    #:define-asset
+   #:generate-assets-from-path
+   #:define-assets-from-path
    #:single-resource-asset
    #:multi-resource-asset
    #:file-input-asset)

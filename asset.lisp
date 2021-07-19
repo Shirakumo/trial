@@ -148,6 +148,37 @@
 
 (trivial-indent:define-indentation define-asset (4 6 4 &body))
 
+(defun pathname-asset-name (path &key ignore-directory)
+  (flet ((rep (regex replace source)
+           (cl-ppcre:regex-replace-all regex source replace)))
+    (let ((name (rep "[ _-.]+" "-" (pathname-name path)))
+          (dirs (unless ignore-directory (rest (pathname-directory path)))))
+      (format NIL "~:@(~{~a/~}~a~)" dirs name))))
+
+(defun generate-assets-from-path (pool type pathname &key attributes ignore-directory debug exclude)
+  (let ((base (pool-path pool #p""))
+        (default-options (rest (find T attributes :key #'first)))
+        (exclude (enlist exclude)))
+    (loop for path in (directory (pool-path pool pathname))
+          unless (loop for exclusion in exclude
+                       thereis (pathname-match-p path exclusion))
+          collect (let* ((path (enough-namestring path base))
+                         (name (intern (pathname-asset-name path :ignore-directory ignore-directory)
+                                       (symbol-package pool)))
+                         (options (append (rest (find name attributes :key #'first)) default-options)))
+                    (if debug
+                        (print `(define-asset (,pool ,name) ,type
+                                    ,(pathname path)
+                                  ,@options))
+                        (ensure-instance (asset pool name NIL) type
+                                         :input (pathname path)
+                                         :name name
+                                         :pool pool
+                                         :generation-arguments options))))))
+
+(defmacro define-assets-from-path ((pool type pathname &rest args) &body attributes)
+  `(generate-assets-from-path ',pool ',type ,pathname :attributes ',attributes ,@args))
+
 (defclass single-resource-asset (asset)
   ((resource)))
 
