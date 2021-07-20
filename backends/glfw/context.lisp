@@ -273,13 +273,18 @@
 
 (cl-glfw3:def-framebuffer-size-callback ctx-size (window w h)
   (%with-context
-    (v:debug :trial.input "Framebuffer resized to ~ax~a" w h)
-    (cffi:with-foreign-objects ((x-scale :float) (y-scale :float))
-      (cffi:foreign-funcall "glfwGetWindowContentScale" :pointer window :pointer x-scale :pointer y-scale :void)
-      (handle (make-instance 'resize
-                             :width (round (* (cffi:mem-ref x-scale :float) w))
-                             :height (round (* (cffi:mem-ref y-scale :float) h)))
-              (handler context)))))
+   (v:debug :trial.input "Framebuffer resized to ~ax~a" w h)
+   (let ((x-scale 1.0)
+         (y-scale 1.0))
+     #+darwin
+     (cffi:with-foreign-objects ((x :float) (y :float))
+       (cffi:foreign-funcall "glfwGetWindowContentScale" :pointer window :pointer x :pointer y :void)
+       (setf x-scale (cffi:mem-ref x :float))
+       (setf y-scale (cffi:mem-ref y :float)))
+     (handle (make-instance 'resize
+                            :width (round (* x-scale w))
+                            :height (round (* y-scale h)))
+             (handler context)))))
 
 (cl-glfw3:def-window-focus-callback ctx-focus (window focusedp)
   (%with-context
@@ -342,11 +347,15 @@
 
 (cl-glfw3:def-cursor-pos-callback ctx-pos (window x y)
   (%with-context
-    (glfw:get-window-content-scale window)
-    (cffi:with-foreign-objects ((x-scale :float) (y-scale :float))
-      (cffi:foreign-funcall "glfwGetWindowContentScale" :pointer window :pointer x-scale :pointer y-scale :void)
-      (let ((current (vec (* (cffi:mem-ref x-scale :float) x)
-                          (* (cffi:mem-ref y-scale :float) (- (second (cl-glfw3:get-window-size window)) y)))))
+    (let ((x-scale 1.0)
+          (y-scale 1.0))
+      #+darwin
+      (cffi:with-foreign-objects ((x :float) (y :float))
+        (cffi:foreign-funcall "glfwGetWindowContentScale" :pointer window :pointer x :pointer y :void)
+        (setf x-scale (cffi:mem-ref x :float))
+        (setf x-scale (cffi:mem-ref y :float)))
+      (let ((current (vec (* x-scale x)
+                          (* y-scale (- (second (cl-glfw3:get-window-size window)) y)))))
         (handle (make-instance 'mouse-move
                                :pos current
                                :old-pos (mouse-pos context))
