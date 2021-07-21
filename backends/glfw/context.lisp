@@ -353,7 +353,7 @@
       (cffi:with-foreign-objects ((x :float) (y :float))
         (cffi:foreign-funcall "glfwGetWindowContentScale" :pointer window :pointer x :pointer y :void)
         (setf x-scale (cffi:mem-ref x :float))
-        (setf x-scale (cffi:mem-ref y :float)))
+        (setf y-scale (cffi:mem-ref y :float)))
       (let ((current (vec (* x-scale x)
                           (* y-scale (- (second (cl-glfw3:get-window-size window)) y)))))
         (handle (make-instance 'mouse-move
