@@ -6,8 +6,48 @@
 
 (in-package #:org.shirakumo.fraf.trial.harmony)
 
-(defclass sound-loader (trial:resource-generator)
+(defun run (&rest args)
+  (uiop:run-program (loop for arg in args
+                          collect (typecase arg
+                                    (pathname (uiop:native-namestring arg))
+                                    (string arg)
+                                    (T (princ-to-string arg))))
+                    :output :string :error-output *error-output*))
+
+(defclass sound-loader (trial:compiled-generator)
   ())
+
+(defmethod trial:compile-resources ((generator sound-loader) path &key (samplerate 44100) (sample-type :int16))
+  (when (string= "wav" (pathname-type path))
+    (let ((temp (make-pathname :type "temp.wav" :defaults path))
+          source-samplerate source-sample-type)
+      (loop for line in (cl-ppcre:split "\\n+" (run "ffprobe" "-hide_banner" "-loglevel" "error" "-i" path "-of" "flat=s=-" "-show_streams"))
+            do (when (search "sample_fmt" line)
+                 (setf source-sample-type
+                       (cond ((search "s16" line) :int16)
+                             ((search "s24" line) :int24)
+                             ((search "s32" line) :int32)
+                             ((search "u16" line) :uint16)
+                             ((search "u24" line) :uint24)
+                             ((search "u32" line) :uint32))))
+               (when (search "sample_rate" line)
+                 (setf source-samplerate (parse-integer line :start (+ 2 (position #\= line)) :end (1- (length line))))))
+      (unless (and (equal samplerate source-samplerate)
+                   (equal sample-type source-sample-type))
+        (v:info :trial.harmony "Reencoding sound file from ~a..." path)
+        (run "ffmpeg" "-hide_banner" "-loglevel" "error"
+             "-i" path
+             "-c:a" (format NIL "pcm_~ale"
+                            (case sample-type
+                              (:int16 "s16")
+                              (:int24 "s24")
+                              (:int32 "s32")
+                              (:uint16 "u16")
+                              (:uint24 "u24")
+                              (:uint32 "u32")))
+             "-ar" samplerate
+             temp)
+        (rename-file temp path)))))
 
 (defmethod trial:generate-resources ((generator sound-loader) path &key (mixer :effect) effects repeat (repeat-start 0) (volume 1.0) (resource (trial:resource generator T)))
   (trial::ensure-instance resource 'voice
@@ -36,17 +76,17 @@
                    (probe-file source)
                    (trial:recompile-needed-p target source))
           (v:info :trial.harmony "Compiling music track from ~a...." source)
-          (uiop:run-program (list "ffmpeg"
-                                  "-i" (uiop:native-namestring source)
-                                  "-c:a" (cond (codec codec)
-                                               ((string-equal "oga" (pathname-type target)) "libvorbis")
-                                               ((string-equal "flac" (pathname-type target)) "flac")
-                                               ((string-equal "mp3" (pathname-type target)) "libmp3lame")
-                                               ((string-equal "opus" (pathname-type target)) "libopus")
-                                               (T (error "Unsupported file type ~s" (pathname-type target))))
-                                  "-ar" (princ-to-string samplerate)
-                                  "-qscale:a" (princ-to-string quality)
-                                  "-y" (uiop:native-namestring target))))))))
+          (run "ffmpeg" "-hide_banner" "-loglevel" "error"
+               "-i" source
+               "-c:a" (cond (codec codec)
+                            ((string-equal "oga" (pathname-type target)) "libvorbis")
+                            ((string-equal "flac" (pathname-type target)) "flac")
+                            ((string-equal "mp3" (pathname-type target)) "libmp3lame")
+                            ((string-equal "opus" (pathname-type target)) "libopus")
+                            (T (error "Unsupported file type ~s" (pathname-type target))))
+               "-ar" samplerate
+               "-qscale:a" quality
+               "-y" target))))))
 
 (defmethod trial:generate-resources ((generator environment-loader) sets &key (resource (trial:resource generator T)))
   (trial::ensure-instance resource 'music :sets sets))

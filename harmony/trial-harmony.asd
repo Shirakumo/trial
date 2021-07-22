@@ -17,4 +17,5 @@
                (:file "deploy"))
   :depends-on (:trial
                :harmony
-               :uiop))
+               :uiop
+               :cl-ppcre))
