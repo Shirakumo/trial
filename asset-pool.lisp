@@ -88,4 +88,8 @@
 (defmethod pool-path ((name symbol) pathname)
   (pool-path (find-pool name T) pathname))
 
+(defmethod compile-resources ((pool pool) (source (eql T)) &rest args &key &allow-other-keys)
+  (dolist (asset (list-assets pool))
+    (apply #'compile-resources asset source args)))
+
 (define-pool trial)

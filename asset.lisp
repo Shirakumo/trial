@@ -234,7 +234,6 @@
   (when (typep asset 'compiled-generator)
     (apply #'compile-resources asset (input* asset) args)))
 
-(defmethod compile-resources ((all (eql T)) _ &rest args &key &allow-other-keys)
+(defmethod compile-resources ((all (eql T)) (source (eql T)) &rest args &key &allow-other-keys)
   (dolist (pool (list-pools))
-    (dolist (asset (list-assets pool))
-      (apply #'compile-resources asset T args))))
+    (apply #'compile-resources source args)))
