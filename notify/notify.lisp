@@ -34,12 +34,12 @@
                  (remhash file *file-association-table*))))
   ;; Then register new
   (dolist (file (files-to-watch asset))
-    (let ((file (truename file)))
-      (pushnew asset (gethash file *file-association-table*))
-      (handler-case
+    (handler-case
+        (let ((file (truename file)))
           (notify:watch file :events '(:modify))
-        (notify:failure ()
-          (v:error :trial.notify "Failed to add watch for ~a" file))))))
+          (pushnew asset (gethash file *file-association-table*)))
+      (error ()
+        (v:error :trial.notify "Failed to add watch for ~a" file)))))
 
 (defmethod watch ((all (eql T)))
   (notify:init)
