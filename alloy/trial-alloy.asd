@@ -18,6 +18,7 @@
                (:file "components")
                (:file "deploy"))
   :depends-on (:trial
+               :form-fiddle
                :alloy-simple-presentations
                :alloy-opengl
                :alloy-opengl-msdf))

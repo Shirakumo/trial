@@ -23,6 +23,7 @@
    #:vec2
    #:vec3
    #:vec4
+   #:define-set-representation
    #:asset
    #:resource
    #:video-mode))

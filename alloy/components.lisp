@@ -75,57 +75,61 @@
 
 (defmethod alloy:component-class-for-object ((_ 3d-vectors:vec4)) (find-class 'vec4))
 
-(defclass asset-item (alloy:combo-item)
-  ())
+(defmacro define-set-representation (name &body value-set)
+  (form-fiddle:with-body-options (body options item-text represents) value-set
+    (declare (ignore options))
+    (let ((item (trial::mksym *package* name '-item)))
+      `(progn
+         (defclass ,item (alloy:combo-item)
+           ())
 
-(defmethod alloy:text ((asset asset-item))
-  (format NIL "~a / ~a"
-          (trial:name (trial:pool (alloy:value asset)))
-          (trial:name (alloy:value asset))))
+         (defmethod alloy:text ((item ,item))
+           (let ((alloy:value (alloy:value item)))
+             ,item-text))
 
-(defclass asset (alloy:combo)
-  ())
+         (defclass ,name (alloy:combo)
+           ())
 
-(defmethod (setf alloy:value) :before ((value trial:asset) (asset asset))
-  (trial:load value))
+         (defmethod alloy:value-set ((,name ,name))
+           ,@body)
 
-(defmethod alloy:value-set ((asset asset))
+         (defmethod alloy:text ((,name ,name))
+           (let ((alloy:value (alloy:value ,name)))
+             ,item-text))
+
+         (defmethod alloy:combo-item (item (,name ,name))
+           (make-instance ',item :value item))
+
+         ,(when represents
+            `(defmethod alloy:component-class-for-object ((_ ,represents))
+               (find-class ',name)))))))
+
+(define-set-representation asset
+  :represents trial:asset
+  :item-text (format NIL "~a / ~a"
+                     (trial:name (trial:pool alloy:value))
+                     (trial:name alloy:value))
   (let ((type (if (alloy:value asset) (type-of (alloy:value asset)) 'trial:asset)))
     (loop for pool in (trial:list-pools)
           nconc (loop for asset in (trial:list-assets pool)
                       when (typep asset type)
                       collect asset))))
 
-(defmethod alloy:text ((asset asset))
-  (format NIL "~a / ~a"
-          (trial:name (trial:pool (alloy:value asset)))
-          (trial:name (alloy:value asset))))
+(defmethod (setf alloy:value) :before ((value trial:asset) (asset asset))
+  (trial:load value))
 
-(defmethod alloy:combo-item (item (asset asset))
-  (make-instance 'asset-item :value item))
-
-(defmethod alloy:component-class-for-object ((_ trial:asset)) (find-class 'asset))
-
-(defclass resource-item (alloy:combo-item)
-  ())
-
-(defmethod alloy:text ((resource resource-item))
-  (let ((resource (alloy:value resource)))
-    (cond ((trial:generator resource)
-           (format NIL "~a / ~a~@[ / ~a~]"
-                   (trial:name (trial:pool (trial:generator resource)))
-                   (trial:name (trial:generator resource))
-                   (unless (eq T (trial:name resource))
-                     (trial:name resource))))
-          ((trial:name resource)
-           (format NIL "~a" (trial:name resource)))
-          (T
-           (format NIL "<~a>" (type-of resource))))))
-
-(defclass resource (alloy:combo)
-  ())
-
-(defmethod alloy:value-set ((resource resource))
+(define-set-representation resource
+  :represents trial:resource
+  :item-text (cond ((trial:generator alloy:value)
+                    (format NIL "~a / ~a~@[ / ~a~]"
+                            (trial:name (trial:pool (trial:generator alloy:value)))
+                            (trial:name (trial:generator alloy:value))
+                            (unless (eq T (trial:name alloy:value))
+                              (trial:name alloy:value))))
+                   ((trial:name alloy:value)
+                    (format NIL "~a" (trial:name alloy:value)))
+                   (T
+                    (format NIL "<~a>" (type-of alloy:value))))
   (let ((type (if (alloy:value resource) (type-of (alloy:value resource)) 'trial:resource))
         (values ()))
     (when (eql type 'trial:placeholder-resource)
@@ -144,26 +148,7 @@
             (when (typep resource type)
               (push resource values))))))))
 
-(defmethod alloy:text ((resource resource))
-  (call-next-method))
-
-(defmethod alloy:combo-item (item (resource resource))
-  (make-instance 'resource-item :value item))
-
-(defmethod alloy:component-class-for-object ((_ trial:resource)) (find-class 'resource))
-
-(defclass video-mode (alloy:combo)
-  ())
-
-(defmethod alloy:value-set ((video-mode video-mode))
+(define-set-representation video-mode
+  :item-text (destructuring-bind (w h &optional r) alloy:value
+               (format NIL "~a x ~a~@[ @ ~aHz~]" w h r))
   (trial:list-video-modes trial:*context*))
-
-(defmethod alloy:combo-item (item (video-mode video-mode))
-  (make-instance 'video-mode-item :value item))
-
-(defclass video-mode-item (alloy:combo-item)
-  ())
-
-(defmethod alloy:text ((item video-mode-item))
-  (destructuring-bind (w h r) (alloy:value item)
-    (format NIL "~a x ~a @ ~aHz" w h r)))
