@@ -236,4 +236,4 @@
 
 (defmethod compile-resources ((all (eql T)) (source (eql T)) &rest args &key &allow-other-keys)
   (dolist (pool (list-pools))
-    (apply #'compile-resources source args)))
+    (apply #'compile-resources pool source args)))
