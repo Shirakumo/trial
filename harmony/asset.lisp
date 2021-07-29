@@ -127,6 +127,8 @@
    (effects :initarg :effects :accessor effects)
    (repeat :initarg :repeat :accessor repeat)
    (repeat-start :initarg :repeat-start :accessor repeat-start)
+   (min-distance :initarg :min-distance :accessor min-distance)
+   (max-distance :initarg :max-distance :accessor max-distance)
    (volume :initarg :volume :accessor volume)))
 
 (defmethod trial:allocate ((voice voice))
@@ -154,14 +156,13 @@
     (3d-vectors:vec3
      (list (3d-vectors:vx3 vec) (3d-vectors:vy3 vec) (3d-vectors:vz3 vec)))))
 
-(defmethod harmony:play ((voice voice) &key reset location velocity volume)
+(defmethod harmony:play ((voice voice) &key reset location velocity (volume (volume voice)) (min-distance (min-distance voice)) (max-distance (max-distance voice)))
   (let ((voice (or (voice voice)
                    (error "Voice has not been allocated.")))
         (sources (harmony:segment :sources harmony:*server*))
         (mixer (harmony:segment (mixer voice) harmony:*server*))
         (location (ensure-vector location))
-        (velocity (ensure-vector velocity))
-        (volume (or volume (volume voice))))
+        (velocity (ensure-vector velocity)))
     ;; KLUDGE: possible race here.
     (unless (harmony:chain voice)
       (setf (mixed:volume voice) volume)
@@ -172,7 +173,9 @@
           (mixed:add voice sources)
           (harmony:connect voice T mixer T))
         (when location (setf (mixed:location voice) location))
-        (when velocity (setf (mixed:velocity voice) velocity))))
+        (when velocity (setf (mixed:velocity voice) velocity))
+        (when min-distance (setf (mixed:min-distance voice) min-distance))
+        (when max-distance (setf (mixed:max-distance voice) max-distance))))
     voice))
 
 (defmethod harmony:stop ((resource trial:placeholder-resource)))
@@ -187,6 +190,18 @@
 
 (defmethod (setf mixed:volume) (volume (voice voice))
   (setf (mixed:volume (voice voice)) volume))
+
+(defmethod (setf mixed:min-distance) :after (min-distance (voice voice))
+  (when (voice voice)
+    (setf (mixed:min-distance (voice voice)) min-distance)))
+
+(defmethod (setf mixed:max-distance) :after (max-distance (voice voice))
+  (when (voice voice)
+    (setf (mixed:max-distance (voice voice)) max-distance)))
+
+(defmethod (setf mixed:rolloff) :after (rolloff (voice voice))
+  (when (voice voice)
+    (setf (mixed:rolloff (voice voice)) rolloff)))
 
 (defmethod mixed:location ((voice voice))
   (mixed:location (voice voice)))
