@@ -132,24 +132,6 @@
   (:method (ev (_ (eql 'label)) &key &allow-other-keys))
   (:method (ev (_ (eql 'key)) &key one-of (edge :rise))
     `(,(ecase edge (:rise 'key-press) (:fall 'key-release))
-      (one-of (key ,ev) ,@one-of)))
-  (:method (ev (_ (eql 'button)) &key one-of (edge :rise))
-    `(,(ecase edge (:rise 'gamepad-press) (:fall 'gamepad-release))
-      (one-of (button ,ev) ,@one-of)))
-  (:method (ev (_ (eql 'mouse)) &key one-of (edge :rise))
-    `(,(ecase edge (:rise 'mouse-press) (:fall 'mouse-release))
-      (one-of (button ,ev) ,@one-of)))
-  (:method (ev (_ (eql 'axis)) &key one-of (edge :rise) (threshold 0.5))
-    `(gamepad-move
-      (and (one-of (axis ,ev) ,@one-of)
-           ,(if (xor (eql edge :rise) (plusp threshold))
-                `(< (pos ,ev) ,threshold (old-pos ,ev))
-                `(< (old-pos ,ev) ,threshold (pos ,ev)))))))
-
-(defgeneric process-retain-form (ev event &key &allow-other-keys)
-  (:method (ev (_ (eql 'label)) &key &allow-other-keys))
-  (:method (ev (_ (eql 'key)) &key one-of (edge :rise))
-    `(,(ecase edge (:rise 'key-press) (:fall 'key-release))
       ,(ecase edge (:rise 'key-release) (:fall 'key-press))
       (one-of (key ,ev) ,@one-of)))
   (:method (ev (_ (eql 'button)) &key one-of (edge :rise))
@@ -207,15 +189,7 @@
     (ecase type
       (trigger
        (loop for trigger in triggers
-             for (evtype condition) = (apply #'process-trigger-form ev trigger)
-             when evtype
-             collect (list evtype
-                           `(when (and ,condition
-                                       (active-p (action-set ',action)))
-                              (issue ,loop (make-instance ',action :source-event ,ev))))))
-      (retain
-       (loop for trigger in triggers
-             for (evdn evup cddn cdup) = (apply #'process-retain-form ev trigger)
+             for (evdn evup cddn cdup) = (apply #'process-trigger-form ev trigger)
              when evdn
              collect (list evdn
                            `(when (and ,cddn
