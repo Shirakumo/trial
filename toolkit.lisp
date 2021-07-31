@@ -325,9 +325,10 @@
            #-(or windows darwin linux)
            "/tmp")))
 
-(defun tempfile ()
-  (make-pathname :name (format NIL "trial-~a-~a" (get-universal-time) (random 1000))
-                 :type "tmp"
+(defun tempfile (&key (id (format NIL "trial-~a-~a" (get-universal-time) (random 1000)))
+                      (type "tmp"))
+  (make-pathname :name id
+                 :type type
                  :defaults (tempdir)))
 
 (defun logfile ()
