@@ -210,6 +210,18 @@
                                        (active-p (action-set ',action)))
                               (issue ,loop (make-instance ',action :source-event ,ev :value ,value)))))))))
 
+(defun compile-mapping (&key name)
+  (let ((bits (make-hash-table :test 'eql))
+        (data (mapping name)))
+    (dolist (form (second data))
+      (loop for (type body) in (process-mapping-form 'loop 'event form)
+            do (push body (gethash type bits))))
+    (setf (first data) (compile NIL `(lambda (loop event)
+                                       (typecase event
+                                         ,@(loop for event being the hash-keys of bits
+                                                 for bodies being the hash-values of bits
+                                                 collect `(,event ,@bodies))))))))
+
 ;; TODO: could optimise this further by combining ONE-OF tests.
 (defun load-mapping (input &key (name 'keymap) (package *package*))
   (etypecase input
@@ -223,18 +235,23 @@
                          collect form)
                    :name name))
     (list
-     (let ((bits (make-hash-table :test 'eql)))
-       (dolist (form input)
-         (loop for (type body) in (process-mapping-form 'loop 'event form)
-               do (push body (gethash type bits))))
-       (setf (mapping name)
-             (list
-              (compile NIL `(lambda (loop event)
-                              (typecase event
-                                ,@(loop for event being the hash-keys of bits
-                                        for bodies being the hash-values of bits
-                                        collect `(,event ,@bodies)))))
-              input))))))
+     (setf (mapping name) (list NIL input))
+     (compile-mapping :name name))))
+
+(defun save-mapping (output &key (name 'keymap))
+  (etypecase output
+    (null
+     (with-output-to-string (stream)
+       (save-mapping stream :name name)))
+    ((or pathname string)
+     (with-open-file (stream output :direction :output :if-exists :supersede)
+       (save-mapping stream :name name)))
+    (stream
+     (let ((bindings (second (mapping name)))
+           (*print-case* :downcase))
+       (loop for (type event . actions) in bindings
+             do (format output "(~s ~s~{~%  ~s~})~%~%"
+                        type event actions))))))
 
 (defun event-trigger (event &optional (base-event 'input-event))
   (loop for (_function mapping) being the hash-values of *mappings*
@@ -249,28 +266,52 @@
                                  (return-from event-trigger
                                    (values (getf args :one-of) source args))))))))
 
+(defun set-trigger-from-event (event action &key (mapping 'keymap) (threshold 0.5) (compile T))
+  (let* ((map (mapping mapping))
+         (binding (find action (second map) :key #'second))
+         (action-binding (etypecase event
+                           (key-event
+                            `(key :one-of (,(key event))))
+                           (mouse-button-event
+                            `(mouse :one-of (,(button event))))
+                           ((or gamepad-press gamepad-release)
+                            `(button :one-of (,(button event))))
+                           (gamepad-move
+                            `(axis :one-of (,(axis event)) :threshold ,(* (float-sign (pos event)) threshold)))))
+         (pruned (loop for action in (cddr binding)
+                       unless (find (first action)
+                                    (etypecase event
+                                      (key-event '(key))
+                                      (mouse-event '(mouse))
+                                      (gamepad-event '(button axis))))
+                       collect action))
+         (new-binding (list* (first binding) action action-binding pruned)))
+    (setf (second map) (list* new-binding (remove binding (second map))))
+    (when compile
+      (compile-mapping :name mapping))))
+
 #| Keymap should have the following syntax:
-
-keymap    ::= mapping*
-mapping   ::= (type action trigger*)
-type      ::= retain | trigger
-trigger   ::= (key one-of edge?)
-            | (mouse one-of edge?)
-            | (button one-of edge?)
-            | (axis one-of edge? threshold?)
-one-of    ::= :one-of label
-edge      ::= :edge :rise | :edge :fall
-threshold ::= :threshold number
-action    --- a symbol naming an action event
-label     --- a keyword naming a key or button label
-
-Examples:
-
-(trigger quicksave
-  (label :english "Quick Save")
-  (key :one-of (:f5)))
-
-(retain dash
-  (label :english "Dash")
-  (axis :one-of (:r2) :threshold 0.2))
+                                        ; ;
+keymap    ::= mapping*                  ; ;
+mapping   ::= (type action trigger*)    ; ;
+type      ::= retain | trigger          ; ;
+trigger   ::= (key one-of edge?)        ; ;
+| (mouse one-of edge?)                  ; ;
+| (button one-of edge?)                 ; ;
+| (axis one-of edge? threshold?)        ; ;
+one-of    ::= :one-of label             ; ;
+edge      ::= :edge :rise | :edge :fall ; ;
+threshold ::= :threshold number         ; ;
+action    --- a symbol naming an action event ; ;
+label     --- a keyword naming a key or button label ; ;
+                                        ; ;
+Examples:                               ; ;
+                                        ; ;
+(trigger quicksave                      ; ;
+(label :english "Quick Save")           ; ;
+(key :one-of (:f5)))                    ; ;
+                                        ; ;
+(retain dash                            ; ;
+(label :english "Dash")                 ; ;
+(axis :one-of (:r2) :threshold 0.2))    ; ;
 |#

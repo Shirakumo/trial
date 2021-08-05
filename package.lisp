@@ -574,7 +574,10 @@
    #:x #:y #:z
    #:remove-action-mappings
    #:define-action
+   #:compile-mapping
    #:load-mapping
+   #:save-mapping
+   #:set-trigger-from-event
    #:trigger
    #:retain)
   ;; parallax.lisp
@@ -687,6 +690,7 @@
    #:setting-file-path
    #:keymap-path
    #:load-keymap
+   #:save-keymap
    #:load-settings
    #:save-settings
    #:setting
