@@ -461,6 +461,7 @@
    #:scaled-entity
    #:scaling
    #:clocked-entity
+   #:fullscreen-entity
    #:vertex-entity
    #:colored-entity
    #:vertex-colored-entity
