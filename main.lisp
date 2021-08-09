@@ -61,7 +61,7 @@
     (start (scene main)))
   (values new old))
 
-(defmethod enter-and-load ((object renderable) (container container) (main main))
+(defmethod enter-and-load ((object renderable) (container flare:container) (main main))
   (let ((area (make-instance 'staging-area)))
     (stage object area)
     (enter* object container)
@@ -71,7 +71,7 @@
       (remove-from-pass object (scene main))
       (leave* object container))))
 
-(defmethod enter-and-load ((object entity) (container container) (main main))
+(defmethod enter-and-load ((object entity) (container flare:container) (main main))
   (let ((area (make-instance 'staging-area)))
     (stage object area)
     (enter object container)
