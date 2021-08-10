@@ -128,6 +128,7 @@
   (class-shader type (find-class class)))
 
 (defmethod (setf class-shader) (shader type (class shader-entity-class))
+  (check-shader-type type)
   (setf (getf (direct-shaders class) type) shader))
 
 (defmethod (setf class-shader) (shader type (class symbol))
