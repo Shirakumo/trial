@@ -108,19 +108,19 @@
         (vertex :position (vec (+ x w) (+ y h) (- z d)) :uv (vec 1.0 0.0) :normal (vec 1 0 0))))))
 
 (defun make-quad-grid (size x-count z-count &key mesh pack (x 0) (y 0) (z 0))
-  (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
-    (loop repeat x-count
+  (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'basic-vertex)) :pack pack)
+    (loop for xi from 0 below x-count
           for xc from (* x-count size -0.5) by size
-          do (loop repeat z-count
+          do (loop for zi from 0 below z-count
                    for zc from (* z-count size -0.5) by size
                    do (let ((l (+ x xc)) (r (+ x xc size))
                             (u (+ z zc)) (b (+ z zc size)))
-                        (vertex :position (vec l y b))
-                        (vertex :position (vec r y b))
-                        (vertex :position (vec r y u))
-                        (vertex :position (vec r y u))
-                        (vertex :position (vec l y u))
-                        (vertex :position (vec l y b)))))))
+                        (vertex :position (vec l y b) :uv (vec (/ (+ 0 xi) x-count) (/ (+ 0 zi) z-count)) :normal (vec 0 1 0))
+                        (vertex :position (vec r y b) :uv (vec (/ (+ 1 xi) x-count) (/ (+ 0 zi) z-count)) :normal (vec 0 1 0))
+                        (vertex :position (vec r y u) :uv (vec (/ (+ 1 xi) x-count) (/ (+ 1 zi) z-count)) :normal (vec 0 1 0))
+                        (vertex :position (vec r y u) :uv (vec (/ (+ 1 xi) x-count) (/ (+ 1 zi) z-count)) :normal (vec 0 1 0))
+                        (vertex :position (vec l y u) :uv (vec (/ (+ 0 xi) x-count) (/ (+ 1 zi) z-count)) :normal (vec 0 1 0))
+                        (vertex :position (vec l y b) :uv (vec (/ (+ 0 xi) x-count) (/ (+ 0 zi) z-count)) :normal (vec 0 1 0)))))))
 
 (defun make-line-grid (size w h &key mesh pack (x 0) (y 0) (z 0))
   (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex :face-length 2)) :pack pack)
