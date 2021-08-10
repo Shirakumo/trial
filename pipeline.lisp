@@ -151,7 +151,7 @@
     ;; Compute full texture set
     (loop for port in (mapcan #'flow:ports passes)
           for texture = (apply #'make-instance 'texture (normalized-texspec port))
-          when (typep port '(and flow:out-port texture-port))
+          when (typep port '(and (or static-input flow:out-port) texture-port))
           do (setf (texture port) texture)
              (dolist (connection (flow:connections port))
                (setf (texture (flow:right connection)) texture))

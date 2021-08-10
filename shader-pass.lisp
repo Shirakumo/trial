@@ -92,7 +92,18 @@
   (when texture
     (setf (texture input) (eval texture))))
 
-(defmethod check-consistent ((input fixed-input)))
+(defmethod stage ((input fixed-input) (area staging-area))
+  (stage (texture input) area))
+
+(defmethod check-consistent ((input fixed-input))
+  (unless (texture input)
+    (error "Pass ~s is missing an input texture ~s."
+           (flow:node input) input)))
+
+(defclass static-input (input)
+  ())
+
+(defmethod check-consistent ((input static-input)))
 
 (define-shader-entity shader-pass (flow:static-node)
   ((framebuffer :initform NIL :accessor framebuffer)
