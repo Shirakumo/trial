@@ -915,7 +915,8 @@
    #:check-vertex-buffer-type
    #:check-vertex-buffer-element-type
    #:check-vertex-buffer-data-usage
-   #:check-framebuffer-attachment)
+   #:check-framebuffer-attachment
+   #:when-gl-extension)
   ;; transforms.lisp
   (:export
    #:*view-matrix*
