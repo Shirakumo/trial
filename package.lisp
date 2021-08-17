@@ -567,6 +567,7 @@
    #:exclusive-action-set
    #:define-action-set
    #:action
+   #:source-event
    #:analog-action
    #:value
    #:directional-action
