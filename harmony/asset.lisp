@@ -230,3 +230,18 @@
 
 (defmethod harmony:segment (segment (voice voice) &optional (errorp T))
   (harmony:segment segment (voice voice) errorp))
+
+(defmethod (setf mixed:location) ((location 3d-vectors:vec2) (server harmony:server))
+  (let ((list (make-array 2 :element-type 'single-float)))
+    (declare (dynamic-extent list))
+    (setf (aref list 0) (3d-vectors:vx2 location))
+    (setf (aref list 1) (3d-vectors:vy2 location))
+    (setf (mixed:location server) list)))
+
+(defmethod (setf mixed:location) ((location 3d-vectors:vec3) (server harmony:server))
+  (let ((list (make-array 3 :element-type 'single-float)))
+    (declare (dynamic-extent list))
+    (setf (aref list 0) (3d-vectors:vx3 location))
+    (setf (aref list 1) (3d-vectors:vy3 location))
+    (setf (aref list 2) (3d-vectors:vz3 location))
+    (setf (mixed:location server) list)))
