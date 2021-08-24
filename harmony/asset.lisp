@@ -49,9 +49,10 @@
              temp)
         (rename-file temp path)))))
 
-(defmethod trial:generate-resources ((generator sound-loader) path &key (mixer :effect) effects repeat (repeat-start 0) (volume 1.0) (resource (trial:resource generator T)))
+(defmethod trial:generate-resources ((generator sound-loader) path &key (mixer :effect) effects repeat (repeat-start 0) (volume 1.0) (resource (trial:resource generator T)) max-distance min-distance)
   (trial::ensure-instance resource 'voice
                           :mixer mixer :source path :effects effects :volume volume
+                          :max-distance max-distance :min-distance min-distance
                           :repeat repeat :repeat-start repeat-start))
 
 (defclass sound (trial:single-resource-asset trial:file-input-asset sound-loader)
@@ -125,17 +126,17 @@
    (source :initarg :source :accessor source)
    (mixer :initarg :mixer :initform :effect :accessor mixer)
    (effects :initarg :effects :initform NIL :accessor effects)
-   (repeat :initarg :repeat :initform NIL :accessor repeat)
-   (repeat-start :initarg :repeat-start :initform 0 :accessor repeat-start)
-   (min-distance :initarg :min-distance :initform NIL :accessor min-distance)
-   (max-distance :initarg :max-distance :initform NIL :accessor max-distance)
-   (volume :initarg :volume :initform 1.0 :accessor volume)))
+   (repeat :initarg :repeat :initform NIL :accessor harmony:repeat)
+   (repeat-start :initarg :repeat-start :initform 0 :accessor harmony:repeat-start)
+   (min-distance :initarg :min-distance :initform NIL :accessor mixed:min-distance)
+   (max-distance :initarg :max-distance :initform NIL :accessor mixed:max-distance)
+   (volume :initarg :volume :initform 1.0 :accessor mixed:volume)))
 
 (defmethod trial:allocate ((voice voice))
   (setf (voice voice) (harmony:create (source voice)
                                       :effects (effects voice) :on-end :disconnect
-                                      :repeat (repeat voice) :repeat-start (repeat-start voice)
-                                      :volume (volume voice) :mixer (mixer voice))))
+                                      :repeat (harmony:repeat voice) :repeat-start (harmony:repeat-start voice)
+                                      :volume (mixed:volume voice) :mixer (mixer voice))))
 
 (defmethod trial:deallocate ((voice voice))
   (if (harmony:chain (voice voice))
@@ -156,7 +157,7 @@
     (3d-vectors:vec3
      (list (3d-vectors:vx3 vec) (3d-vectors:vy3 vec) (3d-vectors:vz3 vec)))))
 
-(defmethod harmony:play ((voice voice) &key reset location velocity (volume (volume voice)) (min-distance (min-distance voice)) (max-distance (max-distance voice)))
+(defmethod harmony:play ((voice voice) &key reset location velocity (volume (mixed:volume voice)) (min-distance (mixed:min-distance voice)) (max-distance (mixed:max-distance voice)))
   (let ((voice (or (voice voice)
                    (error "Voice has not been allocated.")))
         (sources (harmony:segment :sources harmony:*server*))
@@ -174,15 +175,15 @@
                (harmony:connect voice T mixer T))
              (when location (setf (mixed:location voice) location))
              (when velocity (setf (mixed:velocity voice) velocity))
-             (when min-distance (setf (mixed:min-distance voice) min-distance))
-             (when max-distance (setf (mixed:max-distance voice) max-distance))))
+             (when min-distance (setf (mixed:min-distance voice) (float min-distance 0f0)))
+             (when max-distance (setf (mixed:max-distance voice) (float max-distance 0f0)))))
           (reset
            (setf (mixed:volume voice) volume)
            (mixed:seek voice 0)
            (when location (setf (mixed:location voice) location))
            (when velocity (setf (mixed:velocity voice) velocity))
-           (when min-distance (setf (mixed:min-distance voice) min-distance))
-           (when max-distance (setf (mixed:max-distance voice) max-distance))))
+           (when min-distance (setf (mixed:min-distance voice) (float min-distance 0f0)))
+           (when max-distance (setf (mixed:max-distance voice) (float max-distance 0f0)))))
     voice))
 
 (defmethod harmony:stop ((resource trial:placeholder-resource)))
@@ -192,29 +193,39 @@
 (defmethod harmony:stop ((voice voice))
   (harmony:stop (voice voice)))
 
-(defmethod mixed:volume ((voice voice))
-  (mixed:volume (voice voice)))
-
-(defmethod (setf mixed:volume) (volume (voice voice))
-  (setf (mixed:volume (voice voice)) volume))
+(defmethod (setf mixed:volume) :after (volume (voice voice))
+  (when (voice voice)
+    (setf (mixed:volume (voice voice)) volume)))
 
 (defmethod (setf mixed:min-distance) :after (min-distance (voice voice))
   (when (voice voice)
-    (setf (mixed:min-distance (voice voice)) min-distance)))
+    (setf (mixed:min-distance (voice voice)) (float min-distance 0f0))))
 
 (defmethod (setf mixed:max-distance) :after (max-distance (voice voice))
   (when (voice voice)
-    (setf (mixed:max-distance (voice voice)) max-distance)))
+    (setf (mixed:max-distance (voice voice)) (float max-distance 0f0))))
 
 (defmethod (setf mixed:rolloff) :after (rolloff (voice voice))
   (when (voice voice)
-    (setf (mixed:rolloff (voice voice)) rolloff)))
+    (setf (mixed:rolloff (voice voice)) (float rolloff 0f0))))
 
 (defmethod mixed:location ((voice voice))
   (mixed:location (voice voice)))
 
-(defmethod (setf mixed:location) (location (voice voice))
-  (setf (mixed:location (voice voice)) (ensure-vector location)))
+(defmethod (setf mixed:location) ((location 3d-vectors:vec2) (voice voice))
+  (let ((list (make-array 2 :element-type 'single-float)))
+    (declare (dynamic-extent list))
+    (setf (aref list 0) (3d-vectors:vx2 location))
+    (setf (aref list 1) (3d-vectors:vy2 location))
+    (setf (mixed:location (voice voice)) list)))
+
+(defmethod (setf mixed:location) ((location 3d-vectors:vec3) (voice voice))
+  (let ((list (make-array 3 :element-type 'single-float)))
+    (declare (dynamic-extent list))
+    (setf (aref list 0) (3d-vectors:vx3 location))
+    (setf (aref list 1) (3d-vectors:vy3 location))
+    (setf (aref list 2) (3d-vectors:vy3 location))
+    (setf (mixed:location (voice voice)) list)))
 
 (defmethod mixed:velocity ((voice voice))
   (mixed:velocity (voice voice)))
