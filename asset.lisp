@@ -176,7 +176,11 @@
                                          :generation-arguments options))))))
 
 (defmacro define-assets-from-path ((pool type pathname &rest args) &body attributes)
-  `(generate-assets-from-path ',pool ',type ,pathname :attributes ',attributes :package ,*package* ,@args))
+  `(generate-assets-from-path ',pool ',type ,pathname
+                              :attributes (list ,@(loop for (name . args) in attributes
+                                                        collect `(list ',name ,@args)))
+                              :package ,*package*
+                              ,@args))
 
 (defclass single-resource-asset (asset)
   ((resource)))
