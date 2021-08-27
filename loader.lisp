@@ -150,8 +150,8 @@
                    ;; The validated state occurs after a late sorting has changed
                    ;; the sequence for objects that should be loaded new.
                    ((:to-load :validated)
-                    (load-with loader resource)
-                    (progress loader i (length loads)))))))
+                    (progress loader (1+ i) (+ 2 (length loads)))
+                    (load-with loader resource))))))
       ;; The load sequence can be longer after an invalid resorting,
       ;; so we need to check the length at every step.
       (loop for i from 0
@@ -187,8 +187,10 @@
 (defmethod progress ((loader loader) so-far total))
 
 (defmethod commit ((area staging-area) (loader loader) &key (unload T))
+  (progress loader 0 100)
   (let ((load-sequence (compute-load-sequence area))
         (resources (loaded loader)))
+    (progress loader 1 (+ 2 (length load-sequence)))
     (if unload
         ;; First, mark all resources as to-unload
         (loop for resource being the hash-keys of resources
@@ -210,6 +212,7 @@
           (v:info :trial.loader "Loading about ~d resources." (length load-sequence))
           (v:debug :trial.loader "About to load the following:~%  ~a" load-sequence)
           (process-loads loader area load-sequence)
+          (progress loader (+ 2 (length load-sequence)) (+ 2 (length load-sequence)))
           ;; Now unload the ones we no longer need and reset state.
           ;; TODO: Consider UNLOADing assets always here, since that'll just throw
           ;;       away allocation input state rather than deallocating the resources.
@@ -220,6 +223,7 @@
                       (unload-with loader resource))
                      (:to-keep
                       (setf (gethash resource resources) :loaded))))
+          (progress loader (length load-sequence) (length load-sequence))
           T)
       (abort-commit ()
         :report "Abort the commit and roll back any changes."
