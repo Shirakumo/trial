@@ -17,6 +17,10 @@
   ((generator :initarg :generator :initform NIL :reader generator)
    (name :initarg :name :initform NIL :reader name)))
 
+(defmethod print-object ((resource resource) stream)
+  (print-unreadable-object (resource stream :type T :identity T)
+    (format stream "~@[~a~]~@[ ~a~]" (generator resource) (name resource))))
+
 (defgeneric allocate (resource))
 (defgeneric deallocate (resource))
 (defgeneric allocated-p (resource))
