@@ -161,6 +161,10 @@
         ((print mode)
          (resize context (first mode) (second mode)))))
 
+(defmethod visible-p ((context context))
+  (and (cl-glfw3:get-window-attribute :visible (window context))
+       (not (cl-glfw3:get-window-attribute :iconified (window context)))))
+
 (defmethod resize ((context context) width height)
   (v:info :trial.backend.glfw "Resizing window to ~ax~a" width height)
   (cl-glfw3:set-window-size width height (window context))

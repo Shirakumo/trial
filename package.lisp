@@ -226,6 +226,7 @@
    #:done-current
    #:hide
    #:show
+   #:visible-p
    #:resize
    #:quit
    #:swap-buffers
