@@ -116,6 +116,8 @@
         array)))
 
 (defmethod capture ((framebuffer null) &rest args)
+  (unless (visible-p *context*)
+    (error "Cannot capture invisible backbuffer."))
   (apply #'capture (make-instance 'framebuffer :data-pointer 0
                                                :attachments ()
                                                :width (width *context*)
