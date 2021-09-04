@@ -277,7 +277,7 @@
 
 (cl-glfw3:def-framebuffer-size-callback ctx-size (window w h)
   (%with-context
-   (v:debug :trial.input "Framebuffer resized to ~ax~a" w h)
+   (v:info :trial.backend.glfw "Framebuffer resized to ~ax~a" w h)
    (let ((x-scale 1.0)
          (y-scale 1.0))
      #+darwin
@@ -292,11 +292,13 @@
 
 (cl-glfw3:def-window-focus-callback ctx-focus (window focusedp)
   (%with-context
+    (v:info :trial.backend.glfw "Window has ~:[lost~;gained~] focus" focusedp)
     (handle (make-instance (if focusedp 'gain-focus 'lose-focus))
             (handler context))))
 
 (cl-glfw3:def-window-iconify-callback ctx-iconify (window iconifiedp)
   (%with-context
+    (v:info :trial.backend.glfw "Window has been ~:[restored~;iconified~]" iconifiedp)
     (handle (make-instance (if iconifiedp 'window-hidden 'window-shown))
             (handler context))))
 
