@@ -46,9 +46,11 @@
   `(setf *report-hooks* (list* (list ',name (lambda () ,@body))
                                (remove ',name *report-hooks* :key #'first))))
 
-(define-report-hook trial ()
-  `(("log" ,(trial:logfile))
-    ("screenshot" ,(when trial:*context* (trial:capture NIL :file (trial:tempfile))))))
+(define-report-hook logfile ()
+  `(("log" ,(trial:logfile))))
+
+(define-report-hook screenshot ()
+  `(("screenshot" ,(trial:capture NIL :file (trial:tempfile)))))
 
 (defun find-user-id ()
   (error-or
