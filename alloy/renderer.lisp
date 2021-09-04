@@ -107,13 +107,23 @@
 
 (defmethod opengl:make-vertex-buffer ((renderer renderer) contents &key (data-usage :static-draw)
                                                                         (buffer-type :array-buffer))
-  (make-instance 'trial:vertex-buffer
-                 :buffer-data contents
-                 :data-usage data-usage
-                 :buffer-type buffer-type))
+  (etypecase contents
+    (vector
+     (make-instance 'trial:vertex-buffer
+                    :buffer-data contents
+                    :data-usage data-usage
+                    :buffer-type buffer-type))
+    (integer
+     (make-instance 'trial:vertex-buffer
+                    :size (* 4 contents)
+                    :data-usage data-usage
+                    :buffer-type buffer-type))))
 
 (defmethod opengl:update-vertex-buffer ((buffer trial:vertex-buffer) contents)
-  (trial:resize-buffer buffer (* (length contents) (trial:gl-type-size :float)) :data contents))
+  (let ((length (* (length contents) (trial:gl-type-size :float))))
+    (if (< (trial:size buffer) length)
+        (trial:resize-buffer buffer length :data contents)
+        (trial:update-buffer-data buffer contents))))
 
 (defmethod alloy:allocate ((buffer trial:vertex-buffer))
   (trial:allocate buffer))
