@@ -148,22 +148,11 @@
 (defmethod trial:allocated-p ((voice voice))
   (not (null (voice voice))))
 
-(defun ensure-vector (vec)
-  (etypecase vec
-    (list
-     vec)
-    (3d-vectors:vec2
-     (list (3d-vectors:vx2 vec) (3d-vectors:vy2 vec) 0))
-    (3d-vectors:vec3
-     (list (3d-vectors:vx3 vec) (3d-vectors:vy3 vec) (3d-vectors:vz3 vec)))))
-
 (defmethod harmony:play ((voice voice) &key reset location velocity (volume (mixed:volume voice)) (min-distance (mixed:min-distance voice)) (max-distance (mixed:max-distance voice)))
   (let ((voice (or (voice voice)
                    (error "Voice has not been allocated.")))
         (sources (harmony:segment :sources harmony:*server*))
-        (mixer (harmony:segment (mixer voice) harmony:*server*))
-        (location (ensure-vector location))
-        (velocity (ensure-vector velocity)))
+        (mixer (harmony:segment (mixer voice) harmony:*server*)))
     ;; KLUDGE: possible race here.
     (cond ((null (harmony:chain voice))
            (setf (mixed:volume voice) volume)
@@ -239,8 +228,23 @@
 (defmethod (setf mixed:velocity) (velocity (voice voice))
   (let ((voice (voice voice)))
     (when (harmony:chain voice)
-      (setf (mixed:velocity voice) (ensure-vector velocity)))
+      (setf (mixed:velocity voice) velocity))
     velocity))
+
+(defmethod (setf mixed:velocity) ((velocity 3d-vectors:vec2) (voice harmony:voice))
+  (let ((list (make-array 2 :element-type 'single-float)))
+    (declare (dynamic-extent list))
+    (setf (aref list 0) (3d-vectors:vx2 velocity))
+    (setf (aref list 1) (3d-vectors:vy2 velocity))
+    (setf (mixed:velocity voice) list)))
+
+(defmethod (setf mixed:velocity) ((velocity 3d-vectors:vec3) (voice harmony:voice))
+  (let ((list (make-array 3 :element-type 'single-float)))
+    (declare (dynamic-extent list))
+    (setf (aref list 0) (3d-vectors:vx3 velocity))
+    (setf (aref list 1) (3d-vectors:vy3 velocity))
+    (setf (aref list 2) (3d-vectors:vy3 velocity))
+    (setf (mixed:velocity voice) list)))
 
 (defmethod mixed:done-p ((voice voice))
   (mixed:done-p (voice voice)))
