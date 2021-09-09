@@ -49,13 +49,30 @@
 (defun action-definition (mapping action)
   (find action (second (mapping mapping)) :key #'second))
 
-(defun action-input (mapping action &key (device :gamepad))
+(defun action-binding (mapping action &key (device :gamepad))
   (let ((binds (cddr (action-definition mapping action))))
     (ecase device
       (:keyboard
-       (getf (rest (or (assoc 'key binds) (assoc 'mouse binds))) :one-of))
+       (or (assoc 'key binds) (assoc 'mouse binds)))
       (:gamepad
-       (getf (rest (or (assoc 'button binds) (assoc 'axis binds))) :one-of)))))
+       (or (assoc 'button binds) (assoc 'axis binds))))))
+
+(defun action-input (mapping action &key (device :gamepad))
+  (getf (rest (action-binding mapping action :device device)) :one-of))
+
+(defun make-event-from-binding (binding)
+  (destructuring-bind (type &key one-of (threshold 0.5) (edge :rise) &allow-other-keys) binding
+    (ecase type
+      (key (make-instance (ecase edge ((:rise :rise-only) 'key-press) ((:fall :fall-only) 'key-release))
+                          :key (first one-of)))
+      (mouse (make-instance (ecase edge ((:rise :rise-only) 'mouse-press) ((:fall :fall-only) 'mouse-release))
+                            :button (first one-of)))
+      (button (make-instance (ecase edge ((:rise :rise-only) 'gamepad-press) ((:fall :fall-only) 'gamepad-release))
+                             :button (first one-of)))
+      (axis (make-instance 'gamepad-move
+                           :axis (first one-of)
+                           :old-pos (ecase edge ((:rise :rise-only) 0.0) ((:fall :fall-only) threshold))
+                           :pos (ecase edge ((:rise :rise-only) threshold) ((:fall :fall-only) 0.0)))))))
 
 (defclass action-set () ()) ;; marker-class
 (defclass exclusive-action-set () ())

@@ -229,26 +229,45 @@
                         (:SCROLL-U      #x27F0)
                         (:SCROLL-D      #x27F1)))))
 
+(defun degeneralise-axis-symbol (axis threshold)
+  (case axis
+    (:l-h (if (< 0 threshold) :l-r :l-l))
+    (:l-v (if (< 0 threshold) :l-u :l-d))
+    (:r-h (if (< 0 threshold) :r-r :r-l))
+    (:r-v (if (< 0 threshold) :r-u :r-d))
+    (:dpad-h (if (< 0 threshold) :dpad-r :dpad-l))
+    (:dpad-v (if (< 0 threshold) :dpad-u :dpad-d))))
+
 (defun specific-char-for-event-trigger (thing &optional (type 'input-event))
   (multiple-value-bind (alts type args) (event-trigger thing type)
     (let ((symbol (first alts))
           (threshold (getf args :threshold 0.0)))
       (or (when (and (/= 0.0 threshold) (eql 'axis type))
-            (case symbol
-              (:l-h (if (< 0 threshold) :l-r :l-l))
-              (:l-v (if (< 0 threshold) :l-u :l-d))
-              (:r-h (if (< 0 threshold) :r-r :r-l))
-              (:r-v (if (< 0 threshold) :r-u :r-d))
-              (:dpad-h (if (< 0 threshold) :dpad-r :dpad-l))
-              (:dpad-v (if (< 0 threshold) :dpad-u :dpad-d))))
+            (degeneralise-axis-symbol symbol threshold))
           symbol))))
 
 (defun prompt-char (thing &key (bank :gamepad))
+  (when (typep thing 'input-event)
+    (setf bank (etypecase thing
+                 (gamepad-event :gamepad)
+                 (key-event :keyboard)
+                 (mouse-event :mouse))))
   (let ((table (getf *prompt-char-table* bank)))
     (when table
       (etypecase thing
         (character thing)
         (keyword (gethash thing table))
+        (action (let ((type (ecase bank
+                              (:gamepad 'gamepad-event)
+                              (:keyboard 'key-event)
+                              (:mouse 'mouse-event))))
+                  (gethash (specific-char-for-event-trigger (type-of thing) type) table)))
+        (input-event (gethash (etypecase thing
+                                (gamepad-move (degeneralise-axis-symbol (axis thing) (pos thing)))
+                                (gamepad-event (button thing))
+                                (keyboard-event (key thing))
+                                (mouse-button-event (button thing)))
+                              table))
         (symbol (let ((type (ecase bank
                               (:gamepad 'gamepad-event)
                               (:keyboard 'key-event)
