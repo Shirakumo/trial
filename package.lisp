@@ -555,6 +555,7 @@
    #:launch)
   ;; mapping.lisp
   (:export
+   #:keymap
    #:retained
    #:clear-retained
    #:mapping
@@ -563,7 +564,9 @@
    #:define-simple-mapping
    #:map-event
    #:action-definition
+   #:action-binding
    #:action-input
+   #:make-event-from-binding
    #:action-set
    #:exclusive-action-set
    #:define-action-set
