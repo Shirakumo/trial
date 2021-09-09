@@ -128,19 +128,24 @@
        (remove-action-mappings ',name)
        ,@(mapcar #'compile-mapping mappings))))
 
+(defun process-edge (edge rise fall)
+  (list (ecase edge
+          ((:rise-only :rise) rise)
+          (:fall-only) (:fall fall))
+        (ecase edge
+          (:rise-only) (:rise fall)
+          ((:fall-only :fall) rise))))
+
 (defgeneric process-trigger-form (ev event &key &allow-other-keys)
   (:method (ev (_ (eql 'label)) &key &allow-other-keys))
   (:method (ev (_ (eql 'key)) &key one-of (edge :rise))
-    `(,(ecase edge (:rise 'key-press) (:fall 'key-release))
-      ,(ecase edge (:rise 'key-release) (:fall 'key-press))
+    `(,@(process-edge edge 'key-press 'key-release)
       (one-of (key ,ev) ,@one-of)))
   (:method (ev (_ (eql 'button)) &key one-of (edge :rise))
-    `(,(ecase edge (:rise 'gamepad-press) (:fall 'gamepad-release))
-      ,(ecase edge (:rise 'gamepad-release) (:fall 'gamepad-press))
+    `(,@(process-edge edge 'gamepad-press 'gamepad-release)
       (one-of (button ,ev) ,@one-of)))
   (:method (ev (_ (eql 'mouse)) &key one-of (edge :rise))
-    `(,(ecase edge (:rise 'mouse-press) (:fall 'mouse-release))
-      ,(ecase edge (:rise 'mouse-release) (:fall 'mouse-press))
+    `(,@(process-edge edge 'mouse-press 'mouse-release)
       (one-of (button ,ev) ,@one-of)))
   (:method (ev (_ (eql 'axis)) &key one-of (edge :rise) (threshold 0.5))
     `(gamepad-move
@@ -161,19 +166,19 @@
       (one-of (key ,ev) ,@one-of)
       (etypecase ,ev
         (key-press ,(ecase edge (:rise value) (:fall 0.0)))
-        (key-release (ecase edge (:rise 0.0) (:fall ,value))))))
+        (key-release ,(ecase edge (:rise 0.0) (:fall value))))))
   (:method (ev (_ (eql 'button)) &key one-of (edge :rise) (value 1.0))
     `(button-event
       (one-of (button ,ev) ,@one-of)
       (etypecase ,ev
         (button-press ,(ecase edge (:rise value) (:fall 0.0)))
-        (button-release (ecase edge (:rise 0.0) (:fall ,value))))))
+        (button-release ,(ecase edge (:rise 0.0) (:fall value))))))
   (:method (ev (_ (eql 'mouse)) &key one-of (edge :rise) (value 1.0))
     `(mouse-button-event
       (one-of (button ,ev) ,@one-of)
       (etypecase ,ev
         (mouse-press ,(ecase edge (:rise value) (:fall 0.0)))
-        (mouse-release (ecase edge (:rise 0.0) (:fall ,value))))))
+        (mouse-release ,(ecase edge (:rise 0.0) (:fall value))))))
   (:method (ev (_ (eql 'cursor)) &key (axis :x) (multiplier 1.0))
     `(mouse-move
       T
@@ -195,7 +200,8 @@
                            `(when (and ,cddn
                                        (active-p (action-set ',action)))
                               (issue ,loop (make-instance ',action :source-event ,ev))
-                              (setf (retained ',action) T)))
+                              (setf (retained ',action)
+                                    ,(if evup T `(not (retained ',action))))))
              when evup
              collect (list evup
                            `(when (and ,(or cdup cddn)
@@ -266,7 +272,7 @@
                                  (return-from event-trigger
                                    (values (getf args :one-of) source args))))))))
 
-(defun set-trigger-from-event (event action &key (mapping 'keymap) (threshold 0.5) (compile T))
+(defun set-trigger-from-event (event action &key (mapping 'keymap) (threshold 0.5) (edge :rise) (compile T))
   (let* ((map (mapping mapping))
          (binding (find action (second map) :key #'second))
          (action-binding (etypecase event
@@ -278,6 +284,8 @@
                             `(button :one-of (,(button event))))
                            (gamepad-move
                             `(axis :one-of (,(axis event)) :threshold ,(* (float-sign (pos event)) threshold)))))
+         (action-binding (if (eql edge :rise) action-binding
+                             (append action-binding (list :edge edge))))
          (pruned (loop for action in (cddr binding)
                        unless (find (first action)
                                     (etypecase event
