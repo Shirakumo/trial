@@ -23,8 +23,10 @@
 (defun language-files (language)
   (directory (make-pathname :name :wild :type "lisp" :defaults (language-dir language))))
 
-(defmethod load-language (&optional (language (setting :language)))
-  (let ((table (make-hash-table :test 'eq)))
+(defmethod load-language (&optional (language (setting :language)) replace)
+  (let ((table (if (or replace (null +language-data+))
+                   (make-hash-table :test 'eq)
+                   +language-data+)))
     (v:info :trial.language "Loading language ~s from ~a" language (language-file language))
     (with-trial-io-syntax ()
       (with-open-file (stream (language-file language))
