@@ -147,13 +147,15 @@
    (or (first (uiop:command-line-arguments))
        *default-pathname-defaults*)))
 
+(defvar *open-in-browser-hook* (constantly NIL))
 (defun open-in-browser (url)
-  #+windows
-  (uiop:run-program (list "rundll32" "url.dll,FileProtocolHandler" url))
-  #+linux
-  (uiop:run-program (list "xdg-open" url))
-  #+darwin
-  (uiop:run-program (list "open" url)))
+  (or (funcall *open-in-browser-hook* url)
+      #+windows
+      (uiop:run-program (list "rundll32" "url.dll,FileProtocolHandler" url))
+      #+linux
+      (uiop:run-program (list "xdg-open" url))
+      #+darwin
+      (uiop:run-program (list "open" url))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun kw (thing)

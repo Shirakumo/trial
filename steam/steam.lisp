@@ -17,6 +17,12 @@
    (#:steam* #:org.shirakumo.fraf.steamworks.cffi)))
 (in-package #:org.shirakumo.fraf.trial.steam)
 
+(setf trial::*open-in-browser-hook*
+      (lambda (url)
+        (when (steam:steamworks-available-p)
+          (steam:activate-overlay (steam:interface 'steam:steamfriends T) :url url)
+          T)))
+
 (defun action-label (action)
   (let ((action (etypecase action
                   (symbol action)
