@@ -11,7 +11,8 @@
    #:report-files
    #:define-report-hook
    #:find-user-id
-   #:submit-report))
+   #:submit-report
+   #:submit-snapshot))
 (in-package #:org.shirakumo.fraf.trial.feedback)
 
 (defvar *report-hooks* ())
@@ -60,7 +61,7 @@
    (pathname-utils:directory-name (user-homedir-pathname))
    "anonymous"))
 
-(defun submit-report (&key (project trial:+app-system+) (user (find-user-id)) (files () files-p) description version)
+(defun submit-report (&key (project trial:+app-system+) (user (find-user-id)) (files () files-p) description (version (trial:version :app)))
   (let ((files (if files-p files
                    (handler-bind ((error #'continue))
                      (report-files)))))
@@ -70,10 +71,20 @@
       (org.shirakumo.dns-client:query "feedback.tymoon.eu" :dns-servers org.shirakumo.dns-client:*google-servers*)
       (apply #'org.shirakumo.feedback.client:submit
              project user
-             :version (or version (trial:version :app))
+             :version version
              :description description
              :attachments files
              *client-args*))))
+
+(defun submit-snapshot (session-id session-duration snapshot-duration &key (project trial:+app-system+) (user (find-user-id)) trace (version (trial:version :app)))
+  (handler-bind ((error (lambda (e)
+                          (v:debug :trial.report e)
+                          (v:error :trial.report "Failed to submit snapshot: ~a" e))))
+    (org.shirakumo.dns-client:query "feedback.tymoon.eu" :dns-servers org.shirakumo.dns-client:*google-servers*)
+    (apply #'org.shirakumo.feedback.client:submit-snapshot
+           project user session-id session-duration snapshot-duration
+           :version version :trace trace
+           *client-args*)))
 
 (defun trial:standalone-error-handler (err &optional (category :trial))
   (when (and (deploy:deployed-p) (not trial:*inhibit-standalone-error-handler*))
