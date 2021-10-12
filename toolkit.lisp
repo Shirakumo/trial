@@ -151,11 +151,19 @@
 (defun open-in-browser (url)
   (or (funcall *open-in-browser-hook* url)
       #+windows
-      (uiop:run-program (list "rundll32" "url.dll,FileProtocolHandler" url))
+      (uiop:launch-program (list "rundll32" "url.dll,FileProtocolHandler" url))
       #+linux
-      (uiop:run-program (list "xdg-open" url))
+      (uiop:launch-program (list "xdg-open" url))
       #+darwin
-      (uiop:run-program (list "open" url))))
+      (uiop:launch-program (list "open" url))))
+
+(defun open-in-file-manager (path)
+  #+windows
+  (uiop:launch-program (list "explorer.exe" (uiop:native-namestring path)))
+  #+linux
+  (uiop:launch-program (list "xdg-open" (uiop:native-namestring path)))
+  #+darwin
+  (uiop:launch-program (list "open" (uiop:native-namestring path))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun kw (thing)

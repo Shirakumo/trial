@@ -854,6 +854,7 @@
    #:current-time
    #:executable-directory
    #:open-in-browser
+   #:open-in-file-manager
    #:kw
    #:enlist
    #:unlist
