@@ -68,8 +68,10 @@
       (mouse (make-instance (ecase edge ((:rise :rise-only) 'mouse-press) ((:fall :fall-only) 'mouse-release))
                             :button (first one-of)))
       (button (make-instance (ecase edge ((:rise :rise-only) 'gamepad-press) ((:fall :fall-only) 'gamepad-release))
+                             :device NIL
                              :button (first one-of)))
       (axis (make-instance 'gamepad-move
+                           :device NIL
                            :axis (first one-of)
                            :old-pos (ecase edge ((:rise :rise-only) 0.0) ((:fall :fall-only) threshold))
                            :pos (ecase edge ((:rise :rise-only) threshold) ((:fall :fall-only) 0.0)))))))
