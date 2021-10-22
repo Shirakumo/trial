@@ -154,7 +154,7 @@
   (cl-glfw3:show-window (window context))
   (cond (f-p
          (destructuring-bind (w h &optional (r %glfw:+dont-care+)) (or mode (cl-glfw3:get-window-size (window context)))
-           (cl-glfw3:set-window-monitor (when fullscreen (cl-glfw3:get-primary-monitor))
+           (cl-glfw3:set-window-monitor (when fullscreen (find-best-monitor (window context)))
                                         w h :window (window context) :refresh-rate r))
          (unless fullscreen
            (center-window (window context))))
@@ -230,7 +230,7 @@
                        (> ah bh))
                    (> aw bw))))))
     (sort (delete-duplicates
-           (loop for mode in (cl-glfw3:get-video-modes (cl-glfw3:get-primary-monitor))
+           (loop for mode in (cl-glfw3:get-video-modes (find-best-monitor (window context)))
                  collect (list (getf mode '%CL-GLFW3:WIDTH)
                                (getf mode '%CL-GLFW3:HEIGHT)
                                (getf mode '%CL-GLFW3::REFRESH-RATE)))
