@@ -26,4 +26,5 @@
    #:define-set-representation
    #:asset
    #:resource
+   #:monitor
    #:video-mode))

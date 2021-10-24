@@ -148,7 +148,31 @@
             (when (typep resource type)
               (push resource values))))))))
 
-(define-set-representation video-mode
-  :item-text (destructuring-bind (w h &optional r) alloy:value
-               (format NIL "~a x ~a~@[ @ ~aHz~]" w h r))
-  (trial:list-video-modes trial:*context*))
+(define-set-representation monitor
+  :item-text trial:name
+  (trial:list-monitors trial:*context*))
+
+(defclass video-mode-item (alloy:combo-item)
+  ())
+
+(defmethod alloy:text ((item video-mode-item))
+  (destructuring-bind (w h &optional r monitor) (alloy:value item)
+    (declare (ignore monitor))
+    (format nil "~a x ~a~@[ @ ~aHz~]" w h r)))
+
+(defclass video-mode (alloy:combo)
+  ((monitor :initarg :monitor :initform trial:*context* :accessor trial:monitor)))
+
+(defmethod (setf trial:monitor) :after (monitor (mode video-mode))
+  (alloy:notify-observers 'value-set mode monitor mode))
+
+(defmethod alloy:value-set ((video-mode video-mode))
+  (trial:list-video-modes (trial:monitor video-mode)))
+
+(defmethod alloy:text ((video-mode video-mode))
+  (destructuring-bind (w h &optional r monitor) (alloy:value video-mode)
+    (declare (ignore monitor))
+    (format nil "~a x ~a~@[ @ ~aHz~]" w h r)))
+
+(defmethod alloy:combo-item (item (video-mode video-mode))
+  (make-instance 'video-mode-item :value item))

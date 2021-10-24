@@ -15,6 +15,15 @@
 (cffi:defcfun (window-hint-string "glfwWindowHintString") :void
   (target :int) (hint :string))
 
+(defstruct (monitor
+            (:constructor %make-monitor (pointer))
+            (:copier NIL)
+            (:predicate NIL))
+  (pointer))
+
+(defmethod name ((monitor monitor))
+  (%glfw:get-monitor-name (monitor-pointer monitor)))
+
 (defclass context (trial:context)
   ((title :initarg :title :accessor title)
    (cursor-visible :initform T :accessor cursor-visible)
@@ -113,9 +122,11 @@
         (let ((window (%glfw:create-window (getf initargs :width)
                                            (getf initargs :height)
                                            (title context)
-                                           (if (getf initargs :fullscreen)
-                                               (%glfw:get-primary-monitor)
-                                               (cffi:null-pointer))
+                                           (etypecase (getf initargs :fullscreen)
+                                             ((eql T) (%glfw:get-primary-monitor))
+                                             ((eql NIL) (cffi:null-pointer))
+                                             (string (or (find-monitor context (getf initargs :fullscreen))
+                                                         (cffi:null-pointer))))
                                            (if (shared-with context)
                                                (window (shared-with context))
                                                (cffi:null-pointer)))))
@@ -153,11 +164,15 @@
 (defmethod show ((context context) &key (fullscreen NIL f-p) mode)
   (cl-glfw3:show-window (window context))
   (cond (f-p
-         (destructuring-bind (w h &optional (r %glfw:+dont-care+)) (or mode (cl-glfw3:get-window-size (window context)))
-           (cl-glfw3:set-window-monitor (when fullscreen (find-best-monitor (window context)))
-                                        w h :window (window context) :refresh-rate r))
+         (destructuring-bind (w h &optional (r %glfw:+dont-care+) monitor)
+             (or mode (cl-glfw3:get-window-size (window context)))
+           (let ((monitor (etypecase monitor
+                            (null (current-monitor context))
+                            (monitor (monitor-pointer monitor))
+                            (string (monitor-pointer (find-monitor monitor context))))))
+             (cl-glfw3:set-window-monitor (when fullscreen monitor) w h :window (window context) :refresh-rate r)))
          (unless fullscreen
-           (center-window (window context))))
+           (center-window context)))
         ((print mode)
          (resize context (first mode) (second mode)))))
 
@@ -168,7 +183,7 @@
 (defmethod resize ((context context) width height)
   (v:info :trial.backend.glfw "Resizing window to ~ax~a" width height)
   (cl-glfw3:set-window-size width height (window context))
-  (center-window (window context)))
+  (center-window context))
 
 (defmethod quit ((context context))
   (cl-glfw3:set-window-should-close (window context) T))
@@ -219,23 +234,6 @@
 (defmethod version ((context context))
   (list (cl-glfw3:get-window-attribute :context-version-major (window context))
         (cl-glfw3:get-window-attribute :context-version-minor (window context))))
-
-(defmethod list-video-modes ((context context))
-  (flet ((mode> (a b)
-           (destructuring-bind (aw ah ar) a
-             (destructuring-bind (bw bh br) b
-               (if (= aw bw)
-                   (if (= ah bh)
-                       (> ar br)
-                       (> ah bh))
-                   (> aw bw))))))
-    (sort (delete-duplicates
-           (loop for mode in (cl-glfw3:get-video-modes (find-best-monitor (window context)))
-                 collect (list (getf mode '%CL-GLFW3:WIDTH)
-                               (getf mode '%CL-GLFW3:HEIGHT)
-                               (getf mode '%CL-GLFW3::REFRESH-RATE)))
-           :test #'equal)
-          #'mode>)))
 
 (defmethod clipboard ((context context))
   (glfw:get-clipboard-string (window context)))
@@ -385,9 +383,10 @@
     (:grave-accent :section)
     (T key)))
 
-(defun find-best-monitor (window)
+(defmethod current-monitor ((context context))
   (let* ((monitors (glfw:get-monitors))
-         (best (first monitors)))
+         (best (first monitors))
+         (window (window context)))
     (destructuring-bind (ww wh) (glfw:get-window-size window)
       (destructuring-bind (wx wy) (glfw:get-window-position window)
         (flet ((monitor-area (monitor)
@@ -398,17 +397,43 @@
                           (x+ (min (+ wx ww) (+ mx (getf mode '%glfw:width))))
                           (y+ (min (+ wy wh) (+ my (getf mode '%glfw:height)))))
                      (* (- x+ x-) (- y+ y-))))))
-          (dolist (monitor (rest monitors) best)
+          (dolist (monitor (rest monitors) (%make-monitor best))
             (when (< (monitor-area best) (monitor-area monitor))
               (setf best monitor))))))))
 
-(defun center-window (window &optional (monitor (find-best-monitor window)))
-  (let ((mode (glfw:get-video-mode monitor)))
+(defmethod list-monitors ((contex context))
+  (mapcar #'%make-monitor (glfw:get-monitors)))
+
+(defun center-window (context)
+  (let* ((window (window context))
+         (monitor (monitor-pointer (current-monitor context)))
+         (mode (glfw:get-video-mode monitor)))
     (destructuring-bind (x y) (glfw:get-monitor-position monitor)
       (destructuring-bind (w h) (glfw:get-window-size window)
         (glfw:set-window-position (+ x (floor (- (getf mode '%glfw:width) w) 2))
                                   (+ y (floor (- (getf mode '%glfw:height) h) 2))
-                                  window)))))
+                                  (name window))))))
+
+(defmethod list-video-modes ((context context))
+  (list-video-modes (current-monitor context)))
+
+(defmethod list-video-modes ((monitor monitor))
+  (flet ((mode> (a b)
+           (destructuring-bind (aw ah ar) a
+             (destructuring-bind (bw bh br) b
+               (if (= aw bw)
+                   (if (= ah bh)
+                       (> ar br)
+                       (> ah bh))
+                   (> aw bw))))))
+    (sort (delete-duplicates
+           (loop for mode in (cl-glfw3:get-video-modes (monitor-pointer monitor))
+                 collect (list (getf mode '%CL-GLFW3:WIDTH)
+                               (getf mode '%CL-GLFW3:HEIGHT)
+                               (getf mode '%CL-GLFW3::REFRESH-RATE)
+                               monitor))
+           :test #'equal)
+          #'mode>)))
 
 ;; Runtime support for Wayland and X11
 #+linux

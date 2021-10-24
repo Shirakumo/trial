@@ -86,7 +86,10 @@
 (defgeneric (setf title) (value context))
 (defgeneric vsync (context))
 (defgeneric (setf vsync) (mode context))
-(defgeneric list-video-modes (context))
+(defgeneric current-monitor (context))
+(defgeneric list-monitors (context))
+(defgeneric list-video-modes (monitor))
+(defgeneric find-monitor (name context))
 (defgeneric clipboard (context))
 (defgeneric (setf clipboard) (value context))
 
@@ -157,6 +160,9 @@
             (T
              (v:warn :trial.context "~a attempted to release ~a even though ~a is active."
                      this context *context*))))))
+
+(defmethod find-monitor (name (contex context))
+  (find name (list-monitors context) :key #'name :test #'string=))
 
 (defclass resize (event)
   ((width :initarg :width :reader width)

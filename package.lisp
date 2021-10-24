@@ -242,6 +242,9 @@
    #:version
    #:resize
    #:list-video-modes
+   #:current-monitor
+   #:list-monitors
+   #:find-monitor
    #:clipboard
    #:gain-focus
    #:lose-focus
