@@ -210,6 +210,8 @@
    #:with-context
    #:launch-with-context
    #:make-context
+   #:monitor
+   #:name
    #:context
    #:current-thread
    #:context-waiting

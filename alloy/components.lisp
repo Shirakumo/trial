@@ -149,6 +149,7 @@
               (push resource values))))))))
 
 (define-set-representation monitor
+  :represents trial:monitor
   :item-text trial:name
   (trial:list-monitors trial:*context*))
 
@@ -161,9 +162,9 @@
     (format nil "~a x ~a~@[ @ ~aHz~]" w h r)))
 
 (defclass video-mode (alloy:combo)
-  ((monitor :initarg :monitor :initform trial:*context* :accessor trial:monitor)))
+  ((monitor :initarg :monitor :initform trial:*context* :accessor monitor)))
 
-(defmethod (setf trial:monitor) :after (monitor (mode video-mode))
+(defmethod (setf monitor) :after (monitor (mode video-mode))
   (alloy:notify-observers 'value-set mode monitor mode))
 
 (defmethod alloy:value-set ((video-mode video-mode))

@@ -15,14 +15,11 @@
 (cffi:defcfun (window-hint-string "glfwWindowHintString") :void
   (target :int) (hint :string))
 
-(defstruct (monitor
-            (:constructor %make-monitor (pointer))
-            (:copier NIL)
-            (:predicate NIL))
-  (pointer))
+(defclass monitor (trial:monitor)
+  ((pointer :initarg :pointer :reader pointer)))
 
 (defmethod name ((monitor monitor))
-  (%glfw:get-monitor-name (monitor-pointer monitor)))
+  (%glfw:get-monitor-name (pointer monitor)))
 
 (defclass context (trial:context)
   ((title :initarg :title :accessor title)
@@ -30,6 +27,7 @@
    (mouse-pos :initform (vec 0 0) :accessor mouse-pos)
    (initargs :initform NIL :accessor initargs)
    (window :initform NIL :accessor window)
+   (monitors :initform () :accessor monitors)
    (vsync :initarg :vsync :accessor vsync))
   (:default-initargs
    :resizable T
@@ -125,8 +123,10 @@
                                            (etypecase (getf initargs :fullscreen)
                                              ((eql T) (%glfw:get-primary-monitor))
                                              ((eql NIL) (cffi:null-pointer))
-                                             (string (or (find-monitor context (getf initargs :fullscreen))
-                                                         (cffi:null-pointer))))
+                                             (string (let ((monitor (find-monitor context (getf initargs :fullscreen))))
+                                                       (if monitor
+                                                           (pointer monitor)
+                                                           (cffi:null-pointer)))))
                                            (if (shared-with context)
                                                (window (shared-with context))
                                                (cffi:null-pointer)))))
@@ -366,6 +366,15 @@
                 (handler context))
         (setf (mouse-pos context) current)))))
 
+(cl-glfw3:def-monitor-callback ctx-monitor (monitor event)
+  (ecase event
+    (:connected
+     (loop for context being the hash-values of *window-table*
+           do (push (make-instance 'monitor :pointer monitor) (monitors context))))
+    (:disconnected
+     (loop for context being the hash-values of *window-table*
+           do (setf (monitors context) (remove monitor (monitors context) :test #'cffi:pointer-eq :key #'pointer))))))
+
 (defun glfw-button->button (button)
   (case button
     ((:1 :left) :left)
@@ -397,16 +406,20 @@
                           (x+ (min (+ wx ww) (+ mx (getf mode '%glfw:width))))
                           (y+ (min (+ wy wh) (+ my (getf mode '%glfw:height)))))
                      (* (- x+ x-) (- y+ y-))))))
-          (dolist (monitor (rest monitors) (%make-monitor best))
+          (dolist (monitor (rest monitors))
             (when (< (monitor-area best) (monitor-area monitor))
-              (setf best monitor))))))))
+              (setf best monitor)))
+          (find best (list-monitors context) :test #'cffi:pointer-eq :key #'pointer))))))
 
-(defmethod list-monitors ((contex context))
-  (mapcar #'%make-monitor (glfw:get-monitors)))
+(defmethod list-monitors ((context context))
+  (or (monitors context)
+      (setf (monitors context)
+            (loop for pointer in (glfw:get-monitors)
+                  collect (make-instance 'monitor :pointer pointer)))))
 
 (defun center-window (context)
   (let* ((window (window context))
-         (monitor (monitor-pointer (current-monitor context)))
+         (monitor (pointer (current-monitor context)))
          (mode (glfw:get-video-mode monitor)))
     (destructuring-bind (x y) (glfw:get-monitor-position monitor)
       (destructuring-bind (w h) (glfw:get-window-size window)
@@ -427,7 +440,7 @@
                        (> ah bh))
                    (> aw bw))))))
     (sort (delete-duplicates
-           (loop for mode in (cl-glfw3:get-video-modes (monitor-pointer monitor))
+           (loop for mode in (cl-glfw3:get-video-modes (pointer monitor))
                  collect (list (getf mode '%CL-GLFW3:WIDTH)
                                (getf mode '%CL-GLFW3:HEIGHT)
                                (getf mode '%CL-GLFW3::REFRESH-RATE)

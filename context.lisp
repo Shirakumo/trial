@@ -36,6 +36,9 @@
   (error "No context implementation is present.~%~
           Please load a Trial backend."))
 
+(defclass monitor ()
+  ())
+
 (defclass context ()
   ((current-thread :initform NIL :accessor current-thread)
    (waiting :initform 0 :accessor context-waiting)
