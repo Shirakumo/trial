@@ -432,13 +432,16 @@
 
 (defmethod list-video-modes ((monitor monitor))
   (flet ((mode> (a b)
-           (destructuring-bind (aw ah ar) a
-             (destructuring-bind (bw bh br) b
-               (if (= aw bw)
-                   (if (= ah bh)
-                       (> ar br)
-                       (> ah bh))
-                   (> aw bw))))))
+           (destructuring-bind (aw ah ar am) a
+             (destructuring-bind (bw bh br bm) b
+               (if (eq am bm)
+                   (if (= aw bw)
+                       (if (= ah bh)
+                           (> ar br)
+                           (> ah bh))
+                       (> aw bw))
+                   (< (cffi:pointer-address (pointer am))
+                      (cffi:pointer-address (pointer bm))))))))
     (sort (delete-duplicates
            (loop for mode in (cl-glfw3:get-video-modes (pointer monitor))
                  collect (list (getf mode '%CL-GLFW3:WIDTH)

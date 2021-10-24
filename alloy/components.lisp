@@ -162,7 +162,7 @@
     (format nil "~a x ~a~@[ @ ~aHz~]" w h r)))
 
 (defclass video-mode (alloy:combo)
-  ((monitor :initarg :monitor :initform trial:*context* :accessor monitor)))
+  ((monitor :initarg :monitor :initform trial:*context* :accessor trial:monitor)))
 
 (defmethod (setf monitor) :after (monitor (mode video-mode))
   (alloy:notify-observers 'value-set mode monitor mode))
