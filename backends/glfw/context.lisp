@@ -441,14 +441,13 @@
                            (> ar br)
                            (> ah bh))
                        (> aw bw))
-                   (< (cffi:pointer-address (pointer am))
-                      (cffi:pointer-address (pointer bm))))))))
+                   (string> am bm))))))
     (sort (delete-duplicates
            (loop for mode in (cl-glfw3:get-video-modes (pointer monitor))
                  collect (list (getf mode '%CL-GLFW3:WIDTH)
                                (getf mode '%CL-GLFW3:HEIGHT)
                                (getf mode '%CL-GLFW3::REFRESH-RATE)
-                               monitor))
+                               (name monitor)))
            :test #'equal)
           #'mode>)))
 

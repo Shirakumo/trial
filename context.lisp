@@ -164,7 +164,7 @@
              (v:warn :trial.context "~a attempted to release ~a even though ~a is active."
                      this context *context*))))))
 
-(defmethod find-monitor (name (contex context))
+(defmethod find-monitor (name (context context))
   (find name (list-monitors context) :key #'name :test #'string=))
 
 (defclass resize (event)
