@@ -426,7 +426,7 @@
       (destructuring-bind (w h) (glfw:get-window-size window)
         (glfw:set-window-position (+ x (floor (- (getf mode '%glfw:width) w) 2))
                                   (+ y (floor (- (getf mode '%glfw:height) h) 2))
-                                  (name window))))))
+                                  window)))))
 
 (defmethod list-video-modes ((context context))
   (list-video-modes (current-monitor context)))
