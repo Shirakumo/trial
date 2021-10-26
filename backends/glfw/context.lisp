@@ -167,9 +167,10 @@
          (destructuring-bind (w h &optional (r %glfw:+dont-care+) monitor)
              (or mode (cl-glfw3:get-window-size (window context)))
            (let ((monitor (etypecase monitor
-                            (null (current-monitor context))
-                            (monitor (monitor-pointer monitor))
-                            (string (monitor-pointer (find-monitor monitor context))))))
+                            (null (pointer (current-monitor context)))
+                            (cffi:foreign-pointer monitor)
+                            (monitor (pointer monitor))
+                            (string (pointer (find-monitor monitor context))))))
              (cl-glfw3:set-window-monitor (when fullscreen monitor) w h :window (window context) :refresh-rate r)))
          (unless fullscreen
            (center-window context)))
