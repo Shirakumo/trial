@@ -26,8 +26,14 @@
                #+sbcl
                ((typep ,datag 'sb-kernel:simple-unboxed-array)
                 (sb-sys:with-pinned-objects (,datag)
-                  (let ((,ptr (sb-sys:vector-sap ,datag)))
-                    (,thunk ,ptr))))
+                  (,thunk (sb-sys:vector-sap ,datag))))
+               #+sbcl
+               (T
+                (sb-kernel:with-array-data ((,ptr ,datag) (#1=#:start) (#2=#:end) :force-inline T)
+                  (declare (ignore #1# #2#))
+                  (sb-sys:with-pinned-objects (,ptr)
+                    (,thunk (sb-sys:vector-sap ,ptr)))))
+               #-sbcl
                (T
                 (let ((,type (cl-type->gl-type ,(or element-type `(array-element-type ,datag)))))
                   (cffi:with-foreign-object (,ptr ,type (length ,datag))
