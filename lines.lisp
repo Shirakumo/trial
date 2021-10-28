@@ -7,11 +7,12 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (define-shader-entity lines (vertex-entity)
-  ((line-width :initarg :line-width :initform 3.0 :accessor line-width))
+  ((line-width :initarg :line-width :initform 3.0 :accessor line-width)
+   (vertex-array :initform NIL))
   (:inhibit-shaders (vertex-entity :vertex-shader)))
 
-(defmethod initialize-instance :after ((lines lines) &key vertex-array points)
-  (unless vertex-array
+(defmethod initialize-instance :after ((lines lines) &key points)
+  (unless (vertex-array lines)
     (setf (vertex-array lines) (generate-resources 'mesh-loader (make-lines points) :data-usage :dynamic-draw))))
 
 (defmethod replace-vertex-data ((lines lines) points &key (update T) (default-color (vec 0 0 0 1)))
