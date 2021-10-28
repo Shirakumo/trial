@@ -28,12 +28,10 @@
                 (sb-sys:with-pinned-objects (,datag)
                   (,thunk (sb-sys:vector-sap ,datag))))
                #+sbcl
-               (T
-                (sb-kernel:with-array-data ((,ptr ,datag) (#1=#:start) (#2=#:end) :force-inline T)
-                  (declare (ignore #1# #2#))
+               ((typep ,datag '(and vector (not simple-array)))
+                (let ((,ptr (sb-ext:array-storage-vector ,datag)))
                   (sb-sys:with-pinned-objects (,ptr)
                     (,thunk (sb-sys:vector-sap ,ptr)))))
-               #-sbcl
                (T
                 (let ((,type (cl-type->gl-type ,(or element-type `(array-element-type ,datag)))))
                   (cffi:with-foreign-object (,ptr ,type (length ,datag))
@@ -100,7 +98,7 @@
   (declare (optimize speed))
   (declare (type (unsigned-byte 32) offset))
   (let* ((type (or gl-type (cl-type->gl-type (array-element-type data))))
-         (type-size (gl-type-size type))
+         (type-size (the (unsigned-byte 16) (gl-type-size type)))
          (offset (* offset type-size))
          (size (- (the (unsigned-byte 32) (* (length data) type-size)) offset)))
     (with-pointer-to-vector-data (ptr data)
