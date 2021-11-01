@@ -6,6 +6,8 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(define-global +current-shader-program+ NIL)
+
 (defclass shader-program (gl-resource)
   ((uniform-map :initform (make-hash-table :test 'equal) :accessor uniform-map)
    (shaders :initarg :shaders :accessor shaders)
@@ -150,3 +152,7 @@
                           :type type
                           :name name
                           :location (uniform-location program name))))))
+
+(defmethod activate ((program shader-program))
+  (unless (eq +current-shader-program+ program)
+    (gl:use-program (gl-name program))))

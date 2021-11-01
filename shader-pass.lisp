@@ -206,6 +206,7 @@
   (let ((*print-case* (readtable-case *readtable*))
         (units (loop for i downfrom (1- units) to 0 collect i)))
     `(lambda (program)
+       (declare (optimize speed (safety 0)))
        (gl:use-program (gl-name program))
        ,@(loop with texture-index = units
                for slot in (c2mop:class-slots (class-of pass))
@@ -225,6 +226,11 @@
     (unless fun
       (setf fun (setf (prepare-pass-program-fun pass) (compile NIL (generate-prepare-pass-program pass)))))
     (funcall fun program)))
+
+(defmethod prepare-pass-program :around ((pass shader-pass) (program shader-program))
+  (unless (eq +current-shader-program+ program)
+    (setf +current-shader-program+ program)
+    (call-next-method)))
 
 (defmethod blit-to-screen ((pass shader-pass))
   (blit-to-screen (framebuffer pass)))
