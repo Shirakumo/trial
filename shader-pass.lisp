@@ -285,10 +285,12 @@
 
 (defmethod compile-to-pass :after ((object flare:container) (pass scene-pass))
   (for:for ((child over object))
-    (compile-to-pass child pass)
-    ;; KLUDGE: We can't do this in another method for the OBJECT, as the
-    ;;         AROUND for TRANSFORMED must happen before we finish the group.
-    (finish-pass-group pass child)))
+    (when (or (object-renderable-p child pass)
+              (typep child 'flare:container))
+      (compile-to-pass child pass)
+      ;; KLUDGE: We can't do this in another method for the OBJECT, as the
+      ;;         AROUND for TRANSFORMED must happen before we finish the group.
+      (finish-pass-group pass child))))
 
 (defmethod compile-to-pass :around ((scene scene) (pass scene-pass))
   (flare-queue:clear-queue (actions pass))
@@ -296,7 +298,12 @@
   (setf (guards pass) (cons (flare-queue::head (actions pass))
                             (flare-queue::tail (actions pass))))
   (call-next-method)
-  (finish-pass-group pass scene))
+  (finish-pass-group pass scene)
+  #++
+  (progn
+    (format T "~&~% >>>> ~a" pass)
+    (for:for ((a over (actions pass)))
+      (print a))))
 
 (defmethod remove-from-pass ((entity entity) (pass scene-pass))
   (when (gethash entity (group-pointers pass))
