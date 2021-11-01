@@ -51,7 +51,9 @@
 
 (defmethod preceding-entity ((thing entity) (container flare:container))
   (multiple-value-bind (last valid-p) (flare-indexed-set:set-last (objects container))
-    (when valid-p (flare-queue:value last))))
+    (when valid-p
+      (let ((last (flare-queue:value last)))
+        (unless (eq last thing) last)))))
 
 (defmethod enter* ((thing entity) (container container))
   (compile-into-pass thing container *scene*)
