@@ -29,8 +29,8 @@
   (resize scene (width event) (height event)))
 
 (defmethod enter* ((thing entity) (scene pipelined-scene))
-  (enter thing scene)
-  (compile-into-pass thing scene scene))
+  (compile-into-pass thing scene scene)
+  (enter thing scene))
 
 (defmethod leave* ((thing entity) (scene pipelined-scene))
   (leave thing scene)

@@ -330,7 +330,7 @@
           while prev
           do (when guards
                (return (compile-into-pass entity prev pass)))
-          finally (compile-into-pass entity NIL pass))))
+          finally (compile-into-pass-flush entity container pass))))
 
 (defmethod compile-into-pass ((entity entity) (previous entity) (pass scene-pass))
   (destructuring-bind (start . end) (gethash previous (group-pointers pass))
@@ -340,14 +340,16 @@
     (finish-pass-group pass entity)))
 
 (defmethod compile-into-pass ((entity entity) (previous null) (pass scene-pass))
-  (let ((container (container entity)))
-    (destructuring-bind (start . end) (gethash container (group-pointers pass))
-      (declare (ignore end))
-      (when (typep container 'transformed)
-        (setf start (flare-queue:right (flare-queue:right start))))
-      (setf (guards pass) (cons start (flare-queue:right start)))
-      (compile-to-pass entity pass)
-      (finish-pass-group pass entity))))
+  (compile-into-pass-flush entity (container entity) pass))
+
+(defun compile-into-pass-flush (entity container pass)
+  (destructuring-bind (start . end) (gethash container (group-pointers pass))
+    (declare (ignore end))
+    (when (typep container 'transformed)
+      (setf start (flare-queue:right (flare-queue:right start))))
+    (setf (guards pass) (cons start (flare-queue:right start)))
+    (compile-to-pass entity pass)
+    (finish-pass-group pass entity)))
 
 (defmethod handle ((ev class-changed) (pass scene-pass))
   (call-next-method)
