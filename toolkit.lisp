@@ -913,9 +913,9 @@
 
 (defun infer-pixel-type (depth type)
   (ecase depth
-    ( 8 (ecase type
-          (:signed :byte)
-          (:unsigned :unsigned-byte)))
+    ((1 8) (ecase type
+            (:signed :byte)
+            (:unsigned :unsigned-byte)))
     (16 (ecase type
           (:signed :short)
           (:unsigned :unsigned-short)
