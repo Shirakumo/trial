@@ -80,7 +80,7 @@
           (trial:with-thread ("asset-watcher")
             (loop while (file-watch-thread main)
                   do (with-simple-restart (abort "Ignore the error.")
-                       (process-changes :timeout 0.1)))))))
+                       (process-changes :timeout 0.5)))))))
 
 (defmethod trial:finalize :after ((main main))
   (trial:with-thread-exit ((file-watch-thread main))
