@@ -28,7 +28,9 @@
    (initargs :initform NIL :accessor initargs)
    (window :initform NIL :accessor window)
    (monitors :initform () :accessor monitors)
-   (vsync :initarg :vsync :accessor vsync))
+   (vsync :initarg :vsync :accessor vsync)
+   (width :initform 1 :accessor width)
+   (height :initform 1 :accessor height))
   (:default-initargs
    :resizable T
    :visible T
@@ -134,6 +136,10 @@
             (error "Error creating context."))
           (setf (gethash (cffi:pointer-address window) *window-table*) context)
           (setf (window context) window)
+          (cffi:with-foreign-objects ((w :int) (h :int))
+            (cffi:foreign-funcall "glfwGetFramebufferSize" %glfw::window window :pointer w :pointer h :void)
+            (setf (width context) (cffi:mem-ref w :int))
+            (setf (height context) (cffi:mem-ref h :int)))
           (cl-glfw3:make-context-current window)
           (cl-glfw3:swap-interval (getf initargs :refresh-rate))
           (cl-glfw3:set-window-size-callback 'ctx-size window)
@@ -184,6 +190,8 @@
 (defmethod resize ((context context) width height)
   (v:info :trial.backend.glfw "Resizing window to ~ax~a" width height)
   (cl-glfw3:set-window-size width height (window context))
+  (setf (width context) width)
+  (setf (height context) height)
   (center-window context))
 
 (defmethod quit ((context context))
@@ -213,18 +221,6 @@
 
 (defmethod (setf vsync) :before (value (context context))
   (cl-glfw3:swap-interval (ecase value ((NIL :off) 0) ((:on T) 1) (:adaptive -1))))
-
-(defmethod width ((context context))
-  (cffi:with-foreign-objects ((w :int) (h :int))
-    (cffi:foreign-funcall "glfwGetFramebufferSize"
-		          %glfw::window (window context) :pointer w :pointer h :void)
-    (cffi:mem-ref w :int)))
-
-(defmethod height ((context context))
-  (cffi:with-foreign-objects ((w :int) (h :int))
-    (cffi:foreign-funcall "glfwGetFramebufferSize"
-		          %glfw::window (window context) :pointer w :pointer h :void)
-    (cffi:mem-ref h :int)))
 
 (defmethod profile ((context context))
   (ecase (cl-glfw3:get-window-attribute :opengl-profile (window context))
@@ -284,10 +280,11 @@
        (cffi:foreign-funcall "glfwGetWindowContentScale" :pointer window :pointer x :pointer y :void)
        (setf x-scale (cffi:mem-ref x :float))
        (setf y-scale (cffi:mem-ref y :float)))
-     (handle (make-instance 'resize
-                            :width (round (* x-scale w))
-                            :height (round (* y-scale h)))
-             (handler context)))))
+     (let ((w (round (* x-scale w)))
+           (h (round (* y-scale h))))
+       (setf (width context) w)
+       (setf (height context) h)
+       (handle (make-instance 'resize :width w :height h) (handler context))))))
 
 (cl-glfw3:def-window-focus-callback ctx-focus (window focusedp)
   (%with-context
