@@ -24,6 +24,7 @@
                       when keep collect k when keep collect v)))
       (setf context (setf (context display) (apply #'make-context NIL args)))))
   (setf (handler context) display)
+  (setf +matrix-index+ 0)
   (prevent-powersave)
   (with-context ((context display))
     (setup-rendering display)))
