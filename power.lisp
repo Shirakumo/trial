@@ -25,11 +25,11 @@
    (setf +mac-power-id+ 0)
    #+linux
    (unless +X11-display+
-     (setf +X11-display+ (xlib:open-default-display))
-     (xlib/dpms:dpms-disable +X11-display+)
-     (multiple-value-bind (timeout interval blank exposure) (xlib:screen-saver +X11-display+)
-       (declare (ignore timeout))
-       (xlib:set-screen-saver +X11-display+ 0 interval blank exposure)))))
+     (when (setf +X11-display+ (xlib:open-default-display))
+       (xlib/dpms:dpms-disable +X11-display+)
+       (multiple-value-bind (timeout interval blank exposure) (xlib:screen-saver +X11-display+)
+         (declare (ignore timeout))
+         (xlib:set-screen-saver +X11-display+ 0 interval blank exposure))))))
 
 (defun ping-powersave (tt)
   (when (< (+ 10 +powersave-timer+) tt)
@@ -47,7 +47,8 @@
                             :int)
       (setf +mac-power-id+ (cffi:mem-ref id :uint32)))
     #+linux
-    (xlib:reset-screen-saver +X11-display+)))
+    (when +X11-display+
+      (xlib:reset-screen-saver +X11-display+))))
 
 (defun restore-powersave ()
   (v:info :trial.power "Restoring powersaving.")
