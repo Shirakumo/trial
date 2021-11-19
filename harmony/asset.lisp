@@ -17,37 +17,54 @@
 (defclass sound-loader (trial:compiled-generator)
   ())
 
-(defmethod trial:compile-resources ((generator sound-loader) path &key (samplerate 44100) (sample-type :int16))
-  (when (string= "wav" (pathname-type path))
-    (let ((temp (make-pathname :type "temp.wav" :defaults path))
-          source-samplerate source-sample-type)
-      (loop for line in (cl-ppcre:split "\\n+" (run "ffprobe" "-hide_banner" "-loglevel" "error" "-i" path "-of" "flat=s=-" "-show_streams"))
-            do (when (search "sample_fmt" line)
-                 (setf source-sample-type
-                       (cond ((search "s16" line) :int16)
-                             ((search "s24" line) :int24)
-                             ((search "s32" line) :int32)
-                             ((search "u16" line) :uint16)
-                             ((search "u24" line) :uint24)
-                             ((search "u32" line) :uint32))))
-               (when (search "sample_rate" line)
-                 (setf source-samplerate (parse-integer line :start (+ 2 (position #\= line)) :end (1- (length line))))))
-      (unless (and (equal samplerate source-samplerate)
-                   (equal sample-type source-sample-type))
-        (v:info :trial.harmony "Reencoding sound file from ~a..." path)
-        (run "ffmpeg" "-hide_banner" "-loglevel" "error"
-             "-i" path
-             "-c:a" (format NIL "pcm_~ale"
-                            (case sample-type
-                              (:int16 "s16")
-                              (:int24 "s24")
-                              (:int32 "s32")
-                              (:uint16 "u16")
-                              (:uint24 "u24")
-                              (:uint32 "u32")))
-             "-ar" samplerate
-             temp)
-        (rename-file temp path)))))
+(defmethod trial:compile-resources ((generator sound-loader) path &key (samplerate 44100) (sample-type :int16) codec (source-file-type "wav") (quality 3))
+  (cond ((string= "wav" (pathname-type path))
+         (let ((temp (make-pathname :type "temp.wav" :defaults path))
+               source-samplerate source-sample-type)
+           (loop for line in (cl-ppcre:split "\\n+" (run "ffprobe" "-hide_banner" "-loglevel" "error" "-i" path "-of" "flat=s=-" "-show_streams"))
+                 do (when (search "sample_fmt" line)
+                      (setf source-sample-type
+                            (cond ((search "s16" line) :int16)
+                                  ((search "s24" line) :int24)
+                                  ((search "s32" line) :int32)
+                                  ((search "u16" line) :uint16)
+                                  ((search "u24" line) :uint24)
+                                  ((search "u32" line) :uint32))))
+                    (when (search "sample_rate" line)
+                      (setf source-samplerate (parse-integer line :start (+ 2 (position #\= line)) :end (1- (length line))))))
+           (unless (and (equal samplerate source-samplerate)
+                        (equal sample-type source-sample-type))
+             (v:info :trial.harmony "Reencoding sound file from ~a..." path)
+             (run "ffmpeg" "-hide_banner" "-loglevel" "error"
+                  "-i" path
+                  "-c:a" (format NIL "pcm_~ale"
+                                 (case sample-type
+                                   (:int16 "s16")
+                                   (:int24 "s24")
+                                   (:int32 "s32")
+                                   (:uint16 "u16")
+                                   (:uint24 "u24")
+                                   (:uint32 "u32")))
+                  "-ar" samplerate
+                  temp)
+             (rename-file temp path))))
+        (T
+         (let ((source (make-pathname :type source-file-type :defaults path)))
+           (when (and (not (equal path source))
+                      (probe-file source)
+                      (trial:recompile-needed-p path source))
+             (v:info :trial.harmony "Compiling sound from ~a...." path)
+             (run "ffmpeg" "-hide_banner" "-loglevel" "error"
+                  "-i" source
+                  "-c:a" (cond (codec codec)
+                               ((string-equal "oga" (pathname-type path)) "libvorbis")
+                               ((string-equal "flac" (pathname-type path)) "flac")
+                               ((string-equal "mp3" (pathname-type path)) "libmp3lame")
+                               ((string-equal "opus" (pathname-type path)) "libopus")
+                               (T (error "Unsupported file type ~s" (pathname-type path))))
+                  "-ar" samplerate
+                  "-qscale:a" quality
+                  "-y" path))))))
 
 (defmethod trial:generate-resources ((generator sound-loader) path &key (mixer :effect) effects repeat (repeat-start 0) (volume 1.0) (resource (trial:resource generator T)) max-distance min-distance)
   (trial::ensure-instance resource 'voice
