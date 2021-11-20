@@ -86,8 +86,8 @@
     (setf (animation sprite) 0)))
 
 (defmethod observe-generation ((sprite animated-sprite) (data sprite-data) result)
-  (setf (animations sprite) (animations data))
   (setf (frames sprite) (frames data))
+  (setf (animations sprite) (animations data))
   (unless (animation sprite)
     (setf (animation sprite) 0)))
 
