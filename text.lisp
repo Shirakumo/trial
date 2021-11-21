@@ -26,7 +26,7 @@
                  (vertex (+ x 7.0) 7.0 u1 1.0)
                  (vertex (+ x 0.0) 7.0 u0 1.0)
                  (vertex (+ x 0.0) 0.0 u0 0.0)
-                 (incf x 7.0))))
+                 (incf x 6.0))))
         (loop for char across text
               do (print-letter char))))
     array))
