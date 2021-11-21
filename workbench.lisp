@@ -8,8 +8,8 @@
 (defclass workbench (main) ()
   (:default-initargs :clear-color (vec 0.25 0.3 0.35 0)))
 
-(defun launch ()
-  (trial:launch 'workbench))
+(defun launch (&rest args)
+  (apply #'trial:launch 'workbench args))
 
 (define-pool workbench)
 
@@ -40,8 +40,9 @@
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
     (enter (make-instance 'trial::fps-counter) scene)
+    (enter (make-instance 'debug-text :text "HELLO and welcome back to VIDEO GAMES") scene)
     (enter (make-instance 'vertex-entity :vertex-array (// 'workbench 'grid)) scene)
     (enter (make-instance 'player) scene)
-    (enter (make-instance 'following-camera :target (unit 'player scene) :location (vec 0 100 -100)) scene)
+    (enter (make-instance 'following-camera :target (unit 'player scene) :location (vec 0 100 100)) scene)
     (enter (make-instance 'render-pass) scene))
   (maybe-reload-scene))

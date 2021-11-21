@@ -835,14 +835,10 @@
    #:maybe-free-static-vector)
   ;; text.lisp
   (:export
+   #:debug-text
    #:text
-   #:font
-   #:text
-   #:size
-   #:extent
-   #:text-extent
-   #:highlighted-text
-   #:color-regions)
+   #:foreground
+   #:background)
   ;; toolkit.lisp
   (:export
    #:*inhibit-standalone-error-handler*
