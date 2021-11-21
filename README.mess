@@ -5,11 +5,12 @@ Trial is a game engine written in Common Lisp. Unlike many other engines, it is 
 
 The project is still in its very early stages and may change heavily as new constraints become clear. As such there is no guarantee for API stability at this point and no documentation is available.
 
-Come talk to us at the #shirakumo channel on the Freenode IRC network if you're interested in this project.
+Come talk to us at the shirakumo channel, reachable through "lichat"(https://chat.tymoon.eu/?channel=shirakumo) or IRC on Libera.
 
 ## Projects Using Trial
 Here are a few games that are using Trial as their engine:
 
 - "Kandria"(https://kandria.com)
+- "Eternia: Pet Whisperer"(https://kandria.com/eternia)
 - "Rush"(https://shinmera.itch.io/rush)
 - "Outsider"(https://shinmera.itch.io/outsider)
