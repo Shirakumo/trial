@@ -185,6 +185,14 @@
         unless x collect k
         unless x collect v))
 
+(defmacro popf (list key)
+  (let ((value (gensym "VALUE"))
+        (ksym (gensym "KEY")))
+    `(let* ((,ksym ,key)
+            (,value (getf ,list ,ksym)))
+       (remf ,list ,ksym)
+       ,value)))
+
 (defmacro xor (a &rest options)
   (cond ((null options) a)
         (T

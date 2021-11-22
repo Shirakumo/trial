@@ -860,6 +860,7 @@
    #:enlist
    #:unlist
    #:remf*
+   #:popf
    #:one-of
    #:input-source
    #:input-value
