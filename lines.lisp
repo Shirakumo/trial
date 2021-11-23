@@ -16,7 +16,8 @@
     (setf (vertex-array lines) (generate-resources 'mesh-loader (make-lines points) :data-usage :dynamic-draw))))
 
 (defmethod replace-vertex-data ((lines lines) points &key (update T) (default-color (vec 0 0 0 1)))
-  (replace-vertex-data (vertex-array lines) (make-lines points :default-color default-color) :update update))
+  (replace-vertex-data (vertex-array lines) (make-lines points :default-color default-color) :update update)
+  (setf (size (vertex-array lines)) (* 3 (length points))))
 
 (defmethod render :before ((lines lines) (program shader-program))
   (setf (uniform program "line_width") (float (line-width lines)))
