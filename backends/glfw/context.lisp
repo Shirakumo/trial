@@ -238,6 +238,32 @@
 (defmethod (setf clipboard) ((text string) (context context))
   (glfw:set-clipboard-string text (window context)))
 
+(defmethod cursor-position ((context context))
+  (cffi:with-foreign-objects ((x :double) (y :double))
+    (cffi:foreign-funcall "glfwGetCursorPos" :pointer (window context) :pointer x :pointer y :void)
+    (let ((x-scale 1.0)
+          (y-scale 1.0))
+      #+darwin
+      (cffi:with-foreign-objects ((x :float) (y :float))
+        (cffi:foreign-funcall "glfwGetWindowContentScale" :pointer window :pointer x :pointer y :void)
+        (setf x-scale (cffi:mem-ref x :float))
+        (setf y-scale (cffi:mem-ref y :float)))
+      (vec (* x-scale (cffi:mem-ref x :double))
+           (* y-scale (- (second (cl-glfw3:get-window-size (window context))) (cffi:mem-ref y :double)))))))
+
+(defmethod (setf cursor-position) (pos (context context))
+  (let ((x-scale 1.0)
+        (y-scale 1.0))
+    #+darwin
+    (cffi:with-foreign-objects ((x :float) (y :float))
+      (cffi:foreign-funcall "glfwGetWindowContentScale" :pointer window :pointer x :pointer y :void)
+      (setf x-scale (cffi:mem-ref x :float))
+      (setf y-scale (cffi:mem-ref y :float)))
+    (cffi:foreign-funcall "glfwSetCursorPos" :pointer (window context)
+                                             :double (float (* x-scale (vx pos)) 0d0)
+                                             :double (float (* y-scale (- (second (cl-glfw3:get-window-size (window context))) (vy pos))) 0d0)))
+  pos)
+
 (defun make-context (&optional handler &rest initargs)
   (apply #'make-instance 'context :handler handler initargs))
 

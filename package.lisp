@@ -248,6 +248,7 @@
    #:list-monitors
    #:find-monitor
    #:clipboard
+   #:cursor-position
    #:gain-focus
    #:lose-focus
    #:window-hidden

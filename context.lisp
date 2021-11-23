@@ -95,6 +95,8 @@
 (defgeneric find-monitor (name context))
 (defgeneric clipboard (context))
 (defgeneric (setf clipboard) (value context))
+(defgeneric cursor-position (context))
+(defgeneric (setf cursor-position) (pos context))
 
 (defgeneric width (context))
 (defgeneric height (context))
