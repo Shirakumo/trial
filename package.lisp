@@ -853,6 +853,7 @@
    #:finalize
    #:gl-property
    #:polar->cartesian
+   #:cartesian->polar
    #:current-time
    #:executable-directory
    #:open-in-browser

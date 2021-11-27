@@ -72,6 +72,15 @@
                 (* (vx3 vec) (sin (vy3 vec)) (sin (vz3 vec)))
                 (* (vx3 vec)                 (cos (vz3 vec)))))))
 
+(defun cartesian->polar (vec)
+  (etypecase vec
+    (vec2 (vec2 (vlength vec)
+                (atan (vy vec) (vx vec))))
+    (vec3 (let ((len (vlength vec)))
+            (vec3 len
+                  (atan (vy vec) (vx vec))
+                  (acos (/ len (vz vec))))))))
+
 (defmethod apply-class-changes ((class standard-class)))
 
 (defmethod apply-class-changes :before ((class standard-class))
