@@ -66,8 +66,9 @@
                   "-qscale:a" quality
                   "-y" path))))))
 
-(defmethod trial:generate-resources ((generator sound-loader) path &key (mixer :effect) effects repeat (repeat-start 0) (volume 1.0) (resource (trial:resource generator T)) max-distance min-distance)
+(defmethod trial:generate-resources ((generator sound-loader) path &key (voice-class 'harmony:voice) (mixer :effect) effects repeat (repeat-start 0) (volume 1.0) (resource (trial:resource generator T)) max-distance min-distance)
   (trial::ensure-instance resource 'voice
+                          :voice-class voice-class
                           :mixer mixer :source path :effects effects :volume volume
                           :max-distance max-distance :min-distance min-distance
                           :repeat repeat :repeat-start repeat-start))
@@ -140,6 +141,7 @@
 ;;         initialisation rather than at, well, allocation time.
 (defclass voice (trial:resource)
   ((voice :initform NIL :accessor voice)
+   (voice-class :initarg :voice-class :initform 'harmony:voice :accessor voice-class)
    (source :initarg :source :accessor source)
    (mixer :initarg :mixer :initform :effect :accessor mixer)
    (effects :initarg :effects :initform NIL :accessor effects)
@@ -151,6 +153,7 @@
 
 (defmethod trial:allocate ((voice voice))
   (setf (voice voice) (harmony:create (source voice)
+                                      :class (voice-class voice)
                                       :effects (effects voice) :on-end :disconnect
                                       :repeat (harmony:repeat voice) :repeat-start (harmony:repeat-start voice)
                                       :volume (mixed:volume voice) :mixer (mixer voice))))
@@ -286,3 +289,6 @@
     (setf (aref list 1) (3d-vectors:vy3 location))
     (setf (aref list 2) (3d-vectors:vz3 location))
     (setf (mixed:location server) list)))
+
+(defmethod harmony:transition ((voice voice) to &key in)
+  (harmony:transition (voice voice) to :in in))
