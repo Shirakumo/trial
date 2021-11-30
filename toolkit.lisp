@@ -622,12 +622,6 @@
     (real (+ (* from (- 1.0 n)) (* to n)))
     (vec (vlerp from to n))))
 
-(defun damp* (damp &rest factors)
-  (- 1 (apply #'* (- 1 damp) factors)))
-
-(define-compiler-macro damp* (damp &rest factors)
-  `(- 1 (* (- 1 ,damp) ,@factors)))
-
 (declaim (inline deg->rad rad->deg))
 (defun deg->rad (deg)
   (* deg PI 1/180))

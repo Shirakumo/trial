@@ -898,7 +898,6 @@
    #:clamp
    #:deadzone
    #:lerp
-   #:damp*
    #:deg->rad
    #:rad->deg
    #:symbol->c-name
