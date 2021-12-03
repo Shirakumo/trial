@@ -54,13 +54,13 @@
                                        (setf accumulator dt))
                                      (update render-loop tt dt fc)
                                      (decf accumulator dt)
-                                     (incf tt dt))
+                                     (incf tt dt)
+                                     (incf fc))
                             ;; FIXME: interpolate state
                             ;;        See http://gafferongames.com/game-physics/fix-your-timestep/
                             (setf (frame-time render-loop) frame-time)
                             (with-simple-restart (abort "Abort the update and retry.")
-                              (render render-loop render-loop)
-                              (incf fc))))))
+                              (render render-loop render-loop))))))
           (v:info :trial.render-loop "Exiting render-loop for ~a." render-loop))
       (exit-render-loop ()
         :report "Exit the render loop entirely."
