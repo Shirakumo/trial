@@ -334,6 +334,11 @@
                               :key (glfw-key->key key)
                               :modifiers modifiers)
                (handler context)))
+      (:repeat
+       (handle (make-instance 'key-press
+                              :key (glfw-key->key key)
+                              :modifiers modifiers)
+               (handler context)))
       (:release
        (v:debug :trial.input "Key released: ~a" key)
        (handle (make-instance 'key-release
