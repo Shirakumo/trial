@@ -220,6 +220,7 @@
    #:resources
    #:handler
    #:shared-with
+   #:glsl-target-version
    #:create-context
    #:destroy-context
    #:valid-p

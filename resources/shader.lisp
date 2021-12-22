@@ -25,6 +25,8 @@
         (shdr (gl:create-shader (shader-type shader))))
     (with-cleanup-on-failure (gl:delete-shader shdr)
       (with-new-value-restart (source input-source) (use-source "Supply new source code directly.")
+        (unless (search "#version " source)
+          (setf source (format NIL "~a~%~a" (glsl-version-header *context*) source)))
         (gl:shader-source shdr source)
         (gl:compile-shader shdr)
         (unless (gl:get-shader shdr :compile-status)

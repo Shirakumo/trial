@@ -134,9 +134,6 @@
 (defmethod stage ((pass shader-pass) (area staging-area))
   (stage (framebuffer pass) area))
 
-(define-class-shader (shader-pass :fragment-shader)
-  "#version 330 core")
-
 (defmethod check-consistent ((pass shader-pass))
   (dolist (port (flow:ports pass))
     (check-consistent port)))
@@ -410,7 +407,7 @@
   (let ((sources (remove NIL (list (effective-shader type class)
                                    (effective-shader type pass)))))
     (when sources
-      (glsl-toolkit:merge-shader-sources sources))))
+      (glsl-toolkit:merge-shader-sources sources :min-version (glsl-target-version *context*)))))
 
 (defmethod register-object-for-pass ((pass per-object-pass) (class shader-entity-class))
   (let ((effective-class (effective-shader-class class)))

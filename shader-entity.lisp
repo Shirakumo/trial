@@ -61,7 +61,8 @@
     (loop for (type shaders) on effective-shaders by #'cddr
           do (setf (getf effective-shaders type)
                    (glsl-toolkit:merge-shader-sources
-                    (mapcar #'second (stable-sort shaders #'> :key #'first)))))
+                    (mapcar #'second (stable-sort shaders #'> :key #'first))
+                    :min-version NIL)))
     effective-shaders))
 
 (defmethod compute-effective-buffers ((class shader-entity-class))
@@ -217,11 +218,8 @@
      ,direct-slots
      ,@options))
 
-(define-class-shader (shader-entity :vertex-shader)
-  "#version 330 core")
-
 (define-class-shader (shader-entity :fragment-shader)
-  "#version 330 core
+  "
 out vec4 color;
 
 void main(){

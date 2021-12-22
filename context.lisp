@@ -45,11 +45,13 @@
    (lock :initform (bt:make-lock "Context lock") :reader context-lock)
    (wait-lock :initform (bt:make-lock "Context wait lock") :reader context-wait-lock)
    (handler :initarg :handler :accessor handler)
-   (shared-with :initarg :share-with :reader shared-with))
+   (shared-with :initarg :share-with :reader shared-with)
+   (glsl-target-version :initarg :glsl-version :initform NIL :accessor glsl-target-version))
   (:default-initargs
    :title "Trial"
    :width 800
    :height 600
+   #-arm :glsl-version #-arm "330"
    #-arm :version #-arm '(3 3)
    #-arm :profile #-arm :core
    :double-buffering T
@@ -225,3 +227,9 @@
            (let ((*print-right-margin* 1000)) ; SBCL fails otherwise. Huh?
              (with-output-to-string (out)
                (context-info context out)))))
+
+(defmethod glsl-version-header ((context context))
+  (when (glsl-target-version context)
+    (format NIL "#version ~a~@[ core~]"
+            (glsl-target-version context)
+            (eql :core (profile context)))))

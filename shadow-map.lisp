@@ -20,7 +20,7 @@
   (:inhibit-shaders (shader-entity :fragment-shader)))
 
 (define-class-shader (shadow-map-pass :fragment-shader)
-  "#version 330 core
+  "
 void main(){}")
 
 (defmethod coerce-pass-shader ((pass shadow-map-pass) class (type (eql :fragment-shader)))

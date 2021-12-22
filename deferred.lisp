@@ -62,7 +62,7 @@ void main(){
 }")
 
 (define-class-shader (geometry-pass :fragment-shader)
-  "#version 330 core
+  "
 layout (location = 0) out vec3 position_map;
 layout (location = 1) out vec3 normal_map;
 layout (location = 2) out vec3 albedo_map;
