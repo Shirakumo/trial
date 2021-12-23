@@ -51,9 +51,9 @@
    :title "Trial"
    :width 800
    :height 600
-   #-arm :glsl-version #-arm "330"
-   #-arm :version #-arm '(3 3)
-   #-arm :profile #-arm :core
+   :glsl-version "330"
+   :version '(3 3)
+   :profile :core
    :double-buffering T
    :stereo-buffer NIL
    :vsync :off
@@ -230,6 +230,8 @@
 
 (defmethod glsl-version-header ((context context))
   (when (glsl-target-version context)
-    (format NIL "#version ~a~@[ core~]"
+    (format NIL "#version ~a~@[ ~a~]"
             (glsl-target-version context)
-            (eql :core (profile context)))))
+            (case (profile context)
+              (:core "core")
+              (:es "es")))))
