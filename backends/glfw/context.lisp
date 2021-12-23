@@ -87,7 +87,7 @@
         (setf (g :context-version-minor) (second version)))
       (when profile-p
         (setf (g :opengl-profile) (ecase profile
-                                    ((NIL) :opengl-any-profile)
+                                    ((NIL :es) :opengl-any-profile)
                                     (:core :opengl-core-profile)
                                     (:compatibility :opengl-compat-profile)))))))
 
@@ -180,7 +180,7 @@
              (cl-glfw3:set-window-monitor (when fullscreen monitor) w h :window (window context) :refresh-rate r)))
          (unless fullscreen
            (center-window context)))
-        ((print mode)
+        (mode
          (resize context (first mode) (second mode)))))
 
 (defmethod visible-p ((context context))
