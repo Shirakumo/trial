@@ -16,13 +16,13 @@
   (with-cleanup-on-failure (finalize display)
     (call-next-method)))
 
-(defmethod initialize-instance :after ((display display) &rest initargs &key context title width height version profile double-buffering stereo-buffer vsync fullscreen)
-  (declare (ignore title width height version profile double-buffering stereo-buffer vsync fullscreen))
-  (unless context
-    (let ((args (loop for (k v) on initargs by #'cddr
-                      for keep = (find k '(:title :width :height :version :profile :double-buffering :stereo-buffer :vsync :fullscreen))
-                      when keep collect k when keep collect v)))
-      (setf context (setf (context display) (apply #'make-context NIL args)))))
+(defmethod initialize-instance :after ((display display) &rest initargs &key context)
+  (etypecase context
+    (list
+     (setf context (apply #'make-context NIL context)))
+    (context
+     context))
+  (setf (context display) context)
   (setf (handler context) display)
   (setf +matrix-index+ 0)
   (prevent-powersave)
