@@ -25,7 +25,7 @@
   (setf (context display) context)
   (setf (handler context) display)
   (setf +matrix-index+ 0)
-  (prevent-powersave)
+  #-arm64 (prevent-powersave)
   (with-context ((context display))
     (setup-rendering display)))
 
@@ -33,7 +33,7 @@
   (when (context display)
     (finalize (context display))
     (setf (context display) NIL))
-  (restore-powersave))
+  #-arm64 (restore-powersave))
 
 (defmethod handle (event (display display)))
 
@@ -48,14 +48,13 @@
   (gl:depth-mask T)
   (gl:depth-func :lequal)
   (gl:blend-func :src-alpha :one-minus-src-alpha)
-  (gl:clear-depth 1.0)
+  #-arm64 (gl:clear-depth 1.0)
   (gl:front-face :ccw)
   (gl:cull-face :back)
-  (gl:hint :line-smooth-hint :nicest)
   (gl:pixel-store :unpack-alignment 1)
   (with-vec (r g b a) (clear-color display)
     (gl:clear-color r g b a))
-  (enable :blend :multisample :cull-face :stencil-test :line-smooth :depth-test :depth-clamp))
+  (enable :blend :multisample :cull-face :stencil-test :depth-test))
 
 (defmethod update :after ((display display) tt dt fc)
   (declare (type double-float tt))

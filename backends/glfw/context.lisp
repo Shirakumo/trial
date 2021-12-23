@@ -270,11 +270,13 @@
            (let ((main (apply #'make-instance main initargs)))
              (start main)
              (trial:rename-thread "input-loop")
+             (v:debug :trial.backend.glfw "Entering input loop")
              (unwind-protect
                   (loop with window = (window (trial:context main))
                         until (cl-glfw3:window-should-close-p window)
                         do (wait-events-timeout 0.005d0)
                            (poll-input main))
+               (v:debug :trial.backend.glfw "Cleaning up")
                (finalize main)
                (%glfw:terminate)))))
     #+darwin
