@@ -23,6 +23,7 @@
 
 (defclass context (trial:context)
   ((title :initarg :title :accessor title)
+   (profile :initarg :profile :initform NIL :reader profile)
    (cursor-visible :initform T :accessor cursor-visible)
    (mouse-pos :initform (vec 0 0) :accessor mouse-pos)
    (initargs :initform NIL :accessor initargs)
@@ -221,12 +222,6 @@
 
 (defmethod (setf vsync) :before (value (context context))
   (cl-glfw3:swap-interval (ecase value ((NIL :off) 0) ((:on T) 1) (:adaptive -1))))
-
-(defmethod profile ((context context))
-  (ecase (cl-glfw3:get-window-attribute :opengl-profile (window context))
-    (:opengl-any-profile NIL)
-    (:opengl-core-profile :core)
-    (:opengl-compat-profile :compatibility)))
 
 (defmethod version ((context context))
   (list (cl-glfw3:get-window-attribute :context-version-major (window context))
