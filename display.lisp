@@ -54,7 +54,9 @@
   (gl:pixel-store :unpack-alignment 1)
   (with-vec (r g b a) (clear-color display)
     (gl:clear-color r g b a))
-  (enable :blend :multisample :cull-face :stencil-test :depth-test))
+  (enable :blend :multisample :cull-face :stencil-test :depth-test)
+  (when-gl-extension :gl-arb-depth-clamp
+    (enable :depth-clamp)))
 
 (defmethod update :after ((display display) tt dt fc)
   (declare (type double-float tt))
