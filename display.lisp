@@ -29,10 +29,11 @@
   (with-context ((context display))
     (setup-rendering display)))
 
-(defmethod finalize :after ((display display))
-  (when (context display)
-    (finalize (context display))
-    (setf (context display) NIL))
+(defmethod finalize :around ((display display))
+  (unwind-protect (call-next-method)
+    (when (context display)
+      (finalize (context display))
+      (setf (context display) NIL)))
   #-arm64 (restore-powersave))
 
 (defmethod handle (event (display display)))

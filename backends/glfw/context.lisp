@@ -277,8 +277,8 @@
                         do (wait-events-timeout 0.005d0)
                            (poll-input main))
                (v:debug :trial.backend.glfw "Cleaning up")
-               (finalize main)
-               (%glfw:terminate)))))
+               (unwind-protect (finalize main)
+                 (%glfw:terminate))))))
     #+darwin
     (tmt:with-body-in-main-thread ()
       (handler-bind ((error #'trial:standalone-error-handler))
