@@ -90,25 +90,25 @@
 
 (declaim (inline node-contains-p*))
 (defun node-contains-p* (node loc siz)
+  (declare (optimize speed (safety 0)))
   (declare (type vec4 node))
   (declare (type vec2 loc siz))
-  (declare (optimize speed (safety 0)))
   (and (<= (vx4 node) (+ (vx2 loc) (vx2 siz)))
        (<= (- (vx2 loc) (vx2 siz)) (vz4 node))
        (<= (vy4 node) (+ (vy2 loc) (vy2 siz)))
        (<= (- (vy2 loc) (vy2 siz)) (vw4 node))))
 
 (defun node-contains-p (node object)
-  (declare (type vec4 node))
   (declare (optimize speed (safety 0)))
+  (declare (type vec4 node))
   (let ((loc (location object))
         (siz (bsize object)))
     (declare (type vec2 loc siz))
     (node-contains-p* node loc siz)))
 
 (defun node-overlaps-p (node region)
-  (declare (type vec4 node region))
   (declare (optimize speed (safety 0)))
+  (declare (type vec4 node region))
   (and (<= (vx4 node) (vz4 region))
        (<= (vx4 region) (vz4 node))
        (<= (vy4 node) (vw4 region))
@@ -315,20 +315,27 @@
 
 (defun call-with-overlapping (function bvh object)
   (declare (optimize speed))
-  (let ((function (etypecase function
-                    (symbol (fdefinition function))
-                    (function function)))
-        (loc (location object))
-        (siz (bsize object)))
-    (labels ((recurse (node)
-               (when (node-contains-p* node loc siz)
-                 (let ((o (bvh-node-o node)))
-                   (cond (o
-                          (funcall function o))
-                         (T
-                          (recurse (bvh-node-l node))
-                          (recurse (bvh-node-r node))))))))
-      (recurse (bvh-root bvh)))))
+  (flet ((ensure-vec2 (x)
+           (etypecase x
+             (vec2 x)
+             (vec3 (vsetf (load-time-value (vec 0 0))
+                          (vx3 x) (vy3 x)))
+             (vec4 (vsetf (load-time-value (vec 0 0 0 0))
+                          (vx4 x) (vy4 x))))))
+    (let ((function (etypecase function
+                      (symbol (fdefinition function))
+                      (function function)))
+          (loc (ensure-vec2 (location object)))
+          (siz (ensure-vec2 (bsize object))))
+      (labels ((recurse (node)
+                 (when (node-contains-p* node loc siz)
+                   (let ((o (bvh-node-o node)))
+                     (cond (o
+                            (funcall function o))
+                           (T
+                            (recurse (bvh-node-l node))
+                            (recurse (bvh-node-r node))))))))
+        (recurse (bvh-root bvh))))))
 
 (defmacro do-fitting ((entity bvh region &optional result) &body body)
   ;; REGION should be a vec2 for a point test, or a vec4 with left/bottom/right/top coordinates.
