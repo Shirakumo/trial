@@ -16,8 +16,8 @@
     (when (context main)
       (acquire-context (context main) :force T))
     (clear-retained)
-    (finalize scene)
-    (finalize loader)))
+    (finalize loader)
+    (finalize scene)))
 
 (defmethod handle (event (main main))
   (issue (scene main) event))

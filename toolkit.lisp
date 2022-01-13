@@ -629,6 +629,11 @@
 (defun rad->deg (rad)
   (* rad 180 (/ PI)))
 
+(defun angle-midpoint (a b)
+  (when (< b a) (rotatef a b))
+  (when (< 180 (- b a)) (decf b 360))
+  (mod (/ (+ b a) 2) 360))
+
 (defparameter *c-chars* "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_[]")
 
 (defun symbol->c-name (symbol)

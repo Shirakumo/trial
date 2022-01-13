@@ -901,6 +901,7 @@
    #:lerp
    #:deg->rad
    #:rad->deg
+   #:angle-midpoint
    #:symbol->c-name
    #:check-gl-type
    #:gl-type-size
