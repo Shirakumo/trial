@@ -631,8 +631,8 @@
 
 (defun angle-midpoint (a b)
   (when (< b a) (rotatef a b))
-  (when (< 180 (- b a)) (decf b 360))
-  (mod (/ (+ b a) 2) 360))
+  (when (< PI (- b a)) (decf b (* 2 PI)))
+  (mod (/ (+ b a) 2) (* 2 PI)))
 
 (defparameter *c-chars* "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_[]")
 
