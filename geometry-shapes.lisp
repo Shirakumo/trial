@@ -25,7 +25,7 @@
         (T
          `(,@(first shapes) :mesh (combine-shapes ,@(rest shapes))))))
 
-(defun make-rectangle (w h &key (align :center) mesh pack (x 0) (y 0) (z 0))
+(defun make-rectangle (w h &key (align :center) mesh pack (x 0) (y 0) (z 0) (u- 0) (v- 0) (u+ 1) (v+ 1))
   (let (l r u b)
     (ecase align
       (:center (setf l (- (/ w 2)) r (+ (/ w 2))
@@ -38,12 +38,12 @@
                          b 0 u h)))
     (incf l x) (incf r x) (incf u y) (incf b y)
     (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'textured-vertex)) :pack pack)
-      (vertex :position (vec l b z) :uv (vec 0.0 0.0))
-      (vertex :position (vec r b z) :uv (vec 1.0 0.0))
-      (vertex :position (vec r u z) :uv (vec 1.0 1.0))
-      (vertex :position (vec r u z) :uv (vec 1.0 1.0))
-      (vertex :position (vec l u z) :uv (vec 0.0 1.0))
-      (vertex :position (vec l b z) :uv (vec 0.0 0.0)))))
+      (vertex :position (vec l b z) :uv (vec u- v-))
+      (vertex :position (vec r b z) :uv (vec u+ v-))
+      (vertex :position (vec r u z) :uv (vec u+ v+))
+      (vertex :position (vec r u z) :uv (vec u+ v+))
+      (vertex :position (vec l u z) :uv (vec u- v+))
+      (vertex :position (vec l b z) :uv (vec u- v-)))))
 
 (defun make-triangle (w h &key (orientation :right) mesh pack (x 0) (y 0) (z 0))
   (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
