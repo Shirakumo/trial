@@ -383,6 +383,10 @@
            #+sbcl (sb-ext:enable-debugger)
            (invoke-debugger err))
           ((typep err 'trial:thread-did-not-exit))
+          ((typep err 'trial:context-creation-error)
+           (org.shirakumo.messagebox:show (format NIL "Failed to initialise OpenGL.~@[The following error was generated:~% ~a~]"
+                                                  (message err))
+                                          :title "Failed to set up OpenGL" :type :error :modal T))
           (T
            (org.shirakumo.messagebox:show (format NIL "An unhandled error occurred. Please send the application logfile to the developers. You can find it here:~%~%~a"
                                                   (uiop:native-namestring (logfile)))

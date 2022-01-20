@@ -207,6 +207,7 @@
   ;; context.lisp
   (:export
    #:*context*
+   #:context-creation-error
    #:with-context
    #:launch-with-context
    #:make-context

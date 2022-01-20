@@ -98,6 +98,10 @@
            #+sbcl (sb-ext:enable-debugger)
            (invoke-debugger err))
           ((typep err 'trial:thread-did-not-exit))
+          ((typep err 'trial:context-creation-error)
+           (org.shirakumo.messagebox:show (format NIL "Failed to initialise OpenGL.~@[The following error was generated:~% ~a~]"
+                                                  (message err))
+                                          :title "Failed to set up OpenGL" :type :error :modal T))
           ((ignore-errors (submit-report :description (format NIL "Hard crash due to error:~%~a" err)))
            (org.shirakumo.messagebox:show (format NIL "An unhandled error occurred. A log has been sent to the developers. Sorry for the inconvenience!")
                                           :title "Unhandled Error" :type :error :modal T))
