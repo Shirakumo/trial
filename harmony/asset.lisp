@@ -83,6 +83,10 @@
       (mixed:end (harmony:source (voice resource)))
       (mixed:start (harmony:source (voice resource))))))
 
+(defmethod reinitialize-instance :after ((sound sound) &key)
+  (unless (typep (trial:resource sound T) 'trial:placeholder-resource)
+    (apply #'trial:generate-resources sound (trial:input* sound) (trial::generation-arguments sound))))
+
 (defclass environment-loader (trial:compiled-generator)
   ())
 
