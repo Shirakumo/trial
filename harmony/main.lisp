@@ -9,9 +9,20 @@
 (defclass main (trial:main)
   ())
 
-(defmethod initialize-instance ((main main) &key (audio-latency 0.05))
+(defgeneric server-initargs (main)
+  (:method-combination append :most-specific-last))
+
+(defmethod server-initargs append ((main main))
+  ())
+
+(defmethod initialize-instance ((main main) &key audio-backend)
   (call-next-method)
-  (mixed:start (harmony:make-simple-server :name trial:+app-system+ :latency audio-latency)))
+  (flet ((start (drain)
+           (harmony:start (apply #'harmony:make-simple-server
+                                 :name trial:+app-system+ :drain drain (server-initargs main)))))
+    (handler-case (trial:with-error-logging (:trial.harmony "Failed to set up sound, falling back to dummy output.")
+                    (start (or audio-backend :default)))
+      (error () (start :dummy)))))
 
 (defmethod trial:finalize :after ((main main))
   (when harmony:*server*

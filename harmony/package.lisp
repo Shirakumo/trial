@@ -15,4 +15,5 @@
    #:voice
    #:environment
    #:music
-   #:main))
+   #:main
+   #:server-initargs))

@@ -14,6 +14,7 @@
   :source-control (:git "https://github.com/Shirakumo/trial.git")
   :components ((:file "package")
                (:file "asset")
+               (:file "main")
                (:file "deploy"))
   :depends-on (:trial
                :harmony
