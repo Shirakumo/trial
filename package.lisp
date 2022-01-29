@@ -854,8 +854,6 @@
    #:toolkit
    #:finalize
    #:gl-property
-   #:polar->cartesian
-   #:cartesian->polar
    #:current-time
    #:executable-directory
    #:open-in-browser
@@ -896,7 +894,9 @@
    #:maybe-finalize-inheritance
    #:with-slots-bound
    #:with-all-slots-bound
+   #:clone
    #:minimize
+   #:generate-name
    #:clamp
    #:deadzone
    #:lerp

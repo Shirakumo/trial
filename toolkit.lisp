@@ -64,23 +64,6 @@
     (error (err) (declare (ignore err))
       :unavailable)))
 
-(defun polar->cartesian (vec)
-  (etypecase vec
-    (vec2 (vec2 (* (vx2 vec) (cos (vy2 vec)))
-                (* (vx2 vec) (sin (vy2 vec)))))
-    (vec3 (vec3 (* (vx3 vec) (cos (vy3 vec)) (sin (vz3 vec)))
-                (* (vx3 vec) (sin (vy3 vec)) (sin (vz3 vec)))
-                (* (vx3 vec)                 (cos (vz3 vec)))))))
-
-(defun cartesian->polar (vec)
-  (etypecase vec
-    (vec2 (vec2 (vlength vec)
-                (atan (vy vec) (vx vec))))
-    (vec3 (let ((len (vlength vec)))
-            (vec3 len
-                  (atan (vy vec) (vx vec))
-                  (acos (/ len (vz vec))))))))
-
 (defmethod apply-class-changes ((class standard-class)))
 
 (defmethod apply-class-changes :before ((class standard-class))
@@ -584,6 +567,56 @@
              `(load-time-value (,',thunk ,,arg))
              ,whole)))))
 
+(defgeneric clone (thing &key &allow-other-keys))
+(defgeneric initargs (thing)
+  (:method-combination append :most-specific-last))
+
+(defmethod initargs (thing)
+  ())
+
+(defmethod clone (thing &key)
+  thing)
+
+(defmethod clone ((vec vec2) &key) (vcopy2 vec))
+(defmethod clone ((vec vec3) &key) (vcopy3 vec))
+(defmethod clone ((vec vec4) &key) (vcopy4 vec))
+(defmethod clone ((mat mat2) &key) (mcopy2 mat))
+(defmethod clone ((mat mat3) &key) (mcopy3 mat))
+(defmethod clone ((mat mat4) &key) (mcopy4 mat))
+(defmethod clone ((mat matn) &key) (mcopyn mat))
+
+(defmethod clone ((cons cons) &key)
+  (cons (clone (car cons)) (clone (cdr cons))))
+
+(defmethod clone ((array array) &key)
+  (if (array-has-fill-pointer-p array)
+      (make-array (array-dimensions array)
+                  :element-type (array-element-type array)
+                  :adjustable (adjustable-array-p array)
+                  :fill-pointer (fill-pointer array)
+                  :initial-contents array)
+      (make-array (array-dimensions array)
+                  :element-type (array-element-type array)
+                  :adjustable (adjustable-array-p array)
+                  :initial-contents array)))
+
+(defun initarg-slot (class initarg)
+  (let ((class (etypecase class
+                 (class class)
+                 (symbol (find-class class)))))
+    (find (list initarg) (c2mop:class-slots class)
+          :key #'c2mop:slot-definition-initargs
+          :test #'subsetp)))
+
+(defmethod clone ((entity entity) &rest initargs)
+  (let ((initvalues ()))
+    (loop for initarg in (initargs entity)
+          for slot = (initarg-slot (class-of entity) initarg)
+          do (when slot
+               (push (clone (slot-value entity (c2mop:slot-definition-name slot))) initvalues)
+               (push initarg initvalues)))
+    (apply #'make-instance (class-of entity) (append initargs initvalues (when (name entity) (list :name (generate-name (type-of entity))))))))
+
 (defun minimize (sequence test &key (key #'identity))
   (etypecase sequence
     (vector (when (< 0 (length sequence))
@@ -611,6 +644,11 @@
             for line = (read-line in NIL)
             while line
             do (format out "~3d ~a~%" i line)))))
+
+(defun generate-name (&optional indicator)
+  (loop for name = (format NIL "~a-~d" (or indicator "ENTITY") (incf *gensym-counter*))
+        while (find-symbol name #.*package*)
+        finally (return (intern name #.*package*))))
 
 (declaim (inline clamp))
 (defun clamp (low mid high)
