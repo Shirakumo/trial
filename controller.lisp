@@ -37,7 +37,7 @@
     (change-scene (display controller) (make-instance (type-of old) :clock (clock old)))))
 
 (defun find-controller ()
-  (or (when *context* (unit :controller (scene (handler *context*))))
+  (or (when +main+ (unit :controller (scene +main+)))
       (error "No reachable controller found.")))
 
 (defmethod observe ((func function) &key title)
