@@ -26,6 +26,7 @@
 
 (define-global +app-vendor+ "shirakumo")
 (define-global +app-system+ "trial")
+(define-global +main+ NIL)
 
 (defun git-repo-commit (dir)
   (flet ((file (path)

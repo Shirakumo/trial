@@ -6,8 +6,6 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-global +main+ NIL)
-
 (defclass main (display gamepad-input-handler)
   ((scene :initform (make-instance 'pipelined-scene) :accessor scene)
    (loader :initform (make-instance 'loader) :accessor loader)))
