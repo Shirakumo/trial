@@ -571,7 +571,7 @@
 (defgeneric initargs (thing)
   (:method-combination append :most-specific-last))
 
-(defmethod initargs (thing)
+(defmethod initargs append (thing)
   ())
 
 (defmethod clone (thing &key)

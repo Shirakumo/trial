@@ -7,7 +7,7 @@
 (in-package #:cl-user)
 (defpackage #:org.shirakumo.fraf.trial.glfw
   (:use #:cl+trial #:3d-vectors)
-  (:shadow #:context #:window #:monitor)
+  (:shadow #:context #:window #:monitor #:initargs)
   (:shadowing-import-from #:trial #:load)
   (:export
    #:context))

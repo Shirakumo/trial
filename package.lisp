@@ -895,6 +895,7 @@
    #:maybe-finalize-inheritance
    #:with-slots-bound
    #:with-all-slots-bound
+   #:initargs
    #:clone
    #:minimize
    #:generate-name

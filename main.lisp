@@ -36,10 +36,10 @@
     ((or mouse-event keyboard-event)
      (setf +input-source+ :keyboard))
     (gamepad-move
-     (when (< 0.1 (pos ev))
-       (setf +input-source+ (device ev))))
+     (when (< 0.1 (pos event))
+       (setf +input-source+ (device event))))
     (gamepad-press
-     (setf +input-source+ (device ev)))))
+     (setf +input-source+ (device event)))))
 
 (defmethod update ((main main) tt dt fc)
   (issue (scene main) 'tick :tt tt :dt dt :fc fc)

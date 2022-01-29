@@ -18,8 +18,8 @@
 (defmethod initialize-instance ((main main) &key audio-backend)
   (call-next-method)
   (flet ((start (drain)
-           (harmony:start (apply #'harmony:make-simple-server
-                                 :name trial:+app-system+ :drain drain (server-initargs main)))))
+           (mixed:start (apply #'harmony:make-simple-server
+                               :name trial:+app-system+ :drain drain (server-initargs main)))))
     (handler-case (trial:with-error-logging (:trial.harmony "Failed to set up sound, falling back to dummy output.")
                     (start (or audio-backend :default)))
       (error () (start :dummy)))))
