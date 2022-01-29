@@ -6,9 +6,14 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass main (display window gamepad-input-handler)
+(define-global +main+ NIL)
+
+(defclass main (display gamepad-input-handler)
   ((scene :initform (make-instance 'pipelined-scene) :accessor scene)
    (loader :initform (make-instance 'loader) :accessor loader)))
+
+(defmethod initialize-instance :before ((main main) &key)
+  (setf +main+ main))
 
 (defmethod finalize ((main main))
   (with-slots (scene loader) main
@@ -19,8 +24,22 @@
     (finalize loader)
     (finalize scene)))
 
+(defmethod finalize :after ((main main))
+  (setf +main+ NIL)
+  (setf +input-source+ :keyboard))
+
 (defmethod handle (event (main main))
   (issue (scene main) event))
+
+(defmethod handle :before (event (main main))
+  (typecase event
+    ((or mouse-event keyboard-event)
+     (setf +input-source+ :keyboard))
+    (gamepad-move
+     (when (< 0.1 (pos ev))
+       (setf +input-source+ (device ev))))
+    (gamepad-press
+     (setf +input-source+ (device ev)))))
 
 (defmethod update ((main main) tt dt fc)
   (issue (scene main) 'tick :tt tt :dt dt :fc fc)
@@ -37,13 +56,12 @@
       (clear (scene main)))))
 
 (defmethod setup-scene :around ((main main) (scene scene))
-  (let ((*scene* scene))
-    (v:info :trial.main "Setting up ~a" scene)
-    (with-timing-report (info :trial.main "Scene setup took ~fs run time, ~fs clock time.")
-      (call-next-method))
-    ;; Cause camera to refresh
-    (issue scene 'resize :width (width main) :height (height main))
-    scene))
+  (v:info :trial.main "Setting up ~a" scene)
+  (with-timing-report (info :trial.main "Scene setup took ~fs run time, ~fs clock time.")
+    (call-next-method))
+  ;; Cause camera to refresh
+  (issue scene 'resize :width (width main) :height (height main))
+  scene)
 
 (defmethod setup-scene ((main main) scene)
   ())

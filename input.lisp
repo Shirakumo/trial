@@ -6,6 +6,8 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(define-global +input-source+ :keyboard)
+
 (defclass input-event (event)
   ())
 

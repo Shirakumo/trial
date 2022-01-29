@@ -132,7 +132,7 @@ void main(){
   (:buffers (trial light-block)))
 
 (defmethod render :before ((pass deferred-render-pass) (program shader-program))
-  (setf (uniform program "view_position") (location (unit :camera *scene*))))
+  (setf (uniform program "view_position") (location (unit :camera (scene +main+)))))
 
 (define-gl-struct light
   (type :int)

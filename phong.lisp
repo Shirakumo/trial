@@ -28,7 +28,7 @@
   (setf (uniform shader "light.direction") (vec -100 0 0))
   (setf (uniform shader "light.cutoff") (coerce (cos (deg->rad 60)) 'single-float))
   (setf (uniform shader "light.outer") (coerce (cos (deg->rad 70)) 'single-float))
-  (setf (uniform shader "camera_pos") (location (unit :camera *scene*))))
+  (setf (uniform shader "camera_pos") (location (unit :camera (scene +main+)))))
 
 (define-class-shader (phong :vertex-shader)
   "layout (location = 0) in vec3 position;

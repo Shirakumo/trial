@@ -56,7 +56,7 @@
         (unless (eq last thing) last)))))
 
 (defmethod enter* ((thing entity) (container container))
-  (compile-into-pass thing container *scene*)
+  (compile-into-pass thing container (scene +main+))
   (enter thing container))
 
 (defmethod leave* ((thing entity) (container (eql T)))
@@ -64,4 +64,4 @@
 
 (defmethod leave* ((thing entity) (container container))
   (leave thing container)
-  (remove-from-pass thing *scene*))
+  (remove-from-pass thing (scene +main+)))

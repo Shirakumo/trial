@@ -53,7 +53,7 @@
                (:file "lines" :depends-on ("package" "helpers" "shader-entity" "geometry"))
                (:file "layered-container" :depends-on ("package" "entity"))
                (:file "loader" :depends-on ("package" "resource" "asset"))
-               (:file "main" :depends-on ("package" "display" "toolkit" "scene" "pipeline" "window"))
+               (:file "main" :depends-on ("package" "display" "toolkit" "scene" "pipeline"))
                (:file "mapping" :depends-on ("package" "event-loop" "toolkit"))
                (:file "parallax" :depends-on ("package" "shader-entity" "assets"))
                (:file "particle" :depends-on ("package" "shader-entity" "resources"))
@@ -82,7 +82,6 @@
                (:file "toolkit" :depends-on ("package"))
                (:file "transforms" :depends-on ("package"))
                (:file "type-info" :depends-on ("package" "toolkit"))
-               (:file "window" :depends-on ("package"))
                (:module "resources"
                 :depends-on ("package" "resource" "toolkit" "data-pointer")
                 :components ((:file "buffer-object")

@@ -485,6 +485,7 @@
    #:high-pass)
   ;; input.lisp
   (:export
+   #:+input-source+
    #:input-event
    #:keyboard-event
    #:key-event
@@ -554,6 +555,7 @@
    #:progress)
   ;; main.lisp
   (:export
+   #:+main+
    #:main
    #:scene
    #:controller
@@ -688,7 +690,6 @@
    #:render-pass)
   ;; scene.lisp
   (:export
-   #:*scene*
    #:scene
    #:scene-event
    #:scene

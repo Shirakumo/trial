@@ -27,7 +27,7 @@
   (quit *context*))
 
 (defmethod handle ((ev event) (controller controller))
-  (map-event ev *scene*))
+  (map-event ev (scene +main+)))
 
 (defmethod handle ((ev lose-focus) (controller controller))
   (clear-retained))
@@ -82,9 +82,9 @@
     (T
      (commit thing (loader (display controller)) :unload NIL))))
 
-(defun maybe-reload-scene (&optional (window (list-windows)))
-  (dolist (window (enlist window))
-    (issue (scene window) 'reload-scene)))
+(defun maybe-reload-scene (&optional (main +main+))
+  (when main
+    (issue (scene main) 'reload-scene)))
 
 (defclass eval-request (event)
   ((func :initarg :func)))
