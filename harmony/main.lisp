@@ -10,7 +10,7 @@
   ())
 
 (defgeneric server-initargs (main)
-  (:method-combination append :most-specific-last))
+  (:method-combination append :most-specific-first))
 
 (defmethod server-initargs append ((main main))
   ())
@@ -31,3 +31,35 @@
 
 (defmethod trial:finalize ((server harmony:server))
   (mixed:free server))
+
+(defclass settings-main (main)
+  ()
+  (:default-initargs
+   :audio-backend (trial:setting :audio :backend)))
+
+(defmethod initialize-instance :after ((main settings-main) &key)
+  (loop for (k v) on (trial:setting :audio :volume) by #'cddr
+        do (setf (mixed:volume k) v)))
+
+(defmethod server-initargs append ((main settings-main))
+  (list :latency (trial:setting :audio :latency)
+        :device (trial:setting :audio :device)))
+
+(trial:define-setting-observer volumes :audio :volume (value)
+  (when harmony:*server*
+    (loop for (k v) on value by #'cddr
+          do (setf (mixed:volume k) v))))
+
+(trial:define-setting-observer audio-device :audio :device (value)
+  (when harmony:*server*
+    (let* ((seg (harmony:segment :drain (harmony:segment :output T)))
+           (prev (mixed:device seg))
+           (success NIL))
+      (harmony:with-server (harmony:*server* :synchronize T)
+        (handler-case
+            (progn (setf (mixed:device seg) value)
+                   (setf success T))
+          (error ()
+            (setf (mixed:device seg) prev))))
+      (unless success
+        (setf (trial:setting :audio :device) prev)))))

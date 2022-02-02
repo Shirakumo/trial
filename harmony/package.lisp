@@ -16,4 +16,5 @@
    #:environment
    #:music
    #:main
-   #:server-initargs))
+   #:server-initargs
+   #:settings-main))
