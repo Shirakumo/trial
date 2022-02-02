@@ -81,7 +81,8 @@
                       (null
                        (format stream "NIL"))
                       (T
-                       (prin1 part stream)))))
+                       (let ((*print-readably* T))
+                         (prin1 part stream))))))
            (plist 0 +settings+))))))
   +settings+)
 
