@@ -35,7 +35,7 @@
            (cell (gethash thing (flare-indexed-set::set set)))
            (head (flare-queue::head set)))
       (when cell
-        (let ((last (last (flare-queue:left cell))))
+        (let ((last (flare-queue:left cell)))
           (loop until (or (eq last head)
                           (typep (flare-queue:value last) 'renderable))
                 do (setf last (flare-queue::left last)))
