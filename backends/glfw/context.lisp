@@ -461,24 +461,11 @@
   (list-video-modes (current-monitor context)))
 
 (defmethod list-video-modes ((monitor monitor))
-  (flet ((mode> (a b)
-           (destructuring-bind (aw ah ar am) a
-             (destructuring-bind (bw bh br bm) b
-               (if (eq am bm)
-                   (if (= aw bw)
-                       (if (= ah bh)
-                           (> ar br)
-                           (> ah bh))
-                       (> aw bw))
-                   (string> am bm))))))
-    (sort (delete-duplicates
-           (loop for mode in (cl-glfw3:get-video-modes (pointer monitor))
-                 collect (list (getf mode '%CL-GLFW3:WIDTH)
-                               (getf mode '%CL-GLFW3:HEIGHT)
-                               (getf mode '%CL-GLFW3::REFRESH-RATE)
-                               (name monitor)))
-           :test #'equal)
-          #'mode>)))
+  (loop for mode in (cl-glfw3:get-video-modes (pointer monitor))
+        collect (list (getf mode '%CL-GLFW3:WIDTH)
+                      (getf mode '%CL-GLFW3:HEIGHT)
+                      (getf mode '%CL-GLFW3::REFRESH-RATE)
+                      (name monitor))))
 
 ;; Runtime support for Wayland and X11
 #+linux

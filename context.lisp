@@ -176,6 +176,22 @@
 (defmethod find-monitor (name (context context))
   (find name (list-monitors context) :key #'name :test #'string=))
 
+(defmethod list-video-modes :around ((context context))
+  (flet ((mode> (a b)
+           (destructuring-bind (aw ah ar am) a
+             (destructuring-bind (bw bh br bm) b
+               (if (eq am bm)
+                   (if (= aw bw)
+                       (if (= ah bh)
+                           (> ar br)
+                           (> ah bh))
+                       (> aw bw))
+                   (string> am bm))))))
+    (sort (delete-duplicates (call-next-method) :test #'equal) #'mode>)))
+
+(defmethod list-video-modes ((context context))
+  (list-video-modes (current-monitor context)))
+
 (defclass resize (event)
   ((width :initarg :width :reader width)
    (height :initarg :height :reader height)))

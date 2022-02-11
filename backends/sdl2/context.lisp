@@ -6,12 +6,24 @@
 
 (in-package #:org.shirakumo.fraf.trial.sdl2)
 
+(cffi:defcstruct display-mode
+  (format :uint32)
+  (width :int)
+  (height :int)
+  (refresh-rate :int)
+  (data :pointer))
+
+(defstruct (monitor (:constructor make-monitor (id name)))
+  (id 0 :type (unsigned-byte 32) :read-only T)
+  (name NIL :type string :read-only T))
+
 (defclass context (trial:context)
   ((title :initform "" :initarg :title :accessor title)
    (window :initform NIL :accessor window)
    (gl-ctx :initform NIL :accessor gl-ctx)
    (initargs :initform NIL :accessor initargs)
-   (mouse-pos :initform (vec2 0 0) :accessor mouse-pos))
+   (mouse-pos :initform (vec2 0 0) :accessor mouse-pos)
+   (monitors :initform NIL :accessor monitors))
   (:default-initargs
    :resizable T
    :visible T
@@ -119,10 +131,30 @@
 (defmethod hide ((context context))
   (sdl2:hide-window (window context)))
 
-(defmethod show ((context context) &key (fullscreen NIL fullscreen-p))
+(defun find-matching-mode (monitor w h r mode)
+  (loop for i from 0 below (sdl2-ffi.functions:sdl-get-num-display-modes monitor)
+        do (sdl2::check-zero (sdl2-ffi.functions:sdl-get-display-mode monitor i mode))
+        do (when (and (= w (cffi:foreign-slot-value mode '(:struct display-mode) 'width))
+                      (= h (cffi:foreign-slot-value mode '(:struct display-mode) 'height))
+                      (or (null r) (= r (cffi:foreign-slot-value mode '(:struct display-mode) 'refresh-rate))))
+             (return))))
+
+(defmethod show ((context context) &key (fullscreen NIL fullscreen-p) mode)
   (sdl2:show-window (window context))
-  (when fullscreen-p
-    (sdl2:set-window-fullscreen (window context) fullscreen)))
+  (cond (fullscreen-p
+         (destructuring-bind (w h &optional r monitor) (or mode (current-video-mode (current-monitor context)))
+           (let ((monitor (etypecase monitor
+                            (null (monitor-id (current-monitor context)))
+                            (integer monitor)
+                            (monitor (monitor-id monitor))
+                            (string (monitor-id (find-monitor monitor context))))))
+             (sdl2:set-window-fullscreen (window context) fullscreen)
+             (if fullscreen
+                 (cffi:with-foreign-object (mode '(:struct display-mode))
+                   (find-matching-mode monitor w h r mode)
+                   (sdl2-ffi.functions:sdl-set-window-display-mode (window context) mode))
+                 (resize context w h)))))
+        (mode)))
 
 (defmethod resize ((context context) width height)
   (sdl2:set-window-size (window context) width height))
@@ -164,6 +196,53 @@
 (defmethod version ((context context))
   (list (sdl2:gl-get-attr :context-major-version)
         (sdl2:gl-get-attr :context-minor-version)))
+
+(defmethod current-monitor ((context context))
+  (find (sdl2-ffi.functions:sdl-get-window-display-index (window context))
+        (list-monitors context) :key #'monitor-id))
+
+(defmethod name ((monitor monitor))
+  (monitor-name monitor))
+
+(defmethod list-monitors ((context context))
+  (or (monitors context)
+      (setf (monitors context)
+            (loop for i from 0 below (sdl2-ffi.functions:sdl-get-num-video-displays)
+                  collect (make-monitor i (sdl2-ffi.functions:sdl-get-display-name i))))))
+
+(defmethod list-video-modes ((monitor monitor))
+  (cffi:with-foreign-object (mode '(:struct display-mode))
+    (setf (cffi:foreign-slot-value mode '(:struct display-mode) 'data) (cffi:null-pointer))
+    (loop with id = (monitor-id monitor)
+          for i from 0 below (sdl2-ffi.functions:sdl-get-num-display-modes id)
+          do (sdl2::check-zero (sdl2-ffi.functions:sdl-get-display-mode id i mode))
+          collect (list (cffi:foreign-slot-value mode '(:struct display-mode) 'width)
+                        (cffi:foreign-slot-value mode '(:struct display-mode) 'height)
+                        (cffi:foreign-slot-value mode '(:struct display-mode) 'refresh-rate)
+                        (monitor-name monitor)))))
+
+(defun current-video-mode (monitor)
+  (cffi:with-foreign-object (mode '(:struct display-mode))
+    (sdl2-ffi.functions:sdl-get-current-display-mode (monitor-id monitor) mode)
+    (list (cffi:foreign-slot-value mode '(:struct display-mode) 'width)
+          (cffi:foreign-slot-value mode '(:struct display-mode) 'height)
+          (cffi:foreign-slot-value mode '(:struct display-mode) 'refresh-rate)
+          (monitor-name monitor))))
+
+(defmethod clipboard ((context context))
+  (sdl2-ffi.functions:sdl-get-clipboard-text))
+
+(defmethod (setf clipboard) (value (context context))
+  (sdl2-ffi.functions:sdl-set-clipboard-text value)
+  value)
+
+(defmethod cursor-position ((context context))
+  (multiple-value-bind (x y) (sdl2:mouse-state)
+    (vec x y)))
+
+(defmethod (setf cursor-position) (pos (context context))
+  (sdl2:warp-mouse-in-window (window context) (round (vx pos)) (round (vy pos)))
+  pos)
 
 (defun make-context (&optional handler &rest initargs)
   (apply #'make-instance 'context :handler handler initargs))
@@ -207,6 +286,7 @@
                              (mod (sdl2:mod-keywords (sdl2:mod-value keysym))))
                         (handle (make-instance 'key-press
                                                :key (sdl2-key->key sym)
+                                               :repeat (< 0 (plus-c:c-ref ev sdl2-ffi:sdl-event :key :repeat))
                                                :modifiers (mapcar #'sdl2-mod->mod mod))
                                 (handler context))))
                      (:keyup
