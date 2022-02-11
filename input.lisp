@@ -16,9 +16,11 @@
 
 (defclass key-event (keyboard-event)
   ((key :initarg :key :reader key)
+   (repeat :initarg :repeat :reader repeat-p)
    (modifiers :initarg :modifiers :reader modifiers))
   (:default-initargs
    :key (error "KEY required.")
+   :repeat NIL
    :modifiers ()))
 
 (defmethod print-object ((event key-event) stream)

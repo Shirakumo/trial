@@ -491,6 +491,7 @@
    #:key-event
    #:key
    #:modifiers
+   #:repeat-p
    #:key-press
    #:key-release
    #:text-entered
