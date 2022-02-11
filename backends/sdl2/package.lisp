@@ -8,7 +8,7 @@
 (defpackage #:trial-sdl2
   (:nicknames #:org.shirakumo.fraf.trial.sdl2)
   (:use #:cl+trial #:3d-vectors)
-  (:shadow #:context #:window)
+  (:shadow #:context #:window #:monitor #:initargs)
   (:shadowing-import-from #:trial #:load)
   (:export
    #:context))

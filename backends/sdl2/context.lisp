@@ -13,17 +13,21 @@
   (refresh-rate :int)
   (data :pointer))
 
-(defstruct (monitor (:constructor make-monitor (id name)))
-  (id 0 :type (unsigned-byte 32) :read-only T)
-  (name NIL :type string :read-only T))
+(defclass monitor (trial:monitor)
+  ((id :initarg :id :accessor monitor-id)))
+
+(defmethod name ((monitor monitor))
+  (sdl2-ffi.functions:sdl-get-display-name (monitor-id monitor)))
 
 (defclass context (trial:context)
   ((title :initform "" :initarg :title :accessor title)
    (window :initform NIL :accessor window)
    (gl-ctx :initform NIL :accessor gl-ctx)
    (initargs :initform NIL :accessor initargs)
-   (mouse-pos :initform (vec2 0 0) :accessor mouse-pos)
-   (monitors :initform NIL :accessor monitors))
+   (mouse-pos :initform (vec2 0 0) :accessor mouse-pos :reader cursor-position)
+   (monitors :initform NIL :accessor monitors)
+   (width :initform 1 :accessor width)
+   (height :initform 1 :accessor height))
   (:default-initargs
    :resizable T
    :visible T
@@ -46,6 +50,7 @@
                                           (stereo-buffer NIL stereo-buffer-p)
                                           (vsync NIL vsync-p)
                                      ;; Extra options
+                                          (fullscreen NIL fullscreen-p)
                                           (resizable NIL resizable-p)
                                           (visible NIL visible-p)
                                           (decorated NIL decorated-p)
@@ -62,6 +67,7 @@
       (maybe-set height)
       (maybe-set double-buffering)
       (maybe-set stereo-buffer)
+      (maybe-set fullscreen)
       (maybe-set resizable)
       (maybe-set visible)
       (maybe-set decorated)
@@ -71,7 +77,7 @@
       (maybe-set debug-context)
       (when vsync-p
         (setf (g :vsync)
-              (ecase vsync (:off 0) (:on 1) (:adaptive -1))))
+              (ecase vsync (:off 0) ((:on T) 1) (:adaptive -1))))
       (when version-p
         (setf (g :context-version-major) (first version))
         (setf (g :context-version-minor) (second version)))
@@ -98,6 +104,7 @@
       (sdl2:gl-set-attr :doublebuffer (bitarg :double-buffering 1))
       (sdl2:gl-set-attr :stereo (bitarg :stereo-buffer 1))
       (let* ((flags (append (list :opengl)
+                            (when (arg :fullscreen) (list :fullscreen))
                             (when (arg :resizable) (list :resizable))
                             (if (arg :visible) (list :shown) (list :hidden))
                             (unless (arg :decorated) (list :borderless))
@@ -160,7 +167,7 @@
   (sdl2:set-window-size (window context) width height))
 
 (defmethod quit ((context context))
-  (sdl2:quit))
+  (sdl2:push-event :quit))
 
 (defmethod swap-buffers ((context context))
   (sdl2:gl-swap-window (window context)))
@@ -180,12 +187,6 @@
 (defmethod (setf title) :before (value (context context))
   (sdl2:set-window-title (window context) value))
 
-(defmethod width ((context context))
-  (nth-value 0 (sdl2:get-window-size (window context))))
-
-(defmethod height ((context context))
-  (nth-value 1 (sdl2:get-window-size (window context))))
-
 (defmethod profile ((context context))
   (let ((attr (sdl2:gl-get-attr :context-profile-mask)))
     (ecase attr
@@ -201,25 +202,22 @@
   (find (sdl2-ffi.functions:sdl-get-window-display-index (window context))
         (list-monitors context) :key #'monitor-id))
 
-(defmethod name ((monitor monitor))
-  (monitor-name monitor))
-
 (defmethod list-monitors ((context context))
   (or (monitors context)
       (setf (monitors context)
             (loop for i from 0 below (sdl2-ffi.functions:sdl-get-num-video-displays)
-                  collect (make-monitor i (sdl2-ffi.functions:sdl-get-display-name i))))))
+                  collect (make-instance 'monitor :id i)))))
 
 (defmethod list-video-modes ((monitor monitor))
   (cffi:with-foreign-object (mode '(:struct display-mode))
     (setf (cffi:foreign-slot-value mode '(:struct display-mode) 'data) (cffi:null-pointer))
     (loop with id = (monitor-id monitor)
           for i from 0 below (sdl2-ffi.functions:sdl-get-num-display-modes id)
-          do (sdl2::check-zero (sdl2-ffi.functions:sdl-get-display-mode id i mode))
+          do (sdl2::check-rc (sdl2-ffi.functions:sdl-get-display-mode id i mode))
           collect (list (cffi:foreign-slot-value mode '(:struct display-mode) 'width)
                         (cffi:foreign-slot-value mode '(:struct display-mode) 'height)
                         (cffi:foreign-slot-value mode '(:struct display-mode) 'refresh-rate)
-                        (monitor-name monitor)))))
+                        (name monitor)))))
 
 (defun current-video-mode (monitor)
   (cffi:with-foreign-object (mode '(:struct display-mode))
@@ -227,7 +225,7 @@
     (list (cffi:foreign-slot-value mode '(:struct display-mode) 'width)
           (cffi:foreign-slot-value mode '(:struct display-mode) 'height)
           (cffi:foreign-slot-value mode '(:struct display-mode) 'refresh-rate)
-          (monitor-name monitor))))
+          (name monitor))))
 
 (defmethod clipboard ((context context))
   (sdl2-ffi.functions:sdl-get-clipboard-text))
@@ -236,12 +234,9 @@
   (sdl2-ffi.functions:sdl-set-clipboard-text value)
   value)
 
-(defmethod cursor-position ((context context))
-  (multiple-value-bind (x y) (sdl2:mouse-state)
-    (vec x y)))
-
 (defmethod (setf cursor-position) (pos (context context))
-  (sdl2:warp-mouse-in-window (window context) (round (vx pos)) (round (vy pos)))
+  (sdl2:warp-mouse-in-window (window context) (round (vx pos)) (- (height context) (round (vy pos))))
+  (v<- (mouse-pos context) pos)
   pos)
 
 (defun make-context (&optional handler &rest initargs)
@@ -280,6 +275,22 @@
                (when event
                  (with-simple-restart (abort "Don't handle the event.")
                    (case (sdl2:get-event-type ev)
+                     (:windowevent
+                      (case (plus-c:c-ref ev sdl2-ffi:sdl-event :window :event)
+                        (#.sdl2-ffi:+SDL-WINDOWEVENT-SHOWN+
+                         (handle (make-instance 'window-shown) (handler context)))
+                        (#.sdl2-ffi:+SDL-WINDOWEVENT-HIDDEN+
+                         (handle (make-instance 'window-hidden) (handler context)))
+                        (#.sdl2-ffi:+SDL-WINDOWEVENT-FOCUS-GAINED+
+                         (handle (make-instance 'gain-focus) (handler context)))
+                        (#.sdl2-ffi:+SDL-WINDOWEVENT-FOCUS-LOST+
+                         (handle (make-instance 'lose-focus) (handler context)))
+                        (#.sdl2-ffi:+SDL-WINDOWEVENT-SIZE-CHANGED+
+                         (let ((w (plus-c:c-ref ev sdl2-ffi:sdl-event :window :data1))
+                               (h (plus-c:c-ref ev sdl2-ffi:sdl-event :window :data2)))
+                           (setf (width context) w)
+                           (setf (height context) h)
+                           (handle (make-instance 'resize :width w :height h) (handler context))))))
                      (:keydown
                       (let* ((keysym (plus-c:c-ref ev sdl2-ffi:sdl-event :key :keysym))
                              (sym (sdl2:scancode-value keysym))
@@ -300,7 +311,7 @@
                      (:mousebuttondown
                       (let ((button (plus-c:c-ref ev sdl2-ffi:sdl-event :button :button))
                             (x (plus-c:c-ref ev sdl2-ffi:sdl-event :button :x))
-                            (y (plus-c:c-ref ev sdl2-ffi:sdl-event :button :y)))
+                            (y (- (height context) (plus-c:c-ref ev sdl2-ffi:sdl-event :button :y))))
                         (vsetf (mouse-pos context) x y)
                         (handle (make-instance 'mouse-press
                                                :pos (mouse-pos context)
@@ -309,7 +320,7 @@
                      (:mousebuttonup
                       (let ((button (plus-c:c-ref ev sdl2-ffi:sdl-event :button :button))
                             (x (plus-c:c-ref ev sdl2-ffi:sdl-event :button :x))
-                            (y (plus-c:c-ref ev sdl2-ffi:sdl-event :button :y)))
+                            (y (- (height context) (plus-c:c-ref ev sdl2-ffi:sdl-event :button :y))))
                         (vsetf (mouse-pos context) x y)
                         (handle (make-instance 'mouse-release
                                                :pos (mouse-pos context)
@@ -317,7 +328,7 @@
                                 (handler context))))
                      (:mousemotion
                       (let* ((new (vec2 (plus-c:c-ref ev sdl2-ffi:sdl-event :motion :x)
-                                        (plus-c:c-ref ev sdl2-ffi:sdl-event :motion :y)))
+                                        (- (height context) (plus-c:c-ref ev sdl2-ffi:sdl-event :motion :y))))
                              (old (shiftf (mouse-pos context) new)))
                         (handle (make-instance 'mouse-move
                                                :pos new
