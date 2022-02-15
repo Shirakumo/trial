@@ -26,6 +26,3 @@
   (remove-listener thing scene))
 
 (defmethod scene ((scene scene)) scene)
-
-(defmethod finalize :after ((scene scene))
-  (clear scene))
