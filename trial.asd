@@ -25,39 +25,40 @@
   :components ((:file "package")
                (:file "achievements" :depends-on ("package" "event-loop" "main"))
                (:file "actions" :depends-on ("package" "toolkit"))
-               (:file "array-container" :depends-on ("package" "entity"))
+               (:file "array-container" :depends-on ("package" "container"))
                (:file "asset" :depends-on ("package" "toolkit" "resource" "resource-generator"))
                (:file "asset-pool" :depends-on ("package" "asset"))
                (:file "attributes" :depends-on ("package"))
+               (:file "bag" :depends-on ("package" "container"))
                (:file "bvh2" :depends-on ("package" "helpers"))
-               (:file "camera" :depends-on ("package" "entity" "input"))
+               (:file "camera" :depends-on ("package" "container" "input"))
                (:file "capture" :depends-on ("package" "toolkit" "serialize" "event-loop" "input"))
                (:file "conditions" :depends-on ("package"))
+               (:file "camera" :depends-on ("package" "container" "helpers" "input"))
+               (:file "container" :depends-on ("package"))
                (:file "context" :depends-on ("package"))
-               (:file "controller" :depends-on ("package" "mapping" "input" "entity" "asset"))
+               (:file "controller" :depends-on ("package" "mapping" "input" "container" "asset"))
                (:file "data-pointer" :depends-on ("package" "type-info" "static-vector"))
                (:file "deferred" :depends-on ("package" "shader-entity" "shader-pass" "helpers" ("resources" "uniform-buffer") ("assets" "static")))
                (:file "deploy" :depends-on ("package" "gamepad"))
                (:file "display" :depends-on ("package" "context" "render-loop" "power"))
                (:file "documentation" :depends-on ("package"))
                (:file "effects" :depends-on ("package" "shader-pass"))
-               (:file "entity" :depends-on ("package"))
                (:file "error-handling" :depends-on ("package" "toolkit"))
-               (:file "event-loop" :depends-on ("package" "entity" "queue" "toolkit"))
+               (:file "event-loop" :depends-on ("package" "container" "queue" "toolkit"))
                (:file "features" :depends-on ("package"))
-               (:file "flare" :depends-on ("package" "transforms"))
                (:file "fps" :depends-on ("package" ("assets" "image") ("assets" "mesh") "loader"))
                (:file "gamepad" :depends-on ("package" "event-loop" "toolkit"))
                (:file "geometry" :depends-on ("package" "toolkit" "type-info" "static-vector" ("resources" "vertex-array") ("resources" "vertex-buffer")))
                (:file "geometry-clipmap" :depends-on ("package" "geometry-shapes" "shader-entity"))
                (:file "geometry-shapes" :depends-on ("package" "geometry" "asset-pool" ("assets" "mesh")))
                (:file "gl-struct" :depends-on ("package" "type-info"))
-               (:file "helpers" :depends-on ("package" "entity" "transforms" "shader-entity" "shader-pass" "asset" "resources" "loader"))
+               (:file "helpers" :depends-on ("package" "container" "transforms" "shader-entity" "shader-pass" "asset" "resources" "loader"))
                (:file "hdr" :depends-on ("package" "shader-pass"))
                (:file "input" :depends-on ("package" "event-loop"))
                (:file "language" :depends-on ("package" "toolkit" "settings"))
                (:file "lines" :depends-on ("package" "helpers" "shader-entity" "geometry"))
-               (:file "layered-container" :depends-on ("package" "entity"))
+               (:file "layered-container" :depends-on ("package" "container"))
                (:file "loader" :depends-on ("package" "resource" "asset"))
                (:file "main" :depends-on ("package" "display" "toolkit" "scene" "pipeline"))
                (:file "mapping" :depends-on ("package" "event-loop" "actions" "toolkit" "input"))
@@ -69,17 +70,17 @@
                (:file "power" :depends-on ("package"))
                (:file "prompt" :depends-on ("package"))
                (:file "queue" :depends-on ("package"))
-               (:file "rails" :depends-on ("package" "entity" "helpers"))
+               (:file "rails" :depends-on ("package" "container" "helpers"))
                (:file "render-loop" :depends-on ("package" "toolkit"))
-               (:file "render-texture" :depends-on ("package" "pipeline" "entity"))
+               (:file "render-texture" :depends-on ("package" "pipeline" "container"))
                (:file "resource" :depends-on ("package" "context"))
                (:file "resource-generator" :depends-on ("package"))
                (:file "scene-buffer" :depends-on ("package" "scene" "render-texture"))
-               (:file "scene" :depends-on ("package" "event-loop" "entity" "camera"))
+               (:file "scene" :depends-on ("package" "event-loop" "container" "camera"))
                (:file "selection-buffer" :depends-on ("package" "render-texture" "scene" "effects" "loader"))
                (:file "serialize" :depends-on ("package"))
                (:file "settings" :depends-on ("package" "toolkit"))
-               (:file "shader-entity" :depends-on ("package" "entity" "event-loop" "loader"))
+               (:file "shader-entity" :depends-on ("package" "container" "event-loop" "loader"))
                (:file "shader-pass" :depends-on ("package" "shader-entity" "resource" ("resources" "framebuffer") ("resources" "shader-program") "scene" "loader" "context" "geometry-shapes" "camera"))
                (:file "shadow-map" :depends-on ("package" "shader-pass" "transforms"))
                (:file "skybox" :depends-on ("package" "shader-entity" "transforms"))
@@ -118,18 +119,20 @@
                :atomics
                :3d-vectors
                :3d-matrices
+               :3d-quaternions
+               :3d-transforms
                :verbose
                :deploy
                :closer-mop
                :trivial-garbage
                :trivial-indent
+               :trivial-extensible-sequences
                :bordeaux-threads
                :cl-opengl
                :cl-gamepad
                :cl-ppcre
                :pathname-utils
                :documentation-utils
-               :flare
                :for
                :flow
                :glsl-toolkit

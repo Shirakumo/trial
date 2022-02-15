@@ -7,12 +7,17 @@
 (in-package #:cl-user)
 (defpackage #:trial
   (:nicknames #:org.shirakumo.fraf.trial)
-  (:use #:cl #:3d-vectors #:3d-matrices #:flare)
-  (:shadow #:// #:scene #:entity #:container #:load #:update #:particle #:oriented-entity #:sized-entity)
+  (:use #:cl
+        #:org.shirakumo.flare.vector
+        #:org.shirakumo.flare.matrix
+        #:org.shirakumo.flare.quaternion
+        #:org.shirakumo.flare.transform)
+  (:shadow #:// #:load)
   (:import-from #:static-vectors #:static-vector-pointer)
   (:import-from #:flow #:port)
   (:local-nicknames
    (#:gamepad #:org.shirakumo.fraf.gamepad)
+   (#:sequences #:org.shirakumo.trivial-extensible-sequences)
    #+windows
    (#:com #:org.shirakumo.com-on))
   ;; assets/font.lisp
@@ -442,9 +447,6 @@
    #:*debug-features*
    #:*optimize-features*
    #:reload-with-features)
-  ;; flare.lisp
-  (:export
-   #:finalize)
   ;; fps.lisp
   (:export
    #:fps-counter)
@@ -935,7 +937,7 @@
    #:define-global
    #:+app-vendor+
    #:+app-system+
-   #:root
+   #:data-root
    #:git-repo-commit
    #:version
    #:toolkit
@@ -1072,8 +1074,13 @@
 
 (defpackage #:cl+trial
   (:nicknames #:org.shirakumo.fraf.trial.cl+trial)
-  (:shadowing-import-from #:trial #:// #:scene #:entity #:container #:load #:update #:particle #:oriented-entity #:sized-entity)
-  (:use #:cl #:trial #:3d-vectors #:3d-matrices #:flare))
+  (:shadowing-import-from #:trial #:// #:load #:particle)
+  (:use #:cl
+        #:trial
+        #:org.shirakumo.flare.vector
+        #:org.shirakumo.flare.matrix
+        #:org.shirakumo.flare.quaternion
+        #:org.shirakumo.flare.transform))
 
 (do-symbols (symb '#:cl+trial)
   (export (list symb) '#:cl+trial))

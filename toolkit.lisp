@@ -43,7 +43,7 @@
             (when (probe-file (merge-pathnames ".git/" dir)) (subseq (git-repo-commit dir) 0 7)))))
 
 (let ((cache NIL))
-  (defun root (&optional (app +app-system+))
+  (defun data-root (&optional (app +app-system+))
     (if (deploy:deployed-p)
         (deploy:runtime-directory)
         (or cache (setf cache (asdf:system-source-directory app))))))

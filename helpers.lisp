@@ -50,12 +50,6 @@
 (defmethod apply-transforms progn ((obj scaled-entity))
   (scale (scaling obj)))
 
-(defclass clocked-entity (clock listener)
-  ())
-
-(defmethod handle :before ((ev tick) (entity clocked-entity))
-  (flare:update entity))
-
 (define-shader-entity fullscreen-entity (renderable)
   ((vertex-array :initform (// 'trial 'fullscreen-square) :accessor vertex-array)))
 

@@ -176,12 +176,12 @@
   (when (framebuffer pass)
     (finalize (framebuffer pass))))
 
-(defmethod enter ((container flare:container) (pass shader-pass))
+(defmethod enter ((container container) (pass shader-pass))
   (for:for ((object over container))
     (when (object-renderable-p object pass)
       (enter object pass))))
 
-(defmethod leave ((container flare:container) (pass shader-pass))
+(defmethod leave ((container container) (pass shader-pass))
   (for:for ((object over container))
     (when (object-renderable-p object pass)
       (leave object pass))))

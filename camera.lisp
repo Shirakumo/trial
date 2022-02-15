@@ -38,12 +38,12 @@
 (defmethod project-view :before ((camera camera))
   (reset-matrix))
 
-(defmethod map-visible (function (camera camera) (container flare:container))
+(defmethod map-visible (function (camera camera) (container container))
   (for:for ((object over container))
     (when (in-view-p object camera)
       (funcall function object))))
 
-(defmethod map-visible (function (camera null) (container flare:container))
+(defmethod map-visible (function (camera null) (container container))
   (for:for ((object over container))
     (funcall function object)))
 
