@@ -34,7 +34,7 @@
               (not (probe-file path))
               (< (file-write-date path)
                  (file-write-date (merge-pathnames "keymap.lisp" (root)))))
-      (uiop:copy-file (merge-pathnames "keymap.lisp" (root)) path)))
+      (uiop:copy-file (merge-pathnames "keymap.lisp" (data-root)) path)))
   (load-mapping path))
 
 (defun save-keymap (&key (path (keymap-path)))

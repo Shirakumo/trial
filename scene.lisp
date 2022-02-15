@@ -6,30 +6,26 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass scene (flare:scene event-loop)
-  ((camera :initarg :camera :initform NIL :accessor camera)))
+(defclass scene (container event-loop)
+  ((camera :initarg :camera :initform NIL :accessor camera)
+   (name-map :initform (make-hash-table :test 'eq) :accessor name-map)))
 
 (defmethod enter :after ((camera camera) (scene scene))
   (setf (camera scene) camera))
 
+(defmethod register ((entity entity) (scene scene))
+  (setf (gethash (name entity) (name-map scene)) entity))
+
 (defmethod register :after ((listener listener) (scene scene))
   (add-listener listener scene))
 
-(defmethod deregister :after (thing (scene scene))
+(defmethod deregister ((entity entity) (scene scene))
+  (remhash (name entity) (name-map scene)))
+
+(defmethod deregister :after ((listener listener) (scene scene))
   (remove-listener thing scene))
 
 (defmethod scene ((scene scene)) scene)
 
-;; Since we have a tick event, we don't want to dupe that here.
-;; animations and clock update are already handled by the method
-;; combination, but defining a noop primary method prevents update
-;; from being called on the children.
-(defmethod flare:update ((scene scene) dt))
-
-;; But we still need to call it in tick.
-(defmethod handle :before ((event tick) (scene scene))
-  (flare:update scene (dt event)))
-
 (defmethod finalize :after ((scene scene))
-  (stop scene)
   (clear scene))
