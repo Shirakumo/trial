@@ -48,20 +48,6 @@
 (defmethod contains-p (thing (bag bag))
   (gethash thing (%object->index bag)))
 
-(defmethod predecessor (thing (bag bag))
-  (let* ((objects (%objects bag))
-         (table (%object->index bag))
-         (index (gethash thing table)))
-    (when (and index (< 0 index))
-      (svref objects (1- index)))))
-
-(defmethod successor (thing (bag bag))
-  (let* ((objects (%objects bag))
-         (table (%object->index bag))
-         (index (gethash thing table)))
-    (when (and index (< index (1- (length objects))))
-      (svref objects (1+ index)))))
-
 (defmethod sequences:elt ((bag bag) index)
   (svref (%objects bag) index))
 

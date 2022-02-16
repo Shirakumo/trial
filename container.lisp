@@ -12,8 +12,6 @@
 (defgeneric register (thing container))
 (defgeneric deregister (thing conatiner))
 (defgeneric contains-p (thing conatiner))
-(defgeneric predecessor (thing container))
-(defgeneric successor (thing container))
 
 (defclass scene-node ()
   ((container :initarg :container :initform NIL :accessor container)))
