@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial.animation)
 
-(defclass pose (sequences:sequence)
+(defclass pose (sequences:sequence standard-object)
   ((joints :initform #() :accessor joints)
    (parents :initform (make-array 0 :element-type '(signed-byte 16)) :accessor parents)))
 

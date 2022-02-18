@@ -15,7 +15,7 @@
   (print-unreadable-object (frame stream :type T)
     (format stream "~a" (frame-time frame))))
 
-(defclass track (sequences:sequence)
+(defclass track (sequences:sequence standard-object)
   ((frames :initarg :frames :initform #() :accessor frames)
    (interpolation :initarg :interpolation :initform :linear :accessor interpolation)))
 
