@@ -11,12 +11,20 @@
   (time 0.0 :type single-float)
   (curve NIL :type (function (single-float) T)))
 
+(defmethod print-object ((frame frame) stream)
+  (print-unreadable-object (frame stream :type T)
+    (format stream "~a" (frame-time frame))))
+
 (defclass track (sequences:sequence)
   ((frames :initarg :frames :initform #() :accessor frames)
    (interpolation :initarg :interpolation :initform :linear :accessor interpolation)))
 
-(defmethod initialize-instance :after ((track track) &key keyframes)
-  (setf (frames track) keyframes))
+(defmethod initialize-instance :after ((track track) &key times values)
+  (setf (frames track) (cons times values)))
+
+(defmethod print-object ((track track) stream)
+  (print-unreadable-object (track stream :type T)
+    (format stream "~a ~a" (start-time track) (end-time track))))
 
 (defgeneric start-time (track))
 (defgeneric end-time (track))
@@ -24,20 +32,28 @@
 (defgeneric find-frame-idx (track time loop-p))
 
 (defmethod (setf frames) ((keyframes cons) (track track))
-  (let ((frames (make-array (length keyframes))))
-    (loop for i from 0
-          for current = (first keyframes) then next
-          for next in (rest keyframes)
-          do (setf (aref frames i)
-                   (make-frame (first current)
-                               (ecase (interpolation track)
-                                 (:constant (constant (second current)))
-                                 (:linear (linear (second current) (second next)))
-                                 (:hermite (hermite (second current) (third current)
-                                                    (second next) (fourth current)))
-                                 (:bezier (bezier (second current) (third current)
-                                                  (second next) (fourth current)))))))
-    (setf (frames track) frames)))
+  (destructuring-bind (times . values) keyframes
+    (let ((frames (make-array (length times)))
+          (j 0))
+      (dotimes (i (length times))
+        (setf (aref frames i)
+              (make-frame (elt times i)
+                          (ecase (interpolation track)
+                            (:constant
+                             (incf j)
+                             (constant (elt values (1- j))))
+                            (:linear
+                             (incf j)
+                             (linear (elt values (1- j)) (elt values j)))
+                            (:hermite
+                             (incf j 2)
+                             (hermite (elt values (- j 2)) (elt values (- j 1))
+                                      (elt values (+ j 0)) (elt values (+ j 1))))
+                            (:bezier
+                             (incf j 2)
+                             (bezier (elt values (- j 2)) (elt values (- j 1))
+                                     (elt values (+ j 0)) (elt values (+ j 1))))))))
+      (setf (frames track) frames))))
 
 (defun fit-to-track (track time loop-p)
   (let ((frames (frames track)))
@@ -89,6 +105,10 @@
    (location :initform (make-instance 'track) :accessor location)
    (scaling :initform (make-instance 'track) :accessor scaling)
    (rotation :initform (make-instance 'track) :accessor rotation)))
+
+(defmethod print-object ((track transform-track) stream)
+  (print-unreadable-object (track stream :type T)
+    (format stream "~s ~a ~a" (trial:name track) (start-time track) (end-time track))))
 
 (defmethod start-time ((track transform-track))
   (min (start-time (location track))
