@@ -4,10 +4,10 @@
  Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
-(in-package #:org.shirakumo.fraf.trial)
+(in-package #:org.shirakumo.fraf.trial.animation)
 
 (defclass clip (sequences:sequence)
-  ((name :initarg :name :initform NIL :accessor name)
+  ((name :initarg :name :initform NIL :accessor trial:name)
    (tracks :initform #() :accessor tracks)
    (start-time :initform 0.0 :accessor start-time)
    (end-time :initform 0.0 :accessor end-time)

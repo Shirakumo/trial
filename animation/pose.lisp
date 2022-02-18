@@ -4,11 +4,11 @@
  Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
-(in-package #:org.shirakumo.fraf.trial)
+(in-package #:org.shirakumo.fraf.trial.animation)
 
 (defclass pose (sequences:sequence)
-  ((joints :initform #() :accessor joints))
-  ((parents :initform (make-array 0 :element-type '(unsigned-byte 16)) :accessor parents)))
+  ((joints :initform #() :accessor joints)
+   (parents :initform (make-array 0 :element-type '(unsigned-byte 16)) :accessor parents)))
 
 (defmethod initialize-instance :after ((pose pose) &key size source)
   (cond (source

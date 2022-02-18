@@ -4,7 +4,7 @@
  Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
-(in-package #:org.shirakumo.fraf.trial)
+(in-package #:org.shirakumo.fraf.trial.animation)
 
 ;; FIXME: implement modifying variant to avoid garbage production
 
