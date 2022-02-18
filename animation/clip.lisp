@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial.animation)
 
-(defclass clip (sequences:sequence)
+(defclass clip (sequences:sequence standard-object)
   ((name :initarg :name :initform NIL :accessor trial:name)
    (tracks :initform #() :accessor tracks)
    (start-time :initform 0.0 :accessor start-time)
