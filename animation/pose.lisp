@@ -8,13 +8,16 @@
 
 (defclass pose (sequences:sequence)
   ((joints :initform #() :accessor joints)
-   (parents :initform (make-array 0 :element-type '(unsigned-byte 16)) :accessor parents)))
+   (parents :initform (make-array 0 :element-type '(signed-byte 16)) :accessor parents)))
 
 (defmethod initialize-instance :after ((pose pose) &key size source)
   (cond (source
          (pose<- pose source))
         (size
          (sequences:adjust-sequence pose size))))
+
+(defmethod print-object ((pose pose) stream)
+  (print-unreadable-object (pose stream :type T)))
 
 (defun pose<- (target source)
   (let* ((orig-joints (joints source))

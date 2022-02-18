@@ -13,6 +13,14 @@
    (end-time :initform 0.0 :accessor end-time)
    (loop-p :initarg :loop-p :initform T :accessor loop-p)))
 
+(defmethod initialize-instance :after ((clip clip) &key tracks)
+  (when tracks
+    (setf (tracks clip) tracks)))
+
+(defmethod print-object ((clip clip) stream)
+  (print-unreadable-object (clip stream :type T)
+    (format stream "~s" (trial:name clip))))
+
 (defun fit-to-clip (clip time)
   (let ((frames (frames track)))
     (let ((start (start-time clip))
@@ -35,7 +43,13 @@
   (length (tracks clip)))
 
 (defmethod sequences:adjust-sequence ((clip clip) length &rest args)
-  (setf (tracks clip) (apply #'adjust-array (tracks clip) length args))
+  (declare (ignore args))
+  (let* ((tracks (tracks clip))
+         (old (length tracks)))
+    (setf tracks (adjust-array tracks length))
+    (loop for i from old below length
+          do (setf (svref tracks i) (make-instance 'transform-track)))
+    (setf (tracks clip) tracks))
   clip)
 
 (defmethod sequences:elt ((clip clip) index)
@@ -48,13 +62,15 @@
 
 (defmethod find-track ((clip clip) name &key (if-does-not-exist :error))
   (loop for track across (tracks clip)
-        do (when (eql name (name track))
+        do (when (eql name (trial:name track))
              (return track))
         finally (ecase if-does-not-exist
                   (:error (error "No track with name ~s found." name))
-                  (:create (let ((track (make-instance 'transform-track :name name)))
-                             (adjust-array clip (1+ (length clip)) :initial-element track)
-                             (return track)))
+                  (:create (progn 
+                             (sequences:adjust-sequence clip (1+ (length clip)))
+                             (let ((track (elt clip (1- (length clip)))))
+                               (setf (trial:name track) name)
+                               (return track))))
                   ((NIL) (return NIL)))))
 
 (defmethod sample-pose ((clip clip) pose time)

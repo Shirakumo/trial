@@ -11,7 +11,7 @@
 (defmacro define-curve (name args &body expansion)
   (destructuring-bind (body &optional quat) expansion
     `(defun ,name ,args
-       (macrolet ((expand (type + - *)
+       (macrolet ((expand (type + - * &optional (wrap 'progn))
                     `(locally
                          (declare (type ,type ,@',args))
                        (lambda (x)
@@ -19,14 +19,14 @@
                          (let* ((x (float x 0f0))
                                 (1-x (- 1 x)))
                            (declare (ignorable x 1-x))
-                           ,,body)))))
+                           (,wrap ,,body))))))
          (etypecase p1
            (real (let ,(loop for arg in args
                              collect `(,arg (float ,arg 0f0)))
                    (expand single-float + - *)))
            (quat
             (let ,quat
-              (nqunit (expand quat q+ q- q*))))
+              (expand quat q+ q- q* nqunit)))
            (vec4 (expand vec4 v+ v- v*))
            (vec3 (expand vec3 v+ v- v*))
            (vec2 (expand vec2 v+ v- v*)))))))
