@@ -4,7 +4,7 @@
  Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
-(in-package #:org.shirakumo.fraf.trial)
+(in-package #:org.shirakumo.fraf.trial.animation)
 
 (defstruct (frame
             (:constructor make-frame (time curve)))
@@ -85,7 +85,7 @@
     (funcall (frame-curve l) x)))
 
 (defclass transform-track ()
-  ((name :initarg :name :initform NIL :accessor name)
+  ((name :initarg :name :initform NIL :accessor trial:name)
    (location :initform (make-instance 'track) :accessor location)
    (scaling :initform (make-instance 'track) :accessor scaling)
    (rotation :initform (make-instance 'track) :accessor rotation)))

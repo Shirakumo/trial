@@ -4,23 +4,13 @@
  Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
-(in-package #:org.shirakumo.fraf.trial)
+(in-package #:org.shirakumo.fraf.trial.animation)
 
-(defun g (source &rest keys)
-  (let ((result source))
-    (flet ((transcode (key)
-             (setf result
-                   (etypecase key
-                     (string (gethash key result))
-                     (integer (aref result key))))))
-      (mapc #'transcode keys)
-      result)))
-
-(defun node-transform (json)
-  (let ((matrix (g json "matrix"))
-        (translation (g json "translation"))
-        (scale (g json "scale"))
-        (rotation (g json "rotation")))
+(defun node-transform (node)
+  (let ((matrix (gltf:matrix node))
+        (translation (gltf:translation node))
+        (scale (gltf:scale node))
+        (rotation (gltf:rotation node)))
     (let ((transform (if matrix
                          (tfrom-mat (mat4 matrix))
                          (transform))))
@@ -60,9 +50,9 @@
         (buff (g json "buffers" (g view "buffer"))))))
 
 (defun load-track (json channel)
-  (let ((sampler (g json "animations" "samplers" (g channel "sampler")))
-        (interpolation (g sampler "interpolation"))
-        (interpolation (cond ((string-equal interpolation "STEP") :constant)
-                             ((string-equal interpolation "LINEAR") :linear)
-                             ((string-equal interpolation "CUBICSPLINE") :hermite)
-                             (T (error "Unknown interpolation type: ~s" interpolation)))))))
+  (let* ((sampler (g json "animations" "samplers" (g channel "sampler")))
+         (interpolation (g sampler "interpolation"))
+         (interpolation (cond ((string-equal interpolation "STEP") :constant)
+                              ((string-equal interpolation "LINEAR") :linear)
+                              ((string-equal interpolation "CUBICSPLINE") :hermite)
+                              (T (error "Unknown interpolation type: ~s" interpolation)))))))
