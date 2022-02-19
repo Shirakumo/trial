@@ -41,7 +41,9 @@
                                                            (gltf:wrap-t sampler)
                                                            :clamp-to-edge)))))
     (setf (skeleton asset) (load-skeleton gltf))
-    (setf (clips asset) (load-clips gltf)))
+    (setf (clips asset) (load-clips gltf))
+    (print (list :meshes (alexandria:hash-table-keys (meshes asset))))
+    (print (list :clips (alexandria:hash-table-keys (clips asset)))))
   (trial:list-resources asset))
 
 
