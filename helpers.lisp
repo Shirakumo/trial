@@ -50,6 +50,43 @@
 (defmethod apply-transforms progn ((obj scaled-entity))
   (scale (scaling obj)))
 
+(defclass transformed-entity (transformed entity)
+  ((transform :initarg :transform :initform (transform) :accessor tf)))
+
+(defmethod apply-transforms progn ((obj transformed-entity))
+  ;; FIXME: implement a non-consing version.
+  (nm* (model-matrix) (tmat4 (tf obj))))
+
+(defmethod location ((obj transformed-entity))
+  (tlocation (tf obj)))
+
+(defmethod (setf location) (vec (obj transformed-entity))
+  (v<- (tlocation (tf obj)) vec))
+
+(defmethod scaling ((obj transformed-entity))
+  (tscaling (tf obj)))
+
+(defmethod (setf scaling) (vec (obj transformed-entity))
+  (v<- (tscaling (tf obj)) vec))
+
+(defmethod rotation ((obj transformed-entity))
+  (trotation (tf obj)))
+
+(defmethod (setf rotation) (quat (obj transformed-entity))
+  (q<- (trotation (tf obj)) quat))
+
+(defmethod axis ((obj transformed-entity))
+  (qaxis (trotation (tf obj))))
+
+(defmethod (setf axis) (axis (obj transformed-entity))
+  (setf (trotation (tf obj)) (qfrom-angle axis (angle obj))))
+
+(defmethod angle ((obj transformed-entity))
+  (qangle (trotation (tf obj))))
+
+(defmethod (setf angle) (angle (obj transformed-entity))
+  (setf (trotation (tf obj)) (qfrom-angle (axis obj) angle)))
+
 (define-shader-entity fullscreen-entity (renderable)
   ((vertex-array :initform (// 'trial 'fullscreen-square) :accessor vertex-array)))
 
