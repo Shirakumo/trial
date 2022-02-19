@@ -8,6 +8,7 @@
 
 (trial:define-shader-entity entity (trial:transformed-entity trial:renderable trial:listener)
   ((vertex-array :initarg :vertex-array :accessor trial:vertex-array)
+   (texture :initarg :texture :accessor trial:texture)
    (palette :initform #() :accessor palette)
    (clock :initform 0.0 :accessor clock)
    (mesh :initarg :mesh :accessor mesh)
@@ -15,33 +16,35 @@
    (clip :initarg :clip :initform NIL :accessor clip)
    (pose :accessor pose)))
 
-(defmethod initialize-instance :after ((entity entity) &key (mesh 0))
-  (trial:register-generation-observer entity (asset entity))
-  (setf (trial:vertex-array entity) (trial:resource (asset entity) mesh)))
+(defmethod initialize-instance :after ((entity entity) &key)
+  (trial:register-generation-observer entity (asset entity)))
 
 (defmethod trial:stage :after ((entity entity) (area trial:staging-area))
-  (trial:stage (asset entity) area)
-  (trial:stage (trial:vertex-array entity) area))
+  ;; FIXME: fuck. don't know how to load the resources?
+  (trial:stage (asset entity) area))
 
 (defmethod trial:observe-generation ((entity entity) (asset gltf-asset) res)
   (setf (asset entity) asset))
 
 (defmethod (setf asset) :after ((asset gltf-asset) (entity entity))
-  (setf (mesh entity) (gethash 0 (meshes asset)))
-  (setf (clip entity) (svref (clips asset) 0))
+  (unless (typep (mesh entity) 'mesh)
+    (setf (mesh entity) (gethash (mesh entity) (meshes asset))))
+  (setf (clip entity) (gethash NIL (clips asset)))
   (setf (pose entity) (make-instance 'pose :source (rest-pose (skeleton asset)))))
 
 (defmethod (setf mesh) :after ((mesh mesh) (entity entity))
-  (setf (trial:vertex-array entity) (trial:resource (asset entity) (trial:name mesh))))
+  (setf (trial:vertex-array entity) (trial:resource (asset entity) (trial:name mesh)))
+  (setf (trial:texture entity) (trial:texture mesh)))
 
 (defmethod trial:handle ((ev trial:tick) (entity entity))
   (let ((dt (trial:dt ev)))
-    (setf (clock entity) (sample-pose (clip entity) (pose entity) (+ (clock entity) dt)))
-    (let ((palette (matrix-palette (pose entity)))
-          (inv (inv-bind-pose (skeleton (asset entity)))))
-      (dotimes (i (length palette))
-        (nm* (svref palette i) (svref inv i)))
-      (setf (palette entity) palette))))
+    (when (clip entity)
+      (setf (clock entity) (sample-pose (clip entity) (pose entity) (+ (clock entity) dt)))
+      (let ((palette (matrix-palette (pose entity)))
+            (inv (inv-bind-pose (skeleton (asset entity)))))
+        (dotimes (i (length palette))
+          (nm* (svref palette i) (svref inv i)))
+        (setf (palette entity) palette)))))
 
 (defmethod trial:render ((entity entity) (program trial:shader-program))
   (declare (optimize speed))
@@ -56,6 +59,7 @@
   (setf (trial:uniform program "model_matrix") (trial:model-matrix))
   (setf (trial:uniform program "view_matrix") (trial:view-matrix))
   (setf (trial:uniform program "projection_matrix") (trial:projection-matrix))
+  ;;(gl:bind-texture :texture-2d (trial:gl-name (trial:texture entity)))
   (let* ((vao (trial:vertex-array entity))
          (size (trial:size vao)))
     (declare (type (unsigned-byte 32) size))
@@ -91,9 +95,21 @@ void main(){
                    + (pose[j.y] * weights.y)
                    + (pose[j.z] * weights.z)
                    + (pose[j.w] * weights.w);
-  skin_matrix = mat4(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1);
   world_pos = model_matrix * skin_matrix * vec4(position, 1.0f);
   normal = vec3(model_matrix * skin_matrix * vec4(in_normal, 0.0f));
   texcoord = in_texcoord;
   gl_Position = projection_matrix * view_matrix * world_pos;
+}")
+
+(trial:define-class-shader (entity :fragment-shader)
+  "
+uniform sampler2D tex_image;
+
+in vec3 normal;
+in vec4 world_pos;
+in vec2 texcoord;
+out vec4 color;
+
+void main(){
+  color = texture(tex_image, texcoord);
 }")

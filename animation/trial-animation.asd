@@ -1,5 +1,5 @@
 (asdf:defsystem :trial-animation
-  :depends-on (:trial
+  :depends-on (:trial-glfw
                :cl-gltf)
   :components ((:file "package")
                (:file "interpolation")
@@ -9,4 +9,5 @@
                (:file "mesh")
                (:file "gltf")
                (:file "asset")
-               (:file "entity")))
+               (:file "entity")
+               (:file "workbench")))
