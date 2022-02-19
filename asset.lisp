@@ -241,3 +241,6 @@
 (defmethod compile-resources ((all (eql T)) (source (eql T)) &rest args &key &allow-other-keys)
   (dolist (pool (list-pools))
     (apply #'compile-resources pool source args)))
+
+(defclass full-load-asset (asset)
+  ())
