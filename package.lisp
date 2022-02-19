@@ -767,6 +767,7 @@
    #:render-pass)
   ;; scene.lisp
   (:export
+   #:unit
    #:scene
    #:scene-event
    #:scene

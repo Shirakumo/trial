@@ -22,7 +22,7 @@
 (define-asset (workbench grid) mesh
     (make-line-grid 10 100 100))
 
-(define-shader-entity player (vertex-entity textured-entity located-entity listener)
+(define-shader-entity player (vertex-entity textured-entity transformed-entity listener)
   ((name :initform 'player)
    (texture :initform (// 'workbench 'cat))
    (vertex-array :initform (// 'workbench 'cube))))
@@ -31,11 +31,11 @@
   (when (retained :w)
     (incf (vz (location player)) (* dt +50)))
   (when (retained :a)
-    (incf (vx (location player)) (* dt +50)))
+    (incf (vx (location player)) (* dt -50)))
   (when (retained :s)
     (incf (vz (location player)) (* dt -50)))
   (when (retained :d)
-    (incf (vx (location player)) (* dt -50))))
+    (incf (vx (location player)) (* dt +50))))
 
 (progn
   (defmethod setup-scene ((workbench workbench) scene)

@@ -145,7 +145,11 @@
                    ;; the sequence for objects that should be loaded new.
                    ((:to-load :validated)
                     (progress loader (1+ i) (+ 2 (length loads)))
-                    (load-with loader resource))))))
+                    ;; FIXME: This is a really fucking shitty kludge.
+                    (let ((resources (load-with loader resource)))
+                      (when (typep resource 'full-load-asset)
+                        (dolist (resource resources)
+                          (vector-push-extend resource loads)))))))))
       ;; The load sequence can be longer after an invalid resorting,
       ;; so we need to check the length at every step.
       (loop for i from 0
