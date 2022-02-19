@@ -100,8 +100,7 @@
                (:translation (load-track (location track) sampler))
                (:scale (load-track (scaling track) sampler))
                (:rotation (load-track (rotation track) sampler))))
-    (recompute-duration clip)
-    clip))
+    (recompute-duration clip)))
 
 (defun load-clips (gltf)
   (let ((table (make-hash-table :test 'equal)))
