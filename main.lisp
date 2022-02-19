@@ -68,12 +68,10 @@
 
 (defmethod change-scene ((main main) (new scene) &key (old (scene main)))
   (unless (eq old new)
-    (when old (stop old))
     (setup-scene main new)
     (with-timing-report (info :trial.main "Commit took ~fs run time, ~fs clock time.")
       (when (commit new (loader main))
-        (setf (scene main) new)))
-    (start (scene main)))
+        (setf (scene main) new))))
   (values new old))
 
 (defmethod enter-and-load ((object renderable) (container container) (main main))

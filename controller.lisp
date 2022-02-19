@@ -30,7 +30,7 @@
 
 (defmethod handle ((ev reload-scene) (controller controller))
   (let ((old (scene (display controller))))
-    (change-scene (display controller) (make-instance (type-of old) :clock (clock old)))))
+    (change-scene (display controller) (make-instance (type-of old)))))
 
 (defun find-controller ()
   (or (when +main+ (unit :controller (scene +main+)))
