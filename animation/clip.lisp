@@ -19,7 +19,7 @@
 
 (defmethod print-object ((clip clip) stream)
   (print-unreadable-object (clip stream :type T)
-    (format stream "~s" (trial:name clip))))
+    (format stream "~s ~a ~a" (trial:name clip) (start-time clip) (end-time clip))))
 
 (defun fit-to-clip (clip time)
   (let ((start (start-time clip))

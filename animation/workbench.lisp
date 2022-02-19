@@ -24,6 +24,6 @@
     (trial:enter (make-instance 'trial::fps-counter) scene)
     (trial:enter (make-instance 'trial:vertex-entity :vertex-array (trial:// 'workbench 'grid)) scene)
     (trial:enter (make-instance 'entity :asset (trial:asset 'workbench 'simple) :mesh 0) scene)
-    (trial:enter (make-instance 'trial:editor-camera :location (vec 0 1 10)) scene)
+    (trial:enter (make-instance 'trial:editor-camera :location (vec 0 1 5)) scene)
     (trial:enter (make-instance 'trial:render-pass) scene))
   (trial:maybe-reload-scene))

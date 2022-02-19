@@ -134,7 +134,7 @@
   (let ((max most-negative-single-float))
     (flet ((try (track)
              (when (valid-p track)
-               (setf max (max max (start-time track))))))
+               (setf max (max max (end-time track))))))
       (try (location track))
       (try (scaling track))
       (try (rotation track))
@@ -151,5 +151,5 @@
 
 (defmethod valid-p ((track transform-track))
   (or (< 1 (length (location track)))
-      (< 1 (length (location track)))
-      (< 1 (length (location track)))))
+      (< 1 (length (scaling track)))
+      (< 1 (length (rotation track)))))
