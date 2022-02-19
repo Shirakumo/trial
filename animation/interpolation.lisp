@@ -8,28 +8,26 @@
 
 ;; FIXME: implement modifying variant to avoid garbage production
 
-(defmacro define-curve (name args &body expansion)
-  (destructuring-bind (body &optional quat) expansion
-    `(defun ,name ,args
-       (macrolet ((expand (type + - * &optional (wrap 'progn))
-                    `(locally
-                         (declare (type ,type ,@',args))
-                       (lambda (x)
-                         (declare (optimize speed (safety 0)))
-                         (let* ((x (float x 0f0))
-                                (1-x (- 1 x)))
-                           (declare (ignorable x 1-x))
-                           (,wrap ,,body))))))
-         (etypecase p1
-           (real (let ,(loop for arg in args
-                             collect `(,arg (float ,arg 0f0)))
-                   (expand single-float + - *)))
-           (quat
-            (let ,quat
-              (expand quat q+ q- q* nqunit)))
-           (vec4 (expand vec4 v+ v- v*))
-           (vec3 (expand vec3 v+ v- v*))
-           (vec2 (expand vec2 v+ v- v*)))))))
+(defmacro define-curve (name args &body body)
+  `(defun ,name ,args
+     (macrolet ((expand (type + * &optional (wrap 'progn))
+                  `(locally
+                       (declare (type ,type ,@',args))
+                     (lambda (x)
+                       (declare (optimize speed (safety 0)))
+                       (declare (type single-float x))
+                       (let* ((1-x (- 1.0 x)))
+                         (,wrap ,,(first body)))))))
+       (etypecase p1
+         (real (let ,(loop for arg in args
+                           collect `(,arg (float ,arg 0f0)))
+                 (expand single-float + - *)))
+         (quat
+          (let ((p2 (if (< (q. p1 p2) 0) (q- p2) p2)))
+            (expand quat nq+ q* nqunit)))
+         (vec4 (expand vec4 nv+ v*))
+         (vec3 (expand vec3 nv+ v*))
+         (vec2 (expand vec2 nv+ v*))))))
 
 (define-curve bezier (p1 c1 p2 c2)
   `(,+ (,* p1 (* 1-x 1-x 1-x))
@@ -43,12 +41,11 @@
      (,+ (,* p1 (+ (* 2.0 xxx) (* -3.0 xx) 1.0))
          (,* p2 (+ (* -2.0 xxx) (* 3.0 xx)))
          (,* s1 (+ xxx (* -2.0 xx) x))
-         (,* s2 (- xxx xx))))
-  ((p2 (if (< (q. p1 p2) 0) (q- p2) p2))))
+         (,* s2 (- xxx xx)))))
 
 (define-curve linear (p1 p2)
-  `(,+ (,* p1 x)
-       (,* p2 1-x)))
+  `(,+ (,* p1 1-x)
+       (,* p2 x)))
 
 (define-curve constant (p1)
   'p1)
