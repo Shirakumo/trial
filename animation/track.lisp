@@ -24,7 +24,9 @@
 
 (defmethod print-object ((track track) stream)
   (print-unreadable-object (track stream :type T)
-    (format stream "~a ~a" (start-time track) (end-time track))))
+    (if (valid-p track)
+        (format stream "~a ~a" (start-time track) (end-time track))
+        (format stream "INVALID"))))
 
 (defgeneric start-time (track))
 (defgeneric end-time (track))
@@ -64,6 +66,9 @@
           (if loop-p
               (+ start (mod (- time start) (- end start)))
               (trial:clamp start time end))))))
+
+(defmethod valid-p ((track track))
+  (< 1 (length (frames track))))
 
 (defmethod start-time ((track track))
   (frame-time (svref (frames track) 0)))
@@ -108,17 +113,33 @@
 
 (defmethod print-object ((track transform-track) stream)
   (print-unreadable-object (track stream :type T)
-    (format stream "~s ~a ~a" (trial:name track) (start-time track) (end-time track))))
+    (if (valid-p track)
+        (format stream "~s ~a ~a" (trial:name track)
+                (start-time track)
+                (end-time track))
+        (format stream "~s INVALID" (trial:name track)))))
 
 (defmethod start-time ((track transform-track))
-  (min (start-time (location track))
-       (start-time (scaling track))
-       (start-time (rotation track))))
+  (let ((min most-positive-single-float))
+    (flet ((try (track)
+             (when (valid-p track)
+               (setf min (min min (start-time track))))))
+      (try (location track))
+      (try (scaling track))
+      (try (rotation track))
+      (if (= min most-positive-single-float)
+          0.0 min))))
 
 (defmethod end-time ((track transform-track))
-  (max (end-time (location track))
-       (end-time (scaling track))
-       (end-time (rotation track))))
+  (let ((max most-negative-single-float))
+    (flet ((try (track)
+             (when (valid-p track)
+               (setf max (max max (start-time track))))))
+      (try (location track))
+      (try (scaling track))
+      (try (rotation track))
+      (if (= max most-negative-single-float)
+          0.0 max))))
 
 (defmethod sample-transform ((track transform-track) transform time loop-p)
   (when (< 1 (length (location track)))

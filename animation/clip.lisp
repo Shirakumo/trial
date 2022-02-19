@@ -33,7 +33,8 @@
         when (valid-p track) minimize (start-time track) into start
         when (valid-p track) maximize (end-time track) into end
         finally (setf (start-time clip) (float start 0.0)
-                      (end-time clip) (float end 0.0))))
+                      (end-time clip) (float end 0.0)))
+  clip)
 
 (defmethod (setf tracks) :after (tracks (clip clip))
   (recompute-duration clip))
