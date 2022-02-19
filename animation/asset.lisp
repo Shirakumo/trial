@@ -22,8 +22,10 @@
                  (setf (trial:name mesh) i))
                (setf (gethash (trial:name mesh) meshes) mesh)
                (when (trial:texture mesh)
-                 (setf (trial:texture mesh) (trial:resource asset (list 'texture (gltf:idx (trial:texture mesh))))))
+                 (setf (trial:texture mesh)
+                       NIL #++(trial:resource asset (list 'texture (gltf:idx (trial:texture mesh))))))
                (make-vertex-array mesh (trial:resource asset (trial:name mesh))))
+      #++
       (loop for material across (gltf:materials gltf)
             do (let* ((pbr (gltf:pbr material))
                       (texinfo (gltf:albedo pbr))
