@@ -64,7 +64,7 @@
   (clear container))
 
 (defclass entity (scene-node)
-  ((name :initform NIL :accessor name)))
+  ((name :initform NIL :initarg :name :accessor name)))
 
 (defmethod enter :after ((entity entity) (container container))
   (register entity container))
