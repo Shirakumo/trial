@@ -27,9 +27,9 @@
          (parents (parents target)))
     (let ((old (length joints)))
       (when (< old size)
-        (setf (joints pose) (setf joints (adjust-array joints length)))
-        (setf (parents pose) (setf parents (adjust-array parents length)))
-        (loop for i from old below length
+        (setf (joints target) (setf joints (adjust-array joints size)))
+        (setf (parents target) (setf parents (adjust-array parents size)))
+        (loop for i from old below size
               do (setf (svref joints i) (transform)))))
     (loop for i from 0 below size
           do (setf (aref parents i) (aref orig-parents i))
@@ -78,3 +78,8 @@
             do (setf base (t+ (svref joints parent) base))
             until (= 0 parent))
       base)))
+
+(defmethod matrix-palette ((pose pose))
+  (let ((result (make-array (length (joints pose)))))
+    (dotimes (i (length result) result)
+      (setf (svref result i) (tmat4 (global-transform pose i))))))

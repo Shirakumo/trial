@@ -63,7 +63,7 @@
               (end (frame-time (svref frames (1- (length frames))))))
           (if loop-p
               (+ start (mod (- time start) (- end start)))
-              (clamp start time end))))))
+              (trial:clamp start time end))))))
 
 (defmethod start-time ((track track))
   (frame-time (svref (frames track) 0)))
