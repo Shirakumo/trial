@@ -13,8 +13,8 @@
   ;; #p "~/Projects/var/gltf-samples/2.0/Box/glTF/Box.gltf"
   ;; #p "~/Projects/var/gltf-samples/2.0/BoxTextured/glTF/BoxTextured.gltf"
   ;; #p "~/Projects/var/gltf-samples/2.0/SimpleSkin/glTF/SimpleSkin.gltf"
-  #p "~/Projects/var/gltf-samples/2.0/RiggedSimple/glTF/RiggedSimple.gltf"
-  ;;#p "~/Projects/var/gltf-samples/2.0/Duck/glTF/Duck.gltf"
+    ;; #p "~/Projects/var/gltf-samples/2.0/RiggedSimple/glTF/RiggedSimple.gltf"
+  #p "~/Projects/var/gltf-samples/2.0/RiggedFigure/glTF/RiggedFigure.gltf"
   )
 
 (trial:define-asset (workbench grid) trial:mesh

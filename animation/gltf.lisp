@@ -77,7 +77,7 @@
           do (setf (elt pose i) (node-transform node))
              (setf (parent-joint pose i) (if (gltf:parent node)
                                              (gltf:idx (gltf:parent node))
-                                             0)))
+                                             -1)))
     pose))
 
 (defun access (json accessor)

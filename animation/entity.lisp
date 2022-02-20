@@ -33,34 +33,32 @@
                             (loop for value being the hash-values of (meshes asset)
                                   do (return value)))))
   (setf (clip entity) (gethash NIL (clips asset)))
-  (if (skeleton asset)
-      (setf (pose entity) (make-instance 'pose :source (rest-pose (skeleton asset))))
-      (setf (palette entity) #(#.(meye 4)))))
+  (cond ((skeleton asset)
+         (setf (pose entity) (make-instance 'pose :source (rest-pose (skeleton asset))))
+         (update-palette entity))
+        (T
+         (setf (palette entity) #(#.(meye 4))))))
 
 (defmethod (setf mesh) :after ((mesh mesh) (entity entity))
   (setf (trial:vertex-array entity) (trial:resource (asset entity) (trial:name mesh)))
   (setf (trial:texture entity) (trial:texture mesh)))
 
+(defun update-palette (entity)
+  (let ((palette (matrix-palette (pose entity) (palette entity)))
+        (inv (inv-bind-pose (skeleton (asset entity)))))
+    (setf (palette entity) palette)
+    (dotimes (i (length palette))
+      (nm* (svref palette i) (svref inv i)))))
+
 (defmethod trial:handle ((ev trial:tick) (entity entity))
   (let ((dt (trial:dt ev)))
     (when (clip entity)
       (setf (clock entity) (sample-pose (clip entity) (pose entity) (+ (clock entity) dt)))
-      (let ((palette (matrix-palette (pose entity) (palette entity)))
-            (inv (inv-bind-pose (skeleton (asset entity)))))
-        (setf (palette entity) palette)
-        (dotimes (i (length palette))
-          (nm* (svref palette i) (svref inv i)))))))
+      (update-palette entity))))
 
 (defmethod trial:render ((entity entity) (program trial:shader-program))
   (declare (optimize speed))
-  (when (< 0 (length (palette entity)))
-    (setf (trial:uniform program "pose[0]") (svref (palette entity) 0)))
-  (when (< 1 (length (palette entity)))
-    (setf (trial:uniform program "pose[1]") (svref (palette entity) 1)))
-  (when (< 2 (length (palette entity)))
-    (setf (trial:uniform program "pose[2]") (svref (palette entity) 2)))
-  (when (< 3 (length (palette entity)))
-    (setf (trial:uniform program "pose[3]") (svref (palette entity) 3)))
+  (setf (trial:uniform program "pose") (palette entity))
   (setf (trial:uniform program "model_matrix") (trial:model-matrix))
   (setf (trial:uniform program "view_matrix") (trial:view-matrix))
   (setf (trial:uniform program "projection_matrix") (trial:projection-matrix))
@@ -88,7 +86,7 @@ uniform mat4 model_matrix;
 uniform mat4 view_matrix;
 uniform mat4 projection_matrix;
 
-uniform mat4 pose[4];
+uniform mat4 pose[100];
 
 out vec3 normal;
 out vec4 world_pos;

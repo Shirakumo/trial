@@ -22,7 +22,8 @@
   (let* ((pose (bind-pose skeleton))
          (inv (make-array (length pose))))
     (dotimes (i (length inv) (setf (inv-bind-pose skeleton) inv))
-      (setf (svref inv i) (minv (tmat4 (global-transform pose i)))))))
+      (let ((transform (global-transform pose i)))
+        (setf (svref inv i) (minv (tmat4 transform)))))))
 
 (defclass mesh ()
   ((name :initarg :name :initform NIL :accessor trial:name)

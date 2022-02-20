@@ -75,8 +75,8 @@
         (parents (parents pose)))
     (let ((base (svref joints i)))
       (loop for parent = (aref parents i) then (aref parents parent)
-            do (setf base (t+ (svref joints parent) base))
-            until (= 0 parent))
+            while (<= 0 parent)
+            do (setf base (t+ (svref joints parent) base)))
       base)))
 
 (defmethod matrix-palette ((pose pose) result)
@@ -84,6 +84,6 @@
     (when (< old (length (joints pose)))
       (setf result (adjust-array result (length (joints pose))))
       (loop for i from old below (length result)
-            do (setf (svref result i) (mat4))))
+            do (setf (svref result i) (meye 4))))
     (dotimes (i (length result) result)
       (tmat4 (global-transform pose i) (svref result i)))))
