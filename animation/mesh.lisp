@@ -29,7 +29,8 @@
    (texture :initarg :texture :initform NIL :accessor trial:texture)
    (position-normals :initform (make-array 0 :element-type 'single-float) :accessor position-normals)
    (vertex-data :initform (make-array 0 :element-type 'single-float) :accessor vertex-data)
-   (index-data :initform NIL :accessor index-data)))
+   (index-data :initform NIL :accessor index-data)
+   (skinned-p :initarg :skinned-p :initform NIL :accessor skinned-p)))
 
 (defmethod (setf vertex-data) :after (data (mesh mesh))
   (let ((vertices (truncate (length data) (+ 3 3 2 4 4))))

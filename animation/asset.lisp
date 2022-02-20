@@ -11,11 +11,14 @@
                       trial::full-load-asset)
   ((meshes :initform (make-hash-table :test 'equal) :accessor meshes)
    (skeleton :initform NIL :accessor skeleton)
-   (clips :initform NIL :accessor clips)))
+   (clips :initform (make-hash-table) :accessor clips)))
 
 (defmethod trial:generate-resources ((asset gltf-asset) input &key)
   (gltf:with-gltf (gltf input)
     (let ((meshes (meshes asset)))
+      (clrhash meshes)
+      (clrhash (clips asset))
+      (setf (skeleton asset) NIL)
       (loop for mesh across (load-meshes gltf)
             for i from 0
             do (unless (trial:name mesh)
@@ -39,11 +42,12 @@
                                            :min-filter (gltf:min-filter sampler)
                                            :wrapping (list (gltf:wrap-s sampler)
                                                            (gltf:wrap-t sampler)
-                                                           :clamp-to-edge)))))
-    (setf (skeleton asset) (load-skeleton gltf))
-    (setf (clips asset) (load-clips gltf))
-    (print (list :meshes (alexandria:hash-table-keys (meshes asset))))
-    (print (list :clips (alexandria:hash-table-keys (clips asset)))))
-  (trial:list-resources asset))
-
-
+                                                           :clamp-to-edge))))
+      (when (loop for mesh being the hash-values of meshes
+                  thereis (skinned-p mesh))
+        (setf (skeleton asset) (load-skeleton gltf))
+        (setf (clips asset) (load-clips gltf)))
+      (print (list :meshes (alexandria:hash-table-keys (meshes asset))))
+      (print (list :clips (alexandria:hash-table-keys (clips asset))))
+      (loop for mesh being the hash-values of meshes
+            collect (trial:resource asset (trial:name mesh))))))
