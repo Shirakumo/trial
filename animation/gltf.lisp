@@ -63,7 +63,7 @@
     (let ((elements (make-array 16 :element-type 'single-float)))
       (dotimes (i (length elements))
         (setf (aref elements i) (cffi:mem-aref ptr :float i)))
-      (values (mat4 elements)
+      (values (nmtranspose (mat4 elements))
               (cffi:inc-pointer ptr (* 4 16))))))
 
 (defun load-joint-names (gltf)
