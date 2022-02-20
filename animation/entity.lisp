@@ -62,6 +62,7 @@
   (setf (trial:uniform program "model_matrix") (trial:model-matrix))
   (setf (trial:uniform program "view_matrix") (trial:view-matrix))
   (setf (trial:uniform program "projection_matrix") (trial:projection-matrix))
+  (setf (trial:uniform program "camera_pos") (trial:location (trial:unit :camera (trial:scene trial:+main+))))
   ;;(gl:bind-texture :texture-2d (trial:gl-name (trial:texture entity)))
   (let* ((vao (trial:vertex-array entity))
          (size (trial:size vao)))
@@ -107,12 +108,27 @@ void main(){
 (trial:define-class-shader (entity :fragment-shader)
   "
 uniform sampler2D tex_image;
+uniform vec3 camera_pos;
 
 in vec3 normal;
 in vec4 world_pos;
 in vec2 texcoord;
 out vec4 color;
 
+vec3 shade_pointlight(vec3 light_pos, vec3 fragment_pos, vec3 normal){
+  vec3 light_dir = normalize(light_pos - fragment_pos);
+  vec3 view_dir = normalize(camera_pos - fragment_pos);
+  vec3 reflect_dir = reflect(-light_dir, normal);
+  float distance = length(light_pos - fragment_pos);
+  float attenuation = 1.0 / (1.0 + 0.014 * distance + 0.0007 * distance * distance);
+
+  vec3 ambient = vec3(0.8, 0.8, 0.8) * 0.1;
+  vec3 diffuse = vec3(0.8, 0.8, 0.8) * max(dot(normal, light_dir), 0);
+  vec3 specular = vec3(0.1, 0.1, 0.1) * pow(max(dot(view_dir, reflect_dir), 0.0), 32);
+  
+  return attenuation * (ambient+diffuse+specular);
+}
+
 void main(){
-  color = texture(tex_image, texcoord);
+  color = vec4(shade_pointlight(vec3(0, 10, 0), vec3(world_pos), normal), 1);
 }")

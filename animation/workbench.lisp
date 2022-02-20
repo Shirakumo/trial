@@ -18,15 +18,18 @@
   )
 
 (trial:define-asset (workbench grid) trial:mesh
-    (trial:make-line-grid 10 100 100))
+    (trial:make-line-grid 10 10 10))
 
 (progn
   (defmethod trial:setup-scene ((workbench workbench) scene)
     (trial:disable :cull-face)
     (trial:enter (make-instance 'trial::fps-counter) scene)
     (trial:enter (make-instance 'trial:vertex-entity :vertex-array (trial:// 'workbench 'grid)) scene)
-    (trial:enter (make-instance 'entity :asset (trial:asset 'workbench 'simple)) scene)
-    ;;(trial:enter (make-instance 'trial:vertex-entity :vertex-array (trial:// 'workbench 'simple "LOD3spShape")) scene)
-    (trial:enter (make-instance 'trial:editor-camera :location (vec 0 1 5)) scene)
+    (let ((entity
+            (trial:enter (make-instance 'entity :asset (trial:asset 'workbench 'simple)) scene)
+            ;;(trial:enter (make-instance 'trial:vertex-entity :vertex-array (trial:// 'workbench 'simple "LOD3spShape")) scene)
+            ))
+      (nv+ (trial:location entity) (vec 0 1 0))
+      (trial:enter (make-instance 'trial:target-camera :target (vec 0 1 0) :location (vec 0 1 -2)) scene))
     (trial:enter (make-instance 'trial:render-pass) scene))
   (trial:maybe-reload-scene))
