@@ -48,13 +48,14 @@
                              (incf j)
                              (linear (elt values (1- j)) (elt values j)))
                             (:hermite
-                             (incf j 2)
+                             (incf j 3)
                              (hermite (elt values (- j 2)) (elt values (- j 1))
-                                      (elt values (+ j 0)) (elt values (+ j 1))))
+                                      (elt values (+ j 1)) (elt values (+ j 0))))
                             (:bezier
-                             (incf j 2)
+                             ;; DATA is ordered like this: i0 v0 o0 i1 v1 o1
+                             (incf j 3)
                              (bezier (elt values (- j 2)) (elt values (- j 1))
-                                     (elt values (+ j 0)) (elt values (+ j 1))))))))
+                                     (elt values (+ j 1)) (elt values (+ j 0))))))))
       (setf (frames track) frames))))
 
 (defun fit-to-track (track time loop-p)
