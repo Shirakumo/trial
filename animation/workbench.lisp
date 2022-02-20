@@ -30,6 +30,7 @@
             ;;(trial:enter (make-instance 'trial:vertex-entity :vertex-array (trial:// 'workbench 'simple "LOD3spShape")) scene)
             ))
       (nv+ (trial:location entity) (vec 0 1 0))
-      (trial:enter (make-instance 'trial:target-camera :target (vec 0 1 0) :location (vec 0 1 -2)) scene))
+      (setf (vy (trial:scaling entity)) -1.0)
+      (trial:enter (make-instance 'trial:target-camera :target (vec 0 1 0) :location (vec 0 8 -13)) scene))
     (trial:enter (make-instance 'trial:render-pass) scene))
   (trial:maybe-reload-scene))
