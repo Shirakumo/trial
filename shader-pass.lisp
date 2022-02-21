@@ -401,6 +401,9 @@
 (defmethod shader-program-for-pass ((pass per-object-pass) (entity shader-entity))
   (gethash (effective-shader-class entity) (assets pass)))
 
+(defmethod shader-program-for-pass ((pass per-object-pass) (class shader-entity-class))
+  (gethash class (assets pass)))
+
 (defmethod coerce-pass-shader ((pass per-object-pass) class type)
   ;; FIXME: This re-introduces shaders from the pass that were suppressed in the
   ;;        object and vice-versa
