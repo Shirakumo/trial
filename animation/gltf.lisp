@@ -156,6 +156,7 @@
              do (setf (aref data (+ (* i stride) 3)) (vx el))
                 (setf (aref data (+ (* i stride) 4)) (vy el))
                 (setf (aref data (+ (* i stride) 5)) (vz el))))
+      (:tangent)
       (:texcoord_0
        (loop for i from 0 below (length accessor)
              for el = (elt accessor i)
