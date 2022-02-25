@@ -196,7 +196,9 @@
            (when location (setf (mixed:location voice) location))
            (when velocity (setf (mixed:velocity voice) velocity))
            (when min-distance (setf (mixed:min-distance voice) (float min-distance 0f0)))
-           (when max-distance (setf (mixed:max-distance voice) (float max-distance 0f0)))))
+           (when max-distance (setf (mixed:max-distance voice) (float max-distance 0f0))))
+          (T
+           (setf (mixed:volume voice) volume)))
     voice))
 
 (defmethod harmony:stop ((resource trial:placeholder-resource)))
