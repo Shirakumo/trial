@@ -83,3 +83,8 @@
               do (sample-transform track (elt pose (trial:name track)) time loop-p))
         time)
       0.0))
+
+(defmethod reorder ((clip clip) map)
+  (dotimes (i (length clip) clip)
+    (let ((joint (name (elt clip i))))
+      (setf (name joint) (gethash joint map)))))
