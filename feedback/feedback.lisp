@@ -51,7 +51,10 @@
   `(("log" ,(trial:logfile))))
 
 (define-report-hook screenshot ()
-  `(("screenshot" ,(trial:capture NIL :file (trial:tempfile)))))
+  (let ((ratio (/ (trial:height trial:*context*) (trial:width trial:*context*))))
+    `(("screenshot" ,(trial:capture NIL :file (trial:tempfile)
+                                        :target-width 1280
+                                        :target-height (floor (* ratio 1280)))))))
 
 (defun find-user-id ()
   (error-or
