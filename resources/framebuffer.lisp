@@ -99,10 +99,9 @@
                         (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
                         (cffi:foreign-enum-value '%gl:enum :nearest)))
 
-(defgeneric capture (thing &key &allow-other-keys))
-(defmethod capture ((framebuffer framebuffer) &key (x 0) (y 0) (width (width framebuffer)) (height (height framebuffer)) file)
+(defun %capture (framebuffer x y width height file)
   (let ((array (make-array (* width height 3) :element-type '(unsigned-byte 8))))
-    (gl:bind-framebuffer :read-framebuffer (gl-name framebuffer))
+    (gl:bind-framebuffer :read-framebuffer framebuffer)
     (with-pointer-to-vector-data (ptr array)
       (gl:pixel-store :pack-alignment 1)
       (%gl:read-pixels x y width height :rgb :unsigned-byte ptr))
@@ -114,6 +113,31 @@
                                                  :image-data (flip-image-vertically array width height 3))
                         file)
         array)))
+
+(defgeneric capture (thing &key &allow-other-keys))
+(defmethod capture ((framebuffer framebuffer) &key (x 0) (y 0) (width (width framebuffer)) (height (height framebuffer))
+                                                   (target-width width) (target-height height) file)
+  (if (and (= width target-width) (= height target-height))
+      (%capture (gl-name framebuffer) x y width height file)
+      (let ((dummy (gl:gen-framebuffer))
+            (dummy-tex (gl:gen-texture)))
+        (unwind-protect
+             (progn
+               ;; Create dummy framebuffer
+               (gl:bind-texture :texture-2d dummy-tex)
+               (%gl:tex-storage-2d :texture-2d 1 :rgb8 target-width target-height)
+               (gl:bind-framebuffer :draw-framebuffer dummy)
+               (%gl:framebuffer-texture :draw-framebuffer :color-attachment0 dummy-tex 0)
+               (gl:draw-buffers '(:color-attachment0))
+               (gl:bind-framebuffer :read-framebuffer (gl-name framebuffer))
+               ;; Blit over what we need
+               (%gl:blit-framebuffer x y width height 0 0 target-width target-height
+                                     (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
+                                     (cffi:foreign-enum-value '%gl:enum :linear))
+               ;; Capture the buffer
+               (%capture dummy 0 0 target-width target-height file))
+          (gl:delete-framebuffers (list dummy))
+          (gl:delete-texture dummy-tex)))))
 
 (defmethod capture ((framebuffer null) &rest args)
   (unless (visible-p *context*)
