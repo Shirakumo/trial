@@ -256,6 +256,7 @@
     (when table
       (etypecase thing
         (character thing)
+        (integer (princ-to-string thing))
         (keyword (gethash thing table))
         (action (let ((type (ecase bank
                               (:gamepad 'gamepad-event)
