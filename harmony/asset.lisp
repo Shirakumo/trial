@@ -58,6 +58,7 @@
                   "-i" source
                   "-c:a" (cond (codec codec)
                                ((string-equal "oga" (pathname-type path)) "libvorbis")
+                               ((string-equal "ogg" (pathname-type path)) "libvorbis")
                                ((string-equal "flac" (pathname-type path)) "flac")
                                ((string-equal "mp3" (pathname-type path)) "libmp3lame")
                                ((string-equal "opus" (pathname-type path)) "libopus")
@@ -103,6 +104,7 @@
                "-i" source
                "-c:a" (cond (codec codec)
                             ((string-equal "oga" (pathname-type target)) "libvorbis")
+                            ((string-equal "ogg" (pathname-type target)) "libvorbis")
                             ((string-equal "flac" (pathname-type target)) "flac")
                             ((string-equal "mp3" (pathname-type target)) "libmp3lame")
                             ((string-equal "opus" (pathname-type target)) "libopus")
