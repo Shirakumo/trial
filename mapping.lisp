@@ -279,18 +279,26 @@
              do (format output "(~s ~s~{~%  ~s~})~%~%"
                         type event actions))))))
 
+(defun event-triggers (event &optional (base-event 'input-event))
+  (let ((triggers ()))
+    (loop for (_function mapping) being the hash-values of *mappings*
+          do (loop for (_type target . sources) in mapping
+                   do (when (eql event target)
+                        (loop for (source . args) in sources
+                              for source-event = (case source
+                                                   (key 'key-event)
+                                                   (mouse 'mouse-button-event)
+                                                   (axis 'gamepad-event)
+                                                   (button 'gamepad-event))
+                              do (when (subtypep source-event base-event)
+                                   (push (list* source args) triggers))))))
+    triggers))
+
 (defun event-trigger (event &optional (base-event 'input-event))
-  (loop for (_function mapping) being the hash-values of *mappings*
-        do (loop for (_type target . sources) in mapping
-                 do (when (eql event target)
-                      (loop for (source . args) in sources
-                            for source-event = (case source
-                                                 (key 'key-event)
-                                                 (mouse 'mouse-button-event)
-                                                 (button 'gamepad-event))
-                            do (when (subtypep source-event base-event)
-                                 (return-from event-trigger
-                                   (values (getf args :one-of) source args))))))))
+  (let ((trigger (first (event-triggers event base-event))))
+    (values (getf (rest trigger) :one-of)
+            (car trigger)
+            (cdr trigger))))
 
 (defun set-trigger-from-event (event action &key (mapping 'keymap) (threshold 0.5) (edge :rise) (compile T))
   (let* ((map (mapping mapping))

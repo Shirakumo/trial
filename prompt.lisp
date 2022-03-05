@@ -246,34 +246,47 @@
             (degeneralise-axis-symbol symbol threshold))
           symbol))))
 
-(defun prompt-char (thing &key (bank :gamepad))
-  (when (typep thing 'input-event)
-    (setf bank (etypecase thing
-                 (gamepad-event :gamepad)
-                 (key-event :keyboard)
-                 (mouse-event :mouse))))
-  (let ((table (getf *prompt-char-table* bank)))
-    (when table
-      (etypecase thing
-        (character thing)
-        (integer (princ-to-string thing))
-        (keyword (gethash thing table))
-        (action (let ((type (ecase bank
-                              (:gamepad 'gamepad-event)
-                              (:keyboard 'key-event)
-                              (:mouse 'mouse-event))))
-                  (gethash (specific-char-for-event-trigger (type-of thing) type) table)))
-        (input-event (gethash (etypecase thing
+(defun specific-chars-for-event-trigger (thing &optional (type 'input-event))
+  (let ((list ()))
+    (loop for (type . args) in (event-triggers thing type)
+          for threshold = (getf args :threshold 0.0)
+          do (dolist (symbol (getf args :one-of))
+               (if (and (/= 0.0 threshold) (eql 'axis type))
+                   (push (degeneralise-axis-symbol symbol threshold) list)
+                   (push symbol list))))
+    list))
+
+(defun prompt-char (thing &key bank)
+  (etypecase thing
+    (character thing)
+    (integer (princ-to-string thing))
+    (keyword (let ((table (getf *prompt-char-table* (or bank :gamepad))))
+               (when table (gethash thing table))))
+    (symbol (let ((type (ecase bank
+                          ((NIL :gamepad) 'gamepad-event)
+                          (:keyboard 'key-event)
+                          (:mouse 'mouse-event))))
+              (prompt-char (specific-char-for-event-trigger thing type) :bank bank)))
+    (action (prompt-char (type-of thing) :bank bank))
+    (input-event (prompt-char (etypecase thing
                                 (gamepad-move (degeneralise-axis-symbol (axis thing) (pos thing)))
                                 (gamepad-event (button thing))
                                 (keyboard-event (key thing))
                                 (mouse-button-event (button thing)))
-                              table))
-        (symbol (let ((type (ecase bank
-                              (:gamepad 'gamepad-event)
-                              (:keyboard 'key-event)
-                              (:mouse 'mouse-event))))
-                  (gethash (specific-char-for-event-trigger thing type) table)))))))
+                              :bank (or bank
+                                        (etypecase thing
+                                          (gamepad-event :gamepad)
+                                          (key-event :keyboard)
+                                          (mouse-event :mouse)))))))
+
+(defun action-prompts (thing &key (bank :gamepad))
+  (delete-duplicates
+   (delete #\Space
+           (map 'string (lambda (a) (or (prompt-char a :bank bank) #\Space))
+                (specific-chars-for-event-trigger thing (ecase bank
+                                                          ((NIL :gamepad) 'gamepad-event)
+                                                          (:keyboard 'key-event)
+                                                          (:mouse 'mouse-event)))))))
 
 (defun prompt-charset ()
   (sort (delete-duplicates
