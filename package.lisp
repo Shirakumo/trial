@@ -876,6 +876,7 @@
    #:with-trial-io-syntax
    #:tempdir
    #:tempfile
+   #:make-uuid
    #:logfile
    #:config-directory
    #:standalone-error-handler

@@ -342,6 +342,15 @@
                  :type type
                  :defaults (tempdir)))
 
+(defun make-uuid ()
+  (let ((val (random #xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)))
+    (format NIL "~8,'0x-~4,'0x-~4,'0x-~4,'0x-~12,'0x"
+            (ldb (byte 32  0) val)
+            (ldb (byte 16 32) val)
+            (ldb (byte 16 48) val)
+            (ldb (byte 16 64) val)
+            (ldb (byte 48 80) val))))
+
 (defun logfile ()
   (let ((log (or (uiop:getenv "TRIAL_LOGFILE") "")))
     (if (string= "" log)
