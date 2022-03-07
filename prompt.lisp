@@ -282,7 +282,7 @@
 (defun action-prompts (thing &key (bank :gamepad))
   (delete-duplicates
    (delete #\Space
-           (map 'string (lambda (a) (or (prompt-char a :bank bank) #\Space))
+           (map 'string (lambda (a) (or (when a (prompt-char a :bank bank)) #\Space))
                 (specific-chars-for-event-trigger thing (ecase bank
                                                           ((NIL :gamepad) 'gamepad-event)
                                                           (:keyboard 'key-event)
