@@ -187,16 +187,18 @@
     `(lambda (pass)
        (loop with texture-name = ',(loop for unit in units collect
                                          (kw (format NIL "~a~a" :texture unit)))
-             for port in (flow:ports pass)
-             do (typecase port
-                  (uniform-port
-                   (when (texture port)
-                     (gl:active-texture (pop texture-name))
-                     (gl:bind-texture :texture-2d (gl-name (texture port)))))
-                  (image-port
-                   (when (texture port)
-                     (%gl:bind-image-texture (binding port) (gl-name (texture port)) 0 T 0 (access port)
-                                             (internal-format (texture port))))))))))
+             for slot in (c2mop:class-slots (class-of pass))
+             when (flow:port-type slot)
+             do (let ((port (flow::port-slot-value pass slot)))
+                  (typecase port
+                    (uniform-port
+                     (when (texture port)
+                       (gl:active-texture (pop texture-name))
+                       (gl:bind-texture :texture-2d (gl-name (texture port)))))
+                    (image-port
+                     (when (texture port)
+                       (%gl:bind-image-texture (binding port) (gl-name (texture port)) 0 T 0 (access port)
+                                               (internal-format (texture port)))))))))))
 
 (defun generate-prepare-pass-program (pass &optional (units (gl:get* :max-texture-image-units)))
   (check-type units (integer 1))
