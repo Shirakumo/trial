@@ -14,6 +14,9 @@
       (pathname-utils:subdirectory (deploy:data-directory) "pool" "font-cache")
       (call-next-method)))
 
+(defmethod opengl:view-size ((renderer renderer))
+  (alloy:px-size (trial:width trial:*context*) (trial:height trial:*context*)))
+
 (defmethod alloy:allocate ((renderer renderer)))
 
 (defmethod trial:stage :before ((renderer renderer) (area trial:staging-area))
