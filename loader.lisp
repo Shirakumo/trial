@@ -224,6 +224,8 @@
                      (:to-keep
                       (setf (gethash resource resources) :loaded))))
           (progress loader (length load-sequence) (length load-sequence))
+          (when unload
+            (trivial-garbage:gc :full T))
           T)
       (abort-commit ()
         :report "Abort the commit and roll back any changes."
