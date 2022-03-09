@@ -473,11 +473,9 @@
 
 (defmethod render ((pass post-effect-pass) (program shader-program))
   (let ((vao (vertex-array pass)))
-    (with-pushed-attribs
-      (disable :depth-test)
-      (gl:bind-vertex-array (gl-name vao))
-      (%gl:draw-elements :triangles (size vao) :unsigned-int (cffi:null-pointer))
-      (gl:bind-vertex-array 0))))
+    (gl:bind-vertex-array (gl-name vao))
+    (%gl:draw-elements :triangles (size vao) :unsigned-int (cffi:null-pointer))
+    (gl:bind-vertex-array 0)))
 
 (define-class-shader (post-effect-pass :vertex-shader)
   "
