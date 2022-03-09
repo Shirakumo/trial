@@ -54,12 +54,13 @@
                                (error "The frame~%  ~a~%is not part of the sprite-entity." frame))))
 
 (defmethod render ((entity sprite-entity) (program shader-program))
+  (declare (optimize speed))
   (setf (uniform program "model_matrix") (model-matrix))
   (setf (uniform program "view_matrix") (view-matrix))
   (setf (uniform program "projection_matrix") (projection-matrix))
   (let ((vao (vertex-array entity)))
     (gl:bind-vertex-array (gl-name vao))
-    (%gl:draw-arrays :triangle-strip (* 4 (frame-idx entity)) 4)
+    (%gl:draw-arrays :triangle-strip (* 4 (the (unsigned-byte 32) (frame-idx entity))) 4)
     (gl:bind-vertex-array 0)))
 
 (define-shader-entity animated-sprite (listener sprite-entity)
