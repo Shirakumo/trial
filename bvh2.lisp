@@ -93,10 +93,18 @@
   (declare (optimize speed (safety 0)))
   (declare (type vec4 node))
   (declare (type vec2 loc siz))
-  (and (<= (vx4 node) (+ (vx2 loc) (vx2 siz)))
-       (<= (- (vx2 loc) (vx2 siz)) (vz4 node))
-       (<= (vy4 node) (+ (vy2 loc) (vy2 siz)))
-       (<= (- (vy2 loc) (vy2 siz)) (vw4 node))))
+  (let ((nx (vx4 node))
+        (ny (vy4 node))
+        (nz (vz4 node))
+        (nw (vw4 node))
+        (lx (vx2 loc))
+        (ly (vy2 loc))
+        (sx (vx2 siz))
+        (sy (vy2 siz)))
+    (and (<= nx (+ lx sx))
+         (<= ny (+ ly sy))
+         (<= (- lx sx) nz)
+         (<= (- ly sy) nw))))
 
 (defun node-contains-p (node object)
   (declare (optimize speed (safety 0)))
@@ -106,21 +114,32 @@
     (declare (type vec2 loc siz))
     (node-contains-p* node loc siz)))
 
+(declaim (inline node-overlaps-p))
 (defun node-overlaps-p (node region)
   (declare (optimize speed (safety 0)))
   (declare (type vec4 node region))
-  (and (<= (vx4 node) (vz4 region))
-       (<= (vx4 region) (vz4 node))
-       (<= (vy4 node) (vw4 region))
-       (<= (vy4 region) (vw4 node))))
+  (let ((nx (vx4 node))
+        (ny (vy4 node))
+        (nz (vz4 node))
+        (nw (vw4 node))
+        (rx (vx4 region))
+        (ry (vy4 region))
+        (rz (vz4 region))
+        (rw (vw4 region)))
+    (and (<= nx rz)
+         (<= ny rw)
+         (<= rx nz)
+         (<= ry nw))))
 
 (defun node-sub-p (node sub)
+  (declare (optimize speed))
   (and (<= (vx4 node) (vx4 sub))
        (<= (vy4 node) (vy4 sub))
        (<= (vz4 sub) (vz4 node))
        (<= (vw4 sub) (vw4 node))))
 
 (defun better-fit (a b object)
+  (declare (optimize speed))
   (let ((ca (node-contains-p a object))
         (cb (node-contains-p b object)))
     (cond ((eq ca cb)
@@ -139,6 +158,7 @@
           (cb b))))
 
 (defun node-insert (node object)
+  (declare (optimize speed))
   (cond ((bvh-node-o node)
          (node-split node object))
         ((bvh-node-r node)
@@ -149,6 +169,7 @@
          node)))
 
 (defun node-sibling (node)
+  (declare (optimize speed))
   (let* ((p (bvh-node-p node))
          (l (bvh-node-l p))
          (r (bvh-node-r p)))
@@ -157,12 +178,14 @@
           (T (error "What the fuck?")))))
 
 (defun set-depth (node d)
+  (declare (optimize speed))
   (setf (bvh-node-d node) d)
   (unless (bvh-node-o node)
     (set-depth (bvh-node-l node) (1+ d))
     (set-depth (bvh-node-r node) (1+ d))))
 
 (defun node-transfer (target source)
+  (declare (optimize speed))
   (setf (vx4 target) (vx4 source))
   (setf (vy4 target) (vy4 source))
   (setf (vz4 target) (vz4 source))
@@ -178,6 +201,7 @@
   (set-depth target (bvh-node-d source)))
 
 (defun node-remove (node)
+  (declare (optimize speed))
   (let ((p (bvh-node-p node)))
     (cond (p
            (node-transfer p (node-sibling node))
@@ -196,6 +220,7 @@
   (table (make-hash-table :test 'eq) :type hash-table))
 
 (defun bvh-insert (bvh object)
+  (declare (optimize speed))
   (let ((node (node-insert (bvh-root bvh) object))
         (table (bvh-table bvh)))
     (cond ((eq object (bvh-node-o node))
@@ -206,6 +231,7 @@
     object))
 
 (defun bvh-remove (bvh object)
+  (declare (optimize speed))
   (let* ((table (bvh-table bvh))
          (node (gethash object table)))
     (when node
@@ -214,6 +240,7 @@
         (setf (gethash (bvh-node-o p) table) p)))))
 
 (defun bvh-update (bvh object)
+  (declare (optimize speed))
   ;; FIXME: Figure out when to rebalance the tree.
   (let ((node (gethash object (bvh-table bvh))))
     (when node
@@ -289,6 +316,7 @@
                     n o (bvh-node-o n)))))
 
 (defun bvh-refit (bvh)
+  (declare (optimize speed))
   (labels ((recurse (node)
              (cond ((bvh-node-l node)
                     (recurse (bvh-node-l node))
@@ -299,22 +327,32 @@
     (recurse (bvh-root bvh))))
 
 (defun call-with-contained (function bvh region)
-  (declare (optimize speed))
+  (declare (optimize speed (safety 1)))
   (let ((function (etypecase function
                     (symbol (fdefinition function))
-                    (function function))))
-    (labels ((recurse (node)
+                    (function function)))
+        (tentative (make-array 64))
+        (i 0))
+    (declare (type (integer 0 64) i))
+    (declare (dynamic-extent tentative))
+    (flet ((add (node)
+             (setf (svref tentative i) node)
+             (incf i)))
+      (add (bvh-root bvh))
+      (loop for node = (svref tentative (1- i))
+            do (setf i (1- i))
                (when (node-overlaps-p node region)
                  (let ((o (bvh-node-o node)))
                    (cond (o
                           (funcall function o))
                          (T
-                          (recurse (bvh-node-l node))
-                          (recurse (bvh-node-r node))))))))
-      (recurse (bvh-root bvh)))))
+                          (add (bvh-node-l node))
+                          (add (bvh-node-r node))))))
+               (when (= 0 i)
+                 (return))))))
 
 (defun call-with-overlapping (function bvh object)
-  (declare (optimize speed))
+  (declare (optimize speed (safety 1)))
   (flet ((ensure-vec2 (x)
            (etypecase x
              (vec2 x)
