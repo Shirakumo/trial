@@ -1,7 +1,8 @@
 (in-package #:org.shirakumo.fraf.trial.release)
 
 (defvar *default-build-features*
-  '(:trial-optimize-all :cl-opengl-no-masked-traps :cl-opengl-no-check-error))
+  '(:trial-optimize-all :cl-opengl-no-masked-traps :cl-opengl-no-check-error
+    :cl-mixed-no-restarts))
 
 (defmethod build :around (target)
   (with-simple-restart (continue "Treat build as successful")
