@@ -181,8 +181,12 @@
 (defmethod simple:icon ((renderer renderer) bounds (texture trial:texture) &rest initargs)
   (apply #'make-instance 'simple:icon :image texture :bounds bounds initargs))
 
-(defmethod simple:request-image ((renderer renderer) (image pathname) &key (filtering :linear))
-  (trial:generate-resources 'trial:image-loader image :min-filter filtering :mag-filter filtering))
+(defmethod simple:request-image ((renderer renderer) (image pathname) &key (filtering :linear) (wrapping :repeat))
+  (trial:generate-resources 'trial:image-loader image
+                            :wrapping (list wrapping wrapping wrapping)
+                            :texture-class 'image
+                            :min-filter filtering
+                            :mag-filter filtering))
 
 (defmethod alloy:allocate ((texture trial:texture))
   (trial:allocate texture))

@@ -112,7 +112,7 @@
 (defclass image-loader (resource-generator)
   ())
 
-(defmethod generate-resources ((generator image-loader) path &rest texture-args &key (type T) internal-format pixel-format (resource (resource generator T)) &allow-other-keys)
+(defmethod generate-resources ((generator image-loader) path &rest texture-args &key (type T) internal-format pixel-format (resource (resource generator T)) (texture-class 'texture) &allow-other-keys)
   (multiple-value-bind (bits width height pixel-type inferred-pixel-format)
       (with-new-value-restart (path) (new-path "Specify a new image path.")
         (with-retry-restart (retry "Retry loading the image path.")
@@ -120,14 +120,14 @@
     (assert (not (null bits)))
     (let ((pixel-format (or pixel-format inferred-pixel-format)))
       (with-unwind-protection (free-data bits)
-        (apply #'ensure-instance resource 'texture
+        (apply #'ensure-instance resource texture-class
                :width width :height height
                :pixel-data bits
                :pixel-type pixel-type
                :pixel-format pixel-format
                :internal-format (or internal-format
                                     (infer-internal-format pixel-type pixel-format))
-               (remf* texture-args :type :resource))))))
+               (remf* texture-args :type :resource :texture-class))))))
 
 (defclass image (single-resource-asset file-input-asset image-loader)
   ())
