@@ -147,14 +147,17 @@
       (%gl:draw-elements primitive-type count :unsigned-int 0)
       (%gl:draw-arrays primitive-type 0 count)))
 
+(defclass image (trial:texture simple:image)
+  ())
+
 (defmethod opengl:make-texture ((renderer renderer) width height data &key (channels 4) (filtering :linear))
   (let ((format (ecase channels (1 :r) (2 :rg) (3 :rgb) (4 :rgba))))
-    (make-instance 'trial:texture :width width :height height
-                                  :internal-format format
-                                  :pixel-format format
-                                  :pixel-data data
-                                  :min-filter filtering
-                                  :mag-filter filtering)))
+    (make-instance 'image :width width :height height
+                          :internal-format format
+                          :pixel-format format
+                          :pixel-data data
+                          :min-filter filtering
+                          :mag-filter filtering)))
 
 (defmethod alloy:allocate ((array trial:vertex-array))
   (trial:allocate array))
