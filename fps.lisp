@@ -33,7 +33,7 @@
 (define-global +start-time+ 0)
 
 (define-shader-entity fps-counter (renderable)
-  ())
+  ((name :initform 'fps-counter)))
 
 (defmethod stage :after ((counter fps-counter) (area staging-area))
   (stage (// 'trial 'fps-counter) area)
