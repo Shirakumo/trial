@@ -6,6 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(defvar *language-change-hooks* '())
 (define-global +language-data+ NIL)
 
 (defun languages ()
@@ -23,7 +24,14 @@
 (defun language-files (language)
   (directory (make-pathname :name :wild :type "lisp" :defaults (language-dir language))))
 
-(defmethod load-language (&optional (language (setting :language)) replace)
+(defmacro define-language-change-hook (name args &body body)
+  (let ((name (mksym *package* '%language-change-hook name)))
+    `(progn
+       (defun ,name ,args
+         ,@body)
+       (pushnew ',name *language-change-hooks*))))
+
+(defun load-language (&optional (language (setting :language)) replace)
   (let ((table (if (or replace (null +language-data+))
                    (make-hash-table :test 'eq)
                    +language-data+)))
@@ -34,9 +42,11 @@
               for v = (read stream NIL)
               while k
               do (setf (gethash k table) v))
-        (setf +language-data+ table)))))
+        (setf +language-data+ table)
+        (dolist (hook *language-change-hooks* table)
+          (funcall hook language))))))
 
-(defmethod save-language (&optional (language (setting :language)))
+(defun save-language (&optional (language (setting :language)))
   (when +language-data+
     (v:info :trial.language "Saving language ~s to ~s" language (language-file language))
     (with-trial-io-syntax ()
