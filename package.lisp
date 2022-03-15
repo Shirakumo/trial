@@ -251,6 +251,7 @@
    #:find-monitor
    #:clipboard
    #:cursor-position
+   #:local-key-string
    #:gain-focus
    #:lose-focus
    #:window-hidden

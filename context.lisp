@@ -104,6 +104,7 @@
 (defgeneric (setf clipboard) (value context))
 (defgeneric cursor-position (context))
 (defgeneric (setf cursor-position) (pos context))
+(defgeneric local-key-string (context scan-code))
 
 (defgeneric width (context))
 (defgeneric height (context))

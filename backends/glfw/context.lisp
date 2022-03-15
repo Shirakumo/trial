@@ -14,6 +14,8 @@
   (timeout :double))
 (cffi:defcfun (window-hint-string "glfwWindowHintString") :void
   (target :int) (hint :string))
+(cffi:defcfun (get-key-name "glfwGetKeyName") :string
+  (key %glfw::key) (scan-code :int))
 
 (defclass monitor (trial:monitor)
   ((pointer :initarg :pointer :reader pointer)))
@@ -421,6 +423,12 @@
   (case key
     (:grave-accent :section)
     (T key)))
+
+(defmethod local-key-string ((context context) (scancode integer))
+  (get-key-name :unknown scancode))
+
+(defmethod local-key-string ((context context) (key symbol))
+  (get-key-name key 0))
 
 (defmethod current-monitor ((context context))
   (let* ((monitors (glfw:get-monitors))

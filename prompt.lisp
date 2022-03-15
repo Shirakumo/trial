@@ -258,35 +258,53 @@
 
 (defun prompt-char (thing &key bank)
   (etypecase thing
-    (character thing)
-    (integer (princ-to-string thing))
-    (keyword (let ((table (getf *prompt-char-table* (or bank :gamepad))))
-               (when table (gethash thing table))))
-    (symbol (let ((type (ecase bank
-                          ((NIL :gamepad) 'gamepad-event)
-                          (:keyboard 'key-event)
-                          (:mouse 'mouse-event))))
-              (prompt-char (specific-char-for-event-trigger thing type) :bank bank)))
-    (action (prompt-char (type-of thing) :bank bank))
-    (input-event (prompt-char (etypecase thing
-                                (gamepad-move (degeneralise-axis-symbol (axis thing) (pos thing)))
-                                (gamepad-event (button thing))
-                                (keyboard-event (key thing))
-                                (mouse-button-event (button thing)))
-                              :bank (or bank
-                                        (etypecase thing
-                                          (gamepad-event :gamepad)
-                                          (key-event :keyboard)
-                                          (mouse-event :mouse)))))))
+    (character
+     thing)
+    (string
+     (char thing 0))
+    (integer
+     (princ-to-string thing))
+    (keyword
+     (let ((table (getf *prompt-char-table* (or bank :gamepad))))
+       (when table (gethash thing table))))
+    (symbol
+     (let* ((type (ecase bank
+                    ((NIL :gamepad) 'gamepad-event)
+                    (:keyboard 'key-event)
+                    (:mouse 'mouse-event)))
+            (char (specific-char-for-event-trigger thing type)))
+       (when (eql bank :keyboard)
+         (setf char (or (ignore-errors (local-key-string *context* char)) char)))
+       (prompt-char char :bank bank)))
+    (action
+     (prompt-char (type-of thing) :bank bank))
+    (input-event
+     (let* ((char (etypecase thing
+                    (gamepad-move (degeneralise-axis-symbol (axis thing) (pos thing)))
+                    (gamepad-event (button thing))
+                    (keyboard-event (key thing))
+                    (mouse-button-event (button thing))))
+            (bank (or bank
+                      (etypecase thing
+                        (gamepad-event :gamepad)
+                        (key-event :keyboard)
+                        (mouse-event :mouse)))))
+       (when (eql bank :keyboard)
+         (setf char (or (ignore-errors (local-key-string *context* char)) char)))
+       (prompt-char char :bank bank)))))
 
 (defun action-prompts (thing &key (bank :gamepad))
-  (delete-duplicates
-   (delete #\Space
-           (map 'string (lambda (a) (or (when a (prompt-char a :bank bank)) #\Space))
-                (specific-chars-for-event-trigger thing (ecase bank
-                                                          ((NIL :gamepad) 'gamepad-event)
-                                                          (:keyboard 'key-event)
-                                                          (:mouse 'mouse-event)))))))
+  (flet ((map-any (a)
+           (or (when a (prompt-char a :bank bank)) #\Space))
+         (map-key (a)
+           (or (when a (prompt-char (or (ignore-errors (local-key-string *context* a)) a) :bank bank)) #\Space)))
+    (delete-duplicates
+     (delete #\Space
+             (map 'string (if (eql bank :keyboard) #'map-key #'map-any)
+                  (specific-chars-for-event-trigger thing (ecase bank
+                                                            ((NIL :gamepad) 'gamepad-event)
+                                                            (:keyboard 'key-event)
+                                                            (:mouse 'mouse-event))))))))
 
 (defun prompt-charset ()
   (sort (delete-duplicates
