@@ -327,13 +327,13 @@
      (let ((table (gethash (normalize-prompt-bank bank) *prompt-char-table*)))
        (when table (gethash thing table))))
     (symbol
-     (let* ((type (ecase bank
-                    (NIL (etypecase +input-source+
-                           ((eql :keyboard) :keyboard)
-                           (gamepad:device :gamepad)))
-                    (:gamepad 'gamepad-event)
+     (let* ((type (case bank
+                    ((NIL) (etypecase +input-source+
+                             ((eql :keyboard) :keyboard)
+                             (gamepad:device :gamepad)))
                     (:keyboard 'key-event)
-                    (:mouse 'mouse-event)))
+                    (:mouse 'mouse-event)
+                    (T 'gamepad-event)))
             (char (specific-char-for-event-trigger thing type)))
        (when (eql bank :keyboard)
          (setf char (or (ignore-errors (local-key-string *context* char)) char)))
@@ -367,10 +367,10 @@
       (delete-duplicates
        (delete #\Space
                (map 'string (if (eql bank :keyboard) #'map-key #'map-any)
-                    (specific-chars-for-event-trigger thing (ecase bank
-                                                              (:gamepad 'gamepad-event)
+                    (specific-chars-for-event-trigger thing (case bank
                                                               (:keyboard 'key-event)
-                                                              (:mouse 'mouse-event)))))))))
+                                                              (:mouse 'mouse-event)
+                                                              (T 'gamepad-event)))))))))
 
 (defun prompt-charset ()
   (sort (delete-duplicates
