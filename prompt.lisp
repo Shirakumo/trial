@@ -324,7 +324,7 @@
     (integer
      (princ-to-string thing))
     (keyword
-     (let ((table (getf *prompt-char-table* (normalize-prompt-bank bank))))
+     (let ((table (gethash (normalize-prompt-bank bank) *prompt-char-table*)))
        (when table (gethash thing table))))
     (symbol
      (let* ((type (ecase bank
@@ -375,7 +375,7 @@
 (defun prompt-charset ()
   (sort (delete-duplicates
          (with-output-to-string (out)
-           (loop for (bank table) on *prompt-char-table* by #'cddr
+           (loop for bank being the hash-keys of *prompt-char-table* using (hash-value table)
                  do (loop for string being the hash-values of table
                           do (write-char string out)))))
         #'char<))
