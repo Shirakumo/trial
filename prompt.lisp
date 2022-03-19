@@ -306,6 +306,15 @@
                    (push symbol list))))
     list))
 
+(defun normalize-prompt-bank (bank)
+  (etypecase bank
+    (null
+     (normalize-prompt-bank +input-source+))
+    (gamepad:device
+     (gamepad:icon-type bank))
+    (symbol
+     bank)))
+
 (defun prompt-char (thing &key bank)
   (etypecase thing
     (character
@@ -315,11 +324,14 @@
     (integer
      (princ-to-string thing))
     (keyword
-     (let ((table (getf *prompt-char-table* (or bank :gamepad))))
+     (let ((table (getf *prompt-char-table* (normalize-prompt-bank bank))))
        (when table (gethash thing table))))
     (symbol
      (let* ((type (ecase bank
-                    ((NIL :gamepad) 'gamepad-event)
+                    (NIL (etypecase +input-source+
+                           ((eql :keyboard) :keyboard)
+                           (gamepad:device :gamepad)))
+                    (:gamepad 'gamepad-event)
                     (:keyboard 'key-event)
                     (:mouse 'mouse-event)))
             (char (specific-char-for-event-trigger thing type)))
@@ -336,25 +348,29 @@
                     (mouse-button-event (button thing))))
             (bank (or bank
                       (etypecase thing
-                        (gamepad-event :gamepad)
+                        (gamepad-event
+                         (if (typep +input-source+ 'gamepad:device)
+                             (gamepad:icon-type +input-source+)
+                             :gamepad))
                         (key-event :keyboard)
                         (mouse-event :mouse)))))
        (when (eql bank :keyboard)
          (setf char (or (ignore-errors (local-key-string *context* char)) char)))
        (prompt-char char :bank bank)))))
 
-(defun action-prompts (thing &key (bank :gamepad))
-  (flet ((map-any (a)
-           (or (when a (prompt-char a :bank bank)) #\Space))
-         (map-key (a)
-           (or (when a (prompt-char (or (ignore-errors (local-key-string *context* a)) a) :bank bank)) #\Space)))
-    (delete-duplicates
-     (delete #\Space
-             (map 'string (if (eql bank :keyboard) #'map-key #'map-any)
-                  (specific-chars-for-event-trigger thing (ecase bank
-                                                            ((NIL :gamepad) 'gamepad-event)
-                                                            (:keyboard 'key-event)
-                                                            (:mouse 'mouse-event))))))))
+(defun action-prompts (thing &key bank)
+  (let ((bank (normalize-prompt-bank bank)))
+    (flet ((map-any (a)
+             (or (when a (prompt-char a :bank bank)) #\Space))
+           (map-key (a)
+             (or (when a (prompt-char (or (ignore-errors (local-key-string *context* a)) a) :bank bank)) #\Space)))
+      (delete-duplicates
+       (delete #\Space
+               (map 'string (if (eql bank :keyboard) #'map-key #'map-any)
+                    (specific-chars-for-event-trigger thing (ecase bank
+                                                              (:gamepad 'gamepad-event)
+                                                              (:keyboard 'key-event)
+                                                              (:mouse 'mouse-event)))))))))
 
 (defun prompt-charset ()
   (sort (delete-duplicates
