@@ -6,18 +6,18 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-global +retention-table* (make-hash-table :test 'eql))
+(define-global +retention-table+ (make-hash-table :test 'eql))
 (defvar *mappings* (make-hash-table :test 'equal))
 
 (declaim (inline retained (setf retained) clear-retained))
 (defun retained (id)
-  (gethash id +retention-table*))
+  (gethash id +retention-table+))
 
 (defun (setf retained) (bool id)
-  (setf (gethash id +retention-table*) bool))
+  (setf (gethash id +retention-table+) bool))
 
 (defun clear-retained ()
-  (clrhash +retention-table*))
+  (clrhash +retention-table+))
 
 (defun mapping (name)
   (gethash name *mappings*))
