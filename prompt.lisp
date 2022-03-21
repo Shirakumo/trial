@@ -317,6 +317,8 @@
 
 (defun prompt-char (thing &key bank)
   (etypecase thing
+    (null
+     thing)
     (character
      thing)
     (string
@@ -329,8 +331,8 @@
     (symbol
      (let* ((type (case bank
                     ((NIL) (etypecase +input-source+
-                             ((eql :keyboard) :keyboard)
-                             (gamepad:device :gamepad)))
+                             ((eql :keyboard) 'key-event)
+                             (gamepad:device 'gamepad-event)))
                     (:keyboard 'key-event)
                     (:mouse 'mouse-event)
                     (T 'gamepad-event)))
