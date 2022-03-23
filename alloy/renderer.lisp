@@ -140,12 +140,12 @@
 (defmethod opengl:make-vertex-array ((renderer renderer) bindings)
   (make-instance 'trial:vertex-array :bindings bindings :vertex-form NIL))
 
-(defmethod opengl:draw-vertex-array ((array trial:vertex-array) primitive-type count)
+(defmethod opengl:draw-vertex-array ((array trial:vertex-array) primitive-type offset count)
   (gl:bind-vertex-array (trial:gl-name array))
   (if (loop for binding in (trial:bindings array)
             thereis (typep binding 'trial:vertex-buffer))
-      (%gl:draw-elements primitive-type count :unsigned-int 0)
-      (%gl:draw-arrays primitive-type 0 count)))
+      (%gl:draw-elements primitive-type count :unsigned-int offset)
+      (%gl:draw-arrays primitive-type offset count)))
 
 (defclass image (trial:texture simple:image)
   ())
