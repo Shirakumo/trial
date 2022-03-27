@@ -11,6 +11,7 @@
    (loader :initform (make-instance 'loader) :accessor loader)))
 
 (defmethod initialize-instance :before ((main main) &key)
+  (clear-retained)
   (setf +main+ main))
 
 (defmethod finalize ((main main))
@@ -18,7 +19,6 @@
     (v:info :trial.main "RAPTURE")
     (when (context main)
       (acquire-context (context main) :force T))
-    (clear-retained)
     (finalize loader)
     (finalize scene)))
 
