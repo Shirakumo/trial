@@ -33,9 +33,12 @@
         (setf (attributes:attributes path) (attributes:encode-attributes attrs))))
     release))
 
+(defun bundle-path (release)
+  (make-pathname :name (pathname-utils:directory-name release) :type "zip"
+                 :defaults (pathname-utils:parent release)))
+
 (defun bundle (&key (release (release)))
-  (let ((bundle (make-pathname :name (pathname-utils:directory-name release) :type "zip"
-                               :defaults (pathname-utils:parent release))))
+  (let ((bundle (bundle-path release)))
     (zippy:compress-zip release bundle :if-exists :supersede)
     bundle))
 
@@ -48,6 +51,23 @@
     (when (directory (make-pathname :name :wild :type "exe" :defaults release))
       (push "windows" systems))
     systems))
+
+(defmethod upload ((service (eql :ftp)) &key (release (release)) (user (config :ftp :user)) (port (config :ftp :port)) (hostname (config :ftp :hostname)) (password (config :ftp :password)) (path (config :ftp :path)))
+  (org.mapcar.ftp.client:with-ftp-connection (connection :hostname hostname
+                                                         :port (or port 21)
+                                                         :username username
+                                                         :password (or password (password user))
+                                                         :passive-ftp-p T)
+    (when path
+      (org.mapcar.ftp.client:send-cwd-command connection (uiop:native-namestring path)))
+    (let ((bundle (bundle-path release)))
+      (org.mapcar.ftp.client:store-file connection bundle (file-namestring bundle) :type :binary))))
+
+(defmethod upload ((service (eql :http)) &key (release (release)) (url (config :http :url)) (method (config :http :method)) (file-parameter (config :http :file-parameter)) (parameters (config :http :post-parameters)))
+  (dexador:request url
+                   :method (or method :post)
+                   :content (list* (cons (or file-parameter "file") (bundle-path release))
+                                   parameters)))
 
 (defmethod upload ((service (eql :itch)) &key (release (release)) (user (config :itch :user)) (project (config :itch :project)) &allow-other-keys)
   (run "butler" "push" (uiop:native-namestring release)

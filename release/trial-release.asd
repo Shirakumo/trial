@@ -17,4 +17,10 @@
                (:file "toolkit")
                (:file "build")
                (:file "release"))
-  :depends-on (:alexandria :cl-ppcre :pathname-utils :zippy :deploy))
+  :depends-on (:alexandria
+               :cl-ppcre
+               :pathname-utils
+               :zippy
+               :deploy
+               :cl-ftp
+               :dexador))
