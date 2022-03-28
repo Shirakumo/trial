@@ -582,6 +582,7 @@
    #:make-event-from-binding
    #:action-set
    #:exclusive-action-set
+   #:list-action-sets
    #:define-action-set
    #:action
    #:source-event

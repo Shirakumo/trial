@@ -99,6 +99,9 @@
 (defun action-set (action)
   (find-action-set (ensure-class action)))
 
+(defun list-action-sets ()
+  (c2mop:class-direct-subclasses (find-class 'action-set)))
+
 (define-compiler-macro action-set (action &environment env)
   (if (constantp action env)
       `(load-time-value (find-action-set (ensure-class ,action)))
