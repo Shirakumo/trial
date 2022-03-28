@@ -95,6 +95,14 @@
                (setf node next))
         finally (return (values node T))))
 
+(defun %call-setting-observers (sub)
+  (loop for (k v) on (gethash sub +settings-observers+) by #'cddr
+        do (with-simple-restart (abort "Don't call the observer.")
+             (handler-bind (#-trial-release (error #'invoke-debugger)
+                            #+trial-release (error (lambda (e) (v:error :trial.settings e)
+                                                     (invoke-restart 'abort))))
+               (funcall v (apply #'setting sub))))))
+
 (defun (setf setting) (value &rest path)
   (labels ((update (node key path)
              (setf (getf node key)
@@ -105,12 +113,7 @@
     (setf +settings+ (update +settings+ (first path) (rest path)))
     (loop for i from 0 below (length path)
           for sub = (butlast path i)
-          do (loop for (k v) on (gethash sub +settings-observers+) by #'cddr
-                   do (handler-case
-                          (handler-bind (#-trial-release (error #'invoke-debugger)
-                                         #+trial-release (error (lambda (e) (v:error :trial.settings e))))
-                            (funcall v (apply #'setting sub)))
-                        (error ()))))
+          do (%call-setting-observers sub))
     (when *save-settings*
       (save-settings))
     value))
