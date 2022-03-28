@@ -583,6 +583,7 @@
    #:action-set
    #:exclusive-action-set
    #:list-action-sets
+   #:active-action-set
    #:define-action-set
    #:action
    #:source-event
