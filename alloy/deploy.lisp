@@ -22,4 +22,4 @@
 #+windows
 (trial::dont-deploy
  org.shirakumo.font-discovery::directwrite
- org.shirakumo.font-discovery::ole32)
+ org.shirakumo.com-on.cffi::ole32)
