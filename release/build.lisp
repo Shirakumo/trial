@@ -2,7 +2,7 @@
 
 (defvar *default-build-features*
   '(:trial-optimize-all :cl-opengl-no-masked-traps :cl-opengl-no-check-error
-    :cl-mixed-no-restarts))
+    :cl-mixed-no-restarts :trial-release))
 
 (defmethod build :around (target)
   (with-simple-restart (continue "Treat build as successful")

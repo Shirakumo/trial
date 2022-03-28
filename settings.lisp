@@ -106,7 +106,11 @@
     (loop for i from 0 below (length path)
           for sub = (butlast path i)
           do (loop for (k v) on (gethash sub +settings-observers+) by #'cddr
-                   do (funcall v (apply #'setting sub))))
+                   do (handler-case
+                          (handler-bind (#-trial-release (error #'invoke-debugger)
+                                         #+trial-release (error (lambda (e) (v:error :trial.settings e))))
+                            (funcall v (apply #'setting sub)))
+                        (error ()))))
     (when *save-settings*
       (save-settings))
     value))
