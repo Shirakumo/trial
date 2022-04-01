@@ -578,6 +578,7 @@
    #:map-event
    #:action-definition
    #:action-binding
+   #:action-bindings
    #:action-input
    #:make-event-from-binding
    #:action-set
@@ -598,7 +599,10 @@
    #:compile-mapping
    #:load-mapping
    #:save-mapping
-   #:set-trigger-from-event
+   #:event-triggers
+   #:event-trigger
+   #:binding-from-event
+   #:update-action-bindings
    #:trigger
    #:retain)
   ;; parallax.lisp

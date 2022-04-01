@@ -57,6 +57,20 @@
       (:gamepad
        (or (assoc 'button binds) (assoc 'axis binds))))))
 
+(defun action-bindings (mapping action &key (device :gamepad))
+  (let ((binds (cddr (action-definition mapping action))))
+    (flet ((match (&rest types)
+             (loop for (type . args) in binds
+                   when (find type types)
+                   append (loop for button in (getf args :one-of)
+                                collect (list* type
+                                               :one-of (list button)
+                                               (remf* args :one-of))))))
+      (ecase device
+        (:keyboard (match 'key 'mouse))
+        (:gamepad (match 'button 'axis))
+        ((T) (match 'key 'mouse 'button 'axis))))))
+
 (defun action-input (mapping action &key (device :gamepad))
   (getf (rest (action-binding mapping action :device device)) :one-of))
 
@@ -66,7 +80,7 @@
       (key (make-instance (ecase edge ((:rise :rise-only) 'key-press) ((:fall :fall-only) 'key-release))
                           :key (first one-of)))
       (mouse (make-instance (ecase edge ((:rise :rise-only) 'mouse-press) ((:fall :fall-only) 'mouse-release))
-                            :button (first one-of)))
+                            :button (first one-of) :pos #.(vec 0 0)))
       (button (make-instance (ecase edge ((:rise :rise-only) 'gamepad-press) ((:fall :fall-only) 'gamepad-release))
                              :device NIL
                              :button (first one-of)))
@@ -306,31 +320,31 @@
             (car trigger)
             (cdr trigger))))
 
-(defun set-trigger-from-event (event action &key (mapping 'keymap) (threshold 0.5) (edge :rise) (compile T))
+(defun binding-from-event (event &key (threshold 0.5) (edge :rise))
+  (let ((binding (etypecase event
+                   (key-event
+                    `(key :one-of (,(key event))))
+                   (mouse-button-event
+                    `(mouse :one-of (,(button event))))
+                   ((or gamepad-press gamepad-release)
+                    `(button :one-of (,(button event))))
+                   (gamepad-move
+                    `(axis :one-of (,(axis event)) :threshold ,(* (float-sign (pos event)) threshold))))))
+    (if (eql edge :rise)
+        binding
+        (append binding (list :edge edge)))))
+
+(defun update-action-bindings (new-bindings action &key (mapping 'keymap) (prune-types T) (update T))
   (let* ((map (mapping mapping))
          (binding (find action (second map) :key #'second))
-         (action-binding (etypecase event
-                           (key-event
-                            `(key :one-of (,(key event))))
-                           (mouse-button-event
-                            `(mouse :one-of (,(button event))))
-                           ((or gamepad-press gamepad-release)
-                            `(button :one-of (,(button event))))
-                           (gamepad-move
-                            `(axis :one-of (,(axis event)) :threshold ,(* (float-sign (pos event)) threshold)))))
-         (action-binding (if (eql edge :rise) action-binding
-                             (append action-binding (list :edge edge))))
          (pruned (loop for action in (cddr binding)
-                       unless (find (first action)
-                                    (etypecase event
-                                      (key-event '(key))
-                                      (mouse-event '(mouse))
-                                      (gamepad-event '(button axis))))
+                       unless (or (eql prune-types T) (find (first action) prune-types))
                        collect action))
-         (new-binding (list* (first binding) action action-binding pruned)))
-    (setf (second map) (list* new-binding (remove binding (second map))))
-    (when compile
-      (compile-mapping :name mapping))))
+         (new-binding (list* (first binding) action (append new-bindings pruned))))
+    (when update
+      (setf (second map) (list* new-binding (remove binding (second map))))
+      (compile-mapping :name mapping))
+    new-binding))
 
 #| Keymap should have the following syntax:
                                         ; ;
