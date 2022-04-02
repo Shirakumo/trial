@@ -110,7 +110,7 @@
 
 (defmethod print-object ((event gamepad-move) stream)
   (print-unreadable-object (event stream :type T)
-    (format stream "~a ~a" (device event) (axis event))))
+    (format stream "~a ~a ~3f" (device event) (axis event) (pos event))))
 
 (define-mapping retain-generic (loop ev)
   (typecase ev

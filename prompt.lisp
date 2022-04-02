@@ -286,7 +286,8 @@
     (:r-h (if (< 0 threshold) :r-r :r-l))
     (:r-v (if (< 0 threshold) :r-u :r-d))
     (:dpad-h (if (< 0 threshold) :dpad-r :dpad-l))
-    (:dpad-v (if (< 0 threshold) :dpad-u :dpad-d))))
+    (:dpad-v (if (< 0 threshold) :dpad-u :dpad-d))
+    (T axis)))
 
 (defun specific-char-for-event-trigger (thing &optional (type 'input-event))
   (multiple-value-bind (alts type args) (event-trigger thing type)
