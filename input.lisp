@@ -86,10 +86,18 @@
   (:default-initargs
    :button (error "BUTTON required.")))
 
+(defmethod print-object ((event gamepad-press) stream)
+  (print-unreadable-object (event stream :type T)
+    (format stream "~a ~a" (device event) (button event))))
+
 (defclass gamepad-release (gamepad-event)
   ((button :initarg :button :reader button))
   (:default-initargs
    :button (error "BUTTON required.")))
+
+(defmethod print-object ((event gamepad-release) stream)
+  (print-unreadable-object (event stream :type T)
+    (format stream "~a ~a" (device event) (button event))))
 
 (defclass gamepad-move (gamepad-event)
   ((axis :initarg :axis :reader axis)
@@ -99,6 +107,10 @@
    :axis (error "AXIS required.")
    :old-pos (error "OLD-POS required.")
    :pos (error "POS required.")))
+
+(defmethod print-object ((event gamepad-move) stream)
+  (print-unreadable-object (event stream :type T)
+    (format stream "~a ~a" (device event) (axis event))))
 
 (define-mapping retain-generic (loop ev)
   (typecase ev
