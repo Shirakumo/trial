@@ -39,7 +39,10 @@
 
 (defmethod initialize-instance :after ((main settings-main) &key)
   (loop for (k v) on (trial:setting :audio :volume) by #'cddr
-        do (setf (mixed:volume k) v)))
+        for segment = (harmony:segment k harmony:*server* NIL)
+        do (if segment
+               (setf (mixed:volume segment) v)
+               (v:warn :trial.harmony "Can't set volume for inexistent segment ~s" k))))
 
 (defmethod server-initargs append ((main settings-main))
   (list :latency (trial:setting :audio :latency)
