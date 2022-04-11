@@ -51,7 +51,10 @@
 (trial:define-setting-observer volumes :audio :volume (value)
   (when harmony:*server*
     (loop for (k v) on value by #'cddr
-          do (setf (mixed:volume k) v))))
+          for segment = (harmony:segment k harmony:*server* NIL)
+          do (if segment
+                 (setf (mixed:volume segment) v)
+                 (v:warn :trial.harmony "Can't set volume for inexistent segment ~s" k)))))
 
 (trial:define-setting-observer audio-device :audio :device (value)
   (when harmony:*server*
