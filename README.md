@@ -3,7 +3,7 @@
 ## About Trial
 Trial is a game engine written in Common Lisp. Unlike many other engines, it is meant to be more of a loose connection of components that can be fit together as required by any particular game.
 
-The project is still in its very early stages and may change heavily as new constraints become clear. As such there is no guarantee for API stability at this point and no documentation is available. However, you may use projects such as [Vegetable Mash](https://github.com/shirakumo/vpetjam) as a reference on how to start using it.
+The project is still in its very early stages and may change heavily as new constraints become clear. As such there is no guarantee for API stability at this point and no documentation is available. However, you may use projects such as [Vegetable Mash](https://github.com/shinmera/vpetjam) as a reference on how to start using it.
 
 Come talk to us at the shirakumo channel, reachable through [lichat](https://chat.tymoon.eu/?channel=shirakumo) or IRC on Libera.
 
