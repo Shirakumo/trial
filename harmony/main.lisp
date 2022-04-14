@@ -24,7 +24,7 @@
                     (start (or audio-backend :default)))
       (error () (start :dummy)))))
 
-(defmethod trial:finalize :after ((main main))
+(defmethod trial:finalize :before ((main main))
   (when harmony:*server*
     (trial:finalize harmony:*server*))
   (setf harmony:*server* NIL))
