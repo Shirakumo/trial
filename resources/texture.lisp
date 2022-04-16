@@ -24,6 +24,7 @@
    (anisotropy :initarg :anisotropy :writer (setf anisotropy))
    (wrapping :initarg :wrapping :writer (setf wrapping))
    (border-color :initarg :border-color :writer (setf border-color))
+   (swizzle :initarg :swizzle :writer (setf swizzle))
    (storage :initarg :storage)))
 
 (define-unbound-reader texture width NIL)
@@ -43,6 +44,7 @@
 (define-unbound-reader texture anisotropy NIL)
 (define-unbound-reader texture wrapping '(:clamp-to-edge :clamp-to-edge :clamp-to-edge))
 (define-unbound-reader texture border-color (vec 0 0 0 0))
+(define-unbound-reader texture swizzle '(:r :g :b :a))
 (define-unbound-reader texture storage :dynamic)
 
 (defun texture-texspec (texture)
@@ -164,7 +166,7 @@
          (%gl:tex-storage-3d-multisample target samples internal-format width height depth 1))))))
 
 (defmethod allocate ((texture texture))
-  (with-accessors* (width height depth target samples internal-format pixel-format pixel-type pixel-data
+  (with-accessors* (width height depth target samples internal-format pixel-format pixel-type pixel-data swizzle
                           mag-filter min-filter mipmap-levels mipmap-lod anisotropy wrapping border-color storage)
       texture
     (let ((tex (gl:gen-texture)))
@@ -179,6 +181,18 @@
         (when (find :clamp-to-border wrapping)
           (gl:tex-parameter target :texture-border-color
                             (list (vx border-color) (vy border-color) (vz border-color) (vw border-color))))
+        (cffi:with-foreign-object (params :int 4)
+          (loop for c in swizzle
+                for i from 0
+                do (setf (cffi:mem-aref params :int i)
+                         (ecase c
+                           ((:r :red) (cffi:foreign-enum-value '%gl:enum :red))
+                           ((:g :green) (cffi:foreign-enum-value '%gl:enum :green))
+                           ((:b :blue) (cffi:foreign-enum-value '%gl:enum :blue))
+                           ((:a :alpha) (cffi:foreign-enum-value '%gl:enum :alpha))
+                           ((0 :zero) (cffi:foreign-enum-value '%gl:enum :zero))
+                           ((1 :one) (cffi:foreign-enum-value '%gl:enum :one)))))
+          (%gl:tex-parameter-iv target :texture-swizzle-rgba params))
         (gl:tex-parameter target :texture-min-filter min-filter)
         (gl:tex-parameter target :texture-mag-filter mag-filter)
         (unless (or (eql target :texture-2d-multisample)

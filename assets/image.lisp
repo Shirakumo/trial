@@ -113,7 +113,7 @@
   ())
 
 (defmethod generate-resources ((generator image-loader) path &rest texture-args &key (type T) internal-format pixel-format (resource (resource generator T)) (texture-class 'texture) &allow-other-keys)
-  (multiple-value-bind (bits width height pixel-type inferred-pixel-format)
+  (multiple-value-bind (bits width height pixel-type inferred-pixel-format swizzle)
       (with-new-value-restart (path) (new-path "Specify a new image path.")
         (with-retry-restart (retry "Retry loading the image path.")
           (load-image path type)))
@@ -127,6 +127,7 @@
                :pixel-format pixel-format
                :internal-format (or internal-format
                                     (infer-internal-format pixel-type pixel-format))
+               :swizzle (or swizzle (infer-swizzle-format pixel-format))
                (remf* texture-args :type :resource :texture-class))))))
 
 (defclass image (single-resource-asset file-input-asset image-loader)

@@ -979,11 +979,18 @@
      ((:short-float) :16f)
      ((:float) :32f))))
 
+(defun infer-swizzle-format (pixel-format)
+  (ecase pixel-format
+    ((:r :red) '(:r :r :r :r))
+    ((:rg :gr) '(:r :r :r :g))
+    ((:rgb :bgr) '(:r :g :b 1))
+    ((:rgba :bgra) '(:r :g :b :a))))
+
 (defun infer-pixel-type (depth type)
   (ecase depth
     ((1 8) (ecase type
-            (:signed :byte)
-            (:unsigned :unsigned-byte)))
+             (:signed :byte)
+             (:unsigned :unsigned-byte)))
     (16 (ecase type
           (:signed :short)
           (:unsigned :unsigned-short)
