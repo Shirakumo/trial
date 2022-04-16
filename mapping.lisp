@@ -19,6 +19,22 @@
 (defun clear-retained ()
   (clrhash +retention-table+))
 
+(defun reset-retained (&optional (scene (scene +main+)))
+  (clear-retained)
+  (typecase +input-source+
+    ((eql :keyboard)
+     ;; FIXME: how the heck do we do this?
+     )
+    (gamepad:device
+     (loop for label across gamepad:+labels+
+           for button = (gamepad:button label +input-source+)
+           for axis = (gamepad:axis label +input-source+)
+           do (map-event (make-instance (if button 'gamepad-press 'gamepad-release) :button label :device +input-source+)
+                         scene)
+              (when (/= 0f0 axis)
+                (map-event (make-instance 'gamepad-move :axis label :pos axis :old-pos 0.0 :device +input-source+)
+                           scene))))))
+
 (defun mapping (name)
   (gethash name *mappings*))
 

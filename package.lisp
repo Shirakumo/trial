@@ -571,6 +571,7 @@
    #:keymap
    #:retained
    #:clear-retained
+   #:reset-retained
    #:mapping
    #:remove-mapping
    #:define-mapping
