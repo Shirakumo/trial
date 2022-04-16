@@ -8,4 +8,6 @@
   #-(or linux bsd win32) "workbench"
   :entry-point "workbench::launch"
   :components ((:file "workbench"))
-  :depends-on (:trial-glfw))
+  :depends-on (:trial-glfw
+               :trial-jpeg
+               :trial-png))

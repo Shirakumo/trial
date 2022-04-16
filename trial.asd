@@ -128,11 +128,6 @@
                :float-features
                :lquery
                :static-vectors
-               :pngload
-               :cl-tga
-               :cl-jpeg
-               :retrospectiff
-               :terrable
                :mmap
                :messagebox
                :form-fiddle
