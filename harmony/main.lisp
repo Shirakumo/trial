@@ -24,12 +24,9 @@
                     (start (or audio-backend :default)))
       (error () (start :dummy)))))
 
-(defmethod trial:finalize :before ((main main))
-  (v:info :trial.harmony "Finalising server in ~a" (bt:current-thread))
-  (when harmony:*server*
-    (trial:finalize harmony:*server*)))
-
 (defmethod trial:finalize :after ((main main))
+  (when harmony:*server*
+    (trial:finalize harmony:*server*))
   (setf harmony:*server* NIL))
 
 (defmethod trial:finalize ((server harmony:server))

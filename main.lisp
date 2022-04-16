@@ -14,12 +14,10 @@
   (clear-retained)
   (setf +main+ main))
 
-(defmethod finalize :before ((main main))
-  (when (context main)
-    (acquire-context (context main) :force T)))
-
 (defmethod finalize ((main main))
   (v:info :trial.main "RAPTURE")
+  (when (context main)
+    (acquire-context (context main) :force T))
   (finalize (loader main))
   (finalize (scene main)))
 
