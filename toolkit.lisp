@@ -681,6 +681,9 @@
 (defun rad->deg (rad)
   (* rad 180 (/ PI)))
 
+(defun db (db)
+  (expt 10 (* 0.05 db)))
+
 (defun angle-midpoint (a b)
   (when (< b a) (rotatef a b))
   (when (< PI (- b a)) (decf b (* 2 PI)))

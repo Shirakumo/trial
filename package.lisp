@@ -915,6 +915,7 @@
    #:lerp
    #:deg->rad
    #:rad->deg
+   #:db
    #:angle-midpoint
    #:symbol->c-name
    #:check-gl-type
