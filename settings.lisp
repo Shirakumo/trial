@@ -26,11 +26,12 @@
                           (funcall function (reverse (list* k rpath)) v)))))
     (recurse settings ())))
 
-(defun load-keymap (&key path (name 'keymap))
+(defun load-keymap (&key path (name 'keymap) reset)
   (unless path
     (setf path (keymap-path))
     (ensure-directories-exist path)
-    (when (or (not (probe-file path))
+    (when (or reset
+              (not (probe-file path))
               (< (file-write-date path)
                  (file-write-date (merge-pathnames "keymap.lisp" (root)))))
       (uiop:copy-file (merge-pathnames "keymap.lisp" (root)) path)))
