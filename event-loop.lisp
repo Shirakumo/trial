@@ -84,6 +84,9 @@
           while listener
           do (handle event listener))))
 
+(defmethod handle ((event event) (fun function))
+  (funcall fun event))
+
 (defmethod add-listener (listener (loop event-loop))
   (if (gethash listener (listeners loop))
       listener
