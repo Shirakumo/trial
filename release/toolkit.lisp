@@ -107,4 +107,5 @@
         ((pathname-utils:directory-p file)
          (deploy:copy-directory-tree file target :copy-root NIL))
         (T
+         (ensure-directories-exist target)
          (uiop:copy-file file target))))
