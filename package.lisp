@@ -885,6 +885,7 @@
    #:with-trial-io-syntax
    #:tempdir
    #:tempfile
+   #:rename-file*
    #:make-uuid
    #:logfile
    #:config-directory

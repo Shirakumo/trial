@@ -342,6 +342,11 @@
                  :type type
                  :defaults (tempdir)))
 
+(defun rename-file* (file new-file)
+  (when (uiop:file-exists-p new-file)
+    (delete-file new-file))
+  (rename-file file new-file))
+
 (defun make-uuid ()
   (let ((val (random #xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)))
     (format NIL "~8,'0x-~4,'0x-~4,'0x-~4,'0x-~12,'0x"
