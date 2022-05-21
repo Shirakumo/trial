@@ -166,7 +166,7 @@ void main(){
 (defmethod render :around ((obj textured-entity) (program shader-program))
   (let ((tex (texture obj)))
     (when tex
-      (gl:active-texture :texture0)
+      (%gl:active-texture :texture0)
       (gl:bind-texture (target tex) (gl-name tex))
       (call-next-method)
       (gl:bind-texture (target tex) 0))))
