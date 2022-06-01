@@ -96,6 +96,10 @@
 
 (defmethod create-context ((context context))
   (let ((initargs (initargs context)))
+    (when (eql T (getf initargs :width))
+      (let ((mode (glfw:get-video-mode (first (glfw:get-monitors)))))
+        (setf (getf initargs :width) (getf mode '%glfw:width))
+        (setf (getf initargs :height) (getf mode '%glfw:height))))
     (macrolet ((output-hints (&rest hints)
                  `(progn
                     ,@(loop for (name type attrib) in hints

@@ -173,7 +173,9 @@
 (defmethod alloy:text ((video-mode video-mode))
   (destructuring-bind (w h &optional r monitor) (alloy:value video-mode)
     (declare (ignore monitor))
-    (format nil "~a x ~a~@[ @ ~aHz~]" w h r)))
+    (if (eql T w)
+        (format NIL "Native~@[ @ ~aHz~]" r)
+        (format nil "~a x ~a~@[ @ ~aHz~]" w h r))))
 
 (defmethod alloy:combo-item (item (video-mode video-mode))
   (make-instance 'video-mode-item :value item))
