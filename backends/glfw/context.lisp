@@ -177,17 +177,25 @@
 (defmethod hide ((context context))
   (cl-glfw3:hide-window (window context)))
 
+(defun ensure-monitor (monitor context)
+  (etypecase monitor
+    (null (current-monitor context))
+    (monitor monitor)
+    (string (find-monitor monitor context))))
+
 (defmethod show ((context context) &key (fullscreen NIL f-p) mode)
   (cl-glfw3:show-window (window context))
   (cond (f-p
          (destructuring-bind (w h &optional (r %glfw:+dont-care+) monitor)
-             (or mode (cl-glfw3:get-window-size (window context)))
-           (let ((monitor (etypecase monitor
-                            (null (pointer (current-monitor context)))
-                            (cffi:foreign-pointer monitor)
-                            (monitor (pointer monitor))
-                            (string (pointer (find-monitor monitor context))))))
-             (cl-glfw3:set-window-monitor (when fullscreen monitor) w h :window (window context) :refresh-rate r)))
+             (etypecase mode
+               (monitor (current-video-mode mode))
+               (null (current-video-mode (current-monitor context)))
+               (cons mode))
+           (let ((monitor (ensure-monitor monitor context)))
+             (when (eql T w)
+               (destructuring-bind (cw ch cr cm) (current-video-mode monitor)
+                 (setf w cw h ch r cr)))
+             (cl-glfw3:set-window-monitor (when fullscreen (pointer monitor)) w h :window (window context) :refresh-rate r)))
          (unless fullscreen
            (center-window context)))
         (mode
@@ -452,6 +460,13 @@
             (when (< (monitor-area best) (monitor-area monitor))
               (setf best monitor)))
           (find best (list-monitors context) :test #'cffi:pointer-eq :key #'pointer))))))
+
+(defmethod current-video-mode ((monitor monitor))
+  (let ((mode (glfw:get-video-mode (pointer monitor))))
+    (list (getf mode '%CL-GLFW3:WIDTH)
+          (getf mode '%CL-GLFW3:HEIGHT)
+          (getf mode '%CL-GLFW3::REFRESH-RATE)
+          (name monitor))))
 
 (defmethod list-monitors ((context context))
   (or (monitors context)
