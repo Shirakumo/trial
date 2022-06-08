@@ -605,6 +605,7 @@
    #:binding-from-event
    #:update-action-bindings
    #:trigger
+   #:analog
    #:retain)
   ;; parallax.lisp
   (:export
