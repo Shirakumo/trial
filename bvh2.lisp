@@ -23,7 +23,7 @@
             (:constructor %make-bvh-node (3d-vectors::%vx4 3d-vectors::%vy4 3d-vectors::%vz4 3d-vectors::%vw4 d p l r o))
             (:copier NIL)
             (:predicate NIL))
-  (d 0 :type (unsigned-byte 8))
+  (d 0 :type (unsigned-byte 16))
   (p NIL :type (or null bvh-node))
   (l NIL :type (or null bvh-node))
   (r NIL :type (or null bvh-node))
