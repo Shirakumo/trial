@@ -256,13 +256,14 @@
                            `(when (and ,cddn
                                        (active-p (action-set ',action)))
                               (issue ,loop (make-instance ',action :source-event ,ev))
-                              (setf (retained ',action)
-                                    ,(if evup T `(not (retained ',action))))))
+                              (let ((state (+ (or (retained ',action) 0) ,(if evup 1 -1))))
+                                (setf (retained ',action) (if (<= state 0) NIL state)))))
              when evup
              collect (list evup
                            `(when (and ,(or cdup cddn)
                                        (active-p (action-set ',action)))
-                              (setf (retained ',action) NIL)))))
+                              (let ((state (1- (or (retained ',action) 0))))
+                                (setf (retained ',action) (if (<= state 0) NIL state)))))))
       (analog
        (loop for trigger in triggers
              for (evtype condition value) = (apply #'process-analog-form ev trigger)
