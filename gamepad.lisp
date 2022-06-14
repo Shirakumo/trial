@@ -22,7 +22,12 @@
 
 (defmethod start :after ((handler gamepad-input-handler))
   (with-gamepad-failure-handling (:ignore-error #-trial-optimize-all NIL #+trial-optimize-all T)
-    (gamepad:init)))
+    (flet ((describe-device (dev)
+             (format NIL "Vendor: ~a Product: ~a Version: ~a Driver: ~a Name: ~a"
+                     (gamepad:vendor dev) (gamepad:product dev) (gamepad:version dev)
+                     (gamepad:driver dev) (gamepad:name dev))))
+      (v:info :trial.input "Detected the following controllers:~{~%  ~a~}"
+              (mapcar #'describe-device (gamepad:init))))))
 
 (defmethod stop :after ((handler gamepad-input-handler))
   (with-gamepad-failure-handling ()
