@@ -303,6 +303,22 @@
     #-darwin
     (body)))
 
+(defun refresh-window-size (context)
+  (destructuring-bind (w h) (glfw:get-window-size (window context))
+    (let ((x-scale 1.0)
+          (y-scale 1.0))
+      #+darwin
+      (cffi:with-foreign-objects ((x :float) (y :float))
+        (cffi:foreign-funcall "glfwGetWindowContentScale" :pointer window :pointer x :pointer y :void)
+        (setf x-scale (cffi:mem-ref x :float))
+        (setf y-scale (cffi:mem-ref y :float)))
+      (let ((w (round (* x-scale w)))
+            (h (round (* y-scale h))))
+        (unless (or (= 0 w) (= 0 h))
+          (setf (width context) w)
+          (setf (height context) h)
+          (handle (make-instance 'resize :width w :height h) (handler context)))))))
+
 (defmacro %with-context (&body body)
   `(let ((context (gethash (cffi:pointer-address window) *window-table*)))
      ,@body))
@@ -329,12 +345,14 @@
 (cl-glfw3:def-window-focus-callback ctx-focus (window focusedp)
   (%with-context
     (v:info :trial.backend.glfw "Window has ~:[lost~;gained~] focus" focusedp)
+    (when focusedp (refresh-window-size context))
     (handle (make-instance (if focusedp 'gain-focus 'lose-focus))
             (handler context))))
 
 (cl-glfw3:def-window-iconify-callback ctx-iconify (window iconifiedp)
   (%with-context
     (v:info :trial.backend.glfw "Window has been ~:[restored~;iconified~]" iconifiedp)
+    (unless iconifiedp (refresh-window-size context))
     (handle (make-instance (if iconifiedp 'window-hidden 'window-shown))
             (handler context))))
 
