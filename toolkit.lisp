@@ -8,6 +8,8 @@
 
 (defvar *inhibit-standalone-error-handler* NIL)
 
+(defvar *error-report-hook* #'identity)
+
 (defvar *native-array-element-types*
   (remove T (remove-duplicates
              (mapcar #'upgraded-array-element-type
@@ -373,23 +375,61 @@
              (pathname-utils:subdirectory (user-homedir-pathname) ".config"))
          (or app-path (list +app-vendor+ +app-system+))))
 
-(defun standalone-error-handler (err &optional (category :trial))
+(defun standard-error-hook (err)
+  (org.shirakumo.messagebox:show
+   (format NIL "An unhandled error occurred. Please send the application logfile to the developers. You can find it here:~%~%~a"
+           (uiop:native-namestring (trial:logfile)))
+   :title (format NIL "Failed to run ~a" +app+)
+   :type :error
+   :modal T)
+  (deploy:quit))
+
+(setf *error-report-hook* #'standard-error-hook)
+
+(defun maybe-report-error (err)
+  (flet ((message (message &rest args)
+           (org.shirakumo.messagebox:show (format NIL "~?" message args)
+                                          :title (format NIL "Failed to run ~a" +app-system+)
+                                          :type :error
+                                          :modal T)
+           :exit))
+    (or (typecase err
+          (file-error
+           (message "Failed to access the file ~a. The file does not exist, cannot be accessed, or is corrupted." (file-error-pathname err)))
+          (storage-condition
+           (message "The application ran out of memory and cannot continue, sorry."))
+          #+sbcl
+          (sb-sys:memory-fault-error
+           (message "The application encountered a memory corruption and cannot continue, sorry."))
+          (trial:thread-did-not-exit
+           :exit)
+          (trial:context-creation-error
+           (message "Failed to initialise OpenGL. This either means your system is not capable of running this game, or your driver is currently bugged.~@[The following error was generated:~% ~a~]"
+                    (message err)))
+          (gl:opengl-error
+           (case (cdr (%gl::opengl-error.error-code err))
+             (:out-of-memory
+              (message "OpenGL ran out of memory. Your graphics card's or your computer's memory may be too small to run this game, sorry."))
+             (:invalid-operation
+              ;; Ignoring this in the hopes it's a temporary issue that can just be ignored.
+              :ignore))))
+        :report)))
+
+(defun standalone-error-handler (err &key (category :trial))
   (when (and (deploy:deployed-p) (not *inhibit-standalone-error-handler*))
     (v:error category err)
     (v:fatal category "Encountered unhandled error in ~a, bailing." (bt:current-thread))
-    (cond ((string/= "" (or (uiop:getenv "DEPLOY_DEBUG_BOOT") ""))
+    (cond ((string/= "" (or (uiop:getenv "DEPLOY_CONTINUE_ERROR") ""))
+           (if (find-restart 'continue)
+               (continue err)
+               (abort err)))
+          ((string/= "" (or (uiop:getenv "DEPLOY_DEBUG_BOOT") ""))
            #+sbcl (sb-ext:enable-debugger)
            (invoke-debugger err))
-          ((typep err 'trial:thread-did-not-exit))
-          ((typep err 'trial:context-creation-error)
-           (org.shirakumo.messagebox:show (format NIL "Failed to initialise OpenGL.~@[The following error was generated:~% ~a~]"
-                                                  (message err))
-                                          :title "Failed to set up OpenGL" :type :error :modal T))
           (T
-           (org.shirakumo.messagebox:show (format NIL "An unhandled error occurred. Please send the application logfile to the developers. You can find it here:~%~%~a"
-                                                  (uiop:native-namestring (logfile)))
-                                          :title "Unhandled Error" :type :error :modal T)))
-    (deploy:quit)))
+           (case (maybe-report-error err)
+             (:exit (deploy:quit))
+             (:report (funcall *error-report-hook* err)))))))
 
 (defun standalone-logging-handler ()
   (when (deploy:deployed-p)

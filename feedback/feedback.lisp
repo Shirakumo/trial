@@ -89,30 +89,14 @@
            :version version :trace trace
            *client-args*)))
 
-(defun trial:standalone-error-handler (err &optional (category :trial))
-  (when (and (deploy:deployed-p) (not trial:*inhibit-standalone-error-handler*))
-    (v:error category err)
-    (v:fatal category "Encountered unhandled error in ~a, bailing." (bt:current-thread))
-    (cond ((string/= "" (or (uiop:getenv "DEPLOY_CONTINUE_ERROR") ""))
-           (if (find-restart 'continue)
-               (continue err)
-               (abort err)))
-          ((string/= "" (or (uiop:getenv "DEPLOY_DEBUG_BOOT") ""))
-           #+sbcl (sb-ext:enable-debugger)
-           (invoke-debugger err))
-          ((typep err 'trial:thread-did-not-exit))
-          ((typep err 'trial:context-creation-error)
-           (org.shirakumo.messagebox:show (format NIL "Failed to initialise OpenGL.~@[The following error was generated:~% ~a~]"
-                                                  (message err))
-                                          :title "Failed to set up OpenGL" :type :error :modal T))
-          ((ignore-errors (submit-report :description (format NIL "Hard crash due to error:~%~a" err)))
-           (org.shirakumo.messagebox:show (format NIL "An unhandled error occurred. A log has been sent to the developers. Sorry for the inconvenience!")
-                                          :title "Unhandled Error" :type :error :modal T))
-          (T
-           (org.shirakumo.messagebox:show (format NIL "An unhandled error occurred. Please send the application logfile to the developers. You can find it here:~%~%~a"
-                                                  (uiop:native-namestring (trial:logfile)))
-                                          :title "Unhandled Error" :type :error :modal T)))
-    (deploy:quit)))
+(defun error-handler (err)
+  (if (ignore-errors (submit-report :description (format NIL "Hard crash due to error:~%~a" err)))
+      (org.shirakumo.messagebox:show (format NIL "An unhandled error occurred. A log has been sent to the developers. Sorry for the inconvenience!")
+                                     :title "Unhandled Error" :type :error :modal T)
+      (funcall trial:standard-error-hook err))
+  (deploy:quit))
+
+(setf trial:*error-report-hook* #'error-handler)
 
 #+linux
 (trial::dont-deploy

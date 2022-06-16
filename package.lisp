@@ -856,6 +856,7 @@
    #:background)
   ;; toolkit.lisp
   (:export
+   #:*error-report-hook*
    #:*inhibit-standalone-error-handler*
    #:define-global
    #:+app-vendor+
@@ -890,6 +891,7 @@
    #:make-uuid
    #:logfile
    #:config-directory
+   #:standard-error-hook
    #:standalone-error-handler
    #:standalone-logging-handler
    #:rename-thread
