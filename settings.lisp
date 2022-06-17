@@ -96,6 +96,23 @@
                (setf node next))
         finally (return (values node T))))
 
+(define-compiler-macro setting (&whole whole &rest path &environment env)
+  (if (loop for part in path always (constantp part env))
+      (let ((inner (gensym "INNER"))
+            (not-found (gensym "NOT-FOUND")))
+        (labels ((rec (path)
+                   (if path
+                       `(let ((,inner ,(rec (rest path))))
+                          (if (eq ,inner ',not-found)
+                              ,inner
+                              (getf ,inner ,(car path) ',not-found)))
+                       `(or +settings+ (load-settings)))))
+          `(let ((,inner ,(rec (reverse path))))
+             (if (eq ,inner ',not-found)
+                 (values NIL NIL)
+                 (values ,inner T)))))
+      whole))
+
 (defun %call-setting-observers (sub)
   (loop for (k v) on (gethash sub +settings-observers+) by #'cddr
         do (with-simple-restart (abort "Don't call the observer.")
