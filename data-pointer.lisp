@@ -20,6 +20,7 @@
        (flet ((,thunk (,ptr)
                 (declare (type cffi:foreign-pointer ,ptr))
                 ,@body))
+         (declare (dynamic-extent #',thunk))
          (cond ((static-vector-p ,datag)
                 (let ((,ptr (static-vector-pointer ,datag)))
                   (,thunk ,ptr)))
@@ -115,4 +116,5 @@
               (declare (type fixnum ,size))
               (declare (ignorable ,size))
               ,@body))
+       (declare (dynamic-extent #',thunk))
        (call-with-data-ptr #',thunk ,data ,@args))))
