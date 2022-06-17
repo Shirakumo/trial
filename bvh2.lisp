@@ -382,6 +382,7 @@
     `(block NIL
        (flet ((,thunk (,entity)
                 ,@body))
+         (declare (dynamic-extent #',thunk))
          (let ((,regiong ,region))
            (etypecase ,regiong
              (vec2 (let ((,regiong (3d-vectors::%vec4 (vx2 ,regiong) (vy2 ,regiong) (vx2 ,regiong) (vy2 ,regiong))))
