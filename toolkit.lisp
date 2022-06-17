@@ -21,10 +21,11 @@
 
 (defmacro define-global (name value)
   `(eval-when (:compile-toplevel :load-toplevel :execute)
-     (if (boundp ',name)
-         (setf ,name ,value)
-         #+sbcl (sb-ext:defglobal ,name ,value)
-         #-sbcl (defvar ,name ,value))))
+     (let ((boundp (boundp ',name)))
+       #+sbcl (sb-ext:defglobal ,name ,value)
+       #-sbcl (defvar ,name ,value)
+       (when boundp
+         (setf ,name ,value)))))
 
 (define-global +app-vendor+ "shirakumo")
 (define-global +app-system+ "trial")
