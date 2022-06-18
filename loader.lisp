@@ -184,56 +184,58 @@
   (progress loader 0 100)
   (let ((load-sequence (compute-load-sequence area))
         (resources (loaded loader)))
-    (progress loader 1 (+ 2 (length load-sequence)))
-    (if unload
-        ;; First, mark all resources as to-unload
-        (loop for resource being the hash-keys of resources
-              do (setf (gethash resource resources) :to-unload))
-        (loop for resource being the hash-keys of resources
-              do (setf (gethash resource resources) :to-keep)))
-    ;; Next re-mark resources as keep if already loaded or to-load if new
-    (loop for resource across load-sequence
-          do (cond ((gethash resource resources)
-                    (setf (gethash resource resources) :to-keep)
-                    ;; Also mark source asset as to-keep, as unloading it would
-                    ;; cause the associated resource to be unloaded as well.
-                    (when (and (typep resource 'resource) (generator resource))
-                      (setf (gethash (generator resource) resources) :to-keep)))
-                   (T
-                    (setf (gethash resource resources) :to-load))))
-    (restart-case
-        (progn
-          (v:info :trial.loader "Loading about ~d resources." (length load-sequence))
-          (v:debug :trial.loader "About to load the following:~%  ~a" load-sequence)
-          (process-loads loader area load-sequence)
-          (progress loader (+ 2 (length load-sequence)) (+ 2 (length load-sequence)))
-          ;; Now unload the ones we no longer need and reset state.
-          ;; TODO: Consider UNLOADing assets always here, since that'll just throw
-          ;;       away allocation input state rather than deallocating the resources.
+    (progress loader 1 (+ 1 (length load-sequence)))
+    (unless (= 0 (length load-sequence))
+      (if unload
+          ;; First, mark all resources as to-unload
           (loop for resource being the hash-keys of resources
-                for state being the hash-values of resources
-                do (case state
-                     (:to-unload
-                      (unload-with loader resource))
-                     (:to-keep
-                      (setf (gethash resource resources) :loaded))))
-          (progress loader (length load-sequence) (length load-sequence))
-          (when unload
-            (trivial-garbage:gc :full T))
-          T)
-      (abort-commit ()
-        :report "Abort the commit and roll back any changes."
-        ;; Unload the newly loaded resources we didn't need before, and reset the state.
-        (loop for resource being the hash-keys of resources
-              for state being the hash-values of resources
-              do (case state
-                   (:loaded
-                    (unload-with loader resource))
-                   (:to-load
-                    (remhash resource resources))
-                   ((:to-unload :to-keep)
-                    (setf (gethash resource resources) :loaded))))
-        NIL))))
+                do (setf (gethash resource resources) :to-unload))
+          (loop for resource being the hash-keys of resources
+                do (setf (gethash resource resources) :to-keep)))
+      (unless (= 0 (length load-sequence))
+        ;; Next re-mark resources as keep if already loaded or to-load if new
+        (loop for resource across load-sequence
+              do (cond ((gethash resource resources)
+                        (setf (gethash resource resources) :to-keep)
+                        ;; Also mark source asset as to-keep, as unloading it would
+                        ;; cause the associated resource to be unloaded as well.
+                        (when (and (typep resource 'resource) (generator resource))
+                          (setf (gethash (generator resource) resources) :to-keep)))
+                       (T
+                        (setf (gethash resource resources) :to-load))))
+        (restart-case
+            (progn
+              (v:info :trial.loader "Loading about ~d resources." (length load-sequence))
+              (v:debug :trial.loader "About to load the following:~%  ~a" load-sequence)
+              (process-loads loader area load-sequence)
+              (progress loader (+ 2 (length load-sequence)) (+ 2 (length load-sequence)))
+              ;; Now unload the ones we no longer need and reset state.
+              ;; TODO: Consider UNLOADing assets always here, since that'll just throw
+              ;;       away allocation input state rather than deallocating the resources.
+              (loop for resource being the hash-keys of resources
+                    for state being the hash-values of resources
+                    do (case state
+                         (:to-unload
+                          (unload-with loader resource))
+                         (:to-keep
+                          (setf (gethash resource resources) :loaded))))
+              (progress loader (length load-sequence) (length load-sequence))
+              (when unload
+                (trivial-garbage:gc :full T))
+              T)
+          (abort-commit ()
+            :report "Abort the commit and roll back any changes."
+            ;; Unload the newly loaded resources we didn't need before, and reset the state.
+            (loop for resource being the hash-keys of resources
+                  for state being the hash-values of resources
+                  do (case state
+                       (:loaded
+                        (unload-with loader resource))
+                       (:to-load
+                        (remhash resource resources))
+                       ((:to-unload :to-keep)
+                        (setf (gethash resource resources) :loaded))))
+            NIL))))))
 
 (defmethod commit (object (loader loader) &rest args)
   (let ((area (make-instance 'staging-area)))
