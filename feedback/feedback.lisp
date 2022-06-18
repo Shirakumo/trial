@@ -91,9 +91,8 @@
 
 (defun error-handler (err)
   (if (ignore-errors (submit-report :description (format NIL "Hard crash due to error:~%~a" err)))
-      (org.shirakumo.messagebox:show (format NIL "An unhandled error occurred. A log has been sent to the developers. Sorry for the inconvenience!")
-                                     :title "Unhandled Error" :type :error :modal T)
-      (funcall trial:standard-error-hook err))
+      (trial:emessage "An unhandled error occurred. A log has been sent to the developers. Sorry for the inconvenience!")
+      (trial:standard-error-hook err))
   (deploy:quit))
 
 (setf trial:*error-report-hook* #'error-handler)

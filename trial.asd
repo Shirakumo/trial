@@ -38,6 +38,7 @@
                (:file "display" :depends-on ("package" "context" "render-loop" "power"))
                (:file "effects" :depends-on ("package" "shader-pass"))
                (:file "entity" :depends-on ("package"))
+               (:file "error-handling" :depends-on ("package" "toolkit"))
                (:file "event-loop" :depends-on ("package" "entity"))
                (:file "features" :depends-on ("package"))
                (:file "flare" :depends-on ("package" "transforms"))

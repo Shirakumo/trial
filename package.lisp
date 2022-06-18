@@ -359,6 +359,14 @@
    #:preceding-entity
    #:enter*
    #:leave*)
+  ;; error-handling.lisp
+  (:export
+   #:*error-report-hook*
+   #:*inhibit-standalone-error-handler*
+   #:standard-error-hook
+   #:emessage
+   #:report-on-error
+   #:standalone-error-handler)
   ;; event-loop.lisp
   (:export
    #:event
@@ -864,8 +872,6 @@
    #:background)
   ;; toolkit.lisp
   (:export
-   #:*error-report-hook*
-   #:*inhibit-standalone-error-handler*
    #:define-global
    #:+app-vendor+
    #:+app-system+
@@ -899,8 +905,6 @@
    #:make-uuid
    #:logfile
    #:config-directory
-   #:standard-error-hook
-   #:standalone-error-handler
    #:standalone-logging-handler
    #:rename-thread
    #:make-thread
