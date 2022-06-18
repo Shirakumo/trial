@@ -6,12 +6,6 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-condition resource-depended-on (error)
-  ((resource :initarg :resource)
-   (dependents :initarg :dependents))
-  (:report (lambda (c s) (format s "The resource~%  ~a~%cannot be unstaged as it is depended on by~{~%  ~a~}"
-                                 (slot-value c 'resource) (slot-value c 'dependents)))))
-
 (defclass staging-area ()
   ((staged :initform (make-hash-table :test 'eq) :reader staged)))
 

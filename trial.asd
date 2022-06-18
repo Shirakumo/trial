@@ -29,6 +29,7 @@
                (:file "attributes" :depends-on ("package"))
                (:file "bvh2" :depends-on ("package" "helpers"))
                (:file "camera" :depends-on ("package" "entity" "helpers" "input"))
+               (:file "conditions" :depends-on ("package"))
                (:file "context" :depends-on ("package"))
                (:file "controller" :depends-on ("package" "mapping" "input" "entity" "asset" ("assets" "font")))
                (:file "data-pointer" :depends-on ("package" "type-info" "static-vector"))
@@ -79,7 +80,7 @@
                (:file "ssao" :depends-on ("package" "shader-pass" "transforms"))
                (:file "static-vector" :depends-on ("package"))
                (:file "text" :depends-on ("package" "helpers" ("assets" "image")))
-               (:file "toolkit" :depends-on ("package"))
+               (:file "toolkit" :depends-on ("package" "conditions"))
                (:file "transforms" :depends-on ("package"))
                (:file "type-info" :depends-on ("package" "toolkit"))
                (:module "resources"

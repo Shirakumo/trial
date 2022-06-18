@@ -32,9 +32,7 @@
         (gl:shader-source shdr source)
         (gl:compile-shader shdr)
         (unless (gl:get-shader shdr :compile-status)
-          (error "Failed to compile ~a: ~%~a~%Shader source:~%~a"
-                 shader (gl:get-shader-info-log shdr)
-                 (format-with-line-numbers source)))
+          (error 'shader-compilation-error :shader shader :log (gl:get-shader-info-log shdr)))
         (v:debug :trial.asset "Compiled shader ~a: ~%~a" shader source)
         (setf (data-pointer shader) shdr)))))
 

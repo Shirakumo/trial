@@ -8,11 +8,6 @@
 
 (defvar *context* NIL)
 
-(define-condition context-creation-error (error)
-  ((message :initarg :message :initform NIL :reader message)
-   (context :initarg :context :initform NIL :reader context))
-  (:report (lambda (c s) (format s "Failed to create an OpenGL context~@[:~%~%  ~a~]" (message c)))))
-
 (defmacro with-context ((&optional (context '*context*) &key force reentrant) &body body)
   (let* ((cont (gensym "CONTEXT"))
          (thunk (gensym "THUNK"))

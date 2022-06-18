@@ -204,6 +204,14 @@
    #:freeroam-camera
    #:move-speed
    #:editor-camera)
+  ;; conditions.lisp
+  (:export
+   #:trial-error
+   #:thread-did-not-exit
+   #:resource-not-allocated
+   #:context-creation-error
+   #:resource-depended-on
+   #:shader-compilation-error)
   ;; context.lisp
   (:export
    #:*context*

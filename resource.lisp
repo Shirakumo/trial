@@ -8,11 +8,6 @@
 
 ;; FIXME: configurable defaults
 
-(define-condition resource-not-allocated (error)
-  ((resource :initarg :resource))
-  (:report (lambda (c s) (format s "The resource~%  ~s~%is required to be allocated, but was not yet."
-                                 (slot-value c 'resource)))))
-
 (defclass resource ()
   ((generator :initarg :generator :initform NIL :reader generator)
    (name :initarg :name :initform NIL :reader name)))

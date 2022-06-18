@@ -406,7 +406,9 @@
            :exit)
           (trial:context-creation-error
            (message "Failed to initialise OpenGL. This either means your system is not capable of running this game, or your driver is currently bugged.~@[The following error was generated:~% ~a~]"
-                    (message err)))
+                    (slot-value err 'message)))
+          (trial:shader-compilation-error
+           (message "Failed to compile shaders. This means your graphics card or driver is not capable of running this game."))
           (gl:opengl-error
            (case (cdr (%gl::opengl-error.error-code err))
              (:out-of-memory
@@ -473,12 +475,6 @@
   `(make-thread ,name (lambda ()
                         (handler-bind ((error #'standalone-error-handler))
                           ,@body))))
-
-(define-condition thread-did-not-exit (error)
-  ((thread :initarg :thread)
-   (timeout :initarg :timeout))
-  (:report (lambda (c s) (format s "Thread~%  ~a~%did not exit after ~ds."
-                                 (slot-value c 'thread) (slot-value c 'timeout)))))
 
 (defun wait-for-thread-exit (thread &key (timeout 1) (interval 0.1))
   (loop for i from 0
