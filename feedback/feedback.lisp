@@ -90,9 +90,12 @@
            *client-args*)))
 
 (defun error-handler (err)
-  (if (ignore-errors (submit-report :description (format NIL "Hard crash due to error:~%~a" err)))
-      (trial:emessage "An unhandled error occurred. A log has been sent to the developers. Sorry for the inconvenience!")
-      (trial:standard-error-hook err))
+  (cond ((trial:setting :debugging :dont-submit-reports)
+         (trial:emessage "An unhandled error of type ~s occurred: ~a" (type-of err) err))
+        ((ignore-errors (submit-report :description (format NIL "Hard crash due to error:~%~a" err)))
+         (trial:emessage "An unhandled error occurred. A log has been sent to the developers. Sorry for the inconvenience!"))
+        (T
+         (trial:standard-error-hook err)))
   (deploy:quit))
 
 (setf trial:*error-report-hook* #'error-handler)
