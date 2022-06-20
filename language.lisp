@@ -7,6 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defvar *language-change-hooks* '())
+(defvar *languages* (make-hash-table :test 'equalp))
 (define-global +language-data+ NIL)
 
 (defun languages ()
@@ -37,12 +38,18 @@
                    +language-data+)))
     (v:info :trial.language "Loading language ~s from ~a" language (language-file language))
     (with-trial-io-syntax ()
-      (with-open-file (stream (language-file language))
-        (loop for k = (read stream NIL)
-              for v = (read stream NIL)
-              while k
-              do (setf (gethash k table) v))
-        (setf +language-data+ table)
+      (with-open-file (stream (language-file language) :if-does-not-exist nil)
+        (cond (stream
+               (loop for k = (read stream NIL)
+                     for v = (read stream NIL)
+                     while k
+                     do (setf (gethash k table) v))
+               (setf (gethash language *languages*) table)
+               (setf +language-data+ table))
+              ((gethash language *languages*)
+               (setf +language-data+ (gethash language *languages*)))
+              (T
+               (error "No language named ~s found." language)))
         (dolist (hook *language-change-hooks* table)
           (funcall hook language))))))
 
