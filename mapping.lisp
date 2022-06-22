@@ -9,12 +9,18 @@
 (define-global +retention-table+ (make-hash-table :test 'eql))
 (defvar *mappings* (make-hash-table :test 'equal))
 
-(declaim (inline retained (setf retained) clear-retained))
+(declaim (inline %retained (setf %retained) retained (setf retained) clear-retained))
+(defun %retained (id)
+  (gethash id +retention-table+ 0))
+
+(defun (setf %retained) (int id)
+  (setf (gethash id +retention-table+) int))
+
 (defun retained (id)
-  (gethash id +retention-table+))
+  (< 0 (gethash id +retention-table+ 0)))
 
 (defun (setf retained) (bool id)
-  (setf (gethash id +retention-table+) bool))
+  (setf (gethash id +retention-table+) (if bool 1 0)))
 
 (defun clear-retained ()
   (clrhash +retention-table+))
@@ -256,14 +262,12 @@
                            `(when (and ,cddn
                                        (active-p (action-set ',action)))
                               (issue ,loop (make-instance ',action :source-event ,ev))
-                              (let ((state (+ (or (retained ',action) 0) ,(if evup 1 -1))))
-                                (setf (retained ',action) (if (<= state 0) NIL state)))))
+                              (setf (%retained ',action) (+ (%retained ',action) ,(if evup 1 -1)))))
              when evup
              collect (list evup
                            `(when (and ,(or cdup cddn)
                                        (active-p (action-set ',action)))
-                              (let ((state (1- (or (retained ',action) 0))))
-                                (setf (retained ',action) (if (<= state 0) NIL state)))))))
+                              (setf (%retained ',action) (1- (%retained ',action)))))))
       (analog
        (loop for trigger in triggers
              for (evtype condition value) = (apply #'process-analog-form ev trigger)
