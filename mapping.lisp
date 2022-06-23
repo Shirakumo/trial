@@ -7,7 +7,27 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (define-global +retention-table+ (make-hash-table :test 'eql))
-(defvar *mappings* (make-hash-table :test 'equal))
+(defvar *mapping-functions* (make-hash-table :test 'eql))
+(defvar *action-mappings* ())
+
+(defun mapping-function (name)
+  (gethash name *mapping-functions*))
+
+(defun (setf mapping-function) (mapping name)
+  (setf (gethash name *mapping-functions*) mapping))
+
+(defun remove-mapping-function (name)
+  (remhash name *mapping-functions*))
+
+(defmacro define-mapping-function (name (loop ev) &body body)
+  `(setf (mapping-function ',name)
+         (lambda (,loop ,ev)
+           (declare (ignorable ,loop))
+           ,@body)))
+
+(defun map-event (event loop)
+  (loop for function being the hash-values of *mapping-functions*
+        do (funcall function loop event)))
 
 (declaim (inline %retained (setf %retained) retained (setf retained) clear-retained))
 (defun %retained (id)
@@ -42,354 +62,239 @@
                 (map-event (make-instance 'gamepad-move :axis label :pos axis :old-pos 0.0 :device +input-source+)
                            scene))))))
 
-(defun mapping (name)
-  (gethash name *mappings*))
+(define-mapping-function retain-generic (loop ev)
+  (typecase ev
+    (mouse-press
+     (setf (retained (button ev)) T))
+    (mouse-release
+     (setf (retained (button ev)) NIL))
+    (key-press
+     (setf (retained (key ev)) T)
+     (case (key ev)
+       ((:left-control :right-control) (setf (retained :control) T))
+       ((:left-shift :right-shift) (setf (retained :shift) T))
+       ((:left-alt :right-alt) (setf (retained :alt) T))))
+    (key-release
+     (setf (retained (key ev)) NIL)
+     (case (key ev)
+       ((:left-control :right-control) (setf (retained :control) NIL))
+       ((:left-shift :right-shift) (setf (retained :shift) NIL))
+       ((:left-alt :right-alt) (setf (retained :alt) NIL))))))
 
-(defun (setf mapping) (mapping name)
-  (setf (gethash name *mappings*) mapping))
+(defclass action-mapping ()
+  ((action-type :initarg :action-type :accessor action-type)
+   (event-type :initarg :event-type :accessor event-type)
+   (qualifier :initarg :qualifier :accessor qualifier)
+   (%action-prototype)))
 
-(defun remove-mapping (name)
-  (remhash name *mappings*))
+(defmethod shared-initialize :after ((mapping action-mapping) slots &key)
+  (setf (slot-value mapping '%action-prototype) (c2mop:class-prototype (c2mop:ensure-finalized (find-class (action-type mapping))))))
 
-(defmacro define-mapping (name (loop ev) &body body)
-  `(setf (mapping ',name)
-         (list (lambda (,loop ,ev)
-                 ,@body)
-               ())))
+(defmethod print-object ((mapping action-mapping) stream)
+  (print-unreadable-object (mapping stream :type T)
+    (format stream "~s ~s -> ~s" (event-type mapping) (qualifier mapping) (action-type mapping))))
 
-(defmacro define-simple-mapping (name (from to &rest to-args) &body tests)
-  (let ((loop (gensym "LOOP")))
-    `(define-mapping ,name (,loop ,from)
-       (when (typep ,from ',from)
-         (with-all-slots-bound (,from ,from)
-           (when (and ,@tests)
-             (issue ,loop (make-instance ',to ,@to-args))))))))
+(defgeneric event-applicable-p (event mapping))
+(defgeneric event-active-p (event mapping))
+(defgeneric perform-event-mapping (event mapping loop))
+(defgeneric from-mapping-description (type action bindings))
+(defgeneric to-mapping-description (mapping))
+(defgeneric event-from-action-mapping (mapping))
+(defgeneric event-to-action-mapping (event action &key))
 
-(defun map-event (event loop)
-  (loop for (function) being the hash-values of *mappings*
-        do (funcall function loop event)))
+(defmethod active-p ((mapping action-mapping))
+  (active-p (slot-value mapping '%action-prototype)))
 
-(defun action-definition (mapping action)
-  (find action (second (mapping mapping)) :key #'second))
+(defmethod event-applicable-p ((event input-event) (mapping action-mapping))
+  NIL)
 
-(defun action-binding (mapping action &key (device :gamepad))
-  (let ((binds (cddr (action-definition mapping action))))
-    (ecase device
-      (:keyboard
-       (or (assoc 'key binds) (assoc 'mouse binds)))
-      (:gamepad
-       (or (assoc 'button binds) (assoc 'axis binds))))))
+(defmethod event-applicable-p ((event key-event) (mapping action-mapping))
+  (and (not (repeat-p event))
+       (typep event (event-type mapping))
+       (find (key event) (qualifier mapping))))
 
-(defun action-bindings (mapping action &key (device :gamepad))
-  (let ((binds (cddr (action-definition mapping action))))
-    (flet ((match (&rest types)
-             (loop for (type . args) in binds
-                   when (find type types)
-                   append (loop for button in (getf args :one-of)
-                                collect (list* type
-                                               :one-of (list button)
-                                               (remf* args :one-of))))))
-      (ecase device
-        (:keyboard (match 'key 'mouse))
-        (:gamepad (match 'button 'axis))
-        ((T) (match 'key 'mouse 'button 'axis))))))
+(defmethod event-applicable-p ((event mouse-button-event) (mapping action-mapping))
+  (and (typep event (event-type mapping))
+       (find (button event) (qualifier mapping))))
 
-(defun action-input (mapping action &key (device :gamepad))
-  (getf (rest (action-binding mapping action :device device)) :one-of))
+(defmethod event-applicable-p ((event gamepad-button-event) (mapping action-mapping))
+  (and (typep event (event-type mapping))
+       (find (button event) (qualifier mapping))))
 
-(defun make-event-from-binding (binding)
-  (destructuring-bind (type &key one-of (threshold 0.5) (edge :rise) &allow-other-keys) binding
-    (ecase type
-      (key (make-instance (ecase edge ((:rise :rise-only) 'key-press) ((:fall :fall-only) 'key-release))
-                          :key (first one-of)))
-      (mouse (make-instance (ecase edge ((:rise :rise-only) 'mouse-press) ((:fall :fall-only) 'mouse-release))
-                            :button (first one-of) :pos #.(vec 0 0)))
-      (button (make-instance (ecase edge ((:rise :rise-only) 'gamepad-press) ((:fall :fall-only) 'gamepad-release))
-                             :device NIL
-                             :button (first one-of)))
-      (axis (make-instance 'gamepad-move
-                           :device NIL
-                           :axis (first one-of)
-                           :old-pos (ecase edge ((:rise :rise-only) 0.0) ((:fall :fall-only) threshold))
-                           :pos (ecase edge ((:rise :rise-only) threshold) ((:fall :fall-only) 0.0)))))))
+(defmethod event-applicable-p ((event gamepad-move) (mapping action-mapping))
+  (and (typep event (event-type mapping))
+       (find (axis event) (qualifier mapping))))
 
-(defclass action-set () ()) ;; marker-class
-(defclass exclusive-action-set () ())
+(defclass digital-mapping (action-mapping)
+  ((threshold :initarg :threshold :initform +0.5 :accessor threshold)
+   (toggle-p :initarg :toggle-p :initform NIL :accessor toggle-p)))
 
-(defmethod (setf active-p) :after (value (set exclusive-action-set))
-  (when value
-    (dolist (other (c2mop:class-direct-subclasses (find-class 'exclusive-action-set)))
-      (unless (eql (class-of set) other)
-        (setf (active-p other) NIL)))))
+(defmethod event-active-p ((event gamepad-move) (mapping digital-mapping))
+  (and (<= (abs (threshold mapping)) (abs (pos event)))
+       (= (float-sign (threshold mapping)) (float-sign (pos event)))))
 
-(defun find-action-set (action)
-  (flet ((direct-action-set (base)
-           (loop for class in (c2mop:class-direct-superclasses base)
-                 do (when (eql class (find-class 'action-set))
-                      (return base)))))
-    (or (direct-action-set action)
-        (loop for class in (or (ignore-errors (c2mop:class-precedence-list action))
-                               (c2mop:compute-class-precedence-list action))
-              thereis (direct-action-set class))
-        (find-class 'action))))
+(defmethod event-active-p ((event digital-event) (mapping digital-mapping))
+  (typep event '(or key-press mouse-press gamepad-press)))
 
-(defun action-set (action)
-  (find-action-set (ensure-class action)))
+(defmethod perform-event-mapping (event (mapping digital-mapping) loop)
+  (let ((active-p (event-active-p event mapping))
+        (action (action-type mapping)))
+    (cond ((toggle-p mapping)
+           (when active-p
+             (setf (%retained action) (if (retained action) -1 +1))))
+          (T
+           (when (and (not (retained action)) active-p)
+             (issue loop (make-instance action :source-event event)))
+           (typecase event
+             (digital-event
+              (setf (%retained action) (max 0 (+ (%retained action) (if active-p +1 -1)))))
+             (T
+              (setf (%retained action) (if active-p +1 0))))))))
 
-(defun list-action-sets ()
-  (c2mop:class-direct-subclasses (find-class 'action-set)))
+(defun normalize-mapping-event-type (type)
+  (case type
+    (key 'key-event)
+    (mouse 'mouse-button-event)
+    (button 'gamepad-button-event)
+    (axis 'gamepad-move)
+    (T type)))
 
-(defun active-action-set ()
-  (find T (list-action-sets) :key #'active-p))
+(defmethod from-mapping-description ((type (eql 'trigger)) action bindings)
+  (loop for binding in bindings
+        collect (destructuring-bind (type &key one-of edge threshold (toggle NIL toggle-p)) binding
+                  (make-instance 'digital-mapping
+                                 :action-type action
+                                 :event-type (normalize-mapping-event-type type)
+                                 :qualifier one-of
+                                 :threshold (or threshold 0.5)
+                                 :toggle-p (if toggle-p toggle (eql :rise-only edge))))))
 
-(define-compiler-macro action-set (action &environment env)
-  (if (constantp action env)
-      `(load-time-value (find-action-set (ensure-class ,action)))
-      `(find-action-set (ensure-class ,action))))
+(defmethod to-mapping-description ((mapping digital-mapping))
+  (list* 'trigger (action-type mapping)
+         (list* (case (event-type mapping)
+                  (key-event 'key)
+                  (mouse-button-event 'mouse)
+                  (gamepad-button-event 'button)
+                  (gamepad-move 'axis)
+                  (T (event-type mapping)))
+                :one-of (qualifier mapping)
+                :threshold (threshold mapping)
+                (when (toggle-p mapping) `(:toggle T)))))
 
-(defmacro define-action-set (name &optional superclasses)
-  `(progn (defclass ,name (,@superclasses action-set)
-            ((active-p :initform T :accessor active-p :allocation :class)))
-          (defmethod active-p ((class (eql (find-class ',name))))
-            (active-p (c2mop:class-prototype class)))
-          (defmethod (setf active-p) (value (class (eql (find-class ',name))))
-            (setf (active-p (c2mop:class-prototype class)) value))
-          (c2mop:finalize-inheritance (find-class ',name))))
+(defmethod event-from-action-mapping ((mapping digital-mapping))
+  (let ((qualifier (first (qualifiers mapping))))
+    (ecase (event-type mapping)
+      (key-event (make-instance 'key-press :key qualifier))
+      (mouse-button-event (make-instance 'mouse-press :button qualifier :pos #.(vec 0 0)))
+      (gamepad-button-event (make-instance 'gamepad-press :device NIL :button qualifier))
+      (gamepad-move (make-instance 'gamepad-move :device NIL :axis qualifier :old-pos 0.0 :pos (threshold mapping))))))
 
-(defclass action (event)
-  ((source-event :initarg :source-event :initform NIL :accessor source-event)))
+(defmethod event-to-action-mapping ((event gamepad-move) (action action) &key (threshold 0.5) toggle-p)
+  (make-instance 'digital-mapping
+                 :action-type (type-of action)
+                 :event-type (type-of event)
+                 :qualifier (list (axis event))
+                 :threshold threshold
+                 :toggle-p toggle-p))
 
-(defmethod active-p ((action (eql (find-class 'action)))) T)
+(defmethod event-to-action-mapping ((event digital-event) (action action) &key toggle-p)
+  (make-instance 'digital-mapping
+                 :action-type (type-of action)
+                 :event-type (type-of event)
+                 :qualifier (list (button event))
+                 :toggle-p toggle-p))
 
-(defclass analog-action (action)
-  ((value :initarg :value :initform 0f0 :accessor value)))
+(define-mapping-function input-maps (loop event)
+  (when (typep event 'input-event)
+    ;; TODO: This is slow, as we keep iterating over and testing for events that will
+    ;;       very likely not change for a long time (comparatively). We should cache
+    ;;       the set of applicable mappings depending on active action-sets whenever
+    ;;       those change.
+    (dolist (mapping *action-mappings*)
+      (when (and (active-p mapping)
+                 (event-applicable-p event mapping))
+        (perform-event-mapping event mapping loop)))))
 
-(defclass directional-action (action)
-  ((x :initarg :value :initform 0f0 :accessor x)
-   (y :initarg :value :initform 0f0 :accessor y)))
+(defun compile-mapping (input)
+  (let ((mappings ()))
+    (dolist (description input)
+      (destructuring-bind (type action &rest bindings) description
+        (dolist (mapping (from-mapping-description type action bindings))
+          (push mapping mappings))))
+    (setf *action-mappings* mappings)))
 
-(defclass spatial-action (action)
-  ((x :initarg :value :initform 0f0 :accessor x)
-   (y :initarg :value :initform 0f0 :accessor y)
-   (z :initarg :value :initform 0f0 :accessor z)))
-
-(defun remove-action-mappings (action)
-  (loop for k being the hash-keys of *mappings*
-        do (when (and (consp k) (eql (car k) action))
-             (remhash k *mappings*))))
-
-(defmacro define-action (name superclasses &body mappings)
-  (flet ((compile-mapping (mapping)
-           (destructuring-bind (type &rest tests) mapping
-             `(define-simple-mapping (,name ,type) (,type ,name :source-event ,type)
-                ,@tests))))
-    (setf superclasses (append superclasses '(action)))
-    `(progn
-       (defclass ,name ,superclasses
-         ())
-       (remove-action-mappings ',name)
-       ,@(mapcar #'compile-mapping mappings))))
-
-(defun process-edge (edge rise fall)
-  (list (ecase edge
-          ((:rise-only :rise) rise)
-          (:fall-only) (:fall fall))
-        (ecase edge
-          (:rise-only) (:rise fall)
-          ((:fall-only :fall) rise))))
-
-(defgeneric process-trigger-form (ev event &key &allow-other-keys)
-  (:method (ev (_ (eql 'label)) &key &allow-other-keys))
-  (:method (ev (_ (eql 'key)) &key one-of (edge :rise))
-    `(,@(process-edge edge 'key-press 'key-release)
-      (and (one-of (key ,ev) ,@one-of)
-           (not (repeat-p ,ev)))))
-  (:method (ev (_ (eql 'button)) &key one-of (edge :rise))
-    `(,@(process-edge edge 'gamepad-press 'gamepad-release)
-      (one-of (button ,ev) ,@one-of)))
-  (:method (ev (_ (eql 'mouse)) &key one-of (edge :rise))
-    `(,@(process-edge edge 'mouse-press 'mouse-release)
-      (one-of (button ,ev) ,@one-of)))
-  (:method (ev (_ (eql 'axis)) &key one-of (edge :rise) (threshold 0.5))
-    `(gamepad-move
-      gamepad-move
-      (and (one-of (axis ,ev) ,@one-of)
-           ,(if (xor (eql edge :rise) (plusp threshold))
-                `(< (pos ,ev) ,threshold (old-pos ,ev))
-                `(< (old-pos ,ev) ,threshold (pos ,ev))))
-      (and (one-of (axis ,ev) ,@one-of)
-           ,(if (xor (eql edge :rise) (plusp threshold))
-                `(< (old-pos ,ev) ,threshold (pos ,ev))
-                `(< (pos ,ev) ,threshold (old-pos ,ev)))))))
-
-(defgeneric process-analog-form (ev event &key &allow-other-keys)
-  (:method (ev (_ (eql 'label)) &key &allow-other-keys))
-  (:method (ev (_ (eql 'key)) &key one-of (edge :rise) (value 1.0))
-    `(key-event
-      (one-of (key ,ev) ,@one-of)
-      (etypecase ,ev
-        (key-press ,(ecase edge (:rise value) (:fall 0.0)))
-        (key-release ,(ecase edge (:rise 0.0) (:fall value))))))
-  (:method (ev (_ (eql 'button)) &key one-of (edge :rise) (value 1.0))
-    `(button-event
-      (one-of (button ,ev) ,@one-of)
-      (etypecase ,ev
-        (button-press ,(ecase edge (:rise value) (:fall 0.0)))
-        (button-release ,(ecase edge (:rise 0.0) (:fall value))))))
-  (:method (ev (_ (eql 'mouse)) &key one-of (edge :rise) (value 1.0))
-    `(mouse-button-event
-      (one-of (button ,ev) ,@one-of)
-      (etypecase ,ev
-        (mouse-press ,(ecase edge (:rise value) (:fall 0.0)))
-        (mouse-release ,(ecase edge (:rise 0.0) (:fall value))))))
-  (:method (ev (_ (eql 'cursor)) &key (axis :x) (multiplier 1.0))
-    `(mouse-move
-      T
-      (* ,multiplier (,(ecase axis (:x 'vx2) (:y 'vy2)) (pos ,ev)))))
-  (:method (ev (_ (eql 'axis)) &key one-of (threshold 0.1) (multiplier 1.0))
-    `(gamepad-move
-      (and (one-of (axis ,ev) ,@one-of)
-           (< ,threshold (pos ,ev)))
-      (* ,multiplier (pos ,ev)))))
-
-(defun process-mapping-form (loop ev form)
-  (destructuring-bind (type action &body triggers) form
-    (ecase type
-      (trigger
-       (loop for trigger in triggers
-             for (evdn evup cddn cdup) = (apply #'process-trigger-form ev trigger)
-             when evdn
-             collect (list evdn
-                           `(when (and ,cddn
-                                       (active-p (action-set ',action)))
-                              (issue ,loop (make-instance ',action :source-event ,ev))
-                              (setf (%retained ',action) (+ (%retained ',action) ,(if evup 1 -1)))))
-             when evup
-             collect (list evup
-                           `(when (and ,(or cdup cddn)
-                                       (active-p (action-set ',action)))
-                              (setf (%retained ',action) (1- (%retained ',action)))))))
-      (analog
-       (loop for trigger in triggers
-             for (evtype condition value) = (apply #'process-analog-form ev trigger)
-             when evtype
-             collect (list evtype
-                           `(when (and ,condition
-                                       (active-p (action-set ',action)))
-                              (issue ,loop (make-instance ',action :source-event ,ev :value ,value)))))))))
-
-(defun compile-mapping (&key name)
-  (let ((bits (make-hash-table :test 'eql))
-        (data (mapping name)))
-    (dolist (form (second data))
-      (loop for (type body) in (process-mapping-form 'loop 'event form)
-            do (push body (gethash type bits))))
-    (setf (first data) (compile NIL `(lambda (loop event)
-                                       (typecase event
-                                         ,@(loop for event being the hash-keys of bits
-                                                 for bodies being the hash-values of bits
-                                                 collect `(,event ,@bodies))))))))
-
-;; TODO: could optimise this further by combining ONE-OF tests.
-(defun load-mapping (input &key (name 'keymap) (package *package*))
+(defun load-mapping (input &key (package *package*))
   (etypecase input
     ((or pathname string)
      (with-open-file (stream input :direction :input)
-       (load-mapping stream :name name :package package)))
+       (load-mapping stream :package package)))
     (stream
      (load-mapping (loop with *package* = package
                          for form = (read input NIL '#1=#:END)
                          until (eq form '#1#)
-                         collect form)
-                   :name name))
+                         collect form)))
     (list
-     (setf (mapping name) (list NIL input))
-     (compile-mapping :name name))))
+     (compile-mapping input))))
 
-(defun save-mapping (output &key (name 'keymap))
+(defun save-mapping (output)
   (etypecase output
     (null
      (with-output-to-string (stream)
-       (save-mapping stream :name name)))
+       (save-mapping stream)))
     ((or pathname string)
      (with-open-file (stream output :direction :output :if-exists :supersede)
-       (save-mapping stream :name name)))
+       (save-mapping stream)))
     (stream
-     (let ((bindings (second (mapping name)))
+     (let ((descriptions (mapcar #'to-mapping-description *action-mappings*))
+           (cache (make-hash-table :test 'equal))
            (*print-case* :downcase))
-       (loop for (type event . actions) in bindings
-             do (format output "(~s ~s~{~%  ~s~})~%~%"
-                        type event actions))))))
+       (dolist (description descriptions)
+         (push (cddr description) (gethash (list (first description) (second description)) cache)))
+       (let ((descriptions (loop for preamble being the hash-keys of cache
+                                 for bindings being the hash-values of cache
+                                 collect (append preamble bindings))))
+         (loop for (type event . bindings) in descriptions
+               do (format output "(~s ~s~{~%  ~s~})~%~%"
+                          type event bindings)))))))
 
-(defun event-triggers (event &optional (base-event 'input-event))
+(defun find-action-mappings (action &optional (input-event-type 'input-event))
   (let ((triggers ()))
-    (loop for (_function mapping) being the hash-values of *mappings*
-          do (loop for (_type target . sources) in mapping
-                   do (when (eql event target)
-                        (loop for (source . args) in sources
-                              for source-event = (case source
-                                                   (key 'key-event)
-                                                   (mouse 'mouse-button-event)
-                                                   (axis 'gamepad-event)
-                                                   (button 'gamepad-event))
-                              do (when (subtypep source-event base-event)
-                                   (push (list* source args) triggers))))))
+    (loop for mapping in *action-mappings*
+          do (when (and (eql action (action-type mapping))
+                        (subtypep (event-type mapping) input-event-type))
+               (push mapping triggers)))
     triggers))
 
-(defun event-trigger (event &optional (base-event 'input-event))
-  (let ((trigger (first (event-triggers event base-event))))
-    (values (getf (rest trigger) :one-of)
-            (car trigger)
-            (cdr trigger))))
-
-(defun binding-from-event (event &key (threshold 0.5) (edge :rise))
-  (let ((binding (etypecase event
-                   (key-event
-                    `(key :one-of (,(key event))))
-                   (mouse-button-event
-                    `(mouse :one-of (,(button event))))
-                   ((or gamepad-press gamepad-release)
-                    `(button :one-of (,(button event))))
-                   (gamepad-move
-                    `(axis :one-of (,(axis event)) :threshold ,(* (float-sign (pos event)) threshold))))))
-    (if (eql edge :rise)
-        binding
-        (append binding (list :edge edge)))))
-
-(defun update-action-bindings (new-bindings action &key (mapping 'keymap) (prune-types T) (update T))
-  (let* ((map (mapping mapping))
-         (binding (find action (second map) :key #'second))
-         (pruned (loop for action in (cddr binding)
-                       unless (or (eql prune-types T) (find (first action) prune-types))
-                       collect action))
-         (new-binding (list* (first binding) action (append new-bindings pruned))))
-    (when update
-      (setf (second map) (list* new-binding (remove binding (second map))))
-      (compile-mapping :name mapping))
-    new-binding))
+(defun update-action-mappings (new-mappings &key (prune-event-type T))
+  (let ((mappings (append new-mappings
+                          (remove-if (lambda (mapping)
+                                       (and (find (action-type mapping) new-mappings :key #'action-type)
+                                            (subtypep (event-type mapping) prune-event-type)))
+                                     *action-mappings*))))
+    (setf *action-mappings* mappings)))
 
 #| Keymap should have the following syntax:
-                                        ; ;
-keymap    ::= mapping*                  ; ;
-mapping   ::= (type action trigger*)    ; ;
-type      ::= retain | trigger          ; ;
-trigger   ::= (key one-of edge?)        ; ;
-| (mouse one-of edge?)                  ; ;
-| (button one-of edge?)                 ; ;
-| (axis one-of edge? threshold?)        ; ;
-one-of    ::= :one-of label             ; ;
-edge      ::= :edge :rise | :edge :fall ; ;
-threshold ::= :threshold number         ; ;
-action    --- a symbol naming an action event ; ;
-label     --- a keyword naming a key or button label ; ;
-                                        ; ;
-Examples:                               ; ;
-                                        ; ;
-(trigger quicksave                      ; ;
-(label :english "Quick Save")           ; ;
-(key :one-of (:f5)))                    ; ;
-                                        ; ;
-(retain dash                            ; ;
-(label :english "Dash")                 ; ;
-(axis :one-of (:r2) :threshold 0.2))    ; ;
+
+keymap    ::= mapping*
+mapping   ::= (type action trigger*)
+type      ::= retain | trigger
+trigger   ::= (key one-of edge?)
+            | (mouse one-of edge?)
+            | (button one-of edge?)
+            | (axis one-of edge? threshold?)
+one-of    ::= :one-of label
+edge      ::= :edge :rise | :edge :fall
+threshold ::= :threshold number
+action    --- a symbol naming an action event
+label     --- a keyword naming a key or button label
+
+Examples:
+
+(trigger quicksave
+(label :english "Quick Save")
+(key :one-of (:f5)))
+
+(retain dash
+(label :english "Dash")
+(axis :one-of (:r2) :threshold 0.2))
 |#

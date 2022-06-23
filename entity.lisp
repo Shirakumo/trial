@@ -46,6 +46,15 @@
   (when (slot-boundp entity 'container)
     (scene (container entity))))
 
+(defmethod clone ((entity entity) &rest initargs)
+  (let ((initvalues ()))
+    (loop for initarg in (initargs entity)
+          for slot = (initarg-slot (class-of entity) initarg)
+          do (when slot
+               (push (clone (slot-value entity (c2mop:slot-definition-name slot))) initvalues)
+               (push initarg initvalues)))
+    (apply #'make-instance (class-of entity) (append initargs initvalues (when (name entity) (list :name (generate-name (type-of entity))))))))
+
 (defclass container (flare:container-unit entity)
   ())
 

@@ -143,6 +143,8 @@ Refusing to deploy as the game would not launch properly anyway.")))
               (push (list language label) labels))))
         (list (list "english" (string-downcase (class-name (trial:ensure-class action))))))))
 
+;; TODO: rewrite this
+#++
 (defun generate-vdf (file &key (actions T) (if-exists :error))
   (let ((localization ())
         (action-sets ())

@@ -132,6 +132,27 @@
   ;; resources/vertex-struct-buffer.lisp
   (:export
    #:vertex-struct-buffer)
+  ;; actions.lisp
+  (:export
+   #:action-set
+   #:exclusive-action-set
+   #:active-p
+   #:find-action-set
+   #:list-action-sets
+   #:active-action-set
+   #:define-action-set
+   #:action
+   #:source-event
+   #:analog-action
+   #:value
+   #:directional-action
+   #:x
+   #:y
+   #:spatial-action
+   #:x
+   #:y
+   #:z
+   #:define-action)
   ;; array-container.lisp
   (:export
    #:array-container
@@ -524,10 +545,10 @@
    #:device
    #:gamepad-attach
    #:gamepad-remove
+   #:gamepad-button-event
+   #:button
    #:gamepad-press
-   #:button
    #:gamepad-release
-   #:button
    #:gamepad-move
    #:axis
    #:old-pos
@@ -584,45 +605,35 @@
    #:launch)
   ;; mapping.lisp
   (:export
+   #:trigger
    #:keymap
+   #:mapping-function
+   #:remove-mapping-function
+   #:map-event
    #:retained
    #:clear-retained
    #:reset-retained
-   #:mapping
-   #:remove-mapping
-   #:define-mapping
-   #:define-simple-mapping
-   #:map-event
-   #:action-definition
-   #:action-binding
-   #:action-bindings
-   #:action-input
-   #:make-event-from-binding
-   #:action-set
-   #:exclusive-action-set
-   #:list-action-sets
-   #:active-action-set
-   #:define-action-set
-   #:action
-   #:source-event
-   #:analog-action
-   #:value
-   #:directional-action
-   #:x #:y
-   #:spatial-action
-   #:x #:y #:z
-   #:remove-action-mappings
-   #:define-action
+   #:action-mapping
+   #:action-type
+   #:event-type
+   #:qualifier
+   #:mapping-active-p
+   #:active-mappings
+   #:event-applicable-p
+   #:event-active-p
+   #:perform-event-mapping
+   #:from-mapping-description
+   #:to-mapping-description
+   #:event-from-action-mapping
+   #:event-to-action-mapping
+   #:digital-mapping
+   #:threshold
+   #:toggle-p
    #:compile-mapping
    #:load-mapping
    #:save-mapping
-   #:event-triggers
-   #:event-trigger
-   #:binding-from-event
-   #:update-action-bindings
-   #:trigger
-   #:analog
-   #:retain)
+   #:find-action-mappings
+   #:update-action-mappings)
   ;; parallax.lisp
   (:export
    #:parallax

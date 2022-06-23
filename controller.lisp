@@ -11,12 +11,8 @@
 (define-action-set system-action)
 
 (define-action reload-scene (system-action))
-
-(define-action quit-game (system-action)
-  (key-press (and (eql key :q) (find :control modifiers))))
-
-(define-action toggle-overlay (system-action)
-  (key-press (one-of key :section :grave)))
+(define-action quit-game (system-action))
+(define-action toggle-overlay (system-action))
 
 (defclass controller (entity listener)
   ((display :initform NIL :initarg :display :accessor display))

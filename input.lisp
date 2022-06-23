@@ -14,8 +14,13 @@
 (defclass keyboard-event (input-event)
   ())
 
-(defclass key-event (keyboard-event)
-  ((key :initarg :key :reader key)
+(defclass digital-event (input-event)
+  ())
+
+(defgeneric button (digital-event))
+
+(defclass key-event (keyboard-event digital-event)
+  ((key :initarg :key :reader key :reader button)
    (repeat :initarg :repeat :reader repeat-p)
    (modifiers :initarg :modifiers :reader modifiers))
   (:default-initargs
@@ -43,7 +48,7 @@
   (:default-initargs
    :pos (error "POS required.")))
 
-(defclass mouse-button-event (mouse-event)
+(defclass mouse-button-event (mouse-event digital-event)
   ((button :initarg :button :reader button))
   (:default-initargs
    :button (error "BUTTON required.")))
@@ -81,23 +86,20 @@
   (:default-initargs
    :device (error "DEVICE required.")))
 
-(defclass gamepad-press (gamepad-event)
+(defclass gamepad-button-event (gamepad-event digital-event)
   ((button :initarg :button :reader button))
   (:default-initargs
    :button (error "BUTTON required.")))
 
-(defmethod print-object ((event gamepad-press) stream)
+(defmethod print-object ((event gamepad-button-event) stream)
   (print-unreadable-object (event stream :type T)
     (format stream "~a ~a" (device event) (button event))))
 
-(defclass gamepad-release (gamepad-event)
-  ((button :initarg :button :reader button))
-  (:default-initargs
-   :button (error "BUTTON required.")))
+(defclass gamepad-press (gamepad-button-event)
+  ())
 
-(defmethod print-object ((event gamepad-release) stream)
-  (print-unreadable-object (event stream :type T)
-    (format stream "~a ~a" (device event) (button event))))
+(defclass gamepad-release (gamepad-button-event)
+  ())
 
 (defclass gamepad-move (gamepad-event)
   ((axis :initarg :axis :reader axis)
@@ -111,22 +113,3 @@
 (defmethod print-object ((event gamepad-move) stream)
   (print-unreadable-object (event stream :type T)
     (format stream "~a ~a ~3f" (device event) (axis event) (pos event))))
-
-(define-mapping retain-generic (loop ev)
-  (typecase ev
-    (mouse-press
-     (setf (retained (button ev)) T))
-    (mouse-release
-     (setf (retained (button ev)) NIL))
-    (key-press
-     (setf (retained (key ev)) T)
-     (case (key ev)
-       ((:left-control :right-control) (setf (retained :control) T))
-       ((:left-shift :right-shift) (setf (retained :shift) T))
-       ((:left-alt :right-alt) (setf (retained :alt) T))))
-    (key-release
-     (setf (retained (key ev)) NIL)
-     (case (key ev)
-       ((:left-control :right-control) (setf (retained :control) NIL))
-       ((:left-shift :right-shift) (setf (retained :shift) NIL))
-       ((:left-alt :right-alt) (setf (retained :alt) NIL))))))
