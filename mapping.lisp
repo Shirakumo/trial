@@ -35,9 +35,10 @@
      (loop for label across gamepad:+labels+
            for button = (gamepad:button label +input-source+)
            for axis = (gamepad:axis label +input-source+)
-           do (map-event (make-instance (if button 'gamepad-press 'gamepad-release) :button label :device +input-source+)
-                         scene)
-              (when (/= 0f0 axis)
+           do (when button
+                (map-event (make-instance 'gamepad-press :button label :device +input-source+)
+                           scene))
+              (when (<= 0.2 (abs axis))
                 (map-event (make-instance 'gamepad-move :axis label :pos axis :old-pos 0.0 :device +input-source+)
                            scene))))))
 
