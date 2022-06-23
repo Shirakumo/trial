@@ -171,23 +171,27 @@
 
 (defmethod to-mapping-description ((mapping digital-mapping))
   (list* 'trigger (action-type mapping)
-         (list* (case (event-type mapping)
-                  (key-event 'key)
-                  (mouse-button-event 'mouse)
-                  (gamepad-button-event 'button)
-                  (gamepad-move 'axis)
-                  (T (event-type mapping)))
-                :one-of (qualifier mapping)
-                :threshold (threshold mapping)
-                (when (toggle-p mapping) `(:toggle T)))))
+         (append (list (case (event-type mapping)
+                         ((key-event key-press) 'key)
+                         ((mouse-button-event mouse-press) 'mouse)
+                         ((gamepad-button-event gamepad-press) 'button)
+                         (gamepad-move 'axis)
+                         (T (event-type mapping)))
+                       :one-of (qualifier mapping))
+                 (unless (subtypep (event-type mapping) 'digital-event)
+                   (list :threshold (threshold mapping)))
+                 (when (toggle-p mapping) `(:toggle T)))))
 
 (defmethod event-from-action-mapping ((mapping digital-mapping))
-  (let ((qualifier (first (qualifiers mapping))))
+  (let ((qualifier (first (qualifier mapping))))
     (ecase (event-type mapping)
-      (key-event (make-instance 'key-press :key qualifier))
-      (mouse-button-event (make-instance 'mouse-press :button qualifier :pos #.(vec 0 0)))
-      (gamepad-button-event (make-instance 'gamepad-press :device NIL :button qualifier))
+      ((key-event key-press key-release) (make-instance 'key-press :key qualifier))
+      ((mouse-button-event mouse-press mouse-release) (make-instance 'mouse-press :button qualifier :pos #.(vec 0 0)))
+      ((gamepad-button-event gamepad-press gamepad-release) (make-instance 'gamepad-press :device NIL :button qualifier))
       (gamepad-move (make-instance 'gamepad-move :device NIL :axis qualifier :old-pos 0.0 :pos (threshold mapping))))))
+
+(defmethod event-to-action-mapping (event (action symbol) &rest args &key &allow-other-keys)
+  (apply #'event-to-action-mapping event (make-instance action) args))
 
 (defmethod event-to-action-mapping ((event gamepad-move) (action action) &key (threshold 0.5) toggle-p)
   (make-instance 'digital-mapping
@@ -250,6 +254,7 @@
            (*print-case* :downcase))
        (dolist (description descriptions)
          (push (cddr description) (gethash (list (first description) (second description)) cache)))
+       ;; FIXME: collect based on matching :one-of.
        (let ((descriptions (loop for preamble being the hash-keys of cache
                                  for bindings being the hash-values of cache
                                  collect (append preamble bindings))))
