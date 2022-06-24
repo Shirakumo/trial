@@ -641,14 +641,11 @@
    #:change-background)
   ;; particle.lisp
   (:export
-   #:particle
+   #:particle-system
+   #:particle-capacity
+   #:active-particles
    #:lifetime
-   #:particle-emitter
-   #:initial-particle-state
-   #:update-particle-state
-   #:new-particle-count
-   #:simple-particle
-   #:simple-particle-emitter)
+   #:clock)
   ;; phong.lisp
   (:export)
   ;; pipeline.lisp

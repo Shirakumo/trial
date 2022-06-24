@@ -6,79 +6,130 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-gl-struct (particle (:layout-standard :vertex-buffer))
-  (lifetime :vec2 :accessor lifetime))
+(defparameter *particle-vbo*
+  (make-instance 'vertex-buffer :buffer-data
+                 (make-array 24 :element-type 'single-float :initial-contents
+                             '(+0.5 +0.5 1.0 1.0
+                               -0.5 +0.5 0.0 1.0
+                               -0.5 -0.5 0.0 0.0
+                               -0.5 -0.5 0.0 0.0
+                               +0.5 -0.5 1.0 0.0
+                               +0.5 +0.5 1.0 1.0))))
 
-(define-shader-entity particle-emitter (listener)
-  ((live-particles :initform 0 :accessor live-particles)
-   (vertex-array :accessor vertex-array)
-   (particle-buffer :initarg :particle-buffer :accessor particle-buffer)))
+(define-shader-entity particle-system (located-entity renderable listener)
+  ((vertex-array :initarg :vertex-array :accessor vertex-array)
+   (particle-data :accessor particle-data)
+   (particle-capacity :initarg :particle-capacity :initform 1000 :accessor particle-capacity)
+   (active-particles :initform 0 :accessor active-particles)
+   (lifetime :initform 1.0 :accessor lifetime)
+   (clock :initarg :clock :initform 0.0 :accessor clock)))
 
-(defmethod initialize-instance :after ((emitter particle-emitter) &key particle-mesh particle-buffer)
-  (setf (vertex-array emitter)
-        (add-vertex-bindings
-         particle-buffer
-         (generate-resources 'mesh-loader particle-mesh))))
+(defmethod initialize-instance :after ((system particle-system) &key)
+  (let* ((vbo *particle-vbo*)
+         (particle-capacity (particle-capacity system))
+         (particle-data (make-array (* 2 particle-capacity) :element-type 'single-float))
+         (vio (make-instance 'vertex-buffer :data-usage :stream-draw :buffer-data particle-data))
+         (vao (make-instance 'vertex-array :bindings `((,vbo :size 2 :stride ,(* 4 4) :offset 0)
+                                                       (,vbo :size 2 :stride ,(* 4 4) :offset 8)
+                                                       (,vio :size 1 :stride ,(* 2 4) :offset 0 :instancing 1)
+                                                       (,vio :size 1 :stride ,(* 2 4) :offset 4 :instancing 1)))))
+    (setf (particle-data system) vio)
+    (setf (vertex-array system) vao)
+    (dotimes (i particle-capacity)
+      (setf (aref particle-data (+ (* 2 i) 0)) 0.0)
+      (setf (aref particle-data (+ (* 2 i) 1)) (random 1.0)))))
 
-(defmethod render ((emitter particle-emitter) target)
-  (let ((vao (vertex-array emitter)))
-    (gl:bind-vertex-array (gl-name vao))
-    (%gl:draw-elements-instanced (vertex-form vao) (size vao) :unsigned-int 0 (live-particles emitter))))
+(defmethod stage :after ((system particle-system) (area staging-area))
+  (stage (vertex-array system) area))
 
-(defgeneric initial-particle-state (emitter tick particle))
-(defgeneric update-particle-state (emitter tick input output))
-(defgeneric new-particle-count (emitter tick)) ; => N
+(define-handler (particle-system tick) (dt)
+  (let* ((vbo (particle-data particle-system))
+         (data (buffer-data vbo))
+         (clock (clock particle-system))
+         (active (active-particles particle-system))
+         (life (lifetime particle-system)))
+    (setf (clock particle-system) (+ clock (float dt 0f0)))
+    (loop with i = 0
+          for age = (- clock (aref data (+ 0 (* i 2))))
+          while (< i active)
+          do (cond ((<= life age)
+                    (decf active)
+                    (rotatef (aref data (+ 0 (* i 2))) (aref data (+ 0 (* active 2))))
+                    (rotatef (aref data (+ 1 (* i 2))) (aref data (+ 1 (* active 2)))))
+                   (T
+                    (incf i))))
+    (when (< active (active-particles particle-system))
+      (setf (active-particles particle-system) active)
+      (update-buffer-data vbo data :count (* 2 4 active)))))
 
-(defmethod update-particle-state ((emitter particle-emitter) tick particle output)
-  (let ((life (lifetime particle)))
-    (incf (vx2 life) (dt tick))
-    (setf (lifetime output) life)
-    (< (vx2 life) (vy2 life))))
-
-(defmethod handle ((ev tick) (emitter particle-emitter))
-  (let ((vbo (particle-buffer emitter))
-        (write-offset 0))
-    (let ((data (struct-vector vbo)))
-      (declare (type simple-vector data))
-      (loop for read-offset from 0 below (live-particles emitter)
-            for particle = (aref data read-offset)
-            do (when (< (vx2 (lifetime particle)) (vy2 (lifetime particle)))
-                 (when (update-particle-state emitter ev particle (aref data write-offset))
-                   (incf write-offset))))
-      (loop repeat (new-particle-count emitter ev)
-            while (< write-offset (length data))
-            do (initial-particle-state emitter ev (aref data write-offset))
-               (incf write-offset))
-      (setf (live-particles emitter) write-offset)
-      (update-buffer-data vbo T))))
-
-(define-gl-struct (simple-particle (:include particle)
-                                   (:layout-standard :vertex-buffer))
-  (location :vec3 :accessor location)
-  (velocity :vec3 :accessor velocity))
-
-(define-shader-entity simple-particle-emitter (particle-emitter)
-  ())
-
-(defmethod initial-particle-state :before ((emitter simple-particle-emitter) tick particle)
-  (setf (location particle) (vec 0 0 0)))
-
-(defmethod update-particle-state :before ((emitter simple-particle-emitter) tick particle output)
-  (setf (location output) (v+ (location particle) (velocity particle))))
-
-(defmethod render :before ((emitter simple-particle-emitter) (program shader-program))
+(defmethod render ((system particle-system) (program shader-program))
+  (declare (optimize speed))
+  (setf (uniform program "model_matrix") (model-matrix))
   (setf (uniform program "view_matrix") (view-matrix))
   (setf (uniform program "projection_matrix") (projection-matrix))
-  (setf (uniform program "model_matrix") (model-matrix)))
+  (setf (uniform program "clock") (clock system))
+  (gl:bind-vertex-array (gl-name (vertex-array system)))
+  (%gl:draw-arrays-instanced :triangles 0 6 (active-particles system))
+  (gl:bind-vertex-array 0))
 
-(define-class-shader (simple-particle-emitter :vertex-shader)
-  "layout (location = 0) in vec3 vtx_location;
+(defmethod emit ((system particle-system) count)
+  (let* ((vbo (particle-data system))
+         (data (buffer-data vbo))
+         (clock (clock system))
+         (active (min (particle-capacity system) (+ (active-particles system) count))))
+    (loop for i from (active-particles system) below active
+          do (setf (aref data (+ 0 (* i 2))) clock)
+             (setf (aref data (+ 1 (* i 2))) (random 1.0)))
+    (setf (active-particles system) active)
+    (update-buffer-data vbo data :count (* 2 4 active))))
+
+(define-class-shader (particle-system :vertex-shader)
+  "layout (location = 0) in vec2 position;
+layout (location = 1) in vec2 in_uv;
+layout (location = 2) in float start_time;
+layout (location = 3) in float in_seed;
 
 uniform mat4 model_matrix;
 uniform mat4 view_matrix;
 uniform mat4 projection_matrix;
+uniform float clock;
+
+out vec2 uv;
+out float age;
+out float seed;
+
+#define PHI 1.61803398874989484820459
+#define PI 3.1415926538
+
+float rand(float n){return fract(sin(n) * 43758.5453123);}
+
+void compute_particle(in float age, in float seed, out vec3 position, out vec2 scale);
 
 void main(){
-  vec3 position = vtx_location + location;
-  gl_Position = projection_matrix * view_matrix * model_matrix * vec4(position, 1.0f);
+  uv = in_uv;
+  age = clock - start_time;
+  seed = in_seed;
+
+  vec2 scale;
+  vec3 off;
+  compute_particle(age, seed, off, scale);
+
+  // Orient the quad to always face the camera
+  vec3 center = (model_matrix * vec4(off, 1)).xyz;
+  vec3 camera_right = vec3(view_matrix[0][0], view_matrix[1][0], view_matrix[2][0]);
+  vec3 camera_up = vec3(view_matrix[0][1], view_matrix[1][1], view_matrix[2][1]);
+  vec3 world_pos = center + camera_right * position.x * scale.x + camera_up * position.y * scale.y;
+  gl_Position = projection_matrix * view_matrix * vec4(world_pos, 1.0);
+}")
+
+(define-class-shader (particle-system :fragment-shader)
+  "
+in vec2 uv;
+in float age;
+in float seed;
+
+out vec4 color;
+
+void main(){
+  color = vec4(1);
 }")
