@@ -204,7 +204,11 @@
 (defmethod event-to-action-mapping ((event digital-event) (action action) &key toggle-p)
   (make-instance 'digital-mapping
                  :action-type (type-of action)
-                 :event-type (type-of event)
+                 :event-type (typecase event
+                               (key-event 'key-event)
+                               (mouse-button-event 'mouse-button-event)
+                               (gamepad-button-event 'gamepad-button-event)
+                               (T (type-of event)))
                  :qualifier (list (button event))
                  :toggle-p toggle-p))
 
