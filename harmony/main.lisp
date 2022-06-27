@@ -38,10 +38,11 @@
   (mixed:free server))
 
 (defmethod (setf mixed:device) :after (device (server harmony:server))
-  (v:info :trial.harmony "Configured output for ~s~@[ on ~a~]: ~d ~a channels ~aHz.~%  Channel layout is ~a"
-          (type-of drain) (mixed:device drain)
-          (mixed:channels drain) (mixed:encoding drain) (mixed:samplerate drain)
-          (subseq (mixed:channel-order drain) 0 (mixed:channels drain))))
+  (let ((drain (harmony:segment :drain (harmony:segment :output server))))
+    (v:info :trial.harmony "Configured output for ~s~@[ on ~a~]: ~d ~a channels ~aHz.~%  Channel layout is ~a"
+            (type-of drain) (mixed:device drain)
+            (mixed:channels drain) (mixed:encoding drain) (mixed:samplerate drain)
+            (subseq (mixed:channel-order drain) 0 (mixed:channels drain)))))
 
 (defclass settings-main (main)
   ()
@@ -69,13 +70,6 @@
 
 (trial:define-setting-observer audio-device :audio :device (value)
   (when harmony:*server*
-    (let ((prev (mixed:device harmony:*server*))
-          (success NIL))
-      (harmony:with-server (harmony:*server* :synchronize T)
-        (handler-case
-            (progn (setf (mixed:device harmony:*server*) value)
-                   (setf success T))
-          (error ()
-            (setf (mixed:device harmony:*server*) prev))))
-      (unless success
-        (setf (trial:setting :audio :device) prev)))))
+    (let ((new (setf (mixed:device harmony:*server*) value)))
+      (unless (equal value new)
+        (setf (trial:setting :audio :device) new)))))
