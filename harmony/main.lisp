@@ -37,7 +37,7 @@
 (defmethod trial:finalize ((server harmony:server))
   (mixed:free server))
 
-(defmethod (setf mixed:device) :after (device (drain mixed:device-drain))
+(defmethod (setf mixed:device) :after (device (server harmony:server))
   (v:info :trial.harmony "Configured output for ~s~@[ on ~a~]: ~d ~a channels ~aHz.~%  Channel layout is ~a"
           (type-of drain) (mixed:device drain)
           (mixed:channels drain) (mixed:encoding drain) (mixed:samplerate drain)
@@ -69,14 +69,13 @@
 
 (trial:define-setting-observer audio-device :audio :device (value)
   (when harmony:*server*
-    (let* ((seg (harmony:segment :drain (harmony:segment :output T)))
-           (prev (mixed:device seg))
-           (success NIL))
+    (let ((prev (mixed:device harmony:*server*))
+          (success NIL))
       (harmony:with-server (harmony:*server* :synchronize T)
         (handler-case
-            (progn (setf (mixed:device seg) value)
+            (progn (setf (mixed:device harmony:*server*) value)
                    (setf success T))
           (error ()
-            (setf (mixed:device seg) prev))))
+            (setf (mixed:device harmony:*server*) prev))))
       (unless success
         (setf (trial:setting :audio :device) prev)))))
