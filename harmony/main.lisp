@@ -19,7 +19,12 @@
   (call-next-method)
   (flet ((start (drain)
            (mixed:start (apply #'harmony:make-simple-server
-                               :name trial:+app-system+ :drain drain (server-initargs main)))))
+                               :name trial:+app-system+ :drain drain (server-initargs main)))
+           (let ((drain (harmony:segment :drain (harmony:segment :output T))))
+             (v:info :trial.harmony "Configured output for ~s~@[ on ~a~]: ~d ~a channels ~aHz.~%  Channel layout is ~a"
+                     (type-of drain) (when (typep drain 'mixed:device-drain) (mixed:device drain))
+                     (mixed:channels drain) (mixed:encoding drain) (mixed:samplerate drain)
+                     (subseq (mixed:channel-order drain) 0 (mixed:channels drain))))))
     (handler-case (trial:with-error-logging (:trial.harmony "Failed to set up sound, falling back to dummy output.")
                     (start (or audio-backend :default)))
       (error () (start :dummy)))))
