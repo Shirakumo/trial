@@ -37,6 +37,12 @@
 (defmethod trial:finalize ((server harmony:server))
   (mixed:free server))
 
+(defmethod (setf mixed:device) :after (device (drain mixed:device-drain))
+  (v:info :trial.harmony "Configured output for ~s~@[ on ~a~]: ~d ~a channels ~aHz.~%  Channel layout is ~a"
+          (type-of drain) (mixed:device drain)
+          (mixed:channels drain) (mixed:encoding drain) (mixed:samplerate drain)
+          (subseq (mixed:channel-order drain) 0 (mixed:channels drain))))
+
 (defclass settings-main (main)
   ()
   (:default-initargs
