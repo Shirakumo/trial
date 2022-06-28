@@ -691,6 +691,8 @@
    #:thread
    #:delta-time
    #:frame-time
+   #:target-frame-time
+   #:reset-render-loop
    #:start
    #:stop
    #:render
