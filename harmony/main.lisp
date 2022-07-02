@@ -24,10 +24,14 @@
              (v:info :trial.harmony "Configured output for ~s~@[ on ~a~]: ~d ~a channels ~aHz.~%  Channel layout is ~a"
                      (type-of drain) (when (typep drain 'mixed:device-drain) (mixed:device drain))
                      (mixed:channels drain) (mixed:encoding drain) (mixed:samplerate drain)
-                     (subseq (mixed:channel-order drain) 0 (mixed:channels drain))))))
-    (handler-case (trial:with-error-logging (:trial.harmony "Failed to set up sound, falling back to dummy output.")
-                    (start (or audio-backend :default)))
-      (error () (start :dummy)))))
+                     (subseq (mixed:channel-order drain) 0 (mixed:channels drain)))
+             drain)))
+    (or (when audio-backend
+          (ignore-errors (trial:with-error-logging (:trial.harmony "Failed to set up requested backend, falling back to default output.")
+                           (start audio-backend))))
+        (ignore-errors (trial:with-error-logging (:trial.harmony "Failed to set up sound, falling back to dummy output.")
+                         (start :default)))
+        (start :dummy))))
 
 (defmethod trial:finalize :after ((main main))
   (when harmony:*server*
