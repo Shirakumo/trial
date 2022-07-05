@@ -74,6 +74,7 @@
 
 (trial:define-setting-observer audio-device :audio :device (value)
   (when harmony:*server*
-    (let ((new (setf (mixed:device harmony:*server*) value)))
-      (unless (equal value new)
-        (setf (trial:setting :audio :device) new)))))
+    (when (typep (harmony:segment :drain (harmony:segment :output harmony:*server*)) 'mixed:device-drain)
+      (let ((new (setf (mixed:device harmony:*server*) value)))
+        (unless (equal value new)
+          (setf (trial:setting :audio :device) new))))))
