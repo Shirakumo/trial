@@ -15,14 +15,14 @@
           (directory (merge-pathnames "lang/*/" (root)))))
 
 
-(defun language-dir (language)
+(defun language-dir (&optional (language (setting :language)))
   (merge-pathnames (make-pathname :directory `(:relative "lang" ,(string-downcase language)))
                    (root)))
 
-(defun language-file (language)
+(defun language-file (&optional (language (setting :language)))
   (make-pathname :name "strings" :type "lisp" :defaults (language-dir language)))
 
-(defun language-files (language)
+(defun language-files (&optional (language (setting :language)))
   (directory (make-pathname :name :wild :type "lisp" :defaults (language-dir language))))
 
 (defmacro define-language-change-hook (name args &body body)
