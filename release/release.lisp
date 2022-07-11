@@ -55,7 +55,7 @@
 (defmethod upload ((service (eql :ftp)) &key (release (release)) (user (config :ftp :user)) (port (config :ftp :port)) (hostname (config :ftp :hostname)) (password (config :ftp :password)) (path (config :ftp :path)))
   (org.mapcar.ftp.client:with-ftp-connection (connection :hostname hostname
                                                          :port (or port 21)
-                                                         :username username
+                                                         :username user
                                                          :password (or password (password user))
                                                          :passive-ftp-p T)
     (when path
