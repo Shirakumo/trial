@@ -18,8 +18,14 @@
 
 #-elide-handler-restarts
 (defmethod handle :around ((event event) listener)
-  (with-simple-restart (abort "Don't handle ~a in ~a." event listener)
-    (call-next-method)))
+  (restart-case
+      (call-next-method)
+    (abort ()
+      :report (lambda (s) (format s "Don't handle ~a in ~a." event listener))
+      NIL)
+    (leave ()
+      :report (lambda (s) (format s "Leave ~a from the loop." listener))
+      (leave* listener T))))
 
 ;; Default to doing nothing.
 (defmethod handle ((event event) (listener listener)))
