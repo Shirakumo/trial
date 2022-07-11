@@ -69,7 +69,8 @@
   (compile-into-pass thing container (scene +main+)))
 
 (defmethod leave* ((thing entity) (container (eql T)))
-  (leave* thing (container thing)))
+  (when (slot-boundp thing 'container)
+    (leave* thing (container thing))))
 
 (defmethod leave* ((thing entity) (container container))
   (leave thing container)
