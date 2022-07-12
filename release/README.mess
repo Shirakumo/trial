@@ -53,6 +53,7 @@ Outside of this, you'll have to have the following binaries set up in your PATH:
   Used to retrieve the Steam account password automatically. If not present, will query for a password at the REPL.
 
 Once all of this is ready, you can run a build using ``(asdf:make :my-game-release)`` or manually invoking ``org.shirakumo.fraf.trial.release:make`` after loading that system.
+For the ``sbcl-*`` variants, you can use the binaries and scripts from the following repository: https://gitea.tymoon.eu/shinmera/trial-deployment They have been pre-tested.
 
 ## Setting up Steam
 Steam will require some VDF files to configure your build in addition. Please consult the SteamWorks documentation on how to do that. However, be aware that the base file should be called ``app-build.vdf`` and should be in the same directory as your ``my-game-release.asd`` file, and should have several fields set specially so the Trial release mechanism can operate properly. Here's an example:
