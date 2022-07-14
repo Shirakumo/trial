@@ -476,7 +476,8 @@
           (dolist (monitor (rest monitors))
             (when (< (monitor-area best) (monitor-area monitor))
               (setf best monitor)))
-          (find best (list-monitors context) :test #'cffi:pointer-eq :key #'pointer))))))
+          (or (find best (list-monitors context) :test #'cffi:pointer-eq :key #'pointer)
+              (first (list-monitors context))))))))
 
 (defmethod current-video-mode ((monitor monitor))
   (let ((mode (glfw:get-video-mode (pointer monitor))))
