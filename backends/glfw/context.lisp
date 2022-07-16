@@ -256,7 +256,7 @@
           (y-scale 1.0))
       #+darwin
       (cffi:with-foreign-objects ((x :float) (y :float))
-        (cffi:foreign-funcall "glfwGetWindowContentScale" :pointer window :pointer x :pointer y :void)
+        (cffi:foreign-funcall "glfwGetWindowContentScale" :pointer (window context) :pointer x :pointer y :void)
         (setf x-scale (cffi:mem-ref x :float))
         (setf y-scale (cffi:mem-ref y :float)))
       (vec (* x-scale (cffi:mem-ref x :double))
@@ -267,7 +267,7 @@
         (y-scale 1.0))
     #+darwin
     (cffi:with-foreign-objects ((x :float) (y :float))
-      (cffi:foreign-funcall "glfwGetWindowContentScale" :pointer window :pointer x :pointer y :void)
+      (cffi:foreign-funcall "glfwGetWindowContentScale" :pointer (window context) :pointer x :pointer y :void)
       (setf x-scale (cffi:mem-ref x :float))
       (setf y-scale (cffi:mem-ref y :float)))
     (cffi:foreign-funcall "glfwSetCursorPos" :pointer (window context)
@@ -308,7 +308,7 @@
           (y-scale 1.0))
       #+darwin
       (cffi:with-foreign-objects ((x :float) (y :float))
-        (cffi:foreign-funcall "glfwGetWindowContentScale" :pointer window :pointer x :pointer y :void)
+        (cffi:foreign-funcall "glfwGetWindowContentScale" :pointer (window context) :pointer x :pointer y :void)
         (setf x-scale (cffi:mem-ref x :float))
         (setf y-scale (cffi:mem-ref y :float)))
       (let ((w (round (* x-scale w)))
