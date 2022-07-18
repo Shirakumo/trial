@@ -1076,7 +1076,7 @@
 
 (defpackage #:cl+trial
   (:nicknames #:org.shirakumo.fraf.trial.cl+trial)
-  (:shadowing-import-from #:trial #:// #:load #:particle)
+  (:shadowing-import-from #:trial #:// #:load)
   (:use #:cl
         #:trial
         #:org.shirakumo.flare.vector
