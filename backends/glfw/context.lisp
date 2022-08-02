@@ -29,6 +29,7 @@
    (cursor-visible :initform T :accessor cursor-visible)
    (mouse-pos :initform (vec 0 0) :accessor mouse-pos)
    (initargs :initform NIL :accessor initargs)
+   (visible-p :initform T :accessor visible-p)
    (window :initform NIL :accessor window)
    (monitors :initform () :accessor monitors)
    (vsync :initarg :vsync :accessor vsync)
@@ -173,7 +174,8 @@
   (%glfw:make-context-current (cffi:null-pointer)))
 
 (defmethod hide ((context context))
-  (cl-glfw3:hide-window (window context)))
+  (cl-glfw3:hide-window (window context))
+  (setf (visible-p context) NIL))
 
 (defun ensure-monitor (monitor context)
   (etypecase monitor
@@ -183,6 +185,7 @@
 
 (defmethod show ((context context) &key (fullscreen NIL f-p) mode)
   (cl-glfw3:show-window (window context))
+  (setf (visible-p context) T)
   (cond (f-p
          (destructuring-bind (w h &optional (r %glfw:+dont-care+) monitor)
              (etypecase mode
@@ -199,10 +202,6 @@
            (center-window context)))
         (mode
          (resize context (first mode) (second mode)))))
-
-(defmethod visible-p ((context context))
-  (and (cl-glfw3:get-window-attribute :visible (window context))
-       (not (cl-glfw3:get-window-attribute :iconified (window context)))))
 
 (defmethod resize ((context context) width height)
   (v:info :trial.backend.glfw "Resizing window to ~ax~a" width height)
@@ -351,6 +350,9 @@
 (cl-glfw3:def-window-iconify-callback ctx-iconify (window iconifiedp)
   (%with-context
     (v:info :trial.backend.glfw "Window has been ~:[restored~;iconified~]" iconifiedp)
+    (setf (visible-p context)
+          (and (not iconifiedp)
+               (cl-glfw3:get-window-attribute :visible (window context))))
     (unless iconifiedp (refresh-window-size context))
     (handle (make-instance (if iconifiedp 'window-hidden 'window-shown))
             (handler context))))

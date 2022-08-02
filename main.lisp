@@ -96,7 +96,8 @@
 (defmethod render ((source main) (target main))
   (render (scene source) NIL)
   ;; KLUDGE: This assumes a pipelined scene
-  (blit-to-screen (scene source)))
+  (when (visible-p (context target))
+    (blit-to-screen (scene source))))
 
 (defun launch (main &rest initargs)
   (labels ((recurse (class)
