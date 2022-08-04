@@ -671,6 +671,16 @@
                     (write-char (char-downcase c) out))
                    (T (write-char #\_ out))))))
 
+(defun c-name->symbol (name &optional (package *package*))
+  (intern
+   (with-output-to-string (out)
+     (loop for c across name
+           do (cond ((char= c #\_)
+                     (write-char #\- out))
+                    (T
+                     (write-char (char-upcase c) out)))))
+   package))
+
 ;; https://www.khronos.org/registry/OpenGL/extensions/ATI/ATI_meminfo.txt
 (defun gpu-room-ati ()
   (let* ((vbo-free-memory-ati (gl:get-integer #x87FB 4))

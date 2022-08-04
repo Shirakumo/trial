@@ -958,6 +958,7 @@
    #:db
    #:angle-midpoint
    #:symbol->c-name
+   #:c-name->symbol
    #:check-gl-type
    #:gl-type-size
    #:cl-type->gl-type

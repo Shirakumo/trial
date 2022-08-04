@@ -13,7 +13,8 @@
   :homepage "https://Shirakumo.github.io/trial/"
   :bug-tracker "https://github.com/Shirakumo/trial/issues"
   :source-control (:git "https://github.com/Shirakumo/trial.git")
-  :components ((:file "steam"))
+  :components ((:file "steam")
+               (:file "achievements"))
   :depends-on (:trial
                :cl-ppcre
                :cl-steamworks))
