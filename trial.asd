@@ -23,6 +23,7 @@
   :bug-tracker "https://github.com/Shirakumo/trial/issues"
   :source-control (:git "https://github.com/Shirakumo/trial.git")
   :components ((:file "package")
+               (:file "achievements" :depends-on ("package" "event-loop" "main"))
                (:file "actions" :depends-on ("package" "toolkit"))
                (:file "array-container" :depends-on ("package" "entity"))
                (:file "asset" :depends-on ("package" "toolkit" "resource" "resource-generator"))
@@ -61,7 +62,7 @@
                (:file "parallax" :depends-on ("package" "shader-entity" "assets"))
                (:file "particle" :depends-on ("package" "shader-entity" "resources"))
                (:file "phong" :depends-on ("package" "helpers"))
-               (:file "pipeline" :depends-on ("package" "event-loop" "toolkit"))
+               (:file "pipeline" :depends-on ("package" "event-loop" "toolkit" "shader-pass"))
                (:file "pipelined-scene" :depends-on ("package" "pipeline" "scene" "loader"))
                (:file "power" :depends-on ("package"))
                (:file "prompt" :depends-on ("package"))

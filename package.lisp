@@ -132,6 +132,20 @@
   ;; resources/vertex-struct-buffer.lisp
   (:export
    #:vertex-struct-buffer)
+  ;; achievements.lisp
+  (:export
+   #:achievement
+   #:name
+   #:api-name
+   #:icon
+   #:unlocked-p
+   #:title
+   #:description
+   #:achievement-container
+   #:list-achievements
+   #:achievement-state
+   #:achievement-changed
+   #:define-achievements)
   ;; actions.lisp
   (:export
    #:action-set
