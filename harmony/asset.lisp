@@ -288,5 +288,5 @@
     (setf (aref list 2) (3d-vectors:vz3 location))
     (setf (mixed:location server) list)))
 
-(defmethod harmony:transition ((voice voice) to &key in)
-  (harmony:transition (voice voice) to :in in))
+(defmethod harmony:transition ((voice voice) to &rest args &key &allow-other-keys)
+  (apply #'harmony:transition (voice voice) to args))
