@@ -18,8 +18,12 @@
 (defmethod initialize-instance ((main main) &key audio-backend)
   (call-next-method)
   (flet ((start (drain)
-           (mixed:start (apply #'harmony:make-simple-server
-                               :name trial:+app-system+ :drain drain (server-initargs main)))
+           (handler-bind ((mixed:device-not-found
+                            (lambda (e)
+                              (v:error :trial.harmony "~a" e)
+                              (continue e))))
+             (mixed:start (apply #'harmony:make-simple-server
+                                 :name trial:+app-system+ :drain drain (server-initargs main))))
            (let ((drain (harmony:segment :drain (harmony:segment :output T))))
              (v:info :trial.harmony "Configured output for ~s~@[ on ~a~]: ~d ~a channels ~aHz.~%  Channel layout is ~a"
                      (type-of drain) (when (typep drain 'mixed:device-drain) (mixed:device drain))
