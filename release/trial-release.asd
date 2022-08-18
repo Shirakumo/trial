@@ -23,4 +23,5 @@
                :zippy
                :deploy
                :cl-ftp
-               :dexador))
+               :dexador
+               :trivial-ssh))

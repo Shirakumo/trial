@@ -63,6 +63,16 @@
     (let ((bundle (bundle-path release)))
       (org.mapcar.ftp.client:store-file connection bundle (file-namestring bundle) :type :binary))))
 
+(defmethod upload ((service (eql :ssh)) &key (release (release)) (user (config :ssh :user)) (port (config :ssh :port)) (hostname (config :ssh :hostname)) (password (config :ssh :password)) (path (config :ssh :path)))
+  (trivial-ssh:with-connection (connection hostname (etypecase password
+                                                      (pathname (trivial-ssh:key user password))
+                                                      (string (trivial-ssh:pass user password))
+                                                      ((eql :pass) (trivial-ssh:pass user (password user)))
+                                                      ((or null (eql :agent)) (trivial-ssh:agent user)))
+                                           trivial-ssh::+default-hosts-db+ (or port 22))
+    (let ((bundle (bundle-path release)))
+      (trivial-ssh:upload-file connection bundle (make-pathname :name (pathname-name bundle) :type (pathname-type bundle) :defaults path)))))
+
 (defmethod upload ((service (eql :http)) &key (release (release)) (url (config :http :url)) (method (config :http :method)) (file-parameter (config :http :file-parameter)) (parameters (config :http :post-parameters)))
   (dexador:request url
                    :method (or method :post)
@@ -86,7 +96,7 @@
          "+quit")))
 
 (defmethod upload ((service (eql :all)) &rest args &key &allow-other-keys)
-  (apply #'upload '(:itch :steam) args))
+  (apply #'upload (remove-if-not #'config '(:itch :steam :http :ssh :ftp)) args))
 
 (defmethod upload ((service (eql T)) &rest args &key &allow-other-keys)
   (dolist (service (config :upload :targets))
