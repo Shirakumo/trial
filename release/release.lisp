@@ -61,7 +61,8 @@
     (when path
       (org.mapcar.ftp.client:send-cwd-command connection (uiop:native-namestring path)))
     (let ((bundle (bundle-path release)))
-      (org.mapcar.ftp.client:store-file connection bundle (file-namestring bundle) :type :binary))))
+      (org.mapcar.ftp.client:store-file connection bundle (file-namestring bundle) :type :binary)
+      (deploy:status 2 "Uploaded to ~a" hostname))))
 
 (defmethod upload ((service (eql :ssh)) &key (release (release)) (user (config :ssh :user)) (port (config :ssh :port)) (hostname (config :ssh :hostname)) (password (config :ssh :password)) (path (config :ssh :path)))
   (trivial-ssh:with-connection (connection hostname (etypecase password
@@ -70,14 +71,24 @@
                                                       ((eql :pass) (trivial-ssh:pass user (password user)))
                                                       ((or null (eql :agent)) (trivial-ssh:agent user)))
                                            trivial-ssh::+default-hosts-db+ (or port 22))
-    (let ((bundle (bundle-path release)))
-      (trivial-ssh:upload-file connection bundle (make-pathname :name (pathname-name bundle) :type (pathname-type bundle) :defaults path)))))
+    (let* ((bundle (bundle-path release))
+           (target (make-pathname :name (pathname-name bundle) :type (pathname-type bundle) :defaults path)))
+      (trivial-ssh:upload-file connection bundle target)
+      (deploy:status 2 "Uploaded to ~a" target))))
+
+(defmethod upload ((service (eql :rsync)) &key (release (release)) (user (config :rsync :user)) (port (config :rsync :port)) (hostname (config :rsync :hostname)) (path (config :rsync :path)))
+  (let ((bundle (bundle-path release)))
+    (uiop:run-program (list "rsync" "-avz" (format NIL "--rsh=ssh -p~a" (or port 22)) (uiop:native-namestring bundle)
+                            (format NIL "~@[~a@~]~a:~@[~a~]" user hostname path))
+                      :output *standard-output* :error-output *error-output*)
+    (deploy:status 2 "Uploaded to ~a~@[~a~]" hostname path)))
 
 (defmethod upload ((service (eql :http)) &key (release (release)) (url (config :http :url)) (method (config :http :method)) (file-parameter (config :http :file-parameter)) (parameters (config :http :post-parameters)))
   (dexador:request url
                    :method (or method :post)
                    :content (list* (cons (or file-parameter "file") (bundle-path release))
-                                   parameters)))
+                                   parameters))
+  (deploy:status 2 "Uploaded to ~a" url))
 
 (defmethod upload ((service (eql :itch)) &key (release (release)) (user (config :itch :user)) (project (config :itch :project)) &allow-other-keys)
   (run "butler" "push" (uiop:native-namestring release)
@@ -99,7 +110,7 @@
   (apply #'upload (remove-if-not #'config '(:itch :steam :http :ssh :ftp)) args))
 
 (defmethod upload ((service (eql T)) &rest args &key &allow-other-keys)
-  (dolist (service (config :upload :targets))
+  (dolist (service (coerce (config :upload :targets) 'list))
     (apply #'upload service args)))
 
 (defmethod upload ((services cons) &rest args &key &allow-other-keys)
