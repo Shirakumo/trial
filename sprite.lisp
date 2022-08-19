@@ -114,8 +114,10 @@
 (defmethod (setf animation) ((name symbol) (sprite animated-sprite))
   (let ((animation (animation sprite)))
     (unless (and animation (eql name (name animation)))
-      (setf (animation sprite) (or (find name (animations sprite) :key #'name)
-                                   (error "No animation named ~s found." name))))))
+      (let ((animation (find name (animations sprite) :key #'name)))
+        (if animation
+            (setf (animation sprite) animation)
+            #-trial-release (error "No animation named ~s found." name))))))
 
 (defmethod (setf animations) :after (animations (sprite animated-sprite))
   (setf (animation sprite) 0))
