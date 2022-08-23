@@ -69,7 +69,7 @@
   (animation:update ui (float (trial:dt ev) 0f0)))
 
 (defmethod trial:handle ((ev trial:resize) (ui ui))
-  (alloy:suggest-bounds (alloy:px-extent 0 0 (trial:width ev) (trial:height ev)) ui))
+  (alloy:suggest-size (alloy:px-size (trial:width ev) (trial:height ev)) ui))
 
 (defmethod trial:stage ((ui ui) (area trial:staging-area))
   (trial:stage (alloy:layout-tree ui) area))
