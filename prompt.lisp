@@ -290,11 +290,13 @@
     (T axis)))
 
 (defun specific-char-for-event-trigger (thing &optional (type 'input-event))
-  (let* ((mapping (first (find-action-mappings thing type)))
-         (symbol (first (qualifier mapping))))
-    (or (when (and (eql 'gamepad-move (event-type mapping)) (/= 0.0 (threshold mapping)))
-          (degeneralise-axis-symbol symbol (threshold mapping)))
-        symbol)))
+  (let ((mapping (first (find-action-mappings thing type))))
+    (if mapping
+        (let ((symbol (first (qualifier mapping))))
+          (or (when (and (eql 'gamepad-move (event-type mapping)) (/= 0.0 (threshold mapping)))
+                (degeneralise-axis-symbol symbol (threshold mapping)))
+              symbol))
+        "<unbound>")))
 
 (defun specific-chars-for-event-trigger (thing &optional (type 'input-event))
   (let ((list ()))
