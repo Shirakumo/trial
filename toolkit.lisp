@@ -357,9 +357,10 @@
 
 (defun logfile ()
   (let ((log (or (uiop:getenv "TRIAL_LOGFILE") "")))
-    (if (string= "" log)
-        (merge-pathnames "trial.log" (or (uiop:argv0) (user-homedir-pathname)))
-        log)))
+    (merge-pathnames (if (string= "" log)
+                         "trial.log"
+                         (pathname-utils:parse-native-namestring log))
+                     (or (uiop:argv0) (user-homedir-pathname)))))
 
 (defun config-directory (&rest app-path)
   (apply #'pathname-utils:subdirectory
