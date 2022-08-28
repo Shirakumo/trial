@@ -289,14 +289,14 @@
     (:dpad-v (if (< 0 threshold) :dpad-u :dpad-d))
     (T axis)))
 
-(defun specific-char-for-event-trigger (thing &optional (type 'input-event))
+(defun specific-char-for-event-trigger (thing &optional (type 'input-event) (default NIL))
   (let ((mapping (first (find-action-mappings thing type))))
     (if mapping
         (let ((symbol (first (qualifier mapping))))
           (or (when (and (eql 'gamepad-move (event-type mapping)) (/= 0.0 (threshold mapping)))
                 (degeneralise-axis-symbol symbol (threshold mapping)))
               symbol))
-        "<unbound>")))
+        default)))
 
 (defun specific-chars-for-event-trigger (thing &optional (type 'input-event))
   (let ((list ()))
@@ -317,7 +317,7 @@
     (symbol
      bank)))
 
-(defun prompt-char (thing &key bank)
+(defun prompt-char (thing &key bank default)
   (etypecase thing
     (null
      thing)
@@ -329,7 +329,9 @@
      (princ-to-string thing))
     (keyword
      (let ((table (gethash (normalize-prompt-bank bank) *prompt-char-table*)))
-       (when table (gethash thing table))))
+       (if table
+           (gethash thing table default)
+           default)))
     (symbol
      (let* ((type (case bank
                     ((NIL) (etypecase +input-source+
@@ -338,12 +340,15 @@
                     (:keyboard 'key-event)
                     (:mouse 'mouse-event)
                     (T 'gamepad-event)))
-            (char (specific-char-for-event-trigger thing type)))
-       (when (eql bank :keyboard)
-         (setf char (or (ignore-errors (local-key-string *context* char)) char)))
-       (prompt-char char :bank bank)))
+            (char (specific-char-for-event-trigger thing type NIL)))
+       (cond (char
+              (when (eql bank :keyboard)
+                (setf char (or (ignore-errors (local-key-string *context* char)) char)))
+              (prompt-char char :bank bank))
+             (T
+              default))))
     (action
-     (prompt-char (type-of thing) :bank bank))
+     (prompt-char (type-of thing) :bank bank :default default))
     (input-event
      (let* ((char (etypecase thing
                     (gamepad-move (degeneralise-axis-symbol (axis thing) (pos thing)))
@@ -360,7 +365,7 @@
                         (mouse-event :mouse)))))
        (when (eql bank :keyboard)
          (setf char (or (ignore-errors (local-key-string *context* char)) char)))
-       (prompt-char char :bank bank)))))
+       (prompt-char char :bank bank :default default)))))
 
 (defun action-prompts (thing &key bank)
   (let ((bank (normalize-prompt-bank bank)))
@@ -391,7 +396,7 @@
   (setf (text prompt) (string character)))
 
 (defmethod (setf text) ((symbol symbol) (prompt prompt))
-  (setf (text prompt) (string (prompt-char symbol))))
+  (setf (text prompt) (string (prompt-char symbol :default "<unbound>"))))
 
 (defmethod (setf prompt-icon) (char (prompt prompt) &key (bank :gamepad))
   (setf (text prompt) (string (prompt-char char :bank bank))))
