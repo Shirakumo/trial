@@ -14,7 +14,7 @@
 
 (flet ((handle (event vec)
          (alloy:do-elements (element vec :result (alloy:decline) :from-end T)
-           (when (alloy:contained-p (alloy:location event) (alloy:bounds element))
+           (when (alloy:contained-p (alloy:location event) element)
              (if (alloy:handle event element)
                  (return)
                  (alloy:decline))))))
