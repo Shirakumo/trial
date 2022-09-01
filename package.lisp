@@ -640,6 +640,7 @@
    #:to-mapping-description
    #:event-from-action-mapping
    #:event-to-action-mapping
+   #:stratify-action-mapping
    #:digital-mapping
    #:threshold
    #:toggle-p

@@ -101,6 +101,7 @@
 (defgeneric to-mapping-description (mapping))
 (defgeneric event-from-action-mapping (mapping))
 (defgeneric event-to-action-mapping (event action &key))
+(defgeneric stratify-action-mapping (mapping))
 
 (defmethod active-p ((mapping action-mapping))
   (active-p (slot-value mapping '%action-prototype)))
@@ -124,6 +125,12 @@
 (defmethod event-applicable-p ((event gamepad-move) (mapping action-mapping))
   (and (typep event (event-type mapping))
        (find (axis event) (qualifier mapping))))
+
+(defmethod stratify-action-mapping ((mapping action-mapping))
+  (loop for qualifier in (qualifier mapping)
+        collect (make-instance (type-of mapping) :action-type (action-type mapping)
+                                                 :event-type (event-type mapping)
+                                                 :qualifier (list qualifier))))
 
 (defclass digital-mapping (action-mapping)
   ((threshold :initarg :threshold :initform +0.5 :accessor threshold)
@@ -211,6 +218,12 @@
                                (T (type-of event)))
                  :qualifier (list (button event))
                  :toggle-p toggle-p))
+
+(defmethod stratify-action-mapping ((mapping digital-mapping))
+  (mapc (lambda (new)
+          (setf (threshold new) (threshold mapping))
+          (setf (toggle-p new) (toggle-p mapping)))
+        (call-next-method)))
 
 (define-mapping-function input-maps (loop event)
   (when (typep event 'input-event)
