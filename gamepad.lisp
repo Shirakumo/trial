@@ -20,14 +20,15 @@
                            `(throw 'bail-input NIL)))))
        ,@body)))
 
+(defun describe-gamepad (dev)
+  (format NIL "Vendor: ~a Product: ~a Version: ~a Driver: ~a Name: ~a"
+          (gamepad:vendor dev) (gamepad:product dev) (gamepad:version dev)
+          (gamepad:driver dev) (gamepad:name dev)))
+
 (defmethod start :after ((handler gamepad-input-handler))
   (with-gamepad-failure-handling (:ignore-error #-trial-optimize-all NIL #+trial-optimize-all T)
-    (flet ((describe-device (dev)
-             (format NIL "Vendor: ~a Product: ~a Version: ~a Driver: ~a Name: ~a"
-                     (gamepad:vendor dev) (gamepad:product dev) (gamepad:version dev)
-                     (gamepad:driver dev) (gamepad:name dev))))
-      (v:info :trial.input "Detected the following controllers:~{~%  ~a~}"
-              (mapcar #'describe-device (gamepad:init))))))
+    (v:info :trial.input "Detected the following controllers:~{~%  ~a~}"
+            (mapcar #'describe-gamepad (gamepad:init)))))
 
 (defmethod stop :after ((handler gamepad-input-handler))
   (with-gamepad-failure-handling ()
@@ -63,4 +64,7 @@
     (when (< internal-time-units-per-second
              (- (get-internal-real-time) (last-device-probe handler)))
       (setf (last-device-probe handler) (get-internal-real-time))
-      (gamepad:poll-devices))))
+      (gamepad:poll-devices :function (lambda (action device)
+                                        (ecase action
+                                          (:add (v:info :trial.input "New controller:~%  ~a" (describe-gamepad device)))
+                                          (:remove (v:info :trial.input "Lost controller:~%  ~a" (describe-gamepad device)))))))))
