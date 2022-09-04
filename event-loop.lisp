@@ -31,11 +31,12 @@
 (defmethod handle ((event event) (listener listener)))
 
 (defclass event-loop ()
-  ((queue :initform (make-array 64 :initial-element NIL :adjustable T :fill-pointer 0) :reader queue)
+  ((queue :initform (make-array 1024 :initial-element NIL :adjustable T :fill-pointer 0) :reader queue)
    (queue-index :initform 0 :accessor queue-index)
    (listeners :initform (make-hash-table :test 'eq) :accessor listeners)
    (listener-queue :initform '(NIL) :accessor listener-queue)))
 
+;; FIXME: Make this thread-safe.
 (defun issue (loop event-type &rest args)
   (let ((event (etypecase event-type
                  (event event-type)
