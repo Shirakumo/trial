@@ -140,6 +140,3 @@
                :zpng
                (:feature :linux :clx)
                (:feature :windows :com-on)))
-
-;; TODO: factor out dependencies into systems
-;;       like for image, model formats, etc.
