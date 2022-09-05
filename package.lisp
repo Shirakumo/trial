@@ -679,11 +679,9 @@
    #:pipelined-scene)
   ;; prompt.lisp
   (:export
-   #:prompt-char
-   #:prompt-charset
-   #:prompt-font
-   #:prompt
-   #:prompt-icon)
+   #:prompt-string
+   #:action-strings
+   #:action-string)
   ;; rails.lisp
   (:export
    #:rail

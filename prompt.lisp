@@ -6,20 +6,21 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defvar *prompt-char-table* (make-hash-table :test 'eq))
+(defvar *prompt-string-table* (make-hash-table :test 'eq))
 
 (defmacro define-glyph-table (name &body entries)
   (destructuring-bind (name &key inherit) (enlist name)
-    `(setf (gethash ',name *prompt-char-table*)
+    `(setf (gethash ',name *prompt-string-table*)
            (let ((table (make-hash-table :test 'eq)))
              ,@(when inherit
-                 `((loop for name being the hash-keys of (gethash ',inherit *prompt-char-table*) using (hash-value char)
+                 `((loop for name being the hash-keys of (gethash ',inherit *prompt-string-table*) using (hash-value char)
                           do (setf (gethash name table) char))))
              ,@(loop for (name char) in entries
                      collect `(setf (gethash ',name table)
-                                    ,(etypecase char
-                                       (integer (code-char char))
-                                       (character char))))
+                                    ,(string (etypecase char
+                                               (integer (code-char char))
+                                               (string char)
+                                               (character char)))))
              table))))
 
 (define-glyph-table :devices
@@ -289,7 +290,7 @@
     (:dpad-v (if (< 0 threshold) :dpad-u :dpad-d))
     (T axis)))
 
-(defun specific-char-for-event-trigger (thing &optional (type 'input-event) (default NIL))
+(defun specific-prompt-for-event-trigger (thing &optional (type 'input-event) (default NIL))
   (let ((mapping (first (find-action-mappings thing type))))
     (if mapping
         (let ((symbol (first (qualifier mapping))))
@@ -298,7 +299,7 @@
               symbol))
         default)))
 
-(defun specific-chars-for-event-trigger (thing &optional (type 'input-event))
+(defun specific-prompts-for-event-trigger (thing &optional (type 'input-event))
   (let ((list ()))
     (loop for mapping in (find-action-mappings thing type)
           for threshold = (threshold mapping)
@@ -317,18 +318,18 @@
     (symbol
      bank)))
 
-(defun prompt-char (thing &key bank default)
+(defun prompt-string (thing &key bank default)
   (etypecase thing
     (null
      thing)
     (character
-     thing)
+     (string thing))
     (string
-     (char thing 0))
+     thing)
     (integer
      (princ-to-string thing))
     (keyword
-     (let ((table (gethash (normalize-prompt-bank bank) *prompt-char-table*)))
+     (let ((table (gethash (normalize-prompt-bank bank) *prompt-string-table*)))
        (if table
            (gethash thing table default)
            default)))
@@ -340,21 +341,22 @@
                     (:keyboard 'key-event)
                     (:mouse 'mouse-event)
                     (T 'gamepad-event)))
-            (char (specific-char-for-event-trigger thing type NIL)))
-       (cond (char
-              (when (eql bank :keyboard)
-                (setf char (or (ignore-errors (local-key-string *context* char)) char)))
-              (prompt-char char :bank bank))
+            (prompt (specific-prompt-for-event-trigger thing type NIL)))
+       (cond (prompt
+              (let ((char (or (when (eql bank :keyboard)
+                                (ignore-errors (local-key-string *context* prompt)))
+                              prompt)))
+                (prompt-string char :bank bank)))
              (T
               default))))
     (action
-     (prompt-char (type-of thing) :bank bank :default default))
+     (prompt-string (type-of thing) :bank bank :default default))
     (input-event
-     (let* ((char (etypecase thing
-                    (gamepad-move (degeneralise-axis-symbol (axis thing) (pos thing)))
-                    (gamepad-event (button thing))
-                    (keyboard-event (key thing))
-                    (mouse-button-event (button thing))))
+     (let* ((prompt (etypecase thing
+                      (gamepad-move (degeneralise-axis-symbol (axis thing) (pos thing)))
+                      (gamepad-event (button thing))
+                      (keyboard-event (key thing))
+                      (mouse-button-event (button thing))))
             (bank (or bank
                       (etypecase thing
                         (gamepad-event
@@ -363,31 +365,39 @@
                              :gamepad))
                         (key-event :keyboard)
                         (mouse-event :mouse)))))
-       (when (eql bank :keyboard)
-         (setf char (or (ignore-errors (local-key-string *context* char)) char)))
-       (prompt-char char :bank bank :default default)))))
+       (let ((char (or (when (eql bank :keyboard)
+                         (ignore-errors (local-key-string *context* prompt)))
+                       prompt)))
+         (prompt-string char :bank bank :default default))))))
 
-(defun action-prompts (thing &key bank)
-  (let ((bank (normalize-prompt-bank bank)))
-    (flet ((map-any (a)
-             (or (when a (prompt-char a :bank bank)) #\Space))
-           (map-key (a)
-             (or (when a (prompt-char (or (ignore-errors (local-key-string *context* a)) a) :bank bank)) #\Space)))
-      (delete-duplicates
-       (delete #\Space
-               (map 'string (if (eql bank :keyboard) #'map-key #'map-any)
-                    (specific-chars-for-event-trigger thing (case bank
-                                                              (:keyboard 'key-event)
-                                                              (:mouse 'mouse-event)
-                                                              (T 'gamepad-event)))))))))
+(defun action-strings (thing &key bank)
+  (let ((bank (normalize-prompt-bank bank))
+        (prompts ()))
+    (loop for prompt in (specific-prompts-for-event-trigger thing (case bank
+                                                                    (:keyboard 'key-event)
+                                                                    (:mouse 'mouse-event)
+                                                                    (T 'gamepad-event)))
+          for string = (when prompt
+                         (or (when (eql bank :keyboard)
+                               (ignore-errors (local-key-string *context* prompt)))
+                             (prompt-string prompt :bank bank)))
+          do (when string (pushnew string prompts)))
+    (nreverse prompts)))
+
+(defun action-string (thing &key bank (join " "))
+  (with-output-to-string (out)
+    (loop for (string . next) on (action-strings thing :bank bank)
+          do (write-string string out)
+             (when next
+               (write-string join out)))))
 
 (defun prompt-charset ()
   (sort (delete-duplicates
          (with-output-to-string (out)
-           (loop for bank being the hash-keys of *prompt-char-table* using (hash-value table)
+           (loop for bank being the hash-keys of *prompt-string-table* using (hash-value table)
                  do (loop for string being the hash-values of table
-                          do (write-char string out)))))
-        #'char<))
+                          do (write-string string out)))))
+        #'string<))
 
 (define-shader-entity prompt ()
   ())
@@ -396,7 +406,7 @@
   (setf (text prompt) (string character)))
 
 (defmethod (setf text) ((symbol symbol) (prompt prompt))
-  (setf (text prompt) (string (prompt-char symbol :default "<unbound>"))))
+  (setf (text prompt) (prompt-string symbol :default "<unbound>")))
 
 (defmethod (setf prompt-icon) (char (prompt prompt) &key (bank :gamepad))
-  (setf (text prompt) (string (prompt-char char :bank bank))))
+  (setf (text prompt) (prompt-string char :bank bank)))
