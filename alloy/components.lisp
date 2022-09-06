@@ -6,6 +6,19 @@
 
 (in-package #:org.shirakumo.fraf.trial.alloy)
 
+(defclass language-data (alloy:data)
+  ((name :initarg :name :accessor name)))
+
+(defmethod alloy:value ((data language-data))
+  (trial:language-string (name data)))
+
+(defmethod alloy:refresh ((data language-data))
+  (alloy:notify-observers 'alloy:value data (trial:language-string (name data)) data))
+
+(defmethod alloy:expand-compound-place-data ((place (eql 'trial:@)) args)
+  (destructuring-bind (name) args
+    `(make-instance 'language-data :name ',name)))
+
 (defclass vec (alloy:grid-layout
                alloy:focus-list
                alloy:value-component)
