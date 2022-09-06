@@ -569,7 +569,9 @@
    #:pos
    #:key
    #:mouse
-   #:gamepad)
+   #:gamepad
+   #:gamepad-added
+   #:gamepad-removed)
   ;; language.lisp
   (:export
    #:languages

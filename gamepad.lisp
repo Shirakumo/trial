@@ -66,5 +66,7 @@
       (setf (last-device-probe handler) (get-internal-real-time))
       (gamepad:poll-devices :function (lambda (action device)
                                         (ecase action
-                                          (:add (v:info :trial.input "New controller:~%  ~a" (describe-gamepad device)))
-                                          (:remove (v:info :trial.input "Lost controller:~%  ~a" (describe-gamepad device)))))))))
+                                          (:add (v:info :trial.input "New controller:~%  ~a" (describe-gamepad device))
+                                           (handle (make-instance 'gamepad-added :device device) handler))
+                                          (:remove (v:info :trial.input "Lost controller:~%  ~a" (describe-gamepad device))
+                                           (handle (make-instance 'gamepad-removed :device device) handler))))))))

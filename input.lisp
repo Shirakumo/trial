@@ -113,3 +113,9 @@
 (defmethod print-object ((event gamepad-move) stream)
   (print-unreadable-object (event stream :type T)
     (format stream "~a ~a ~3f" (device event) (axis event) (pos event))))
+
+(defclass gamepad-added (gamepad-event)
+  ())
+
+(defclass gamepad-removed (gamepad-event)
+  ())
