@@ -362,15 +362,20 @@
                          (pathname-utils:parse-native-namestring log))
                      (or (uiop:argv0) (user-homedir-pathname)))))
 
+(defun envvar-directory (var)
+  (let ((var (uiop:getenv var)))
+    (when (and var (string/= "" var))
+      (pathname-utils:parse-native-namestring var :as :directory :junk-allowed T))))
+
 (defun config-directory (&rest app-path)
   (apply #'pathname-utils:subdirectory
-         #+(or windows win32)
-         (or (uiop:getenv "AppData")
-             (merge-pathnames "AppData/" (user-homedir-pathname)))
-         #+(or windows win32) "Roaming"
-         #-(or windows win32)
-         (or (uiop:getenv "XDG_CONFIG_HOME")
-             (pathname-utils:subdirectory (user-homedir-pathname) ".config"))
+         (or (envvar-directory "TRIAL_CONFIG_HOME")
+             #+(or windows win32)
+             (or (envvar-directory "AppData")
+                 (pathname-utils:subdirectory (user-homedir-pathname) "AppData" "Roaming"))
+             #-(or windows win32)
+             (or (envvar-directory "XDG_CONFIG_HOME")
+                 (pathname-utils:subdirectory (user-homedir-pathname) ".config")))
          (or app-path (list +app-vendor+ +app-system+))))
 
 (defun standalone-logging-handler ()
