@@ -31,6 +31,7 @@
 
 (define-glyph-table :gamepad
   (:DEVICE        #x243C)
+  (:DPAD          #x21CE)
   (:DPAD-L        #x219E)
   (:DPAD-U        #x219F)
   (:DPAD-R        #x21A0)
@@ -43,9 +44,9 @@
   (:R1            #x21B1)
   (:L2            #x21B2)
   (:R2            #x21B3)
-  (:L             #x21BA)
+  (:L             #x21CB)
   (:L3            #x21BA)
-  (:R             #x21BB)
+  (:R             #x21CC)
   (:R3            #x21BB)
   (:L-L           #x21BC)
   (:R-L           #x21BD)
