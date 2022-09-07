@@ -137,8 +137,10 @@
    (toggle-p :initarg :toggle-p :initform NIL :accessor toggle-p)))
 
 (defmethod event-active-p ((event gamepad-move) (mapping digital-mapping))
-  (and (<= (abs (threshold mapping)) (abs (pos event)))
-       (= (float-sign (threshold mapping)) (float-sign (pos event)))))
+  (let ((threshold (threshold mapping)))
+    (if (< 0.0 threshold)
+        (<= threshold (pos event))
+        (<= (pos event) threshold))))
 
 (defmethod event-active-p ((event digital-event) (mapping digital-mapping))
   (typep event '(or key-press mouse-press gamepad-press)))
