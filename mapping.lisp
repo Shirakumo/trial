@@ -137,28 +137,39 @@
    (toggle-p :initarg :toggle-p :initform NIL :accessor toggle-p)))
 
 (defmethod event-active-p ((event gamepad-move) (mapping digital-mapping))
-  (let ((threshold (threshold mapping)))
+  (let* ((threshold (threshold mapping))
+         (old (old-pos event))
+         (cur (pos event)))
     (if (< 0.0 threshold)
-        (<= threshold (pos event))
-        (<= (pos event) threshold))))
+        (cond ((< old threshold cur)
+               :on)
+              ((< cur threshold old)
+               :off))
+        (cond ((< cur threshold old)
+               :on)
+              ((< old threshold cur)
+               :off)))))
 
 (defmethod event-active-p ((event digital-event) (mapping digital-mapping))
-  (typep event '(or key-press mouse-press gamepad-press)))
+  (if (typep event '(or key-press mouse-press gamepad-press))
+      :on :off))
 
 (defmethod perform-event-mapping (event (mapping digital-mapping) loop)
   (let ((active-p (event-active-p event mapping))
         (action (action-type mapping)))
-    (cond ((toggle-p mapping)
-           (when active-p
-             (setf (%retained action) (if (retained action) -1 +1))))
-          (T
-           (when (and (not (retained action)) active-p)
-             (issue loop (make-instance action :source-event event)))
-           (typecase event
-             (digital-event
-              (setf (%retained action) (max 0 (+ (%retained action) (if active-p +1 -1)))))
-             (T
-              (setf (%retained action) (if active-p +1 0))))))))
+    (when active-p
+      (let ((active-p (eql :on active-p)))
+        (cond ((toggle-p mapping)
+               (when active-p
+                 (setf (%retained action) (if (retained action) -1 +1))))
+              (T
+               (when (and (not (retained action)) active-p)
+                 (issue loop (make-instance action :source-event event)))
+               (typecase event
+                 (digital-event
+                  (setf (%retained action) (max 0 (+ (%retained action) (if active-p +1 -1)))))
+                 (T
+                  (setf (%retained action) (if active-p +1 0))))))))))
 
 (defun normalize-mapping-event-type (type)
   (case type
