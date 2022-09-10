@@ -117,7 +117,9 @@
       (let ((animation (find name (animations sprite) :key #'name)))
         (if animation
             (setf (animation sprite) animation)
-            #-trial-release (error "No animation named ~s found." name))))))
+            #-trial-release
+            (with-simple-restart (continue "Ignore the animation")
+              (error "No animation named ~s found." name)))))))
 
 (defmethod (setf animations) :after (animations (sprite animated-sprite))
   (setf (animation sprite) 0))
