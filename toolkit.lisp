@@ -100,15 +100,17 @@
                                                 until (listp thing)
                                                 collect thing into qualifiers
                                                 finally (return (list qualifiers thing)))
-      `(remove-method
-        #',name
-        (find-method
-         #',name
-         ',qualifiers
-         (mapcar #'find-class
-                 ',(loop for arg in args
-                         until (lambda-keyword-p arg)
-                         collect (if (listp arg) (second arg) T))))))))
+      `(let ((method (find-method
+                      #',name
+                      ',qualifiers
+                      (mapcar #'find-class
+                              ',(loop for arg in args
+                                      until (lambda-keyword-p arg)
+                                      collect (if (listp arg) (second arg) T)))
+                      NIL)))
+         (if method
+             (remove-method #',name method)
+             NIL)))))
 
 (defmacro define-unbound-reader (class method &body default)
   (destructuring-bind (method slot) (enlist method method)

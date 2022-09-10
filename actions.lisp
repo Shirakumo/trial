@@ -6,6 +6,8 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(define-global +action-set-states+ (make-hash-table :test 'eq))
+
 (defclass action-set () ()) ;; marker-class
 (defclass exclusive-action-set () ())
 
@@ -42,18 +44,24 @@
 
 (defmacro define-action-set (name &optional superclasses)
   `(progn (defclass ,name (,@superclasses action-set)
-            ((active-p :initform T :accessor active-p :allocation :class)))
+            ())
+          (defmethod active-p ((,name ,name))
+            (or (gethash ',name +action-set-states+)
+                (when (next-method-p)
+                  (call-next-method))))
+          (defmethod (setf active-p) (value (,name ,name))
+            (setf (gethash ',name +action-set-states+) value))
           (defmethod active-p ((class (eql (find-class ',name))))
-            (active-p (c2mop:class-prototype class)))
+            (gethash ',name +action-set-states+))
           (defmethod (setf active-p) (value (class (eql (find-class ',name))))
-            (setf (active-p (c2mop:class-prototype class)) value))
+            (setf (gethash ',name +action-set-states+) value))
           (c2mop:finalize-inheritance (find-class ',name))))
 
 (defclass action (event)
   ((source-event :initarg :source-event :initform NIL :accessor source-event)))
 
 (defmethod active-p ((action (eql (find-class 'action)))) T)
-(defmethod active-p ((action action)) T)
+(defmethod active-p ((action action)) NIL)
 
 (defclass analog-action (action)
   ((value :initarg :value :initform 0f0 :accessor value)))
@@ -68,6 +76,10 @@
    (z :initarg :value :initform 0f0 :accessor z)))
 
 (defmacro define-action (name superclasses)
-  (setf superclasses (append superclasses '(action)))
-  `(defclass ,name ,superclasses
-     ()))
+  `(progn
+     (defclass ,name ,(append superclasses '(action))
+       ())
+     ,(if superclasses
+          `(undefmethod active-p ((,name ,name)))
+          `(defmethod active-p ((,name ,name)) T))
+     ',name))
