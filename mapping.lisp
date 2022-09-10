@@ -6,6 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(define-global +map-key-events+ T)
 (define-global +retention-table+ (make-hash-table :test 'eql))
 (defvar *mapping-functions* (make-hash-table :test 'eql))
 (defvar *action-mappings* ())
@@ -26,8 +27,10 @@
            ,@body)))
 
 (defun map-event (event loop)
-  (loop for function being the hash-values of *mapping-functions*
-        do (funcall function loop event)))
+  (when (or +map-key-events+
+            (not (typep event 'key-event)))
+    (loop for function being the hash-values of *mapping-functions*
+          do (funcall function loop event))))
 
 (declaim (inline %retained (setf %retained) retained (setf retained) clear-retained))
 (defun %retained (id)

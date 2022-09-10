@@ -621,6 +621,7 @@
    #:launch)
   ;; mapping.lisp
   (:export
+   #:+map-key-events+
    #:trigger
    #:keymap
    #:mapping-function

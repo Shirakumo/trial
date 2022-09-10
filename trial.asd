@@ -38,6 +38,7 @@
                (:file "deferred" :depends-on ("package" "shader-entity" "shader-pass" "helpers" ("resources" "uniform-buffer") ("assets" "static")))
                (:file "deploy" :depends-on ("package" "gamepad"))
                (:file "display" :depends-on ("package" "context" "render-loop" "power"))
+               (:file "documentation" :depends-on ("package"))
                (:file "effects" :depends-on ("package" "shader-pass"))
                (:file "entity" :depends-on ("package"))
                (:file "error-handling" :depends-on ("package" "toolkit"))
@@ -123,6 +124,7 @@
                :cl-gamepad
                :cl-ppcre
                :pathname-utils
+               :documentation-utils
                :flare
                :for
                :flow
