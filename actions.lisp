@@ -52,9 +52,9 @@
           (defmethod (setf active-p) (value (,name ,name))
             (setf (gethash ',name +action-set-states+) value))
           (defmethod active-p ((class (eql (find-class ',name))))
-            (gethash ',name +action-set-states+))
+            (active-p (c2mop:class-prototype class)))
           (defmethod (setf active-p) (value (class (eql (find-class ',name))))
-            (setf (gethash ',name +action-set-states+) value))
+            (setf (active-p (c2mop:class-prototype class)) value))
           (c2mop:finalize-inheritance (find-class ',name))))
 
 (defclass action (event)
