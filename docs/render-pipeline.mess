@@ -1,0 +1,93 @@
+# Render Pipeline System
+This document outlines Trial's render pipeline system and details how rendering behaves internally and externally.
+
+## 1. Parts
+The system deals with objects of the following types:
+
+- ``container``
+  Containers that are not themselves renderable, but may contain other renderables and provide positioning information.
+- ``renderable``
+  An object to be drawn in the scene in some way. It is not specified how this object is drawn.
+- ``shader-pass``
+  A rendering pass. Note that one pass may draw many objects, or none, such as for a post-processing pass.
+- ``shader-pipeline``
+  A bundle of shader passes into a consistent pipeline that produces a set of textures or, more typically, renders to the screen.
+
+## 2. Lifecycle
+In order to understand rendering, we have to look at two distinct cases where the renderer needs to change its state:
+
+1. Setup
+   After the scene is set up all of the renderable objects contained within need to be registered with the shader pipelines, so that effective shader programs can be computed and allocated. This typically occurs as a bulk change within a loading context.
+2. Runtime
+   While the game is running, dynamic changes may add or remove renderable entities. Renderables may also come in or out of view, or for other reasons start or stop rendering. In this case the shader pipelines need to adapt appropriately to cull their draw calls.
+
+To actually perform the rendering, each shader pipeline simply iterates through each shader pass in topological order. Each pass then conceptually proceeds as follows:
+
+1. ``construct-frame``
+   Allocate the objects that should be rendered for the current frame in a ``frame`` sequence:
+   1. If the frame is considered not to have changed, skip
+   2. For every ``renderable`` that is tied to the pass:
+      1. If the renderable is considered visible within the pass' context (may be culled for occlusion, frustum, or other reasons):
+         1. Store the object and its ``shader-program`` for the pass in the ``frame``
+   3. Sort the ``frame`` by the ``frame-priority`` of the ``renderable``s
+2. ``render-frame``
+   Perform the render operations needed to render the frame:
+   1. Call ``bind-textures`` on the pass
+   2. Iterate over the ``renderable``s in order of the ``frame``:
+      1. Call ``apply-transforms``
+      2. Call ``bind-textures``
+      3. Call ``render`` with the associated ``shader-program``
+
+Important to note here are that ``construct-frame`` is called //for every frame//, meaning the potential culling and ordering is called automatically once per frame to ensure consistency. Passes may //elide// changing the frame, but by default without optimisations they will not.
+
+Additionally, only ``renderables`` that are tied to the pass will be considered for rendering within the pass' context //at all//. Meaning that any object first needs to be tied to the pass by ``enter``ing it. An object may also be dynamically removed by using ``leave``.
+
+A pass only distinguishes between 1. Setup and 2. Runtime above by whether a ``containter`` is passed to the pass or a single ``renderable``. Entering and leaving renderables potentially causes allocations to happen, as new shader programs may need to be compiled. More details on this are illustrated in §3.
+
+The specifics of frame construction and rendering are elaborated upon in §4.
+
+## 3. Allocation
+Broadly passes are distinguished in the following manner:
+
+1. Post-processing passes
+   These passes contain all the rendering logic they need in themselves. The scene graph does not interact with them at all.
+2. Per-object passes
+   These passes share some rendering logic with objects from the scene graph, and render control usually lies with the actual objects, rather than with the pass itself.
+
+For passes of type 1 there isn't much to discuss. The pass manages its own shader and geometry logic, and allocates that at the beginning when the pass data in general is allocated.
+
+For type two, things are more interesting, as the pass needs to potentially allocate a shader program for the object, and needs to appropriately manage the lifetime of this program. The pass also needs to figure out the "effective shader sources" for each object tied to it.
+
+When an object is ``enter``ed into a pass, whether on its own or through a ``collection``, it proceeds as follows:
+
+1. If the object is already in the renderable table, skip
+2. Check if the object's class has an allocated shader program. If not:
+   //Note that this test always fails if the object is a ``dynamic-renderable``//
+   1. Call ``compute-shader`` with each shader type, the pass, and the object
+   2. Check if an identical shader program exists. If not:
+      1. Generate the shaders and shader program and add them to the current staging area
+      2. Associate a load trigger with the program to run ``update-uniforms`` once loaded
+   3. Tie the object's class to the generated shader program
+3. Increase the refcount of the shader program
+4. Associate the object with its shader program in the renderable table
+
+If the object was entered on its own, the staging area is now committed. Otherwise the commit is deferred until all resource construction is complete. Note that this process is //very// cheap for instances of classes that have already been entered once before.
+
+When an object is entered from a collection, it also first calls ``object-renderable-p`` on the object and pass, to preemptively cull objects that should not be rendered on the given pass.
+
+When an object ``leave``s a pass, it proceeds as follows:
+
+1. If an associated shader program is found in the renderable table:
+   1. Reduce the refcount of the associated shader program
+   2. Remove the object from the renderable table
+
+Deallocation of shader programs is //not// done even if the refcount reaches zero, as this could lead to bad dynamic allocations in the future when the same object type is entered again, such as can often happen for effects or other dynamic object types.
+
+Instead, deallocation is deferred to when the pass is next ``stage``d, at which point the programs with a zero refcount are culled again, and not staged, leading to a deallocation on commit.
+
+Objects and passes can specialise their rendering code depending on each combination through specific methods on ``compute-shader``. The resulting list of shader code fragments are combined into a singular piece of shader code through glsl-toolkit's code merger. More details on the interoperation between shader fragments is outlined in §5.
+
+## 4. Rendering
+
+
+## 5. Shader Interfaces
