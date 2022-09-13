@@ -9,15 +9,11 @@
 (defclass pipelined-scene (scene pipeline)
   ())
 
-(defmethod leave :after ((entity entity) (scene pipelined-scene))
-  ;; FIXME: A system for figuring out when we can GC shader programs
-  )
-
 (defmethod setup-scene :after (main (scene scene))
-  (pack-pipeline scene (context main)))
-
-(defmethod stage :before ((scene pipelined-scene) (area staging-area))
-  (compile-to-pass scene scene))
+  (pack-pipeline scene (context main))
+  (for:for ((object over scene))
+    (loop for pass across (passes scene)
+          do (enter object pass))))
 
 (defmethod stage :after ((scene pipelined-scene) (area staging-area))
   (loop for texture across (textures scene)
@@ -27,3 +23,19 @@
 
 (defmethod handle :after ((event resize) (scene pipelined-scene))
   (resize scene (width event) (height event)))
+
+(defmethod enter :after ((entity renderable) (scene pipelined-scene))
+  (loop for pass across (passes scene)
+        do (enter entity pass)))
+
+(defmethod leave :after ((entity renderable) (scene pipelined-scene))
+  (loop for pass across (passes scene)
+        do (leave entity pass)))
+
+(defmethod enter :after ((entity container) (scene pipelined-scene))
+  (loop for pass across (passes scene)
+        do (enter entity pass)))
+
+(defmethod leave :after ((entity container) (scene pipelined-scene))
+  (loop for pass across (passes scene)
+        do (leave entity pass)))

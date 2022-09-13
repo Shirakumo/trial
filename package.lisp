@@ -808,6 +808,7 @@
    #:output
    #:attachment
    #:fixed-input
+   #:static-input
    #:check-consistent
    #:buffer
    #:shader-pass
@@ -815,12 +816,11 @@
    #:active-p
    #:renderable
    #:transformed
+   #:renderable
+   #:dynamic-renderable
    #:apply-transforms
+   #:bind-textures
    #:object-renderable-p
-   #:compile-to-pass
-   #:compile-into-pass
-   #:remove-from-pass
-   #:register-object-for-pass
    #:shader-program-for-pass
    #:make-pass-shader-program
    #:coerce-pass-shader

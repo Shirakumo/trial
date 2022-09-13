@@ -210,21 +210,24 @@
 
 (defmethod render :before ((pass shader-pass) target)
   (activate (framebuffer pass))
-  (bind-pass-textures pass))
+  (bind-textures pass))
 
 (defmethod render (object (pass shader-pass))
   (let ((program (shader-program-for-pass pass object)))
     (prepare-pass-program pass program)
     (render object program)))
 
-(define-shader-pass per-object-pass ()
+(define-shader-pass per-object-pass (listener)
   ((program-table :initform (make-hash-table :test 'eq) :accessor program-table)
    (renderable-table :initform (make-hash-table :test 'eq) :accessor renderable-table)
    (frame :initform (map-into (make-array 128 :adjustable T :fill-pointer 0) (lambda () (cons NIL NIL))) :accessor frame)))
 
 (defgeneric construct-frame (pass))
 (defgeneric render-frame (pass frame))
-(defgeneric frame-priority (pass object-a object-b))
+(defgeneric frame-priority-fun (pass))
+
+(defmethod frame-priority-fun ((pass per-object-pass))
+  (lambda (a b) NIL))
 
 (defmethod camera ((pass shader-pass))
   (camera (scene +main+)))
@@ -232,11 +235,11 @@
 (defmethod scene ((pass shader-pass))
   (scene +main+))
 
-(defmethod enter ((container container) (pass per-object-pass))
+(defmethod enter ((container flare:container) (pass per-object-pass))
   (for:for ((object over container))
-           (enter object pass)))
+    (enter object pass)))
 
-(defmethod leave ((container container) (pass per-object-pass))
+(defmethod leave ((container flare:container) (pass per-object-pass))
   (for:for ((object over container))
     (leave object pass)))
 
@@ -252,6 +255,7 @@
           (unless program
             (setf program (make-pass-shader-program pass target))
             ;; TODO: alias program against identical programs
+            ;; FIXME: how to allocate??
             (setf (gethash program program-table) (cons 0 NIL))
             (setf (gethash target renderable-table) program))
           (incf (car (gethash program program-table)))
@@ -268,6 +272,8 @@
   (call-next-method)
   (loop for program being the hash-keys of (program-table pass) using (hash-value count)
         do (if (<= count 0)
+               ;; FIXME: remove the program from the renderable-table as well
+               ;;        as it may still be there from the class references
                (remhash program (program-table pass))
                (stage program area))))
 
@@ -289,6 +295,7 @@
                  (when prev
                    (v:info :trial.shader-pass "Refreshing shader program for ~a" class)
                    (let ((new (make-pass-shader-program pass class)))
+                     ;; FIXME: how to allocate??
                      (setf (buffers prev) (buffers new))
                      (setf (shaders prev) (shaders new))
                      (setf (cdr (gethash prev program-table)) NIL))))))
@@ -314,7 +321,7 @@
 
 (defmethod construct-frame ((pass per-object-pass))
   (let* ((frame (frame pass))
-         (index -1)
+         (index 0)
          (total (array-total-size frame))
          (renderable-table (renderable-table pass)))
     (flet ((store (object program)
@@ -323,7 +330,7 @@
                (loop for i from total below (* 2 total)
                      do (setf (aref frame i) (cons NIL NIL)))
                (setf total (* 2 total)))
-             (let ((entry (aref frame index)))
+             (let ((entry (aref frame (1- index))))
                (setf (car entry) object)
                (setf (cdr entry) program))))
       (do-visible (object (camera pass) (scene pass))
@@ -331,16 +338,17 @@
           (when program
             (store object program)))))
     (setf (fill-pointer frame) index)
-    (sort frame #'frame-priority :key #'car)))
+    (sort frame (frame-priority-fun pass) :key #'car)))
 
 (defmethod render-frame ((pass per-object-pass) frame)
   (declare (type (and vector (not simple-vector)) frame))
-  (bind-textures pass)
   (loop for (object . program) across frame
         do (prepare-pass-program pass program)
-           (apply-transforms object)
-           (bind-textures object)
-           (render object program)))
+           (push-matrix)
+           (with-unwind-protection (pop-matrix)
+             (apply-transforms object)
+             (bind-textures object)
+             (render object program))))
 
 (define-shader-pass single-shader-pass ()
   ((shader-program :initform NIL :accessor shader-program)))
