@@ -38,8 +38,3 @@
 (defmethod finalize ((container array-container))
   (for:for ((object across (objects container)))
     (finalize object)))
-
-(defmethod preceding-entity ((thing entity) (container array-container))
-  (if (= 1 (length (objects container)))
-      NIL
-      (aref (objects container) (- (length (objects container)) 2))))

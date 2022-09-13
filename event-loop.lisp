@@ -25,7 +25,7 @@
       NIL)
     (leave ()
       :report (lambda (s) (format s "Leave ~a from the loop." listener))
-      (leave* listener T))))
+      (leave listener T))))
 
 ;; Default to doing nothing.
 (defmethod handle ((event event) (listener listener)))

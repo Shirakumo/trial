@@ -93,13 +93,13 @@ In the first step, ``construct-frame`` is called, which proceeds as follows:
 
 1. If entities were added or removed, or visibility state of entities changed:
    //The visibility check especially is dependent on the specific rendering pass used and the camera model used. In many cases, recomputing the frame can be avoided as visibility of entities does not change frequently//
-   2. Call ``map-visible`` on the current pass and camera, and iterate over every visible object:
+   2. Call ``map-visible`` on the current camera and scene, and iterate over every visible object:
       1. If the object has an entry in the renderable table:
          1. Store the object and its ``shader-program`` for the pass in the ``frame``
 3. Sort the ``frame`` by the ``frame-priority`` of the ``renderable``s
    //The specifics of how this sorting occurs is up to the pass internals, but suffice to say that in most cases the cost can be held down a lot, and in cases where it's clear that order has not changed ahead of time, elided completely//
 
-Most of the magic here is in the function ``map-visible``. However, the precise operation of this is up to the individual camera models, which know how to properly perform frustum culling. The pass as an argument to ``map-visible`` mostly exists to allow for special passes, which require more precise control over which entities are considered visible or not.
+Most of the magic here is in the function ``map-visible``. However, the precise operation of this is up to the individual camera models, which know how to properly perform frustum culling.
 
 In the second step, ``render-frame`` is called, which proceeds as follows:
 
