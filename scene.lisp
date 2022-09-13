@@ -7,7 +7,10 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass scene (flare:scene event-loop)
-  ())
+  ((camera :initarg :camera :initform NIL :accessor camera)))
+
+(defmethod enter :after ((camera camera) (scene scene))
+  (setf (camera scene) camera))
 
 (defmethod register :after ((listener listener) (scene scene))
   (add-listener listener scene))

@@ -163,13 +163,9 @@ void main(){
 (defmethod stage :after ((entity textured-entity) (area staging-area))
   (stage (texture entity) area))
 
-(defmethod render :around ((obj textured-entity) (program shader-program))
-  (let ((tex (texture obj)))
-    (when tex
-      (%gl:active-texture :texture0)
-      (gl:bind-texture (target tex) (gl-name tex))
-      (call-next-method)
-      (gl:bind-texture (target tex) 0))))
+(defmethod bind-textures :after ((obj textured-entity))
+  (%gl:active-texture :texture0)
+  (gl:bind-texture :texture-2d (gl-name (texture tex))))
 
 (define-class-shader (textured-entity :vertex-shader)
   "layout (location = 1) in vec2 in_texcoord;

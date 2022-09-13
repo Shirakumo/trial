@@ -38,13 +38,15 @@
 (defmethod project-view :before ((camera camera))
   (reset-matrix))
 
-(defmethod map-visible (function camera (container container))
+(defmethod map-visible (function (camera camera) (container flare:container))
   (for:for ((object over container))
     (when (in-view-p object camera)
       (funcall function object))))
 
 (defmacro do-visible ((entity camera container) &body body)
   `(map-visible (lambda (,entity) ,@body) ,camera ,container))
+
+(defmethod in-view-p (object (camera camera)) T)
 
 (defclass 2d-camera (camera)
   ()
