@@ -29,29 +29,6 @@
 (defmethod leave (thing (container layered-container))
   (flare-indexed-set:set-remove thing (aref (objects container) (layer-index thing))))
 
-(defmethod preceding-entity ((thing entity) (container layered-container))
-  (let ((objects (objects container)))
-    (let* ((set (aref objects (layer-index thing)))
-           (cell (gethash thing (flare-indexed-set::set set)))
-           (head (flare-queue::head set)))
-      (when cell
-        (let ((last (flare-queue:left cell)))
-          (loop until (or (eq last head)
-                          (typep (flare-queue:value last) 'renderable))
-                do (setf last (flare-queue::left last)))
-          (cond ((eq last head)
-                 (loop for index downfrom (1- (layer-index thing)) to 0
-                       for set = (aref objects index)
-                       for head = (flare-queue::head set)
-                       for last = (flare-queue::left (flare-queue::tail set))
-                       do (loop until (or (eq last head)
-                                          (typep (flare-queue:value last) 'renderable))
-                                do (setf last (flare-queue::left last)))
-                          (unless (eq last head)
-                            (return (flare-queue:value last)))))
-                (T
-                 (flare-queue:value last))))))))
-
 (defmethod for:step-functions ((iterator layered-container))
   (let* ((layers (objects iterator))
          (idx 0) layer cell tail)

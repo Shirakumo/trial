@@ -390,10 +390,7 @@
   ;; entity.lisp
   (:export
    #:entity
-   #:container
-   #:preceding-entity
-   #:enter*
-   #:leave*)
+   #:container)
   ;; error-handling.lisp
   (:export
    #:*error-report-hook*
