@@ -217,7 +217,7 @@
     (prepare-pass-program pass program)
     (render object program)))
 
-(defclass per-object-pass (shader-pass)
+(define-shader-pass per-object-pass ()
   ((program-table :initform (make-hash-table :test 'eq) :accessor program-table)
    (renderable-table :initform (make-hash-table :test 'eq) :accessor renderable-table)
    (frame :initform (map-into (make-array 128 :adjustable T :fill-pointer 0) (lambda () (cons NIL NIL))) :accessor frame)))
