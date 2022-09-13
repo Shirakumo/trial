@@ -1005,11 +1005,11 @@
     (:double 'double-float)
     (T T)))
 
-(defvar *gl-extensions* ())
+(define-global +gl-extensions+ ())
 
 (defun cache-gl-extensions ()
   (let ((*package* (find-package "KEYWORD")))
-    (setf *gl-extensions*
+    (setf +gl-extensions+
           (loop for i from 0 below (gl:get* :num-extensions)
                 for name = (ignore-errors (gl:get-string-i :extensions i))
                 when name
@@ -1019,5 +1019,15 @@
   (let ((list (enlist extension)))
     ;; TODO: Optimise this by caching the test after first runtime.
     `(when (and ,@(loop for extension in list
-                        collect `(find ,extension *gl-extensions*)))
+                        collect `(find ,extension +gl-extensions+)))
        ,@body)))
+
+(defmacro gl-extension-case (&body cases)
+  `(cond ,@(loop for (extensions . body) in cases
+                 collect (case extensions
+                           ((T otherwise)
+                            `(T ,@body))
+                           (T
+                            `((and ,@(loop for extension in (enlist extensions)
+                                           collect `(find ,extension +gl-extensions+)))
+                              ,@body))))))
