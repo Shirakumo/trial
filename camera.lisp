@@ -43,6 +43,10 @@
     (when (in-view-p object camera)
       (funcall function object))))
 
+(defmethod map-visible (function (camera null) (container flare:container))
+  (for:for ((object over container))
+    (funcall function object)))
+
 (defmacro do-visible ((entity camera container) &body body)
   `(map-visible (lambda (,entity) ,@body) ,camera ,container))
 
