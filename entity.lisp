@@ -17,7 +17,8 @@
   (slot-makunbound entity 'container))
 
 (defmethod leave ((entity entity) (container (eql T)))
-  (leave entity (container entity)))
+  (when (slot-boundp entity 'container)
+    (leave entity (container entity))))
 
 (defmethod (setf name) :around (name (entity entity))
   (unless (eq name (name entity))
