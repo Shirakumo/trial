@@ -126,10 +126,10 @@
                ;; Create dummy framebuffer
                (gl:bind-texture :texture-2d dummy-tex)
                (gl-extension-case
-                 (:arb-texture-storage
+                 (:gl-arb-texture-storage
                   (%gl:tex-storage-2d :texture-2d 1 :rgb8 target-width target-height))
                  (T
-                  (%gl:tex-image-2d :texture-2d 0 (cffi:foreign-enum-value '%gl:enum :rgb8) target-width target-height 0 :rgb-integer :unsigned-byte 0)))
+                  (%gl:tex-image-2d :texture-2d 0 (cffi:foreign-enum-value '%gl:enum :rgb8) target-width target-height 0 :rgb :unsigned-byte (cffi:null-pointer))))
                (gl:bind-framebuffer :draw-framebuffer dummy)
                (%gl:framebuffer-texture :draw-framebuffer :color-attachment0 dummy-tex 0)
                (gl:draw-buffers '(:color-attachment0))
