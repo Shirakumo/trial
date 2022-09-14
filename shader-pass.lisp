@@ -151,6 +151,7 @@
           (enlist (effective-shader type object))))
 
 (defmethod make-pass-shader-program ((pass shader-pass) object)
+  ;; TODO: alias program against identical programs
   (let ((shaders ())
         (buffers ()))
     (loop for type in *shader-type-list*
@@ -169,6 +170,16 @@
 (defmethod finalize :after ((pass shader-pass))
   (when (framebuffer pass)
     (finalize (framebuffer pass))))
+
+(defmethod enter ((container flare:container) (pass shader-pass))
+  (for:for ((object over container))
+    (when (object-renderable-p object pass)
+      (enter object pass))))
+
+(defmethod leave ((container flare:container) (pass shader-pass))
+  (for:for ((object over container))
+    (when (object-renderable-p object pass)
+      (leave object pass))))
 
 (defmethod render (object (pass shader-pass))
   (render object (shader-program-for-pass pass object)))
@@ -200,14 +211,14 @@
 
 (defmethod bind-textures ((pass shader-pass))
   ;; FIXME: I kinda hate this and we could definitely optimise the iteration away.
-  (loop with texture-index = 16
+  (loop with texture-index =  (gl:get-integer :max-texture-image-units)
         for slot in (c2mop:class-slots (class-of pass))
         when (flow:port-type slot)
         do (let ((port (flow::port-slot-value pass slot)))
              (typecase port
                (uniform-port
                 (when (texture port)
-                  (gl:active-texture (decf texture-name))
+                  (gl:active-texture (decf texture-index))
                   (gl:bind-texture :texture-2d (gl-name (texture port)))))
                (image-port
                 (when (texture port)
@@ -240,10 +251,7 @@
 
 (defgeneric construct-frame (pass))
 (defgeneric render-frame (pass frame))
-(defgeneric frame-priority-fun (pass))
-
-(defmethod frame-priority-fun ((pass per-object-pass))
-  (lambda (a b) NIL))
+(defgeneric sort-frame (pass frame))
 
 (defmethod camera ((pass shader-pass))
   (camera (scene +main+)))
@@ -251,18 +259,15 @@
 (defmethod scene ((pass shader-pass))
   (scene +main+))
 
-(defmethod enter ((container flare:container) (pass per-object-pass))
-  (for:for ((object over container))
-    (when (object-renderable-p object pass)
-      (enter object pass))))
+(defmethod sort-frame ((pass per-object-pass) frame)
+  frame)
 
-(defmethod leave ((container flare:container) (pass per-object-pass))
-  (for:for ((object over container))
-    (when (object-renderable-p object pass)
-      (leave object pass))))
+(defmethod shader-program-for-pass ((pass per-object-pass) object)
+  (gethash object (renderable-table pass)))
 
-(defmethod enter ((object renderable) (pass per-object-pass))
-  (when (object-renderable-p object pass)
+(defmethod enter (object (pass per-object-pass))
+  (when (or (object-renderable-p object pass)
+            (typep object 'shader-entity-class))
     (let ((renderable-table (renderable-table pass)))
       (unless (gethash object renderable-table)
         (let* ((program-table (program-table pass))
@@ -272,14 +277,13 @@
                (program (gethash target renderable-table)))
           (unless program
             (setf program (make-pass-shader-program pass target))
-            ;; TODO: alias program against identical programs
-            ;; FIXME: how to allocate??
-            (setf (gethash program program-table) (cons 0 NIL))
-            (setf (gethash target renderable-table) program))
+            (unless (gethash program program-table)
+              (setf (gethash program program-table) (cons 0 NIL))
+              (setf (gethash target renderable-table) program)))
           (incf (car (gethash program program-table)))
           (setf (gethash object renderable-table) program))))))
 
-(defmethod leave ((object renderable) (pass per-object-pass))
+(defmethod leave (object (pass per-object-pass))
   (let* ((renderable-table (renderable-table pass))
          (program (gethash object renderable-table)))
     (when program
@@ -294,6 +298,12 @@
                ;;        as it may still be there from the class references
                (remhash program (program-table pass))
                (stage program area))))
+
+(defmethod stage ((object shader-entity) (pass per-object-pass))
+  (stage (effective-shader-class object) pass))
+
+(defmethod stage ((object shader-entity-class) (pass per-object-pass))
+  (enter object pass))
 
 ;; FIXME: Maybe consider determining effective class for each
 ;;        individual shader stage as they might each change
@@ -313,7 +323,6 @@
                  (when prev
                    (v:info :trial.shader-pass "Refreshing shader program for ~a" class)
                    (let ((new (make-pass-shader-program pass class)))
-                     ;; FIXME: how to allocate??
                      (setf (buffers prev) (buffers new))
                      (setf (shaders prev) (shaders new))
                      (setf (cdr (gethash prev program-table)) NIL))))))
@@ -356,7 +365,7 @@
           (when program
             (store object program)))))
     (setf (fill-pointer frame) index)
-    (sort frame (frame-priority-fun pass) :key #'car)))
+    (sort-frame pass frame)))
 
 (defmethod render-frame ((pass per-object-pass) frame)
   (declare (type (and vector (not simple-vector)) frame))
@@ -386,10 +395,10 @@
       (setf (buffers prev) (buffers new))
       (setf (shaders prev) (shaders new)))))
 
-(defmethod register-object-for-pass ((pass single-shader-pass) o)
+(defmethod shader-program-for-pass ((pass single-shader-pass) o)
   (shader-program pass))
 
-(defmethod shader-program-for-pass ((pass single-shader-pass) o)
+(defmethod make-pass-shader-program ((pass single-shader-pass) o)
   (shader-program pass))
 
 (defmethod render ((pass single-shader-pass) (_ null))
@@ -405,6 +414,7 @@
 (defmethod stage :after ((pass post-effect-pass) (area staging-area))
   (stage (vertex-array pass) area))
 
+(defmethod object-renderable-p ((renderable renderable) (pass post-effect-pass)) NIL)
 (defmethod handle ((event event) (pass post-effect-pass)))
 
 (defmethod render ((pass post-effect-pass) (program shader-program))
