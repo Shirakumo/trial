@@ -220,6 +220,9 @@
    #:far-plane
    #:project-view
    #:setup-perspective
+   #:map-visible
+   #:in-view-p
+   #:do-visible
    #:2d-camera
    #:sidescroll-camera
    #:zoom
@@ -829,7 +832,9 @@
    #:prepare-pass-program
    #:scene-pass
    #:per-object-pass
-   #:assets
+   #:construct-frame
+   #:render-frame
+   #:sort-frame
    #:single-shader-pass
    #:single-shader-scene-pass
    #:shader-program
