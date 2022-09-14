@@ -135,13 +135,29 @@
   (dolist (port (flow:ports pass))
     (check-consistent port)))
 
+(defmethod compute-shader (type pass object)
+  ())
+
+(defmethod compute-shader (type (pass shader-pass) object)
+  (append (call-next-method)
+          (enlist (effective-shader type pass))))
+
+(defmethod compute-shader (type pass (object shader-entity))
+  (append (call-next-method)
+          (enlist (effective-shader type object))))
+
+(defmethod compute-shader (type pass (object shader-entity-class))
+  (append (call-next-method)
+          (enlist (effective-shader type object))))
+
 (defmethod make-pass-shader-program ((pass shader-pass) object)
   (let ((shaders ())
         (buffers ()))
     (loop for type in *shader-type-list*
           for inputs = (compute-shader type pass object)
-          for shader = (make-instance 'shader :source inputs :type type)
-          do (when inputs (push shader shaders)))
+          do (when inputs
+               (let ((input (glsl-toolkit:merge-shader-sources inputs :min-version (glsl-target-version *context*))))
+                 (push (make-instance 'shader :source input :type type) shaders))))
     (loop for resource-spec in (effective-buffers object)
           do (push (apply #'// resource-spec) buffers))
     (loop for resource-spec in (effective-buffers pass)
@@ -172,6 +188,7 @@
      ,@options))
 
 (defmethod prepare-pass-program ((pass shader-pass) program)
+  (activate program)
   (loop with units = (gl:get-integer :max-texture-image-units)
         for slot in (c2mop:class-slots (class-of pass))
         when (flow:port-type slot)
@@ -199,7 +216,6 @@
 
 (defmethod prepare-pass-program :around ((pass shader-pass) (program shader-program))
   (unless (eq +current-shader-program+ program)
-    (setf +current-shader-program+ program)
     (call-next-method)))
 
 (defmethod blit-to-screen ((pass shader-pass))
@@ -237,11 +253,13 @@
 
 (defmethod enter ((container flare:container) (pass per-object-pass))
   (for:for ((object over container))
-    (enter object pass)))
+    (when (object-renderable-p object pass)
+      (enter object pass))))
 
 (defmethod leave ((container flare:container) (pass per-object-pass))
   (for:for ((object over container))
-    (leave object pass)))
+    (when (object-renderable-p object pass)
+      (leave object pass))))
 
 (defmethod enter ((object renderable) (pass per-object-pass))
   (when (object-renderable-p object pass)
@@ -270,7 +288,7 @@
 
 (defmethod stage ((pass per-object-pass) (area staging-area))
   (call-next-method)
-  (loop for program being the hash-keys of (program-table pass) using (hash-value count)
+  (loop for program being the hash-keys of (program-table pass) using (hash-value (count . cached))
         do (if (<= count 0)
                ;; FIXME: remove the program from the renderable-table as well
                ;;        as it may still be there from the class references
@@ -314,7 +332,7 @@
 (defmethod prepare-pass-program ((pass per-object-pass) program)
   (let ((entry (gethash program (program-table pass))))
     (cond ((cdr entry)
-           (gl:use-program program))
+           (activate program))
           (T
            (call-next-method)
            (setf (cdr entry) T)))))

@@ -11,9 +11,8 @@
 
 (defmethod setup-scene :after (main (scene scene))
   (pack-pipeline scene (context main))
-  (for:for ((object over scene))
-    (loop for pass across (passes scene)
-          do (enter object pass))))
+  (loop for pass across (passes scene)
+        do (enter scene pass)))
 
 (defmethod stage :after ((scene pipelined-scene) (area staging-area))
   (loop for texture across (textures scene)
