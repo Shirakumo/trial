@@ -331,9 +331,9 @@
   (let ((function (etypecase function
                     (symbol (fdefinition function))
                     (function function)))
-        (tentative (make-array 64))
+        (tentative (make-array 128))
         (i 0))
-    (declare (type (integer 0 64) i))
+    (declare (type (integer 0 128) i))
     (declare (dynamic-extent tentative))
     (flet ((add (node)
              (setf (svref tentative i) node)
