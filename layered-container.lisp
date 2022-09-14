@@ -24,10 +24,10 @@
   (length (objects container)))
 
 (defmethod enter (thing (container layered-container))
-  (flare-indexed-set:set-add thing (aref (objects container) (layer-index thing))))
+  (flare-indexed-set:set-add thing (aref (objects container) (max 0 (layer-index thing)))))
 
 (defmethod leave (thing (container layered-container))
-  (flare-indexed-set:set-remove thing (aref (objects container) (layer-index thing))))
+  (flare-indexed-set:set-remove thing (aref (objects container) (max 0 (layer-index thing)))))
 
 (defmethod for:step-functions ((iterator layered-container))
   (let* ((layers (objects iterator))

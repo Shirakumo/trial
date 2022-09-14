@@ -262,6 +262,17 @@
 (defmethod sort-frame ((pass per-object-pass) frame)
   frame)
 
+(defmethod map-visible (function (camera camera) (pass per-object-pass))
+  (loop for object being the hash-keys of (renderable-table pass) using (hash-value program)
+        do (when (and (not (typep object 'class))
+                      (in-view-p object camera))
+             (funcall function object))))
+
+(defmethod map-visible (function (camera null) (pass per-object-pass))
+  (loop for object being the hash-keys of (renderable-table pass) using (hash-value program)
+        do (when (not (typep object 'class))
+             (funcall function object))))
+
 (defmethod shader-program-for-pass ((pass per-object-pass) object)
   (gethash object (renderable-table pass)))
 
