@@ -1,0 +1,32 @@
+# Event Loop System
+Trial offers an event loop system that makes the following guarantees:
+
+- Any number of threads can write to the loop simultaneously
+- Any number of events can be written without dropping
+- The order of events as written by one thread is preserved when reading them back
+- Reads can be re-entrant, meaning even while iterating over the loop, the loop can be processed again without duplicating events
+- Listeners can be added or removed from any thread, at any time
+
+With the following constraints:
+
+- Only a single thread may read from the queue at a time
+- There are no guarantees about the order of events between multiple threads
+- The order in which listeners are called is not preserved nor guaranteed to stay consistent
+
+## 1. Basics
+An event loop must be a subclass of ``event-loop``. Events can //technically// be any kind of object, but //should// be instances of ``event``. In order to issue those events onto a loop, simply use ``issue``. In order to process events in a loop, use ``process``. You can also discard future events with ``discard-events``.
+
+The ``main`` class by default will use its ``update`` method to ``process`` events in the ``scene``.
+
+When events are ``process``ed, ``handle`` is called for each event on the loop. By default this will then simply call ``handle`` for each listener on the loop. Listeners can be added with ``add-listener`` and removed with ``remove-listener``. A listener should be either a function to be called with events, or an object that has a ``handle`` method specialised.
+
+The marker class ``listener`` can be used as a mixin, causing any instances of it to be added to the event loop automatically when the instance is registered in the ``scene``.
+
+``event`` objects //must not// be retained outside of the call to ``handle``, meaning they should effectively be considered to have dynamic-extent. This is to ensure that they can be recycled if needed, such as with event pools as shown in §2.
+
+## 2. Defining Events
+Events can be defined with ``define-event``, which presents a ``defstruct``-like interface to create new event classes. A slot without a default value will be a required argument, causing an error on initialization if not passed.
+
+Event instances can be explicitly created using ``make-event``, but usually you can instead directly use ``issue``, which creates the event as needed.
+
+It can also be desired to pool the events, in order to avoid allocation of the event instances at runtime. To do so simply use ``define-event-pool`` with the class name and pool size. Please be aware that the system //cannot// notice if you ever schedule more events than there are in the pool before they're processed. Doing so will lead to a prior event being overwritten and used twice. It is your responsibility to ensure the pool is appropriately sized, so use with care and only as an optimisation step.
