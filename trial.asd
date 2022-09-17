@@ -67,6 +67,7 @@
                (:file "pipelined-scene" :depends-on ("package" "pipeline" "scene" "loader"))
                (:file "power" :depends-on ("package"))
                (:file "prompt" :depends-on ("package"))
+               (:file "queue" :depends-on ("package"))
                (:file "rails" :depends-on ("package" "entity" "helpers"))
                (:file "render-loop" :depends-on ("package" "toolkit"))
                (:file "render-texture" :depends-on ("package" "pipeline" "entity"))
@@ -112,6 +113,7 @@
                              (:file "vertex-format"))))
   :defsystem-depends-on (:trivial-features)
   :depends-on (:alexandria
+               :atomics
                :3d-vectors
                :3d-matrices
                :verbose
