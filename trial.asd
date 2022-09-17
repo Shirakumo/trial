@@ -42,7 +42,7 @@
                (:file "effects" :depends-on ("package" "shader-pass"))
                (:file "entity" :depends-on ("package"))
                (:file "error-handling" :depends-on ("package" "toolkit"))
-               (:file "event-loop" :depends-on ("package" "entity" "queue"))
+               (:file "event-loop" :depends-on ("package" "entity" "queue" "toolkit"))
                (:file "features" :depends-on ("package"))
                (:file "flare" :depends-on ("package" "transforms"))
                (:file "fps" :depends-on ("package" ("assets" "image") ("assets" "mesh") "loader"))
