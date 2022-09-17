@@ -112,6 +112,7 @@
                  (setf elements (queue-elements queue)))))
     queue))
 
+#++
 (defun %queue-test-writers (&key (threads 10) (writes 100))
   (let ((queue (make-queue))
         (handles ())
@@ -138,6 +139,7 @@
           (dotimes (i writes)
             (assert (find i entries))))))))
 
+#++
 (defun %queue-test-writers-reader (&key (threads 10) (writes 100))
   (let ((queue (make-queue))
         (handles ())
