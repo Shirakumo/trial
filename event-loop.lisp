@@ -106,9 +106,14 @@
 
 (defun discard-events (loop &optional (type T))
   (let ((queue (queue loop)))
-    (loop for i from 0 below (length queue)
-          do (when (typep (aref queue i) type)
-               (setf (aref queue i) NIL)))))
+    (let ((elements (queue-elements queue))
+          (read (queue-read-index queue))
+          (write (queue-write-index queue)))
+      (loop for i = read then (1+ i)
+            while (< i write)
+            do (when (typep (aref elements i) type)
+                 (setf (aref elements i) NIL)))
+      queue)))
 
 (defmethod handle ((event event) (loop event-loop))
   (with-simple-restart (skip-event "Skip handling the event entirely.")
