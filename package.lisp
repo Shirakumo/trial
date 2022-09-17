@@ -409,15 +409,20 @@
    #:add-listener
    #:remove-listener
    #:handle
+   #:make-event
    #:event-loop
    #:issue
    #:process
    #:discard-events
    #:define-handler
+   #:define-event
+   #:define-event-pool
    #:tick
    #:tt
    #:dt
-   #:fc)
+   #:fc
+   #:class-changed
+   #:changed-class)
   ;; features.lisp
   (:export
    #:*debug-features*

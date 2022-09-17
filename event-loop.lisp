@@ -6,11 +6,17 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(define-global +event-pools+ (make-hash-table :test 'eq))
+
 (defclass event ()
   ())
 
 (defclass listener ()
   ())
+
+(defstruct (event-pool (:constructor %make-event-pool (instances)))
+  (instances NIL :type simple-vector)
+  (index 0 :type (unsigned-byte 32)))
 
 (defgeneric add-listener (listener event-loop))
 (defgeneric remove-listener (listener event-loop))
@@ -30,6 +36,36 @@
 ;; Default to doing nothing.
 (defmethod handle ((event event) (listener listener)))
 
+(defun make-event-pool (class count)
+  (let ((array (make-array count)))
+    (dotimes (i count (%make-event-pool array))
+      (setf (aref array i) (allocate-instance (ensure-class class))))))
+
+(defun make-event (class &rest initargs)
+  (let ((pool (gethash class +event-pools+)))
+    (if pool
+        (loop
+         (let* ((index (event-pool-index pool))
+                (instances (event-pool-instances pool)))
+           (when (atomics:cas (event-pool-index pool) index (mod (1+ index) (length instances)))
+             (return (apply #'initialize-instance (aref instances index) initargs)))))
+        (apply #'make-instance class initargs))))
+
+(define-compiler-macro make-event (&environment env class &rest initargs)
+  (let ((pool (gensym "POOL"))
+        (index (gensym "INDEX"))
+        (instances (gensym "INSTANCES")))
+    `(let ((,pool ,(if (constantp class env)
+                       `(load-time-value (gethash ,class +event-pools+))
+                       `(gethash ,class +event-pools+))))
+       (if ,pool
+           (loop
+            (let* ((,index (event-pool-index ,pool))
+                   (,instances (event-pool-instances ,pool)))
+              (when (atomics:cas (event-pool-index ,pool) ,index (mod (1+ ,index) (length ,instances)))
+                (return (initialize-instance (aref ,instances ,index) ,@initargs)))))
+           (make-instance ,class ,@initargs)))))
+
 (defclass event-loop ()
   ((queue :initform (make-queue) :reader queue)
    (listeners :initform (make-hash-table :test 'eq) :accessor listeners)
@@ -39,7 +75,7 @@
   (let ((event (etypecase event-type
                  (event event-type)
                  ((or class symbol)
-                  (apply #'make-instance event-type args)))))
+                  (apply #'make-event event-type args)))))
     (queue-push event (queue loop))))
 
 (define-compiler-macro issue (&environment env loop event-type &rest args)
@@ -47,14 +83,14 @@
               (listp event-type)
               (eql (first event-type) 'quote)
               (symbolp (second event-type)))
-         `(queue-push (make-instance ,event-type ,@args) (queue ,loop)))
+         `(queue-push (make-event ,event-type ,@args) (queue ,loop)))
         (T
          (let ((eventg (gensym "EVENT")))
            `(let* ((,eventg ,event-type)
                    (,eventg (etypecase ,eventg
                               (event ,eventg)
                               ((or class symbol)
-                               (make-instance ,eventg ,@args)))))
+                               (make-event ,eventg ,@args)))))
               (queue-push ,eventg (queue ,loop)))))))
 
 (defmethod process ((loop event-loop))
@@ -121,10 +157,16 @@
                      collect `(,var (slot-value ,variable ',name)))
            ,@body)))))
 
-(defclass tick (event)
-  ((tt :initarg :tt :accessor tt)
-   (dt :initarg :dt :accessor dt)
-   (fc :initarg :fc :accessor fc)))
+(defmacro define-event (name superclasses &body slots)
+  (unless (find 'event superclasses)
+    (setf superclasses (append superclasses '(event))))
+  `(defclass ,name ,superclasses
+     ,(loop for slot in slots
+            collect (destructuring-bind (name &optional (default NIL default-p) &key (reader name)) (enlist slot)
+                      `(,name :initarg ,(kw name) :initform ,(if default-p default `(error "~a required." ',name)) :reader ,reader)))))
 
-(defclass class-changed (event)
-  ((changed-class :initarg :changed-class :accessor changed-class)))
+(defmacro define-event-pool (class count)
+  `(setf (gethash ',class +event-pools+) (make-event-pool ',class ,count)))
+
+(define-event tick () tt dt fc)
+(define-event class-changed () changed-class)
