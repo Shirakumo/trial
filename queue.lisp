@@ -17,43 +17,35 @@
   (write-index 0 :type (unsigned-byte 32))
   (allocation-index 0 :type (unsigned-byte 32))
   (read-index 0 :type (unsigned-byte 32))
-  (reallocating 0 :type (unsigned-byte 8)))
+  (reallocating 1024 :type (or (unsigned-byte 32) simple-vector)))
 
 (defun queue-push (element queue)
-  (declare (optimize speed (safety 1)))
-  (loop
-   (let ((write (queue-allocation-index queue)))
-     ;; First: allocate the space in the elements vector
-     (loop until (atomics:cas (queue-allocation-index queue) write (1+ write))
-           do (setf write (queue-allocation-index queue)))
-     ;; Second: check if we actually have space in the array
-     (let ((elements (queue-elements queue)))
-       (loop while (<= (length elements) write)
-             do (cond ((atomics:cas (queue-reallocating queue) 0 1)
-                       ;; Ok, we got reallocate bit. Now check if someone else already reallocated for us
-                       (setf elements (queue-elements queue))
-                       (when (<= (length elements) write)
-                         ;; Ok, array still too small, do the resize
-                         (let ((new (make-array (* 2 (length elements)) :initial-element NIL)))
-                           (assert (atomics:cas (queue-elements queue) elements new))
-                           (replace new elements)
-                           (setf elements new)))
-                       ;; Now release the allocation bit
-                       (setf (queue-reallocating queue) 0))
-                      (T
-                       ;; We didn't get the bit, so someone else is resizing. Just wait
-                       (setf elements (queue-elements queue)))))
-       ;; Third: loop until we successfully set the element without the array changing underneath us.
-       (loop (setf (aref elements write) element)
-             (cond ((and (= write (queue-write-index queue))
-                         (atomics:cas (queue-write-index queue) write (1+ write)))
-                    ;; All good, return
-                    (return-from queue-push queue))
-                   ((< (queue-allocation-index queue) write)
-                    ;; Our allocation index slipped, retry from the beginning
-                    (return))
-                   (T
-                    (setf elements (queue-elements queue)))))))))
+  (declare (optimize debug))
+  (let ((write (queue-allocation-index queue)))
+    ;; First: allocate the space in the elements vector
+    (loop until (atomics:cas (queue-allocation-index queue) write (1+ write))
+          do (setf write (queue-allocation-index queue)))
+    ;; Second: check if we actually have space in the vector
+    (let ((elements (queue-elements queue)))
+      (when (<= (length elements) write)
+        (let ((new (make-array (* 2 (length elements)) :initial-element NIL)))
+          (cond ((atomics:cas (queue-reallocating queue) (length elements) new)
+                 ;; Copy over elements that have been committed so far
+                 (replace new elements :end2 (1- (queue-write-index queue)))
+                 (setf elements new)
+                 (setf (queue-elements queue) new)
+                 (setf (queue-reallocating queue) (length elements)))
+                (T
+                 ;; Someone else got it, write into the new array instead.
+                 (setf elements (queue-reallocating queue))
+                 (unless (vectorp elements)
+                   (setf elements (queue-elements queue)))))))
+      ;; Third: we now have a vector we can actually write to, so do that.
+      (setf (aref elements write) element)
+      ;; Fourth: now wait until we're done reallocating
+      (loop while (vectorp (queue-reallocating queue)))
+      ;; Fifth: now we can actually "commit" the write
+      (loop until (atomics:cas (queue-write-index queue) write (1+ write))))))
 
 (defun queue-discard (queue)
   (let ((elements (queue-elements queue))
@@ -71,7 +63,7 @@
     queue))
 
 (defun map-queue (function queue)
-  (declare (optimize speed (safety 1)))
+  (declare (optimize debug))
   (let ((elements (queue-elements queue))
         (read (queue-read-index queue))
         (write (queue-write-index queue))
@@ -81,7 +73,8 @@
     (loop (cond ((<= write read)
                  ;; We reached beyond the write head. Try to reset the allocation head
                  ;; and exit processing
-                 (cond ((atomics:cas (queue-allocation-index queue) write 0)
+                 (cond ((or (< (queue-allocation-index queue) write)
+                            (atomics:cas (queue-allocation-index queue) write 0))
                         (cond ((atomics:cas (queue-write-index queue) write 0)
                                (setf (queue-read-index queue) 0)
                                (return))
@@ -97,22 +90,19 @@
                    (cond ((null element)
                           ;; The current element has been discarded, skip it
                           (incf read))
-                         ((atomics:cas (queue-read-index queue) read (1+ read))
+                         (T
+                          (setf (queue-read-index queue) (1+ read))
                           ;; We got a proper element, increase the read index and null the element
                           (setf (aref elements read) NIL)
                           ;; Call the function with the element
                           (funcall function element)
                           ;; Reset the read index as we might have processed more within the function
                           (setf read (queue-read-index queue))
-                          (when (= 0 read) (return)))
-                         (T
-                          (setf read (queue-read-index queue))
                           (when (= 0 read) (return))))))
                 (T
                  (setf elements (queue-elements queue)))))
     queue))
 
-#++
 (defun %queue-test-writers (&key (threads 10) (writes 100))
   (let ((queue (make-queue))
         (handles ())
@@ -126,9 +116,11 @@
                                         (dotimes (i writes)
                                           (queue-push (cons tid i) queue))))
                      handles)))
-           (setf start T))
+           (setf start T)
+           (dolist (handle handles)
+             (bt:join-thread handle)))
       (dolist (handle handles)
-        (bt:join-thread handle)))
+        (ignore-errors (bt:destroy-thread handle))))
     (let ((found (make-hash-table :test 'eql)))
       (map-queue (lambda (el)
                    (destructuring-bind (tid . i) el
