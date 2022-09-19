@@ -304,11 +304,12 @@
 (defmethod stage ((pass per-object-pass) (area staging-area))
   (call-next-method)
   (loop for program being the hash-keys of (program-table pass) using (hash-value (count . cached))
-        do (if (<= count 0)
-               ;; FIXME: remove the program from the renderable-table as well
-               ;;        as it may still be there from the class references
-               (remhash program (program-table pass))
-               (stage program area))))
+        do (cond ((<= count 0)
+                  (remhash program (program-table pass))
+                  (loop for other being the hash-values of (renderable-table pass) using (hash-key key)
+                        do (when (eq other program) (remhash key (renderable-table pass)))))
+                 (T
+                  (stage program area)))))
 
 (defmethod stage ((object shader-entity) (pass per-object-pass))
   (stage (effective-shader-class object) pass))
