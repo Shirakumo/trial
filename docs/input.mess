@@ -1,0 +1,73 @@
+# Input and Mapping System
+In Trial getting inputs from the user is divided up into three parts: raw input events, actions, and mappings.
+
+## Raw Inputs
+Raw device inputs are delivered via the "event system"(link event-loop.mess). Each class of device has its own events derived from ``input-event``:
+
+- ``keyboard-event``
+  - ``key-event`` (``key``, ``repeat-p``, ``modifiers``)
+    - ``key-press``
+    - ``key-release``
+  - ``text-entered`` (``text``)
+- ``mouse-event`` (``pos``)
+  - ``mouse-button-event`` (``button``)
+    - ``mouse-press``
+    - ``mouse-release``
+  - ``mouse-move`` (``old-pos``)
+- ``gamepad-event`` (``device``)
+  - ``gamepad-button-event`` (``button``)
+    - ``gamepad-press``
+    - ``gamepad-release``
+  - ``gamepad-move`` (``axis``, ``pos``, ``old-pos``)
+  - ``gamepad-added``
+  - ``gamepad-removed``
+
+Trial's systems allow distinguishing between multiple gamepads, but //not// between multiple keyboards or mice.
+
+You should almost never have to directly interface with these events, as they are not user-configurable. Instead, you should use the input mapping system.
+
+Input events are provided by the rendering backend and cl-gamepad, and should automatically appear in the ``scene`` of your ``main``.
+
+## Actions
+``action``s are abstract events that correspond to in-game actions. Actions are typically mapped from existing events, and you can look at the origin with ``source-event``. New actions are defined with ``define-action``. The superclass list is used to attach the event to one or more ``action-set``s.
+
+``action-set``s are ways to group actions together under a set that allows you to activate and deactivate all actions at once. This way you can have a separate sets of actions for menu navigation, for in-game, etc. Accessing whether a set is active or not imply happens with ``active-p``.
+
+Most actions will represent some kind of event request, such as "jump", "interact", "select next", "confirm", etc. For some games however it can also make more sense to have actions that carry a value, such as "gas" or "camera tilt". For the latter, the superclasses ``analog-action``, ``directional-action``, and ``spatial-action`` are useful.
+
+## Mappings
+Actions by themselves allow you to define player input with a layer of abstraction, but they won't be useful unless actions can be fired by user inputs. This is where the mapping layer comes into play.
+
+Event mappings are executed through ``map-event``, which is handled by the ``controller`` when it is present in the scene. If you do not have a controller present, you should call ``map-event`` yourself somehow.
+
+Defining how events are mapped is, in the most generic way, done via ``define-mapping-function``. The function it defines is invoked for each event, and can then just issue other events back onto the loop. Typically though this is //too// generic and open-ended, and also doesn't allow players to customise how the mapping works.
+
+Instead, a ``keymap.lisp`` file should be defined, which describes the mappings. This file will contain all the default mappings present, and Trial will emit a new file of the same structure when the user changes the mappings. Trial will also take care of keeping track of the action's state: whether it is currently being ``retained`` or not. Often it is much more useful to be able to ask what the action's retained state is. For digital actions this means whether it's "active" or not. For others it's what the last value, position, or location was.
+
+The file describing action mappings is in s-expression format and contains definitions like this:
+
+::
+(trigger jump
+  (key :one-of (:space))
+  (button :one-of (:b :a)))
+::
+
+Meaning: when the ``:space`` key is pressed, or when the ``:b`` or ``:a`` button on a gamepad is pressed, fire a ``jump`` action.
+
+The possible mapping types are ``trigger`` for digital maps, and ``bind`` for analogue or directional maps.
+
+The possible binding sources are ``key`` for keyboard keys, ``button`` for gamepad buttons, ``axis`` for gamepad axes, and ``mouse`` for mouse buttons. Each of the bindings also accepts the following parameters:
+
+- ``:one-of`` the qualifiers to look out for, typically the names of the buttons
+- ``:threshold`` the value at which the input becomes "active". Defaults to 0.5, but only used for ``axis`` mappings.
+- ``:toggle`` if NIL (default) then the action is retained while the input is "active". Otherwise the action stays retained until the input becomes "inactive" and then "active" again. Only used for ``trigger`` mappings.
+- ``:value`` what value should be used for the action when the input is "active". Only used for ``bind`` mappings on non-``axis`` bindings.
+
+Querying and interacting with the mappings can of course also be done programmatically outside of the ``keymap.lisp`` source file. On the most basic, one can ``load-mapping`` and ``save-mapping`` to interact with the file. Finding mappings that spawn an action can be done via ``find-action-mappings``. It can also be useful to capture an input event and turn that into on ``action-mapping`` or vice-versa. To do so, simply use ``event-to-action-mapping``, or the inverse, ``event-from-action-mapping``.
+
+## Miscellaneous
+Sometimes, particularly when switching action sets, it can be useful to reset or clear retentions. ``clear-retained`` will reset all retention information. ``reset-retained`` will attempt to "back fill" retention information based on current device state.
+
+It can also be useful to inhibit mapping of any key events, such as when the user is typing into a text field, as then key presses could instead lead to unintended actions being taken. To control the mapping simply set ``+map-key-events+``.
+
+Finally, default retentions for all mouse buttons and keyboard keys are kept. The retention is simply named after the key or button. These retentions can be useful for debugging purposes.
