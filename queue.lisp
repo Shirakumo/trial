@@ -31,7 +31,7 @@
     (%make-queue elements elements)))
 
 (defun queue-push (element queue)
-  (declare (optimize debug))
+  (declare (optimize speed (safety 1)))
   (let ((write (queue-allocation-index queue)))
     ;; 1. allocate the space in the elements vector
     (loop until (atomics:cas (queue-allocation-index queue) write (1+ write))
@@ -60,6 +60,7 @@
       (loop until (atomics:cas (queue-write-index queue) write (1+ write))))))
 
 (defun queue-discard (queue)
+  (declare (optimize speed (safety 1)))
   (let ((elements (queue-elements queue))
         (read (queue-read-index queue))
         (write (queue-write-index queue)))
@@ -75,7 +76,7 @@
     queue))
 
 (defun map-queue (function queue)
-  (declare (optimize debug))
+  (declare (optimize speed (safety 1)))
   (let ((elements (queue-elements queue))
         (read (queue-read-index queue))
         (write (queue-write-index queue))
