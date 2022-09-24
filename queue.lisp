@@ -12,39 +12,51 @@
 ;;       the thread not be suspended at any time.
 
 (defstruct (queue
-            (:constructor make-queue ()))
-  (elements (make-array 1024 :initial-element :tentative) :type simple-vector)
+            (:constructor %make-queue (elements reallocating)))
+  (elements NIL :type simple-vector)
   (write-index 0 :type (unsigned-byte 32))
   (allocation-index 0 :type (unsigned-byte 32))
   (read-index 0 :type (unsigned-byte 32))
-  (reallocating 1024 :type (or (unsigned-byte 32) simple-vector)))
+  (reallocating NIL :type simple-vector))
+
+(defmethod print-object ((queue queue) stream)
+  (print-unreadable-object (queue stream :type T :identity T)
+    (format stream "READ-INDEX: ~d WRITE-INDEX: ~d CAPACITY: ~d"
+            (queue-read-index queue)
+            (queue-write-index queue)
+            (length (queue-elements queue)))))
+
+(defun make-queue (&optional (initial-size 1024))
+  (let ((elements (make-array initial-size :initial-element NIL)))
+    (%make-queue elements elements)))
 
 (defun queue-push (element queue)
   (declare (optimize debug))
   (let ((write (queue-allocation-index queue)))
-    ;; First: allocate the space in the elements vector
+    ;; 1. allocate the space in the elements vector
     (loop until (atomics:cas (queue-allocation-index queue) write (1+ write))
           do (setf write (queue-allocation-index queue)))
-    ;; Second: check if we actually have space in the vector
+    ;; 2. check if we actually have space in the vector
     (let ((elements (queue-elements queue)))
       (when (<= (length elements) write)
+        ;; 2.1 allocate a new vector and try to claim it in the back buffer
         (let ((new (make-array (* 2 (length elements)) :initial-element NIL)))
-          (cond ((atomics:cas (queue-reallocating queue) (length elements) new)
-                 ;; Copy over elements that have been committed so far
-                 (replace new elements :end2 (1- (queue-write-index queue)))
-                 (setf elements new)
-                 (setf (queue-elements queue) new)
-                 (setf (queue-reallocating queue) (length elements)))
-                (T
-                 ;; Someone else got it, write into the new array instead.
-                 (setf elements (queue-reallocating queue))
-                 (unless (vectorp elements)
-                   (setf elements (queue-elements queue)))))))
-      ;; Third: we now have a vector we can actually write to, so do that.
-      (setf (aref elements write) element)
-      ;; Fourth: now wait until we're done reallocating
-      (loop while (vectorp (queue-reallocating queue)))
-      ;; Fifth: now we can actually "commit" the write
+          (when (atomics:cas (queue-reallocating queue) elements new)
+            ;; 2.2 keep copying over until the old buffer is full
+            (loop for start = 0 then index
+                  for index = (queue-write-index queue)
+                  do (replace new elements :start2 start :end2 index)
+                  until (= (length elements) index))
+            ;; 2.3 publish the new queue vector
+            (setf (queue-elements queue) new))
+          (setf elements (queue-reallocating queue))))
+      ;; 3. fill the element until it's actually public
+      (loop
+       (setf (aref elements write) element)
+       (if (eq elements (queue-elements queue))
+           (return)
+           (setf elements (queue-reallocating queue))))
+      ;; 4. commit the write by bumping the index
       (loop until (atomics:cas (queue-write-index queue) write (1+ write))))))
 
 (defun queue-discard (queue)
@@ -122,16 +134,14 @@
       (dolist (handle handles)
         (ignore-errors (bt:destroy-thread handle))))
     (let ((found (make-hash-table :test 'eql)))
-      (map-queue (lambda (el)
-                   (destructuring-bind (tid . i) el
-                     (push i (gethash tid found))))
-                 queue)
+      (loop for (tid . i) across (queue-elements queue)
+            do (when tid (push i (gethash tid found))))
+      (format T "~&Checking ~a~%" queue)
       (dotimes (tid threads)
         (let ((entries (gethash tid found)))
           (dotimes (i writes)
             (assert (find i entries))))))))
 
-#++
 (defun %queue-test-writers-reader (&key (threads 10) (writes 100))
   (let ((queue (make-queue))
         (handles ())
@@ -146,9 +156,18 @@
                                           (queue-push (cons tid i) queue))))
                      handles)))
            (setf start T)
-           (let ((found (make-array (* threads writes) :fill-pointer 0)))
-             (loop (map-queue (lambda (el) (vector-push el found)) queue)
-                   (when (= (length found) (* threads writes))
-                     (return)))))
+           (let ((found (make-hash-table :test 'eql)))
+             (loop (map-queue (lambda (el)
+                                (destructuring-bind (tid . i) el
+                                  (when tid (push i (gethash tid found)))))
+                              queue)
+                   (when (loop for thread in handles never (bt:thread-alive-p thread))
+                     (return)))
+             (format T "~&Checking ~a~%" queue)
+             (format T "~&Size overhead ~d" (- (length (queue-elements queue)) (* threads writes)))
+             (dotimes (tid threads)
+               (let ((entries (gethash tid found)))
+                 (dotimes (i writes)
+                   (assert (find i entries)))))))
       (dolist (handle handles)
         (bt:join-thread handle)))))
