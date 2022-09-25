@@ -70,8 +70,7 @@
     ;; We may also "miss out" on elements that are written to the queue concurrently,
     ;; but that shouldn't be a problem, as we only guarantee to clear out elements
     ;; set prior to the call of QUEUE-DISCARD.
-    (loop for i = read then (1+ i)
-          while (< i write)
+    (loop for i from read below write
           do (setf (aref elements i) NIL))
     queue))
 

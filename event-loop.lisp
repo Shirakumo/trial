@@ -109,8 +109,7 @@
     (let ((elements (queue-elements queue))
           (read (queue-read-index queue))
           (write (queue-write-index queue)))
-      (loop for i = read then (1+ i)
-            while (< i write)
+      (loop for i from read below write
             do (when (typep (aref elements i) type)
                  (setf (aref elements i) NIL)))
       queue)))
