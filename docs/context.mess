@@ -1,1 +1,76 @@
 # Render Contexts
+Trial is "backend agnostic" in that it can work with several underlying libraries to handle the OpenGL context and window management. The standard and most well-tested backend is the GLFW integration through trial-glfw.
+
+Typically, management of the context is handled by ``main`` and the associated ``launch``. For highest convenience, you'll probably just want to create your own wrapper around ``launch`` that passes the appropriate arguments for context construction via the ``:context`` initarg.
+
+## Context Objects
+The context combines both a window and an OpenGL context, treating them as the same. It is expected that games do not utilise multiple windows, instead using virtual windows within the main game window if required.
+
+There may be multiple context instances in flight at once, in order to allow asynchronous upload of resources such as textures through shared contexts in background threads. However, there can only be one primary context in flight at a time, and only one context of any kind can be current to any one thread at a time.
+
+In order to issue OpenGL commands, an appropriate context must be current on the thread. Many commands are only available on the primary context. Typically you will only need one context, and with the ``render-loop`` class, all the drawing will be contained on one thread anyway.
+
+The base context object has a rather wide API to interact with. The context itself has a ``handler`` to which it sends events whenever input or other changes come along. Typically the handler will be a ``main`` instance, which then sends the events along to the scene for delivery. See the "event-loop"(link event-loop.mess).
+
+### Context Interaction
+
+- ``*context*`` Accesses the current context
+- ``make-context`` Create a new context instance. Should be used to construct shared contexts
+- ``launch-with-context`` Should be called to launch ``main`` with a valid primary context instance
+- ``destroy-context`` Destroy the context and make it unusable. Frees all GL resources
+- ``valid-p`` Whether the context is still valid and thus usable at all
+- ``make-current`` To make the context current in this thread. Post this, GL commands may be used. Beware of stealing the context from another thread, use ``with-context`` for safe management
+- ``done-current`` To free the context up from this thread. Post this, no GL commands may be used
+- ``current-p`` Whether the context is current in this thread
+- ``with-context`` Invoke body with the context bound locally. Ensures proper context sharing
+- ``profile`` What profile is used. Should be one of: ``:core :compatibility :es NIL``
+- ``version`` The major and minor version of OpenGL as a list of two elements
+
+### Window Interaction
+Note that these functions may be no-ops on some backends where the concept of a "window" does not apply.
+
+- ``hide`` Hides the window
+- ``show`` Makes the window visible, changes its fullscreen behaviour, and video mode
+- ``visible-p`` Whether the window is currently visible or not
+- ``resize`` Resize the window. Typically you want to use ``show`` with a video mode instead
+- ``quit`` Closes the window and shuts things down
+- ``show-cursor`` Ensure the OS cursor can be seen
+- ``hide-cursor`` Hides the OS cursor turning it invisible
+- ``lock-cursor`` Locks the OS cursor within the window preventing it from escaping. Use with care to prevent over-eager cursor capture
+- ``unlock-cursor`` Unlock the OS cursor allowing it to escape the window
+- ``cursor-position`` Return the current cursor position within the window
+- ``title`` Access the title shown on the window
+- ``vsync`` Access whether vertical screen synchronisation is in effect
+- ``width`` Return the window's current width in pixels
+- ``height`` Return the window's current height in pixels
+
+### System Interaction
+Some interactions with the rest of the operating system are also provided:
+
+- ``clipboard`` Access the clipboard contents. A context must, in the very least, support strings, but may also support arbitrary octet vector content
+- ``local-key-string`` Return the name of the key in the current layout for the given scan-code. Meaning if the user has, say, a Dvorak layout, the scan-code ``:t`` will yield ``"y"``. You should use this function whenever you intend to display a key prompt to the user.
+
+### Video Modes and Monitors
+One important part is the handling of "video modes" or screen resolution and refresh rate. Trial defines a video mode "structure" as a list composed out of: ``(width height [refresh-rate [display-descriptor-string]])``.
+
+A user may have multiple monitors connected, and the available list of video modes for each may be different. To list the available monitors, use ``list-monitors``, and the current monitor the window is on can be retrieved with ``current-monitor``.
+
+The monitor structure is backend-dependent, but must support getting its string ``name``. To get the monitor back from its name, use ``find-monitor``. If the monitor has since been removed or is not present, it may not be returned even with a valid name.
+
+To get the video modes available, use ``list-video-modes``. To activate one, pass the mode to ``show``. If the mode came from a monitor listing, it will include the monitor's name, ensuring that the window will be shown on the correct monitor.
+
+### Events
+Aside from the keyboard and mouse "input events"(link input.mess), the context is also responsible for sending the following events:
+
+- ``resize`` After the window has changed size. Typically requires updating camera and UI
+- ``lose-focus`` After the window has lost focus. May be useful to pause the game
+- ``gain-focus`` After the window has received focus. May be useful to unpause the game
+- ``window-hidden`` After the window has been hidden or minimised
+- ``window-shown`` After the window has been restored from being hidden or minimised
+
+## Context Management
+Typically managing a context directly is cumbersome and a lot of extra scaffolding is needed. The first part is the ``render-loop``. On its own, the render loop does not care about a context at all. ALl it does is, after being ``start``ed, it maintains a thread that calls ``update`` and ``render`` on the loop in regular intervals -- fixed timestep intervals for ``update`` and as much as possible under the constraints of frame limits and such for ``render``.
+
+The ``display`` as a render-loop upgrade then ties the loop behaviour to an actual context instance, manages the cleanup and setup of the context, and so on. It introduces ``setup-rendering`` for initial setup of GL attributes and modes.
+
+Finally, the ``main`` instance ties everything together with a ``scene`` for event management, and a ``loader`` for resource management (see "resources"(link resources.mess)). This is typically what you want to subclass for your own games, as it provides most of the convenience and is required for many of the other integrations with other subsystems.
