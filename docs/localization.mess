@@ -1,0 +1,21 @@
+# Localization and Language
+Trial includes a simple but effective localisation system. To use it, you should have a ``lang`` directory in your project root, and a subdirectory within for each language supported. The languages should follow the standard ISO 3-letter language codes.
+
+Listing available languages works with ``languages``, and a specific language can be loaded with ``load-language``. A "language" itself is simply a hash table that typically associates symbols with strings of language-specific text.
+
+You can access such an entry with ``language-string``, or with the shorthand ``@`` macro. If your string needs interpolation, then it can be written as a format directive string, and interpolated with ``@format`` or ``@formats``.
+
+If you programmatically set ``language-string``, you can serialise the table out via ``save-language``. To react to changes to the language dictionary, whether by setting or via ``load-language``, you can define a hook via ``define-language-change-hook``.
+
+Note that the values do not //have// to be strings. Sometimes it can be useful to stuff a list of choices under a single key, for instance. Trial's system does not care, and leaves it up to you to manage the data appropriately.
+
+The base "language" is stored in each ``language-dir`` as a file called ``strings.lisp``. The file is simply alternating keys and values:
+
+:: common lisp
+player-name "Yukari"
+city-name "Tokyo"
+::
+
+etc. You may also of course store other language-specific files such as dialogue scripts and so forth in the language specific directory.
+
+And that's pretty much all there is to it.

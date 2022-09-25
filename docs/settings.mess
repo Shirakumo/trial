@@ -1,0 +1,82 @@
+# Settings Storage
+Trial offers a standardised way to store and access user settings for your game. The settings are stored as a nested tree of plists.
+
+## Using Settings
+Setting the default properties of the settings works simply by setfing ``+settings+``:
+
+:: common lisp
+(setf +settings+
+      (copy-tree '(:audio (:latency 0.005
+                           :backend :default
+                           :device :default
+                           :volume (:master 0.5
+                                    :effect 1.0
+                                    :music 1.0))
+                   :display (:resolution (T T)
+                             :fullscreen T
+                             :vsync T
+                             :target-framerate :none
+                             :gamma 2.2
+                             :ui-scale 1.0)
+                   :gameplay (:rumble 1.0
+                              :screen-shake 1.0)
+                   :language :eng)))
+::
+
+When you ``save-settings`` this plist structure is output to a local file appropriate for your game, provided ``+app-system+`` and ``+app-vendor+`` are correctly set (see ``config-directory``).
+
+When you ``load-settings`` the plist is read from the file and //merged// with the existing settings. This means missing keys are augmented, existing keys are overwritten, and superfluous keys are retained.
+
+Accessing settings happens through the ``setting`` function, which takes a path to the value you want to access. When you update a setting through this function, it similarly merges things, adding and overwriting keys as necessary. Reading settings out with this function should be //very fast// provided that the ``setting`` compiler-macro can be expanded (so not called through ``funcall``, not declared ``notinline``).
+
+Often it is also useful to react in various parts of the game when a setting is changed. To install change hooks, use ``define-setting-observer``:
+
+:: common lisp
+(define-setting-observer update-resolution :display :resolution (value)
+  (when *context*
+    (show *context* :fullscreen (setting :display :fullscreen) :mode value)))
+::
+
+## Standard Fields
+Trial defines the following setting paths as standard. It will integrate better if you structure your settings in the same way.
+
+### Audio
+Settings related to audio playback. See "audio.mess"(link audio.mess)
+
+- ``:audio :latency`` The size of the internal audio buffers in seconds. Should default to a very low value
+- ``:audio :backend`` The audio backend chosen for playback. Should always be ``:default``
+- ``:audio :device`` The audio device used by the chosen backend. The values are backend-specific, but should default to ``:default``
+- ``:audio :volume ..`` Volume values for various segments in the audio pipeline. Should include the volumes for the mixers, in the very least
+
+### Display
+Settings related to graphics and context. See "context.mess"(link context.mess)
+
+- ``:display :resolution`` A video mode description: ``(width height [refresh rate [monitor identifier string]])``. Should default to ``(T T)``
+- ``:display :fullscreen`` Whether the game should be in fullscreen mode. Should default to ``T``
+- ``:display :vsync`` Whether vertical sync should be active. Should default to ``T``
+- ``:display :target-framerate`` What framerate should be targeted (frame throttle). Should default to ``NIL``
+- ``:display :gamma`` The gamma value by which to map from HDR to SDR. Should default to ``2.2``
+- ``:display :ui-scale`` The base scaling of all UI elements. Should default to ``1.0``
+
+### Gameplay
+General gameplay options and tweaks for the user.
+
+- ``:gameplay :camera-shake`` A float scaling the intensity of camera shaking. Should default to ``1.0``
+- ``:gameplay :rumble`` A float scaling the intensity of gamepad rumble. Should default to ``1.0``
+- ``:gameplay :fov`` The field-of-view variable for perspective cameras
+
+### Language
+The language to use. See "localization.mess"(link localization.mess)
+
+- ``:language`` The language used for the game. Should be a standard language code string
+
+### Debugging
+Debugging options for diagnostics.
+
+- ``:debugging :swank`` Whether to start a swank server, and if so, on what port
+- ``:debugging :fps-counter`` Whether to show an ``fps-counter``
+
+## Keymaps
+See "input.mess"(link input.mess)
+
+Loading and saving the ``keymap.lisp`` file can be conveniently done through ``load-keymap`` and ``save-keymap``. When ``load-keymap`` is called, it will check whether the ``keymap.lisp`` file in the ``root`` is newer, and if so, update the old one. This ensures that changes to the actions or keymaps will propagate to installations that already have a potentially stale map.
