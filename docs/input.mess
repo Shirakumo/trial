@@ -31,7 +31,9 @@ Input events are provided by the rendering backend and cl-gamepad, and should au
 ## Actions
 ``action``s are abstract events that correspond to in-game actions. Actions are typically mapped from existing events, and you can look at the origin with ``source-event``. New actions are defined with ``define-action``. The superclass list is used to attach the event to one or more ``action-set``s.
 
-``action-set``s are ways to group actions together under a set that allows you to activate and deactivate all actions at once. This way you can have a separate sets of actions for menu navigation, for in-game, etc. Accessing whether a set is active or not imply happens with ``active-p``.
+``action-set``s are ways to group actions together under a set that allows you to activate and deactivate all actions at once. This way you can have a separate sets of actions for menu navigation, for in-game, etc. Sets can be activated by setting ``active-p``. An action will be active as long as at least one of the sets it is a subclass of is active.
+
+Often it's also desired to have ``action-set``s be mutually exclusive. In that case, making the sets a subclass of ``exclusive-action-set`` will ensure all others will be automatically deactivated when another is activated.
 
 Most actions will represent some kind of event request, such as "jump", "interact", "select next", "confirm", etc. For some games however it can also make more sense to have actions that carry a value, such as "gas" or "camera tilt". For the latter, the superclasses ``analog-action``, ``directional-action``, and ``spatial-action`` are useful.
 
