@@ -242,6 +242,13 @@
    #:freeroam-camera
    #:move-speed
    #:editor-camera)
+  ;; capture.lisp
+  (:export
+   #:start
+   #:stop
+   #:active-p
+   #:capture
+   #:replay)
   ;; conditions.lisp
   (:export
    #:trial-error
@@ -757,6 +764,12 @@
    #:register
    #:deregister
    #:process)
+  ;; serialize.lisp
+  (:export
+   #:define-type-serializer
+   #:define-object-type-serializer
+   #:serialize-as
+   #:deserialize-as)
   ;; settings.lisp
   (:export
    #:+settings+
@@ -950,6 +963,7 @@
    #:ensure-class
    #:list-subclasses
    #:list-leaf-classes
+   #:format-timestring
    #:ensure-instance
    #:type-prototype
    #:maybe-finalize-inheritance
