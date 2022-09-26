@@ -465,6 +465,15 @@
                 (/ (- (get-internal-run-time) ,run) INTERNAL-TIME-UNITS-PER-SECOND)
                 (/ (- (get-internal-real-time) ,real) INTERNAL-TIME-UNITS-PER-SECOND))))))
 
+(defun format-timestring (&key (timestamp (get-universal-time)) (as :datetime))
+  (multiple-value-bind (s m h dd mm yy) (decode-universal-time timestamp)
+    (ecase as
+      (:filename (format NIL "~4,'0d-~2,'0d-~2,'0d ~2,'0d-~2,'0d-~2,'0d" yy mm dd h m s))
+      (:datetime (format NIL "~4,'0d-~2,'0d-~2,'0d ~2,'0d:~2,'0d:~2,'0d" yy mm dd h m s))
+      (:date (format NIL "~4,'0d-~2,'0d-~2,'0d" yy mm dd))
+      (:time (format NIL "~2,'0d:~2,'0d:~2,'0d" h m s))
+      (:clock (format NIL "~2,'0d:~2,'0d" h m)))))
+
 (defun simplify (array)
   (if (typep array 'simple-array)
       array

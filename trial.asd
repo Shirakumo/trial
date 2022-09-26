@@ -31,6 +31,7 @@
                (:file "attributes" :depends-on ("package"))
                (:file "bvh2" :depends-on ("package" "helpers"))
                (:file "camera" :depends-on ("package" "entity" "input"))
+               (:file "capture" :depends-on ("package" "toolkit" "serialize" "event-loop" "input"))
                (:file "conditions" :depends-on ("package"))
                (:file "context" :depends-on ("package"))
                (:file "controller" :depends-on ("package" "mapping" "input" "entity" "asset" ("assets" "font")))
@@ -76,6 +77,7 @@
                (:file "scene-buffer" :depends-on ("package" "scene" "render-texture"))
                (:file "scene" :depends-on ("package" "event-loop" "entity" "camera"))
                (:file "selection-buffer" :depends-on ("package" "render-texture" "scene" "effects" "loader"))
+               (:file "serialize" :depends-on ("package"))
                (:file "settings" :depends-on ("package" "toolkit"))
                (:file "shader-entity" :depends-on ("package" "entity" "event-loop" "loader"))
                (:file "shader-pass" :depends-on ("package" "shader-entity" "resource" ("resources" "framebuffer") ("resources" "shader-program") "scene" "loader" "context" "geometry-shapes" "camera"))
@@ -138,6 +140,7 @@
                :static-vectors
                :mmap
                :messagebox
+               :nibbles
                :form-fiddle
                :lambda-fiddle
                :jsown
