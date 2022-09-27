@@ -47,8 +47,10 @@
   (for:for ((object over container))
     (funcall function object)))
 
-(defmacro do-visible ((entity camera container) &body body)
-  `(map-visible (lambda (,entity) ,@body) ,camera ,container))
+(defmacro do-visible ((entity camera container &optional return) &body body)
+  `(block NIL
+     (map-visible (lambda (,entity) ,@body) ,camera ,container)
+     ,return))
 
 (defmethod in-view-p (object (camera camera)) T)
 
