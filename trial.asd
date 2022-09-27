@@ -34,7 +34,7 @@
                (:file "capture" :depends-on ("package" "toolkit" "serialize" "event-loop" "input"))
                (:file "conditions" :depends-on ("package"))
                (:file "context" :depends-on ("package"))
-               (:file "controller" :depends-on ("package" "mapping" "input" "entity" "asset" ("assets" "font")))
+               (:file "controller" :depends-on ("package" "mapping" "input" "entity" "asset"))
                (:file "data-pointer" :depends-on ("package" "type-info" "static-vector"))
                (:file "deferred" :depends-on ("package" "shader-entity" "shader-pass" "helpers" ("resources" "uniform-buffer") ("assets" "static")))
                (:file "deploy" :depends-on ("package" "gamepad"))
