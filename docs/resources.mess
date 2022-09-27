@@ -1,2 +1,73 @@
 # Resource and Asset Management
+A big part of an engine's responsibilities are concerned with the management of resources, typically ones related to graphics. Trial divides this into two parts, resources, and assets.
 
+A resource represents some object that requires manual allocation management. Often this is something like a texture, buffer, shader, etc.
+
+An asset on the other hand //generates// one or more resources, either dynamically, or from a file on disk.
+
+## Resources
+Trial in its core offers the following ``resource``s:
+
+- ``buffer-object``
+- ``framebuffer``
+- ``shader``
+- ``shader-program``
+- ``struct-buffer``
+- ``texture``
+- ``uniform-buffer``
+- ``vertex-array``
+- ``vertex-buffer``
+- ``vertex-struct-buffer``
+
+Core extensions, such as trial-harmony, will offer further resources to encompass other state they might need to manage.
+
+The resources interface is very slim: all you can do is ``allocate``, ``deallocate`` and check ``allocated-p``. All of the above resources are ``gl-resources`` of which you can access the OpenGL handle with ``gl-name``.
+
+The individual classes may have additional functions to dynamically resize, update, or otherwise change their contents without explicit reallocation.
+
+All of them will also have different initargs on construction. However, you will typically not need to manually create resources, and should instead rely on assets.
+
+## Assets
+``asset``s on the other hand are what you'll typically use directly. Trial defines the following core assets:
+
+- ``image``
+- ``mesh``
+- ``sprite-data``
+- ``static``
+- ``uniform-block``
+
+Again, extensions to Trial are likely to define their own asset types.
+
+The API for assets is slightly richer than that for resources. You have the analogous ``load``, ``unload``, and ``loaded-p``. In addition however, there is the explicit ``reload``, and functions to access the resources that the asset generates:
+
+The ``//`` function is the primary way in which you will access resources from an asset. It takes care to "inline" the reference to the resource, meaning you pay zero access costs for the resource at runtime if you use this function.
+
+This is achieved with a trick: when you use ``//`` to refer to a resource that hasn't been loaded yet, it will return a ``placeholder-resource`` instance. When the referenced resource is ultimately loaded, the placeholder instance is ``change-class`ed into the proper resource type.
+
+Manually referencing a resource from an asset can be done with ``resource`` and. ``list-resources``.
+
+Sometimes assets also contain extraneous information not contained in resources, such as number of frames, or similar. However, they cannot know this information until they are actually loaded. In such a case, you will want to ``register-generation-observer``s to get a callback whenever the asset is actually ready.
+
+; TODO: describe how to write new assets
+
+## Pools
+Assets reside in ``pool``s. A pool is a logical grouping of assets, and usually also a physical one, occupying a directory on disk. You typically define at least one pool for your project, and possibly more to avoid name collisions. A pool is defined with ``define-pool``.
+
+The ``define-pool`` should be in a file in the same directory as the ``data`` directory in which the pool's files reside. If you have a different structure, you must pass the ``:base`` initarg explicitly.
+
+Retrieving assets within a pool happens with ``asset`` or ``list-assets``. You can also retrieve a subpath in the pool via ``pool-path``.
+
+Within a pool, then, you define assets via ``define-asset``. You must set the pool it should be in, the name of the asset, its type, and the "input". Depending on the asset the input should be a pathname or some other value from which the asset's resources and other data are derived. Many assets will also take several options to configure the generated resources' behaviour.
+
+Defining individual assets like this can become way too verbose, however. To cut down on the repetition, we can instead define assets based on the files contained in a directory, via ``define-assets-from-path``. The ``pathname`` argument should be wild, and is merged with the pool's base directory. The body of the macro should be options for specific assets:
+
+:: common lisp
+(define-assets-from-path (my-pool image "*.png")
+  (T :min-filter :nearest :mag-filter :nearest)
+  (logo :min-filter :linear :mag-filter :linear))
+::
+
+Where the ``T`` option applies by default to all assets defined like this, and ones for specific assets override. The asset name is derived from the input file via ``pathname-asset-name``, which tries its best to turn the filename into a somewhat sensible symbol name.
+
+## Compiled Assets
+Some assets require source files that are derived from others. In that case, Trial may automate the compiling and optimizing of these source files. Assets that can be compiled like this will derive from ``compiled-generator`` and you may call ``compile-resources`` on them. You can also call ``compile-resources`` on a pool, which will invoke it for every asset that can.
