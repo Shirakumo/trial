@@ -1,0 +1,39 @@
+# The Trial Game Engine
+Trial is a modular game engine written in Common Lisp. It offers many tools and systems that manage parts of a game system for you. Many of these parts are optional, composable, and customisable in case as it exists should not suit your needs. This documentation covers both details intended for users, and internals in case you need to modify or extend the engine.
+
+"NOTE:"(bold,red) This engine is a work in progress, and this documentation even more so. API stability is //not// guaranteed. However, any subsystem documented here should be rather stable, and is very unlikely to change significantly without prior discussion.
+
+## Index
+- Projects
+  - Getting Started
+  - Existing Games
+- Graphics
+  - "Context"(link context.mess)
+  - "Render Pipeline"(link render-pipeline.mess)
+  - "Resources & Assets"(link resources.mess)
+  - Scene Graph
+  - Animation
+  - Geometry
+  - 2D
+    - Sprites
+    - Tile Maps
+  - 3D
+    - Models
+- Input
+  - "Event Loop"(link event-loop.mess)
+  - "Input System"(link input.mess)
+  - Prompts
+- Physics
+  - Acceleration Structures
+  - Intersection Tests
+  - Rigid Body Physics
+  - Soft Body Physics
+- Misc
+  - "User Settings"(link settings.mess)
+  - "Localisation"(link localization.mess)
+- Extensions
+  - "Audio"(link audio.mess)
+  - User Interfaces
+  - Crash Reports
+  - Releasing
+  - Steam Integration
