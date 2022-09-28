@@ -8,8 +8,12 @@
 
 (define-global +type-serialize-info+ (make-hash-table :test 'eql))
 
+(defun serialize-info (type)
+  (gethash type +type-serialize-info+))
+
 (defstruct (serialize-info
-            (:constructor make-serialize-info (id reader writer)))
+            (:constructor make-serialize-info (type id reader writer)))
+  (type NIL :type symbol)
   (id 0 :type (unsigned-byte 16))
   (reader NIL :type (function (stream) T))
   (writer NIL :type (function (T stream) T)))
@@ -18,7 +22,7 @@
   `(let ((struct (or (gethash ',type +type-serialize-info+))))
      (unless struct
        (setf (gethash ',type +type-serialize-info+)
-             (make-serialize-info (hash-table-count +type-serialize-info+)
+             (make-serialize-info ',type (hash-table-count +type-serialize-info+)
                                   (lambda (s) (declare (ignore s)))
                                   (lambda (v s) (declare (ignore v s)))))
        (setf struct (gethash ',type +type-serialize-info+))
@@ -32,10 +36,10 @@
        (lambda (stream)
          (,constructor ,@(loop for (slot type) in slots
                                collect (kw slot)
-                               collect `(funcall (serialize-info-reader (gethash ',type +type-serialize-info+)) stream))))
+                               collect `(funcall (load-time-value (serialize-info-reader (gethash ',type +type-serialize-info+))) stream))))
      (lambda (event stream)
        ,@(loop for (slot type) in slots
-               collect `(funcall (serialize-info-writer (gethash ',type +type-serialize-info+)) (,slot event) stream)))))
+               collect `(funcall (load-time-value (serialize-info-writer (gethash ',type +type-serialize-info+))) (,slot event) stream)))))
 
 (defun serialize-as (type value stream)
   (let ((struct (gethash type +type-serialize-info+)))
@@ -53,7 +57,7 @@
   #'nibbles:read-ieee-single/le
   #'nibbles:write-ieee-single/le)
 
-(define-type-serializer single-float
+(define-type-serializer double-float
   #'nibbles:read-ieee-double/le
   #'nibbles:write-ieee-double/le)
 
@@ -128,14 +132,14 @@
 
 (define-type-serializer boolean
     (lambda (s)
-      (= 0 (read-byte s)))
+      (< 0 (read-byte s)))
   (lambda (v s)
     (write-byte (if v 1 0) s)))
 
 (define-type-serializer string
     (lambda (s)
       (let ((string (make-string (nibbles:read-ub32/le s))))
-        (dotimes (i (length string))
+        (dotimes (i (length string) string)
           (setf (char string i) (code-char (nibbles:read-ub32/le s))))))
   (lambda (v s)
     (nibbles:write-ub32/le (length v) s)

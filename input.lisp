@@ -21,7 +21,7 @@
 
 (defclass key-event (keyboard-event digital-event)
   ((key :initarg :key :reader key :reader button)
-   (repeat :initarg :repeat :reader repeat-p)
+   (repeat :initarg :repeat :initarg :repeat-p :reader repeat-p)
    (modifiers :initarg :modifiers :reader modifiers))
   (:default-initargs
    :key (error "KEY required.")
@@ -30,7 +30,7 @@
 
 (defmethod print-object ((event key-event) stream)
   (print-unreadable-object (event stream :type T)
-    (format stream "~a" (key event))))
+    (format stream "~s" (key event))))
 
 (defclass key-press (key-event)
   ())
@@ -42,6 +42,10 @@
   ((text :initarg :text :reader text))
   (:default-initargs
    :text (error "TEXT required.")))
+
+(defmethod print-object ((event text-entered) stream)
+  (print-unreadable-object (event stream :type T)
+    (format stream "~s" (text event))))
 
 (defclass mouse-event (input-event)
   ((pos :initarg :pos :reader pos))
@@ -55,7 +59,7 @@
 
 (defmethod print-object ((event mouse-button-event) stream)
   (print-unreadable-object (event stream :type T)
-    (format stream "~a" (button event))))
+    (format stream "~s" (button event))))
 
 (defclass mouse-press (mouse-button-event)
   ())
@@ -93,7 +97,7 @@
 
 (defmethod print-object ((event gamepad-button-event) stream)
   (print-unreadable-object (event stream :type T)
-    (format stream "~a ~a" (device event) (button event))))
+    (format stream "~a ~s" (device event) (button event))))
 
 (defclass gamepad-press (gamepad-button-event)
   ())
@@ -112,7 +116,7 @@
 
 (defmethod print-object ((event gamepad-move) stream)
   (print-unreadable-object (event stream :type T)
-    (format stream "~a ~a ~3f" (device event) (axis event) (pos event))))
+    (format stream "~a ~s ~3f" (device event) (axis event) (pos event))))
 
 (defclass gamepad-added (gamepad-event)
   ())

@@ -10,18 +10,17 @@
   `(define-object-type-serializer ,type (lambda (&rest args) (apply #'make-event ',type args))
      ,@slots))
 
-(define-event-type-serializer tick
-  (tt double-float)
-  (dt single-float)
-  (fc integer))
+(define-type-serializer frame-count-change
+  (lambda (s) (nibbles:read-ub32/le s))
+  (lambda (v s) (nibbles:write-ub32/le v s)))
 
 (define-event-type-serializer key-press
-  (key symbol)
-  (repeat boolean))
+  (key keyword)
+  (repeat-p boolean))
 
 (define-event-type-serializer key-release
-  (key symbol)
-  (repeat boolean))
+  (key keyword)
+  (repeat-p boolean))
 
 (define-event-type-serializer text-entered
   (text string))
@@ -56,45 +55,113 @@
   (old-pos single-float)
   (pos single-float))
 
-(defclass capture-object ()
-  ((capture-stream :initform NIL :accessor capture-stream)
-   (file :initarg :file :initform (make-pathname :name (format NIL "capture ~a" (format-timestring :as :filename)) :type "dat") :accessor file)
-   (fc :initform 0 :accessor fc)))
+(defun capture-pathname ()
+  (make-pathname :name (format NIL "capture ~a" (format-timestring :as :filename)) :type "dat"))
 
-(defmethod start ((capture capture-object))
-  (unless (capture-stream capture)
-    (setf (capture-stream capture) (open (file capture) :element-type '(unsigned-byte 8) :direction :io))))
+(defvar *capture-header* "TRIAL-CAPTURE")
 
-(defmethod stop ((capture capture-object))
+(defclass capture (unit listener)
+  ((name :initform 'capture)
+   (capture-stream :initform NIL :accessor capture-stream)
+   (file :initarg :file :initform (capture-pathname) :accessor file)
+   (fc :initform NIL :accessor fc)))
+
+(defmethod start ((capture capture))
   (when (capture-stream capture)
-    (close (capture-stream capture))
-    (setf (capture-stream capture) NIL)))
+    (error "Already started."))
+  (let ((stream (open (file capture)
+                      :element-type '(unsigned-byte 8)
+                      :direction :io)))
+    (setf (capture-stream capture) stream)
+    (loop for c across *capture-header*
+          do (write-byte (char-code c) stream))
+    (nibbles:write-ub32/le 0 stream))
+  capture)
+
+(defmethod stop ((capture capture))
+  ;; Finalize the length
+  (let ((stream (capture-stream capture)))
+    (when stream
+      (file-position stream (length *capture-header*))
+      (nibbles:write-ub32/le (car (fc capture)) stream)
+      (close (capture-stream capture))
+      (setf (capture-stream capture) NIL)))
+  capture)
 
 (defmethod active-p ((capture capture-object))
   (not (null (capture-stream capture))))
 
-(defclass capture (capture-object)
-  ())
+(defmethod handle ((event tick) (capture capture))
+  (unless (fc capture)
+    (setf (fc capture) (cons -1 0)))
+  (setf (cdr (fc capture)) (fc event)))
 
 (defmethod handle ((event event) (capture capture))
-  (let ((stream (capture-stream capture)))
-    (when (typep event 'tick)
-      (setf (fc capture) (fc event)))
-    (let ((struct (gethash (type-of event) +type-serialize-info+)))
-      (when struct
-        (write-byte (serialize-info-id struct) stream)
-        (funcall (serialize-info-writer struct) event stream)))))
+  (let ((stream (capture-stream capture))
+        (struct (serialize-info (type-of event)))
+        (fc (fc capture)))
+    (when (and struct fc)
+      (unless (= (car fc) (cdr fc))
+        (let ((info (serialize-info 'frame-count-change)))
+          (write-byte (serialize-info-id info) stream)
+          (funcall (serialize-info-writer info) (cdr (fc capture)) stream))
+        (setf (car fc) (cdr fc)))
+      (write-byte (serialize-info-id struct) stream)
+      (funcall (serialize-info-writer struct) event stream))))
 
-(defclass replay (capture-object)
-  ((buffer :initform NIL :accessor buffer)))
+(defun start-capture (scene &optional (file (capture-pathname)))
+  (register (start (make-instance 'capture :file file)) scene))
 
-(defmethod handle ((loop event-loop) (replay replay))
-  (let ((stream (capture-stream replay)))
-    (when (buffer replay)
-      (issue loop (shiftf (buffer replay) NIL)))
-    (loop for event = (funcall (serialize-info-reader (gethash (read-byte stream) +type-serialize-info+)) stream)
-          do (when (typep event 'tick)
-               (setf (buffer replay) event)
-               (setf (fc replay) (fc event))
-               (return))
-             (issue loop event))))
+(defun stop-capture (scene)
+  (stop (deregister (unit 'capture scene) scene)))
+
+(defclass replay (unit listener)
+  ((name :initform 'replay)
+   (file :initarg :file :accessor file)
+   (capture-stream :initform NIL :accessor capture-stream)
+   (buffer :initform NIL :accessor buffer)
+   (duration :initform NIL :accessor duration)
+   (fc :initform (cons NIL NIL) :accessor fc)))
+
+(defmethod start ((replay replay))
+  (let ((stream (open (file replay) :element-type '(unsigned-byte 8) :direction :input)))
+    (loop for c across *capture-header*
+          do (assert (char= c (code-char (read-byte stream)))))
+    (setf (capture-stream replay) stream)
+    (setf (duration replay) (nibbles:read-ub32/le stream))
+    (when (= 0 (duration replay))
+      (v:warn :trial.capture "Capture file was not finalized.")
+      (setf (duration replay) most-positive-fixnum))
+    (let ((fc (funcall (serialize-info-reader (gethash (read-byte stream) +type-serialize-info+)) stream)))
+      (setf (fc replay) (cons fc fc)))
+    replay))
+
+(defmethod stop ((replay replay))
+  (when (capture-stream replay)
+    (close (capture-stream replay))
+    (setf (capture-stream replay) NIL))
+  replay)
+
+(defmethod handle ((ev tick) (replay replay))
+  (let ((fc (fc replay)))
+    (incf (car fc))
+    (when (= (duration replay) (car fc))
+      (v:info :trial.capture "Capture replay completed.")
+      (setf (cdr fc) most-positive-fixnum)
+      (stop replay)
+      (deregister replay (scene +main+)))
+    (when (< (cdr fc) (car fc))
+      (let ((stream (capture-stream replay)))
+        (loop for object = (funcall (serialize-info-reader (gethash (read-byte stream) +type-serialize-info+)) stream)
+              do (etypecase object
+                   (integer
+                    (setf (cdr fc) object)
+                    (return))
+                   (event
+                    (handle object +main+))))))))
+
+(defun start-replay (file scene)
+  (register (start (make-instance 'replay :file file)) scene))
+
+(defun stop-replay (scene)
+  (stop (deregister (unit 'replay scene) scene)))

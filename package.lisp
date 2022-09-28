@@ -248,7 +248,11 @@
    #:stop
    #:active-p
    #:capture
-   #:replay)
+   #:start-capture
+   #:stop-capture
+   #:replay
+   #:start-replay
+   #:stop-replay)
   ;; conditions.lisp
   (:export
    #:trial-error
