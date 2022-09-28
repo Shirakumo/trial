@@ -8,6 +8,7 @@
 
 (defvar *language-change-hooks* '())
 (defvar *languages* (make-hash-table :test 'equalp))
+(define-global +loaded-language+ NIL)
 (define-global +language-data+ NIL)
 
 (defun languages ()
@@ -40,24 +41,26 @@
   (let ((table (if (or replace (null +language-data+))
                    (make-hash-table :test 'eq)
                    +language-data+)))
-    (v:info :trial.language "Loading language ~s from ~a" language (language-file language))
-    (with-trial-io-syntax ()
-      (with-open-file (stream (language-file language) :if-does-not-exist nil)
-        (cond (stream
-               (loop for k = (read stream NIL)
-                     for v = (read stream NIL)
-                     while k
-                     do (setf (gethash k table) v))
-               (setf (gethash language *languages*) table)
-               (setf +language-data+ table))
-              ((gethash language *languages*)
-               (setf +language-data+ (gethash language *languages*)))
-              (T
-               (error "No language named ~s found." language)))
-        (dolist (hook *language-change-hooks* table)
-          (funcall hook language))))))
+    (when (or replace (null +loaded-language+) (not (equalp +loaded-language+ language)))
+      (v:info :trial.language "Loading language ~s from ~a" language (language-file language))
+      (with-trial-io-syntax ()
+        (with-open-file (stream (language-file language) :if-does-not-exist nil)
+          (cond (stream
+                 (loop for k = (read stream NIL)
+                       for v = (read stream NIL)
+                       while k
+                       do (setf (gethash k table) v))
+                 (setf (gethash language *languages*) table)
+                 (setf +language-data+ table))
+                ((gethash language *languages*)
+                 (setf +language-data+ (gethash language *languages*)))
+                (T
+                 (error "No language named ~s found." language)))))
+      (setf +loaded-language+ language)
+      (dolist (hook *language-change-hooks* table)
+        (funcall hook language)))))
 
-(defun save-language (&optional (language (setting :language)))
+(defun save-language (&optional (language (or +loaded-language+ (setting :language))))
   (when +language-data+
     (v:info :trial.language "Saving language ~s to ~s" language (language-file language))
     (with-trial-io-syntax ()
