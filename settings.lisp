@@ -123,10 +123,12 @@
 
 (defun (setf setting) (value &rest path)
   (labels ((update (node key path)
-             (setf (getf node key)
-                   (if path
-                       (update (getf node key) (first path) (rest path))
-                       value))
+             (cond (path
+                    (setf (getf node key) (update (getf node key) (first path) (rest path))))
+                   ((eql value (getf node key))
+                    (return-from setting value))
+                   (T
+                    (setf (getf node key) value)))
              node))
     (setf +settings+ (update +settings+ (first path) (rest path)))
     (loop for i from 0 below (length path)
