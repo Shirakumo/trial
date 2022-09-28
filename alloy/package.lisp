@@ -19,6 +19,7 @@
    #:event-bridge
    #:ui)
   (:export
+   #:language-data
    #:vec
    #:vec2
    #:vec3
