@@ -12,6 +12,9 @@
 (defmethod alloy:value ((data language-data))
   (trial:language-string (name data)))
 
+(defmethod (setf alloy:value) (value (data language-data))
+  value)
+
 (defmethod alloy:refresh ((data language-data))
   (alloy:notify-observers 'alloy:value data (trial:language-string (name data)) data))
 

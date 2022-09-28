@@ -88,7 +88,7 @@
       (setf (capture-stream capture) NIL)))
   capture)
 
-(defmethod active-p ((capture capture-object))
+(defmethod active-p ((capture capture))
   (not (null (capture-stream capture))))
 
 (defmethod handle ((event tick) (capture capture))

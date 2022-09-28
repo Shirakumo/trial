@@ -62,8 +62,9 @@
 (defmacro define-achievements (name achievement-superclass &body achievements)
   `(let ((achievements (list ,@(loop for (name . initargs) in achievements
                                      collect `(make-instance ',achievement-superclass :name ',name ,@initargs)))))
-     (defclass ,name ()
-       ())
+     (unless (find-class ',name)
+       (defclass ,name ()
+         ()))
 
      (defmethod list-achievements ((_ ,name))
        achievements)

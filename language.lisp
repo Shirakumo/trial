@@ -28,8 +28,12 @@
 (defmacro define-language-change-hook (name args &body body)
   (let ((name (mksym *package* '%language-change-hook name)))
     `(progn
-       (defun ,name ,args
-         ,@body)
+       ,(if args
+            `(defun ,name ,args
+               ,@body)
+            `(defun ,name (language)
+               (declare (ignorable language))
+               ,@body))
        (pushnew ',name *language-change-hooks*))))
 
 (defun load-language (&optional (language (setting :language)) replace)
