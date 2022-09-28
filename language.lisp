@@ -42,6 +42,7 @@
                    (make-hash-table :test 'eq)
                    +language-data+)))
     (when (or replace (null +loaded-language+) (not (equalp +loaded-language+ language)))
+      (setf language (string-downcase language))
       (v:info :trial.language "Loading language ~s from ~a" language (language-file language))
       (with-trial-io-syntax ()
         (with-open-file (stream (language-file language) :if-does-not-exist nil)
@@ -62,6 +63,7 @@
 
 (defun save-language (&optional (language (or +loaded-language+ (setting :language))))
   (when +language-data+
+    (setf language (string-downcase language))
     (v:info :trial.language "Saving language ~s to ~s" language (language-file language))
     (with-trial-io-syntax ()
       (with-open-file (stream (language-file language)
