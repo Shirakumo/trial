@@ -786,7 +786,12 @@
    #:setting
    #:observe-setting
    #:remove-setting-observer
-   #:define-setting-observer)
+   #:define-setting-observer
+   #:video-mode
+   #:fullscreen
+   #:vsync
+   #:framerate
+   #:fps-counter)
   ;; sdl2-gamepad-map.lisp
   (:export)
   ;; selection-buffer.lisp

@@ -158,3 +158,29 @@
                            `(lambda (,v)
                               (declare (ignore ,v))
                               ,@body)))))
+
+(define-setting-observer video-mode :display :resolution (value)
+  (when *context*
+    (show *context* :fullscreen (setting :display :fullscreen) :mode value)))
+
+(define-setting-observer fullscreen :display :fullscreen (value)
+  (when *context*
+    (show *context* :fullscreen value :mode (setting :display :resolution))))
+
+(define-setting-observer vsync :display :vsync (value)
+  (when *context*
+    (setf (vsync *context*) vsync)))
+
+(define-setting-observer framerate :display :target-framerate (value)
+  (setf (target-frame-time +main+) (typecase value
+                                     (real (/ value))
+                                     (T 0.0))))
+
+(define-setting-observer fps-counter :debugging :fps-counter (value)
+  (let ((scene (scene +main+)))
+    (when (scene +main+)
+      (if value
+          (unless (unit 'fps-counter scene)
+            (enter-and-load (make-instance 'fps-counter) scene +main+))
+          (when (unit 'fps-counter scene)
+            (leave (unit 'fps-counter scene) T))))))
