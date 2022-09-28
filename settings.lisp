@@ -149,6 +149,12 @@
                        until (listp part)
                        collect (pop setting)))
         (args (pop setting))
-        (body setting))
+        (body setting)
+        (v (gensym "VALUE")))
     `(observe-setting ',setting ',name
-                      (lambda ,args ,@body))))
+                      ,(if args
+                           `(lambda ,args
+                              ,@body)
+                           `(lambda (,v)
+                              (declare (ignore ,v))
+                              ,@body)))))
