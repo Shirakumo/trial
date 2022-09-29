@@ -563,6 +563,7 @@
    #:key-press
    #:key-release
    #:text-entered
+   #:replace-p
    #:mouse-event
    #:mouse-button-event
    #:mouse-press

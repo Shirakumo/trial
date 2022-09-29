@@ -211,4 +211,4 @@ Refusing to deploy as the game would not launch properly anyway.")))
 (steam:define-callback steam*::gamepad-text-input-dismissed (result submitted)
   (when submitted
     (let ((text (steam:input-text (steam:interface 'steam:steamutils T))))
-      (trial:handle (make-instance 'trial:text-entered :text text) (trial:handler trial:*context*)))))
+      (trial:handle (make-instance 'trial:text-entered :text text :replace T) (trial:handler trial:*context*)))))

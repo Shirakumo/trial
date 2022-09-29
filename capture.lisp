@@ -23,7 +23,8 @@
   (repeat-p boolean))
 
 (define-event-type-serializer text-entered
-  (text string))
+  (text string)
+  (replace-p boolean))
 
 (define-event-type-serializer mouse-press
   (pos vec2)

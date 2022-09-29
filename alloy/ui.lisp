@@ -33,9 +33,6 @@
   :dx 0
   :location (vec->point (trial:pos ev)))
 
-(define-event-translator trial:text-entered alloy:text-event
-  :text (trial:text ev))
-
 (define-event-translator trial:key-press alloy:key-down
   :modifiers (trial:modifiers ev)
   :key (trial:key ev)
@@ -53,6 +50,11 @@
 (define-event-translator trial:gamepad-release alloy:button-up
   :device (trial:device ev)
   :button (trial:button ev))
+
+(defmethod trial:handle ((ev trial:text-entered) (bridge event-bridge))
+  (when (trial:replace-p ev)
+    (alloy:handle (make-instance 'alloy:reset-event) bridge))
+  (alloy:handle (make-instance 'alloy:text-event :text (trial:text ev)) bridge))
 
 (defclass ui (renderer event-bridge alloy:ui trial:entity)
   ((first-hold-time :initform (cons NIL 0.0) :accessor first-hold-time)))

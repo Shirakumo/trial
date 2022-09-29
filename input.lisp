@@ -39,7 +39,8 @@
   ())
 
 (defclass text-entered (keyboard-event)
-  ((text :initarg :text :reader text))
+  ((text :initarg :text :reader text)
+   (replace :initarg :replace :initarg :replace-p :initform NIL :reader replace-p))
   (:default-initargs
    :text (error "TEXT required.")))
 
