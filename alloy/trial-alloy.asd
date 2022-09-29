@@ -15,6 +15,7 @@
   :components ((:file "package")
                (:file "renderer")
                (:file "ui")
+               (:file "actions")
                (:file "components")
                (:file "deploy"))
   :depends-on (:trial

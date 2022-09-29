@@ -55,7 +55,10 @@
   :button (trial:button ev))
 
 (defclass ui (renderer event-bridge alloy:ui trial:entity)
-  ())
+  ((first-hold-time :initform (cons NIL 0.0) :accessor first-hold-time)))
+
+(defmethod org.shirakumo.alloy.renderers.opengl.msdf:fontcache-directory ((ui ui))
+  (trial:pool-path 'trial:trial "font-cache/"))
 
 (defmethod trial:render ((ui ui) target)
   (alloy:render ui ui))
@@ -95,3 +98,34 @@
      (when (find :control (trial:modifiers ev))
        (alloy:handle (make-instance 'alloy:cut-event) ui)))))
 
+(trial:define-shader-pass ui-pass (ui)
+  ((name :initform 'ui)
+   (trial:color :port-type trial:output :attachment :color-attachment0)
+   (trial:depth :port-type trial:output :attachment :depth-stencil-attachment)))
+
+(defmethod render :around ((pass ui-pass) target)
+  (trial:with-pushed-attribs
+    (gl:enable :depth-test)
+    (gl:clear-color 0 0 0 0)
+    (call-next-method)))
+
+;; KLUDGE: No idea why this is necessary, fuck me.
+(defmethod simple:request-font :around ((pass ui-pass) font &key)
+  (let ((font (call-next-method)))
+    (unless (and (alloy:allocated-p font)
+                 (trial:allocated-p (org.shirakumo.alloy.renderers.opengl.msdf:atlas font)))
+      (trial:commit font (trial:loader trial:+main+) :unload NIL))
+    font))
+
+(defmethod trial:object-renderable-p ((renderable trial:renderable) (pass ui-pass)) NIL)
+
+(trial:define-shader-pass base-ui (ui-pass
+                                   alloy:fixed-scaling-ui
+                                   presentations:default-look-and-feel)
+  ((alloy:target-resolution :initform (alloy:px-size 1280 720))
+   (alloy:scales :initform '((3840 T 2.0)
+                             (2800 T 1.5)
+                             (1920 T 1.25)
+                             (1280 T 1.0)
+                             (1000 T 0.8)
+                             (T T 0.5)))))

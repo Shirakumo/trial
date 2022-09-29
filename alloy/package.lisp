@@ -17,7 +17,17 @@
   (:export
    #:renderer
    #:event-bridge
-   #:ui)
+   #:ui
+   #:ui-pass
+   #:basic-ui)
+  (:export
+   #:ui-actions
+   #:select-left
+   #:select-right
+   #:select-up
+   #:select-down
+   #:accept
+   #:back)
   (:export
    #:language-data
    #:vec
