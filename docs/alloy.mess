@@ -1,0 +1,14 @@
+# User Interfaces with Alloy
+"Alloy"(https://shirakumo.org/projects/alloy) is the primary toolkit with which user interfaces are created for Trial games. An integration system, trial-alloy, exists, which you should use for easier access to Alloy's UIs.
+
+## Getting Started
+The first step is to define a ``ui`` subclass, which will be used to define the styling and default UI behaviour, and to act as the rendering method. The easiest way to render UI is to use a separate pass, which is then composited with your main game render.
+
+:: common lisp
+(define-shader-pass ui (org.shirakumo.fraf.trial.alloy:base-ui)
+  ((name :initform 'ui)))
+::
+
+You can then just enter an instance of this pass into your "render pipeline"(link render-pipeline.mess). Since it is an Alloy UI instance, you can otherwise use it as you would any other Alloy UI.
+
+The integration system takes care of translating Trial's input events into Alloy's input events, and also includes standard UI actions that you can use in your action-sets.

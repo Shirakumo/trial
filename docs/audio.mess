@@ -1,4 +1,0 @@
-## Audio
-Audio output is not handled by core Trial. Instead, integration with the "Harmony"(https://shirakumo.github.io/harmony) sound server is provided by the trial-harmony system. Unless you desire to handle sound otherwise, we will assume the use of Harmony.
-
-
