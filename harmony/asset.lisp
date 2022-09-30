@@ -129,7 +129,8 @@
   (loop for (key . set) in description
         collect (cons key (loop for track in set
                                 for (input . params) = (if (listp track) track (list track))
-                                collect (list* (trial:coerce-asset-input asset input) params)))))
+                                for file = (trial:coerce-asset-input asset input)
+                                collect (list* file :name (file-namestring file) params)))))
 
 (defclass music (trial:resource harmony:environment)
   ())
