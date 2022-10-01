@@ -291,3 +291,6 @@
 
 (defmethod harmony:transition ((voice voice) to &rest args &key &allow-other-keys)
   (apply #'harmony:transition (voice voice) to args))
+
+(defmethod trial:clone ((voice voice) &key)
+  (error "FIXME: implement this."))
