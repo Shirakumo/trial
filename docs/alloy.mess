@@ -12,3 +12,31 @@ The first step is to define a ``ui`` subclass, which will be used to define the 
 You can then just enter an instance of this pass into your "render pipeline"(link render-pipeline.mess). Since it is an Alloy UI instance, you can otherwise use it as you would any other Alloy UI.
 
 The integration system takes care of translating Trial's input events into Alloy's input events, and also includes standard UI actions that you can use in your action-sets.
+
+## Panels
+The ``base-ui`` includes a "panel system", which allows you to stack different layers of UI over each other and automatically manage all the itty gritty of focus and active action sets. Each ``panel`` is an ``alloy:structure`` and, in addition to the Alloy UI elements, also receives all of Trial's ``event``s that are posted to the UI.
+
+Here's an example of some basic panels:
+
+:: common lisp
+(defclass hud (org.shirakumo.fraf.trial.alloy:panel) ())
+
+(defmethod initialize-instance :after ((hud hud) &key)
+  (let ((layout (make-instance 'org.shirakumo.alloy.layouts.constraint:layout)))
+    (alloy:enter "Hello!" layout :constraints `((:left 10) (:top 10) (:size 500 30)))
+    (alloy:finish-structure hud layout NIL)))
+
+(defclass menu (org.shirakumo.fraf.trial.alloy:menuing-panel) ())
+
+(defmethod initialize-instance :after ((menu menu) &key)
+  (let ((layout (make-instance 'alloy:vertical-linear-layout))
+        (focus (make-instance 'alloy:vertical-focus-list))
+        (quit (alloy:represent "Quit" 'alloy:button :layout-parent layout :focus-parent focus)))
+    (alloy:on alloy:activate (quit)
+      (quit *context*))
+    (alloy:finish-structure menu layout focus)))
+::
+
+Panels can be ``show``n and ``hide``n, though often it is more convenient to use ``show-panel``, ``hide-panel``, and ``toggle-panel``. If you need to access a panel specifically, you can do so with ``find-panel``.
+
+Any ``menuing-panel`` will take care to automatically activate the ``ui-actions`` action-set when it is shown, and restore the old action set when it is hidden. If it is important that a panel be the only one shown over the others, make it a ``fullscreen-panel``.

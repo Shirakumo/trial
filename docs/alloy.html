@@ -1,0 +1,52 @@
+<article><style>article{
+    max-width: 800px;
+    font-size: 12pt;
+    font-family: sans-serif;
+    margin: 3em auto;
+}
+
+article h1{
+    text-align: center;
+    font-size: 2em;
+}
+
+article img{
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+article blockquote{
+    border-left: 0.2em solid gray;
+    margin-left: 1em;
+    padding-left: 1em;
+}
+
+article figcaption{
+    padding: 0.2em 1em;
+    background: #E0E0E0;
+}
+
+article code{
+    background: #F0F0F0;
+    padding: 0 0.1em;
+}
+
+article .code-block{
+    padding: 0.1em 0.5em;
+}</style><h1 id="user interfaces with alloy">User Interfaces with Alloy</h1><p><a class="external-link" href="https://shirakumo.org/projects/alloy">Alloy</a> is the primary toolkit with which user interfaces are created for Trial games. An integration system, trial-alloy, exists, which you should use for easier access to Alloy's UIs.</p><h2 id="getting started">Getting Started</h2><p>The first step is to define a <code>ui</code> subclass, which will be used to define the styling and default UI behaviour, and to act as the rendering method. The easiest way to render UI is to use a separate pass, which is then composited with your main game render.</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(define-shader-pass ui (org.shirakumo.fraf.trial.alloy:base-ui)
+  ((name :initform 'ui)))</pre></code><p>You can then just enter an instance of this pass into your <a class="external-link" href="render-pipeline.html">render pipeline</a>. Since it is an Alloy UI instance, you can otherwise use it as you would any other Alloy UI.</p><p>The integration system takes care of translating Trial's input events into Alloy's input events, and also includes standard UI actions that you can use in your action-sets.</p><h2 id="panels">Panels</h2><p>The <code>base-ui</code> includes a &quot;panel system&quot;, which allows you to stack different layers of UI over each other and automatically manage all the itty gritty of focus and active action sets. Each <code>panel</code> is an <code>alloy:structure</code> and, in addition to the Alloy UI elements, also receives all of Trial's <code>event</code>s that are posted to the UI.</p><p>Here's an example of some basic panels:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(defclass hud (org.shirakumo.fraf.trial.alloy:panel) ())
+
+(defmethod initialize-instance :after ((hud hud) &amp;key)
+  (let ((layout (make-instance 'org.shirakumo.alloy.layouts.constraint:layout)))
+    (alloy:enter &quot;Hello!&quot; layout :constraints `((:left 10) (:top 10) (:size 500 30)))
+    (alloy:finish-structure hud layout NIL)))
+
+(defclass menu (org.shirakumo.fraf.trial.alloy:menuing-panel) ())
+
+(defmethod initialize-instance :after ((menu menu) &amp;key)
+  (let ((layout (make-instance 'alloy:vertical-linear-layout))
+        (focus (make-instance 'alloy:vertical-focus-list))
+        (quit (alloy:represent &quot;Quit&quot; 'alloy:button :layout-parent layout :focus-parent focus)))
+    (alloy:on alloy:activate (quit)
+      (quit *context*))
+    (alloy:finish-structure menu layout focus)))</pre></code><p>Panels can be <code>show</code>n and <code>hide</code>n, though often it is more convenient to use <code>show-panel</code>, <code>hide-panel</code>, and <code>toggle-panel</code>. If you need to access a panel specifically, you can do so with <code>find-panel</code>.</p><p>Any <code>menuing-panel</code> will take care to automatically activate the <code>ui-actions</code> action-set when it is shown, and restore the old action set when it is hidden. If it is important that a panel be the only one shown over the others, make it a <code>fullscreen-panel</code>.</p></article>

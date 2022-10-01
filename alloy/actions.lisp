@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial.alloy)
 
-(trial:define-action-set ui-actions)
+(trial:define-action-set ui-actions (trial:exclusive-action-set))
 (trial:define-action select-left (ui-actions))
 (trial:define-action select-right (ui-actions))
 (trial:define-action select-up (ui-actions))

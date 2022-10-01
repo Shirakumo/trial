@@ -16,6 +16,7 @@
                (:file "renderer")
                (:file "ui")
                (:file "actions")
+               (:file "panels")
                (:file "components")
                (:file "deploy"))
   :depends-on (:trial

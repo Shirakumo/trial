@@ -404,7 +404,8 @@
   ;; entity.lisp
   (:export
    #:entity
-   #:container)
+   #:container
+   #:clear)
   ;; error-handling.lisp
   (:export
    #:*error-report-hook*

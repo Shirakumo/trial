@@ -18,8 +18,7 @@
    #:renderer
    #:event-bridge
    #:ui
-   #:ui-pass
-   #:basic-ui)
+   #:ui-pass)
   (:export
    #:ui-actions
    #:select-left
@@ -28,6 +27,18 @@
    #:select-down
    #:accept
    #:back)
+  (:export
+   #:base-ui
+   #:panels
+   #:find-panel
+   #:toggle-panel
+   #:show-panel
+   #:hide-panel
+   #:panel
+   #:shown-p
+   #:fullscreen-panel
+   #:action-set-change-panel
+   #:menuing-panel)
   (:export
    #:language-data
    #:vec
