@@ -281,6 +281,10 @@
   (:R2            #x2197)
   (:HOME          #xE001))
 
+(define-glyph-table (:xbox-one :inherit :generic-xbox)
+  (:SELECT        #x21FA)
+  (:START         #x21FB))
+
 (defun degeneralise-axis-symbol (axis threshold)
   (case axis
     (:l-h (if (< 0 threshold) :l-r :l-l))
