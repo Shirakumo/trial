@@ -27,16 +27,16 @@
   (alloy:clear (alloy:focus-tree ui))
   (setf (panels ui) ()))
 
-(defmethod trial:handle :around ((ev event) (ui base-ui))
+(defmethod trial:handle :around ((ev trial:event) (ui base-ui))
   (unless (call-next-method)
     (dolist (panel (panels ui))
       (trial:handle ev panel)
       (when (typep panel 'pausing-panel)
         (return)))))
 
-(defmethod alloy:stage :after ((ui base-ui) (area staging-area))
+(defmethod trial:stage :after ((ui base-ui) (area trial:staging-area))
   (dolist (panel (panels ui))
-    (stage panel area)))
+    (trial:stage panel area)))
 
 (defun find-panel (panel-type &optional (ui (ui)))
   (declare (optimize speed))
@@ -76,7 +76,7 @@
   (unless (find-panel 'fullscreen-panel)
     (call-next-method)))
 
-(defmethod trial:handle ((ev event) (panel panel)))
+(defmethod trial:handle ((ev trial:event) (panel panel)))
 
 (defmethod shown-p ((panel panel))
   (alloy:layout-tree (alloy:layout-element panel)))

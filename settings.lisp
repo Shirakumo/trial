@@ -172,15 +172,17 @@
     (setf (vsync *context*) vsync)))
 
 (define-setting-observer framerate :display :target-framerate (value)
-  (setf (target-frame-time +main+) (typecase value
-                                     (real (/ value))
-                                     (T 0.0))))
+  (when +main+
+    (setf (target-frame-time +main+) (typecase value
+                                       (real (/ value))
+                                       (T 0.0)))))
 
 (define-setting-observer fps-counter :debugging :fps-counter (value)
-  (let ((scene (scene +main+)))
-    (when (scene +main+)
-      (if value
-          (unless (unit 'fps-counter scene)
-            (enter-and-load (make-instance 'fps-counter) scene +main+))
-          (when (unit 'fps-counter scene)
-            (leave (unit 'fps-counter scene) T))))))
+  (when +main+
+    (let ((scene (scene +main+)))
+      (when (scene +main+)
+        (if value
+            (unless (unit 'fps-counter scene)
+              (enter-and-load (make-instance 'fps-counter) scene +main+))
+            (when (unit 'fps-counter scene)
+              (leave (unit 'fps-counter scene) T)))))))
