@@ -75,7 +75,8 @@ sbcl --noinform --load "$0" --eval '(generate)' --quit && exit
       :background (hex F0F0F0)
       :padding 0 0.1em)
      (.code-block
-      :padding 0.1em 0.5em))))
+      :padding 0.1em 0.5em
+      :overflow-x auto))))
 
 (defun suffix-p (suffix string)
   (and (<= (length suffix) (length string))

@@ -1,5 +1,5 @@
-# Using Trial-Release
-This is a system offering automation for pushing releases of your game to a zip, Steam, or Itch.io.
+# Releasing Games
+While you can simply use "Deploy"(https://github.com/shinmera/deploy) or some other system to create a bundle of your game, it is often useful to automate the build for multiple operating systems and also automate the submission. For this purpose, the ``trial-release`` extension exists This is a system offering automation for pushing releases of your game to a zip, Steam, Itch.io, or other services.
 
 ## Getting Set Up
 First you'll want to create a new ASDF system for your game's release. The ASD file should be in a directory where your releases will be put, so ideally not in the game's source root. The ASD should be something like this:

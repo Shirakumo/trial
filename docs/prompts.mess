@@ -1,0 +1,8 @@
+# Input Prompts
+While the "input system"(link input.mess) takes care of separating actions from actual inputs in your code, you will still need to do the inverse when prompting players for an action. Trial offers a system to do this, and an integration with the "PromptFont"(link https://shinmera.github.io/promptfont) font to make the display of the prompts trivial.
+
+To get the string to display to a user, simply call ``prompt-string``. The function accepts a keyword naming a specific prompt glyph to show, a symbol naming an action to display the prompt for, an ``action`` instance, or even an ``input-event`` for which to match the prompt. You can also specifically request prompts for a certain input type, by passing ``:bank`` as ``:keyboard`` or a gamepad ``device``. It is important to pass a gamepad device instance, as Trial will try to match the glyphs to the actual button labelling on the device.
+
+When showing a configuration dialogue for inputs, it can also be useful to list all the buttons that can trigger an action. To do so, use ``action-strings`` which returns a list of glyph strings, or ``action-string`` which just joins the strings into one.
+
+Once you have a glyph string, all you need to do is present it by rendering the text with the PromptFont font.

@@ -33,6 +33,7 @@ article code{
 
 article .code-block{
     padding: 0.1em 0.5em;
+    overflow-x: auto;
 }</style><h1 id="settings storage">Settings Storage</h1><p>Trial offers a standardised way to store and access user settings for your game. The settings are stored as a nested tree of plists.</p><h2 id="using settings">Using Settings</h2><p>Setting the default properties of the settings works simply by setfing <code>+settings+</code>:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(setf +settings+
       (copy-tree '(:audio (:latency 0.005
                            :backend :default

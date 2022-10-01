@@ -1,0 +1,31 @@
+# VALV^(E) Steam Integration
+The ``trial-steam`` extension system provides a few features to more easily integrate with "cl-steamworks"(https://github.com/shinmera/cl-steamworks) for Steam-specific features like achievements and, in the very least, Steam compliance.
+
+Setup from your end should be rather trivial for the basics: just inherit from the ``main`` subclass and set your Steam App-Id:
+
+:: common lisp
+(defclass main (org.shirakumo.fraf.trial.steam:main)
+  ()
+  (:default-initargs :app-id 170))
+::
+
+Note that even if you do this, the game will continue to work even if launched outside of Steam or if Steam isn't even present at all. It will try to connect to Steam on startup, but will just disable the extra integration bits if unavailable.
+
+This integration will also automatically integrate with Trial's "achievements"(link achievements.mess) system.
+
+## Gamepad Text Input
+For full gamepad compatibility compliance any text input must be doable with a gamepad. Under Steam you can get an on-screen keyboard by using the appropriate Steamworks calls. The integration system will take care of translating the resulting text into a ``text-entered`` event. For Alloy, the following integration should be suitable:
+
+:: common lisp
+(defmethod alloy:activate :after ((input alloy:text-input-component))
+  (when (and (steam:steamworks-available-p)
+             (not (eql :keyboard +input-source+)))
+    (or (steam:show-text-input (steam:interface 'steam:steamutils T)
+                               :default (alloy:text input))
+        (steam:show-floating-text-input (steam:interface 'steam:steamutils T))
+        (v:warn :trial.steam "Failed to open gamepad text input panel..."))))
+::
+
+Note that, as of this writing, opening the text input panel will fail unless the game is started through Big Picture Mode or is on the Steam Deck. This is expected.
+
+; TODO: Fixup SteamInput and make the translation stuff work

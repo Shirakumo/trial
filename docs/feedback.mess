@@ -1,0 +1,20 @@
+# Crash Reporting
+By default in release mode Trial games will show a message box on crash. The message box will include some info on the crash, but typically users will not bother to actually forward the report to you. To solve this issue, the ``trial-feedback`` system allows sending automated feedback reports to an instance of the "Feedback"(https://shirakumo.org/projects/feedback) service for you.
+
+To integrate your game with this, you must first create a project on your Feedback system that matches the ``+app-system+`` you defined for your game. Then, you must set your Radiance server up with the ``r-oauth`` extension and generate an oAuth application. In your game sources, you will then want to set ``*client-args*`` like so:
+
+:: common lisp
+(defparameter org.shirakumo.fraf.trial.feedback:*client-args*
+  '(:key "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+    :secret "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+    :token "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+    :token-secret "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"))
+::
+
+And that's all the integration needed. Often however it's also useful to submit additional data beyond the standard that the system submits for you (log file, system info, screenshot). To do so, use ``define-report-hook`` which returns an alist of the extra properties to submit.
+
+Note that you must also define the property in the Feedback admin panel for your project, otherwise the server will ignore it and not save it.
+
+It can also be useful to allow users to submit their own reports that aren't crashes. In that case, you can call the ``submit-report`` function with your own custom ``description`` that the user supplied.
+
+"IMPORTANT"(red, bold): It is up to you to ensure the legality of automated data submission. In all likelihood you must present a EULA to your users that they must accept for you to be able to submit data about their system and gameplay to your servers. We take no responsibility if this is not done.

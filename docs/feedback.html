@@ -1,0 +1,41 @@
+<article><style>article{
+    max-width: 800px;
+    font-size: 12pt;
+    font-family: sans-serif;
+    margin: 3em auto;
+}
+
+article h1{
+    text-align: center;
+    font-size: 2em;
+}
+
+article img{
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+article blockquote{
+    border-left: 0.2em solid gray;
+    margin-left: 1em;
+    padding-left: 1em;
+}
+
+article figcaption{
+    padding: 0.2em 1em;
+    background: #E0E0E0;
+}
+
+article code{
+    background: #F0F0F0;
+    padding: 0 0.1em;
+}
+
+article .code-block{
+    padding: 0.1em 0.5em;
+    overflow-x: auto;
+}</style><h1 id="crash reporting">Crash Reporting</h1><p>By default in release mode Trial games will show a message box on crash. The message box will include some info on the crash, but typically users will not bother to actually forward the report to you. To solve this issue, the <code>trial-feedback</code> system allows sending automated feedback reports to an instance of the <a class="external-link" href="https://shirakumo.org/projects/feedback">Feedback</a> service for you.</p><p>To integrate your game with this, you must first create a project on your Feedback system that matches the <code>+app-system+</code> you defined for your game. Then, you must set your Radiance server up with the <code>r-oauth</code> extension and generate an oAuth application. In your game sources, you will then want to set <code>*client-args*</code> like so:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(defparameter org.shirakumo.fraf.trial.feedback:*client-args*
+  '(:key &quot;XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX&quot;
+    :secret &quot;XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX&quot;
+    :token &quot;XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX&quot;
+    :token-secret &quot;XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX&quot;))</pre></code><p>And that's all the integration needed. Often however it's also useful to submit additional data beyond the standard that the system submits for you (log file, system info, screenshot). To do so, use <code>define-report-hook</code> which returns an alist of the extra properties to submit.</p><p>Note that you must also define the property in the Feedback admin panel for your project, otherwise the server will ignore it and not save it.</p><p>It can also be useful to allow users to submit their own reports that aren't crashes. In that case, you can call the <code>submit-report</code> function with your own custom <code>description</code> that the user supplied.</p><p><span style="color:rgb(255,0,0);font-weight:bold">IMPORTANT</span>: It is up to you to ensure the legality of automated data submission. In all likelihood you must present a EULA to your users that they must accept for you to be able to submit data about their system and gameplay to your servers. We take no responsibility if this is not done.</p></article>
