@@ -167,6 +167,9 @@
                    :shaders shaders
                    :buffers buffers)))
 
+(defmethod make-pass-shader-program ((pass shader-pass) (entity standalone-shader-entity))
+  (shader-program entity))
+
 (defmethod finalize :after ((pass shader-pass))
   (when (framebuffer pass)
     (finalize (framebuffer pass))))
