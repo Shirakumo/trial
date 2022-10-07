@@ -338,18 +338,19 @@
     (flet ((add (node)
              (setf (svref tentative i) node)
              (incf i)))
+      (declare (inline add))
       (add (bvh-root bvh))
-      (loop for node = (svref tentative (1- i))
-            do (setf i (1- i))
-               (when (node-overlaps-p node region)
-                 (let ((o (bvh-node-o node)))
-                   (cond (o
-                          (funcall function o))
-                         (T
-                          (add (bvh-node-l node))
-                          (add (bvh-node-r node))))))
-               (when (= 0 i)
-                 (return))))))
+      (loop (decf i)
+            (let ((node (svref tentative i)))
+              (when (node-overlaps-p node region)
+                (let ((o (bvh-node-o node)))
+                  (cond (o
+                         (funcall function o))
+                        (T
+                         (add (bvh-node-l node))
+                         (add (bvh-node-r node))))))
+              (when (= 0 i)
+                (return)))))))
 
 (defun call-with-overlapping (function bvh object)
   (declare (optimize speed (safety 1)))
