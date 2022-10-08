@@ -15,6 +15,26 @@
   (mapcar #'pathname-utils:directory-name
           (directory (merge-pathnames "lang/*/" (root)))))
 
+(defun try-find-language (language)
+  (etypecase language
+    ((eql :system)
+     (try-find-language (system-locale:languages)))
+    (symbol
+     (try-find-language (string-downcase language)))
+    (cons
+     (loop for candidate in language
+           thereis (try-find-language candidate)))
+    (string
+     (flet ((try (language)
+              (when (probe-file (language-file language))
+                (return-from try-find-language (string-downcase language)))))
+       (try language)
+       (mapc #'try (language-codes:codes language))
+       (let ((name (first (language-codes:names language))))
+         (when name
+           (mapc #'try (language-codes:codes name))))
+       (try "eng")
+       (try (first (languages)))))))
 
 (defun language-dir (&optional (language (setting :language)))
   (merge-pathnames (make-pathname :directory `(:relative "lang" ,(string-downcase language)))
@@ -41,6 +61,7 @@
   (let ((table (if (or replace (null +language-data+))
                    (make-hash-table :test 'eq)
                    +language-data+)))
+    (setf language (try-find-language language))
     (when (or replace (null +loaded-language+) (not (equalp +loaded-language+ language)))
       (setf language (string-downcase language))
       (v:info :trial.language "Loading language ~s from ~a" language (language-file language))

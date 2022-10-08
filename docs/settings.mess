@@ -20,7 +20,7 @@ Setting the default properties of the settings works simply by setfing ``+settin
                              :ui-scale 1.0)
                    :gameplay (:rumble 1.0
                               :screen-shake 1.0)
-                   :language :eng)))
+                   :language :system)))
 ::
 
 When you ``save-settings`` this plist structure is output to a local file appropriate for your game, provided ``+app-system+`` and ``+app-vendor+`` are correctly set (see ``config-directory``).
@@ -68,7 +68,7 @@ General gameplay options and tweaks for the user.
 ### Language
 The language to use. See "localization.mess"(link localization.mess)
 
-- ``:language`` The language used for the game. Should be a standard language code string
+- ``:language`` The language used for the game. Should be a standard language code string or ``:system``. Should default to ``:system``
 
 ### Debugging
 Debugging options for diagnostics.

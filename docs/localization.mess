@@ -18,4 +18,4 @@ city-name "Tokyo"
 
 etc. You may also of course store other language-specific files such as dialogue scripts and so forth in the language specific directory.
 
-And that's pretty much all there is to it.
+Loading the special language ``:system`` will query the current system for the native locale and try to load a language matching that locale. Loading any language will try to load the language under any alternate codes and names, and if that fails, it'll try to load ``eng`` and if that fails, the first entry of ``languages``.

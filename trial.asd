@@ -145,4 +145,6 @@
                :lambda-fiddle
                :jsown
                :zpng
+               :system-locale
+               :language-codes
                (:feature :windows :com-on)))
