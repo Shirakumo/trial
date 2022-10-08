@@ -167,7 +167,7 @@
   (when *context*
     (show *context* :fullscreen value :mode (setting :display :resolution))))
 
-(define-setting-observer vsync :display :vsync (value)
+(define-setting-observer vsync :display :vsync (vsync)
   (when *context*
     (setf (vsync *context*) vsync)))
 
