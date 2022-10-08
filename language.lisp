@@ -99,7 +99,7 @@
   (or (gethash identifier +language-data+)
       (unless errorp (return-from language-string NIL))
       ;; Try loading again in case things changed.
-      (progn (load-language)
+      (progn (load-language +loaded-language+ T)
              (gethash identifier +language-data+))
       (restart-case
           (error "No language string defined for ~s" identifier)
