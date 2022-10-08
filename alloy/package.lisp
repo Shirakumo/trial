@@ -46,6 +46,7 @@
    #:vec3
    #:vec4
    #:define-set-representation
+   #:language
    #:asset
    #:resource
    #:monitor

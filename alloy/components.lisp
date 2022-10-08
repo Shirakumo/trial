@@ -120,6 +120,10 @@
             `(defmethod alloy:component-class-for-object ((_ ,represents))
                (find-class ',name)))))))
 
+(define-set-representation language
+  :item-text (or (first (language-codes:names alloy:value)) alloy:value)
+  (trial:languages))
+
 (define-set-representation asset
   :represents trial:asset
   :item-text (format NIL "~a / ~a"
