@@ -85,6 +85,12 @@
 (defmethod (setf alloy:clipboard) (value (ui ui))
   (setf (trial:clipboard trial:*context*) value))
 
+(defmethod alloy:cursor ((ui ui))
+  (trial:cursor trial:*context*))
+
+(defmethod (setf alloy:cursor) (value (ui ui))
+  (setf (trial:cursor trial:*context*) value))
+
 (defmethod trial:handle :after ((ev trial:key-release) (ui ui))
   (case (trial:key ev)
     (:insert

@@ -87,6 +87,8 @@
 (defgeneric hide-cursor (context))
 (defgeneric lock-cursor (context))
 (defgeneric unlock-cursor (context))
+(defgeneric cursor (context))
+(defgeneric (setf cursor) (cursor context))
 (defgeneric title (context))
 (defgeneric (setf title) (value context))
 (defgeneric vsync (context))

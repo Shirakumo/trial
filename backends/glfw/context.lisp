@@ -16,6 +16,17 @@
   (target :int) (hint :string))
 (cffi:defcfun (get-key-name "glfwGetKeyName") :string
   (key %glfw::key) (scan-code :int))
+(cffi:defcfun (create-standard-cursor "glfwCreateStandardCursor") :pointer
+  (cursor :int))
+(cffi:defcfun (create-cursor "glfwCreateCursor") :pointer
+  (image :pointer)
+  (x :int)
+  (y :int))
+(cffi:defcfun (set-cursor "glfwSetCursor") :int
+  (window :pointer)
+  (cursor :pointer))
+(cffi:defcfun (destroy-cursor "glfwDestroyCursor") :void
+  (cursor :pointer))
 
 (defclass monitor (trial:monitor)
   ((pointer :initarg :pointer :reader pointer)))
@@ -34,7 +45,9 @@
    (monitors :initform () :accessor monitors)
    (vsync :initarg :vsync :accessor vsync)
    (width :initform 1 :accessor width)
-   (height :initform 1 :accessor height))
+   (height :initform 1 :accessor height)
+   (cursor :initform NIL :reader cursor)
+   (cursor-cache :initform (make-hash-table :test 'eql) :reader cursor-cache))
   (:default-initargs
    :resizable T
    :visible T
@@ -161,6 +174,9 @@
           (cl-glfw3:set-scroll-callback 'ctx-scroll window))))))
 
 (defmethod destroy-context ((context context))
+  (loop for v being the hash-values of (cursor-cache context)
+        do (destroy-cursor v))
+  (clrhash (cursor-cache context))
   (cl-glfw3:destroy-window (window context))
   (setf (window context) NIL))
 
@@ -231,6 +247,23 @@
   (if (cursor-visible context)
       (show-cursor context)
       (hide-cursor context)))
+
+(defun get-cursor (cursor context)
+  (or (gethash cursor (cursor-cache context))
+      (setf (gethash cursor (cursor-cache context))
+            (etypecase cursor
+              ;; TODO: allow custom cursors
+              (null                     (cffi:null-pointer))
+              ((eql :arrow)             (create-standard-cursor #x00036001))
+              ((eql :text)              (create-standard-cursor #x00036002))
+              ((eql :hand)              (create-standard-cursor #x00036004))
+              ((eql :horizontal-resize) (create-standard-cursor #x00036005))
+              ((eql :vertical-resize)   (create-standard-cursor #x00036006))
+              ((eql :crosshair)         (create-standard-cursor #x00036003))))))
+
+(defmethod (setf cursor) (cursor (context context))
+  (set-cursor (window context) (get-cursor cursor context))
+  (setf (slot-value context 'cursor) cursor))
 
 (defmethod (setf title) :before (value (context context))
   (cl-glfw3:set-window-title value (window context)))

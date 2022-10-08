@@ -295,6 +295,7 @@
    #:hide-cursor
    #:lock-cursor
    #:unlock-cursor
+   #:cursor
    #:title
    #:vsync
    #:width

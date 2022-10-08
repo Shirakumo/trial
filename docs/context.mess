@@ -39,6 +39,14 @@ Note that these functions may be no-ops on some backends where the concept of a 
 - ``lock-cursor`` Locks the OS cursor within the window preventing it from escaping. Use with care to prevent over-eager cursor capture
 - ``unlock-cursor`` Unlock the OS cursor allowing it to escape the window
 - ``cursor-position`` Return the current cursor position within the window
+- ``cursor`` Access the cursor's image. A few system-defined cursors are provided via symbols:
+  - ``NIL`` The system's default cursor
+  - ``:arrow`` An arrow for pointing at things
+  - ``:text`` A caret for text editing
+  - ``:hand`` A hand for grabbing and moving
+  - ``:horizontal-resize`` A horizontal arrow for resizing
+  - ``:vertical-resize`` A vertical arrow for resizing
+  - ``:crosshair`` A crosshair for picking and placing
 - ``title`` Access the title shown on the window
 - ``vsync`` Access whether vertical screen synchronisation is in effect
 - ``width`` Return the window's current width in pixels
