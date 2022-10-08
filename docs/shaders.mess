@@ -1,0 +1,92 @@
+# Shaders and You!
+Trial is based upon OpenGL and as such uses the GLSL language for writing shaders. While you can directly create ``shader`` instances and then compile them to a ``shader-program``, the more typically intended user interface is through ``shader-entity`` classes, which are defined via ``define-shader-entity``.
+
+## Shader Entities
+A ``shader-entity`` holds shader code fragments in its class, and can inherit shader code fragments from its superclasses. Trial will combine the shaders together automatically, such that shader semantics combine like other method semantics would in CLOS. More on that later. Defining a basic custom shader class is simple:
+
+:: common lisp
+(define-shader-entity my-object (vertex-entity)
+  ())
+
+(define-class-shader (my-object :fragment-shader)
+  "out vec4 color;
+
+void main(){
+  color = vec4(0, 1, 0, 1);
+}")
+::
+
+The above defines a class that has a fragment shader attached, which sets the output colour to green. We inherit from ``shader-entity`` which handles the loading and drawing of the mesh, and also provides the required vertex shader to process the vertices of the mesh and position them in space.
+
+You can see the fully compiled shader with ``compute-effective-shaders``:
+
+:: common lisp
+(compute-effective-shaders (find-class 'my-object))
+
+; ==>
+(:VERTEX-SHADER "layout(location = 0) in vec3 position;
+uniform mat4 model_matrix;
+uniform mat4 view_matrix;
+uniform mat4 projection_matrix;
+
+void _GLSLTK_main_1(){
+  gl_Position = (projection_matrix * (view_matrix * (model_matrix * vec4(position, 1.0))));
+}
+
+void main(){
+  _GLSLTK_main_1();
+}"
+ :FRAGMENT-SHADER "out vec4 color;
+
+void _GLSLTK_main_1(){
+  color = vec4(1.0, 1.0, 1.0, 1.0);
+}
+
+void _GLSLTK_main_2(){
+  color = vec4(0, 1, 0, 1);
+}
+
+void main(){
+  _GLSLTK_main_1();
+  _GLSLTK_main_2();
+}")
+::
+
+Here you can see the vertex shader we inherited, and the fragment shader we defined as well, though slightly modified by the merging. It appears alongside the vertex shader, we already inherited another default fragment shader which sets the output colour to white. In this case we just override the result so it doesn't matter much, but if we need to prevent a superclass' shader fragment, we can inhibit it:
+
+:: common lisp
+(define-shader-entity my-object (vertex-entity)
+  ()
+  (:inhibit-shaders (shader-entity :fragment-shader)))
+::
+
+Looking at the effective shader for the class now, the inherited fragment is gone.
+
+OpenGL offers many other shader types than fragment and vertex shaders, all of which you can attach to a shader entity in the same way. All of them can be specified with just raw GLSL code snippets. However, if so desired, you can also outsource the shader code into separate files, and then include them, instead:
+
+:: common lisp
+(define-class-shader (my-object :fragment-shader)
+  (pool-path 'my-project #p"my-object.frag"))
+::
+
+There are currently no plans to include a more "lispy" syntax for writing shaders, though it isn't out of the question for such an inclusion to be made. Regardless however, the raw GLSL approach will always be supported.
+
+Due to the looseness of GLSL code, the automated combination of fragments can sometimes end up somewhat unpredictable. Especially if the shader fragments do not agree on the names of various variables. GLSL-toolkit will do its best to try and match up the variables and rename them to slot the pieces together, but it may not always be successful at doing everything fully automated.
+
+Currently we don't have a specified shader interface system to help with this issue, but it is something that we would like to add at a later point. For now, simply look at whatever fragments you inherit, and check that your variable names align, should the merging miscompile.
+
+Please also note that under the typical "render pipeline"(link render-pipeline.mess) the effective shader not only depends on the fragments of your class, but can also be further modified by the shader passes it is rendered by.
+
+## Uniforms
+Often you will want to pass extra information into a shader or configure parameters of it. This is usually done with uniform variables on the shader side, which are then set before the draw call is made. If you have such uniforms, you will often set them in a ``render`` method like so:
+
+:: common lisp
+(defmethod render :before ((object my-object) (program shader-program))
+  (setf (uniform program "whatever") 10.0))
+::
+
+Note: setting uniforms that don't exist will quietly ignore, but trying to set a value that does not match the type of the uniform will error.
+
+Trial support setting uniforms of type ``int``, ``float``, ``double``, ``vec2``, ``vec3``, ``vec4``, ``mat2``, ``mat3``, ``mat4``, and ``matn``. For more complex structure types you have to either use "uniform buffer objects"(link buffers.mess), or set each field of the structure individually by using its full name.
+
+Sometimes uniforms don't change every frame and don't change for every object, and as such don't need to be updated with every ``render``, either. In that case you have to gain access to the shader programs related to the entity via ``shader-program-for-pass`` and set the uniforms whenever they //do// change. However, this is usually an optimisation best left for later.
