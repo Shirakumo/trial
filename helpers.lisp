@@ -54,8 +54,10 @@
   ((transform :initarg :transform :initform (transform) :accessor tf)))
 
 (defmethod apply-transforms progn ((obj transformed-entity))
-  ;; FIXME: implement a non-consing version.
-  (nm* (model-matrix) (tmat4 (tf obj))))
+  (let* ((marr (make-array 16 :element-type 'single-float))
+         (mat (3d-matrices::%mat4 marr)))
+    (declare (dynamic-extent mat marr))
+    (nm* (model-matrix) (tmat4 (tf obj) mat))))
 
 (defmethod location ((obj transformed-entity))
   (tlocation (tf obj)))
