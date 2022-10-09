@@ -34,7 +34,6 @@
                (:file "camera" :depends-on ("package" "container" "input"))
                (:file "capture" :depends-on ("package" "toolkit" "serialize" "event-loop" "input"))
                (:file "conditions" :depends-on ("package"))
-               (:file "camera" :depends-on ("package" "container" "helpers" "input"))
                (:file "container" :depends-on ("package"))
                (:file "context" :depends-on ("package"))
                (:file "controller" :depends-on ("package" "mapping" "input" "container" "asset"))
