@@ -53,8 +53,8 @@
            node container (container entity))))
 
 #-elide-container-checks
-(defmethod leave :before ((entity entity) (container container))
-  (when (and (container entity) (not (eq container (container entity))))
+(defmethod leave :before ((node scene-node) (container container))
+  (when (and (container node) (not (eq container (container node))))
     (error "The entity~%  ~a~%cannot be left from~%  ~a~%as it is contained in~%  ~a"
            entity container (container entity))))
 
