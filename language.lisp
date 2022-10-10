@@ -15,6 +15,10 @@
   (mapcar #'pathname-utils:directory-name
           (directory (merge-pathnames "lang/*/" (root)))))
 
+(defun language ()
+  (or +loaded-language+
+      (load-language (setting :language))))
+
 (defun try-find-language (language)
   (etypecase language
     ((eql :system)
@@ -36,14 +40,14 @@
        (try "eng")
        (try (first (languages)))))))
 
-(defun language-dir (&optional (language (setting :language)))
+(defun language-dir (&optional (language (language)))
   (merge-pathnames (make-pathname :directory `(:relative "lang" ,(string-downcase language)))
                    (root)))
 
-(defun language-file (&optional (language (setting :language)))
+(defun language-file (&optional (language (language)))
   (make-pathname :name "strings" :type "lisp" :defaults (language-dir language)))
 
-(defun language-files (&optional (language (setting :language)))
+(defun language-files (&optional (language (language)))
   (directory (make-pathname :name :wild :type "lisp" :defaults (language-dir language))))
 
 (defmacro define-language-change-hook (name args &body body)
@@ -80,9 +84,10 @@
                  (error "No language named ~s found." language)))))
       (setf +loaded-language+ language)
       (dolist (hook *language-change-hooks* table)
-        (funcall hook language)))))
+        (funcall hook language)))
+    language))
 
-(defun save-language (&optional (language (or +loaded-language+ (setting :language))))
+(defun save-language (&optional (language (language)))
   (when +language-data+
     (setf language (string-downcase language))
     (v:info :trial.language "Saving language ~s to ~s" language (language-file language))

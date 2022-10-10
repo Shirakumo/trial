@@ -593,6 +593,7 @@
    #:gamepad-removed)
   ;; language.lisp
   (:export
+   #:language
    #:languages
    #:language-dir
    #:language-file
