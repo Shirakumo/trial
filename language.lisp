@@ -17,7 +17,7 @@
 
 (defun language ()
   (or +loaded-language+
-      (load-language (setting :language))))
+      (load-language (or (setting :language) :eng))))
 
 (defun try-find-language (language)
   (etypecase language
