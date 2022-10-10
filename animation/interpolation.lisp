@@ -52,19 +52,41 @@
 
 (defgeneric interpolate (a b x))
 
-(defmethod interpolate ((a single-float) (b single-float) x)
-  (+ a (* (- b a) (the single-float x))))
+#+sbcl
+(sb-c:defknown interpolate (T T T) T)
 
-(defmethod interpolate ((a vec2) (b vec2) x)
-  (vlerp a b x))
+(defmacro define-inlined-method (name args &body expansion)
+  `(progn
+     #+sbcl
+     (sb-c:deftransform ,name (,(loop for arg in args collect (first arg))
+                               ,(loop for arg in args collect (second arg)))
+       ',(first expansion))
 
-(defmethod interpolate ((a vec3) (b vec3) x)
-  (vlerp a b x))
+     (defmethod ,name ,args
+       ,@expansion)))
 
-(defmethod interpolate ((a vec4) (b vec4) x)
-  (vlerp a b x))
+(define-inlined-method interpolate ((a real) (b real) (x real))
+  (let ((a (float a 0f0)))
+    (+ a (* (- (float b 0f0) a) (float x 0f0)))))
 
-(defmethod interpolate ((a quat) (b quat) x)
-  (nqunit (if (< (q. a b) 0)
-              (qmix a (q- b) x)
-              (qmix a b x))))
+(define-inlined-method interpolate ((a vec2) (b vec2) (x real))
+  (let ((x (float x 0f0)))
+    (vlerp a b x)))
+
+(define-inlined-method interpolate ((a vec3) (b vec3) (x real))
+  (let ((x (float x 0f0)))
+    (vlerp a b x)))
+
+(define-inlined-method interpolate ((a vec4) (b vec4) (x real))
+  (let ((x (float x 0f0)))
+    (vlerp a b x)))
+
+(define-inlined-method interpolate ((a quat) (b quat) (x real))
+  (let ((x (float x 0f0)))
+    (vlerp a b x)))
+
+(define-inlined-method interpolate ((a quat) (b quat) (x real))
+  (let ((x (float x 0f0)))
+    (nqunit (if (< (q. a b) 0)
+                (qmix a (q- b) x)
+                (qmix a b x)))))
