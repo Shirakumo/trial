@@ -114,7 +114,9 @@
                "-y" target))))))
 
 (defmethod trial:generate-resources ((generator environment-loader) sets &key (resource (trial:resource generator T)))
-  (trial::ensure-instance resource 'music :sets sets))
+  (if (typep resource 'music)
+      resource
+      (trial::ensure-instance resource 'music :sets sets)))
 
 (defclass environment (trial:single-resource-asset environment-loader)
   ())
@@ -140,7 +142,8 @@
 (defmethod trial:allocate ((music music)) music)
 
 (defmethod trial:deallocate ((music music))
-  (mixed:free music)
+  (harmony:with-server ()
+    (mixed:free music))
   (change-class music 'trial:placeholder-resource))
 
 ;; KLUDGE: This cannot be a harmony:voice since it does not handle the change-class/reinitialize-instance
