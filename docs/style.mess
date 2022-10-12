@@ -1,0 +1,24 @@
+# Trial Style Guide
+This style guide is for Trial, but applies for all Shirakumo projects in general. It is not an exhaustive list of style rules, but instead notes the more frequent stumbling blocks.
+
+- No Tabs
+- No CRLF. Always use LF/Unix-style line endings
+- All names must be written in American English
+- Always use ``cond`` whenever you would have to use ``progn`` in an ``if`` branch
+- All constants, including ``T``, ``NIL``, ``PI``, etc, must be in scream-case
+- All global special variables must have ``*earmuffs*``
+- All global variables must have ``+piercings+``
+- Always use ``setf``, no ``setq``
+- Always use looping constructs for iteration instead of recursion
+- All user documentation strings must be in ``documentation.lisp``
+- All implementer-facing source documentation should be in comments
+- Documentation strings should follow this format:
+  ::
+  Single summary line
+  
+  Documentation block wrapped at 80 char
+  Explaining args, behaviour, etc.
+  
+  See CROSSREF
+  See OTHER-REF
+  ::
