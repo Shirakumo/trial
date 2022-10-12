@@ -1,20 +1,3 @@
-(defpackage #:org.shirakumo.fraf.trial.bvh2
-  (:use #:cl #:3d-vectors)
-  (:import-from #:org.shirakumo.fraf.trial #:location #:bsize)
-  (:export
-   #:bvh
-   #:make-bvh
-   #:bvh-insert
-   #:bvh-remove
-   #:bvh-update
-   #:bvh-check
-   #:bvh-print
-   #:bvh-lines
-   #:bvh-reinsert-all
-   #:call-with-contained
-   #:call-with-overlapping
-   #:do-fitting))
-
 (in-package #:org.shirakumo.fraf.trial.bvh2)
 
 ;; CF https://www.researchgate.net/publication/254007711_Fast_Effective_BVH_Updates_for_Animated_Scenes
@@ -463,53 +446,53 @@
          (error "Not supported"))
        (lambda ())))))
 
-(progn
-  (declaim (inline perimiter-heuristic cost node-cost node-priority))
+(declaim (inline perimiter-heuristic cost node-cost node-priority))
 
-  (defun perimiter-heuristic (x y z w)
-    (declare (optimize speed (safety 0))
-             (type single-float x y z w))
-    (+ (- z x)
-       (- w y)))
+(defun perimiter-heuristic (x y z w)
+  (declare (optimize speed (safety 0))
+           (type single-float x y z w))
+  (+ (- z x)
+     (- w y)))
 
-  (defun cost (x y z w)
-    (declare (optimize speed (safety 0)))
-    (the single-float
-         (perimiter-heuristic x y z w)))
+(defun cost (x y z w)
+  (declare (optimize speed (safety 0)))
+  (the single-float
+       (perimiter-heuristic x y z w)))
 
-  (defun node-cost (node)
-    (declare (optimize speed (safety 0)) (type vec4 node))
-    (the single-float
-         (cost (vx4 node) (vy4 node)
-               (vz4 node) (vw4 node))))
+(defun node-cost (node)
+  (declare (optimize speed (safety 0)) (type vec4 node))
+  (the single-float
+       (cost (vx4 node) (vy4 node)
+             (vz4 node) (vw4 node))))
 
-  (defun node-priority (node)
-    (declare (optimize speed (safety 0)))
-    (if (bvh-node-p node)
-        (/ (node-cost (bvh-node-p node))
-           (node-cost node))
-        0.0)))
+(defun node-priority (node)
+  (declare (optimize speed (safety 0)))
+  (if (bvh-node-p node)
+      (/ (node-cost (bvh-node-p node))
+         (node-cost node))
+      0.0))
 
 ;; like "Parallel Reinsertion for Bounding Volume Hierarchy Optimization" (D. Meister and J. Bittner)
 ;; the paper is mostly about optimization for paralellism, with the algorithm being derived from
 ;; "Fast Insertion-Based Optimization of Bounding Volume Hierarchies" (J. Bittner, M. Hapala, and V. Havran)
+;;
+;; Returns the node for which NODE being reinserted as its child would
+;; create the greatest cumulative decrease in box perimiter.
 (defun node-find-best-reinsertion-position (node bvh)
-  "Returns the node for which NODE being reinserted as its child would
-create the greatest cumulative decrease in box perimiter."
   (declare (optimize speed))
   (when (bvh-node-p node)
     (let* ((parent (bvh-node-p node))
            (pivot parent)
            (pivot-box (vec4 0.0 0.0 0.0 0.0))
-           (pivot-box-initialized nil)
+           (pivot-box-initialized NIL)
            (decrease-bound (- (node-cost parent) (node-cost node)))
            (decrease 0.0)
            (decrease-best decrease)
            (out (node-sibling node))
            (out-best out)
-           (down t))
+           (down T))
       (declare (dynamic-extent pivot-box)
-               (type single-float decrease-bound decrease best-decrease))
+               (type single-float decrease-bound decrease decrease-best))
       (flet ((union-cost (node-a node-b)
                (declare (optimize speed (safety 0)))
                (cost (min (vx4 node-a)
@@ -521,95 +504,92 @@ create the greatest cumulative decrease in box perimiter."
                      (max (vw4 node-a)
                           (vw4 node-b)))))
         (declare (inline union-cost))
-        (loop (if down
-                  ;; traverse downwards
-                  (let* ((merged-cost (union-cost node out))
-                         ;; how much better off we would be if OUT was NODE's parent
-                         (decrease-direct (- (node-cost parent)
-                                             merged-cost)))
-                    (when (< decrease-best (+ decrease decrease-direct))
-                      (setq decrease-best (+ decrease decrease-direct))
-                      (setq out-best out))
-                    ;; decrease of cost gets worse as you descend
-                    (decf decrease (- merged-cost (node-cost out)))
-                    (if (or (bvh-node-o out) ; stop at leaves
-                            (<= (+ decrease-bound decrease)
-                                ;; early stop heuristic; if descending
-                                ;; would be worse than where we started,
-                                ;; stop descending.
-                                decrease-best))
-                        (setq down nil)
-                        (setq out (bvh-node-l out))))
-                  (progn    ; traverse upwards towards pivot
-                    ;; decrease of cost improves as you ascend
-                    (incf decrease (- (union-cost node out) (node-cost out)))
-                    (if (eq pivot (bvh-node-p out))
-                        (progn   ; we've reached the pivot
-                          (if pivot-box-initialized ; expand the pivot box to include OUT
-                              (node-fit pivot-box pivot-box out)
-                              (progn
-                                (vsetf pivot-box (vx out) (vy out) (vz out) (vw out))
-                                (setq pivot-box-initialized t)))
-                          (setq out (bvh-node-p out)) ; consider the pivot as OUT,
-                          (when (not (eq out parent)) ; but not if we're still on the original parent.
-                            ;; how much better off we would be if PIVOT-BOX was NODE's parent
-                            (let ((decrease-direct (- (node-cost parent)
-                                                      (union-cost node pivot-box))))
-                              (when (< decrease-best (+ decrease decrease-direct))
-                                (setq decrease-best (+ decrease decrease-direct))
-                                ;; set pivot as best
-                                (setq out-best out)))
-                            (decf decrease (- (node-cost pivot-box)
-                                              (node-cost out))))
-                          (when (eq out (bvh-root bvh)) ; stop at root
-                            ;; If the best position found is the
-                            ;; sibling, NODE is already in the best spot.
-                            (return (unless (eq out-best (node-sibling node))
-                                      out-best)))
-                          ;; when we haven't stopped, move the pivot up
-                          ;; and traverse down on the sibling branch
-                          (setq out (node-sibling pivot))
-                          (setq pivot (bvh-node-p out))
-                          (setq down t))
+        (loop (cond (down
+                     ;; traverse downwards
+                     (let* ((merged-cost (union-cost node out))
+                            ;; how much better off we would be if OUT was NODE's parent
+                            (decrease-direct (- (node-cost parent)
+                                                merged-cost)))
+                       (when (< decrease-best (+ decrease decrease-direct))
+                         (setf decrease-best (+ decrease decrease-direct))
+                         (setf out-best out))
+                       ;; decrease of cost gets worse as you descend
+                       (decf decrease (- merged-cost (node-cost out)))
+                       (if (or (bvh-node-o out) ; stop at leaves
+                               (<= (+ decrease-bound decrease)
+                                   ;; early stop heuristic; if descending
+                                   ;; would be worse than where we started,
+                                   ;; stop descending.
+                                   decrease-best))
+                           (setf down NIL)
+                           (setf out (bvh-node-l out)))))
+                    (T ; traverse upwards towards pivot
+                     ;; decrease of cost improves as you ascend
+                     (incf decrease (- (union-cost node out) (node-cost out)))
+                     (cond ((eq pivot (bvh-node-p out))        ; we've reached the pivot
+                            (cond (pivot-box-initialized ; expand the pivot box to include OUT
+                                   (node-fit pivot-box pivot-box out))
+                                  (T
+                                   (vsetf pivot-box (vx out) (vy out) (vz out) (vw out))
+                                   (setf pivot-box-initialized T)))
+                            (setf out (bvh-node-p out)) ; consider the pivot as OUT,
+                            (when (not (eq out parent)) ; but not if we're still on the original parent.
+                              ;; how much better off we would be if PIVOT-BOX was NODE's parent
+                              (let ((decrease-direct (- (node-cost parent)
+                                                        (union-cost node pivot-box))))
+                                (when (< decrease-best (+ decrease decrease-direct))
+                                  (setf decrease-best (+ decrease decrease-direct))
+                                  ;; set pivot as best
+                                  (setf out-best out)))
+                              (decf decrease (- (node-cost pivot-box)
+                                                (node-cost out))))
+                            (when (eq out (bvh-root bvh)) ; stop at root
+                              ;; If the best position found is the
+                              ;; sibling, NODE is already in the best spot.
+                              (return (unless (eq out-best (node-sibling node))
+                                        out-best)))
+                            ;; when we haven't stopped, move the pivot up
+                            ;; and traverse down on the sibling branch
+                            (setf out (node-sibling pivot))
+                            (setf pivot (bvh-node-p out))
+                            (setf down T))
+                           
+                         ;; we haven't reached the pivot. traverse sibling down, or parent up
+                         ((eq out (bvh-node-l (bvh-node-p out)))
+                          (setf down T)
+                          (setf out (node-sibling out)))
+                         (T
+                          (setf out (bvh-node-p out)))))))))))
 
-                        ;; we haven't reached the pivot. traverse sibling down, or parent up
-                        (if (eq out (bvh-node-l (bvh-node-p out)))
-                            (progn
-                              (setq down t)
-                              (setq out (node-sibling out)))
-                            (setq out (bvh-node-p out)))))))))))
-
+;; Remove NODE from BVH, then splice it back into the tree so that OUT is its parent.
 (defun node-remove-and-reinsert (bvh node out)
-  "Remove NODE from BVH, then splice it back into the tree so that OUT is its parent."
   (declare (optimize speed))
   (let ((sibling (node-sibling node))
         (parent (bvh-node-p node)))
     (when parent
       ;; Put SIBLING where PARENT is
       (let ((grandparent (bvh-node-p parent)))
-        (if grandparent
-            (progn
-              (if (eq (bvh-node-l grandparent) parent)
-                  (setf (bvh-node-l grandparent) sibling)
-                  (setf (bvh-node-r grandparent) sibling))
-              (setf (bvh-node-p sibling) grandparent))
-            ;; if there's no grandparent, parent is the root.
-            (progn (setf (bvh-root bvh) sibling)
-                   (setf (bvh-node-p sibling) nil)))
+        (cond (grandparent
+               (if (eq (bvh-node-l grandparent) parent)
+                   (setf (bvh-node-l grandparent) sibling)
+                   (setf (bvh-node-r grandparent) sibling))
+               (setf (bvh-node-p sibling) grandparent))
+              (T ;; if there's no grandparent, parent is the root.
+               (setf (bvh-root bvh) sibling)
+               (setf (bvh-node-p sibling) NIL)))
         (set-depth sibling (1- (bvh-node-d sibling)))
         (when grandparent
           (node-refit grandparent)))
       ;; Put PARENT where OUT is, with NODE and OUT as its children
       (let ((grandparent (bvh-node-p out)))
-        (if grandparent
-            (progn
-              (if (eq (bvh-node-l grandparent) out)
-                  (setf (bvh-node-l grandparent) parent)
-                  (setf (bvh-node-r grandparent) parent))
-              (setf (bvh-node-p parent) grandparent))
-            ;; out is the root
-            (progn (setf (bvh-root bvh) parent)
-                   (setf (bvh-node-p parent) nil)))
+        (cond (grandparent
+               (if (eq (bvh-node-l grandparent) out)
+                   (setf (bvh-node-l grandparent) parent)
+                   (setf (bvh-node-r grandparent) parent))
+               (setf (bvh-node-p parent) grandparent))
+              (T ;; out is the root
+               (setf (bvh-root bvh) parent)
+               (setf (bvh-node-p parent) NIL)))
         (setf (bvh-node-r parent) out)
         (setf (bvh-node-l parent) node)
         (setf (bvh-node-p out) parent)
@@ -618,27 +598,22 @@ create the greatest cumulative decrease in box perimiter."
         (node-refit parent)))))
 
 (defun node-reinsert-to-best (node bvh)
-  "Remove the specified node from the bvh and reinsert it into its
-optimal position in the tree."
   (let ((best (node-find-best-reinsertion-position node bvh)))
     (when best
       (node-remove-and-reinsert bvh node best)
-      t)))
+      T)))
 
 (defun bvh-reinsert-all (bvh &optional (rounds 1))
-  "Reinsert each node in BVH to its optimal position in the
-tree. Results may improve with multiple passes, the number of which
-may be specified by ROUNDS."
-  (labels ((descend (node)
-             (node-reinsert-to-best node bvh)
-             (unless (bvh-node-o node)
-               (descend (bvh-node-l node))
-               (descend (bvh-node-r node))))
-           (bvh-empty-p (bvh)
-             (let ((root (bvh-root bvh)))
-               (not (or (bvh-node-o root)
-                        (bvh-node-l root)
-                        (bvh-node-r root))))))
-    (unless (bvh-empty-p bvh)
-      (descend (bvh-root bvh))
-      (when (> rounds 0) (bvh-reinsert-all bvh (1- rounds))))))
+  (dotimes (i rounds bvh)
+    (labels ((descend (node)
+               (node-reinsert-to-best node bvh)
+               (unless (bvh-node-o node)
+                 (descend (bvh-node-l node))
+                 (descend (bvh-node-r node))))
+             (bvh-empty-p (bvh)
+               (let ((root (bvh-root bvh)))
+                 (not (or (bvh-node-o root)
+                          (bvh-node-l root)
+                          (bvh-node-r root))))))
+      (unless (bvh-empty-p bvh)
+        (descend (bvh-root bvh))))))

@@ -1052,6 +1052,23 @@
   ;; workbench.lisp
   (:export))
 
+(defpackage #:org.shirakumo.fraf.trial.bvh2
+  (:use #:cl #:3d-vectors)
+  (:import-from #:org.shirakumo.fraf.trial #:location #:bsize)
+  (:export
+   #:bvh
+   #:make-bvh
+   #:bvh-insert
+   #:bvh-remove
+   #:bvh-update
+   #:bvh-check
+   #:bvh-print
+   #:bvh-lines
+   #:bvh-reinsert-all
+   #:call-with-contained
+   #:call-with-overlapping
+   #:do-fitting))
+
 (defpackage #:cl+trial
   (:nicknames #:org.shirakumo.fraf.trial.cl+trial)
   (:shadowing-import-from #:trial #:// #:scene #:entity #:container #:load #:update #:particle #:oriented-entity #:sized-entity)
