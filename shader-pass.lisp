@@ -157,7 +157,9 @@
     (loop for type in *shader-type-list*
           for inputs = (compute-shader type pass object)
           do (when inputs
-               (let ((input (glsl-toolkit:merge-shader-sources inputs :min-version (glsl-target-version *context*))))
+               (let ((input (if (rest inputs)
+                                (glsl-toolkit:merge-shader-sources inputs :min-version (glsl-target-version *context*))
+                                (first inputs))))
                  (push (make-instance 'shader :source input :type type) shaders))))
     (loop for resource-spec in (effective-buffers object)
           do (push (apply #'// resource-spec) buffers))

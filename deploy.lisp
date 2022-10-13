@@ -26,10 +26,7 @@
 (deploy:define-hook (:build trial) ()
   (v:remove-global-controller)
   ;; Finalize all subclasses of shader-entity to avoid shader recompilations
-  (labels ((r (class)
-             (c2mop:finalize-inheritance class)
-             (mapc #'r (c2mop:class-direct-subclasses class))))
-    (r (find-class 'shader-entity)))
+  (apply-class-changes (find-class 'shader-entity))
   ;; Fix version
   (let ((version (version :app)))
     (defmethod version ((_ (eql :app)))
