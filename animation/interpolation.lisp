@@ -131,3 +131,13 @@
 
 (define-inlined-method interpolate ((a quat) (b quat) (x real))
   (ninterpolate (quat) a b x))
+
+(define-inlined-method ninterpolate ((dst transform) (a transform) (b transform) (x real))
+  (let ((x (float x 0f0)))
+    (ninterpolate (tlocation dst) (tlocation a) (tlocation b) x)
+    (ninterpolate (tscaling dst) (tscaling a) (tscaling b) x)
+    (ninterpolate (trotation dst) (trotation a) (trotation b) x)
+    dst))
+
+(define-inlined-method interpolate ((a transform) (b transform) (x real))
+  (ninterpolate (transform) a b x))

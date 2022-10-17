@@ -112,3 +112,17 @@
           do (tmat4 (global-transform pose i) (svref result i))
              (incf i))
     result))
+
+(defmethod descendant-joint-p (joint root (pose pose))
+  (or (= joint root)
+      (loop with parents = (parents pose)
+            for parent = (aref parents joint) then (aref parents parent)
+            while (<= 0 parent)
+            do (when (= parent root) (return T)))))
+
+(defmethod blend-into ((target pose) (a pose) (b pose) x root)
+  (let ((x (float x 0f0)))
+    (dotimes (i (length target) target)
+      (unless (and (<= 0 root)
+                   (descendant-joint-p i root target))
+        (ninterpolate (elt target i) (elt a i) (elt b i) x)))))
