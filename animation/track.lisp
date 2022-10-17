@@ -116,7 +116,7 @@
 (defun generate-index-lookup-table (track)
   (let ((frames (length (frames track))))
     (when (< 1 frames)
-      (let* ((duration (- (start-time track) (end-time track)))
+      (let* ((duration (- (end-time track) (start-time track)))
              (samples (truncate (* (sample-rate track) duration)))
              (sampled (make-array samples :element-type '(unsigned-byte 32))))
         (dotimes (i samples sampled)

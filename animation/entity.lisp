@@ -38,6 +38,7 @@
                                 do (return value))))
   (cond ((skeleton asset)
          (setf (pose entity) (make-instance 'pose :source (rest-pose (skeleton asset))))
+         (trial:check-consistent (pose entity))
          (update-palette entity))
         (T
          (setf (palette entity) #(#.(meye 4))))))

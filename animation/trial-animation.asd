@@ -1,5 +1,6 @@
 (asdf:defsystem :trial-animation
   :depends-on (:trial-glfw
+               :trial-png
                :cl-gltf)
   :components ((:file "package")
                (:file "interpolation")
