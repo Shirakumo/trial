@@ -64,6 +64,11 @@
                  (let ((time (min 1.0 (/ (fade-target-elapsed target) (fade-target-duration target)))))
                    (blend-into (pose controller) (pose controller) (fade-target-pose target) time -1)))))))
 
+(defun instantiate-clip (skeleton clip &optional (time (start-time clip)))
+  (let ((pose (make-instance 'pose :source (rest-pose skeleton))))
+    (sample-pose clip pose time)
+    pose))
+
 (trial:define-shader-entity entity (fade-controller trial:transformed-entity trial:renderable trial:listener)
   ((vertex-array :initarg :vertex-array :accessor trial:vertex-array)
    (texture :initarg :texture :accessor trial:texture)
