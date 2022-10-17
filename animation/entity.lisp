@@ -6,6 +6,52 @@
 
 (in-package #:org.shirakumo.fraf.trial.animation)
 
+(defstruct (animation-layer
+            (:constructor %make-animation-layer (clip pose base)))
+  (clip NIL :type clip)
+  (pose NIL :type pose)
+  (base NIL :type pose)
+  (strength 0.0 :type single-float))
+
+(defun make-animation-layer (clip skeleton &key (strength 0.0))
+  (let ((layer (%make-animation-layer
+                clip
+                (make-instance 'pose :source (rest-pose skeleton))
+                (instantiate-clip skeleton clip))))
+    (setf (strength layer) strength)
+    layer))
+
+(defmethod strength ((layer animation-layer))
+  (animation-layer-strength layer))
+
+(defmethod (setf strength) (strength (layer animation-layer))
+  (let ((clip (animation-layer-clip layer))
+        (strength (trial:clamp 0.0 (float strength 0f0) 1.0)))
+    (sample-pose clip (animation-layer-pose controller) (+ (start-time clip) (* strength (duration clip))))
+    (setf (animation-layer-strength layer) strength)))
+
+(defclass layer-controller ()
+  ((layers :initform (make-hash-table :test 'equalp) :accessor layers)
+   (pose :accessor pose)
+   (skeleton :initform NIL :accessor skeleton)))
+
+(defmethod update ((controller layer-controller) dt)
+  (when (next-method-p) (call-next-method))
+  (loop for layer being the hash-values of (layers controller)
+        do (layer-onto (pose controller) (pose controller) (animation-layer-pose layer) (animation-layer-base layer))))
+
+(defmethod add-layer ((layer animation-layer) (controller layer-controller) &key name)
+  (setf (gethash name (layers controller)) layer))
+
+(defmethod add-layer ((clip clip) (controller layer-controller) &key (strength 0.0) (name (trial:name clip)))
+  (setf (gethash name (layers controller)) (make-animation-layer clip (skeleton controller) :strength strength)))
+
+(defmethod remove-layer (name (controller layer-controller))
+  (remhash name (layers controller)))
+
+(defmethod layer (name (controller layer-controller))
+  (gethash name (layers controller)))
+
 (defstruct (fade-target
             (:constructor make-fade-target (clip pose duration)))
   (pose NIL :type pose)
@@ -43,10 +89,10 @@
                 (eq target (clip controller)))
            (vector-push-extend (make-fade-target target (rest-pose (skeleton controller)) duration) targets)))))
 
-(defmethod trial:handle ((ev trial:tick) (controller fade-controller))
+(defmethod update ((controller fade-controller) dt)
+  (when (next-method-p) (call-next-method))
   (when (and (clip controller) (skeleton controller))
-    (let ((dt (trial:dt ev))
-          (targets (targets controller)))
+    (let ((targets (targets controller)))
       (loop for target across targets
             for i from 0
             do (when (<= (fade-target-duration target) (fade-target-elapsed target))
@@ -62,14 +108,9 @@
               do (setf (fade-target-clock target) (sample-pose (fade-target-clip target) (fade-target-pose target) (+ (fade-target-clock target) dt)))
                  (incf (fade-target-elapsed target) dt)
                  (let ((time (min 1.0 (/ (fade-target-elapsed target) (fade-target-duration target)))))
-                   (blend-into (pose controller) (pose controller) (fade-target-pose target) time -1)))))))
+                   (blend-into (pose controller) (pose controller) (fade-target-pose target) time)))))))
 
-(defun instantiate-clip (skeleton clip &optional (time (start-time clip)))
-  (let ((pose (make-instance 'pose :source (rest-pose skeleton))))
-    (sample-pose clip pose time)
-    pose))
-
-(trial:define-shader-entity entity (fade-controller trial:transformed-entity trial:renderable trial:listener)
+(trial:define-shader-entity entity (fade-controller layer-controller trial:transformed-entity trial:renderable trial:listener)
   ((vertex-array :initarg :vertex-array :accessor trial:vertex-array)
    (texture :initarg :texture :accessor trial:texture)
    (palette :initform #() :accessor palette)
@@ -117,10 +158,9 @@
       (nm* (svref palette i) (svref inv i)))))
 
 (defmethod trial:handle ((ev trial:tick) (entity entity))
-  (let ((dt (trial:dt ev)))
-    (when (clip entity)
-      (setf (clock entity) (sample-pose (clip entity) (pose entity) (+ (clock entity) dt)))
-      (update-palette entity))))
+  (when (pose entity)
+    (update entity (dt ev))
+    (update-palette entity)))
 
 (defmethod trial:render ((entity entity) (program trial:shader-program))
   (declare (optimize speed))
