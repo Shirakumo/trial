@@ -52,7 +52,7 @@
     (when (or (steam-required-p main)
               (deploy:deployed-p))
       (with-simple-restart (ignore "Ignore the steamworks failure.")
-        (v:info :trial.steam "Initialising steamworks")
+        (v:info :trial.steam "Initialising steamworks~@[ for app id ~a~]" app-id)
         (make-instance 'steam:steamworks-client :app-id app-id)
         ;; Populate action sets
         (when (use-steaminput main)
