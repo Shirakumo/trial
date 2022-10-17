@@ -6,6 +6,61 @@
 
 (in-package #:org.shirakumo.fraf.trial.animation)
 
+(defstruct (fade-target
+            (:constructor make-fade-target (clip pose duration)))
+  (pose NIL :type pose)
+  (clip NIL :type clip)
+  (clock 0.0 :type single-float)
+  (duration 0.0 :type single-float)
+  (elapsed 0.0 :type single-float))
+
+(defclass fade-controller ()
+  ((targets :initform (make-array 0 :adjustable T :fill-pointer T) :accessor targets)
+   (clip :initarg :clip :initform NIL :accessor clip)
+   (clock :initform 0.0 :accessor clock)
+   (pose :accessor pose)
+   (skeleton :initform NIL :initarg :skeleton :accessor skeleton)))
+
+(defmethod shared-initialize :after ((controller fade-controller) slots &key skeleton)
+  (when skeleton
+    (setf (pose controller) (rest-pose skeleton))))
+
+(defmethod play ((target clip) (controller fade-controller))
+  (setf (fill-pointer (targets controller)) 0)
+  (setf (clip controller) target)
+  (setf (pose controller) (rest-pose (skeleton controller)))
+  (setf (clock controller) (start-time target)))
+
+(defmethod fade-to ((target clip) (controller fade-controller) &key (duration 0.2))
+  (let ((targets (targets controller)))
+    (cond ((null (clip target))
+           (play target controller))
+          ((and (or (= 0 (length targets))
+                    (not (eq target (fade-target-clip (aref targets (1- (length targets)))))))
+                (eq target (clip controller)))
+           (vector-push-extend (make-fade-target target (rest-pose (skeleton controller)) duration) targets)))))
+
+(defmethod trial:handle ((ev trial:tick) (controller fade-controller))
+  (when (and (clip controller) (skeleton controller))
+    (let ((dt (trial:dt ev))
+          (targets (targets controller)))
+      (loop for target across targets
+            for i from 0
+            do (when (<= (fade-target-duration target) (fade-target-elapsed target))
+                 (setf (clip controller) (fade-target-clip target))
+                 (setf (clock controller) (fade-target-clock target))
+                 (setf (pose controller) (fade-target-pose target))
+                 (array-utils:vector-pop-position targets i)
+                 (return)))
+      (setf (pose controller) (rest-pose (skeleton controller)))
+      (let ((time (sample-pose (clip controller) (pose controller) (+ (clock controller) dt))))
+        (setf (clock controller) time)
+        (loop for target across targets
+              do (setf (fade-target-clock target) (sample-pose (fade-target-clip target) (fade-target-pose target) (+ (fade-target-clock target) dt)))
+                 (incf (fade-target-elapsed target) dt)
+                 (let ((time (min 1.0 (/ (fade-target-elapsed target) (fade-target-duration target)))))
+                   (blend-into (pose controller) (pose controller) (fade-target-pose target) time -1)))))))
+
 (trial:define-shader-entity entity (trial:transformed-entity trial:renderable trial:listener)
   ((vertex-array :initarg :vertex-array :accessor trial:vertex-array)
    (texture :initarg :texture :accessor trial:texture)
