@@ -86,5 +86,5 @@
 
 (defmethod reorder ((clip clip) map)
   (dotimes (i (length clip) clip)
-    (let ((joint (name (elt clip i))))
-      (setf (name joint) (gethash joint map)))))
+    (let ((track (elt clip i)))
+      (setf (trial:name track) (gethash (trial:name track) map)))))

@@ -17,7 +17,7 @@
          (sequences:adjust-sequence pose size))))
 
 (defmethod print-object ((pose pose) stream)
-  (print-unreadable-object (pose stream :type T)))
+  (print-unreadable-object (pose stream :type T :identity T)))
 
 (defun pose<- (target source)
   (let* ((orig-joints (joints source))

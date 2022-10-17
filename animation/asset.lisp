@@ -47,7 +47,6 @@
                   thereis (skinned-p mesh))
         (setf (skeleton asset) (load-skeleton gltf))
         (setf (clips asset) (load-clips gltf))
-        #++
         (let ((map (make-hash-table :test 'eql)))
           (reorder (skeleton asset) map)
           (loop for clip being the hash-values of (clips asset)
