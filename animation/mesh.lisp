@@ -65,6 +65,11 @@
       (setf (bind-pose skeleton) new-bind)
       skeleton)))
 
+(defun instantiate-clip (skeleton clip &optional (time (start-time clip)))
+  (let ((pose (make-instance 'pose :source (rest-pose skeleton))))
+    (sample-pose clip pose time)
+    pose))
+
 (defclass mesh ()
   ((name :initarg :name :initform NIL :accessor trial:name)
    (texture :initarg :texture :initform NIL :accessor trial:texture)

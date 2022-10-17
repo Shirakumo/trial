@@ -120,14 +120,15 @@
             while (<= 0 parent)
             do (when (= parent root) (return T)))))
 
-(defmethod blend-into ((target pose) (a pose) (b pose) x root)
+(defmethod blend-into ((target pose) (a pose) (b pose) x &key (root -1))
   (let ((x (float x 0f0)))
     (dotimes (i (length target) target)
       (unless (and (<= 0 root)
                    (descendant-joint-p i root target))
         (ninterpolate (elt target i) (elt a i) (elt b i) x)))))
 
-(defmethod layer-onto ((target pose) (in pose) (add pose) (base pose) root)
+;;                     Output,       Base Pose,Current Additive,Base Additive (instantiate-clip)
+(defmethod layer-onto ((target pose) (in pose) (add pose) (base pose) &key (root -1))
   (dotimes (i (length add) target)
     (unless (and (<= 0 root)
                  (not (descendant-joint-p i root add)))
