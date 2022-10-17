@@ -58,6 +58,17 @@
   (setf (parents pose) (adjust-array (parents pose) length :initial-element 0))
   pose)
 
+(defmethod trial:check-consistent ((pose pose))
+  (let ((parents (parents pose))
+        (visit (make-array (length pose) :element-type 'bit)))
+    (dotimes (i (length parents) pose)
+      (fill visit 0)
+      (loop for parent = (aref parents i) then (aref parents parent)
+            while (<= 0 parent)
+            do (when (= 1 (aref visit parent))
+                 (error "Bone ~a has a cycle in its parents chain." i))
+               (setf (aref visit parent) 1)))))
+
 (defmethod sequences:elt ((pose pose) index)
   (svref (joints pose) index))
 
@@ -74,6 +85,7 @@
   (let ((joints (joints pose))
         (parents (parents pose)))
     (let ((base (svref joints i)))
+      ;; FIXME: optimize to only allocate one transform
       (loop for parent = (aref parents i) then (aref parents parent)
             while (<= 0 parent)
             do (setf base (t+ (svref joints parent) base)))
@@ -97,5 +109,6 @@
                  (n*m (aref result parent) global)))
              (incf i))
     (loop while (< i new)
-          do (tmat4 (global-transform pose i) (svref result i)))
+          do (tmat4 (global-transform pose i) (svref result i))
+             (incf i))
     result))

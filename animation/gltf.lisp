@@ -78,6 +78,7 @@
              (setf (parent-joint pose i) (if (gltf:parent node)
                                              (gltf:idx (gltf:parent node))
                                              -1)))
+    (trial:check-consistent pose)
     pose))
 
 (defun access (json accessor)
@@ -129,6 +130,7 @@
                      (if (<= 0 p)
                          (t+ (tinv (svref world-bind-pose p)) current)
                          current)))
+      (trial:check-consistent bind-pose)
       bind-pose)))
 
 (defun load-skeleton (gltf)
