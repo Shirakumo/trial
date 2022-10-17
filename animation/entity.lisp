@@ -19,11 +19,14 @@
    (clip :initarg :clip :initform NIL :accessor clip)
    (clock :initform 0.0 :accessor clock)
    (pose :accessor pose)
-   (skeleton :initform NIL :initarg :skeleton :accessor skeleton)))
+   (skeleton :initform NIL :accessor skeleton)))
 
 (defmethod shared-initialize :after ((controller fade-controller) slots &key skeleton)
   (when skeleton
-    (setf (pose controller) (rest-pose skeleton))))
+    (setf (skeleton controller) skeleton)))
+
+(defmethod (setf skeleton) :after ((skeleton skeleton) (controller fade-controller))
+  (setf (pose controller) (make-instance 'pose :source (rest-pose skeleton))))
 
 (defmethod play ((target clip) (controller fade-controller))
   (setf (fill-pointer (targets controller)) 0)
@@ -61,15 +64,12 @@
                  (let ((time (min 1.0 (/ (fade-target-elapsed target) (fade-target-duration target)))))
                    (blend-into (pose controller) (pose controller) (fade-target-pose target) time -1)))))))
 
-(trial:define-shader-entity entity (trial:transformed-entity trial:renderable trial:listener)
+(trial:define-shader-entity entity (fade-controller trial:transformed-entity trial:renderable trial:listener)
   ((vertex-array :initarg :vertex-array :accessor trial:vertex-array)
    (texture :initarg :texture :accessor trial:texture)
    (palette :initform #() :accessor palette)
-   (clock :initform 0.0 :accessor clock)
    (mesh :initarg :mesh :initform NIL :accessor mesh)
-   (asset :initarg :asset :accessor asset)
-   (clip :initarg :clip :initform NIL :accessor clip)
-   (pose :accessor pose)))
+   (asset :initarg :asset :accessor asset)))
 
 (defmethod initialize-instance :after ((entity entity) &key)
   (trial:register-generation-observer entity (asset entity)))
@@ -87,16 +87,18 @@
                             (gethash (mesh entity) (meshes asset))
                             (loop for value being the hash-values of (meshes asset)
                                   do (return value)))))
-  (setf (clip entity) (if (clip entity)
-                          (gethash (clip entity) (clips asset))
-                          (loop for value being the hash-values of (clips asset)
-                                do (return value))))
   (cond ((skeleton asset)
-         (setf (pose entity) (make-instance 'pose :source (rest-pose (skeleton asset))))
-         (trial:check-consistent (pose entity))
-         (update-palette entity))
+         (setf (skeleton entity) (skeleton asset)))
         (T
-         (setf (palette entity) #(#.(meye 4))))))
+         (setf (palette entity) #(#.(meye 4)))))
+  (play (if (clip entity)
+            (gethash (clip entity) (clips asset))
+            (loop for value being the hash-values of (clips asset)
+                  do (return value)))
+        entity))
+
+(defmethod (setf pose) :after ((pose pose) (entity entity))
+  (update-palette entity))
 
 (defmethod (setf mesh) :after ((mesh mesh) (entity entity))
   (setf (trial:vertex-array entity) (trial:resource (asset entity) (trial:name mesh)))
