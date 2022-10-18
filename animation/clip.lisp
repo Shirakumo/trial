@@ -36,6 +36,9 @@
                       (end-time clip) (float end 0.0)))
   clip)
 
+(defmethod duration ((clip clip))
+  (- (end-time clip) (start-time clip)))
+
 (defmethod (setf tracks) :after (tracks (clip clip))
   (recompute-duration clip))
 

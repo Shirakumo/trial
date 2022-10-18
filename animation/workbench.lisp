@@ -26,7 +26,7 @@
     (trial:enter (make-instance 'trial::fps-counter) scene)
     (trial:enter (make-instance 'trial:vertex-entity :vertex-array (trial:// 'workbench 'grid)) scene)
     (let ((entity
-            (trial:enter (make-instance 'entity :asset (trial:asset 'workbench 'simple)) scene)
+            (trial:enter (make-instance 'entity :name 'entity :asset (trial:asset 'workbench 'simple)) scene)
             ;;(trial:enter (make-instance 'trial:vertex-entity :vertex-array (trial:// 'workbench 'simple "LOD3spShape")) scene)
             ))
       (setf (vy (trial:scaling entity)) -1.0)

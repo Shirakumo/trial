@@ -27,7 +27,7 @@
 (defmethod (setf strength) (strength (layer animation-layer))
   (let ((clip (animation-layer-clip layer))
         (strength (trial:clamp 0.0 (float strength 0f0) 1.0)))
-    (sample-pose clip (animation-layer-pose controller) (+ (start-time clip) (* strength (duration clip))))
+    (sample-pose clip (animation-layer-pose layer) (+ (start-time clip) (* strength (duration clip))))
     (setf (animation-layer-strength layer) strength)))
 
 (defclass layer-controller ()
@@ -128,20 +128,22 @@
   (setf (asset entity) asset))
 
 (defmethod (setf asset) :after ((asset gltf-asset) (entity entity))
-  (unless (typep (mesh entity) 'mesh)
-    (setf (mesh entity) (if (mesh entity)
-                            (gethash (mesh entity) (meshes asset))
-                            (loop for value being the hash-values of (meshes asset)
-                                  do (return value)))))
-  (cond ((skeleton asset)
-         (setf (skeleton entity) (skeleton asset)))
-        (T
-         (setf (palette entity) #(#.(meye 4)))))
-  (play (if (clip entity)
-            (gethash (clip entity) (clips asset))
-            (loop for value being the hash-values of (clips asset)
-                  do (return value)))
-        entity))
+  (setf (mesh entity) (or (mesh entity) T))
+  (if (skeleton asset)
+      (setf (skeleton entity) (skeleton asset))
+      (setf (palette entity) #(#.(meye 4))))
+  (play (or (clip entity) T) entity))
+
+(defmethod play ((name string) (entity entity))
+  (let ((clip (gethash name (clips (asset entity)))))
+    (if clip
+        (play clip entity)
+        #-trial-release
+        (error "No animation clip named ~s found." name))))
+
+(defmethod play ((anything (eql T)) (entity entity))
+  (loop for clip being the hash-values of (clips (asset entity))
+        do (return (play clip entity))))
 
 (defmethod (setf pose) :after ((pose pose) (entity entity))
   (update-palette entity))
@@ -149,6 +151,17 @@
 (defmethod (setf mesh) :after ((mesh mesh) (entity entity))
   (setf (trial:vertex-array entity) (trial:resource (asset entity) (trial:name mesh)))
   (setf (trial:texture entity) (trial:texture mesh)))
+
+(defmethod (setf mesh) ((name string) (entity entity))
+  (let ((mesh (gethash name (meshes (asset entity)))))
+    (if mesh
+        (setf (mesh entity) mesh)
+        #-trial-release
+        (error "No mesh named ~s found." name))))
+
+(defmethod (setf mesh) ((anything (eql T)) (entity entity))
+  (loop for mesh being the hash-values of (meshes (asset entity))
+        do (return (setf (mesh entity) mesh))))
 
 (defun update-palette (entity)
   (let ((palette (matrix-palette (pose entity) (palette entity)))
@@ -159,7 +172,7 @@
 
 (defmethod trial:handle ((ev trial:tick) (entity entity))
   (when (pose entity)
-    (update entity (dt ev))
+    (update entity (trial:dt ev))
     (update-palette entity)))
 
 (defmethod trial:render ((entity entity) (program trial:shader-program))
