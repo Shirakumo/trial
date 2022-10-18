@@ -101,7 +101,8 @@
 (defmethod load :around ((asset asset))
   (unless (loaded-p asset)
     (v:trace :trial.asset "Loading ~a/~a" (name (pool asset)) (name asset))
-    (call-next-method)))
+    (with-cleanup-on-failure (deallocate asset)
+      (call-next-method))))
 
 (defmethod generate-resources :after ((asset asset) input &key)
   (setf (loaded-p asset) T))
