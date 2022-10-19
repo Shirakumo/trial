@@ -66,9 +66,12 @@
       skeleton)))
 
 (defun instantiate-clip (skeleton clip &optional (time (start-time clip)))
-  (let ((pose (make-instance 'pose :source (rest-pose skeleton))))
+  (let ((pose (rest-pose* skeleton)))
     (sample-pose clip pose time)
     pose))
+
+(defmethod rest-pose* ((skeleton skeleton))
+  (make-instance 'pose :source (rest-pose skeleton)))
 
 (defclass mesh ()
   ((name :initarg :name :initform NIL :accessor trial:name)

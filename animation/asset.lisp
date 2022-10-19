@@ -11,13 +11,14 @@
                       trial::full-load-asset)
   ((meshes :initform (make-hash-table :test 'equal) :accessor meshes)
    (skeleton :initform NIL :accessor skeleton)
-   (clips :initform (make-hash-table) :accessor clips)))
+   (clips :initform (make-hash-table :test 'equal) :accessor clips)))
 
 (defmethod trial:generate-resources ((asset gltf-asset) input &key)
   (gltf:with-gltf (gltf input)
-    (let ((meshes (meshes asset)))
+    (let ((meshes (meshes asset))
+          (clips (clips asset)))
       (clrhash meshes)
-      (clrhash (clips asset))
+      (clrhash clips)
       (setf (skeleton asset) NIL)
       (loop for mesh across (load-meshes gltf)
             for i from 0
@@ -46,14 +47,12 @@
       (when (loop for mesh being the hash-values of meshes
                   thereis (skinned-p mesh))
         (setf (skeleton asset) (load-skeleton gltf))
-        (setf (clips asset) (load-clips gltf))
+        (load-clips gltf clips)
         (let ((map (make-hash-table :test 'eql)))
           (reorder (skeleton asset) map)
           (loop for clip being the hash-values of (clips asset)
                 do (reorder clip map))
           (loop for mesh being the hash-values of (meshes asset)
                 do (reorder mesh map))))
-      (print (list :meshes (alexandria:hash-table-keys (meshes asset))))
-      (print (list :clips (alexandria:hash-table-keys (clips asset))))
       (loop for mesh being the hash-values of meshes
             collect (trial:resource asset (trial:name mesh))))))

@@ -16,7 +16,7 @@
 (defun make-animation-layer (clip skeleton &key (strength 0.0))
   (let ((layer (%make-animation-layer
                 clip
-                (make-instance 'pose :source (rest-pose skeleton))
+                (rest-pose* skeleton)
                 (instantiate-clip skeleton clip))))
     (setf (strength layer) strength)
     layer))
@@ -72,12 +72,12 @@
     (setf (skeleton controller) skeleton)))
 
 (defmethod (setf skeleton) :after ((skeleton skeleton) (controller fade-controller))
-  (setf (pose controller) (make-instance 'pose :source (rest-pose skeleton))))
+  (setf (pose controller) (rest-pose* skeleton)))
 
 (defmethod play ((target clip) (controller fade-controller))
   (setf (fill-pointer (targets controller)) 0)
   (setf (clip controller) target)
-  (setf (pose controller) (rest-pose (skeleton controller)))
+  (pose<- (pose controller) (rest-pose (skeleton controller)))
   (setf (clock controller) (start-time target)))
 
 (defmethod fade-to ((target clip) (controller fade-controller) &key (duration 0.2))
@@ -98,10 +98,9 @@
             do (when (<= (fade-target-duration target) (fade-target-elapsed target))
                  (setf (clip controller) (fade-target-clip target))
                  (setf (clock controller) (fade-target-clock target))
-                 (setf (pose controller) (fade-target-pose target))
+                 (pose<- (pose controller) (fade-target-pose target))
                  (array-utils:vector-pop-position targets i)
                  (return)))
-      (setf (pose controller) (rest-pose (skeleton controller)))
       (let ((time (sample-pose (clip controller) (pose controller) (+ (clock controller) dt))))
         (setf (clock controller) time)
         (loop for target across targets
@@ -111,7 +110,8 @@
                    (blend-into (pose controller) (pose controller) (fade-target-pose target) time)))))))
 
 (trial:define-shader-entity lines (fade-controller trial:lines trial:listener)
-  ((asset :initarg :asset :accessor asset)))
+  ((asset :initarg :asset :accessor asset)
+   (color :initarg :color :initform (vec 0 0 0 1) :accessor color)))
 
 (defmethod initialize-instance :after ((entity lines) &key asset)
   (trial:register-generation-observer entity asset))
@@ -121,15 +121,15 @@
 
 (defmethod trial:observe-generation ((entity lines) (asset gltf-asset) res)
   (setf (skeleton entity) (skeleton asset))
-  (play (or (clip entity)
-            (loop for clip being the hash-values of (clips (asset entity))
-                  do (return clip)))
-        entity))
+  (typecase (clip entity)
+    (string (play (gethash (clip entity) (clips (asset entity))) entity))
+    ((eql T) (play (loop for v being the hash-values of (clips (asset entity)) return v) entity))
+    (null (setf (pose entity) (rest-pose* (skeleton asset))))))
 
 (defmethod trial:handle ((ev trial:tick) (entity lines))
   (when (pose entity)
     (update entity (trial:dt ev))
-    (trial:replace-vertex-data entity (pose entity))))
+    (trial:replace-vertex-data entity (pose entity) :default-color (color entity))))
 
 (trial:define-shader-entity entity (fade-controller layer-controller trial:transformed-entity trial:renderable trial:listener)
   ((vertex-array :initarg :vertex-array :accessor trial:vertex-array)

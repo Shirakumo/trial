@@ -103,12 +103,11 @@
                (:rotation (load-track (rotation track) sampler))))
     (recompute-duration clip)))
 
-(defun load-clips (gltf)
-  (let ((table (make-hash-table :test 'equal)))
-    (loop for animation across (gltf:animations gltf)
-          for clip = (load-clip animation)
-          do (setf (gethash (trial:name clip) table) clip))
-    table))
+(defun load-clips (gltf &optional (table (make-hash-table :test 'equal)))
+  (loop for animation across (gltf:animations gltf)
+        for clip = (load-clip animation)
+        do (setf (gethash (trial:name clip) table) clip))
+  table)
 
 (defun load-bind-pose (gltf)
   (let* ((rest-pose (load-rest-pose gltf))
