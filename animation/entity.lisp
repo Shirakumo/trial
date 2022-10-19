@@ -78,7 +78,8 @@
   (setf (fill-pointer (targets controller)) 0)
   (setf (clip controller) target)
   (pose<- (pose controller) (rest-pose (skeleton controller)))
-  (setf (clock controller) (start-time target)))
+  (setf (clock controller) (start-time target))
+  (sample-pose (clip controller) (pose controller) (clock controller)))
 
 (defmethod fade-to ((target clip) (controller fade-controller) &key (duration 0.2))
   (let ((targets (targets controller)))
@@ -128,7 +129,11 @@
 
 (defmethod trial:handle ((ev trial:tick) (entity lines))
   (when (pose entity)
-    (update entity (trial:dt ev))
+    (when (trial:retained :space)
+      (update entity (trial:dt ev)))
+    (when (trial:retained :backspace)
+      (when (clip entity)
+        (play (clip entity) entity)))
     (trial:replace-vertex-data entity (pose entity) :default-color (color entity))))
 
 (trial:define-shader-entity entity (fade-controller layer-controller trial:transformed-entity trial:renderable trial:listener)
