@@ -145,3 +145,12 @@
         (q<- (trotation output) (trotation input))
         (nq* (trotation output) (qinv (q* (trotation additive-base) (trotation additive))))
         (nqunit (trotation output))))))
+
+(defmethod trial:replace-vertex-data ((lines trial:lines) (pose pose) &rest args)
+  (let ((points ()))
+    (dotimes (i (length pose))
+      (let ((parent (parent-joint pose i)))
+        (when (<= 0 parent)
+          (push (tlocation (global-transform pose i)) points)
+          (push (tlocation (global-transform pose parent)) points))))
+    (apply #'trial:replace-vertex-data lines (nreverse points) args)))

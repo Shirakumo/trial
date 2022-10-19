@@ -110,6 +110,27 @@
                  (let ((time (min 1.0 (/ (fade-target-elapsed target) (fade-target-duration target)))))
                    (blend-into (pose controller) (pose controller) (fade-target-pose target) time)))))))
 
+(trial:define-shader-entity lines (fade-controller trial:lines trial:listener)
+  ((asset :initarg :asset :accessor asset)))
+
+(defmethod initialize-instance :after ((entity lines) &key asset)
+  (trial:register-generation-observer entity asset))
+
+(defmethod trial:stage :after ((entity lines) (area trial:staging-area))
+  (trial:stage (asset entity) area))
+
+(defmethod trial:observe-generation ((entity lines) (asset gltf-asset) res)
+  (setf (skeleton entity) (skeleton asset))
+  (play (or (clip entity)
+            (loop for clip being the hash-values of (clips (asset entity))
+                  do (return clip)))
+        entity))
+
+(defmethod trial:handle ((ev trial:tick) (entity lines))
+  (when (pose entity)
+    (update entity (trial:dt ev))
+    (trial:replace-vertex-data entity (pose entity))))
+
 (trial:define-shader-entity entity (fade-controller layer-controller trial:transformed-entity trial:renderable trial:listener)
   ((vertex-array :initarg :vertex-array :accessor trial:vertex-array)
    (texture :initarg :texture :accessor trial:texture)
