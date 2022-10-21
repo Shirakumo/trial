@@ -26,7 +26,7 @@
          (joints (joints target))
          (parents (parents target)))
     (let ((old (length joints)))
-      (when (< old size)
+      (when (/= old size)
         (setf (joints target) (setf joints (adjust-array joints size)))
         (setf (parents target) (setf parents (adjust-array parents size)))
         (loop for i from old below size
@@ -82,14 +82,14 @@
   (setf (aref (parents pose) i) value))
 
 (defmethod global-transform ((pose pose) i)
-  (let ((joints (joints pose))
-        (parents (parents pose)))
-    (let ((base (svref joints i)))
-      ;; FIXME: optimize to only allocate one transform
-      (loop for parent = (aref parents i) then (aref parents parent)
-            while (<= 0 parent)
-            do (setf base (t+ (svref joints parent) base)))
-      base)))
+  (let* ((joints (joints pose))
+         (parents (parents pose))
+         (result (svref joints i)))
+    ;; FIXME: optimize to only allocate one transform
+    (loop for parent = (aref parents i) then (aref parents parent)
+          while (<= 0 parent)
+          do (setf result (t+ (svref joints parent) result)))
+    result))
 
 (defmethod matrix-palette ((pose pose) result)
   (let ((old (length result))
