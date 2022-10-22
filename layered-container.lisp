@@ -24,10 +24,10 @@
   (length (%objects container)))
 
 (defmethod enter (thing (container layered-container))
-  (enter thing (aref (objects container) (clamp 0 (round (layer-index thing)) (1- (length (objects container)))))))
+  (enter thing (aref (%objects container) (clamp 0 (round (layer-index thing)) (1- (length (%objects container)))))))
 
 (defmethod leave (thing (container layered-container))
-  (leave thing (aref (objects container) (clamp 0 (round (layer-index thing)) (1- (length (objects container)))))))
+  (leave thing (aref (%objects container) (clamp 0 (round (layer-index thing)) (1- (length (%objects container)))))))
 
 (defmethod for:step-functions ((iterator layered-container))
   (let* ((layers (%objects iterator))

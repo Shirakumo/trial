@@ -68,6 +68,8 @@
            (remhash temp table)))))
 
 (defmethod sequences:make-sequence-iterator ((bag bag) &key start end from-end)
+  (declare (ignore start end))
+  ;; FIXME: don't ignore start/end
   (let ((objects (%objects bag)))
     (values 0
             (size bag)

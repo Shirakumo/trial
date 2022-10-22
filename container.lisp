@@ -82,18 +82,6 @@
              (call-next-method)
              (register entity root))))))
 
-(defmethod enter* ((thing entity) (container container))
-  (enter thing container)
-  (compile-into-pass thing container (scene +main+)))
-
-(defmethod leave* ((thing entity) (container (eql T)))
-  (when (container thing)
-    (leave* thing (container thing))))
-
-(defmethod leave* ((thing entity) (container container))
-  (leave thing container)
-  (remove-from-pass thing (scene +main+)))
-
 (defmethod scene ((entity entity))
   (when (slot-boundp entity 'container)
     (scene (container entity))))

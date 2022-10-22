@@ -26,20 +26,20 @@
   thing)
 
 (defmethod finalize ((container array-container))
-  (for:for ((object across (objects container)))
+  (for:for ((object across (%objects container)))
     (finalize object)))
 
 (defmethod contains-p (thing (container array-container))
   (find thing (%objects container)))
 
 (defmethod sequences:elt ((container array-container) index)
-  (svref (%objects bag) index))
+  (svref (%objects container) index))
 
 (defmethod (setf sequences:elt) (thing (container array-container) index)
-  (setf (svref (%objects bag) index) thing))
+  (setf (svref (%objects container) index) thing))
 
 (defmethod sequences:make-sequence-iterator ((container array-container) &rest args)
-  (apply #'sequences:make-sequence-iterator (%objects bag) args))
+  (apply #'sequences:make-sequence-iterator (%objects container) args))
 
 (defmethod for:make-iterator ((container array-container) &rest args)
   (apply #'for:make-iterator (%objects container) args))
