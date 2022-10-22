@@ -181,7 +181,7 @@
 (defmethod (setf pose) :after ((pose pose) (entity entity))
   (update-palette entity))
 
-(defmethod (setf mesh) :after ((mesh mesh) (entity entity))
+(defmethod (setf mesh) :after ((mesh skinned-mesh) (entity entity))
   (setf (trial:vertex-array entity) (trial:resource (asset entity) (trial:name mesh)))
   (setf (trial:texture entity) (trial:texture mesh)))
 
