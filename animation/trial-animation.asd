@@ -7,6 +7,7 @@
                (:file "track")
                (:file "clip")
                (:file "pose")
+               (:file "skeleton")
                (:file "mesh")
                (:file "gltf")
                (:file "asset")
