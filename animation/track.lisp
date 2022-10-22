@@ -45,19 +45,19 @@
                           (ecase (interpolation track)
                             (:constant
                              (incf j)
-                             (constant (elt values (1- j))))
+                             (trial:constant (elt values (1- j))))
                             (:linear
                              (incf j)
-                             (linear (elt values (1- j)) (elt values j)))
+                             (trial:linear (elt values (1- j)) (elt values j)))
                             (:hermite
                              (incf j 3)
-                             (hermite (elt values (- j 2)) (elt values (- j 1))
-                                      (elt values (+ j 1)) (elt values (+ j 0))))
+                             (trial:hermite (elt values (- j 2)) (elt values (- j 1))
+                                            (elt values (+ j 1)) (elt values (+ j 0))))
                             (:bezier
                              ;; DATA is ordered like this: i0 v0 o0 i1 v1 o1
                              (incf j 3)
-                             (bezier (elt values (- j 2)) (elt values (- j 1))
-                                     (elt values (+ j 1)) (elt values (+ j 0))))))))
+                             (trial:bezier (elt values (- j 2)) (elt values (- j 1))
+                                           (elt values (+ j 1)) (elt values (+ j 0))))))))
       (setf (frames track) frames))))
 
 (defun fit-to-track (track time loop-p)

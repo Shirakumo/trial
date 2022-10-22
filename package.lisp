@@ -595,6 +595,14 @@
    #:gamepad
    #:gamepad-added
    #:gamepad-removed)
+  ;; interpolation.lisp
+  (:export
+   #:bezier
+   #:hermite
+   #:linear
+   #:constant
+   #:interpolate
+   #:ninterpolate)
   ;; language.lisp
   (:export
    #:language
