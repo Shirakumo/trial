@@ -9,7 +9,8 @@
 (defclass vertex-array (gl-resource)
   ((size :initarg :size :initform NIL :accessor size)
    (bindings :initarg :bindings :accessor bindings)
-   (vertex-form :initarg :vertex-form :accessor vertex-form))
+   (vertex-form :initarg :vertex-form :accessor vertex-form)
+   (indexed-p :initform NIL :accessor indexed-p))
   (:default-initargs
    :bindings (error "BINDINGS required.")
    :vertex-form :triangles))
@@ -23,6 +24,7 @@
 
 (defun update-array-bindings (array bindings)
   (gl:bind-vertex-array (data-pointer array))
+  (setf (indexed-p array) NIL)
   (unwind-protect
        (loop for binding in bindings
              for i from 0
@@ -40,6 +42,7 @@
                     (:element-array-buffer
                      (unless (size array)
                        (setf (size array) (/ (size buffer) (gl-type-size (element-type buffer)))))
+                     (setf (indexed-p array) T)
                      (decf i))
                     (:array-buffer
                      (ecase (or type (element-type buffer))
