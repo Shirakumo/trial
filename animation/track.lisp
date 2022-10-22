@@ -109,7 +109,7 @@
   (let ((frames (frames track))
         (i (find-frame-idx track time loop-p)))
     (if (< i 0)
-        (funcall (frame-curve (svref frames 0)) target 0.0)
+        (funcall (animation-frame-curve (svref frames 0)) target 0.0)
         (let* ((l (svref frames i))
                (r (svref frames (1+ i)))
                (x (/ (- time (animation-frame-time l))
