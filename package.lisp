@@ -62,16 +62,6 @@
    #:size
    #:update-buffer-data
    #:resize-buffer)
-  ;; resources/font.lisp
-  (:export
-   #:*default-charset*
-   #:font-atlas
-   #:charset
-   #:index
-   #:size
-   #:oversample
-   #:fit-size
-   #:text-extent)
   ;; resources/framebuffer.lisp
   (:export
    #:framebuffer
