@@ -3,7 +3,6 @@
                :trial-png
                :cl-gltf)
   :components ((:file "package")
-               (:file "interpolation")
                (:file "track")
                (:file "clip")
                (:file "pose")
