@@ -4,7 +4,7 @@
  Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
-(in-package #:org.shirakumo.fraf.trial.animation)
+(in-package #:org.shirakumo.fraf.trial)
 
 (defclass pose (sequences:sequence standard-object)
   ((joints :initform #() :accessor joints)
@@ -58,7 +58,7 @@
   (setf (parents pose) (adjust-array (parents pose) length :initial-element 0))
   pose)
 
-(defmethod trial:check-consistent ((pose pose))
+(defmethod check-consistent ((pose pose))
   (let ((parents (parents pose))
         (visit (make-array (length pose) :element-type 'bit)))
     (dotimes (i (length parents) pose)
@@ -125,7 +125,7 @@
     (dotimes (i (length target) target)
       (unless (and (<= 0 root)
                    (descendant-joint-p i root target))
-        (trial:ninterpolate (elt target i) (elt a i) (elt b i) x)))))
+        (ninterpolate (elt target i) (elt a i) (elt b i) x)))))
 
 ;;                     Output,       Base Pose,Current Additive,Base Additive (instantiate-clip)
 (defmethod layer-onto ((target pose) (in pose) (add pose) (base pose) &key (root -1))
@@ -146,11 +146,11 @@
         (nq* (trotation output) (qinv (q* (trotation additive-base) (trotation additive))))
         (nqunit (trotation output))))))
 
-(defmethod trial:replace-vertex-data ((lines trial:lines) (pose pose) &rest args)
+(defmethod replace-vertex-data ((lines lines) (pose pose) &rest args)
   (let ((points ()))
     (dotimes (i (length pose))
       (let ((parent (parent-joint pose i)))
         (when (<= 0 parent)
           (push (tlocation (global-transform pose i)) points)
           (push (tlocation (global-transform pose parent)) points))))
-    (apply #'trial:replace-vertex-data lines (nreverse points) args)))
+    (apply #'replace-vertex-data lines (nreverse points) args)))

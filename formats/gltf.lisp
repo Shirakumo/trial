@@ -1,10 +1,17 @@
 #|
  This file is a part of trial
- (c) 2022 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
+ (c) 2017 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
  Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
-(in-package #:org.shirakumo.fraf.trial.animation)
+(defpackage #:org.shirakumo.fraf.trial.gltf
+  (:use #:cl+trial)
+  (:shadow #:asset)
+  (:local-nicknames
+   (#:gltf #:org.shirakumo.fraf.gltf))
+  (:export
+   #:asset))
+(in-package #:org.shirakumo.fraf.trial.gltf)
 
 (defun gltf-node-transform (node)
   (let ((matrix (gltf:matrix node))
@@ -78,7 +85,7 @@
              (setf (parent-joint pose i) (if (gltf:parent node)
                                              (gltf:idx (gltf:parent node))
                                              -1)))
-    (trial:check-consistent pose)
+    (check-consistent pose)
     pose))
 
 (defun load-animation-track (track sampler)
@@ -97,12 +104,12 @@
                (:translation (load-animation-track (location track) sampler))
                (:scale (load-animation-track (scaling track) sampler))
                (:rotation (load-animation-track (rotation track) sampler))))
-    (recompute-duration clip)))
+    (trial::recompute-duration clip)))
 
 (defun load-clips (gltf &optional (table (make-hash-table :test 'equal)))
   (loop for animation across (gltf:animations gltf)
         for clip = (load-clip animation)
-        do (setf (gethash (trial:name clip) table) clip))
+        do (setf (gethash (name clip) table) clip))
   table)
 
 (defun load-bind-pose (gltf)
@@ -125,7 +132,7 @@
                      (if (<= 0 p)
                          (t+ (tinv (svref world-bind-pose p)) current)
                          current)))
-      (trial:check-consistent bind-pose)
+      (check-consistent bind-pose)
       bind-pose)))
 
 (defun load-skeleton (gltf)
@@ -186,7 +193,7 @@
                                                                        (gltf:name node))
                                                              :skinned-p (not (null (gltf:skin node))))
                      do (vector-push-extend mesh meshes)
-                        (setf (trial:texture mesh) (gltf:material primitive))
+                        ;;(setf (texture mesh) (gltf:material primitive))
                         (loop for attribute being the hash-keys of (gltf:attributes primitive)
                               for accessor being the hash-values of (gltf:attributes primitive)
                               do (load-mesh-attribute mesh attribute accessor skin))
@@ -198,3 +205,49 @@
                             (loop for i from 0 below (length indexes)
                                   do (setf (aref indexes i) (elt accessor i))))))))
     meshes))
+
+(defclass asset (file-input-asset
+                 multi-resource-asset
+                 animation-asset
+                 trial::full-load-asset)
+  ())
+
+(defmethod generate-resources ((asset asset) input &key)
+  (gltf:with-gltf (gltf input)
+    (let ((meshes (meshes asset))
+          (clips (clips asset)))
+      (loop for mesh across (load-meshes gltf)
+            for i from 0
+            do (unless (name mesh)
+                 (setf (name mesh) i))
+               (setf (gethash (name mesh) meshes) mesh)
+               #++
+               (when (texture mesh)
+                 (setf (texture mesh)
+                       NIL (resource asset (list 'texture (gltf:idx (texture mesh))))))
+               (trial::make-vertex-array mesh (resource asset (name mesh))))
+      #++
+      (loop for material across (gltf:materials gltf)
+            do (let* ((pbr (gltf:pbr material))
+                      (texinfo (gltf:albedo pbr))
+                      (texture (gltf:texture texinfo))
+                      (sampler (gltf:sampler texture))
+                      (image (gltf:source texture))
+                      (name (list 'texture (gltf:idx material))))
+                 (generate-resources 'image-loader (gltf:path image)
+                                           :resource (resource asset name)
+                                           :mag-filter (gltf:mag-filter sampler)
+                                           :min-filter (gltf:min-filter sampler)
+                                           :wrapping (list (gltf:wrap-s sampler)
+                                                           (gltf:wrap-t sampler)
+                                                           :clamp-to-edge))))
+      (when (loop for mesh being the hash-values of meshes
+                  thereis (skinned-p mesh))
+        (setf (skeleton asset) (load-skeleton gltf))
+        (load-clips gltf clips)
+        (let ((map (make-hash-table :test 'eql)))
+          (trial::reorder (skeleton asset) map)
+          (loop for clip being the hash-values of (clips asset)
+                do (trial::reorder clip map))
+          (loop for mesh being the hash-values of (meshes asset)
+                do (trial::reorder mesh map)))))))

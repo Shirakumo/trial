@@ -20,9 +20,84 @@
    (#:sequences #:org.shirakumo.trivial-extensible-sequences)
    #+windows
    (#:com #:org.shirakumo.com-on))
-  ;; assets/font.lisp
+  ;; animation/asset.lisp
   (:export
-   #:font)
+   #:animation-asset
+   #:meshes
+   #:clips
+   #:skeleton)
+  ;; animation/clip.lisp
+  (:export
+   #:clip
+   #:tracks
+   #:start-time
+   #:end-time
+   #:loop-p
+   #:duration
+   #:find-animation-track
+   #:sample-pose)
+  ;; animation/entity.lisp
+  (:export
+   #:animation-layer
+   #:strength
+   #:layer-controller
+   #:layers
+   #:add-layer
+   #:remove-layer
+   #:layer
+   #:fade-controller
+   #:play
+   #:fade-to
+   #:armature
+   #:animation-asset
+   #:animated-entity
+   #:mesh
+   #:animation-asset)
+  ;; animation/mesh.lisp
+  (:export
+   #:skinned-mesh
+   #:position-normals
+   #:vertex-data
+   #:index-data
+   #:skinned-p
+   #:cpu-skin)
+  ;; animation/pose.lisp
+  (:export
+   #:pose
+   #:joints
+   #:parents
+   #:pose<-
+   #:pose=
+   #:parent-joint
+   #:global-transform
+   #:matrix-palette
+   #:blend-into
+   #:layer-onto)
+  ;; animation/skeleton.lisp
+  (:export
+   #:skeleton
+   #:instantiate-clip
+   #:rest-pose
+   #:bind-pose
+   #:inv-bind-pose
+   #:rest-pose*)
+  ;; animation/track.lisp
+  (:export
+   #:animation-frame
+   #:animation-track
+   #:frames
+   #:interpolation
+   #:start-time
+   #:end-time
+   #:duration
+   #:sample
+   #:find-frame-idx
+   #:valid-p
+   #:fast-animation-track
+   #:transform-track
+   #:location
+   #:scaling
+   #:rotation)
   ;; assets/image.lisp
   (:export
    #:image-loader

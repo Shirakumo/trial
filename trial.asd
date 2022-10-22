@@ -91,6 +91,15 @@
                (:file "toolkit" :depends-on ("package" "conditions"))
                (:file "transforms" :depends-on ("package"))
                (:file "type-info" :depends-on ("package" "toolkit"))
+               (:module "animation"
+                :depends-on ("package" "shader-entity")
+                :components ((:file "asset")
+                             (:file "track")
+                             (:file "clip" :depends-on ("track"))
+                             (:file "pose")
+                             (:file "skeleton" :depends-on ("pose"))
+                             (:file "mesh" :depends-on ("pose"))
+                             (:file "entity" :depends-on ("mesh" "skeleton" "clip"))))
                (:module "resources"
                 :depends-on ("package" "resource" "toolkit" "data-pointer")
                 :components ((:file "buffer-object")

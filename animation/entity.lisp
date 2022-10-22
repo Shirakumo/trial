@@ -4,7 +4,7 @@
  Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
-(in-package #:org.shirakumo.fraf.trial.animation)
+(in-package #:org.shirakumo.fraf.trial)
 
 (defstruct (animation-layer
             (:constructor %make-animation-layer (clip pose base)))
@@ -26,7 +26,7 @@
 
 (defmethod (setf strength) (strength (layer animation-layer))
   (let ((clip (animation-layer-clip layer))
-        (strength (trial:clamp 0.0 (float strength 0f0) 1.0)))
+        (strength (clamp 0.0 (float strength 0f0) 1.0)))
     (sample-pose clip (animation-layer-pose layer) (+ (start-time clip) (* strength (duration clip))))
     (setf (animation-layer-strength layer) strength)))
 
@@ -35,7 +35,7 @@
    (pose :accessor pose)
    (skeleton :initform NIL :accessor skeleton)))
 
-(defmethod update ((controller layer-controller) dt)
+(defmethod update ((controller layer-controller) tt dt fc)
   (when (next-method-p) (call-next-method))
   (loop for layer being the hash-values of (layers controller)
         do (layer-onto (pose controller) (pose controller) (animation-layer-pose layer) (animation-layer-base layer))))
@@ -43,7 +43,7 @@
 (defmethod add-layer ((layer animation-layer) (controller layer-controller) &key name)
   (setf (gethash name (layers controller)) layer))
 
-(defmethod add-layer ((clip clip) (controller layer-controller) &key (strength 0.0) (name (trial:name clip)))
+(defmethod add-layer ((clip clip) (controller layer-controller) &key (strength 0.0) (name (name clip)))
   (setf (gethash name (layers controller)) (make-animation-layer clip (skeleton controller) :strength strength)))
 
 (defmethod remove-layer (name (controller layer-controller))
@@ -90,7 +90,7 @@
                 (not (eq target (clip controller))))
            (vector-push-extend (make-fade-target target (rest-pose (skeleton controller)) duration) targets)))))
 
-(defmethod update ((controller fade-controller) dt)
+(defmethod update ((controller fade-controller) tt dt fc)
   (when (next-method-p) (call-next-method))
   (when (and (clip controller) (skeleton controller))
     (let ((targets (targets controller)))
@@ -110,122 +110,102 @@
                  (let ((time (min 1.0 (/ (fade-target-elapsed target) (fade-target-duration target)))))
                    (blend-into (pose controller) (pose controller) (fade-target-pose target) time)))))))
 
-(trial:define-shader-entity armature (fade-controller trial:lines trial:listener)
-  ((asset :initarg :asset :accessor asset)
+(define-shader-entity armature (fade-controller lines listener)
+  ((animation-asset :initarg :asset :accessor animation-asset)
    (color :initarg :color :initform (vec 0 0 0 1) :accessor color)))
 
 (defmethod initialize-instance :after ((entity armature) &key asset)
-  (trial:register-generation-observer entity asset))
+  (register-generation-observer entity asset))
 
-(defmethod trial:stage :after ((entity armature) (area trial:staging-area))
-  (trial:stage (asset entity) area))
+(defmethod stage :after ((entity armature) (area staging-area))
+  (stage (animation-asset entity) area))
 
-(defmethod trial:observe-generation ((entity armature) (asset gltf-asset) res)
+(defmethod observe-generation ((entity armature) (asset animation-asset) res)
   (setf (skeleton entity) (skeleton asset))
   (typecase (clip entity)
-    (string (play (gethash (clip entity) (clips (asset entity))) entity))
-    ((eql T) (play (loop for v being the hash-values of (clips (asset entity)) return v) entity))
+    (string (play (gethash (clip entity) (clips asset)) entity))
+    ((eql T) (play (loop for v being the hash-values of (clips asset) return v) entity))
     (null (setf (pose entity) (rest-pose* (skeleton asset))))))
 
-(defmethod trial:handle ((ev trial:tick) (entity armature))
+(defmethod handle ((ev tick) (entity armature))
   (when (pose entity)
-    (when (trial:retained :space)
-      (update entity (trial:dt ev)))
-    (when (trial:retained :backspace)
-      (when (clip entity)
-        (play (clip entity) entity)))
-    (trial:replace-vertex-data entity (pose entity) :default-color (color entity))))
+    (update entity (tt ev) (dt ev) (fc ev))
+    (replace-vertex-data entity (pose entity) :default-color (color entity))))
 
-(trial:define-shader-entity entity (fade-controller layer-controller trial:transformed-entity trial:renderable trial:listener)
-  ((vertex-array :initarg :vertex-array :accessor trial:vertex-array)
-   (texture :initarg :texture :accessor trial:texture)
-   (palette :initform #() :accessor palette)
+(define-shader-entity animated-entity (fade-controller layer-controller transformed-entity vertex-entity listener)
+  ((palette :initform #() :accessor palette)
    (mesh :initarg :mesh :initform NIL :accessor mesh)
-   (asset :initarg :asset :accessor asset)))
+   (animation-asset :initarg :asset :accessor animation-asset)))
 
-(defmethod initialize-instance :after ((entity entity) &key)
-  (trial:register-generation-observer entity (asset entity)))
+(defmethod initialize-instance :after ((entity animated-entity) &key)
+  (register-generation-observer entity (animation-asset entity)))
 
-(defmethod trial:stage :after ((entity entity) (area trial:staging-area))
+(defmethod stage :after ((entity animated-entity) (area staging-area))
   ;; FIXME: fuck. don't know how to load the resources?
-  (trial:stage (asset entity) area))
+  (stage (animation-asset entity) area))
 
-(defmethod trial:observe-generation ((entity entity) (asset gltf-asset) res)
-  (setf (asset entity) asset))
+(defmethod observe-generation ((entity animated-entity) (asset animation-asset) res)
+  (setf (animation-asset entity) asset))
 
-(defmethod (setf asset) :after ((asset gltf-asset) (entity entity))
+(defmethod (setf animation-asset) :after ((asset animation-asset) (entity animated-entity))
   (setf (mesh entity) (or (mesh entity) T))
   (if (skeleton asset)
       (setf (skeleton entity) (skeleton asset))
       (setf (palette entity) #(#.(meye 4))))
   (play (or (clip entity) T) entity))
 
-(defmethod fade-to ((name string) (entity entity) &rest args)
-  (let ((clip (gethash name (clips (asset entity)))))
+(defmethod fade-to ((name string) (entity animated-entity) &rest args)
+  (let ((clip (gethash name (clips (animation-asset entity)))))
     (if clip
         (apply #'fade-to clip entity args)
         #-trial-release
         (error "No animation clip named ~s found." name))))
 
-(defmethod play ((name string) (entity entity))
-  (let ((clip (gethash name (clips (asset entity)))))
+(defmethod play ((name string) (entity animated-entity))
+  (let ((clip (gethash name (clips (animation-asset entity)))))
     (if clip
         (play clip entity)
         #-trial-release
         (error "No animation clip named ~s found." name))))
 
-(defmethod play ((anything (eql T)) (entity entity))
-  (loop for clip being the hash-values of (clips (asset entity))
+(defmethod play ((anything (eql T)) (entity animated-entity))
+  (loop for clip being the hash-values of (clips (animation-asset entity))
         do (return (play clip entity))))
 
-(defmethod (setf pose) :after ((pose pose) (entity entity))
+(defmethod (setf pose) :after ((pose pose) (entity animated-entity))
   (update-palette entity))
 
-(defmethod (setf mesh) :after ((mesh skinned-mesh) (entity entity))
-  (setf (trial:vertex-array entity) (trial:resource (asset entity) (trial:name mesh)))
-  (setf (trial:texture entity) (trial:texture mesh)))
+(defmethod (setf mesh) :after ((mesh skinned-mesh) (entity animated-entity))
+  (setf (vertex-array entity) (resource (animation-asset entity) (name mesh))))
 
-(defmethod (setf mesh) ((name string) (entity entity))
-  (let ((mesh (gethash name (meshes (asset entity)))))
+(defmethod (setf mesh) ((name string) (entity animated-entity))
+  (let ((mesh (gethash name (meshes (animation-asset entity)))))
     (if mesh
         (setf (mesh entity) mesh)
         #-trial-release
         (error "No mesh named ~s found." name))))
 
-(defmethod (setf mesh) ((anything (eql T)) (entity entity))
-  (loop for mesh being the hash-values of (meshes (asset entity))
+(defmethod (setf mesh) ((anything (eql T)) (entity animated-entity))
+  (loop for mesh being the hash-values of (meshes (animation-asset entity))
         do (return (setf (mesh entity) mesh))))
 
 (defun update-palette (entity)
   (let ((palette (matrix-palette (pose entity) (palette entity)))
-        (inv (inv-bind-pose (skeleton (asset entity)))))
+        (inv (inv-bind-pose (skeleton (animation-asset entity)))))
     (setf (palette entity) palette)
     (dotimes (i (length palette))
       (nm* (svref palette i) (svref inv i)))))
 
-(defmethod trial:handle ((ev trial:tick) (entity entity))
+(defmethod handle ((ev tick) (entity animated-entity))
   (when (pose entity)
-    (update entity (trial:dt ev))
+    (update entity (tt ev) (dt ev) (fc ev))
     (update-palette entity)))
 
-(defmethod trial:render ((entity entity) (program trial:shader-program))
+(defmethod render :before ((entity animated-entity) (program shader-program))
   (declare (optimize speed))
-  (setf (trial:uniform program "pose") (palette entity))
-  (setf (trial:uniform program "model_matrix") (trial:model-matrix))
-  (setf (trial:uniform program "view_matrix") (trial:view-matrix))
-  (setf (trial:uniform program "projection_matrix") (trial:projection-matrix))
-  (setf (trial:uniform program "camera_pos") (trial:location (trial:unit :camera (trial:scene trial:+main+))))
-  ;;(gl:bind-texture :texture-2d (trial:gl-name (trial:texture entity)))
-  (let* ((vao (trial:vertex-array entity))
-         (size (trial:size vao)))
-    (declare (type (unsigned-byte 32) size))
-    (gl:bind-vertex-array (trial:gl-name vao))
-    (if (trial::indexed-p vao)
-        (%gl:draw-elements :triangles size :unsigned-int 0)
-        (%gl:draw-arrays :triangles 0 size))
-    (gl:bind-vertex-array 0)))
+  (setf (uniform program "pose") (palette entity)))
 
-(trial:define-class-shader (entity :vertex-shader)
+(define-class-shader (animated-entity :vertex-shader)
   "
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 in_normal;
@@ -253,32 +233,4 @@ void main(){
   normal = vec3(model_matrix * skin_matrix * vec4(in_normal, 0.0f));
   texcoord = in_texcoord;
   gl_Position = projection_matrix * view_matrix * world_pos;
-}")
-
-(trial:define-class-shader (entity :fragment-shader)
-  "
-uniform sampler2D tex_image;
-uniform vec3 camera_pos;
-
-in vec3 normal;
-in vec4 world_pos;
-in vec2 texcoord;
-out vec4 color;
-
-vec3 shade_pointlight(vec3 light_pos, vec3 fragment_pos, vec3 normal){
-  vec3 light_dir = normalize(light_pos - fragment_pos);
-  vec3 view_dir = normalize(camera_pos - fragment_pos);
-  vec3 reflect_dir = reflect(-light_dir, normal);
-  float distance = length(light_pos - fragment_pos);
-  float attenuation = 1.0 / (1.0 + 0.014 * distance + 0.0007 * distance * distance);
-
-  vec3 ambient = vec3(0.8, 0.8, 0.8) * 0.1;
-  vec3 diffuse = vec3(0.8, 0.8, 0.8) * max(dot(normal, light_dir), 0);
-  vec3 specular = vec3(0.1, 0.1, 0.1) * pow(max(dot(view_dir, reflect_dir), 0.0), 32);
-  
-  return attenuation * (ambient+diffuse+specular);
-}
-
-void main(){
-  color = vec4(shade_pointlight(vec3(10, 10, 10), vec3(world_pos), normal), 1);
 }")
