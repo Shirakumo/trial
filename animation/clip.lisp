@@ -4,10 +4,10 @@
  Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
-(in-package #:org.shirakumo.fraf.trial.animation)
+(in-package #:org.shirakumo.fraf.trial)
 
 (defclass clip (sequences:sequence standard-object)
-  ((name :initarg :name :initform NIL :accessor trial:name)
+  ((name :initarg :name :initform NIL :accessor name)
    (tracks :initform #() :accessor tracks)
    (start-time :initform 0.0 :accessor start-time)
    (end-time :initform 0.0 :accessor end-time)
@@ -19,14 +19,14 @@
 
 (defmethod print-object ((clip clip) stream)
   (print-unreadable-object (clip stream :type T)
-    (format stream "~s ~a ~a" (trial:name clip) (start-time clip) (end-time clip))))
+    (format stream "~s ~a ~a" (name clip) (start-time clip) (end-time clip))))
 
 (defun fit-to-clip (clip time)
   (let ((start (start-time clip))
         (end (end-time clip)))
     (if (loop-p clip)
         (+ start (mod (- time start) (- end start)))
-        (trial:clamp start time end))))
+        (clamp start time end))))
 
 (defun recompute-duration (clip)
   (loop for track across (tracks clip)
@@ -65,14 +65,14 @@
 
 (defmethod find-animation-track ((clip clip) name &key (if-does-not-exist :error))
   (loop for track across (tracks clip)
-        do (when (eql name (trial:name track))
+        do (when (eql name (name track))
              (return track))
         finally (ecase if-does-not-exist
                   (:error (error "No track with name ~s found." name))
                   (:create (progn 
                              (sequences:adjust-sequence clip (1+ (length clip)))
                              (let ((track (elt clip (1- (length clip)))))
-                               (setf (trial:name track) name)
+                               (setf (name track) name)
                                (return track))))
                   ((NIL) (return NIL)))))
 
@@ -83,11 +83,11 @@
             (loop-p (loop-p clip)))
         (loop for i from 0 below (length tracks)
               for track = (svref tracks i)
-              do (sample-transform track (elt pose (trial:name track)) time loop-p))
+              do (sample (elt pose (name track)) track time loop-p))
         time)
       0.0))
 
 (defmethod reorder ((clip clip) map)
   (dotimes (i (length clip) clip)
     (let ((track (elt clip i)))
-      (setf (trial:name track) (gethash (trial:name track) map)))))
+      (setf (name track) (gethash (name track) map)))))

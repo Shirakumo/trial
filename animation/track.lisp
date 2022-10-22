@@ -1,10 +1,10 @@
 #|
- This file is a part of trial
- (c) 2022 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
- Author: Nicolas Hafner <shinmera@tymoon.eu>
+This file is a part of trial
+(c) 2022 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
+Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
-(in-package #:org.shirakumo.fraf.trial.animation)
+(in-package #:org.shirakumo.fraf.trial)
 
 (defstruct (animation-frame
             (:constructor make-frame (time curve)))
@@ -45,19 +45,19 @@
                           (ecase (interpolation track)
                             (:constant
                              (incf j)
-                             (trial:constant (elt values (1- j))))
+                             (constant (elt values (1- j))))
                             (:linear
                              (incf j)
-                             (trial:linear (elt values (1- j)) (elt values j)))
+                             (linear (elt values (1- j)) (elt values j)))
                             (:hermite
                              (incf j 3)
-                             (trial:hermite (elt values (- j 2)) (elt values (- j 1))
-                                            (elt values (+ j 1)) (elt values (+ j 0))))
+                             (hermite (elt values (- j 2)) (elt values (- j 1))
+                                      (elt values (+ j 1)) (elt values (+ j 0))))
                             (:bezier
                              ;; DATA is ordered like this: i0 v0 o0 i1 v1 o1
                              (incf j 3)
-                             (trial:bezier (elt values (- j 2)) (elt values (- j 1))
-                                           (elt values (+ j 1)) (elt values (+ j 0))))))))
+                             (bezier (elt values (- j 2)) (elt values (- j 1))
+                                     (elt values (+ j 1)) (elt values (+ j 0))))))))
       (setf (frames track) frames))))
 
 (defun fit-to-track (track time loop-p)
@@ -68,7 +68,7 @@
               (end (animation-frame-time (svref frames (1- (length frames))))))
           (if loop-p
               (+ start (mod (- time start) (- end start)))
-              (trial:clamp start time end))))))
+              (clamp start time end))))))
 
 (defmethod valid-p ((track animation-track))
   (< 1 (length (frames track))))
@@ -166,7 +166,7 @@
         -1)))
 
 (defclass transform-track ()
-  ((name :initarg :name :initform NIL :accessor trial:name)
+  ((name :initarg :name :initform NIL :accessor name)
    (location :initform (make-instance 'fast-animation-track) :accessor location)
    (scaling :initform (make-instance 'fast-animation-track) :accessor scaling)
    (rotation :initform (make-instance 'fast-animation-track) :accessor rotation)))
@@ -174,10 +174,10 @@
 (defmethod print-object ((track transform-track) stream)
   (print-unreadable-object (track stream :type T)
     (if (valid-p track)
-        (format stream "~s ~a ~a" (trial:name track)
+        (format stream "~s ~a ~a" (name track)
                 (start-time track)
                 (end-time track))
-        (format stream "~s INVALID" (trial:name track)))))
+        (format stream "~s INVALID" (name track)))))
 
 (defmethod start-time ((track transform-track))
   (let ((min most-positive-single-float))
@@ -201,13 +201,14 @@
       (if (= max most-negative-single-float)
           0.0 max))))
 
-(defmethod sample-transform ((track transform-track) transform time loop-p)
+(defmethod sample (transform (track transform-track) time loop-p)
   (when (< 1 (length (location track)))
     (sample (tlocation transform) (location track) time loop-p))
   (when (< 1 (length (scaling track)))
     (sample (tscaling transform) (scaling track) time loop-p))
   (when (< 1 (length (rotation track)))
-    (sample (trotation transform) (rotation track) time loop-p)))
+    (sample (trotation transform) (rotation track) time loop-p))
+  transform)
 
 (defmethod valid-p ((track transform-track))
   (or (< 1 (length (location track)))

@@ -4,11 +4,10 @@
  Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
-(in-package #:org.shirakumo.fraf.trial.animation)
+(in-package #:org.shirakumo.fraf.trial)
 
 (defclass skinned-mesh ()
-  ((name :initarg :name :initform NIL :accessor trial:name)
-   (texture :initarg :texture :initform NIL :accessor trial:texture)
+  ((name :initarg :name :initform NIL :accessor name)
    (position-normals :initform (make-array 0 :element-type 'single-float) :accessor position-normals)
    (vertex-data :initform (make-array 0 :element-type 'single-float) :accessor vertex-data)
    (index-data :initform NIL :accessor index-data)
@@ -42,8 +41,8 @@
                (transform mat (+ i 3) (+ j 3) 0.0)))))
 
 (defmethod make-vertex-array ((mesh skinned-mesh) vao)
-  (let ((vertex-data (make-instance 'trial:vertex-buffer :buffer-data (vertex-data mesh)))
-        (position-normals (make-instance 'trial:vertex-buffer :buffer-data (position-normals mesh)))
+  (let ((vertex-data (make-instance 'vertex-buffer :buffer-data (vertex-data mesh)))
+        (position-normals (make-instance 'vertex-buffer :buffer-data (position-normals mesh)))
         (index-data (index-data mesh)))
     (loop for i from 0 below (length (vertex-data mesh)) by (+ 3 3 2 4 4)
           for j from 0 below (length (position-normals mesh)) by (+ 3 3)
@@ -53,7 +52,7 @@
              (setf (aref (position-normals mesh) (+ j 3)) (aref (vertex-data mesh) (+ i 3)))
              (setf (aref (position-normals mesh) (+ j 4)) (aref (vertex-data mesh) (+ i 4)))
              (setf (aref (position-normals mesh) (+ j 5)) (aref (vertex-data mesh) (+ i 5))))
-    (trial:ensure-instance vao 'trial:vertex-array
+    (ensure-instance vao 'vertex-array
                            :vertex-form :triangles
                            :bindings (list* `(,position-normals :size 3 :offset 0 :stride 24)
                                             `(,position-normals :size 3 :offset 12 :stride 24)
@@ -61,7 +60,7 @@
                                             `(,vertex-data :size 4 :offset 32 :stride 64)
                                             `(,vertex-data :size 4 :offset 48 :stride 64)
                                             (when index-data
-                                              (list (make-instance 'trial:vertex-buffer :buffer-data index-data
+                                              (list (make-instance 'vertex-buffer :buffer-data index-data
                                                                                         :buffer-type :element-array-buffer
                                                                                         :element-type :unsigned-int
                                                                                         :size (* (length index-data) 2)))))
@@ -69,9 +68,9 @@
                                      (length index-data)
                                      (truncate (length (vertex-data mesh)) (+ 3 3 2 4 4))))))
 
-(defmethod trial:update-buffer-data ((vao trial:vertex-array) (mesh skinned-mesh) &key)
-  (let ((buffer (caar (trial:bindings vao))))
-    (trial:update-buffer-data buffer (position-normals mesh))))
+(defmethod update-buffer-data ((vao vertex-array) (mesh skinned-mesh) &key)
+  (let ((buffer (caar (bindings vao))))
+    (update-buffer-data buffer (position-normals mesh))))
 
 (defmethod reorder ((mesh skinned-mesh) map)
   (let ((data (vertex-data mesh)))

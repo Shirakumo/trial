@@ -4,7 +4,7 @@
  Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
-(in-package #:org.shirakumo.fraf.trial.animation)
+(in-package #:org.shirakumo.fraf.trial)
 
 (defclass skeleton ()
   ((rest-pose :initarg :rest-pose :accessor rest-pose)
@@ -59,8 +59,8 @@
           (setf (svref new-names i) (aref (joint-names skeleton) i))
           (setf (parent-joint new-rest i) parent)
           (setf (parent-joint new-bind i) parent)))
-      (trial:check-consistent new-rest)
-      (trial:check-consistent new-bind)
+      (check-consistent new-rest)
+      (check-consistent new-bind)
       (setf (rest-pose skeleton) new-rest)
       (setf (bind-pose skeleton) new-bind)
       skeleton)))

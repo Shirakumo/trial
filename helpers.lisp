@@ -117,7 +117,8 @@ void main(){
   ((vertex-array :initarg :vertex-array :accessor vertex-array)))
 
 (defmethod stage :after ((entity vertex-entity) (area staging-area))
-  (stage (vertex-array entity) area))
+  (when (slot-boundp entity 'vertex-array)
+    (stage (vertex-array entity) area)))
 
 (defmethod render ((entity vertex-entity) (program shader-program))
   (declare (optimize speed))
