@@ -220,9 +220,7 @@
          (size (trial:size vao)))
     (declare (type (unsigned-byte 32) size))
     (gl:bind-vertex-array (trial:gl-name vao))
-    ;; KLUDGE: Bad for performance!
-    (if (loop for binding in (trial:bindings vao)
-              thereis (typep binding 'trial:vertex-buffer))
+    (if (trial::indexed-p vao)
         (%gl:draw-elements :triangles size :unsigned-int 0)
         (%gl:draw-arrays :triangles 0 size))
     (gl:bind-vertex-array 0)))
