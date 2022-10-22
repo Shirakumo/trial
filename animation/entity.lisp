@@ -83,11 +83,11 @@
 
 (defmethod fade-to ((target clip) (controller fade-controller) &key (duration 0.2))
   (let ((targets (targets controller)))
-    (cond ((null (clip target))
+    (cond ((null (clip controller))
            (play target controller))
           ((and (or (= 0 (length targets))
                     (not (eq target (fade-target-clip (aref targets (1- (length targets)))))))
-                (eq target (clip controller)))
+                (not (eq target (clip controller))))
            (vector-push-extend (make-fade-target target (rest-pose (skeleton controller)) duration) targets)))))
 
 (defmethod update ((controller fade-controller) dt)
@@ -110,24 +110,24 @@
                  (let ((time (min 1.0 (/ (fade-target-elapsed target) (fade-target-duration target)))))
                    (blend-into (pose controller) (pose controller) (fade-target-pose target) time)))))))
 
-(trial:define-shader-entity lines (fade-controller trial:lines trial:listener)
+(trial:define-shader-entity armature (fade-controller trial:lines trial:listener)
   ((asset :initarg :asset :accessor asset)
    (color :initarg :color :initform (vec 0 0 0 1) :accessor color)))
 
-(defmethod initialize-instance :after ((entity lines) &key asset)
+(defmethod initialize-instance :after ((entity armature) &key asset)
   (trial:register-generation-observer entity asset))
 
-(defmethod trial:stage :after ((entity lines) (area trial:staging-area))
+(defmethod trial:stage :after ((entity armature) (area trial:staging-area))
   (trial:stage (asset entity) area))
 
-(defmethod trial:observe-generation ((entity lines) (asset gltf-asset) res)
+(defmethod trial:observe-generation ((entity armature) (asset gltf-asset) res)
   (setf (skeleton entity) (skeleton asset))
   (typecase (clip entity)
     (string (play (gethash (clip entity) (clips (asset entity))) entity))
     ((eql T) (play (loop for v being the hash-values of (clips (asset entity)) return v) entity))
     (null (setf (pose entity) (rest-pose* (skeleton asset))))))
 
-(defmethod trial:handle ((ev trial:tick) (entity lines))
+(defmethod trial:handle ((ev trial:tick) (entity armature))
   (when (pose entity)
     (when (trial:retained :space)
       (update entity (trial:dt ev)))
@@ -159,6 +159,13 @@
       (setf (skeleton entity) (skeleton asset))
       (setf (palette entity) #(#.(meye 4))))
   (play (or (clip entity) T) entity))
+
+(defmethod fade-to ((name string) (entity entity) &rest args)
+  (let ((clip (gethash name (clips (asset entity)))))
+    (if clip
+        (apply #'fade-to clip entity args)
+        #-trial-release
+        (error "No animation clip named ~s found." name))))
 
 (defmethod play ((name string) (entity entity))
   (let ((clip (gethash name (clips (asset entity)))))
@@ -275,5 +282,5 @@ vec3 shade_pointlight(vec3 light_pos, vec3 fragment_pos, vec3 normal){
 }
 
 void main(){
-  color = vec4(shade_pointlight(vec3(0, 10, 0), vec3(world_pos), normal), 1);
+  color = vec4(shade_pointlight(vec3(10, 10, 10), vec3(world_pos), normal), 1);
 }")
