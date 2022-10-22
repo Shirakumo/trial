@@ -6,49 +6,63 @@
 
 (in-package #:org.shirakumo.fraf.trial.animation)
 
-;; FIXME: implement modifying variant to avoid garbage production
-
 (defmacro define-curve (name args &body body)
-  `(defun ,name ,args
-     (macrolet ((expand (type + * &optional (wrap 'progn))
-                  `(locally
-                       (declare (type ,type ,@',args))
-                     (lambda (x)
-                       (declare (optimize speed (safety 0)))
-                       (declare (type single-float x))
-                       (let* ((1-x (- 1.0 x)))
-                         (,wrap ,,(first body)))))))
+  (flet ((expand-real ()
+           `(lambda (target x)
+              (declare (optimize speed (safety 0)))
+              (declare (type single-float x))
+              (declare (ignore target))
+              (let* ((1-x (- 1.0 x)))
+                (declare (ignorable 1-x))
+                ,@body)))
+         (expand-vec (result type &rest accs)
+           `(locally
+                (declare (type ,type ,@args))
+              (lambda (target x)
+                (declare (optimize speed (safety 0)))
+                (declare (type single-float x))
+                (declare (type ,type target))
+                (let* ((1-x (- 1.0 x)))
+                  (declare (ignorable 1-x))
+                  ,@(loop for acc in accs
+                          collect `(let ,(loop for arg in args
+                                               collect `(,arg (,acc ,arg)))
+                                     (setf (,acc target) ,@body)))
+                  ,result)))))
+    `(defun ,name ,args
        (etypecase p1
          (real (let ,(loop for arg in args
                            collect `(,arg (float ,arg 0f0)))
-                 (expand single-float + - *)))
+                 ,(expand-real)))
          (quat
-          (let ((p2 (if (< (q. p1 p2) 0) (q- p2) p2)))
-            (expand quat nq+ q* nqunit)))
-         (vec4 (expand vec4 nv+ v*))
-         (vec3 (expand vec3 nv+ v*))
-         (vec2 (expand vec2 nv+ v*))))))
+          ,(if (rest args)
+               `(let ((p2 (if (< (q. p1 p2) 0) (q- p2) p2)))
+                  ,(expand-vec '(nqunit target) 'quat 'qx 'qy 'qz 'qw))
+               (expand-vec '(nqunit target) 'quat 'qx 'qy 'qz 'qw)))
+         (vec4 ,(expand-vec 'target 'vec4 'vx4 'vy4 'vz4 'vw4))
+         (vec3 ,(expand-vec 'target 'vec3 'vx3 'vy3 'vz3))
+         (vec2 ,(expand-vec 'target 'vec2 'vx2 'vy2))))))
 
 (define-curve bezier (p1 c1 p2 c2)
-  `(,+ (,* p1 (* 1-x 1-x 1-x))
-       (,* c1 (* 3.0 x 1-x 1-x))
-       (,* c2 (* 3.0 x x 1-x))
-       (,* p2 (* x x x))))
+  (+ (* p1 (* 1-x 1-x 1-x))
+     (* c1 (* 3.0 x 1-x 1-x))
+     (* c2 (* 3.0 x x 1-x))
+     (* p2 (* x x x))))
 
 (define-curve hermite (p1 s1 p2 s2)
-  `(let ((xx (* x x))
-         (xxx (* x x x)))
-     (,+ (,* p1 (+ (* 2.0 xxx) (* -3.0 xx) 1.0))
-         (,* p2 (+ (* -2.0 xxx) (* 3.0 xx)))
-         (,* s1 (+ xxx (* -2.0 xx) x))
-         (,* s2 (- xxx xx)))))
+  (let ((xx (* x x))
+        (xxx (* x x x)))
+    (+ (* p1 (+ (* 2.0 xxx) (* -3.0 xx) 1.0))
+       (* p2 (+ (* -2.0 xxx) (* 3.0 xx)))
+       (* s1 (+ xxx (* -2.0 xx) x))
+       (* s2 (- xxx xx)))))
 
 (define-curve linear (p1 p2)
-  `(,+ (,* p1 1-x)
-       (,* p2 x)))
+  (+ (* p1 1-x)
+     (* p2 x)))
 
 (define-curve constant (p1)
-  'p1)
+  p1)
 
 (defgeneric interpolate (a b x))
 (defgeneric ninterpolate (dst a b x))
