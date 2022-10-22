@@ -63,7 +63,7 @@
   (recompute-duration clip)
   track)
 
-(defmethod find-track ((clip clip) name &key (if-does-not-exist :error))
+(defmethod find-animation-track ((clip clip) name &key (if-does-not-exist :error))
   (loop for track across (tracks clip)
         do (when (eql name (trial:name track))
              (return track))

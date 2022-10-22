@@ -6,24 +6,24 @@
 
 (in-package #:org.shirakumo.fraf.trial.animation)
 
-(defstruct (frame
+(defstruct (animation-frame
             (:constructor make-frame (time curve)))
   (time 0.0 :type single-float)
   (curve NIL :type (function (T single-float) T)))
 
-(defmethod print-object ((frame frame) stream)
+(defmethod print-object ((frame animation-frame) stream)
   (print-unreadable-object (frame stream :type T)
-    (format stream "~a" (frame-time frame))))
+    (format stream "~a" (animation-frame-time frame))))
 
-(defclass track (sequences:sequence standard-object)
+(defclass animation-track (sequences:sequence standard-object)
   ((frames :initarg :frames :initform #() :accessor frames)
    (interpolation :initarg :interpolation :initform :linear :accessor interpolation)))
 
-(defmethod initialize-instance :after ((track track) &key times values)
+(defmethod initialize-instance :after ((track animation-track) &key times values)
   (when (and times values)
     (setf (frames track) (cons times values))))
 
-(defmethod print-object ((track track) stream)
+(defmethod print-object ((track animation-track) stream)
   (print-unreadable-object (track stream :type T)
     (if (valid-p track)
         (format stream "~a ~a" (start-time track) (end-time track))
@@ -31,10 +31,11 @@
 
 (defgeneric start-time (track))
 (defgeneric end-time (track))
+(defgeneric duration (track))
 (defgeneric sample (target track time loop-p))
 (defgeneric find-frame-idx (track time loop-p))
 
-(defmethod (setf frames) ((keyframes cons) (track track))
+(defmethod (setf frames) ((keyframes cons) (track animation-track))
   (destructuring-bind (times . values) keyframes
     (let ((frames (make-array (length times)))
           (j 0))
@@ -63,63 +64,63 @@
   (let ((frames (frames track)))
     (if (<= (length frames) 1)
         0.0
-        (let ((start (frame-time (svref frames 0)))
-              (end (frame-time (svref frames (1- (length frames))))))
+        (let ((start (animation-frame-time (svref frames 0)))
+              (end (animation-frame-time (svref frames (1- (length frames))))))
           (if loop-p
               (+ start (mod (- time start) (- end start)))
               (trial:clamp start time end))))))
 
-(defmethod valid-p ((track track))
+(defmethod valid-p ((track animation-track))
   (< 1 (length (frames track))))
 
-(defmethod start-time ((track track))
-  (frame-time (svref (frames track) 0)))
+(defmethod start-time ((track animation-track))
+  (animation-frame-time (svref (frames track) 0)))
 
-(defmethod end-time ((track track))
-  (frame-time (svref (frames track) (1- (length (frames track))))))
+(defmethod end-time ((track animation-track))
+  (animation-frame-time (svref (frames track) (1- (length (frames track))))))
 
-(defmethod duration ((track track))
+(defmethod duration ((track animation-track))
   (let ((frames (frames track)))
-    (- (frame-time (svref (frames track) (1- (length frames))))
-       (frame-time (svref (frames track) 0)))))
+    (- (animation-frame-time (svref (frames track) (1- (length frames))))
+       (animation-frame-time (svref (frames track) 0)))))
 
-(defmethod sequences:adjust-sequence ((track track) length &rest args)
+(defmethod sequences:adjust-sequence ((track animation-track) length &rest args)
   (setf (frames track) (apply #'adjust-array (frames track) length args))
   track)
 
-(defmethod sequences:length ((track track))
+(defmethod sequences:length ((track animation-track))
   (length (frames track)))
 
-(defmethod sequences:elt ((track track) index)
+(defmethod sequences:elt ((track animation-track) index)
   (svref (frames track) index))
 
-(defmethod (setf sequences:elt) (value (track track) index)
+(defmethod (setf sequences:elt) (value (track animation-track) index)
   (setf (svref (frames track) index) value))
 
-(defmethod find-frame-idx ((track track) x loop-p)
+(defmethod find-frame-idx ((track animation-track) x loop-p)
   (let ((x (fit-to-track track x loop-p))
         (frames (frames track)))
     (loop for i from 0 below (length frames)
-          do (when (<= x (frame-time (svref frames i)))
+          do (when (<= x (animation-frame-time (svref frames i)))
                (return (1- i)))
           finally (return (1- (length frames))))))
 
-(defmethod sample (target (track track) time loop-p)
+(defmethod sample (target (track animation-track) time loop-p)
   (let ((frames (frames track))
         (i (find-frame-idx track time loop-p)))
     (if (< i 0)
         (funcall (frame-curve (svref frames 0)) target 0.0)
         (let* ((l (svref frames i))
                (r (svref frames (1+ i)))
-               (x (/ (- time (frame-time l))
-                     (- (frame-time r) (frame-time l)))))
-          (funcall (frame-curve l) target x)))))
+               (x (/ (- time (animation-frame-time l))
+                     (- (animation-frame-time r) (animation-frame-time l)))))
+          (funcall (animation-frame-curve l) target x)))))
 
-(defclass fast-track (track)
+(defclass fast-animation-track (animation-track)
   ((sampled-frames :initform (make-array 0 :element-type '(unsigned-byte 32)) :accessor sampled-frames)
    (sample-rate :initform 60.0 :initarg :sample-rate :accessor sample-rate)))
 
-(defmethod update-instance-for-different-class :after ((current track) (new fast-track) &key)
+(defmethod update-instance-for-different-class :after ((current animation-track) (new fast-animation-track) &key)
   (setf (sampled-frames new) (generate-index-lookup-table new)))
 
 (defun generate-index-lookup-table (track)
@@ -135,20 +136,20 @@
                  (frame-index 0))
             (loop for j downfrom (1- frames) to 0
                   for frame = (svref (frames track) j)
-                  do (when (<= (frame-time frame) time)
+                  do (when (<= (animation-frame-time frame) time)
                        (setf frame-index j)
                        (when (<= (- frames 2) frame-index)
                          (setf frame-index (- frames 2)))
                        (return)))
             (setf (aref sampled i) frame-index)))))))
 
-(defmethod (setf sequences:elt) :after (value (track fast-track) index)
+(defmethod (setf sequences:elt) :after (value (track fast-animation-track) index)
   (setf (sampled-frames track) (generate-index-lookup-table track)))
 
-(defmethod (setf frames) :after (value (track fast-track))
+(defmethod (setf frames) :after (value (track fast-animation-track))
   (setf (sampled-frames track) (generate-index-lookup-table track)))
 
-(defmethod find-frame-idx ((track fast-track) time loop-p)
+(defmethod find-frame-idx ((track fast-animation-track) time loop-p)
   (let* ((frames (frames track))
          (size (length frames)))
     (if (< 1 size)
@@ -166,9 +167,9 @@
 
 (defclass transform-track ()
   ((name :initarg :name :initform NIL :accessor trial:name)
-   (location :initform (make-instance 'fast-track) :accessor location)
-   (scaling :initform (make-instance 'fast-track) :accessor scaling)
-   (rotation :initform (make-instance 'fast-track) :accessor rotation)))
+   (location :initform (make-instance 'fast-animation-track) :accessor location)
+   (scaling :initform (make-instance 'fast-animation-track) :accessor scaling)
+   (rotation :initform (make-instance 'fast-animation-track) :accessor rotation)))
 
 (defmethod print-object ((track transform-track) stream)
   (print-unreadable-object (track stream :type T)
