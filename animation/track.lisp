@@ -9,7 +9,7 @@
 (defstruct (frame
             (:constructor make-frame (time curve)))
   (time 0.0 :type single-float)
-  (curve NIL :type (function (single-float) T)))
+  (curve NIL :type (function (T single-float) T)))
 
 (defmethod print-object ((frame frame) stream)
   (print-unreadable-object (frame stream :type T)
@@ -31,7 +31,7 @@
 
 (defgeneric start-time (track))
 (defgeneric end-time (track))
-(defgeneric sample (track time loop-p))
+(defgeneric sample (target track time loop-p))
 (defgeneric find-frame-idx (track time loop-p))
 
 (defmethod (setf frames) ((keyframes cons) (track track))
@@ -104,16 +104,16 @@
                (return (1- i)))
           finally (return (1- (length frames))))))
 
-(defmethod sample ((track track) time loop-p)
+(defmethod sample (target (track track) time loop-p)
   (let ((frames (frames track))
         (i (find-frame-idx track time loop-p)))
     (if (< i 0)
-        (funcall (frame-curve (svref frames 0)) 0.0)
+        (funcall (frame-curve (svref frames 0)) target 0.0)
         (let* ((l (svref frames i))
                (r (svref frames (1+ i)))
                (x (/ (- time (frame-time l))
                      (- (frame-time r) (frame-time l)))))
-          (funcall (frame-curve l) x)))))
+          (funcall (frame-curve l) target x)))))
 
 (defclass fast-track (track)
   ((sampled-frames :initform (make-array 0 :element-type '(unsigned-byte 32)) :accessor sampled-frames)
@@ -202,11 +202,11 @@
 
 (defmethod sample-transform ((track transform-track) transform time loop-p)
   (when (< 1 (length (location track)))
-    (setf (tlocation transform) (sample (location track) time loop-p)))
+    (sample (tlocation transform) (location track) time loop-p))
   (when (< 1 (length (scaling track)))
-    (setf (tscaling transform) (sample (scaling track) time loop-p)))
+    (sample (tscaling transform) (scaling track) time loop-p))
   (when (< 1 (length (rotation track)))
-    (setf (trotation transform) (sample (rotation track) time loop-p))))
+    (sample (trotation transform) (rotation track) time loop-p)))
 
 (defmethod valid-p ((track transform-track))
   (or (< 1 (length (location track)))
