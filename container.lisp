@@ -8,20 +8,20 @@
 
 (defgeneric clear (container))
 (defgeneric enter (thing container))
-(defgeneric leave (thing conatiner))
+(defgeneric leave (thing container))
 (defgeneric register (thing container))
-(defgeneric deregister (thing conatiner))
-(defgeneric contains-p (thing conatiner))
+(defgeneric deregister (thing container))
+(defgeneric contains-p (thing container))
 
 (defclass scene-node ()
   ((container :initarg :container :initform NIL :accessor container)))
 
-(defgeneric root (node))
+(defgeneric scene (node))
 
-(defmethod root ((node scene-node))
+(defmethod scene ((node scene-node))
   (if (null (container node))
       node
-      (root (container node))))
+      (scene (container node))))
 
 (defmethod leave ((node scene-node) (container (eql T)))
   (when (container node)
@@ -74,7 +74,7 @@
 
 (defmethod (setf name) :around (name (entity entity))
   (unless (eq name (name entity))
-    (let ((root (root entity)))
+    (let ((scene (scene entity)))
       (cond ((eq entity root)
              (call-next-method))
             (T
