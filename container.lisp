@@ -30,6 +30,9 @@
 (defclass container (scene-node)
   ())
 
+(defmethod contains-p ((node scene-node) (container container))
+  (eq (container node) container))
+
 (defmethod register ((node scene-node) (null null)))
 
 (defmethod deregister ((node scene-node) (null null)))
