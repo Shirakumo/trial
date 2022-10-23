@@ -1,0 +1,44 @@
+# Animation
+Trial includes support for describing animations -- meaning how properties aught to evolve over time. These systems can be used to animate individual properties of objects or full skeleton rigs. The constructs on offer for this are fairly standard, allowing import from model files, including skinning.
+
+The relevant concepts for animation are as follows:
+
+- ``animation-track``
+  An animation track is a sequence of keyframes and an interpolation method. Each keyframe is at a specific timecode, and has a value that the track should reach at that code. Timecodes between keyframes are interpolated between via the ``interpolation`` method. A track's value can be ``sample``d for a desired time code.
+  Currently the values that a track can interpolate are ``real``, ``vec2``, ``vec3``, ``vec4``, and ``quat``. Other value types, especially composite types, need to be composed out of multiple tracks.
+- ``clip``
+  A clip is a collection of tracks. Clips retain whether they should ``loop-p`` or not, and can be ``name``d. When a clip is ``sample``d, the target object passed should be a sequence, table, or object that can be indexed into by the ``name`` of the ``tracks`` in the clip.
+- ``pose``
+  A pose is a collection of ``transform``s for a skeleton. It represents a particular state for certain bones in the skeleton to be in. It also allows convenient access to the ``global-transform`` of a particular joint, and computing the ``matrix-palette`` used to perform the skinning.
+- ``skeleton``
+  A skeleton contains all the information necessary for the skinning process, namely a ``bind-pose`` and ``inv-bind-pose``, a ``rest-pose``, and a table for the ``joint-names``.
+- ``skinned-mesh``
+  This is a helper class that contains the mesh data such as the extracted ``position-normals`` and packed ``vertex-data``. It can be used to perform ``cpu-skin``ning if needed over the standard gpu-driven skinning method.
+- ``layer-controller``
+  This mixin class implements the ``update`` method in such a way that extra animation poses can be layered onto the base pose. Layers can be added and removed via ``add-layer`` and ``remove-layer``.
+- ``fade-controller``
+  This mixin class implements smooth playback of animation clips and the transitioning between them. As such implements a base ``update`` method to animate the ``pose``, and keeps track of possibly multiple fade targets, which can be added via ``fade-to``. A base clip can also be immediately started via ``play``.
+- ``armature``
+  A debug display to show poses and animation clips.
+- ``animated-entity``
+  A base class for skinned 3d models. Requires an ``animation-asset`` to be passed, but will take care of setting up everything else based on that asset. Is also a ``fade-controller`` and ``layer-controller`` so that animation clips can be easily used with the entity.
+  Note that it does not handle rendering of the mesh, only the vertex deformation needed to perform the skinning.
+
+Aside from the fully automated import of animations and skins from model files as used with the ``animated-entity``, you can also programmatically define animation clips to animate other properties and features.
+
+To do so, use ``define-clip`` which has the following general structure:
+
+:: common lisp
+(define-clip sandstorm
+       (strength speed)
+  0.0   0.0      (vec 0.0 0.0)
+  1.0   0.8      (vec 0.2 0.0)
+  1.5   _        (vec 1.0 0.0)
+  2.0   1.0      _)
+::
+
+Wherein ``_`` is used to omit a track from a keyframe. By default track interpolations are set to ``:linear``. If you specify ``:hermite`` or ``:cubic`` for a track, you must wrap each keyframe value in a list to pass the extra values needed for the interpolation handles.
+
+Once a clip is defined, you can retrieve it by its name via ``clip`` and use ``sample`` to apply the track's effects to an object that contains the properties to be animated.
+
+Note that in general ``sample`` is modifying, meaning it updates the values in place to avoid producing garbage.
