@@ -44,10 +44,20 @@
   (deregister node (container container)))
 
 (defmethod enter :after ((node scene-node) (container container))
+  (register node container)
   (setf (container node) container))
 
 (defmethod leave :after ((node scene-node) (container container))
+  (deregister node container)
   (setf (container node) NIL))
+
+(defmethod register :after ((child container) (parent container))
+  (sequences:dosequence (node child)
+    (register node parent)))
+
+(defmethod deregister :before ((child container) (parent container))
+  (sequences:dosequence (node child)
+    (deregister node parent)))
 
 #-elide-container-checks
 (defmethod enter :before ((node scene-node) (container container))
@@ -68,12 +78,6 @@
 
 (defclass entity (scene-node)
   ((name :initform NIL :initarg :name :accessor name)))
-
-(defmethod enter :after ((entity entity) (container container))
-  (register entity container))
-
-(defmethod leave :after ((node entity) (container container))
-  (deregister entity container))
 
 (defmethod (setf name) :around (name (entity entity))
   (unless (eq name (name entity))
