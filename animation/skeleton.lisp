@@ -67,7 +67,7 @@
 
 (defun instantiate-clip (skeleton clip &optional (time (start-time clip)))
   (let ((pose (rest-pose* skeleton)))
-    (sample-pose clip pose time)
+    (sample pose clip time)
     pose))
 
 (defmethod rest-pose* ((skeleton skeleton))

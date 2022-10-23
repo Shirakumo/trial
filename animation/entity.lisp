@@ -27,7 +27,7 @@
 (defmethod (setf strength) (strength (layer animation-layer))
   (let ((clip (animation-layer-clip layer))
         (strength (clamp 0.0 (float strength 0f0) 1.0)))
-    (sample-pose clip (animation-layer-pose layer) (+ (start-time clip) (* strength (duration clip))))
+    (sample (animation-layer-pose layer) clip (+ (start-time clip) (* strength (duration clip))))
     (setf (animation-layer-strength layer) strength)))
 
 (defclass layer-controller ()
@@ -79,7 +79,7 @@
   (setf (clip controller) target)
   (pose<- (pose controller) (rest-pose (skeleton controller)))
   (setf (clock controller) (start-time target))
-  (sample-pose (clip controller) (pose controller) (clock controller)))
+  (sample (pose controller) (clip controller) (clock controller)))
 
 (defmethod fade-to ((target clip) (controller fade-controller) &key (duration 0.2))
   (let ((targets (targets controller)))
@@ -102,10 +102,10 @@
                  (pose<- (pose controller) (fade-target-pose target))
                  (array-utils:vector-pop-position targets i)
                  (return)))
-      (let ((time (sample-pose (clip controller) (pose controller) (+ (clock controller) dt))))
+      (let ((time (sample (pose controller) (clip controller) (+ (clock controller) dt))))
         (setf (clock controller) time)
         (loop for target across targets
-              do (setf (fade-target-clock target) (sample-pose (fade-target-clip target) (fade-target-pose target) (+ (fade-target-clock target) dt)))
+              do (setf (fade-target-clock target) (sample (fade-target-pose target) (fade-target-clip target) (+ (fade-target-clock target) dt)))
                  (incf (fade-target-elapsed target) dt)
                  (let ((time (min 1.0 (/ (fade-target-elapsed target) (fade-target-duration target)))))
                    (blend-into (pose controller) (pose controller) (fade-target-pose target) time)))))))
