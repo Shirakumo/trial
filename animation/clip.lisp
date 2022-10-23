@@ -13,7 +13,7 @@
    (end-time :initform 0.0 :accessor end-time)
    (loop-p :initarg :loop-p :initform T :accessor loop-p)))
 
-(defmethod initialize-instance :after ((clip clip) &key tracks)
+(defmethod shared-initialize :after ((clip clip) slots &key tracks)
   (when tracks
     (setf (tracks clip) tracks)))
 
@@ -91,3 +91,46 @@
   (dotimes (i (length clip) clip)
     (let ((track (elt clip i)))
       (setf (name track) (gethash (name track) map)))))
+
+(defvar *clips* (make-hash-table :test 'equal))
+
+(defmethod clip ((name symbol))
+  (gethash name *clips*))
+
+(defmethod (setf clip) (clip (name symbol))
+  (setf (gethash name *clips*) clip))
+
+(defmacro define-clip ((name &rest track-interpolations) &body frames)
+  `(setf (clip ',name) (ensure-instance (clip ',name) 'clip :tracks (compile-tracks ',track-interpolations
+                                                                                    ,@(loop for part in frames
+                                                                                            collect (cond ((and (symbolp part) (string= "_" part))
+                                                                                                           NIL)
+                                                                                                          ((and (consp part) (not (symbolp (car part))))
+                                                                                                           `(list ,@part))
+                                                                                                          (T
+                                                                                                           part)))))))
+
+(defun compile-tracks (interpolations &rest frame-data)
+  (let ((tracks (make-array (length interpolations))))
+    (loop for i from 0
+          for interpolation in interpolations
+          for track-frames = (loop for frame = frame-data then (nthcdr (1+ (length interpolations)) frame)
+                                   for value = (nth (1+ i) frame)
+                                   while frame
+                                   when value
+                                   collect (cons (car frame) value))
+          for track = (make-instance 'animation-track
+                                     :interpolation interpolation
+                                     :times (mapcar #'car track-frames)
+                                     :values (let ((values (mapcar #'cdr track-frames)))
+                                               ;; Duplicate last frame values to ensure we leave enough data for the track to finish.
+                                               (setf (cdr (last values)) (cons (car (last values)) (last values)))
+                                               (alexandria:flatten values)))
+          do (setf (aref tracks i) track))
+    tracks))
+
+#++
+(define-clip (foo :linear :hermite)
+  0.0 (vec 3 2 1) (1.0 2.0 0.0)
+  1.0 _           (2.0 3.0 0.0)
+  2.0 (vec 0 2 1) _)

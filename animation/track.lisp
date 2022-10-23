@@ -16,12 +16,14 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
     (format stream "~a" (animation-frame-time frame))))
 
 (defclass animation-track (sequences:sequence standard-object)
-  ((frames :initarg :frames :initform #() :accessor frames)
+  ((frames :initform #() :accessor frames)
    (interpolation :initarg :interpolation :initform :linear :accessor interpolation)))
 
-(defmethod initialize-instance :after ((track animation-track) &key times values)
-  (when (and times values)
-    (setf (frames track) (cons times values))))
+(defmethod initialize-instance :after ((track animation-track) &key times values frames)
+  (cond ((and times values)
+         (setf (frames track) (cons times values)))
+        (frames
+         (setf (frames track) frames))))
 
 (defmethod print-object ((track animation-track) stream)
   (print-unreadable-object (track stream :type T)
