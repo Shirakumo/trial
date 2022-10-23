@@ -111,8 +111,10 @@
     (form-fiddle:with-body-options (frames options) initargs-and-frames
       `(setf (clip ',name) (ensure-instance (clip ',name) ',class
                                             :tracks (compile-tracks ',(if (numberp tracks)
-                                                                          (make-list tracks :initial-element :linear)
-                                                                          tracks)
+                                                                          (loop for i from 0 below tracks
+                                                                                collect (list i :linear))
+                                                                          (loop for el in tracks
+                                                                                collect (if (listp el) el (list el :linear))))
                                                                     ,@(loop for part in frames
                                                                             collect (cond ((and (symbolp part) (string= "_" part))
                                                                                            NIL)
@@ -122,17 +124,16 @@
                                                                                            part))))
                                             ,@options)))))
 
-(defun compile-tracks (interpolations &rest frame-data)
-  (let ((tracks (make-array (length interpolations))))
-    (loop for i from 0
-          for interpolation in interpolations
+(defun compile-tracks (track-descriptions &rest frame-data)
+  (let ((tracks (make-array (length track-descriptions))))
+    (loop for (name interpolation) in track-descriptions
           for track-frames = (loop for frame = frame-data then (nthcdr (1+ (length interpolations)) frame)
                                    for value = (nth (1+ i) frame)
                                    while frame
                                    when value
                                    collect (cons (car frame) value))
           for track = (make-instance 'animation-track
-                                     :name i
+                                     :name name
                                      :interpolation interpolation
                                      :times (mapcar #'car track-frames)
                                      :values (let ((values (mapcar #'cdr track-frames)))
