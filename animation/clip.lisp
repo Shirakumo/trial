@@ -76,16 +76,22 @@
                                (return track))))
                   ((NIL) (return NIL)))))
 
-(defmethod sample (pose (clip clip) time &key)
-  (if (< 0.0 (end-time clip))
-      (let ((time (fit-to-clip clip time))
-            (tracks (tracks clip))
-            (loop-p (loop-p clip)))
-        (loop for i from 0 below (length tracks)
-              for track = (svref tracks i)
-              do (sample (elt pose (name track)) track time :loop-p loop-p))
-        time)
-      0.0))
+(defmacro %define-sampler-method (class accessor)
+  `(defmethod sample ((thing ,class) (clip clip) time &key)
+     (if (< 0.0 (end-time clip))
+         (let ((time (fit-to-clip clip time))
+               (tracks (tracks clip))
+               (loop-p (loop-p clip)))
+           (loop for i from 0 below (length tracks)
+                 for track = (svref tracks i)
+                 for name = (name track)
+                 do (setf ,accessor (sample ,accessor track time :loop-p loop-p)))
+           time)
+         0.0)))
+
+(%define-sampler-method sequences:sequence (elt thing name))
+(%define-sampler-method hash-table (gethash name thing))
+(%define-sampler-method standard-object (slot-value thing name))
 
 (defmethod reorder ((clip clip) map)
   (dotimes (i (length clip) clip)
@@ -126,6 +132,7 @@
                                    when value
                                    collect (cons (car frame) value))
           for track = (make-instance 'animation-track
+                                     :name i
                                      :interpolation interpolation
                                      :times (mapcar #'car track-frames)
                                      :values (let ((values (mapcar #'cdr track-frames)))

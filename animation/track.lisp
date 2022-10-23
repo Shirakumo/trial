@@ -16,7 +16,8 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
     (format stream "~a" (animation-frame-time frame))))
 
 (defclass animation-track (sequences:sequence standard-object)
-  ((frames :initform #() :accessor frames)
+  ((name :initarg :name :initform NIL :accessor name)
+   (frames :initform #() :accessor frames)
    (interpolation :initarg :interpolation :initform :linear :accessor interpolation)))
 
 (defmethod initialize-instance :after ((track animation-track) &key times values frames)
