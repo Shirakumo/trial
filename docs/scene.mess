@@ -1,0 +1,30 @@
+# Scene Graph
+Like many engines, Trial includes a "scene graph" -- a tree of nodes in which the objects that are drawn or are interactable are organised. Each node is a ``scene-node`` with a ``container`` pointer to its parent node. Nodes that can contain other child nodes are ``container``s. Nodes that can be named are called ``entity``s. If an ``entity`` is named, it is uniquely identified by its name within the ``scene`` it is contained in. An entity can be obtained via its name with the ``entity`` function.
+
+## Graph Operations
+Operating on the graph is rather simple: ``enter`` is used to introduce a node into a container, and ``leave`` is used to remove it again. When a node is ``enter``ed, it is also ``register``ed on the graph's root ``scene``. Similarly, when it is left, the node and any children it might have are first ``deregister``ed. When the name of an ``entity`` is changed via ``setf``, the object is also first ``deregister``ed and then re-``register``ed after the name change.
+
+Each ``container`` must be a ``sequence`` and as such can be iterated over as one, using either ``for:for`` or ``sequences:dosequence``. All other standard sequence operations are naturally required to be supported as well.
+
+## Mixins
+By themselves nodes don't actually do anything. Often you'd like the nodes to carry some properties such as a location, orientation, etc. To this end, Trial offers a number of mixin classes:
+
+- ``located-entity``
+  An entity with a ``location`` vec3.
+- ``sized-entity``
+  An entity with a ``bsize`` vec3 describing the half-size of the entity's bounding box.
+- ``oriented-entity``
+  An entity that is pointing in the ``orientation`` direction according to the ``up`` vector.
+- ``rotated-entity``
+  An entity that is rotated by the ``rotation`` quaternion.
+- ``axis-rotated-entity``
+  An entity that is rotated around the ``axis`` by ``angle``.
+- ``pivoted-entity``
+  An entity that is pivoted by ``pivot``.
+- ``scaled-entity``
+  An entity that is scaled by ``scaling``.
+- ``transformed-entity``
+  An entity with a ``transform`` gizmo attached via ``tf``. It also supports convenience accessors for ``location``, ``scaling``, ``rotation``, ``axis``, ``angle``.
+  This is what all nodes have in a typical game engine. The transform gizmo is a convenient way to encapsulate separated affine transformations.
+
+Note that if you use multiple of these mixins that the order in which you specify them in the superclass list matters, as it determines the order in which their transformations apply to the ``model-matrix``.
