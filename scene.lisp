@@ -16,6 +16,9 @@
 (defmethod unit (name (scene scene))
   (gethash name (name-map scene)))
 
+(defmethod entity (name (scene scene))
+  (gethash name (name-map scene)))
+
 (defmethod register ((entity entity) (scene scene))
   (setf (gethash (name entity) (name-map scene)) entity))
 
