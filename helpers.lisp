@@ -24,12 +24,12 @@
           (* 180 (/ (acos (v. (up obj) (orientation obj))) PI))))
 
 (defclass rotated-entity (transformed entity)
-  ((rotation :initarg :rotation :initform (vec 0 0 0) :accessor rotation)))
+  ((rotation :initarg :rotation :initform (quat) :accessor rotation)))
 
 (defmethod apply-transforms progn ((obj rotated-entity))
-  (rotate +vx+ (vx (rotation obj)))
-  (rotate +vy+ (vy (rotation obj)))
-  (rotate +vz+ (vz (rotation obj))))
+  (let ((mat (mat4)))
+    (declare (dynamic-extent mat))
+    (nm* (model-matrix) (qmat4 (rotation obj) mat))))
 
 (defclass axis-rotated-entity (transformed entity)
   ((axis :initarg :axis :initform (vec 0 1 0) :accessor axis)
