@@ -34,8 +34,7 @@
    #:end-time
    #:loop-p
    #:duration
-   #:find-animation-track
-   #:sample-pose)
+   #:find-animation-track)
   ;; animation/entity.lisp
   (:export
    #:animation-layer

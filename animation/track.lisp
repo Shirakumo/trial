@@ -34,7 +34,7 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
 (defgeneric start-time (track))
 (defgeneric end-time (track))
 (defgeneric duration (track))
-(defgeneric sample (target track time loop-p))
+(defgeneric sample (target track time &key))
 (defgeneric find-frame-idx (track time loop-p))
 
 (defmethod (setf frames) ((keyframes cons) (track animation-track))
@@ -107,7 +107,7 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
                (return (1- i)))
           finally (return (1- (length frames))))))
 
-(defmethod sample (target (track animation-track) time loop-p)
+(defmethod sample (target (track animation-track) time &key loop-p)
   (let ((frames (frames track))
         (i (find-frame-idx track time loop-p)))
     (if (< i 0)
@@ -203,7 +203,7 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
       (if (= max most-negative-single-float)
           0.0 max))))
 
-(defmethod sample (transform (track transform-track) time loop-p)
+(defmethod sample (transform (track transform-track) time &key loop-p)
   (when (< 1 (length (location track)))
     (sample (tlocation transform) (location track) time loop-p))
   (when (< 1 (length (scaling track)))

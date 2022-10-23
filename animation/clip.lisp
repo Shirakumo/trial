@@ -76,14 +76,14 @@
                                (return track))))
                   ((NIL) (return NIL)))))
 
-(defmethod sample-pose ((clip clip) pose time)
+(defmethod sample (pose (clip clip) time &key)
   (if (< 0.0 (end-time clip))
       (let ((time (fit-to-clip clip time))
             (tracks (tracks clip))
             (loop-p (loop-p clip)))
         (loop for i from 0 below (length tracks)
               for track = (svref tracks i)
-              do (sample (elt pose (name track)) track time loop-p))
+              do (sample (elt pose (name track)) track time :loop-p loop-p))
         time)
       0.0))
 
