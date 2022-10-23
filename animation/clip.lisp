@@ -100,15 +100,21 @@
 (defmethod (setf clip) (clip (name symbol))
   (setf (gethash name *clips*) clip))
 
-(defmacro define-clip ((name &rest track-interpolations) &body frames)
-  `(setf (clip ',name) (ensure-instance (clip ',name) 'clip :tracks (compile-tracks ',track-interpolations
-                                                                                    ,@(loop for part in frames
-                                                                                            collect (cond ((and (symbolp part) (string= "_" part))
-                                                                                                           NIL)
-                                                                                                          ((and (consp part) (not (symbolp (car part))))
-                                                                                                           `(list ,@part))
-                                                                                                          (T
-                                                                                                           part)))))))
+(defmacro define-clip (name tracks &body initargs-and-frames)
+  (destructuring-bind (name &optional (class 'clip)) (enlist name)
+    (form-fiddle:with-body-options (frames options) initargs-and-frames
+      `(setf (clip ',name) (ensure-instance (clip ',name) ',class
+                                            :tracks (compile-tracks ',(if (numberp tracks)
+                                                                          (make-list tracks :initial-element :linear)
+                                                                          tracks)
+                                                                    ,@(loop for part in frames
+                                                                            collect (cond ((and (symbolp part) (string= "_" part))
+                                                                                           NIL)
+                                                                                          ((and (consp part) (not (symbolp (car part))))
+                                                                                           `(list ,@part))
+                                                                                          (T
+                                                                                           part))))
+                                            ,@options)))))
 
 (defun compile-tracks (interpolations &rest frame-data)
   (let ((tracks (make-array (length interpolations))))
@@ -130,7 +136,7 @@
     tracks))
 
 #++
-(define-clip (foo :linear :hermite)
+(define-clip foo (:linear :hermite)
   0.0 (vec 3 2 1) (1.0 2.0 0.0)
   1.0 _           (2.0 3.0 0.0)
   2.0 (vec 0 2 1) _)
