@@ -1,0 +1,24 @@
+# Data File Formats
+Trial supports loading textures and model files from a variety of formats. However, core trial does not include support for any, instead relegating each format to its own subsystem. If you have assets that require a certain format, make sure to include the subsystem in your dependencies.
+
+The following formats are supported:
+
+- gif (``trial-gif``)
+  Note: Only single frames are supported at the moment. You cannot play back gif animations.
+- gltf (``trial-gltf``)
+  Note: Only skinned mesh extraction is supported at the moment.
+- jpeg (``trial-jpeg``)
+- png (``trial-png``)
+- ter / Terragen (``trial-terragen``)
+- tga (``trial-tga``)
+- tiff (``trial-tiff``)
+
+On the sound side, please consult Harmony and cl-mixed extensions for details. The following formats are currently supported:
+
+- mp3 (``cl-mixed-mpg123``)
+  Note: MP3s fundamentally cannot loop smoothly without silence in the loop area. It is not recommended to use them for games.
+- wav (``cl-mixed-wav``)
+- flac (``cl-mixed-flac``)
+- ogg/oga (``cl-mixed-vorbis``)
+- Tracker files (``cl-mixed-mpt``)
+  Includes the following file types: mptm mod s3m xm it 669 amf ams c67 dbm digi dmf dsm dtm far imf ice j2b m15 mdl med mms mt2 mtm nst okt plm psm pt36 ptm sfx sfx2 st26 stk stm stp ult wow gdm mo3 oxm umx xpk ppm mmcmp
