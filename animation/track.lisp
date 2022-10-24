@@ -20,7 +20,7 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
    (frames :initform #() :accessor frames)
    (interpolation :initarg :interpolation :initform :linear :accessor interpolation)))
 
-(defmethod initialize-instance :after ((track animation-track) &key times values frames)
+(defmethod shared-initialize :after ((track animation-track) slots &key times values frames)
   (cond ((and times values)
          (setf (frames track) (cons times values)))
         (frames
@@ -60,7 +60,10 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
                              ;; DATA is ordered like this: i0 v0 o0 i1 v1 o1
                              (incf j 3)
                              (bezier (elt values (- j 2)) (elt values (- j 1))
-                                     (elt values (+ j 1)) (elt values (+ j 0))))))))
+                                     (elt values (+ j 1)) (elt values (+ j 0))))
+                            (:custom
+                             (incf j)
+                             (elt values (1- j)))))))
       (setf (frames track) frames))))
 
 (defun fit-to-track (track time loop-p)
