@@ -112,9 +112,9 @@
       `(setf (clip ',name) (ensure-instance (clip ',name) ',class
                                             :tracks (compile-tracks ',(if (numberp tracks)
                                                                           (loop for i from 0 below tracks
-                                                                                collect (list i :linear))
+                                                                                collect (list i :class animation-track))
                                                                           (loop for el in tracks
-                                                                                collect (if (listp el) el (list el :linear))))
+                                                                                collect (if (listp el) el (list el))))
                                                                     ,@(loop for part in frames
                                                                             collect (cond ((and (symbolp part) (string= "_" part))
                                                                                            NIL)
@@ -126,20 +126,22 @@
 
 (defun compile-tracks (track-descriptions &rest frame-data)
   (let ((tracks (make-array (length track-descriptions))))
-    (loop for (name interpolation) in track-descriptions
-          for track-frames = (loop for frame = frame-data then (nthcdr (1+ (length interpolations)) frame)
+    (loop for i from 0
+          for (name . initargs) in track-descriptions
+          for track-frames = (loop for frame = frame-data then (nthcdr (1+ (length tracks)) frame)
                                    for value = (nth (1+ i) frame)
                                    while frame
                                    when value
                                    collect (cons (car frame) value))
-          for track = (make-instance 'animation-track
-                                     :name name
-                                     :interpolation interpolation
-                                     :times (mapcar #'car track-frames)
-                                     :values (let ((values (mapcar #'cdr track-frames)))
-                                               ;; Duplicate last frame values to ensure we leave enough data for the track to finish.
-                                               (setf (cdr (last values)) (cons (car (last values)) (last values)))
-                                               (alexandria:flatten values)))
+          for track = (apply #'make-instance
+                             (getf initargs :class 'animation-track)
+                             :name name
+                             :times (mapcar #'car track-frames)
+                             :values (let ((values (mapcar #'cdr track-frames)))
+                                       ;; Duplicate last frame values to ensure we leave enough data for the track to finish.
+                                       (setf (cdr (last values)) (cons (car (last values)) (last values)))
+                                       (alexandria:flatten values))
+                             (progn (remf initargs :class) initargs))
           do (setf (aref tracks i) track))
     tracks))
 
