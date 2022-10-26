@@ -161,6 +161,12 @@
                      collect `(,var (slot-value ,variable ',name)))
            ,@body)))))
 
+(defmacro undefine-handler ((class event &rest qualifiers) slots &body body)
+  (declare (ignore slots body))
+  (destructuring-bind (instance class) (enlist class class)
+    (destructuring-bind (variable event) (enlist event event)
+      `(undefmethod handle ,@qualifiers ((,variable ,event) (,instance ,class))))))
+
 (defmacro define-event (name superclasses &body slots)
   (unless (find 'event superclasses)
     (setf superclasses (append superclasses '(event))))

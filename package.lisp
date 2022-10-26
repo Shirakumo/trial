@@ -428,6 +428,7 @@
    #:process
    #:discard-events
    #:define-handler
+   #:undefine-handler
    #:define-event
    #:define-event-pool
    #:tick
