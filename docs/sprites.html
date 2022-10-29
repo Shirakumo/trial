@@ -1,0 +1,73 @@
+<article><style>article{
+    max-width: 800px;
+    font-size: 12pt;
+    font-family: sans-serif;
+    margin: 3em auto;
+}
+
+article h1{
+    text-align: center;
+    font-size: 2em;
+}
+
+article img{
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+article blockquote{
+    border-left: 0.2em solid gray;
+    margin-left: 1em;
+    padding-left: 1em;
+}
+
+article figcaption{
+    padding: 0.2em 1em;
+    background: #E0E0E0;
+}
+
+article code{
+    background: #F0F0F0;
+    padding: 0 0.1em;
+}
+
+article .code-block{
+    padding: 0.1em 0.5em;
+    overflow-x: auto;
+}</style><h1 id="sprites">Sprites</h1><p>Trial includes direct support for both displaying and importing animated sprites. At the base there is a <code>sprite-entity</code>, which displays a single sprite frame. The sprite requires a <code>texture</code> and a <code>vertex-array</code> that is created from an array of <code>sprite-frame</code>s via <code>make-sprite-frame-mesh</code>.</p><p>This data can be automatically generated from a json file via the <code>sprite-data</code> asset. The json format should be structured as follows:</p><code style="display:block" class="code-block" data-language="json"><pre>{
+  &quot;frames&quot;: [
+    {
+      // Position and size of the frame within the atlas. Bottom left oriented, Y-down
+      &quot;frame&quot;: { &quot;x&quot;: 0, &quot;y&quot;: 0, &quot;w&quot;: 1, &quot;h&quot;: 1 },
+      // Size and offset of the frame within its padding. Bottom left oriented, Y-down
+      &quot;spriteSourceSize&quot;: { &quot;x&quot;: 0, &quot;y&quot;: 0, &quot;w&quot;: 1, &quot;h&quot;: 1 },
+      // Total size of the frame including padding
+      &quot;sourceSize&quot;: { &quot;w&quot;: 50, &quot;h&quot;: 50 },
+      // How long the frame should last, in milliseconds
+      &quot;duration&quot;: 500
+    },
+  ],
+  &quot;meta&quot;: {
+    // Relative path to the sprite atlas
+    &quot;image&quot;: &quot;critter-baba.png&quot;,
+    // Size of the atlas image
+    &quot;size&quot;: { &quot;w&quot;: 50, &quot;h&quot;: 50 },
+    // Array of animation clips
+    &quot;frameTags&quot;: [
+      {
+        &quot;name&quot;: &quot;Idle&quot;,
+        // Starting frame, 1-indexed
+        &quot;from&quot;: 1,
+        // Ending frame (inclusive upper bound)
+        &quot;to&quot;: 17,
+        // Animation to play after this one, if any
+        &quot;next&quot;: &quot;Idle&quot;,
+        // Which frame to loop to
+        &quot;loop&quot;: 1
+      }
+    ]
+  }
+}</pre></code><p>This format (except for the extra fields <code>next</code> and <code>loop</code> in the <code>frameTags</code>) is also supported by Aseprite and emitted by it if you export a packed sheet. You can even do so from the command line as follows:</p><code style="display:block" class="code-block"><pre>aseprite -b --sheet-pack --trim --shape-padding 1 --sheet my-sprite.png --format json-array --filename-format &quot;{tagframe} {tag}&quot; --list-tags --data my-sprite.json my-sprite.ase</pre></code><p>When you load a json file with the <code>sprite-data</code> asset, the asset will expose two resources: the <code>texture</code> of the packed atlas, and the <code>vertex-array</code> with the encoded frame data. However, it will also hold two arrays, the <code>animations</code> and the <code>frames</code> with the required metadata for each frame and animation clip.</p><p>You can pass the <code>sprite-data</code> instance as an initarg to an <code>animated-sprite</code>, which will cause it to properly load in all the desired data. After loading, you can start an animation on the entity with <code>play</code>. Animations can be named by either their index within the list of animations, or by their name (converted to a symbol). When loading a <code>sprite-data</code> the name is interned into the current <code>*package*</code>,  so it is recommended to bind <code>*package*</code> to your game's local package in your <code>launch</code> function.</p><p>The <code>animated-sprite</code> will automatically loop the animation if its <code>next-animation</code> points to itself, or switch to another animation if it does not. You can also configure what frame it loops back to with <code>loop-to</code>. Aside from this the <code>animated-sprite</code> also allows controlling playback with <code>playback-speed</code> and <code>playback-direction</code>. The latter should be <code>+1</code> for forward playback and <code>-1</code> for backwards playback.</p><p>Please note that the <code>animated-sprite</code> handles the playback within the primary <code>handle</code> method for <code>tick</code>. If you add your own handlers to a subclass, you should thus either <code>call-next-method</code> or only use <code>:after</code> or <code>:before</code> qualified handlers for <code>tick</code>.</p><p>Sometimes it can be useful to react when the animation is automatically switched. When this happens, Trial calls <code>switch-animation</code>, on which you can install additional methods to either prevent the switch or perform other actions.</p><p>Thus, getting sprites working should be as simple as:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(define-asset (workbench sprite) sprite-data
+    #p&quot;my-sprite.json&quot;)
+
+(make-instance 'animated-sprite :sprite-data (asset 'workbench 'sprite))</pre></code><p>And then just using <code>play</code> to play whatever animation you like. By default it should start out with whatever animation is first in the asset's animation list.</p></article>

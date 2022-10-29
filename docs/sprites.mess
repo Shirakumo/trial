@@ -1,0 +1,68 @@
+# Sprites
+Trial includes direct support for both displaying and importing animated sprites. At the base there is a ``sprite-entity``, which displays a single sprite frame. The sprite requires a ``texture`` and a ``vertex-array`` that is created from an array of ``sprite-frame``s via ``make-sprite-frame-mesh``.
+
+ This data can be automatically generated from a json file via the ``sprite-data`` asset. The json format should be structured as follows:
+
+:: json
+{
+  "frames": [
+    {
+      // Position and size of the frame within the atlas. Bottom left oriented, Y-down
+      "frame": { "x": 0, "y": 0, "w": 1, "h": 1 },
+      // Size and offset of the frame within its padding. Bottom left oriented, Y-down
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 1, "h": 1 },
+      // Total size of the frame including padding
+      "sourceSize": { "w": 50, "h": 50 },
+      // How long the frame should last, in milliseconds
+      "duration": 500
+    },
+  ],
+  "meta": {
+    // Relative path to the sprite atlas
+    "image": "critter-baba.png",
+    // Size of the atlas image
+    "size": { "w": 50, "h": 50 },
+    // Array of animation clips
+    "frameTags": [
+      {
+        "name": "Idle",
+        // Starting frame, 1-indexed
+        "from": 1,
+        // Ending frame (inclusive upper bound)
+        "to": 17,
+        // Animation to play after this one, if any
+        "next": "Idle",
+        // Which frame to loop to
+        "loop": 1
+      }
+    ]
+  }
+}
+::
+
+This format (except for the extra fields ``next`` and ``loop`` in the ``frameTags``) is also supported by Aseprite and emitted by it if you export a packed sheet. You can even do so from the command line as follows:
+
+::
+aseprite -b --sheet-pack --trim --shape-padding 1 --sheet my-sprite.png --format json-array --filename-format "{tagframe} {tag}" --list-tags --data my-sprite.json my-sprite.ase
+::
+
+When you load a json file with the ``sprite-data`` asset, the asset will expose two resources: the ``texture`` of the packed atlas, and the ``vertex-array`` with the encoded frame data. However, it will also hold two arrays, the ``animations`` and the ``frames`` with the required metadata for each frame and animation clip.
+
+You can pass the ``sprite-data`` instance as an initarg to an ``animated-sprite``, which will cause it to properly load in all the desired data. After loading, you can start an animation on the entity with ``play``. Animations can be named by either their index within the list of animations, or by their name (converted to a symbol). When loading a ``sprite-data`` the name is interned into the current ``*package*``,  so it is recommended to bind ``*package*`` to your game's local package in your ``launch`` function.
+
+The ``animated-sprite`` will automatically loop the animation if its ``next-animation`` points to itself, or switch to another animation if it does not. You can also configure what frame it loops back to with ``loop-to``. Aside from this the ``animated-sprite`` also allows controlling playback with ``playback-speed`` and ``playback-direction``. The latter should be ``+1`` for forward playback and ``-1`` for backwards playback.
+
+Please note that the ``animated-sprite`` handles the playback within the primary ``handle`` method for ``tick``. If you add your own handlers to a subclass, you should thus either ``call-next-method`` or only use ``:after`` or ``:before`` qualified handlers for ``tick``.
+
+Sometimes it can be useful to react when the animation is automatically switched. When this happens, Trial calls ``switch-animation``, on which you can install additional methods to either prevent the switch or perform other actions.
+
+Thus, getting sprites working should be as simple as:
+
+:: common lisp
+(define-asset (workbench sprite) sprite-data
+    #p"my-sprite.json")
+
+(make-instance 'animated-sprite :sprite-data (asset 'workbench 'sprite))
+::
+
+And then just using ``play`` to play whatever animation you like. By default it should start out with whatever animation is first in the asset's animation list.
