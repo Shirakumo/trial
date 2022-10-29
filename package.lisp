@@ -990,7 +990,8 @@
    #:playback-speed
    #:playback-direction
    #:reset-animation
-   #:switch-animation)
+   #:switch-animation
+   #:play)
   ;; ssao,lisp
   (:export
    #:ssao-pass
