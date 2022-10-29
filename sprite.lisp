@@ -105,8 +105,8 @@
 (defmethod (setf animation) ((animation sprite-animation) (sprite animated-sprite))
   (unless (eql animation (animation sprite))
     (call-next-method)
-    (reset-animation sprite))
-  animation)
+    (reset-animation sprite)
+    animation))
 
 (defmethod (setf animation) ((index integer) (sprite animated-sprite))
   (setf (animation sprite) (aref (animations sprite) index)))
@@ -123,6 +123,11 @@
 
 (defmethod (setf animations) :after (animations (sprite animated-sprite))
   (setf (animation sprite) 0))
+
+(defmethod play (animation (sprite animated-sprite))
+  (when (setf (animation sprite) animation)
+    (setf (playback-speed sprite) 1.0)
+    (setf (playback-direction sprite) +1)))
 
 (defmethod switch-animation ((sprite animated-sprite) animation)
   (setf (playback-speed sprite) 1.0)
