@@ -58,6 +58,7 @@
                (:file "interpolation" :depends-on ("package"))
                (:file "language" :depends-on ("package" "toolkit" "settings"))
                (:file "lines" :depends-on ("package" "helpers" "shader-entity" "geometry"))
+               (:file "list-container" :depends-on ("package" "container"))
                (:file "layered-container" :depends-on ("package" "container"))
                (:file "loader" :depends-on ("package" "resource" "asset"))
                (:file "main" :depends-on ("package" "display" "toolkit" "scene" "pipeline"))

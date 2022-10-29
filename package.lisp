@@ -691,6 +691,9 @@
   (:export
    #:lines
    #:line-width)
+  ;; list-container.lisp
+  (:export
+   #:list-container)
   ;; loader.lisp
   (:export
    #:staging-area
