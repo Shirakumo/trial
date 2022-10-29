@@ -80,6 +80,12 @@
 (defclass entity (scene-node)
   ((name :initform NIL :initarg :name :accessor name)))
 
+(defmethod print-object ((entity entity) stream)
+  (if (name entity)
+      (print-unreadable-object (entity stream :type T :identity NIL)
+        (format stream "~s" (name entity)))
+      (call-next-method)))
+
 (defmethod (setf name) :around (name (entity entity))
   (unless (eq name (name entity))
     (let ((scene (scene entity)))

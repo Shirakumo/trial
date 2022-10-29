@@ -282,6 +282,9 @@
    #:push-attribs
    #:pop-attribs
    #:with-pushed-attribs)
+  ;; bag.lisp
+  (:export
+   #:bag)
   ;; camera.lisp
   (:export
    #:camera
