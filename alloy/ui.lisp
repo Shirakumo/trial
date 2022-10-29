@@ -127,5 +127,5 @@
 
 (defmethod trial:object-renderable-p ((renderable trial:renderable) (pass ui-pass)) NIL)
 
-(defun ui (&optional (scene (scene +main+)))
-  (unit 'ui scene))
+(defun ui (&optional (scene (trial:scene trial:+main+)))
+  (trial:node 'ui scene))

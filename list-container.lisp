@@ -21,7 +21,7 @@
   thing)
 
 (defmethod leave (thing (container list-container))
-  (setf (%objcets container) (delete thing (%objects container)))
+  (setf (%objects container) (delete thing (%objects container)))
   thing)
 
 (defmethod finalize ((container list-container))

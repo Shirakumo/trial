@@ -112,7 +112,7 @@
       `(setf (clip ',name) (ensure-instance (clip ',name) ',class
                                             :tracks (compile-tracks ',(if (numberp tracks)
                                                                           (loop for i from 0 below tracks
-                                                                                collect (list i :class animation-track))
+                                                                                collect (list i :class 'animation-track))
                                                                           (loop for el in tracks
                                                                                 collect (if (listp el) el (list el))))
                                                                     ,@(loop for part in frames

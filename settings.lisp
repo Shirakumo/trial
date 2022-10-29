@@ -33,7 +33,7 @@
     (when (or reset
               (not (probe-file path))
               (< (file-write-date path)
-                 (file-write-date (merge-pathnames "keymap.lisp" (root)))))
+                 (file-write-date (merge-pathnames "keymap.lisp" (data-root)))))
       (uiop:copy-file (merge-pathnames "keymap.lisp" (data-root)) path)))
   (load-mapping path))
 

@@ -30,9 +30,7 @@
 (defmethod trial:handle :around ((ev trial:event) (ui base-ui))
   (unless (call-next-method)
     (dolist (panel (panels ui))
-      (trial:handle ev panel)
-      (when (typep panel 'pausing-panel)
-        (return)))))
+      (trial:handle ev panel))))
 
 (defmethod trial:stage :after ((ui base-ui) (area trial:staging-area))
   (dolist (panel (panels ui))
@@ -66,7 +64,7 @@
           do (cond ((null panel)
                     (return))
                    ((typep panel panel-type)
-                    (hide panel)))
+                    (trial:hide panel)))
              (setf panels (cdr panels)))))
 
 (defclass panel (alloy:structure)
@@ -82,7 +80,7 @@
   (alloy:layout-tree (alloy:layout-element panel)))
 
 (defmethod trial:show ((panel panel) &key (ui (ui)))
-  (trial:commit panel (trial:loader +main+) :unload NIL)
+  (trial:commit panel (trial:loader trial:+main+) :unload NIL)
   ;; Then attach to the UI
   (when (alloy:focus-element panel)
     (dolist (panel (panels ui))
@@ -125,7 +123,7 @@
 (defmethod trial:hide :after ((panel action-set-change-panel))
   (unless (eql (trial:action-set (prior-action-set panel))
                (trial:active-action-set))
-    (trial:reset-retained (scene +main+)))
+    (trial:reset-retained (trial:scene trial:+main+)))
   (setf (trial:active-p (trial:action-set (prior-action-set panel))) T))
 
 (defclass menuing-panel (action-set-change-panel fullscreen-panel)

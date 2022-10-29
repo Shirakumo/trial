@@ -32,6 +32,6 @@
   (remhash (name entity) (name-map scene)))
 
 (defmethod deregister :after ((listener listener) (scene scene))
-  (remove-listener thing scene))
+  (remove-listener listener scene))
 
 (defmethod scene ((scene scene)) scene)
