@@ -52,6 +52,7 @@
                (:file "geometry-clipmap" :depends-on ("package" "geometry-shapes" "shader-entity"))
                (:file "geometry-shapes" :depends-on ("package" "geometry" "asset-pool" ("assets" "mesh")))
                (:file "gl-struct" :depends-on ("package" "type-info"))
+               (:file "hash-table-container" :depends-on ("package" "container"))
                (:file "helpers" :depends-on ("package" "container" "transforms" "shader-entity" "shader-pass" "asset" "resources" "loader"))
                (:file "hdr" :depends-on ("package" "shader-pass"))
                (:file "input" :depends-on ("package" "event-loop"))
