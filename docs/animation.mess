@@ -24,6 +24,23 @@ The relevant concepts for animation are as follows:
   A base class for skinned 3d models. Requires an ``animation-asset`` to be passed, but will take care of setting up everything else based on that asset. Is also a ``fade-controller`` and ``layer-controller`` so that animation clips can be easily used with the entity.
   Note that it does not handle rendering of the mesh, only the vertex deformation needed to perform the skinning.
 
+When loading stuff from a model file you will not have to worry about any of the underlying stuff. All you need is an ``animated-entity`` and an asset to load the model with. From there you can just ``play``, ``fade-to``, and ``add-layer``/``remove-layer`` to manage your animations on the entities.
+
+## Animated-Assets
+In order to use the animation pipeline from model files, the model format system needs to provide a subclass of the ``animation-asset``. Currently the only format that supports this is the ``trial-gltf`` importer.
+
+Using one should be as simple as this:
+
+:: common lisp
+(define-asset (workbench model) org.shirakumo.fraf.trial.gltf:asset
+    #p"model.gltf")
+
+(make-instance 'animated-entity :animation-asset (asset 'workbench 'model))
+::
+
+Once loaded the asset must contain a ``skeleton``, a hash table of ``clips``, and a hash table of ``meshes``. The ``animated-entity`` will automatically extract and reference the properties as needed when you ``play``, ``fade-to``, etc.
+
+## Defining Clips
 Aside from the fully automated import of animations and skins from model files as used with the ``animated-entity``, you can also programmatically define animation clips to animate other properties and features.
 
 To do so, use ``define-clip`` which has the following general structure:
@@ -42,3 +59,6 @@ Wherein ``_`` is used to omit a track from a keyframe. By default track interpol
 Once a clip is defined, you can retrieve it by its name via ``clip`` and use ``sample`` to apply the track's effects to an object that contains the properties to be animated.
 
 Note that in general ``sample`` is modifying, meaning it updates the values in place to avoid producing garbage.
+
+Animation clips are only meant for tweening properties. There is no support for evaluating functions at certain times or running other more complex code. If you need a system to put together sequences of actions and other such changes, please have a look at "action-lists"(https://shinmera.github.io/action-list). They are trivial to integrate with Trial and are geared for that use.
+

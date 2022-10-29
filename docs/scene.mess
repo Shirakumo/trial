@@ -6,7 +6,11 @@ Operating on the graph is rather simple: ``enter`` is used to introduce a node i
 
 Each ``container`` must be a ``sequence`` and as such can be iterated over as one, using either ``for:for`` or ``sequences:dosequence``. All other standard sequence operations are naturally required to be supported as well.
 
-## Mixins
+You can also ``clear`` a container fully, though note that this will not recursively clear if the container contained other containers. When a container is ``finalize``d, all of its children are also finalized and the container is ``clear``ed, though as with all finalization you should not rely on any particular state after finalization.
+
+Finally, you can check whether a node is within a container with ``contained-p``, and retrieve the container it is in (if any) with the ``container`` function. To retrieve the root scene, simply use the ``scene`` function.
+
+## Entity Mixins
 By themselves nodes don't actually do anything. Often you'd like the nodes to carry some properties such as a location, orientation, etc. To this end, Trial offers a number of mixin classes:
 
 - ``located-entity``
@@ -27,4 +31,18 @@ By themselves nodes don't actually do anything. Often you'd like the nodes to ca
   An entity with a ``transform`` gizmo attached via ``tf``. It also supports convenience accessors for ``location``, ``scaling``, ``rotation``, ``axis``, ``angle``.
   This is what all nodes have in a typical game engine. The transform gizmo is a convenient way to encapsulate separated affine transformations.
 
-Note that if you use multiple of these mixins that the order in which you specify them in the superclass list matters, as it determines the order in which their transformations apply to the ``model-matrix``.
+Note that if you use multiple of these mixins that the order in which you specify them in the superclass list matters, as it determines the order in which their transformations apply to the ``model-matrix`` via ``apply-transforms``.
+
+## Container Types
+While you can create your own container types when necessary, Trial already provides a number of containers that should fit almost every need out there.
+
+- ``array-container``
+  A container backed by a simple-vector. Insertion is O(1) and simply adds to the back, and removal is O(n). Iteration should be fast and memory-efficient.
+- ``bag``
+  A container where the order of elements is not guaranteed to be consistent. However, in return, insertion and removal are both O(1), and iteration is also fast and memory-efficient. This should be the default container type unless you expect a very small number of elements.
+- ``layered-container``
+  A container that segregates objects into a multiple ``bag``s depending on their ``layer-index``. The container needs to be initialised with the correct ``layer-count``. Any object with a layer-index beyond [0,layer-count] is clamped to within that range.
+- ``list-container``
+  A container backed by a list. Insertion is O(1) and simple adds to the front, and removal is O(n). Iteration is not memory efficient due to the cons chain.
+
+Defining your own container types is simple -- all you need to do is subclass ``container``, and implement ``clear``, ``enter``, ``leave``, and the necessary sequence methods (most notably ``sequences:make-sequence-iterator``).
