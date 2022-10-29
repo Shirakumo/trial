@@ -843,6 +843,7 @@
   ;; scene.lisp
   (:export
    #:unit
+   #:node
    #:scene
    #:scene-event
    #:scene
