@@ -330,6 +330,19 @@
    #:context-creation-error
    #:resource-depended-on
    #:shader-compilation-error)
+  ;; container.lisp
+  (:export
+   #:scene-node
+   #:container
+   #:scene
+   #:clear
+   #:enter
+   #:leave
+   #:register
+   #:deregister
+   #:contains-p
+   #:entity
+   #:name)
   ;; context.lisp
   (:export
    #:*context*
@@ -845,14 +858,7 @@
    #:unit
    #:node
    #:scene
-   #:scene-event
-   #:scene
-   #:enter
-   #:entity
-   #:leave
-   #:register
-   #:deregister
-   #:process)
+   #:name-map)
   ;; serialize.lisp
   (:export
    #:define-type-serializer

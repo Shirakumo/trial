@@ -64,13 +64,13 @@
 (defmethod enter :before ((node scene-node) (container container))
   (when (container node)
     (error "The node~%  ~a~%cannot be entered into~%  ~a~%as it is already contained in~%  ~a"
-           node container (container entity))))
+           node container (container node))))
 
 #-elide-container-checks
 (defmethod leave :before ((node scene-node) (container container))
   (when (and (container node) (not (eq container (container node))))
     (error "The entity~%  ~a~%cannot be left from~%  ~a~%as it is contained in~%  ~a"
-           entity container (container entity))))
+           node container (container node))))
 
 (defmethod finalize ((container container))
   (for:for ((object over container))
@@ -83,12 +83,12 @@
 (defmethod (setf name) :around (name (entity entity))
   (unless (eq name (name entity))
     (let ((scene (scene entity)))
-      (cond ((eq entity root)
+      (cond ((eq entity scene)
              (call-next-method))
             (T
-             (deregister entity root)
+             (deregister entity scene)
              (call-next-method)
-             (register entity root))))))
+             (register entity scene))))))
 
 (defmethod clone ((entity entity) &rest initargs)
   (let ((initvalues ()))

@@ -17,9 +17,10 @@
   (ignore-errors
    (setf +powersave-timer+ -100.0)
    #+darwin
-   (unless +mac-sleep-reason-name+
-     (setf +mac-sleep-reason-name+ (org.shirakumo.fraf.gamepad.impl::cfstr "TrialGameRunning")))
-   (setf +mac-power-id+ 0)
+   (progn
+     (unless +mac-sleep-reason-name+
+       (setf +mac-sleep-reason-name+ (org.shirakumo.fraf.gamepad.impl::cfstr "TrialGameRunning")))
+     (setf +mac-power-id+ 0))
    #+linux
    (uiop:run-program (list "xset" "s" "off" "-dpms") :ignore-error-status T)))
 

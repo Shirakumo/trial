@@ -175,7 +175,7 @@
 
 (define-set-representation monitor
   :represents trial:monitor
-  :item-text trial:name
+  :item-text (trial:name alloy:value)
   (trial:list-monitors trial:*context*))
 
 (defclass video-mode-item (alloy:combo-item)
