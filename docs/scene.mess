@@ -40,6 +40,8 @@ While you can create your own container types when necessary, Trial already prov
   A container backed by a simple-vector. Insertion is O(1) and simply adds to the back, and removal is O(n). Iteration should be fast and memory-efficient.
 - ``bag``
   A container where the order of elements is not guaranteed to be consistent. However, in return, insertion and removal are both O(1), and iteration is also fast and memory-efficient. This should be the default container type unless you expect a very small number of elements.
+- ``hash-table-container``
+  A container backed by a simple hash table. Iteration order is not guaranteed, but insertion and removal are both O(1). Additionally, setting elements via ``elt`` does not "make sense" as there's no guarantee about the index of new elements.
 - ``layered-container``
   A container that segregates objects into a multiple ``bag``s depending on their ``layer-index``. The container needs to be initialised with the correct ``layer-count``. Any object with a layer-index beyond [0,layer-count] is clamped to within that range.
 - ``list-container``

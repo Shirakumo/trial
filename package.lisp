@@ -604,6 +604,9 @@
    #:define-gl-struct
    #:gl-vector
    #:element-type)
+  ;; hash-table-container.lisp
+  (:export
+   #:hash-table-container)
   ;; helpers.lisp
   (:export
    #:located-entity
