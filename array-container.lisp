@@ -12,7 +12,8 @@
 (defmethod clear ((container array-container))
   (let ((objects (%objects container)))
     (loop for i from 0 below (length objects)
-          do (setf (aref objects i) NIL))
+          do (setf (container (aref objects i)) NIL)
+             (setf (aref objects i) NIL))
     (adjust-array objects 0 :fill-pointer 0))
   container)
 
@@ -28,9 +29,6 @@
 (defmethod finalize ((container array-container))
   (for:for ((object across (%objects container)))
     (finalize object)))
-
-(defmethod contains-p (thing (container array-container))
-  (find thing (%objects container)))
 
 (defmethod sequences:elt ((container array-container) index)
   (svref (%objects container) index))

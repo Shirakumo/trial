@@ -19,9 +19,10 @@
 (defgeneric scene (node))
 
 (defmethod scene ((node scene-node))
-  (if (null (container node))
-      node
-      (scene (container node))))
+  (loop for parent = (container node)
+        do (if parent
+               (setf node parent)
+               (return node))))
 
 (defmethod leave ((node scene-node) (container (eql T)))
   (when (container node)
@@ -88,10 +89,6 @@
              (deregister entity root)
              (call-next-method)
              (register entity root))))))
-
-(defmethod scene ((entity entity))
-  (when (slot-boundp entity 'container)
-    (scene (container entity))))
 
 (defmethod clone ((entity entity) &rest initargs)
   (let ((initvalues ()))

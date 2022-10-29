@@ -42,11 +42,9 @@
   (let ((objects (%objects bag)))
     (clrhash (%object->index bag))
     (loop for i from 0 below (size bag)
-          do (setf (aref objects i) NIL))
+          do (setf (container (aref objects i)) NIL)
+             (setf (aref objects i) NIL))
     (setf (size bag) 0)))
-
-(defmethod contains-p (thing (bag bag))
-  (gethash thing (%object->index bag)))
 
 (defmethod sequences:elt ((bag bag) index)
   (svref (%objects bag) index))

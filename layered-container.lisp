@@ -29,6 +29,11 @@
 (defmethod leave (thing (container layered-container))
   (leave thing (aref (%objects container) (clamp 0 (round (layer-index thing)) (1- (length (%objects container)))))))
 
+(defmethod clear ((container layered-container))
+  (loop for layer across (%objects container)
+        do (clear layer))
+  container)
+
 (defmethod for:step-functions ((iterator layered-container))
   (let* ((layers (%objects iterator))
          (layer-idx 0) (idx 0) layer size)
