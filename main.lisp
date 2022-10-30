@@ -25,6 +25,9 @@
   (setf +main+ NIL)
   (setf +input-source+ :keyboard))
 
+(defmethod scene ((default (eql T)))
+  (scene +main+))
+
 (defmethod handle (event (main main))
   (issue (scene main) event))
 
