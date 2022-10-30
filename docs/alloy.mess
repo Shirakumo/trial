@@ -13,6 +13,8 @@ You can then just enter an instance of this pass into your "render pipeline"(lin
 
 The integration system takes care of translating Trial's input events into Alloy's input events, and also includes standard UI actions that you can use in your action-sets.
 
+Note that this way the UI is rendered on a separate pass, and as such it will not automatically combine with your game render. In order to combine the two, it is recommended to use a ``blend-pass`` or similar to combine the two outputs.
+
 ## Panels
 The ``base-ui`` includes a "panel system", which allows you to stack different layers of UI over each other and automatically manage all the itty gritty of focus and active action sets. Each ``panel`` is an ``alloy:structure`` and, in addition to the Alloy UI elements, also receives all of Trial's ``event``s that are posted to the UI.
 

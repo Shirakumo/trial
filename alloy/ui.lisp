@@ -76,7 +76,7 @@
 (defmethod trial:handle ((ev trial:resize) (ui ui))
   (alloy:suggest-size (alloy:px-size (trial:width ev) (trial:height ev)) ui))
 
-(defmethod trial:stage ((ui ui) (area trial:staging-area))
+(defmethod trial:stage :after ((ui ui) (area trial:staging-area))
   (trial:stage (alloy:layout-tree ui) area))
 
 (defmethod alloy:clipboard ((ui ui))
@@ -111,7 +111,10 @@
    (trial:color :port-type trial:output :attachment :color-attachment0)
    (trial:depth :port-type trial:output :attachment :depth-stencil-attachment)))
 
-(defmethod render :around ((pass ui-pass) target)
+(defmethod trial:stage :after ((pass ui-pass) (area trial:staging-area))
+  (trial:stage (trial:framebuffer pass) area))
+
+(defmethod trial:render :around ((pass ui-pass) target)
   (trial:with-pushed-attribs
     (gl:enable :depth-test)
     (gl:clear-color 0 0 0 0)
