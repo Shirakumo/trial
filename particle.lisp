@@ -68,6 +68,8 @@
   (setf (uniform program "view_matrix") (view-matrix))
   (setf (uniform program "projection_matrix") (projection-matrix))
   (setf (uniform program "clock") (clock system))
+  ;; FIXME: Problem: alpha blending fucks up if things aren't drawn in depth sorted order.
+  ;;        But since all the info is on the gpu how the heck do we sort?
   (gl:bind-vertex-array (gl-name (vertex-array system)))
   (%gl:draw-arrays-instanced :triangles 0 6 (active-particles system))
   (gl:bind-vertex-array 0))
