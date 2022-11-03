@@ -92,12 +92,25 @@
     (setf language (string-downcase language))
     (v:info :trial.language "Saving language ~s to ~s" language (language-file language))
     (with-trial-io-syntax ()
-      (with-open-file (stream (language-file language)
-                              :direction :output
-                              :if-exists :supersede)
+      (let ((order-table (make-hash-table :test 'eq))
+            (i 0))
+        (with-open-file (stream (language-file language)
+                                :direction :input
+                                :if-does-not-exist NIL)
+          (when stream
+            (loop for k = (read stream NIL)
+                  while k
+                  do (read stream NIL)
+                     (setf (gethash k order-table) (1- (incf i))))))
         (loop for k being the hash-keys of +language-data+
-              for v being the hash-keys of +language-data+
-              do (format stream "~s ~s~%" k v))))))
+              do (unless (gethash k order-table)
+                   (setf (gethash k order-table) (1- (incf i)))))
+        (with-open-file (stream (language-file language)
+                                :direction :output
+                                :if-exists :supersede)
+          (loop for (k) in (sort (alexandria:hash-table-alist order-table) #'< :key #'cdr)
+                for v = (gethash k +language-data+)
+                do (format stream "~s ~s~%" k v)))))))
 
 (defun language-string (identifier &optional (errorp T))
   (unless +language-data+ (load-language))
