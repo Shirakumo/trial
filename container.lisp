@@ -13,6 +13,22 @@
 (defgeneric deregister (thing container))
 (defgeneric contains-p (thing container))
 
+(declaim (inline map-scene-graph))
+(defun map-scene-graph (function root)
+  (declare (type function function))
+  (declare (optimize speed))
+  (labels ((process (node)
+             (funcall function node)
+             (when (typep node 'container)
+               (sequences:dosequence (child node)
+                 (process child)))))
+    (process root)))
+
+(defmacro do-scene-graph ((node graph &optional return) &body body)
+  `(block NIL
+     (map-scene-graph (lambda (,node) ,@body) ,graph)
+     ,return))
+
 (defclass scene-node ()
   ((container :initarg :container :initform NIL :accessor container)))
 

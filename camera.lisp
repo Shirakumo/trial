@@ -38,13 +38,17 @@
 (defmethod project-view :before ((camera camera))
   (reset-matrix))
 
+(defmethod map-visible (function (camera camera) (object scene-node))
+  (when (in-view-p object camera)
+    (funcall function object)))
+
 (defmethod map-visible (function (camera camera) (container container))
-  (for:for ((object over container))
+  (do-scene-graph (object container)
     (when (in-view-p object camera)
       (funcall function object))))
 
 (defmethod map-visible (function (camera null) (container container))
-  (for:for ((object over container))
+  (do-scene-graph (object container)
     (funcall function object)))
 
 (defmacro do-visible ((entity camera container &optional return) &body body)

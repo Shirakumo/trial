@@ -344,6 +344,8 @@
    #:register
    #:deregister
    #:contains-p
+   #:map-scene-graph
+   #:do-scene-graph
    #:entity
    #:name)
   ;; context.lisp
