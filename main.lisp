@@ -88,14 +88,16 @@
       (loop for pass across (passes (scene main))
             do (when (object-renderable-p object pass)
                  (leave object pass)))
-      (leave object container))))
+      (leave object container))
+    object))
 
 (defmethod enter-and-load ((object entity) (container container) (main main))
   (let ((area (make-instance 'staging-area)))
     (stage object area)
     (enter object container)
     (unless (commit area (loader main) :unload NIL)
-      (leave object container))))
+      (leave object container))
+    object))
 
 (defmethod render ((source main) (target main))
   (render (scene source) NIL)
