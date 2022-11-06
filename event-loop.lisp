@@ -75,23 +75,34 @@
   (let ((event (etypecase event-type
                  (event event-type)
                  ((or class symbol)
-                  (apply #'make-event event-type args)))))
+                  (apply #'make-event event-type args))))
+        (loop (etypecase loop
+                (event-loop loop)
+                ((eql T) (scene +main+)))))
     (queue-push event (queue loop))))
 
 (define-compiler-macro issue (&environment env loop event-type &rest args)
-  (cond ((and (constantp event-type env)
-              (listp event-type)
-              (eql (first event-type) 'quote)
-              (symbolp (second event-type)))
-         `(queue-push (make-event ,event-type ,@args) (queue ,loop)))
-        (T
-         (let ((eventg (gensym "EVENT")))
-           `(let* ((,eventg ,event-type)
-                   (,eventg (etypecase ,eventg
-                              (event ,eventg)
-                              ((or class symbol)
-                               (make-event ,eventg ,@args)))))
-              (queue-push ,eventg (queue ,loop)))))))
+  (let ((event (cond ((and (constantp event-type env)
+                           (listp event-type)
+                           (eql (first event-type) 'quote)
+                           (symbolp (second event-type)))
+                      `(make-event ,event-type ,@args))
+                     (T
+                      (let ((eventg (gensym "EVENT")))
+                        `(let ((,eventg ,event-type))
+                           (etypecase ,eventg
+                             (event ,eventg)
+                             ((or class symbol)
+                              (make-event ,eventg ,@args))))))))
+        (loop (cond ((eql T loop)
+                     `(scene +world+))
+                    (T
+                     (let ((loopg (gensym "LOOP")))
+                       `(let ((,loopg ,loop))
+                          (etypecase ,loopg
+                            (event-loop ,loopg)
+                            ((eql T) (scene +main+)))))))))
+    `(queue-push ,event (queue ,loop))))
 
 (defmethod process ((loop event-loop))
   (declare (optimize speed))
