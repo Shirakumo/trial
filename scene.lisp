@@ -35,3 +35,5 @@
   (remove-listener listener scene))
 
 (defmethod scene ((scene scene)) scene)
+
+(defmethod apply-transforms progn ((scene scene)))
