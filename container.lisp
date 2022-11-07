@@ -122,4 +122,5 @@
     (apply #'make-instance (class-of entity) (append initargs initvalues (when (name entity) (list :name (generate-name (type-of entity))))))))
 
 (defmethod apply-transforms progn ((entity entity))
-  (apply-transforms (container entity)))
+  (when (container entity)
+    (apply-transforms (container entity))))
