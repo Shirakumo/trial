@@ -18,6 +18,7 @@
   (:local-nicknames
    (#:gamepad #:org.shirakumo.fraf.gamepad)
    (#:sequences #:org.shirakumo.trivial-extensible-sequences)
+   (#:v #:org.shirakumo.verbose)
    #+windows
    (#:com #:org.shirakumo.com-on))
   ;; animation/asset.lisp
