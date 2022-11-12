@@ -44,7 +44,7 @@
   (when (container node)
     (leave node (container node))))
 
-(defclass container (scene-node)
+(defclass container (scene-node sequences:sequence)
   ())
 
 (defmethod contains-p ((node scene-node) (container container))
