@@ -31,10 +31,10 @@
     (finalize object)))
 
 (defmethod sequences:elt ((container array-container) index)
-  (svref (%objects container) index))
+  (aref (%objects container) index))
 
 (defmethod (setf sequences:elt) (thing (container array-container) index)
-  (setf (svref (%objects container) index) thing))
+  (setf (aref (%objects container) index) thing))
 
 (defmethod sequences:make-sequence-iterator ((container array-container) &key (start 0) end from-end)
   (let* ((vector (the (and vector (not simple-vector)) (%objects container)))
