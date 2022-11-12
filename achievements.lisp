@@ -49,8 +49,8 @@
 
 (defmacro define-achievement (name &optional event-type &body test-function)
   (destructuring-bind (name &key (title name) (description (mksym *package* name '/description)) (icon NIL)) (enlist name)
-    (destructuring-bind (event-name event-type) (enlist event-type event-type)
-      `(progn (setf (achievement ',name) (ensure-instance (achievement ',name) 'achievement
+    (destructuring-bind (event-name event-type) (enlist (or event-type '(unused NIL)) event-type)
+      `(progn (setf (achievement ',name) (ensure-instance (ignore-errors (achievement ',name)) 'achievement
                                                           :name ',name
                                                           :title ',title
                                                           :description ',description
