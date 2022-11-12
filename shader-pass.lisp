@@ -177,11 +177,15 @@
     (finalize (framebuffer pass))))
 
 (defmethod enter ((container container) (pass shader-pass))
+  (when (next-method-p)
+    (call-next-method))
   (for:for ((object over container))
     (when (object-renderable-p object pass)
       (enter object pass))))
 
 (defmethod leave ((container container) (pass shader-pass))
+  (when (next-method-p)
+    (call-next-method))
   (for:for ((object over container))
     (when (object-renderable-p object pass)
       (leave object pass))))
