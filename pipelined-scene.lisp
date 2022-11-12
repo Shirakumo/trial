@@ -23,20 +23,12 @@
 (defmethod handle :after ((event resize) (scene pipelined-scene))
   (resize scene (width event) (height event)))
 
-(defmethod enter :after ((entity renderable) (scene pipelined-scene))
+(defmethod register :after ((entity renderable) (scene pipelined-scene))
   (loop for pass across (passes scene)
         do (when (object-renderable-p entity pass)
              (enter entity pass))))
 
-(defmethod leave :after ((entity renderable) (scene pipelined-scene))
+(defmethod deregister :after ((entity renderable) (scene pipelined-scene))
   (loop for pass across (passes scene)
         do (when (object-renderable-p entity pass)
              (leave entity pass))))
-
-(defmethod enter :after ((entity container) (scene pipelined-scene))
-  (loop for pass across (passes scene)
-        do (enter entity pass)))
-
-(defmethod leave :after ((entity container) (scene pipelined-scene))
-  (loop for pass across (passes scene)
-        do (leave entity pass)))

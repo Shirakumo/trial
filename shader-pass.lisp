@@ -286,6 +286,8 @@
   (gethash object (renderable-table pass)))
 
 (defmethod enter (object (pass per-object-pass))
+  (when (next-method-p)
+    (call-next-method))
   (when (or (object-renderable-p object pass)
             (typep object 'shader-entity-class))
     (let ((renderable-table (renderable-table pass)))
@@ -304,6 +306,8 @@
           (setf (gethash object renderable-table) program))))))
 
 (defmethod leave (object (pass per-object-pass))
+  (when (next-method-p)
+    (call-next-method))
   (let* ((renderable-table (renderable-table pass))
          (program (gethash object renderable-table)))
     (when program
