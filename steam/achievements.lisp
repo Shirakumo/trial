@@ -6,34 +6,28 @@
 
 (in-package #:org.shirakumo.fraf.trial.steam)
 
-(defmethod trial:list-achievements ((main main))
-  (if steam::*steamworks*
-      (steam:list-achievements (steam:interface 'steam:steamuserstats T))
-      (call-next-method)))
+(defclass achievement-api (trial:achievement-api)
+  ())
 
-(defmethod (setf trial:achievement-state) :before (value (achievement trial:achievement) (main main))
-  (when steam::*steamworks*
-    (setf (steam:achieved-p (trial:api-name achievement)) value)))
+(defmethod trial:load-achievement-data ((api achievement-api))
+  (unless steam::*steamworks*
+    (error "Not connected to steam."))
+  (dolist (achievement (steam:list-achievements (steam:interface 'steam:steamuserstats T)))
+    (handler-case
+        (setf (slot-value (trial:achievement (steam:handle achievement)) 'trial:active-p) (steam:achieved-p achievement))
+      (error ()
+        (v:warn :trial.achievements "Steam achievement ~s not present locally!" (steam:handle achievement))))))
 
-(defmethod trial:achievement-state ((achievement trial:achievement) (main main))
-  (if steam::*steamworks*
-      (steam:achieved-p (trial:api-name achievement))
-      (call-next-method)))
+(trial:define-handler (achievement-api trial:achievement-unlocked :after) ((achievement trial:achievement))
+  (setf (steam:achieved-p (trial:symbol->c-name (trial:name achievement))) T))
 
-(defmethod trial:name ((achievement steam:achievement))
-  (trial:symbol->c-name (steam:handle achievement)))
+(trial:define-handler (achievement-api trial:achievement-relocked :after) ((achievement trial:achievement))
+  (setf (steam:achieved-p (trial:symbol->c-name (trial:name achievement))) NIL))
 
-(defmethod trial:api-name ((achievement steam:achievement))
-  (steam:handle achievement))
+(defmethod trial:notifications-display-p ((api achievement-api))
+  T)
 
-(defmethod trial:title ((achievement steam:achievement))
-  (steam:display-name achievement))
+(defmethod (setf trial:notifications-display-p) (value (api achievement-api))
+  NIL)
 
-(defmethod trial:description ((achievement steam:achievement))
-  (steam:description achievement))
-
-(defmethod trial:unlocked-p ((achievement steam:achievement))
-  (steam:achieved-p achievement))
-
-(defmethod (setf trial:unlocked-p) (value (achievement steam:achievement))
-  (setf (steam:achieved-p achievement) value))
+(pushnew (make-instance 'achievement-api) trial:*achievement-apis*)

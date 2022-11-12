@@ -205,17 +205,27 @@
   ;; achievements.lisp
   (:export
    #:achievement
+   #:list-achievements
    #:name
-   #:api-name
-   #:icon
-   #:unlocked-p
    #:title
    #:description
-   #:achievement-container
-   #:list-achievements
-   #:achievement-state
-   #:achievement-changed
-   #:define-achievements)
+   #:icon
+   #:event-type
+   #:test-function
+   #:active-p
+   #:define-achievement
+   #:award
+   #:achievement-event
+   #:achievement-unlocked
+   #:achievement-relocked
+   #:*achievement-api*
+   #:*achievement-apis*
+   #:achievement-api
+   #:load-achievement-data
+   #:save-achievement-data
+   #:notifications-display-p
+   #:local-achievement-api
+   #:achievement-main)
   ;; actions.lisp
   (:export
    #:action-set

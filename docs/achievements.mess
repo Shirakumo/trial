@@ -1,0 +1,36 @@
+# Achievements
+Trial includes a generic API to handle achievements in games. This API is core to Trial, as it aims to be independent of whatever platforms you may be ultimately distributing the game on. Using this API your achievements will work properly for games shipped without any service, or on Steam, or whatever you may have.
+
+For this to work each platform extension must implement a small API to integrate and synchronize the data. When the game starts up, you must call ``(load-achievement-data T)`` to select the appropriate API and load the actual data. After this call, ``*achievement-api*`` will be set. You should then call ``handle`` on ``+achievement-api+`` for every event, typically from your ``main``. You can also automate this process by inheriting from ``achievement-main``.
+
+``(load-achievement-data T)`` will always succeed, falling back to a local achievements api, which simply stores achievements in a local file within the config directory.
+
+Once this is set up, you can get on to actually defining your achievements. 
+
+:: common lisp
+(define-achievement all-races-complete race-complete
+  (loop for race in (list-races)
+        always (complete-p race)))
+::
+
+The above achievement will trigger when a ``race-complete`` event is handled and every race is complete. Or in other words: the body of the achievement should return a boolean, which if true will unlock the achievement.
+
+You can also **not** supply any event or body, in which case you must manually unlock the achievement, either by calling ``award`` or setting ``active-p``, on an ``achievement``. Note that while this also allows you to re-lock achievements, it is generally discouraged to do so outside of testing environments.
+
+You can also list all achievements by ``list-achievements`` and query their ``name``, ``title``, ``description``, and ``icon``. The title and description slots should store symbols naming "localization keys"(link localization.mess), such that reading them with the accessor automatically returns the appropriately translated string. You can customise these keys by supplying extra keywords in the name of the achievement:
+
+:: common lisp
+(define-achievement (all-races-complete :title foo) ...)
+::
+
+If not supplied, the title defaults to the achievement name, and the description defaults to the name with ``/description`` appended. The icon is NIL unless manually supplied. If supplied, it should be a ``texture`` resource that can be used to display the icon in the UI.
+
+Note that the names of the achievements matter here, and must correspond to whatever names you have on your distribution platforms. In order to still allow somewhat convenient naming though, the package of the name is ignored, the name is compared case-insensitively, and any underscores or spaces in the name on the distribution platform is treated as a wildcard. For instance, if the name on the platform is ``my_achievement``, this will match ``MY-ACHIEVEMENT`` just fine.
+
+## Achievement Display
+If you are integrating with another platform like Steam it's likely that the platform will take care of showing an achievement popup for you in the expected native style. You can query and possibly set whether the selected achievement api shows notifications with ``notifications-display-p``.
+
+## Implementing an Achievement API
+If you are integrating with another service and would like to tie to the API, you should proceed as follows: implement a subclass of ``achievement-api`` and push an instance onto ``*achievement-apis*``. Then implement a method on ``load-achievement-data``, which should error if the platform is not available, and otherwise restore the ``active-p`` state on the achievements. It is recommended to set the slot-value directly during this, so that no events are generated.
+
+Next you'll want to handle ``achievement-unlocked`` and ``achievement-relocked`` to synchronize the state with your platform when changes occur. And finally, you should implement ``notifications-display-p`` to signal whether the platform will display achievement notification popups for the user on its own or not.

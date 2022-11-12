@@ -6,68 +6,150 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass achievement ()
-  ((name :initform (error "NAME required") :initarg :name :accessor name)
-   (api-name :initform NIL :initarg :api-name :accessor api-name)
-   (icon :initform NIL :initarg :icon :accessor icon)
-   (unlocked-p :initform NIL :initarg :unlocked-p :accessor unlocked-p)))
+(defvar *achievements* (make-hash-table :test 'eq))
 
-(defmethod shared-initialize :after ((achievement achievement) slots &key name)
-  (when name (setf (api-name achievement) (symbol->c-name name))))
+(defmethod achievement ((name symbol))
+  (or (gethash name *achievements*)
+      (error "No achievement named ~s found." name)))
+
+(defmethod achievement ((name string))
+  (loop for achievement being the hash-keys of *achievements*
+        for string = (string achievement)
+        do (when (and (= (length string) (length name))
+                      (loop for a across name
+                            for b across string
+                            always (or (char-equal a b)
+                                       (char= a #\_)
+                                       (char= a #\ ))))
+             (return (gethash achievement *achievements*)))
+        finally (error "No achievement named ~s found." name)))
+
+(defmethod (setf achievement) (achievement (name symbol))
+  (setf (gethash name *achievements*) achievement))
+
+(defmethod (setf achievement) ((none null) (name symbol))
+  (remhash name *achievements*)
+  NIL)
+
+(defun list-achievements ()
+  (sort (alexandria:hash-table-values *achievements*) #'string< :key #'name))
+
+(defclass achievement ()
+  ((name :initarg :name :accessor name)
+   (title :initarg :title :accessor title)
+   (description :initarg :description :initform NIL :accessor description)
+   (icon :initarg :icon :initform NIL :accessor icon)
+   (event-type :initarg :event-type :initform NIL :accessor event-type)
+   (test-function :initarg :test-function :initform (constantly NIL) :accessor test-function)
+   (active-p :initform NIL :accessor active-p)))
+
+(defmethod print-object ((achievement achievement) stream)
+  (print-unreadable-object (achievement stream :type T)
+    (format stream "~s ~:[LOCKED~;UNLOCKED~]" (name achievement) (active-p achievement))))
+
+(defmacro define-achievement (name &optional event-type &body test-function)
+  (destructuring-bind (name &key (title name) (description (mksym *package* name '/description)) (icon NIL)) (enlist name)
+    (destructuring-bind (event-name event-type) (enlist event-type event-type)
+      `(progn (setf (achievement ',name) (ensure-instance (achievement ',name) 'achievement
+                                                          :name ',name
+                                                          :title ',title
+                                                          :description ',description
+                                                          :icon ,icon
+                                                          :event-type ',event-type
+                                                          :test-function (lambda (,event-name)
+                                                                           (declare (ignorable ,event-name))
+                                                                           ,@test-function)))
+              ',name))))
 
 (defmethod title ((achievement achievement))
-  (language-string (name achievement)))
+  (language-string (slot-value achievement 'title)))
 
 (defmethod description ((achievement achievement))
-  (language-string (mksym (symbol-package (name achievement)) (name achievement) '/description)))
+  (language-string (slot-value achievement 'description)))
 
-(defclass achievement-container ()
+(define-handler (achievement (ev event)) ()
+  (when (and (not (active-p achievement))
+             (typep ev (event-type achievement))
+             (funcall (test-function achievement) ev))
+    (award achievement)))
+
+(defmethod award ((achievement achievement))
+  (setf (active-p achievement) T))
+
+(defmethod award ((name symbol))
+  (award (achievement name)))
+
+(defmethod (setf active-p) :around (new (achievement achievement))
+  (let ((old (active-p achievement)))
+    (cond ((and new (not old))
+           (call-next-method)
+           (issue T 'achievement-unlocked :achievement achievement))
+          ((and old (not new))
+           (call-next-method)
+           (issue T 'achievement-relocked :achievement achievement)))))
+
+(define-event achievement-event () achievement)
+(define-event achievement-unlocked (achievement-event))
+(define-event achievement-relocked (achievement-event))
+
+(define-global +achievement-api+ NIL)
+(defvar *achievement-apis* ())
+
+(defclass achievement-api ()
+  ((active-p :initform NIL :accessor active-p)))
+
+(defgeneric load-achievement-data (achievement-api))
+(defgeneric notifications-display-p (achievement-api))
+(defgeneric (setf notifications-display-p) (value achievement-api))
+
+(define-handler (achievement-api event) ()
+  (loop for achievement being the hash-values of *achievements*
+        do (handle event achievement)))
+
+(defmethod load-achievement-data ((all (eql T)))
+  (dolist (api *achievement-apis*)
+    (ignore-errors
+     (with-error-logging (:trial.achievements "Failed to load achievement data from ~a" api)
+       (return (setf +achievement-api+ (load-achievement-data api)))))))
+
+(defclass local-achievement-api ()
   ())
 
-(defgeneric list-achievements (main))
-(defgeneric achievement-state (achievement container))
-(defgeneric (setf achievement-state) (value achievement container))
+(defun achievement-file-path ()
+  (make-pathname :name "achievements" :type "lisp"
+                 :defaults (config-directory)))
 
-(defmethod achievement-state ((name symbol) (container achievement-container))
-  (handler-case (achievement-state (or (find name (list-achievements container) :key #'name)
-                                       (error "No achievement named ~s found!" name))
-                                   container)
-    #+trial-release
-    (error (e)
-      (v:error :trial.achievements "Error retrieving achievement state: ~a" e)
-      NIL)))
+(defmethod load-achievement-data ((api local-achievement-api))
+  (with-open-file (stream (achievement-file-path) :if-does-not-exist NIL)
+    (when stream
+      (loop for achievement being the hash-values of *achievements*
+            do (setf (slot-value (achievement name) 'active-p) NIL))
+      (loop for name = (read stream NIL NIL)
+            while name
+            do (ignore-errors
+                (with-error-logging (:trial.achievements "Failed to find achievement ~a" name)
+                  (setf (slot-value (achievement name) 'active-p) T)))))))
 
-(defmethod (setf achievement-state) (value (name symbol) (container achievement-container))
-  (handler-case (setf (achievement-state (or (find name (list-achievements container) :key #'name)
-                                             (error "No achievement named ~s found!" name))
-                                         container)
-                      value)
-    #+trial-release
-    (error (e)
-      (v:error :trial.achievements "Error setting achievement state: ~a" e)
-      value)))
+(defmethod save-achievement-data ((api local-achievement-api))
+  (with-open-file (stream (achievement-file-path) :direction :output :if-exists :supersede)
+    (loop for achievement being the hash-values of *achievements*
+          do (when (active-p achievement)
+               (prin1 (name achievement) stream)
+               (terpri stream)))))
 
-(defmethod achievement-state ((achievement achievement) container)
-  (unlocked-p achievement))
+(defmethod notifications-display-p ((api local-achievement-api)) NIL)
+(defmethod (setf notifications-display-p) (value (api local-achievement-api)) NIL)
 
-(defmethod (setf achievement-state) (value (achievement achievement) container)
-  (setf (unlocked-p achievement) value))
+(define-handler (achievement-api achievement-event :after) ()
+  (save-achievement-data achievement-api))
 
-(defmethod (setf achievement-state) :after (value (achievement achievement) (main main))
-  (handle (make-instance 'achievement-changed :achievement achievement) main))
+(pushnew (make-instance 'local-achievement-api) *achievement-apis*)
 
-(defclass achievement-changed (event)
-  ((achievement :initform (error "ACHIEVEMENT required") :initarg :achievement :reader achievement)))
+(defclass achievement-main (main)
+  ())
 
-(defmacro define-achievements (name achievement-superclass &body achievements)
-  `(let ((achievements (list ,@(loop for (name . initargs) in achievements
-                                     collect `(make-instance ',achievement-superclass :name ',name ,@initargs)))))
-     (unless (find-class ',name)
-       (defclass ,name ()
-         ()))
+(defmethod initialize-instance :after ((main main) &key)
+  (load-achievement-data T))
 
-     (defmethod list-achievements ((_ ,name))
-       achievements)
-
-     ;; FIXME: integrate with save state stuff, once that's sorted out.
-     ))
+(defmethod handle :before (event (main achievement-main))
+  (handle event +achievement-api+))
