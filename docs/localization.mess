@@ -9,11 +9,11 @@ If you programmatically set ``language-string``, you can serialise the table out
 
 Note that the values do not //have// to be strings. Sometimes it can be useful to stuff a list of choices under a single key, for instance. Trial's system does not care, and leaves it up to you to manage the data appropriately.
 
-The base "language" is stored in each ``language-dir`` as a file called ``strings.lisp``. The file is simply alternating keys and values:
+The base "language" is stored in each ``language-dir`` as a collection of files with the extension ``.sexp``. The files consist of alternating keys and values:
 
 :: common lisp
 player-name "Yukari"
-city-name "Tokyo"
+npc-names ("Frank" "Tim" "Alex")
 ::
 
 etc. You may also of course store other language-specific files such as dialogue scripts and so forth in the language specific directory.

@@ -694,7 +694,6 @@
    #:language
    #:languages
    #:language-dir
-   #:language-file
    #:language-files
    #:define-language-change-hook
    #:load-language

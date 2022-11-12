@@ -30,7 +30,7 @@
            thereis (try-find-language candidate)))
     (string
      (flet ((try (language)
-              (when (probe-file (language-file language))
+              (when (language-files language)
                 (return-from try-find-language (string-downcase language)))))
        (try language)
        (mapc #'try (language-codes:codes language))
@@ -44,11 +44,8 @@
   (merge-pathnames (make-pathname :directory `(:relative "lang" ,(string-downcase language)))
                    (data-root)))
 
-(defun language-file (&optional (language (language)))
-  (make-pathname :name "strings" :type "lisp" :defaults (language-dir language)))
-
 (defun language-files (&optional (language (language)))
-  (directory (make-pathname :name :wild :type "lisp" :defaults (language-dir language))))
+  (directory (make-pathname :name :wild :type "sexp" :defaults (language-dir language))))
 
 (defmacro define-language-change-hook (name args &body body)
   (let ((name (mksym *package* '%language-change-hook name)))
@@ -61,6 +58,15 @@
                ,@body))
        (pushnew ',name *language-change-hooks*))))
 
+(defun load-language-file (file table)
+  (with-trial-io-syntax ()
+    (with-open-file (stream file)
+      (loop for k = (read stream NIL)
+            for v = (read stream NIL)
+            while k
+            do (setf (gethash k table) v))
+      table)))
+
 (defun load-language (&optional (language (setting :language)) replace)
   (let ((table (if (or replace (null +language-data+))
                    (make-hash-table :test 'eq)
@@ -68,33 +74,28 @@
     (setf language (try-find-language language))
     (when (or replace (null +loaded-language+) (not (equalp +loaded-language+ language)))
       (setf language (string-downcase language))
-      (v:info :trial.language "Loading language ~s from ~a" language (language-file language))
-      (with-trial-io-syntax ()
-        (with-open-file (stream (language-file language) :if-does-not-exist nil)
-          (cond (stream
-                 (loop for k = (read stream NIL)
-                       for v = (read stream NIL)
-                       while k
-                       do (setf (gethash k table) v))
-                 (setf (gethash language *languages*) table)
-                 (setf +language-data+ table))
-                ((gethash language *languages*)
-                 (setf +language-data+ (gethash language *languages*)))
-                (T
-                 (error "No language named ~s found." language)))))
+      (v:info :trial.language "Loading language ~s from ~a" language (language-dir language))
+      (let ((files (language-files language)))
+        (cond (files
+               (dolist (file files)
+                 (load-language-file file table))
+               (setf (gethash language *languages*) table))
+              ((null (gethash language *languages*))
+               (error "No language named ~s found." language))))
+      (setf +language-data+ (gethash language *languages*))
       (setf +loaded-language+ language)
       (dolist (hook *language-change-hooks* table)
         (funcall hook language)))
     language))
 
-(defun save-language (&optional (language (language)))
+(defun save-language (file &optional (language (language)))
   (when +language-data+
     (setf language (string-downcase language))
-    (v:info :trial.language "Saving language ~s to ~s" language (language-file language))
+    (v:info :trial.language "Saving language ~s to ~s" language (language-dir language))
     (with-trial-io-syntax ()
       (let ((order-table (make-hash-table :test 'eq))
             (i 0))
-        (with-open-file (stream (language-file language)
+        (with-open-file (stream file
                                 :direction :input
                                 :if-does-not-exist NIL)
           (when stream
@@ -105,7 +106,7 @@
         (loop for k being the hash-keys of +language-data+
               do (unless (gethash k order-table)
                    (setf (gethash k order-table) (1- (incf i)))))
-        (with-open-file (stream (language-file language)
+        (with-open-file (stream file
                                 :direction :output
                                 :if-exists :supersede)
           (loop for (k) in (sort (alexandria:hash-table-alist order-table) #'< :key #'cdr)
