@@ -1,7 +1,7 @@
 # Achievements
 Trial includes a generic API to handle achievements in games. This API is core to Trial, as it aims to be independent of whatever platforms you may be ultimately distributing the game on. Using this API your achievements will work properly for games shipped without any service, or on Steam, or whatever you may have.
 
-For this to work each platform extension must implement a small API to integrate and synchronize the data. When the game starts up, you must call ``(load-achievement-data T)`` to select the appropriate API and load the actual data. After this call, ``*achievement-api*`` will be set. You should then call ``handle`` on ``+achievement-api+`` for every event, typically from your ``main``. You can also automate this process by inheriting from ``achievement-main``.
+For this to work each platform extension must implement a small API to integrate and synchronize the data. When the game starts up, you must call ``(load-achievement-data T)`` to select the appropriate API and load the actual data. After this call, ``*achievement-api*`` will be set. You should then call ``handle`` on ``+achievement-api+`` for every event, typically from your ``scene``, or by registering the api as a handler.
 
 ``(load-achievement-data T)`` will always succeed, falling back to a local achievements api, which simply stores achievements in a local file within the config directory.
 

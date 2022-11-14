@@ -218,14 +218,13 @@
    #:achievement-event
    #:achievement-unlocked
    #:achievement-relocked
-   #:*achievement-api*
+   #:+achievement-api+
    #:*achievement-apis*
    #:achievement-api
    #:load-achievement-data
    #:save-achievement-data
    #:notifications-display-p
-   #:local-achievement-api
-   #:achievement-main)
+   #:local-achievement-api)
   ;; actions.lisp
   (:export
    #:action-set

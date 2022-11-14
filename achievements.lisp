@@ -88,7 +88,8 @@
           ((and old (not new))
            (v:info :trial.achievements "Relocked ~a ~s" (name achievement) (title achievement))
            (call-next-method)
-           (issue T 'achievement-relocked :achievement achievement)))))
+           (issue T 'achievement-relocked :achievement achievement)))
+    new))
 
 (define-event achievement-event () achievement)
 (define-event achievement-unlocked (achievement-event))
@@ -112,9 +113,10 @@
   (dolist (api *achievement-apis*)
     (ignore-errors
      (with-error-logging (:trial.achievements "Failed to load achievement data from ~a" api)
-       (return (setf +achievement-api+ (load-achievement-data api)))))))
+       (load-achievement-data api)
+       (return (setf +achievement-api+ api))))))
 
-(defclass local-achievement-api ()
+(defclass local-achievement-api (achievement-api)
   ())
 
 (defun achievement-file-path ()
@@ -143,16 +145,6 @@
 (defmethod (setf notifications-display-p) (value (api local-achievement-api)) NIL)
 
 (define-handler (local-achievement-api achievement-event :after) ()
-  (save-achievement-data achievement-api))
+  (save-achievement-data local-achievement-api))
 
 (pushnew (make-instance 'local-achievement-api) *achievement-apis*)
-
-(defclass achievement-main (main)
-  ())
-
-(defmethod initialize-instance :after ((main main) &key)
-  (load-achievement-data T))
-
-(defmethod handle :before (event (main achievement-main))
-  (with-ignored-errors-on-release (:trial.achievements "Failed handling event ~a" event)
-    (handle event +achievement-api+)))
