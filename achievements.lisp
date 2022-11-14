@@ -127,7 +127,7 @@
   (with-open-file (stream (achievement-file-path) :if-does-not-exist NIL)
     (when stream
       (loop for achievement being the hash-values of *achievements*
-            do (setf (slot-value (achievement name) 'active-p) NIL))
+            do (setf (slot-value achievement 'active-p) NIL))
       (loop for name = (read stream NIL NIL)
             while name
             do (ignore-errors
