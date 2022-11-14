@@ -95,7 +95,7 @@
                              ((or class symbol)
                               (make-event ,eventg ,@args))))))))
         (loop (cond ((eql T loop)
-                     `(scene +world+))
+                     `(scene +main+))
                     (T
                      (let ((loopg (gensym "LOOP")))
                        `(let ((,loopg ,loop))
