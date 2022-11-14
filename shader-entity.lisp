@@ -101,7 +101,7 @@
   (setf (effective-shaders class) (compute-effective-shaders class))
   (setf (effective-buffers class) (compute-effective-buffers class))
   (setf (effective-shader-class class) (compute-effective-shader-class class))
-  (when +main+
+  (when (and +main+ (scene +main+))
     (handle (make-instance 'class-changed :changed-class class) +main+)))
 
 (defmethod apply-class-changes ((class shader-entity-class))
@@ -109,7 +109,7 @@
   (setf (effective-shaders class) (compute-effective-shaders class))
   (setf (effective-buffers class) (compute-effective-buffers class))
   (setf (effective-shader-class class) (compute-effective-shader-class class))
-  (when +main+
+  (when (and +main+ (scene +main+))
     (handle (make-instance 'class-changed :changed-class class) +main+)))
 
 (defmethod (setf direct-shaders) :after (value (class shader-entity-class))
