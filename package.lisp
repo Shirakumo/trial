@@ -1078,6 +1078,7 @@
    #:wait-for-thread-exit
    #:with-thread-exit
    #:with-error-logging
+   #:with-ignored-errors-on-release
    #:with-timing-report
    #:ensure-class
    #:list-subclasses

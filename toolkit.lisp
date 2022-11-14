@@ -452,6 +452,16 @@
                                (v:debug ,category-g err))))
          ,@body))))
 
+(defmacro with-ignored-errors-on-release ((&optional (category :trial) (message "") &rest args) &body body)
+  (declare (ignorable category message args))
+  `(progn
+     #+trial-release
+     (ignore-errors
+      (with-error-logging (,category ,message ,@args)
+        ,@body))
+     #-trial-release
+     ,@body))
+
 (defmacro with-timing-report ((level category format &rest args) &body body)
   (let ((run (gensym "RUNTIME"))
         (real (gensym "REALTIME")))

@@ -142,7 +142,7 @@
 (defmethod notifications-display-p ((api local-achievement-api)) NIL)
 (defmethod (setf notifications-display-p) (value (api local-achievement-api)) NIL)
 
-(define-handler (achievement-api achievement-event :after) ()
+(define-handler (local-achievement-api achievement-event :after) ()
   (save-achievement-data achievement-api))
 
 (pushnew (make-instance 'local-achievement-api) *achievement-apis*)
@@ -154,4 +154,5 @@
   (load-achievement-data T))
 
 (defmethod handle :before (event (main achievement-main))
-  (handle event +achievement-api+))
+  (with-ignored-errors-on-release (:trial.achievements "Failed handling event ~a" event)
+    (handle event +achievement-api+)))
