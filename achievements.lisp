@@ -82,9 +82,11 @@
 (defmethod (setf active-p) :around (new (achievement achievement))
   (let ((old (active-p achievement)))
     (cond ((and new (not old))
+           (v:info :trial.achievements "Unlocked ~a ~s" (name achievement) (title achievement))
            (call-next-method)
            (issue T 'achievement-unlocked :achievement achievement))
           ((and old (not new))
+           (v:info :trial.achievements "Relocked ~a ~s" (name achievement) (title achievement))
            (call-next-method)
            (issue T 'achievement-relocked :achievement achievement)))))
 
