@@ -116,6 +116,7 @@
 (defun language-string (identifier &optional (errorp T))
   (unless +language-data+ (load-language))
   (or (gethash identifier +language-data+)
+      (unless identifier "NIL")
       (unless errorp (return-from language-string NIL))
       ;; Try loading again in case things changed.
       (progn (load-language +loaded-language+ T)
