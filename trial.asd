@@ -64,6 +64,7 @@
                (:file "loader" :depends-on ("package" "resource" "asset"))
                (:file "main" :depends-on ("package" "display" "toolkit" "scene" "pipeline"))
                (:file "mapping" :depends-on ("package" "event-loop" "actions" "toolkit" "input"))
+               (:file "os-resources" :depends-on ("package"))
                (:file "parallax" :depends-on ("package" "shader-entity" "assets"))
                (:file "particle" :depends-on ("package" "shader-entity" "resources"))
                (:file "phong" :depends-on ("package" "helpers"))

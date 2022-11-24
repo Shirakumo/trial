@@ -706,44 +706,6 @@
                      (write-char (char-upcase c) out)))))
    package))
 
-;; https://www.khronos.org/registry/OpenGL/extensions/ATI/ATI_meminfo.txt
-(defun gpu-room-ati ()
-  (let* ((vbo-free-memory-ati (gl:get-integer #x87FB 4))
-         (tex-free-memory-ati (gl:get-integer #x87FC 4))
-         (buf-free-memory-ati (gl:get-integer #x87FD 4))
-         (total (+ (aref vbo-free-memory-ati 0)
-                   (aref tex-free-memory-ati 0)
-                   (aref buf-free-memory-ati 0))))
-    (values total total)))
-
-;; http://developer.download.nvidia.com/opengl/specs/GL_NVX_gpu_memory_info.txt
-(defun gpu-room-nvidia ()
-  (let ((vidmem-total (gl:get-integer #x9047 1))
-        (vidmem-free  (gl:get-integer #x9049 1)))
-    (values vidmem-free
-            vidmem-total)))
-
-(defun gpu-room ()
-  (macrolet ((jit (thing)
-               `(ignore-errors
-                 (return-from gpu-room
-                   (multiple-value-prog1 ,thing
-                     (compile 'gpu-room (lambda ()
-                                          ,thing)))))))
-    (jit (gpu-room-ati))
-    (jit (gpu-room-nvidia))
-    (jit (values 1 1))))
-
-(defun cpu-room ()
-  #+sbcl
-  (values (round
-           (/ (- (sb-ext:dynamic-space-size)
-                 (sb-kernel:dynamic-usage))
-              1024.0))
-          (round
-           (/ (sb-ext:dynamic-space-size) 1024.0)))
-  #-sbcl (values 1 1))
-
 (defun gl-vendor ()
   (let ((vendor (gl:get-string :vendor)))
     (cond ((search "Intel" vendor) :intel)

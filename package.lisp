@@ -781,6 +781,12 @@
    #:save-mapping
    #:find-action-mappings
    #:update-action-mappings)
+  ;; os-resources.lisp
+  (:export
+   #:cpu-time
+   #:io-bytes
+   #:gpu-room
+   #:cpu-room)
   ;; parallax.lisp
   (:export
    #:parallax
@@ -1108,8 +1114,6 @@
    #:gl-coerce
    #:texture-internal-format->pixel-format
    #:pixel-format->pixel-type
-   #:gpu-room
-   #:cpu-room
    #:gl-vendor
    #:check-texture-size
    #:define-enum-check
