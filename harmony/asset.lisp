@@ -271,6 +271,9 @@
 (defmethod mixed:done-p ((voice voice))
   (mixed:done-p (voice voice)))
 
+(defmethod mixed:duration ((voice voice))
+  (mixed:duration (voice voice)))
+
 (defmethod mixed:seek ((voice voice) position &rest args)
   (apply #'mixed:seek (voice voice) position args))
 
