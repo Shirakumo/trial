@@ -24,4 +24,5 @@
                :deploy
                :cl-ftp
                :dexador
+               :north
                :trivial-ssh))

@@ -106,8 +106,14 @@
          "+run_app_build" (uiop:native-namestring build)
          "+quit")))
 
+(defmethod upload ((service (eql :keygen)) &key (release (release)) (file (config :keygen :file)) (key (config :keygen :key)) (secret (config :keygen :secret)) (token (config :keygen :token)) (token-secret (config :keygen :token-secret)) (api-base (config :keygen :api-base)))
+  (let ((client (make-instance 'north:client :api-base api-base :key key :secret secret :token token :token-secret token-secret))
+        (bundle (bundle-path release)))
+    (north:make-signed-data-request client (format NIL "~a/keygen/file/upload" api-base)
+                                    `(("payload" . ,bundle)) :params `(("file" . ,file)))))
+
 (defmethod upload ((service (eql :all)) &rest args &key &allow-other-keys)
-  (apply #'upload (remove-if-not #'config '(:itch :steam :http :ssh :ftp)) args))
+  (apply #'upload (remove-if-not #'config '(:itch :steam :http :ssh :ftp :rsync :keygen)) args))
 
 (defmethod upload ((service (eql T)) &rest args &key &allow-other-keys)
   (dolist (service (coerce (config :upload :targets) 'list))
