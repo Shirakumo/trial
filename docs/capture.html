@@ -1,0 +1,37 @@
+<article><style>article{
+    max-width: 800px;
+    font-size: 12pt;
+    font-family: sans-serif;
+    margin: 3em auto;
+}
+
+article h1{
+    text-align: center;
+    font-size: 2em;
+}
+
+article img{
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+article blockquote{
+    border-left: 0.2em solid gray;
+    margin-left: 1em;
+    padding-left: 1em;
+}
+
+article figcaption{
+    padding: 0.2em 1em;
+    background: #E0E0E0;
+}
+
+article code{
+    background: #F0F0F0;
+    padding: 0 0.1em;
+}
+
+article .code-block{
+    padding: 0.1em 0.5em;
+    overflow-x: auto;
+}</style><h1 id="game captures / replays">Game Captures / Replays</h1><p>Trial includes an automated way to create game captures, or &quot;replays&quot;. The way this works is by capturing all input events that are issued between physics steps, and then recreating them when replaying. This means that, as long as your game only relies on input events to drive its simulation, the replay system should work completely automatically.</p><p>You can create a replay by calling <code>start-capture</code>. It will create a binary replay file. Once the replay should end, you can call <code>stop-capture</code>. A completed replay file can then be replayed using <code>start-replay</code>, and stopped with <code>stop-replay</code>.</p><p>Note that while replaying, the system will still process input as normal, meaning you can potentially inject additional inputs that could interfere with the replay. It's up to you to ensure this doesn't meaningfully happen.</p><p>Please also note that due to the agnostic nature of the capturing system the capture files may not be the most efficient and robust way to store a replay. For instance, it may be more compact to just store the position of the player character over time, if that is enough to make your game work.</p><p>Finally, if you would like to extend the capture system to also support capturing other event types that might be required for accurate replay, you can make them known to the system via <code>define-event-type-serializer</code> and <code>define-type-serializer</code> if new data types are required. The resulting storage will be compact and efficient binary, such that the replay should have close to zero overhead.</p></article>

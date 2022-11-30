@@ -110,11 +110,17 @@
       (write-byte (serialize-info-id struct) stream)
       (funcall (serialize-info-writer struct) event stream))))
 
-(defun start-capture (scene &optional (file (capture-pathname)))
+(defmethod start-capture ((scene scene) &optional (file (capture-pathname)))
   (register (start (make-instance 'capture :file file)) scene))
 
-(defun stop-capture (scene)
+(defmethod start-capture ((scene (eql T)) &optional (file (capture-pathname)))
+  (start-capture (scene +main+) file))
+
+(defmethod stop-capture ((scene scene))
   (stop (deregister (unit 'capture scene) scene)))
+
+(defmethod stop-capture ((scene (eql T)))
+  (stop-capture (scene +main+)))
 
 (defclass replay (unit listener)
   ((name :initform 'replay)
@@ -161,8 +167,14 @@
                    (event
                     (handle object +main+))))))))
 
-(defun start-replay (file scene)
+(defmethod start-replay (file (scene scene))
   (register (start (make-instance 'replay :file file)) scene))
 
-(defun stop-replay (scene)
+(defmethod start-replay (file (scene (eql T)))
+  (start-replay file (scene +main+)))
+
+(defmethod stop-replay ((scene scene))
   (stop (deregister (unit 'replay scene) scene)))
+
+(defmethod stop-replay ((scene (eql T)))
+  (stop-replay (scene +main+)))
