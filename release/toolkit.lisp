@@ -11,6 +11,8 @@
             :prune ()
             :copy ())
     :upload (:targets (:steam))
+    :depots (:all ("**/*.*"))
+    :bundles (:default (:depots T :file-format "~a-~*~a"))
     :itch (:user "CONFIGURE-ME"
            :project NIL)
     :steam (:branch "default"
@@ -64,21 +66,20 @@
     (assert (= 0 (sb-ext:process-exit-code (sb-ext:run-program program args :search T :output out))))))
 
 (defun get-password (name &optional field)
-  (ignore-errors
-   (let ((candidates (cl-ppcre:split "\\n+" (run* "pass" "find" name))))
-     (when (cdr candidates)
-       (let* ((entry (subseq (second candidates) (length "├── ")))
-              (data (run* "pass" "show" entry))
-              (lines (cl-ppcre:split "\\n+" data)))
-         (if (null field)
-             (first lines)
-             (loop for line in (rest lines)
-                   for (key . val) = (cl-ppcre:split " *: *" :limit 2)
-                   do (when (string-equal key field)
-                        (return val)))))))))
+  (let ((candidates (cl-ppcre:split "\\n+" (run* "pass" "find" name))))
+    (when (cdr candidates)
+      (let* ((entry (subseq (second candidates) (length "├── ")))
+             (data (run* "pass" "show" entry))
+             (lines (cl-ppcre:split "\\n+" data)))
+        (if (null field)
+            (first lines)
+            (loop for line in (rest lines)
+                  for (key val) = (cl-ppcre:split " *: *" line :limit 2)
+                  do (when (string-equal key field)
+                       (return val))))))))
 
 (defun query-password (name &optional field)
-  (format *query-io* "~&Enter ~a password~@[ [~a]~]:~%> " field name)
+  (format *query-io* "~&Enter ~a password~@[ [~a]~]:~%> " name field)
   (read-line *query-io*))
 
 (defun password (name &optional field)

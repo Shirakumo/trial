@@ -16,6 +16,8 @@
   :components ((:file "package")
                (:file "toolkit")
                (:file "build")
+               (:file "bundle")
+               (:file "upload")
                (:file "release"))
   :depends-on (:alexandria
                :cl-ppcre
@@ -24,5 +26,5 @@
                :deploy
                :cl-ftp
                :dexador
-               :north
+               :north-drakma
                :trivial-ssh))
