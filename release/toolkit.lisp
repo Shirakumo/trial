@@ -63,21 +63,27 @@
   (with-output-to-string (out)
     (assert (= 0 (sb-ext:process-exit-code (sb-ext:run-program program args :search T :output out))))))
 
-(defun get-password (name)
+(defun get-password (name &optional field)
   (ignore-errors
    (let ((candidates (cl-ppcre:split "\\n+" (run* "pass" "find" name))))
      (when (cdr candidates)
        (let* ((entry (subseq (second candidates) (length "├── ")))
-              (data (run* "pass" "show" entry)))
-         (first (cl-ppcre:split "\\n+" data)))))))
+              (data (run* "pass" "show" entry))
+              (lines (cl-ppcre:split "\\n+" data)))
+         (if (null field)
+             (first lines)
+             (loop for line in (rest lines)
+                   for (key . val) = (cl-ppcre:split " *: *" :limit 2)
+                   do (when (string-equal key field)
+                        (return val)))))))))
 
-(defun query-password (name)
-  (format *query-io* "~&Enter ~a password:~%> " name)
+(defun query-password (name &optional field)
+  (format *query-io* "~&Enter ~a password~@[ [~a]~]:~%> " field name)
   (read-line *query-io*))
 
-(defun password (name)
-  (or (get-password name)
-      (query-password name)))
+(defun password (name &optional field)
+  (or (get-password name field)
+      (query-password name field)))
 
 (defun list-paths (base &rest paths)
   (loop for path in paths

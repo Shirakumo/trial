@@ -107,7 +107,11 @@
          "+quit")))
 
 (defmethod upload ((service (eql :keygen)) &key (release (release)) (file (config :keygen :file)) (key (config :keygen :key)) (secret (config :keygen :secret)) (token (config :keygen :token)) (token-secret (config :keygen :token-secret)) (api-base (config :keygen :api-base)))
-  (let ((client (make-instance 'north:client :api-base api-base :key key :secret secret :token token :token-secret token-secret))
+  (let ((client (make-instance 'north:client :api-base api-base
+                                             :key (or key (password api-base "key"))
+                                             :secret (or secret (password api-base "secret"))
+                                             :token (or token (password api-base "token"))
+                                             :token-secret (or token-secret (password api-base "token-secret"))))
         (bundle (bundle-path release)))
     (north:make-signed-data-request client (format NIL "~a/keygen/file/upload" api-base)
                                     `(("payload" . ,bundle)) :params `(("file" . ,file)))))
