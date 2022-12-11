@@ -49,10 +49,6 @@ You can adapt the build pathnames as you wish, as long as the pathname types sta
 
 Outside of this, you'll have to have the following binaries set up in your PATH:
 
-- ``butler``
-  The itch.io release tool. You'll need this if you want to release to itch.
-- ``steamcmd.sh``
-  The steam command tool. You'll need this if you want to release to Steam.
 - ``sbcl-lin`` (linux)
   The SBCL binary used to build the Linux version. This should be a binary that was compiled on the minimum linux kernel version you want to support. It's also recommended that you modify the ``LD_LIBRARY_PATH`` of it to include a directory with all necessary libraries also compiled on the same minimum kernel version.
 - ``sbcl-win`` (linux)
@@ -60,14 +56,46 @@ Outside of this, you'll have to have the following binaries set up in your PATH:
 - ``sbcl-mac`` (linux)
   The SBCL binary used to build the Mac version. This is currently unsupported, but in the future once Darling works better this could be used to deploy to that platform from Linux as well.
 - ``pass`` (optional)
-  Used to retrieve the Steam account password automatically. If not present, will query for a password at the REPL.
-- ``rsync`` (optional)
-  Used when using the rsync upload method. Also required on the remote server.
+  Used to retrieve passwords and other secrets for uploads. If not present, will query for a password at the REPL.
 
 Once all of this is ready, you can run a build using ``(asdf:make :my-game-release)`` or manually invoking ``org.shirakumo.fraf.trial.release:make`` after loading that system.
 For the ``sbcl-*`` variants, you can use the binaries and scripts from the following repository: https://gitea.tymoon.eu/shinmera/trial-deployment They have been pre-tested.
 
-## Setting up Steam
+## Build Configuration
+You can configure the build with the following options, all under the ``:build`` scope:
+
+- ``:features`` A list of symbols to push onto *features* when building.
+- ``:build-arguments`` A list of command line argmuents to pass on when building.
+- ``:dynamic-space-size`` The max heap size to use when building.
+- ``:linux`` The binary used to build for Linux from linux.
+- ``:windows`` The binary used to build for Windows from linux.
+- ``:macos`` The binary used to build for MacOS form linux.
+- ``:targets`` Which targets to build by default (can include :linux, :windows, :macos).
+- ``:prune`` Specify directories or files that should be removed before deploying. Paths are relative to the target directory.
+- ``:copy`` Specify additional files that should be copied before deploying. May be a path or a list of source and target. Source paths are relative to the system root, target paths relative to the output directory.
+
+## Bundle Configuration
+Some upload mechanisms require appropriate bundles to be configured. Bundles will also produce standalone ZIP files that you can distribute manually. To configure bundles, you must first configure depots. A depot is a list of paths in the release that belong to it. Each path in a depot may be either:
+
+- A plain path, in which case the singular file is copied.
+- A directory path, in which case the directory is copied recursively.
+- A wild path, in which case all matching files are copied.
+
+Once your depots are configured, you can specify the bundles. Each bundle under the ``:bundles`` scope should be a plist of the following options:
+
+- ``:depots`` The list of depots to include in the bundle.
+- ``:file-format`` An optional format string by which to create the file name for the bundle. Is passed the three arguments:
+  - The ``:system`` key.
+  - The bundle's name.
+  - The current version string.
+  By default the format string is just ``~(~a-~a-~a~)``.
+
+To configure which bundles are actually created when you run a default release build, fill the vector for ``:bundle :targets``.
+
+## Upload Configurations
+The Trial release mechanism supports a number of upload mechanisms to automatically distribute releases to different platforms. See the sections below on how to configure them. If you would like to automatically push releases, make sure to add the upload mechanism to the ``:upload :targets`` array.
+
+### Steam
 Steam will require some VDF files to configure your build in addition. Please consult the SteamWorks documentation on how to do that. However, be aware that the base file should be called ``app-build.vdf`` and should be in the same directory as your ``my-game-release.asd`` file, and should have several fields set specially so the Trial release mechanism can operate properly. Here's an example:
 
 ::
@@ -90,33 +118,78 @@ Steam will require some VDF files to configure your build in addition. Please co
 
 The Trial release build will automatically take this file and replace the ``$`` variables, then copy it to a subdirectory where the upload happens, hence the ``../`` backrefs in the paths. The depot VDF files do not need any special configuration.
 
-## Config Options
-The configuration you can set is a tree of options, here shown with default values:
+The ``steamcmd.sh`` also needs to be available in your PATH.
 
-::
-(:build (:features ()                    ; A list of symbols to push onto *features* when building
-         :build-arguments ()             ; A list of command line argmuents to pass on when building
-         :dynamic-space-size 4096        ; The max heap size to use when building
-         :linux "sbcl-lin"               ; The binary used to build for Linux from linux
-         :windows "sbcl-win"             ; The binary used to build for Windows from linux
-         :macos "sbcl-mac"               ; The binary used to build for MacOS form linux
-         :targets (:linux :windows)      ; Which targets to build by default (can include :linux, :windows, :macos)
-         :prune ()                       ; Specify directories or files that should be removed before deploying.
-                                         ; Paths are relative to the target directory.
-         :copy ())                       ; Specify additional files that should be copied before deploying.
-                                         ; May be a path or a list of source and target. Source paths are relative
-                                         ; to the system root, target paths relative to the output directory.
- :depots (:depot ("path"))               ; A plist of file depots, each being a list of path patterns. The paths can either be a singular file, a wild pathname, or a directory pathname.
- :bundles (:bundle (:depots (:depot)))   ; Descriptions of bundles to produce ZIP files for, and possibly to upload to services.
-                                         ; Each bundle must in the very least reference a list of depots to include in the release.
-                                         ; It may also include a :file-format format string, which accepts three arguments: the system name, bundle name, and version name.
- :bundle (:targets #(:bundle))           ; Which bundles to create a zip for by default.
- :upload (:targets #(:steam))            ; Which platforms to upload to by default (can include :steam, :itch, :ftp, :ssh, :rsync, :http, :keygen)
- :itch (:user "CONFIGURE-ME"             ; The user on which the itch project resides
-        :project NIL)                    ; The name of the project (defaults to your system name)
- :steam (:branch "default"               ; The branch to which to push on Steam
-         :preview NIL                    ; Whether it should only preview the upload and not actually perform it
-         :user "CONFIGURE-ME"            ; The user with which you log in to perform the upload
-         :password NIL)                  ; The password for the user. If NIL will try to get it from pass or query for it.
- :system "CONFIGURE-ME")                 ; The name of the ASDF system to build your game with.
-::
+In the configuration, the following keys are available in the ``:steam`` scope:
+
+- ``:branch`` The branch to which to push on Steam
+- ``:preview`` Whether it should only preview the upload and not actually perform it
+- ``:user`` The user with which you log in to perform the upload
+- ``:password`` The password for the user. If NIL will try to get it from pass or query for it.
+
+### Itch
+To upload to itch, you will need to have the ``butler`` program in your PATH. Make sure to run Butler once before to save the login credentials.
+
+In the configuration, the following keys are available in the ``:steam`` scope:
+
+- ``:user`` The user under which the project is located.
+- ``:project`` The name of the project. Defaults to the ``:system`` key.
+
+### Keygen
+To upload to a "Keygen"(link https://shirakumo.org/projects/keygen) instance, you'll need to generate an oAuth application on your instance and also authorise a token using the standard oAuth flow. If you use pass, you should create a pass entry with your tokens and secrets in it. On the Keygen side, create a project and a file under the project for each of the bundles you want to upload. On the release side you'll of course need the corresponding bundles to upload.
+
+In the configuration, the following keys are available in the ``:keygen`` scope:
+
+- ``:bundles`` A plist of bundles to upload, with the corresponding IDs of the files to upload to.
+- ``:key`` The oAuth application key.
+- ``:secret`` The oAuth application secret.
+- ``:token`` The oAuth token for your authorisation.
+- ``:token-secret`` The oAuth token secret key.
+- ``:api-base`` The base URL under which to perform keygen API calls. Something like: https://keygen.tymoon.eu/api/
+- ``:secrets`` The password to query for the tokens/secrets. If unspecified defaults to the api-base.
+
+### HTTP
+This will perform a simple HTTP request to upload bundle payloads.
+
+In the configuration, the following keys are available in the ``:http`` scope:
+
+- ``:bundles`` A list of bundles to upload.
+- ``:url`` The URL to send the request to.
+- ``:method`` The method by which to send the request. Defaults to POST.
+- ``:file-parameter`` Which parameter the payload is sent under.
+- ``:parameters`` Additional content parameters to send.
+
+### Rsync
+This will use the ``rsync`` tool to send the file to a remote server. ``rsync`` must be in the PATH and available on the remote server as well.
+
+In the configuration, the following keys are available in the ``:rsync`` scope:
+
+- ``:bundles`` A list of bundles to upload.
+- ``:user`` The user by which to connect.
+- ``:port`` The port under which to connect.
+- ``:hostname`` The hostname of the server to connect to.
+- ``:path`` The path under which to upload the bundle.
+
+### SSH
+This will use an SSH connection to send the file to a remote server.
+
+In the configuration, the following keys are available in the ``:ssh`` scope:
+
+- ``:bundles`` A list of bundles to upload.
+- ``:user`` The user by which to connect.
+- ``:port`` The port under which to connect.
+- ``:password`` The password for the user. May be a pathname to a key file, a string, ``:pass`` to query the pass utility, and NIL to use the SSH agent.
+- ``:hostname`` The hostname of the server to connect to.
+- ``:path`` The path under which to upload the bundle.
+
+### FTP
+This will use an FTP connection to send the file to a remote server.
+
+In the configuration, the following keys are available in the ``:ftp`` scope:
+
+- ``:bundles`` A list of bundles to upload.
+- ``:user`` The user by which to connect.
+- ``:port`` The port under which to connect.
+- ``:password`` The password for the user. If unspecified, will use pass or query.
+- ``:hostname`` The hostname of the server to connect to.
+- ``:path`` The path under which to upload the bundle.

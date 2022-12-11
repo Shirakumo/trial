@@ -2,7 +2,7 @@
 
 ;;(setf dexador:*use-connection-pool* NIL)
 
-(defmethod upload ((service (eql :ftp)) &key (version (version)) (bundles (config :keygen :bundles)) (user (config :ftp :user)) (port (config :ftp :port)) (hostname (config :ftp :hostname)) (password (config :ftp :password)) (path (config :ftp :path)))
+(defmethod upload ((service (eql :ftp)) &key (version (version)) (bundles (config :ftp :bundles)) (user (config :ftp :user)) (port (config :ftp :port)) (hostname (config :ftp :hostname)) (password (config :ftp :password)) (path (config :ftp :path)))
   (org.mapcar.ftp.client:with-ftp-connection (connection :hostname hostname
                                                          :port (or port 21)
                                                          :username user
@@ -15,7 +15,7 @@
         (org.mapcar.ftp.client:store-file connection bundle (file-namestring bundle) :type :binary)
         (deploy:status 2 "Uploaded to ~a" hostname)))))
 
-(defmethod upload ((service (eql :ssh)) &key (version (version)) (bundles (config :keygen :bundles)) (user (config :ssh :user)) (port (config :ssh :port)) (hostname (config :ssh :hostname)) (password (config :ssh :password)) (path (config :ssh :path)))
+(defmethod upload ((service (eql :ssh)) &key (version (version)) (bundles (config :ssh :bundles)) (user (config :ssh :user)) (port (config :ssh :port)) (hostname (config :ssh :hostname)) (password (config :ssh :password)) (path (config :ssh :path)))
   (trivial-ssh:with-connection (connection hostname (etypecase password
                                                       (pathname (trivial-ssh:key user password))
                                                       (string (trivial-ssh:pass user password))
@@ -28,7 +28,7 @@
         (trivial-ssh:upload-file connection bundle target)
         (deploy:status 2 "Uploaded to ~a" target)))))
 
-(defmethod upload ((service (eql :rsync)) &key (version (version)) (bundles (config :keygen :bundles)) (user (config :rsync :user)) (port (config :rsync :port)) (hostname (config :rsync :hostname)) (path (config :rsync :path)))
+(defmethod upload ((service (eql :rsync)) &key (version (version)) (bundles (config :rsync :bundles)) (user (config :rsync :user)) (port (config :rsync :port)) (hostname (config :rsync :hostname)) (path (config :rsync :path)))
   (dolist (bundle bundles)
     (let ((bundle (bundle-path bundle :version version)))
       (uiop:run-program (list "rsync" "-avz" (format NIL "--rsh=ssh -p~a" (or port 22)) (uiop:native-namestring bundle)
@@ -36,7 +36,7 @@
                         :output *standard-output* :error-output *error-output*)
       (deploy:status 2 "Uploaded to ~a~@[~a~]" hostname path))))
 
-(defmethod upload ((service (eql :http)) &key (version (version)) (bundles (config :keygen :bundles)) (url (config :http :url)) (method (config :http :method)) (file-parameter (config :http :file-parameter)) (parameters (config :http :post-parameters)))
+(defmethod upload ((service (eql :http)) &key (version (version)) (bundles (config :http :bundles)) (url (config :http :url)) (method (config :http :method)) (file-parameter (config :http :file-parameter)) (parameters (config :http :parameters)))
   (dolist (bundle bundles)
     (dexador:request url
                      :method (or method :post)
