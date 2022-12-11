@@ -477,6 +477,10 @@
    #:simple-post-effect-pass
    #:previous-pass
    #:color
+   #:iterative-post-effect-pass
+   #:iterations
+   #:temporal-post-effect-pass
+   #:previous
    #:copy-pass
    #:negative-pass
    #:grayscale-pass

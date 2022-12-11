@@ -13,7 +13,7 @@
    (depth :port-type output :attachment :depth-stencil-attachment :reader depth)))
 
 (define-shader-pass simple-post-effect-pass (post-effect-pass)
-  ((previous-pass :port-type input)
+  ((previous-pass :port-type input :reader previous-pass)
    (color :port-type output :reader color)))
 
 (defmethod (setf active-p) :before (value (pass simple-post-effect-pass))
@@ -32,6 +32,37 @@
              (when succ (setf (texture succ) (texture (flow:port pass 'color)))))
             (succ
              (setf (texture succ) (texture pred)))))))
+
+(define-shader-pass iterative-post-effect-pass (simple-post-effect-pass)
+  ((iterations :initarg :iterations :initform 1 :accessor iterations)))
+
+(defmethod render ((pass iterative-post-effect-pass) (program shader-program))
+  (let* ((color (gl-name (color pass)))
+         (ocolor color)
+         (previous (gl-name (previous-pass pass))))
+    (flet ((swap-buffers ()
+             (rotatef color previous)
+             (%gl:framebuffer-texture :framebuffer :color-attachment0 color 0)
+             (gl:bind-texture :texture-2d previous)))
+      (call-next-method)
+      (loop with limit = (iterations pass)
+            for i from 0
+            do (call-next-method)
+               (if (< (incf i) limit)
+                   (swap-buffers)
+                   (return)))
+      ;; KLUDGE: this is wrong for even number of iterations. It essentially
+      ;;         discards the last iteration, as it won't be displayed....
+      (when (/= ocolor color)
+        (%gl:framebuffer-texture :framebuffer :color-attachment0 ocolor 0)))))
+
+(define-shader-pass temporal-post-effect-pass (post-effect-pass)
+  ((previous :port-type static-input :accessor previous)
+   (color :port-type output :reader color)))
+
+(defmethod render :after ((pass temporal-post-effect-pass) thing)
+  (rotatef (gl-name (previous pass)) (gl-name (color pass)))
+  (%gl:framebuffer-texture :framebuffer :color-attachment0 (gl-name (color pass)) 0))
 
 (define-shader-pass copy-pass (simple-post-effect-pass)
   ())
@@ -58,7 +89,7 @@ void main(){
 (define-class-shader (grayscale-pass :fragment-shader)
   (pool-path 'effects #p"gray-filter.frag"))
 
-(define-shader-pass box-blur-pass (simple-post-effect-pass)
+(define-shader-pass box-blur-pass (iterative-post-effect-pass)
   ())
 
 (define-class-shader (box-blur-pass :fragment-shader)
@@ -70,13 +101,13 @@ void main(){
 (define-class-shader (sobel-pass :fragment-shader)
   (pool-path 'effects #p"sobel.frag"))
 
-(define-shader-pass gaussian-blur-pass (simple-post-effect-pass)
+(define-shader-pass gaussian-blur-pass (iterative-post-effect-pass)
   ())
 
 (define-class-shader (gaussian-blur-pass :fragment-shader)
   (pool-path 'effects #p"gaussian.frag"))
 
-(define-shader-pass radial-blur-pass (simple-post-effect-pass)
+(define-shader-pass radial-blur-pass (iterative-post-effect-pass)
   ())
 
 (define-class-shader (radial-blur-pass :fragment-shader)
