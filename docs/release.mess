@@ -11,13 +11,23 @@ First you'll want to create a new ASDF system for your game's release. The ASD f
   :perform (asdf:build-op (op c) (uiop:symbol-call :org.shirakumo.fraf.trial.release :make)))
 ::
 
-The ``release`` file can just be:
+The ``release`` file can be something like this:
 
 ::
 (org.shirakumo.fraf.trial.release:configure
  :itch (:user "my-itch-username")
  :steam (:user "my-steam-username")
- :system "my-game")
+ :system "my-game"
+ :depots (:content ("pool/")
+          :windows ("*.dll" "*.exe")
+          :linux ("*.so" "*.run")
+          :macos ("*.dylib" "*.o"))
+ :bundles (:linux (:depots (:linux :content))
+           :windows (:depots (:windows :content))
+           :macos (:depots (:macos :content))
+           :all (:depots (:linux :windows :macos :content)))
+ :bundle (:targets #(:linux :windows))
+ :upload (:targets #(:steam :itch)))
 ::
 
 There are other configuration parameters you can set if necessary to customise the build and release process.
@@ -51,6 +61,8 @@ Outside of this, you'll have to have the following binaries set up in your PATH:
   The SBCL binary used to build the Mac version. This is currently unsupported, but in the future once Darling works better this could be used to deploy to that platform from Linux as well.
 - ``pass`` (optional)
   Used to retrieve the Steam account password automatically. If not present, will query for a password at the REPL.
+- ``rsync`` (optional)
+  Used when using the rsync upload method. Also required on the remote server.
 
 Once all of this is ready, you can run a build using ``(asdf:make :my-game-release)`` or manually invoking ``org.shirakumo.fraf.trial.release:make`` after loading that system.
 For the ``sbcl-*`` variants, you can use the binaries and scripts from the following repository: https://gitea.tymoon.eu/shinmera/trial-deployment They have been pre-tested.
@@ -94,7 +106,12 @@ The configuration you can set is a tree of options, here shown with default valu
          :copy ())                       ; Specify additional files that should be copied before deploying.
                                          ; May be a path or a list of source and target. Source paths are relative
                                          ; to the system root, target paths relative to the output directory.
- :upload (:targets (:steam))             ; Which platforms to upload to by default (can include :steam, :itch)
+ :depots (:depot ("path"))               ; A plist of file depots, each being a list of path patterns. The paths can either be a singular file, a wild pathname, or a directory pathname.
+ :bundles (:bundle (:depots (:depot)))   ; Descriptions of bundles to produce ZIP files for, and possibly to upload to services.
+                                         ; Each bundle must in the very least reference a list of depots to include in the release.
+                                         ; It may also include a :file-format format string, which accepts three arguments: the system name, bundle name, and version name.
+ :bundle (:targets #(:bundle))           ; Which bundles to create a zip for by default.
+ :upload (:targets #(:steam))            ; Which platforms to upload to by default (can include :steam, :itch, :ftp, :ssh, :rsync, :http, :keygen)
  :itch (:user "CONFIGURE-ME"             ; The user on which the itch project resides
         :project NIL)                    ; The name of the project (defaults to your system name)
  :steam (:branch "default"               ; The branch to which to push on Steam
