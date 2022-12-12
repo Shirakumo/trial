@@ -186,8 +186,9 @@
 (defclass single-resource-asset (asset)
   ((resource)))
 
-(defmethod initialize-instance :after ((asset single-resource-asset) &key)
-  (setf (slot-value asset 'resource) (make-instance 'placeholder-resource :generator asset)))
+(defmethod shared-initialize :after ((asset single-resource-asset) slots &key)
+  (unless (slot-boundp asset 'resource)
+    (setf (slot-value asset 'resource) (make-instance 'placeholder-resource :generator asset))))
 
 (defmethod resource ((asset single-resource-asset) (id (eql T)))
   (slot-value asset 'resource))
