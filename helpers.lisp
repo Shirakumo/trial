@@ -7,7 +7,10 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass located-entity (transformed entity)
-  ((location :initarg :location :initform (vec 0 0 0) :accessor location)))
+  ((location :initarg :location :initform (vec 0 0 0) :reader location)))
+
+(defmethod (setf location) ((vec vec3) (obj located-entity))
+  (v<- (location obj) vec))
 
 (defmethod apply-transforms progn ((obj located-entity))
   (translate (location obj)))
@@ -76,10 +79,10 @@
 (defmethod (setf scaling) (vec (obj transformed-entity))
   (v<- (tscaling (tf obj)) vec))
 
-(defmethod rotation ((obj transformed-entity))
+(defmethod orientation ((obj transformed-entity))
   (trotation (tf obj)))
 
-(defmethod (setf rotation) (quat (obj transformed-entity))
+(defmethod (setf orientation) (quat (obj transformed-entity))
   (q<- (trotation (tf obj)) quat))
 
 (defmethod axis ((obj transformed-entity))
