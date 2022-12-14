@@ -665,6 +665,7 @@
    #:scaled-entity
    #:scaling
    #:transformed-entity
+   #:orientation
    #:tf
    #:fullscreen-entity
    #:vertex-entity
