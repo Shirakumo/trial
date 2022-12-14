@@ -1,48 +1,10 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(defgeneric integrate (object dt))
-(defgeneric mass (object))
-(defgeneric (setf mass) (object))
-
-(defun nv+* (target vector scalar)
-  (setf (vx target) (* (vx vector) scalar))
-  (setf (vy target) (* (vy vector) scalar))
-  (setf (vz target) (* (vz vector) scalar)))
-
-(defclass physics-entity ()
-  ((velocity :initform (vec 0 0 0) :reader velocity)
-   (inverse-mass :initform 0.0 :accessor inverse-mass)))
-
-(defmethod shared-initialize :after ((entity physics-entity) slots &key mass)
-  (when mass (setf (mass entity) mass)))
-
-(defmethod (setf velocity) ((vel vec3) (entity physics-entity))
-  (v<- (velocity entity) vel))
-
-(defmethod mass ((entity physics-entity))
-  (let ((inverse (inverse-mass entity)))
-    (if (= 0.0 inverse)
-        0.0
-        (/ (inverse-mass entity)))))
-
-(defmethod (setf mass) (mass (entity physics-entity))
-  (setf (inverse-mass entity) (if (= 0.0 mass) 0.0 (abs (float (/ mass) 0.0)))))
-
-(defclass particle-force ()
-  ())
-
-(defgeneric apply-force (force particle dt))
-
 (defclass particle (located-entity physics-entity)
-  ((acceleration :initform (vec 0 0 0) :reader acceleration)
-   (damping :initform 1.0 :accessor damping)
-   (force :initform (vec 0 0 0) :reader force)))
+  ((acceleration :initform (vec 0 0 0) :reader acceleration)))
 
 (defmethod (setf acceleration) ((val vec3) (particle particle))
   (v<- (acceleration particle) val))
-
-(defmethod (setf force) ((val vec3) (particle particle))
-  (v<- (force particle) val))
 
 (defmethod integrate ((particle particle) dt)
   (nv+* (location particle) (velocity particle) dt)
@@ -52,9 +14,8 @@
   (vsetf (force particle) 0 0 0)
   (nv* (velocity particle) (expt (damping particle) dt)))
 
-(defclass drag-force (particle-force)
-  ((k1 :initarg :k1 :initform 1.0 :accessor k1)
-   (k2 :initarg :k2 :initform 1.0 :accessor k2)))
+(defmethod apply-force ((force gravity) (particle particle) dt)
+  (nv+* (force particle) (gravity force) (mass particle)))
 
 (defmethod apply-force ((force drag-force) (particle particle) dt)
   (let* ((force (vcopy (velocity particle)))
@@ -64,38 +25,24 @@
     (nv* force (- coeff))
     (nv+ (force particle) force)))
 
-(defclass spring-force (particle-force)
-  ((anchor :initarg :anchor :accessor anchor)
-   (spring-constant :initarg :spring-constant :initform 1.0 :accessor spring-constant)
-   (rest-length :initarg :rest-length :initform 0.0 :accessor rest-length)))
-
 (defmethod apply-force ((force spring-force) (particle particle) dt)
   (let* ((force (v- (location particle) (location (anchor force))))
          (coeff (* (abs (- (vlength force) (rest-length force)))
                    (spring-constant force))))
     (nv+ (force particle) (nv* (nvunit force) (- coeff)))))
 
-(defclass stiff-spring-force (particle-force)
-  ((anchor :initarg :anchor :accessor anchor)
-   (spring-constant :initarg :spring-constant :initform 1.0 :accessor spring-constant)
-   (damping :initarg :damping :initform 1.0 :accessor damping)))
-
 (defmethod apply-force ((force stiff-spring-force) (particle particle) dt)
-  (when (< 0.0 (inverse-mass particle))
-    (let* ((damping (damping force))
-           (relative (v- (location particle) (location (anchor force))))
-           (gamma (* 0.5 (sqrt (- (* 4 (spring-constant force)) (* damping damping)))))
-           (c (nv+ (v* relative (/ damping (* 2 gamma)))
-                   (v* (velocity particle) (/ gamma))))
-           (target (nv* (nv+ (v* relative (cos (* gamma dt)))
-                             (v* c (sin (* gamma dt))))
-                        (exp (* -0.5 damping dt))))
-           (accel (nv- (nv* (v- target relative) (/ (* dt dt)))
-                       (v* (velocity particle) dt))))
-      (nv+ (force particle) (nv* accel (mass particle))))))
-
-(defclass bungee-force (spring-force)
-  ())
+  (let* ((damping (damping force))
+         (relative (v- (location particle) (location (anchor force))))
+         (gamma (* 0.5 (sqrt (- (* 4 (spring-constant force)) (* damping damping)))))
+         (c (nv+ (v* relative (/ damping (* 2 gamma)))
+                 (v* (velocity particle) (/ gamma))))
+         (target (nv* (nv+ (v* relative (cos (* gamma dt)))
+                           (v* c (sin (* gamma dt))))
+                      (exp (* -0.5 damping dt))))
+         (accel (nv- (nv* (v- target relative) (/ (* dt dt)))
+                     (v* (velocity particle) dt))))
+    (nv+ (force particle) (nv* accel (mass particle)))))
 
 (defmethod apply-force ((force bungee-force) (particle particle) dt)
   (let* ((force (v- (location particle) (location (anchor force))))
@@ -103,13 +50,6 @@
                    (spring-constant force))))
     (when (<= 0.0 coeff)
       (nv+ (force particle) (nv* (nvunit force) (- coeff))))))
-
-(defstruct hit
-  (a NIL :type T)
-  (b NIL :type T)
-  (restitution 0.0 :type single-float)
-  (normal (vec 0 0 0) :type vec3)
-  (depth 0.0 :type single-float))
 
 (defmethod separating-velocity ((a particle) (b particle) hit)
   (v. (v- (velocity a) (velocity b)) (hit-normal hit)))
@@ -159,21 +99,7 @@
                (return iterations))
         finally (return max-iterations)))
 
-(defgeneric generate-hits (generator hits start end))
-
-(defmacro define-hit-generation (generator &body body)
-  `(defmethod generate-hits (,(enlist generator generator) hits start end)
-     (let ((hit (aref hits start)))
-       (block NIL
-         (flet ((finish-hit ()
-                  (incf start)
-                  (if (< start end)
-                      (setf hit (aref hits start))
-                      (return))))
-           ,@body))
-       start)))
-
-(defclass particle-link ()
+(defclass particle-link (hit-generator)
   ((a :initarg :a :accessor a)
    (b :initarg :b :accessor b)))
 
