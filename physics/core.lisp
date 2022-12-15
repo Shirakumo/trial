@@ -47,6 +47,14 @@
   ((k1 :initarg :k1 :initform 1.0 :accessor k1)
    (k2 :initarg :k2 :initform 1.0 :accessor k2)))
 
+(defmethod apply-force ((force drag-force) (entity physics-entity) dt)
+  (let* ((force (vcopy (velocity entity)))
+         (coeff (vlength force))
+         (coeff (+ (* (k1 force) coeff) (* (k2 force) coeff coeff))))
+    (nvunit force)
+    (nv* force (- coeff))
+    (nv+ (force entity) force)))
+
 (defclass spring-force (force)
   ((anchor :initarg :anchor :accessor anchor)
    (anchor-offset :initarg :anchor-offset :initform (vec 0 0 0) :accessor anchor-offset)
@@ -86,3 +94,20 @@
                       (return))))
            ,@body))
        start)))
+
+(defclass physics-system (container)
+  ((forces :initform (make-array 0 :adjustable T :fill-pointer T) :accessor forces)))
+
+(defmethod integrate ((system physics-system) dt)
+  (sequences:dosequence (entity system)
+    (integrate entity dt)))
+
+(defmethod start-frame ((system physics-system))
+  (sequences:dosequence (entity system)
+    (start-frame entity)))
+
+(defmethod update ((system rigidbody-system) tt dt fc)
+  (sequences:dosequence (entity system)
+    (loop for force across (forces system)
+          do (apply-force force entity dt)))
+  (integrate system dt))
