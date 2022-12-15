@@ -106,6 +106,12 @@
                              (:file "skeleton" :depends-on ("pose"))
                              (:file "mesh" :depends-on ("pose"))
                              (:file "entity" :depends-on ("mesh" "skeleton" "clip"))))
+               (:module "physics"
+                :depends-on ("package" "helpers")
+                :components ((:file "toolkit")
+                             (:file "core" :depends-on ("toolkit"))
+                             (:file "particle" :depends-on ("core"))
+                             (:file "rigidbody" :depends-on ("core"))))
                (:module "resources"
                 :depends-on ("package" "resource" "toolkit" "data-pointer")
                 :components ((:file "buffer-object")

@@ -11,19 +11,11 @@
   (nv* (force particle) (inverse-mass particle))
   (nv+ (force particle) (acceleration particle))
   (nv+* (velocity particle) (force particle) dt)
-  (vsetf (force particle) 0 0 0)
-  (nv* (velocity particle) (expt (damping particle) dt)))
+  (nv* (velocity particle) (expt (damping particle) dt))
+  (vsetf (force particle) 0 0 0))
 
-(defmethod apply-force ((force gravity) (particle particle) dt)
-  (nv+* (force particle) (gravity force) (mass particle)))
-
-(defmethod apply-force ((force drag-force) (particle particle) dt)
-  (let* ((force (vcopy (velocity particle)))
-         (coeff (vlength force))
-         (coeff (+ (* (k1 force) coeff) (* (k2 force) coeff coeff))))
-    (nvunit force)
-    (nv* force (- coeff))
-    (nv+ (force particle) force)))
+(defmethod start-frame ((particle particle))
+  (vsetf (force particle) 0 0 0))
 
 (defmethod apply-force ((force spring-force) (particle particle) dt)
   (let* ((force (v- (location particle) (location (anchor force))))
@@ -138,15 +130,9 @@
       (setf (hit-restitution hit) 0.0)
       (finish-hit))))
 
-(defclass mass-aggregate-system ()
-  ((particles :initform (make-array 0 :adjustable T :fill-pointer T) :accessor particles)
-   (forces :initform (make-array 0 :adjustable T :fill-pointer T) :accessor forces)
-   (hit-generators :initform (make-array 0 :adjustable T :fill-pointer T) :accessor hit-generators)
+(defclass mass-aggregate-system (physics-system)
+  ((hit-generators :initform (make-array 0 :adjustable T :fill-pointer T) :accessor hit-generators)
    (hits :initform (map-into (make-array 128) #'make-hit) :accessor hits)))
-
-(defmethod integrate ((system mass-aggregate-system) dt)
-  (loop for particle across (particles system)
-        do (integrate particle dt)))
 
 (defmethod generate-hits ((system mass-aggregate-system) hits start end)
   (loop for generator across (hit-generators system)
@@ -154,10 +140,7 @@
   start)
 
 (defmethod update ((system mass-aggregate-system) tt dt fc)
-  (loop for particle across (particles system)
-        do (loop for force across (forces system)
-                 do (apply-force force particle dt)))
-  (integrate system dt)
+  (call-next-method)
   (let* ((hits (hits system))
          (end (generate-hits system hits 0 (length hits))))
     (resolve-hits hits end dt)))
