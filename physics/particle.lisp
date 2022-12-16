@@ -91,6 +91,22 @@
                (return iterations))
         finally (return max-iterations)))
 
+(defclass hit-generator () ())
+
+(defgeneric generate-hits (generator hits start end))
+
+(defmacro define-hit-generation (generator &body body)
+  `(defmethod generate-hits (,(enlist generator generator) hits start end)
+     (let ((hit (aref hits start)))
+       (block NIL
+         (flet ((finish-hit ()
+                  (incf start)
+                  (if (< start end)
+                      (setf hit (aref hits start))
+                      (return))))
+           ,@body))
+       start)))
+
 (defclass particle-link (hit-generator)
   ((a :initarg :a :accessor a)
    (b :initarg :b :accessor b)))

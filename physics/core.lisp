@@ -75,25 +75,11 @@
 (defstruct hit
   (a NIL :type T)
   (b NIL :type T)
-  (restitution 0.0 :type single-float)
+  (location (vec 0 0 0) :type vec3)
   (normal (vec 0 0 0) :type vec3)
+  (restitution 0.0 :type single-float)
+  (friction 0.0 :type single-float)
   (depth 0.0 :type single-float))
-
-(defclass hit-generator () ())
-
-(defgeneric generate-hits (generator hits start end))
-
-(defmacro define-hit-generation (generator &body body)
-  `(defmethod generate-hits (,(enlist generator generator) hits start end)
-     (let ((hit (aref hits start)))
-       (block NIL
-         (flet ((finish-hit ()
-                  (incf start)
-                  (if (< start end)
-                      (setf hit (aref hits start))
-                      (return))))
-           ,@body))
-       start)))
 
 (defclass physics-system (container)
   ((forces :initform (make-array 0 :adjustable T :fill-pointer T) :accessor forces)))
