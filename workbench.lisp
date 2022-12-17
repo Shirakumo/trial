@@ -28,10 +28,10 @@
     #p"cat.png")
 
 (define-asset (workbench cube) mesh
-    (make-cube 15))
+    (make-cube-mesh 15))
 
 (define-asset (workbench grid) mesh
-    (make-line-grid 10 100 100))
+    (make-line-grid-mesh 10 100 100))
 
 (define-shader-entity player (vertex-entity textured-entity transformed-entity listener)
   ((name :initform 'player)
