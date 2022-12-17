@@ -25,7 +25,7 @@
         (T
          `(,@(first shapes) :mesh (combine-shapes ,@(rest shapes))))))
 
-(defun make-rectangle (w h &key (align :center) mesh pack (x 0) (y 0) (z 0) (u- 0) (v- 0) (u+ 1) (v+ 1))
+(defun make-rectangle-mesh (w h &key (align :center) mesh pack (x 0) (y 0) (z 0) (u- 0) (v- 0) (u+ 1) (v+ 1))
   (let (l r u b)
     (ecase align
       (:center (setf l (- (/ w 2)) r (+ (/ w 2))
@@ -45,7 +45,7 @@
       (vertex :position (vec l u z) :uv (vec u- v+))
       (vertex :position (vec l b z) :uv (vec u- v-)))))
 
-(defun make-triangle (w h &key (orientation :right) mesh pack (x 0) (y 0) (z 0))
+(defun make-triangle-mesh (w h &key (orientation :right) mesh pack (x 0) (y 0) (z 0))
   (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
     (let ((l (- x (/ w 2)))
           (r (+ x (/ w 2)))
@@ -61,7 +61,7 @@
          (vertex :position (vec l b z))
          (vertex :position (vec r y z)))))))
 
-(defun make-cube (size &key mesh pack (x 0) (y 0) (z 0))
+(defun make-cube-mesh (size &key mesh pack (x 0) (y 0) (z 0))
   (destructuring-bind (w h d) (enlist size size size)
     (let ((w (/ w 2)) (d (/ d 2)) (h (/ h 2)))
       (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'basic-vertex)) :pack pack)
@@ -107,7 +107,7 @@
         (vertex :position (vec (+ x w) (- y h) (- z d)) :uv (vec 1.0 1.0) :normal (vec 1 0 0))
         (vertex :position (vec (+ x w) (+ y h) (- z d)) :uv (vec 1.0 0.0) :normal (vec 1 0 0))))))
 
-(defun make-quad-grid (size x-count z-count &key mesh pack (x 0) (y 0) (z 0))
+(defun make-quad-grid-mesh (size x-count z-count &key mesh pack (x 0) (y 0) (z 0))
   (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'basic-vertex)) :pack pack)
     (loop for xi from 0 below x-count
           for xc from (* x-count size -0.5) by size
@@ -122,7 +122,7 @@
                         (vertex :position (vec l y u) :uv (vec (/ (+ 0 xi) x-count) (/ (+ 1 zi) z-count)) :normal (vec 0 1 0))
                         (vertex :position (vec l y b) :uv (vec (/ (+ 0 xi) x-count) (/ (+ 0 zi) z-count)) :normal (vec 0 1 0)))))))
 
-(defun make-line-grid (size w h &key mesh pack (x 0) (y 0) (z 0))
+(defun make-line-grid-mesh (size w h &key mesh pack (x 0) (y 0) (z 0))
   (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex :face-length 2)) :pack pack)
     (let ((w (/ w 2)) (h (/ h 2))
           (ws (/ w size)) (hs (/ h size)))
@@ -133,7 +133,7 @@
             do (vertex :position (vec (- x w) y (+ z _z)))
                (vertex :position (vec (+ x w) y (+ z _z)))))))
 
-(defun make-sphere (size &key (segments 32) mesh pack (x 0) (y 0) (z 0))
+(defun make-sphere-mesh (size &key (segments 32) mesh pack (x 0) (y 0) (z 0))
   (let ((lat segments) (lng segments))
     (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'basic-vertex)) :pack pack)
       (loop for i from lat downto 1
@@ -157,7 +157,7 @@
                           (vertex (vec (+ x (* x1 zr1 size)) (+ y (* y1 zr1 size)) (+ z (* z1 size))))
                           (vertex (vec (+ x (* x2 zr1 size)) (+ y (* y2 zr1 size)) (+ z (* z1 size))))))))))
 
-(defun make-disc (size &key (segments 32) mesh pack (x 0) (y 0) (z 0))
+(defun make-disc-mesh (size &key (segments 32) mesh pack (x 0) (y 0) (z 0))
   (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
     (loop with step = (/ (* 2 PI) segments)
           for i1 = (- step) then i2
@@ -166,7 +166,7 @@
              (vertex :position (vec (+ x (* size (cos i1))) (+ y (* size (sin i1))) z))
              (vertex :position (vec (+ x (* size (cos i2))) (+ y (* size (sin i2))) z)))))
 
-(defun make-cylinder (size height &key (segments 32) mesh pack (x 0) (y 0) (z 0))
+(defun make-cylinder-mesh (size height &key (segments 32) mesh pack (x 0) (y 0) (z 0))
   (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
     (loop with step = (/ (* 2 PI) segments)
           for i1 = (- step) then i2
@@ -191,7 +191,7 @@
              (vertex :position e2b)
              (vertex :position e2t))))
 
-(defun make-cone (size height &key (segments 32) mesh pack (x 0) (y 0) (z 0))
+(defun make-cone-mesh (size height &key (segments 32) mesh pack (x 0) (y 0) (z 0))
   (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
     (loop with step = (/ (* 2 PI) segments)
           for i1 = (- step) then i2
@@ -205,7 +205,7 @@
              (vertex :position (vec (+ x (* size (cos i2))) y (+ z (* size (sin i2)))))
              (vertex :position (vec (+ x (* size (cos i1))) y (+ z (* size (sin i1))))))))
 
-(defun make-tube (size height inner-size &key (segments 32) mesh pack (x 0) (y 0) (z 0))
+(defun make-tube-mesh (size height inner-size &key (segments 32) mesh pack (x 0) (y 0) (z 0))
   (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
     (loop with step = (/ (* 2 PI) segments)
           for i1 = (- step) then i2
@@ -265,7 +265,7 @@
                  (vertex :location a :normal (v- b a) :color ac))))))
 
 (define-asset (trial fullscreen-square) mesh
-    (make-rectangle 2 2 :pack T))
+    (make-rectangle-mesh 2 2 :pack T))
 
 (define-asset (trial empty-vertex-array) mesh
     (make-instance 'vertex-mesh))

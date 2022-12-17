@@ -581,16 +581,16 @@
   (:export)
   ;; geometry-shapes.lisp
   (:export
-   #:make-rectangle
-   #:make-triangle
-   #:make-cube
-   #:make-quad-grid
-   #:make-line-grid
-   #:make-sphere
-   #:make-disc
-   #:make-cylinder
-   #:make-cone
-   #:make-tube
+   #:make-rectangle-mesh
+   #:make-triangle-mesh
+   #:make-cube-mesh
+   #:make-quad-grid-mesh
+   #:make-line-grid-mesh
+   #:make-sphere-mesh
+   #:make-disc-mesh
+   #:make-cylinder-mesh
+   #:make-cone-mesh
+   #:make-tube-mesh
    #:make-lines
    #:fullscreen-square
    #:empty-vertex-array
