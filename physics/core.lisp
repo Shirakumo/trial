@@ -2,7 +2,7 @@
 
 (defgeneric integrate (object dt))
 (defgeneric mass (object))
-(defgeneric (setf mass) (object))
+(defgeneric (setf mass) (mass object))
 
 (defclass physics-entity ()
   ((velocity :initform (vec 0 0 0) :reader velocity)
@@ -81,19 +81,38 @@
   (friction 0.0 :type single-float)
   (depth 0.0 :type single-float))
 
-(defclass physics-system (container)
-  ((forces :initform (make-array 0 :adjustable T :fill-pointer T) :accessor forces)))
+(defclass physics-system ()
+  ((forces :initform (make-array 0 :adjustable T :fill-pointer T) :accessor forces)
+   (%objects :initform (make-array 0 :adjustable T :fill-pointer T) :accessor %objects)))
+
+(defmethod enter (thing (system physics-system))
+  (vector-push-extend thing (%objects system))
+  thing)
+
+(defmethod enter ((thing force) (system physics-system))
+  (vector-push-extend thing (forces system))
+  thing)
+
+(defmethod leave (thing (system physics-system))
+  (array-utils:vector-pop-position (%objects system)
+                                   (position thing (%objects system)))
+  thing)
+
+(defmethod leave ((thing force) (system physics-system))
+  (array-utils:vector-pop-position (forces system)
+                                   (position thing (forces system)))
+  thing)
 
 (defmethod integrate ((system physics-system) dt)
-  (sequences:dosequence (entity system)
-    (integrate entity dt)))
+  (loop for entity across (%objects system)
+        do (integrate entity dt)))
 
 (defmethod start-frame ((system physics-system))
-  (sequences:dosequence (entity system)
-    (start-frame entity)))
+  (loop for entity across (%objects system)
+        do (start-frame entity)))
 
-(defmethod update ((system rigidbody-system) tt dt fc)
-  (sequences:dosequence (entity system)
-    (loop for force across (forces system)
-          do (apply-force force entity dt)))
+(defmethod update ((system physics-system) tt dt fc)
+  (loop for entity across (%objects system)
+        do (loop for force across (forces system)
+                 do (apply-force force entity dt)))
   (integrate system dt))

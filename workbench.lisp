@@ -28,27 +28,36 @@
     #p"cat.png")
 
 (define-asset (workbench cube) mesh
-    (make-cube-mesh 15))
+    (make-cube-mesh 10))
 
 (define-asset (workbench grid) mesh
     (make-line-grid-mesh 10 100 100))
 
-(define-shader-entity player (vertex-entity textured-entity transformed-entity listener)
-  ((name :initform 'player)
+(define-shader-entity cube (vertex-entity textured-entity trial::rigidbody listener)
+  ((name :initform 'cube)
    (texture :initform (// 'workbench 'cat))
-   (vertex-array :initform (// 'workbench 'cube))))
+   (vertex-array :initform (// 'workbench 'cube)))
+  (:default-initargsp
+   :mass 10.0
+   :physics-primitives (trial::make-box :bsize (vec 5 5 5))))
 
-(define-handler (player tick) (dt)
-  (incf (vx (location player)) (* dt 50 (vx (directional 'movement))))
-  (incf (vz (location player)) (* dt 50 (vy (directional 'movement)))))
+(define-handler (cube tick) (dt)
+  (when (retained :a)
+    (nv+ (trial::rotation cube) (vec dt 0 0))))
 
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
-    (enter (make-instance 'trial::fps-counter) scene)
-    (enter (make-instance 'debug-text :text "HELLO and welcome back to VIDEO GAMES") scene)
+    (let ((physics (make-instance 'trial::rigidbody-system))
+          (floor (make-instance 'trial::rigidbody :physics-primitives (trial::make-half-space)))
+          (cube (make-instance 'cube :location (vec 0 50 0))))
+      (enter (make-instance 'trial::gravity) physics)
+      (enter cube physics)
+      (enter floor physics)
+      (enter cube scene)
+      (enter physics scene))
+    (enter (make-instance 'fps-counter) scene)
     (enter (make-instance 'vertex-entity :vertex-array (// 'workbench 'grid)) scene)
-    (enter (make-instance 'player :location (vec 0 100 200)) scene)
-    (enter (make-instance 'following-camera :target (unit 'player scene) :location (vec 0 10 100)) scene)
+    (enter (make-instance 'target-camera :location (vec 0 100 100)) scene)
     (enter (make-instance 'render-pass) scene))
   (maybe-reload-scene))
 
