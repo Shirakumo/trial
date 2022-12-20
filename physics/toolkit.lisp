@@ -11,9 +11,18 @@
     (nq+ target tmp)))
 
 (defun nv+* (target vector scalar)
-  (setf (vx target) (* (vx vector) scalar))
-  (setf (vy target) (* (vy vector) scalar))
-  (setf (vz target) (* (vz vector) scalar)))
+  (incf (vx target) (* (vx vector) scalar))
+  (incf (vy target) (* (vy vector) scalar))
+  (incf (vz target) (* (vz vector) scalar)))
+
+(defun ntransform-inverse (vec3 mat4)
+  (with-fast-matref (m mat4 4)
+    (let ((x (- (vx3 vec3) (m 3)))
+          (y (- (vy3 vec3) (m 7)))
+          (z (- (vz3 vec3) (m 11))))
+      (setf (vx3 vec3) (+ (* x (m 0)) (* y (m 4)) (* z (m 8))))
+      (setf (vy3 vec3) (+ (* x (m 1)) (* y (m 5)) (* z (m 9))))
+      (setf (vz3 vec3) (+ (* x (m 2)) (* y (m 6)) (* z (m 10)))))))
 
 (defun compute-world-inertia-tensor (iitworld iitbody rotmat)
   (let ((iitworld (marr3 iitworld))

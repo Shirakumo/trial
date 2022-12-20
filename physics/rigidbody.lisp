@@ -5,9 +5,14 @@
    (inverse-inertia-tensor :initform (mat3) :reader inverse-inertia-tensor)
    (torque :initform (vec 0 0 0) :reader torque)
    (angular-damping :initform 1.0 :accessor angular-damping)
+   (physics-primitives :initform #() :accessor physics-primitives)
    ;; Cache
    (transform-matrix :initform (mat4) :reader transform-matrix)
    (world-inverse-inertia-tensor :initform (mat3) :reader world-inverse-inertia-tensor)))
+
+(defmethod shared-initialize :after ((body rigidbody) slots &key inertia-tensor physics-primitives)
+  (when inertia-tensor (setf (inertia-tensor body) inertia-tensor))
+  (when physics-primitives (setf (physics-primitives body) physics-primitives)))
 
 (defmethod (setf rotation) ((vel vec3) (entity rigidbody))
   (v<- (rotation entity) vel))
@@ -18,6 +23,21 @@
 (defmethod (setf inertia-tensor) ((mat mat3) (entity rigidbody))
   (let ((inv (minv mat)))
     (replace (marr3 (inverse-inertia-tensor entity)) (marr3 inv))))
+
+(defmethod (setf inertia-tensor) ((primitive sphere) (entity rigidbody))
+  (setf (inertia-tensor entity) (sphere-tensor (mass entity) (sphere-radius primitive))))
+
+(defmethod (setf inertia-tensor) ((primitive box) (entity rigidbody))
+  (setf (inertia-tensor entity) (box-tensor (mass entity) (box-bsize primitive))))
+
+(defmethod (setf inertia-tensor) ((primitive cylinder) (entity rigidbody))
+  (setf (inertia-tensor entity) (cylinder-tensor (mass entity) (cylinder-radius primitive) (cylinder-height primitive))))
+
+(defmethod (setf physics-primitives) ((primitive primitive) (entity rigidbody))
+  (setf (physics-primitives entity) (vector primitive))
+  (when (and (/= 0 (inverse-mass entity))
+             (every #'zerop (marr3 (inverse-inertia-tensor entity))))
+    (setf (inertia-tensor entity) primitive)))
 
 (defun %update-rigidbody-cache (rigidbody)
   (nqunit (orientation rigidbody))
@@ -56,7 +76,7 @@
     (nv* (velocity entity) (expt (damping entity) dt))
     (nv* (rotation entity) (expt (angular-damping entity) dt))
     (nv+* (location entity) (velocity entity) dt)
-    (nv+* (orientation entity) (rotation entity) dt)
+    (nq+* (orientation entity) (rotation entity) dt)
     (start-frame entity)))
 
 (defmethod start-frame ((entity rigidbody))
@@ -64,5 +84,47 @@
   (vsetf (torque entity) 0 0 0)
   (vsetf (force entity) 0 0 0))
 
-(defclass rigidbody-system (physics-system)
+(defclass rigidbody-system (physics-system entity listener)
   ())
+
+(define-handler (rigidbody-system tick) (dt)
+  (start-frame rigidbody-system)
+  (let ((forces (forces rigidbody-system)))
+    (loop for entity across (%objects rigidbody-system)
+          do (loop for force across forces
+                   do (apply-force force entity dt))))
+  (integrate rigidbody-system dt))
+
+(defun hit-basis (hit &optional (basis (mat3)))
+  (let ((normal (hit-normal hit))
+        (tangent-0 (vec3 0 0 0))
+        (tangent-1 (vec3 0 0 0)))
+    (declare (dynamic-extent tangent-0 tangent-1))
+    (cond ((< (abs (vy normal)) (abs (vx normal)))
+           (let ((s (/ (sqrt (+ (* (vz normal) (vz normal))
+                                (* (vx normal) (vx normal)))))))
+             (vsetf tangent-0 (* (vz normal) s) 0.0 (* (vx normal) s -1))
+             (vsetf tangent-1
+                    (* (vy normal) (vx tangent-0))
+                    (- (* (vz normal) (vx tangent-0))
+                       (* (vx normal) (vz tangent-0)))
+                    (* (vy normal) (vx tangent-0) -1))))
+          (T
+           (let ((s (/ (sqrt (+ (* (vz normal) (vz normal))
+                                (* (vy normal) (vy normal)))))))
+             (vsetf tangent-0 0.0 (* (vz normal) s -1) (* (vy normal) s))
+             (vsetf tangent-1
+                    (- (* (vy normal) (vz tangent-0))
+                       (* (vz normal) (vy tangent-0)))
+                    (* (vx normal) (vz tangent-0) -1)
+                    (* (vx normal) (vy tangent-0))))))
+    (with-fast-matref (m basis 3)
+      (setf (m 0 0) (vx normal))
+      (setf (m 1 0) (vy normal))
+      (setf (m 2 0) (vz normal))
+      (setf (m 0 1) (vx tangent-0))
+      (setf (m 1 1) (vy tangent-0))
+      (setf (m 2 1) (vz tangent-0))
+      (setf (m 0 2) (vx tangent-1))
+      (setf (m 1 2) (vy tangent-1))
+      (setf (m 2 2) (vz tangent-1)))))

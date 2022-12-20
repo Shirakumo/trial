@@ -2,7 +2,7 @@
 
 (defmacro define-tensor-fun (name args &body body)
   `(defun ,name (,@args &optional (tensor (mat3)))
-     (fill (marr3 m) 0.0)
+     (fill (marr3 tensor) 0.0)
      (with-fast-matref (m tensor 3)
        ,@body
        tensor)))
@@ -37,7 +37,7 @@
   ;; TODO
   )
 
-(define-tensor-fun cuboid-tensor (mass bsize)
+(define-tensor-fun box-tensor (mass bsize)
   (let ((x2 (* (vx bsize) (vx bsize)))
         (y2 (* (vy bsize) (vy bsize)))
         (z2 (* (vz bsize) (vz bsize))))
