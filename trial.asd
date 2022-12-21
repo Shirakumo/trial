@@ -113,8 +113,9 @@
                              (:file "core" :depends-on ("toolkit"))
                              (:file "inertia-tensors" :depends-on ("core"))
                              (:file "particle" :depends-on ("core"))
-                             (:file "rigidbody" :depends-on ("core"))
-                             (:file "primitives" :depends-on ("core"))))
+                             (:file "rigidbody" :depends-on ("primitives"))
+                             (:file "primitives" :depends-on ("core"))
+                             (:file "resolution" :depends-on ("rigidbody"))))
                (:module "resources"
                 :depends-on ("package" "resource" "toolkit" "data-pointer")
                 :components ((:file "buffer-object")
