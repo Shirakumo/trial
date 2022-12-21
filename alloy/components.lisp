@@ -121,7 +121,8 @@
                (find-class ',name)))))))
 
 (define-set-representation language
-  :item-text (or (first (language-codes:names alloy:value)) alloy:value)
+  :item-text (let ((language (trial::try-find-language alloy:value)))
+               (or (first (language-codes:names language)) language))
   (trial:languages))
 
 (define-set-representation asset
