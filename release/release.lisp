@@ -9,6 +9,9 @@
 (defun release ()
   (pathname-utils:subdirectory (output) (version)))
 
+(defun release-version (release)
+  (pathname-utils:directory-name release))
+
 (defun update-files (&optional (target (release)))
   (loop for file in (config :build :prune)
         do (prune (merge-pathnames file target)))

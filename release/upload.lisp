@@ -2,7 +2,7 @@
 
 ;;(setf dexador:*use-connection-pool* NIL)
 
-(defmethod upload ((service (eql :ftp)) &key (version (version)) (bundles (config :ftp :bundles)) (user (config :ftp :user)) (port (config :ftp :port)) (hostname (config :ftp :hostname)) (password (config :ftp :password)) (path (config :ftp :path)))
+(defmethod upload ((service (eql :ftp)) &key (release (release)) (bundles (config :ftp :bundles)) (user (config :ftp :user)) (port (config :ftp :port)) (hostname (config :ftp :hostname)) (password (config :ftp :password)) (path (config :ftp :path)))
   (org.mapcar.ftp.client:with-ftp-connection (connection :hostname hostname
                                                          :port (or port 21)
                                                          :username user
@@ -11,11 +11,11 @@
     (when path
       (org.mapcar.ftp.client:send-cwd-command connection (uiop:native-namestring path)))
     (dolist (bundle bundles)
-      (let ((bundle (bundle-path bundle :version version)))
+      (let ((bundle (bundle-path bundle :version (release-version release))))
         (org.mapcar.ftp.client:store-file connection bundle (file-namestring bundle) :type :binary)
         (deploy:status 2 "Uploaded to ~a" hostname)))))
 
-(defmethod upload ((service (eql :ssh)) &key (version (version)) (bundles (config :ssh :bundles)) (user (config :ssh :user)) (port (config :ssh :port)) (hostname (config :ssh :hostname)) (password (config :ssh :password)) (path (config :ssh :path)))
+(defmethod upload ((service (eql :ssh)) &key (release (release)) (bundles (config :ssh :bundles)) (user (config :ssh :user)) (port (config :ssh :port)) (hostname (config :ssh :hostname)) (password (config :ssh :password)) (path (config :ssh :path)))
   (trivial-ssh:with-connection (connection hostname (etypecase password
                                                       (pathname (trivial-ssh:key user password))
                                                       (string (trivial-ssh:pass user password))
@@ -23,29 +23,30 @@
                                                       ((or null (eql :agent)) (trivial-ssh:agent user)))
                                            trivial-ssh::+default-hosts-db+ (or port 22))
     (dolist (bundle bundles)
-      (let* ((bundle (bundle-path bundle :version version))
+      (let* ((bundle (bundle-path bundle :version (release-version release)))
              (target (make-pathname :name (pathname-name bundle) :type (pathname-type bundle) :defaults path)))
         (trivial-ssh:upload-file connection bundle target)
         (deploy:status 2 "Uploaded to ~a" target)))))
 
-(defmethod upload ((service (eql :rsync)) &key (version (version)) (bundles (config :rsync :bundles)) (user (config :rsync :user)) (port (config :rsync :port)) (hostname (config :rsync :hostname)) (path (config :rsync :path)))
+(defmethod upload ((service (eql :rsync)) &key (release (release)) (bundles (config :rsync :bundles)) (user (config :rsync :user)) (port (config :rsync :port)) (hostname (config :rsync :hostname)) (path (config :rsync :path)))
   (dolist (bundle bundles)
-    (let ((bundle (bundle-path bundle :version version)))
+    (let ((bundle (bundle-path bundle :version (release-version release))))
       (uiop:run-program (list "rsync" "-avz" (format NIL "--rsh=ssh -p~a" (or port 22)) (uiop:native-namestring bundle)
                               (format NIL "~@[~a@~]~a:~@[~a~]" user hostname path))
                         :output *standard-output* :error-output *error-output*)
       (deploy:status 2 "Uploaded to ~a~@[~a~]" hostname path))))
 
-(defmethod upload ((service (eql :http)) &key (version (version)) (bundles (config :http :bundles)) (url (config :http :url)) (method (config :http :method)) (file-parameter (config :http :file-parameter)) (parameters (config :http :parameters)))
+(defmethod upload ((service (eql :http)) &key (release (release)) (bundles (config :http :bundles)) (url (config :http :url)) (method (config :http :method)) (file-parameter (config :http :file-parameter)) (parameters (config :http :parameters)))
   (dolist (bundle bundles)
     (dexador:request url
                      :method (or method :post)
-                     :content (list* (cons (or file-parameter "file") (bundle-path bundle :version version))
+                     :content (list* (cons (or file-parameter "file") (bundle-path bundle :version (release-version release)))
                                      parameters)))
   (deploy:status 2 "Uploaded to ~a" url))
 
-(defmethod upload ((service (eql :keygen)) &key (version (version)) (bundles (config :keygen :bundles)) (key (config :keygen :key)) (secret (config :keygen :secret)) (token (config :keygen :token)) (token-secret (config :keygen :token-secret)) (api-base (config :keygen :api-base)))
-  (let* ((secret-source (or (config :keygen :secrets) api-base))
+(defmethod upload ((service (eql :keygen)) &key (release (release)) (bundles (config :keygen :bundles)) (key (config :keygen :key)) (secret (config :keygen :secret)) (token (config :keygen :token)) (token-secret (config :keygen :token-secret)) (api-base (config :keygen :api-base)))
+  (let* ((version (release-version release))
+         (secret-source (or (config :keygen :secrets) api-base))
          (client (make-instance 'north:client :key (or key (password secret-source "key"))
                                               :secret (or secret (password secret-source "secret"))
                                               :token (or token (password secret-source "token"))
