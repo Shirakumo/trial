@@ -38,7 +38,7 @@
     (call-next-method)))
 
 (defclass gravity (force)
-  ((gravity :initarg :gravity :initform (vec 0 -1 0) :accessor gravity)))
+  ((gravity :initarg :gravity :initform (vec 0 -10 0) :accessor gravity)))
 
 (defmethod apply-force ((force gravity) (entity physics-entity) dt)
   (nv+* (force entity) (gravity force) (mass entity)))

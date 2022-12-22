@@ -42,8 +42,15 @@
    :physics-primitives (trial::make-box :bsize (vec 5 5 5))))
 
 (define-handler (cube tick) (dt)
-  (when (retained :a)
-    (nv+ (trial::rotation cube) (vec dt 0 0))))
+  (let ((strength (* dt 10000)))
+    (when (retained :a)
+      (nv+ (trial::torque cube) (vec strength 0 0)))
+    (when (retained :d)
+      (nv- (trial::torque cube) (vec strength 0 0)))
+    (when (retained :w)
+      (nv+ (trial::torque cube) (vec 0 strength 0)))
+    (when (retained :s)
+      (nv- (trial::torque cube) (vec 0 strength 0)))))
 
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
