@@ -45,6 +45,7 @@
 
 (defstruct primitive
   (entity NIL :type T)
+  (material :wood :type T)
   (transform (mat4) :type mat4))
 
 (defmethod location ((primitive primitive))

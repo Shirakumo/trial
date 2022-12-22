@@ -77,20 +77,9 @@
     (nv* (rotation entity) (expt (angular-damping entity) dt))
     (nv+* (location entity) (velocity entity) dt)
     (nq+* (orientation entity) (rotation entity) dt)
-    (start-frame entity)))
+    (%update-rigidbody-cache entity)
+    (vsetf (torque entity) 0 0 0)
+    (vsetf (force entity) 0 0 0)))
 
 (defmethod start-frame ((entity rigidbody))
-  (%update-rigidbody-cache entity)
-  (vsetf (torque entity) 0 0 0)
-  (vsetf (force entity) 0 0 0))
-
-(defclass rigidbody-system (physics-system entity listener)
-  ())
-
-(define-handler (rigidbody-system tick) (dt)
-  (start-frame rigidbody-system)
-  (let ((forces (forces rigidbody-system)))
-    (loop for entity across (%objects rigidbody-system)
-          do (loop for force across forces
-                   do (apply-force force entity dt))))
-  (integrate rigidbody-system dt))
+  (%update-rigidbody-cache entity))
