@@ -1070,6 +1070,7 @@
    #:input-literal
    #:with-retry-restart
    #:with-new-value-restart
+   #:with-unwind-protection
    #:with-cleanup-on-failure
    #:acquire-lock-with-starvation-test
    #:with-trial-io-syntax
