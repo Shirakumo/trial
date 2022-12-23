@@ -39,6 +39,10 @@
              (every #'zerop (marr3 (inverse-inertia-tensor entity))))
     (setf (inertia-tensor entity) primitive)))
 
+(defmethod (setf physics-primitives) :after ((primitives vector) (entity rigidbody))
+  (loop for primitive across primitives
+        do (setf (primitive-entity primitive) entity)))
+
 (defun %update-rigidbody-cache (rigidbody)
   (nqunit (orientation rigidbody))
   (tmat4 (tf rigidbody) (transform-matrix rigidbody))

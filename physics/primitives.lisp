@@ -3,7 +3,7 @@
 (defconstant MAX-CONTACTS 1024)
 
 (defstruct contact-data
-  (hits (map-into (make-array #.MAX-CONTACTS) #'make-hit) :type (simple-array T (#.MAX-CONTACTS)))
+  (hits (map-into (make-array #.MAX-CONTACTS) #'make-contact) :type (simple-array T (#.MAX-CONTACTS)))
   (start 0 :type (integer 0 #.MAX-CONTACTS))
   (restitution 0.0 :type single-float)
   (friction 0.0 :type single-float))
@@ -20,6 +20,7 @@
          (let ((hit (aref hits start)))
            (block NIL
              (flet ((finish-hit ()
+                      (when (v= 0 (hit-normal hit)) (error "What"))
                       (setf (hit-restitution hit) (contact-data-restitution data))
                       (setf (hit-friction hit) (contact-data-friction data))
                       (setf (hit-a hit) (primitive-entity a))
@@ -124,13 +125,13 @@
          (h (vec3 (+ (vx bs)) (+ (vy bs)) (+ (vz bs)))))
     (declare (dynamic-extent a b c d e f g h))
     (flet ((test (p)
-             (n*m tf p)
+             (n*m3 tf p)
              (let ((dist (v. p pd)))
                (when (<= dist po)
                  (v<- (hit-location hit) pd)
                  (nv* (hit-location hit) (- dist po))
                  (nv+ (hit-location hit) p)
-                 (v<- (hit-location hit) pd)
+                 (v<- (hit-normal hit) pd)
                  (setf (hit-depth hit) (- po dist))
                  (finish-hit)))))
       (test a)

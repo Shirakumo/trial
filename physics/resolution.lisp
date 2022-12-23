@@ -43,9 +43,10 @@
       (setf (m 2 1) (vz tangent-0))
       (setf (m 0 2) (vx tangent-1))
       (setf (m 1 2) (vy tangent-1))
-      (setf (m 2 2) (vz tangent-1)))))
+      (setf (m 2 2) (vz tangent-1))
+      basis)))
 
-(defun local-velocity (to-world loc entity dt)
+(defun local-velocity (to-world entity loc dt)
   (let ((vel (ntransform-inverse
               (nv+ (vc (rotation entity) loc)
                    (velocity entity))
@@ -176,7 +177,7 @@
               (contact-b-rotation-change contact) (contact-b-velocity-change contact)))))
 
 (defun resolve-contacts (contacts end dt &key (iterations 20))
-  (macrolet ((do-contacts (contact &body body)
+  (macrolet ((do-contacts ((contact) &body body)
                `(loop for i from 0 below end
                       for ,contact = (aref contacts i)
                       do (progn ,@body)))
@@ -205,7 +206,7 @@
           for worst = 0.0
           for contact = NIL
           do (do-contacts (tentative)
-               (when (< worst (contact-depth contact))
+               (when (< worst (contact-depth tentative))
                  (setf contact tentative)
                  (setf worst (contact-depth contact))))
              (unless contact (loop-finish))
@@ -249,9 +250,10 @@
                      unless (eq a b)
                      do (loop for a-p across (physics-primitives a)
                               do (loop for b-p across (physics-primitives b)
-                                       do ;; (setf (contact-data-friction data) (static-friction a-p b-p))
+                                       do ;; (setf (contact-data-friction data) (static-friction (material a-p) (material b-p)))
                                           (setf (contact-data-restitution data) 0.2) ; ??? Hard-coded ???
                                           (detect-hits a-p b-p data)))))
       ;; Resolve contacts
-      (resolve-contacts (contact-data-hits data) (contact-data-start data) dt)))
+      (resolve-contacts (contact-data-hits data) (contact-data-start data) dt)
+      (setf (contact-data-start data) 0)))
   (integrate rigidbody-system dt))
