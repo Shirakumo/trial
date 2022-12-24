@@ -201,7 +201,8 @@
                            (change (contact-b-rotation-change contact)
                                    (contact-b-velocity-change contact)
                                    (contact-b-relative other) -1)))))))
-    (do-contacts (contact) (upgrade-hit-to-contact contact dt))
+    (do-contacts (contact)
+      (upgrade-hit-to-contact contact dt))
     (loop repeat iterations
           for worst = 0.0
           for contact = NIL
@@ -245,15 +246,18 @@
       (setf (contact-data-start data) 0)
       ;; Compute contacts
       ;; TODO: replace with something that isn't as dumb as this.
-      (loop for a across objects
-            do (loop for b across objects
-                     unless (eq a b)
+      (loop for i from 0 below (length objects)
+            for a = (aref objects i)
+            do (loop for j from (1+ i) below (length objects)
+                     for b = (aref objects j)
                      do (loop for a-p across (physics-primitives a)
                               do (loop for b-p across (physics-primitives b)
-                                       do ;; (setf (contact-data-friction data) (static-friction (material a-p) (material b-p)))
+                                       do ;; (setf (contact-data-friction data) (static-friction (primitive-material a-p) (primitive-material b-p)))
                                           (setf (contact-data-restitution data) 0.2) ; ??? Hard-coded ???
                                           (detect-hits a-p b-p data)))))
       ;; Resolve contacts
-      (resolve-contacts (contact-data-hits data) (contact-data-start data) dt)
-      (setf (contact-data-start data) 0)))
+      (when (< 0 (contact-data-start data))
+        (resolve-contacts (contact-data-hits data) (contact-data-start data) dt)
+        (loop for i from 0 below (contact-data-start data)
+              do (print (aref (contact-data-hits data) i))))))
   (integrate rigidbody-system dt))

@@ -17,9 +17,9 @@
 
 (defun dynamic-friction (a b)
   (let* ((cons (cons a b))
-         (a (gethash cons *dynamic-frictions*)))
+         (found (gethash cons *dynamic-frictions*)))
     (declare (dynamic-extent cons))
-    (cond (a a)
+    (cond (found found)
           (T (rotatef (car cons) (cdr cons))
              (or (gethash cons *dynamic-frictions*)
                  (error "Dynamic friction between ~a and ~a is not known." a b))))))
@@ -27,6 +27,8 @@
 (defun (setf dynamic-friction) (friction a b)
   (setf (gethash (cons a b) *dynamic-frictions*) (float friction 0f0)))
 
+(setf (static-friction :wood :wood) 0.5)
+(setf (dynamic-friction :wood :wood) 0.5)
 (setf (static-friction :wood :concrete) 0.5)
 (setf (dynamic-friction :wood :concrete) 0.4)
 (setf (static-friction :wood :ice) 0.2)
