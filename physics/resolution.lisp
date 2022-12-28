@@ -253,7 +253,9 @@
       ;; Resolve contacts
       (when (< 0 (contact-data-start data))
         (resolve-contacts (contact-data-hits data) (contact-data-start data) dt)
-        #++
         (loop for i from 0 below (contact-data-start data)
-              do (print (aref (contact-data-hits data) i))))))
+              for contact = (aref (contact-data-hits data) i)
+              do (debug-line (contact-location contact)
+                             (v+ (contact-location contact)
+                                 (v* (contact-normal contact) 10)))))))
   (integrate rigidbody-system dt))

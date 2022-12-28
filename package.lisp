@@ -459,6 +459,12 @@
    #:with-pointer-to-vector-data
    #:call-with-data-ptr
    #:with-data-ptr)
+  ;; debug.lisp
+  (:export
+   #:debug-draw
+   #:debug-point
+   #:debug-line
+   #:debug-clear)
   ;; deferred.lisp
   (:export
    #:geometry-pass
