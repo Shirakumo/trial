@@ -56,10 +56,10 @@
 (defclass transformed-entity (transformed entity)
   ((transform :initarg :transform :initform (transform) :accessor tf)))
 
-(defmethod initialize-instance :after ((entity transformed-entity) &key location scaling rotation)
+(defmethod initialize-instance :after ((entity transformed-entity) &key location scaling orientation)
   (when location (setf (location entity) location))
   (when scaling (setf (scaling entity) scaling))
-  (when rotation (setf (rotation entity) rotation)))
+  (when orientation (setf (orientation entity) orientation)))
 
 (defmethod apply-transforms progn ((obj transformed-entity))
   (let* ((marr (make-array 16 :element-type 'single-float))
