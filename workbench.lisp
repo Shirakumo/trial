@@ -17,7 +17,8 @@
                  (buttons :one-of ((:y :x :a :b))))))
 
 (defclass workbench (main) ()
-  (:default-initargs :clear-color (vec 0.25 0.3 0.35 0)))
+  (:default-initargs :clear-color (vec 0.25 0.3 0.35 0)
+                     :context '(:vsync T)))
 
 (defun launch (&rest args)
   (apply #'trial:launch 'workbench args))
@@ -52,11 +53,18 @@
     (when (retained :s)
       (nv- (trial::torque cube) (vec 0 strength 0)))))
 
+(define-handler (cube text-entered) (text)
+  (when (string= text "r")
+    (vsetf (location cube) 0 10 0)
+    (vsetf (trial::velocity cube) 0 0 0)
+    (vsetf (trial::rotation cube) 0 0 0)))
+
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
     (let ((physics (make-instance 'trial::rigidbody-system))
           (floor (make-instance 'trial::rigidbody :physics-primitives (trial::make-half-space)))
-          (cube (make-instance 'cube :location (vec 0 50 0))))
+          (cube (make-instance 'cube :location (vec 0 10 0) :orientation (q* (qfrom-angle +vz+ (/ PI 4))
+                                                                             (qfrom-angle +vx+ (/ PI 4))))))
       (enter (make-instance 'trial::gravity) physics)
       (enter cube physics)
       (enter floor physics)
