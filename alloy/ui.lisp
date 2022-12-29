@@ -107,7 +107,7 @@
        (alloy:handle (make-instance 'alloy:cut-event) ui)))))
 
 (trial:define-shader-pass ui-pass (ui)
-  ((name :initform 'ui)
+  ((trial:name :initform 'ui)
    (trial:color :port-type trial:output :attachment :color-attachment0)
    (trial:depth :port-type trial:output :attachment :depth-stencil-attachment)))
 
