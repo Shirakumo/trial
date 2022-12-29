@@ -85,10 +85,11 @@
       (push "windows" systems))
     systems))
 
-(defmethod upload ((service (eql :itch)) &key (release (release)) (user (config :itch :user)) (project (config :itch :project)) &allow-other-keys)
-  (run "butler" "push" (uiop:native-namestring release)
-       (format NIL "~a/~a:~{~a~^-~}" user (or project (string (config :system))) (release-systems release))
-       "--userversion" (version)))
+(defmethod upload ((service (eql :itch)) &key (release (release)) (bundles (config :itch :bundles)) (user (config :itch :user)) (project (config :itch :project)) &allow-other-keys)
+  (let ((version (release-version release)))
+    (loop for (bundle file) on bundles by #'cddr
+          for filename = (or file (format NIL "~a:~{~a~^-~}" (or project (string (config :system))) bundle))
+          do (run "butler" "push" (uiop:native-namestring (bundle-path bundle :version version)) (format NIL "~a/~a" user filename) "--userversion" version))))
 
 (defmethod upload ((service (eql :steam)) &key (release (release)) (branch (config :steam :branch)) (preview (config :steam :preview)) (user (config :steam :user)) (password (config :steam :password)) &allow-other-keys)
   (let ((template (make-pathname :name "app-build" :type "vdf" :defaults (output)))
