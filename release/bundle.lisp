@@ -7,7 +7,7 @@
                    :type "zip"
                    :defaults output)))
 
-(defmethod bundle ((bundle symbol) &key (version (version)) (output (output)) (release (release)) comment)
+(defmethod bundle ((bundle symbol) &key (version (version)) (output (output)) (release (release)) comment (recompress (config :bundle :recompress)))
   (let ((path (bundle-path bundle :version version :output output))
         (comment (or comment (multiple-value-bind (s m h dd mm yy) (decode-universal-time (get-universal-time))
                                (format NIL "Release created on ~4,'0d-~2,'0d-~2,'0d ~2,'0d:~2,'0d:~2,'0d" yy mm dd h m s))))
@@ -35,6 +35,8 @@
                      (entry (merge-pathnames source release)
                             (or target (enough-namestring source release))))))))))
     (zippy:compress-zip (make-instance 'zippy:zip-file :entries entries :comment comment) path :if-exists :supersede)
+    (when recompress
+      (uiop:run-program (list "advzip" "-z" "-3" (pathname-utils:native-namestring path)) :output *standard-output* :error-output *standard-output*))
     path))
 
 (defmethod bundle ((all cons) &rest args)
