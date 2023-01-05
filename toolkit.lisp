@@ -341,6 +341,13 @@
                  :type type
                  :defaults (tempdir)))
 
+(defmacro with-tempfile ((path &rest args) &body body)
+  `(let ((,path (tempfile ,@args)))
+     (unwind-protect
+          (progn ,@body)
+       (when (probe-file ,path)
+         (delete-file ,path)))))
+
 (defun rename-file* (file new-file)
   (when (uiop:file-exists-p new-file)
     (delete-file new-file))
