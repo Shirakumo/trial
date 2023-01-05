@@ -112,10 +112,6 @@
 
 (defun cpu-room ()
   #+sbcl
-  (values (round
-           (/ (- (sb-ext:dynamic-space-size)
-                 (sb-kernel:dynamic-usage))
-              1024.0))
-          (round
-           (/ (sb-ext:dynamic-space-size) 1024.0)))
+  (values (round (- (sb-ext:dynamic-space-size) (sb-kernel:dynamic-usage)) 1024.0)
+          (round (sb-ext:dynamic-space-size) 1024.0))
   #-sbcl (values 1 1))
