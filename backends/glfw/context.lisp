@@ -369,9 +369,10 @@
        (setf y-scale (cffi:mem-ref y :float)))
      (let ((w (round (* x-scale w)))
            (h (round (* y-scale h))))
-       (setf (width context) w)
-       (setf (height context) h)
-       (handle (make-instance 'resize :width w :height h) (handler context))))))
+       (when (and (< 0 w) (< 0 h))
+         (setf (width context) w)
+         (setf (height context) h)
+         (handle (make-instance 'resize :width w :height h) (handler context)))))))
 
 (cl-glfw3:def-window-focus-callback ctx-focus (window focusedp)
   (%with-context
