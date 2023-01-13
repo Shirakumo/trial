@@ -320,20 +320,16 @@
                (*print-readably* NIL))
            ,@body)))))
 
+(defun envvar-directory (var)
+  (let ((var (uiop:getenv var)))
+    (when (and var (string/= "" var))
+      (pathname-utils:parse-native-namestring var :as :directory :junk-allowed T))))
+
 (defun tempdir ()
-  (pathname
-   (format NIL "~a/"
-           #+windows
-           (or (uiop:getenv "TEMP")
-               "~/AppData/Local/Temp")
-           #+darwin
-           (or (uiop:getenv "TMPDIR")
-               "/tmp")
-           #+linux
-           (or (uiop:getenv "XDG_RUNTIME_DIR")
-               "/tmp")
-           #-(or windows darwin linux)
-           "/tmp")))
+  (or #+windows (or (envvar-directory "TEMP") #p"~/AppData/Local/Temp/")
+      #+darwin (envvar-directory "TMPDIR")
+      #+linux (envvar-directory "XDG_RUNTIME_DIR")
+      #p"/tmp/"))
 
 (defun tempfile (&key (id (format NIL "trial-~a-~a" (get-universal-time) (random 1000)))
                       (type "tmp"))
@@ -368,11 +364,6 @@
                          "trial.log"
                          (pathname-utils:parse-native-namestring log))
                      (or (uiop:argv0) (user-homedir-pathname)))))
-
-(defun envvar-directory (var)
-  (let ((var (uiop:getenv var)))
-    (when (and var (string/= "" var))
-      (pathname-utils:parse-native-namestring var :as :directory :junk-allowed T))))
 
 (defun config-directory (&rest app-path)
   (apply #'pathname-utils:subdirectory
