@@ -32,7 +32,9 @@
   ((pointer :initarg :pointer :reader pointer)))
 
 (defmethod name ((monitor monitor))
-  (%glfw:get-monitor-name (pointer monitor)))
+  (handler-case
+      (%glfw:get-monitor-name (pointer monitor))
+    (error () "<UNKNOWN>")))
 
 (defclass context (trial:context)
   ((title :initarg :title :accessor title)
@@ -543,11 +545,14 @@
   (list-video-modes (current-monitor context)))
 
 (defmethod list-video-modes ((monitor monitor))
-  (loop for mode in (cl-glfw3:get-video-modes (pointer monitor))
-        collect (list (getf mode '%CL-GLFW3:WIDTH)
-                      (getf mode '%CL-GLFW3:HEIGHT)
-                      (getf mode '%CL-GLFW3::REFRESH-RATE)
-                      (name monitor))))
+  (cffi:with-foreign-object (count :int)
+    (let ((ptr (cffi:foreign-funcall "glfwGetVideoModes" :pointer (pointer monitor) :pointer count :pointer)))
+      (loop for i from 0 below (cffi:mem-ref count :int)
+            for mode-ptr = (cffi:mem-aptr ptr '(:struct %cl-glfw3:video-mode) i)
+            collect (list (cffi:foreign-slot-value mode-ptr '(:struct %cl-glfw3:video-mode) '%cl-glfw3::width)
+                          (cffi:foreign-slot-value mode-ptr '(:struct %cl-glfw3:video-mode) '%cl-glfw3::height)
+                          (cffi:foreign-slot-value mode-ptr '(:struct %cl-glfw3:video-mode) '%cl-glfw3::refresh-rate)
+                          (name monitor))))))
 
 ;; Runtime support for Wayland and X11
 #+linux
