@@ -14,6 +14,10 @@
   (clear-retained)
   (setf +main+ main))
 
+(defmethod initialize-instance :after ((main main) &key)
+  (when (string= "true" (uiop:getenv "TRIAL_QUIT_AFTER_INIT"))
+    (quit (context main))))
+
 (defmethod finalize ((main main))
   (v:info :trial.main "RAPTURE")
   (when (context main)
