@@ -132,3 +132,11 @@
 
 (defun ui (&optional (scene (trial:scene trial:+main+)))
   (trial:node 'ui scene))
+
+(defmethod (setf alloy:focus) :after (value (text alloy:text-input-component))
+  (case value
+    ((NIL :weak)
+     (trial:clear-retained)
+     (setf trial:+map-key-events+ T))
+    (:strong
+     (setf trial:+map-key-events+ NIL))))
