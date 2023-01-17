@@ -31,14 +31,15 @@
     (cffi:foreign-funcall "SetThreadExecutionState"
                           :uint #x80000003 :int)
     #+darwin
-    (cffi:with-foreign-object (id :uint32)'q
-      (setf (cffi:mem-ref id :uint32) +mac-power-id+)
-      (cffi:foreign-funcall "IOPMAssertionDeclareUserActivity"
-                            :pointer +mac-sleep-reason-name+
-                            :uint 0
-                            :pointer id
-                            :int)
-      (setf +mac-power-id+ (cffi:mem-ref id :uint32)))))
+    (when +mac-sleep-reason-name+
+      (cffi:with-foreign-object (id :uint32)
+        (setf (cffi:mem-ref id :uint32) +mac-power-id+)
+        (cffi:foreign-funcall "IOPMAssertionDeclareUserActivity"
+                              :pointer +mac-sleep-reason-name+
+                              :uint 0
+                              :pointer id
+                              :int)
+        (setf +mac-power-id+ (cffi:mem-ref id :uint32))))))
 
 (defun restore-powersave ()
   (v:info :trial.power "Restoring powersaving.")
