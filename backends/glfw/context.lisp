@@ -396,26 +396,27 @@
 
 (cl-glfw3:def-key-callback ctx-key (window key scancode action modifiers)
   (declare (ignore scancode))
-  (%with-context
-    (case action
-      (:press
-       (v:debug :trial.input "Key pressed: ~a" key)
-       (handle (make-instance 'key-press
-                              :key (glfw-key->key key)
-                              :modifiers modifiers)
-               (handler context)))
-      (:repeat
-       (handle (make-instance 'key-press
-                              :key (glfw-key->key key)
-                              :modifiers modifiers
-                              :repeat T)
-               (handler context)))
-      (:release
-       (v:debug :trial.input "Key released: ~a" key)
-       (handle (make-instance 'key-release
-                              :key (glfw-key->key key)
-                              :modifiers modifiers)
-               (handler context))))))
+  (unless (eql :unknown key)
+    (%with-context
+      (case action
+        (:press
+         (v:debug :trial.input "Key pressed: ~a" key)
+         (handle (make-instance 'key-press
+                                :key (glfw-key->key key)
+                                :modifiers modifiers)
+                 (handler context)))
+        (:repeat
+         (handle (make-instance 'key-press
+                                :key (glfw-key->key key)
+                                :modifiers modifiers
+                                :repeat T)
+                 (handler context)))
+        (:release
+         (v:debug :trial.input "Key released: ~a" key)
+         (handle (make-instance 'key-release
+                                :key (glfw-key->key key)
+                                :modifiers modifiers)
+                 (handler context)))))))
 
 (cffi:defcallback ctx-char :void ((window :pointer) (char :unsigned-int))
   (when (< char #x110000)
