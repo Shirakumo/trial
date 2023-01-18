@@ -746,6 +746,7 @@
   (:export
    #:+main+
    #:main
+   #:username
    #:scene
    #:controller
    #:setup-scene

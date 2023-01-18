@@ -85,6 +85,11 @@
       (steam:free (steam:steamworks))
     (steam:steamworks-not-initialized ())))
 
+(defmethod trial:username ((main main))
+  (if steam::*steamworks*
+      (steam:display-name (steam:interface 'steam:steamfriends T))
+      (call-next-method)))
+
 (defun compute-action-sets ()
   (let ((input (steam:interface 'steam:steaminput T))
         (analog ())
