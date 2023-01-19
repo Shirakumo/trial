@@ -134,11 +134,6 @@
           do (setf (slot-value copy name) (if deep (copy-instance value) value)))
     copy))
 
-(defun executable-directory ()
-  (pathname-utils:to-directory
-   (or (first (uiop:command-line-arguments))
-       *default-pathname-defaults*)))
-
 (defvar *open-in-browser-hook* (constantly NIL))
 (defun open-in-browser (url)
   (or (funcall *open-in-browser-hook* url)
@@ -414,9 +409,7 @@
                                       (*debug-io* . ,*debug-io*))))
 
 (defmacro with-thread ((name) &body body)
-  `(make-thread ,name (lambda ()
-                        (handler-bind ((error #'standalone-error-handler))
-                          ,@body))))
+  `(make-thread ,name (lambda () ,@body)))
 
 (defun wait-for-thread-exit (thread &key (timeout 1) (interval 0.1))
   (loop for i from 0

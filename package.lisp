@@ -1057,7 +1057,6 @@
    #:finalize
    #:gl-property
    #:current-time
-   #:executable-directory
    #:open-in-browser
    #:open-in-file-manager
    #:kw
