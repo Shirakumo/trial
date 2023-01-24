@@ -69,6 +69,7 @@
                         (north:make-signed-data-request client endpoint
                                                         `(("payload" . (,part :content-type "application/octet-stream" :filename "payload")))
                                                         :params `(("file" . ,(princ-to-string file))
+                                                                  ("version" . ,version)
                                                                   ("chunk" . ,(princ-to-string chunk))))))
              (north:make-signed-request client endpoint :post
                                         :params `(("file" . ,(princ-to-string file))
