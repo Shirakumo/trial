@@ -17,7 +17,7 @@
 
 (defmethod print-object ((array vertex-array) stream)
   (print-unreadable-object (array stream :type T :identity T)
-    (format stream "~@[~a~]" (size array))))
+    (format stream "~@[~a~]~:[~; ALLOCATED~]" (size array) (allocated-p array))))
 
 (defmethod dependencies ((array vertex-array))
   (mapcar #'unlist (bindings array)))

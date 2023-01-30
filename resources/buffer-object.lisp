@@ -18,7 +18,7 @@
 
 (defmethod print-object ((buffer buffer-object) stream)
   (print-unreadable-object (buffer stream :type T :identity T)
-    (format stream "~a ~a" (buffer-type buffer) (data-usage buffer))))
+    (format stream "~a ~a~:[~; ALLOCATED~]" (buffer-type buffer) (data-usage buffer) (allocated-p buffer))))
 
 (defun update-buffer-data/ptr (buffer data count &optional (buffer-start 0))
   (let ((buffer-type (buffer-type buffer)))

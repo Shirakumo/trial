@@ -131,7 +131,7 @@
        (format stream "~ax~a" (width texture) (height texture)))
       ((:texture-3d :texture-2d-array :texture-2d-multisample-array)
        (format stream "~ax~ax~a" (width texture) (height texture) (depth texture))))
-    (format stream " ~a" (internal-format texture))))
+    (format stream " ~a~:[~; ALLOCATED~]" (internal-format texture) (allocated-p texture))))
 
 (defmacro with-pixel-data-pointer ((ptr data element-type) &body body)
   (let ((datag (gensym "DATA")))

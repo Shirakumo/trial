@@ -15,7 +15,7 @@
 
 (defmethod print-object ((framebuffer framebuffer) stream)
   (print-unreadable-object (framebuffer stream :type T :identity T)
-    (format stream "~:{~a ~}" (attachments framebuffer))))
+    (format stream "~:{~a ~}~:[~; ALLOCATED~]" (attachments framebuffer) (allocated-p framebuffer))))
 
 (defmethod dependencies ((framebuffer framebuffer))
   (mapcar #'second (attachments framebuffer)))

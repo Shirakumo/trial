@@ -14,7 +14,7 @@
 
 (defmethod print-object ((resource resource) stream)
   (print-unreadable-object (resource stream :type T :identity T)
-    (format stream "~@[~a~]~@[ ~a~]" (generator resource) (name resource))))
+    (format stream "~@[~a~]~@[ ~a~]~:[~; ALLOCATED~]" (generator resource) (name resource) (allocated-p resource))))
 
 (defgeneric allocate (resource))
 (defgeneric deallocate (resource))

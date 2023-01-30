@@ -18,7 +18,7 @@
 
 (defmethod print-object ((shader shader) stream)
   (print-unreadable-object (shader stream :type T :identity T)
-    (format stream "~a" (shader-type shader))))
+    (format stream "~a~:[~; ALLOCATED~]" (shader-type shader) (allocated-p shader))))
 
 (defmethod allocate ((shader shader))
   (let ((source (shader-source shader))
