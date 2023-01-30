@@ -17,15 +17,14 @@
                   "--disable-debugger" "--quit"))))
 
 (defmethod build ((target (eql :linux)))
-  (apply #'run (config :build :linux) (build-args)))
+  #+linux (apply #'run (config :build :linux) (build-args))
+  #+windows (apply #'run "wsl.exe" (config :build :linux) (build-args)))
 
 (defmethod build ((target (eql :windows)))
-  #-windows (apply #'run (config :build :windows) (build-args))
-  #+windows (apply #'run "sbcl.exe" (build-args)))
+  (apply #'run (config :build :windows) (build-args)))
 
 (defmethod build ((target (eql :macos)))
-  #-darwin (apply #'run (config :build :macos) (build-args))
-  #+darwin (apply #'run "sbcl" (build-args)))
+  (apply #'run (config :build :macos) (build-args)))
 
 (defmethod build ((target (eql T)))
   (dolist (target (config :build :targets))
