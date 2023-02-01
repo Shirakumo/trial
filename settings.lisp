@@ -173,9 +173,10 @@
 
 (define-setting-observer framerate :display :target-framerate (value)
   (when +main+
-    (setf (target-frame-time +main+) (typecase value
-                                       (real (/ value))
-                                       (T 0.0)))))
+    (setf (target-frame-time +main+) (float (typecase value
+                                              (real (/ value))
+                                              (T 0.0))
+                                            0d0))))
 
 (define-setting-observer fps-counter :debugging :fps-counter (value)
   (when +main+
