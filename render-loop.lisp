@@ -12,9 +12,9 @@
    (frame-time :initform 0.0d0 :accessor frame-time)
    (target-frame-time :initarg :target-frame-time :initform 0.0d0 :accessor target-frame-time)))
 
-(defmethod initialize-instance :after ((loop render-loop) &key (target-framerate NIL (setting :display :target-framerate)))
-  (setf (target-frame-time loop) (float (typecase value
-                                          (real (/ value))
+(defmethod initialize-instance :after ((loop render-loop) &key (target-framerate (setting :display :target-framerate)))
+  (setf (target-frame-time loop) (float (typecase target-framerate
+                                          (real (/ target-framerate))
                                           (T 0.0))
                                         0d0)))
 
