@@ -91,6 +91,7 @@
                (:file "ssao" :depends-on ("package" "shader-pass" "transforms"))
                (:file "static-vector" :depends-on ("package"))
                (:file "text" :depends-on ("package" "helpers" ("assets" "image")))
+               (:file "tile-layer" :depends-on ("package" "helpers"))
                (:file "toolkit" :depends-on ("package" "conditions"))
                (:file "transforms" :depends-on ("package"))
                (:file "type-info" :depends-on ("package" "toolkit"))
