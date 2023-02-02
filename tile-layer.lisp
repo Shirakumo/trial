@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-shader-entity tile-layer (located-entity sized-entity)
+(define-shader-entity tile-layer (located-entity sized-entity renderable)
   ((vertex-array :initform (// 'trial 'fullscreen-square) :accessor vertex-array)
    (tilemap :accessor tilemap)
    (tileset :initarg :tileset :accessor tileset)
@@ -15,11 +15,14 @@
    (size :initarg :size :initform (vec 1 1) :accessor size))
   (:inhibit-shaders (shader-entity :fragment-shader)))
 
-(defmethod initialize-instance :after ((layer tile-layer) &key pixel-data)
+(defmethod initialize-instance :after ((layer tile-layer) &key tilemap)
   (let* ((size (size layer))
-         (data (or pixel-data
-                   (make-array (floor (* (vx size) (vy size) 2))
-                               :element-type '(unsigned-byte 8)))))
+         (data (etypecase tilemap
+                 (null (make-array (floor (* (vx size) (vy size) 2))
+                                   :element-type '(unsigned-byte 8)))
+                 ((vector (unsigned-byte 8)) tilemap)
+                 (pathname (alexandria:read-file-into-byte-vector tilemap))
+                 (stream (alexandria:read-stream-content-into-byte-vector tilemap)))))
     (setf (bsize layer) (v* size (tile-size layer) .5))
     (setf (tilemap layer) (make-instance 'texture :target :texture-2d
                                                   :width (floor (vx size))

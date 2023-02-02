@@ -1045,6 +1045,17 @@
    #:text
    #:foreground
    #:background)
+  ;; tile-layer.lisp
+  (:export
+   #:tile-layer
+   #:tileset
+   #:tilemap
+   #:tile-size
+   #:visibility
+   #:resize
+   #:size
+   #:tile
+   #:clear)
   ;; toolkit.lisp
   (:export
    #:define-global
