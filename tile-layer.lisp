@@ -8,36 +8,52 @@
 
 (define-shader-entity tile-layer (located-entity sized-entity renderable)
   ((vertex-array :initform (// 'trial 'fullscreen-square) :accessor vertex-array)
-   (tilemap :accessor tilemap)
-   (tileset :initarg :tileset :accessor tileset)
+   (tilemap :initform NIL :accessor tilemap)
+   (tileset :initform NIL :initarg :tileset :accessor tileset)
    (visibility :initform 1.0 :accessor visibility)
-   (tile-size :initarg :tile-size :initform 16 :accessor tile-size)
+   (tile-size :initform (vec 16 16) :accessor tile-size)
    (size :initarg :size :initform (vec 1 1) :accessor size))
   (:inhibit-shaders (shader-entity :fragment-shader)))
 
-(defmethod initialize-instance :after ((layer tile-layer) &key tilemap)
-  (let* ((size (size layer))
-         (data (etypecase tilemap
-                 (null (make-array (floor (* (vx size) (vy size) 2))
-                                   :element-type '(unsigned-byte 8)))
-                 ((vector (unsigned-byte 8)) tilemap)
-                 (pathname (alexandria:read-file-into-byte-vector tilemap))
-                 (stream (alexandria:read-stream-content-into-byte-vector tilemap)))))
-    (setf (bsize layer) (v* size (tile-size layer) .5))
-    (setf (tilemap layer) (make-instance 'texture :target :texture-2d
-                                                  :width (floor (vx size))
-                                                  :height (floor (vy size))
-                                                  :pixel-data data
-                                                  :pixel-type :unsigned-byte
-                                                  :pixel-format :rg-integer
-                                                  :internal-format :rg8ui
-                                                  :min-filter :nearest
-                                                  :mag-filter :nearest))))
+(defmethod initialize-instance :after ((layer tile-layer) &key tilemap (map-name 1) tile-data tile-size)
+  (when tile-size (setf (tile-size layer) tile-size))
+  (cond (tile-data
+         (setf (tilemap layer) (resource tile-data map-name))
+         (register-generation-observer layer tile-data))
+        (T
+         (let* ((size (size layer))
+                (data (etypecase tilemap
+                        (null (make-array (floor (* (vx size) (vy size) 2))
+                                          :element-type '(unsigned-byte 8)))
+                        ((vector (unsigned-byte 8)) tilemap)
+                        (pathname (alexandria:read-file-into-byte-vector tilemap))
+                        (stream (alexandria:read-stream-content-into-byte-vector tilemap)))))
+           (setf (bsize layer) (v* size (tile-size layer) .5))
+           (setf (tilemap layer) (make-instance 'texture :target :texture-2d
+                                                         :width (floor (vx size))
+                                                         :height (floor (vy size))
+                                                         :pixel-data data
+                                                         :pixel-type :unsigned-byte
+                                                         :pixel-format :rg-integer
+                                                         :internal-format :rg8ui
+                                                         :min-filter :nearest
+                                                         :mag-filter :nearest))))))
+
+(defmethod observe-generation ((layer tile-layer) (data tile-data) result)
+  (let ((tileset (tileset (tilemap layer))))
+    (setf (tileset layer) tileset)
+    (setf (tile-size layer) (tile-size tileset))
+    (setf (vx (size layer)) (width (tilemap layer)))
+    (setf (vy (size layer)) (height (tilemap layer)))
+    (setf (bsize layer) (v* (size layer) (tile-size tileset) 0.5))))
 
 (defmethod stage ((layer tile-layer) (area staging-area))
   (stage (vertex-array layer) area)
-  (stage (tilemap layer) area)
-  (stage (tileset layer) area))
+  (when (tilemap layer) (stage (tilemap layer) area))
+  (when (tileset layer) (stage (tileset layer) area)))
+
+(defmethod (setf tile-size) ((number real) (layer tile-layer))
+  (vsetf (tile-size layer) number number))
 
 (defmethod pixel-data ((layer tile-layer))
   (pixel-data (tilemap layer)))
@@ -47,7 +63,7 @@
   (%update-tile-layer layer))
 
 (defmethod resize ((layer tile-layer) w h)
-  (let ((size (vec2 (floor w (tile-size layer)) (floor h (tile-size layer)))))
+  (let ((size (vec2 (floor w (vx (tile-size layer))) (floor h (vy (tile-size layer))))))
     (unless (v= size (size layer))
       (setf (size layer) size))))
 
@@ -76,8 +92,8 @@
   (setf (bsize layer) (v* value (* tile-size 0.5))))
 
 (defmacro %with-layer-xy ((layer location) &body body)
-  `(let ((x (floor (+ (- (vx ,location) (vx (location ,layer))) (vx (bsize ,layer))) (tile-size layer)))
-         (y (floor (+ (- (vy ,location) (vy (location ,layer))) (vy (bsize ,layer))) (tile-size layer))))
+  `(let ((x (floor (+ (- (vx ,location) (vx (location ,layer))) (vx (bsize ,layer))) (vx (tile-size layer))))
+         (y (floor (+ (- (vy ,location) (vy (location ,layer))) (vy (bsize ,layer))) (vy (tile-size layer)))))
      (when (and (< -1.0 x (vx (size ,layer)))
                 (< -1.0 y (vy (size ,layer))))
        ,@body)))
@@ -151,7 +167,7 @@ uniform mat4 view_matrix;
 uniform mat4 model_matrix;
 uniform mat4 projection_matrix;
 uniform vec2 map_size;
-uniform int tile_size = 16;
+uniform vec2 tile_size = vec2(16);
 uniform usampler2D tilemap;
 out vec2 pix_uv;
 out vec2 world_pos;
@@ -169,7 +185,7 @@ void main(){
 uniform usampler2D tilemap;
 uniform sampler2D tileset;
 uniform float visibility = 1.0;
-uniform int tile_size = 16;
+uniform vec2 tile_size = vec2(16);
 in vec2 pix_uv;
 in vec2 world_pos;
 out vec4 color;
@@ -181,7 +197,7 @@ void main(){
 
   // Look up tileset index from tilemap and pixel from tileset.
   uvec2 tile = texelFetch(tilemap, map_xy, 0).rg;
-  ivec2 tile_xy = ivec2(tile)*tile_size+pixel_xy;
+  ivec2 tile_xy = ivec2(tile)*ivec2(tile_size)+pixel_xy;
   color = texelFetch(tileset, tile_xy, 0);
   color.a *= visibility;
 }")

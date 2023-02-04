@@ -21,7 +21,7 @@ This probably doesn't look like anything to you, so let me modify the image a li
 
 Each pixel in the image represents the X and Y offsets of the tile in the tileset that should be rendered at that point, counting from the bottom left. So for instance to select that red square tile, the tilemap would contain a pixel with the data ``1,0``.
 
-Authoring these maps by hand is very tricky as it's so hard to see them. There are two editors you might be able to re-use, at this point. First, the editor provided in "Kandria"(https://github.com/shirakumo/kandria) edits these tilemaps, and second the more primitive web editor for the "Factory Reset"(https://shinmera.github.io/factory-reset/editor/) project does as well. Both editors currently don't allow directly exporting a dat file and it instead needs to be extracted from the outputted level/world zip bundle instead.
+Authoring these maps by hand is very tricky as it's so hard to see them. There are two editors you might be able to re-use, at this point. First, the editor provided in "Kandria"(https://github.com/shirakumo/kandria) edits these tilemaps, and second the "Tiled"(https://www.mapeditor.org) editor's exported JSON format is partially supported through the ``tile-data`` asset.
 
 Regardless, once a map has been created, all you need to do is construct a ``tile-layer`` as appropriate:
 
@@ -34,3 +34,13 @@ Regardless, once a map has been created, all you need to do is construct a ``til
 [ image rendered-tilemap.png ]
 
 The class also provides functions to ``resize`` the map, and to access individual ``tile``s.
+
+For the ``tile-data`` approach, export your map from Tiled as a JSON file and then define your asset and instance as follows:
+
+:: common lisp
+(define-asset (workbench tilemap) tile-data #p"tilemap.json")
+
+(make-instance 'tile-layer :tile-data (asset 'workbench 'tilemap))
+::
+
+You can also pass the ``:map-name`` corresponding to the ``id`` field of one of the layers in the json.

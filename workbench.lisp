@@ -37,12 +37,17 @@
   (when (retained :d)
     (incf (vx (location player)) (* dt +50))))
 
+(define-asset (workbench test) tile-data
+    #p "~/test")
+
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
     (enter (make-instance 'trial::fps-counter) scene)
     (enter (make-instance 'debug-text :text "HELLO and welcome back to VIDEO GAMES") scene)
     (enter (make-instance 'vertex-entity :vertex-array (// 'workbench 'grid)) scene)
-    (enter (make-instance 'player) scene)
-    (enter (make-instance 'following-camera :target (unit 'player scene) :location (vec 0 100 100)) scene)
+    (enter (make-instance 'player :location (vec 0 100 200)) scene)
+    (enter (make-instance 'following-camera :target (unit 'player scene) :location (vec 0 10 100)) scene)
+    (enter (make-instance 'tile-layer :tile-data (asset 'workbench 'test) :map-name 1) scene)
     (enter (make-instance 'render-pass) scene))
   (maybe-reload-scene))
+

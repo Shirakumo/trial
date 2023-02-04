@@ -121,6 +121,13 @@
   ;; assets/static.lisp
   (:export
    #:static)
+  ;; assets/tile-data.lisp
+  (:export
+   #:tileset
+   #:tile-size
+   #:tilemap
+   #:tileset
+   #:tile-data)
   ;; assets/uniform-block.lisp
   (:export
    #:uniform-block)
