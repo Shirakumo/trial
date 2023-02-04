@@ -342,7 +342,9 @@
    #:resource-not-allocated
    #:context-creation-error
    #:resource-depended-on
-   #:shader-compilation-error)
+   #:shader-compilation-error
+   #:initarg-not-supplied
+   #:arg!)
   ;; container.lisp
   (:export
    #:scene-node

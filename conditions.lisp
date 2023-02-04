@@ -34,3 +34,9 @@
 
 (define-simple-condition shader-compilation-error (trial-error)
   (shader log) "Failed to compile ~a:~%  ~a~%~a" shader log (format-with-line-numbers (shader-source (slot-value c 'shader))))
+
+(define-simple-condition initarg-not-supplied (trial-error)
+  (initarg) "The initarg~%  ~s~%is required but was not supplied." initarg)
+
+(defun arg! (argument)
+  (error 'initarg-not-supplied :initarg argument))
