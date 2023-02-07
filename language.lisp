@@ -70,8 +70,11 @@
 (defun load-language (&optional (language (setting :language)) replace)
   (let ((table (if (or replace (null +language-data+))
                    (make-hash-table :test 'eq)
-                   +language-data+)))
-    (setf language (try-find-language language))
+                   +language-data+))
+        (corrected-language (try-find-language language)))
+    (if corrected-language
+        (setf language corrected-language)
+        (error "Could not find any suitable language for ~a" language))
     (when (or replace (null +loaded-language+) (not (equalp +loaded-language+ language)))
       (setf language (string-downcase language))
       (v:info :trial.language "Loading language ~s from ~a" language (language-dir language))
