@@ -21,7 +21,7 @@
 
 (defun try-find-language (language)
   (etypecase language
-    ((eql :system)
+    ((member NIL :system)
      (try-find-language (system-locale:languages)))
     (symbol
      (try-find-language (string-downcase language)))
