@@ -17,7 +17,7 @@
 
 (defun language ()
   (or +loaded-language+
-      (load-language (or (setting :language) :eng))))
+      (load-language :language (or (setting :language) :eng))))
 
 (defun try-find-language (language)
   (etypecase language
@@ -61,8 +61,8 @@
                ,@body))
        (pushnew ',name *language-change-hooks*))))
 
-(defun load-language-file (file table)
-  (with-trial-io-syntax ()
+(defun load-language-file (file table &optional (package *package*))
+  (with-trial-io-syntax (package)
     (with-open-file (stream file)
       (loop for k = (read stream NIL)
             for v = (read stream NIL)
@@ -70,7 +70,7 @@
             do (setf (gethash k table) v))
       table)))
 
-(defun load-language (&optional (language (setting :language)) replace)
+(defun load-language (&key (language (setting :language)) replace (package *package*))
   (let ((table (if (or replace (null +language-data+))
                    (make-hash-table :test 'eq)
                    +language-data+))
@@ -84,7 +84,7 @@
       (let ((files (language-files language)))
         (cond (files
                (dolist (file files)
-                 (load-language-file file table))
+                 (load-language-file file table package))
                (setf (gethash language *languages*) table))
               ((null (gethash language *languages*))
                (error "No language named ~s found." language))))
@@ -94,11 +94,11 @@
         (funcall hook language)))
     language))
 
-(defun save-language (file &optional (language (language)))
+(defun save-language (file &key (language (language)) (package *package*))
   (when +language-data+
     (setf language (string-downcase language))
     (v:info :trial.language "Saving language ~s to ~s" language (language-dir language))
-    (with-trial-io-syntax ()
+    (with-trial-io-syntax (package)
       (let ((order-table (make-hash-table :test 'eq))
             (i 0))
         (with-open-file (stream file
@@ -125,7 +125,7 @@
       (unless identifier "NIL")
       (unless errorp (return-from language-string NIL))
       ;; Try loading again in case things changed.
-      (progn (load-language +loaded-language+ T)
+      (progn (load-language :language +loaded-language+ :replace T)
              (gethash identifier +language-data+))
       (restart-case
           (error "No language string defined for ~s" identifier)
@@ -148,7 +148,7 @@
     (symbol (language-string thing))))
 
 (define-setting-observer load-language :language (value)
-  (load-language value))
+  (load-language :language value))
 
 (defun @format (destination identifier &rest args)
   (format destination "~?" (language-string identifier) args))
