@@ -253,15 +253,19 @@
 (defun get-cursor (cursor context)
   (or (gethash cursor (cursor-cache context))
       (setf (gethash cursor (cursor-cache context))
-            (etypecase cursor
+            (ecase cursor
               ;; TODO: allow custom cursors
-              (null                     (cffi:null-pointer))
-              ((eql :arrow)             (create-standard-cursor #x00036001))
-              ((eql :text)              (create-standard-cursor #x00036002))
-              ((eql :hand)              (create-standard-cursor #x00036004))
-              ((eql :horizontal-resize) (create-standard-cursor #x00036005))
-              ((eql :vertical-resize)   (create-standard-cursor #x00036006))
-              ((eql :crosshair)         (create-standard-cursor #x00036003))))))
+              ((NIL)              (cffi:null-pointer))
+              (:arrow             (create-standard-cursor #x00036001))
+              (:text              (create-standard-cursor #x00036002))
+              (:hand              (create-standard-cursor #x00036004))
+              (:crosshair         (create-standard-cursor #x00036003))
+              (:horizontal-resize (create-standard-cursor #x00036005))
+              (:vertical-resize   (create-standard-cursor #x00036006))
+              (:topleft-bottomright-resize (create-standard-cursor #x00036007))
+              (:bottomleft-topright-resize (create-standard-cursor #x00036008))
+              (:resize            (create-standard-cursor #x00036009))
+              (:disallowed        (create-standard-cursor #x0003600A))))))
 
 (defmethod (setf cursor) (cursor (context context))
   (set-cursor (window context) (get-cursor cursor context))
