@@ -15,6 +15,12 @@
 (defmethod (setf alloy:value) (value (data language-data))
   value)
 
+(defmethod alloy:access ((data language-data) (field (eql 'alloy:value)))
+  (alloy:value data))
+
+(defmethod (setf alloy:access) (value (data language-data) (field (eql 'alloy:value)))
+  value)
+
 (defmethod alloy:refresh ((data language-data))
   (alloy:notify-observers 'alloy:value data (trial:language-string (name data)) data))
 
