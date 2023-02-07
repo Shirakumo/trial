@@ -22,7 +22,10 @@
 (defun try-find-language (language)
   (etypecase language
     ((member NIL :system)
-     (try-find-language (system-locale:languages)))
+     (let ((languages (system-locale:languages)))
+       (if languages
+           (try-find-language languages)
+           (try-find-language "eng"))))
     (symbol
      (try-find-language (string-downcase language)))
     (cons
