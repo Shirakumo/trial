@@ -70,15 +70,18 @@
             do (setf (gethash k table) v))
       table)))
 
+(defvar *recursive-load* NIL)
+
 (defun load-language (&key (language (setting :language)) replace (package *package*))
-  (let ((table (if (or replace (null +language-data+))
+  (let ((table (if (null +language-data+)
                    (make-hash-table :test 'eq)
                    +language-data+))
         (corrected-language (try-find-language language)))
     (if corrected-language
         (setf language corrected-language)
         (error "Could not find any suitable language for ~a" language))
-    (when (or replace (null +loaded-language+) (not (equalp +loaded-language+ language)))
+    (when (and (or replace (null +loaded-language+) (not (equalp +loaded-language+ language)))
+               (not (equalp language *recursive-load*)))
       (setf language (string-downcase language))
       (v:info :trial.language "Loading language ~s from ~a" language (language-dir language))
       (let ((files (language-files language)))
@@ -90,8 +93,9 @@
                (error "No language named ~s found." language))))
       (setf +language-data+ (gethash language *languages*))
       (setf +loaded-language+ language)
-      (dolist (hook *language-change-hooks* table)
-        (funcall hook language)))
+      (let ((*recursive-load* language))
+        (dolist (hook *language-change-hooks* table)
+          (funcall hook language))))
     language))
 
 (defun save-language (file &key (language (language)) (package *package*))
