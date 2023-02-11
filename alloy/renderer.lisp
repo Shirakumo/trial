@@ -181,11 +181,13 @@
   (apply #'simple:icon renderer bounds (simple:request-image renderer path) initargs))
 
 (defmethod simple:request-image ((renderer renderer) (image pathname) &key (filtering :linear) (wrapping :repeat))
-  (trial:generate-resources 'trial:image-loader image
-                            :wrapping (list wrapping wrapping wrapping)
-                            :texture-class 'image
-                            :min-filter filtering
-                            :mag-filter filtering))
+  ;; WARNING: This is leaky.
+  (alloy:allocate
+   (trial:generate-resources 'trial:image-loader image
+                             :wrapping (list wrapping wrapping wrapping)
+                             :texture-class 'image
+                             :min-filter filtering
+                             :mag-filter filtering)))
 
 (defmethod alloy:allocate ((texture trial:texture))
   (trial:allocate texture))

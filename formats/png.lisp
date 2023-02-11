@@ -16,4 +16,5 @@
               (:greyscale :red)
               (:greyscale-alpha :rg)
               (:truecolour :rgb)
-              (:truecolour-alpha :rgba)))))
+              (:truecolour-alpha :rgba)
+              (:indexed-colour :rgb)))))
