@@ -406,7 +406,8 @@
                                       (*trace-output* . ,*trace-output*)
                                       (*standard-input* . ,*standard-input*)
                                       (*query-io* . ,*query-io*)
-                                      (*debug-io* . ,*debug-io*))))
+                                      (*debug-io* . ,*debug-io*)
+                                      (*package* . ,*package*))))
 
 (defmacro with-thread ((name) &body body)
   `(make-thread ,name (lambda () ,@body)))
