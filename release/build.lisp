@@ -35,3 +35,30 @@
     (build target)))
 
 (defmethod build ((target null)))
+
+(defmethod test :around (target)
+  (setf (uiop:getenv "TRIAL_QUIT_AFTER_INIT") "true")
+  (unwind-protect
+       (with-simple-restart (continue "Treat test as successful")
+         (call-next-method))
+    (setf (uiop:getenv "TRIAL_QUIT_AFTER_INIT") "false")))
+
+(defmethod test ((target (eql :linux)))
+  (dolist (file (directory (merge-pathnames "bin/*.run" (asdf:system-source-directory (config :system)))))
+    #+linux (run file)
+    #+windows (run "wsl.exe" file)))
+
+(defmethod test ((target (eql :windows)))
+  (dolist (file (directory (merge-pathnames "bin/*.exe" (asdf:system-source-directory (config :system)))))
+    #+windows (run file)
+    #-windows (run "wine" file)))
+
+(defmethod test ((target (eql T)))
+  (dolist (target (config :build :targets))
+    (test target)))
+
+(defmethod test ((targets cons))
+  (dolist (target targets)
+    (test target)))
+
+(defmethod test ((target null)))
