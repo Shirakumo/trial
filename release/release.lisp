@@ -36,9 +36,11 @@
         (setf (attributes:attributes path) (attributes:encode-attributes attrs))))
     release))
 
-(defun make (&key (build T) (upload T) (bundle T))
+(defun make (&key (build T) (upload T) (bundle T) (test T))
   (deploy:status 0 "Building ~a" (version))
   (build build)
+  (deploy:status 1 "Testing")
+  (test test)
   (deploy:status 1 "Deploying to release directory")
   (let ((release (deploy)))
     (deploy:status 1 "Creating bundles")
