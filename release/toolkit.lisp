@@ -58,12 +58,18 @@
 (defmacro configure (&body config)
   `(set-config (append ',config '(:output ,(or *compile-file-pathname* *load-pathname*)))))
 
+(defun coerce-program-arg (arg)
+  (etypecase arg
+    (string arg)
+    (pathname (pathname-utils:native-namestring arg))
+    (real (princ-to-string arg))))
+
 (defun run (program &rest args)
-  (assert (= 0 (sb-ext:process-exit-code (sb-ext:run-program program args :search T :output *standard-output*)))))
+  (assert (= 0 (sb-ext:process-exit-code (sb-ext:run-program program (mapcar #'coerce-program-arg args) :search T :output *standard-output*)))))
 
 (defun run* (program &rest args)
   (with-output-to-string (out)
-    (assert (= 0 (sb-ext:process-exit-code (sb-ext:run-program program args :search T :output out))))))
+    (assert (= 0 (sb-ext:process-exit-code (sb-ext:run-program program (mapcar #'coerce-program-arg args) :search T :output out))))))
 
 (defun get-password (name &optional field)
   (let ((candidates (cl-ppcre:split "\\n+" (run* "pass" "find" name))))
