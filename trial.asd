@@ -28,6 +28,7 @@
                (:file "array-container" :depends-on ("package" "container"))
                (:file "asset" :depends-on ("package" "toolkit" "resource" "resource-generator"))
                (:file "asset-pool" :depends-on ("package" "asset"))
+               (:file "async" :depends-on ("package" "main"))
                (:file "attributes" :depends-on ("package"))
                (:file "bag" :depends-on ("package" "container"))
                (:file "bvh2" :depends-on ("package" "helpers"))
@@ -164,4 +165,6 @@
                :zpng
                :system-locale
                :language-codes
+               :promise
+               :simple-tasks
                (:feature :windows :com-on)))

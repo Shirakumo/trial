@@ -19,6 +19,7 @@
    (#:gamepad #:org.shirakumo.fraf.gamepad)
    (#:sequences #:org.shirakumo.trivial-extensible-sequences)
    (#:v #:org.shirakumo.verbose)
+   (#:promise #:org.shirakumo.promise)
    #+windows
    (#:com #:org.shirakumo.com-on))
   ;; animation/asset.lisp
@@ -292,6 +293,14 @@
    #:single-resource-asset
    #:multi-resource-asset
    #:file-input-asset)
+  ;; async.lisp
+  (:export
+   #:task-thread
+   #:start
+   #:stop
+   #:task-runner-main
+   #:promise-task
+   #:with-eval-in-task-thread)
   ;; attributes.lisp
   (:export
    #:enable
