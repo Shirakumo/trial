@@ -49,7 +49,8 @@
    (width :initform 1 :accessor width)
    (height :initform 1 :accessor height)
    (cursor :initform NIL :reader cursor)
-   (cursor-cache :initform (make-hash-table :test 'eql) :reader cursor-cache))
+   (cursor-cache :initform (make-hash-table :test 'eql) :reader cursor-cache)
+   (event-queue :initform (make-event-queue) :accessor event-queue))
   (:default-initargs
    :resizable T
    :visible T
@@ -282,10 +283,10 @@
         (cl-glfw3:get-window-attribute :context-version-minor (window context))))
 
 (defmethod clipboard ((context context))
-  (glfw:get-clipboard-string (window context)))
+  (request-event-queue (event-queue context) :get-clipboard))
 
 (defmethod (setf clipboard) ((text string) (context context))
-  (glfw:set-clipboard-string text (window context)))
+  (request-event-queue (event-queue context) :set-clipboard text))
 
 (defmethod cursor-position ((context context))
   (cffi:with-foreign-objects ((x :double) (y :double))
@@ -327,10 +328,17 @@
              (trial:rename-thread "input-loop")
              (v:debug :trial.backend.glfw "Entering input loop")
              (unwind-protect
-                  (loop with window = (window (trial:context main))
-                        until (cl-glfw3:window-should-close-p window)
-                        do (wait-events-timeout 0.005d0)
-                           (poll-input main))
+                  (let* ((context (trial:context main))
+                         (window (window context)))
+                    (flet ((handler (request arg)
+                             (ecase request
+                               (:get-clipboard (glfw:get-clipboard-string window))
+                               (:set-clipboard (glfw:set-clipboard-string arg window)))))
+                      (declare (dynamic-extent #'handler))
+                      (loop until (cl-glfw3:window-should-close-p window)
+                            do (wait-events-timeout 0.005d0)
+                               (poll-input main)
+                               (handle-event-queue (event-queue context) #'handler))))
                (v:debug :trial.backend.glfw "Cleaning up")
                (unwind-protect (finalize main)
                  (%glfw:terminate))))))
@@ -479,6 +487,8 @@
     (:disconnected
      (loop for context being the hash-values of *window-table*
            do (setf (monitors context) (remove monitor (monitors context) :test #'cffi:pointer-eq :key #'pointer))))))
+
+
 
 (defun glfw-button->button (button)
   (case button

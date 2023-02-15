@@ -16,8 +16,10 @@
   :source-control (:git "https://github.com/Shirakumo/trial.git")
   :serial T
   :components ((:file "package")
+               (:file "queue")
                (:file "context"))
   :depends-on (:cl-glfw3
+               :atomics
                :trial
                :trivial-main-thread
                :trivial-garbage))
