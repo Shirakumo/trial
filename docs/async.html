@@ -1,0 +1,37 @@
+<article><style>article{
+    max-width: 800px;
+    font-size: 12pt;
+    font-family: sans-serif;
+    margin: 3em auto;
+}
+
+article h1{
+    text-align: center;
+    font-size: 2em;
+}
+
+article img{
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+article blockquote{
+    border-left: 0.2em solid gray;
+    margin-left: 1em;
+    padding-left: 1em;
+}
+
+article figcaption{
+    padding: 0.2em 1em;
+    background: #E0E0E0;
+}
+
+article code{
+    background: #F0F0F0;
+    padding: 0 0.1em;
+}
+
+article .code-block{
+    padding: 0.1em 0.5em;
+    overflow-x: auto;
+}</style><h1 id="asynchronicity and threading">Asynchronicity and Threading</h1><p>By default Trial will run two threads: the main thread, which is initiated via <code>launch-with-context</code> and controlled by the context, and the separate render-thread, initiated by the <code>render-loop</code>. These threads are kept separate so that the main thread can always respond to window events and inputs and schedule them up as fast as possible, preventing the application from appearing as locked up even if the render thread might be busy for a spell, such as with a loading operation.</p><p>However, this still means that by default, for all intents and purposes, your game will run single-threaded, with all steps happening on the render thread. This is fine for most things, but especially long-running operations like network requests or long saves and loads could cause stutters or hangups in the UI. In this case you may want to keep a separate back thread to perform such long-running operations.</p><p>Trial offers a very simple system based on the <a class="external-link" href="https://shinmera.github.io/simple-tasks">simple-tasks</a> and <a class="external-link" href="https://shinmera.github.io/promise">promise</a> libraries. Simply have your <code>main</code> class inherit from <code>task-runner-main</code>, and then schedule tasks on the back thread via <code>with-eval-in-task-thread</code>. You can also use <code>simple-tasks:schedule-task</code> with a function object and the <code>main</code> instance.</p><p>Both will return a <code>promise</code> object so that you can chain the operation and keep track of the result value or failure state. See the promise library above for more information on how to use the promises.</p><p>Some operations will also require the reverse: running stuff in the render loop. You can do this with <code>with-eval-in-render-loop</code>. This macro can also be very useful for REPL interaction while the game is running, as then you can simple compile a form like that in, and have it run synchronously on the render thread, avoiding issues with asynchronous resource interaction.</p></article>
