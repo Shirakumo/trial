@@ -161,7 +161,7 @@
                :nibbles
                :form-fiddle
                :lambda-fiddle
-               :jsown
+               :com.inuoe.jzon
                :zpng
                :system-locale
                :language-codes

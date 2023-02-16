@@ -42,11 +42,11 @@
           (list x y (getf tileset :tileset))))))
 
 (defun decode-tiled-layer (data tilesets asset)
-  (let* ((width (jsown:val data "width"))
-         (height (jsown:val data "height"))
+  (let* ((width (gethash "width"  data))
+         (height (gethash "height"  data))
          (pixel-data (make-array (* width height 2) :element-type '(unsigned-byte 8) :initial-element 0))
          (tileset NIL))
-    (loop for gid in (jsown:val data "data")
+    (loop for gid in (gethash "data"  data)
           for i from 0
           do (destructuring-bind (x y new-tileset) (decode-tiled-gid gid tilesets)
                (when new-tileset
@@ -56,25 +56,25 @@
                  (setf (aref pixel-data (+ 0 (* 2 i))) x)
                  (setf (aref pixel-data (+ 1 (* 2 i))) (- (floor (height tileset) (vy (tile-size tileset))) 1 y)))))
     (flip-image-vertically pixel-data width height 2)
-    (ensure-instance (resource asset (jsown:val data "id")) 'tilemap
+    (ensure-instance (resource asset (gethash "id"  data)) 'tilemap
                      :width width
                      :height height
                      :pixel-data pixel-data
                      :tileset tileset)))
 
 (defun decode-tiled-tileset (data path asset)
-  (list :tileset (generate-resources 'image-loader (merge-pathnames (jsown:val data "image") path)
-                                     :resource (resource asset (jsown:val data "name"))
+  (list :tileset (generate-resources 'image-loader (merge-pathnames (gethash "image"  data) path)
+                                     :resource (resource asset (gethash "name"  data))
                                      :texture-class 'tileset
-                                     :width (jsown:val data "imagewidth")
-                                     :height (jsown:val data "imageheight")
-                                     :tile-size (vec (jsown:val data "tileheight")
-                                                     (jsown:val data "tilewidth")))
-        :first-id (jsown:val data "firstgid")
-        :columns (jsown:val data "columns")))
+                                     :width (gethash "imagewidth"  data)
+                                     :height (gethash "imageheight"  data)
+                                     :tile-size (vec (gethash "tileheight"  data)
+                                                     (gethash "tilewidth"  data)))
+        :first-id (gethash "firstgid"  data)
+        :columns (gethash "columns"  data)))
 
 (defmethod generate-resources ((tile tile-data) (path pathname) &key)
-  (let* ((data (jsown:parse (alexandria:read-file-into-string path)))
-         (tilesets (map 'list (lambda (f) (decode-tiled-tileset f path tile)) (jsown:val data "tilesets"))))
-    (map NIL (lambda (f) (decode-tiled-layer f tilesets tile)) (jsown:val data "layers"))
+  (let* ((data (com.inuoe.jzon:parse path))
+         (tilesets (map 'list (lambda (f) (decode-tiled-tileset f path tile)) (gethash "tilesets"  data))))
+    (map NIL (lambda (f) (decode-tiled-layer f tilesets tile)) (gethash "layers"  data))
     (list-resources tile)))
