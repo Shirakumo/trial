@@ -51,6 +51,10 @@
   :device (trial:device ev)
   :button (trial:button ev))
 
+(define-event-translator trial:file-drop-event alloy:drop-event
+  :location (vec->point (trial:pos ev))
+  :paths (trial:paths ev))
+
 (defmethod trial:handle ((ev trial:text-entered) (bridge event-bridge))
   (when (trial:replace-p ev)
     (alloy:handle (make-instance 'alloy:reset-event) bridge))

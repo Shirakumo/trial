@@ -27,6 +27,9 @@
   (cursor :pointer))
 (cffi:defcfun (destroy-cursor "glfwDestroyCursor") :void
   (cursor :pointer))
+(cffi:defcfun (set-drop-callback "glfwSetDropCallback") :void
+  (window :pointer)
+  (callback :pointer))
 
 (defclass monitor (trial:monitor)
   ((pointer :initarg :pointer :reader pointer)))
@@ -174,7 +177,8 @@
           (cl-glfw3:set-char-callback 'ctx-char window)
           (cl-glfw3:set-mouse-button-callback 'ctx-button window)
           (cl-glfw3:set-cursor-position-callback 'ctx-pos window)
-          (cl-glfw3:set-scroll-callback 'ctx-scroll window))))))
+          (cl-glfw3:set-scroll-callback 'ctx-scroll window)
+          (set-drop-callback window (cffi:callback ctx-drop)))))))
 
 (defmethod destroy-context ((context context))
   (loop for v being the hash-values of (cursor-cache context)
@@ -488,7 +492,12 @@
      (loop for context being the hash-values of *window-table*
            do (setf (monitors context) (remove monitor (monitors context) :test #'cffi:pointer-eq :key #'pointer))))))
 
-
+(cffi:defcallback ctx-drop :void ((window :pointer) (count :int) (paths :pointer))
+  (%with-context
+    (let ((paths (loop for i from 0 below count
+                       for path = (cffi:mem-aref paths :pointer i)
+                       collect (cffi:foreign-string-to-lisp path))))
+      (handle (make-event 'file-drop-event :paths paths :pos (mouse-pos context)) (handler context)))))
 
 (defun glfw-button->button (button)
   (case button

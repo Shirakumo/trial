@@ -695,6 +695,8 @@
    #:delta
    #:mouse-move
    #:old-pos
+   #:file-drop-event
+   #:paths
    #:gamepad-event
    #:device
    #:gamepad-attach

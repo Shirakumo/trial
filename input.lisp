@@ -86,6 +86,9 @@
   (print-unreadable-object (event stream :type T)
     (format stream "~a => ~a" (old-pos event) (pos event))))
 
+(defclass file-drop-event (mouse-event)
+  ((paths :initarg :paths :reader paths)))
+
 (defclass gamepad-event (input-event)
   ((device :initarg :device :reader device))
   (:default-initargs
