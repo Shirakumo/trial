@@ -1224,8 +1224,9 @@
         #:org.shirakumo.flare.quaternion
         #:org.shirakumo.flare.transform))
 
-(do-symbols (symb '#:cl+trial)
-  (export (list symb) '#:cl+trial))
+(let ((symbols ()))
+  (do-symbols (symb '#:cl+trial) (push symb symbols))
+  (export symbols '#:cl+trial))
 
 (defpackage #:trial-user
   (:nicknames #:org.shirakumo.fraf.trial.user)
