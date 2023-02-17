@@ -22,7 +22,8 @@
 (defmethod deallocate-cache ((renderer renderer))
   (loop with cache = (image-cache renderer)
         for path being the hash-keys of cache using (hash-value object)
-        do (trial:deallocate object)
+        do (when (trial:allocated-p object)
+             (trial:deallocate object))
            (remhash path (image-cache renderer))))
 
 (defmethod alloy:deallocate :after ((renderer renderer))

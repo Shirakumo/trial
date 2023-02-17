@@ -497,7 +497,8 @@
     (let ((paths (loop for i from 0 below count
                        for ptr = (cffi:mem-aref paths :pointer i)
                        for string = (cffi:foreign-string-to-lisp ptr)
-                       for path = (ignore-errors (pathname-utils:parse-native-namestring string :junk-allowed T))
+                       for path = (handler-case (pathname-utils:parse-native-namestring string :junk-allowed T)
+                                    (error (e) (v:warn :trial.glfw "Failed to parse drop path: ~a" string)))
                        when path collect path)))
       (when paths
         (handle (make-event 'file-drop-event :paths paths :pos (mouse-pos context)) (handler context))))))
