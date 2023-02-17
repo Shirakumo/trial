@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial.alloy)
 
 (defclass renderer (org.shirakumo.alloy.renderers.opengl.msdf:renderer trial:renderable trial:resource)
-  ())
+  ((image-cache :initform (make-hash-table :test 'equal) :reader image-cache)))
 
 (defmethod org.shirakumo.alloy.renderers.opengl.msdf:fontcache-directory ((renderer renderer))
   (if (deploy:deployed-p)
@@ -18,6 +18,15 @@
   (alloy:px-size (trial:width trial:*context*) (trial:height trial:*context*)))
 
 (defmethod alloy:allocate ((renderer renderer)))
+
+(defmethod deallocate-cache ((renderer renderer))
+  (loop with cache = (image-cache renderer)
+        for path being the hash-keys of cache using (hash-value object)
+        do (trial:deallocate object)
+           (remhash path (image-cache renderer))))
+
+(defmethod alloy:deallocate :after ((renderer renderer))
+  (deallocate-cache renderer))
 
 (defmethod trial:stage :before ((renderer renderer) (area trial:staging-area))
   ;; FIXME: This is BAD, but Alloy gives us no way of generating the resource stubs.
@@ -180,14 +189,20 @@
 (defmethod simple:icon ((renderer renderer) bounds (path pathname) &rest initargs)
   (apply #'simple:icon renderer bounds (simple:request-image renderer path) initargs))
 
-(defmethod simple:request-image ((renderer renderer) (image pathname) &key (filtering :linear) (wrapping :repeat))
-  ;; WARNING: This is leaky.
-  (alloy:allocate
-   (trial:generate-resources 'trial:image-loader image
-                             :wrapping (list wrapping wrapping wrapping)
-                             :texture-class 'image
-                             :min-filter filtering
-                             :mag-filter filtering)))
+(defmethod simple:request-image ((renderer renderer) (path pathname) &key (filtering :linear) (wrapping :repeat))
+  (let ((image (gethash path (image-cache renderer))))
+    (unless image
+      (setf image (trial:generate-resources 'trial:image-loader path
+                                            :wrapping (list wrapping wrapping wrapping)
+                                            :texture-class 'image
+                                            :min-filter filtering
+                                            :mag-filter filtering))
+      (setf (gethash path (image-cache renderer)) image)
+      (trial:allocate image))
+    image))
+
+(defmethod simple:request-image ((renderer renderer) (texture trial:texture) &key)
+  texture)
 
 (defmethod alloy:allocate ((texture trial:texture))
   (trial:allocate texture))

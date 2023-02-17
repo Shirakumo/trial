@@ -102,6 +102,11 @@
     ;; Now perform Tarjan, which happens to be "stable-sorting".
     (dependency-sort-loads area sorted)))
 
+(defmethod deallocate ((area staging-area))
+  (loop for object being the hash-keys of (staged area)
+        do (deallocate object)
+           (remhash object area)))
+
 (defclass loader ()
   ((loaded :initform (make-hash-table :test 'eq) :reader loaded)))
 
