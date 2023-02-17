@@ -363,7 +363,7 @@
         (unless (or (= 0 w) (= 0 h))
           (setf (width context) w)
           (setf (height context) h)
-          (handle (make-instance 'resize :width w :height h) (handler context)))))))
+          (handle (make-event 'resize :width w :height h) (handler context)))))))
 
 (defmacro %with-context (&body body)
   `(let ((context (gethash (cffi:pointer-address window) *window-table*)))
@@ -387,13 +387,13 @@
        (when (and (< 0 w) (< 0 h))
          (setf (width context) w)
          (setf (height context) h)
-         (handle (make-instance 'resize :width w :height h) (handler context)))))))
+         (handle (make-event 'resize :width w :height h) (handler context)))))))
 
 (cl-glfw3:def-window-focus-callback ctx-focus (window focusedp)
   (%with-context
     (v:info :trial.backend.glfw "Window has ~:[lost~;gained~] focus" focusedp)
     (when focusedp (refresh-window-size context))
-    (handle (make-instance (if focusedp 'gain-focus 'lose-focus))
+    (handle (if focusedp (make-event 'gain-focus) (make-event 'lose-focus))
             (handler context))))
 
 (cl-glfw3:def-window-iconify-callback ctx-iconify (window iconifiedp)
@@ -403,7 +403,7 @@
           (and (not iconifiedp)
                (cl-glfw3:get-window-attribute :visible (window context))))
     (unless iconifiedp (refresh-window-size context))
-    (handle (make-instance (if iconifiedp 'window-hidden 'window-shown))
+    (handle (if iconifiedp (make-event 'window-hidden) (make-event 'window-shown))
             (handler context))))
 
 (cl-glfw3:def-key-callback ctx-key (window key scancode action modifiers)
@@ -413,19 +413,19 @@
       (case action
         (:press
          (v:debug :trial.input "Key pressed: ~a" key)
-         (handle (make-instance 'key-press
+         (handle (make-event 'key-press
                                 :key (glfw-key->key key)
                                 :modifiers modifiers)
                  (handler context)))
         (:repeat
-         (handle (make-instance 'key-press
+         (handle (make-event 'key-press
                                 :key (glfw-key->key key)
                                 :modifiers modifiers
                                 :repeat T)
                  (handler context)))
         (:release
          (v:debug :trial.input "Key released: ~a" key)
-         (handle (make-instance 'key-release
+         (handle (make-event 'key-release
                                 :key (glfw-key->key key)
                                 :modifiers modifiers)
                  (handler context)))))))
@@ -434,7 +434,7 @@
   (when (< char #x110000)
     (let ((char (code-char char)))
       (%with-context
-        (handle (make-instance 'text-entered :text (string char))
+        (handle (make-event 'text-entered :text (string char))
                 (handler context))))))
 
 (cl-glfw3:def-mouse-button-callback ctx-button (window button action modifiers)
@@ -443,13 +443,13 @@
     (case action
       (:press
        (v:debug :trial.input "Mouse pressed: ~a" (glfw-button->button button))
-       (handle (make-instance 'mouse-press
+       (handle (make-event 'mouse-press
                               :pos (mouse-pos context)
                               :button (glfw-button->button button))
                (handler context)))
       (:release
        (v:debug :trial.input "Mouse released: ~a" (glfw-button->button button))
-       (handle (make-instance 'mouse-release
+       (handle (make-event 'mouse-release
                               :pos (mouse-pos context)
                               :button (glfw-button->button button))
                (handler context))))))
@@ -457,7 +457,7 @@
 (cl-glfw3:def-scroll-callback ctx-scroll (window x y)
   (%with-context
     (v:debug :trial.input "Mouse wheel: ~a ~a" x y)
-    (handle (make-instance 'mouse-scroll
+    (handle (make-event 'mouse-scroll
                            :pos (mouse-pos context)
                            :delta y)
             (handler context))))
@@ -473,7 +473,7 @@
         (setf y-scale (cffi:mem-ref y :float)))
       (let ((current (vec (* x-scale x)
                           (* y-scale (- (second (cl-glfw3:get-window-size window)) y)))))
-        (handle (make-instance 'mouse-move
+        (handle (make-event 'mouse-move
                                :pos current
                                :old-pos (mouse-pos context))
                 (handler context))
