@@ -495,9 +495,12 @@
 (cffi:defcallback ctx-drop :void ((window :pointer) (count :int) (paths :pointer))
   (%with-context
     (let ((paths (loop for i from 0 below count
-                       for path = (cffi:mem-aref paths :pointer i)
-                       collect (cffi:foreign-string-to-lisp path))))
-      (handle (make-event 'file-drop-event :paths paths :pos (mouse-pos context)) (handler context)))))
+                       for ptr = (cffi:mem-aref paths :pointer i)
+                       for string = (cffi:foreign-string-to-lisp ptr)
+                       for path = (ignore-errors (pathname-utils:parse-native-namestring string :junk-allowed T))
+                       when path collect path)))
+      (when paths
+        (handle (make-event 'file-drop-event :paths paths :pos (mouse-pos context)) (handler context))))))
 
 (defun glfw-button->button (button)
   (case button

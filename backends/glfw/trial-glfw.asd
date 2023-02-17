@@ -21,5 +21,6 @@
   :depends-on (:cl-glfw3
                :atomics
                :trial
+               :pathname-utils
                :trivial-main-thread
                :trivial-garbage))
