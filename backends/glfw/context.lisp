@@ -520,11 +520,16 @@
     (:grave-accent :section)
     (T key)))
 
+(defun key->glfw-key (key)
+  (case key
+    (:section :grave-accent)
+    (T key)))
+
 (defmethod local-key-string ((context context) (scancode integer))
   (get-key-name :unknown scancode))
 
 (defmethod local-key-string ((context context) (key symbol))
-  (get-key-name key 0))
+  (get-key-name (key->glfw-key key) 0))
 
 (defmethod current-monitor ((context context))
   (let* ((monitors (glfw:get-monitors))
