@@ -61,9 +61,8 @@
 
 (defvar *capture-header* "TRIAL-CAPTURE")
 
-(defclass capture (entity listener)
-  ((name :initform 'capture)
-   (capture-stream :initform NIL :accessor capture-stream)
+(defclass capture ()
+  ((capture-stream :initform NIL :accessor capture-stream)
    (file :initarg :file :initform (capture-pathname) :accessor file)
    (fc :initform NIL :accessor fc)))
 
@@ -111,20 +110,23 @@
       (funcall (serialize-info-writer struct) event stream))))
 
 (defmethod start-capture ((scene scene) &optional (file (capture-pathname)))
-  (register (start (make-instance 'capture :file file)) scene))
+  (push (start (make-instance 'capture :file file))
+        (handlers (node :controller scene))))
 
 (defmethod start-capture ((scene (eql T)) &optional (file (capture-pathname)))
   (start-capture (scene +main+) file))
 
 (defmethod stop-capture ((scene scene))
-  (stop (deregister (unit 'capture scene) scene)))
+  (let* ((controller (node :controller scene))
+         (capture (find 'capture (handlers controller) :key #'type-of)))
+    (setf (handlers controller) (remove capture (handlers controller)))
+    (stop capture)))
 
 (defmethod stop-capture ((scene (eql T)))
   (stop-capture (scene +main+)))
 
-(defclass replay (unit listener)
-  ((name :initform 'replay)
-   (file :initarg :file :accessor file)
+(defclass replay ()
+  ((file :initarg :file :accessor file)
    (capture-stream :initform NIL :accessor capture-stream)
    (buffer :initform NIL :accessor buffer)
    (duration :initform NIL :accessor duration)
@@ -149,14 +151,15 @@
     (setf (capture-stream replay) NIL))
   replay)
 
+(defmethod handle ((ev event) (replay replay)))
+
 (defmethod handle ((ev tick) (replay replay))
   (let ((fc (fc replay)))
     (incf (car fc))
     (when (= (duration replay) (car fc))
       (v:info :trial.capture "Capture replay completed.")
       (setf (cdr fc) most-positive-fixnum)
-      (stop replay)
-      (deregister replay (scene +main+)))
+      (stop-replay (scene +main+)))
     (when (< (cdr fc) (car fc))
       (let ((stream (capture-stream replay)))
         (loop for object = (funcall (serialize-info-reader (gethash (read-byte stream) +type-serialize-info+)) stream)
@@ -168,13 +171,17 @@
                     (handle object +main+))))))))
 
 (defmethod start-replay (file (scene scene))
-  (register (start (make-instance 'replay :file file)) scene))
+  (push (start (make-instance 'replay :file file))
+        (handlers (node :controller scene))))
 
 (defmethod start-replay (file (scene (eql T)))
   (start-replay file (scene +main+)))
 
 (defmethod stop-replay ((scene scene))
-  (stop (deregister (unit 'replay scene) scene)))
+  (let* ((controller (node :controller scene))
+         (replay (find 'replay (handlers controller) :key #'type-of)))
+    (setf (handlers controller) (remove replay (handlers controller)))
+    (stop replay)))
 
 (defmethod stop-replay ((scene (eql T)))
   (stop-replay (scene +main+)))

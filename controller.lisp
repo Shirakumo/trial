@@ -15,7 +15,8 @@
 (define-action toggle-overlay (system-action))
 
 (defclass controller (entity listener)
-  ((display :initform NIL :initarg :display :accessor display))
+  ((display :initform NIL :initarg :display :accessor display)
+   (handlers :initform NIL :accessor handlers))
   (:default-initargs
    :name :controller))
 
@@ -23,6 +24,8 @@
   (quit *context*))
 
 (defmethod handle ((ev event) (controller controller))
+  (dolist (handler (handlers controller))
+    (handle ev handler))
   (map-event ev (scene +main+)))
 
 (defmethod handle ((ev lose-focus) (controller controller))
