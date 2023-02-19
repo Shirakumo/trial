@@ -61,7 +61,7 @@
 
 (defvar *capture-header* "TRIAL-CAPTURE")
 
-(defclass capture (unit listener)
+(defclass capture (entity listener)
   ((name :initform 'capture)
    (capture-stream :initform NIL :accessor capture-stream)
    (file :initarg :file :initform (capture-pathname) :accessor file)

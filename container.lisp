@@ -50,9 +50,11 @@
 (defmethod contains-p ((node scene-node) (container container))
   (eq (container node) container))
 
-(defmethod register ((node scene-node) (null null)))
+(defmethod register ((node scene-node) (null null))
+  node)
 
-(defmethod deregister ((node scene-node) (null null)))
+(defmethod deregister ((node scene-node) (null null))
+  node)
 
 (defmethod register ((node scene-node) (container container))
   (register node (container container)))

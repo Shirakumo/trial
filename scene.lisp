@@ -24,13 +24,15 @@
 
 (defmethod register ((entity entity) (scene scene))
   (when (name entity)
-    (setf (gethash (name entity) (name-map scene)) entity)))
+    (setf (gethash (name entity) (name-map scene)) entity))
+  entity)
 
 (defmethod register :after ((listener listener) (scene scene))
   (add-listener listener scene))
 
 (defmethod deregister ((entity entity) (scene scene))
-  (remhash (name entity) (name-map scene)))
+  (remhash (name entity) (name-map scene))
+  entity)
 
 (defmethod deregister :after ((listener listener) (scene scene))
   (remove-listener listener scene))
