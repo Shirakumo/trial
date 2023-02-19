@@ -126,8 +126,7 @@
     (v:info :trial.context "Recreated context successfully.")
     (make-current context)
     (context-note-debug-info context)
-    (cache-gl-extensions)
-    (show context)))
+    (cache-gl-extensions)))
 
 (defmethod current-p ((context context) &optional (thread (bt:current-thread)))
   (eql thread (current-thread context)))
