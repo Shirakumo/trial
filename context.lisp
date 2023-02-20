@@ -189,21 +189,12 @@
 (defmethod list-video-modes ((context context))
   (list-video-modes (current-monitor context)))
 
-(defclass resize (event)
-  ((width :initarg :width :reader width)
-   (height :initarg :height :reader height)))
-
-(defclass gain-focus (event)
-  ())
-
-(defclass lose-focus (event)
-  ())
-
-(defclass window-hidden (event)
-  ())
-
-(defclass window-shown (event)
-  ())
+(define-event resize () width height)
+(define-event gain-focus ())
+(define-event lose-focus ())
+(define-event window-hidden ())
+(define-event window-shown ())
+(define-event window-close ())
 
 (defmethod describe-object :after ((context context) stream)
   (context-info context stream))

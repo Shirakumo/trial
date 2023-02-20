@@ -179,6 +179,7 @@
           (cl-glfw3:set-mouse-button-callback 'ctx-button window)
           (cl-glfw3:set-cursor-position-callback 'ctx-pos window)
           (cl-glfw3:set-scroll-callback 'ctx-scroll window)
+          (cl-glfw3:set-window-close-callback 'ctx-close window)
           (set-drop-callback window (cffi:callback ctx-drop)))))))
 
 (defmethod destroy-context ((context context))
@@ -492,6 +493,11 @@
     (:disconnected
      (loop for context being the hash-values of *window-table*
            do (setf (monitors context) (remove monitor (monitors context) :test #'cffi:pointer-eq :key #'pointer))))))
+
+(cl-glfw3:def-window-close-callback ctx-close (window)
+  (glfw:set-window-should-close window NIL)
+  (%with-context
+    (handle (make-event 'window-close) (handler context))))
 
 (cffi:defcallback ctx-drop :void ((window :pointer) (count :int) (paths :pointer))
   (%with-context

@@ -71,6 +71,9 @@
     (gamepad-press
      (setf +input-source+ (device event)))))
 
+(defmethod handle ((window window-close) (main main))
+  (quit *context*))
+
 (defmethod update ((main main) tt dt fc)
   (issue (scene main) 'tick :tt tt :dt dt :fc fc)
   (process (scene main)))

@@ -429,6 +429,7 @@
    #:lose-focus
    #:window-hidden
    #:window-shown
+   #:window-close
    #:context-info)
   ;; controller.lisp
   (:export
