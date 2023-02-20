@@ -475,6 +475,19 @@
       (:time (format NIL "~2,'0d:~2,'0d:~2,'0d" h m s))
       (:clock (format NIL "~2,'0d:~2,'0d" h m)))))
 
+(defgeneric descriptor (object))
+
+(defmethod descriptor (object)
+  (format NIL "~a@~4,'0x" (type-of object)
+          #-sbcl (sxhash object)
+          #+sbcl (sb-kernel:get-lisp-obj-address object)))
+
+(defmethod descriptor ((number number))
+  (format NIL "~a" number))
+
+(defmethod descriptor ((string string))
+  (format NIL "~s" string))
+
 (defun simplify (array)
   (if (typep array 'simple-array)
       array

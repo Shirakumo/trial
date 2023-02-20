@@ -1126,6 +1126,7 @@
    #:list-subclasses
    #:list-leaf-classes
    #:format-timestring
+   #:descriptor
    #:ensure-instance
    #:type-prototype
    #:maybe-finalize-inheritance

@@ -104,6 +104,11 @@
         (format stream "~s" (name entity)))
       (call-next-method)))
 
+(defmethod descriptor ((entity entity))
+  (if (name entity)
+      (prin1-to-string (name entity))
+      (call-next-method)))
+
 (defmethod (setf name) :around (name (entity entity))
   (unless (eq name (name entity))
     (let ((scene (scene entity)))
