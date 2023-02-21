@@ -692,6 +692,7 @@
    #:mouse-button-event
    #:mouse-press
    #:mouse-release
+   #:mouse-double-click
    #:mouse-scroll
    #:delta
    #:mouse-move

@@ -39,11 +39,17 @@
       (%glfw:get-monitor-name (pointer monitor))
     (error () "<UNKNOWN>")))
 
+(defstruct last-click
+  (button NIL :type symbol)
+  (time 0 :type (unsigned-byte 64))
+  (pos (vec 0 0) :type vec2))
+
 (defclass context (trial:context)
   ((title :initarg :title :accessor title)
    (profile :initarg :profile :initform NIL :reader profile)
    (cursor-visible :initform T :accessor cursor-visible)
    (mouse-pos :initform (vec 0 0) :accessor mouse-pos)
+   (last-click :initform (make-last-click) :accessor last-click)
    (initargs :initform NIL :accessor initargs)
    (visible-p :initform T :accessor visible-p)
    (window :initform NIL :accessor window)
@@ -446,19 +452,27 @@
 (cl-glfw3:def-mouse-button-callback ctx-button (window button action modifiers)
   (declare (ignore modifiers))
   (%with-context
-    (case action
-      (:press
-       (v:debug :trial.input "Mouse pressed: ~a" (glfw-button->button button))
-       (handle (make-event 'mouse-press
-                              :pos (mouse-pos context)
-                              :button (glfw-button->button button))
-               (handler context)))
-      (:release
-       (v:debug :trial.input "Mouse released: ~a" (glfw-button->button button))
-       (handle (make-event 'mouse-release
-                              :pos (mouse-pos context)
-                              :button (glfw-button->button button))
-               (handler context))))))
+    (let ((pos (mouse-pos context))
+          (button (glfw-button->button button)))
+      (case action
+        (:press
+         (v:debug :trial.input "Mouse pressed: ~a" button)
+         (handle (make-event 'mouse-press :pos pos :button button)
+                 (handler context))
+         (let* ((click (last-click context))
+                (time (get-internal-real-time))
+                (diff (/ (- time (last-click-time click)) internal-time-units-per-second)))
+           (when (and (< diff 0.5) (eql (last-click-button click) button) (v= pos (last-click-pos click)))
+             (v:debug :trial.input "Double click")
+             (handle (make-event 'mouse-double-click :pos pos :button button)
+                     (handler context)))
+           (setf (last-click-button click) button)
+           (setf (last-click-time click) time)
+           (v<- (last-click-pos click) pos)))
+        (:release
+         (v:debug :trial.input "Mouse released: ~a" button)
+         (handle (make-event 'mouse-release :pos pos :button button)
+                 (handler context)))))))
 
 (cl-glfw3:def-scroll-callback ctx-scroll (window x y)
   (%with-context
