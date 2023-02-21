@@ -39,8 +39,16 @@
 (defmethod test :around (target)
   (setf (uiop:getenv "TRIAL_QUIT_AFTER_INIT") "true")
   (unwind-protect
-       (with-simple-restart (continue "Treat test as successful")
-         (call-next-method))
+       (restart-case (call-next-method)
+         (continue ()
+           :report "Treat test as successful")
+         (retry ()
+           :report "Retry the test"
+           (test target))
+         (rebuild ()
+           :report "Rebuild and retry"
+           (build target)
+           (test target)))
     (setf (uiop:getenv "TRIAL_QUIT_AFTER_INIT") "false")))
 
 (defmethod test ((target (eql :linux)))
