@@ -350,7 +350,7 @@
         (id (cond (id-p id)
                   (+main+ (sxhash (username +main+))))))
     (format NIL "~8,'0x-~4,'0x-~4,'0x-~4,'0x-~12,'0x"
-            (or id (ldb (byte 32  0) val))
+            (ldb (byte 32  0) (or id val))
             (ldb (byte 16 32) val)
             (ldb (byte 16 48) val)
             (ldb (byte 16 64) val)
