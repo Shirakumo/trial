@@ -30,6 +30,10 @@
 (cffi:defcfun (set-drop-callback "glfwSetDropCallback") :void
   (window :pointer)
   (callback :pointer))
+(cffi:defcstruct image
+  (width :int)
+  (height :int)
+  (pixels :pointer))
 
 (defclass monitor (trial:monitor)
   ((pointer :initarg :pointer :reader pointer)))
@@ -263,22 +267,30 @@
       (show-cursor context)
       (hide-cursor context)))
 
+(defun create-cursor-from-image (data width height &key (xoff 0) (yoff 0))
+  (cffi:with-foreign-object (image '(:struct image))
+    (setf (cffi:foreign-slot-value image '(:struct image) 'width) width)
+    (setf (cffi:foreign-slot-value image '(:struct image) 'height) height)
+    (with-pointer-to-vector-data (pixels data)
+      (setf (cffi:foreign-slot-value image '(:struct image) 'pixels) pixels)
+      (create-cursor image xoff yoff))))
+
 (defun get-cursor (cursor context)
   (or (gethash cursor (cursor-cache context))
       (setf (gethash cursor (cursor-cache context))
             (ecase cursor
               ;; TODO: allow custom cursors
-              ((NIL)              (cffi:null-pointer))
-              (:arrow             (create-standard-cursor #x00036001))
-              (:text              (create-standard-cursor #x00036002))
-              (:hand              (create-standard-cursor #x00036004))
-              (:crosshair         (create-standard-cursor #x00036003))
-              (:horizontal-resize (create-standard-cursor #x00036005))
-              (:vertical-resize   (create-standard-cursor #x00036006))
-              (:topleft-bottomright-resize (create-standard-cursor #x00036007))
-              (:bottomleft-topright-resize (create-standard-cursor #x00036008))
-              (:resize            (create-standard-cursor #x00036009))
-              (:disallowed        (create-standard-cursor #x0003600A))))))
+              ((NIL)        (cffi:null-pointer))
+              (:arrow       (create-standard-cursor #x00036001))
+              (:text        (create-standard-cursor #x00036002))
+              (:hand        (create-standard-cursor #x00036004))
+              (:crosshair   (create-standard-cursor #x00036003))
+              (:ew-resize   (create-standard-cursor #x00036005))
+              (:ns-resize   (create-standard-cursor #x00036006))
+              (:nwse-resize (create-standard-cursor #x00036007))
+              (:nesw-resize (create-standard-cursor #x00036008))
+              (:resize      (create-standard-cursor #x00036009))
+              (:disallowed  (create-standard-cursor #x0003600A))))))
 
 (defmethod (setf cursor) (cursor (context context))
   (set-cursor (window context) (get-cursor cursor context))

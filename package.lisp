@@ -455,6 +455,11 @@
    #:call-in-render-loop
    #:with-eval-in-render-loop
    #:display-controller)
+  ;; data-pointer.lisp
+  (:export
+   #:with-pointer-to-vector-data
+   #:call-with-data-ptr
+   #:with-data-ptr)
   ;; deferred.lisp
   (:export
    #:geometry-pass
