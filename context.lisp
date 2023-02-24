@@ -252,3 +252,19 @@
             (case (profile context)
               (:core "core")
               (:es "es")))))
+
+(defmethod (setf icon) ((path pathname) (context context))
+  (multiple-value-bind (bits width height pixel-type pixel-format swizzle)
+      (load-image path T)
+    (let* ((swizzle (or swizzle (infer-swizzle-format pixel-format)))
+           (data (convert-image-data bits width height :pixel-type-in pixel-type :pixel-format-in pixel-format :swizzle swizzle
+                                                       :pixel-type-out :unsigned-byte :pixel-format-out :rgba)))
+      (setf (icon context) (rgba-icon width height data)))))
+
+(defmethod (setf cursor) ((path pathname) (context context))
+  (multiple-value-bind (bits width height pixel-type pixel-format swizzle)
+      (load-image path T)
+    (let* ((swizzle (or swizzle (infer-swizzle-format pixel-format)))
+           (data (convert-image-data bits width height :pixel-type-in pixel-type :pixel-format-in pixel-format :swizzle swizzle
+                                                       :pixel-type-out :unsigned-byte :pixel-format-out :rgba)))
+      (setf (cursor context) (rgba-icon width height data)))))

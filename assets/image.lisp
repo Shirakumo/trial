@@ -37,6 +37,18 @@
             (setf (aref target offset) (floor (/ avg count)))
             (incf offset)))))))
 
+(defun convert-image-data (data-in width-in height-in &key (pixel-type-in :unsigned-byte) (pixel-format-in :rgba) (swizzle '(:r :g :b :a)) (pixel-type-out pixel-type-in) (pixel-format-out pixel-format-in)
+                                                           (width-out width-in) (height-out height-in))
+  (cond ((and (eql pixel-type-in pixel-type-out)
+              (eql pixel-format-in pixel-format-out)
+              (eql width-in width-out)
+              (eql height-in height-out)
+              (equal swizzle '(:r :g :b :a)))
+         data-in)
+        (T
+         ;; TODO: implement convert-image-data
+         (error "IMPLEMENT"))))
+
 (defgeneric load-image (path type &key width height pixel-type pixel-format &allow-other-keys))
 
 (defmethod load-image (path (type (eql T)) &rest args)
