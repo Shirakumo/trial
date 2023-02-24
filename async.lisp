@@ -51,8 +51,22 @@
    (func :initarg :func :accessor func)))
 
 (defmethod simple-tasks:run-task ((task promise-task))
-  (handler-case (promise:succeed (promise task) (funcall (func task)))
-    (error (e) (promise:fail (promise task) e))))
+  (let ((ok NIL))
+    (unwind-protect
+         (restart-case
+             (progn (promise:succeed (promise task) (funcall (func task)))
+                    (setf ok T))
+           (use-value (value)
+             :report "Succeed the promise using the provided value"
+             (promise:succeed (promise task) value)
+             (setf ok T))
+           (continue ()
+             :report "Continue, failing the promise.")
+           (abort ()
+             :report "Abort, timing the promise out."
+             (promise:timeout (promise task))))
+      (unless ok
+        (promise:fail (promise task))))))
 
 (defmacro with-eval-in-task-thread ((&key (runner '(task-thread +main+)) (task-type ''promise-task) lifetime) &body body)
   `(flet ((thunk () ,@body))
