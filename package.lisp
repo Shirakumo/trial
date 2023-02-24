@@ -394,6 +394,10 @@
    #:handler
    #:shared-with
    #:glsl-target-version
+   #:rgba-icon
+   #:rgba-icon-width
+   #:rgba-icon-height
+   #:rgba-icon-data
    #:create-context
    #:destroy-context
    #:valid-p

@@ -30,6 +30,10 @@
 (cffi:defcfun (set-drop-callback "glfwSetDropCallback") :void
   (window :pointer)
   (callback :pointer))
+(cffi:defcfun (set-window-icon "glfwSetWindowIcon") :void
+  (window :pointer)
+  (count :int)
+  (images :pointer))
 (cffi:defcstruct image
   (width :int)
   (height :int)
@@ -267,34 +271,46 @@
       (show-cursor context)
       (hide-cursor context)))
 
-(defun create-cursor-from-image (data width height &key (xoff 0) (yoff 0))
+(defun create-cursor-from-icon (icon &key (xoff 0) (yoff 0))
   (cffi:with-foreign-object (image '(:struct image))
-    (setf (cffi:foreign-slot-value image '(:struct image) 'width) width)
-    (setf (cffi:foreign-slot-value image '(:struct image) 'height) height)
-    (with-pointer-to-vector-data (pixels data)
+    (setf (cffi:foreign-slot-value image '(:struct image) 'width) (rgba-icon-width icon))
+    (setf (cffi:foreign-slot-value image '(:struct image) 'height) (rgba-icon-height icon))
+    (with-pointer-to-vector-data (pixels (rgba-icon-data icon))
       (setf (cffi:foreign-slot-value image '(:struct image) 'pixels) pixels)
       (create-cursor image xoff yoff))))
 
 (defun get-cursor (cursor context)
   (or (gethash cursor (cursor-cache context))
       (setf (gethash cursor (cursor-cache context))
-            (ecase cursor
-              ;; TODO: allow custom cursors
-              ((NIL)        (cffi:null-pointer))
-              (:arrow       (create-standard-cursor #x00036001))
-              (:text        (create-standard-cursor #x00036002))
-              (:hand        (create-standard-cursor #x00036004))
-              (:crosshair   (create-standard-cursor #x00036003))
-              (:ew-resize   (create-standard-cursor #x00036005))
-              (:ns-resize   (create-standard-cursor #x00036006))
-              (:nwse-resize (create-standard-cursor #x00036007))
-              (:nesw-resize (create-standard-cursor #x00036008))
-              (:resize      (create-standard-cursor #x00036009))
-              (:disallowed  (create-standard-cursor #x0003600A))))))
+            (etypecase cursor
+              ;; FIXME: some way to provide fallbacks for standard cursors
+              (null               (cffi:null-pointer))
+              (rgba-icon          (create-cursor-from-icon cursor))
+              ((eql :arrow)       (create-standard-cursor #x00036001))
+              ((eql :text)        (create-standard-cursor #x00036002))
+              ((eql :hand)        (create-standard-cursor #x00036004))
+              ((eql :crosshair)   (create-standard-cursor #x00036003))
+              ((eql :ew-resize)   (create-standard-cursor #x00036005))
+              ((eql :ns-resize)   (create-standard-cursor #x00036006))
+              ((eql :nwse-resize) (create-standard-cursor #x00036007))
+              ((eql :nesw-resize) (create-standard-cursor #x00036008))
+              ((eql :resize)      (create-standard-cursor #x00036009))
+              ((eql :disallowed)  (create-standard-cursor #x0003600A))))))
 
 (defmethod (setf cursor) (cursor (context context))
   (set-cursor (window context) (get-cursor cursor context))
   (setf (slot-value context 'cursor) cursor))
+
+(defmethod (setf icon) ((icon rgba-icon) (context context))
+  (cffi:with-foreign-object (image '(:struct image))
+    (setf (cffi:foreign-slot-value image '(:struct image) 'width) (rgba-icon-width icon))
+    (setf (cffi:foreign-slot-value image '(:struct image) 'height) (rgba-icon-height icon))
+    (with-pointer-to-vector-data (pixels (rgba-icon-data icon))
+      (setf (cffi:foreign-slot-value image '(:struct image) 'pixels) pixels)
+      (set-window-icon (window context) 1 image))))
+
+(defmethod (setf icon) ((none null) (context context))
+  (set-window-icon (window context) 0 (cffi:null-pointer)))
 
 (defmethod (setf title) :before (value (context context))
   (cl-glfw3:set-window-title value (window context)))

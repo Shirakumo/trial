@@ -71,6 +71,13 @@
 (defmethod initialize-instance :after ((context context) &key)
   (release-context context))
 
+(defstruct (rgba-icon
+            (:constructor rgba-icon (width height data))
+            (:predicate NIL))
+  (width 0 :type (unsigned-byte 16))
+  (height 0 :type (unsigned-byte 16))
+  (data #() :type (simple-array (unsigned-byte 8))))
+
 (defgeneric create-context (context))
 (defgeneric destroy-context (context))
 (defgeneric valid-p (context))
@@ -102,6 +109,7 @@
 (defgeneric cursor-position (context))
 (defgeneric (setf cursor-position) (pos context))
 (defgeneric local-key-string (context scan-code))
+(defgeneric (setf icon) (icon context))
 
 (defgeneric width (context))
 (defgeneric height (context))
