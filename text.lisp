@@ -8,25 +8,28 @@
 
 (define-asset (trial ascii) image
     #p"ascii.png"
+  :min-filter :nearest
   :mag-filter :nearest)
 
-(defun print-ascii-text (text array)
-  (let ((i -1) (x 0.0))
+(defun print-ascii-text (text array &optional (glyph-width 9) (glyph-height 17))
+  (let ((i -1) (x 0.0)
+        (gw (float glyph-width))
+        (gh (float glyph-height)))
     (adjust-array array (* 4 6 (length text)))
     (macrolet ((vertex (&rest vals)
                  `(progn ,@(loop for val in vals
                                  collect `(setf (aref array (incf i)) ,val)))))
       (flet ((print-letter (char)
                (let* ((c (clamp 0 (- (char-code char) (char-code #\Space)) 95))
-                      (u0 (float (/ c 96)))
-                      (u1 (float (/ (1+ c) 96))))
+                      (u0 (* gw (+ 0 c)))
+                      (u1 (* gw (+ 1 c))))
                  (vertex (+ x 0.0) 0.0 u0 0.0)
-                 (vertex (+ x 7.0) 0.0 u1 0.0)
-                 (vertex (+ x 7.0) 7.0 u1 1.0)
-                 (vertex (+ x 7.0) 7.0 u1 1.0)
-                 (vertex (+ x 0.0) 7.0 u0 1.0)
+                 (vertex (+ x  gw) 0.0 u1 0.0)
+                 (vertex (+ x  gw)  gh u1  gh)
+                 (vertex (+ x  gw)  gh u1  gh)
+                 (vertex (+ x 0.0)  gh u0  gh)
                  (vertex (+ x 0.0) 0.0 u0 0.0)
-                 (incf x 6.0))))
+                 (incf x gw))))
         (loop for char across text
               do (print-letter char))))
     array))
@@ -61,6 +64,14 @@
   (setf (uniform program "foreground") (foreground text))
   (setf (uniform program "background") (background text)))
 
+(define-class-shader (debug-text :vertex-shader)
+  "out vec2 texcoord;
+uniform sampler2D texture_image;
+
+void main(){
+  texcoord /= textureSize(texture_image, 0).rg;
+}")
+
 (define-class-shader (debug-text :fragment-shader)
   "in vec2 texcoord;
 out vec4 color;
@@ -69,6 +80,6 @@ uniform vec4 foreground;
 uniform vec4 background;
 
 void main(){
-  float fg_bg = texture(texture_image, texcoord).r;
+  float fg_bg = texture(texture_image, texcoord, 0).r;
   color = mix(foreground, background, fg_bg);
 }")
