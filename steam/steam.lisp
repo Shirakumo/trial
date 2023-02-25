@@ -19,7 +19,8 @@
 
 (setf trial::*open-in-browser-hook*
       (lambda (url)
-        (when (steam:steamworks-available-p)
+        (when (and (steam:steamworks-available-p)
+                   (steam:overlay-enabled-p (steam:interface 'steam:steamutils T)))
           (steam:activate-overlay (steam:interface 'steam:steamfriends T) :url url)
           T)))
 
