@@ -19,6 +19,20 @@
 
 (defmethod alloy:allocate ((renderer renderer)))
 
+(defmethod deallocate-image-cache ((path pathname) (renderer renderer))
+  (let ((image (gethash path (image-cache renderer))))
+    (when image
+      (when (trial:allocated-p image)
+        (trial:deallocate image))
+      (remhash path (image-cache renderer)))))
+
+(defmethod deallocate-image-cache ((texture trial:texture) (renderer renderer))
+  (loop for path being the hash-keys of (image-cache renderer) using (hash-value value)
+        do (when (eq texture value)
+             (when (trial:allocated-p texture)
+               (trial:deallocate texture))
+             (remhash path (image-cache renderer)))))
+
 (defmethod deallocate-cache ((renderer renderer))
   (loop with cache = (image-cache renderer)
         for path being the hash-keys of cache using (hash-value object)
@@ -198,7 +212,8 @@
                                             :texture-class 'image
                                             :min-filter filtering
                                             :mag-filter filtering))
-      (setf (gethash path (image-cache renderer)) image)
+      (setf (gethash path (image-cache renderer)) image))
+    (unless (trial:allocated-p image)
       (trial:allocate image))
     image))
 
