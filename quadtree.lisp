@@ -1,17 +1,17 @@
 (in-package #:org.shirakumo.fraf.trial.quadtree)
 
 ;; TODO: NODE-CHECK-ACTIVITY can be removed if the nodes know their parents.
-;; TODO: Make the threshold in NODE-SPLIT a variable.
 
 (defstruct (quadtree-node
             (:include vec4) ;; x and y are top left corner, z and w are bottom right corner.
             (:constructor %make-quadtree-node
                 (3d-vectors::%vx4 3d-vectors::%vy4 3d-vectors::%vz4 3d-vectors::%vw4
-                 depth min-size top-left top-right bottom-left bottom-right))
+                 depth min-size threshold top-left top-right bottom-left bottom-right))
             (:copier NIL)
             (:predicate NIL))
   (depth 0 :type (unsigned-byte 32)) ;; For debugging.
   (min-size 1 :type (unsigned-byte 16)) ;; Minimum quad size.
+  (threshold 1 :type (unsigned-byte 16)) ;; Number of objects in a quad before it's split.
   (top-left NIL :type (or null quadtree-node)) ;; Child quads.
   (top-right NIL :type (or null quadtree-node))
   (bottom-left NIL :type (or null quadtree-node))
@@ -56,23 +56,24 @@
   (with-vec4 (left top right bottom) node
     (let ((depth (1+ (quadtree-node-depth node)))
           (min-size (quadtree-node-min-size node))
+          (threshold (quadtree-node-threshold node))
           (mid-x (+ left (/ (- right left) 2f0)))
           (mid-y (+ top (/ (- bottom top) 2f0))))
       (unless (quadtree-node-top-left node)
         (setf (quadtree-node-top-left node) (%make-quadtree-node
-                                             left top mid-x mid-y depth min-size
+                                             left top mid-x mid-y depth min-size threshold
                                              NIL NIL NIL NIL)))
       (unless (quadtree-node-top-right node)
         (setf (quadtree-node-top-right node) (%make-quadtree-node
-                                              mid-x top right mid-y depth min-size
+                                              mid-x top right mid-y depth min-size threshold
                                               NIL NIL NIL NIL)))
       (unless (quadtree-node-bottom-left node)
         (setf (quadtree-node-bottom-left node) (%make-quadtree-node
-                                                left mid-y mid-x bottom depth min-size
+                                                left mid-y mid-x bottom depth min-size threshold
                                                 NIL NIL NIL NIL)))
       (unless (quadtree-node-bottom-right node)
         (setf (quadtree-node-bottom-right node) (%make-quadtree-node
-                                                 mid-x mid-y right bottom depth min-size
+                                                 mid-x mid-y right bottom depth min-size threshold
                                                  NIL NIL NIL NIL)))))
   (list (quadtree-node-top-left node)
         (quadtree-node-top-right node)
@@ -143,7 +144,9 @@
   (when (and (quadtree-node-active-p node)
              (<= (* 2f0 (quadtree-node-min-size node)) (- (vz4 node) (vx4 node)))
              (<= (* 2f0 (quadtree-node-min-size node)) (- (vw4 node) (vy4 node)))
-             (or (node-child-active-p node) (< 1 (length (quadtree-node-objects node)))))
+             (or (node-child-active-p node)
+                 (< (quadtree-node-threshold node)
+                    (length (quadtree-node-objects node)))))
     (let ((children (ensure-child-nodes node))
           (objects (node-pop-objects node)))
       ;; Clear and rearrange the objects.
@@ -205,9 +208,10 @@
   (declare (optimize speed))
   (with-vec4 (node-x node-y node-z node-w) node
     (let ((min-size (quadtree-node-min-size node))
+          (threshold (quadtree-node-threshold node))
           (width (- node-z node-x))
           (height (- node-w node-y)))
-      (flet ((child (x y z w) (%make-quadtree-node x y z w 1 min-size NIL NIL NIL NIL)))
+      (flet ((child (x y z w) (%make-quadtree-node x y z w 1 min-size threshold NIL NIL NIL NIL)))
         (multiple-value-bind (x y z w)
             (ecase direction
               (:bottom-right (values node-x node-y (+ node-z width) (+ node-w height)))
@@ -221,7 +225,7 @@
                  (bottom-left (if (eql direction :top-right) node (child x mid-y mid-x w)))
                  (bottom-right (if (eql direction :top-left) node (child mid-x mid-y z w)))
                  (parent (%make-quadtree-node
-                          x y z w 0 min-size top-left top-right bottom-left bottom-right)))
+                          x y z w 0 min-size threshold top-left top-right bottom-left bottom-right)))
             (setf (quadtree-node-active-p parent) (quadtree-node-active-p node))
             (node-increase-depth node)
             parent))))))
@@ -292,14 +296,20 @@
   (loop for child in (node-children node)
         do (node-set-min-size child min-size)))
 
+(defun node-set-threshold (node threshold)
+  (declare (optimize speed))
+  (setf (quadtree-node-threshold node) threshold)
+  (loop for child in (node-children node)
+        do (node-set-threshold child threshold)))
+
 (defstruct (quadtree
             (:constructor make-quadtree ())
             (:copier NIL)
             (:predicate NIL))
-  (root (%make-quadtree-node 0f0 0f0 100f0 100f0 0 1 NIL NIL NIL NIL) :type quadtree-node)
+  (root (%make-quadtree-node 0f0 0f0 100f0 100f0 0 1 1 NIL NIL NIL NIL) :type quadtree-node)
   (table (make-hash-table :test 'eq) :type hash-table))
 
-(defun make-quadtree-at (location size &key min-size)
+(defun make-quadtree-at (location size &key min-size threshold)
   (declare (optimize speed))
   (declare (type vec2 location size))
   (declare (type (or null (unsigned-byte 16)) min-size))
@@ -317,6 +327,8 @@
     (setf (vw4 root) (+ ly sy))
     (when (and min-size (< 0 min-size))
       (node-set-min-size root min-size))
+    (when (and threshold (< 0 threshold))
+      (node-set-threshold root threshold))
     tree))
 
 (defun quadtree-insert (tree object)
