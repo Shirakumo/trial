@@ -154,9 +154,10 @@
 
 (defun node-split (node table)
   (declare (optimize speed))
-  ;; Do not split if the node is not active, it'd split the node below the minimum size, or
-  ;; there are no active children while we are still below the threshold.
+  ;; Do not split if the node is not active, it's empty, it'd split the node below the minimum size,
+  ;; or there are no active children while we are still below the threshold.
   (when (and (quadtree-node-active-p node)
+             (not (node-empty-p node))
              (<= (* 2f0 (quadtree-node-min-size node)) (- (vz4 node) (vx4 node)))
              (<= (* 2f0 (quadtree-node-min-size node)) (- (vw4 node) (vy4 node)))
              (or (node-child-active-p node)
