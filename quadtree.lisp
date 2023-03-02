@@ -35,6 +35,21 @@
   (loop until (node-empty-p node)
         collect (vector-pop (quadtree-node-objects node))))
 
+(defmacro with-node-children ((top-left top-right bottom-left bottom-right) node &body body)
+  `(let ((,top-left (quadtree-node-top-left ,node))
+         (,top-right (quadtree-node-top-right ,node))
+         (,bottom-left (quadtree-node-bottom-left ,node))
+         (,bottom-right (quadtree-node-bottom-right ,node)))
+     ,@body))
+
+(defun node-active-children-p (node)
+  (declare (optimize speed))
+  (with-node-children (tl tr bl br) node
+    (or (and tl (quadtree-node-active-p tl))
+        (and tr (quadtree-node-active-p tr))
+        (and bl (quadtree-node-active-p bl))
+        (and br (quadtree-node-active-p br)))))
+
 (defun node-children (node)
   (declare (optimize speed))
   (remove-if #'null (list (quadtree-node-top-left node)
@@ -73,11 +88,7 @@
       (unless (quadtree-node-bottom-right node)
         (setf (quadtree-node-bottom-right node) (%make-quadtree-node
                                                  mid-x mid-y right bottom depth min-size threshold
-                                                 node NIL NIL NIL NIL)))))
-  (list (quadtree-node-top-left node)
-        (quadtree-node-top-right node)
-        (quadtree-node-bottom-left node)
-        (quadtree-node-bottom-right node)))
+                                                 node NIL NIL NIL NIL))))))
 
 (defun node-remove-children (node &key recurse)
   (declare (optimize speed))
@@ -148,10 +159,6 @@
     (declare (type vec2 loc siz))
     (node-contains-p* node loc siz)))
 
-(defun node-child-active-p (node)
-  (declare (optimize speed))
-  (not (null (node-active-children node))))
-
 (defun node-split (node table)
   (declare (optimize speed))
   ;; Do not split if the node is not active, it's empty, it'd split the node below the minimum size,
@@ -160,21 +167,24 @@
              (not (node-empty-p node))
              (<= (* 2f0 (quadtree-node-min-size node)) (- (vz4 node) (vx4 node)))
              (<= (* 2f0 (quadtree-node-min-size node)) (- (vw4 node) (vy4 node)))
-             (or (node-child-active-p node)
+             (or (node-active-children-p node)
                  (< (quadtree-node-threshold node)
                     (length (quadtree-node-objects node)))))
-    (let ((children (ensure-child-nodes node))
-          (objects (node-pop-objects node)))
+    (let ((objects (node-pop-objects node)))
       ;; Clear and rearrange the objects.
-      (loop for object in objects
-            for match = (loop for child in children
-                              for contains-p = (node-contains-p child object)
-                              until contains-p
-                              finally (return (if contains-p child node)))
-            do (setf (gethash object table) match)
-            do (setf (quadtree-node-active-p match) T)
-            do (vector-push-extend object (quadtree-node-objects match)))
-      (loop for child in children do (node-split child table))))
+      (ensure-child-nodes node)
+      (with-node-children (tl tr bl br) node
+        (loop for object in objects
+              for match = (cond
+                            ((node-contains-p tl object) tl)
+                            ((node-contains-p tr object) tr)
+                            ((node-contains-p bl object) bl)
+                            ((node-contains-p br object) br)
+                            (T node))
+              do (setf (gethash object table) match)
+              do (setf (quadtree-node-active-p match) T)
+              do (vector-push-extend object (quadtree-node-objects match))
+              unless (eq match node) do (node-split match table)))))
   node)
 
 (declaim (inline node-overlaps-p))
@@ -244,8 +254,10 @@
                  (parent (%make-quadtree-node
                           x y z w 0 min-size threshold NIL
                           top-left top-right bottom-left bottom-right)))
-            (loop for child in (node-children parent)
-                  do (setf (quadtree-node-parent child) parent))
+            (setf (quadtree-node-parent top-left) parent)
+            (setf (quadtree-node-parent top-right) parent)
+            (setf (quadtree-node-parent bottom-left) parent)
+            (setf (quadtree-node-parent bottom-right) parent)
             (setf (quadtree-node-active-p parent) (quadtree-node-active-p node))
             (node-increase-depth node)
             parent))))))
@@ -280,7 +292,7 @@
 
 (defun node-check-activity (node)
   (declare (optimize speed))
-  (when (and (node-empty-p node) (null (node-active-children node)))
+  (when (and (node-empty-p node) (node-active-children-p node))
     (setf (quadtree-node-active-p node) NIL)
     (when (quadtree-node-parent node)
       (node-check-activity (quadtree-node-parent node)))))
@@ -448,12 +460,12 @@
 
 (defun quadtree-check (tree) ;; None of these things should happen.
   (labels ((recurse (node)
-             (when (and (not (quadtree-node-active-p node)) (node-child-active-p node))
+             (when (and (not (quadtree-node-active-p node)) (node-active-children-p node))
                (error "Node ~a~%has active children without being active itself." node))
              (when (and (not (quadtree-node-active-p node))
                         (< 0 (length (quadtree-node-objects node))))
                (error "Node ~a~%has objects without being active itself." node))
-             (when (and (quadtree-node-active-p node) (not (node-child-active-p node))
+             (when (and (quadtree-node-active-p node) (not (node-active-children-p node))
                         (= 0 (length (quadtree-node-objects node))))
                (error "Node ~a~%is active without active children or objects." node))
              (loop for child in (node-children node)
