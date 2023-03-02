@@ -1246,7 +1246,10 @@
    #:quadtree-print
    #:quadtree-lines
    #:quadtree-reinsert-all
-   #:call-objects-with))
+   #:call-all
+   #:call-with-region
+   #:call-with-area
+   #:call-with-object))
 
 (defpackage #:cl+trial
   (:nicknames #:org.shirakumo.fraf.trial.cl+trial)

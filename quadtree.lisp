@@ -106,6 +106,22 @@
          (<= oz rz)
          (<= ow rw))))
 
+(defun region-overlaps-p (region other)
+  (declare (optimize speed))
+  (declare (type vec4 region other))
+  (let ((rx (vx4 region))
+        (ry (vy4 region))
+        (rz (vz4 region))
+        (rw (vw4 region))
+        (ox (vx4 other))
+        (oy (vy4 other))
+        (oz (vz4 other))
+        (ow (vw4 other)))
+    (and (<= rx oz) ;; Partial touch.
+         (<= ox rz)
+         (<= ry ow)
+         (<= oy rw))))
+
 (declaim (inline node-contains-p*))
 (defun node-contains-p* (node loc siz)
   (declare (optimize speed (safety 0)))
@@ -459,10 +475,29 @@
     (clrhash (quadtree-table tree))
     (loop for object in objects do (quadtree-insert tree object))))
 
-(defun call-objects-with (function tree location size)
+(defun call-all (function tree)
   (declare (optimize speed (safety 1)))
   (let ((function (etypecase function
                     (symbol (fdefinition function))
                     (function function))))
-    (loop for object in (quadtree-find tree location size)
+    (loop for object in (quadtree-find-all tree)
           do (funcall function object))))
+
+(defun call-with-region (function tree region)
+  (declare (optimize speed (safety 1)))
+  (let ((function (etypecase function
+                    (symbol (fdefinition function))
+                    (function function))))
+    (loop for object in (quadtree-find-in-region tree region)
+          when (region-overlaps-p region object)
+          do (funcall function object))))
+
+(defun call-with-area (function tree location size)
+  (declare (optimize speed))
+  (declare (type vec2 location size))
+  (call-with-region function tree (vec4 (vx2 location) (vy2 location)
+                                        (vx2 size) (vy2 size))))
+
+(defun call-with-object (function tree object)
+  (declare (optimize speed))
+  (call-with-area function tree (location object) (bsize object)))
