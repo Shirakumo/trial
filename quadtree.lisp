@@ -1,7 +1,5 @@
 (in-package #:org.shirakumo.fraf.trial.quadtree)
 
-;; TODO: NODE-CHECK-ACTIVITY can be removed if the nodes know their parents.
-
 (defstruct (quadtree-node
             (:include vec4) ;; x and y are top left corner, z and w are bottom right corner.
             (:constructor %make-quadtree-node
@@ -250,14 +248,19 @@
       (node-insert node object table)
       (node-insert-extend (node-extend node (node-direction node object)) object table)))
 
-(defun node-check-activity (node)
+(defun node-clear (node)
   (declare (optimize speed))
   (when (quadtree-node-active-p node)
-    (loop for child in (node-children node) do (node-check-activity child))
-    (setf (quadtree-node-active-p node) (or (not (node-empty-p node)) (node-child-active-p node)))
-    node))
+    (prog1 (nconc (node-pop-objects node)
+                  (loop for child in (node-children node)
+                        appending (node-clear child)))
+      (setf (quadtree-node-active-p node) NIL))))
 
-(defun node-remove (node object)
+(defun node-reorder (node table)
+  (loop for object in (node-clear node)
+        do (node-insert node object table)))
+
+(defun node-remove (node object table)
   (declare (optimize speed))
   (let* ((found NIL) ;; Clear the wanted object out.
          (others (loop until (node-empty-p node)
@@ -267,17 +270,9 @@
     (loop for other in others ;; Put the others back.
           do (vector-push-extend other (quadtree-node-objects node)))
     (when found
-      (setf (quadtree-node-active-p node) ;; Quick check.
-            (or (not (node-empty-p node)) (node-child-active-p node)))
+      (when (node-empty-p node)
+        (node-reorder node table))
       found)))
-
-(defun node-clear (node)
-  (declare (optimize speed))
-  (when (quadtree-node-active-p node)
-    (prog1 (nconc (node-pop-objects node)
-                  (loop for child in (node-children node)
-                        appending (node-clear child)))
-      (setf (quadtree-node-active-p node) NIL))))
 
 (defun node-find-all (node)
   (declare (optimize speed))
@@ -348,9 +343,8 @@
   (let* ((table (quadtree-table tree))
          (node (gethash object table)))
     (when node
-      (prog1 (node-remove node object)
-        (remhash object table)
-        (node-check-activity (quadtree-root tree))))))
+      (remhash object table)
+      (node-remove node object table))))
 
 (defun quadtree-update (tree object)
   (declare (optimize speed))
