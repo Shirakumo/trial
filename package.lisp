@@ -1228,6 +1228,26 @@
    #:call-with-overlapping
    #:do-fitting))
 
+(defpackage #:org.shirakumo.fraf.trial.quadtree
+  (:use #:cl #:3d-vectors)
+  (:import-from #:org.shirakumo.fraf.trial #:location #:bsize)
+  (:export
+   #:quadtree
+   #:make-quadtree
+   #:make-quadtree-at
+   #:quadtree-insert
+   #:quadtree-remove
+   #:quadtree-update
+   #:quadtree-find-all
+   #:quadtree-find-in-region
+   #:quadtree-find-in
+   #:quadtree-find-for
+   #:quadtree-check
+   #:quadtree-print
+   #:quadtree-lines
+   #:quadtree-reinsert-all
+   #:call-objects-with))
+
 (defpackage #:cl+trial
   (:nicknames #:org.shirakumo.fraf.trial.cl+trial)
   (:shadowing-import-from #:trial #:// #:load)
