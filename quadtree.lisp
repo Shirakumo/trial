@@ -513,22 +513,78 @@
     (clrhash (quadtree-table tree))
     (loop for object in objects do (quadtree-insert tree object))))
 
+(defstruct (quadtree-iterator
+            (:constructor make-quadtree-iterator (tree region))
+            (:copier NIL)
+            (:predicate NIL))
+  (tree NIL :type quadtree)
+  (region NIL :type vec4))
+
+(defmethod for:make-iterator ((tree quadtree) &key region)
+  (make-quadtree-iterator tree (or region (quadtree-root tree))))
+
+(defmethod for:step-functions ((iterator quadtree-iterator))
+  (declare (optimize speed))
+  (let* ((region (quadtree-iterator-region iterator))
+         (node (quadtree-root (quadtree-iterator-tree iterator))) ;; Current node.
+         (objects (node-list-objects node)) ;; Current node's list of objects.
+         (child-stack (make-array 16 :fill-pointer 0 :adjustable T
+                                     :element-type '(or null list)
+                                     :initial-element NIL)))
+    (when (or (eq node region) (region-contains-p region node))
+      (setf region NIL))
+    (labels ((pop-stack () ;; Keep track of child nodes that haven't been checked yet.
+               (when (< 0 (length child-stack))
+                 (vector-pop child-stack)))
+             (push-stack (parent)
+               (vector-push-extend (node-active-children parent) child-stack))
+             (pop-child ()
+               (when (< 0 (length child-stack))
+                 (pop (aref child-stack (1- (length child-stack))))))
+             (has-more-p () ;; Also ensures that the object list has an object within region.
+               (loop while (and objects region (not (region-overlaps-with-p region (car objects))))
+                     do (pop objects)
+                     finally (return (not (null objects)))))
+             (next-quad () ;; Updates the current node, object list, and maintains the child stack.
+               (loop while (and node (not (has-more-p)))
+                     do (let ((child (pop-child)))
+                          (cond
+                            (child
+                             (when (or (null region) (region-overlaps-p region node))
+                               (setf objects (node-list-objects child))
+                               (push-stack child)
+                               (setf node child)))
+                            (T
+                             (pop-stack)
+                             (unless (< 0 (length child-stack))
+                               (setf node NIL))))))))
+      (push-stack node)
+      (next-quad)
+      (values
+       (lambda ()
+         (when node
+           (prog1 (pop objects)
+             (next-quad))))
+       (lambda ()
+         (and node (has-more-p)))
+       (lambda (value)
+         (declare (ignore value))
+         (error "Not supported"))
+       (lambda ())))))
+
 (defun call-all (function tree)
-  (declare (optimize speed (safety 1)))
   (let ((function (etypecase function
                     (symbol (fdefinition function))
                     (function function))))
-    (loop for object in (quadtree-find-all tree)
-          do (funcall function object))))
+    (for:for ((object over tree))
+      (funcall function object))))
 
 (defun call-with-region (function tree region)
-  (declare (optimize speed (safety 1)))
   (let ((function (etypecase function
                     (symbol (fdefinition function))
                     (function function))))
-    (loop for object in (quadtree-find-in-region tree region)
-          when (region-overlaps-p region object)
-          do (funcall function object))))
+    (for:for ((object over tree :region region))
+      (funcall function object))))
 
 (defun call-with-area (function tree location size)
   (declare (optimize speed))
