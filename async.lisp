@@ -31,7 +31,8 @@
 (defclass task-runner-main (main)
   ((task-thread :initform (make-instance 'task-thread) :accessor task-thread)))
 
-(defmethod initialize-instance :after ((main task-runner-main) &key)
+(defmethod initialize-instance ((main task-runner-main) &key)
+  (call-next-method)
   (start (task-thread main)))
 
 (defmethod finalize :after ((main task-runner-main))
