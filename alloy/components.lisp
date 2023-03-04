@@ -180,6 +180,9 @@
             (when (typep resource type)
               (push resource values))))))))
 
+(defmethod (setf alloy:value) :before ((value trial:resource) (resource resource))
+  (trial:load value))
+
 (define-set-representation monitor
   :represents trial:monitor
   :item-text (trial:name alloy:value)
