@@ -177,7 +177,8 @@
       (dolist (pool (trial:list-pools) (sort values #'resource<))
         (dolist (asset (trial:list-assets pool))
           (dolist (resource (trial:list-resources asset))
-            (when (typep resource type)
+            (when (or (typep resource type)
+                      (typep resource 'trial:placeholder-resource))
               (push resource values))))))))
 
 (defmethod (setf alloy:value) :before ((value trial:resource) (resource resource))
