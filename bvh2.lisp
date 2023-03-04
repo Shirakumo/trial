@@ -200,7 +200,7 @@
             (:constructor make-bvh ())
             (:copier NIL)
             (:predicate NIL))
-  (root (%make-bvh-node 0f0 0f0 0f0 0f0 0 NIL NIL NIL NIL) :type bvh-node)
+  (root (%make-bvh-node 0f0 0f0 0f0 0f0 0 NIL NIL NIL NIL) :type bvh-node :read-only T)
   (table (make-hash-table :test 'eq) :type hash-table))
 
 (defun bvh-insert (bvh object)
@@ -320,7 +320,7 @@
     (declare (type (integer 0 256) i))
     (declare (dynamic-extent tentative))
     (flet ((add (node)
-             (when (< i 256)
+             (when (and (< i 256) node)
                (setf (svref tentative i) node)
                (incf i))))
       (declare (inline add))
