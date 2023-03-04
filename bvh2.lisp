@@ -200,7 +200,7 @@
             (:constructor make-bvh ())
             (:copier NIL)
             (:predicate NIL))
-  (root (%make-bvh-node 0f0 0f0 0f0 0f0 0 NIL NIL NIL NIL) :type bvh-node :read-only T)
+  (root (%make-bvh-node 0f0 0f0 0f0 0f0 0 NIL NIL NIL NIL) :type bvh-node)
   (table (make-hash-table :test 'eq) :type hash-table))
 
 (defun bvh-insert (bvh object)
