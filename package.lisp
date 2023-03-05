@@ -1239,8 +1239,10 @@
    #:quadtree-remove
    #:quadtree-update
    #:quadtree-find-all
-   #:quadtree-find-in-region
-   #:quadtree-find-in
+   #:quadtree-find-overlaps
+   #:quadtree-find-overlaps-in
+   #:quadtree-find-contained
+   #:quadtree-find-contained-in
    #:quadtree-find-for
    #:quadtree-check
    #:quadtree-print

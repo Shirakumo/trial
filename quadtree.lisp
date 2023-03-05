@@ -1,5 +1,9 @@
 (in-package #:org.shirakumo.fraf.trial.quadtree)
 
+(declaim (inline make-object-vector))
+(defun make-object-vector (&optional (initial-size 4))
+  (make-array initial-size :adjustable T :fill-pointer 0))
+
 (defstruct (quadtree-node
             (:include vec4) ;; x and y are top left corner, z and w are bottom right corner.
             (:constructor %make-quadtree-node
@@ -16,25 +20,42 @@
   (bottom-left NIL :type (or null quadtree-node))
   (bottom-right NIL :type (or null quadtree-node))
   (active-p NIL :type boolean) ;; We disable nodes when they have no content for searches.
-  (objects (make-array 4 :adjustable T :fill-pointer 0) :type (vector T))) ;; Stays very short.
+  (objects (make-object-vector) :type (vector T))) ;; Stays very short.
 
 (defmethod print-object ((node quadtree-node) stream)
   (print-unreadable-object (node stream :type T)
     (with-vec4 (x y z w) node
-      (format stream "~a ~a ~a ~a~@[: ~{~a~^, ~}~]" x y z w (node-list-objects node)))))
+      (format stream "~a ~a ~a ~a~@[: ~{~a~^, ~}~]"
+              x y z w (loop for object across (quadtree-node-objects node)
+                            collecting object)))))
 
 (declaim (inline node-empty-p))
 (defun node-empty-p (node)
   (declare (optimize speed))
   (= 0 (length (quadtree-node-objects node))))
 
-(defun node-list-objects (node)
-  (loop for object across (quadtree-node-objects node) collecting object))
+(declaim (inline node-active-p))
+(defun node-active-p (node)
+  (declare (optimize speed))
+  (and node (quadtree-node-active-p node)))
 
-(defun node-pop-objects (node)
+(defun node-push-objects-into (node vector)
+  ;; TODO: Is there a way to declare optimisation for speed here?
+  (loop for object across (quadtree-node-objects node)
+        do (vector-push-extend object vector))
+  vector)
+
+(defun node-clear-objects (node)
   (declare (optimize speed))
   (loop until (node-empty-p node)
-        collect (vector-pop (quadtree-node-objects node))))
+        do (vector-pop (quadtree-node-objects node))))
+
+(defun node-pop-objects (node &optional vector)
+  (declare (optimize speed))
+  (let ((vector (or vector (make-object-vector))))
+    (loop until (node-empty-p node)
+          do (vector-push-extend (vector-pop (quadtree-node-objects node)) vector)
+          finally (return vector))))
 
 (defmacro with-node-children ((top-left top-right bottom-left bottom-right) node &body body)
   `(let ((,top-left (quadtree-node-top-left ,node))
@@ -43,10 +64,27 @@
          (,bottom-right (quadtree-node-bottom-right ,node)))
      ,@body))
 
-(declaim (inline node-active-p))
-(defun node-active-p (node)
-  (declare (optimize speed))
-  (and node (quadtree-node-active-p node)))
+(defmacro for-node-children ((function node &rest arguments))
+  (let ((top-left (gensym "TOP-LEFT"))
+        (top-right (gensym "TOP-RIGHT"))
+        (bottom-left (gensym "BOTTOM-LEFT"))
+        (bottom-right (gensym "BOTTOM-RIGHT")))
+    `(with-node-children (,top-left ,top-right ,bottom-left ,bottom-right) ,node
+       (when ,top-left (,function ,top-left ,@arguments))
+       (when ,top-right (,function ,top-right ,@arguments))
+       (when ,bottom-left (,function ,bottom-left ,@arguments))
+       (when ,bottom-right (,function ,bottom-right ,@arguments)))))
+
+(defmacro for-node-active-children ((function node &rest arguments))
+  (let ((top-left (gensym "TOP-LEFT"))
+        (top-right (gensym "TOP-RIGHT"))
+        (bottom-left (gensym "BOTTOM-LEFT"))
+        (bottom-right (gensym "BOTTOM-RIGHT")))
+    `(with-node-children (,top-left ,top-right ,bottom-left ,bottom-right) ,node
+       (when (node-active-p ,top-left) (,function ,top-left ,@arguments))
+       (when (node-active-p ,top-right) (,function ,top-right ,@arguments))
+       (when (node-active-p ,bottom-left) (,function ,bottom-left ,@arguments))
+       (when (node-active-p ,bottom-right) (,function ,bottom-right ,@arguments)))))
 
 (defun node-active-children-p (node)
   (declare (optimize speed))
@@ -58,23 +96,15 @@
 
 (defun node-children (node)
   (declare (optimize speed))
-  (with-node-children (tl tr bl br) node
-    (let ((children ()))
-      (when br (push br children))
-      (when bl (push bl children))
-      (when tr (push tr children))
-      (when tl (push tl children))
-      children)))
+  (let ((children ()))
+    (for-node-children (push node children))
+    (nreverse children)))
 
 (defun node-active-children (node)
   (declare (optimize speed))
-  (with-node-children (tl tr bl br) node
-    (let ((children ()))
-      (when (node-active-p br) (push br children))
-      (when (node-active-p bl) (push bl children))
-      (when (node-active-p tr) (push tr children))
-      (when (node-active-p tl) (push tl children))
-      children)))
+  (let ((children ()))
+    (for-node-active-children (push node children))
+    (nreverse children)))
 
 (defun ensure-child-nodes (node)
   (declare (optimize speed))
@@ -104,13 +134,14 @@
 (defun node-remove-children (node &key recurse)
   (declare (optimize speed))
   (let ((children (node-children node)))
-    (setf (quadtree-node-top-left node) NIL)
-    (setf (quadtree-node-top-right node) NIL)
-    (setf (quadtree-node-bottom-left node) NIL)
-    (setf (quadtree-node-bottom-right node) NIL)
-    (loop for child in children
-          do (setf (quadtree-node-parent child) NIL)
-          when recurse do (node-remove-children child :recurse T))))
+    (when children
+      (setf (quadtree-node-top-left node) NIL)
+      (setf (quadtree-node-top-right node) NIL)
+      (setf (quadtree-node-bottom-left node) NIL)
+      (setf (quadtree-node-bottom-right node) NIL)
+      (loop for child in children
+            do (setf (quadtree-node-parent child) NIL)
+            when recurse do (node-remove-children child :recurse T)))))
 
 (declaim (inline region-contains-p))
 (defun region-contains-p (region other)
@@ -129,8 +160,8 @@
          (<= oz rz)
          (<= ow rw))))
 
-(declaim (inline region-contains-object-p*))
-(defun region-contains-object-p* (region loc siz)
+(declaim (inline region-contains-area-p))
+(defun region-contains-area-p (region loc siz)
   (declare (optimize speed))
   (declare (type vec4 region))
   (declare (type vec2 loc siz))
@@ -153,7 +184,7 @@
   (let ((loc (location object))
         (siz (bsize object)))
     (declare (type vec2 loc siz))
-    (region-contains-object-p* region loc siz)))
+    (region-contains-area-p region loc siz)))
 
 (declaim (inline region-overlaps-p))
 (defun region-overlaps-p (region other)
@@ -172,8 +203,8 @@
          (<= ry ow)
          (<= oy rw))))
 
-(declaim (inline region-overlaps-with-p*))
-(defun region-overlaps-with-p* (region loc siz)
+(declaim (inline region-overlaps-area-p))
+(defun region-overlaps-area-p (region loc siz)
   (declare (optimize speed))
   (declare (type vec4 region))
   (declare (type vec2 loc siz))
@@ -190,17 +221,17 @@
          (<= ry (+ ly sy))
          (<= ly rw))))
 
-(defun region-overlaps-with-p (region object)
+(defun region-overlaps-object-p (region object)
   (declare (optimize speed))
   (declare (type vec4 region))
   (let ((loc (location object))
         (siz (bsize object)))
     (declare (type vec2 loc siz))
-    (region-overlaps-with-p* region loc siz)))
+    (region-overlaps-area-p region loc siz)))
 
 (defun node-split (node table)
   (declare (optimize speed))
-  ;; Do not split if the node is not active, it's empty, it'd split the node below the minimum size,
+  ;; Do not split if the node is inactive, it's empty, it'd split the node below the minimum size,
   ;; or there are no active children while we are still below the threshold.
   (when (and (quadtree-node-active-p node)
              (not (node-empty-p node))
@@ -209,11 +240,12 @@
              (or (node-active-children-p node)
                  (< (quadtree-node-threshold node)
                     (length (quadtree-node-objects node)))))
-    (let ((objects (node-pop-objects node)))
-      ;; Clear and rearrange the objects.
+    (let ((objects (node-pop-objects node))) ;; Clear and rearrange the objects.
+      (declare (type (vector T) objects))
       (ensure-child-nodes node)
       (with-node-children (tl tr bl br) node
-        (loop for object in objects
+        (loop while (< 0 (length objects))
+              for object = (vector-pop objects)
               for match = (cond
                             ((region-contains-object-p tl object) tl)
                             ((region-contains-object-p tr object) tr)
@@ -229,8 +261,7 @@
 (defun node-increase-depth (node)
   (declare (optimize speed))
   (incf (quadtree-node-depth node))
-  (loop for child in (node-children node)
-        do (node-increase-depth child)))
+  (for-node-children (node-increase-depth node)))
 
 (declaim (inline node-direction*))
 (defun node-direction* (node loc)
@@ -299,18 +330,22 @@
       (node-insert node object table)
       (node-insert-extend (node-extend node (node-direction node object)) object table)))
 
-(defun node-clear (node)
+(defun node-clear (node vector)
   (declare (optimize speed))
   (when (quadtree-node-active-p node)
-    (prog1 (nconc (node-pop-objects node)
-                  (loop for child in (node-children node)
-                        nconcing (node-clear child)))
-      (setf (quadtree-node-active-p node) NIL))))
+    (if vector
+        (node-pop-objects node vector)
+        (node-clear-objects node))
+    (for-node-children (node-clear node vector))
+    (setf (quadtree-node-active-p node) NIL))
+  vector)
 
 (defun node-reorder (node table)
   (declare (optimize speed))
-  (loop for object in (node-clear node)
-        do (node-insert node object table)))
+  (let ((objects (node-clear node (make-object-vector))))
+    (declare (type (vector T) objects))
+    (loop while (< 0 (length objects))
+          do (node-insert node (vector-pop objects) table))))
 
 (defun node-check-activity (node)
   (declare (optimize speed))
@@ -321,47 +356,46 @@
 
 (defun node-remove (node object table)
   (declare (optimize speed))
-  (multiple-value-bind (found others) ;; Clear the wanted object out.
-      (loop until (node-empty-p node)
-            for obj = (vector-pop (quadtree-node-objects node))
-            for found = (when (eq obj object) obj)
-            until found
-            collect obj into rest
-            finally (return (values found rest)))
-    (loop for other in others ;; Put the others back.
-          do (vector-push-extend other (quadtree-node-objects node)))
-    (when (node-active-children-p node)
-      (node-reorder node table))
-    (node-check-activity node)
+  (let ((tmp (node-pop-objects node))
+        (found NIL))
+    (declare (type (vector T) tmp))
+    (loop while (< 0 (length tmp)) ;; Clear the wanted object out.
+          for obj = (vector-pop tmp)
+          for match-p = (unless found (eq obj object))
+          do (if match-p
+                 (setf found obj)
+                 (vector-push obj (quadtree-node-objects node))))
+    (when found
+      (when (node-active-children-p node)
+        (node-reorder node table))
+      (node-check-activity node))
     found))
 
-(defun node-find-all (node)
+(defun node-find-all (node vector)
   (declare (optimize speed))
   (when (quadtree-node-active-p node)
-    (nconc (node-list-objects node)
-           (loop for child in (node-children node)
-                 nconcing (node-find-all child)))))
+    (node-push-objects-into node vector)
+    (for-node-children (node-find-all node vector)))
+  vector)
 
-(defun node-find (node region)
+(defun node-find (node region vector)
   (declare (optimize speed))
   (when (and (quadtree-node-active-p node) (region-overlaps-p node region))
+    (node-push-objects-into node vector)
     (if (region-contains-p region node)
-        (node-find-all node)
-        (nconc (node-list-objects node)
-               (loop for child in (node-children node)
-                     nconcing (node-find child region))))))
+        (for-node-children (node-find-all node vector))
+        (for-node-children (node-find node region vector))))
+  vector)
 
 (defun node-set-min-size (node min-size)
   (declare (optimize speed))
   (setf (quadtree-node-min-size node) min-size)
-  (loop for child in (node-children node)
-        do (node-set-min-size child min-size)))
+  (for-node-children (node-set-min-size node min-size)))
 
 (defun node-set-threshold (node threshold)
   (declare (optimize speed))
   (setf (quadtree-node-threshold node) threshold)
-  (loop for child in (node-children node)
-        do (node-set-threshold child threshold)))
+  (for-node-children (node-set-threshold node threshold)))
 
 (defstruct (quadtree
             (:constructor make-quadtree ())
@@ -373,19 +407,17 @@
 (defun make-quadtree-at (location size &key min-size threshold)
   (declare (optimize speed))
   (declare (type vec2 location size))
-  (declare (type (or null (unsigned-byte 16)) min-size))
+  (declare (type (or null (unsigned-byte 16)) min-size threshold))
   (let* ((tree (make-quadtree))
          (root (quadtree-root tree))
          (lx (vx2 location))
          (ly (vx2 location))
          (sx (vx2 size))
          (sy (vx2 size)))
-    (when (node-children root) ;; Should not happen.
-      (node-remove-children root :recurse T))
-    (setf (vx4 root) lx)
-    (setf (vy4 root) ly)
-    (setf (vz4 root) (+ lx sx))
-    (setf (vw4 root) (+ ly sy))
+    ;; Muffling warnings because it complains about the deletion of unreachable code otherwise.
+    #+sbcl (locally (declare (sb-ext:muffle-conditions sb-ext:compiler-note))
+             (vsetf root lx ly (+ lx sx) (+ ly sy)))
+    #-sbcl (vsetf root lx ly (+ lx sx) (+ ly sy))
     (when (and min-size (< 0 min-size))
       (node-set-min-size root min-size))
     (when (and threshold (< 0 threshold))
@@ -419,27 +451,57 @@
          (quadtree-insert tree object)))
       object)))
 
-(defun quadtree-find-all (tree)
+(defun quadtree-find-all (tree &optional vector)
   (declare (optimize speed))
-  (node-find-all (quadtree-root tree)))
+  (let ((vector (or vector (make-object-vector))))
+    (node-find-all (quadtree-root tree) vector)
+    vector))
 
-(defun quadtree-find-in-region (tree region)
+(defun quadtree-find-overlaps (tree region &optional vector)
   (declare (optimize speed))
   (declare (type vec4 region))
-  (node-find (quadtree-root tree) region))
+  (let ((tmp (make-object-vector))
+        (vector (or vector (make-object-vector))))
+    (node-find (quadtree-root tree) region tmp)
+    (loop while (< 0 (length tmp))
+          for object = (vector-pop tmp)
+          when (region-overlaps-object-p region object)
+          do (vector-push-extend object vector))
+    vector))
 
-(defun quadtree-find-in (tree location size)
+(defun quadtree-find-overlaps-in (tree location size &optional vector)
   (declare (optimize speed))
   (declare (type vec2 location size))
   (let ((lx (vx2 location))
         (ly (vy2 location))
         (sx (vx2 size))
         (sy (vy2 size)))
-    (quadtree-find-in-region tree (vec4 lx ly (+ lx sx) (+ ly sy)))))
+    (quadtree-find-overlaps tree (vec4 lx ly (+ lx sx) (+ ly sy)) vector)))
 
-(defun quadtree-find-for (tree object)
+(defun quadtree-find-for (tree object &optional vector)
   (declare (optimize speed))
-  (quadtree-find-in tree (location object) (bsize object)))
+  (quadtree-find-overlaps-in tree (location object) (bsize object) vector))
+
+(defun quadtree-find-contained (tree region &optional vector)
+  (declare (optimize speed))
+  (declare (type vec4 region))
+  (let ((tmp (make-object-vector))
+        (vector (or vector (make-object-vector))))
+    (node-find (quadtree-root tree) region tmp)
+    (loop while (< 0 (length tmp))
+          for object = (vector-pop tmp)
+          when (region-contains-object-p region object)
+          do (vector-push-extend object vector))
+    vector))
+
+(defun quadtree-find-contained-in (tree location size &optional vector)
+  (declare (optimize speed))
+  (declare (type vec2 location size))
+  (let ((lx (vx2 location))
+        (ly (vy2 location))
+        (sx (vx2 size))
+        (sy (vy2 size)))
+    (quadtree-find-contained tree (vec4 lx ly (+ lx sx) (+ ly sy)) vector)))
 
 (defmethod trial:enter (object (tree quadtree))
   (quadtree-insert tree object))
@@ -449,7 +511,7 @@
 
 (defmethod trial::clear ((tree quadtree))
   (clrhash (quadtree-table tree))
-  (node-clear (quadtree-root tree))
+  (node-clear (quadtree-root tree) NIL)
   tree)
 
 (defun quadtree-print (tree)
@@ -457,29 +519,27 @@
   (labels ((recurse (node)
              (when (quadtree-node-active-p node)
                (format T "~&~v@{|  ~}└ ~a" (quadtree-node-depth node) node)
-               (loop for child in (node-children node)
-                     do (recurse child)))))
+               (for-node-children (recurse node)))))
     (recurse (quadtree-root tree))))
 
 (defun quadtree-lines (tree)
-  (let ((points ()))
+  (let ((root (quadtree-root tree))
+        (points ()))
     (labels ((depth-color (depth)
                (let ((value (max 0.0 (- 1.0 (/ depth 100)))))
                  (vec 1 value value 0.1)))
              (recurse (node)
-               (when (quadtree-node-active-p node)
-                 (let ((color (depth-color (quadtree-node-depth node))))
-                   (push (list (vxy_ node) color) points)
-                   (push (list (vzy_ node) color) points)
-                   (push (list (vxw_ node) color) points)
-                   (push (list (vzw_ node) color) points)
-                   (push (list (vxy_ node) color) points)
-                   (push (list (vxw_ node) color) points)
-                   (push (list (vzy_ node) color) points)
-                   (push (list (vzw_ node) color) points)
-                   (loop for child in (node-children node)
-                         do (recurse child))))))
-      (recurse (quadtree-root tree))
+               (let ((color (depth-color (quadtree-node-depth node))))
+                 (push (list (vxy_ node) color) points)
+                 (push (list (vzy_ node) color) points)
+                 (push (list (vxw_ node) color) points)
+                 (push (list (vzw_ node) color) points)
+                 (push (list (vxy_ node) color) points)
+                 (push (list (vxw_ node) color) points)
+                 (push (list (vzy_ node) color) points)
+                 (push (list (vzw_ node) color) points)
+                 (for-node-active-children (recurse node)))))
+      (when (node-active-p root) (recurse root))
       points)))
 
 (defun quadtree-check (tree) ;; None of these things should happen.
@@ -493,80 +553,100 @@
              (when (and (quadtree-node-active-p node) (not (node-active-children-p node))
                         (= 0 (length (quadtree-node-objects node))))
                (error "Node ~a~%is active without active children or objects." node))
-             (loop for child in (node-children node)
-                   do (recurse child))
-             (loop for object in (node-list-objects node)
-                   unless (eq node (gethash object (quadtree-table tree)))
-                   do (error "Node ~a~%is not assigned to object~%  ~a~% as it is assigned to~%node ~a"
-                             node object (gethash object (quadtree-table tree))))))
+             (for-node-children (recurse node))
+             (let ((objects (make-object-vector)))
+               (node-push-objects-into node objects)
+               (loop while (< 0 (length objects))
+                     for object = (vector-pop objects)
+                     unless (eq node (gethash object (quadtree-table tree)))
+                     do (error "Node ~a~%is not assigned to object~%  ~a~% as it is assigned to~%node ~a"
+                               node object (gethash object (quadtree-table tree)))))))
     (recurse (quadtree-root tree)))
   (loop for object being the hash-keys of (quadtree-table tree)
         for node being the hash-values of (quadtree-table tree)
-        do (loop for obj in (node-list-objects node)
+        for objects = (make-object-vector)
+        do (node-push-objects-into node objects)
+        do (loop while (< 0 (length objects))
+                 for obj = (vector-pop objects)
                  for match = (eq obj object)
                  until match
                  finally (unless match
                            (error "Node ~a~%does not refer to object~%  ~a" node object)))))
 
 (defun quadtree-reinsert-all (tree) ;; Useful only if something's gone very wrong.
-  (let ((objects (node-clear (quadtree-root tree))))
+  (declare (optimize speed))
+  (let ((objects (node-clear (quadtree-root tree) (make-object-vector))))
+    (declare (type (vector T) objects))
     (clrhash (quadtree-table tree))
-    (loop for object in objects do (quadtree-insert tree object))))
+    (loop while (< 0 (length objects))
+          do (quadtree-insert tree (vector-pop objects)))))
 
 (defstruct (quadtree-iterator
-            (:constructor make-quadtree-iterator (tree region))
+            (:constructor make-quadtree-iterator (tree region contain-p))
             (:copier NIL)
             (:predicate NIL))
   (tree NIL :type quadtree)
-  (region NIL :type vec4))
+  (region NIL :type vec4)
+  (contain-p NIL :type boolean))
 
-(defmethod for:make-iterator ((tree quadtree) &key region)
-  (make-quadtree-iterator tree (or region (quadtree-root tree))))
+(defmethod for:make-iterator ((tree quadtree) &key region contain)
+  (make-quadtree-iterator tree (or region (quadtree-root tree)) contain))
 
 (defmethod for:step-functions ((iterator quadtree-iterator))
   (declare (optimize speed))
   (let* ((region (quadtree-iterator-region iterator))
+         (contain-p (quadtree-iterator-contain-p iterator))
          (node (quadtree-root (quadtree-iterator-tree iterator))) ;; Current node.
-         (objects (node-list-objects node)) ;; Current node's list of objects.
-         (child-stack (make-array 16 :fill-pointer 0 :adjustable T
-                                     :element-type '(or null list)
-                                     :initial-element NIL)))
+         (objects (node-push-objects-into node (make-object-vector))) ;; Current node's objects.
+         (next-object NIL)
+         (child-stack (make-array 1 :fill-pointer 0 :adjustable T
+                                    :element-type '(or null list)
+                                    :initial-element NIL)))
+    (declare (type (vector T) objects))
     (when (or (eq node region) (region-contains-p region node))
       (setf region NIL))
     (labels ((pop-stack () ;; Keep track of child nodes that haven't been checked yet.
-               (when (< 0 (length child-stack))
-                 (vector-pop child-stack)))
+               (vector-pop child-stack))
              (push-stack (parent)
                (vector-push-extend (node-active-children parent) child-stack))
              (pop-child ()
-               (when (< 0 (length child-stack))
-                 (pop (aref child-stack (1- (length child-stack))))))
-             (has-more-p () ;; Also ensures that the object list has an object within region.
-               (loop while (and objects region (not (region-overlaps-with-p region (car objects))))
-                     do (pop objects)
-                     finally (return (not (null objects)))))
+               (let ((children (vector-pop child-stack)))
+                 (prog1 (when children (pop children))
+                   (vector-push children child-stack))))
+             (next-object () ;; Ensures that the next object is within region.
+               (loop while (and (null next-object) (< 0 (length objects)))
+                     for object = (vector-pop objects)
+                     when (or (null region) (if contain-p
+                                                (region-contains-object-p region object)
+                                                (region-overlaps-object-p region object)))
+                     do (setf next-object object)))
              (next-quad () ;; Updates the current node, object list, and maintains the child stack.
-               (loop while (and node (not (has-more-p)))
-                     do (let ((child (pop-child)))
-                          (cond
-                            (child
-                             (when (or (null region) (region-overlaps-p region node))
-                               (setf objects (node-list-objects child))
-                               (push-stack child)
-                               (setf node child)))
-                            (T
-                             (pop-stack)
-                             (unless (< 0 (length child-stack))
-                               (setf node NIL))))))))
+               (let ((child (pop-child)))
+                 (cond
+                   ((and child (or (null region) (region-overlaps-p region child)))
+                    (node-push-objects-into child objects)
+                    (push-stack child)
+                    (setf node child))
+                   ((null child)
+                    (pop-stack)
+                    (if (< 0 (length child-stack))
+                        (next-quad)
+                        (setf node NIL)))
+                   (T (next-quad)))))
+             (next () ;; Updates the current node and the next object.
+               (setf next-object NIL)
+               (loop until (or (null node) next-object)
+                     do (next-object)
+                     unless next-object do (next-quad))))
       (push-stack node)
-      (next-quad)
+      (next)
       (values
        (lambda ()
          (when node
-           (prog1 (pop objects)
-             (next-quad))))
+           (prog1 next-object
+             (next))))
        (lambda ()
-         (and node (has-more-p)))
+         (and node (not (null next-object))))
        (lambda (value)
          (declare (ignore value))
          (error "Not supported"))
@@ -579,19 +659,22 @@
     (for:for ((object over tree))
       (funcall function object))))
 
-(defun call-with-region (function tree region)
+(defun call-with-region (function tree region &key contain)
+  (declare (type (or null vec4) region))
+  (declare (type boolean contain))
   (let ((function (etypecase function
                     (symbol (fdefinition function))
                     (function function))))
-    (for:for ((object over tree :region region))
+    (for:for ((object over tree :region region :contain contain))
       (funcall function object))))
 
-(defun call-with-area (function tree location size)
+(defun call-with-area (function tree location size &key contain)
   (declare (optimize speed))
   (declare (type vec2 location size))
-  (call-with-region function tree (vec4 (vx2 location) (vy2 location)
-                                        (vx2 size) (vy2 size))))
+  (call-with-region function tree
+                    (vec4 (vx2 location) (vy2 location) (vx2 size) (vy2 size))
+                    :contain contain))
 
-(defun call-with-object (function tree object)
+(defun call-with-object (function tree object &key contain)
   (declare (optimize speed))
-  (call-with-area function tree (location object) (bsize object)))
+  (call-with-area function tree (location object) (bsize object) :contain contain))
