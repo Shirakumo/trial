@@ -73,6 +73,7 @@
                (:file "pipelined-scene" :depends-on ("package" "pipeline" "scene" "loader"))
                (:file "power" :depends-on ("package"))
                (:file "prompt" :depends-on ("package"))
+               (:file "quadtree" :depends-on ("package" "helpers"))
                (:file "queue" :depends-on ("package"))
                (:file "rails" :depends-on ("package" "container" "helpers"))
                (:file "render-loop" :depends-on ("package" "toolkit"))
