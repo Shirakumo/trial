@@ -352,7 +352,7 @@
           (loc (ensure-vec2 (location object)))
           (siz (ensure-vec2 (bsize object))))
       (labels ((recurse (node)
-                 (when (node-contains-p* node loc siz)
+                 (when (and node (node-contains-p* node loc siz))
                    (let ((o (bvh-node-o node)))
                      (cond (o
                             (funcall function o))
