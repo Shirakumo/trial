@@ -298,8 +298,9 @@
               ((eql :disallowed)  (create-standard-cursor #x0003600A))))))
 
 (defmethod (setf cursor) (cursor (context context))
-  (set-cursor (window context) (get-cursor cursor context))
-  (setf (slot-value context 'cursor) cursor))
+  (unless (eq cursor (slot-value context 'cursor))
+    (set-cursor (window context) (get-cursor cursor context))
+    (setf (slot-value context 'cursor) cursor)))
 
 (defmethod (setf icon) ((icon rgba-icon) (context context))
   (cffi:with-foreign-object (image '(:struct image))
