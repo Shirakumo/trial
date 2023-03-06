@@ -396,12 +396,18 @@
 (defmethod render-frame ((pass per-object-pass) frame)
   (declare (type (and vector (not simple-vector)) frame))
   (loop for (object . program) across frame
-        do (prepare-pass-program pass program)
-           (push-matrix)
-           (with-unwind-protection (pop-matrix)
-             (apply-transforms object)
-             (bind-textures object)
-             (render object program))))
+        do (restart-case
+               (progn
+                 (prepare-pass-program pass program)
+                 (push-matrix)
+                 (with-unwind-protection (pop-matrix)
+                   (apply-transforms object)
+                   (bind-textures object)
+                   (render object program)))
+             #-kandria-release
+             (leave ()
+               :report "Leave the object"
+               (leave object T)))))
 
 (define-shader-pass single-shader-pass ()
   ((shader-program :initform NIL :accessor shader-program)))
