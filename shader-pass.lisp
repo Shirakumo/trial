@@ -325,7 +325,8 @@
                   (stage program area)))))
 
 (defmethod stage ((object shader-entity) (pass per-object-pass))
-  (stage (effective-shader-class object) pass))
+  (unless (typep object 'dynamic-renderable)
+    (stage (effective-shader-class object) pass)))
 
 (defmethod stage ((object shader-entity-class) (pass per-object-pass))
   (enter object pass))
