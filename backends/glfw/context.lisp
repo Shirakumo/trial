@@ -487,6 +487,10 @@
         (:press
          (v:debug :trial.input "Mouse pressed: ~a" button)
          (handle (make-event 'mouse-press :pos pos :button button)
+                 (handler context)))
+        (:release
+         (v:debug :trial.input "Mouse released: ~a" button)
+         (handle (make-event 'mouse-release :pos pos :button button)
                  (handler context))
          (let* ((click (last-click context))
                 (time (get-internal-real-time))
@@ -497,11 +501,7 @@
                      (handler context)))
            (setf (last-click-button click) button)
            (setf (last-click-time click) time)
-           (v<- (last-click-pos click) pos)))
-        (:release
-         (v:debug :trial.input "Mouse released: ~a" button)
-         (handle (make-event 'mouse-release :pos pos :button button)
-                 (handler context)))))))
+           (v<- (last-click-pos click) pos)))))))
 
 (cl-glfw3:def-scroll-callback ctx-scroll (window x y)
   (%with-context
