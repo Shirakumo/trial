@@ -9,7 +9,8 @@
    #:set-config
    #:configure)
   (:export
-   #:build)
+   #:build
+   #:test)
   (:export
    #:release
    #:deploy
