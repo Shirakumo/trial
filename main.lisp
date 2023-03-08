@@ -116,6 +116,7 @@
     (enter object container)
     (loop for pass across (passes (scene main))
           do (when (object-renderable-p object pass)
+               (stage (shader-program-for-pass pass object) area)
                (stage pass area)))
     (unless (commit area (loader main) :unload NIL)
       (loop for pass across (passes (scene main))
