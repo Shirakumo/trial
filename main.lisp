@@ -140,11 +140,6 @@
     (blit-to-screen (scene source))))
 
 (defun launch (main &rest initargs)
-  (labels ((recurse (class)
-             (c2mop:finalize-inheritance class)
-             (dolist (sub (c2mop:class-direct-subclasses class))
-               (recurse sub))))
-    (recurse (find-class 'shader-entity)))
   (standalone-logging-handler)
   (v:output-here)
   (v:info :trial.main "GENESIS")
