@@ -183,8 +183,10 @@
     (setf superclasses (append superclasses '(event))))
   `(defclass ,name ,superclasses
      ,(loop for slot in slots
-            collect (destructuring-bind (name &optional (default NIL default-p) &key (reader name)) (enlist slot)
-                      `(,name :initarg ,(kw name) :initform ,(if default-p default `(error "~a required." ',name)) :reader ,reader)))))
+            collect (destructuring-bind (name &optional (default 'arg!) &rest args) (enlist slot)
+                      (unless (getf args :reader)
+                        (setf (getf args :reader) name))
+                      `(,name :initarg ,(kw name) :initform ,(if (eql default 'arg!) `(error "~a required." ',name)) ,@args)))))
 
 (defmacro define-event-pool (class count)
   `(setf (gethash ',class +event-pools+) (make-event-pool ',class ,count)))
