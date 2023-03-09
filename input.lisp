@@ -15,7 +15,7 @@
 (defgeneric button (digital-event))
 
 (define-event key-event (keyboard-event digital-event)
-  key (repeat NIL :reader repeat-p) (modifiers ()))
+  (key arg! :reader key :reader button) (repeat NIL :reader repeat-p) (modifiers ()))
 
 (defmethod print-object ((event key-event) stream)
   (print-unreadable-object (event stream :type T)
