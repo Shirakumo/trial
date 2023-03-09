@@ -43,6 +43,9 @@
 (defmethod report-on-error ((error sb-sys:memory-fault-error))
   (emessage "The application encountered a memory corruption and cannot continue, sorry."))
 
+(defmethod report-on-error ((error cffi:load-foreign-library-error))
+  (emessage "Failed to load a foreign library: ~a" error))
+
 (defmethod report-on-error ((error trial:thread-did-not-exit))
   :exit)
 
