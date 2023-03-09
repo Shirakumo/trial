@@ -46,7 +46,7 @@
          (height (gethash "height"  data))
          (pixel-data (make-array (* width height 2) :element-type '(unsigned-byte 8) :initial-element 0))
          (tileset NIL))
-    (loop for gid in (gethash "data"  data)
+    (loop for gid across (gethash "data"  data)
           for i from 0
           do (destructuring-bind (x y new-tileset) (decode-tiled-gid gid tilesets)
                (when new-tileset
