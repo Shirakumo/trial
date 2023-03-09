@@ -25,7 +25,7 @@
   (setf (steam:achieved-p (string-downcase (trial:name achievement))) NIL))
 
 (defmethod trial:notifications-display-p ((api achievement-api))
-  T)
+  steam::*steamworks*)
 
 (defmethod (setf trial:notifications-display-p) (value (api achievement-api))
   NIL)
