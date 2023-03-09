@@ -5,8 +5,13 @@
     :cl-mixed-no-restarts :trial-release))
 
 (defmethod build :around (target)
-  (with-simple-restart (continue "Treat build as successful")
-    (call-next-method)))
+  (restart-case
+      (call-next-method)
+    (continue ()
+      :report "Treat the build as successful")
+    (retry ()
+      :report "Retry the build"
+      (build target))))
 
 (defun build-args ()
   (let ((features (append *default-build-features* (config :build :features))))

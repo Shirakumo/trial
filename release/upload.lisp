@@ -113,3 +113,12 @@
 (defmethod upload ((services cons) &rest args &key &allow-other-keys)
   (dolist (service services)
     (apply #'upload service args)))
+
+(defmethod upload :around (target &rest args &key &allow-other-keys)
+  (restart-case
+      (call-next-method)
+    (continue ()
+      :report "Treat the upload as successful")
+    (retry ()
+      :report "Retry the upload"
+      (apply #'upload target args))))
