@@ -48,7 +48,7 @@
   (simple-tasks:schedule-task task (task-thread +main+)))
 
 (defclass promise-task (simple-tasks:task)
-  ((promise :initarg :promise :accessor promise)
+  ((promise :initarg :promise :accessor promise :reader promise:ensure-promise)
    (func :initarg :func :accessor func)))
 
 (defmethod simple-tasks:run-task ((task promise-task))
