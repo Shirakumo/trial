@@ -184,13 +184,19 @@
 
 (defmethod from-mapping-description ((type (eql 'trigger)) action bindings)
   (loop for binding in bindings
-        collect (destructuring-bind (type &key one-of edge threshold (toggle NIL toggle-p)) binding
-                  (make-instance 'digital-mapping
-                                 :action-type action
-                                 :event-type (normalize-mapping-event-type type)
-                                 :qualifier one-of
-                                 :threshold (or threshold 0.5)
-                                 :toggle-p (if toggle-p toggle (eql :rise-only edge))))))
+        for mapping = (destructuring-bind (type &key one-of edge threshold (toggle NIL toggle-p)) binding
+                        (cond ((not (find-class action NIL))
+                               (warn "Mapping for inexistent action class ~s! Ignoring." action))
+                              ((not (subtypep action 'action))
+                               (warn "Mapping for class ~s, but it is not an action! Ignoring." action))
+                              (T
+                               (make-instance 'digital-mapping
+                                              :action-type action
+                                              :event-type (normalize-mapping-event-type type)
+                                              :qualifier one-of
+                                              :threshold (or threshold 0.5)
+                                              :toggle-p (if toggle-p toggle (eql :rise-only edge))))))
+        when mapping collect mapping))
 
 (defmethod to-mapping-description ((mapping digital-mapping))
   (list* 'trigger (action-type mapping)
