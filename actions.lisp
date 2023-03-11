@@ -67,13 +67,7 @@
   ((value :initarg :value :initform 0f0 :accessor value)))
 
 (defclass directional-action (action)
-  ((x :initarg :value :initform 0f0 :accessor x)
-   (y :initarg :value :initform 0f0 :accessor y)))
-
-(defclass spatial-action (action)
-  ((x :initarg :value :initform 0f0 :accessor x)
-   (y :initarg :value :initform 0f0 :accessor y)
-   (z :initarg :value :initform 0f0 :accessor z)))
+  ((direction :initarg :direction :initform (vec 0 0 0 0) :reader direction)))
 
 (defmacro define-action (name superclasses)
   `(progn
@@ -83,3 +77,13 @@
           `(undefmethod active-p ((,name ,name)))
           `(defmethod active-p ((,name ,name)) T))
      ',name))
+
+(defun check-action (action)
+  (cond ((not (find-class action NIL))
+         (warn "Mapping for inexistent action class ~s! Ignoring." action)
+         NIL)
+        ((not (subtypep action 'action))
+         (warn "Mapping for class ~s, but it is not an action! Ignoring." action)
+         NIL)
+        (T
+         T)))

@@ -5,6 +5,17 @@
   (:export #:workbench #:launch))
 (in-package #:workbench)
 
+(defclass movement (directional-action)
+  ())
+
+(defmethod active-p ((action movement)) T)
+
+(load-mapping '((directional movement
+                 (point)
+                 (stick :one-of ((:l-h :l-v) (:r-h :r-v) (:dpad-h :dpad-v)))
+                 (keys :one-of ((:w :a :s :d) (:i :j :k :l)))
+                 (buttons :one-of ((:y :x :a :b))))))
+
 (defclass workbench (main) ()
   (:default-initargs :clear-color (vec 0.25 0.3 0.35 0)))
 
@@ -28,14 +39,8 @@
    (vertex-array :initform (// 'workbench 'cube))))
 
 (define-handler (player tick) (dt)
-  (when (retained :w)
-    (incf (vz (location player)) (* dt +50)))
-  (when (retained :a)
-    (incf (vx (location player)) (* dt -50)))
-  (when (retained :s)
-    (incf (vz (location player)) (* dt -50)))
-  (when (retained :d)
-    (incf (vx (location player)) (* dt +50))))
+  (incf (vx (location player)) (* dt 50 (vx (directional 'movement))))
+  (incf (vz (location player)) (* dt 50 (vy (directional 'movement)))))
 
 (progn
   (defmethod setup-scene ((workbench workbench) scene)

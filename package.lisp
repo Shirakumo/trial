@@ -247,12 +247,7 @@
    #:analog-action
    #:value
    #:directional-action
-   #:x
-   #:y
-   #:spatial-action
-   #:x
-   #:y
-   #:z
+   #:direction
    #:define-action)
   ;; array-container.lisp
   (:export
@@ -795,6 +790,8 @@
    #:retained
    #:clear-retained
    #:reset-retained
+   #:directional
+   #:clear-directional
    #:action-mapping
    #:action-type
    #:event-type
@@ -812,6 +809,18 @@
    #:digital-mapping
    #:threshold
    #:toggle-p
+   #:axis-directional-mapping
+   #:dead-zone
+   #:axis
+   #:digital-directional-mapping
+   #:high-value
+   #:low-value
+   #:mouse-directional-mapping
+   #:scaling
+   #:point
+   #:stick
+   #:buttons
+   #:keys
    #:compile-mapping
    #:load-mapping
    #:save-mapping
