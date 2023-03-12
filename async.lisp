@@ -23,6 +23,13 @@
     (simple-tasks:runner-not-stopped ()
       (bt:destroy-thread (thread runner)))))
 
+(defmethod simple-tasks:start-runner ((runner task-thread))
+  (handler-bind (#+trial-release (error (lambda (e)
+                                          (v:warn :trial.async "Ignoring failure in task thread: ~a" e)
+                                          (v:debug :trial.async e)
+                                          (invoke-restart 'simple-tasks:skip))))
+    (call-next-method)))
+
 (defmethod simple-tasks:schedule-task ((function function) (main task-thread))
   (simple-tasks:schedule-task
    (make-instance 'promise-task :promise (promise:make) :func function)
