@@ -84,16 +84,20 @@
   (trial:stage (alloy:layout-tree ui) area))
 
 (defmethod alloy:clipboard ((ui ui))
-  (trial:clipboard trial:*context*))
+  (when trial:*context*
+    (trial:clipboard trial:*context*)))
 
 (defmethod (setf alloy:clipboard) (value (ui ui))
-  (setf (trial:clipboard trial:*context*) value))
+  (when trial:*context*
+    (setf (trial:clipboard trial:*context*) value)))
 
 (defmethod alloy:cursor ((ui ui))
-  (trial:cursor trial:*context*))
+  (when trial:*context*
+    (trial:cursor trial:*context*)))
 
 (defmethod (setf alloy:cursor) (value (ui ui))
-  (setf (trial:cursor trial:*context*) value))
+  (when trial:*context*
+    (setf (trial:cursor trial:*context*) value)))
 
 (defmethod alloy:key-text (key (ui ui))
   (trial:local-key-string trial:*context* key))
