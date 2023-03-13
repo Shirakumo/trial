@@ -6,6 +6,8 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(defgeneric debug-draw (thing &key))
+
 (define-shader-entity debug-draw (renderable)
   ((name :initform 'debug-draw)
    (points-vao :accessor points-vao)
@@ -50,6 +52,12 @@
      (when update
        (resize-buffer (caar (bindings (,(ecase type (points 'points-vao) (lines 'lines-vao)) debug-draw))) T))))
 
+(defmethod debug-draw ((point vec2) &rest args)
+  (apply #'debug-point (vxy_ point) args))
+
+(defmethod debug-draw ((point vec3) &rest args)
+  (apply #'debug-point point args))
+
 (define-debug-draw-function (debug-point points) (point &key (color #.(vec 1 0 0)))
   (v point)
   (v color))
@@ -59,6 +67,14 @@
   (v color-a)
   (v b)
   (v color-b))
+
+(defmethod debug-draw ((entity vertex-entity) &rest args)
+  (apply #'debug-vertex-array (vertex-array entity) args))
+
+(defmethod debug-draw :around ((entity transformed-entity) &rest args)
+  (unless (getf args :transform)
+    (setf (getf args :transform) (tmat4 (tf entity))))
+  (apply #'call-next-method entity args))
 
 (define-debug-draw-function (debug-vertex-array lines) (vao &key (color #.(vec 1 0 0)) (transform (model-matrix)))
   (let ((count 0) prev pprev)
@@ -71,9 +87,9 @@
                   (setf count 1))
                  (1 (lines vec)
                   (lines vec))))
-             (line-loop ()
+             (line-loop (vec)
                (error "Not implemented"))
-             (triangles ()
+             (triangles (vec)
                (case count
                  (0 (lines vec)
                   (setf prev vec)
@@ -83,8 +99,9 @@
                   (setf count 2))
                  (T (lines vec)
                   (lines prev)
+                  (lines vec)
                   (setf count 0))))
-             (triangle-strip ()
+             (triangle-strip (vec)
                (case count
                  (0 (lines vec)
                   (setf pprev vec)
@@ -97,7 +114,7 @@
                   (lines vec)
                   (lines pprev)
                   (shiftf pprev prev vec))))
-             (triangle-fan ()
+             (triangle-fan (vec)
                (case count
                  (0 (lines prev)
                   (setf pprev vec)
@@ -116,20 +133,44 @@
                       (:line-loop #'line-loop)
                       (:triangles #'triangles)
                       (:triangle-strip #'triangle-strip)
-                      (:triangle-fan #'triangle-fan))))
-        (destructuring-bind (buffer &key (size 3) (stride 0) (offset 0)) (first (bindings vao))
-          (loop for i from (floor offset 4) by (floor stride 4)
-                do (ecase size
-                     (3
-                      (let ((vec (vec (aref buffer (+ 0 i)) (aref buffer (+ 1 i)) (aref buffer (+ 2 i)))))
-                        (declare (dynamic-extent vec))
-                        (n*m transform vec)
-                        (funcall vertex vec)))
-                     (2
-                      (let ((vec (vec (aref buffer (+ 0 i)) (aref buffer (+ 1 i)) 0.0)))
-                        (declare (dynamic-extent vec))
-                        (n*m transform vec)
-                        (funcall vertex vec))))))))))
+                      (:triangle-fan #'triangle-fan)))
+            ebo vbo)
+        (loop for binding in (bindings vao)
+              do (case (buffer-type (unlist binding))
+                   (:element-array-buffer
+                    (setf ebo (buffer-data (unlist binding))))
+                   (:array-buffer
+                    (when (= 0 (getf (rest binding) :index 0))
+                      (setf vbo binding)))))
+        (destructuring-bind (buffer &key (size 3) (stride 0) (offset 0) &allow-other-keys) vbo
+          (let ((data (buffer-data buffer)))
+            (cond (ebo
+                   (loop for e across ebo
+                         for i = (+ (floor offset 4) (* (floor stride 4) e))
+                         do (ecase size
+                              (3
+                               (let ((vec (vec (aref data (+ 0 i)) (aref data (+ 1 i)) (aref data (+ 2 i)) 1.0)))
+                                 (declare (dynamic-extent vec))
+                                 (n*m transform vec)
+                                 (funcall vertex vec)))
+                              (2
+                               (let ((vec (vec (aref data (+ 0 i)) (aref data (+ 1 i)) 0.0 1.0)))
+                                 (declare (dynamic-extent vec))
+                                 (n*m transform vec)
+                                 (funcall vertex vec))))))
+                  (T
+                   (loop for i from (floor offset 4) by (floor stride 4) below (length data)
+                         do (ecase size
+                              (3
+                               (let ((vec (vec (aref data (+ 0 i)) (aref data (+ 1 i)) (aref data (+ 2 i)) 1.0)))
+                                 (declare (dynamic-extent vec))
+                                 (n*m transform vec)
+                                 (funcall vertex vec)))
+                              (2
+                               (let ((vec (vec (aref data (+ 0 i)) (aref data (+ 1 i)) 0.0 1.0)))
+                                 (declare (dynamic-extent vec))
+                                 (n*m transform vec)
+                                 (funcall vertex vec)))))))))))))
 
 (defun debug-clear (&key (debug-draw (node 'debug-draw T)) (update T))
   (when debug-draw

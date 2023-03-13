@@ -257,5 +257,6 @@
               for contact = (aref (contact-data-hits data) i)
               do (debug-line (contact-location contact)
                              (v+ (contact-location contact)
-                                 (v* (contact-normal contact) 10)))))))
+                                 (v* (contact-normal contact) 10)))
+                 (debug-draw (contact-a contact))))))
   (integrate rigidbody-system dt))
