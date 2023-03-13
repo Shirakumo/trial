@@ -21,7 +21,7 @@
                                 (* (vx normal) (vx normal)))))))
              (vsetf tangent-0 (* (vz normal) s) 0.0 (- (* (vx normal) s)))
              (vsetf tangent-1
-                    (* (vy normal) (vx tangent-0))
+                    (* (vy normal) (vz tangent-0))
                     (- (* (vz normal) (vx tangent-0))
                        (* (vx normal) (vz tangent-0)))
                     (- (* (vy normal) (vx tangent-0))))))
@@ -52,23 +52,22 @@
                    (velocity entity))
               to-world))
         (acc (ntransform-inverse
-              (v* (force entity) (inverse-mass entity) dt)
+              (v* (last-frame-acceleration entity) dt)
               to-world)))
     (setf (vx acc) 0.0)
     (nv+ vel acc)))
 
 (defun desired-delta-velocity (hit velocity dt)
-  (let ((limit 0.25))
-    (flet ((acc (entity)
-             (v. (v* (force entity) (inverse-mass entity) dt)
-                 (hit-normal hit))))
-      (let ((vx (vx velocity)))
-        (- 0.0 vx (if (< (abs vx) limit)
-                      0.0
-                      (* (hit-restitution hit)
-                         (- vx
-                            (acc (hit-a hit))
-                            (acc (hit-b hit))))))))))
+  (flet ((acc (entity)
+           (v. (v* (last-frame-acceleration entity) dt)
+               (hit-normal hit))))
+    (let ((vel-from-acc (- (acc (hit-a hit))
+                           (acc (hit-b hit))))
+          (restitution (hit-restitution hit))
+          (vx (vx velocity)))
+      (when (< (abs vx) 0.25) ; Some kinda velocity limit magic number?
+        (setf restitution 0.0))
+      (- (- vx) (* (- restitution) (- vx vel-from-acc))))))
 
 (defun upgrade-hit-to-contact (hit dt)
   (let* ((to-world (hit-basis hit))
@@ -111,8 +110,8 @@
       (n*m (world-inverse-inertia-tensor entity) rotation-change)
       (vsetf velocity-change 0 0 0)
       (nv+* velocity-change impulse (inverse-mass entity))
-      (nv+ (rotation entity) rotation-change)
-      (nv+ (velocity entity) velocity-change))
+      (nv+ (velocity entity) velocity-change)
+      (nv+ (rotation entity) rotation-change))
     ;; Second body needs to invert the direction.
     (let ((entity (contact-b contact))
           (velocity-change (contact-b-velocity-change contact))
@@ -121,8 +120,8 @@
       (n*m (inverse-inertia-tensor entity) rotation-change)
       (vsetf velocity-change 0 0 0)
       (nv+* velocity-change impulse (- (inverse-mass entity)))
-      (nv+ (rotation entity) rotation-change)
-      (nv+ (velocity entity) velocity-change))))
+      (nv+ (velocity entity) velocity-change)
+      (nv+ (rotation entity) rotation-change))))
 
 (defun apply-position-change (contact)
   (flet ((angular-inertia (entity loc)
@@ -176,8 +175,9 @@
                `(loop for i from 0 below end
                       for ,contact = (aref contacts i)
                       do (progn ,@body)))
-             (do-update (args &body body)
+             (do-update ((rotation-change velocity-change loc sign) &body body)
                `(do-contacts (other)
+                  #++
                   (flet ((change ,args
                            ,@body))
                     (cond ((eq (contact-a other) (contact-a contact))
@@ -195,9 +195,31 @@
                           ((eq (contact-b other) (contact-b contact))
                            (change (contact-b-rotation-change contact)
                                    (contact-b-velocity-change contact)
-                                   (contact-b-relative other) +1)))))))
+                                   (contact-b-relative other) +1))
+                          (T (error "?"))))
+                  (dotimes (b 2)
+                    (dotimes (d 2)
+                      (let ((obody (ecase b (0 (contact-a other)) (1 (contact-b other))))
+                            (cbody (ecase d (0 (contact-a contact)) (1 (contact-b contact)))))
+                        (when (eq obody cbody)
+                          (let ((,rotation-change (ecase d (0 (contact-a-rotation-change contact))
+                                                         (1 (contact-b-rotation-change contact))))
+                                (,velocity-change (ecase d (0 (contact-a-velocity-change contact))
+                                                         (1 (contact-b-velocity-change contact))))
+                                (,loc (ecase b (0 (contact-a-rotation-change other))
+                                             (1 (contact-b-rotation-change other))))
+                                (,sign (ecase b (0 +1) (1 -1))))
+                            ,@body))))))))
+    ;; Prepare Contacts
     (do-contacts (contact)
       (upgrade-hit-to-contact contact dt))
+
+    (do-contacts (contact)
+      (format T "~d ~f,~f,~f~%" i (vx (contact-location contact)) (vy (contact-location contact)) (vz (contact-location contact)))
+      (format T "  ~f~%" (contact-depth contact))
+      (format T "  ~f~%" (contact-desired-delta contact)))
+    
+    ;; Adjust Positions
     (loop repeat iterations
           for worst = 0.0
           for contact = NIL
@@ -212,6 +234,7 @@
                (incf (contact-depth other)
                      (* sign (v. (nv+ (vc rotation-change loc) velocity-change)
                                  (contact-normal other))))))
+    ;; Adjust Velocities
     (loop repeat iterations
           for worst = 0.01 ;; Some kinda epsilon.
           for contact = NIL
@@ -222,8 +245,8 @@
              (unless contact (loop-finish))
              (apply-velocity-change contact)
              (do-update (rotation-change velocity-change loc sign)
-               (let ((delta (nv+ (vc rotation-change loc) velocity-change)))
-                 (nv+* (contact-velocity other) (n*m (contact-to-world other) delta) sign)
+               (let ((delta (v+ (vc rotation-change loc) velocity-change)))
+                 (nv+* (contact-velocity other) (m* (contact-to-world other) delta) sign)
                  (setf (contact-desired-delta other)
                        (desired-delta-velocity other (contact-velocity other) dt)))))))
 
@@ -248,7 +271,7 @@
                      do (loop for a-p across (physics-primitives a)
                               do (loop for b-p across (physics-primitives b)
                                        do ;; (setf (contact-data-friction data) (static-friction (primitive-material a-p) (primitive-material b-p)))
-                                       (setf (contact-data-restitution data) 0.2) ; ??? Hard-coded ???
+                                       (setf (contact-data-restitution data) 0.6) ; ??? Hard-coded ???
                                        (detect-hits a-p b-p data)))))
       ;; Resolve contacts
       (when (< 0 (contact-data-start data))
@@ -257,6 +280,7 @@
               for contact = (aref (contact-data-hits data) i)
               do (debug-line (contact-location contact)
                              (v+ (contact-location contact)
-                                 (v* (contact-normal contact) 10)))
-                 (debug-draw (contact-a contact))))))
+                                 (v* (contact-normal contact)
+                                     (contact-desired-delta contact))))
+                 (debug-draw (contact-a contact) :color (vec 0 1 0 1))))))
   (integrate rigidbody-system dt))

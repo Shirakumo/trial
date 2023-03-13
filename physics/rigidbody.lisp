@@ -8,7 +8,8 @@
    (physics-primitives :initform #() :accessor physics-primitives)
    ;; Cache
    (transform-matrix :initform (mat4) :reader transform-matrix)
-   (world-inverse-inertia-tensor :initform (mat3) :reader world-inverse-inertia-tensor)))
+   (world-inverse-inertia-tensor :initform (mat3) :reader world-inverse-inertia-tensor)
+   (last-frame-acceleration :initform (vec 0 0 0) :reader last-frame-acceleration)))
 
 (defmethod shared-initialize :after ((body rigidbody) slots &key inertia-tensor physics-primitives)
   (when inertia-tensor (setf (inertia-tensor body) inertia-tensor))
@@ -78,8 +79,10 @@
       (impact entity (nv* (nvunit force) (- coeff)) lws))))
 
 (defmethod integrate ((entity rigidbody) dt)
-  (let ((last-frame-acceleration (nv* (force entity) (inverse-mass entity)))
+  (let ((last-frame-acceleration (last-frame-acceleration entity))
         (angular-acceleration (m* (world-inverse-inertia-tensor entity) (torque entity))))
+    (v<- last-frame-acceleration (force entity))
+    (nv* (last-frame-acceleration entity) (inverse-mass entity))
     (nv+* (velocity entity) last-frame-acceleration dt)
     (nv+* (rotation entity) angular-acceleration dt)
     (nv* (velocity entity) (expt (damping entity) dt))

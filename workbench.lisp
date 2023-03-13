@@ -57,8 +57,9 @@
   (when (string= text "r")
     (trial:debug-clear)
     (vsetf (location cube) 0 10 0)
-    (setf (orientation cube) (q* (qfrom-angle +vz+ (/ PI 4))
-                                 (qfrom-angle +vx+ (/ PI 4))))
+    (setf (orientation cube) ;; (q* (qfrom-angle +vz+ (/ PI 4))
+                             ;;     (qfrom-angle +vx+ (/ PI 4)))
+          (quat))
     (vsetf (trial::velocity cube) 0 0 0)
     (vsetf (trial::rotation cube) 0 0 0)))
 
@@ -75,7 +76,7 @@
       (enter physics scene))
     (enter (make-instance 'fps-counter) scene)
     (enter (make-instance 'vertex-entity :vertex-array (// 'workbench 'grid)) scene)
-    (enter (make-instance 'target-camera :location (vec 0 100 100)) scene)
+    (enter (make-instance 'editor-camera :location (vec 0 100 100)) scene)
     (enter (make-instance 'render-pass) scene))
   (maybe-reload-scene))
 
