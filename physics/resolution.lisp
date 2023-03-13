@@ -67,7 +67,7 @@
           (vx (vx velocity)))
       (when (< (abs vx) 0.25) ; Some kinda velocity limit magic number?
         (setf restitution 0.0))
-      (- (- vx) (* (- restitution) (- vx vel-from-acc))))))
+      (+ (- vx) (* (- restitution) (- vx vel-from-acc))))))
 
 (defun upgrade-hit-to-contact (hit dt)
   (let* ((to-world (hit-basis hit))
@@ -140,7 +140,8 @@
                  (projection (v* (contact-normal contact)
                                  (- (v. loc (contact-normal contact))))))
              (nv+ projection loc)
-             (let ((max (* 0.2 (vlength projection)))
+             (let ((max (* 0.2 ; Some kinda angular limit magic.
+                           (vlength projection)))
                    (total (+ angular-move linear-move)))
                (cond ((< angular-move (- max))
                       (setf angular-move (- max))
@@ -175,9 +176,8 @@
                `(loop for i from 0 below end
                       for ,contact = (aref contacts i)
                       do (progn ,@body)))
-             (do-update ((rotation-change velocity-change loc sign) &body body)
+             (do-update (args &body body)
                `(do-contacts (other)
-                  #++
                   (flet ((change ,args
                            ,@body))
                     (cond ((eq (contact-a other) (contact-a contact))
@@ -196,24 +196,12 @@
                            (change (contact-b-rotation-change contact)
                                    (contact-b-velocity-change contact)
                                    (contact-b-relative other) +1))
-                          (T (error "?"))))
-                  (dotimes (b 2)
-                    (dotimes (d 2)
-                      (let ((obody (ecase b (0 (contact-a other)) (1 (contact-b other))))
-                            (cbody (ecase d (0 (contact-a contact)) (1 (contact-b contact)))))
-                        (when (eq obody cbody)
-                          (let ((,rotation-change (ecase d (0 (contact-a-rotation-change contact))
-                                                         (1 (contact-b-rotation-change contact))))
-                                (,velocity-change (ecase d (0 (contact-a-velocity-change contact))
-                                                         (1 (contact-b-velocity-change contact))))
-                                (,loc (ecase b (0 (contact-a-rotation-change other))
-                                             (1 (contact-b-rotation-change other))))
-                                (,sign (ecase b (0 +1) (1 -1))))
-                            ,@body))))))))
+                          (T (error "?")))))))
     ;; Prepare Contacts
-    (do-contacts (contact)
+    (do-contacts (contact)      
       (upgrade-hit-to-contact contact dt))
 
+    (format T "PREPARED~%")
     (do-contacts (contact)
       (format T "~d ~f,~f,~f~%" i (vx (contact-location contact)) (vy (contact-location contact)) (vz (contact-location contact)))
       (format T "  ~f~%" (contact-depth contact))
@@ -221,26 +209,38 @@
     
     ;; Adjust Positions
     (loop repeat iterations
-          for worst = 0.0
+          for worst = 0.01
           for contact = NIL
+          for contact-i = -1
           do (do-contacts (tentative)
                (when (< worst (contact-depth tentative))
                  (setf contact tentative)
+                 (setf contact-i i)
                  (setf worst (contact-depth contact))))
              (unless contact (loop-finish))
+             (format T "IDX: ~d~%" contact-i)
              (apply-position-change contact)
              ;; We now need to fix up the contact depths.
              (do-update (rotation-change velocity-change loc sign)
                (incf (contact-depth other)
                      (* sign (v. (nv+ (vc rotation-change loc) velocity-change)
-                                 (contact-normal other))))))
+                                 (contact-normal other))))
+               (format T "~a dL: ~a~%" i velocity-change)))
+
+    (format T "POSITIONS ADJUSTED~%")
+    (do-contacts (contact)
+      (format T "~d ~f,~f,~f~%" i (vx (contact-location contact)) (vy (contact-location contact)) (vz (contact-location contact)))
+      (format T "  ~f~%" (contact-depth contact))
+      (format T "  ~f~%" (contact-desired-delta contact)))
     ;; Adjust Velocities
     (loop repeat iterations
           for worst = 0.01 ;; Some kinda epsilon.
           for contact = NIL
+          for contact-i = -1
           do (do-contacts (tentative)
                (when (< worst (contact-desired-delta tentative))
                  (setf contact tentative)
+                 (setf contact-i i)
                  (setf worst (contact-desired-delta contact))))
              (unless contact (loop-finish))
              (apply-velocity-change contact)
@@ -248,7 +248,12 @@
                (let ((delta (v+ (vc rotation-change loc) velocity-change)))
                  (nv+* (contact-velocity other) (m* (contact-to-world other) delta) sign)
                  (setf (contact-desired-delta other)
-                       (desired-delta-velocity other (contact-velocity other) dt)))))))
+                       (desired-delta-velocity other (contact-velocity other) dt)))))
+    (format T "VELOCITIES ADJUSTED~%")
+    (do-contacts (contact)
+      (format T "~d ~f,~f,~f~%" i (vx (contact-location contact)) (vy (contact-location contact)) (vz (contact-location contact)))
+      (format T "  ~f~%" (contact-depth contact))
+      (format T "  ~f~%" (contact-desired-delta contact)))))
 
 (defclass rigidbody-system (physics-system entity listener)
   ((contact-data :initform (make-contact-data) :accessor contact-data)))
