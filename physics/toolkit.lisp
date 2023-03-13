@@ -28,7 +28,8 @@
            (vz3 vec3) (+ (* (vx3 vec3) (m 8))
                          (* (vy3 vec3) (m 9))
                          (* (vz3 vec3) (m 10))
-                         (*            (m 11))))))
+                         (*            (m 11))))
+    vec3))
 
 (defun ntransform-inverse (vec3 mat)
   (with-fast-matcase (m mat)

@@ -134,7 +134,6 @@
                  (nv+ (hit-location hit) p)
                  (v<- (hit-normal hit) pd)
                  (setf (hit-depth hit) (- po dist))
-                 (format T "~a~%" tf)
                  (finish-hit)))))
       (test a)
       (test b)
