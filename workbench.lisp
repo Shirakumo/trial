@@ -38,7 +38,7 @@
   ((name :initform 'cube)
    (texture :initform (// 'workbench 'cat))
    (vertex-array :initform (// 'workbench 'cube)))
-  (:default-initargsp
+  (:default-initargs
    :mass 10.0
    :physics-primitives (trial::make-box :bsize (vec 5 5 5))))
 
@@ -55,7 +55,10 @@
 
 (define-handler (cube text-entered) (text)
   (when (string= text "r")
+    (trial:debug-clear)
     (vsetf (location cube) 0 10 0)
+    (setf (orientation cube) (q* (qfrom-angle +vz+ (/ PI 4))
+                                 (qfrom-angle +vx+ (/ PI 4))))
     (vsetf (trial::velocity cube) 0 0 0)
     (vsetf (trial::rotation cube) 0 0 0)))
 
