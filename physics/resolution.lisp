@@ -117,7 +117,7 @@
           (velocity-change (contact-b-velocity-change contact))
           (rotation-change (contact-b-rotation-change contact)))
       (v<- rotation-change (vc impulse (contact-b-relative contact)))
-      (n*m (inverse-inertia-tensor entity) rotation-change)
+      (n*m (world-inverse-inertia-tensor entity) rotation-change)
       (vsetf velocity-change 0 0 0)
       (nv+* velocity-change impulse (- (inverse-mass entity)))
       (nv+ (velocity entity) velocity-change)
@@ -132,7 +132,7 @@
          (linear-inertia (entity)
            (inverse-mass entity))
          (change (entity loc angular-inertia linear-inertia total-inertia
-                         rotation-change velocity-change)
+                         angular-change linear-change)
            (let ((angular-move (* (contact-depth contact)
                                   (/ angular-inertia total-inertia)))
                  (linear-move (* (contact-depth contact)
@@ -140,7 +140,7 @@
                  (projection (v* (contact-normal contact)
                                  (- (v. loc (contact-normal contact))))))
              (nv+ projection loc)
-             (let ((max (* 0.2 ; Some kinda angular limit magic.
+             (let ((max (* 0.2       ; Some kinda angular limit magic.
                            (vlength projection)))
                    (total (+ angular-move linear-move)))
                (cond ((< angular-move (- max))
@@ -149,15 +149,16 @@
                      ((< max angular-move)
                       (setf angular-move max)
                       (setf linear-move (- total angular-move))))
-               (vsetf rotation-change 0 0 0)
-               (v<- velocity-change (contact-normal contact))
-               (when (/= 0 angular-move)
-                 (v<- rotation-change (vc loc (contact-normal contact)))
-                 (n*m (inverse-inertia-tensor entity) rotation-change)
-                 (nv* rotation-change (/ angular-move angular-inertia)))
-               (nv* velocity-change linear-move)
-               (nv+ (location entity) velocity-change)
-               (nq+* (orientation entity) rotation-change 1.0)))))
+               (cond ((= 0 angular-move)
+                      (vsetf angular-change 0 0 0))
+                     (T
+                      (let ((target-direction (vc loc (contact-normal contact)))
+                            (inverse-tensor (world-inverse-inertia-tensor entity)))
+                        (v<- angular-change (n*m inverse-tensor target-direction))
+                        (nv* angular-change (/ angular-move angular-inertia)))))
+               (v<- linear-change (v* (contact-normal contact) linear-move))
+               (nv+ (location entity) linear-change)
+               (nq+* (orientation entity) angular-change 1.0)))))
     (let* ((a (contact-a contact))
            (b (contact-b contact))
            (a-angular-inertia (angular-inertia a (contact-a-relative contact)))
@@ -200,12 +201,6 @@
     ;; Prepare Contacts
     (do-contacts (contact)      
       (upgrade-hit-to-contact contact dt))
-
-    (format T "PREPARED~%")
-    (do-contacts (contact)
-      (format T "~d ~f,~f,~f~%" i (vx (contact-location contact)) (vy (contact-location contact)) (vz (contact-location contact)))
-      (format T "  ~f~%" (contact-depth contact))
-      (format T "  ~f~%" (contact-desired-delta contact)))
     
     ;; Adjust Positions
     (loop repeat iterations
@@ -218,20 +213,13 @@
                  (setf contact-i i)
                  (setf worst (contact-depth contact))))
              (unless contact (loop-finish))
-             (format T "IDX: ~d~%" contact-i)
              (apply-position-change contact)
              ;; We now need to fix up the contact depths.
              (do-update (rotation-change velocity-change loc sign)
                (incf (contact-depth other)
                      (* sign (v. (nv+ (vc rotation-change loc) velocity-change)
-                                 (contact-normal other))))
-               (format T "~a dL: ~a~%" i velocity-change)))
-
-    (format T "POSITIONS ADJUSTED~%")
-    (do-contacts (contact)
-      (format T "~d ~f,~f,~f~%" i (vx (contact-location contact)) (vy (contact-location contact)) (vz (contact-location contact)))
-      (format T "  ~f~%" (contact-depth contact))
-      (format T "  ~f~%" (contact-desired-delta contact)))
+                                 (contact-normal other))))))
+    
     ;; Adjust Velocities
     (loop repeat iterations
           for worst = 0.01 ;; Some kinda epsilon.
@@ -245,15 +233,11 @@
              (unless contact (loop-finish))
              (apply-velocity-change contact)
              (do-update (rotation-change velocity-change loc sign)
-               (let ((delta (v+ (vc rotation-change loc) velocity-change)))
-                 (nv+* (contact-velocity other) (m* (contact-to-world other) delta) sign)
+               (let* ((delta (v+ (vc rotation-change loc) velocity-change))
+                      (tmp (ntransform-inverse delta (contact-to-world other))))
+                 (nv+* (contact-velocity other) tmp (- sign))
                  (setf (contact-desired-delta other)
-                       (desired-delta-velocity other (contact-velocity other) dt)))))
-    (format T "VELOCITIES ADJUSTED~%")
-    (do-contacts (contact)
-      (format T "~d ~f,~f,~f~%" i (vx (contact-location contact)) (vy (contact-location contact)) (vz (contact-location contact)))
-      (format T "  ~f~%" (contact-depth contact))
-      (format T "  ~f~%" (contact-desired-delta contact)))))
+                       (desired-delta-velocity other (contact-velocity other) dt)))))))
 
 (defclass rigidbody-system (physics-system entity listener)
   ((contact-data :initform (make-contact-data) :accessor contact-data)))
