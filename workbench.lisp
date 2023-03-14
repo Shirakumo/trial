@@ -84,7 +84,7 @@
       (enter physics scene))
     (enter (make-instance 'fps-counter) scene)
     (enter (make-instance 'vertex-entity :vertex-array (// 'workbench 'grid)) scene)
-    (enter (make-instance 'editor-camera :location (vec 0 100 100)) scene)
+    (enter (make-instance 'editor-camera :location (vec 0 10 20)) scene)
     (enter (make-instance 'render-pass) scene))
   (maybe-reload-scene))
 
