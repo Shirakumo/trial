@@ -16,12 +16,19 @@
                  (keys :one-of ((:w :a :s :d) (:i :j :k :l)))
                  (buttons :one-of ((:y :x :a :b))))))
 
-(defclass workbench (main) ()
+(defclass workbench (main)
+  ((paused-p :initform NIL :accessor paused-p))
   (:default-initargs :clear-color (vec 0.25 0.3 0.35 0)
                      :context '(:vsync T)))
 
 (defun launch (&rest args)
   (apply #'trial:launch 'workbench args))
+
+(defmethod update ((main workbench) tt dt fc)
+  (if (paused-p main)
+      (handle (make-event 'tick :tt tt :dt dt :fc fc) (camera (scene main)))
+      (issue (scene main) 'tick :tt tt :dt dt :fc fc))
+  (process (scene main)))
 
 (define-pool workbench)
 
@@ -57,11 +64,12 @@
   (when (string= text "r")
     (trial:debug-clear)
     (vsetf (location cube) 0 10 0)
-    (setf (orientation cube) ;; (q* (qfrom-angle +vz+ (/ PI 4))
-                             ;;     (qfrom-angle +vx+ (/ PI 4)))
-          (quat))
+    (setf (orientation cube) (q* (qfrom-angle +vz+ (/ PI 4))
+                                 (qfrom-angle +vx+ (/ PI 4))))
     (vsetf (trial::velocity cube) 0 0 0)
-    (vsetf (trial::rotation cube) 0 0 0)))
+    (vsetf (trial::rotation cube) 0 0 0))
+  (when (string= text "p")
+    (setf (paused-p +main+) (not (paused-p +main+)))))
 
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
