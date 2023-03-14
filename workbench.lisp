@@ -17,7 +17,7 @@
                  (buttons :one-of ((:y :x :a :b))))))
 
 (defclass workbench (main)
-  ((paused-p :initform NIL :accessor paused-p))
+  ((paused-p :initform T :accessor paused-p))
   (:default-initargs :clear-color (vec 0.25 0.3 0.35 0)
                      :context '(:vsync T)))
 
