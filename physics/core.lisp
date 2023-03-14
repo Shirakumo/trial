@@ -8,7 +8,7 @@
   ((velocity :initform (vec 0 0 0) :reader velocity)
    (inverse-mass :initform 0.0 :accessor inverse-mass)
    (force :initform (vec 0 0 0) :reader force)
-   (damping :initform 1.0 :accessor damping)))
+   (damping :initform 0.95 :accessor damping)))
 
 (defmethod shared-initialize :after ((entity physics-entity) slots &key mass)
   (when mass (setf (mass entity) mass)))

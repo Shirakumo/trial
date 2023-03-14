@@ -4,7 +4,7 @@
   ((rotation :initform (vec 0 0 0) :reader rotation)
    (inverse-inertia-tensor :initform (mat3) :reader inverse-inertia-tensor)
    (torque :initform (vec 0 0 0) :reader torque)
-   (angular-damping :initform 1.0 :accessor angular-damping)
+   (angular-damping :initform 0.8 :accessor angular-damping)
    (physics-primitives :initform #() :accessor physics-primitives)
    ;; Cache
    (transform-matrix :initform (mat4) :reader transform-matrix)
