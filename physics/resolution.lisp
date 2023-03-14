@@ -125,7 +125,7 @@
 
 (defun apply-position-change (contact)
   (flet ((angular-inertia (entity loc)
-           (v. (vc (n*m (inverse-inertia-tensor entity)
+           (v. (vc (n*m (world-inverse-inertia-tensor entity)
                         (vc loc (contact-normal contact)))
                    loc)
                (contact-normal contact)))
