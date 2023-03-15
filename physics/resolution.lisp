@@ -224,7 +224,7 @@
                (incf (contact-depth other)
                      (* sign (v. (nv+ (vc rotation-change loc) velocity-change)
                                  (contact-normal other)))))
-          finally (print :adjust-position-overrun))
+          finally (dbg "Adjust position overflow"))
 
     ;; Adjust Velocities
     (loop repeat iterations
@@ -244,7 +244,7 @@
                  (nv+* (contact-velocity other) tmp (- sign))
                  (setf (contact-desired-delta other)
                        (desired-delta-velocity other (contact-velocity other) dt))))
-          finally (print :adjust-velocity-overrun))))
+          finally (dbg "Adjust velocity overflow"))))
 
 (defclass rigidbody-system (physics-system entity listener)
   ((contact-data :initform (make-contact-data) :accessor contact-data)))
