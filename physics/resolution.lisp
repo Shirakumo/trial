@@ -87,6 +87,16 @@
     (vsetf (contact-b-velocity-change hit) 0 0 0)
     hit))
 
+(defun match-awake-state (contact)
+  (let ((a (contact-a contact))
+        (b (contact-b contact)))
+    (when (and (/= 0 (inverse-mass a))
+               (/= 0 (inverse-mass b))
+               (xor (awake-p a) (awake-p b)))
+      (if (awake-p a)
+          (setf (awake-p b) T)
+          (setf (awake-p a) T)))))
+
 (defun frictionless-impulse (contact &optional (impulse (vec3 0 0 0)))
   (flet ((body-delta-vel (loc body)
            (let ((delta-vel (vc loc (contact-normal contact))))
@@ -206,7 +216,9 @@
                         (nv* angular-change (/ angular-move angular-inertia)))))
                (v<- linear-change (v* (contact-normal contact) linear-move))
                (nv+ (location entity) linear-change)
-               (nq+* (orientation entity) angular-change 1.0)))))
+               (nq+* (orientation entity) angular-change 1.0)
+               (unless (awake-p entity)
+                 (%update-rigidbody-cache entity))))))
     (let* ((a (contact-a contact))
            (b (contact-b contact))
            (a-angular-inertia (angular-inertia a (contact-a-relative contact)))
@@ -222,7 +234,7 @@
         (change b (contact-b-relative contact) b-angular-inertia b-linear-inertia (- total-inertia)
                 (contact-b-rotation-change contact) (contact-b-velocity-change contact))))))
 
-(defun resolve-contacts (contacts end dt &key (iterations 200))
+(defun resolve-contacts (system contacts end dt &key (iterations 200))
   (macrolet ((do-contacts ((contact) &body body)
                `(loop for i from 0 below end
                       for ,contact = (aref contacts i)
@@ -248,12 +260,12 @@
                               (contact-b-velocity-change contact)
                               (contact-b-relative other) +1))))))
     ;; Prepare Contacts
-    (do-contacts (contact)      
+    (do-contacts (contact)
       (upgrade-hit-to-contact contact dt))
     
     ;; Adjust Positions
     (loop repeat iterations
-          for worst = 0.01
+          for worst = (depth-eps system)
           for contact = NIL
           for contact-i = -1
           do (do-contacts (tentative)
@@ -262,6 +274,7 @@
                  (setf contact-i i)
                  (setf worst (contact-depth contact))))
              (unless contact (return))
+             (match-awake-state contact)
              (apply-position-change contact)
              ;; We now need to fix up the contact depths.
              (do-update (rotation-change velocity-change loc sign)
@@ -272,7 +285,7 @@
 
     ;; Adjust Velocities
     (loop repeat iterations
-          for worst = 0.01 ;; Some kinda epsilon.
+          for worst = (velocity-eps system) ;; Some kinda epsilon.
           for contact = NIL
           for contact-i = -1
           do (do-contacts (tentative)
@@ -281,6 +294,7 @@
                  (setf contact-i i)
                  (setf worst (contact-desired-delta contact))))
              (unless contact (return))
+             (match-awake-state contact)
              (apply-velocity-change contact)
              (do-update (rotation-change velocity-change loc sign)
                (let* ((delta (v+ (vc rotation-change loc) velocity-change))
@@ -291,16 +305,19 @@
           finally (dbg "Adjust velocity overflow"))))
 
 (defclass rigidbody-system (physics-system entity listener)
-  ((contact-data :initform (make-contact-data) :accessor contact-data)))
+  ((contact-data :initform (make-contact-data) :accessor contact-data)
+   (velocity-eps :initform 0.01 :initarg :velocity-eps :accessor velocity-eps)
+   (depth-eps :initform 0.01 :initarg :depth-eps :accessor depth-eps)))
 
-(define-handler (rigidbody-system tick) (dt)
-  (start-frame rigidbody-system)
-  (let ((forces (forces rigidbody-system))
-        (objects (%objects rigidbody-system)))
-    (loop for entity across objects
-          do (loop for force across forces
-                   do (apply-force force entity dt)))
-    (integrate rigidbody-system dt)
+(defmethod (setf units-per-metre) (units (system rigidbody-system))
+  ;; The default we pick here is for assuming 1un = 1cm
+  (call-next-method)
+  (setf (velocity-eps system) (* 0.01 units))
+  (setf (depth-eps system) (* 0.01 units)))
+
+(define-handler (rigidbody-system tick) (tt dt fc)
+  (update rigidbody-system tt dt fc)
+  (let ((objects (%objects rigidbody-system)))
     (let ((data (contact-data rigidbody-system)))
       (setf (contact-data-start data) 0)
       ;; Compute contacts
@@ -316,7 +333,7 @@
                                           (detect-hits a-p b-p data)))))
       ;; Resolve contacts
       (when (< 0 (contact-data-start data))
-        (resolve-contacts (contact-data-hits data) (contact-data-start data) dt)
+        (resolve-contacts rigidbody-system (contact-data-hits data) (contact-data-start data) dt)
         #++
         (loop for i from 0 below (contact-data-start data)
               for contact = (aref (contact-data-hits data) i)

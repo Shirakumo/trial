@@ -15,6 +15,13 @@
   (when inertia-tensor (setf (inertia-tensor body) inertia-tensor))
   (when physics-primitives (setf (physics-primitives body) physics-primitives)))
 
+(defmethod (setf awake-p) :after ((false null) (entity rigidbody))
+  (vsetf (rotation entity) 0 0 0))
+
+(defmethod current-motion ((entity rigidbody))
+  (+ (v. (velocity entity) (velocity entity))
+     (v. (rotation entity) (rotation entity))))
+
 (defmethod (setf rotation) ((vel vec3) (entity rigidbody))
   (v<- (rotation entity) vel))
 

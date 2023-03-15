@@ -47,7 +47,7 @@
    (vertex-array :initform (// 'workbench 'cube)))
   (:default-initargs
    :mass 10.0
-   :physics-primitives (trial::make-box :bsize (vec 5 5 5))))
+   :physics-primitives (trial::make-box :bsize (vec 5 5 5) :material :wood)))
 
 (define-handler (cube tick) (dt)
   (let ((strength (* dt 10000)))
@@ -66,10 +66,11 @@
     (for:for ((cube over (scene +main+))
               (i from 0))
       (when (typep cube 'cube)
-        (vsetf (location cube) 0 (+ 5 (* i 20)) 0)
+        (vsetf (location cube) 0 (+ 5 (* i 11)) 0)
         (qsetf (orientation cube) 0 0 0 1)
         (vsetf (trial::velocity cube) 0 0 0)
-        (vsetf (trial::rotation cube) 0 0 0))))
+        (vsetf (trial::rotation cube) 0 0 0)
+        (setf (trial::awake-p cube) T))))
   (when (string= text "p")
     (setf (paused-p +main+) (not (paused-p +main+))))
   (when (string= text "s")
@@ -77,14 +78,14 @@
 
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
-    (let ((physics (make-instance 'trial::rigidbody-system))
-          (floor (make-instance 'trial::rigidbody :physics-primitives (trial::make-half-space))))
+    (let ((physics (make-instance 'trial::rigidbody-system :units-per-metre 1.0))
+          (floor (make-instance 'trial::rigidbody :physics-primitives (trial::make-half-space :material :wood))))
       (enter floor physics)
       (loop for i from 0 below 10
-            for cube = (make-instance 'cube :location (vec 0 (+ 5 (* i 20)) 0))
+            for cube = (make-instance 'cube :location (vec 0 (+ 5 (* i 11)) 0))
             do (enter cube physics)
                (enter cube scene))
-      (enter (make-instance 'trial::gravity :gravity (vec 0 -10 0)) physics)
+      (enter (make-instance 'trial::gravity :gravity (vec 0 -200 0)) physics)
       (enter physics scene))
     (enter (make-instance 'fps-counter) scene)
     (enter (make-instance 'vertex-entity :vertex-array (// 'workbench 'grid)) scene)
