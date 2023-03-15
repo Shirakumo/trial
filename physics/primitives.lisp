@@ -5,8 +5,7 @@
 (defstruct contact-data
   (hits (map-into (make-array #.MAX-CONTACTS) #'make-contact) :type (simple-array T (#.MAX-CONTACTS)))
   (start 0 :type (integer 0 #.MAX-CONTACTS))
-  (restitution 0.0 :type single-float)
-  (friction 0.0 :type single-float))
+  (restitution 0.0 :type single-float))
 
 (defgeneric detect-hits (a b contact-data))
 
@@ -22,9 +21,15 @@
              (flet ((finish-hit ()
                       (when (v= 0 (hit-normal hit)) (error "What"))
                       (setf (hit-restitution hit) (contact-data-restitution data))
-                      (setf (hit-friction hit) (contact-data-friction data))
                       (setf (hit-a hit) (primitive-entity a))
-                      (setf (hit-b hit) ,(if (subtypep b 'primitive) `(primitive-entity b) NIL))
+                      ,@(cond ((subtypep b 'primitive)
+                               `((setf (hit-b hit) (primitive-entity b))
+                                 (setf (hit-static-friction hit) (static-friction (primitive-material a) (primitive-material b)))
+                                 (setf (hit-dynamic-friction hit) (dynamic-friction (primitive-material a) (primitive-material b)))))
+                              (T
+                               `((setf (hit-b hit) NIL)
+                                 (setf (hit-static-friction hit) 0.0)
+                                 (setf (hit-dynamic-friction hit) 0.0))))
                       (incf start)
                       (if (< start #.MAX-CONTACTS)
                           (setf hit (aref hits start))
