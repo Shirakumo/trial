@@ -322,6 +322,10 @@
       (setf (contact-data-start data) 0)
       ;; Compute contacts
       ;; TODO: replace with something that isn't as dumb as this.
+      ;;       particularly: use a spatial query structure to speed up
+      ;;       the search of close objects, and then process close objects
+      ;;       in batches to avoid updating contacts that are far apart
+      ;;       in the resolver.
       (loop for i from 0 below (length objects)
             for a = (aref objects i)
             do (loop for j from (1+ i) below (length objects)
