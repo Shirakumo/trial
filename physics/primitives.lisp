@@ -10,7 +10,7 @@
 
 (defgeneric detect-hits (a b contact-data))
 
-(defmacro define-hit-detector ((a b &key (generate-inverse T)) &body body)
+(defmacro define-hit-detector ((a b) &body body)
   `(progn
      (defmethod detect-hits ((a ,a) (b ,b) data)
        (let ((start (contact-data-start data))
@@ -24,7 +24,7 @@
                       (setf (hit-restitution hit) (contact-data-restitution data))
                       (setf (hit-friction hit) (contact-data-friction data))
                       (setf (hit-a hit) (primitive-entity a))
-                      (setf (hit-b hit) (primitive-entity b))
+                      (setf (hit-b hit) ,(if (subtypep b 'primitive) `(primitive-entity b) NIL))
                       (incf start)
                       (if (< start #.MAX-CONTACTS)
                           (setf hit (aref hits start))
@@ -32,17 +32,9 @@
                ,@body))
            (setf (contact-data-start data) start)
            data)))
-     ,@(when (and generate-inverse
-                  (not (eql a b)))
+     ,@(unless (eql a b)
          `((defmethod detect-hits ((a ,b) (b ,a) data)
-             (let ((start (contact-data-start data)))
-               (detect-hits b a data)
-               ;; FLEEP
-               (loop with hits = (contact-data-hits data)
-                     for i from start below (contact-data-start data)
-                     for hit = (aref hits i)
-                     do (rotatef (hit-a hit) (hit-b hit))
-                        (nv- (hit-normal hit)))))))))
+             (detect-hits b a data))))))
 
 (defstruct primitive
   (entity NIL :type T)
@@ -209,7 +201,7 @@
 
 (define-hit-detector (box vec3)
     (let* ((atf (primitive-transform a))
-           (rel (ntransform-inverse (vcopy b) atf))
+           (rel (ntransform-inverse b atf))
            (bsize (box-bsize a))
            (normal (hit-normal hit))
            (min-depth most-positive-single-float))
@@ -266,9 +258,9 @@
                  (when (< 0 (v. normal center))
                    (nv- normal))
                  (let ((vert (vcopy (box-bsize b))))
-                   (cond ((< (v. (mcol3 btf 0) normal) 0) (setf (vx vert) (- (vx vert))))
-                         ((< (v. (mcol3 btf 1) normal) 0) (setf (vy vert) (- (vy vert))))
-                         ((< (v. (mcol3 btf 2) normal) 0) (setf (vz vert) (- (vz vert)))))
+                   (when (< (v. (mcol3 btf 0) normal) 0) (setf (vx vert) (- (vx vert))))
+                   (when (< (v. (mcol3 btf 1) normal) 0) (setf (vy vert) (- (vy vert))))
+                   (when (< (v. (mcol3 btf 2) normal) 0) (setf (vz vert) (- (vz vert))))
                    (v<- (hit-normal hit) normal)
                    (v<- (hit-location hit) (n*m3 btf vert))
                    (setf (hit-depth hit) smallest-depth)
