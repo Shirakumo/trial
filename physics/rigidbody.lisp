@@ -45,6 +45,7 @@
         do (setf (primitive-entity primitive) entity)))
 
 (defun %update-rigidbody-cache (rigidbody)
+  ;; Re-normalising the orientation here aids in stability by eliminating drift.
   (nqunit (orientation rigidbody))
   (tmat4 (tf rigidbody) (transform-matrix rigidbody))
   (compute-world-inertia-tensor (world-inverse-inertia-tensor rigidbody) (inverse-inertia-tensor rigidbody) (transform-matrix rigidbody))
@@ -88,7 +89,9 @@
     (nv* (velocity entity) (expt (damping entity) dt))
     (nv* (rotation entity) (expt (angular-damping entity) dt))
     (nv+* (location entity) (velocity entity) dt)
+    (nv+* (location entity) last-frame-acceleration (* 0.5 dt dt))
     (nq+* (orientation entity) (rotation entity) dt)
+    (nq+* (orientation entity) angular-acceleration (* 0.5 dt dt))
     (%update-rigidbody-cache entity)
     (vsetf (torque entity) 0 0 0)
     (vsetf (force entity) 0 0 0)))
