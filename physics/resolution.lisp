@@ -200,8 +200,7 @@
                           ((eq (contact-b other) (contact-b contact))
                            (change (contact-b-rotation-change contact)
                                    (contact-b-velocity-change contact)
-                                   (contact-b-relative other) +1))
-                          (T (error "?")))))))
+                                   (contact-b-relative other) +1)))))))
     ;; Prepare Contacts
     (do-contacts (contact)      
       (upgrade-hit-to-contact contact dt))
@@ -270,6 +269,7 @@
       ;; Resolve contacts
       (when (< 0 (contact-data-start data))
         (resolve-contacts (contact-data-hits data) (contact-data-start data) dt)
+        #++
         (loop for i from 0 below (contact-data-start data)
               for contact = (aref (contact-data-hits data) i)
               do (debug-line (contact-location contact)
