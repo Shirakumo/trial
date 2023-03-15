@@ -4,36 +4,40 @@
 (define-global +dynamic-frictions+ (make-hash-table :test 'equal))
 
 (defun static-friction (a b)
-  (let* ((cons (cons a b)))
-    (declare (dynamic-extent cons))
-    (or (gethash cons +static-frictions+)
-        #+trial-release 0.0
-        #-trial-release
-        (restart-case (error "No static friction known for ~a" cons)
-          (continue ()
-            :report "Ignore the friction"
-            (setf (static-friction a b) 0.0))
-          (use-value (value)
-            :report "Store a friction"
-            (setf (static-friction a b) value))))))
+  (if (not (and a b))
+      0.0
+      (let* ((cons (cons a b)))
+        (declare (dynamic-extent cons))
+        (or (gethash cons +static-frictions+)
+            #+trial-release 0.0
+            #-trial-release
+            (restart-case (error "No static friction known for ~a" cons)
+              (continue ()
+                :report "Ignore the friction"
+                (setf (static-friction a b) 0.0))
+              (use-value (value)
+                :report "Store a friction"
+                (setf (static-friction a b) value)))))))
 
 (defun (setf static-friction) (friction a b)
   (setf (gethash (cons a b) +static-frictions+) (float friction 0f0))
   (setf (gethash (cons b a) +static-frictions+) (float friction 0f0)))
 
 (defun dynamic-friction (a b)
-  (let* ((cons (cons a b)))
-    (declare (dynamic-extent cons))
-    (or (gethash cons +dynamic-frictions+)
-        #+trial-release 0.0
-        #-trial-release
-        (restart-case (error "No dynamic friction known for ~a" cons)
-          (continue ()
-            :report "Ignore the friction"
-            (setf (dynamic-friction a b) 0.0))
-          (use-value (value)
-            :report "Store a friction"
-            (setf (dynamic-friction a b) value))))))
+  (if (not (and a b))
+      0.0
+      (let* ((cons (cons a b)))
+        (declare (dynamic-extent cons))
+        (or (gethash cons +dynamic-frictions+)
+            #+trial-release 0.0
+            #-trial-release
+            (restart-case (error "No dynamic friction known for ~a" cons)
+              (continue ()
+                :report "Ignore the friction"
+                (setf (dynamic-friction a b) 0.0))
+              (use-value (value)
+                :report "Store a friction"
+                (setf (dynamic-friction a b) value)))))))
 
 (defun (setf dynamic-friction) (friction a b)
   (setf (gethash (cons a b) +dynamic-frictions+) (float friction 0f0))

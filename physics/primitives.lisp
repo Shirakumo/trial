@@ -43,7 +43,7 @@
 
 (defstruct primitive
   (entity NIL :type T)
-  (material :wood :type T)
+  (material NIL :type T)
   (local-transform (meye 4) :type mat4)
   (transform (mat4) :type mat4))
 
