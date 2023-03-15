@@ -205,11 +205,6 @@
     ;; Prepare Contacts
     (do-contacts (contact)      
       (upgrade-hit-to-contact contact dt))
-
-    (do-contacts (contact)
-      (format T "B ~a~%" i)
-      (format T "~a ~a~%" (contact-location contact) (contact-depth contact))
-      (format T "~a ~a~%" (location (contact-a contact)) (orientation (contact-a contact))))
     
     ;; Adjust Positions
     (loop repeat iterations
@@ -229,11 +224,6 @@
                      (* sign (v. (nv+ (vc rotation-change loc) velocity-change)
                                  (contact-normal other))))))
     
-    (do-contacts (contact)
-      (format T "C ~a~%" i)
-      (format T "~a ~a~%" (contact-location contact) (contact-depth contact))
-      (format T "~a ~a~%" (location (contact-a contact)) (orientation (contact-a contact))))
-    
     ;; Adjust Velocities
     (loop repeat iterations
           for worst = 0.01 ;; Some kinda epsilon.
@@ -245,19 +235,13 @@
                  (setf contact-i i)
                  (setf worst (contact-desired-delta contact))))
              (unless contact (loop-finish))
-             (format T "ROT1: ~a~%" (contact-a-rotation-change contact))
              (apply-velocity-change contact)
-             (format T "ROT2: ~a~%" (contact-a-rotation-change contact))
              (do-update (rotation-change velocity-change loc sign)
                (let* ((delta (v+ (vc rotation-change loc) velocity-change))
                       (tmp (ntransform-inverse delta (contact-to-world other))))
                  (nv+* (contact-velocity other) tmp (- sign))
                  (setf (contact-desired-delta other)
-                       (desired-delta-velocity other (contact-velocity other) dt)))))
-
-    (format T "DONE.~%")
-    (format T "LOC: ~a ORI: ~a~%" (location (contact-a (aref contacts 0))) (orientation (contact-a (aref contacts 0))))
-    (format T "VEL: ~a ROT: ~a~%" (velocity (contact-a (aref contacts 0))) (rotation (contact-a (aref contacts 0))))))
+                       (desired-delta-velocity other (contact-velocity other) dt)))))))
 
 (defclass rigidbody-system (physics-system entity listener)
   ((contact-data :initform (make-contact-data) :accessor contact-data)))
