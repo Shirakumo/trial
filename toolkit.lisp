@@ -1028,7 +1028,7 @@
                                            collect `(find ,extension +gl-extensions+)))
                               ,@body))))))
 
-(declare (inline dbg))
+(declaim (inline dbg))
 #-trial-release
 (defun dbg (&rest parts)
   (let ((*print-right-margin* 10000000000))

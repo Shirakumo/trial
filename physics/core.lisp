@@ -78,7 +78,8 @@
   (location (vec 0 0 0) :type vec3)
   (normal (vec 0 0 0) :type vec3)
   (restitution 0.0 :type single-float)
-  (friction 0.0 :type single-float)
+  (static-friction 0.0 :type single-float)
+  (dynamic-friction 0.0 :type single-float)
   (depth 0.0 :type single-float))
 
 (defclass physics-system ()
