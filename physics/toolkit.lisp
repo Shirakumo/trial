@@ -6,7 +6,7 @@
                    (* (vz vector) scalar)
                    0.0)))
     (declare (dynamic-extent tmp))
-    (nq* tmp target)
+    (q<- tmp (q* target tmp))
     (nq* tmp 0.5)
     (nq+ target tmp)))
 
