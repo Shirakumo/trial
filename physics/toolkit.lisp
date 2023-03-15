@@ -31,6 +31,10 @@
                          (*            (m 11))))
     vec3))
 
+(defun mcol3 (mat n)
+  (with-fast-matref (e mat 4)
+    (vec3 (e 0 n) (e 1 n) (e 2 n))))
+
 (defun ntransform-inverse (vec3 mat)
   (with-fast-matcase (m mat)
     (mat4
