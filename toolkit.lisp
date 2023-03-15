@@ -1027,3 +1027,13 @@
                             `((and ,@(loop for extension in (enlist extensions)
                                            collect `(find ,extension +gl-extensions+)))
                               ,@body))))))
+
+(declare (inline dbg))
+#-trial-release
+(defun dbg (&rest parts)
+  (let ((*print-right-margin* 10000000000))
+    (format *debug-io* "~&~{~a~^ ~}~%" parts)))
+
+#+trial-release
+(defun dbg (&rest parts)
+  (declare (ignore parts)))
