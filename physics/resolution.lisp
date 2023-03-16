@@ -315,7 +315,7 @@
   (setf (velocity-eps system) (* 0.01 units))
   (setf (depth-eps system) (* 0.01 units)))
 
-(defmethod update ((system mass-aggregate-system) tt dt fc)
+(defmethod update ((system rigidbody-system) tt dt fc)
   (call-next-method)
   (let ((objects (%objects system)))
     (let ((data (contact-data system)))
