@@ -5,7 +5,7 @@
 (defgeneric (setf mass) (mass object))
 (defgeneric start-frame (object))
 
-(defclass physics-entity ()
+(defclass physics-entity (entity)
   ((velocity :initform (vec 0 0 0) :reader velocity)
    (inverse-mass :initform 0.0 :accessor inverse-mass)
    (force :initform (vec 0 0 0) :reader force)

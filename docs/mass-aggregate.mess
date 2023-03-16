@@ -1,2 +1,26 @@
 # Mass-Aggregate Physics Simulations
+Mass-Aggregate, or also known as Particle or Verlet Physics are systems that govern a set of point particles, each with a specific mass. The particles then interact with each other through force generators.
 
+Please see "physics systems"(link physics.mess) for a general overview of physics systems in Trial.
+
+## Particles
+A ``particle`` is a ``physics-entity`` and a ``located-entity``. As discussed, it has no "size", so there's no associated shape or primitive at all. By default, a Verlet integration scheme is used to update the particle state, which should be stable enough for most game uses.
+
+Particles also implement ``resolve-hit`` and the associated ``resolve-velocity`` and ``resolve-intersection`` functions, responsible for resolving a contact between two particles. However, since particles have no size of their own, they cannot by themselves generate contacts.
+
+## Contact Generation
+Instead, the responsibility of contact generation falls onto the ``hit-generator`` which must simply implement the ``generate-hits`` function as described for the physics systems. The following set of contact generators is provided out of the box:
+
+- ``particle-link``
+  A mixin class for any contact generator between two particles ``a`` and ``b``.
+- ``particle-cable``
+  A particle cable is similar to a ``bungee-force`` wherein the two particles are prevented from separating farther than the ``max-length``, invoking the ``restitution`` factor if exceeded.
+- ``particle-rod``
+  And the rod is similar to a ``spring-force`` with a specific ``distance`` between the particles being enforced.
+
+## Mass Aggregate Systems
+Finally, the ``mass-aggregate-system`` allows you to run a simulation with particles, using ``hit-generators`` for contact generation. Similar to forces and particles, you can add and remove generators with ``enter`` and ``leave``.
+
+Otherwise the mass aggregate system implements all the necessary functionality to generate and resolve contacts, and to integrate the simulation, so no special care has to be taken.
+
+Note that this system uses an object per particle and per contact or force generator. This does not scale well to thousands let alone millions of objects. A special matrix-based solver would have to be written to handle such scales.
