@@ -3,6 +3,7 @@
 (defgeneric integrate (object dt))
 (defgeneric mass (object))
 (defgeneric (setf mass) (mass object))
+(defgeneric start-frame (object))
 
 (defclass physics-entity ()
   ((velocity :initform (vec 0 0 0) :reader velocity)
@@ -91,6 +92,15 @@
   (static-friction 0.0 :type single-float)
   (dynamic-friction 0.0 :type single-float)
   (depth 0.0 :type single-float))
+
+(define-accessor-delegate-methods a (hit-a hit))
+(define-accessor-delegate-methods b (hit-b hit))
+(define-accessor-delegate-methods location (hit-location hit))
+(define-accessor-delegate-methods normal (hit-normal hit))
+(define-accessor-delegate-methods restitution (hit-restitution hit))
+(define-accessor-delegate-methods static-friction (hit-static-friction hit))
+(define-accessor-delegate-methods dynamic-friction (hit-dynamic-friction hit))
+(define-accessor-delegate-methods depth (hit-depth hit))
 
 (defclass physics-system (entity listener)
   ((forces :initform (make-array 0 :adjustable T :fill-pointer T) :accessor forces)

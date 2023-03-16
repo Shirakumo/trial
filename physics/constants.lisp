@@ -22,14 +22,16 @@
             :dynamic-friction (material-interaction-properties-dynamic-friction properties)
             :restitution (material-interaction-properties-restitution properties))))
 
-(defmethod static-friction ((properties material-interaction-properties))
-  (material-interaction-properties-static-friction properties))
-
-(defmethod dynamic-friction ((properties material-interaction-properties))
-  (material-interaction-properties-dynamic-friction properties))
-
-(defmethod restitution ((properties material-interaction-properties))
-  (material-interaction-properties-restitution properties))
+(define-accessor-delegate-methods a
+  (material-interaction-properties-a material-interaction-properties))
+(define-accessor-delegate-methods b
+  (material-interaction-properties-b material-interaction-properties))
+(define-accessor-delegate-methods static-friction
+  (material-interaction-properties-static-friction material-interaction-properties))
+(define-accessor-delegate-methods dynamic-friction
+  (material-interaction-properties-dynamic-friction material-interaction-properties))
+(define-accessor-delegate-methods restitution
+  (material-interaction-properties-restitution material-interaction-properties))
 
 (defvar *default-material-interaction-properties*
   (make-material-interaction-properties NIL NIL 0.0 0.0 0.5))
