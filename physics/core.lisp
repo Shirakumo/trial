@@ -105,6 +105,9 @@
   ;; The default we pick here is for assuming 1un = 1cm
   (setf (sleep-eps system) (* units 0.3)))
 
+(defgeneric generate-hits (system hits start end))
+(defgeneric resolve-hits (system hits start end dt &key))
+
 (defmethod enter (thing (system physics-system))
   (vector-push-extend thing (%objects system))
   thing)
