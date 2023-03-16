@@ -1,2 +1,48 @@
 # Rigid Body Physics Simulations
+Rigid body physics simulate "stiff" bodies without any deformation. Bodies may have any shape, and may potentially have any internal mass distribution, though are always reduced down to one or more primitive convex shapes with a global (for the entire object) center of mass and inertia tensor.
 
+Please see "physics systems"(link physics.mess) for a general overview of physics systems in Trial.
+
+## Rigid Bodies
+At the core on the object side lies the ``rigidbody`` which adds all the necessary information onto the ``physics-entity`` for the simulation. For the current information, it makes use of a transform object via the ``transformed-entity``. For the velocities, it adds the ``rotation`` field to the physics entity's ``velocity``, and for the rotational analogue of ``force`` it adds the ``torque``. Finally, it also adds an ``angular-damping`` factor to the ``damping`` for linear motion.
+
+As mentioned, every rigidbody is made up of one or more ``physics-primitives``, which are ``primitive`` objects that describe the geometry used for collisions. This geometry is usually separate and massively simplified from the geometry used for visualising the entity.
+
+Trial currently does not offer any tools to automatically derive a set of convex primitives to describe your shape and it is thus up to you to construct the set and initialise the rigidbody appropriately.
+
+Rigid bodies also need an inertia tensor to describe their mass distribution. This tensor can be manually set via ``inertia-tensor``. The system will also automatically compute it for you when setting the primitives, if it knows how to.
+
+Note that no two rigidbodies can share a primitive instance. When you assign a primitive to a rigidbody, control over that primitive is handed over to the rigidbody.
+
+If you need to impart forces on the object, you should typically use ``impact`` or ``impact-local`` to do so, as this will take care of translating the force from the given contact point into the appropriate amounts of linear and angular acceleration.
+
+## Primitives
+Besides describing the composition of a rigidbody, primitives are also the way by which collision detections are handled. Each primitive has a link back to its ``entity``, a ``material`` it is made out of, a ``local-transform`` that describes how the primitive is offset from the main rigidbody, and a ``transform`` that describes the current world-space transform for the primitive. The transform is updated automatically by the rigidbody and is used during collision detection.
+
+The material for the primitive is used to determine interaction properties. Please see the respective section in the overview on "physics systems in Trial"(link physics.mess).
+
+In order to detect contacts between two primitives the function ``detect-hits`` is used. Similar to ``generate-hits`` this fills a passed vector of ``hit`` instances with data and returns the new start index.
+
+Trial currently offers the following primitives, as well as collision detection between them, out of the box:
+
+- ``sphere``
+  A sphere with a ``radius``
+- ``plane``
+  An infinite plane facing towards the ``normal`` at the ``offset`` along that normal.
+- ``half-space``
+  An infinite volume below the ``offset`` along the ``normal``.
+- ``box``
+  A box with the half-size ``bsize``.
+
+Note that there is currently no support for complex convex primitives, nor for automated tessellation of concave geometry into sets of convex primitives. Please help us out by adding support for that!
+
+## Rigid Body Systems
+Finally, to actually run a simulation between rigidbodies, there's the ``rigidbody-system``. It holds the usual ``physics-system`` properties, as well as the ``velocity-eps`` and ``depth-eps``, two constants to aid in the resolution stability by ignoring intersections that would be too small.
+
+The system implements ``generate-hits`` and ``resolve-hits``, so there's nothing more to do to make use of a rigidbody system.
+
+The system implemented here is called an "impulse-based micro-collisions engine". This has a few consequences for the simulations. For instance, the engine does not currently deal well with long collision chains such as when stacking many objects on top of each other. It will lead to jiggling and eventual collapse.
+
+You can counter-act this by putting such stacks to sleep first, but this is only suitable for select scenarios.
+
+To improve simulation stability further, the system would have to be revised to properly handle simultaneous contacts.
