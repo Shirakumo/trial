@@ -106,6 +106,13 @@
 (defclass mass-aggregate-system (physics-system)
   ((hit-generators :initform (make-array 0 :adjustable T :fill-pointer T) :accessor hit-generators)))
 
+(defmethod enter ((generator hit-generator) (system mass-aggregate-system))
+  (vector-push-extend generator (hit-generators system)))
+
+(defmethod leave ((generator hit-generator) (system mass-aggregate-system))
+  (array-utils:vector-pop-position (hit-generators system)
+                                   (position generator (hit-generators system))))
+
 (defmethod generate-hits ((system mass-aggregate-system) hits start end)
   (loop for generator across (hit-generators system)
         do (setf start (generate-hits generator hits start end)))
