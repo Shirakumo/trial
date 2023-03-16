@@ -15,9 +15,6 @@
   (nv* (velocity particle) (expt (damping particle) dt))
   (vsetf (force particle) 0 0 0))
 
-(defmethod start-frame ((particle particle))
-  (vsetf (force particle) 0 0 0))
-
 (defmethod separating-velocity ((a particle) (b particle) hit)
   (v. (v- (velocity a) (velocity b)) (hit-normal hit)))
 
