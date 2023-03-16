@@ -119,7 +119,7 @@
          (h (vec3 (- (vx bs)) (- (vy bs)) (- (vz bs)))))
     (declare (dynamic-extent a b c d e f g h))
     (flet ((test (p)
-             (n*m3 tf p)
+             (n*m tf p)
              (let ((dist (v. p pd)))
                (when (<= dist po)
                  (v<- (hit-location hit) pd)
@@ -263,7 +263,7 @@
                    (when (< (v. (mcol3 btf 1) normal) 0) (setf (vy vert) (- (vy vert))))
                    (when (< (v. (mcol3 btf 2) normal) 0) (setf (vz vert) (- (vz vert))))
                    (v<- (hit-normal hit) normal)
-                   (v<- (hit-location hit) (n*m3 btf vert))
+                   (v<- (hit-location hit) (n*m btf vert))
                    (setf (hit-depth hit) smallest-depth)
                    (finish-hit)))))
         (cond ((< smallest 3)
@@ -308,8 +308,8 @@
                            ((< (v. (mcol3 btf i) axis) 0)
                             (set-edge bedge-point (- (vidx i bedge-point))))))
                    
-                   (n*m3 atf aedge-point)
-                   (n*m3 btf bedge-point)
+                   (n*m atf aedge-point)
+                   (n*m btf bedge-point)
 
                    (setf (hit-depth hit) smallest-depth)
                    (v<- (hit-normal hit) axis)
