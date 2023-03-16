@@ -39,6 +39,9 @@
 (defmethod current-motion ((entity physics-entity))
   (v. (velocity entity) (velocity entity)))
 
+(defmethod start-frame ((entity physics-entity))
+  (vsetf (force entity) 0 0 0))
+
 (defclass force ()
   ())
 
