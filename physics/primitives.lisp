@@ -4,8 +4,7 @@
 
 (defstruct contact-data
   (hits (map-into (make-array #.MAX-CONTACTS) #'make-contact) :type (simple-array T (#.MAX-CONTACTS)))
-  (start 0 :type (integer 0 #.MAX-CONTACTS))
-  (restitution 0.0 :type single-float))
+  (start 0 :type (integer 0 #.MAX-CONTACTS)))
 
 (defgeneric detect-hits (a b contact-data))
 
@@ -19,17 +18,14 @@
          (let ((hit (aref hits start)))
            (block NIL
              (flet ((finish-hit ()
-                      (when (v= 0 (hit-normal hit)) (error "What"))
-                      (setf (hit-restitution hit) (contact-data-restitution data))
-                      (setf (hit-a hit) (primitive-entity a))
-                      ,@(cond ((subtypep b 'primitive)
-                               `((setf (hit-b hit) (primitive-entity b))
-                                 (setf (hit-static-friction hit) (static-friction (primitive-material a) (primitive-material b)))
-                                 (setf (hit-dynamic-friction hit) (dynamic-friction (primitive-material a) (primitive-material b)))))
-                              (T
-                               `((setf (hit-b hit) NIL)
-                                 (setf (hit-static-friction hit) 0.0)
-                                 (setf (hit-dynamic-friction hit) 0.0))))
+                      #-trial-release (when (v= 0 (hit-normal hit)) (error "Hit normal not set correctly."))
+                      (let ((properties (material-interaction-properties
+                                         (primitive-material a) ,(if (subtypep b 'primitive) `(primitive-material b) NIL))))
+                        (setf (hit-a hit) (primitive-entity a))
+                        (setf (hit-b hit) ,(if (subtypep b 'primitive) `(primitive-entity b) NIL))
+                        (setf (hit-static-friction hit) (material-interaction-properties-static-friction properties))
+                        (setf (hit-dynamic-friction hit) (material-interaction-properties-dynamic-friction properties))
+                        (setf (hit-restitution hit) (material-interaction-properties-restitution properties)))
                       (incf start)
                       (if (< start #.MAX-CONTACTS)
                           (setf hit (aref hits start))

@@ -52,7 +52,7 @@
         do (setf (primitive-entity primitive) entity)))
 
 (defun %update-rigidbody-cache (rigidbody)
-  ;; Re-normalising the orientation here aids in stability by eliminating drift.
+  ;; NOTE: Re-normalising the orientation here aids in stability by eliminating drift.
   (nqunit (orientation rigidbody))
   (tmat4 (tf rigidbody) (transform-matrix rigidbody))
   (compute-world-inertia-tensor (world-inverse-inertia-tensor rigidbody) (inverse-inertia-tensor rigidbody) (transform-matrix rigidbody))

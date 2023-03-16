@@ -8,6 +8,7 @@
 
 (defmethod integrate ((particle particle) dt)
   (nv+* (location particle) (velocity particle) dt)
+  (nv+* (location particle) (acceleration particle) (* 0.5 dt dt))
   (nv* (force particle) (inverse-mass particle))
   (nv+ (force particle) (acceleration particle))
   (nv+* (velocity particle) (force particle) dt)
