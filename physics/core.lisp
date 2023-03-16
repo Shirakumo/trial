@@ -73,6 +73,12 @@
    (spring-constant :initarg :spring-constant :initform 1.0 :accessor spring-constant)
    (rest-length :initarg :rest-length :initform 0.0 :accessor rest-length)))
 
+(defmethod apply-force ((force spring-force) (entity physics-entity) dt)
+  (let* ((force (v- (location entity) (location (anchor force))))
+         (coeff (* (abs (- (vlength force) (rest-length force)))
+                   (spring-constant force))))
+    (nv+ (force entity) (nv* (nvunit force) (- coeff)))))
+
 (defclass stiff-spring-force (force)
   ((anchor :initarg :anchor :accessor anchor)
    (anchor-offset :initarg :anchor-offset :initform (vec 0 0 0) :accessor anchor-offset)
@@ -80,8 +86,52 @@
    (spring-constant :initarg :spring-constant :initform 1.0 :accessor spring-constant)
    (damping :initarg :damping :initform 1.0 :accessor damping)))
 
+(defmethod apply-force ((force stiff-spring-force) (entity physics-entity) dt)
+  (let* ((damping (damping force))
+         (relative (v- (location entity) (location (anchor force))))
+         (gamma (* 0.5 (sqrt (- (* 4 (spring-constant force)) (* damping damping)))))
+         (c (nv+ (v* relative (/ damping (* 2 gamma)))
+                 (v* (velocity entity) (/ gamma))))
+         (target (nv* (nv+ (v* relative (cos (* gamma dt)))
+                           (v* c (sin (* gamma dt))))
+                      (exp (* -0.5 damping dt))))
+         (accel (nv- (nv* (v- target relative) (/ (* dt dt)))
+                     (v* (velocity entity) dt))))
+    (nv+ (force entity) (nv* accel (mass entity)))))
+
 (defclass bungee-force (spring-force)
   ())
+
+(defmethod apply-force ((force bungee-force) (entity physics-entity) dt)
+  (let* ((force (v- (location entity) (location (anchor force))))
+         (coeff (* (- (vlength force) (rest-length force))
+                   (spring-constant force))))
+    (when (<= 0.0 coeff)
+      (nv+ (force entity) (nv* (nvunit force) (- coeff))))))
+
+(defclass located-force (force)
+  ((location :initform (vec 0 0 0) :initarg :location :reader location)))
+
+(defmethod (setf location) ((vec vec3) (obj located-force))
+  (v<- (location obj) vec))
+
+(defclass spherical-force (located-force)
+  ((radius :initform 1.0 :initarg :radius :accessor radius)))
+
+(defmethod apply-force :around ((force spherical-force) (entity located-entity) dt)
+  (when (<= (vdistance (location force) (location entity)) (radius force))
+    (call-next-method)))
+
+(defclass aabb-force (located-force)
+  ((bsize :initform (vec 0 0 0) :initarg :bsize :accessor bsize)))
+
+(defmethod (setf bsize) ((vec vec3) (obj aabb-force))
+  (v<- (bsize obj) vec))
+
+(defmethod apply-force :around ((force aabb-force) (entity located-entity) dt)
+  (when (v<= (nvabs (v- (location entity) (location force)))
+             (v+ (bsize force) (bsize entity)))
+    (call-next-method)))
 
 (defstruct hit
   (a NIL :type T)
