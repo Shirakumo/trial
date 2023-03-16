@@ -231,6 +231,14 @@
                   collect `(defmethod (setf ,name) (,value (,type ,type))
                              (setf (,name ,resolution) ,value)))))
 
+(defmacro define-accessor-delegate-methods (name &body wrappers)
+  `(progn ,@(loop with value = (gensym "VALUE")
+                  for (resolution type) in wrappers
+                  collect `(defmethod ,name ((,type ,type))
+                             (,resolution ,type))
+                  collect `(defmethod (setf ,name) (,value (,type ,type))
+                             (setf (,resolution ,type) ,value)))))
+
 (defmacro with-retry-restart ((name report &rest report-args) &body body)
   (let ((tag (gensym "RETRY-TAG"))
         (return (gensym "RETURN"))

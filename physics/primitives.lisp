@@ -1,7 +1,5 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(defconstant MAX-CONTACTS 1024)
-
 (defgeneric detect-hits (a b contacts start end))
 
 (defmacro define-hit-detector ((a b) &body body)
@@ -42,21 +40,35 @@
   (with-fast-matref (m (primitive-transform primitive) 4)
     (vec (m 3) (m 7) (m 11))))
 
+(define-accessor-delegate-methods entity (primitive-entity primitive))
+(define-accessor-delegate-methods material (primitive-material primitive))
+(define-accessor-delegate-methods transform-matrix (primitive-transform primitive))
+
 (defstruct (sphere (:include primitive))
   (radius 1.0 :type single-float))
+
+(define-accessor-delegate-methods radius (sphere-radius sphere))
 
 (defstruct (plane (:include primitive))
   (normal (vec3 0 1 0) :type vec3)
   (offset 0.0 :type single-float))
+
+(define-accessor-delegate-methods normal (plane-normal plane))
+(define-accessor-delegate-methods offset (plane-offset plane))
 
 (defstruct (half-space (:include plane)))
 
 (defstruct (box (:include primitive))
   (bsize (vec3 1 1 1) :type vec3))
 
+(define-accessor-delegate-methods bsize (box-bsize box))
+
 (defstruct (cylinder (:include primitive))
   (radius 1.0 :type single-float)
   (height 1.0 :type single-float))
+
+(define-accessor-delegate-methods radius (cylinder-radius cylinder))
+(define-accessor-delegate-methods height (cylinder-height cylinder))
 
 (define-hit-detector (sphere sphere)
   (let* ((al (location a))

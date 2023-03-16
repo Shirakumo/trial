@@ -236,8 +236,8 @@
 
 (defclass rigidbody-system (physics-system)
   ((velocity-eps :initform 0.01 :initarg :velocity-eps :accessor velocity-eps)
-   (hits :initform (map-into (make-array #.MAX-CONTACTS) #'make-contact))
-   (depth-eps :initform 0.01 :initarg :depth-eps :accessor depth-eps)))
+   (depth-eps :initform 0.01 :initarg :depth-eps :accessor depth-eps)
+   (hits :initform (map-into (make-array 1024) #'make-contact))))
 
 (defmethod (setf units-per-metre) (units (system rigidbody-system))
   ;; The default we pick here is for assuming 1un = 1cm
