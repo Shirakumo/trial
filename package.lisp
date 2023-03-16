@@ -178,6 +178,12 @@
    #:spring-constant
    #:damping
    #:bungee-force
+   #:located-force
+   #:location
+   #:spherical-force
+   #:radius
+   #:aabb-force
+   #:bsize
    #:hit
    #:make-hit
    #:hit-a

@@ -18,32 +18,6 @@
 (defmethod start-frame ((particle particle))
   (vsetf (force particle) 0 0 0))
 
-(defmethod apply-force ((force spring-force) (particle particle) dt)
-  (let* ((force (v- (location particle) (location (anchor force))))
-         (coeff (* (abs (- (vlength force) (rest-length force)))
-                   (spring-constant force))))
-    (nv+ (force particle) (nv* (nvunit force) (- coeff)))))
-
-(defmethod apply-force ((force stiff-spring-force) (particle particle) dt)
-  (let* ((damping (damping force))
-         (relative (v- (location particle) (location (anchor force))))
-         (gamma (* 0.5 (sqrt (- (* 4 (spring-constant force)) (* damping damping)))))
-         (c (nv+ (v* relative (/ damping (* 2 gamma)))
-                 (v* (velocity particle) (/ gamma))))
-         (target (nv* (nv+ (v* relative (cos (* gamma dt)))
-                           (v* c (sin (* gamma dt))))
-                      (exp (* -0.5 damping dt))))
-         (accel (nv- (nv* (v- target relative) (/ (* dt dt)))
-                     (v* (velocity particle) dt))))
-    (nv+ (force particle) (nv* accel (mass particle)))))
-
-(defmethod apply-force ((force bungee-force) (particle particle) dt)
-  (let* ((force (v- (location particle) (location (anchor force))))
-         (coeff (* (- (vlength force) (rest-length force))
-                   (spring-constant force))))
-    (when (<= 0.0 coeff)
-      (nv+ (force particle) (nv* (nvunit force) (- coeff))))))
-
 (defmethod separating-velocity ((a particle) (b particle) hit)
   (v. (v- (velocity a) (velocity b)) (hit-normal hit)))
 
