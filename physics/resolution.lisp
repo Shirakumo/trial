@@ -234,9 +234,36 @@
         (change b (contact-b-relative contact) b-angular-inertia b-linear-inertia (- total-inertia)
                 (contact-b-rotation-change contact) (contact-b-velocity-change contact))))))
 
-(defun resolve-contacts (system contacts end dt &key (iterations 200))
+(defclass rigidbody-system (physics-system)
+  ((velocity-eps :initform 0.01 :initarg :velocity-eps :accessor velocity-eps)
+   (hits :initform (map-into (make-array #.MAX-CONTACTS) #'make-contact))
+   (depth-eps :initform 0.01 :initarg :depth-eps :accessor depth-eps)))
+
+(defmethod (setf units-per-metre) (units (system rigidbody-system))
+  ;; The default we pick here is for assuming 1un = 1cm
+  (call-next-method)
+  (setf (velocity-eps system) (* 0.01 units))
+  (setf (depth-eps system) (* 0.01 units)))
+
+(defmethod generate-hits ((system rigidbody-system) contacts start end)
+  ;; TODO: replace with something that isn't as dumb as this.
+  ;;       particularly: use a spatial query structure to speed up
+  ;;       the search of close objects, and then process close objects
+  ;;       in batches to avoid updating contacts that are far apart
+  ;;       in the resolver.
+  (loop with objects = (%objects system)
+        for i from 0 below (length objects)
+        for a = (aref objects i)
+        do (loop for j from (1+ i) below (length objects)
+                 for b = (aref objects j)
+                 do (loop for a-p across (physics-primitives a)
+                          do (loop for b-p across (physics-primitives b)
+                                   do (setf start (detect-hits a-p b-p contacts start end))))))
+  start)
+
+(defmethod resolve-hits ((system rigidbody-system) contacts start end dt &key (iterations 200))
   (macrolet ((do-contacts ((contact) &body body)
-               `(loop for i from 0 below end
+               `(loop for i from start below end
                       for ,contact = (aref contacts i)
                       do (progn ,@body)))
              (do-update (args &body body)
@@ -303,36 +330,3 @@
                  (setf (contact-desired-delta other)
                        (desired-delta-velocity other (contact-velocity other) dt))))
           finally (dbg "Adjust velocity overflow"))))
-
-(defclass rigidbody-system (physics-system)
-  ((contact-data :initform (make-contact-data) :accessor contact-data)
-   (velocity-eps :initform 0.01 :initarg :velocity-eps :accessor velocity-eps)
-   (depth-eps :initform 0.01 :initarg :depth-eps :accessor depth-eps)))
-
-(defmethod (setf units-per-metre) (units (system rigidbody-system))
-  ;; The default we pick here is for assuming 1un = 1cm
-  (call-next-method)
-  (setf (velocity-eps system) (* 0.01 units))
-  (setf (depth-eps system) (* 0.01 units)))
-
-(defmethod update ((system rigidbody-system) tt dt fc)
-  (call-next-method)
-  (let ((objects (%objects system)))
-    (let ((data (contact-data system)))
-      (setf (contact-data-start data) 0)
-      ;; Compute contacts
-      ;; TODO: replace with something that isn't as dumb as this.
-      ;;       particularly: use a spatial query structure to speed up
-      ;;       the search of close objects, and then process close objects
-      ;;       in batches to avoid updating contacts that are far apart
-      ;;       in the resolver.
-      (loop for i from 0 below (length objects)
-            for a = (aref objects i)
-            do (loop for j from (1+ i) below (length objects)
-                     for b = (aref objects j)
-                     do (loop for a-p across (physics-primitives a)
-                              do (loop for b-p across (physics-primitives b)
-                                       do (detect-hits a-p b-p data)))))
-      ;; Resolve contacts
-      (when (< 0 (contact-data-start data))
-        (resolve-contacts system (contact-data-hits data) (contact-data-start data) dt)))))

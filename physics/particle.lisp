@@ -77,21 +77,6 @@
   (resolve-velocity a b hit dt)
   (resolve-intersection a b hit))
 
-(defun resolve-hits (hits end dt &key (max-iterations (* 2 end)))
-  (loop for iterations from 0 below max-iterations
-        for max-velocity = 0.0
-        for candidate = NIL
-        do (loop for i from 0 below end
-                 for hit = (aref hits i)
-                 for sep = (separating-velocity (hit-a hit) (hit-b hit) hit)
-                 do (when (< sep max-velocity)
-                      (setf max-velocity sep)
-                      (setf candidate hit)))
-           (if candidate
-               (resolve-hit (hit-a candidate) (hit-b candidate) candidate dt)
-               (return iterations))
-        finally (return max-iterations)))
-
 (defclass hit-generator () ())
 
 (defgeneric generate-hits (generator hits start end))
@@ -148,16 +133,24 @@
       (finish-hit))))
 
 (defclass mass-aggregate-system (physics-system)
-  ((hit-generators :initform (make-array 0 :adjustable T :fill-pointer T) :accessor hit-generators)
-   (hits :initform (map-into (make-array 128) #'make-hit) :accessor hits)))
+  ((hit-generators :initform (make-array 0 :adjustable T :fill-pointer T) :accessor hit-generators)))
 
 (defmethod generate-hits ((system mass-aggregate-system) hits start end)
   (loop for generator across (hit-generators system)
         do (setf start (generate-hits generator hits start end)))
   start)
 
-(defmethod update ((system mass-aggregate-system) tt dt fc)
-  (call-next-method)
-  (let* ((hits (hits system))
-         (end (generate-hits system hits 0 (length hits))))
-    (resolve-hits hits end dt)))
+(defmethod resolve-hits ((system mass-aggregate-system) hits start end dt &key (iterations (* 2 end)))
+  (loop for iterations from 0 below iterations
+        for max-velocity = 0.0
+        for candidate = NIL
+        do (loop for i from start below end
+                 for hit = (aref hits i)
+                 for sep = (separating-velocity (hit-a hit) (hit-b hit) hit)
+                 do (when (< sep max-velocity)
+                      (setf max-velocity sep)
+                      (setf candidate hit)))
+           (if candidate
+               (resolve-hit (hit-a candidate) (hit-b candidate) candidate dt)
+               (return iterations))
+        finally (return iterations)))

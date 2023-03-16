@@ -95,6 +95,7 @@
 (defclass physics-system (entity listener)
   ((forces :initform (make-array 0 :adjustable T :fill-pointer T) :accessor forces)
    (%objects :initform (make-array 0 :adjustable T :fill-pointer T) :accessor %objects)
+   (hits :initform (map-into (make-array 128) #'make-hit) :accessor hits)
    (sleep-eps :initform 0.3 :initarg :sleep-eps :accessor sleep-eps)))
 
 (defmethod shared-initialize :after ((system physics-system) slots &key units-per-metre)
@@ -144,13 +145,19 @@
         when (awake-p entity)
         do (start-frame entity)))
 
+(defmethod update :before ((system physics-system) tt dt fc)
+  (start-frame system))
+
 (defmethod update ((system physics-system) tt dt fc)
-  (start-frame system)
   (loop for entity across (%objects system)
         when (awake-p entity)
         do (loop for force across (forces system)
                  do (apply-force force entity dt)))
-  (integrate system dt))
+  (integrate system dt)
+  (let* ((hits (hits system))
+         (end (generate-hits system hits 0 (length hits))))
+    (when (< 0 end)
+      (resolve-hits system hits 0 end dt))))
 
 (define-handler (physics-system tick) (tt dt fc)
   (update physics-system tt dt fc))
