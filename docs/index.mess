@@ -37,8 +37,10 @@ Trial is a modular game engine written in Common Lisp. It offers many tools and 
 - Physics
   - Acceleration Structures
   - Intersection Tests
-  - Rigid Body Physics
-  - Soft Body Physics
+  - "Physics Systems"(link physics.mess)
+    - "Mass Aggregate Physics"(link mass-aggregate.mess)
+    - "Rigid Body Physics"(link rigid-body.mess)
+    - Soft Body Physics
 - Misc
   - "Asynchynchronicity & Threading"(link async.mess)
   - "User Settings"(link settings.mess)

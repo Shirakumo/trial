@@ -1,0 +1,88 @@
+# Physics in Trial
+Trial contains a basic protocol for implementing physics systems, which is described in this document. The "mass aggregate"(link mass-aggregate.mess) and "rigid body"(link rigid-body.mess) systems make use of this protocol.
+
+## Entities
+All objects that can be controlled by a physics system must be a subclass of ``physics-entity``, which keeps track of the ``velocity``, ``inverse-mass``, the currently accumulated ``forces``, the ``damping`` factor, and its ``awake-p`` status. You can also access the ``mass``, which will translate to/from the more commonly used ``inverse-mass``.
+
+The ``awake-p`` status controls whether the object is currently being updated or not, and is usually automatically controlled by the physics system. However, if you require an object to be permanently awake, you can also add a method that always returns ``T``.
+
+Every physics entity implements ``current-motion``, which returns a scalar representing the energy of its current motion, which is used to control the sleep status.
+
+Like the properties of other helper classes, setting the ``velocity`` or ``force`` will not retain the identity of the vectors passed in, and instead update the vectors held by the entity. Adding velocity or forces can simply be done like usual with ``nv+``.
+
+Finally, any physics entity must implement ``integrate`` and ``start-frame``. The former is called at the beginning of any system's update step, and allows clearing out any remaining forces. The ``integrate`` function on the other hand is responsible for updating the accumulated forces and integrating the motion over the given timestep, advancing the object.
+
+## Forces
+Common to all physics systems is also the description of ``force``s. A force is something that automatically adds or removes forces on physics entities. A force must only support a single function, ``apply-force`` which updates the passed entity accordingly. Note that entities with infinite mass will never receive any forces.
+
+The following primitive forces are supplied:
+
+- ``gravity``
+  A constant force in a constant direction.
+- ``drag-force``
+  A force to simulate drag slowing the object down. Uses the ``k1`` and ``k2`` drag coefficients.
+- ``spring-force``
+  A spring tying an object to an ``anchor`` with the spring fastened at ``anchor-offset``, and ``local-offset`` on the object's end. The spring has a ``rest-length`` and a ``spring-constant``. Note that this force generator does not behave well for stiff springs.
+- ``stiff-spring-force``
+  A special spring type more suited towards very stiff springs. Has the same properties as the ``spring-force``, but instead of a rest length has a ``damping`` factor, with the rest length always being zero.
+- ``bungee-force``
+  Another variant of a ``spring-force``, but only acting for expansion, not compression.
+- ``located-force``
+  Mixin class for forces that have a ``location``.
+- ``spherical-force``
+  Mixin class for forces that have a spherical ``radius`` of influence.
+- ``aabb-force``
+  Mixin class for forces that have an axis-aligned bounding box ``bsize`` of influence.
+
+## Contacts
+Core to all physics systems is also the handling of contacts. We provide a base structure class called ``hit``, which stores the two objects involved in the contact, ``a`` and ``b``, the ``location`` of the contact, the ``normal`` (from the perspective of ``a``), the ``restitution`` describing the "bounciness" of the contact, the ``static-friction`` and ``dynamic-friction`` between the two objects' materials, and the ``depth`` of the contact's intersection.
+
+You may, like the rigidbody system, construct a subtype of this ``hit`` class to extend it with other useful properties as necessary.
+
+## Controlling Systems
+Physics entities alone are not enough. Everything is tied together through a ``physics-system`` which is responsible for controlling the forces, contacts, and the integration. An entity should only ever be a part of a single physics system, but you might have several independent systems to control simulations that don't interact with each other.
+
+Every system holds a set of forces and a set of objects under its control. You can add and remove either with the standard ``enter`` and ``leave`` functions. Aside from this, every system also holds a cache of ``hits`` used for contact resolution, and the ``sleep-eps`` that defines the minimum amount of motion below which an object is put to sleep.
+
+When initialising a system, you can pass ``units-per-metre`` which informs the system about the relative scale of your object, allowing it to automatically tune any parameters for your setup.
+
+A system must implement ``generate-hits``, which fills the passed vector of hits with new contacts and returns the updated start offset. It must also implement ``resolve-hits``, which will then resolve any collisions described in the hits vector. These functions may be called multiple times per update, in order to generate and resolve hits for distinct sets of contacts. The precise calling behaviour is up to the physics system.
+
+Calling ``integrate`` on a system will cause it to integrate the motion of any of the objects it controls, and manage the sleep state thereof.
+
+Finally, the basic physics system also provides an ``update`` entry function, which will apply all forces generated to all of its objects, integrate the system, and then generate and resolve any contacts. If your system requires more precise control over this process, you should define a method to override it.
+
+The ``physics-system`` is also an ``entity`` and ``listener`` such that it can simply be added into a ``scene`` and automatically manage the timesteps.
+
+## Material Properties
+Trial ships a small library of known material property constants. These constants describe how two different materials interact with each other, which is used in collision resolution. To access the properties structure, use ``material-interaction-properties`` on a set of materials, usually named by keywords.
+
+The property holds the materials (``a`` and ``b``), the ``static-friction`` and ``dynamic-friction`` factors, and the ``restitution`` (see "Contacts").
+
+You can list the known interactions with ``list-material-interaction-properties``. If a material you would like to use is not provided by default, you can add it with ``set-material-interaction-properties`` (and send us a PR!)
+
+You may also set the ``*default-material-interaction-properties*`` which is used if the system attempts to look up any properties that aren't defined explicitly.
+
+## Inertia Tensors
+Rigid and soft body physics require some kind of description of the resistance towards rotation of the object. This is typically encompassed via a 3x3 matrix called the inertia tensor. Trial provides a number of functions to automatically compute this tensor for your collision primitives.
+
+A new tensor computation function is defined via ``define-tensor-fun``, which automatically defines a common function signature and gives you access to the tensor's local fields through the ``m`` local function.
+
+Trial currently provides the following tensor computation functions:
+
+- ``mass-aggregate-tensor``
+  The particles must be a vector of objects with a ``location`` and a ``mass``. The tensor is then computed using this particle mass distribution description.
+- ``box-tensor``
+  Tensor for a box with uniform weight distribution.
+- ``sphere-tensor``
+  Tensor for a sphere with uniform weight distribution.
+- ``shell-tensor``
+  Tensor for a hollow sphere with uniform weight distribution.
+- ``cylinder-tensor``
+  Tensor for a cylinder with uniform weight distribution.
+- ``tube-tensor``
+  Tensor for a hollow tub with uniform weight distribution.
+- ``cone-tensor``
+  Tensor for a cone with uniform weight distribution.
+
+We currently do not have any functions to automatically combine tensors or compute tensors for complex shapes. Please help us out by adding more!
