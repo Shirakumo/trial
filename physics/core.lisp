@@ -92,7 +92,7 @@
   (dynamic-friction 0.0 :type single-float)
   (depth 0.0 :type single-float))
 
-(defclass physics-system ()
+(defclass physics-system (listener)
   ((forces :initform (make-array 0 :adjustable T :fill-pointer T) :accessor forces)
    (%objects :initform (make-array 0 :adjustable T :fill-pointer T) :accessor %objects)
    (sleep-eps :initform 0.3 :initarg :sleep-eps :accessor sleep-eps)))
@@ -151,3 +151,6 @@
         do (loop for force across (forces system)
                  do (apply-force force entity dt)))
   (integrate system dt))
+
+(define-handler (physics-system tick) (tt dt fc)
+  (update physics-system tt dt fc))

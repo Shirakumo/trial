@@ -304,7 +304,7 @@
                        (desired-delta-velocity other (contact-velocity other) dt))))
           finally (dbg "Adjust velocity overflow"))))
 
-(defclass rigidbody-system (physics-system entity listener)
+(defclass rigidbody-system (physics-system)
   ((contact-data :initform (make-contact-data) :accessor contact-data)
    (velocity-eps :initform 0.01 :initarg :velocity-eps :accessor velocity-eps)
    (depth-eps :initform 0.01 :initarg :depth-eps :accessor depth-eps)))
@@ -315,10 +315,10 @@
   (setf (velocity-eps system) (* 0.01 units))
   (setf (depth-eps system) (* 0.01 units)))
 
-(define-handler (rigidbody-system tick) (tt dt fc)
-  (update rigidbody-system tt dt fc)
-  (let ((objects (%objects rigidbody-system)))
-    (let ((data (contact-data rigidbody-system)))
+(defmethod update ((system mass-aggregate-system) tt dt fc)
+  (call-next-method)
+  (let ((objects (%objects system)))
+    (let ((data (contact-data system)))
       (setf (contact-data-start data) 0)
       ;; Compute contacts
       ;; TODO: replace with something that isn't as dumb as this.
@@ -332,16 +332,7 @@
                      for b = (aref objects j)
                      do (loop for a-p across (physics-primitives a)
                               do (loop for b-p across (physics-primitives b)
-                                       do (setf (contact-data-restitution data) 0.6)
-                                        ; ??? Hard-coded ???
-                                          (detect-hits a-p b-p data)))))
+                                       do (detect-hits a-p b-p data)))))
       ;; Resolve contacts
       (when (< 0 (contact-data-start data))
-        (resolve-contacts rigidbody-system (contact-data-hits data) (contact-data-start data) dt)
-        #++
-        (loop for i from 0 below (contact-data-start data)
-              for contact = (aref (contact-data-hits data) i)
-              do (debug-line (contact-location contact)
-                             (v+ (contact-location contact)
-                                 (v* (contact-a-rotation-change contact)
-                                     10))))))))
+        (resolve-contacts system (contact-data-hits data) (contact-data-start data) dt)))))
