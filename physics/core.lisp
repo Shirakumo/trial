@@ -92,7 +92,7 @@
   (dynamic-friction 0.0 :type single-float)
   (depth 0.0 :type single-float))
 
-(defclass physics-system (listener)
+(defclass physics-system (entity listener)
   ((forces :initform (make-array 0 :adjustable T :fill-pointer T) :accessor forces)
    (%objects :initform (make-array 0 :adjustable T :fill-pointer T) :accessor %objects)
    (sleep-eps :initform 0.3 :initarg :sleep-eps :accessor sleep-eps)))

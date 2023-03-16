@@ -1,8 +1,11 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(defun mcol3 (mat n)
+(defun mcol3 (mat n &optional (vec (vec3 0 0 0)))
   (with-fast-matref (e mat 4)
-    (vec3 (e 0 n) (e 1 n) (e 2 n))))
+    (setf (vx3 vec) (e 0 n)
+          (vy3 vec) (e 1 n)
+          (vz3 vec) (e 2 n))
+    vec))
 
 (defun ntransform-inverse (vec3 mat)
   (with-fast-matcase (m mat)
