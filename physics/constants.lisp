@@ -4,7 +4,7 @@
 
 (defstruct (material-interaction-properties
             (:constructor make-material-interaction-properties
-                (a b &optional (static-friction 0.0) (dynamic-friction 0.0) (restitution 0.0)))
+                (a b &optional (static-friction 0.0) (dynamic-friction 0.0) (restitution 0.5)))
             (:copier NIL)
             (:predicate NIL))
   (a NIL :type T)
