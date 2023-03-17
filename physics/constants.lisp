@@ -68,15 +68,16 @@
         do (setf (material-interaction-properties a b) props)))
 
 (set-material-interaction-properties
+ ;;                                                                      I made these values up
  ;;A--------------|B----------------|static friction--|dynamic friciton-|restitution------|
- :wood             :wood             0.5               0.5               0.6
- :wood             :concrete         0.5               0.4               0.6
- :wood             :ice              0.2               0.1               0.6
- :glass            :ice              0.1               0.03              0.6
- :glass            :glass            0.95              0.4               0.6
- :metal            :metal            0.6               0.4               0.6
- :lubricated-metal :metal            0.1               0.05              0.6
- :rubber           :concrete         1.0               0.8               0.6
- :wet-rubber       :concrete         0.7               0.5               0.6
- :tire             :concrete         1.5               1.0               0.6
- :velcro           :velcro           6.0               4.0               0.6)
+ :wood             :wood             0.5               0.5               0.3
+ :wood             :concrete         0.5               0.4               0.5
+ :wood             :ice              0.2               0.1               0.3
+ :glass            :ice              0.1               0.03              0.4
+ :glass            :glass            0.95              0.4               0.4
+ :metal            :metal            0.6               0.4               0.4
+ :lubricated-metal :metal            0.1               0.05              0.4
+ :rubber           :concrete         1.0               0.8               0.9
+ :wet-rubber       :concrete         0.7               0.5               0.85
+ :tire             :concrete         1.5               1.0               0.8
+ :velcro           :velcro           6.0               4.0               0.0)
