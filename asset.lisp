@@ -232,9 +232,10 @@
   ())
 
 (defmethod shared-initialize :after ((asset file-input-asset) slots &key &allow-other-keys)
-  (let ((file (input* asset)))
-    (unless (probe-file file)
-      (alexandria:simple-style-warning "Input file~% ~s~%for asset~%  ~s~%does not exist." file asset))))
+  (let ((input (input* asset)))
+    (loop for file in (enlist input)
+          do (unless (probe-file file)
+               (alexandria:simple-style-warning "Input file~% ~s~%for asset~%  ~s~%does not exist." file asset)))))
 
 (defmethod compile-resources ((asset asset) (source (eql T)) &rest args &key &allow-other-keys)
   (when (typep asset 'compiled-generator)

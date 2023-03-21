@@ -55,6 +55,18 @@
   (let ((type (pathname-type path)))
     (apply #'load-image path (kw type) args)))
 
+(defmethod load-image ((paths cons) type &rest args)
+  (let ((data (loop for path in paths
+                    collect (multiple-value-list (apply #'load-image path type args)))))
+    #-trial-release
+    (loop with first = (first data)
+          for other in (rest data)
+          for path in (rest paths)
+          do (unless (equal (rest first) (rest other))
+               (error "Images are not congruent! File~%  ~a~%has attributes~%  ~a~%but file~%  ~a~%has attributes~%  ~a"
+                      (first paths) (rest first) path (rest other))))
+    (values-list (list* (mapcar #'first data) (rest (first data))))))
+
 (defclass image-loader (resource-generator)
   ())
 

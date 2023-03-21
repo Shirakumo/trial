@@ -11,7 +11,9 @@
     (cffi:foreign-pointer
      (cffi:foreign-free data))
     (vector
-     (maybe-free-static-vector data))))
+     (maybe-free-static-vector data))
+    (cons
+     (mapc #'free-data data))))
 
 (defmacro with-pointer-to-vector-data ((ptr data &optional element-type) &body body)
   (let ((datag (gensym "DATA")) (thunk (gensym "THUNK"))
