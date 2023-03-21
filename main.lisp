@@ -100,7 +100,8 @@
   ())
 
 (defmethod setup-scene :after ((main main) (scene scene))
-  (enter (make-instance 'controller :display main) scene))
+  (unless (node :controller scene)
+    (enter (make-instance 'controller) scene)))
 
 (defmethod change-scene ((main main) (new scene) &key (old (scene main)))
   (unless (eq old new)
