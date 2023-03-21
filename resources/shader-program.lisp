@@ -177,4 +177,5 @@
 
 (defmethod activate ((program shader-program))
   (unless (eq +current-shader-program+ program)
+    (setf +current-shader-program+ program)
     (gl:use-program (gl-name program))))
