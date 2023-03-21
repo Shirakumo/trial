@@ -607,7 +607,6 @@
    #:noto-sans
    #:noto-mono
    #:controller
-   #:display
    #:text
    #:show-overlay
    #:observe
