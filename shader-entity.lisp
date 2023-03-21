@@ -237,5 +237,5 @@ void main(){
 
 (defmethod render ((entity standalone-shader-entity) target)
   (let ((program (shader-program entity)))
-    (gl:use-program (gl-name program))
+    (activate program)
     (render entity program)))
