@@ -6,10 +6,14 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-shader-entity skybox ()
+(define-shader-entity skybox (renderable)
   ((texture :initarg :texture :accessor texture)
-   (vertex-array :initform (asset 'trial 'empty-vertex-array) :Accessor vertex-array))
+   (vertex-array :initform (// 'trial 'empty-vertex-array) :Accessor vertex-array))
   (:default-initargs :texture (error "TEXTURE required.")))
+
+(defmethod stage :after ((skybox skybox) (area staging-area))
+  (stage (texture skybox) area)
+  (stage (vertex-array skybox) area))
 
 (defmethod render ((skybox skybox) (shader shader-program))
   (let ((texture (texture skybox)))
@@ -37,6 +41,7 @@ void main() {
     mat3 inverseModelview = transpose(mat3(view_matrix));
     vec3 unprojected = (inverseProjection * position).xyz;
     eye = inverseModelview * unprojected;
+    eye.y *= -1;
 
     gl_Position = position;
 }")
