@@ -446,8 +446,8 @@
                     :timeout timeout))
               (stick
                (loop for (x y) in one-of
-                     do (add 'axis-directional-mapping :qualifier x :axis :x :dead-zone dead-zone)
-                        (add 'axis-directional-mapping :qualifier y :axis :y :dead-zone dead-zone)))
+                     do (add 'axis-directional-mapping :qualifier (list x) :axis :x :dead-zone dead-zone)
+                        (add 'axis-directional-mapping :qualifier (list y) :axis :y :dead-zone dead-zone)))
               (buttons
                (loop for (u l d r) in one-of
                      do (add 'digital-directional-mapping :event-type 'gamepad-button-event :qualifier (list u) :axis :y :high-value (+ high-value) :low-value (+ low-value))
