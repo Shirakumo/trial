@@ -47,9 +47,6 @@
 
 (dont-deploy
  cl-opengl-bindings::opengl)
-#+linux
-(dont-deploy
- org.shirakumo.fraf.gamepad.impl::evdev)
 #+darwin
 (dont-deploy
  org.shirakumo.fraf.gamepad.impl::corefoundation
