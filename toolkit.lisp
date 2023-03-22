@@ -713,6 +713,19 @@
   (when (< PI (- b a)) (decf b F-2PI))
   (mod (/ (+ b a) 2) F-2PI))
 
+(defun clamp-angle (min a max)
+  (flet ((normalize-180 (a)
+           (- (mod (+ a F-PI) F-2PI) F-PI)))
+    (let* ((a (mod a F-2PI))
+           (n-min (normalize-180 (- min a)))
+           (n-max (normalize-180 (- max a))))
+      (cond ((and (<= n-min 0) (<= 0 n-max))
+             a)
+            ((< (abs n-min) (abs n-max))
+             min)
+            (T
+             max)))))
+
 (defparameter *c-chars* "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_[]")
 
 (defun symbol->c-name (symbol)

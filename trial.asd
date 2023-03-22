@@ -106,7 +106,8 @@
                              (:file "pose")
                              (:file "skeleton" :depends-on ("pose"))
                              (:file "mesh" :depends-on ("pose"))
-                             (:file "entity" :depends-on ("mesh" "skeleton" "clip"))))
+                             (:file "entity" :depends-on ("mesh" "skeleton" "clip"))
+                             (:file "ik" :depends-on ())))
                (:module "physics"
                 :depends-on ("package" "helpers")
                 :components ((:file "toolkit")
