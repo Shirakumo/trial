@@ -19,17 +19,62 @@
       (support-mapping object-2 (v- direction))))
 
 (defgeneric sample-one-point (object)
-  (:documentation
-   "Returns a single point from the object. Required for the GJK algorithm."))
+  (:documentation "Returns a single point from the object. Required for the GJK algorithm."))
 
 (defmethod sample-one-point ((sphere sphere)) (location sphere))
 
 (defun point-of-minimum-norm-in-convex-hull (set)
   (error "implement me"))
 
+(defun epsilon-= (a b &optional (epsilon 1e-6))
+  (< (abs (v2norm (v- a b))) epsilon))
+
+(defun epsilon-zerop (a &optional (epsilon 1e-6))
+  (< (- epsilon) a epsilon))
+
+(defun colinear-p (q1 q2 q3)
+  (epsilon-zerop (v2norm (vc (v- q3 q1) (v- q2 q1)))))
+
+(defun parallelepiped-zero-volume-p (q1 q2 q3 q4)
+  (epsilon-zerop (v. (vc (v- q2 q1) (v- q3 q1)) (v- q4 q1))))
+
 (defun reduce-to-smallest-spanning-set (p q)
   "Returns the smallest subset of q such that p lies in the complex hull of q."
-  (error "implement me"))
+  (ecase (length q)
+    (4
+     (let ((q1 (aref q 0))
+           (q2 (aref q 1))
+           (q3 (aref q 2))
+           (q4 (aref q 3)))
+       (cond
+         ((parallelepiped-zero-volume-p q1 q2 q3 p)
+          (reduce-to-smallest-spanning-set p (vector q1 q2 q3)))
+         ((parallelepiped-zero-volume-p q1 q2 q4 p)
+          (reduce-to-smallest-spanning-set p (vector q1 q2 q4)))
+         ((parallelepiped-zero-volume-p q1 q3 q4 p)
+          (reduce-to-smallest-spanning-set p (vector q1 q3 q4)))
+         ((parallelepiped-zero-volume-p q2 q3 q4 p)
+          (reduce-to-smallest-spanning-set p (vector q2 q3 q4)))
+         (t (progn
+              (warn "Returning a simplex of size 4")
+              q)))))
+    (3
+     (let ((q1 (aref q 0))
+           (q2 (aref q 1))
+           (q3 (aref q 2)))
+       (cond
+         ((colinear-p q1 q2 p) (reduce-to-smallest-spanning-set p (vector q1 q2)))
+         ((colinear-p q2 q3 p) (reduce-to-smallest-spanning-set p (vector q2 q3)))
+         ((colinear-p q3 q1 p) (reduce-to-smallest-spanning-set p (vector q3 q1)))
+         (t q))))
+    (2
+     (let ((q1 (aref q 0))
+           (q2 (aref q 1)))
+       (cond
+         ((epsilon-= p q1) (vector q1))
+         ((epsilon-= p q2) (vector q2))
+         (t q))))
+    (1 q)))
 
 (defun gjk (a b)
   (let ((q (vector (v- (sample-one-point a) (sample-one-point b))))) ; step 1
