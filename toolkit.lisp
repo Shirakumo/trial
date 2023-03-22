@@ -25,6 +25,9 @@
 (define-global +app-system+ "trial")
 (define-global +main+ NIL)
 
+(defconstant F-PI (float PI 0f0))
+(defconstant F-2PI (float (* 2 PI) 0f0))
+
 (defun git-repo-commit (dir)
   (flet ((file (path)
            (merge-pathnames path dir))
@@ -707,8 +710,8 @@
 
 (defun angle-midpoint (a b)
   (when (< b a) (rotatef a b))
-  (when (< PI (- b a)) (decf b (* 2 PI)))
-  (mod (/ (+ b a) 2) (* 2 PI)))
+  (when (< PI (- b a)) (decf b F-2PI))
+  (mod (/ (+ b a) 2) F-2PI))
 
 (defparameter *c-chars* "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_[]")
 
