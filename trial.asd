@@ -116,7 +116,8 @@
                              (:file "particle" :depends-on ("core"))
                              (:file "rigidbody" :depends-on ("primitives"))
                              (:file "primitives" :depends-on ("core"))
-                             (:file "resolution" :depends-on ("rigidbody"))))
+                             (:file "resolution" :depends-on ("rigidbody"))
+                             (:file "gjk" :depends-on ("primitives"))))
                (:module "resources"
                 :depends-on ("package" "resource" "toolkit" "data-pointer")
                 :components ((:file "buffer-object")
