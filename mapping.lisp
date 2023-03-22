@@ -41,7 +41,7 @@
   (setf (gethash id +retention-table+) int))
 
 (defun retained (id)
-  (< 0 (the (unsigned-byte 8) (gethash id +retention-table+ 0))))
+  (< 0 (the (signed-byte 8) (gethash id +retention-table+ 0))))
 
 (defun (setf retained) (bool id)
   (setf (gethash id +retention-table+) (if bool 1 0)))
