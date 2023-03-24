@@ -136,6 +136,7 @@
              (v+ (bsize force) (bsize entity)))
     (call-next-method)))
 
+(declaim (inline make-hit))
 (defstruct hit
   (a NIL :type T)
   (b NIL :type T)
