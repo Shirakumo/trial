@@ -1,6 +1,20 @@
 (in-package #:org.shirakumo.fraf.trial)
 
+(defgeneric intersects-p (a b))
 (defgeneric detect-hits (a b contacts start end))
+
+(defun detect-hit (a b &optional (hit (make-hit)))
+  (let ((array (make-array 1)))
+    (declare (dynamic-extent array))
+    (setf (aref array 0) hit)
+    (let ((count (detect-hits a b array 0 1)))
+      (when (< 0 count)
+        hit))))
+
+(defmethod intersects-p (a b)
+  (let ((hit (make-hit)))
+    (declare (dynamic-extent hit))
+    (not (null (detect-hit a b hit)))))
 
 (defmacro define-hit-detector ((a b) &body body)
   `(progn
