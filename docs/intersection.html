@@ -1,0 +1,37 @@
+<article><style>article{
+    max-width: 800px;
+    font-size: 12pt;
+    font-family: sans-serif;
+    margin: 3em auto;
+}
+
+article h1{
+    text-align: center;
+    font-size: 2em;
+}
+
+article img{
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+article blockquote{
+    border-left: 0.2em solid gray;
+    margin-left: 1em;
+    padding-left: 1em;
+}
+
+article figcaption{
+    padding: 0.2em 1em;
+    background: #E0E0E0;
+}
+
+article code{
+    background: #F0F0F0;
+    padding: 0 0.1em;
+}
+
+article .code-block{
+    padding: 0.1em 0.5em;
+    overflow-x: auto;
+}</style><h1 id="intersection / collision testing">Intersection / Collision Testing</h1><p>Trial provides an array of intersection and collision testing functions. The functions to use are called <code>intersects-p</code>, <code>detect-hits</code>, and <code>detect-hit</code>.</p><p>The <code>intersects-p</code> test <em>may</em> be faster for some tests, as broader, more specialised tests can be implemented that are faster to execute. If there's no special implementation it falls back on <code>detect-hits</code>.</p><p>All of these functions operate on <code>primitive</code> objects or a <code>ray</code>. Primitives describe a particular shape with its centre at the origin and aligned along the axes. A transform matrix is used to handle translation and rotation of the shape.</p><p>When you access a primitive's <code>location</code> and <code>orientation</code>, it accesses the <code>primitive-local-transform</code> in the back. Each primitive also has a &quot;global transform&quot; (<code>primitive-transform</code>) which is a transform matrix that combines the primitive's and the parent's matrices to get a world-space transform. To get the world-space location and orientation you will want the <code>global-location</code> and <code>global-orientation</code>. Note that the two transform matrices may be identical if the primitive has no parent to speak of.</p><p>The <code>detect-hits</code> function takes an array filled with <code>hit</code> instances, as well as a start and (exclusive) end index of the range it is allowed to fill. It will return the index of the last element that wasn't modified. Thus, no hits means <code>(= start (detect-hits ...))</code>.</p><p>This interface allows you to cache and re-use hit instances, avoiding spurious allocation. If you know you only need one hit at a time, you can also use the more convenient <code>detect-hit</code>.</p><p>Any hit covered by <code>detect-hits</code> must fill out the fields <code>a</code>, <code>b</code>, <code>location</code>, and <code>normal</code>. It may also fill out the rest of the hit's fields depending on the properties of the objects involved in the test.</p><p>To perform raycasts, a <code>ray</code> instance can be used. This works through the same <code>intersects-p</code> interface, though every ray-primitive test also has a specific implicit function, named like <code>ray-box-p</code>, which takes the required parameters implicitly, and returns either <code>NIL</code> or a float describing the &quot;time&quot; along the ray at which the ray hit the primitive.</p><p>Other non-primitive objects may also support the <code>intersects-p</code> and <code>detect-hits</code> interfaces.</p></article>
