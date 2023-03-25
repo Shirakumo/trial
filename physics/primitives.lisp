@@ -72,17 +72,42 @@
 
 (defstruct (half-space (:include plane)))
 
+;; NOTE: the box is centred at 0,0,0 and the bsize is the half-size along each axis.
 (defstruct (box (:include primitive))
   (bsize (vec3 1 1 1) :type vec3))
 
 (define-accessor-delegate-methods bsize (box-bsize box))
 
+;; Frustums are just boxes skewed by a linear transform. We provide these shorthands
+;; here to allow easier construction of frustum testing primitives.
+(defun make-frustum-box (left right bottom top near far)
+  (let ((transform (mfrustum left right bottom top near far)))
+    (make-box :local-transform transform
+              :transform (mcopy4 transform)
+              :bsize (vec (* 0.5 (abs (- right left)))
+                          (* 0.5 (abs (- top bottom)))
+                          (* 0.5 (abs (- far near)))))))
+
+(defun make-perspective-box (fovy aspect near far)
+  (3d-matrices::with-floats ((fpi PI) (f360 360) (fovy fovy) (aspect aspect) (near near) (far far))
+    (let* ((fh (* (the single-float (tan (* (/ fovy f360) fpi))) near))
+           (fw (* fh aspect)))
+      (frustum-box (- fw) fw (- fh) fh near far))))
+
+;; NOTE: the cylinder is centred at 0,0,0 and points Y-up. the "height" is the half-height.
 (defstruct (cylinder (:include primitive))
   (radius 1.0 :type single-float)
   (height 1.0 :type single-float))
 
 (define-accessor-delegate-methods radius (cylinder-radius cylinder))
 (define-accessor-delegate-methods height (cylinder-height cylinder))
+
+(defstruct (pill (:include cylinder)))
+
+(defstruct (triangle (:include primitive))
+  (a (vec3 0 0 0) :type vec3)
+  (b (vec3 0 0 0) :type vec3)
+  (c (vec3 0 0 0) :type vec3))
 
 (define-hit-detector (sphere sphere)
   (let* ((al (location a))
