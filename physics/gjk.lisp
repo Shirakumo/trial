@@ -11,7 +11,9 @@
    (v+ (location sphere) (vunit direction)))
 
 (defmethod support-mapping ((mesh convex-mesh) (direction vec3))
-  (error "implement me"))
+  (with-slots (vertex-array index-array) mesh
+    (let ((n (/ (length index-array 3))))
+      (loop for ))))
 
 (defun support-mapping-minkowski-difference (object-1 object-2 direction)
   "Computes the support mapping of the Minkowski difference of object-1 with object-2."
@@ -23,8 +25,111 @@
 
 (defmethod sample-one-point ((sphere sphere)) (location sphere))
 
+(defun closest-point-to-origin-on-line (q1 q2)
+  (let ((n (vunit (v- q2 q1))))
+    (v- q1 (v* n (v. q1 n)))))
+
+
+(defun closest-point-to-origin-on-plane (p n)
+  (v* (/ (v. p n) (v. n n)) n))
+
 (defun point-of-minimum-norm-in-convex-hull (set)
-  (error "implement me"))
+  (labels ((voronoi-half-plane (q1 q2)
+             (v. (v- q2 q1) (v- q1)))
+           (normal-vector (q1 q2 q3)
+             (vc (v- q2 q1) (v- q3 q1)))
+           (voronoi-edge-helper (q1 q2 q3)
+             (v. (v- q1)
+                 (vc (v- q2 q1)
+                     (normal-vector q1 q2 q3))))
+           (voronoi-edge (q1 q2 q3 &optional q4)
+             (if q4
+                 (and
+                  (<= 0 (voronoi-half-plane q1 q2))
+                  (<= 0 (voronoi-half-plane q2 q1))
+                  (<= 0 (voronoi-edge-helper q1 q2 q3))
+                  (<= 0 (voronoi-edge-helper q1 q2 q4)))
+                 (and
+                  (<= 0 (voronoi-half-plane q1 q2))
+                  (<= 0 (voronoi-half-plane q2 q1))
+                  (<= 0 (voronoi-edge-helper q1 q2 q3)))))
+           (voronoi-face (q1 q2 q3 q4)
+             (< (* (v. (v- q1)
+                       (normal-vector q1 q2 q3))
+                   (v. (v- q4 q1)
+                       (normal-vector q1 q2 q3)))
+                0))
+           (voronoi-point (q1 q2 q3 &optional q4)
+             (if q4
+                 (and (<= (voronoi-half-plane q1 q2) 0)
+                      (<= (voronoi-half-plane q1 q3) 0)
+                      (<= (voronoi-half-plane q1 q4) 0))
+                 (and (<= (voronoi-half-plane q1 q2) 0)
+                      (<= (voronoi-half-plane q1 q3) 0)))))
+    (ecase (length set)
+      (4
+       (let* ((q1 (aref set 0))
+              (q2 (aref set 1))
+              (q3 (aref set 2))
+              (q4 (aref set 3)))
+         (cond
+           ;; q1
+           ((voronoi-point q1 q2 q3 q4) q1)
+           ;; q2
+           ((voronoi-point q2 q1 q3 q4) q2)
+           ;; q3
+           ((voronoi-point q3 q1 q2 q4) q3)
+           ;; q4
+           ((voronoi-point q4 q1 q2 q3) q4)
+           ;; Edges
+           ;; q1 q2
+           ((voronoi-edge q1 q2 q3 q4) (closest-point-to-origin-on-line q1 q2))
+           ;; q1 q3
+           ((voronoi-edge q1 q3 q2 q4)  (closest-point-to-origin-on-line q1 q3))
+           ;; q1 q4
+           ((voronoi-edge q1 q4 q2 q3) (closest-point-to-origin-on-line q1 q4) )
+           ;; q2 q3
+           ((voronoi-edge q2 q3 q1 q4)  (closest-point-to-origin-on-line q2 q3))
+           ;; q2 q4
+           ((voronoi-edge q2 q4 q1 q3)  (closest-point-to-origin-on-line q2 q4))
+           ;; q3 q4
+           ((voronoi-edge q3 q4 q1 q2)  (closest-point-to-origin-on-line q3 q4))
+;;; Faces
+           ;; q1 q2 q3
+           ((voronoi-face q1 q2 q3 q4) (closest-point-to-origin-on-plane q1 (normal-vector q1 q2 q3)))
+           ;; q1 q2 q4
+           ((voronoi-face q1 q2 q4 q3) (closest-point-to-origin-on-plane q1 (normal-vector q1 q2 q4)))
+           ;; q1 q3 q4
+           ((voronoi-face q1 q3 q4 q2) (closest-point-to-origin-on-plane q1 (normal-vector q1 q3 q4)))
+           ;; q2 q3 q4
+           ((voronoi-face q2 q3 q4 q1) (closest-point-to-origin-on-plane q2 (normal-vector q2 q3 q4)))
+           ;; Simplex interior
+           (t (vec3 0.0 0.0 0.0)))))
+      (3 (let ((q1 (aref set 0))
+               (q2 (aref set 1))
+               (q3 (aref set 2)))
+           (cond
+             ;; q1
+             ((voronoi-point q1 q2 q3) q1)
+             ;; q2
+             ((voronoi-point q2 q1 q3) q2)
+             ;; q3
+             ((voronoi-point q3 q2 q1) q3)
+             ;; q1 q2
+             ((voronoi-edge q1 q2 q3) (point-of-minimum-norm-in-convex-hull (vector q1 q2)))
+             ;; q1 q3
+             ((voronoi-edge q1 q3 q2) (point-of-minimum-norm-in-convex-hull (vector q1 q3)))
+             ;; q2 q3
+             ((voronoi-edge q2 q3 q1) (point-of-minimum-norm-in-convex-hull (vector q2 q3)))
+             ;; Triangle interior
+             (t (closest-point-to-origin-on-plane q1 (normal-vector q1 q2 q3)))
+             )))
+      (2 (let ((q1 (aref set 0))
+               (q2 (aref set 1)))
+           (let* ((n (v- q2 q1))
+                  (s (/ (v. n (v- q1)) (v. n n))))
+             (v+ q1 (v* n (alexandria:clamp s 0.0 1.0))))))
+      (1 (aref set 0)))))
 
 (defun epsilon-= (a b &optional (epsilon 1e-6))
   (< (abs (v2norm (v- a b))) epsilon))
