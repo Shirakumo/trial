@@ -138,6 +138,10 @@
   (b (vec3 0 0 0) :type vec3)
   (c (vec3 0 0 0) :type vec3))
 
+(defstruct (convex-mesh (:include primitive))
+  (vertices #() :type (simple-array single-float (*)))
+  (faces #() :type (simple-array (unsigned-byte 32) (*))))
+
 (define-hit-detector (sphere sphere)
   (let* ((al (global-location a))
          (bl (global-location b))
