@@ -1,0 +1,18 @@
+# Intersection / Collision Testing
+Trial provides an array of intersection and collision testing functions. The functions to use are called ``intersects-p``, ``detect-hits``, and ``detect-hit``.
+
+The ``intersects-p`` test //may// be faster for some tests, as broader, more specialised tests can be implemented that are faster to execute. If there's no special implementation it falls back on ``detect-hits``.
+
+All of these functions operate on ``primitive`` objects or a ``ray``. Primitives describe a particular shape with its centre at the origin and aligned along the axes. A transform matrix is used to handle translation and rotation of the shape.
+
+When you access a primitive's ``location`` and ``orientation``, it accesses the ``primitive-local-transform`` in the back. Each primitive also has a "global transform" (``primitive-transform``) which is a transform matrix that combines the primitive's and the parent's matrices to get a world-space transform. To get the world-space location and orientation you will want the ``global-location`` and ``global-orientation``. Note that the two transform matrices may be identical if the primitive has no parent to speak of.
+
+The ``detect-hits`` function takes an array filled with ``hit`` instances, as well as a start and (exclusive) end index of the range it is allowed to fill. It will return the index of the last element that wasn't modified. Thus, no hits means ``(= start (detect-hits ...))``.
+
+This interface allows you to cache and re-use hit instances, avoiding spurious allocation. If you know you only need one hit at a time, you can also use the more convenient ``detect-hit``.
+
+Any hit covered by ``detect-hits`` must fill out the fields ``a``, ``b``, ``location``, and ``normal``, which describe the intersection in world space. It may also fill out the rest of the hit's fields depending on the properties of the objects involved in the test.
+
+To perform raycasts, a ``ray`` instance can be used. This works through the same ``intersects-p`` interface, though every ray-primitive test also has a specific implicit function, named like ``ray-box-p``, which takes the required parameters implicitly, and returns either ``NIL`` or a float describing the "time" along the ray at which the ray hit the primitive.
+
+Other non-primitive objects may also support the ``intersects-p`` and ``detect-hits`` interfaces.
