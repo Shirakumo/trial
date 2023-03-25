@@ -50,9 +50,38 @@
   (local-transform (meye 4) :type mat4)
   (transform (mat4) :type mat4))
 
-(defmethod location ((primitive primitive))
+(defmethod global-location ((primitive primitive))
   (with-fast-matref (m (primitive-transform primitive) 4)
     (vec (m 3) (m 7) (m 11))))
+
+(defmethod global-orientation ((primitive primitive))
+  (qfrom-mat (primitive-transform primitive)))
+
+(defmethod location ((primitive primitive))
+  (with-fast-matref (m (primitive-local-transform primitive) 4)
+    (vec (m 3) (m 7) (m 11))))
+
+(defmethod (setf location) ((vec vec3) (primitive primitive))
+  (with-fast-matref (m (primitive-local-transform primitive) 4)
+    (setf (m 3) (vx3 vec))
+    (setf (m 7) (vy3 vec))
+    (setf (m 11) (vz3 vec))
+    vec))
+
+(defmethod orientation ((primitive primitive))
+  (qfrom-mat (primitive-local-transform primitive)))
+
+(defmethod (setf orientation) ((quat quat) (primitive primitive))
+  (let ((src (mat3))
+        (dst (primitive-local-transform primitive)))
+    (declare (dynamic-extent src))
+    (qmat3 quat src)
+    (with-fast-matref (s src 3)
+      (with-fast-matref (d dst 4)
+        (setf (d 0 0) (s 0 0) (d 0 1) (s 0 1) (d 0 2) (s 0 2))
+        (setf (d 1 0) (s 1 0) (d 1 1) (s 1 1) (d 1 2) (s 1 2))
+        (setf (d 2 0) (s 2 0) (d 2 1) (s 2 1) (d 2 2) (s 2 2))))
+    quat))
 
 (define-accessor-delegate-methods entity (primitive-entity primitive))
 (define-accessor-delegate-methods material (primitive-material primitive))
@@ -110,8 +139,8 @@
   (c (vec3 0 0 0) :type vec3))
 
 (define-hit-detector (sphere sphere)
-  (let* ((al (location a))
-         (bl (location b))
+  (let* ((al (global-location a))
+         (bl (global-location b))
          (dx (v- al bl))
          (len (vlength dx)))
     (when (and (<= (+ (sphere-radius a) (sphere-radius b)) len)
@@ -124,7 +153,7 @@
       (finish-hit))))
 
 (define-hit-detector (sphere half-space)
-  (let* ((al (location a))
+  (let* ((al (global-location a))
          (dist (- (v. (plane-normal b) al)
                   (sphere-radius a)
                   (plane-offset b))))
@@ -136,7 +165,7 @@
       (finish-hit))))
 
 (define-hit-detector (sphere plane)
-  (let* ((al (location a))
+  (let* ((al (global-location a))
          (dist (- (v. (plane-normal b) al)
                   (plane-offset b))))
     (when (< (* dist dist) (* (sphere-radius a) (sphere-radius a)))
@@ -184,7 +213,7 @@
       (test h))))
 
 (define-hit-detector (sphere box)
-  (let ((center (location a))
+  (let ((center (global-location a))
         (radius (sphere-radius a))
         (bs (box-bsize b)))
     (ntransform-inverse center (box-transform b))
