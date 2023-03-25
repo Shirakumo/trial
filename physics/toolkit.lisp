@@ -7,6 +7,16 @@
           (vz3 vec) (e 2 n))
     vec))
 
+(declaim (inline n*m4/3))
+(defun n*m4/3 (mat b)
+  (declare (optimize speed))
+  ;; Ignoring the fourth column to eliminate translation
+  (with-fast-matref (e mat 4)
+    (setf (vx3 B) (+ (* (VX3 B) (E 0 0)) (* (VY3 B) (E 0 1)) (* (VZ3 B) (E 0 2))))
+    (setf (vy3 b) (+ (* (VX3 B) (E 1 0)) (* (VY3 B) (E 1 1)) (* (VZ3 B) (E 1 2))))
+    (setf (vz3 b) (+ (* (VX3 B) (E 2 0)) (* (VY3 B) (E 2 1)) (* (VZ3 B) (E 2 2))))
+    b))
+
 (defun ntransform-inverse (vec3 mat)
   (with-fast-matcase (m mat)
     (mat4
