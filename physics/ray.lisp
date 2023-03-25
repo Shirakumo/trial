@@ -70,7 +70,7 @@
                    ;; induced by the primitive's transform scaling sorted out.
                    (nv+* (hit-location hit) (ray-direction a) (max 0.0 (* tt transform-scaling)))
                    (setf (hit-a hit) a)
-                   (setf (hit-b hit) ,(if (subtypep b 'primitive) `(primitive-entity b) NIL))
+                   (setf (hit-b hit) ,(if (subtypep b 'primitive) `(primitive-entity b) b))
                    (ntransform-inverse (hit-normal hit) (primitive-transform b))
                    (incf start)))))
            start))
