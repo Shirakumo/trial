@@ -12,8 +12,17 @@
 
 (defmethod support-mapping ((mesh convex-mesh) (direction vec3))
   (with-slots (vertex-array index-array) mesh
-    (let ((n (/ (length index-array 3))))
-      (loop for ))))
+    (let ((n (/ (length index-array) 3))
+          (best-point nil)
+          (best-score most-negative-double-float))
+      (loop for i from 0 below n do
+            (let ((point (vec3 (aref vertex-array (aref index-array (* 3 i)))
+                               (aref vertex-array (aref index-array (+ 1 (* 3 i))))
+                               (aref vertex-array (aref index-array (+ 2 (* 3 i)))))))
+              (when (<= best-score (v. direction point))
+                (setf best-point point)
+                (setf best-score (v. direction point)))))
+      best-point)))
 
 (defun support-mapping-minkowski-difference (object-1 object-2 direction)
   "Computes the support mapping of the Minkowski difference of object-1 with object-2."
@@ -24,6 +33,11 @@
   (:documentation "Returns a single point from the object. Required for the GJK algorithm."))
 
 (defmethod sample-one-point ((sphere sphere)) (location sphere))
+(defmethod sample-one-point ((mesh convex-mesh))
+  (with-slots (vertex-array index-array) mesh
+    (vec3 (aref vertex-array (aref index-array 0))
+          (aref vertex-array (aref index-array 1))
+          (aref vertex-array (aref index-array 2)))))
 
 (defun closest-point-to-origin-on-line (q1 q2)
   (let ((n (vunit (v- q2 q1))))
