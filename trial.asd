@@ -117,6 +117,7 @@
                              (:file "particle" :depends-on ("core"))
                              (:file "rigidbody" :depends-on ("primitives"))
                              (:file "primitives" :depends-on ("core"))
+                             (:file "ray" :depends-on ("primitives"))
                              (:file "resolution" :depends-on ("rigidbody"))))
                (:module "resources"
                 :depends-on ("package" "resource" "toolkit" "data-pointer")
