@@ -30,7 +30,7 @@
                     (let ((properties (material-interaction-properties
                                        (primitive-material a) ,(if (subtypep b 'primitive) `(primitive-material b) NIL))))
                       (setf (hit-a hit) (primitive-entity a))
-                      (setf (hit-b hit) ,(if (subtypep b 'primitive) `(primitive-entity b) NIL))
+                      (setf (hit-b hit) ,(if (subtypep b 'primitive) `(primitive-entity b) b))
                       (setf (hit-static-friction hit) (material-interaction-properties-static-friction properties))
                       (setf (hit-dynamic-friction hit) (material-interaction-properties-dynamic-friction properties))
                       (setf (hit-restitution hit) (material-interaction-properties-restitution properties)))
