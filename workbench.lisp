@@ -1,7 +1,8 @@
 (defpackage #:workbench
   (:use #:cl+trial)
   (:shadow #:launch)
-  (:local-nicknames)
+  (:local-nicknames
+   (#:assets #:org.shirakumo.fraf.trial.assets))
   (:export #:workbench #:launch))
 (in-package #:workbench)
 
@@ -17,7 +18,7 @@
                  (buttons :one-of ((:y :x :a :b))))))
 
 (defclass workbench (main)
-  ((paused-p :initform T :accessor paused-p))
+  ((paused-p :initform NIL :accessor paused-p))
   (:default-initargs :clear-color (vec 0.25 0.3 0.35 0)
                      :context '(:vsync T)))
 

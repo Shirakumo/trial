@@ -19,10 +19,18 @@
 (defgeneric apply-constraint (constraint solver i))
 
 (defclass ik-solver (sequences:sequence standard-object)
-  ((ik-chain :initform #() :accessor ik-chain)
+  ((ik-chain :initform #() :accessor ik-chain :reader joints)
    (constraints :initform #() :accessor constraints)
    (iterations :initarg :iterations :initform 15 :accessor iterations)
    (threshold :initarg :threshold :initform 0.00001 :accessor threshold)))
+
+(defmethod shared-initialize :after ((solver ik-solver) slots &key (joints NIL joints-p))
+  (when joints-p (setf (joints solver) joints)))
+
+(defmethod (setf joints) (joints (solver ik-solver))
+  (sequences:adjust-sequence solver (length joints))
+  (replace (ik-chain solver) joints)
+  joints)
 
 (defgeneric solve-for (target solver))
 

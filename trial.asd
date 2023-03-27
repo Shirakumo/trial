@@ -109,7 +109,7 @@
                              (:file "entity" :depends-on ("mesh" "skeleton" "clip"))
                              (:file "ik" :depends-on ())))
                (:module "physics"
-                :depends-on ("package" "helpers")
+                :depends-on ("package")
                 :components ((:file "toolkit")
                              (:file "constants" :depends-on ("toolkit"))
                              (:file "core" :depends-on ("toolkit"))
@@ -134,7 +134,7 @@
                (:module "assets"
                 :depends-on ("package" "asset" "resources" "data-pointer")
                 :components ((:file "image")
-                             (:file "mesh")
+                             (:file "mesh" :depends-on ((:.. ("physics" "primitives"))))
                              (:file "sprite-data" :depends-on ("image"))
                              (:file "static")
                              (:file "tile-data" :depends-on ("image"))
