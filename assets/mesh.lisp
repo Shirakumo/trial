@@ -48,5 +48,14 @@
           for mesh being the hash-values of meshes
           collect (generate-resources generator mesh :resource (resource generator name)))))
 
+(defmethod generate-resources ((generator mesh-loader) (primitive convex-mesh) &key (data-usage :static-draw) (resource (resource generator T)))
+  (let ((vbo (make-instance 'vertex-buffer :buffer-data (convex-mesh-vertices primitive) :buffer-type :array-buffer
+                                           :data-usage data-usage :elemen-type :float))
+        (ebo (make-instance 'vertex-buffer :buffer-data (convex-mesh-faces primitive) :buffer-type :element-array-buffer
+                                           :data-usage data-usage :element-type :unsigned-int)))
+    (ensure-instance resource 'vertex-array
+                     :bindings `(,ebo (,vbo :offset 0 :size 3 :stride 4))
+                     :vertex-form :triangles)))
+
 (defclass mesh (multi-resource-asset mesh-loader)
   ())
