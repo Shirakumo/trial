@@ -127,7 +127,7 @@
                    (descendant-joint-p i root target))
         (ninterpolate (elt target i) (elt a i) (elt b i) x)))))
 
-;;                     Output,       Base Pose,Current Additive,Base Additive (instantiate-clip)
+;;                     Output,       Base Pose,Current Additive,Base Additive
 (defmethod layer-onto ((target pose) (in pose) (add pose) (base pose) &key (root -1))
   (dotimes (i (length add) target)
     (unless (and (<= 0 root)

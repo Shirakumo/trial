@@ -92,6 +92,7 @@
 (%define-sampler-method sequences:sequence (elt thing name))
 (%define-sampler-method hash-table (gethash name thing))
 (%define-sampler-method standard-object (slot-value thing name))
+(%define-sampler-method structure-object (slot-value thing name))
 
 (defmethod reorder ((clip clip) map)
   (dotimes (i (length clip) clip)

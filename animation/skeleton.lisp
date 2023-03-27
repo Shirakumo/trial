@@ -86,10 +86,9 @@
       (setf (joint-names skeleton) new-names)
       skeleton)))
 
-(defun instantiate-clip (skeleton clip &optional (time (start-time clip)))
-  (let ((pose (rest-pose* skeleton)))
-    (sample pose clip time)
-    pose))
+(defun instantiate-clip (skeleton clip &key (time (start-time clip)) (pose (rest-pose* skeleton)))
+  (sample pose clip time)
+  pose)
 
 (defmethod rest-pose* ((skeleton skeleton))
   (make-instance 'pose :source (rest-pose skeleton)))
