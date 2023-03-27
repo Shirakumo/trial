@@ -12,6 +12,25 @@
    (inv-bind-pose :accessor inv-bind-pose)
    (joint-names :initarg :joint-names :accessor joint-names)))
 
+(defmethod describe-object ((skeleton skeleton) stream)
+  (call-next-method)
+  (terpri)
+  (let ((parents (parents (rest-pose skeleton)))
+        (names (joint-names skeleton)))
+    (labels ((recurse (i last)
+               (when last
+                 (destructuring-bind (cur . rest) last
+                   (dolist (p (reverse rest))
+                     (format stream "~:[│  ~;   ~]" p))
+                   (format stream "~:[├~;└~]─" cur)))
+               (format stream " ~2d ~a~%" i (aref names i))
+               (loop with max = (loop for j from 0 below (length parents)
+                                      when (= (aref parents j) i) maximize j)
+                     for j from 0 below (length parents)
+                     do (when (= (aref parents j) i)
+                          (recurse j (list* (= max j) last))))))
+      (recurse 0 ()))))
+
 (defmethod shared-initialize :after ((skeleton skeleton) slots &key)
   (update-bind-pose skeleton))
 

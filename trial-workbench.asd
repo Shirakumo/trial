@@ -11,4 +11,5 @@
   :depends-on (:trial-glfw
                :trial-jpeg
                :trial-png
-               :trial-gltf))
+               :trial-gltf
+               :trial-assets-gltf))
