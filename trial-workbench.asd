@@ -10,4 +10,5 @@
   :components ((:file "workbench"))
   :depends-on (:trial-glfw
                :trial-jpeg
-               :trial-png))
+               :trial-png
+               :trial-gltf))

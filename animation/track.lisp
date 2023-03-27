@@ -209,11 +209,11 @@ Author: Nicolas Hafner <shinmera@tymoon.eu>
 
 (defmethod sample (transform (track transform-track) time &key loop-p)
   (when (< 1 (length (location track)))
-    (sample (tlocation transform) (location track) time loop-p))
+    (sample (tlocation transform) (location track) time :loop-p loop-p))
   (when (< 1 (length (scaling track)))
-    (sample (tscaling transform) (scaling track) time loop-p))
+    (sample (tscaling transform) (scaling track) time :loop-p loop-p))
   (when (< 1 (length (rotation track)))
-    (sample (trotation transform) (rotation track) time loop-p))
+    (sample (trotation transform) (rotation track) time :loop-p loop-p))
   transform)
 
 (defmethod valid-p ((track transform-track))
