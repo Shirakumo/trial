@@ -24,8 +24,35 @@
    (iterations :initarg :iterations :initform 15 :accessor iterations)
    (threshold :initarg :threshold :initform 0.00001 :accessor threshold)))
 
-(defmethod shared-initialize :after ((solver ik-solver) slots &key (joints NIL joints-p))
-  (when joints-p (setf (joints solver) joints)))
+(defmethod shared-initialize :after ((solver ik-solver) slots &key skeleton pose (joints NIL joints-p) root-joint leaf-joint constraints)
+  (when joints-p (setf (joints solver) joints))
+  (when skeleton (ik-from-skeleton solver skeleton root-joint leaf-joint :pose pose :constraints constraints)))
+
+(defmethod ik-from-skeleton ((solver ik-solver) (skeleton skeleton) root-joint leaf-joint &key pose constraints)
+  (let* ((pose (or pose (rest-pose* skeleton)))
+         (constraints (or constraints (make-hash-table :test 'eql)))
+         (parents (parents (rest-pose skeleton)))
+         (names (joint-names skeleton))
+         (root-joint (etypecase root-joint
+                       (string (position root-joint names :test #'string-equal))
+                       (integer root-joint)
+                       (null 0)))
+         (leaf-joint (etypecase leaf-joint
+                       (string (position leaf-joint names :test #'string-equal))
+                       (integer leaf-joint)))
+         (chain ()))
+    (loop for parent = leaf-joint then (aref parents parent)
+          do (push parent chain)
+          until (= root-joint parent))
+    (sequences:adjust-sequence solver (length chain))
+    (loop for i from 0
+          for joint in chain
+          for transform = (aref pose joint)
+          for constraint = (gethash (aref names joint) constraints)
+          do (setf (elt solver i) transform)
+             (when constraint
+               (setf (elt solver i) constraint)))
+    pose))
 
 (defmethod (setf joints) (joints (solver ik-solver))
   (sequences:adjust-sequence solver (length joints))
