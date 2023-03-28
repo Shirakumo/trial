@@ -6,6 +6,23 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(defun describe-skeleton (skeleton stream)
+  (let ((parents (parents (rest-pose skeleton)))
+        (names (joint-names skeleton)))
+    (labels ((recurse (i last)
+               (when last
+                 (destructuring-bind (cur . rest) last
+                   (dolist (p (reverse rest))
+                     (format stream "~:[│  ~;   ~]" p))
+                   (format stream "~:[├~;└~]─" cur)))
+               (format stream " ~2d ~@[~s~]~%" i (when (<= 0 i) (aref names i)))
+               (loop with max = (loop for j from 0 below (length parents)
+                                      when (= (aref parents j) i) maximize j)
+                     for j from 0 below (length parents)
+                     do (when (= (aref parents j) i)
+                          (recurse j (list* (= max j) last))))))
+      (recurse -1 ()))))
+
 (defclass skeleton ()
   ((rest-pose :initarg :rest-pose :accessor rest-pose)
    (bind-pose :initarg :bind-pose :accessor bind-pose)
@@ -15,21 +32,7 @@
 (defmethod describe-object ((skeleton skeleton) stream)
   (call-next-method)
   (terpri)
-  (let ((parents (parents (rest-pose skeleton)))
-        (names (joint-names skeleton)))
-    (labels ((recurse (i last)
-               (when last
-                 (destructuring-bind (cur . rest) last
-                   (dolist (p (reverse rest))
-                     (format stream "~:[│  ~;   ~]" p))
-                   (format stream "~:[├~;└~]─" cur)))
-               (format stream " ~2d ~@[~a~]~%" i (when (<= 0 i) (aref names i)))
-               (loop with max = (loop for j from 0 below (length parents)
-                                      when (= (aref parents j) i) maximize j)
-                     for j from 0 below (length parents)
-                     do (when (= (aref parents j) i)
-                          (recurse j (list* (= max j) last))))))
-      (recurse -1 ()))))
+  (describe-skeleton skeleton stream))
 
 (defmethod shared-initialize :after ((skeleton skeleton) slots &key)
   (update-bind-pose skeleton))
