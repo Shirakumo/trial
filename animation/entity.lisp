@@ -35,6 +35,16 @@
    (pose :accessor pose)
    (skeleton :initform NIL :accessor skeleton)))
 
+(defmethod describe-object :after ((controller layer-controller) stream)
+  (terpri stream)
+  (format stream "Layers:~%")
+  (let ((layers (sort (alexandria:hash-table-keys (layers controller)) #'string<)))
+    (if layers
+        (loop for name in layers
+              for layer = (layer name controller)
+              do (format stream "  ~3d% ~s~%" (round (* 100 (animation-layer-strength layer))) name))
+        (format stream "  No layers.~%"))))
+
 (defmethod update ((controller layer-controller) tt dt fc)
   (when (next-method-p) (call-next-method))
   (loop for layer being the hash-values of (layers controller)
@@ -81,6 +91,22 @@
 (defmethod (setf skeleton) :after ((skeleton skeleton) (controller fade-controller))
   (setf (pose controller) (rest-pose* skeleton)))
 
+(defmethod describe-object :after ((controller fade-controller) stream)
+  (terpri stream)
+  (format stream "Current Clip:~%")
+  (if (clip controller)
+      (format stream "  ~4f / ~4f ~s~%"
+              (clock controller) (duration (clip controller)) (name (clip controller)))
+      (format stream "  No current clip.~%"))
+  (terpri stream)
+  (format stream "Fade Targets:~%")
+  (if (< 0 (length (targets controller)))
+      (loop for target across (targets controller)
+            do (format stream "  ~4f / ~4f ~s~%"
+                       (fade-target-clock target) (fade-target-duration target)
+                       (name (fade-target-clip target))))
+      (format stream "  No current fade targets.~%")))
+
 (defmethod play ((target clip) (controller fade-controller))
   (setf (fill-pointer (targets controller)) 0)
   (setf (clip controller) target)
@@ -118,10 +144,21 @@
                    (blend-into (pose controller) (pose controller) (fade-target-pose target) time)))))))
 
 (define-shader-entity base-animated-entity (ik-controller layer-controller fade-controller listener)
-  ((animation-asset :initarg :asset :accessor animation-asset)))
+  ((animation-asset :initarg :asset :initform NIL :accessor animation-asset)))
 
 (defmethod initialize-instance :after ((entity base-animated-entity) &key asset)
   (register-generation-observer entity asset))
+
+(defmethod describe-object :after ((entity base-animated-entity) stream)
+  (terpri stream)
+  (format stream "Available Clips:~%")
+  (if (list-clips entity)
+      (loop for clip in (list-clips entity)
+            do (format stream "  ~s~%" clip))
+      (format stream "  No currently available clips.~%"))
+  (terpri stream)
+  (format stream "Skeleton:~%")
+  (describe-skeleton (skeleton entity) stream))
 
 (defmethod stage :after ((entity base-animated-entity) (area staging-area))
   (stage (animation-asset entity) area))
@@ -135,10 +172,13 @@
   (play (or (clip entity) T) entity))
 
 (defmethod find-clip (name (entity base-animated-entity) &optional (errorp T))
-  (find-clip name (animation-asset entity) errorp))
+  (if (null (animation-asset entity))
+      (when errorp (error "No such clip ~s found on ~a" name entity))
+      (find-clip name (animation-asset entity) errorp)))
 
 (defmethod list-clips ((entity base-animated-entity))
-  (list-clips (animation-asset entity)))
+  (when (animation-asset entity)
+    (list-clips (animation-asset entity))))
 
 (defmethod add-layer (clip-name (entity base-animated-entity) &key (name NIL name-p))
   (let ((clip (find-clip clip-name entity)))

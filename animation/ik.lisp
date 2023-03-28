@@ -32,8 +32,7 @@
   (print-unreadable-object (solver stream :type T :identity T)
     (format stream "~s ~s" :length (length (ik-chain solver)))))
 
-(defmethod describe-object ((solver ik-solver) stream)
-  (call-next-method)
+(defmethod describe-object :after ((solver ik-solver) stream)
   (terpri)
   (loop with *print-right-margin* = 100000
         for i from 0
@@ -269,6 +268,17 @@
   ((ik-systems :initform (make-hash-table :test 'equalp) :accessor ik-systems)
    (rest-pose :accessor rest-pose)
    (pose :accessor pose)))
+
+(defmethod describe-object :after ((controller ik-controller) stream)
+  (terpri stream)
+  (format stream "IK Systems:~%")
+  (let ((systems (sort (alexandria:hash-table-keys (ik-systems controller)) #'string<)))
+    (if systems
+        (loop for name in systems
+              for system = (ik-system name controller)
+              do (format stream "  [~:[ ~;x~]] ~10a ~2d ~4f ~a~%"
+                         name (active-p system) (length (solver system)) (strength system) (target system)))
+        (format stream "  No IK systems.~%"))))
 
 (defmethod (setf skeleton) :after ((skeleton skeleton) (controller ik-controller))
   (setf (rest-pose controller) (rest-pose* skeleton)))
