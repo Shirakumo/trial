@@ -47,7 +47,7 @@
   (setf (layer name controller) (make-animation-layer clip (skeleton controller) :strength strength)))
 
 (defmethod remove-layer (name (controller layer-controller))
-  (setf (layer name (layers controller)) NIL))
+  (setf (layer name controller) NIL))
 
 (defmethod layer (name (controller layer-controller))
   (gethash name (layers controller)))
@@ -117,7 +117,7 @@
                  (let ((time (min 1.0 (/ (fade-target-elapsed target) (fade-target-duration target)))))
                    (blend-into (pose controller) (pose controller) (fade-target-pose target) time)))))))
 
-(define-shader-entity armature (fade-controller lines listener)
+(define-shader-entity armature (ik-controller fade-controller layer-controller lines listener)
   ((animation-asset :initarg :asset :accessor animation-asset)
    (color :initarg :color :initform (vec 0 0 0 1) :accessor color)))
 

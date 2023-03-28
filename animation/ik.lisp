@@ -47,7 +47,7 @@
          (chain ())
          (straints ()))
     (loop for parent = leaf-joint then (aref parents parent)
-          do (push (aref pose parent) chain)
+          do (push (elt pose parent) chain)
              (push (gethash (aref names parent) constraints) straints)
           until (= root-joint parent))
     (values (make-instance type :joints chain :constraints straints)
@@ -178,7 +178,7 @@
       ;; Forwards iteration
       (v<- (aref world-chain 0) base)
       (loop for i from 1 below size
-            for offset = (nv* (nvunit (v- (aref world-chain i) (aref world-chain (1- i))))
+            for offset = (nv* (nvunit* (v- (aref world-chain i) (aref world-chain (1- i))))
                               (aref lengths i))
             do (v<- (aref world-chain i) (nv+ offset (aref world-chain (1- i)))))
       ;; Apply constraints
@@ -252,7 +252,7 @@
    (pose :accessor pose)))
 
 (defmethod (setf skeleton) :after ((skeleton skeleton) (controller ik-controller))
-  (setf (pose controller) (rest-pose* skeleton)))
+  (setf (rest-pose controller) (rest-pose* skeleton)))
 
 (defmethod update ((controller ik-controller) tt dt fc)
   (when (next-method-p) (call-next-method))
@@ -263,18 +263,21 @@
                        :strength (strength system))))
 
 (defmethod add-ik-system ((layer ik-system) (controller ik-controller) &key (name (arg! :name)))
-  (setf (ik-system name (layers controller)) layer))
+  (setf (ik-system name controller) layer))
 
 (defmethod add-ik-system ((solver ik-solver) (controller ik-controller) &rest args &key (system-type 'ik-system) (name (arg! :name)) &allow-other-keys)
   (let ((system (apply #'make-instance system-type :solver solver :pose (clone (rest-pose controller))
                       (remf* args :name :system-type))))
-    (setf (ik-system name (layers controller)) system)))
+    (setf (ik-system name controller) system)))
 
 (defmethod add-ik-system ((skeleton skeleton) (controller ik-controller) &rest args &key (name (arg! :name)) (joint (arg! :joint)) (system-type 'ik-system) (solver-type 'fabrik-solver) root-joint length constraints &allow-other-keys)
   (let* ((solver (ik-from-skeleton skeleton joint :type solver-type :root-joint root-joint :length length :constraints constraints))
          (system (apply #'make-instance system-type :solver solver :pose (clone (rest-pose controller))
                        (remf* args :name :joint :system-type :solver-type :root-joint :length :constraints))))
-    (setf (ik-system name (layers controller)) system)))
+    (setf (ik-system name controller) system)))
+
+(defmethod add-ik-system ((name string) (controller ik-controller) &rest args &key &allow-other-keys)
+  (apply #'add-ik-system (skeleton controller) controller :name name args))
 
 (defmethod remove-ik-system (name (controller ik-controller))
   (setf (ik-system name (layers controller)) NIL))
