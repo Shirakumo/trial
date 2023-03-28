@@ -37,8 +37,8 @@
          (quat
           ,(if (rest args)
                `(let ((p2 (if (< (q. p1 p2) 0) (q- p2) p2)))
-                  ,(expand-vec '(nqunit target) 'quat 'qx 'qy 'qz 'qw))
-               (expand-vec '(nqunit target) 'quat 'qx 'qy 'qz 'qw)))
+                  ,(expand-vec '(nqunit* target) 'quat 'qx 'qy 'qz 'qw))
+               (expand-vec '(nqunit* target) 'quat 'qx 'qy 'qz 'qw)))
          (vec4 ,(expand-vec 'target 'vec4 'vx4 'vy4 'vz4 'vw4))
          (vec3 ,(expand-vec 'target 'vec3 'vx3 'vy3 'vz3))
          (vec2 ,(expand-vec 'target 'vec2 'vx2 'vy2))))))
@@ -141,7 +141,7 @@
            (+ (qy lhs) (qy rhs))
            (+ (qz lhs) (qz rhs))
            (+ (qw lhs) (qw rhs)))
-    (nqunit dst)))
+    (nqunit* dst)))
 
 (define-inlined-method interpolate ((a quat) (b quat) (x real))
   (ninterpolate (quat) a b x))

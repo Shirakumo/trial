@@ -28,6 +28,19 @@
   (when joints-p (setf (joints solver) joints))
   (when constraints-p (replace (constraints solver) constraints)))
 
+(defmethod print-object ((solver ik-solver) stream)
+  (print-unreadable-object (solver stream :type T :identity T)
+    (format stream "~s ~s" :length (length (ik-chain solver)))))
+
+(defmethod describe-object ((solver ik-solver) stream)
+  (call-next-method)
+  (terpri)
+  (loop with *print-right-margin* = 100000
+        for i from 0
+        for chain across (ik-chain solver)
+        for constraint across (constraints solver)
+        do (format stream "~d ~20a ~a~%" i constraint chain)))
+
 (defmethod ik-from-skeleton ((skeleton skeleton) leaf-joint &key (type 'fabrik-solver) root-joint length pose constraints)
   (let* ((pose (or pose (rest-pose* skeleton)))
          (constraints (or constraints (make-hash-table :test 'eql)))
@@ -50,7 +63,8 @@
           do (push (elt pose parent) chain)
              (push (gethash (aref names parent) constraints) straints)
           until (= root-joint parent))
-    (values (make-instance type :joints chain :constraints straints)
+    (values (make-instance type :joints chain
+                                :constraints straints)
             pose)))
 
 (defmethod (setf joints) (joints (solver ik-solver))
@@ -228,6 +242,11 @@
    (active-p :initarg :active-p :initform T :accessor active-p)
    (target :initarg :target :initform (vec 0 0 0) :accessor target)))
 
+(defmethod print-object ((system ik-system) stream)
+  (print-unreadable-object (system stream :type T)
+    (format stream "~s ~s ~a ~:[~; ACTIVE~]"
+            (length (solver system)) (strength system) (target system) (active-p system))))
+
 (defmethod update ((layer ik-system) tt dt fc)
   (solve-for (target layer) (solver layer)))
 
@@ -271,8 +290,9 @@
     (setf (ik-system name controller) system)))
 
 (defmethod add-ik-system ((skeleton skeleton) (controller ik-controller) &rest args &key (name (arg! :name)) (joint (arg! :joint)) (system-type 'ik-system) (solver-type 'fabrik-solver) root-joint length constraints &allow-other-keys)
-  (let* ((solver (ik-from-skeleton skeleton joint :type solver-type :root-joint root-joint :length length :constraints constraints))
-         (system (apply #'make-instance system-type :solver solver :pose (clone (rest-pose controller))
+  (let* ((pose (clone (rest-pose controller)))
+         (solver (ik-from-skeleton skeleton joint :type solver-type :root-joint root-joint :length length :constraints constraints :pose pose))
+         (system (apply #'make-instance system-type :solver solver :pose pose
                        (remf* args :name :joint :system-type :solver-type :root-joint :length :constraints))))
     (setf (ik-system name controller) system)))
 
