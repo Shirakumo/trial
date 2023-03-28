@@ -24,35 +24,34 @@
    (iterations :initarg :iterations :initform 15 :accessor iterations)
    (threshold :initarg :threshold :initform 0.00001 :accessor threshold)))
 
-(defmethod shared-initialize :after ((solver ik-solver) slots &key skeleton pose (joints NIL joints-p) root-joint leaf-joint constraints)
+(defmethod shared-initialize :after ((solver ik-solver) slots &key (joints NIL joints-p) (constraints NIL constraints-p))
   (when joints-p (setf (joints solver) joints))
-  (when skeleton (ik-from-skeleton solver skeleton root-joint leaf-joint :pose pose :constraints constraints)))
+  (when constraints-p (replace (constraints solver) constraints)))
 
-(defmethod ik-from-skeleton ((solver ik-solver) (skeleton skeleton) root-joint leaf-joint &key pose constraints)
+(defmethod ik-from-skeleton ((skeleton skeleton) leaf-joint &key (type 'fabrik-solver) root-joint length pose constraints)
   (let* ((pose (or pose (rest-pose* skeleton)))
          (constraints (or constraints (make-hash-table :test 'eql)))
          (parents (parents (rest-pose skeleton)))
          (names (joint-names skeleton))
-         (root-joint (etypecase root-joint
-                       (string (position root-joint names :test #'string-equal))
-                       (integer root-joint)
-                       (null 0)))
          (leaf-joint (etypecase leaf-joint
                        (string (position leaf-joint names :test #'string-equal))
                        (integer leaf-joint)))
-         (chain ()))
+         (root-joint (etypecase root-joint
+                       (string (position root-joint names :test #'string-equal))
+                       (integer root-joint)
+                       (null (if length
+                                 (loop repeat length
+                                       for parent = leaf-joint then (aref parents parent)
+                                       finally (return parent))
+                                 0))))
+         (chain ())
+         (straints ()))
     (loop for parent = leaf-joint then (aref parents parent)
-          do (push parent chain)
+          do (push (aref pose parent) chain)
+             (push (gethash (aref names parent) constraints) straints)
           until (= root-joint parent))
-    (sequences:adjust-sequence solver (length chain))
-    (loop for i from 0
-          for joint in chain
-          for transform = (aref pose joint)
-          for constraint = (gethash (aref names joint) constraints)
-          do (setf (elt solver i) transform)
-             (when constraint
-               (setf (elt solver i) constraint)))
-    pose))
+    (values (make-instance type :joints chain :constraints straints)
+            pose)))
 
 (defmethod (setf joints) (joints (solver ik-solver))
   (sequences:adjust-sequence solver (length joints))
@@ -221,3 +220,61 @@
       ;; FIXME: allow constraining the angle as well
       (nq* rot (qtowards current desired))
       (setf (qangle rot) (clamp-angle (min-angle solver) (qangle rot) (max-angle solver))))))
+
+(defclass ik-layer ()
+  ((solver :initarg :solver :accessor solver)
+   (pose :initarg :pose :accessor pose)
+   (strength :initarg :strength :initform 1.0 :accessor strength)
+   (active-p :initarg :active-p :initform T :accessor active-p)
+   (target :initarg :target :initform (vec 0 0 0) :accessor target)))
+
+(defmethod update ((layer ik-layer) tt dt fc)
+  (solve-for (target layer) (solver layer)))
+
+(defclass clip-ik-layer (ik-layer)
+  ((clip :initarg :clip :accessor clip)
+   (clock :initform 0.0 :accessor clock)))
+
+(defmethod update :before ((layer clip-ik-layer) tt dt fc)
+  (setf (clock layer) (sample layer (clip layer) (+ (clock layer) dt) :loop-p T)))
+
+(defclass entity-target-ik-layer (ik-layer)
+  ((entity :initarg :entity :accessor entity)
+   (offset :initarg :offset :accessor offset)))
+
+(defmethod update :before ((layer entity-target-ik-layer) tt dt fc)
+  (v<- (target layer) (location (entity layer)))
+  (nv+ (target layer) (offset layer)))
+
+(defclass ik-controller ()
+  ((layers :initform (make-hash-table :test 'equalp) :accessor layers)
+   (rest-pose :accessor rest-pose)
+   (pose :accessor pose)))
+
+(defmethod update ((controller ik-controller) tt dt fc)
+  (when (next-method-p) (call-next-method))
+  (loop for layer being the hash-values of (layers controller)
+        when (active-p layer)
+        do (update layer tt dt fc)
+           (layer-onto (pose controller) (pose controller) (pose layer) (rest-pose controller)
+                       :strength (strength layer))))
+
+(defmethod add-layer ((layer ik-layer) (controller ik-controller) &key name)
+  (setf (gethash name (layers controller)) layer))
+
+(defmethod add-layer ((solver ik-solver) (controller ik-controller) &rest args &key (layer-type 'ik-layer) (name (arg! :name)) &allow-other-keys)
+  (let ((layer (apply #'make-instance layer-type :solver solver :pose (clone (rest-pose controller))
+                      (remf* args :name :layer-type))))
+    (setf (gethash name (layers controller)) layer)))
+
+(defmethod add-layer ((skeleton skeleton) (controller ik-controller) &rest args &key (name (arg! :name)) (joint (arg! :joint)) (layer-type 'ik-layer) (solver-type 'fabrik-solver) root-joint length constraints &allow-other-keys)
+  (let* ((solver (ik-from-skeleton skeleton joint :type solver-type :root-joint root-joint :length length :constraints constraints))
+         (layer (apply #'make-instance layer-type :solver solver :pose (clone (rest-pose controller))
+                       (remf* args :name :joint :layer-type :solver-type :root-joint :length :constraints))))
+    (setf (gethash name (layers controller)) layer)))
+
+(defmethod remove-layer (name (controller ik-controller))
+  (remhash name (layers controller)))
+
+(defmethod layer (name (controller ik-controller))
+  (gethash name (layers controller)))
