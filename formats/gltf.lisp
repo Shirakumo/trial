@@ -100,10 +100,12 @@
     (loop for channel across (gltf:channels animation)
           for sampler = (svref (gltf:samplers animation) (gltf:sampler channel))
           for track = (find-animation-track clip (gltf:idx (gltf:node (gltf:target channel))) :if-does-not-exist :create)
-          do (ecase (gltf:path (gltf:target channel))
+          do (case (gltf:path (gltf:target channel))
                (:translation (load-animation-track (location track) sampler))
                (:scale (load-animation-track (scaling track) sampler))
-               (:rotation (load-animation-track (rotation track) sampler))))
+               (:rotation (load-animation-track (rotation track) sampler))
+               (T (warn "Unknown animation channel target path: ~s on ~s, ignoring."
+                        (gltf:path (gltf:target channel)) (gltf:name animation)))))
     (trial::recompute-duration clip)))
 
 (defun load-clips (gltf &optional (table (make-hash-table :test 'equal)))
