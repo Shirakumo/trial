@@ -43,7 +43,7 @@
 (defmethod add-layer ((layer animation-layer) (controller layer-controller) &key name)
   (setf (layer name controller) layer))
 
-(defmethod add-layer ((clip clip) (controller layer-controller) &key (strength 0.0) (name (name clip)))
+(defmethod add-layer ((clip clip) (controller layer-controller) &key (strength 1.0) (name (name clip)))
   (setf (layer name controller) (make-animation-layer clip (skeleton controller) :strength strength)))
 
 (defmethod remove-layer (name (controller layer-controller))
@@ -117,67 +117,64 @@
                  (let ((time (min 1.0 (/ (fade-target-elapsed target) (fade-target-duration target)))))
                    (blend-into (pose controller) (pose controller) (fade-target-pose target) time)))))))
 
-(define-shader-entity armature (ik-controller fade-controller layer-controller lines listener)
-  ((animation-asset :initarg :asset :accessor animation-asset)
-   (color :initarg :color :initform (vec 0 0 0 1) :accessor color)))
+(define-shader-entity base-animated-entity (ik-controller layer-controller fade-controller listener)
+  ((animation-asset :initarg :asset :accessor animation-asset)))
 
-(defmethod initialize-instance :after ((entity armature) &key asset)
+(defmethod initialize-instance :after ((entity base-animated-entity) &key asset)
   (register-generation-observer entity asset))
 
-(defmethod stage :after ((entity armature) (area staging-area))
+(defmethod stage :after ((entity base-animated-entity) (area staging-area))
   (stage (animation-asset entity) area))
 
-(defmethod observe-generation ((entity armature) (asset animation-asset) res)
-  (setf (skeleton entity) (skeleton asset))
-  (typecase (clip entity)
-    (string (play (gethash (clip entity) (clips asset)) entity))
-    ((eql T) (play (loop for v being the hash-values of (clips asset) return v) entity))
-    (null (setf (pose entity) (rest-pose* (skeleton asset))))))
+(defmethod observe-generation ((entity base-animated-entity) (asset animation-asset) res)
+  (setf (animation-asset entity) asset))
+
+(defmethod (setf animation-asset) :after ((asset animation-asset) (entity base-animated-entity))
+  (when (skeleton asset)
+    (setf (skeleton entity) (skeleton asset)))
+  (play (or (clip entity) T) entity))
+
+(defmethod find-clip (name (entity base-animated-entity) &optional (errorp T))
+  (find-clip name (animation-asset entity) errorp))
+
+(defmethod list-clips ((entity base-animated-entity))
+  (list-clips (animation-asset entity)))
+
+(defmethod add-layer (clip-name (entity base-animated-entity) &key (name NIL name-p))
+  (let ((clip (find-clip clip-name entity)))
+    (add-layer clip entity :name (if name-p name (name clip)))))
+
+(defmethod fade-to ((name string) (entity base-animated-entity) &rest args)
+  (apply #'fade-to (find-clip name entity) entity args))
+
+(defmethod play ((name string) (entity base-animated-entity))
+  (play (find-clip name entity) entity))
+
+(defmethod play ((anything (eql T)) (entity base-animated-entity))
+  (loop for clip being the hash-values of (clips (animation-asset entity))
+        do (return (play clip entity))))
+
+(defmethod handle ((ev tick) (entity base-animated-entity))
+  (when (pose entity)
+    (update entity (tt ev) (dt ev) (fc ev))))
+
+(define-shader-entity armature (base-animated-entity lines)
+  ((animation-asset :initarg :asset :accessor animation-asset)
+   (color :initarg :color :initform (vec 0 0 0 1) :accessor color)))
 
 (defmethod handle ((ev tick) (entity armature))
   (when (pose entity)
     (update entity (tt ev) (dt ev) (fc ev))
     (replace-vertex-data entity (pose entity) :default-color (color entity))))
 
-(define-shader-entity animated-entity (ik-controller fade-controller layer-controller transformed-entity vertex-entity listener)
+(define-shader-entity animated-entity (base-animated-entity transformed-entity vertex-entity)
   ((palette :initform #() :accessor palette)
-   (mesh :initarg :mesh :initform NIL :accessor mesh)
-   (animation-asset :initarg :asset :accessor animation-asset)))
-
-(defmethod initialize-instance :after ((entity animated-entity) &key)
-  (register-generation-observer entity (animation-asset entity)))
-
-(defmethod stage :after ((entity animated-entity) (area staging-area))
-  ;; FIXME: fuck. don't know how to load the resources?
-  (stage (animation-asset entity) area))
-
-(defmethod observe-generation ((entity animated-entity) (asset animation-asset) res)
-  (setf (animation-asset entity) asset))
+   (mesh :initarg :mesh :initform NIL :accessor mesh)))
 
 (defmethod (setf animation-asset) :after ((asset animation-asset) (entity animated-entity))
   (setf (mesh entity) (or (mesh entity) T))
-  (if (skeleton asset)
-      (setf (skeleton entity) (skeleton asset))
-      (setf (palette entity) #(#.(meye 4))))
-  (play (or (clip entity) T) entity))
-
-(defmethod fade-to ((name string) (entity animated-entity) &rest args)
-  (let ((clip (gethash name (clips (animation-asset entity)))))
-    (if clip
-        (apply #'fade-to clip entity args)
-        #-trial-release
-        (error "No animation clip named ~s found." name))))
-
-(defmethod play ((name string) (entity animated-entity))
-  (let ((clip (gethash name (clips (animation-asset entity)))))
-    (if clip
-        (play clip entity)
-        #-trial-release
-        (error "No animation clip named ~s found." name))))
-
-(defmethod play ((anything (eql T)) (entity animated-entity))
-  (loop for clip being the hash-values of (clips (animation-asset entity))
-        do (return (play clip entity))))
+  (unless (skeleton asset)
+    (setf (palette entity) #(#.(meye 4)))))
 
 (defmethod (setf pose) :after ((pose pose) (entity animated-entity))
   (update-palette entity))

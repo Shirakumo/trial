@@ -149,8 +149,9 @@
           (nv+ (tscaling temp) (tscaling additive))
           (nv- (tscaling temp) (tscaling additive-base))
           (q<- (trotation temp) (trotation input))
-          (nq* (trotation temp) (qinv (q* (trotation additive-base) (trotation additive))))
-          (nqunit (trotation temp))
+          (nq* (trotation temp) (trotation additive))
+          (nq* (trotation temp) (qinv (trotation additive-base)))
+          (nqunit* (trotation temp))
           (ninterpolate output output temp strength))))))
 
 (defmethod replace-vertex-data ((lines lines) (pose pose) &rest args)

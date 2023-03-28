@@ -20,3 +20,18 @@
     (call-next-method)
     (loop for mesh being the hash-values of meshes
           collect (resource asset (name mesh)))))
+
+(defmethod find-clip (name (asset animation-asset) &optional (errorp T))
+  (or (gethash name (clips asset))
+      (when errorp (error "No clip with name~%  ~a~%on~%  ~a"
+                          name asset))))
+
+(defmethod (setf find-clip) ((clip clip) name (asset animation-asset))
+  (setf (gethash name (clips asset)) clip))
+
+(defmethod (setf find-clip) ((null null) name (asset animation-asset))
+  (remhash name (clips asset))
+  null)
+
+(defmethod list-clips ((asset animation-asset))
+  (alexandria:hash-table-keys (clips asset)))
