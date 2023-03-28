@@ -41,16 +41,23 @@
         do (layer-onto (pose controller) (pose controller) (animation-layer-pose layer) (animation-layer-base layer))))
 
 (defmethod add-layer ((layer animation-layer) (controller layer-controller) &key name)
-  (setf (gethash name (layers controller)) layer))
+  (setf (layer name controller) layer))
 
 (defmethod add-layer ((clip clip) (controller layer-controller) &key (strength 0.0) (name (name clip)))
-  (setf (gethash name (layers controller)) (make-animation-layer clip (skeleton controller) :strength strength)))
+  (setf (layer name controller) (make-animation-layer clip (skeleton controller) :strength strength)))
 
 (defmethod remove-layer (name (controller layer-controller))
-  (remhash name (layers controller)))
+  (setf (layer name (layers controller)) NIL))
 
 (defmethod layer (name (controller layer-controller))
   (gethash name (layers controller)))
+
+(defmethod (setf layer) ((layer animation-layer) name (controller layer-controller))
+  (setf (gethash name (layers controller)) layer))
+
+(defmethod (setf layer) ((null null) name (controller layer-controller))
+  (remhash name (layers controller))
+  null)
 
 (defstruct (fade-target
             (:constructor make-fade-target (clip pose duration)))
@@ -132,7 +139,7 @@
     (update entity (tt ev) (dt ev) (fc ev))
     (replace-vertex-data entity (pose entity) :default-color (color entity))))
 
-(define-shader-entity animated-entity (fade-controller layer-controller transformed-entity vertex-entity listener)
+(define-shader-entity animated-entity (ik-controller fade-controller layer-controller transformed-entity vertex-entity listener)
   ((palette :initform #() :accessor palette)
    (mesh :initarg :mesh :initform NIL :accessor mesh)
    (animation-asset :initarg :asset :accessor animation-asset)))
