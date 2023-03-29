@@ -25,17 +25,23 @@
 
 (defclass skeleton ()
   ((rest-pose :initarg :rest-pose :accessor rest-pose)
-   (bind-pose :initarg :bind-pose :accessor bind-pose)
-   (inv-bind-pose :accessor inv-bind-pose)
-   (joint-names :initarg :joint-names :accessor joint-names)))
+   (bind-pose :initarg :bind-pose :initform NIL :accessor bind-pose)
+   (inv-bind-pose :initform NIL :accessor inv-bind-pose)
+   (joint-names :initarg :joint-names :initform #() :accessor joint-names)))
 
 (defmethod describe-object ((skeleton skeleton) stream)
   (call-next-method)
   (terpri)
   (describe-skeleton skeleton stream))
 
-(defmethod shared-initialize :after ((skeleton skeleton) slots &key)
-  (update-bind-pose skeleton))
+(defmethod shared-initialize :after ((skeleton skeleton) slots &key rest-pose)
+  (when (bind-pose skeleton)
+    (update-bind-pose skeleton))
+  (when rest-pose
+    (setf (rest-pose skeleton) rest-pose)))
+
+(defmethod (setf rest-pose) :after (pose (skeleton skeleton))
+  (setf (joint-names skeleton) (%adjust-array (joint-names skeleton) (length pose))))
 
 (defmethod (setf bind-pose) :after (pose (skeleton skeleton))
   (update-bind-pose skeleton))

@@ -10,7 +10,7 @@
   ((joints :initform #() :accessor joints)
    (parents :initform (make-array 0 :element-type '(signed-byte 16)) :accessor parents)))
 
-(defmethod initialize-instance :after ((pose pose) &key size source)
+(defmethod shared-initialize :after ((pose pose) slots &key size source)
   (cond (source
          (pose<- pose source))
         (size
@@ -76,8 +76,11 @@
 (defmethod sequences:elt ((pose pose) index)
   (svref (joints pose) index))
 
-(defmethod (setf sequences:elt) (transform (pose pose) index)
+(defmethod (setf sequences:elt) ((transform transform) (pose pose) index)
   (setf (svref (joints pose) index) transform))
+
+(defmethod (setf sequences:elt) ((parent integer) (pose pose) index)
+  (setf (aref (parents pose) index) parent))
 
 (defmethod parent-joint ((pose pose) i)
   (aref (parents pose) i))
