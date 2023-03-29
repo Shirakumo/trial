@@ -10,7 +10,7 @@
   (let* ((old (length array)))
     (setf array (adjust-array array length))
     (loop for i from old below length
-          do (setf (svref array i) (funcall constructor)))
+          do (setf (aref array i) (funcall constructor)))
     array))
 
 (defclass ik-constraint ()
@@ -19,7 +19,8 @@
 (defgeneric apply-constraint (constraint solver i))
 
 (defclass ik-solver (sequences:sequence standard-object)
-  ((ik-chain :initform #() :accessor ik-chain :reader joints)
+  ((pose :initform NIL :initarg :pose :accessor pose)
+   (ik-chain :initform (make-array 0 :element-type '(unsigned-byte 8)) :accessor ik-chain :reader joints)
    (constraints :initform #() :accessor constraints)
    (iterations :initarg :iterations :initform 15 :accessor iterations)
    (threshold :initarg :threshold :initform 0.00001 :accessor threshold)))
@@ -34,11 +35,10 @@
 
 (defmethod describe-object :after ((solver ik-solver) stream)
   (terpri)
-  (loop with *print-right-margin* = 100000
-        for i from 0
+  (loop for i from 0
         for chain across (ik-chain solver)
         for constraint across (constraints solver)
-        do (format stream "~d ~20a ~a~%" i constraint chain)))
+        do (format stream "~d ~3d ~a~%" i chain constraint)))
 
 (defmethod ik-from-skeleton ((skeleton skeleton) leaf-joint &key (type 'fabrik-solver) root-joint length pose constraints)
   (let* ((pose (or pose (rest-pose* skeleton)))
@@ -52,19 +52,19 @@
                        (string (position root-joint names :test #'string-equal))
                        (integer root-joint)
                        (null (if length
-                                 (loop repeat length
+                                 (loop repeat (1+ length)
                                        for parent = leaf-joint then (aref parents parent)
                                        finally (return parent))
                                  0))))
          (chain ())
          (straints ()))
     (loop for parent = leaf-joint then (aref parents parent)
-          do (push (elt pose parent) chain)
+          do (push parent chain)
              (push (gethash (aref names parent) constraints) straints)
           until (= root-joint parent))
-    (values (make-instance type :joints chain
-                                :constraints straints)
-            pose)))
+    (make-instance type :joints chain
+                        :constraints straints
+                        :pose pose)))
 
 (defmethod (setf joints) (joints (solver ik-solver))
   (sequences:adjust-sequence solver (length joints))
@@ -78,28 +78,23 @@
 
 (defmethod sequences:adjust-sequence ((solver ik-solver) length &rest args)
   (declare (ignore args))
-  (setf (ik-chain solver) (%adjust-array (ik-chain solver) length #'transform))
+  (setf (ik-chain solver) (%adjust-array (ik-chain solver) length (constantly 0)))
   (setf (constraints solver) (%adjust-array (constraints solver) length (constantly NIL)))
   solver)
 
 (defmethod sequences:elt ((solver ik-solver) index)
-  (svref (ik-chain solver) index))
+  (aref (ik-chain solver) index))
 
-(defmethod (setf sequences:elt) ((transform transform) (solver ik-solver) index)
-  (setf (svref (ik-chain solver) index) transform)
-  transform)
+(defmethod (setf sequences:elt) ((joint integer) (solver ik-solver) index)
+  (setf (aref (ik-chain solver) index) joint)
+  joint)
 
 (defmethod (setf sequences:elt) ((constraint ik-constraint) (solver ik-solver) index)
   (setf (svref (constraints solver) index) constraint)
   constraint)
 
 (defmethod global-transform ((solver ik-solver) i)
-  (let* ((chain (ik-chain solver))
-         (result (svref chain i)))
-    ;; FIXME: optimize to only allocate one transform
-    (loop for parent downfrom (1- i) to 0
-          do (setf result (t+ (svref chain parent) result)))
-    result))
+  (global-transform (pose solver) (aref (ik-chain solver) i)))
 
 (defmethod solve-for ((target transform) (solver ik-solver))
   (solve-for (tlocation target) solver))
@@ -109,32 +104,34 @@
 
 (defmethod solve-for ((goal vec3) (solver ccd-solver))
   (let* ((chain (ik-chain solver))
+         (joints (joints (pose solver)))
          (constraints (constraints solver))
          (size (length chain))
          (last (1- size))
          (threshold2 (expt (threshold solver) 2)))
     (when (<= 0 last)
-      (dotimes (i (iterations solver))
-        (when (< (vsqrdistance goal (tlocation (global-transform solver last))) threshold2)
-          (return T))
-        (loop for i downfrom (- size 2) to 0
-              do (let* ((effector (tlocation (global-transform solver last)))
-                        (local (svref chain i))
-                        (world (global-transform solver i))
-                        (location (tlocation world))
-                        (rotation (trotation world))
-                        (to-goal (v- goal location))
-                        (effector-to-goal (if (< 0.00001 (vsqrlength to-goal))
-                                              (qtowards (v- effector location) to-goal)
-                                              (quat)))
-                        (world-rotated (q* rotation effector-to-goal))
-                        (local-rotate (q* world-rotated (qinv rotation))))
-                   (q<- (trotation local) (q* local-rotate (trotation local)))
-                   (let ((constraint (svref constraints i)))
-                     (when constraint
-                       (apply-constraint constraint solver i)))
-                   (when (< (vsqrdistance goal (tlocation (global-transform solver last))) threshold2)
-                     (return T))))))))
+      (flet ((test-goal ()
+               (when (<= (vsqrdistance goal (tlocation (global-transform solver last))) threshold2)
+                 (return-from solve-for T))))
+        (dotimes (i (iterations solver))
+          (test-goal)
+          (loop for j downfrom (- size 2) to 0
+                do (let* ((effector (tlocation (global-transform solver last)))
+                          (local (svref joints (aref chain j)))
+                          (world (global-transform solver j))
+                          (location (tlocation world))
+                          (rotation (trotation world))
+                          (to-goal (v- goal location))
+                          (effector-to-goal (if (< 0.00001 (vsqrlength to-goal))
+                                                (qtowards (v- effector location) to-goal)
+                                                (quat)))
+                          (world-rotated (q* rotation effector-to-goal))
+                          (local-rotate (q* world-rotated (qinv rotation))))
+                     (q<- (trotation local) (q* local-rotate (trotation local)))
+                     (let ((constraint (svref constraints j)))
+                       (when constraint
+                         (apply-constraint constraint solver j)))
+                     (test-goal))))))))
 
 (defclass fabrik-solver (ik-solver)
   ((world-chain :initform #() :accessor world-chain)
@@ -157,23 +154,24 @@
 
 (defun %world-to-ik-chain (solver)
   (let ((chain (ik-chain solver))
+        (joints (joints (pose solver)))
         (world-chain (world-chain solver)))
     (loop for i from 0 below (1- (length chain))
+          for joint = (aref chain i)
           for next = (global-transform solver (1+ i))
-          for world = (global-transform solver 0) then next
+          for world = (global-transform solver i)
           do (let* ((location (tlocation world))
                     (rinv (qinv (trotation world)))
                     (to-next (q*v rinv (v- (tlocation next) location)))
                     (to-desired (q*v rinv (v- (aref world-chain (1+ i)) location)))
                     (delta (qtowards to-next to-desired)))
-               (q<- (trotation (aref chain i)) (q* delta (trotation (aref chain i))))))))
+               (q<- (trotation (svref joints joint)) (q* delta (trotation (svref joints joint))))))))
 
 (defmethod solve-for ((goal vec3) (solver fabrik-solver))
-  (let* ((chain (ik-chain solver))
-         (constraints (constraints solver))
+  (let* ((constraints (constraints solver))
          (world-chain (world-chain solver))
          (lengths (lengths solver))
-         (size (length chain))
+         (size (length constraints))
          (last (1- size))
          (threshold2 (expt (threshold solver) 2))
          (base (vcopy (aref world-chain 0)))
@@ -236,7 +234,6 @@
 
 (defclass ik-system ()
   ((solver :initarg :solver :accessor solver)
-   (pose :initarg :pose :accessor pose)
    (strength :initarg :strength :initform 1.0 :accessor strength)
    (active-p :initarg :active-p :initform T :accessor active-p)
    (target :initarg :target :initform (vec 0 0 0) :accessor target)))
@@ -246,8 +243,14 @@
     (format stream "~s ~s ~a ~:[~; ACTIVE~]"
             (length (solver system)) (strength system) (target system) (active-p system))))
 
-(defmethod update ((layer ik-system) tt dt fc)
-  (solve-for (target layer) (solver layer)))
+(defmethod pose ((system ik-system))
+  (pose (solver system)))
+
+(defmethod (setf pose) (pose (system ik-system))
+  (setf (pose (solver system)) pose))
+
+(defmethod update ((system ik-system) tt dt fc)
+  (solve-for (target system) (solver system)))
 
 (defclass clip-ik-system (ik-system)
   ((clip :initarg :clip :accessor clip)
@@ -269,6 +272,11 @@
    (rest-pose :accessor rest-pose)
    (pose :accessor pose)))
 
+(defmethod shared-initialize :after ((controller ik-controller) slots &key skeleton systems)
+  (loop for (name joint . args) in systems
+        do (apply #'add-ik-system (or skeleton (skeleton controller)) controller 
+                  :name name :joint joint args)))
+
 (defmethod describe-object :after ((controller ik-controller) stream)
   (terpri stream)
   (format stream "IK Systems:~%")
@@ -276,8 +284,8 @@
     (if systems
         (loop for name in systems
               for system = (ik-system name controller)
-              do (format stream "  [~:[ ~;x~]] ~10a ~2d ~4f ~a~%"
-                         name (active-p system) (length (solver system)) (strength system) (target system)))
+              do (format stream "  [~:[ ~;x~]] ~24a ~2d ~4f ~a~%"
+                         (active-p system) name (length (solver system)) (strength system) (target system)))
         (format stream "  No IK systems.~%"))))
 
 (defmethod (setf skeleton) :after ((skeleton skeleton) (controller ik-controller))
@@ -291,22 +299,24 @@
            (layer-onto (pose controller) (pose controller) (pose system) (rest-pose controller)
                        :strength (strength system))))
 
-(defmethod add-ik-system ((layer ik-system) (controller ik-controller) &key (name (arg! :name)))
-  (setf (ik-system name controller) layer))
+(defmethod add-ik-system ((system ik-system) (controller ik-controller) &key (name (arg! :name)))
+  (setf (ik-system name controller) system))
 
 (defmethod add-ik-system ((solver ik-solver) (controller ik-controller) &rest args &key (system-type 'ik-system) (name (arg! :name)) &allow-other-keys)
-  (let ((system (apply #'make-instance system-type :solver solver :pose (clone (rest-pose controller))
+  (let ((system (apply #'make-instance system-type :solver solver
                       (remf* args :name :system-type))))
     (setf (ik-system name controller) system)))
 
 (defmethod add-ik-system ((skeleton skeleton) (controller ik-controller) &rest args &key (name (arg! :name)) (joint (arg! :joint)) (system-type 'ik-system) (solver-type 'fabrik-solver) root-joint length constraints &allow-other-keys)
   (let* ((pose (clone (rest-pose controller)))
          (solver (ik-from-skeleton skeleton joint :type solver-type :root-joint root-joint :length length :constraints constraints :pose pose))
-         (system (apply #'make-instance system-type :solver solver :pose pose
+         (system (apply #'make-instance system-type :solver solver
                        (remf* args :name :joint :system-type :solver-type :root-joint :length :constraints))))
     (setf (ik-system name controller) system)))
 
 (defmethod add-ik-system ((name string) (controller ik-controller) &rest args &key &allow-other-keys)
+  (unless (getf args :joint)
+    (setf (getf args :joint) name))
   (apply #'add-ik-system (skeleton controller) controller :name name args))
 
 (defmethod remove-ik-system (name (controller ik-controller))
