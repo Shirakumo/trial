@@ -12,12 +12,21 @@
         (fade-to "Idle" player))
     (nv+ (tlocation (tf player)) (nv* vel dt))))
 
+(defun make-skeleton (&key (size 4) (offset 10))
+  (let* ((pose (make-instance 'pose :size size))
+         (skeleton (make-instance 'skeleton :rest-pose pose)))
+    (setf (aref (trial::joint-names skeleton) (1- size)) "end")
+    (dotimes (i size)
+      (setf (elt pose i) (transform (vec3 (* i offset) 0 0)))
+      (setf (elt pose i) (1- i)))
+    skeleton))
+
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
     (disable :cull-face)
     (enter (make-instance 'fps-counter) scene)
     (enter (make-instance 'vertex-entity :vertex-array (// 'workbench 'grid)) scene)
-    (enter (make-instance 'armature :asset (assets:asset :woman) :name :armature) scene)
+    (enter (make-instance 'armature :skeleton (make-skeleton :size 4) :ik-systems '(("end" :joint 3)) :name :armature) scene)
     (enter (make-instance 'target-camera :target (vec 0 2 0) :location (vec 0 3 5)) scene)
     (enter (make-instance 'render-pass) scene))
   (maybe-reload-scene))

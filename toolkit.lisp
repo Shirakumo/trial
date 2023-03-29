@@ -1061,3 +1061,10 @@
 #+trial-release
 (defun dbg (&rest parts)
   (declare (ignore parts)))
+
+(defun %adjust-array (array length &optional (constructor (constantly NIL)))
+  (let* ((old (length array)))
+    (setf array (adjust-array array length))
+    (loop for i from old below length
+          do (setf (aref array i) (funcall constructor)))
+    array))

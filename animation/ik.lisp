@@ -6,13 +6,6 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defun %adjust-array (array length constructor)
-  (let* ((old (length array)))
-    (setf array (adjust-array array length))
-    (loop for i from old below length
-          do (setf (aref array i) (funcall constructor)))
-    array))
-
 (defclass ik-constraint ()
   ())
 
@@ -272,10 +265,10 @@
    (rest-pose :accessor rest-pose)
    (pose :accessor pose)))
 
-(defmethod shared-initialize :after ((controller ik-controller) slots &key skeleton systems)
-  (loop for (name joint . args) in systems
+(defmethod shared-initialize :after ((controller ik-controller) slots &key skeleton ik-systems)
+  (loop for (name . args) in ik-systems
         do (apply #'add-ik-system (or skeleton (skeleton controller)) controller 
-                  :name name :joint joint args)))
+                  :name name args)))
 
 (defmethod describe-object :after ((controller ik-controller) stream)
   (terpri stream)
@@ -307,7 +300,7 @@
                       (remf* args :name :system-type))))
     (setf (ik-system name controller) system)))
 
-(defmethod add-ik-system ((skeleton skeleton) (controller ik-controller) &rest args &key (name (arg! :name)) (joint (arg! :joint)) (system-type 'ik-system) (solver-type 'fabrik-solver) root-joint length constraints &allow-other-keys)
+(defmethod add-ik-system ((skeleton skeleton) (controller ik-controller) &rest args &key (name (arg! :name)) (joint name) (system-type 'ik-system) (solver-type 'fabrik-solver) root-joint length constraints &allow-other-keys)
   (let* ((pose (clone (rest-pose controller)))
          (solver (ik-from-skeleton skeleton joint :type solver-type :root-joint root-joint :length length :constraints constraints :pose pose))
          (system (apply #'make-instance system-type :solver solver

@@ -152,7 +152,8 @@
   ((animation-asset :initarg :asset :initform NIL :accessor animation-asset)))
 
 (defmethod initialize-instance :after ((entity base-animated-entity) &key asset)
-  (register-generation-observer entity asset))
+  (when asset
+    (register-generation-observer entity asset)))
 
 (defmethod describe-object :after ((entity base-animated-entity) stream)
   (terpri stream)
