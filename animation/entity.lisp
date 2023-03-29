@@ -35,6 +35,11 @@
    (pose :accessor pose)
    (skeleton :initform NIL :accessor skeleton)))
 
+(defmethod shared-initialize :after ((controller layer-controller) slots &key layers)
+  (loop for layer in layers
+        for (clip . args) = (enlist layer)
+        do (apply #'add-layer clip controller args)))
+
 (defmethod describe-object :after ((controller layer-controller) stream)
   (terpri stream)
   (format stream "Layers:~%")
@@ -53,7 +58,7 @@
 (defmethod add-layer ((layer animation-layer) (controller layer-controller) &key name)
   (setf (layer name controller) layer))
 
-(defmethod add-layer ((clip clip) (controller layer-controller) &key (strength 1.0) (name (name clip)))
+(defmethod add-layer ((clip clip) (controller layer-controller) &key (strength 0.0) (name (name clip)))
   (setf (layer name controller) (make-animation-layer clip (skeleton controller) :strength strength)))
 
 (defmethod remove-layer (name (controller layer-controller))

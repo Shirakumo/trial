@@ -13,7 +13,7 @@
                (when last
                  (destructuring-bind (cur . rest) last
                    (dolist (p (reverse rest))
-                     (format stream "~:[│  ~;   ~]" p))
+                     (format stream "~:[│  ~;   ~]" p))
                    (format stream "~:[├~;└~]─" cur)))
                (format stream " ~2d ~@[~s~]~%" i (when (<= 0 i) (aref names i)))
                (loop with max = (loop for j from 0 below (length parents)
