@@ -27,7 +27,9 @@
    #:animation-asset
    #:meshes
    #:clips
-   #:skeleton)
+   #:skeleton
+   #:find-clip
+   #:list-clips)
   ;; animation/clip.lisp
   (:export
    #:clip
@@ -36,7 +38,9 @@
    #:end-time
    #:loop-p
    #:duration
-   #:find-animation-track)
+   #:find-animation-track
+   #:clip
+   #:define-clip)
   ;; animation/entity.lisp
   (:export
    #:animation-layer
@@ -49,11 +53,47 @@
    #:fade-controller
    #:play
    #:fade-to
-   #:armature
+   #:base-animated-entity
    #:animation-asset
+   #:armature
    #:animated-entity
-   #:mesh
-   #:animation-asset)
+   #:mesh)
+  ;; animation/ik.lisp
+  (:export
+   #:ik-constraint
+   #:apply-constraint
+   #:ik-solver
+   #:pose
+   #:joints
+   #:constraints
+   #:iterations
+   #:threshold
+   #:ik-from-skeleton
+   #:solve-for
+   #:ccd-solver
+   #:fabrik-solver
+   #:ball-socket-constraint
+   #:axis
+   #:limit
+   #:hinge-constraint
+   #:axis
+   #:min-angle
+   #:max-angle
+   #:ik-system
+   #:solver
+   #:strength
+   #:active-p
+   #:target
+   #:clip-ik-system
+   #:clip
+   #:entity-target-ik-system
+   #:entity
+   #:offset
+   #:ik-controller
+   #:ik-systems
+   #:add-ik-system
+   #:remove-ik-system
+   #:ik-system)
   ;; animation/mesh.lisp
   (:export
    #:skinned-mesh
@@ -81,6 +121,7 @@
    #:rest-pose
    #:bind-pose
    #:inv-bind-pose
+   #:reorder
    #:rest-pose*)
   ;; animation/track.lisp
   (:export
