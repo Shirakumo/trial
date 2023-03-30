@@ -239,6 +239,11 @@
   (loop for mesh being the hash-values of (meshes (animation-asset entity))
         do (return (setf (mesh entity) mesh))))
 
+(defmethod (setf ik-system) :after ((system ik-system) name (entity animated-entity))
+  ;; Hook up our local transform to the IK system's. Since the identity never changes
+  ;; the properties "transfer".
+  (setf (slot-value system 'transform) (tf entity)))
+
 (defun update-palette (entity)
   (let ((palette (matrix-palette (pose entity) (palette entity)))
         (inv (inv-bind-pose (skeleton (animation-asset entity)))))
