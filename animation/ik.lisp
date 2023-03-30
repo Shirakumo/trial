@@ -27,7 +27,7 @@
     (format stream "~s ~s" :length (length (ik-chain solver)))))
 
 (defmethod describe-object :after ((solver ik-solver) stream)
-  (terpri)
+  (terpri stream)
   (loop for i from 0
         for chain across (ik-chain solver)
         for constraint across (constraints solver)
@@ -35,7 +35,6 @@
 
 (defmethod ik-from-skeleton ((skeleton skeleton) leaf-joint &key (type 'fabrik-solver) root-joint length pose constraints)
   (let* ((pose (or pose (rest-pose* skeleton)))
-         (constraints (or constraints (make-hash-table :test 'eql)))
          (parents (parents (rest-pose skeleton)))
          (names (joint-names skeleton))
          (leaf-joint (etypecase leaf-joint
@@ -53,7 +52,9 @@
          (straints ()))
     (loop for parent = leaf-joint then (aref parents parent)
           do (push parent chain)
-             (push (gethash (aref names parent) constraints) straints)
+             (push (or (getf* parent constraints)
+                       (getf* (aref names parent) constraints :test #'equal))
+                   straints)
           until (= root-joint parent))
     (make-instance type :joints chain
                         :constraints straints
@@ -76,7 +77,10 @@
   solver)
 
 (defmethod sequences:elt ((solver ik-solver) index)
-  (aref (ik-chain solver) index))
+  (svref (joints (pose solver)) (aref (ik-chain solver) index)))
+
+(defmethod (setf sequences:elt) ((transform transform) (solver ik-solver) index)
+  (setf (elt (pose solver) (aref (ik-chain solver) index)) transform))
 
 (defmethod (setf sequences:elt) ((joint integer) (solver ik-solver) index)
   (setf (aref (ik-chain solver) index) joint)
@@ -102,7 +106,7 @@
          (size (length chain))
          (last (1- size))
          (threshold2 (expt (threshold solver) 2)))
-    (when (<= 0 last)
+    (when (< 0 last)
       (flet ((test-goal ()
                (when (<= (vsqrdistance goal (tlocation (global-transform solver last))) threshold2)
                  (return-from solve-for T))))
@@ -176,7 +180,7 @@
       ;; Backwards iteration
       (v<- (aref world-chain last) goal)
       (loop for i downfrom (- size 2) to 0
-            for offset = (nv* (nvunit (v- (aref world-chain i) (aref world-chain (1+ i))))
+            for offset = (nv* (nvunit* (v- (aref world-chain i) (aref world-chain (1+ i))))
                               (aref lengths (1+ i)))
             do (v<- (aref world-chain i) (nv+ offset (aref world-chain (1+ i)))))
       ;; Forwards iteration
@@ -223,7 +227,7 @@
            (rot (trotation (elt solver i))))
       ;; FIXME: allow constraining the angle as well
       (nq* rot (qtowards current desired))
-      (setf (qangle rot) (clamp-angle (min-angle solver) (qangle rot) (max-angle solver))))))
+      (setf (qangle rot) (clamp-angle (min-angle constraint) (qangle rot) (max-angle constraint))))))
 
 (defclass ik-system ()
   ((solver :initarg :solver :accessor solver)

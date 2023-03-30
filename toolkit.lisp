@@ -192,6 +192,11 @@
        (remf ,list ,ksym)
        ,value)))
 
+(defun getf* (key list &key (test #'eql) default)
+  (loop for (k v) on list by #'cddr
+        do (when (funcall test key k) (return v))
+        finally (return default)))
+
 (defmacro xor (a &rest options)
   (cond ((null options) a)
         (T
