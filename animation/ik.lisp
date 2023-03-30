@@ -233,7 +233,8 @@
   ((solver :initarg :solver :accessor solver)
    (strength :initarg :strength :initform 1.0 :accessor strength)
    (active-p :initarg :active-p :initform T :accessor active-p)
-   (target :initarg :target :initform (vec 0 0 0) :accessor target)))
+   (target :initform (vec 0 0 0) :accessor target)
+   (transform :initarg :transform :initform (transform) :accessor tf)))
 
 (defmethod print-object ((system ik-system) stream)
   (print-unreadable-object (system stream :type T)
@@ -247,7 +248,16 @@
   (setf (pose (solver system)) pose))
 
 (defmethod update ((system ik-system) tt dt fc)
-  (solve-for (target system) (solver system)))
+  (let ((target (target system)))
+    ;; The target is in global space, transform into local for IK.
+    (t*p-inv (transform system) target)
+    (solve-for target (solver system))))
+
+(defclass global-ik-system (ik-system)
+  ((global-target :initarg :target :initform (vec3) :accessor global-target)))
+
+(defmethod update :before ((system global-ik-system) tt dt fc)
+  (v<- (target system) (global-target system)))
 
 (defclass clip-ik-system (ik-system)
   ((clip :initarg :clip :accessor clip)
@@ -299,12 +309,12 @@
 (defmethod add-ik-system ((system ik-system) (controller ik-controller) &key (name (arg! :name)))
   (setf (ik-system name controller) system))
 
-(defmethod add-ik-system ((solver ik-solver) (controller ik-controller) &rest args &key (system-type 'ik-system) (name (arg! :name)) &allow-other-keys)
+(defmethod add-ik-system ((solver ik-solver) (controller ik-controller) &rest args &key (system-type 'global-ik-system) (name (arg! :name)) &allow-other-keys)
   (let ((system (apply #'make-instance system-type :solver solver
                       (remf* args :name :system-type))))
     (setf (ik-system name controller) system)))
 
-(defmethod add-ik-system ((skeleton skeleton) (controller ik-controller) &rest args &key (name (arg! :name)) (joint name) (system-type 'ik-system) (solver-type 'fabrik-solver) root-joint length constraints &allow-other-keys)
+(defmethod add-ik-system ((skeleton skeleton) (controller ik-controller) &rest args &key (name (arg! :name)) (joint name) (system-type 'global-ik-system) (solver-type 'fabrik-solver) root-joint length constraints &allow-other-keys)
   (let* ((pose (clone (rest-pose controller)))
          (solver (ik-from-skeleton skeleton joint :type solver-type :root-joint root-joint :length length :constraints constraints :pose pose))
          (system (apply #'make-instance system-type :solver solver
