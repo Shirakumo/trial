@@ -102,6 +102,7 @@
   (declare (optimize speed))
   (declare (type (signed-byte 32) location))
   #+sbcl (declare (sb-ext:muffle-conditions sb-ext:compiler-note))
+  ;; FIXME: this kinda blows, man.
   (etypecase data
     (vec4 (%gl:uniform-4f location (vx data) (vy data) (vz data) (vw data)))
     (vec3 (%gl:uniform-3f location (vx data) (vy data) (vz data)))

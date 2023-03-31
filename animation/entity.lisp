@@ -246,9 +246,8 @@
 
 (defmethod update-palette ((entity animated-entity))
   (let ((palette (matrix-palette (pose entity) (palette entity)))
-        (inv (inv-bind-pose (skeleton (animation-asset entity)))))
-    (setf (palette entity) palette)
-    (dotimes (i (length palette))
+        (inv (mat-inv-bind-pose (skeleton (animation-asset entity)))))
+    (dotimes (i (length palette) (setf (palette entity) palette))
       (nm* (svref palette i) (svref inv i)))))
 
 (defmethod handle ((ev tick) (entity animated-entity))
@@ -294,15 +293,10 @@ void main(){
   ()
   (:inhibit-shaders (animated-entity :vertex-shader)))
 
-(defmethod (setf skeleton) :before ((skeleton skeleton) (entity dquat-animated-entity))
-  (unless (typep skeleton 'dquat-skeleton)
-    (change-class skeleton 'dquat-skeleton)))
-
 (defmethod update-palette ((entity dquat-animated-entity))
   (let ((palette (dquat-palette (pose entity) (palette entity)))
-        (inv (inv-bind-pose (skeleton (animation-asset entity)))))
-    (setf (palette entity) palette)
-    (dotimes (i (length palette))
+        (inv (quat-inv-bind-pose (skeleton (animation-asset entity)))))
+    (dotimes (i (length palette) (setf (palette entity) palette))
       (nq* (svref palette i) (svref inv i)))))
 
 (define-class-shader (dquat-animated-entity :vertex-shader)
@@ -358,6 +352,7 @@ mat2x4 dquat_normalized(mat2x4 dq){
 
 void main(){
   ivec4 j = ivec4(joints);
+
   mat2x4 skin_dq = dquat_normalized(
     + (pose[j.x] * weights.x)
     + (pose[j.y] * weights.y)

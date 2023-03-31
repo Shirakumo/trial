@@ -26,17 +26,18 @@
 (defclass skeleton ()
   ((rest-pose :initarg :rest-pose :accessor rest-pose)
    (bind-pose :initarg :bind-pose :initform NIL :accessor bind-pose)
-   (inv-bind-pose :initform NIL :accessor inv-bind-pose)
+   (mat-inv-bind-pose :initform NIL :accessor mat-inv-bind-pose)
+   (quat-inv-bind-pose :initform NIL :accessor quat-inv-bind-pose)
    (joint-names :initarg :joint-names :initform #() :accessor joint-names)))
 
 (defmethod describe-object ((skeleton skeleton) stream)
   (call-next-method)
-  (terpri)
+  (terpri stream)
   (describe-skeleton skeleton stream))
 
 (defmethod shared-initialize :after ((skeleton skeleton) slots &key rest-pose)
   (when (bind-pose skeleton)
-    (update-bind-pose skeleton))
+    (update-inv-bind-pose skeleton))
   (when rest-pose
     (setf (rest-pose skeleton) rest-pose)))
 
@@ -44,14 +45,17 @@
   (setf (joint-names skeleton) (%adjust-array (joint-names skeleton) (length pose))))
 
 (defmethod (setf bind-pose) :after (pose (skeleton skeleton))
-  (update-bind-pose skeleton))
+  (update-inv-bind-pose skeleton))
 
-(defmethod update-bind-pose ((skeleton skeleton))
+(defmethod update-inv-bind-pose ((skeleton skeleton))
   (let* ((pose (bind-pose skeleton))
-         (inv (make-array (length pose))))
-    (dotimes (i (length inv) (setf (inv-bind-pose skeleton) inv))
-      (let ((transform (global-transform pose i)))
-        (setf (svref inv i) (minv (tmat4 transform)))))))
+         (minv (make-array (length pose)))
+         (qinv (make-array (length pose))))
+    (dotimes (i (length minv) (setf (mat-inv-bind-pose skeleton) minv))
+      (setf (svref minv i) (minv (tmat4 (global-transform pose i)))))
+    (dotimes (i (length qinv) (setf (quat-inv-bind-pose skeleton) qinv))
+      (setf (svref qinv i) (qconjugate (global-dquat pose i))))
+    skeleton))
 
 (defmethod reorder ((skeleton skeleton) map)
   (let* ((rest (rest-pose skeleton))
@@ -101,12 +105,3 @@
 
 (defmethod rest-pose* ((skeleton skeleton))
   (make-instance 'pose :source (rest-pose skeleton)))
-
-(defclass dquat-skeleton (skeleton)
-  ())
-
-(defmethod update-bind-pose ((skeleton dquat-skeleton))
-  (let* ((pose (bind-pose skeleton))
-         (inv (make-array (length pose))))
-    (dotimes (i (length inv) (setf (inv-bind-pose skeleton) inv))
-      (setf (svref inv i) (qconjugate (global-dquat pose i))))))
