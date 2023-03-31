@@ -46,7 +46,7 @@
 (defmethod (setf bind-pose) :after (pose (skeleton skeleton))
   (update-bind-pose skeleton))
 
-(defun update-bind-pose (skeleton)
+(defmethod update-bind-pose ((skeleton skeleton))
   (let* ((pose (bind-pose skeleton))
          (inv (make-array (length pose))))
     (dotimes (i (length inv) (setf (inv-bind-pose skeleton) inv))
@@ -101,3 +101,12 @@
 
 (defmethod rest-pose* ((skeleton skeleton))
   (make-instance 'pose :source (rest-pose skeleton)))
+
+(defclass dquat-skeleton (skeleton)
+  ())
+
+(defmethod update-bind-pose ((skeleton dquat-skeleton))
+  (let* ((pose (bind-pose skeleton))
+         (inv (make-array (length pose))))
+    (dotimes (i (length inv) (setf (inv-bind-pose skeleton) inv))
+      (setf (svref inv i) (qconjugate (global-dquat pose i))))))

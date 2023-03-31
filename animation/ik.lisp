@@ -90,8 +90,8 @@
   (setf (svref (constraints solver) index) constraint)
   constraint)
 
-(defmethod global-transform ((solver ik-solver) i)
-  (global-transform (pose solver) (aref (ik-chain solver) i)))
+(defmethod global-transform ((solver ik-solver) i &optional (transform (transform)))
+  (global-transform (pose solver) (aref (ik-chain solver) i) transform))
 
 (defmethod solve-for ((target transform) (solver ik-solver))
   (solve-for (tlocation target) solver))
