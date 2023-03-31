@@ -35,3 +35,8 @@
 
 (defmethod list-clips ((asset animation-asset))
   (alexandria:hash-table-keys (clips asset)))
+
+(defmethod unload :after ((asset animation-asset))
+  (clrhash (meshes asset))
+  (clrhash (clips asset))
+  (setf (skeleton asset) NIL))
