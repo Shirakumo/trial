@@ -79,6 +79,15 @@
 
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
+    (enter (make-instance 'display-controller) scene)
+    (observe! "
+[P] Pause
+[R] Reset
+[S] Step
+[Ctrl] Look
+[WASD] Move
+[Space] Ascend
+[C] Descend" :title "Controls")
     (let ((physics (make-instance 'trial::rigidbody-system :units-per-metre 1.0))
           (floor (make-instance 'trial::rigidbody :physics-primitives (trial::make-half-space :material :wood))))
       (enter floor physics)

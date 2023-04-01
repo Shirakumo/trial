@@ -149,6 +149,13 @@
                          (sb-sys:vector-sap (marr4 (svref data i)))
                          (* 16 4)))
                (%gl:uniform-matrix-4fv location (length data) T dat)))
+       (mat3 (cffi:with-foreign-object (dat :float (* 9 (length data)))
+               (loop for i from 0 below (length data)
+                     do (static-vectors:replace-foreign-memory
+                         (cffi:inc-pointer dat (* 9 4 i))
+                         (sb-sys:vector-sap (marr3 (svref data i)))
+                         (* 9 4)))
+               (%gl:uniform-matrix-4fv location (length data) T dat)))
        (dquat (cffi:with-foreign-object (dat :float (* 8 (length data)))
                 (loop for i from 0 below (length data)
                       do (%set-dquat (aref data i) dat (* 8 i)))

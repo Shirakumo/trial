@@ -106,8 +106,7 @@
           while (<= 0 parent)
           do (let ((temp (dquat)))
                (declare (dynamic-extent temp))
-               (tdquat (svref joints parent) temp)
-               (nq* result temp)))
+               (nq* result (tdquat (svref joints parent) temp))))
     result))
 
 (defmethod matrix-palette ((pose pose) result)
@@ -140,8 +139,7 @@
                    while (<= 0 parent)
                    do (let ((temp (dquat)))
                         (declare (dynamic-extent temp))
-                        (tdquat (svref joints parent) temp)
-                        (nq* res temp))))
+                        (nq* res (tdquat (svref joints parent) temp)))))
     result))
 
 (defmethod descendant-joint-p (joint root (pose pose))
