@@ -14,7 +14,8 @@
   (:local-nicknames
    (#:trial #:org.shirakumo.fraf.trial)
    (#:steam #:org.shirakumo.fraf.steamworks)
-   (#:steam* #:org.shirakumo.fraf.steamworks.cffi)))
+   (#:steam* #:org.shirakumo.fraf.steamworks.cffi)
+   (#:v #:org.shirakumo.verbose)))
 (in-package #:org.shirakumo.fraf.trial.steam)
 
 (setf trial::*open-in-browser-hook*

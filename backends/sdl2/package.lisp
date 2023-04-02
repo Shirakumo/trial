@@ -10,5 +10,6 @@
   (:use #:cl+trial #:3d-vectors)
   (:shadow #:context #:window #:monitor #:initargs)
   (:shadowing-import-from #:trial #:load)
+  (:local-nicknames (#:v #:org.shirakumo.verbose))
   (:export
    #:context))

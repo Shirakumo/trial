@@ -6,6 +6,7 @@
 
 (defpackage #:org.shirakumo.fraf.trial.feedback
   (:use #:cl)
+  (:local-nicknames (#:v #:org.shirakumo.verbose))
   (:export
    #:*client-args*
    #:report-files

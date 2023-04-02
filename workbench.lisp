@@ -2,7 +2,8 @@
   (:use #:cl+trial)
   (:shadow #:launch)
   (:local-nicknames
-   (#:assets #:org.shirakumo.fraf.trial.assets))
+   (#:assets #:org.shirakumo.fraf.trial.assets)
+   (#:v #:org.shirakumo.verbose))
   (:export #:workbench #:launch))
 (in-package #:workbench)
 

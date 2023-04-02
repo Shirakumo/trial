@@ -8,7 +8,8 @@
   (:use #:cl)
   (:local-nicknames
    (#:trial #:org.shirakumo.fraf.trial)
-   (#:notify #:org.shirakumo.file-notify))
+   (#:notify #:org.shirakumo.file-notify)
+   (#:v #:org.shirakumo.verbose))
   (:export
    #:watch
    #:notify
