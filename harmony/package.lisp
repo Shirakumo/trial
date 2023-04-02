@@ -9,7 +9,8 @@
   (:local-nicknames
    (#:trial #:org.shirakumo.fraf.trial)
    (#:harmony #:org.shirakumo.fraf.harmony)
-   (#:mixed #:org.shirakumo.fraf.mixed))
+   (#:mixed #:org.shirakumo.fraf.mixed)
+   (#:v #:org.shirakumo.verbose))
   (:export
    #:sound
    #:voice
