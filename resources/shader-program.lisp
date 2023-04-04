@@ -10,11 +10,8 @@
 
 (defclass shader-program (gl-resource)
   ((uniform-map :initform (make-hash-table :test 'equal) :accessor uniform-map)
-   (shaders :initarg :shaders :accessor shaders)
-   (buffers :initarg :buffers :accessor buffers))
-  (:default-initargs
-   :shaders (error "SHADERS required.")
-   :buffers ()))
+   (shaders :initarg :shaders :initform (arg! :shaders) :accessor shaders)
+   (buffers :initarg :buffers :initform () :accessor buffers)))
 
 (defun check-shader-compatibility (shaders)
   (loop with table = (make-hash-table :test 'eql)
@@ -23,6 +20,7 @@
                (error "Cannot compile two shaders of the same type into a single program~%  ~a~%  ~a"
                       (gethash (shader-type shader) table) shader)
                (setf (gethash (shader-type shader) table) shader))
+           (check-allocated shader)
         finally (return shaders)))
 
 (defmethod dependencies ((program shader-program))
@@ -32,8 +30,7 @@
 (defun link-program (program shaders)
   (let ((prog (gl-name program)))
     (dolist (shader shaders)
-      (check-allocated shader)
-      (gl:attach-shader prog (gl-name shader)))
+      (gl:attach-shader prog (typecase shader (integer shader) (T (gl-name shader)))))
     (gl:link-program prog)
     (dolist (shader shaders)
       (gl:detach-shader prog (gl-name shader)))
@@ -60,10 +57,9 @@
   (let ((shaders (shaders program)))
     (check-shader-compatibility shaders)
     (let ((prog (gl:create-program)))
-      (with-cleanup-on-failure (progn (gl:delete-program prog)
-                                      (setf (data-pointer program) NIL))
-        (setf (data-pointer program) prog)
-        (link-program program shaders)))))
+      (with-cleanup-on-failure (gl:delete-program prog)
+        (link-program program shaders)
+        (setf (data-pointer program) prog)))))
 
 (defmethod deallocate ((program shader-program))
   (clrhash (uniform-map program))

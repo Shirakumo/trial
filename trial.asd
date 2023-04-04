@@ -122,6 +122,7 @@
                (:module "resources"
                 :depends-on ("package" "resource" "toolkit" "data-pointer")
                 :components ((:file "buffer-object")
+                             (:file "compute-shader" :depends-on ("shader-program"))
                              (:file "framebuffer")
                              (:file "shader-program")
                              (:file "shader")
