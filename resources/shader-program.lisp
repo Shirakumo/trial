@@ -10,6 +10,7 @@
 
 (defclass shader-program (gl-resource)
   ((uniform-map :initform (make-hash-table :test 'equal) :accessor uniform-map)
+   (binding-point-allocation-pointer :initform 0 :accessor binding-point-allocation-pointer)
    (shaders :initarg :shaders :initform (arg! :shaders) :accessor shaders)
    (buffers :initarg :buffers :initform () :accessor buffers)))
 

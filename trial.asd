@@ -126,6 +126,7 @@
                              (:file "framebuffer")
                              (:file "shader-program")
                              (:file "shader")
+                             (:file "shader-storage-buffer" :depends-on ("uniform-buffer"))
                              (:file "struct-buffer" :depends-on ("buffer-object" (:.. "gl-struct")))
                              (:file "texture")
                              (:file "uniform-buffer" :depends-on ("struct-buffer"))

@@ -46,7 +46,8 @@
    (wait-lock :initform (bt:make-lock "Context wait lock") :reader context-wait-lock)
    (handler :initarg :handler :accessor handler)
    (shared-with :initarg :share-with :reader shared-with)
-   (glsl-target-version :initarg :glsl-version :initform NIL :accessor glsl-target-version))
+   (glsl-target-version :initarg :glsl-version :initform NIL :accessor glsl-target-version)
+   (binding-point-allocator :initform (make-array 256 :element-type 'bit) :accessor binding-point-allocator))
   (:default-initargs
    :title "Trial"
    :width 800

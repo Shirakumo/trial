@@ -6,8 +6,6 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defvar *uniform-binding-point-counter* 0)
-
 (defclass uniform-buffer (struct-buffer)
   ((buffer-type :initform :uniform-buffer)
    (qualifiers :initarg :qualifiers :initform () :accessor qualifiers)
@@ -37,8 +35,18 @@
 
 (defmethod allocate :after ((buffer uniform-buffer))
   (unless (binding-point buffer)
-    (setf (binding-point buffer) (incf *uniform-binding-point-counter*)))
-  (%gl:bind-buffer-base :uniform-buffer (binding-point buffer) (gl-name buffer)))
+    (setf (binding-point buffer)
+          (loop with allocator = (binding-point-allocator *context*)
+                for i from 0 below (length allocator)
+                do (when (= 0 (sbit allocator i))
+                     (setf (sbit allocator i) 1)
+                     (return i))
+                finally (error "What the heck?? Out of buffer binding points"))))
+  (%gl:bind-buffer-base (buffer-type buffer) (binding-point buffer) (gl-name buffer)))
+
+(defmethod deallocate :after ((buffer uniform-buffer))
+  (setf (sbit (binding-point-allocator *context*) (binding-point buffer)) 0)
+  (setf (binding-point buffer) NIL))
 
 (defmethod bind ((buffer uniform-buffer) (program shader-program))
   ;; TODO: Once we can do shared/packed, load offsets here.
