@@ -140,7 +140,7 @@
   (when (visible-p (context target))
     (blit-to-screen (scene source))))
 
-(defun launch (main &rest initargs)
+(defmethod launch ((main main) &rest initargs)
   (standalone-logging-handler)
   (v:output-here)
   (v:info :trial.main "GENESIS")
