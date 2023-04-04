@@ -51,7 +51,7 @@
 
 (defclass gl-struct-class (standard-class)
   ((gl-type :initarg :gl-type :accessor gl-type)
-   (layout-standard :initform :std140 :reader layout-standard)))
+   (layout-standard :initform 'std140 :reader layout-standard)))
 
 (defmethod initialize-instance :after ((class gl-struct-class) &key)
   (unless (slot-boundp class 'gl-type)
@@ -97,10 +97,10 @@
     ,@(mapcar #'gl-source (struct-fields class))))
 
 (defmethod vertex-layout ((class gl-struct-class))
-  (let ((stride (buffer-field-stride class :vertex-buffer)))
+  (let ((stride (buffer-field-stride class 'vertex-buffer)))
     (values (loop for offset = 0 then (+ offset size)
                   for field in (struct-fields class)
-                  for size = (buffer-field-size (gl-type field) :vertex-buffer 0)
+                  for size = (buffer-field-size (gl-type field) 'vertex-buffer 0)
                   collect (list :offset offset
                                 :size (ecase (gl-type field)
                                         ((:float :int) 1)
@@ -138,12 +138,12 @@
   ;; If a referenced struct changed, we need to re-finalise in order to recompute field offsets.
   (c2mop:finalize-inheritance dependent))
 
-(defmethod buffer-field-base ((class gl-struct-class) (standard (eql :std140)))
-  (round-to (buffer-field-base :vec4 :std140)
+(defmethod buffer-field-base ((class gl-struct-class) (standard std140))
+  (round-to (buffer-field-base :vec4 standard)
             (loop for field in (struct-fields class)
                   maximize (buffer-field-base (gl-type field) standard))))
 
-(defmethod buffer-field-base ((class gl-struct-class) (standard (eql :vertex-buffer)))
+(defmethod buffer-field-base ((class gl-struct-class) (standard vertex-buffer))
   1)
 
 (defmethod buffer-field-base ((class gl-struct-class) (standard (eql T)))
@@ -157,10 +157,10 @@
 (defmethod buffer-field-size ((class gl-struct-class) (standard (eql T)) base)
   (buffer-field-size class (layout-standard class) base))
 
-(defmethod buffer-field-stride ((class gl-struct-class) (standard (eql :std140)))
+(defmethod buffer-field-stride ((class gl-struct-class) (standard std140))
   (buffer-field-size class standard 0))
 
-(defmethod buffer-field-stride ((class gl-struct-class) (standard (eql :vertex-buffer)))
+(defmethod buffer-field-stride ((class gl-struct-class) (standard vertex-buffer))
   (buffer-field-size class standard 0))
 
 (defmethod buffer-field-stride ((class gl-struct-class) (standard (eql T)))
