@@ -40,15 +40,16 @@
     (error "Failed to link ~a: ~%~a"
            program (gl:get-program-info-log program-id)))
   (v:debug :trial.asset "Linked ~a with ~a." program shaders)
-  (loop for buffer in (buffers program)
-        do (bind buffer program))
+  (setf (data-pointer program) program-id)
   (clrhash (uniform-map program))
-  (setf (data-pointer program) program-id))
+  (loop for buffer in (buffers program)
+        do (bind buffer program)))
 
 (defmethod (setf shaders) :before (shaders (program shader-program))
   (when (allocated-p program)
     ;; If we're already hot, relink immediately.
     (handler-bind ((resource-not-allocated (constantly-restart 'continue)))
+      (check-shader-compatibility shaders)
       (link-program program shaders))))
 
 (defmethod (setf buffers) :before (buffers (program shader-program))

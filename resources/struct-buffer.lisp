@@ -25,7 +25,7 @@
   (when (allocated-p buffer)
     (c2mop:update-dependent (struct-class buffer) buffer)))
 
-(defmethod buffer-field-size (standard (buffer struct-buffer) base)
+(defmethod buffer-field-size ((standard symbol) (buffer struct-buffer) base)
   (buffer-field-size standard (struct-class buffer) 0))
 
 ;;; FIXME: we update the buffer just fine, but what about the shader programs?
