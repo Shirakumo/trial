@@ -16,7 +16,8 @@
     (glsl-toolkit:interface-declaration
      (glsl-toolkit:type-qualifier
       (glsl-toolkit:layout-qualifier
-       (glsl-toolkit:layout-qualifier-id ,(layout-standard (struct-class buffer))))
+       (glsl-toolkit:layout-qualifier-id ,(intern (string (layout-standard (struct-class buffer)))
+                                                  "KEYWORD")))
       :buffer
       ,@(qualifiers buffer))
      ,(gl-type buffer)
