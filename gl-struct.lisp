@@ -19,7 +19,7 @@
        (declare (ignore identifier))
        (if (listp type)
            (loop with vector = (make-array count)
-                 with size = (buffer-field-stride (second type) standard)
+                 with size = (buffer-field-stride standard (second type))
                  for i from 0 below count
                  for offset = (base-offset slot) then (+ offset size)
                  do (setf (aref vector i) (make-instance (second type)
@@ -31,7 +31,7 @@
                           :base-offset (base-offset slot)
                           :element-type type
                           :element-count count
-                          :stride (buffer-field-stride type standard)))))))
+                          :stride (buffer-field-stride standard type)))))))
 
 (defmethod initialize-instance :after ((struct gl-struct) &key base-offset)
   (when base-offset (cffi:incf-pointer (storage-ptr struct) base-offset))
@@ -97,10 +97,10 @@
     ,@(mapcar #'gl-source (struct-fields class))))
 
 (defmethod vertex-layout ((class gl-struct-class))
-  (let ((stride (buffer-field-stride class 'vertex-buffer)))
+  (let ((stride (buffer-field-stride 'vertex-buffer class)))
     (values (loop for offset = 0 then (+ offset size)
                   for field in (struct-fields class)
-                  for size = (buffer-field-size (gl-type field) 'vertex-buffer 0)
+                  for size = (buffer-field-size 'vertex-buffer (gl-type field) 0)
                   collect (list :offset offset
                                 :size (ecase (gl-type field)
                                         ((:float :int) 1)
@@ -120,9 +120,9 @@
     ;; Compute discrete slot offsets.
     (loop for slot in slots
           when (typep slot 'gl-struct-slot)
-          do (let ((base (round-to (buffer-field-base (gl-type slot) standard) offset)))
+          do (let ((base (round-to (buffer-field-base standard (gl-type slot)) offset)))
                (setf (slot-value slot 'base-offset) base)
-               (setf offset (+ base (buffer-field-size (gl-type slot) standard base)))))
+               (setf offset (+ base (buffer-field-size standard (gl-type slot) base)))))
     slots))
 
 (defmethod c2mop:finalize-inheritance :after ((class gl-struct-class))
@@ -138,39 +138,39 @@
   ;; If a referenced struct changed, we need to re-finalise in order to recompute field offsets.
   (c2mop:finalize-inheritance dependent))
 
-(defmethod buffer-field-base ((class gl-struct-class) (standard std140))
-  (round-to (buffer-field-base :vec4 standard)
+(defmethod buffer-field-base ((standard std140) (class gl-struct-class))
+  (round-to (buffer-field-base standard :vec4)
             (loop for field in (struct-fields class)
-                  maximize (buffer-field-base (gl-type field) standard))))
+                  maximize (buffer-field-base standard (gl-type field)))))
 
-(defmethod buffer-field-base ((class gl-struct-class) (standard vertex-buffer))
+(defmethod buffer-field-base ((standard vertex-buffer) (class gl-struct-class))
   1)
 
-(defmethod buffer-field-base ((class gl-struct-class) (standard (eql T)))
-  (buffer-field-base class (layout-standard class)))
+(defmethod buffer-field-base ((standard (eql T)) (class gl-struct-class))
+  (buffer-field-base (layout-standard class) class))
 
-(defmethod buffer-field-size ((class gl-struct-class) standard base)
-  (round-to (buffer-field-base class standard)
+(defmethod buffer-field-size (standard (class gl-struct-class) base)
+  (round-to (buffer-field-base standard class)
             (let ((field (car (last (struct-fields class)))))
-              (+ (base-offset field) (buffer-field-size (gl-type field) standard base)))))
+              (+ (base-offset field) (buffer-field-size standard (gl-type field) base)))))
 
-(defmethod buffer-field-size ((class gl-struct-class) (standard (eql T)) base)
-  (buffer-field-size class (layout-standard class) base))
+(defmethod buffer-field-size ((standard (eql T)) (class gl-struct-class) base)
+  (buffer-field-size (layout-standard class) class base))
 
-(defmethod buffer-field-stride ((class gl-struct-class) (standard std140))
-  (buffer-field-size class standard 0))
+(defmethod buffer-field-stride ((standard std140) (class gl-struct-class))
+  (buffer-field-size standard class 0))
 
-(defmethod buffer-field-stride ((class gl-struct-class) (standard vertex-buffer))
-  (buffer-field-size class standard 0))
+(defmethod buffer-field-stride ((standard vertex-buffer) (class gl-struct-class))
+  (buffer-field-size standard class 0))
 
-(defmethod buffer-field-stride ((class gl-struct-class) (standard (eql T)))
-  (buffer-field-stride class (layout-standard class)))
+(defmethod buffer-field-stride ((standard (eql T)) (class gl-struct-class))
+  (buffer-field-stride (layout-standard class) class))
 
 (defvar *indentation* 0)
 (defmethod describe-memory-layout ((class gl-struct-class) stream offset standard)
-  (let ((offset (round-to (buffer-field-base class T) offset)))
+  (let ((offset (round-to (buffer-field-base T class) offset)))
     (format stream "~5d ~v{ ~} ~a ~64t(~5dB)~%"
-            offset  *indentation* 0 (gl-type class) (buffer-field-size class T offset))
+            offset  *indentation* 0 (gl-type class) (buffer-field-size T class offset))
     (let ((*indentation* (1+ *indentation*)))
       (loop for field in (struct-fields class)
             do (setf offset (describe-memory-layout field stream offset standard))))))
@@ -219,8 +219,8 @@
     ,(gl-name slot)))
 
 (defmethod describe-memory-layout ((slot gl-struct-slot) stream offset standard)
-  (let* ((offset (round-to (buffer-field-base (gl-type slot) standard) offset))
-         (size (buffer-field-size (gl-type slot) standard offset)))
+  (let* ((offset (round-to (buffer-field-base standard (gl-type slot)) offset))
+         (size (buffer-field-size standard (gl-type slot) offset)))
     (format stream "~5d ~v{ ~} ~a ~a ~64t(~5dB)~%"
             offset *indentation* 0 (gl-name slot) (gl-type slot) size)
     (when (listp (gl-type slot))
@@ -230,11 +230,11 @@
            (describe-memory-layout (gl-type slot) stream offset))
           (:array
            (loop repeat (third (gl-type slot))
-                 for start from offset by (buffer-field-stride (second (gl-type slot)) standard)
+                 for start from offset by (buffer-field-stride standard (second (gl-type slot)))
                  do (if (listp (second (gl-type slot)))
                         (describe-memory-layout (find-class (second (second (gl-type slot)))) stream start standard)
                         (format stream "~5d ~v{ ~} ~a ~64t(~5dB)~%"
-                                start *indentation* 0 (second (gl-type slot)) (buffer-field-size (second (gl-type slot)) standard start))))))))
+                                start *indentation* 0 (second (gl-type slot)) (buffer-field-size standard (second (gl-type slot)) start))))))))
     (+ offset size)))
 
 (defclass gl-struct-direct-slot (gl-struct-slot c2mop:standard-direct-slot-definition)

@@ -36,7 +36,7 @@
 (defmethod (setf buffer-data) :after (data (buffer vertex-struct-buffer))
   (loop with struct = (struct-class buffer)
         with vector = (make-array (struct-count buffer))
-        with size = (buffer-field-stride struct :vertex-buffer)
+        with size = (buffer-field-stride buffer struct)
         for i from 0 below (length vector)
         for offset = 0 then (+ offset size)
         do (setf (aref vector i) (make-instance struct

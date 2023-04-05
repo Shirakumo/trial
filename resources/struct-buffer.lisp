@@ -25,8 +25,8 @@
   (when (allocated-p buffer)
     (c2mop:update-dependent (struct-class buffer) buffer)))
 
-(defmethod buffer-field-size ((buffer struct-buffer) standard base)
-  (buffer-field-size (struct-class buffer) standard 0))
+(defmethod buffer-field-size (standard (buffer struct-buffer) base)
+  (buffer-field-size standard (struct-class buffer) 0))
 
 ;;; FIXME: we update the buffer just fine, but what about the shader programs?
 (defmethod c2mop:update-dependent ((class gl-struct-class) (buffer struct-buffer) &rest _)
@@ -34,7 +34,7 @@
   (when (buffer-data buffer)
     ;; FIXME: This currently zeroes out the data.
     ;;        We might be able to fix things up better and retain old values by copying across.
-    (let ((new-size (buffer-field-size buffer T 0)))
+    (let ((new-size (buffer-field-size T buffer 0)))
       (when (/= new-size (size buffer))
         (setf (size buffer) new-size)
         (let ((old (buffer-data buffer))
@@ -58,7 +58,7 @@
 
 (defmethod allocate :before ((buffer struct-buffer))
   (unless (size buffer)
-    (setf (size buffer) (buffer-field-size buffer T 0))
+    (setf (size buffer) (buffer-field-size T buffer 0))
     (setf (buffer-data buffer) (make-static-vector (size buffer) :initial-element 0))))
 
 (defmethod allocate :after ((buffer struct-buffer))
