@@ -188,11 +188,11 @@
   ;; a ray
   (let ((atf (primitive-transform a))
         (r (global-location b))
-        (d (n*m4/3 (primitive-transform b) (vec 0 (* (cylinder-height b) 2) 0))))
+        (d (n*m4/3 (primitive-transform b) (vec 0 (* (cylinder-height a) 2) 0))))
     (nv+* r d (- 0.5))
     (n*m atf r)
     (n*m4/3 atf d)
-    (let ((tt (ray-sphere-p r d (sphere-radius a) (hit-normal hit))))
+    (let ((tt (ray-sphere-p r d (sphere-radius b) (hit-normal hit))))
       (when (< 0.0 tt)
         ;; Compute the location in A's reference frame, then transform back.
         (v<- (hit-location hit) r)
