@@ -6,7 +6,7 @@ The first step is to define a ``ui`` subclass, which will be used to define the 
 
 :: common lisp
 (define-shader-pass ui (org.shirakumo.fraf.trial.alloy:base-ui)
-  ((name :initform 'ui)))
+  ())
 ::
 
 You can then just enter an instance of this pass into your "render pipeline"(link render-pipeline.mess). Since it is an Alloy UI instance, you can otherwise use it as you would any other Alloy UI.

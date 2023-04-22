@@ -3,6 +3,7 @@ Trial supports loading textures and model files from a variety of formats. Howev
 
 The following formats are supported:
 
+- bmp (``trial-bmp``)
 - gif (``trial-gif``)
   Note: Only single frames are supported at the moment. You cannot play back gif animations.
 - gltf (``trial-gltf``)
