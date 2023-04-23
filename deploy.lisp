@@ -60,6 +60,7 @@
  org.shirakumo.messagebox::cocoa)
 #+windows
 (dont-deploy
+ secur32
  org.shirakumo.com-on.cffi::ole32
  org.shirakumo.fraf.gamepad.impl::user32
  org.shirakumo.fraf.gamepad.impl::xinput
