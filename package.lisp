@@ -562,7 +562,9 @@
    #:resource-depended-on
    #:shader-compilation-error
    #:initarg-not-supplied
-   #:arg!)
+   #:arg!
+   #:not-implemented
+   #:implement!)
   ;; container.lisp
   (:export
    #:scene-node
@@ -1318,6 +1320,7 @@
    #:git-repo-commit
    #:version
    #:toolkit
+   #:coerce-object
    #:finalize
    #:gl-property
    #:current-time

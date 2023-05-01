@@ -58,6 +58,11 @@
         (deploy:runtime-directory)
         (or cache (setf cache (asdf:system-source-directory app))))))
 
+(defgeneric coerce-object (object type &key))
+
+(defmethod coerce-object (object type &key)
+  (coerce object type))
+
 (defgeneric finalize (object))
 
 (defmethod finalize :before (object)

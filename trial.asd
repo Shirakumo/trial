@@ -109,10 +109,11 @@
                              (:file "skeleton" :depends-on ("pose"))
                              (:file "track")))
                (:module "physics"
-                :depends-on ("package")
+                :depends-on ("package" "conditions")
                 :components ((:file "toolkit")
                              (:file "constants" :depends-on ("toolkit"))
                              (:file "core" :depends-on ("toolkit"))
+                             (:file "hit-detection" :depends-on ("primitives"))
                              (:file "inertia-tensors" :depends-on ("core"))
                              (:file "particle" :depends-on ("core"))
                              (:file "rigidbody" :depends-on ("primitives"))

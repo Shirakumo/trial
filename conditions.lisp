@@ -40,3 +40,19 @@
 
 (defun arg! (argument)
   (error 'initarg-not-supplied :initarg argument))
+
+(define-simple-condition not-implemented (trial-error)
+  (file index) "This function has not been implemented yet.
+
+Please help the development of Trial by implementing it ~@[in
+
+  ~a~@[:~a~]
+
+~]and submitting a patch to
+
+   https://shirakumo.org/projects/trial
+
+Thanks!" file index)
+
+(defmacro implement! ()
+  `(error 'not-implemented :file ,(or *compile-file-truename* *load-truename*)))
