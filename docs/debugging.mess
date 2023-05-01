@@ -1,0 +1,71 @@
+# Debugging
+Trial includes a variety of tools to aid in the inevitable debugging process.
+
+## Logging
+Trial relies on the "Verbose"(https://shinmera.github.io/verbose) logger framework to print various status messages to its log. You can, of course, make use of all of Verbose's features yourself as well. You should add a local nickname for ``org.shirakumo.verbose`` (as ``v``) to your package definitions for that.
+
+When deployed, Trial will also automatically capture Verbose's log to a logfile that can be used for debugging crashes and other issues.
+
+Trial also offers a number of useful shorthand macros:
+
+- ``with-error-logging``
+  Will log any unhandled error that is signalled within the body.
+- ``with-ignored-errors-on-release``
+  Does the same as ``with-error-logging`` but ignoring the error in release mode and propagating it to the debugger with a ``continue`` restart in development mode.
+- ``with-timing-report``
+  Logs a report on the time taken to execute the body.
+
+## Watches
+You can add a watchpoint for the result of a function with the ``observe`` function, or of an expression with the ``observe!`` macro. To remove the watchpoint again, you can use ``stop-observing``.
+
+In order for the watches to show up, you must have a ``display-controller`` in your scene. Typically you'll want to do this by using ``(enter (make-instance 'display-controller) scene)`` in your ``setup-scene``.
+
+You can also use an ``fps-counter`` instance to only observe the frame count. The ``fps-counter`` in particular is written to be as low latency as possible, and should have almost zero overhead.
+
+## Drawing
+In order to debug visual information, you can use the following functions:
+
+- ``debug-point``
+  Draws a point at the specified coordinate.
+- ``debug-line``
+  Draws a line between the specified points.
+- ``debug-text``
+  Shows the text at the specified point. The text can only contain ASCII characters.
+- ``debug-triangles``
+  Draw a set of triangles as a line mesh.
+- ``debug-vertex-array``
+  Draw a vertex array as a line mesh. This should work regardless of primitive shape used.
+- ``debug-clear``
+  Clear all debug draws.
+- ``debug-draw``
+  Generic version that dispatches to the above depending on the argument.
+
+All of these are copying, meaning they won't update if their arguments are modified and they'll stick around until cleared away. All of the functions also accept the following arguments:
+
+- ``:color``
+  The color of the lines or point.
+- ``:debug-draw``
+  The ``debug-draw`` instance used to draw the elements. Defaults to using an entity named ``debug-draw`` and will create one if it doesn't exist yet.
+- ``:update``
+  Whether the data should be uploaded to the GPU immediately. You may want to set this to NIL if you intend on drawing a large batch of debug info.
+
+Note that all drawing calls are synchronised to the render thread. Meaning that if the call occurs outside of the render thread, it is scheduled asynchronously to run on it.
+
+## Renderdoc
+Special mention should be made of the "Renderdoc"(https://renderdoc.org) tool. While Trial allows redefinition of shaders at runtime, sometimes being able to capture the entire pipeline state and inspect it can be invaluable to figure out weird graphical issues. Renderdoc is ideal for this situation and works fine with Trial, as long as the underlying lisp process is called via Renderdoc.
+
+To do so, create a small script like so:
+
+:: common lisp
+(ql:quickload :swank)
+(swank:create-server)
+(ql:quickload :my-project)
+(my-project::launch)
+::
+
+Then you can configure your implementation as a launch option in Rendedoc:
+
+- ``Executable Path`` Eg: ``/usr/bin/sbcl``
+- ``Command-line Arguments`` Eg: ``--load /tmp/renderdoc.lisp``
+
+Launching it like that should allow you to connect via Slime on port 4005, and capture snapshots of the running process via Renderdoc.

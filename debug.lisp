@@ -139,7 +139,7 @@ void main(){
   (v point)
   (v color))
 
-(define-debug-draw-function (debug-line lines) (a b &key (color-a #.(vec 1 0 0)) (color-b #.(vec 0 0 0)))
+(define-debug-draw-function (debug-line lines) (a b &key (color #.(vec 1 0 0)) (color-a color) (color-b color))
   (v a)
   (v color-a)
   (v b)
@@ -169,15 +169,15 @@ void main(){
 (defmethod debug-draw ((primitive general-mesh) &rest args)
   (unless (getf args :transform)
     (setf (getf args :transform) (tmat4 (primitive-transform primitive))))
-  (apply #'debug-vertices (general-mesh-vertices primitive) (general-mesh-faces primitive) args))
+  (apply #'debugv-triangles (general-mesh-vertices primitive) (general-mesh-faces primitive) args))
 
 (defmethod debug-draw ((primitive primitive) &rest args)
   (unless (getf args :transform)
     (setf (getf args :transform) (tmat4 (primitive-transform primitive))))
   (let ((primitive (coerce-object primitive 'convex-mesh)))
-    (apply #'debug-vertices (general-mesh-vertices primitive) (general-mesh-faces primitive) args)))
+    (apply #'debug-triangles (general-mesh-vertices primitive) (general-mesh-faces primitive) args)))
 
-(define-debug-draw-function (debug-vertices lines) (vertices faces &key (color #.(vec 1 0 0)) (transform (model-matrix)))
+(define-debug-draw-function (debug-triangles lines) (vertices faces &key (color #.(vec 1 0 0)) (transform (model-matrix)))
   (let (prev)
     (flet ((lines (vec)
              (v vec)
