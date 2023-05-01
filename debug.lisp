@@ -166,6 +166,37 @@ void main(){
     (setf (getf args :transform) (tmat4 (tf entity))))
   (apply #'call-next-method entity args))
 
+(defmethod debug-draw ((primitive general-mesh) &rest args)
+  (unless (getf args :transform)
+    (setf (getf args :transform) (tmat4 (primitive-transform primitive))))
+  (apply #'debug-vertices (general-mesh-vertices primitive) (general-mesh-faces primitive) args))
+
+(defmethod debug-draw ((primitive primitive) &rest args)
+  (unless (getf args :transform)
+    (setf (getf args :transform) (tmat4 (primitive-transform primitive))))
+  (let ((primitive (coerce-object primitive 'convex-mesh)))
+    (apply #'debug-vertices (general-mesh-vertices primitive) (general-mesh-faces primitive) args)))
+
+(define-debug-draw-function (debug-vertices lines) (vertices faces &key (color #.(vec 1 0 0)) (transform (model-matrix)))
+  (let (prev)
+    (flet ((lines (vec)
+             (v vec)
+             (v color)))
+      (loop for e across faces
+            for c = 0 then (mod (1+ c) 3)
+            for i = (* e 3)
+            do (let ((vec (vec (aref vertices (+ 0 i)) (aref vertices (+ 1 i)) (aref vertices (+ 2 i)) 1.0)))
+                 (declare (dynamic-extent vec))
+                 (n*m transform vec)
+                 (case c
+                   (0 (lines vec)
+                    (setf prev vec))
+                   (1 (lines vec)
+                    (lines vec))
+                   (T (lines vec)
+                    (lines prev)
+                    (lines vec))))))))
+
 (define-debug-draw-function (debug-vertex-array lines) (vao &key (color #.(vec 1 0 0)) (transform (model-matrix)))
   (let ((count 0) prev pprev)
     (labels ((lines (vec)
