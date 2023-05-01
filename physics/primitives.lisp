@@ -125,10 +125,9 @@
                           (* 0.5 (abs (- far near)))))))
 
 (defun make-perspective-box (fovy aspect near far)
-  (3d-matrices::with-floats ((fpi PI) (f360 360) (fovy fovy) (aspect aspect) (near near) (far far))
-    (let* ((fh (* (the single-float (tan (* (/ fovy f360) fpi))) near))
-           (fw (* fh aspect)))
-      (frustum-box (- fw) fw (- fh) fh near far))))
+  (let* ((fh (* (the single-float (tan (* (/ fovy 360.0) F-PI))) near))
+         (fw (* fh aspect)))
+    (make-frustum-box (- fw) fw (- fh) fh near far)))
 
 ;; NOTE: the cylinder is centred at 0,0,0 and points Y-up. the "height" is the half-height.
 (defstruct (cylinder (:include primitive))
@@ -146,7 +145,11 @@
   (c (vec3 0 0 0) :type vec3))
 
 (defstruct (general-mesh (:include primitive))
+  ;; NOTE: Packed vertex positions as X Y Z triplets
+  ;; [ X0 Y0 Z0 X1 Y1 Z1 X2 Y2 Z2 X3 Y3 Z3 ... ]
   (vertices #() :type (simple-array single-float (*)))
+  ;; NOTE: Vertex indices pointing into the vertex array / 3
+  ;; [ 0 1 2 2 3 0 ... ]
   (faces #() :type (simple-array (unsigned-byte 32) (*))))
 
 (defstruct (convex-mesh (:include general-mesh)))
@@ -229,9 +232,9 @@
   (with-mesh-construction (v)
     (let ((s (cylinder-radius primitive))
           (h (cylinder-height primitive)))
-      (loop with step = (/ (* 2 PI) segments)
+      (loop with step = (/ F-2PI segments)
             for i1 = (- step) then i2
-            for i2 from 0 to (* 2 PI) by step
+            for i2 from 0 to F-2PI by step
             do ;; Bottom disc
             (v 0.0            (- h) 0.0)
             (v (* s (cos i2)) (- h) (* s (sin i2)))
