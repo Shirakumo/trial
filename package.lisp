@@ -306,6 +306,7 @@
    #:normal
    #:offset
    #:half-space
+   #:make-half-space
    #:box
    #:box-bsize
    #:make-box
@@ -315,7 +316,14 @@
    #:cylinder-height
    #:make-cylinder
    #:radius
-   #:height)
+   #:height
+   #:pill
+   #:make-pill
+   #:triangle
+   #:triangle-a
+   #:triangle-b
+   #:triangle-c
+   #:make-triangle)
   ;; physics/resolution.lisp
   (:export
    #:contact

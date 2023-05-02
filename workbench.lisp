@@ -43,24 +43,24 @@
 (define-asset (workbench grid) mesh
     (make-line-grid-mesh 10 100 100))
 
-(define-shader-entity cube (vertex-entity textured-entity trial::rigidbody listener)
+(define-shader-entity cube (vertex-entity textured-entity rigidbody listener)
   ((name :initform 'cube)
    (texture :initform (// 'workbench 'cat))
    (vertex-array :initform (// 'workbench 'cube)))
   (:default-initargs
    :mass 10.0
-   :physics-primitives (trial::make-box :bsize (vec 5 5 5) :material :wood)))
+   :physics-primitives (make-box :bsize (vec 5 5 5) :material :wood)))
 
 (define-handler (cube tick) (dt)
   (let ((strength (* dt 10000)))
     (when (retained :a)
-      (nv+ (trial::torque cube) (vec strength 0 0)))
+      (nv+ (torque cube) (vec strength 0 0)))
     (when (retained :d)
-      (nv- (trial::torque cube) (vec strength 0 0)))
+      (nv- (torque cube) (vec strength 0 0)))
     (when (retained :w)
-      (nv+ (trial::torque cube) (vec 0 strength 0)))
+      (nv+ (torque cube) (vec 0 strength 0)))
     (when (retained :s)
-      (nv- (trial::torque cube) (vec 0 strength 0)))))
+      (nv- (torque cube) (vec 0 strength 0)))))
 
 (define-handler (controller text-entered) (text)
   (when (string= text "r")
@@ -70,9 +70,9 @@
       (when (typep cube 'cube)
         (vsetf (location cube) 0 (+ 5 (* i 11)) 0)
         (qsetf (orientation cube) 0 0 0 1)
-        (vsetf (trial::velocity cube) 0 0 0)
-        (vsetf (trial::rotation cube) 0 0 0)
-        (setf (trial::awake-p cube) T))))
+        (vsetf (velocity cube) 0 0 0)
+        (vsetf (rotation cube) 0 0 0)
+        (setf (awake-p cube) T))))
   (when (string= text "p")
     (setf (paused-p +main+) (not (paused-p +main+))))
   (when (string= text "s")
@@ -89,14 +89,14 @@
 [WASD] Move
 [Space] Ascend
 [C] Descend" :title "Controls")
-    (let ((physics (make-instance 'trial::rigidbody-system :units-per-metre 1.0))
-          (floor (make-instance 'trial::rigidbody :physics-primitives (trial::make-half-space :material :wood))))
+    (let ((physics (make-instance 'rigidbody-system :units-per-metre 1.0))
+          (floor (make-instance 'rigidbody :physics-primitives (trial::make-half-space :material :wood))))
       (enter floor physics)
       (loop for i from 0 below 10
             for cube = (make-instance 'cube :location (vec 0 (+ 5 (* i 11)) 0))
             do (enter cube physics)
                (enter cube scene))
-      (enter (make-instance 'trial::gravity :gravity (vec 0 -200 0)) physics)
+      (enter (make-instance 'gravity :gravity (vec 0 -200 0)) physics)
       (enter physics scene))
     (enter (make-instance 'fps-counter) scene)
     (enter (make-instance 'vertex-entity :vertex-array (// 'workbench 'grid)) scene)
