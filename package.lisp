@@ -20,6 +20,7 @@
    (#:sequences #:org.shirakumo.trivial-extensible-sequences)
    (#:v #:org.shirakumo.verbose)
    (#:promise #:org.shirakumo.promise)
+   (#:3ds #:org.shirakumo.fraf.trial.space)
    #+windows
    (#:com #:org.shirakumo.com-on))
   ;; animation/asset.lisp
@@ -1435,48 +1436,6 @@
    #:name)
   ;; workbench.lisp
   (:export))
-
-(defpackage #:org.shirakumo.fraf.trial.bvh2
-  (:use #:cl #:3d-vectors)
-  (:import-from #:org.shirakumo.fraf.trial #:location #:bsize)
-  (:export
-   #:bvh
-   #:make-bvh
-   #:bvh-insert
-   #:bvh-remove
-   #:bvh-update
-   #:bvh-check
-   #:bvh-print
-   #:bvh-lines
-   #:bvh-reinsert-all
-   #:call-with-contained
-   #:call-with-overlapping
-   #:do-fitting))
-
-(defpackage #:org.shirakumo.fraf.trial.quadtree
-  (:use #:cl #:3d-vectors)
-  (:import-from #:org.shirakumo.fraf.trial #:location #:bsize)
-  (:export
-   #:quadtree
-   #:make-quadtree
-   #:make-quadtree-at
-   #:quadtree-insert
-   #:quadtree-remove
-   #:quadtree-update
-   #:quadtree-find-all
-   #:quadtree-find-overlaps
-   #:quadtree-find-overlaps-in
-   #:quadtree-find-contained
-   #:quadtree-find-contained-in
-   #:quadtree-find-for
-   #:quadtree-check
-   #:quadtree-print
-   #:quadtree-lines
-   #:quadtree-reinsert-all
-   #:call-all
-   #:call-with-region
-   #:call-with-area
-   #:call-with-object))
 
 (defpackage #:cl+trial
   (:nicknames #:org.shirakumo.fraf.trial.cl+trial)

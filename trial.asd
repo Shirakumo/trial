@@ -31,7 +31,6 @@
                (:file "async" :depends-on ("package" "main"))
                (:file "attributes" :depends-on ("package"))
                (:file "bag" :depends-on ("package" "container"))
-               (:file "bvh2" :depends-on ("package" "helpers"))
                (:file "camera" :depends-on ("package" "container" "input" "transforms"))
                (:file "capture" :depends-on ("package" "toolkit" "serialize" "event-loop" "input"))
                (:file "conditions" :depends-on ("package"))
@@ -74,7 +73,6 @@
                (:file "pipelined-scene" :depends-on ("package" "pipeline" "scene" "loader"))
                (:file "power" :depends-on ("package"))
                (:file "prompt" :depends-on ("package"))
-               (:file "quadtree" :depends-on ("package" "helpers"))
                (:file "queue" :depends-on ("package"))
                (:file "rails" :depends-on ("package" "container" "helpers"))
                (:file "render-loop" :depends-on ("package" "toolkit"))
@@ -153,6 +151,7 @@
                :3d-matrices
                :3d-quaternions
                :3d-transforms
+               :3d-spaces
                :verbose
                :deploy
                :closer-mop

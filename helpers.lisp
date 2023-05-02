@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass located-entity (transformed entity)
-  ((location :initarg :location :initform (vec 0 0 0) :reader location)))
+  ((location :initarg :location :initform (vec 0 0 0) :reader location :reader 3ds:location)))
 
 (defmethod (setf location) ((vec vec3) (obj located-entity))
   (v<- (location obj) vec))
@@ -16,7 +16,7 @@
   (translate (location obj)))
 
 (defclass sized-entity (entity)
-  ((bsize :initarg :bsize :initform (vec 0 0 0) :accessor bsize)))
+  ((bsize :initarg :bsize :initform (vec 0 0 0) :accessor bsize :reader 3ds:bsize)))
 
 (defclass oriented-entity (transformed entity)
   ((orientation :initarg :orientation :initform (vec 1 0 0) :accessor orientation)
@@ -68,6 +68,9 @@
     (nm* (model-matrix) (tmat4 (tf obj) mat))))
 
 (defmethod location ((obj transformed-entity))
+  (tlocation (tf obj)))
+
+(defmethod 3ds:location ((obj transformed-entity))
   (tlocation (tf obj)))
 
 (defmethod (setf location) (vec (obj transformed-entity))
@@ -223,3 +226,18 @@ uniform sampler2D texture_image;
 void main(){
   color *= texture(texture_image, texcoord);
 }")
+
+(defmethod enter (thing (container 3ds:container))
+  (3ds:enter thing container))
+
+(defmethod leave (thing (container 3ds:container))
+  (3ds:leave thing container))
+
+(defmethod clear ((container 3ds:container))
+  (3ds:clear container))
+
+(defmethod location ((region 3ds:region))
+  (3ds:location region))
+
+(defmethod bsize ((region 3ds:region))
+  (3ds:bsize region))

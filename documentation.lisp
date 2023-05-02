@@ -12,11 +12,3 @@
 
 This is useful to set to NIL when within a text input field, to avoid
 key bindings interfering with text input."))
-
-(in-package #:org.shirakumo.fraf.trial.bvh2)
-
-(docs:define-docs
-  (function bvh-reinsert-all
-   "Reinsert each node in BVH to its optimal position in the
-tree. Results may improve with multiple passes, the number of which
-may be specified by ROUNDS."))
