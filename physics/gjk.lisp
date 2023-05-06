@@ -8,7 +8,7 @@
    (:documentation "Maps the direction into a supporting point for the object in that direction."))
 
 (defmethod support-mapping ((sphere sphere) (direction vec3))
-   (v+ (location sphere) (vunit direction)))
+  (v+ (location sphere) (v* (radius sphere) (vunit direction))))
 
 (defmethod support-mapping ((mesh convex-mesh) (direction vec3))
   (with-slots (vertex-array index-array) mesh
@@ -142,6 +142,7 @@
                (q2 (aref set 1)))
            (let* ((n (v- q2 q1))
                   (s (/ (v. n (v- q1)) (v. n n))))
+       ;      (break "n ~a s ~a q1 ~a q2 ~a" n s q1 q2)
              (v+ q1 (v* n (alexandria:clamp s 0.0 1.0))))))
       (1 (aref set 0)))))
 
@@ -196,13 +197,22 @@
     (1 q)))
 
 (defun gjk (a b)
-  (let ((q (vector (v- (sample-one-point a) (sample-one-point b))))) ; step 1
+  (let ((q (make-array '(1)
+                       :initial-contents (list (v- (sample-one-point a) (sample-one-point b)))
+                       :adjustable t
+                       :fill-pointer t))) ; step 1
+    (assert (adjustable-array-p q))
     (loop do
+      ;(break "q ~a" q)
       (let ((p (point-of-minimum-norm-in-convex-hull q))) ; step 2
         (when (< (v2norm (v- p (vec3 0.0 0.0 0.0))) 1e-6) ; step 3
           (return-from gjk t))
-        (setf q (reduce-to-smallest-spanning-set p q)) ; step 4
+        (let ((contents (reduce-to-smallest-spanning-set p q)))
+          (setf q (make-array (array-dimensions contents)
+                              :adjustable t
+                              :fill-pointer t
+                              :initial-contents contents))) ; step 4
         (let ((v (support-mapping-minkowski-difference a b (v- p)))) ; step 5
-          (when (>= (v. v p) (v. p p)) ; step 6
+          (when (>= (v. v p) (- (v. p p) 0.001)) ; step 6
               (return-from gjk (values nil (v2norm p))))
           (vector-push-extend v q)))))) ; step 7
