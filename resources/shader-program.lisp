@@ -45,12 +45,15 @@
   (loop for buffer in (buffers program)
         do (bind buffer program)))
 
-(defmethod (setf shaders) :before (shaders (program shader-program))
+(defmethod (setf shaders) :before ((shaders cons) (program shader-program))
   (when (allocated-p program)
     ;; If we're already hot, relink immediately.
     (handler-bind ((resource-not-allocated (constantly-restart 'continue)))
       (check-shader-compatibility shaders)
       (link-program program shaders))))
+
+(defmethod (setf shaders) ((other shader-program) (program shader-program))
+  (setf (shaders program) (shaders other)))
 
 (defmethod (setf buffers) :before (buffers (program shader-program))
   (when (allocated-p program)
