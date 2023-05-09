@@ -367,7 +367,8 @@
    #:attachments
    #:resize
    #:capture
-   #:blit-to-screen)
+   #:blit-to-screen
+   #:activate)
   ;; resources/shader-program.lisp
   (:export
    #:shader-program
@@ -375,7 +376,8 @@
    #:shaders
    #:uniform
    #:uniform-location
-   #:uniforms)
+   #:uniforms
+   #:activate)
   ;; resources/shader.lisp
   (:export
    #:shader
