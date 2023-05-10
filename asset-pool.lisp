@@ -63,7 +63,7 @@
         `(load-time-value
           (let ((,poolg (find-pool ,pool ,errorp)))
             (when ,poolg
-              (or (gethash ,name (assets ))
+              (or (gethash ,name (assets ,poolg))
                   (when ,errorp (error "No asset with name ~s on pool ~a." ,name ,pool)))))))
       whole))
 
