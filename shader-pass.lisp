@@ -101,7 +101,7 @@
     (error "Pass ~s is missing an input texture ~s."
            (flow:node input) input)))
 
-(defclass static-input (input)
+(defclass static-input (flow:out-port flow:n-port texture-port uniform-port)
   ())
 
 (defmethod check-consistent ((input static-input)))
