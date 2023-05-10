@@ -71,6 +71,7 @@
                (:file "phong" :depends-on ("package" "helpers"))
                (:file "pipeline" :depends-on ("package" "event-loop" "toolkit" "shader-pass"))
                (:file "pipelined-scene" :depends-on ("package" "pipeline" "scene" "loader"))
+               (:file "pixel-pipeline" :depends-on ("package" "pipeline"))
                (:file "power" :depends-on ("package"))
                (:file "prompt" :depends-on ("package"))
                (:file "queue" :depends-on ("package"))
