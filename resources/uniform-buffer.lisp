@@ -9,13 +9,15 @@
 (defclass uniform-buffer (struct-buffer)
   ((buffer-type :initform :uniform-buffer)
    (qualifiers :initarg :qualifiers :initform () :accessor qualifiers)
-   (binding :initarg :binding :initform NIL :accessor binding)
+   (binding :initarg :binding :accessor binding)
    (binding-point :initarg :binding-point :initform NIL :accessor binding-point)))
 
-(defmethod shared-initialize :after ((buffer uniform-buffer) slots &key struct-class binding)
-  (when (or binding (null (binding buffer)))
-    (setf (binding buffer) (cffi:translate-underscore-separated-name
-                            (class-name (ensure-class struct-class))))))
+(defmethod shared-initialize :after ((buffer uniform-buffer) slots &key struct-class (binding NIL binding-p))
+  (cond (binding-p
+         (setf (binding buffer) binding))
+        ((not (slot-boundp buffer 'binding))
+         (setf (binding buffer) (cffi:translate-underscore-separated-name
+                                 (class-name (ensure-class struct-class)))))))
 
 (defmethod gl-source ((buffer uniform-buffer))
   `(glsl-toolkit:shader
