@@ -59,9 +59,12 @@
   ;; We can do this because assets get updated in place rather than being recreated.
   (if (and (constantp pool env)
            (constantp name env))
-      `(load-time-value
-        (or (gethash ,name (assets (find-pool ,pool ,errorp)))
-            (when ,errorp (error "No asset with name ~s on pool ~a." ,name ,pool))))
+      (let ((poolg (gensym "POOL")))
+        `(load-time-value
+          (let ((,poolg (find-pool ,pool ,errorp)))
+            (when ,poolg
+              (or (gethash ,name (assets ))
+                  (when ,errorp (error "No asset with name ~s on pool ~a." ,name ,pool)))))))
       whole))
 
 (defmethod (setf asset) (asset (pool symbol) name)
