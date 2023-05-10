@@ -24,6 +24,8 @@
   (let ((color-attachments (loop for attachment in attachments
                                  unless (find (first attachment) '(:depth-attachment :stencil-attachment :depth-stencil-attachment))
                                  collect (first attachment))))
+    (unless (equal color-attachments (remove-duplicates color-attachments))
+      (error "Duplicate color attachments:~%  ~a" color-attachments))
     (gl:bind-framebuffer :framebuffer (gl-name framebuffer))
     (with-unwind-protection (gl:bind-framebuffer :framebuffer 0)
       (dolist (attachment attachments)
