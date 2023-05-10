@@ -23,7 +23,8 @@
 ;;        like texture size.
 (defclass texture-port (flow:port)
   ((texture :initform NIL :accessor texture)
-   (texspec :initarg :texspec :accessor texspec))
+   (texspec :initarg :texspec :accessor texspec)
+   (unit-id :initform NIL :accessor unit-id))
   (:default-initargs
    :texspec ()))
 
@@ -110,6 +111,15 @@
    (active-p :initform T :accessor active-p))
   (:metaclass shader-pass-class)
   (:inhibit-shaders (shader-entity :fragment-shader)))
+
+(defmethod shared-initialize :after ((pass shader-pass) slots &key)
+  (loop with texture-index =  (gl:get-integer :max-texture-image-units)
+        for slot in (c2mop:class-slots (class-of pass))
+        when (flow:port-type slot)
+        do (let ((port (flow::port-slot-value pass slot)))
+             (typecase port
+               (texture-port
+                (setf (unit-id port) (decf texture-index)))))))
 
 (defclass transformed () ())
 (defclass renderable () ())
@@ -215,19 +225,19 @@
         do (let ((port (flow::port-slot-value pass slot)))
              (typecase port
                (uniform-port
-                (when (texture port)
-                  (setf (uniform program (uniform-name port)) (decf units))))))))
+                (if (texture port)
+                    (setf (uniform program (uniform-name port)) (decf units))
+                    (setf (uniform program (uniform-name port)) (slot-value pass (c2mop:slot-definition-name slot)))))))))
 
 (defmethod bind-textures ((pass shader-pass))
   ;; FIXME: I kinda hate this and we could definitely optimise the iteration away.
-  (loop with texture-index =  (gl:get-integer :max-texture-image-units)
-        for slot in (c2mop:class-slots (class-of pass))
+  (loop for slot in (c2mop:class-slots (class-of pass))
         when (flow:port-type slot)
         do (let ((port (flow::port-slot-value pass slot)))
              (typecase port
                (uniform-port
                 (when (texture port)
-                  (gl:active-texture (decf texture-index))
+                  (gl:active-texture (unit-id port))
                   (gl:bind-texture :texture-2d (gl-name (texture port)))))
                (image-port
                 (when (texture port)
