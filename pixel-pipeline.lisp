@@ -91,7 +91,9 @@
 
 (defmethod pack-pipeline ((pipeline pixel-pipeline) (self (eql T)))
   (setup-pipeline pipeline)
-  (pack-pipeline pipeline pipeline))
+  (pack-pipeline pipeline pipeline)
+  (loop for pass across (passes pipeline)
+        do (setf (clear-bits (framebuffer pass)) 0)))
 
 (defmacro define-pixel-pipeline (pipeline-name slots &body body)
   (form-fiddle:with-body-options (body others pool loopback accessors (struct (mksym *package* pipeline-name '-uniforms))) body
