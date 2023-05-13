@@ -43,43 +43,45 @@
 
 (defmacro define-pixel-stage (name ports &body body)
   (destructuring-bind (name &key (direct-superclasses '(post-effect-pass)) first iterate) (enlist name)
-    `(progn
-       (define-shader-pass ,name ,direct-superclasses
-         ,(loop with attachments = '(:color-attachment0 :color-attachment1 :color-attachment2 :color-attachment3
-                                     :color-attachment4 :color-attachment5 :color-attachment6 :color-attachment7)
-                for (kind name type . slot-args) in ports
-                collect `(,name
-                          ,@(ecase kind
-                              (:uniform `(:port-type uniform-port))
-                              (:input `(:port-type ,(if first 'static-input 'input) :texspec (:internal-format ,type)))
-                              (:output `(:port-type output :texspec (:internal-format ,type)
-                                         :attachment ,(pop attachments)))
-                              (:slot (list name type)))
-                          ,@slot-args))
-         (:inhibit-shaders (shader-entity :fragment-shader)))
+    (form-fiddle:with-body-options (body options) body
+      `(progn
+         (define-shader-pass ,name ,direct-superclasses
+           ,(loop with attachments = '(:color-attachment0 :color-attachment1 :color-attachment2 :color-attachment3
+                                       :color-attachment4 :color-attachment5 :color-attachment6 :color-attachment7)
+                  for (kind name type . slot-args) in ports
+                  collect `(,name
+                            ,@(ecase kind
+                                (:uniform `(:port-type uniform-port))
+                                (:input `(:port-type ,(if first 'static-input 'input) :texspec (:internal-format ,type)))
+                                (:output `(:port-type output :texspec (:internal-format ,type)
+                                           :attachment ,(pop attachments)))
+                                (:slot (list name type)))
+                            ,@slot-args))
+           (:inhibit-shaders (shader-entity :fragment-shader))
+           ,@(loop for (k v) on options by #'cddr collect (cons k v)))
 
-       (define-class-shader (,name :fragment-shader)
-         ,(compile-pixel-shader-preamble ports)
-         ,@body
-         ,(compile-pixel-shader-main ports))
+         (define-class-shader (,name :fragment-shader)
+           ,(compile-pixel-shader-preamble ports)
+           ,@body
+           ,(compile-pixel-shader-main ports))
 
-       ,@(when iterate
-           (destructuring-bind (times (a b)) iterate
-             `((defmethod render ((pass ,name) (program shader-program))
-                 (let ((in (gl-name (slot-value pass ',a)))
-                       (out (gl-name (slot-value pass ',b)))
-                       (unit-id (unit-id (port pass ',a)))
-                       (attachment (attachment (port pass ',b)))
-                       (times ,times))
-                   (gl:active-texture unit-id)
-                   (dotimes (i times)
-                     (call-next-method)
-                     (when (< i (1- times))
-                       (rotatef in out)
-                       (%gl:bind-texture :texture-2d in)
-                       (%gl:framebuffer-texture :framebuffer attachment out 0)))
-                   (setf (gl-name (slot-value pass ',a)) in)
-                   (setf (gl-name (slot-value pass ',b)) out)))))))))
+         ,@(when iterate
+             (destructuring-bind (times (a b)) iterate
+               `((defmethod render ((pass ,name) (program shader-program))
+                   (let ((in (gl-name (slot-value pass ',a)))
+                         (out (gl-name (slot-value pass ',b)))
+                         (unit-id (unit-id (port pass ',a)))
+                         (attachment (attachment (port pass ',b)))
+                         (times ,times))
+                     (gl:active-texture unit-id)
+                     (dotimes (i times)
+                       (call-next-method)
+                       (when (< i (1- times))
+                         (rotatef in out)
+                         (%gl:bind-texture :texture-2d in)
+                         (%gl:framebuffer-texture :framebuffer attachment out 0)))
+                     (setf (gl-name (slot-value pass ',a)) in)
+                     (setf (gl-name (slot-value pass ',b)) out))))))))))
 
 (defclass pixel-pipeline (pipeline)
   ((width :initarg :width :accessor width)
@@ -117,6 +119,7 @@
                  collect (form-fiddle:with-body-options (body options) pass
                            `(define-pixel-stage (,name :first ,(eql name (first names)) ,@options)
                                 ,ports
+                              :buffers ((,pool ,struct))
                               (gl-source (asset ',pool ',struct))
                               ,@body)))
 
@@ -126,13 +129,20 @@
                   collect args))
 
          ,@(loop for name in accessors
-                 for i = (loop for pass in (reverse body)
-                               for i downfrom (1- (length body))
-                               do (when (loop for slot = (pop pass)
-                                              while (consp slot)
-                                              thereis (and (eql :output (first slot))
-                                                           (eql name (second slot))))
-                                    (return i)))
+                 for i = (or (loop for pass in (reverse body)
+                                   for i downfrom (1- (length body))
+                                   do (when (loop for slot = (pop pass)
+                                                  while (consp slot)
+                                                  thereis (and (eql :output (first slot))
+                                                               (eql name (second slot))))
+                                        (return i)))
+                             (loop for pass in (reverse body)
+                                   for i from 0 below (length body)
+                                   do (when (loop for slot = (pop pass)
+                                                  while (consp slot)
+                                                  thereis (and (eql :input (first slot))
+                                                               (eql name (second slot))))
+                                        (return i))))
                  collect `(defmethod ,name ((pipeline ,pipeline-name))
                             (slot-value (aref (passes pipeline) ,i) ',name)))
 
