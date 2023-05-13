@@ -365,6 +365,7 @@
   (:export
    #:framebuffer
    #:attachments
+   #:clear-bits
    #:resize
    #:capture
    #:blit-to-screen

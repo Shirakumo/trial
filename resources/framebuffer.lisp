@@ -8,6 +8,7 @@
 
 (defclass framebuffer (gl-resource)
   ((attachments :initarg :attachments :accessor attachments)
+   (clear-bits :initarg :clear-bits :initform 17664 :accessor clear-bits)
    (width :initarg :width :initform NIL :accessor width)
    (height :initarg :height :initform NIL :accessor height))
   (:default-initargs
@@ -16,6 +17,12 @@
 (defmethod print-object ((framebuffer framebuffer) stream)
   (print-unreadable-object (framebuffer stream :type T :identity T)
     (format stream "~:{~a ~}~:[~; ALLOCATED~]" (attachments framebuffer) (allocated-p framebuffer))))
+
+(defmethod clear-bits ((framebuffer framebuffer))
+  (cffi:foreign-bitfield-symbols '%gl::ClearBufferMask (slot-value framebuffer 'clear-bits)))
+
+(defmethod (setf clear-bits) ((bits list) (framebuffer framebuffer))
+  (setf (clear-bits framebuffer) (cffi:foreign-bitfield-value '%gl::ClearBufferMask bits)))
 
 (defmethod dependencies ((framebuffer framebuffer))
   (mapcar #'second (attachments framebuffer)))
@@ -89,8 +96,7 @@
 (defmethod activate ((framebuffer framebuffer))
   (gl:bind-framebuffer :framebuffer (gl-name framebuffer))
   (gl:viewport 0 0 (width framebuffer) (height framebuffer))
-  ;; FIXME: Figure out which to clearq depending on framebuffer attachments
-  (gl:clear :color-buffer :depth-buffer :stencil-buffer))
+  (%gl:clear (clear-bits framebuffer)))
 
 ;; FIXME: this should ideally be more generic, with blitting from one to another framebuffer
 ;;        and handling the screen as a special framebuffer instance that's always around.
