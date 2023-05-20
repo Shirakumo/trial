@@ -78,7 +78,9 @@
   (animation:update ui (float (trial:dt ev) 0f0)))
 
 (defmethod trial:handle ((ev trial:resize) (ui ui))
-  (alloy:suggest-size (alloy:px-size (trial:width ev) (trial:height ev)) ui))
+  (alloy:suggest-size (alloy:px-size (trial:width ev) (trial:height ev)) ui)
+  (loop for framebuffer across (framebuffers ui)
+        do (trial:resize framebuffer (trial:width ev) (trial:height ev))))
 
 (defmethod trial:stage :after ((ui ui) (area trial:staging-area))
   (trial:stage (alloy:layout-tree ui) area))

@@ -7,7 +7,8 @@
 (in-package #:org.shirakumo.fraf.trial.alloy)
 
 (defclass renderer (org.shirakumo.alloy.renderers.opengl.msdf:renderer trial:renderable trial:resource)
-  ((image-cache :initform (make-hash-table :test 'equal) :reader image-cache)))
+  ((image-cache :initform (make-hash-table :test 'equal) :reader image-cache)
+   (framebuffers :initform (make-array 0 :adjustable T :fill-pointer T) :reader framebuffers)))
 
 (defmethod org.shirakumo.alloy.renderers.opengl.msdf:fontcache-directory ((renderer renderer))
   (if (deploy:deployed-p)
@@ -166,6 +167,42 @@
             thereis (typep binding 'trial:vertex-buffer))
       (%gl:draw-elements primitive-type count :unsigned-int offset)
       (%gl:draw-arrays primitive-type offset count)))
+
+(defclass framebuffer (trial:framebuffer)
+  ((target :initform NIL :accessor target)))
+
+(defmethod opengl:make-framebuffer ((renderer renderer))
+  (let* ((color (make-instance 'trial:texture :width (width *context*) :height (height *context*) :internal-format :rgba))
+         (depth (make-instance 'trial:texture :width (width *context*) :height (height *context*) :internal-format :depth-stencil))
+         (framebuffer (make-instance 'framebuffer :bindings `((:color-attachment0 ,color)
+                                                              (:depth-stencil-attachment ,depth)))))
+    (vector-push-extend framebuffer (framebuffers renderer))
+    framebuffer))
+
+(defmethod alloy:allocate ((framebuffer trial:framebuffer))
+  (loop for (_ texture) in (trial:attachments framebuffer)
+        do (trial:allocate texture))
+  (trial:allocate framebuffer))
+
+(defmethod alloy:deallocate ((framebuffer trial:framebuffer))
+  (trial:deallocate framebuffer)
+  (loop for (_ texture) in (trial:attachments framebuffer)
+        do (trial:deallocate texture)))
+
+(defmethod opengl:gl-name ((framebuffer trial:framebuffer))
+  (trial:gl-name framebuffer))
+
+(defmethod opengl:bind ((framebuffer trial:framebuffer))
+  (setf (target framebuffer) (gl:get-integer :draw-framebuffer-binding))
+  (gl:bind-framebuffer :draw-framebuffer (gl-resource-name framebuffer))
+  (gl:clear :color-buffer :depth-buffer :stencil-buffer))
+
+(defmethod opengl:blit-framebuffer ((framebuffer trial:framebuffer))
+  (gl:bind-framebuffer :read-framebuffer (gl-resource-name framebuffer))
+  (gl:bind-framebuffer :draw-framebuffer (target framebuffer))
+  (let ((w (trial:width framebuffer))
+        (h (trial:height framebuffer)))
+    (%gl:blit-framebuffer 0 0 w h 0 0 w h '(:color-buffer :depth-buffer :stencil-buffer) :nearest)))
 
 (defclass image (trial:texture simple:image)
   ())
