@@ -158,8 +158,10 @@
 (defmethod opengl:gl-name ((buffer trial:vertex-buffer))
   (trial:gl-name buffer))
 
-(defmethod opengl:make-vertex-array ((renderer renderer) bindings)
-  (make-instance 'trial:vertex-array :bindings bindings :vertex-form NIL))
+(defmethod opengl:make-vertex-array ((renderer renderer) bindings &key index-buffer)
+  (make-instance 'trial:vertex-array
+                 :bindings (if index-buffer (list* index-buffer bindings) bindings)
+                 :vertex-form NIL))
 
 (defmethod opengl:draw-vertex-array ((array trial:vertex-array) primitive-type offset count)
   (gl:bind-vertex-array (trial:gl-name array))
