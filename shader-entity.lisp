@@ -10,6 +10,23 @@
 ;;        constants can be backed-in, but still be changed for each
 ;;        instance without needing to change source code
 
+(defgeneric resolve-shader-include (source))
+
+(defmethod resolve-shader-include ((source string))
+  (if (position #\: source)
+      (resolve-shader-include (read-from-string source))
+      (resolve-shader-include (parse-namestring source))))
+
+(defmethod resolve-shader-include ((source pathname))
+  (glsl-toolkit:parse (merge-pathnames source *default-pathname-defaults*)))
+
+(defmethod resolve-shader-include ((source symbol))
+  (gl-source (find-class source)))
+
+(defmethod resolve-shader-include ((source cons))
+  (destructuring-bind (pool name) source
+    (gl-source (asset pool name T))))
+
 (defclass shader-entity-class (standard-class)
   ((effective-shaders :initform () :accessor effective-shaders)
    (direct-shaders :initform () :initarg :shaders :accessor direct-shaders)
@@ -29,6 +46,13 @@
 
 (defmethod c2mop:validate-superclass ((class shader-entity-class) (superclass shader-entity-class))
   T)
+
+(defmethod shared-initialize :after ((class shader-entity-class) slots &key shader-file)
+  (when shader-file
+    (destructuring-bind (pool path) (first shader-file)
+      (let ((*default-pathname-defaults* (pool-path pool path)))
+        (loop for (type source) on (glsl-toolkit:preprocess *default-pathname-defaults* :include-resolution #'resolve-shader-include) by #'cddr
+              do (setf (getf (direct-shaders class) type) (list 0 source)))))))
 
 (defmethod compute-effective-shaders ((class shader-entity-class))
   (let ((effective-shaders ())
