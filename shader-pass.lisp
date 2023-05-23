@@ -219,14 +219,13 @@
 
 (defmethod prepare-pass-program ((pass shader-pass) program)
   (activate program)
-  (loop with units = (gl:get-integer :max-texture-image-units)
-        for slot in (c2mop:class-slots (class-of pass))
+  (loop for slot in (c2mop:class-slots (class-of pass))
         when (flow:port-type slot)
         do (let ((port (flow::port-slot-value pass slot)))
              (typecase port
                (uniform-port
                 (if (texture port)
-                    (setf (uniform program (uniform-name port)) (decf units))
+                    (setf (uniform program (uniform-name port)) (unit-id port))
                     (setf (uniform program (uniform-name port)) (slot-value pass (c2mop:slot-definition-name slot)))))))))
 
 (defmethod bind-textures ((pass shader-pass))
