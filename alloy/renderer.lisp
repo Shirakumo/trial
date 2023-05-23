@@ -200,7 +200,7 @@
   (gl:clear :color-buffer :depth-buffer :stencil-buffer))
 
 (defmethod opengl:blit-framebuffer ((framebuffer trial:framebuffer))
-  (gl:bind-framebuffer :read-framebuffer (gl-resource-name framebuffer))
+  (gl:bind-framebuffer :read-framebuffer (trial:gl-name framebuffer))
   (gl:bind-framebuffer :draw-framebuffer (target framebuffer))
   (let ((w (trial:width framebuffer))
         (h (trial:height framebuffer)))
