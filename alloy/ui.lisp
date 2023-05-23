@@ -110,16 +110,17 @@
      (when (find :shift (trial:modifiers ev))
        (alloy:handle (make-instance 'alloy:paste-event :content (alloy:clipboard ui)) ui)))
     (T
-     (case (char (or (trial:local-key-string trial:*context* (trial:key ev)) " ") 0)
-       (#\v
-        (when (find :control (trial:modifiers ev))
-          (alloy:handle (make-instance 'alloy:paste-event :content (alloy:clipboard ui)) ui)))
-       (#\c
-        (when (find :control (trial:modifiers ev))
-          (alloy:handle (make-instance 'alloy:copy-event) ui)))
-       (#\x
-        (when (find :control (trial:modifiers ev))
-          (alloy:handle (make-instance 'alloy:cut-event) ui)))))))
+     (when trial:*context*
+       (case (char (or (trial:local-key-string trial:*context* (trial:key ev)) " ") 0)
+         (#\v
+          (when (find :control (trial:modifiers ev))
+            (alloy:handle (make-instance 'alloy:paste-event :content (alloy:clipboard ui)) ui)))
+         (#\c
+          (when (find :control (trial:modifiers ev))
+            (alloy:handle (make-instance 'alloy:copy-event) ui)))
+         (#\x
+          (when (find :control (trial:modifiers ev))
+            (alloy:handle (make-instance 'alloy:cut-event) ui))))))))
 
 (trial:define-shader-pass ui-pass (ui)
   ((trial:name :initform 'ui)
