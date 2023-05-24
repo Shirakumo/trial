@@ -271,6 +271,7 @@
 (defgeneric construct-frame (pass))
 (defgeneric render-frame (pass frame))
 (defgeneric sort-frame (pass frame))
+(defgeneric render-with (pass object program))
 
 (defmethod camera ((pass shader-pass))
   (camera (scene +main+)))
@@ -406,18 +407,21 @@
 (defmethod render-frame ((pass per-object-pass) frame)
   (declare (type (and vector (not simple-vector)) frame))
   (loop for (object . program) across frame
-        do (restart-case
-               (progn
-                 (prepare-pass-program pass program)
-                 (push-matrix)
-                 (with-unwind-protection (pop-matrix)
-                   (apply-transforms object)
-                   (bind-textures object)
-                   (render object program)))
-             #-kandria-release
-             (leave ()
-               :report "Leave the object"
-               (leave object T)))))
+        do (render-with pass object program)))
+
+(defmethod render-with ((pass per-object-pass) object program)
+  (restart-case
+      (progn
+        (prepare-pass-program pass program)
+        (push-matrix)
+        (with-unwind-protection (pop-matrix)
+          (apply-transforms object)
+          (bind-textures object)
+          (render object program)))
+    #-kandria-release
+    (leave ()
+      :report "Leave the object"
+      (leave object T))))
 
 (define-shader-pass single-shader-pass ()
   ((shader-program :initform NIL :accessor shader-program)))

@@ -7,12 +7,13 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defstruct (lru-cache-node
-            (:constructor make-lru-cache-node (left right))
+            (:constructor make-lru-cache-node (left right id))
             (:predicate NIL)
             (:copier NIL))
   (left NIL :type T)
   (right NIL :type T)
-  (value NIL :type T))
+  (value NIL :type T)
+  (id 0 :type (unsigned-byte 32)))
 
 (defmethod print-object ((node lru-cache-node) stream)
   (print-unreadable-object (node stream :type T :identity T)
@@ -38,17 +39,17 @@
         for value = (lru-cache-node-value node)
         until (eq node tail)
         do (when value
-             (format stream "~3d ~a~%" i value))))
+             (format stream "~3d ~a~%" (lru-cache-node-id node) value))))
 
 (defun make-lru-cache (size)
   (check-type size (integer 1))
-  (let ((head (make-lru-cache-node NIL NIL)))
+  (let ((head (make-lru-cache-node NIL NIL 0)))
     (setf (lru-cache-node-left head) head)
     (setf (lru-cache-node-right head) head)
-    (loop repeat (1- size)
-          for node = (make-lru-cache-node head (lru-cache-node-right head))
-          do (setf (lru-cache-node-left (lru-cache-node-right head)) node)
-             (setf (lru-cache-node-right head) node))
+    (loop for i from 1 below size
+          for node = (make-lru-cache-node head (lru-cache-node-right head) i)
+          do (setf (lru-cache-node-right (lru-cache-node-left head)) node)
+             (setf (lru-cache-node-left head) node))
     (%make-lru-cache head (make-hash-table :test 'eq :size size) size)))
 
 ;; Returns T if the value did not exist in the cache.
@@ -65,8 +66,8 @@
              (setf (lru-cache-head cache) prev)
              (when (lru-cache-node-value prev)
                (remhash (lru-cache-node-value prev) table))
-             (setf (gethash value table) prev))
-           T)
+             (setf (gethash value table) prev)
+             (lru-cache-node-id prev)))
           ((eq node head)
            NIL)
           (T
@@ -95,7 +96,7 @@
            (setf (lru-cache-node-value node) NIL)
            (remhash value table)
            (setf (lru-cache-head cache) (lru-cache-node-right node))
-           T)
+           (lru-cache-node-id node))
           (T
            (let ((l (the lru-cache-node (lru-cache-node-left node)))
                  (r (the lru-cache-node (lru-cache-node-right node))))
@@ -106,7 +107,7 @@
              (setf (lru-cache-node-right node) (lru-cache-node-left head))
              (setf (lru-cache-node-right node) head)
              (setf (lru-cache-node-left head) node)
-             T)))))
+             (lru-cache-node-id node))))))
 
 (defun map-lru-cache (function cache)
   (declare (optimize speed (safety 1)))
