@@ -67,9 +67,9 @@
              (when (lru-cache-node-value prev)
                (remhash (lru-cache-node-value prev) table))
              (setf (gethash value table) prev)
-             (lru-cache-node-id prev)))
+             (values (lru-cache-node-id prev) T)))
           ((eq node head)
-           NIL)
+           (values (lru-cache-node-id node) NIL))
           (T
            (let ((l (the lru-cache-node (lru-cache-node-left node)))
                  (r (the lru-cache-node (lru-cache-node-right node))))
@@ -81,7 +81,7 @@
              (setf (lru-cache-node-left node) (lru-cache-node-left head))
              (setf (lru-cache-node-right node) head)
              (setf (lru-cache-node-left head) node)
-             NIL)))))
+             (values (lru-cache-node-id node) NIL))))))
 
 ;; Returns T if the value existed in the cache.
 (defun lru-cache-pop (value cache)

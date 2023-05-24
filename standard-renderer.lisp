@@ -122,12 +122,15 @@
           (when pushed
             ;; FIXME: implement this
             ;; We have to manually evict all materials that use the texture ID that was evicted.
+            ;; Important here is that we reference via the unit-id, as that's what's being
+            ;; allocated, rather than via the texture object itself.
             (dolist (material (texture-materials id pass))
               (lru-cache-pop material (allocated-materials pass)))
-            (setf (texture-materials id pass) (list material))
+            (setf (texture-materials id pass) ())
             (gl:active-texture id)
             (gl:bind-texture :texture-2d (gl-name texture))
-            (setf (unit-id texture) id))))
+            (setf (unit-id texture) id))
+          (pushnew material (texture-materials id pass))))
       (with-buffer-tx (struct (material-block pass))
         (setf (aref (slot-value struct 'materials) id) material)))
     id))
