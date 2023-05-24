@@ -14,7 +14,7 @@
 
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
-    (disable :cull-face)
+    (disable-feature :cull-face)
     (enter (make-instance 'fps-counter) scene)
     (enter (make-instance 'vertex-entity :vertex-array (// 'workbench 'grid)) scene)
     (enter (make-instance 'animated-entity :asset (assets:asset :woman) :location (vec -2 0 0)) scene)

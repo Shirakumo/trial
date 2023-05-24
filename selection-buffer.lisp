@@ -81,8 +81,8 @@
 ;;                         (cffi:foreign-enum-value '%gl:enum :nearest)))
 
 (defmethod render :around ((buffer selection-buffer) thing)
-  (with-pushed-attribs
-    (disable :blend)
+  (with-pushed-features
+    (disable-feature :blend)
     (call-next-method)))
 
 (define-shader-pass selection-buffer-pass (render-pass)

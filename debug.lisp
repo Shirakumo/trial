@@ -25,12 +25,12 @@
   (setf (uniform program "view_matrix") (view-matrix))
   (setf (uniform program "projection_matrix") (projection-matrix))
   (setf (uniform program "texture_image") 0)
-  (disable :depth-test)
+  (disable-feature :depth-test)
   (gl:active-texture :texture0)
   (gl:bind-texture :texture-2d (gl-name (// 'trial 'ascii)))
   (gl:bind-vertex-array (gl-name (text-vao draw)))
   (gl:draw-arrays :triangles 0 (truncate (length (text draw)) 5))
-  (enable :depth-test))
+  (enable-feature :depth-test))
 
 (define-class-shader (debug-draw-text :vertex-shader)
   "layout (location = 0) in vec3 position;
