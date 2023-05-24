@@ -28,13 +28,3 @@ void standard_init(){
   color = vec4(0);
   material = materials[material_id];
 }
-
-vec4 standard_shade(in StandardLight light){
-  return sample_texture(ALBEDO, uv);
-}
-
-vec4 standard_mix(in vec4 upper, in vec4 lower){
-  return upper + lower;
-}
-
-void standard_finish(){}
