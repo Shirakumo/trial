@@ -515,13 +515,6 @@
    #:task-runner-main
    #:promise-task
    #:with-eval-in-task-thread)
-  ;; attributes.lisp
-  (:export
-   #:enable
-   #:disable
-   #:push-attribs
-   #:pop-attribs
-   #:with-pushed-attribs)
   ;; bag.lisp
   (:export
    #:bag)
@@ -856,6 +849,13 @@
    #:basic-vertex
    #:replace-vertex-data
    #:make-vertex-data)
+  ;; gl-features.lisp
+  (:export
+   #:enable-feature
+   #:disable-feature
+   #:push-features
+   #:pop-features
+   #:with-pushed-features)
   ;; gl-struct.lisp
   (:export
    #:gl-struct

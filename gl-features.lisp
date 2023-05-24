@@ -58,14 +58,14 @@
 (defun attribute-table ()
   (first *attribute-stack*))
 
-(defun enable (&rest attributes)
+(defun enable-feature (&rest attributes)
   (let ((table (attribute-table)))
     (dolist (attrib attributes)
       (unless (gethash attrib table)
         (gl:enable attrib)
         (setf (gethash attrib table) T)))))
 
-(define-compiler-macro enable (&whole whole &environment env &rest attributes)
+(define-compiler-macro enable-feature (&whole whole &environment env &rest attributes)
   (let ((constants) (variants) (table (gensym "TABLE")))
     (dolist (attribute attributes)
       (if (constantp attribute env)
@@ -77,21 +77,21 @@
            whole)
           (T
            `(let ((,table (attribute-table)))
-              (enable ,@variants)
+              (enable-feature ,@variants)
               ,@(loop for constant in constants
                       for attrib = `(load-time-value ,constant)
                       collect `(unless (gethash ,attrib ,table)
                                  (gl:enable ,attrib)
                                  (setf (gethash ,attrib ,table) T))))))))
 
-(defun disable (&rest attributes)
+(defun disable-feature (&rest attributes)
   (let ((table (attribute-table)))
     (dolist (attrib attributes)
       (when (gethash attrib table)
         (gl:disable attrib)
         (setf (gethash attrib table) NIL)))))
 
-(define-compiler-macro disable (&whole whole &environment env &rest attributes)
+(define-compiler-macro disable-feature (&whole whole &environment env &rest attributes)
   (let ((constants) (variants) (table (gensym "TABLE")))
     (dolist (attribute attributes)
       (if (constantp attribute env)
@@ -103,17 +103,17 @@
            whole)
           (T
            `(let ((,table (attribute-table)))
-              (disable ,@variants)
+              (disable-feature ,@variants)
               ,@(loop for constant in constants
                       for attrib = `(load-time-value ,constant)
                       collect `(when (gethash ,attrib ,table)
                                  (gl:disable ,attrib)
                                  (setf (gethash ,attrib ,table) NIL))))))))
 
-(defun push-attribs (&optional (table (make-attribute-table (attribute-table))))
+(defun push-features (&optional (table (make-attribute-table (attribute-table))))
   (push table *attribute-stack*))
 
-(defun pop-attribs ()
+(defun pop-features ()
   (let ((prev (pop *attribute-stack*))
         (cur (attribute-table)))
     (loop for k being the hash-keys of prev
@@ -123,7 +123,7 @@
                    ((and (not v) (gethash k cur))
                     (gl:enable k))))))
 
-(defmacro with-pushed-attribs (&body body)
+(defmacro with-pushed-features (&body body)
   `(progn (push-attribs)
           (unwind-protect
                (progn ,@body)
