@@ -113,3 +113,30 @@
   ((material :initarg :material :accessor material))
   (:shader-file (trial "standard-renderable.glsl"))
   (:inhibit-shaders (shader-entity :fragment-shader)))
+
+(defmethod enable ((material material) (pass standard-render-pass))
+  (multiple-value-bind (id pushed) (lru-cache-push material (allocated-materials pass))
+    (when pushed
+      (dolist (texture (textures material))
+        (multiple-value-bind (id pushed) (lru-cache-push texture (allocated-textures pass))
+          (when pushed
+            ;; FIXME: implement this
+            ;; We have to manually evict all materials that use the texture ID that was evicted.
+            (dolist (material (texture-materials id pass))
+              (lru-cache-pop material (allocated-materials pass)))
+            (setf (texture-materials id pass) (list material))
+            (gl:active-texture id)
+            (gl:bind-texture :texture-2d (gl-name texture))
+            (setf (unit-id texture) id))))
+      (with-buffer-tx (struct (material-block pass))
+        (setf (aref (slot-value struct 'materials) id) material)))
+    id))
+
+(defmethod enable ((light standard-light) (pass standard-render-pass))
+  (multiple-value-bind (id pushed) (lru-cache-push light (allocated-lights pass))
+    (when pushed
+      (with-buffer-tx (struct (// 'trial 'standard-light-block))
+        (setf (aref (slot-value struct 'lights) id) light)))))
+
+(defmethod render-with :before ((pass standard-render-pass) (object standard-renderable) program)
+  (setf (uniform program "object_material") (enable (material object) pass)))

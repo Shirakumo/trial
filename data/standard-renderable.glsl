@@ -15,11 +15,13 @@ void main(){
 }
 
 #section FRAGMENT_SHADER
+uniform int object_material;
 in vec3 v_position;
 in vec3 v_normal;
 in vec3 v_uv;
 
-void standard_init@after(){
+void standard_init@before(){
+  material_id = object_material;
   uv = v_uv;
   normal = v_normal;
   position = v_position;
