@@ -25,7 +25,11 @@
 
 (defmethod resolve-shader-include ((source cons))
   (destructuring-bind (pool name) source
-    (gl-source (asset pool name T))))
+    (etypecase name
+      (symbol
+       (gl-source (asset pool name T)))
+      ((or string pathname)
+       (resolve-shader-include (pool-path pool name))))))
 
 (defclass shader-entity-class (standard-class)
   ((effective-shaders :initform () :accessor effective-shaders)
