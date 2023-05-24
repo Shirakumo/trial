@@ -76,10 +76,11 @@
       (swap-buffers context))))
 
 (defmethod render-loop :around ((display display))
-  (unwind-protect
-       (call-next-method)
-    (when (context display)
-      (release-context (context display)))))
+  (let ((*context* (context display)))
+    (unwind-protect
+         (call-next-method)
+      (when (context display)
+        (release-context (context display))))))
 
 (defmethod width ((display display))
   (width (context display)))
