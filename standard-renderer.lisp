@@ -6,8 +6,10 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+;; FIXME: would be nice to have this dynamically configurable....
 (defconstant MAX-LIGHTS 128)
 (defconstant MAX-MATERIALS 64)
+(defconstant MAX-TEXTURES 32)
 
 (define-gl-struct standard-light
   (type :int)
@@ -63,7 +65,10 @@
    (depth :port-type output :attachment :depth-stencil-attachment :reader depth)
    (tt :initform 0.0 :accessor tt)
    (dt :initform 0.0 :accessor dt)
-   (frame-start :initform 0d0 :accessor frame-start))
+   (frame-start :initform 0d0 :accessor frame-start)
+   (allocated-materials :initform (make-lru-cache MAX-MATERIALS) :accessor allocated-materials)
+   (allocated-textures :initform (make-lru-cache MAX-TEXTURES) :accessor allocated-textures)
+   (allocated-lights :initform (make-lru-cache MAX-LIGHTS) :accessor allocated-lights))
   (:buffers (trial standard-environment-information))
   (:shader-file (trial "standard-render-pass.glsl")))
 
