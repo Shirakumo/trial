@@ -170,7 +170,7 @@
                (let ((input (if (rest inputs)
                                 (glsl-toolkit:merge-shader-sources inputs :min-version (glsl-target-version *context*))
                                 (first inputs))))
-                 (push (make-instance 'shader :source input :type type) shaders))))
+                 (push (make-instance 'shader :source (glsl-toolkit:combine-methods input) :type type) shaders))))
     (loop for resource-spec in (effective-buffers object)
           do (push (apply #'// resource-spec) buffers))
     (loop for resource-spec in (effective-buffers pass)

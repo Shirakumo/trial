@@ -179,7 +179,7 @@
 (defmethod make-class-shader-program ((class shader-entity-class))
   (make-instance 'shader-program
                  :shaders (loop for (type source) on (effective-shaders class) by #'cddr
-                                collect (make-instance 'shader :source source :type type))
+                                collect (make-instance 'shader :source source :type (glsl-toolkit:combine-methods type)))
                  :buffers (loop for resource-spec in (effective-buffers class)
                                 collect (apply #'// resource-spec))))
 
