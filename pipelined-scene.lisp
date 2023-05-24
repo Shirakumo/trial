@@ -12,7 +12,11 @@
 (defmethod setup-scene :after (main (scene scene))
   (pack-pipeline scene (context main))
   (loop for pass across (passes scene)
-        do (enter scene pass)))
+        do (enter scene pass))
+  ;; KLUDGE: this will trigger class changed events which we can ignore.
+  ;;         we have to do this both because it's a waste of time, but also
+  ;;         because not doing so leads to real ???? OpenGL driver state.
+  (discard-events scene 'class-changed))
 
 (defmethod stage :after ((scene pipelined-scene) (area staging-area))
   (loop for texture across (textures scene)
