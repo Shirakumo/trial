@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defvar *gl-attributes* #(:blend
+(defvar *gl-features* #(:blend
                           :clip-distance0
                           :clip-distance1
                           :color-logic-op
@@ -36,86 +36,86 @@
                           :texture-cube-map-seamless
                           :program-point-size))
 
-(defvar *default-enabled-gl-attributes* #(:dither :multisample))
+(defvar *default-enabled-gl-features* #(:dither :multisample))
 
-(defun make-attribute-table (&optional parent)
-  (let ((table (make-hash-table :test 'eq :size (length *gl-attributes*))))
+(defun make-feature-table (&optional parent)
+  (let ((table (make-hash-table :test 'eq :size (length *gl-features*))))
     (if parent
         (loop for k being the hash-keys of parent
               for v being the hash-values of parent
               do (setf (gethash k table) v))
-        (reset-attributes table))
+        (reset-features table))
     table))
 
-(defun reset-attributes (&optional (table (attribute-table)))
-  (loop for k across *gl-attributes*
-        do (if (find k *default-enabled-gl-attributes*)
+(defun reset-features (&optional (table (feature-table)))
+  (loop for k across *gl-features*
+        do (if (find k *default-enabled-gl-features*)
                (setf (gethash k table) T)
                (setf (gethash k table) NIL))))
 
-(defvar *attribute-stack* (list (make-attribute-table)))
+(defvar *feature-stack* (list (make-feature-table)))
 
-(defun attribute-table ()
-  (first *attribute-stack*))
+(defun feature-table ()
+  (first *feature-stack*))
 
-(defun enable-feature (&rest attributes)
-  (let ((table (attribute-table)))
-    (dolist (attrib attributes)
-      (unless (gethash attrib table)
-        (gl:enable attrib)
-        (setf (gethash attrib table) T)))))
+(defun enable-feature (&rest features)
+  (let ((table (feature-table)))
+    (dolist (feature features)
+      (unless (gethash feature table)
+        (gl:enable feature)
+        (setf (gethash feature table) T)))))
 
-(define-compiler-macro enable-feature (&whole whole &environment env &rest attributes)
+(define-compiler-macro enable-feature (&whole whole &environment env &rest features)
   (let ((constants) (variants) (table (gensym "TABLE")))
-    (dolist (attribute attributes)
-      (if (constantp attribute env)
-          (push attribute constants)
-          (push attribute variants)))
+    (dolist (feature features)
+      (if (constantp feature env)
+          (push feature constants)
+          (push feature variants)))
     (cond ((and (null constants) (null variants))
            ())
           ((null constants)
            whole)
           (T
-           `(let ((,table (attribute-table)))
+           `(let ((,table (feature-table)))
               (enable-feature ,@variants)
               ,@(loop for constant in constants
-                      for attrib = `(load-time-value ,constant)
-                      collect `(unless (gethash ,attrib ,table)
-                                 (gl:enable ,attrib)
-                                 (setf (gethash ,attrib ,table) T))))))))
+                      for feature = `(load-time-value ,constant)
+                      collect `(unless (gethash ,feature ,table)
+                                 (gl:enable ,feature)
+                                 (setf (gethash ,feature ,table) T))))))))
 
-(defun disable-feature (&rest attributes)
-  (let ((table (attribute-table)))
-    (dolist (attrib attributes)
-      (when (gethash attrib table)
-        (gl:disable attrib)
-        (setf (gethash attrib table) NIL)))))
+(defun disable-feature (&rest features)
+  (let ((table (feature-table)))
+    (dolist (feature features)
+      (when (gethash feature table)
+        (gl:disable feature)
+        (setf (gethash feature table) NIL)))))
 
-(define-compiler-macro disable-feature (&whole whole &environment env &rest attributes)
+(define-compiler-macro disable-feature (&whole whole &environment env &rest features)
   (let ((constants) (variants) (table (gensym "TABLE")))
-    (dolist (attribute attributes)
-      (if (constantp attribute env)
-          (push attribute constants)
-          (push attribute variants)))
+    (dolist (feature features)
+      (if (constantp feature env)
+          (push feature constants)
+          (push feature variants)))
     (cond ((and (null constants) (null variants))
            ())
           ((null constants)
            whole)
           (T
-           `(let ((,table (attribute-table)))
+           `(let ((,table (feature-table)))
               (disable-feature ,@variants)
               ,@(loop for constant in constants
-                      for attrib = `(load-time-value ,constant)
-                      collect `(when (gethash ,attrib ,table)
-                                 (gl:disable ,attrib)
-                                 (setf (gethash ,attrib ,table) NIL))))))))
+                      for feature = `(load-time-value ,constant)
+                      collect `(when (gethash ,feature ,table)
+                                 (gl:disable ,feature)
+                                 (setf (gethash ,feature ,table) NIL))))))))
 
-(defun push-features (&optional (table (make-attribute-table (attribute-table))))
-  (push table *attribute-stack*))
+(defun push-features (&optional (table (make-feature-table (feature-table))))
+  (push table *feature-stack*))
 
 (defun pop-features ()
-  (let ((prev (pop *attribute-stack*))
-        (cur (attribute-table)))
+  (let ((prev (pop *feature-stack*))
+        (cur (feature-table)))
     (loop for k being the hash-keys of prev
           for v being the hash-values of prev
           do (cond ((and v (not (gethash k cur)))
@@ -124,7 +124,7 @@
                     (gl:enable k))))))
 
 (defmacro with-pushed-features (&body body)
-  `(progn (push-attribs)
+  `(progn (push-features)
           (unwind-protect
                (progn ,@body)
-            (pop-attribs))))
+            (pop-features))))
