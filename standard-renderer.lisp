@@ -27,12 +27,6 @@
     'standard-light-block
   :binding NIL)
 
-(define-gl-struct standard-textures
-  (albedo :int)
-  (normal :int)
-  (emission :int)
-  (metal-rough-occlusion :int))
-
 (define-gl-struct standard-material
   (textures (:array :int 8))
   (albedo-factor :vec4)
@@ -90,6 +84,10 @@
       (setf (slot-value buffer 'tt) (tt pass))
       (setf (slot-value buffer 'dt) (dt pass))
       (setf (slot-value buffer 'fdt) (float fdt 0f0)))))
+
+(define-shader-pass phong-render-pass (standard-render-pass)
+  ()
+  (:shader-file (trial "standard-render-phong.glsl")))
 
 (define-shader-entity standard-renderable (renderable transformed-entity)
   ((material :initarg :material :accessor material))
