@@ -681,13 +681,19 @@
                        (setf minimal current))
                   finally (return minimal))))))
 
-(defun format-with-line-numbers (text)
-  (with-output-to-string (out)
-    (with-input-from-string (in text)
-      (loop for i from 1
-            for line = (read-line in NIL)
-            while line
-            do (format out "~3d ~a~%" i line)))))
+(defun format-with-line-numbers (text &optional out)
+  (etypecase out
+    (null
+     (with-output-to-string (out)
+       (format-with-line-numbers text out)))
+    ((eql T)
+     (format-with-line-numbers text *standard-output*))
+    (stream
+     (with-input-from-string (in text)
+       (loop for i from 1
+             for line = (read-line in NIL)
+             while line
+             do (format out "~3d ~a~%" i line))))))
 
 (defun generate-name (&optional indicator)
   (loop for name = (format NIL "~a-~d" (or indicator "ENTITY") (incf *gensym-counter*))
