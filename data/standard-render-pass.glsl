@@ -13,6 +13,10 @@ vec3 position;
 vec3 normal;
 vec4 color;
 
+vec4 sample_texture(int id, vec2 uv){
+  return texture(textures[id], uv);
+}
+
 void standard_init(){
   color = vec4(0);
 }

@@ -85,9 +85,24 @@
       (setf (slot-value buffer 'dt) (dt pass))
       (setf (slot-value buffer 'fdt) (float fdt 0f0)))))
 
+(define-gl-struct phong-material
+  (textures (:array :int 3))
+  (diffuse-factor :vec4)
+  (specular-factor :vec3)
+  (alpha-cutoff :float))
+
+(define-gl-struct phong-material-block
+  (materials (:array (:struct phong-material) #.MAX-MATERIALS))
+  (material-count :int))
+
+(define-asset (trial phong-material-block) uniform-block
+    'standard-material-block
+  :binding NIL)
+
 (define-shader-pass phong-render-pass (standard-render-pass)
   ()
-  (:shader-file (trial "standard-render-phong.glsl")))
+  (:shader-file (trial "standard-render-phong.glsl"))
+  (:buffers (trial phong-material-block)))
 
 (define-shader-entity standard-renderable (renderable transformed-entity)
   ((material :initarg :material :accessor material))

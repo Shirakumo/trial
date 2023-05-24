@@ -1,19 +1,30 @@
 #section FRAGMENT_SHADER
+#include (trial:trial trial::phong-material-block)
 
+PhongMaterial material;
+int material_id;
 vec3 view_dir;
-vec3 diffuse;
+vec4 diffuse;
 vec3 specular;
 
 void standard_init@after(){
+  material = materials[material_id];
   view_dir = normalize(camera_position - position);
-  diffuse = sample_texture(ALBEDO, uv).xyz;
-  specular = sample_texture(SPECULAR, uv).xyz;
+  diffuse = sample_texture(material.textures[0], uv) * material.diffuse_factor;
+  specular = sample_texture(material.textures[1], uv).xyz * material.specular_factor;
 }
 
 vec4 standard_shade(in StandardLight light){
   StandardLightData light_data = evaluate_light(light);
   vec3 reflect_dir = reflect(-light_data.direction, normal);
-  return light_data.radiance
-    * (diffuse * max(dot(normal, light_data.direction), 0)
-      +specular * pow(max(dot(view_dir, reflect_dir), 0.0), 32));
+  return vec4(light_data.radiance
+              * (diffuse.xyz * max(dot(normal, light_data.direction), 0)
+                 +specular * pow(max(dot(view_dir, reflect_dir), 0.0), 32)),
+              1.0);
+}
+
+vec4 standard_finish(){
+  color.w = diffuse.w;
+  if(color.w < material.alpha_cutoff)
+    color = vec4(0);
 }

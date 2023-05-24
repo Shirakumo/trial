@@ -18,13 +18,9 @@ void main(){
 in vec3 v_position;
 in vec3 v_normal;
 in vec3 v_uv;
-uniform int material_id;
-StandardMaterial material;
 
-void standard_init(){
+void standard_init@after(){
   uv = v_uv;
   normal = v_normal;
   position = v_position;
-  color = vec4(0);
-  material = materials[material_id];
 }
