@@ -88,9 +88,7 @@
     ;; Compute effective single shader sources
     (loop for (type shaders) on effective-shaders by #'cddr
           do (setf (getf effective-shaders type)
-                   (glsl-toolkit:merge-shader-sources
-                    (mapcar #'second (stable-sort shaders #'> :key #'first))
-                    :min-version NIL)))
+                   (mapcar #'second (stable-sort shaders #'> :key #'first))))
     effective-shaders))
 
 (defmethod compute-effective-buffers ((class shader-entity-class))
@@ -179,7 +177,10 @@
 (defmethod make-class-shader-program ((class shader-entity-class))
   (make-instance 'shader-program
                  :shaders (loop for (type source) on (effective-shaders class) by #'cddr
-                                collect (make-instance 'shader :source source :type (glsl-toolkit:combine-methods type)))
+                                for processed = (glsl-toolkit:merge-shader-sources
+                                                 (glsl-toolkit:combine-methods type)
+                                                 :min-version (glsl-target-version *context*))
+                                collect (make-instance 'shader :source processed :type type))
                  :buffers (loop for resource-spec in (effective-buffers class)
                                 collect (apply #'// resource-spec))))
 
@@ -200,6 +201,15 @@
 (defmacro define-class-shader ((class type &optional (priority 0)) &body definitions)
   `(setf (class-shader ,type ',class)
          (list ,priority (combine-shader-sources ,@definitions))))
+
+(defmethod describe-object ((class shader-entity-class) stream)
+  (call-next-method)
+  (loop for (type parts) on (compute-effective-shaders class) by #'cddr
+        do (format stream "~&~%[~a]~%" type)
+           (format-with-line-numbers
+            (glsl-toolkit:merge-shader-sources
+             (list (glsl-toolkit:combine-methods parts)))
+            stream)))
 
 (defclass shader-entity (entity)
   ()
