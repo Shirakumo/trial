@@ -11,7 +11,8 @@
         #:org.shirakumo.flare.vector
         #:org.shirakumo.flare.matrix
         #:org.shirakumo.flare.quaternion
-        #:org.shirakumo.flare.transform)
+        #:org.shirakumo.flare.transform
+        #:org.shirakumo.lru-cache)
   (:shadow #:// #:load)
   (:import-from #:static-vectors #:static-vector-pointer)
   (:import-from #:flow #:port)

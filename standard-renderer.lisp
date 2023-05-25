@@ -63,19 +63,17 @@
   ((color :port-type output :texspec (:internal-format :rgba32f) :attachment :color-attachment0 :reader color)
    (normal :port-type output :texspec (:internal-format :rgb16f) :attachment :color-attachment1 :reader normal)
    (depth :port-type output :attachment :depth-stencil-attachment :reader depth)
-   (tt :initform 0.0 :accessor tt)
-   (dt :initform 0.0 :accessor dt)
    (frame-start :initform 0d0 :accessor frame-start)
-   (allocated-materials :initform (make-lru-cache MAX-MATERIALS) :accessor allocated-materials)
-   (allocated-textures :initform (make-lru-cache MAX-TEXTURES) :accessor allocated-textures)
-   (allocated-lights :initform (make-lru-cache MAX-LIGHTS) :accessor allocated-lights))
+   (allocated-materials :initform (make-lru-cache MAX-MATERIALS 'eq) :accessor allocated-materials)
+   (allocated-textures :initform (make-lru-cache MAX-TEXTURES 'eq) :accessor allocated-textures)
+   (allocated-lights :initform (make-lru-cache MAX-LIGHTS 'eq) :accessor allocated-lights))
   (:buffers (trial standard-environment-information))
   (:shader-file (trial "standard-render-pass.glsl")))
 
-(define-handler (standard-render-pass tick) (dt)
-  (let ((dt (float dt 0f0)))
-    (setf (dt standard-render-pass) dt)
-    (setf (tt standard-render-pass) (+ (tt standard-render-pass) dt))))
+(define-handler (standard-render-pass tick) (tt dt)
+  (with-buffer-tx (buffer (// 'trial 'standard-environment-information) :update NIL)
+    (setf (slot-value buffer 'tt) (float tt 0f0))
+    (setf (slot-value buffer 'dt) (float dt 0f0))))
 
 (defmethod render :before ((pass standard-render-pass) target)
   (let* ((frame-time (current-time))
@@ -86,9 +84,31 @@
       (setf (slot-value buffer 'projection-matrix) (projection-matrix))
       (setf (slot-value buffer 'view-size) (vec2 (width (framebuffer pass)) (height (framebuffer pass))))
       (setf (slot-value buffer 'camera-position) (location (camera pass)))
-      (setf (slot-value buffer 'tt) (tt pass))
-      (setf (slot-value buffer 'dt) (dt pass))
       (setf (slot-value buffer 'fdt) (float fdt 0f0)))))
+
+(defmethod bind-textures ((pass standard-render-pass))
+  (call-next-method)
+  (do-lru-cache (texture id (allocated-textures pass))
+    (gl:active-texture id)
+    (gl:bind-texture :texture-2d (gl-name texture))))
+
+(defmethod enable ((texture texture) (pass standard-render-pass))
+  (let ((id (lru-cache-push texture (allocated-textures pass))))
+    (when id
+      (gl:active-texture id)
+      (gl:bind-texture :texture-2d (gl-name texture)))))
+
+(defmethod disable ((texture texture) (pass standard-render-pass))
+  (lru-cache-pop texture (allocated-textures pass)))
+
+(defmethod enable ((light standard-light) (pass standard-render-pass))
+  (let ((id (lru-cache-push light (allocated-lights pass))))
+    (when id
+      (with-buffer-tx (struct (// 'trial 'standard-light-block))
+        (setf (aref (slot-value struct 'lights) id) light)))))
+
+(defmethod disable ((light standard-light) (pass standard-render-pass))
+  (lru-cache-pop light (allocated-lights pass)))
 
 (define-gl-struct phong-material
   (textures (:array :int 3))
@@ -114,32 +134,26 @@
   (:shader-file (trial "standard-renderable.glsl"))
   (:inhibit-shaders (shader-entity :fragment-shader)))
 
+(defclass material ()
+  ((textures :initform (make-array MAX-TEXTURES :fill-pointer 0) :accessor textures)))
+
 (defmethod enable ((material material) (pass standard-render-pass))
-  (multiple-value-bind (id pushed) (lru-cache-push material (allocated-materials pass))
-    (when pushed
+  (let ((id (lru-cache-push material (allocated-materials pass))))
+    (when id
+      (setf (unit-id material) id)
       (dolist (texture (textures material))
-        (multiple-value-bind (id pushed) (lru-cache-push texture (allocated-textures pass))
-          (when pushed
+        (let ((id (enable texture pass)))
+          (when id
             ;; FIXME: implement this
             ;; We have to manually evict all materials that use the texture ID that was evicted.
             ;; Important here is that we reference via the unit-id, as that's what's being
             ;; allocated, rather than via the texture object itself.
             (dolist (material (texture-materials id pass))
               (lru-cache-pop material (allocated-materials pass)))
-            (setf (texture-materials id pass) ())
-            (gl:active-texture id)
-            (gl:bind-texture :texture-2d (gl-name texture))
-            (setf (unit-id texture) id))
+            (setf (texture-materials id pass) ()))
           (pushnew material (texture-materials id pass))))
       (with-buffer-tx (struct (material-block pass))
-        (setf (aref (slot-value struct 'materials) id) material)))
-    id))
-
-(defmethod enable ((light standard-light) (pass standard-render-pass))
-  (multiple-value-bind (id pushed) (lru-cache-push light (allocated-lights pass))
-    (when pushed
-      (with-buffer-tx (struct (// 'trial 'standard-light-block))
-        (setf (aref (slot-value struct 'lights) id) light)))))
+        (setf (elt (slot-value struct 'materials) id) material)))))
 
 (defmethod render-with :before ((pass standard-render-pass) (object standard-renderable) program)
   (setf (uniform program "object_material") (enable (material object) pass)))
