@@ -62,7 +62,6 @@
                (:file "list-container" :depends-on ("package" "container"))
                (:file "layered-container" :depends-on ("package" "container"))
                (:file "loader" :depends-on ("package" "resource" "asset"))
-               (:file "lru-cache" :depends-on ("package"))
                (:file "main" :depends-on ("package" "display" "toolkit" "scene" "pipeline"))
                (:file "mapping" :depends-on ("package" "event-loop" "actions" "toolkit" "input"))
                (:file "os-resources" :depends-on ("package"))
@@ -90,7 +89,7 @@
                (:file "skybox" :depends-on ("package" "shader-entity" "transforms"))
                (:file "sprite" :depends-on ("package" "shader-entity" "helpers" ("assets" "sprite-data")))
                (:file "ssao" :depends-on ("package" "shader-pass" "transforms"))
-               (:file "standard-renderer" :depends-on ("package" "shader-pass" "helpers" "lru-cache"))
+               (:file "standard-renderer" :depends-on ("package" "shader-pass" "helpers"))
                (:file "static-vector" :depends-on ("package"))
                (:file "text" :depends-on ("package" "helpers" ("assets" "image")))
                (:file "tile-layer" :depends-on ("package" "helpers" ("assets" "tile-data")))
@@ -184,4 +183,5 @@
                :language-codes
                :promise
                :simple-tasks
+               :lru-cache
                (:feature :windows :com-on)))
