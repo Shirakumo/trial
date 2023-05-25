@@ -167,7 +167,7 @@
     (loop for type in *shader-type-list*
           for inputs = (compute-shader type pass object)
           do (when inputs
-               (let* ((inptus (glsl-toolkit:combine-methods inputs))
+               (let* ((inputs (glsl-toolkit:combine-methods inputs))
                       (input (if (rest inputs)
                                  (glsl-toolkit:merge-shader-sources inputs :min-version (glsl-target-version *context*))
                                  (first inputs))))

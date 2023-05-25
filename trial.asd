@@ -39,7 +39,7 @@
                (:file "data-pointer" :depends-on ("package" "type-info" "static-vector"))
                (:file "debug" :depends-on ("package" "shader-entity" "text" ("physics" "primitives")))
                (:file "deploy" :depends-on ("package" "gamepad"))
-               (:file "display" :depends-on ("package" "context" "render-loop" "power" "transforms"))
+               (:file "display" :depends-on ("package" "context" "render-loop" "power" "transforms" "gl-features"))
                (:file "documentation" :depends-on ("package"))
                (:file "effects" :depends-on ("package" "shader-pass"))
                (:file "error-handling" :depends-on ("package" "toolkit"))

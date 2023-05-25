@@ -74,7 +74,7 @@ StandardLightData evaluate_light(in StandardLight light){
   case 1: return evaluate_light_point(light);
   case 2: return evaluate_light_directional(light);
   case 3: return evaluate_light_spot(light);
-  default: return StandardLightData(-normal, vec3(0));
+  default: return StandardLightData(-normal, vec3(1,0,1));
   }
 }
 
