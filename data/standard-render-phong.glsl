@@ -2,6 +2,9 @@
 #include (trial:trial trial::phong-material-block)
 
 PhongMaterial material;
+uniform int material_id;
+uniform sampler2D diffuse_tex;
+uniform sampler2D specular_tex;
 int material_id;
 vec3 view_dir;
 vec4 diffuse;
@@ -10,8 +13,8 @@ vec3 specular;
 void standard_init@after(){
   material = materials[material_id];
   view_dir = normalize(camera_position - position);
-  diffuse = sample_texture(material.textures[0], uv) * material.diffuse_factor;
-  specular = sample_texture(material.textures[1], uv).xyz * material.specular_factor;
+  diffuse = texture(diffuse_tex, uv) * material.diffuse_factor;
+  specular = texture(specular_tex, uv).xyz * material.specular_factor;
 }
 
 vec4 standard_shade(in StandardLight light){

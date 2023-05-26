@@ -9,7 +9,6 @@
 ;; FIXME: would be nice to have this dynamically configurable....
 (defconstant MAX-LIGHTS 128)
 (defconstant MAX-MATERIALS 64)
-(defconstant MAX-TEXTURES 32)
 
 (define-gl-struct standard-light
   (type :int)
@@ -64,11 +63,19 @@
    (normal :port-type output :texspec (:internal-format :rgb16f) :attachment :color-attachment1 :reader normal)
    (depth :port-type output :attachment :depth-stencil-attachment :reader depth)
    (frame-start :initform 0d0 :accessor frame-start)
+   (allocated-textures :initform (make-lru-cache 16 'eq) :accessor allocated-textures)
    (allocated-materials :initform (make-lru-cache MAX-MATERIALS 'eq) :accessor allocated-materials)
-   (allocated-textures :initform (make-lru-cache MAX-TEXTURES 'eq) :accessor allocated-textures)
    (allocated-lights :initform (make-lru-cache MAX-LIGHTS 'eq) :accessor allocated-lights))
   (:buffers (trial standard-environment-information))
   (:shader-file (trial "standard-render-pass.glsl")))
+
+(defmethod shared-initialize :after ((pass standard-render-pass) slots &key)
+  (let ((max-textures (gl:get-integer :max-texture-image-units)))
+    (dolist (port (flow:ports pass))
+      (typecase port
+        (texture-port
+         (setf max-textures (max max-textures (unit-id port))))))
+    (lru-cache-resize (allocated-textures pass) max-textures)))
 
 (define-handler (standard-render-pass tick) (tt dt)
   (with-buffer-tx (buffer (// 'trial 'standard-environment-information) :update NIL)
@@ -101,6 +108,9 @@
 (defmethod disable ((texture texture) (pass standard-render-pass))
   (lru-cache-pop texture (allocated-textures pass)))
 
+(defmethod local-id ((texture texture) (pass standard-render-pass))
+  (lru-cache-id texture (allocated-textures pass)))
+
 (defmethod enable ((light standard-light) (pass standard-render-pass))
   (let ((id (lru-cache-push light (allocated-lights pass))))
     (when id
@@ -110,8 +120,34 @@
 (defmethod disable ((light standard-light) (pass standard-render-pass))
   (lru-cache-pop light (allocated-lights pass)))
 
+(defmethod local-id ((light standard-light) (pass standard-render-pass))
+  (lru-cache-id light (allocated-lights pass)))
+
+(defclass material ()
+  ())
+
+(defmethod enable ((material material) (pass standard-render-pass))
+  (let ((id (lru-cache-push material (allocated-materials pass))))
+    (when id
+      (with-buffer-tx (struct (material-block pass))
+        (setf (elt (slot-value struct 'materials) id) material)))))
+
+(defmethod disable ((material material) (pass standard-render-pass))
+  (lru-cache-pop material (allocated-materials pass)))
+
+(defmethod local-id ((material material) (pass standard-render-pass))
+  (lru-cache-id material (allocated-materials pass)))
+
+(define-shader-entity standard-renderable (renderable transformed-entity)
+  ((material :initarg :material :accessor material))
+  (:shader-file (trial "standard-renderable.glsl"))
+  (:inhibit-shaders (shader-entity :fragment-shader)))
+
+(defmethod render-with :before ((pass standard-render-pass) (object standard-renderable) program)
+  (enable (material object) pass)
+  (prepare-pass-program material program))
+
 (define-gl-struct phong-material
-  (textures (:array :int 3))
   (diffuse-factor :vec4)
   (specular-factor :vec3)
   (alpha-cutoff :float))
@@ -125,35 +161,13 @@
   :binding NIL)
 
 (define-shader-pass phong-render-pass (standard-render-pass)
-  ()
+  ((material-block :initform (// 'trial 'phong-material-block) :accessor material-block))
   (:shader-file (trial "standard-render-phong.glsl"))
   (:buffers (trial phong-material-block)))
 
-(define-shader-entity standard-renderable (renderable transformed-entity)
-  ((material :initarg :material :accessor material))
-  (:shader-file (trial "standard-renderable.glsl"))
-  (:inhibit-shaders (shader-entity :fragment-shader)))
+(defmethod render-with :before ((pass phong-render-pass) (object standard-renderable) program)
+  (setf (uniform program "material_id") (local-id (material object) pass)))
 
-(defclass material ()
-  ((textures :initform (make-array MAX-TEXTURES :fill-pointer 0) :accessor textures)))
-
-(defmethod enable ((material material) (pass standard-render-pass))
-  (let ((id (lru-cache-push material (allocated-materials pass))))
-    (when id
-      (setf (unit-id material) id)
-      (dolist (texture (textures material))
-        (let ((id (enable texture pass)))
-          (when id
-            ;; FIXME: implement this
-            ;; We have to manually evict all materials that use the texture ID that was evicted.
-            ;; Important here is that we reference via the unit-id, as that's what's being
-            ;; allocated, rather than via the texture object itself.
-            (dolist (material (texture-materials id pass))
-              (lru-cache-pop material (allocated-materials pass)))
-            (setf (texture-materials id pass) ()))
-          (pushnew material (texture-materials id pass))))
-      (with-buffer-tx (struct (material-block pass))
-        (setf (elt (slot-value struct 'materials) id) material)))))
-
-(defmethod render-with :before ((pass standard-render-pass) (object standard-renderable) program)
-  (setf (uniform program "object_material") (enable (material object) pass)))
+(defmethod prepare-pass-program ((material phong-material) program)
+  (setf (uniform program "diffuse_tex") (diffuse-texture material))
+  (setf (uniform program "specular_tex") (specular-texture material)))

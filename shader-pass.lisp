@@ -113,13 +113,11 @@
   (:inhibit-shaders (shader-entity :fragment-shader)))
 
 (defmethod shared-initialize :after ((pass shader-pass) slots &key)
-  (loop with texture-index =  (gl:get-integer :max-texture-image-units)
-        for slot in (c2mop:class-slots (class-of pass))
-        when (flow:port-type slot)
-        do (let ((port (flow::port-slot-value pass slot)))
-             (typecase port
-               (texture-port
-                (setf (unit-id port) (decf texture-index)))))))
+  (loop with texture-index = (gl:get-integer :max-texture-image-units)
+        for port in (flow:ports pass)
+        do (typecase port
+             (texture-port
+              (setf (unit-id port) (decf texture-index))))))
 
 (defclass transformed () ())
 (defclass renderable () ())
