@@ -6,6 +6,21 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(define-asset (trial missing) image
+    #p "missing.png"
+  :min-filter :nearest
+  :mag-filter :nearest)
+
+(define-asset (trial black) image
+    #p "black.png"
+  :min-filter :nearest
+  :mag-filter :nearest)
+
+(define-asset (trial neutral-normal) image
+    #p "neutral-normal.png"
+  :min-filter :nearest
+  :mag-filter :nearest)
+
 (define-gl-struct standard-light
   (type :int)
   (position :vec3)
