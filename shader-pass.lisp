@@ -127,8 +127,7 @@
   (:method-combination progn :most-specific-last))
 (defgeneric bind-textures (object))
 (defgeneric object-renderable-p (object pass))
-(defgeneric compute-shader (shader-type pass object)
-  (:method-combination append :most-specific-last))
+(defgeneric compute-shader (shader-type pass object))
 (defgeneric update-uniforms (program pass object))
 
 (defmethod object-renderable-p (object (pass shader-pass)) NIL)
@@ -144,17 +143,17 @@
   (dolist (port (flow:ports pass))
     (check-consistent port)))
 
-(defmethod compute-shader append (type pass object)
+(defmethod compute-shader (type pass object)
   ())
 
-(defmethod compute-shader append (type (pass shader-pass) object)
-  (enlist (effective-shader type pass)))
+(defmethod compute-shader (type (pass shader-pass) object)
+  (append (call-next-method) (enlist (effective-shader type pass))))
 
-(defmethod compute-shader append (type pass (object shader-entity))
-  (enlist (effective-shader type object)))
+(defmethod compute-shader (type pass (object shader-entity))
+  (append (call-next-method) (enlist (effective-shader type object))))
 
-(defmethod compute-shader append (type pass (object shader-entity-class))
-  (enlist (effective-shader type object)))
+(defmethod compute-shader (type pass (object shader-entity-class))
+  (append (call-next-method) (enlist (effective-shader type object))))
 
 (defmethod make-pass-shader-program ((pass shader-pass) object)
   ;; TODO: alias program against identical programs
@@ -162,10 +161,9 @@
     (loop for type in *shader-type-list*
           for inputs = (compute-shader type pass object)
           do (when inputs
-               (let* ((inputs (glsl-toolkit:combine-methods inputs))
-                      (input (if (rest inputs)
-                                 (glsl-toolkit:merge-shader-sources inputs :min-version (glsl-target-version *context*))
-                                 (first inputs))))
+               (let ((input (glsl-toolkit:merge-shader-sources
+                             (list (glsl-toolkit:combine-methods inputs))
+                             :min-version (glsl-target-version *context*))))
                  (push (make-instance 'shader :source input :type type) shaders))))
     (make-instance 'shader-program
                    :shaders shaders

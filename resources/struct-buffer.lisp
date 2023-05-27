@@ -28,6 +28,9 @@
 (defmethod buffer-field-size ((standard symbol) (buffer struct-buffer) base)
   (buffer-field-size standard (struct buffer) 0))
 
+(defmethod buffer-field-size ((standard (eql T)) (buffer struct-buffer) base)
+  (buffer-field-size (layout-standard buffer) buffer 0))
+
 ;;; FIXME: we update the buffer just fine, but what about the shader programs?
 (defmethod c2mop:update-dependent ((class gl-struct-class) (buffer struct-buffer) &rest _)
   (declare (ignore _))

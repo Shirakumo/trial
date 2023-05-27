@@ -82,9 +82,15 @@
 (defgeneric material-block-type (standard-render-pass))
 (defgeneric update-material (material-block material id))
 
-(defmethod compute-shader append (type (pass standard-render-pass) object)
-  (list (gl-source (material-block pass))
-        (gl-source (light-block pass))))
+(defmethod compute-shader (type (pass standard-render-pass) object)
+  (if (or (typep object 'standard-renderable)
+          (subtypep object 'standard-renderable))
+      (let ((next (call-next-method)))
+        (when next
+          (list* (gl-source (material-block pass))
+                 (gl-source (light-block pass))
+                 next)))
+      (enlist (effective-shader type object))))
 
 (define-handler (standard-render-pass tick) (tt dt)
   (with-buffer-tx (buffer (// 'trial 'standard-environment-information) :update NIL)

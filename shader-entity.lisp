@@ -178,7 +178,7 @@
   (make-instance 'shader-program
                  :shaders (loop for (type source) on (effective-shaders class) by #'cddr
                                 for processed = (glsl-toolkit:merge-shader-sources
-                                                 (glsl-toolkit:combine-methods type)
+                                                 (list (glsl-toolkit:combine-methods source))
                                                  :min-version (glsl-target-version *context*))
                                 collect (make-instance 'shader :source processed :type type))
                  :buffers (loop for resource-spec in (effective-buffers class)
@@ -210,6 +210,10 @@
             (glsl-toolkit:merge-shader-sources
              (list (glsl-toolkit:combine-methods parts)))
             stream)))
+
+(defmethod buffers ((object shader-entity-class))
+  (loop for spec in (effective-buffers object)
+        collect (apply #'// spec)))
 
 (defclass shader-entity (entity)
   ()
@@ -247,8 +251,7 @@
   (make-class-shader-program (class-of entity)))
 
 (defmethod buffers ((object shader-entity))
-  (loop for spec in (effective-buffers (class-of object))
-        collect (apply #'// spec)))
+  (buffers (class-of object)))
 
 (defmacro define-shader-entity (&environment env name direct-superclasses direct-slots &rest options)
   (setf direct-superclasses (append direct-superclasses (list 'shader-entity)))
