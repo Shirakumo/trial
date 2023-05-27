@@ -27,4 +27,5 @@ void standard_finish(){
   color.w = diffuse.w;
   if(color.w < material.alpha_cutoff)
     color = vec4(0);
+  color = vec4(1,0,1,1);
 }

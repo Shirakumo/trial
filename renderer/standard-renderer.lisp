@@ -192,7 +192,7 @@
          (size (size vao)))
     (declare (type (unsigned-byte 32) size))
     (gl:bind-vertex-array (gl-name vao))
-    (%gl:draw-arrays (vertex-form vao) 0 size)))
+    (%gl:draw-elements (vertex-form vao) size :unsigned-int 0)))
 
 (define-shader-entity single-material-renderable (standard-renderable)
   ((material :initarg :material :accessor material)))
