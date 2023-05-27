@@ -243,24 +243,26 @@
            (if (symbolp value)
                (slot-value *dynamic-context* value)
                value)))
-    `(glsl-toolkit:struct-declarator
-      (glsl-toolkit:type-qualifier
-       ,@(when (layout slot)
-           `((glsl-toolkit:layout-qualifier
-              ,@(loop for id in (enlist (layout slot))
-                      collect `(glsl-toolkit:layout-qualifier-id ,@(enlist id))))))
-       ,@(qualifiers slot))
-      (glsl-toolkit:type-specifier
-       ,@(labels ((translate-type (type)
-                    (etypecase type
-                      (cons
-                       (ecase (first type)
-                         (:struct (list (gl-type (find-class (second type)))))
-                         (:array (append (translate-type (second type))
-                                         `((glsl-toolkit:array-specifier ,(resolve (third type))))))))
-                      (symbol (list type)))))
-           (translate-type (gl-type slot))))
-      ,(gl-name slot))))
+    (let ((array ()))
+      `(glsl-toolkit:struct-declarator
+        (glsl-toolkit:type-qualifier
+         ,@(when (layout slot)
+             `((glsl-toolkit:layout-qualifier
+                ,@(loop for id in (enlist (layout slot))
+                        collect `(glsl-toolkit:layout-qualifier-id ,@(enlist id))))))
+         ,@(qualifiers slot))
+        (glsl-toolkit:type-specifier
+         ,@(labels ((translate-type (type)
+                      (etypecase type
+                        (cons
+                         (ecase (first type)
+                           (:struct (list (gl-type (find-class (second type)))))
+                           (:array (push `(glsl-toolkit:array-specifier ,(resolve (third type))) array)
+                            (translate-type (second type)))))
+                        (symbol (list type)))))
+             (translate-type (gl-type slot))))
+        ,(gl-name slot)
+        ,@array))))
 
 (defmethod describe-memory-layout ((slot gl-struct-slot) stream offset standard)
   (let* ((offset (round-to (buffer-field-base standard (gl-type slot)) offset))

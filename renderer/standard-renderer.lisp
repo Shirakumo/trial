@@ -190,8 +190,6 @@
   (stage (material renderable) area))
 
 ;; TODO:
-;; [ ] better mechanism for define-gl-struct, something with referential transparency so it can be "deallocated" out of a uniform block
-;;      just create an opaque static-vector-backed UBO and add a conversion to a specified index? maybe via (setf elt) on a gl-struct?
 ;; [ ] resolve discrepancy of model import material / model "native material" <-> pass material
 ;;      is it reasonable to allow a model to have different materials per pass?
 ;; [ ] implement normal maps in phong shader
