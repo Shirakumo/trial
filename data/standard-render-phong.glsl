@@ -1,6 +1,4 @@
 #section FRAGMENT_SHADER
-#include (trial:trial trial::phong-material-block)
-
 PhongMaterial material;
 uniform int material_id;
 uniform sampler2D diffuse_tex;

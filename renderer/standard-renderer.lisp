@@ -6,10 +6,6 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-;; FIXME: would be nice to have this dynamically configurable....
-(defconstant MAX-LIGHTS 128)
-(defconstant MAX-MATERIALS 64)
-
 (define-gl-struct standard-light
   (type :int)
   (position :vec3)
@@ -21,29 +17,9 @@
   (cutoff-radius :float))
 
 (define-gl-struct standard-light-block
-  (lights (:array (:struct standard-light) #.MAX-LIGHTS))
-  (light-count :int))
-
-(define-asset (trial standard-light-block) uniform-block
-    'standard-light-block
-  :binding NIL)
-
-(define-gl-struct standard-material
-  (textures (:array :int 8))
-  (albedo-factor :vec4)
-  (emission-factor :vec4)
-  (metallic-factor :float)
-  (roughness-factor :float)
-  (occlusion-factor :float)
-  (alpha-cutoff :float))
-
-(define-gl-struct standard-material-block
-  (materials (:array (:struct standard-material) #.MAX-MATERIALS))
-  (material-count :int))
-
-(define-asset (trial standard-material-block) uniform-block
-    'standard-material-block
-  :binding NIL)
+  (size NIL :initarg :size :initform 128 :reader size)
+  (light-count :int)
+  (lights (:array (:struct standard-light) size)))
 
 (define-gl-struct standard-environment-information
   (view-matrix :mat4)
@@ -63,19 +39,33 @@
    (normal :port-type output :texspec (:internal-format :rgb16f) :attachment :color-attachment1 :reader normal)
    (depth :port-type output :attachment :depth-stencil-attachment :reader depth)
    (frame-start :initform 0d0 :accessor frame-start)
+   (material-block :reader material-block)
+   (light-block :reader light-block)
    (allocated-textures :initform (make-lru-cache 16 'eq) :accessor allocated-textures)
-   (allocated-materials :initform (make-lru-cache MAX-MATERIALS 'eq) :accessor allocated-materials)
-   (allocated-lights :initform (make-lru-cache MAX-LIGHTS 'eq) :accessor allocated-lights))
+   (allocated-materials :accessor allocated-materials)
+   (allocated-lights :accessor allocated-lights))
   (:buffers (trial standard-environment-information))
   (:shader-file (trial "standard-render-pass.glsl")))
 
+(defmethod initialize-instance :after ((pass standard-render-pass) &key (max-lights 128) (max-materials 64))
+  (setf (allocated-materials pass) (make-lru-cache max-materials))
+  (setf (allocated-lights pass) (make-lru-cache max-lights))
+  (setf (slot-value pass 'material-block) (make-instance 'uniform-buffer :binding NIL :struct (make-instance (material-block-type pass) :size max-materials)))
+  (setf (slot-value pass 'light-block) (make-instance 'uniform-buffer :binding NIL :struct (make-instance 'standard-light-block :size max-lights))))
+
 (defmethod shared-initialize :after ((pass standard-render-pass) slots &key)
-  (let ((max-textures (gl:get-integer :max-texture-image-units)))
+  (let ((max-textures (max 16 (gl:get-integer :max-texture-image-units))))
     (dolist (port (flow:ports pass))
       (typecase port
         (texture-port
          (setf max-textures (max max-textures (unit-id port))))))
     (lru-cache-resize (allocated-textures pass) max-textures)))
+
+(defgeneric material-block-type (standard-render-pass))
+
+(defmethod compute-shader append (type (pass standard-render-pass) object)
+  (list (gl-source (material-block pass))
+        (gl-source (light-block pass))))
 
 (define-handler (standard-render-pass tick) (tt dt)
   (with-buffer-tx (buffer (// 'trial 'standard-environment-information) :update NIL)
@@ -92,6 +82,9 @@
       (setf (slot-value buffer 'view-size) (vec2 (width (framebuffer pass)) (height (framebuffer pass))))
       (setf (slot-value buffer 'camera-position) (location (camera pass)))
       (setf (slot-value buffer 'fdt) (float fdt 0f0)))))
+
+(defmethod buffers ((pass standard-render-pass))
+  (list* (material-block pass) (light-block pass) (call-next-method)))
 
 (defmethod bind-textures ((pass standard-render-pass))
   (call-next-method)
@@ -114,7 +107,7 @@
 (defmethod enable ((light standard-light) (pass standard-render-pass))
   (let ((id (lru-cache-push light (allocated-lights pass))))
     (when id
-      (with-buffer-tx (struct (// 'trial 'standard-light-block))
+      (with-buffer-tx (struct (light-block pass))
         (setf (aref (slot-value struct 'lights) id) light)))))
 
 (defmethod disable ((light standard-light) (pass standard-render-pass))
@@ -147,27 +140,10 @@
   (enable (material object) pass)
   (prepare-pass-program material program))
 
-(define-gl-struct phong-material
-  (diffuse-factor :vec4)
-  (specular-factor :vec3)
-  (alpha-cutoff :float))
-
-(define-gl-struct phong-material-block
-  (materials (:array (:struct phong-material) #.MAX-MATERIALS))
-  (material-count :int))
-
-(define-asset (trial phong-material-block) uniform-block
-    'standard-material-block
-  :binding NIL)
-
-(define-shader-pass phong-render-pass (standard-render-pass)
-  ((material-block :initform (// 'trial 'phong-material-block) :accessor material-block))
-  (:shader-file (trial "standard-render-phong.glsl"))
-  (:buffers (trial phong-material-block)))
-
-(defmethod render-with :before ((pass phong-render-pass) (object standard-renderable) program)
-  (setf (uniform program "material_id") (local-id (material object) pass)))
-
-(defmethod prepare-pass-program ((material phong-material) program)
-  (setf (uniform program "diffuse_tex") (diffuse-texture material))
-  (setf (uniform program "specular_tex") (specular-texture material)))
+;; TODO:
+;; [ ] better mechanism for define-gl-struct, something with referential transparency so it can be "deallocated" out of a uniform block
+;;      just create an opaque static-vector-backed UBO and add a conversion to a specified index? maybe via (setf elt) on a gl-struct?
+;; [ ] resolve discrepancy of model import material / model "native material" <-> pass material
+;;      is it reasonable to allow a model to have different materials per pass?
+;; [ ] implement normal maps in phong shader
+;;      dig this back out of the git history

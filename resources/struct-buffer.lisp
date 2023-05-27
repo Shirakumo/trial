@@ -8,25 +8,25 @@
 
 (defclass struct-buffer (buffer-object)
   ((data-usage :initform :stream-draw)
-   (struct :accessor struct)
-   (struct-class :accessor struct-class)))
+   (struct :accessor struct)))
 
-(defmethod shared-initialize :after ((buffer struct-buffer) slots &key struct-class)
+(defmethod shared-initialize :after ((buffer struct-buffer) slots &key struct-class struct)
   (when struct-class
-    (setf (struct-class buffer) (ensure-class struct-class))))
-
-(defmethod reinitialize-instance :before ((buffer struct-buffer) &key struct-class)
-  (when (and (not (equal struct-class (struct-class buffer)))
-             (allocated-p buffer))
-    (c2mop:remove-dependent (struct-class buffer) buffer)
-    (c2mop:add-dependent (ensure-class struct-class) buffer)))
+    (setf (struct buffer) (make-instance struct-class)))
+  (when struct
+    (setf (struct buffer) struct)))
 
 (defmethod reinitialize-instance :after ((buffer struct-buffer) &key)
   (when (allocated-p buffer)
     (c2mop:update-dependent (struct-class buffer) buffer)))
 
+(defmethod (setf struct) :before ((struct gl-struct) (buffer struct-buffer))
+  (when (and (slot-boundp buffer 'struct) (not (eq (class-of struct) (class-of (struct buffer)))))
+    (c2mop:remove-dependent (class-of (struct buffer)) buffer)
+    (c2mop:add-dependent (class-of struct) buffer)))
+
 (defmethod buffer-field-size ((standard symbol) (buffer struct-buffer) base)
-  (buffer-field-size standard (struct-class buffer) 0))
+  (buffer-field-size standard (struct buffer) 0))
 
 ;;; FIXME: we update the buffer just fine, but what about the shader programs?
 (defmethod c2mop:update-dependent ((class gl-struct-class) (buffer struct-buffer) &rest _)
@@ -45,16 +45,19 @@
             (resize-buffer buffer new-size :data new)))))))
 
 (defmethod (setf buffer-data) :after (data (buffer struct-buffer))
-  (setf (struct buffer) (make-instance (struct-class buffer) :storage-ptr (static-vector-pointer data))))
+  (setf (storage-ptr (struct buffer)) (static-vector-pointer data)))
 
 (defmethod gl-type ((buffer struct-buffer))
-  (gl-type (struct-class buffer)))
+  (gl-type (struct buffer)))
 
 (defmethod struct-fields ((buffer struct-buffer))
-  (struct-fields (struct-class buffer)))
+  (struct-fields (struct buffer)))
+
+(defmethod layout-standard ((buffer struct-buffer))
+  (layout-standard (struct buffer)))
 
 (defmethod compute-dependent-types ((buffer struct-buffer))
-  (compute-dependent-types (struct-class buffer)))
+  (compute-dependent-types (struct buffer)))
 
 (defmethod allocate :before ((buffer struct-buffer))
   (unless (size buffer)
@@ -62,10 +65,10 @@
     (setf (buffer-data buffer) (make-static-vector (size buffer) :initial-element 0))))
 
 (defmethod allocate :after ((buffer struct-buffer))
-  (c2mop:add-dependent (struct-class buffer) buffer))
+  (c2mop:add-dependent (class-of (struct buffer)) buffer))
 
 (defmethod deallocate :after ((buffer struct-buffer))
-  (c2mop:remove-dependent (struct-class buffer) buffer)
+  (c2mop:remove-dependent (class-of (struct buffer)) buffer)
   (maybe-free-static-vector (buffer-data buffer))
   (setf (size buffer) NIL)
   (setf (buffer-data buffer) NIL)
