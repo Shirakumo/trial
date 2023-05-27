@@ -42,7 +42,7 @@
   (reset-matrix (model-matrix))
   (reset-matrix (view-matrix))
   (reset-matrix (projection-matrix))
-  (reset-attributes (attribute-table))
+  (reset-features (feature-table))
   (gl:stencil-mask #xFF)
   (gl:clear-stencil #x00)
   (gl:stencil-op :keep :keep :keep)
