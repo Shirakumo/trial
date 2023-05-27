@@ -43,9 +43,9 @@
 (define-asset (workbench grid) mesh
     (make-line-grid-mesh 10 100 100))
 
-(define-shader-entity cube (vertex-entity textured-entity rigidbody listener)
+(define-shader-entity cube (trial::single-material-renderable rigidbody listener)
   ((name :initform 'cube)
-   (texture :initform (// 'workbench 'cat))
+   (trial::material :initform (make-instance 'trial::phong-material))
    (vertex-array :initform (// 'workbench 'cube)))
   (:default-initargs
    :mass 10.0
@@ -101,6 +101,6 @@
     (enter (make-instance 'fps-counter) scene)
     (enter (make-instance 'vertex-entity :vertex-array (// 'workbench 'grid)) scene)
     (enter (make-instance 'editor-camera :rotation (vec 0 (* 1.5 PI) 0) :location (vec 100 10 0)) scene)
-    (enter (make-instance 'render-pass) scene))
+    (enter (make-instance 'trial::phong-render-pass) scene))
   (maybe-reload-scene))
 

@@ -46,8 +46,8 @@ StandardLightData evaluate_light_ambient(in StandardLight light){
 }
 
 StandardLightData evaluate_light_point(in StandardLight light){
-  return StadardLightData(normalize(light.position - position),
-                          light.color * evaluate_light_attenuation(light));
+  return StandardLightData(normalize(light.position - position),
+                           light.color * evaluate_light_attenuation(light));
 }
 
 StandardLightData evaluate_light_directional(in StandardLight light){
@@ -80,10 +80,10 @@ StandardLightData evaluate_light(in StandardLight light){
 
 void main(){
   standard_init();
-  for(int light_idx = 0; light_idx<light_Count; ++light_idx){
+  for(int light_idx = 0; light_idx<light_count; ++light_idx){
     StandardLight light = lights[light_idx];
     vec4 local_color;
-    color = standard_mix(standard_shade(light, local_color), color);
+    color = standard_mix(standard_shade(light), color);
   }
   standard_finish();
   f_color = color;

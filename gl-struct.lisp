@@ -317,7 +317,8 @@
 ;; FIXME: maybe this should be NIL during class initialisation after all so that the
 ;;        slot initform can do its thing.
 (defmethod c2mop:slot-boundp-using-class ((class gl-struct-class) (object gl-struct) (slot gl-struct-effective-slot))
-  T)
+  (or (storage-ptr object)
+      (call-next-method)))
 
 (defmethod c2mop:slot-makunbound-using-class ((class gl-struct-class) (object gl-struct) (slot gl-struct-effective-slot))
   (error "Cannot unbind struct slots."))
