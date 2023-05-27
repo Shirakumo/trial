@@ -133,7 +133,13 @@
   (let ((id (lru-cache-push light (allocated-lights pass))))
     (when id
       (with-buffer-tx (struct (light-block pass))
-        (setf (aref (slot-value struct 'lights) id) light)
+        (let ((target (aref (slot-value struct 'lights) id)))
+          (macrolet ((transfer (&rest fields)
+                       `(setf ,@(loop for field in fields
+                                      collect `(,field target)
+                                      collect `(,field light)))))
+            (transfer light-type location direction color attenuation-linear
+                      attenuation-quadratic outer-radius cutoff-radius)))
         (setf (light-count struct) (max (light-count struct) (1+ id)))))))
 
 (defmethod disable ((light standard-light) (pass standard-render-pass))
