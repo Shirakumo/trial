@@ -36,7 +36,7 @@
                (:file "container" :depends-on ("package"))
                (:file "context" :depends-on ("package"))
                (:file "controller" :depends-on ("package" "mapping" "input" "container" "asset" "text"))
-               (:file "data-pointer" :depends-on ("package" "type-info" "static-vector"))
+               (:file "data-pointer" :depends-on ("package" "static-vector"))
                (:file "debug" :depends-on ("package" "shader-entity" "text" ("physics" "primitives")))
                (:file "deploy" :depends-on ("package" "gamepad"))
                (:file "display" :depends-on ("package" "context" "render-loop" "power" "transforms" "gl-features"))
@@ -94,7 +94,7 @@
                (:file "tile-layer" :depends-on ("package" "helpers" ("assets" "tile-data")))
                (:file "toolkit" :depends-on ("package" "conditions"))
                (:file "transforms" :depends-on ("package"))
-               (:file "type-info" :depends-on ("package" "toolkit"))
+               (:file "type-info" :depends-on ("package" "toolkit" "data-pointer"))
                (:module "animation"
                 :depends-on ("package" "shader-entity")
                 :components ((:file "asset" :depends-on ("clip"))
