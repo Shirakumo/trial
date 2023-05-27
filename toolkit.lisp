@@ -693,7 +693,8 @@
        (loop for i from 1
              for line = (read-line in NIL)
              while line
-             do (format out "~3d ~a~%" i line))))))
+             do (format out "~3d " i)
+                (write-line line out))))))
 
 (defun generate-name (&optional indicator)
   (loop for name = (format NIL "~a-~d" (or indicator "ENTITY") (incf *gensym-counter*))
