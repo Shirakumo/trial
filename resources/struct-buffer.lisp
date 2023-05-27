@@ -47,8 +47,11 @@
           (when (allocated-p buffer)
             (resize-buffer buffer new-size :data new)))))))
 
-(defmethod (setf buffer-data) :after (data (buffer struct-buffer))
+(defmethod (setf buffer-data) :after ((data vector) (buffer struct-buffer))
   (setf (storage-ptr (struct buffer)) (static-vector-pointer data)))
+
+(defmethod (setf buffer-data) :after ((data null) (buffer struct-buffer))
+  (setf (storage-ptr (struct buffer)) NIL))
 
 (defmethod gl-type ((buffer struct-buffer))
   (gl-type (struct buffer)))
@@ -74,8 +77,7 @@
   (c2mop:remove-dependent (class-of (struct buffer)) buffer)
   (maybe-free-static-vector (buffer-data buffer))
   (setf (size buffer) NIL)
-  (setf (buffer-data buffer) NIL)
-  (slot-makunbound buffer 'struct))
+  (setf (buffer-data buffer) NIL))
 
 (defmethod update-buffer-data ((buffer struct-buffer) (data (eql T)) &key)
   (update-buffer-data/ptr buffer (static-vector-pointer (buffer-data buffer)) (size buffer)))

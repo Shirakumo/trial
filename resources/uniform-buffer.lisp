@@ -55,7 +55,8 @@
   ;; TODO: Once we can do shared/packed, load offsets here.
   (load buffer)
   ;; Bind the buffer to the program's specified binding point.
-  (%gl:uniform-block-binding
-   (gl-name program)
-   (gl:get-uniform-block-index (gl-name program) (gl-type buffer))
-   (binding-point buffer)))
+  (let ((index (gl:get-uniform-block-index (gl-name program) (gl-type buffer))))
+    (if (= (1- (ash 1 32)) index)
+        (warn "Failed to get uniform block index for ~s ~s"
+              (gl-name program) (gl-type buffer))
+        (%gl:uniform-block-binding (gl-name program) index (binding-point buffer)))))
