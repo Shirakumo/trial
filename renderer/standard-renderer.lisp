@@ -178,17 +178,13 @@
         do (stage texture area)))
 
 (define-shader-entity standard-renderable (renderable transformed-entity)
-  ((material :initarg :material :accessor material)
-   (vertex-array :initarg :vertex-array :initform NIL :accessor vertex-array))
+  ((vertex-array :initarg :vertex-array :initform NIL :accessor vertex-array))
   (:shader-file (trial "standard-renderable.glsl"))
   (:inhibit-shaders (shader-entity :fragment-shader)))
 
-(defmethod render-with :before ((pass standard-render-pass) (object standard-renderable) program)
-  (enable (material object) pass)
-  (render-with pass (material object) program))
-
 (defmethod stage :after ((renderable standard-renderable) (area staging-area))
-  (stage (vertex-array renderable) area))
+  (stage (vertex-array renderable) area)
+  (stage (material renderable) area))
 
 (defmethod render ((renderable standard-renderable) (program shader-program))
   (declare (optimize speed))
@@ -198,8 +194,11 @@
     (gl:bind-vertex-array (gl-name vao))
     (%gl:draw-arrays (vertex-form vao) 0 size)))
 
-(defmethod stage :after ((renderable standard-renderable) (area staging-area))
-  (stage (material renderable) area))
+(define-shader-entity single-material-renderable (standard-renderable)
+  ((material :initarg :material :accessor material)))
+
+(defmethod render-with :before ((pass standard-render-pass) (object single-material-renderable) program)
+  (render-with pass (material object) program))
 
 ;; TODO:
 ;; [ ] resolve discrepancy of model import material / model "native material" <-> pass material

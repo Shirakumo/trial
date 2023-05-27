@@ -35,10 +35,9 @@
   ()
   (:shader-file (trial "standard-render-phong.glsl")))
 
-(defmethod render-with :before ((pass phong-render-pass) (object standard-renderable) program)
-  (setf (uniform program "material_id") (local-id (material object) pass)))
-
 (defmethod render-with ((pass standard-render-pass) (material phong-material) program)
+  (enable material pass)
+  (setf (uniform program "material_id") (local-id material pass))
   (setf (uniform program "diffuse_tex") (local-id (diffuse-texture material) pass))
   (setf (uniform program "specular_tex") (local-id (specular-texture material) pass))
   (setf (uniform program "normal_tex") (local-id (normal-texture material) pass)))
