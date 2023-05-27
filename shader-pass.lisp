@@ -127,7 +127,8 @@
   (:method-combination progn :most-specific-last))
 (defgeneric bind-textures (object))
 (defgeneric object-renderable-p (object pass))
-(defgeneric compute-shader (shader-type pass object))
+(defgeneric compute-shader (shader-type pass object)
+  (:method-combination append :most-specific-last))
 (defgeneric update-uniforms (program pass object))
 
 (defmethod object-renderable-p (object (pass shader-pass)) NIL)
@@ -143,25 +144,21 @@
   (dolist (port (flow:ports pass))
     (check-consistent port)))
 
-(defmethod compute-shader (type pass object)
+(defmethod compute-shader append (type pass object)
   ())
 
-(defmethod compute-shader (type (pass shader-pass) object)
-  (append (call-next-method)
-          (enlist (effective-shader type pass))))
+(defmethod compute-shader append (type (pass shader-pass) object)
+  (enlist (effective-shader type pass)))
 
-(defmethod compute-shader (type pass (object shader-entity))
-  (append (call-next-method)
-          (enlist (effective-shader type object))))
+(defmethod compute-shader append (type pass (object shader-entity))
+  (enlist (effective-shader type object)))
 
-(defmethod compute-shader (type pass (object shader-entity-class))
-  (append (call-next-method)
-          (enlist (effective-shader type object))))
+(defmethod compute-shader append (type pass (object shader-entity-class))
+  (enlist (effective-shader type object)))
 
 (defmethod make-pass-shader-program ((pass shader-pass) object)
   ;; TODO: alias program against identical programs
-  (let ((shaders ())
-        (buffers ()))
+  (let ((shaders ()))
     (loop for type in *shader-type-list*
           for inputs = (compute-shader type pass object)
           do (when inputs
@@ -170,13 +167,9 @@
                                  (glsl-toolkit:merge-shader-sources inputs :min-version (glsl-target-version *context*))
                                  (first inputs))))
                  (push (make-instance 'shader :source input :type type) shaders))))
-    (loop for resource-spec in (effective-buffers object)
-          do (push (apply #'// resource-spec) buffers))
-    (loop for resource-spec in (effective-buffers pass)
-          do (pushnew (apply #'// resource-spec) buffers))
     (make-instance 'shader-program
                    :shaders shaders
-                   :buffers buffers)))
+                   :buffers (delete-duplicates (append (buffers object) (buffers pass))))))
 
 (defmethod make-pass-shader-program ((pass shader-pass) (entity standalone-shader-entity))
   (shader-program entity))

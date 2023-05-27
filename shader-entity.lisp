@@ -246,6 +246,10 @@
 (defmethod make-class-shader-program ((entity shader-entity))
   (make-class-shader-program (class-of entity)))
 
+(defmethod buffers ((object shader-entity))
+  (loop for spec in (effective-buffers (class-of object))
+        collect (apply #'// spec)))
+
 (defmacro define-shader-entity (&environment env name direct-superclasses direct-slots &rest options)
   (setf direct-superclasses (append direct-superclasses (list 'shader-entity)))
   (unless (find :metaclass options :key #'first)

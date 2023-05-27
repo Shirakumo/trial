@@ -89,7 +89,6 @@
                (:file "skybox" :depends-on ("package" "shader-entity" "transforms"))
                (:file "sprite" :depends-on ("package" "shader-entity" "helpers" ("assets" "sprite-data")))
                (:file "ssao" :depends-on ("package" "shader-pass" "transforms"))
-               (:file "standard-renderer" :depends-on ("package" "shader-pass" "helpers"))
                (:file "static-vector" :depends-on ("package"))
                (:file "text" :depends-on ("package" "helpers" ("assets" "image")))
                (:file "tile-layer" :depends-on ("package" "helpers" ("assets" "tile-data")))
@@ -118,6 +117,11 @@
                              (:file "primitives" :depends-on ("core"))
                              (:file "ray" :depends-on ("primitives"))
                              (:file "resolution" :depends-on ("rigidbody"))))
+               (:module "renderer"
+                :depends-on ("package" "shader-pass" "helpers" "gl-struct")
+                :components ((:file "pbr" :depends-on ("standard-renderer"))
+                             (:file "phong" :depends-on ("standard-renderer"))
+                             (:file "standard-renderer")))
                (:module "resources"
                 :depends-on ("package" "resource" "toolkit" "data-pointer")
                 :components ((:file "buffer-object")

@@ -12,12 +12,12 @@
    (binding :initarg :binding :accessor binding)
    (binding-point :initarg :binding-point :initform NIL :accessor binding-point)))
 
-(defmethod shared-initialize :after ((buffer uniform-buffer) slots &key struct-class (binding NIL binding-p))
+(defmethod shared-initialize :after ((buffer uniform-buffer) slots &key (binding NIL binding-p))
   (cond (binding-p
          (setf (binding buffer) binding))
         ((not (slot-boundp buffer 'binding))
          (setf (binding buffer) (cffi:translate-underscore-separated-name
-                                 (class-name (ensure-class struct-class)))))))
+                                 (class-name (class-of (struct buffer))))))))
 
 (defmethod gl-source ((buffer uniform-buffer))
   `(glsl-toolkit:shader
@@ -26,15 +26,15 @@
     (glsl-toolkit:interface-declaration
      (glsl-toolkit:type-qualifier
       (glsl-toolkit:layout-qualifier
-       (glsl-toolkit:layout-qualifier-id ,(intern (string (layout-standard (struct-class buffer)))
-                                                  "KEYWORD")))
+       (glsl-toolkit:layout-qualifier-id ,(intern (string (layout-standard buffer)) "KEYWORD")))
       :uniform
       ,@(qualifiers buffer))
      ,(gl-type buffer)
      ,(if (binding buffer)
           `(glsl-toolkit:instance-name ,(binding buffer))
           'glsl-toolkit:no-value)
-     ,@(mapcar #'gl-source (struct-fields buffer)))))
+     ,@(let ((*dynamic-context* (struct buffer)))
+         (mapcar #'gl-source (struct-fields buffer))))))
 
 (defmethod allocate :after ((buffer uniform-buffer))
   (unless (binding-point buffer)

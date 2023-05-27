@@ -6,10 +6,13 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass gl-struct ()
-  ((storage-ptr :initarg :storage-ptr :accessor storage-ptr)))
+(defvar *dynamic-context*)
 
-(defun compound-struct-slot-initform (slot standard storage-ptr)
+(defclass gl-struct ()
+  ((storage-ptr :initform NIL :initarg :storage-ptr :accessor storage-ptr)
+   (base-offset :initform 0 :initarg :base-offset :accessor base-offset)))
+
+(defun compound-struct-slot-initform (struct slot standard storage-ptr)
   (case (first (gl-type slot))
     (:struct
      (make-instance (second (gl-type slot)) :storage-ptr storage-ptr
@@ -17,6 +20,8 @@
     (:array
      (destructuring-bind (identifier type count) (gl-type slot)
        (declare (ignore identifier))
+       (when (symbolp count)
+         (setf count (slot-value struct count)))
        (if (listp type)
            (loop with vector = (make-array count)
                  with size = (buffer-field-stride standard (second type))
@@ -33,21 +38,47 @@
                           :element-count count
                           :stride (buffer-field-stride standard type)))))))
 
-(defmethod initialize-instance :after ((struct gl-struct) &key base-offset)
-  (when base-offset (cffi:incf-pointer (storage-ptr struct) base-offset))
+(defmethod shared-initialize :after ((struct gl-struct) slots &key)
   ;; TODO: optimise with precompiled ctors
-  (loop with standard = (layout-standard (class-of struct))
+  (loop with standard = (layout-standard struct)
+        for slot-name in slots
+        for slot = (find slot-name (c2mop:class-slots (class-of struct)) :key #'c2mop:slot-definition-name)
+        do (when (and (typep slot 'gl-struct-effective-slot)
+                      (not (typep slot 'gl-struct-immediate-slot)))
+             (setf (slot-value struct slot-name)
+                   (compound-struct-slot-initform struct slot standard (storage-ptr struct))))))
+
+(defmethod (setf storage-ptr) :after (pointer (struct gl-struct))
+  (loop with standard = (layout-standard struct)
         for slot in (c2mop:class-slots (class-of struct))
-        when (and (typep slot 'gl-struct-effective-slot)
-                  (not (typep slot 'gl-struct-immediate-slot)))
-        do (setf (slot-value struct (c2mop:slot-definition-name slot))
-                 (compound-struct-slot-initform slot standard (storage-ptr struct)))))
+        do (when (and (typep slot 'gl-struct-effective-slot)
+                      (not (typep slot 'gl-struct-immediate-slot)))
+             (setf (storage-ptr (slot-value struct (c2mop:slot-definition-name struct))) pointer))))
 
 (defmethod compute-dependent-types ((struct gl-struct))
   (compute-dependent-types (class-of struct)))
 
 (defmethod gl-source ((struct gl-struct))
-  (gl-source (class-of struct)))
+  (let ((*dynamic-context* struct))
+    (gl-source (class-of struct))))
+
+(defmethod gl-type ((struct gl-struct))
+  (gl-type (class-of struct)))
+
+(defmethod struct-fields ((struct gl-struct))
+  (struct-fields (class-of struct)))
+
+(defmethod layout-standard ((struct gl-struct))
+  (layout-standard (class-of struct)))
+
+(defmethod buffer-field-base (standard (struct gl-struct))
+  (buffer-field-base standard (class-of struct)))
+
+(defmethod buffer-field-size (standard (struct gl-struct) base)
+  (buffer-field-size standard (class-of struct) base))
+
+(defmethod buffer-field-stride (standard (struct gl-struct))
+  (buffer-field-stride standard (class-of struct)))
 
 (defclass gl-struct-class (standard-class)
   ((gl-type :initarg :gl-type :accessor gl-type)
@@ -122,7 +153,7 @@
           when (typep slot 'gl-struct-slot)
           do (let ((base (round-to (buffer-field-base standard (gl-type slot)) offset)))
                (setf (slot-value slot 'base-offset) base)
-               (setf offset (+ base (buffer-field-size standard (gl-type slot) base)))))
+               (ignore-errors (setf offset (+ base (buffer-field-size standard (gl-type slot) base))))))
     slots))
 
 (defmethod c2mop:finalize-inheritance :after ((class gl-struct-class))
@@ -199,24 +230,28 @@
       T))
 
 (defmethod gl-source ((slot gl-struct-slot))
-  `(glsl-toolkit:struct-declarator
-    (glsl-toolkit:type-qualifier
-     ,@(when (layout slot)
-         `((glsl-toolkit:layout-qualifier
-            ,@(loop for id in (enlist (layout slot))
-                    collect `(glsl-toolkit:layout-qualifier-id ,@(enlist id))))))
-     ,@(qualifiers slot))
-    (glsl-toolkit:type-specifier
-     ,@(labels ((translate-type (type)
-                  (etypecase type
-                    (cons
-                     (ecase (first type)
-                       (:struct (list (gl-type (find-class (second type)))))
-                       (:array (append (translate-type (second type))
-                                       `((glsl-toolkit:array-specifier ,(third type)))))))
-                    (symbol (list type)))))
-         (translate-type (gl-type slot))))
-    ,(gl-name slot)))
+  (flet ((resolve (value)
+           (if (symbolp value)
+               (slot-value *dynamic-context* value)
+               value)))
+    `(glsl-toolkit:struct-declarator
+      (glsl-toolkit:type-qualifier
+       ,@(when (layout slot)
+           `((glsl-toolkit:layout-qualifier
+              ,@(loop for id in (enlist (layout slot))
+                      collect `(glsl-toolkit:layout-qualifier-id ,@(enlist id))))))
+       ,@(qualifiers slot))
+      (glsl-toolkit:type-specifier
+       ,@(labels ((translate-type (type)
+                    (etypecase type
+                      (cons
+                       (ecase (first type)
+                         (:struct (list (gl-type (find-class (second type)))))
+                         (:array (append (translate-type (second type))
+                                         `((glsl-toolkit:array-specifier ,(resolve (third type))))))))
+                      (symbol (list type)))))
+           (translate-type (gl-type slot))))
+      ,(gl-name slot))))
 
 (defmethod describe-memory-layout ((slot gl-struct-slot) stream offset standard)
   (let* ((offset (round-to (buffer-field-base standard (gl-type slot)) offset))
@@ -240,9 +275,11 @@
 (defclass gl-struct-direct-slot (gl-struct-slot c2mop:standard-direct-slot-definition)
   ())
 
-(defmethod c2mop:direct-slot-definition-class ((class gl-struct-class) &rest _)
+(defmethod c2mop:direct-slot-definition-class ((class gl-struct-class) &rest _ &key gl-type)
   (declare (ignore _))
-  (find-class 'gl-struct-direct-slot))
+  (if gl-type
+      (find-class 'gl-struct-direct-slot)
+      (call-next-method)))
 
 (defclass gl-struct-effective-slot (gl-struct-slot c2mop:standard-effective-slot-definition)
   ((base-offset :reader base-offset))
@@ -315,23 +352,29 @@
 ;; TODO: generate optimised accessor functions
 
 (defmethod c2mop:slot-value-using-class ((class gl-struct-class) (struct gl-struct) (slot gl-struct-immediate-slot))
-  (gl-memref (cffi:inc-pointer (storage-ptr struct) (base-offset slot))
-             (gl-type slot)))
+  (if (storage-ptr struct)
+      (gl-memref (cffi:inc-pointer (storage-ptr struct) (+ (base-offset struct) (base-offset slot)))
+                 (gl-type slot))
+      (call-next-method)))
 
 (defmethod (setf c2mop:slot-value-using-class) (value (class gl-struct-class) (struct gl-struct) (slot gl-struct-immediate-slot))
-  (setf (gl-memref (cffi:inc-pointer (storage-ptr struct) (base-offset slot))
-                   (gl-type slot))
-        value))
+  (if (storage-ptr struct)
+      (setf (gl-memref (cffi:inc-pointer (storage-ptr struct) (+ (base-offset struct) (base-offset slot)))
+                       (gl-type slot))
+            value)
+      (call-next-method)))
 
 (defmethod c2mop:slot-definition-allocation ((slot gl-struct-immediate-slot))
-  :none)
+  :instance)
 ;; FIXME: Figure out direct accessor functions
 
 (defmacro define-gl-struct (name &body slots)
   (destructuring-bind (name . options) (enlist name)
     `(defclass ,name (,@(cdr (assoc :include options)) gl-struct)
        ,(loop for (slot type . args) in slots
-              collect (list* slot :gl-type type args))
+              collect (if type
+                          (list* slot :gl-type type args)
+                          (list* slot args)))
        (:metaclass gl-struct-class)
        ,@(remove :include options :key #'car))))
 
@@ -339,12 +382,10 @@
 ;;; FIXME: factor out into trivial-* library
 (defclass gl-vector (#+(or abcl sbcl) sequence)
   ((storage-ptr :initarg :storage-ptr :accessor storage-ptr)
+   (base-offset :initform 0 :initarg :base-offset :accessor base-offset)
    (element-count :initarg :element-count :reader sb-sequence:length)
    (element-type :initarg :element-type :reader element-type)
    (stride :initarg :stride :accessor stride)))
-
-(defmethod initialize-instance :after ((vector gl-vector) &key base-offset)
-  (when base-offset (cffi:incf-pointer (storage-ptr vector) base-offset)))
 
 (defmethod print-object ((vector gl-vector) stream)
   (print-unreadable-object (vector stream :type T :identity T)
@@ -352,14 +393,12 @@
 
 #+sbcl
 (defmethod sb-sequence:elt ((vector gl-vector) index)
-  (gl-memref (cffi:inc-pointer (storage-ptr vector)
-                               (* index (stride vector)))
+  (gl-memref (cffi:inc-pointer (storage-ptr vector) (+ (base-offset vector) (* index (stride vector))))
              (element-type vector)))
 
 #+sbcl
 (defmethod (setf sb-sequence:elt) (value (vector gl-vector) index)
-  (setf (gl-memref (cffi:inc-pointer (storage-ptr vector)
-                                     (* index (stride vector)))
+  (setf (gl-memref (cffi:inc-pointer (storage-ptr vector) (+ (base-offset vector) (* index (stride vector))))
                    (element-type vector))
         value))
 
@@ -369,7 +408,7 @@
          (end (or end (sb-sequence:length vector)))
          (state (if from-end (1- end) start))
          (limit (if from-end (1- start) end))
-         (ptr (storage-ptr vector))
+         (ptr (cffi:inc-pointer (storage-ptr vector) (base-offset vector)))
          (type (element-type vector))
          (stride (stride vector)))
     (values state limit from-end
