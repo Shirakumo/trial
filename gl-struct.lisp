@@ -41,10 +41,11 @@
 (defmethod shared-initialize :after ((struct gl-struct) slots &key)
   ;; TODO: optimise with precompiled ctors
   (loop with standard = (layout-standard struct)
-        for slot-name in slots
-        for slot = (find slot-name (c2mop:class-slots (class-of struct)) :key #'c2mop:slot-definition-name)
+        for slot in (c2mop:class-slots (class-of struct))
+        for slot-name = (c2mop:slot-definition-name slot)
         do (when (and (typep slot 'gl-struct-effective-slot)
-                      (not (typep slot 'gl-struct-immediate-slot)))
+                      (not (typep slot 'gl-struct-immediate-slot))
+                      (not (slot-boundp struct slot-name)))
              (setf (slot-value struct slot-name)
                    (compound-struct-slot-initform struct slot standard (storage-ptr struct))))))
 
