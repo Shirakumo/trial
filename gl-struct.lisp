@@ -44,8 +44,7 @@
         for slot in (c2mop:class-slots (class-of struct))
         for slot-name = (c2mop:slot-definition-name slot)
         do (when (and (typep slot 'gl-struct-effective-slot)
-                      (not (typep slot 'gl-struct-immediate-slot))
-                      (not (slot-boundp struct slot-name)))
+                      (not (typep slot 'gl-struct-immediate-slot)))
              (setf (slot-value struct slot-name)
                    (compound-struct-slot-initform struct slot standard (storage-ptr struct))))))
 
@@ -54,7 +53,13 @@
         for slot in (c2mop:class-slots (class-of struct))
         do (when (and (typep slot 'gl-struct-effective-slot)
                       (not (typep slot 'gl-struct-immediate-slot)))
-             (setf (storage-ptr (slot-value struct (c2mop:slot-definition-name struct))) pointer))))
+             (let ((value (slot-value struct (c2mop:slot-definition-name slot))))
+               (typecase value
+                 (vector
+                  (loop for v across value
+                        do (setf (storage-ptr v) pointer)))
+                 (gl-struct
+                  (setf (storage-ptr value) pointer)))))))
 
 (defmethod compute-dependent-types ((struct gl-struct))
   (compute-dependent-types (class-of struct)))
@@ -73,13 +78,16 @@
   (layout-standard (class-of struct)))
 
 (defmethod buffer-field-base (standard (struct gl-struct))
-  (buffer-field-base standard (class-of struct)))
+  (let ((*dynamic-context* struct))
+    (buffer-field-base standard (class-of struct))))
 
 (defmethod buffer-field-size (standard (struct gl-struct) base)
-  (buffer-field-size standard (class-of struct) base))
+  (let ((*dynamic-context* struct))
+    (buffer-field-size standard (class-of struct) base)))
 
 (defmethod buffer-field-stride (standard (struct gl-struct))
-  (buffer-field-stride standard (class-of struct)))
+  (let ((*dynamic-context* struct))
+    (buffer-field-stride standard (class-of struct))))
 
 (defclass gl-struct-class (standard-class)
   ((gl-type :initarg :gl-type :accessor gl-type)

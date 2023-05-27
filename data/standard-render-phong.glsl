@@ -3,7 +3,6 @@ PhongMaterial material;
 uniform int material_id;
 uniform sampler2D diffuse_tex;
 uniform sampler2D specular_tex;
-int material_id;
 vec3 view_dir;
 vec4 diffuse;
 float specular;

@@ -6,6 +6,8 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(defvar *dynamic-context*)
+
 (defun check-integer-size (thing size &optional unsigned)
   (declare (type (unsigned-byte 8) size))
   (declare (optimize speed))
@@ -183,6 +185,8 @@
     (:struct (buffer-field-size standard (second type) base))
     (:array (destructuring-bind (identifier type count) type
               (declare (ignore identifier))
+              (when (symbolp count)
+                (setf count (slot-value *dynamic-context* count)))
               (if (listp type)
                   (* count (buffer-field-size standard type base))
                   (round-to
