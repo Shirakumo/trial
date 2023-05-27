@@ -22,19 +22,22 @@
   :mag-filter :nearest)
 
 (define-gl-struct standard-light
-  (type :int)
-  (position :vec3)
-  (direction :vec3)
-  (color :vec3)
-  (attenuation-linear :float)
-  (attenuation-quadratic :float)
-  (outer-radius :float)
-  (cutoff-radius :float))
+  (type :int :accessor light-type)
+  (position :vec3 :accessor location)
+  (direction :vec3 :accessor direction)
+  (color :vec3 :accessor color)
+  (attenuation-linear :float :accessor attenuation-linear)
+  (attenuation-quadratic :float :accessor attenuation-quadratic)
+  (outer-radius :float :accessor outer-radius)
+  (cutoff-radius :float :accessor cutoff-radius))
+
+(defmethod active-p ((light standard-light))
+  (< 0 (light-type light)))
 
 (define-gl-struct standard-light-block
   (size NIL :initarg :size :initform 128 :reader size)
-  (light-count :int)
-  (lights (:array (:struct standard-light) size)))
+  (light-count :int :accessor light-count)
+  (lights (:array (:struct standard-light) size) :reader lights))
 
 (define-gl-struct standard-environment-information
   (view-matrix :mat4)
@@ -77,6 +80,7 @@
     (lru-cache-resize (allocated-textures pass) max-textures)))
 
 (defgeneric material-block-type (standard-render-pass))
+(defgeneric update-material (material-block material id))
 
 (defmethod compute-shader append (type (pass standard-render-pass) object)
   (list (gl-source (material-block pass))
@@ -123,28 +127,43 @@
   (let ((id (lru-cache-push light (allocated-lights pass))))
     (when id
       (with-buffer-tx (struct (light-block pass))
-        (setf (aref (slot-value struct 'lights) id) light)))))
+        (setf (aref (slot-value struct 'lights) id) light)
+        (setf (light-count struct) (max (light-count struct) (1+ id)))))))
 
 (defmethod disable ((light standard-light) (pass standard-render-pass))
-  (lru-cache-pop light (allocated-lights pass)))
+  (let ((id (lru-cache-pop light (allocated-lights pass))))
+    (when id
+      (with-buffer-tx (struct (light-block pass))
+        (setf (light-type (aref (lights struct) id)) 0)
+        (loop for i downfrom (light-count struct) above 0
+              do (when (active-p (aref (lights struct) i))
+                   (setf (light-count struct) (1+ i))
+                   (return))
+              finally (setf (light-count struct) 0))))))
 
 (defmethod local-id ((light standard-light) (pass standard-render-pass))
   (lru-cache-id light (allocated-lights pass)))
 
 (defclass material ()
-  ())
+  ((textures :initform #() :accessor textures)))
 
 (defmethod enable ((material material) (pass standard-render-pass))
   (let ((id (lru-cache-push material (allocated-materials pass))))
     (when id
       (with-buffer-tx (struct (material-block pass))
-        (setf (elt (slot-value struct 'materials) id) material)))))
+        (update-material struct material id)))
+    (loop for texture across (textures material)
+          do (enable texture pass))))
 
 (defmethod disable ((material material) (pass standard-render-pass))
   (lru-cache-pop material (allocated-materials pass)))
 
 (defmethod local-id ((material material) (pass standard-render-pass))
   (lru-cache-id material (allocated-materials pass)))
+
+(defmethod stage ((material material) (area staging-area))
+  (loop for texture across (textures material)
+        do (stage texture area)))
 
 (define-shader-entity standard-renderable (renderable transformed-entity)
   ((material :initarg :material :accessor material))
@@ -153,7 +172,10 @@
 
 (defmethod render-with :before ((pass standard-render-pass) (object standard-renderable) program)
   (enable (material object) pass)
-  (prepare-pass-program material program))
+  (render-with pass (material object) program))
+
+(defmethod stage :after ((renderable standard-renderable) (area staging-area))
+  (stage (material renderable) area))
 
 ;; TODO:
 ;; [ ] better mechanism for define-gl-struct, something with referential transparency so it can be "deallocated" out of a uniform block

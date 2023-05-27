@@ -69,10 +69,11 @@ StandardLightData evaluate_light_spot(in StandardLight light){
 
 StandardLightData evaluate_light(in StandardLight light){
   switch(light.type){
-  case 0: return evaluate_light_ambient(light);
-  case 1: return evaluate_light_point(light);
-  case 2: return evaluate_light_directional(light);
-  case 3: return evaluate_light_spot(light);
+  case 0: return StandardLightData(-normal, vec3(0));
+  case 1: return evaluate_light_ambient(light);
+  case 2: return evaluate_light_point(light);
+  case 3: return evaluate_light_directional(light);
+  case 4: return evaluate_light_spot(light);
   default: return StandardLightData(-normal, vec3(1,0,1));
   }
 }

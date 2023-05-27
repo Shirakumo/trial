@@ -7,17 +7,29 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (define-gl-struct (phong-material (:include material))
-  (diffuse-texture NIL :initarg :diffuse-texture :accessor diffuse-texture)
-  (specular-texture NIL :initarg :specular-texture :accessor specular-texture)
-  (normal-texture NIL :initarg :normal-texture :accessor normal-texture)
+  (textures NIL :initform (vector (// 'trial 'missing) (// 'trial 'black) (// 'trial 'neutral-normal)))
   (diffuse-factor :vec4 :initarg :diffuse-factor :initform (vec 1 1 1 1) :accessor diffuse-factor)
-  (specular-factor :vec3 :initarg :specular-factor :initform (vec 1 1 1) :accessor specular-factor)
+  (specular-factor :float :initarg :specular-factor :initform 1.0 :accessor specular-factor)
   (alpha-cutoff :float :initarg :alpha-cutoff :initform 0.5 :accessor alpha-cutoff))
+
+(defmethod diffuse-texture ((material phong-material))
+  (aref (textures material) 0))
+
+(defmethod specular-texture ((material phong-material))
+  (aref (textures material) 1))
+
+(defmethod normal-texture ((material phong-material))
+  (aref (textures material) 2))
 
 (define-gl-struct phong-material-block
   (size NIL :initarg :size :initform 64 :reader size)
-  (material-count :int)
-  (materials (:array (:struct phong-material) size)))
+  (materials (:array (:struct phong-material) size) :accessor materials))
+
+(defmethod update-material ((block phong-material-block) (material phong-material) id)
+  (let ((target (svref (materials block) id)))
+    (setf (diffuse-factor target) (diffuse-factor material))
+    (setf (specular-factor target) (specular-factor material))
+    (setf (alpha-cutoff target) (alpha-cutoff material))))
 
 (define-shader-pass phong-render-pass (standard-render-pass)
   ()
@@ -26,10 +38,19 @@
 (defmethod render-with :before ((pass phong-render-pass) (object standard-renderable) program)
   (setf (uniform program "material_id") (local-id (material object) pass)))
 
-(defmethod prepare-pass-program ((material phong-material) program)
-  (setf (uniform program "diffuse_tex") (diffuse-texture material))
-  (setf (uniform program "specular_tex") (specular-texture material))
-  (setf (uniform program "normal_tex") (normal-texture material)))
+(defmethod render-with ((pass standard-render-pass) (material phong-material) program)
+  (setf (uniform program "diffuse_tex") (local-id (diffuse-texture material) pass))
+  (setf (uniform program "specular_tex") (local-id (specular-texture material) pass))
+  (setf (uniform program "normal_tex") (local-id (normal-texture material) pass)))
 
 (defmethod material-block-type ((pass phong-render-pass))
   'phong-material-block)
+
+(defmethod coerce-object ((material pbr-material) (type (eql 'phong-material)) &key)
+  (make-instance 'phong-material
+                 :diffuse-texture (albedo-texture material)
+                 :specular-texture (metal-rough-occlusion-texture material)
+                 :normal-texture (normal-texture material)
+                 :diffuse-factor (diffuse-factor material)
+                 :specular-factor (vx (metallic-factor material))
+                 :alpha-cutoff (alpha-cutoff material)))
