@@ -9,7 +9,7 @@ float specular;
 
 void standard_init@after(){
   material = materials[material_id];
-  view_dir = normalize(camera_position - position);
+  view_dir = normalize(camera_position - world_position);
   diffuse = texture(diffuse_tex, uv) * material.diffuse_factor;
   specular = texture(specular_tex, uv).x * material.specular_factor;
 }
