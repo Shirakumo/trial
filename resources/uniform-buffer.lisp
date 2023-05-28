@@ -57,6 +57,6 @@
   ;; Bind the buffer to the program's specified binding point.
   (let ((index (gl:get-uniform-block-index (gl-name program) (gl-type buffer))))
     (if (= (1- (ash 1 32)) index)
-        (warn "Failed to get uniform block index for ~s ~s"
-              (gl-name program) (gl-type buffer))
+        (warn "Failed to get uniform block index for ~s in ~a"
+              (gl-type buffer) program)
         (%gl:uniform-block-binding (gl-name program) index (binding-point buffer)))))

@@ -14,6 +14,14 @@
    (shaders :initarg :shaders :initform (arg! :shaders) :accessor shaders)
    (buffers :initarg :buffers :initform () :accessor buffers)))
 
+(defmethod describe-object ((program shader-program) stream)
+  (call-next-method)
+  (format stream "~&~%Buffers:~{~%  ~a~}~%~%Shaders:~%"
+          (or (buffers program) (list "None")))
+  (dolist (shader (shaders program))
+    (format stream "~&  ~s~%" (shader-type shader))
+    (format-with-line-numbers (shader-source shader) stream)))
+
 (defun check-shader-compatibility (shaders)
   (loop with table = (make-hash-table :test 'eql)
         for shader in shaders
