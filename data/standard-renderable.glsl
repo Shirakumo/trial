@@ -11,7 +11,7 @@ out vec2 v_uv;
 void main(){
   vec4 world_position = model_matrix * vec4(in_position, 1);
   vec4 view_position = view_matrix * world_position;
-  gl_Position = projection_matrix * world_position;
+  gl_Position = projection_matrix * view_position;
   v_world_position = world_position.xyz;
   v_view_position = view_position.xyz;
   v_normal = in_normal;
