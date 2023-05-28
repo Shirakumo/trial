@@ -199,6 +199,7 @@
   ((material :initarg :material :accessor material)))
 
 (defmethod render-with :before ((pass standard-render-pass) (object single-material-renderable) program)
+  (activate program)
   (render-with pass (material object) program))
 
 ;; TODO:
