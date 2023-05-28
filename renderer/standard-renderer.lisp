@@ -100,7 +100,7 @@
 (defmethod render :before ((pass standard-render-pass) target)
   (let* ((frame-time (current-time))
          (old-time (shiftf (frame-start pass) frame-time))
-         (fdt (- old-time frame-time)))
+         (fdt (- frame-time old-time)))
     (with-buffer-tx (buffer (// 'trial 'standard-environment-information))
       (setf (slot-value buffer 'view-matrix) (view-matrix))
       (setf (slot-value buffer 'projection-matrix) (projection-matrix))
