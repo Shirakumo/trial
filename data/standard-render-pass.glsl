@@ -32,7 +32,7 @@ struct StandardLightData{
 };
 
 float evaluate_light_attenuation(StandardLight light){
-  float distance = length(light.position - position);
+  float distance = length(light.position - world_position);
   return 1.0 / (light.attenuation_linear * distance + light.attenuation_quadratic * distance * distance);
 }
 
@@ -42,7 +42,7 @@ StandardLightData evaluate_light_ambient(in StandardLight light){
 }
 
 StandardLightData evaluate_light_point(in StandardLight light){
-  return StandardLightData(normalize(light.position - position),
+  return StandardLightData(normalize(light.position - world_position),
                            light.color * evaluate_light_attenuation(light));
 }
 
@@ -52,7 +52,7 @@ StandardLightData evaluate_light_directional(in StandardLight light){
 }
 
 StandardLightData evaluate_light_spot(in StandardLight light){
-  vec3 light_dir = normalize(light.position - position);
+  vec3 light_dir = normalize(light.position - world_position);
   float theta = dot(light_dir, -light.direction);
   float intensity = 0.0;
   if(light.outer_radius < theta){
