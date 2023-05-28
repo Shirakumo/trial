@@ -26,7 +26,8 @@
     (glsl-toolkit:interface-declaration
      (glsl-toolkit:type-qualifier
       (glsl-toolkit:layout-qualifier
-       (glsl-toolkit:layout-qualifier-id ,(intern (string (layout-standard buffer)) "KEYWORD")))
+       (glsl-toolkit:layout-qualifier-id ,(intern (string (layout-standard buffer)) "KEYWORD"))
+       (glsl-toolkit:layout-qualifier-id "row_major"))
       :uniform
       ,@(qualifiers buffer))
      ,(gl-type buffer)
