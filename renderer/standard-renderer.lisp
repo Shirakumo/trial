@@ -191,6 +191,7 @@
   (let* ((vao (vertex-array renderable))
          (size (size vao)))
     (declare (type (unsigned-byte 32) size))
+    (setf (uniform program "model_matrix") (model-matrix))
     (gl:bind-vertex-array (gl-name vao))
     (%gl:draw-elements (vertex-form vao) size :unsigned-int 0)))
 

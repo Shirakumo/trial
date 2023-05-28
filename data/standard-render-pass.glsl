@@ -6,9 +6,10 @@
 layout (location = 0) out vec4 f_color;
 layout (location = 1) out vec3 f_normal;
 
-vec2 uv;
-vec3 position;
+vec3 world_position;
+vec3 view_position;
 vec3 normal;
+vec2 uv;
 vec4 color;
 
 void standard_init(){

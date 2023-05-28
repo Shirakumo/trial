@@ -2,25 +2,31 @@
 layout (location = 0) in vec3 in_position;
 layout (location = 1) in vec2 in_uv;
 layout (location = 2) in vec3 in_normal;
-out vec3 v_position;
+uniform mat4 model_matrix
+out vec3 v_world_position;
+out vec3 v_view_position;
 out vec3 v_normal;
 out vec2 v_uv;
 
 void main(){
-  vec4 position = projection_matrix * view_matrix * vec4(in_position, 1);
-  gl_Position = position;
-  v_position = position.xyz;
-  v_uv = in_uv;
+  vec4 world_position = model_matrix * vec4(in_position, 1);
+  vec4 view_position = view_matrix * world_position;
+  gl_Position = projection_matrix * world_position;
+  v_world_position = world_position.xyz;
+  v_view_position = view_position.xyz;
   v_normal = in_normal;
+  v_uv = in_uv;
 }
 
 #section FRAGMENT_SHADER
-in vec3 v_position;
+in vec3 v_world_position;
+in vec3 v_view_position;
 in vec3 v_normal;
 in vec2 v_uv;
 
 void standard_init@before(){
-  uv = v_uv;
+  world_position = v_world_position;
+  view_position = v_view_position;
   normal = v_normal;
-  position = v_position;
+  uv = v_uv;
 }
