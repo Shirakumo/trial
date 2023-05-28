@@ -5,16 +5,11 @@
 #include (trial:trial trial::standard-environment-information)
 layout (location = 0) out vec4 f_color;
 layout (location = 1) out vec3 f_normal;
-uniform sampler2D[32] textures;
 
 vec2 uv;
 vec3 position;
 vec3 normal;
 vec4 color;
-
-vec4 sample_texture(int id, vec2 uv){
-  return texture(textures[id], uv);
-}
 
 void standard_init(){
   color = vec4(0);
