@@ -26,3 +26,29 @@
 
 (defmethod normal-texture ((material pbr-material))
   (aref (textures material) 3))
+
+(define-gl-struct pbr-material-block
+  (size NIL :initarg :size :initform 64 :reader size)
+  (materials (:array (:struct pbr-material) size) :accessor materials))
+
+(defmethod transfer-to progn ((target pbr-material) (material pbr-material))
+  (setf (albedo-factor target) (albedo-factor material))
+  (setf (emission-factor target) (emission-factor material))
+  (setf (metallic-factor target) (metallic-factor material))
+  (setf (roughness-factor target) (roughness-factor material))
+  (setf (occlusion-factor target) (occlusion-factor material))
+  (setf (alpha-cutoff target) (alpha-cutoff material)))
+
+(define-shader-pass pbr-render-pass (light-cache-render-pass)
+  ()
+  (:shader-file (trial "standard-render-pbr.glsl")))
+
+(defmethod render-with ((pass pbr-render-pass) (material pbr-material) program)
+  (enable material pass)
+  (setf (uniform program "material_id") (local-id material pass))
+  (setf (uniform program "albedo_tex") (local-id (albedo-texture material) pass))
+  (setf (uniform program "metal_rough_occlusion_tex") (local-id (metal-rough-occlusion-texture material) pass))
+  (setf (uniform program "normal_tex") (local-id (normal-texture material) pass)))
+
+(defmethod material-block-type ((pass pbr-render-pass))
+  'pbr-material-block)
