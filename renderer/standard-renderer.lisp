@@ -98,7 +98,7 @@
       (setf (slot-value buffer 'view-matrix) (view-matrix))
       (setf (slot-value buffer 'projection-matrix) (projection-matrix))
       (setf (slot-value buffer 'view-size) (vec2 (width (framebuffer pass)) (height (framebuffer pass))))
-      (setf (slot-value buffer 'camera-position) (location (camera pass)))
+      (setf (slot-value buffer 'camera-position) (global-location (camera pass)))
       (setf (slot-value buffer 'fdt) (float fdt 0f0)))))
 
 (defmethod buffers ((pass standard-render-pass))
@@ -231,7 +231,7 @@
 
 (defmethod render :before ((pass light-cache-render-pass) target)
   (when (light-cache-dirty-p pass)
-    (let* ((location (v<- (light-cache-location pass) (location (target (camera pass)))))
+    (let* ((location (v<- (light-cache-location pass) (global-location (target (camera pass)))))
            (size (1- (lru-cache-size (allocated-lights pass))))
            (nearest (org.shirakumo.fraf.trial.space.kd-tree:kd-tree-k-nearest
                      size location (light-cache pass) :test #'active-p)))
