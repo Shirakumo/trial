@@ -19,6 +19,7 @@
 (defgeneric setup-perspective (camera width height))
 (defgeneric map-visible (function camera container))
 (defgeneric in-view-p (object camera))
+(defgeneric focal-point (camera))
 
 (defmethod handle ((ev tick) (camera camera))
   (project-view camera))
@@ -85,6 +86,9 @@
     (scale-by z z z *view-matrix*)
     (translate (v- (location camera) (location (target camera))) *view-matrix*)))
 
+(defmethod focal-point ((camera sidescroll-camera))
+  (global-location (target camera)))
+
 (defclass 3d-camera (camera)
   ((fov :initarg :fov :accessor fov))
   (:default-initargs
@@ -104,7 +108,10 @@
    :up (vec 0 1 0)))
 
 (defmethod project-view ((camera target-camera))
-  (look-at (location camera) (target camera) (up camera)))
+  (look-at (location camera) (location (target camera)) (up camera)))
+
+(defmethod focal-point ((camera target-camera))
+  (global-location (target camera)))
 
 (defclass pivot-camera (target-camera)
   ()
@@ -156,6 +163,10 @@
 
 (define-handler (fps-camera mouse-move) (old-pos pos)
   (do-fps-movement fps-camera old-pos pos))
+
+(defmethod focal-point ((camera fps-camera))
+  ;; KLUDGE: not really accurate. Should be somewhere in front of the camera.
+  (location camera))
 
 (defclass freeroam-camera (fps-camera)
   ((move-speed :initarg :move-speed :accessor move-speed))
