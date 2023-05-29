@@ -24,7 +24,7 @@
   (light-count :int :accessor light-count)
   (lights (:array (:struct standard-light) size) :reader lights))
 
-(defclass light ()
+(defclass light (entity)
   ((color :initarg :color :initform (vec 1 1 1) :accessor color)
    (active-p :initarg :active-p :initform T :accessor active-p)))
 

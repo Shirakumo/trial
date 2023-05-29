@@ -37,7 +37,7 @@ float evaluate_light_attenuation(StandardLight light){
 }
 
 StandardLightData evaluate_light_ambient(in StandardLight light){
-  return StandardLightData(-normal,
+  return StandardLightData(normal,
                            light.color);
 }
 

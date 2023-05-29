@@ -101,6 +101,7 @@
     (enter (make-instance 'fps-counter) scene)
     (enter (make-instance 'vertex-entity :vertex-array (// 'workbench 'grid)) scene)
     (enter (make-instance 'editor-camera :rotation (vec 0 (* 1.5 PI) 0) :location (vec 100 10 0)) scene)
+    (enter (make-instance 'trial::ambient-light) scene)
     (enter (make-instance 'trial::phong-render-pass) scene))
   (maybe-reload-scene))
 

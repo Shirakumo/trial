@@ -25,12 +25,12 @@
   (size NIL :initarg :size :initform 64 :reader size)
   (materials (:array (:struct phong-material) size) :accessor materials))
 
-(defmethod transfer-to ((target phong-material) (material phong-material))
+(defmethod transfer-to progn ((target phong-material) (material phong-material))
   (setf (diffuse-factor target) (diffuse-factor material))
   (setf (specular-factor target) (specular-factor material))
   (setf (alpha-cutoff target) (alpha-cutoff material)))
 
-(define-shader-pass phong-render-pass (standard-render-pass)
+(define-shader-pass phong-render-pass (light-cache-render-pass)
   ()
   (:shader-file (trial "standard-render-phong.glsl")))
 
