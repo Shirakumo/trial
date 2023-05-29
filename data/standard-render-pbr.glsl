@@ -43,15 +43,15 @@ void standard_init@after(){
   view_dir = normalize(camera_position - world_position);
   albedo = texture(albedo_tex, uv) * material.albedo_factor;
   vec3 mro = texture(metal_rough_occlusion_tex, uv).xyz;
-  metallic = mro.x * material.metalness_factor;
+  metallic = mro.x * material.metallic_factor;
   roughness = mro.y * material.roughness_factor;
   occlusion = mro.z * material.occlusion_factor;
-  F0 = mix(vec3(0.04), albedo, metallic);
+  F0 = mix(vec3(0.04), albedo.xyz, metallic);
 }
 
 vec4 standard_shade(in StandardLight light){
   if(light.type == 1){
-    return occlusion * albedo.xyz * light.color;
+    return vec4(occlusion * albedo.xyz * light.color, 1);
   }else{
     StandardLightData light_data = evaluate_light(light);
     vec3 N = normal;
@@ -74,12 +74,12 @@ vec4 standard_shade(in StandardLight light){
     vec3 specular = numerator / max(denominator, 0.001);
   
     float NdotL = max(dot(N, L), 0.0);
-    return (kD * albedo / PI + specular) * radiance * NdotL;
+    return vec4((kD * albedo.xyz / PI + specular) * radiance * NdotL, 1);
   }
 }
 
 void standard_finish(){
   color.w = albedo.w;
   if(color.w < material.alpha_cutoff)
-    color = vec4(0);
+    discard;
 }

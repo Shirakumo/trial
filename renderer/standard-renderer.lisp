@@ -16,6 +16,11 @@
   :min-filter :nearest
   :mag-filter :nearest)
 
+(define-asset (trial white) image
+    #p "white.png"
+  :min-filter :nearest
+  :mag-filter :nearest)
+
 (define-asset (trial neutral-normal) image
     #p "neutral-normal.png"
   :min-filter :nearest

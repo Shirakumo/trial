@@ -30,5 +30,5 @@ vec4 standard_shade(in StandardLight light){
 void standard_finish(){
   color.w = diffuse.w;
   if(color.w < material.alpha_cutoff)
-    color = vec4(0);
+    discard;
 }
