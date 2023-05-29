@@ -26,7 +26,8 @@
 
 (defclass light (entity)
   ((color :initarg :color :initform (vec 1 1 1) :accessor color)
-   (active-p :initarg :active-p :initform T :accessor active-p)))
+   (active-p :initarg :active-p :initform T :accessor active-p)
+   (cast-shadows-p :initarg :cast-shadows-p :initform NIL :accessor cast-shadows-p)))
 
 (defmethod transfer-to progn ((target standard-light) (light light))
   (setf (color target) (color light)))
@@ -65,7 +66,8 @@
   (setf (light-type target) 2))
 
 (defclass directional-light (light)
-  ((direction :initform (vec 0 -1 0) :reader direction)))
+  ((direction :initform (vec 0 -1 0) :reader direction)
+   (cast-shadows-p :initform T)))
 
 (defmethod shared-initialize :after ((light directional-light) slots &key direction)
   (when direction (setf (direction light) direction)))
