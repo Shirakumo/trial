@@ -40,12 +40,18 @@
 (define-asset (workbench cube) mesh
     (make-cube-mesh 10))
 
+(define-asset (workbench ground) mesh
+    (make-cube-mesh 1000 :y -500))
+
 (define-asset (workbench grid) mesh
     (make-line-grid-mesh 10 100 100))
 
+(define-shader-entity ground (trial::single-material-renderable)
+  ((trial::material :initform (make-instance 'trial::phong-material))
+   (vertex-array :initform (// 'workbench 'ground))))
+
 (define-shader-entity cube (trial::single-material-renderable rigidbody listener)
-  ((name :initform 'cube)
-   (trial::material :initform (make-instance 'trial::phong-material))
+  ((trial::material :initform (make-instance 'trial::phong-material))
    (vertex-array :initform (// 'workbench 'cube)))
   (:default-initargs
    :mass 10.0
@@ -98,10 +104,14 @@
                (enter cube scene))
       (enter (make-instance 'gravity :gravity (vec 0 -200 0)) physics)
       (enter physics scene))
+    (enter (make-instance 'ground) scene)
     (enter (make-instance 'fps-counter) scene)
     (enter (make-instance 'vertex-entity :vertex-array (// 'workbench 'grid)) scene)
     (enter (make-instance 'editor-camera :rotation (vec 0 (* 1.5 PI) 0) :location (vec 100 10 0)) scene)
-    (enter (make-instance 'trial::ambient-light) scene)
+    ;;(enter (make-instance 'trial::ambient-light :color (vec .1 .1 .1)) scene)
+    ;;(enter (make-instance 'trial::point-light :color (vec 0 0 100) :location (vec 0 30 0)) scene)
+    ;;(enter (make-instance 'trial::directional-light :color (vec 1 1 1)) scene)
+    (enter (make-instance 'trial::spot-light :color (vec 1 1 1) :location (vec 0 30 0) :inner-radius 12.5 :outer-radius 17.5) scene)
     (enter (make-instance 'trial::phong-render-pass) scene))
   (maybe-reload-scene))
 

@@ -13,8 +13,8 @@
   (color :vec3 :accessor color)
   (linear-attenuation :float :accessor linear-attenuation)
   (quadratic-attenuation :float :accessor quadratic-attenuation)
-  (outer-radius :float :accessor outer-radius)
-  (cutoff-radius :float :accessor cutoff-radius))
+  (inner-radius :float :accessor inner-radius)
+  (outer-radius :float :accessor outer-radius))
 
 (defmethod active-p ((light standard-light))
   (< 0 (light-type light)))
@@ -47,7 +47,7 @@
          most-positive-single-float))
 
 (defclass located-light (light located-entity)
-  ((linear-attenuation :initarg :linear-attenuation :initform 1.0 :accessor linear-attenuation)
+  ((linear-attenuation :initarg :linear-attenuation :initform 0.0 :accessor linear-attenuation)
    (quadratic-attenuation :initarg :quadratic-attenuation :initform 1.0 :accessor quadratic-attenuation)))
 
 (defmethod transfer-to progn ((target standard-light) (light located-light))
@@ -64,18 +64,31 @@
 (defmethod transfer-to progn ((target standard-light) (light point-light))
   (setf (light-type target) 2))
 
-(defclass directional-light (located-light)
-  ((direction :initarg :direction :initform (vec 0 -1 1) :accessor direction)))
+(defclass directional-light (light)
+  ((direction :initform (vec 0 -1 0) :reader direction)))
+
+(defmethod shared-initialize :after ((light directional-light) slots &key direction)
+  (when direction (setf (direction light) direction)))
+
+(defmethod (setf direction) ((direction vec3) (light directional-light))
+  (nvunit (v<- (direction light) direction))
+  direction)
 
 (defmethod transfer-to progn ((target standard-light) (light directional-light))
   (setf (light-type target) 3)
   (setf (direction target) (direction light)))
 
-(defclass spot-light (directional-light)
-  ((outer-radius :initarg :outer-radius :initform 32.0 :accessor outer-radius)
-   (cutoff-radius :initarg :cutoff-radius :initform 32.0 :accessor cutoff-radius)))
+(defmethod 3ds:bsize ((light directional-light))
+  #.(vec most-positive-single-float
+         most-positive-single-float
+         most-positive-single-float))
+
+(defclass spot-light (directional-light located-light)
+  ((inner-radius :initarg :inner-radius :initform 30.0 :accessor inner-radius)
+   (outer-radius :initarg :outer-radius :initform 32.0 :accessor outer-radius)
+   (quadratic-attenuation :initform 0.0)))
 
 (defmethod transfer-to progn ((target standard-light) (light spot-light))
   (setf (light-type target) 4)
-  (setf (outer-radius target) (outer-radius light))
-  (setf (cutoff-radius target) (cutoff-radius light)))
+  (setf (outer-radius target) (float (outer-radius light) 0f0))
+  (setf (inner-radius target) (float (inner-radius light) 0f0)))

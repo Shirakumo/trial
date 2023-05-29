@@ -183,6 +183,7 @@
          (size (size vao)))
     (declare (type (unsigned-byte 32) size))
     (setf (uniform program "model_matrix") (model-matrix))
+    (setf (uniform program "inv_model_matrix") (minv (model-matrix)))
     (gl:bind-vertex-array (gl-name vao))
     (%gl:draw-elements (vertex-form vao) size :unsigned-int 0)))
 
