@@ -51,7 +51,7 @@
    (quadratic-attenuation :initarg :quadratic-attenuation :initform 1.0 :accessor quadratic-attenuation)))
 
 (defmethod transfer-to progn ((target standard-light) (light located-light))
-  (setf (location target) (location light))
+  (setf (location target) (global-location light))
   (setf (linear-attenuation target) (linear-attenuation light))
   (setf (quadratic-attenuation target) (quadratic-attenuation light)))
 
