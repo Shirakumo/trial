@@ -200,7 +200,8 @@
   ((light-cache :initform (org.shirakumo.fraf.trial.space.kd-tree:make-kd-tree) :reader light-cache)
    (light-cache-dirty-p :initform T :accessor light-cache-dirty-p)
    (light-cache-location :initform (vec 0 0 0) :reader light-cache-location)
-   (light-cache-distance-threshold :initform 10.0 :accessor light-cache-distance-threshold)))
+   (light-cache-distance-threshold :initform 10.0 :accessor light-cache-distance-threshold)
+   (ambient-light :initform NIL :accessor ambient-light)))
 
 (defmethod clear :after ((pass light-cache-render-pass))
   (3ds:clear (light-cache pass)))
@@ -213,6 +214,15 @@
   (3ds:leave light (light-cache pass))
   (setf (light-cache-dirty-p pass) T))
 
+(defmethod enter ((light ambient-light) (pass light-cache-render-pass))
+  (setf (ambient-light pass) light)
+  (setf (light-cache-dirty-p pass) T))
+
+(defmethod leave ((light ambient-light) (pass light-cache-render-pass))
+  (when (eq light (ambient-light pass))
+    (setf (ambient-light pass) NIL)
+    (disable light pass)))
+
 (define-handler ((pass light-cache-render-pass) tick :before) ()
   (when (<= (light-cache-distance-threshold pass)
             (vsqrdistance (location (target (camera pass)))
@@ -222,11 +232,13 @@
 (defmethod render :before ((pass light-cache-render-pass) target)
   (when (light-cache-dirty-p pass)
     (let* ((location (v<- (light-cache-location pass) (location (target (camera pass)))))
-           (size (lru-cache-size (allocated-lights pass)))
+           (size (1- (lru-cache-size (allocated-lights pass))))
            (nearest (org.shirakumo.fraf.trial.space.kd-tree:kd-tree-k-nearest
                      size location (light-cache pass) :test #'active-p)))
       (loop for light across nearest
-            do (enable light pass)))
+            do (enable light pass))
+      (when (ambient-light pass)
+        (enable (ambient-light pass) pass)))
     (setf (light-cache-dirty-p pass) NIL)))
 
 ;; FIXME: how do we know when lights moved or de/activated so we can update?
