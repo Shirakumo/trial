@@ -131,3 +131,9 @@
 (defmethod apply-transforms progn ((entity entity))
   (when (container entity)
     (apply-transforms (container entity))))
+
+(defmethod global-location ((entity entity))
+  (with-pushed-matrix ()
+    (apply-transforms entity)
+    (with-fast-matref (m (model-matrix) 4)
+      (vec (m 0 3) (m 1 3) (m 2 3)))))
