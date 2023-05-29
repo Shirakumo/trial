@@ -59,7 +59,7 @@ StandardLightData evaluate_light_spot(in StandardLight light){
     float epsilon = light.inner_radius - light.outer_radius;
     intensity = clamp((theta - light.outer_radius) / epsilon, 0.0, 1.0);
   }
-  return StandardLightData(light_dir,
+  return StandardLightData(-light.direction,
                            light.color * intensity * evaluate_light_attenuation(light));
 }
 
