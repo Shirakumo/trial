@@ -25,11 +25,10 @@
   (size NIL :initarg :size :initform 64 :reader size)
   (materials (:array (:struct phong-material) size) :accessor materials))
 
-(defmethod update-material ((block phong-material-block) (material phong-material) id)
-  (let ((target (svref (materials block) id)))
-    (setf (diffuse-factor target) (diffuse-factor material))
-    (setf (specular-factor target) (specular-factor material))
-    (setf (alpha-cutoff target) (alpha-cutoff material))))
+(defmethod transfer-to ((target phong-material) (material phong-material))
+  (setf (diffuse-factor target) (diffuse-factor material))
+  (setf (specular-factor target) (specular-factor material))
+  (setf (alpha-cutoff target) (alpha-cutoff material)))
 
 (define-shader-pass phong-render-pass (standard-render-pass)
   ()

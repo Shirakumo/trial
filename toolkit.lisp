@@ -58,6 +58,9 @@
         (deploy:runtime-directory)
         (or cache (setf cache (asdf:system-source-directory app))))))
 
+(defgeneric transfer-to (target source)
+  (:method-combination progn :most-specific-last))
+
 (defgeneric coerce-object (object type &key))
 
 (defmethod coerce-object (object type &key)

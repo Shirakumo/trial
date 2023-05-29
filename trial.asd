@@ -119,9 +119,10 @@
                              (:file "resolution" :depends-on ("rigidbody"))))
                (:module "renderer"
                 :depends-on ("package" "shader-pass" "helpers" "gl-struct")
-                :components ((:file "pbr" :depends-on ("standard-renderer"))
+                :components ((:file "lights")
+                             (:file "pbr" :depends-on ("standard-renderer"))
                              (:file "phong" :depends-on ("standard-renderer"))
-                             (:file "standard-renderer")))
+                             (:file "standard-renderer" :depends-on ("lights"))))
                (:module "resources"
                 :depends-on ("package" "resource" "toolkit" "data-pointer")
                 :components ((:file "buffer-object")
