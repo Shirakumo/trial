@@ -24,11 +24,11 @@
 (define-gl-struct standard-environment-information
   (view-matrix :mat4)
   (projection-matrix :mat4)
-  (view-size :vec2)
-  (camera-position :vec3)
-  (tt :float)
-  (dt :float)
-  (fdt :float))
+  (view-size :vec2 :accessor view-size)
+  (camera-position :vec3 :accessor location)
+  (tt :float :accessor tt)
+  (dt :float :accessor dt)
+  (fdt :float :accessor fdt))
 
 (define-asset (trial standard-environment-information) uniform-block
     'standard-environment-information
