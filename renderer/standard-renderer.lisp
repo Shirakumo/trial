@@ -143,6 +143,12 @@
 (defmethod local-id ((light light) (pass standard-render-pass))
   (lru-cache-id light (allocated-lights pass)))
 
+(defmethod notice-update ((light light) (pass standard-render-pass))
+  (let ((id (lru-cache-id light (allocated-lights pass))))
+    (when id
+      (with-buffer-tx (struct (light-block pass))
+        (transfer-to (aref (slot-value struct 'lights) id) light)))))
+
 (defmethod enable ((material material) (pass standard-render-pass))
   (let ((id (lru-cache-push material (allocated-materials pass))))
     (when id
@@ -156,6 +162,12 @@
 
 (defmethod local-id ((material material) (pass standard-render-pass))
   (lru-cache-id material (allocated-materials pass)))
+
+(defmethod notice-update ((material material) (pass standard-render-pass))
+  (let ((id (lru-cache-id material (allocated-materials pass))))
+    (when id
+      (with-buffer-tx (struct (material-block pass))
+        (transfer-to (aref (slot-value struct 'materials) id) material)))))
 
 (define-shader-entity standard-renderable (renderable transformed-entity)
   ((vertex-array :initarg :vertex-array :initform NIL :accessor vertex-array))
@@ -186,7 +198,9 @@
 
 (define-shader-pass light-cache-render-pass (standard-render-pass)
   ((light-cache :initform (org.shirakumo.fraf.trial.space.kd-tree:make-kd-tree) :reader light-cache)
-   (light-cache-dirty-p :initform T :accessor light-cache-dirty-p)))
+   (light-cache-dirty-p :initform T :accessor light-cache-dirty-p)
+   (light-cache-location :initform (vec 0 0 0) :reader light-cache-location)
+   (light-cache-distance-threshold :initform 10.0 :accessor light-cache-distance-threshold)))
 
 (defmethod clear :after ((pass light-cache-render-pass))
   (3ds:clear (light-cache pass)))
@@ -199,13 +213,20 @@
   (3ds:leave light (light-cache pass))
   (setf (light-cache-dirty-p pass) T))
 
+(define-handler ((pass light-cache-render-pass) tick :before) ()
+  (when (<= (light-cache-distance-threshold pass)
+            (vsqrdistance (location (target (camera pass)))
+                          (light-cache-location pass)))
+    (setf (light-cache-dirty-p pass) T)))
+
 (defmethod render :before ((pass light-cache-render-pass) target)
   (when (light-cache-dirty-p pass)
-    (let* ((camera (camera pass))
+    (let* ((location (v<- (light-cache-location pass) (location (target (camera pass)))))
            (size (lru-cache-size (allocated-lights pass)))
            (nearest (org.shirakumo.fraf.trial.space.kd-tree:kd-tree-k-nearest
-                     size (location (target camera)) (light-cache pass) :test #'active-p)))
+                     size location (light-cache pass) :test #'active-p)))
       (loop for light across nearest
-            do (enable light pass)))))
+            do (enable light pass)))
+    (setf (light-cache-dirty-p pass) NIL)))
 
 ;; FIXME: how do we know when lights moved or de/activated so we can update?
