@@ -3,6 +3,7 @@ layout (location = 0) in vec3 in_position;
 layout (location = 1) in vec2 in_uv;
 layout (location = 2) in vec3 in_normal;
 uniform mat4 model_matrix;
+uniform mat4 inv_model_matrix;
 out vec3 v_world_position;
 out vec3 v_view_position;
 out vec3 v_normal;
@@ -14,7 +15,7 @@ void main(){
   gl_Position = projection_matrix * view_position;
   v_world_position = world_position.xyz;
   v_view_position = view_position.xyz;
-  v_normal = in_normal;
+  v_normal = mat3(transpose(inv_model_matrix)) * in_normal;
   v_uv = in_uv;
 }
 
