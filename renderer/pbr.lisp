@@ -6,10 +6,10 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-gl-struct pbr-material
+(define-gl-struct (pbr-material (:include material))
   (textures NIL :initform (vector (// 'trial 'missing) (// 'trial 'black) (// 'trial 'black) (// 'trial 'neutral-normal)))
   (albedo-factor :vec4 :initform (vec 1 1 1 1) :initarg :albedo-factor :accessor albedo-factor)
-  (emission-factor :vec4 :initform (vec 1 1 1) :initarg :emission-factor :accessor emission-factor)
+  (emission-factor :vec3 :initform (vec 1 1 1) :initarg :emission-factor :accessor emission-factor)
   (metallic-factor :float :initform 1.0 :initarg :metallic-factor :accessor metallic-factor)
   (roughness-factor :float :initform 1.0 :initarg :roughness-factor :accessor roughness-factor)
   (occlusion-factor :float :initform 1.0 :initarg :occlusion-factor :accessor occlusion-factor)
