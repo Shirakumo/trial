@@ -21,24 +21,6 @@
   :min-filter :nearest
   :mag-filter :nearest)
 
-(define-gl-struct standard-light
-  (type :int :accessor light-type)
-  (position :vec3 :accessor location)
-  (direction :vec3 :accessor direction)
-  (color :vec3 :accessor color)
-  (attenuation-linear :float :accessor attenuation-linear)
-  (attenuation-quadratic :float :accessor attenuation-quadratic)
-  (outer-radius :float :accessor outer-radius)
-  (cutoff-radius :float :accessor cutoff-radius))
-
-(defmethod active-p ((light standard-light))
-  (< 0 (light-type light)))
-
-(define-gl-struct standard-light-block
-  (size NIL :initarg :size :initform 128 :reader size)
-  (light-count :int :accessor light-count)
-  (lights (:array (:struct standard-light) size) :reader lights))
-
 (define-gl-struct standard-environment-information
   (view-matrix :mat4)
   (projection-matrix :mat4)
@@ -51,6 +33,13 @@
 (define-asset (trial standard-environment-information) uniform-block
     'standard-environment-information
   :binding NIL)
+
+(defclass material ()
+  ((textures :initform #() :accessor textures)))
+
+(defmethod stage ((material material) (area staging-area))
+  (loop for texture across (textures material)
+        do (stage texture area)))
 
 (define-shader-pass standard-render-pass (per-object-pass)
   ((color :port-type output :texspec (:internal-format :rgba32f) :attachment :color-attachment0 :reader color)
@@ -79,8 +68,12 @@
          (setf max-textures (max max-textures (unit-id port))))))
     (lru-cache-resize (allocated-textures pass) max-textures)))
 
+(defmethod clear :after ((pass standard-render-pass))
+  (lru-cache-clear (allocated-textures pass))
+  (lru-cache-clear (allocated-materials pass))
+  (lru-cache-clear (allocated-lights pass)))
+
 (defgeneric material-block-type (standard-render-pass))
-(defgeneric update-material (material-block material id))
 
 (defmethod compute-shader (type (pass standard-render-pass) object)
   (if (or (typep object 'standard-renderable)
@@ -129,20 +122,14 @@
 (defmethod local-id ((texture texture) (pass standard-render-pass))
   (lru-cache-id texture (allocated-textures pass)))
 
-(defmethod enable ((light standard-light) (pass standard-render-pass))
+(defmethod enable ((light light) (pass standard-render-pass))
   (let ((id (lru-cache-push light (allocated-lights pass))))
     (when id
       (with-buffer-tx (struct (light-block pass))
-        (let ((target (aref (slot-value struct 'lights) id)))
-          (macrolet ((transfer (&rest fields)
-                       `(setf ,@(loop for field in fields
-                                      collect `(,field target)
-                                      collect `(,field light)))))
-            (transfer light-type location direction color attenuation-linear
-                      attenuation-quadratic outer-radius cutoff-radius)))
+        (transfer-to (aref (slot-value struct 'lights) id) light)
         (setf (light-count struct) (max (light-count struct) (1+ id)))))))
 
-(defmethod disable ((light standard-light) (pass standard-render-pass))
+(defmethod disable ((light light) (pass standard-render-pass))
   (let ((id (lru-cache-pop light (allocated-lights pass))))
     (when id
       (with-buffer-tx (struct (light-block pass))
@@ -153,17 +140,14 @@
                    (return))
               finally (setf (light-count struct) 0))))))
 
-(defmethod local-id ((light standard-light) (pass standard-render-pass))
+(defmethod local-id ((light light) (pass standard-render-pass))
   (lru-cache-id light (allocated-lights pass)))
-
-(defclass material ()
-  ((textures :initform #() :accessor textures)))
 
 (defmethod enable ((material material) (pass standard-render-pass))
   (let ((id (lru-cache-push material (allocated-materials pass))))
     (when id
       (with-buffer-tx (struct (material-block pass))
-        (update-material struct material id)))
+        (transfer-to (aref (slot-value struct 'materials) id) material)))
     (loop for texture across (textures material)
           do (enable texture pass))))
 
@@ -173,18 +157,13 @@
 (defmethod local-id ((material material) (pass standard-render-pass))
   (lru-cache-id material (allocated-materials pass)))
 
-(defmethod stage ((material material) (area staging-area))
-  (loop for texture across (textures material)
-        do (stage texture area)))
-
 (define-shader-entity standard-renderable (renderable transformed-entity)
   ((vertex-array :initarg :vertex-array :initform NIL :accessor vertex-array))
   (:shader-file (trial "standard-renderable.glsl"))
   (:inhibit-shaders (shader-entity :fragment-shader)))
 
 (defmethod stage :after ((renderable standard-renderable) (area staging-area))
-  (stage (vertex-array renderable) area)
-  (stage (material renderable) area))
+  (stage (vertex-array renderable) area))
 
 (defmethod render ((renderable standard-renderable) (program shader-program))
   (declare (optimize speed))
@@ -198,12 +177,35 @@
 (define-shader-entity single-material-renderable (standard-renderable)
   ((material :initarg :material :accessor material)))
 
+(defmethod stage :after ((renderable single-material-renderable) (area staging-area))
+  (stage (material renderable) area))
+
 (defmethod render-with :before ((pass standard-render-pass) (object single-material-renderable) program)
   (activate program)
   (render-with pass (material object) program))
 
-;; TODO:
-;; [ ] resolve discrepancy of model import material / model "native material" <-> pass material
-;;      is it reasonable to allow a model to have different materials per pass?
-;; [ ] implement normal maps in phong shader
-;;      dig this back out of the git history
+(define-shader-pass light-cache-render-pass (standard-render-pass)
+  ((light-cache :initform (org.shirakumo.fraf.trial.space.kd-tree:make-kd-tree) :reader light-cache)
+   (light-cache-dirty-p :initform T :accessor light-cache-dirty-p)))
+
+(defmethod clear :after ((pass light-cache-render-pass))
+  (3ds:clear (light-cache pass)))
+
+(defmethod enter ((light light) (pass light-cache-render-pass))
+  (3ds:enter light (light-cache pass))
+  (setf (light-cache-dirty-p pass) T))
+
+(defmethod leave ((light light) (pass light-cache-render-pass))
+  (3ds:leave light (light-cache pass))
+  (setf (light-cache-dirty-p pass) T))
+
+(defmethod render :before ((pass light-cache-render-pass) target)
+  (when (light-cache-dirty-p pass)
+    (let* ((camera (camera pass))
+           (size (lru-cache-size (allocated-lights pass)))
+           (nearest (org.shirakumo.fraf.trial.space.kd-tree:kd-tree-k-nearest
+                     size (location (target camera)) (light-cache pass) :test #'active-p)))
+      (loop for light across nearest
+            do (enable light pass)))))
+
+;; FIXME: how do we know when lights moved or de/activated so we can update?

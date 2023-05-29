@@ -33,7 +33,7 @@ struct StandardLightData{
 
 float evaluate_light_attenuation(StandardLight light){
   float distance = length(light.position - world_position);
-  return 1.0 / (light.attenuation_linear * distance + light.attenuation_quadratic * distance * distance);
+  return 1.0 / (light.linear_attenuation * distance + light.quadratic_attenuation * distance * distance);
 }
 
 StandardLightData evaluate_light_ambient(in StandardLight light){
