@@ -33,7 +33,7 @@
                (:file "camera" :depends-on ("package" "container" "input" "transforms"))
                (:file "capture" :depends-on ("package" "toolkit" "serialize" "event-loop" "input"))
                (:file "conditions" :depends-on ("package"))
-               (:file "container" :depends-on ("package"))
+               (:file "container" :depends-on ("package" "toolkit" "transforms"))
                (:file "context" :depends-on ("package"))
                (:file "controller" :depends-on ("package" "mapping" "input" "container" "asset" "text"))
                (:file "data-pointer" :depends-on ("package" "static-vector"))

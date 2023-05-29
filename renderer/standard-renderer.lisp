@@ -203,6 +203,8 @@
    (light-cache-distance-threshold :initform 10.0 :accessor light-cache-distance-threshold)
    (ambient-light :initform NIL :accessor ambient-light)))
 
+(defmethod object-renderable-p ((light light) (pass light-cache-render-pass)) T)
+
 (defmethod clear :after ((pass light-cache-render-pass))
   (3ds:clear (light-cache pass)))
 
@@ -225,18 +227,17 @@
 
 (define-handler ((pass light-cache-render-pass) tick :before) ()
   (when (<= (light-cache-distance-threshold pass)
-            (vsqrdistance (location (target (camera pass)))
-                          (light-cache-location pass)))
+            (vsqrdistance (focal-point (camera pass)) (light-cache-location pass)))
     (setf (light-cache-dirty-p pass) T)))
 
 (defmethod render :before ((pass light-cache-render-pass) target)
   (when (light-cache-dirty-p pass)
-    (let* ((location (v<- (light-cache-location pass) (global-location (target (camera pass)))))
-           (size (1- (lru-cache-size (allocated-lights pass))))
-           (nearest (org.shirakumo.fraf.trial.space.kd-tree:kd-tree-k-nearest
-                     size location (light-cache pass) :test #'active-p)))
-      (loop for light across nearest
-            do (enable light pass))
+    (let ((location (v<- (light-cache-location pass) (focal-point (camera pass))))
+          (size (1- (lru-cache-size (allocated-lights pass)))))
+      (multiple-value-bind (nearest count) (org.shirakumo.fraf.trial.space.kd-tree:kd-tree-k-nearest
+                                            size location (light-cache pass) :test #'active-p)
+        (dotimes (i count)
+          (enable (aref nearest i) pass)))
       (when (ambient-light pass)
         (enable (ambient-light pass) pass)))
     (setf (light-cache-dirty-p pass) NIL)))

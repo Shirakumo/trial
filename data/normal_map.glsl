@@ -1,5 +1,3 @@
-#section FRAGMENT_SHADER
-
 mat3 normal_map_cotangent_frame(in vec3 N, in vec3 p, in vec2 uv){
     // get edge vectors of the pixel triangle
     vec3 dp1 = dFdx(p);
