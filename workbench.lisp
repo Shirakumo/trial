@@ -108,10 +108,10 @@
     (enter (make-instance 'fps-counter) scene)
     (enter (make-instance 'vertex-entity :vertex-array (// 'workbench 'grid)) scene)
     (enter (make-instance 'editor-camera :rotation (vec 0 (* 1.5 PI) 0) :location (vec 100 10 0)) scene)
-    ;;(enter (make-instance 'trial::ambient-light :color (vec .1 .1 .1)) scene)
-    ;;(enter (make-instance 'trial::point-light :color (vec 0 0 100) :location (vec 0 30 0)) scene)
+    (enter (make-instance 'trial::ambient-light :color (vec .1 .1 .1)) scene)
+    (enter (make-instance 'trial::point-light :color (vec 0 0 100) :location (vec 0 30 0)) scene)
     ;;(enter (make-instance 'trial::directional-light :color (vec 1 1 1)) scene)
-    (enter (make-instance 'trial::spot-light :color (vec 1 1 1) :location (vec 0 30 0) :inner-radius 12.5 :outer-radius 17.5) scene)
+    (enter (make-instance 'trial::spot-light :color (vec 1 1 1) :location (vec 0 30 0) :outer-radius 30 :inner-radius 25) scene)
     (enter (make-instance 'trial::phong-render-pass) scene))
   (maybe-reload-scene))
 

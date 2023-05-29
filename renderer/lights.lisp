@@ -84,11 +84,29 @@
          most-positive-single-float))
 
 (defclass spot-light (directional-light located-light)
-  ((inner-radius :initarg :inner-radius :initform 30.0 :accessor inner-radius)
-   (outer-radius :initarg :outer-radius :initform 32.0 :accessor outer-radius)
+  ((inner-radius :initform 0.976296)
+   (outer-radius :initform 0.95371693)
    (quadratic-attenuation :initform 0.0)))
+
+(defmethod shared-initialize :after ((light spot-light) slots &key inner-radius outer-radius)
+  (when inner-radius (setf (inner-radius light) inner-radius))
+  (when outer-radius (setf (outer-radius light) outer-radius)))
+
+(defmethod inner-radius ((light spot-light))
+  (rad->deg (acos (slot-value light 'inner-radius))))
+
+(defmethod (setf inner-radius) (value (light spot-light))
+  (setf (slot-value light 'inner-radius) (float (cos (deg->rad (float value 0f0))) 0f0))
+  value)
+
+(defmethod outer-radius ((light spot-light))
+  (rad->deg (acos (slot-value light 'outer-radius))))
+
+(defmethod (setf outer-radius) (value (light spot-light))
+  (setf (slot-value light 'outer-radius) (float (cos (deg->rad (float value 0f0))) 0f0))
+  value)
 
 (defmethod transfer-to progn ((target standard-light) (light spot-light))
   (setf (light-type target) 4)
-  (setf (outer-radius target) (float (outer-radius light) 0f0))
-  (setf (inner-radius target) (float (inner-radius light) 0f0)))
+  (setf (inner-radius target) (slot-value light 'inner-radius))
+  (setf (outer-radius target) (slot-value light 'outer-radius)))
