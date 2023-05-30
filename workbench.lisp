@@ -112,7 +112,8 @@
     (enter (make-instance 'trial::ambient-light :color (vec .1 .1 .1)) scene)
     (enter (make-instance 'trial::point-light :color (vec 0 0 100) :location (vec 0 30 0)) scene)
     ;;(enter (make-instance 'trial::directional-light :color (vec 1 1 1)) scene)
-    (enter (make-instance 'trial::spot-light :color (vec 1 1 1) :location (vec 0 30 0) :outer-radius 30 :inner-radius 25) scene)
+    (enter (make-instance 'trial::spot-light :cast-shadows-p T :color (vec 1 1 1) :outer-radius 30 :inner-radius 25
+                                             :location (vec 30 30 0) :target (vec 0 0 0)) scene)
     (enter (make-instance 'trial::phong-render-pass) scene))
   (maybe-reload-scene))
 
