@@ -13,11 +13,13 @@
   (shadow-sample-spread :float :initform 0.0002 :accessor shadow-sample-spread)
   (light-space-matrices (:array :mat4 size)))
 
+;; TODO: implement frustum clipping to ensure the view of the light is as tight as possible
+
 (defmethod transfer-to progn ((struct shadow-map-block) (light directional-light))
-  (let ((cloc (location (camera (scene +main+)))))
-    (setf (elt (slot-value struct 'light-space-matrices) (shadow-map light))
-          (n*m (mortho -100.0 +100.0 -100.0 +100.0 1.0 1000.0)
-               (mlookat cloc (v+ cloc (direction light)) +vy3+)))))
+  ;; FIXME: Determine proper location
+  (setf (elt (slot-value struct 'light-space-matrices) (shadow-map light))
+        (n*m (mortho -100.0 +100.0 -100.0 +100.0 1.0 1000.0)
+             (mlookat (v* (direction light) -100) (vec 0 0 0) +vy3+))))
 
 (defmethod transfer-to progn ((struct shadow-map-block) (light spot-light))
   (setf (elt (slot-value struct 'light-space-matrices) (shadow-map light))
@@ -135,5 +137,6 @@
       (setf (uniform program "shadow_map_id") id)
       (%gl:framebuffer-texture-layer :framebuffer :depth-attachment map 0 id)
       (loop for (object) across frame
-            do (render object program)))
+            do (when (typep object 'standard-renderable)
+                 (render object program))))
     (activate (framebuffer pass))))
