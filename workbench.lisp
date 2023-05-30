@@ -1,4 +1,5 @@
 (defpackage #:workbench
+  (:nicknames #:trial-workbench #:org.shirakumo.fraf.trial.workbench)
   (:use #:cl+trial)
   (:shadow #:launch)
   (:local-nicknames
