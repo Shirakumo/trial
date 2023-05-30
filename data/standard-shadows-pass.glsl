@@ -58,7 +58,7 @@ void standard_init@after(){
   shadow_texel_size = 0.5 / textureSize(shadow_map, 0).xy;
 }
 
-StandardLightData evaluate_light@around(in StandardLight light){
+StandardLightData evaluate_light(in StandardLight light){
   StandardLightData data = call_next_method();
   if(light.shadow_map < 0xFFFF){
     float bias = shadow_bias(normal, data.direction);
