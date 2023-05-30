@@ -28,22 +28,23 @@ float random(vec4 seed4){
 }
 
 float shadow_factor(int map, vec3 position, float bias){
-  vec4 light_space_position = light_space_matrices[map] * vec4(position, 1);
+  ShadowMapInfo info = shadow_info[map];
+  vec4 light_space_position = info.projection_matrix * vec4(position, 1);
   vec3 projected = light_space_position.xyz / light_space_position.w;
   projected = (projected+1)*0.5;
   if(projected.z > 1) return 0.0;
   float closest = texture(shadow_map, vec3(projected.xy, map)).r;
   float current = projected.z;
   float shadow = 0;
-  for(int i=0; i<shadow_sample_count; ++i){
+  for(int i=0; i<info.sample_count; ++i){
     int index = int(16*random(vec4(gl_FragCoord.xyy, i)))%16;
-    vec2 poisson = poisson_disk[index]*shadow_sample_spread;
+    vec2 poisson = poisson_disk[index]*info.sample_spread;
     for(int x=-1; x<=1; ++x){
       for(int y=-1; y<=1; ++y){
         vec2 pos = projected.xy + poisson + vec2(x, y)*shadow_texel_size;
         float closest = texture(shadow_map, vec3(pos, map)).r;
         if((current - bias) > closest)
-          shadow+=(1.0 / (shadow_sample_count*8.0));
+          shadow+=(1.0 / (info.sample_count*8.0));
       }
     }
   }
@@ -62,7 +63,7 @@ StandardLightData evaluate_light(in StandardLight light){
   StandardLightData data = call_next_method();
   if(0 < light.type && light.shadow_map < 0xFFFF){
     float bias = shadow_bias(normal, data.direction);
-    data.radiance *= shadow_factor(light.shadow_map, world_position, bias);
+    data.radiance *= 1.0-shadow_factor(light.shadow_map, world_position, bias);
   }
   return data;
 }

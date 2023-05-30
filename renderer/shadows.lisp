@@ -6,23 +6,30 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(define-gl-struct shadow-map-info
+  (sample-count :int :initform 4 :accessor sample-count)
+  (sample-spread :float :initform 0.0002 :accessor sample-spread)
+  (projection-matrix :mat4))
+
 (define-gl-struct shadow-map-block
   (size NIL :initarg :size :initform 8 :reader size)
   (dirty-p NIL :initform NIL :accessor dirty-p)
-  (shadow-sample-count :int :initform 4 :accessor shadow-sample-count)
-  (shadow-sample-spread :float :initform 0.0002 :accessor shadow-sample-spread)
-  (light-space-matrices (:array :mat4 size)))
+  (shadow-info (:array (:struct shadow-map-info) size) :accessor shadow-info))
 
 ;; TODO: implement frustum clipping to ensure the view of the light is as tight as possible
 
-(defmethod transfer-to progn ((struct shadow-map-block) (light directional-light))
-  ;; FIXME: Determine proper location
-  (setf (elt (slot-value struct 'light-space-matrices) (shadow-map light))
-        (n*m (mortho -100.0 +100.0 -100.0 +100.0 1.0 1000.0)
-             (mlookat (v* (direction light) -100) (vec 0 0 0) +vy3+))))
+(defmethod transfer-to progn ((struct shadow-map-info) (light light))
+  (setf (sample-count struct) 4)
+  (setf (sample-spread struct) 0.0002))
 
-(defmethod transfer-to progn ((struct shadow-map-block) (light spot-light))
-  (setf (elt (slot-value struct 'light-space-matrices) (shadow-map light))
+(defmethod transfer-to progn ((struct shadow-map-info) (light directional-light))
+  (let ((point (focal-point (camera (scene +main+)))))
+    (setf (slot-value struct 'projection-matrix)
+          (n*m (mortho -100.0 +100.0 -100.0 +100.0 1.0 1000.0)
+               (mlookat (nv+ (v* (direction light) -100) point) point +vy3+)))))
+
+(defmethod transfer-to progn ((struct shadow-map-info) (light spot-light))
+  (setf (slot-value struct 'projection-matrix)
         (n*m (mperspective (* 2.0 (outer-radius light)) 1.0 1.0 100.0)
              (mlookat (location light) (v+ (location light) (direction light)) +vy3+))))
 
@@ -82,14 +89,14 @@
 (defmethod clear :after ((pass standard-shadows-pass))
   (lru-cache-clear (allocated-shadow-casters pass)))
 
-(defmethod enter :after ((light light) (pass standard-shadows-pass))
+(defmethod enter :before ((light light) (pass standard-shadows-pass))
   (when (cast-shadows-p light)
     (lru-cache-push light (allocated-shadow-casters pass))
     ;; FIXME: needd to unset shadow-map id in evicted light.
     (setf (shadow-map light) (lru-cache-id light (allocated-shadow-casters pass)))
     (if (allocated-p (shadow-map-block pass))
         (with-buffer-tx (struct (shadow-map-block pass))
-          (transfer-to struct light))
+          (transfer-to (aref (shadow-info struct) (shadow-map light)) light))
         (setf (dirty-p (struct (shadow-map-block pass))) T))))
 
 (defmethod leave :after ((light light) (pass standard-shadows-pass))
@@ -97,13 +104,13 @@
     (lru-cache-pop light (allocated-shadow-casters pass))
     (setf (shadow-map light) NIL)))
 
-(defmethod notice-update :after ((light light) (pass standard-shadows-pass))
+(defmethod notice-update :before ((light light) (pass standard-shadows-pass))
   (cond ((cast-shadows-p light)
          (lru-cache-push light (allocated-shadow-casters pass))
          (setf (shadow-map light) (lru-cache-id light (allocated-shadow-casters pass)))
          (if (allocated-p (shadow-map-block pass))
              (with-buffer-tx (struct (shadow-map-block pass))
-               (transfer-to struct light))
+               (transfer-to (aref (shadow-info struct) (shadow-map light)) light))
              (setf (dirty-p (struct (shadow-map-block pass))) T)))
         (T
          (lru-cache-pop light (allocated-shadow-casters pass))
@@ -128,15 +135,16 @@
     (activate program)
     (when (dirty-p (struct (shadow-map-block pass)))
       (with-buffer-tx (struct (shadow-map-block pass))
-        (setf (shadow-sample-count struct) 4)
-        (setf (shadow-sample-spread struct) 0.0002)
         (do-lru-cache (light id (allocated-shadow-casters pass))
-          (transfer-to struct light))
+          (transfer-to (aref (shadow-info struct) (shadow-map light)) light))
         (setf (dirty-p struct) NIL)))
     (do-lru-cache (light id (allocated-shadow-casters pass))
       (setf (uniform program "shadow_map_id") id)
       (%gl:framebuffer-texture-layer :framebuffer :depth-attachment map 0 id)
       (loop for (object) across frame
             do (when (typep object 'standard-renderable)
-                 (render object program))))
+                 (push-matrix)
+                 (apply-transforms object)
+                 (render object program)
+                 (pop-matrix))))
     (activate (framebuffer pass))))
