@@ -85,7 +85,6 @@
                (:file "settings" :depends-on ("package" "toolkit"))
                (:file "shader-entity" :depends-on ("package" "container" "event-loop" "loader"))
                (:file "shader-pass" :depends-on ("package" "shader-entity" "resource" ("resources" "framebuffer") ("resources" "shader-program") "scene" "loader" "context" "geometry-shapes" "camera"))
-               (:file "shadow-map" :depends-on ("package" "shader-pass" "transforms"))
                (:file "skybox" :depends-on ("package" "shader-entity" "transforms"))
                (:file "sprite" :depends-on ("package" "shader-entity" "helpers" ("assets" "sprite-data")))
                (:file "ssao" :depends-on ("package" "shader-pass" "transforms"))
