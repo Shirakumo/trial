@@ -30,7 +30,7 @@
   (setf (specular-factor target) (specular-factor material))
   (setf (alpha-cutoff target) (alpha-cutoff material)))
 
-(define-shader-pass phong-render-pass (light-cache-render-pass)
+(define-shader-pass phong-render-pass (standard-shadows-pass light-cache-render-pass)
   ()
   (:shader-file (trial "standard-render-phong.glsl")))
 
