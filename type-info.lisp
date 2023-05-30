@@ -192,7 +192,7 @@
                   (round-to
                    (buffer-field-base standard :vec4)
                    (* count (round-to (buffer-field-base standard :vec4)
-                                      (buffer-field-base standard type)))))))))
+                                      (buffer-field-size standard type 0)))))))))
 
 (defmethod buffer-field-stride ((standard std140) (type (eql :int))) 16)
 (defmethod buffer-field-stride ((standard std430) (type (eql :int))) 4)
