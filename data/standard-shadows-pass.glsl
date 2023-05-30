@@ -1,5 +1,7 @@
 #section FRAGMENT_SHADER
-uniform sampler2DArray shadow_maps_tex;
+uniform sampler2DArray shadow_map;
+
+vec2 shadow_texel_size;
 
 vec2 poisson_disk[16] = vec2[](
    vec2( -0.94201624, -0.39906216 ),
@@ -30,18 +32,18 @@ float shadow_factor(int map, vec3 position, float bias){
   vec3 projected = light_space_position.xyz / light_space_position.w;
   projected = (projected+1)*0.5;
   if(projected.z > 1) return 0.0;
-  float closest = texture(shadow_maps_tex, vec3(projected.xy, map)).r;
+  float closest = texture(shadow_map, vec3(projected.xy, map)).r;
   float current = projected.z;
   float shadow = 0;
-  vec2 texel_size = 0.5 / textureSize(shadow_map, 0);
   for(int i=0; i<shadow_sample_count; ++i){
     int index = int(16*random(vec4(gl_FragCoord.xyy, i)))%16;
     vec2 poisson = poisson_disk[index]*shadow_sample_spread;
     for(int x=-1; x<=1; ++x){
       for(int y=-1; y<=1; ++y){
-        float closest = texture(shadow_map, projected.xy + poisson + vec2(x, y)*texel_size).r;
+        vec2 pos = projected.xy + poisson + vec2(x, y)*shadow_texel_size;
+        float closest = texture(shadow_map, vec3(pos, map)).r;
         if((current - bias) > closest)
-          shadow+=(1.0 / (SHADOW_SAMPLES*8.0));
+          shadow+=(1.0 / (shadow_sample_count*8.0));
       }
     }
   }
@@ -52,7 +54,11 @@ float shadow_bias(vec3 normal, vec3 light_direction){
   return clamp(0.005*tan(acos(dot(normal, light_direction))), 0.0, 0.001);
 }
 
-StandardLightData evaluate_light(in StandardLight light){
+void standard_init@after(){
+  shadow_texel_size = 0.5 / textureSize(shadow_map, 0).xy;
+}
+
+StandardLightData evaluate_light@around(in StandardLight light){
   StandardLightData data = call_next_method();
   if(light.shadow_map < 0xFFFF){
     float bias = shadow_bias(normal, data.direction);

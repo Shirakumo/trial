@@ -45,7 +45,7 @@
    (shadow-map-block :reader shadow-map-block)
    (shadow-map-program :reader shadow-map-program)
    (shadow-map-framebuffer :reader shadow-map-framebuffer))
-  (:shaders (trial "standard-shadows-pass.glsl")))
+  (:shader-file (trial "standard-shadows-pass.glsl")))
 
 (defmethod initialize-instance :after ((pass standard-shadows-pass) &key (max-shadow-casters 8) (shadow-map-resolution 2048))
   (setf (allocated-shadow-casters pass) (make-lru-cache max-shadow-casters))
@@ -106,6 +106,15 @@
          (lru-cache-pop light (allocated-shadow-casters pass))
          (setf (shadow-map light) NIL))))
 
+(defmethod compute-shader (type (pass standard-shadows-pass) object)
+  (if (or (typep object 'standard-renderable)
+          (subtypep object 'standard-renderable))
+      (let ((next (call-next-method)))
+        (when next
+          (list* (gl-source (shadow-map-block pass))
+                 next)))
+      (call-next-method)))
+
 (defmethod render-frame :before ((pass standard-shadows-pass) frame)
   (let ((program (shadow-map-program pass))
         (map (gl-name (shadow-map pass))))
@@ -113,8 +122,11 @@
     (activate program)
     (when (dirty-p (struct (shadow-map-block pass)))
       (with-buffer-tx (struct (shadow-map-block pass))
+        (setf (shadow-sample-count struct) 4)
+        (setf (shadow-sample-spread struct) 0.0002)
         (do-lru-cache (light id (allocated-shadow-casters pass))
-          (transfer-to struct light))))
+          (transfer-to struct light))
+        (setf (dirty-p struct) NIL)))
     (do-lru-cache (light id (allocated-shadow-casters pass))
       (setf (uniform program "shadow_map_id") id)
       (%gl:framebuffer-texture-layer :framebuffer :depth-attachment map 0 id)
