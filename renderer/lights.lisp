@@ -13,7 +13,7 @@
   (color :vec3 :accessor color)
   (attenuation :vec2 :accessor attenuation)
   (spot-radius :vec2 :accessor spot-radius)
-  (shadow-map :int :initform 0 :accessor shadow-map))
+  (shadow-map :int :initform #xFFFF :accessor shadow-map))
 
 (defmethod active-p ((light standard-light))
   (< 0 (light-type light)))

@@ -60,7 +60,7 @@ void standard_init@after(){
 
 StandardLightData evaluate_light(in StandardLight light){
   StandardLightData data = call_next_method();
-  if(light.shadow_map < 0xFFFF){
+  if(0 < light.type && light.shadow_map < 0xFFFF){
     float bias = shadow_bias(normal, data.direction);
     data.radiance *= shadow_factor(light.shadow_map, world_position, bias);
   }
