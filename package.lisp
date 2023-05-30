@@ -1072,8 +1072,6 @@
    #:active-particles
    #:lifetime
    #:clock)
-  ;; phong.lisp
-  (:export)
   ;; pipeline.lisp
   (:export
    #:pipeline
@@ -1253,15 +1251,6 @@
    #:single-shader-scene-pass
    #:shader-program
    #:post-effect-pass)
-  ;; shadow-map.lisp
-  (:export
-   #:shadow-map-pass
-   #:shadow
-   #:shadow-projection-matrix
-   #:shadow-view-matrix
-   #:shadow-render-pass
-   #:shadow-map
-   #:shadow-map-pass)
   ;; skybox.lisp
   (:export
    #:skybox
