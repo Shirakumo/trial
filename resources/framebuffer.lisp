@@ -8,11 +8,14 @@
 
 (defclass framebuffer (gl-resource)
   ((attachments :initarg :attachments :accessor attachments)
-   (clear-bits :initarg :clear-bits :initform 17664 :accessor clear-bits)
+   (clear-bits :initform 17664 :accessor clear-bits)
    (width :initarg :width :initform NIL :accessor width)
    (height :initarg :height :initform NIL :accessor height))
   (:default-initargs
    :attachments (error "ATTACHMENTS required.")))
+
+(defmethod shared-initialize :after ((framebuffer framebuffer) slots &key clear-bits)
+  (when clear-bits (setf (clear-bits framebuffer) clear-bits)))
 
 (defmethod print-object ((framebuffer framebuffer) stream)
   (print-unreadable-object (framebuffer stream :type T :identity T)

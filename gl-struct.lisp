@@ -58,7 +58,7 @@
                  (vector
                   (loop for v across value
                         do (setf (storage-ptr v) pointer)))
-                 (gl-struct
+                 ((or gl-vector gl-struct)
                   (setf (storage-ptr value) pointer)))))))
 
 (defmethod compute-dependent-types ((struct gl-struct))
@@ -317,7 +317,7 @@
 ;; FIXME: maybe this should be NIL during class initialisation after all so that the
 ;;        slot initform can do its thing.
 (defmethod c2mop:slot-boundp-using-class ((class gl-struct-class) (object gl-struct) (slot gl-struct-effective-slot))
-  (or (storage-ptr object)
+  (or (not (null (storage-ptr object)))
       (call-next-method)))
 
 (defmethod c2mop:slot-makunbound-using-class ((class gl-struct-class) (object gl-struct) (slot gl-struct-effective-slot))
@@ -392,7 +392,7 @@
 
 ;;; Only for primitive types.
 ;;; FIXME: factor out into trivial-* library
-(defclass gl-vector (#+(or abcl sbcl) sequence)
+(defclass gl-vector (standard-object #+(or abcl sbcl) sequence)
   ((storage-ptr :initarg :storage-ptr :accessor storage-ptr)
    (base-offset :initform 0 :initarg :base-offset :accessor base-offset)
    (element-count :initarg :element-count :reader sb-sequence:length)
