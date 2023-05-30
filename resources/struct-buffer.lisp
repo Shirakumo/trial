@@ -10,6 +10,10 @@
   ((data-usage :initform :stream-draw)
    (struct :accessor struct)))
 
+(defmethod print-object ((buffer struct-buffer) stream)
+  (print-unreadable-object (buffer stream :type T :identity T)
+    (format stream "~a ~a~:[~; ALLOCATED~]" (type-of (struct buffer)) (data-usage buffer) (allocated-p buffer))))
+
 (defmethod shared-initialize :after ((buffer struct-buffer) slots &key struct-class struct)
   (when struct-class
     (setf (struct buffer) (make-instance struct-class)))
