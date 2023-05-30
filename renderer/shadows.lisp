@@ -115,6 +115,9 @@
                  next)))
       (call-next-method)))
 
+(defmethod buffers ((pass standard-shadows-pass))
+  (list* (shadow-map-block pass) (call-next-method)))
+
 (defmethod render-frame :before ((pass standard-shadows-pass) frame)
   (let ((program (shadow-map-program pass))
         (map (gl-name (shadow-map pass))))

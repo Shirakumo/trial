@@ -199,7 +199,7 @@
   (stage (material renderable) area))
 
 (defmethod render-with :before ((pass standard-render-pass) (object single-material-renderable) program)
-  (activate program)
+  (prepare-pass-program pass program)
   (render-with pass (material object) program))
 
 (define-shader-pass light-cache-render-pass (standard-render-pass)
