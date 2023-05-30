@@ -11,10 +11,9 @@
   (position :vec3 :accessor location)
   (direction :vec3 :accessor direction)
   (color :vec3 :accessor color)
-  (linear-attenuation :float :accessor linear-attenuation)
-  (quadratic-attenuation :float :accessor quadratic-attenuation)
-  (inner-radius :float :accessor inner-radius)
-  (outer-radius :float :accessor outer-radius))
+  (attenuation :vec2 :accessor attenuation)
+  (spot-radius :vec2 :accessor spot-radius)
+  (shadow-map :int :initform 0 :accessor shadow-map))
 
 (defmethod active-p ((light standard-light))
   (< 0 (light-type light)))
@@ -26,14 +25,16 @@
 
 (defclass light (entity)
   ((color :initarg :color :initform (vec 1 1 1) :accessor color)
-   (active-p :initarg :active-p :initform T :accessor active-p)
-   (cast-shadows-p :initarg :cast-shadows-p :initform NIL :accessor cast-shadows-p)))
+   (active-p :initarg :active-p :initform T :accessor active-p)))
 
 (defmethod transfer-to progn ((target standard-light) (light light))
-  (setf (color target) (color light)))
+  (setf (color target) (color light))
+  (setf (shadow-map target) #xFFFF))
 
 (defmethod 3ds:location ((light light))
   #.(vec 0 0 0))
+
+(defmethod cast-shadows-p ((light light)) NIL)
 
 (defclass ambient-light (light)
   ())
@@ -53,21 +54,23 @@
 
 (defmethod transfer-to progn ((target standard-light) (light located-light))
   (setf (location target) (global-location light))
-  (setf (linear-attenuation target) (linear-attenuation light))
-  (setf (quadratic-attenuation target) (quadratic-attenuation light)))
+  (setf (attenuation target) (vec (linear-attenuation light) (quadratic-attenuation light))))
 
 (defmethod 3ds:bsize ((light located-light))
   #.(vec 0 0 0))
 
 (defclass point-light (located-light)
-  ())
+  ((shadow-map :initform NIL :accessor shadow-map)
+   (cast-shadows-p :initform NIL :initarg :cast-shadows-p :accessor cast-shadows-p)))
 
 (defmethod transfer-to progn ((target standard-light) (light point-light))
-  (setf (light-type target) 2))
+  (setf (light-type target) 2)
+  (when (shadow-map light) (setf (shadow-map target) (shadow-map light))))
 
 (defclass directional-light (light)
   ((direction :initform (vec 0 -1 0) :reader direction)
-   (cast-shadows-p :initform T)))
+   (shadow-map :initarg :shadow-map :initform NIL :accessor shadow-map)
+   (cast-shadows-p :initform T :initarg :cast-shadows-p :accessor cast-shadows-p)))
 
 (defmethod shared-initialize :after ((light directional-light) slots &key direction)
   (when direction (setf (direction light) direction)))
@@ -78,7 +81,8 @@
 
 (defmethod transfer-to progn ((target standard-light) (light directional-light))
   (setf (light-type target) 3)
-  (setf (direction target) (direction light)))
+  (setf (direction target) (direction light))
+  (when (shadow-map light) (setf (shadow-map target) (shadow-map light))))
 
 (defmethod 3ds:bsize ((light directional-light))
   #.(vec most-positive-single-float
@@ -110,5 +114,4 @@
 
 (defmethod transfer-to progn ((target standard-light) (light spot-light))
   (setf (light-type target) 4)
-  (setf (inner-radius target) (slot-value light 'inner-radius))
-  (setf (outer-radius target) (slot-value light 'outer-radius)))
+  (setf (spot-radius target) (vec (slot-value light 'inner-radius) (slot-value light 'outer-radius))))
