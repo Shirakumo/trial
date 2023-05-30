@@ -94,9 +94,10 @@
    (outer-radius :initform 0.95371693)
    (quadratic-attenuation :initform 0.0)))
 
-(defmethod shared-initialize :after ((light spot-light) slots &key inner-radius outer-radius)
+(defmethod shared-initialize :after ((light spot-light) slots &key inner-radius outer-radius target)
   (when inner-radius (setf (inner-radius light) inner-radius))
-  (when outer-radius (setf (outer-radius light) outer-radius)))
+  (when outer-radius (setf (outer-radius light) outer-radius))
+  (when target (setf (target light) target)))
 
 (defmethod inner-radius ((light spot-light))
   (rad->deg (acos (slot-value light 'inner-radius))))
@@ -115,3 +116,13 @@
 (defmethod transfer-to progn ((target standard-light) (light spot-light))
   (setf (light-type target) 4)
   (setf (spot-radius target) (vec (slot-value light 'inner-radius) (slot-value light 'outer-radius))))
+
+(defmethod (setf target) ((location vec3) (light spot-light))
+  (v<- (direction light) location)
+  (nv- (direction light) (location light))
+  (nvunit (direction light))
+  location)
+
+(defmethod (setf target) ((entity entity) (light spot-light))
+  (setf (target light) (global-location entity))
+  entity)
