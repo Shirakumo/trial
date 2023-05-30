@@ -5,7 +5,7 @@ uniform int shadow_map_id;
 
 void main(){
   vec4 world_position = model_matrix * vec4(in_position, 1);
-  gl_Position = light_space_matrices[shadow_map_id] * world_position;
+  gl_Position = shadow_info[shadow_map_id].projection_matrix * world_position;
 }
 
 #section FRAGMENT_SHADER
