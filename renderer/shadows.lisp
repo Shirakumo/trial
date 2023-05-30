@@ -14,9 +14,10 @@
   (light-space-matrices (:array :mat4 size)))
 
 (defmethod transfer-to progn ((struct shadow-map-block) (light directional-light))
-  (setf (elt (slot-value struct 'light-space-matrices) (shadow-map light))
-        (n*m (mortho -100.0 +100.0 -100.0 +100.0 1.0 100.0)
-             (mlookat (location light) (v+ (location light) (direction light)) +vy3+))))
+  (let ((cloc (location (camera (scene +main+)))))
+    (setf (elt (slot-value struct 'light-space-matrices) (shadow-map light))
+          (n*m (mortho -100.0 +100.0 -100.0 +100.0 1.0 1000.0)
+               (mlookat cloc (v+ cloc (direction light)) +vy3+)))))
 
 (defmethod transfer-to progn ((struct shadow-map-block) (light spot-light))
   (setf (elt (slot-value struct 'light-space-matrices) (shadow-map light))
