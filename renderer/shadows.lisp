@@ -23,7 +23,7 @@
 
 (defmethod transfer-to progn ((struct shadow-map-block) (light spot-light))
   (setf (elt (slot-value struct 'light-space-matrices) (shadow-map light))
-        (n*m (mperspective (outer-radius light) 1.0 1.0 100.0)
+        (n*m (mperspective (* 2.0 (outer-radius light)) 1.0 1.0 100.0)
              (mlookat (location light) (v+ (location light) (direction light)) +vy3+))))
 
 (defmethod transfer-to progn ((struct shadow-map-block) (light point-light))
