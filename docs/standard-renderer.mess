@@ -1,0 +1,117 @@
+# Standard Renderer Protocol
+The "render pipeline"(link render-pipeline.mess) is a very loose and low-level system that organises rendering information. Most notably, it does not provide a protocol for dealing with materials, light sources, lighting models, and other associated problems. This is where the standard renderer protocol comes in.
+
+## Standard Information
+Every ``standard-renderer-pass`` will provide the following variables to the shaders:
+
+- ``mat4`` ``view_matrix``
+  The camera's view matrix
+- ``mat4`` ``projection_matrix``
+  The camera's projection matrix
+- ``vec2`` ``view_size``
+  The size of the view / window
+- ``vec3`` ``camera_position``
+  The position of the camera in world space
+- ``float`` ``tt``
+  The current total time passage (see ``tick``)
+- ``float`` ``dt``
+  The physics time step (see ``tick``)
+- ``float`` ``fdt``
+  The delta time since the last frame was rendered
+
+The following variables must be set in the fragment shader:
+
+- ``vec3`` ``world_position``
+  The position of the current fragment in world space
+- ``vec3`` ``view_position``
+  The position of the current fragment in view space
+- ``vec3`` ``normal``
+  The normal of the current fragment
+- ``vec2`` ``uv``
+  The UV coordinate of the current fragment for its respective textures
+- ``vec4`` ``color``
+  The color to be output for the current fragment
+
+An implementation of the ``standard-renderer-pass`` should set these values through the use of the following functions:
+
+- ``standard_init``
+  Called once at the beginning of the fragment stage
+- ``standard_shade``
+  Called per active light
+- ``standard_mix``
+  Called to accumulate the shaded colour
+- ``standard_finish``
+  Called once at the end of the fragment stage
+
+You may use glsl-toolkit's standard method combinators to neatly override and combine behaviours. Appending ``@after``, ``@before``, or ``@around`` to your function names will cause the same semantic behaviour as you'd expect from the standard method combination, though without any regard for argument or return types. In ``@around`` or primary "methods", you may also use ``call_next_method`` to call the next "method", and ``next_method_p`` to determine whether there is one or not.
+
+The ``standard-renderable`` expects a ``vertex-array`` with the following attributes:
+
+0. ``vec3`` position
+1. ``vec2`` UV coordinate
+2. ``vec3`` normal vector
+
+It will automatically supply the following variables to shaders:
+
+- ``mat4`` ``model_matrix``
+  The model transformation matrix
+- ``mat4`` ``inv_model_matrix``
+  The model inverse of the model transformation matrix
+
+And based on those compute the necessary variables in the vertex shader. It also provides a ``standard_init@before`` method in the fragment stage to set the ``world_position``, ``view_position``, ``normal``, and ``uv`` variables mentioned above.
+
+## Lights
+We provide a standardised light system through ``standard-light``, and the entities ``ambient-light``, ``located-light``, ``point-light``, ``directional-light``, and ``spot-light``. Any light holds a radiance ``color`` and a toggle for whether it is currently ``active-p``. Each light also holds a ``location`` and ``bsize``, even if they do not necessarily have any actual size. The extent information is used to allow light allocation in the renderer to be optimised transparently without having to know about specific light types.
+
+Lights with a location (``located-light``) also have a ``linear-falloff`` and ``quadratic-falloff`` to describe how their radiance diminishes over distance based on this simple formula:
+
+:: mathjax
+R_{effective} = R_{source} / (1 + F_{linear}*d + F_{quadratic}*d^2)
+::
+
+A spot light also has two factors to define the size of the illuminated spot, the ``outer-radius`` and ``inner-radius``, which are specified as half-angles. The outer radius defines the maximal radius of the spot, and the inner radius describes the radius within which the radiance is at its maximum. An outer radius of 90 would equal a directional light.
+
+A ``standard-renderer-pass`` limits the number of active lights at once. By default this is 128, though it can be customised with the ``:max-lights`` option at construction. In order to render a light, it must be ``enabled`` on the pass, and may be ``disabled`` again to remove it. If more lights are enabled than supported in the renderer, the oldest light is automatically evicted.
+
+The assigned ID of the light (if any) can be obtained via the ``local-id`` function. This ID will not change for the light unless it is removed.
+
+Note that the properties of ``light`` instance are not automatically synchronised with the light information used in a ``standard-renderer-pass``. If a light's properties have changed and you would like to make those changes reflect in the pass, you must call ``notice-update`` with the light and pass.
+
+The ``light-cache-render-pass`` takes care of automatically enabling and disabling lights based on their distance from the camera's current ``focal-point``. This is usually an adequate heuristic for determining the set of active lights, as light contribution falls off dramatically with distance. The ``light-cache-render-pass`` tracks an ``ambient-light`` instance specially to ensure that it is always active, however.
+
+## Materials
+We also provide a standardised materials system through ``material``. However, since the required material information varies highly depending on the lighting system used, aside from a ``textures`` array and a ``name``, no other properties are mandated for the base class.
+
+Materials can be accessed by name via ``material`` and asset importers that provide materials should call ``update-material`` to ensure that the material information is registered and updated. This allows materials to be shared across multiple models.
+
+Any material implementation must provide a method for ``texture-names``, which are used to read out initargs by name and slot them into the corresponding index in the ``textures`` vector.
+
+A ``standard-renderer-pass`` has a limited number of available slots for materials, similar to lights. The number of material slots can be configured via the ``:max-materials`` initarg on construction. Same as for lights, materials must be ``enabled`` to be used, and also follow the same LRU eviction strategy.
+
+When ``enable``ing a material, all its textures are also automatically enabled. The number of available texture slots is **not** user-configurable, and is instead based on the runtime value of OpenGL's max-texture-image-units, sans any texture slots taken up by the pass itself.
+
+Any implementation of ``standard-renderable`` must make sure to enable the required materials and bind the associated textures. The ``single-material-renderable`` will automatically call ``render-with`` on the pass, material, and shader program, to allow the renderer to configure the material properties as required and bind the textures.
+
+Any implementation of ``standard-renderer-pass`` must implement ``material-block-type`` to return the class name of a ``gl-struct`` that will accept the ``:size`` construction initarg and hold a GL slot called ``materials`` that is an array of the actual material struct instances, with ``:size`` number of elements.
+
+An implementation must also be provided for ``transfer-to`` between two instances of the material type. This is used to update the material property in the backed buffers from the material representation used by entities.
+
+You may also want to provide a ``coerce-object`` method for your material type from other material types, as model importers may not directly supply your ideal material type.
+
+## Shadows
+In real-time rendering systems shadows are usually handled separately, and often implemented via shadow maps, where each light maintains a depth map by which occlusion can be determined. The ``standard-shadows-pass`` provides an automated implementation of shadow maps for all standard light types. This pass keeps a limited set of shadow maps, and can be configured via the following initargs:
+
+- ``:max-shadow-casters``
+  The maximal number of lights that can cast shadows. Note that point lights take up the space of 6 directional or spot lights. This can only be provided at construction time.
+- ``:shadow-map-resolution``
+  The resolution of the shadow maps. Higher resolution leads to better accuracy of the shadow projections. This can only be provided at construction time.
+- ``:sample-count``
+  The number of poisson samples taken to determine the shadow value. Higher values provide smoother results, but at higher render cost.
+- ``:sample-spread``
+  The spread between samples. Higher values create blurrier edges but may avoid shadow acne better.
+
+Since the number of shadow maps is limited, a light that is ``enable``d is only given a shadow map if there is enough space free. Please note that shadow maps are quite expensive in general, as each map requires a re-rendering of the entire scene, which can be quite costly with large numbers of objects or dense geometry.
+
+The shadow calculation is transparently hooked into the ``evaluate_light_*`` functions provided by the ``standard-renderer-pass``, and thus requires no further attention from the shading implementation.
+
+You may dynamically de/activate a light's shadow casting by setting ``cast-shadows-p``, and then ``notice-update`` on the light and pass.
