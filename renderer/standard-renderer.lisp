@@ -174,7 +174,7 @@
       (with-buffer-tx (struct (material-block pass))
         (transfer-to (aref (slot-value struct 'materials) id) material)))))
 
-(define-shader-entity standard-renderable (renderable transformed-entity)
+(define-shader-entity standard-renderable (renderable)
   ((vertex-array :initarg :vertex-array :initform NIL :accessor vertex-array))
   (:shader-file (trial "standard-renderable.glsl"))
   (:inhibit-shaders (shader-entity :fragment-shader)))
