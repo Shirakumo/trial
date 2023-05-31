@@ -39,7 +39,7 @@
   (setf (occlusion-factor target) (occlusion-factor material))
   (setf (alpha-cutoff target) (alpha-cutoff material)))
 
-(define-shader-pass pbr-render-pass (light-cache-render-pass)
+(define-shader-pass pbr-render-pass (standard-shadows-pass light-cache-render-pass)
   ()
   (:shader-file (trial "standard-render-pbr.glsl")))
 

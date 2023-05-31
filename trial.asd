@@ -119,10 +119,10 @@
                (:module "renderer"
                 :depends-on ("package" "shader-pass" "helpers" "gl-struct" "transforms")
                 :components ((:file "lights")
-                             (:file "pbr" :depends-on ("standard-renderer" "shadows"))
-                             (:file "phong" :depends-on ("standard-renderer" "shadows"))
-                             (:file "standard-renderer" :depends-on ("lights"))
-                             (:file "shadows" :depends-on ("standard-renderer"))))
+                             (:file "pbr" :depends-on ("standard-renderer" "shadow-map"))
+                             (:file "phong" :depends-on ("standard-renderer" "shadow-map"))
+                             (:file "shadow-map" :depends-on ("standard-renderer"))
+                             (:file "standard-renderer" :depends-on ("lights"))))
                (:module "resources"
                 :depends-on ("package" "resource" "toolkit" "data-pointer")
                 :components ((:file "buffer-object")

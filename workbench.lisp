@@ -42,12 +42,12 @@
     (make-cube-mesh 10))
 
 (define-asset (workbench ground) mesh
-    (make-cube-mesh 1000 :y -500))
+    (make-cube-mesh 100))
 
 (define-asset (workbench grid) mesh
     (make-line-grid-mesh 10 100 100))
 
-(define-shader-entity ground (trial::single-material-renderable)
+(define-shader-entity ground (trial::single-material-renderable transformed-entity)
   ((trial::material :initform (make-instance 'trial::phong-material))
    (vertex-array :initform (// 'workbench 'ground))))
 
@@ -105,15 +105,19 @@
                (enter cube scene))
       (enter (make-instance 'gravity :gravity (vec 0 -200 0)) physics)
       (enter physics scene))
-    (enter (make-instance 'ground) scene)
+    (enter (make-instance 'ground :location (vec 0 -50 0)) scene)
+    (enter (make-instance 'ground :location (vec 0 +150 0)) scene)
+    (enter (make-instance 'ground :location (vec +100 +50 0)) scene)
+    (enter (make-instance 'ground :location (vec -100 +50 0)) scene)
+    (enter (make-instance 'ground :location (vec 0 +50 +100)) scene)
+    (enter (make-instance 'ground :location (vec 0 +50 -100)) scene)
     (enter (make-instance 'fps-counter) scene)
     (enter (make-instance 'vertex-entity :vertex-array (// 'workbench 'grid)) scene)
-    (enter (make-instance 'editor-camera :rotation (vec 0 (* 1.5 PI) 0) :location (vec 100 10 0)) scene)
+    (enter (make-instance 'editor-camera :rotation (vec 0 (* 1.5 PI) 0) :location (vec 75 30 0)) scene)
     (enter (make-instance 'trial::ambient-light :color (vec .1 .1 .1)) scene)
-    (enter (make-instance 'trial::point-light :color (vec 0 0 100) :location (vec 0 30 0)) scene)
+    (enter (make-instance 'trial::point-light :cast-shadows-p T :color (vec 1000 1000 1000) :location (vec 0 50 25)
+                                              :linear-attenuation 0.2 :quadratic-attenuation 1.0) scene)
     ;;(enter (make-instance 'trial::directional-light :color (vec 1 1 1)) scene)
-    (enter (make-instance 'trial::spot-light :cast-shadows-p T :color (vec 1 1 1) :outer-radius 30 :inner-radius 25
-                                             :location (vec 30 30 0) :target (vec 0 0 0)) scene)
     (enter (make-instance 'trial::phong-render-pass) scene))
   (maybe-reload-scene))
 

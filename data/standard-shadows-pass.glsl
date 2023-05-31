@@ -1,4 +1,5 @@
 #section FRAGMENT_SHADER
+#include (trial::trial "cube_maps.glsl")
 uniform sampler2DArray shadow_map;
 
 vec2 shadow_texel_size;
@@ -27,21 +28,16 @@ float random(vec4 seed4){
   return fract(sin(dot_product) * 43758.5453);
 }
 
-float shadow_factor(int map, vec3 position, float bias){
-  ShadowMapInfo info = shadow_info[map];
-  vec4 light_space_position = info.projection_matrix * vec4(position, 1);
-  vec3 projected = light_space_position.xyz / light_space_position.w;
-  projected = (projected+1)*0.5;
-  if(projected.z > 1) return 0.0;
-  float closest = texture(shadow_map, vec3(projected.xy, map)).r;
-  float current = projected.z;
+float shadow_factor(ShadowMapInfo info, vec3 uvw, float map, float bias){
+  float closest = texture(shadow_map, vec3(uvw.xy, map)).r;
+  float current = uvw.z;
   float shadow = 0;
   for(int i=0; i<info.sample_count; ++i){
     int index = int(16*random(vec4(gl_FragCoord.xyy, i)))%16;
     vec2 poisson = poisson_disk[index]*info.sample_spread;
     for(int x=-1; x<=1; ++x){
       for(int y=-1; y<=1; ++y){
-        vec2 pos = projected.xy + poisson + vec2(x, y)*shadow_texel_size;
+        vec2 pos = uvw.xy + poisson + vec2(x, y)*shadow_texel_size;
         float closest = texture(shadow_map, vec3(pos, map)).r;
         if((current - bias) > closest)
           shadow+=(1.0 / (info.sample_count*8.0));
@@ -59,11 +55,39 @@ void standard_init@after(){
   shadow_texel_size = 0.5 / textureSize(shadow_map, 0).xy;
 }
 
-StandardLightData evaluate_light(in StandardLight light){
+StandardLightData evaluate_light_point(in StandardLight light){
   StandardLightData data = call_next_method();
-  if(0 < light.type && light.shadow_map < 0xFFFF){
-    float bias = shadow_bias(normal, data.direction);
-    data.radiance *= 1.0-shadow_factor(light.shadow_map, world_position, bias);
+  if(light.shadow_map < 0xFFFF){
+      ShadowMapInfo info = shadow_info[light.shadow_map];
+      int shadow_map = light.shadow_map + cubemap_texture_index(normalize(world_position-light.position));
+      vec4 light_space_position = shadow_info[shadow_map].projection_matrix * vec4(world_position, 1);
+      vec3 projected = (light_space_position.xyz / light_space_position.w + 1) * 0.5;
+      float bias = shadow_bias(normal, data.direction);
+      data.radiance *= 1.0-shadow_factor(info, projected, shadow_map, bias);
+  }
+  return data;
+}
+
+StandardLightData evaluate_light_directional(in StandardLight light){
+  StandardLightData data = call_next_method();
+  if(light.shadow_map < 0xFFFF){
+      ShadowMapInfo info = shadow_info[light.shadow_map];
+      vec4 light_space_position = info.projection_matrix * vec4(world_position, 1);
+      vec3 projected = (light_space_position.xyz / light_space_position.w + 1) * 0.5;
+      float bias = shadow_bias(normal, data.direction);
+      data.radiance *= 1.0-shadow_factor(info, projected, light.shadow_map, bias);
+  }
+  return data;
+}
+
+StandardLightData evaluate_light_spot(in StandardLight light){
+  StandardLightData data = call_next_method();
+  if(light.shadow_map < 0xFFFF){
+      ShadowMapInfo info = shadow_info[light.shadow_map];
+      vec4 light_space_position = info.projection_matrix * vec4(world_position, 1);
+      vec3 projected = (light_space_position.xyz / light_space_position.w + 1) * 0.5;
+      float bias = shadow_bias(normal, data.direction);
+      data.radiance *= 1.0-shadow_factor(info, projected, light.shadow_map, bias);
   }
   return data;
 }
