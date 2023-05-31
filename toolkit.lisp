@@ -999,7 +999,8 @@
      ((:short :unsigned-short) :16)
      ((:int :unsigned-int) :32)
      ((:short-float) :16f)
-     ((:float) :32f))))
+     ((:float) :32f)
+     (:unsigned-int-5-9-9-9-rev :9-e5))))
 
 (defun infer-swizzle-format (pixel-format)
   (ecase pixel-format
