@@ -27,6 +27,17 @@
 (defmethod normal-texture ((material pbr-material))
   (aref (textures material) 3))
 
+;; FIXME: Allow specifying textures separated:
+;;  - Metalness
+;;  - Roughness
+;;  - Occlusion
+;;  - Metal-Rough
+;; But how do we combine them without loading them dynamically?
+;; A new kind of asset that can combine from multiple resources?
+
+(defmethod texture-names ((material pbr-material))
+  #(:albedo-texture :metal-rough-occlusion-texture :emission-texture :normal-texture))
+
 (define-gl-struct pbr-material-block
   (size NIL :initarg :size :initform 64 :reader size)
   (materials (:array (:struct pbr-material) size) :accessor materials))
@@ -45,10 +56,12 @@
 
 (defmethod render-with ((pass pbr-render-pass) (material pbr-material) program)
   (enable material pass)
-  (setf (uniform program "material_id") (local-id material pass))
-  (setf (uniform program "albedo_tex") (local-id (albedo-texture material) pass))
-  (setf (uniform program "metal_rough_occlusion_tex") (local-id (metal-rough-occlusion-texture material) pass))
-  (setf (uniform program "normal_tex") (local-id (normal-texture material) pass)))
+  (let ((textures (textures material)))
+    (setf (uniform program "material_id") (local-id material pass))
+    (setf (uniform program "albedo_tex") (local-id (aref textures 0) pass))
+    (setf (uniform program "metal_rough_occlusion_tex") (local-id (aref textures 1) pass))
+    (setf (uniform program "emission_tex") (local-id (aref textures 2) pass))
+    (setf (uniform program "normal_tex") (local-id (aref textures 3) pass))))
 
 (defmethod material-block-type ((pass pbr-render-pass))
   'pbr-material-block)

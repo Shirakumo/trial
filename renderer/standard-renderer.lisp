@@ -6,26 +6,6 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-asset (trial missing) image
-    #p "missing.png"
-  :min-filter :nearest
-  :mag-filter :nearest)
-
-(define-asset (trial black) image
-    #p "black.png"
-  :min-filter :nearest
-  :mag-filter :nearest)
-
-(define-asset (trial white) image
-    #p "white.png"
-  :min-filter :nearest
-  :mag-filter :nearest)
-
-(define-asset (trial neutral-normal) image
-    #p "neutral-normal.png"
-  :min-filter :nearest
-  :mag-filter :nearest)
-
 (define-gl-struct standard-environment-information
   (view-matrix :mat4)
   (projection-matrix :mat4)
@@ -38,13 +18,6 @@
 (define-asset (trial standard-environment-information) uniform-block
     'standard-environment-information
   :binding NIL)
-
-(defclass material ()
-  ((textures :initform #() :accessor textures)))
-
-(defmethod stage ((material material) (area staging-area))
-  (loop for texture across (textures material)
-        do (stage texture area)))
 
 (define-shader-pass standard-render-pass (per-object-pass)
   ((color :port-type output :texspec (:internal-format :rgba32f) :attachment :color-attachment0 :reader color)

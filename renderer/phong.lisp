@@ -21,6 +21,9 @@
 (defmethod normal-texture ((material phong-material))
   (aref (textures material) 2))
 
+(defmethod texture-names ((material pbr-material))
+  #(:diffuse-texture :specular-texture :normal-texture))
+
 (define-gl-struct phong-material-block
   (size NIL :initarg :size :initform 64 :reader size)
   (materials (:array (:struct phong-material) size) :accessor materials))
@@ -36,10 +39,11 @@
 
 (defmethod render-with ((pass phong-render-pass) (material phong-material) program)
   (enable material pass)
-  (setf (uniform program "material_id") (local-id material pass))
-  (setf (uniform program "diffuse_tex") (local-id (diffuse-texture material) pass))
-  (setf (uniform program "specular_tex") (local-id (specular-texture material) pass))
-  (setf (uniform program "normal_tex") (local-id (normal-texture material) pass)))
+  (let ((textures (textures material)))
+    (setf (uniform program "material_id") (local-id material pass))
+    (setf (uniform program "diffuse_tex") (local-id (aref textures 0) pass))
+    (setf (uniform program "specular_tex") (local-id (aref textures 1) pass))
+    (setf (uniform program "normal_tex") (local-id (aref textures 2) pass))))
 
 (defmethod material-block-type ((pass phong-render-pass))
   'phong-material-block)
