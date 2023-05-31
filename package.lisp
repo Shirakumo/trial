@@ -353,6 +353,86 @@
    #:impact)
   ;; physics/toolkit.lisp
   (:export)
+  ;; renderer/lights.lisp
+  (:export
+   #:standard-light
+   #:light-type
+   #:location
+   #:direction
+   #:color
+   #:attenuation
+   #:spot-radius
+   #:shadow-map
+   #:active-p
+   #:light
+   #:cast-shadows-p
+   #:ambient-light
+   #:located-light
+   #:linear-attenuation
+   #:quadratic-attenuation
+   #:point-light
+   #:directional-light
+   #:direction
+   #:spot-light
+   #:inner-radius
+   #:outer-radius)
+  ;; renderer/materials.lisp
+  (:export
+   #:missing
+   #:black
+   #:white
+   #:neutral-normal
+   #:material
+   #:textures
+   #:texture-names
+   #:list-materials
+   #:update-material)
+  ;; renderer/pbr.lisp
+  (:export
+   #:pbr-material
+   #:albedo-factor
+   #:emission-factor
+   #:metallic-factor
+   #:roughness-factor
+   #:occlusion-factor
+   #:alpha-cutoff
+   #:albedo-texture
+   #:metal-rough-occlusion-texture
+   #:emission-texture
+   #:normal-texture
+   #:pbr-render-pass)
+  ;; renderer/phong.lisp
+  (:export
+   #:phong-material
+   #:diffuse-factor
+   #:specular-factor
+   #:alpha-cutoff
+   #:diffuse-texture
+   #:specular-texture
+   #:normal-texture
+   #:phong-render-pass)
+  ;; renderer/standard-renderer.lisp
+  (:export
+   #:standard-environment-environment
+   #:view-size
+   #:location
+   #:tt
+   #:dt
+   #:fdt
+   #:standard-render-pass
+   #:color
+   #:normal
+   #:depth
+   #:material-block-type
+   #:enable
+   #:disable
+   #:local-id
+   #:notice-update
+   #:standard-renderable
+   #:vertex-array
+   #:single-material-renderable
+   #:material
+   #:light-cache-render-pass)
   ;; resources/buffer-object.lisp
   (:export
    #:buffer-object
@@ -1322,6 +1402,7 @@
    #:git-repo-commit
    #:version
    #:toolkit
+   #:transfer-to
    #:coerce-object
    #:finalize
    #:gl-property
