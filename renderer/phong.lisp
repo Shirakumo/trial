@@ -21,7 +21,7 @@
 (defmethod normal-texture ((material phong-material))
   (aref (textures material) 2))
 
-(defmethod texture-names ((material pbr-material))
+(defmethod texture-names ((material phong-material))
   #(:diffuse-texture :specular-texture :normal-texture))
 
 (define-gl-struct phong-material-block
