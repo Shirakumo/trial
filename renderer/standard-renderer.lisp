@@ -43,7 +43,7 @@
     (dolist (port (flow:ports pass))
       (typecase port
         (texture-port
-         (setf max-textures (max max-textures (unit-id port))))))
+         (setf max-textures (min max-textures (unit-id port))))))
     (lru-cache-resize (allocated-textures pass) max-textures)))
 
 (defmethod clear :after ((pass standard-render-pass))

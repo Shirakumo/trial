@@ -20,6 +20,8 @@ void main(){
 }
 
 #section FRAGMENT_SHADER
+uniform mat4 model_matrix;
+uniform mat4 inv_model_matrix;
 in vec3 v_world_position;
 in vec3 v_view_position;
 in vec3 v_normal;
