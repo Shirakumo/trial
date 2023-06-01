@@ -6,15 +6,42 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(defclass static-mesh ()
+  ((name :initarg :name :initform NIL :accessor name)
+   (vertex-data :initarg :vertex-data :initform (make-array 0 :element-type 'single-float) :accessor vertex-data)
+   (index-data :initarg :index-data :initform NIL :accessor index-data)))
+
+(defmethod skinned-p ((mesh static-mesh)) NIL)
+
+(defmethod make-vertex-array ((mesh static-mesh) vao)
+  (let ((vertex-data (make-instance 'vertex-buffer :buffer-data (vertex-data mesh)))
+        (index-data (index-data mesh)))
+    ;; Vertices contain: X Y Z NX NY NZ U V
+    (ensure-instance vao 'vertex-array
+                     :vertex-form :triangles
+                     :bindings (list* `(,vertex-data :size 3 :offset 0 :stride 32)
+                                      `(,vertex-data :size 3 :offset 12 :stride 32)
+                                      `(,vertex-data :size 2 :offset 24 :stride 32)
+                                      (when index-data
+                                        (list (make-instance 'vertex-buffer :buffer-data index-data
+                                                                            :buffer-type :element-array-buffer
+                                                                            :element-type :unsigned-int))))
+                     :size (if index-data
+                               (length index-data)
+                               (truncate (length (vertex-data mesh)) (+ 3 3 2))))))
+
+(defmethod update-buffer-data ((vao vertex-array) (mesh static-mesh) &key)
+  (let ((buffer (caar (bindings vao))))
+    (update-buffer-data buffer (position-normals mesh))))
+
 (defclass skinned-mesh ()
   ((name :initarg :name :initform NIL :accessor name)
    (position-normals :initform (make-array 0 :element-type 'single-float) :accessor position-normals)
-   (vertex-data :initform (make-array 0 :element-type 'single-float) :accessor vertex-data)
-   (index-data :initform NIL :accessor index-data)
+   (vertex-data :initarg :vertex-data :initform (make-array 0 :element-type 'single-float) :accessor vertex-data)
+   (index-data :initarg :index-data :initform NIL :accessor index-data)
    (skinned-p :initarg :skinned-p :initform NIL :accessor skinned-p)))
 
 (defmethod (setf vertex-data) :after (data (mesh skinned-mesh))
-  ;; Vertices contain: X Y Z NX NY NZ U V B1 B2 B3 B4 W1 W2 W3 W4
   (let ((vertices (truncate (length data) (+ 3 3 2 4 4))))
     (setf (position-normals mesh) (adjust-array (position-normals mesh) (* vertices (+ 3 3))
                                                 :initial-element 0f0))))
@@ -45,6 +72,7 @@
   (let ((vertex-data (make-instance 'vertex-buffer :buffer-data (vertex-data mesh)))
         (position-normals (make-instance 'vertex-buffer :buffer-data (position-normals mesh)))
         (index-data (index-data mesh)))
+    ;; Vertices contain: X Y Z NX NY NZ U V B1 B2 B3 B4 W1 W2 W3 W4
     (loop for i from 0 below (length (vertex-data mesh)) by (+ 3 3 2 4 4)
           for j from 0 below (length (position-normals mesh)) by (+ 3 3)
           do (setf (aref (position-normals mesh) (+ j 0)) (aref (vertex-data mesh) (+ i 0)))

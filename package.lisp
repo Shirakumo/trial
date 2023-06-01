@@ -98,6 +98,7 @@
    #:ik-system)
   ;; animation/mesh.lisp
   (:export
+   #:static-mesh
    #:skinned-mesh
    #:position-normals
    #:vertex-data
