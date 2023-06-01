@@ -14,6 +14,7 @@
    (skinned-p :initarg :skinned-p :initform NIL :accessor skinned-p)))
 
 (defmethod (setf vertex-data) :after (data (mesh skinned-mesh))
+  ;; Vertices contain: X Y Z NX NY NZ U V B1 B2 B3 B4 W1 W2 W3 W4
   (let ((vertices (truncate (length data) (+ 3 3 2 4 4))))
     (setf (position-normals mesh) (adjust-array (position-normals mesh) (* vertices (+ 3 3))
                                                 :initial-element 0f0))))
