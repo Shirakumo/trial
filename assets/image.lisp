@@ -51,7 +51,14 @@
 
 (defgeneric load-image (path type &key width height pixel-type pixel-format &allow-other-keys))
 
-(defmethod load-image (path (type (eql T)) &rest args)
+(defmethod load-image (source (type (eql T)) &rest args &key mime-type)
+  (if mime-type
+      (cl-ppcre:register-groups-bind (type) ("^[^/]*/([^+/]+)" mime-type)
+        (remf args :mime-type)
+        (apply #'load-image source (kw type) args))
+      (call-next-method)))
+
+(defmethod load-image ((path pathname-type) (type (eql T)) &rest args)
   (let ((type (pathname-type path)))
     (apply #'load-image path (kw type) args)))
 
@@ -70,11 +77,11 @@
 (defclass image-loader (resource-generator)
   ())
 
-(defmethod generate-resources ((generator image-loader) path &rest texture-args &key (type T) internal-format pixel-format (resource (resource generator T)) (texture-class 'texture) &allow-other-keys)
+(defmethod generate-resources ((generator image-loader) path &rest texture-args &key (type T) internal-format pixel-format (resource (resource generator T)) (texture-class 'texture) mime-type &allow-other-keys)
   (multiple-value-bind (bits width height pixel-type inferred-pixel-format swizzle)
       (with-new-value-restart (path) (new-path "Specify a new image path.")
         (with-retry-restart (retry "Retry loading the image path.")
-          (load-image path type)))
+          (load-image path type :mime-type mime-type)))
     (assert (not (null bits)))
     (let ((pixel-format (or pixel-format inferred-pixel-format)))
       (with-unwind-protection (free-data bits)
