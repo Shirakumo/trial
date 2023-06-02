@@ -1215,7 +1215,10 @@
    #:foreign-resource
    #:data-pointer
    #:gl-resource
-   #:gl-name)
+   #:gl-name
+   #:memory-region
+   #:memory-region-start
+   #:memory-region-size)
   ;; resource-generator.lisp
   (:export
    #:resource-generator

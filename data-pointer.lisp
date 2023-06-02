@@ -120,3 +120,21 @@
               ,@body))
        (declare (dynamic-extent #',thunk))
        (call-with-data-ptr #',thunk ,data ,@args))))
+
+(declaim (inline memory-region memory-region-start memory-region-size))
+(defstruct (memory-region
+            (:constructor memory-region (start size)))
+  (start NIL :type cffi:foreign-pointer :read-only T)
+  (size 0 :type fixnum :read-only T))
+
+(defmethod start ((region memory-region)) (memory-region-start region))
+(defmethod end ((region memory-region)) (cffi:inc-pointer (memory-region-start region) (memory-region-size region)))
+(defmethod size ((region memory-region)) (memory-region-size region))
+
+(defmethod print-object ((region memory-region) stream)
+  (print-unreadable-object (region stream)
+    (print (list 'memory-region (memory-region-start region) (memory-region-size region)) stream)))
+
+(defmethod call-with-data-ptr (function (region memory-region) &key (offset 0))
+  (funcall function (cffi:inc-pointer (memory-region-start region) offset)
+           (memory-region-size region)))
