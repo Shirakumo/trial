@@ -95,7 +95,7 @@
                (:file "transforms" :depends-on ("package"))
                (:file "type-info" :depends-on ("package" "toolkit" "data-pointer"))
                (:module "animation"
-                :depends-on ("package" "shader-entity")
+                :depends-on ("package" "shader-entity" "helpers")
                 :components ((:file "asset" :depends-on ("clip"))
                              (:file "clip" :depends-on ("track"))
                              (:file "entity" :depends-on ("mesh" "skeleton" "clip" "ik"))

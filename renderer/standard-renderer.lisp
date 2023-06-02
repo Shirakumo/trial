@@ -169,7 +169,8 @@
   ((material :initarg :material :accessor material)))
 
 (defmethod stage :after ((renderable single-material-renderable) (area staging-area))
-  (stage (material renderable) area))
+  (when (material renderable)
+    (stage (material renderable) area)))
 
 (defmethod render-with :before ((pass standard-render-pass) (object single-material-renderable) program)
   (prepare-pass-program pass program)
