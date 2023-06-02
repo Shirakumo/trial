@@ -56,7 +56,6 @@
    #:play
    #:fade-to
    #:base-animated-entity
-   #:animation-asset
    #:armature
    #:animated-entity
    #:mesh)
@@ -98,12 +97,13 @@
    #:ik-system)
   ;; animation/mesh.lisp
   (:export
-   #:static-mesh
-   #:skinned-mesh
-   #:position-normals
+   #:mesh-data
    #:vertex-data
    #:index-data
    #:skinned-p
+   #:static-mesh
+   #:skinned-mesh
+   #:position-normals
    #:cpu-skin)
   ;; animation/pose.lisp
   (:export
@@ -980,7 +980,10 @@
    #:colored-entity
    #:vertex-colored-entity
    #:textured-entity
-   #:texture)
+   #:texture
+   #:mesh-entity
+   #:mesh-asset
+   #:mesh)
   ;; hdr.lisp
   (:export
    #:hdr-output-pass

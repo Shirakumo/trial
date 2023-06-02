@@ -35,55 +35,15 @@
 
 (define-pool workbench)
 
-(define-asset (workbench cat) image
-    #p"cat.png")
-
-(define-asset (workbench cube) mesh
-    (make-cube-mesh 10))
-
-(define-asset (workbench ground) mesh
-    (make-cube-mesh 100))
+(define-asset (workbench garbage) org.shirakumo.fraf.trial.gltf:asset
+    #p "~/large_garbage_bin.glb")
 
 (define-asset (workbench grid) mesh
     (make-line-grid-mesh 10 100 100))
 
 (define-shader-entity ground (trial::single-material-renderable transformed-entity)
-  ((trial::material :initform (make-instance 'trial::phong-material))
-   (vertex-array :initform (// 'workbench 'ground))))
-
-(define-shader-entity cube (trial::single-material-renderable rigidbody listener)
-  ((trial::material :initform (make-instance 'trial::phong-material))
-   (vertex-array :initform (// 'workbench 'cube)))
-  (:default-initargs
-   :mass 10.0
-   :physics-primitives (make-box :bsize (vec 5 5 5) :material :wood)))
-
-(define-handler (cube tick) (dt)
-  (let ((strength (* dt 10000)))
-    (when (retained :a)
-      (nv+ (torque cube) (vec strength 0 0)))
-    (when (retained :d)
-      (nv- (torque cube) (vec strength 0 0)))
-    (when (retained :w)
-      (nv+ (torque cube) (vec 0 strength 0)))
-    (when (retained :s)
-      (nv- (torque cube) (vec 0 strength 0)))))
-
-(define-handler (controller text-entered) (text)
-  (when (string= text "r")
-    (trial:debug-clear)
-    (for:for ((cube over (scene +main+))
-              (i from 0))
-      (when (typep cube 'cube)
-        (vsetf (location cube) 0 (+ 5 (* i 11)) 0)
-        (qsetf (orientation cube) 0 0 0 1)
-        (vsetf (velocity cube) 0 0 0)
-        (vsetf (rotation cube) 0 0 0)
-        (setf (awake-p cube) T))))
-  (when (string= text "p")
-    (setf (paused-p +main+) (not (paused-p +main+))))
-  (when (string= text "s")
-    (issue (scene +main+) 'tick :tt 1.0d0 :dt 0.01 :fc 1)))
+  ()
+  (:default-initarg :asset (asset 'workbench 'garbage)))
 
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
