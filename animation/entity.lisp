@@ -148,8 +148,8 @@
                  (let ((time (min 1.0 (/ (fade-target-elapsed target) (fade-target-duration target)))))
                    (blend-into (pose controller) (pose controller) (fade-target-pose target) time)))))))
 
-(define-shader-entity base-animated-entity (ik-controller layer-controller fade-controller listener)
-  ((animation-asset :initarg :asset :initform NIL :accessor animation-asset)))
+(define-shader-entity base-animated-entity (mesh-entity ik-controller layer-controller fade-controller listener)
+  ())
 
 (defmethod initialize-instance :after ((entity base-animated-entity) &key asset)
   (when asset
@@ -166,25 +166,19 @@
   (format stream "Skeleton:~%")
   (describe-skeleton (skeleton entity) stream))
 
-(defmethod stage :after ((entity base-animated-entity) (area staging-area))
-  (stage (animation-asset entity) area))
-
-(defmethod observe-generation ((entity base-animated-entity) (asset animation-asset) res)
-  (setf (animation-asset entity) asset))
-
-(defmethod (setf animation-asset) :after ((asset animation-asset) (entity base-animated-entity))
+(defmethod (setf mesh-asset) :after ((asset animation-asset) (entity base-animated-entity))
   (when (skeleton asset)
     (setf (skeleton entity) (skeleton asset)))
   (play (or (clip entity) T) entity))
 
 (defmethod find-clip (name (entity base-animated-entity) &optional (errorp T))
-  (if (null (animation-asset entity))
+  (if (null (mesh-asset entity))
       (when errorp (error "No such clip ~s found on ~a" name entity))
-      (find-clip name (animation-asset entity) errorp)))
+      (find-clip name (mesh-asset entity) errorp)))
 
 (defmethod list-clips ((entity base-animated-entity))
-  (when (animation-asset entity)
-    (list-clips (animation-asset entity))))
+  (when (mesh-asset entity)
+    (list-clips (mesh-asset entity))))
 
 (defmethod add-layer (clip-name (entity base-animated-entity) &key (name NIL name-p))
   (let ((clip (find-clip clip-name entity)))
@@ -197,7 +191,7 @@
   (play (find-clip name entity) entity))
 
 (defmethod play ((anything (eql T)) (entity base-animated-entity))
-  (loop for clip being the hash-values of (clips (animation-asset entity))
+  (loop for clip being the hash-values of (clips (mesh-asset entity))
         do (return (play clip entity))))
 
 (defmethod handle ((ev tick) (entity base-animated-entity))
@@ -205,8 +199,7 @@
     (update entity (tt ev) (dt ev) (fc ev))))
 
 (define-shader-entity armature (base-animated-entity lines)
-  ((animation-asset :initarg :asset :accessor animation-asset)
-   (color :initarg :color :initform (vec 0 0 0 1) :accessor color)))
+  ((color :initarg :color :initform (vec 0 0 0 1) :accessor color)))
 
 (defmethod handle ((ev tick) (entity armature))
   (when (pose entity)
@@ -217,27 +210,12 @@
   ((palette :initform #() :accessor palette)
    (mesh :initarg :mesh :initform NIL :accessor mesh)))
 
-(defmethod (setf animation-asset) :after ((asset animation-asset) (entity animated-entity))
-  (setf (mesh entity) (or (mesh entity) T))
+(defmethod (setf mesh-asset) :after ((asset animation-asset) (entity animated-entity))
   (unless (skeleton asset)
     (setf (palette entity) #(#.(meye 4)))))
 
 (defmethod (setf pose) :after ((pose pose) (entity animated-entity))
   (update-palette entity))
-
-(defmethod (setf mesh) :after ((mesh skinned-mesh) (entity animated-entity))
-  (setf (vertex-array entity) (resource (animation-asset entity) (name mesh))))
-
-(defmethod (setf mesh) ((name string) (entity animated-entity))
-  (let ((mesh (gethash name (meshes (animation-asset entity)))))
-    (if mesh
-        (setf (mesh entity) mesh)
-        #-trial-release
-        (error "No mesh named ~s found." name))))
-
-(defmethod (setf mesh) ((anything (eql T)) (entity animated-entity))
-  (loop for mesh being the hash-values of (meshes (animation-asset entity))
-        do (return (setf (mesh entity) mesh))))
 
 (defmethod (setf ik-system) :after ((system ik-system) name (entity animated-entity))
   ;; Hook up our local transform to the IK system's. Since the identity never changes
@@ -246,7 +224,7 @@
 
 (defmethod update-palette ((entity animated-entity))
   (let ((palette (matrix-palette (pose entity) (palette entity)))
-        (inv (mat-inv-bind-pose (skeleton (animation-asset entity)))))
+        (inv (mat-inv-bind-pose (skeleton (mesh-asset entity)))))
     (dotimes (i (length palette) (setf (palette entity) palette))
       (nm* (svref palette i) (svref inv i)))))
 
@@ -295,7 +273,7 @@ void main(){
 
 (defmethod update-palette ((entity dquat-animated-entity))
   (let ((palette (dquat-palette (pose entity) (palette entity)))
-        (inv (quat-inv-bind-pose (skeleton (animation-asset entity)))))
+        (inv (quat-inv-bind-pose (skeleton (mesh-asset entity)))))
     (dotimes (i (length palette) (setf (palette entity) palette))
       (nq* (svref palette i) (svref inv i)))))
 

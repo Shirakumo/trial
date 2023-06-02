@@ -241,3 +241,30 @@ void main(){
 
 (defmethod bsize ((region 3ds:region))
   (3ds:bsize region))
+
+(defclass mesh-entity (entity)
+  ((mesh-asset :initform NIL :initarg :asset :accessor mesh-asset)
+   (mesh :initarg :mesh :initform NIL :accessor mesh)))
+
+(defmethod stage :after ((entity mesh-entity) (area staging-area))
+  (stage (mesh-asset entity) area))
+
+(defmethod observe-generation ((entity mesh-entity) (asset asset) res)
+  (setf (mesh-asset entity) asset))
+
+(defmethod (setf mesh-asset) :after ((asset asset) (entity mesh-entity))
+  (setf (mesh entity) (or (mesh entity) T)))
+
+(defmethod (setf mesh) :after ((mesh mesh-data) (entity mesh-entity))
+  (setf (vertex-array entity) (resource (mesh-asset entity) (name mesh))))
+
+(defmethod (setf mesh) ((name string) (entity mesh-entity))
+  (let ((mesh (gethash name (meshes (mesh-asset entity)))))
+    (if mesh
+        (setf (mesh entity) mesh)
+        #-trial-release
+        (error "No mesh named ~s found." name))))
+
+(defmethod (setf mesh) ((anything (eql T)) (entity mesh-entity))
+  (loop for mesh being the hash-values of (meshes (mesh-asset entity))
+        do (return (setf (mesh entity) mesh))))

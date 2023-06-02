@@ -6,10 +6,26 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass static-mesh ()
+(defclass mesh-data ()
   ((name :initarg :name :initform NIL :accessor name)
    (vertex-data :initarg :vertex-data :initform (make-array 0 :element-type 'single-float) :accessor vertex-data)
-   (index-data :initarg :index-data :initform NIL :accessor index-data)))
+   (index-data :initarg :index-data :initform NIL :accessor index-data)
+   (material :initform NIL :accessor material)))
+
+(defmethod shared-initialize :after ((data mesh-data) slots &key (material NIL material-p))
+  (when material-p (setf (material data) material)))
+
+(defmethod (setf material) ((name string) (data mesh-data))
+  (setf (material data) (material name)))
+
+(defmethod (setf material) ((none null) (data mesh-data))
+  (setf (material data) NIL))
+
+(defmethod (setf material) ((name symbol) (data mesh-data))
+  (setf (material data) (material name)))
+
+(defclass static-mesh (mesh-data)
+  ())
 
 (defmethod skinned-p ((mesh static-mesh)) NIL)
 
@@ -34,11 +50,8 @@
   (let ((buffer (caar (bindings vao))))
     (update-buffer-data buffer (position-normals mesh))))
 
-(defclass skinned-mesh ()
-  ((name :initarg :name :initform NIL :accessor name)
-   (position-normals :initform (make-array 0 :element-type 'single-float) :accessor position-normals)
-   (vertex-data :initarg :vertex-data :initform (make-array 0 :element-type 'single-float) :accessor vertex-data)
-   (index-data :initarg :index-data :initform NIL :accessor index-data)
+(defclass skinned-mesh (mesh-data)
+  ((position-normals :initform (make-array 0 :element-type 'single-float) :accessor position-normals)
    (skinned-p :initarg :skinned-p :initform T :accessor skinned-p)))
 
 (defmethod (setf vertex-data) :after (data (mesh skinned-mesh))
