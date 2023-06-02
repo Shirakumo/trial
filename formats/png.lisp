@@ -6,8 +6,27 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defmethod load-image (path (type (eql :png)) &key)
-  (let ((png (pngload:load-file path :flatten T :flip-y T)))
+(defmethod load-image (source (type (eql :png)) &key)
+  (let ((png (etypecase source
+               ((or string pathname)
+                (pngload:load-file source :flatten T :flip-y T))
+               (memory-region
+                ;; FIXME: upstream this
+                (let ((png (pngload::make-png))
+                      (state (pngload::make-state :decode-data T
+                                                  :flatten T
+                                                  :flip-y T
+                                                  :use-static-vector NIL
+                                                  :unknown-chunk-warnings NIL)))
+                  (setf (pngload::state png) state)
+                  (3bz:with-octet-pointer (pointer-binding (start source) (size source))
+                    (let ((source (make-instance 'pngload::octet-pointer-source
+                                                 :data (start source)
+                                                 :end (size source))))
+                      (setf (pngload::state-source state) source
+                            (pngload::state-mmap-pointer state) pointer-binding
+                            (pngload::parse-tree png) (pngload::parse-datastream png))))
+                  png)))))
     (values (pngload:data png)
             (pngload:width png)
             (pngload:height png)
