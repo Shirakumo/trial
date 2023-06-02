@@ -144,7 +144,10 @@
 
 (defun load-mesh-attribute (mesh attribute accessor skin)
   (let ((data (vertex-data mesh))
-        (stride (+ 3 3 2 4 4)))
+        (stride (etypecase mesh
+                  ;; FIXME: this also sucks.
+                  (trial:skinned-mesh (+ 3 3 2 4 4))
+                  (trial:static-mesh (+ 3 3 2)))))
     (when (< (length data) (length accessor))
       (setf data (adjust-array data (* (length accessor) stride) :element-type 'single-float))
       (setf (vertex-data mesh) data))
@@ -191,9 +194,11 @@
           for skin = (gltf:skin node)
           do (when (gltf:mesh node)
                (loop for primitive across (gltf:primitives (gltf:mesh node))
-                     for mesh = (make-instance 'skinned-mesh :name (or (gltf:name (gltf:mesh node))
-                                                                       (gltf:name node))
-                                                             :skinned-p (not (null (gltf:skin node))))
+                     for name = (or (gltf:name (gltf:mesh node))
+                                    (gltf:name node))
+                     for mesh = (if (gltf:skin node)
+                                    (make-instance 'skinned-mesh :name name)
+                                    (make-instance 'static-mesh :name name))
                      do (vector-push-extend mesh meshes)
                         ;;(setf (texture mesh) (gltf:material primitive))
                         (loop for attribute being the hash-keys of (gltf:attributes primitive)
