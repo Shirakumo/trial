@@ -49,7 +49,7 @@
         ;; Try to gracefully update material textures.
         do (etypecase texture
              (null)
-             (texture
+             (resource
               (setf (aref (textures material) i) texture))
              (image
               (setf (aref (textures material) i) (resource texture T)))
