@@ -152,7 +152,7 @@
       (setf data (adjust-array data (* (length accessor) stride) :element-type 'single-float))
       (setf (vertex-data mesh) data))
     ;; FIXME: this sucks for a multitude of reasons as should be immediately clear lol
-    (ecase attribute
+    (case attribute
       (:position
        (loop for i from 0 below (length accessor)
              for el = (elt accessor i)
@@ -186,7 +186,9 @@
              do (setf (aref data (+ (* i stride) 12)) (qx el))
                 (setf (aref data (+ (* i stride) 13)) (qy el))
                 (setf (aref data (+ (* i stride) 14)) (qz el))
-                (setf (aref data (+ (* i stride) 15)) (qw el)))))))
+                (setf (aref data (+ (* i stride) 15)) (qw el))))
+      (T
+       (warn "Ignoring attribute ~s" attribute)))))
 
 (defun load-meshes (gltf)
   (let ((meshes (make-array 0 :adjustable T :fill-pointer T)))
