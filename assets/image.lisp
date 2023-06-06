@@ -93,7 +93,7 @@
                :internal-format (or internal-format
                                     (infer-internal-format pixel-type pixel-format))
                :swizzle (or swizzle (infer-swizzle-format pixel-format))
-               (remf* texture-args :type :resource :texture-class))))))
+               (remf* texture-args :mime-type :type :resource :texture-class))))))
 
 (defclass image (single-resource-asset file-input-asset image-loader)
   ())
