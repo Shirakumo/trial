@@ -147,6 +147,10 @@
       (with-buffer-tx (struct (material-block pass))
         (transfer-to (aref (slot-value struct 'materials) id) material)))))
 
+(defmethod render-with ((pass standard-render-pass) (material material) program)
+  (error "Unsupported material~%  ~s~%for pass~%  ~s"
+         material pass))
+
 (define-shader-entity standard-renderable (renderable)
   ((vertex-array :initarg :vertex-array :initform NIL :accessor vertex-array))
   (:shader-file (trial "standard-renderable.glsl"))
