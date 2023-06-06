@@ -920,6 +920,30 @@
    #:location
    #:fill-vector-data
    #:vertex-attribute-size
+   #:vertex-attribute-stride
+   #:vertex-attribute-offset
+   #:vertex-attribute-category
+   #:vertex-attribute-order
+   #:vertex-attribute<
+   #:location
+   #:uv
+   #:normal
+   #:color
+   #:tangent
+   #:joints
+   #:weights
+   #:uv-0
+   #:uv-1
+   #:uv-2
+   #:uv-3
+   #:joints-0
+   #:joints-1
+   #:joints-2
+   #:joints-3
+   #:weights-0
+   #:weights-1
+   #:weights-2
+   #:weights-3
    #:fill-vertex-attribute
    #:vertex-attributes
    #:vertex=

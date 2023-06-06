@@ -770,14 +770,18 @@
 
 (defparameter *c-chars* "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_[]")
 
-(defun symbol->c-name (symbol)
-  (with-output-to-string (out)
-    (loop for c across (symbol-name symbol)
-          do (cond ((char= c #\-)
-                    (write-char #\_ out))
-                   ((find c *c-chars*)
-                    (write-char (char-downcase c) out))
-                   (T (write-char #\_ out))))))
+(defun symbol->c-name (symbol &optional out)
+  (flet ((frob (out)
+           (loop for c across (symbol-name symbol)
+                 do (cond ((char= c #\-)
+                           (write-char #\_ out))
+                          ((find c *c-chars*)
+                           (write-char (char-downcase c) out))
+                          (T (write-char #\_ out))))))
+    (if out
+        (frob out)
+        (with-output-to-string (out)
+          (frob out)))))
 
 (defun c-name->symbol (name &optional (package *package*))
   (intern

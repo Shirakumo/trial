@@ -80,6 +80,139 @@
              (pack ,meshg)
              ,meshg)))))
 
+(defgeneric vertex-attribute-size (attribute))
+(defgeneric vertex-attribute-offset (attribute container))
+(defgeneric vertex-attribute-category (attribute))
+(defgeneric vertex-attribute-order (attribute))
+
+;; KLUDGE: this kinda sucks, doesn't it?
+
+(defmethod vertex-attribute-size ((_ (eql 'location))) 3)
+(defmethod vertex-attribute-size ((_ (eql 'uv))) 2)
+(defmethod vertex-attribute-size ((_ (eql 'normal))) 3)
+(defmethod vertex-attribute-size ((_ (eql 'color))) 4)
+(defmethod vertex-attribute-size ((_ (eql 'tangent))) 3)
+(defmethod vertex-attribute-size ((_ (eql 'joints))) 4)
+(defmethod vertex-attribute-size ((_ (eql 'weights))) 4)
+(defmethod vertex-attribute-size ((_ (eql 'uv-0))) 2)
+(defmethod vertex-attribute-size ((_ (eql 'uv-1))) 2)
+(defmethod vertex-attribute-size ((_ (eql 'uv-2))) 2)
+(defmethod vertex-attribute-size ((_ (eql 'uv-3))) 2)
+(defmethod vertex-attribute-size ((_ (eql 'joints-0))) 4)
+(defmethod vertex-attribute-size ((_ (eql 'joints-1))) 4)
+(defmethod vertex-attribute-size ((_ (eql 'joints-2))) 4)
+(defmethod vertex-attribute-size ((_ (eql 'joints-3))) 4)
+(defmethod vertex-attribute-size ((_ (eql 'weights-0))) 4)
+(defmethod vertex-attribute-size ((_ (eql 'weights-1))) 4)
+(defmethod vertex-attribute-size ((_ (eql 'weights-2))) 4)
+(defmethod vertex-attribute-size ((_ (eql 'weights-3))) 4)
+
+(defmethod vertex-attribute-category (attr) attr)
+(defmethod vertex-attribute-category ((_ (eql 'uv-0))) 'uv)
+(defmethod vertex-attribute-category ((_ (eql 'uv-1))) 'uv)
+(defmethod vertex-attribute-category ((_ (eql 'uv-2))) 'uv)
+(defmethod vertex-attribute-category ((_ (eql 'uv-3))) 'uv)
+(defmethod vertex-attribute-category ((_ (eql 'joints-0))) 'joints)
+(defmethod vertex-attribute-category ((_ (eql 'joints-1))) 'joints)
+(defmethod vertex-attribute-category ((_ (eql 'joints-2))) 'joints)
+(defmethod vertex-attribute-category ((_ (eql 'joints-3))) 'joints)
+(defmethod vertex-attribute-category ((_ (eql 'weights-0))) 'weights)
+(defmethod vertex-attribute-category ((_ (eql 'weights-1))) 'weights)
+(defmethod vertex-attribute-category ((_ (eql 'weights-2))) 'weights)
+(defmethod vertex-attribute-category ((_ (eql 'weights-3))) 'weights)
+
+(defmethod vertex-attribute-order ((_ (eql 'location))) 0)
+(defmethod vertex-attribute-order ((_ (eql 'normal))) 1)
+(defmethod vertex-attribute-order ((_ (eql 'uv))) 2)
+(defmethod vertex-attribute-order ((_ (eql 'tangent))) 3)
+(defmethod vertex-attribute-order ((_ (eql 'color))) 4)
+(defmethod vertex-attribute-order ((_ (eql 'joints))) 5)
+(defmethod vertex-attribute-order ((_ (eql 'weights))) 6)
+(defmethod vertex-attribute-order (attr) (vertex-attribute-order (vertex-attribute-category attr)))
+
+(defun vertex-attribute< (a b)
+  (let ((a-cat (vertex-attribute-category a))
+        (b-cat (vertex-attribute-category b)))
+    (cond ((eql a b) NIL)
+          ((eql a-cat b-cat)
+           (string< a b))
+          (T
+           (< (vertex-attribute-order a-cat)
+              (vertex-attribute-order b-cat))))))
+
+(defmethod vertex-attribute-offset (attribute (container list))
+  (loop for attr in container
+        until (eq attr attribute)
+        sum (vertex-attribute-size attr)))
+
+(defclass mesh-data ()
+  ((name :initarg :name :initform NIL :accessor name)
+   (vertex-data :initarg :vertex-data :initform (make-array 0 :element-type 'single-float) :accessor vertex-data)
+   (index-data :initarg :index-data :initform NIL :accessor index-data)
+   (material :initform NIL :accessor material)
+   (vertex-form :initarg :vertex-form :initform :triangles :accessor vertex-form)
+   (vertex-attributes :initarg :vertex-attributes :initform '(location normal uv) :accessor vertex-attributes)))
+
+(defmethod shared-initialize :after ((data mesh-data) slots &key (material NIL material-p))
+  (when material-p (setf (material data) material)))
+
+(defmethod (setf material) ((name string) (data mesh-data))
+  (setf (material data) (material name)))
+
+(defmethod (setf material) ((none null) (data mesh-data))
+  (setf (material data) NIL))
+
+(defmethod (setf material) ((name symbol) (data mesh-data))
+  (setf (material data) (material name)))
+
+(defmethod make-vertex-array ((mesh mesh-data) vao)
+  (let ((vertex-data (make-instance 'vertex-buffer :buffer-data (vertex-data mesh)))
+        (index-data (index-data mesh)))
+    (ensure-instance vao 'vertex-array
+                     :dependencies (list (material mesh))
+                     :vertex-form (vertex-form mesh)
+                     :bindings (append (loop with stride = (vertex-attribute-stride mesh)
+                                             for attribute in (vertex-attributes mesh)
+                                             for offset = 0 then (+ offset size)
+                                             for size = (vertex-attribute-size attribute)
+                                             collect `(,vertex-data :size ,size :offset ,offset :stride ,stride))
+                                       (when index-data
+                                         (list (make-instance 'vertex-buffer :buffer-data index-data
+                                                                             :buffer-type :element-array-buffer
+                                                                             :element-type :unsigned-int))))
+                     :size (if index-data
+                               (length index-data)
+                               (truncate (length (vertex-data mesh)) (+ 3 3 2))))))
+
+(defmethod gl-source ((mesh mesh-data))
+  `(glsl-toolkit:shader
+    ,@(loop for i from 0
+            for attribute in (vertex-attributes mesh)
+            for size = (vertex-attribute-size attribute)
+            for name = (format NIL "in_~a" (symbol->c-name attribute))
+            for type = (ecase size (1 :float) (2 :vec2) (3 :vec3) (4 :vec4))
+            collect `(glsl-toolkit:variable-declaration
+                      (glsl-toolkit:type-qualifier
+                       (glsl-toolkit:layout-qualifier
+                        (glsl-toolkit:layout-qualifier-id "location" ,i))
+                       :in)
+                      (glsl-toolkit:type-specifier ,type)
+                      ,name glsl-toolkit:no-value))))
+
+(defmethod vertex-attribute-stride ((mesh mesh-data))
+  (loop for attribute in (vertex-attributes mesh)
+        sum (vertex-attribute-size attribute)))
+
+(defmethod vertex-attribute-offset (attribute (mesh mesh-data))
+  (vertex-attribute-offset attribute (vertex-attributes mesh)))
+
+(defmethod update-buffer-data ((vbo vertex-buffer) (mesh mesh-data) &key)
+  (update-buffer-data vbo (vertex-data mesh)))
+
+(defmethod update-buffer-data ((vao vertex-array) (mesh mesh-data) &key)
+  (let ((buffer (caar (bindings vao))))
+    (update-buffer-data buffer (vertex-data mesh))))
+
 (defclass vertex ()
   ((location :initform (vec 0 0 0) :initarg :position :initarg :location :accessor location :type vec3)))
 
@@ -102,16 +235,12 @@
      (setf (aref array (+ offset 3)) (vw4 vec))
      (+ offset 4))))
 
-(defmethod vertex-attribute-size ((vertex vertex) (attribute (eql 'location)))
-  3)
-
 (defmethod fill-vertex-attribute ((vertex vertex) (attribute (eql 'location)) data offset)
   (fill-vector-data (location vertex) (type-of (location vertex)) data offset))
 
-(defgeneric vertex-attributes (vertex)
-  (:method-combination append :most-specific-last))
+(defgeneric vertex-attributes (vertex))
 
-(defmethod vertex-attributes append ((vertex vertex))
+(defmethod vertex-attributes ((vertex vertex))
   '(location))
 
 (defgeneric vertex= (a b)
@@ -126,11 +255,8 @@
 (defmethod vertex= and ((a textured-vertex) (b textured-vertex))
   (v= (uv a) (uv b)))
 
-(defmethod vertex-attribute-size ((vertex textured-vertex) (attribute (eql 'uv)))
-  2)
-
-(defmethod vertex-attributes append ((vertex textured-vertex))
-  '(uv))
+(defmethod vertex-attributes ((vertex textured-vertex))
+  (append (call-next-method) '(uv)))
 
 (defmethod fill-vertex-attribute ((vertex textured-vertex) (attribute (eql 'uv)) data offset)
   (fill-vector-data (uv vertex) 'vec2 data offset))
@@ -141,11 +267,8 @@
 (defmethod vertex= and ((a normal-vertex) (b normal-vertex))
   (v= (normal a) (normal b)))
 
-(defmethod vertex-attribute-size ((vertex normal-vertex) (attribute (eql 'normal)))
-  3)
-
-(defmethod vertex-attributes append ((vertex normal-vertex))
-  '(normal))
+(defmethod vertex-attributes ((vertex normal-vertex))
+  (append (call-next-method) '(normal)))
 
 (defmethod fill-vertex-attribute ((vertex normal-vertex) (attribute (eql 'normal)) data offset)
   (fill-vector-data (normal vertex) 'vec3 data offset))
@@ -156,11 +279,8 @@
 (defmethod vertex= and ((a colored-vertex) (b colored-vertex))
   (v= (color a) (color b)))
 
-(defmethod vertex-attribute-size ((vertex colored-vertex) (attribute (eql 'color)))
-  4)
-
-(defmethod vertex-attributes append ((vertex colored-vertex))
-  '(color))
+(defmethod vertex-attributes ((vertex colored-vertex))
+  (append (call-next-method) '(color)))
 
 (defmethod fill-vertex-attribute ((vertex colored-vertex) (attribute (eql 'color)) data offset)
   (fill-vector-data (color vertex) 'vec4 data offset))
@@ -171,11 +291,8 @@
 (defmethod vertex= and ((a tangent-vertex) (b tangent-vertex))
   (v= (tangent a) (tangent b)))
 
-(defmethod vertex-attribute-size ((vertex tangent-vertex) (attribute (eql 'tangent)))
-  3)
-
 (defmethod vertex-attributes append ((vertex tangent-vertex))
-  '(tangent))
+  (append (call-next-method) '(tangent)))
 
 (defmethod fill-vertex-attribute ((vertex tangent-vertex) (attribute (eql 'tangent)) data offset)
   (fill-vector-data (tangent vertex) 'vec3 data offset))
@@ -200,7 +317,7 @@
                    (attributes (etypecase attributes
                                  ((eql T) (vertex-attributes primer))
                                  (list attributes)))
-                   (sizes (loop for attr in attributes collect (vertex-attribute-size primer attr)))
+                   (sizes (loop for attr in attributes collect (vertex-attribute-size attr)))
                    (total-size (* (length vertices) (reduce #'+ sizes))))
               (when (/= (length buffer) total-size)
                 (setf buffer (if (array-has-fill-pointer-p buffer)

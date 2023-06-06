@@ -240,24 +240,6 @@ void main(){
 (defmethod bsize ((region 3ds:region))
   (3ds:bsize region))
 
-(defclass mesh-data ()
-  ((name :initarg :name :initform NIL :accessor name)
-   (vertex-data :initarg :vertex-data :initform (make-array 0 :element-type 'single-float) :accessor vertex-data)
-   (index-data :initarg :index-data :initform NIL :accessor index-data)
-   (material :initform NIL :accessor material)))
-
-(defmethod shared-initialize :after ((data mesh-data) slots &key (material NIL material-p))
-  (when material-p (setf (material data) material)))
-
-(defmethod (setf material) ((name string) (data mesh-data))
-  (setf (material data) (material name)))
-
-(defmethod (setf material) ((none null) (data mesh-data))
-  (setf (material data) NIL))
-
-(defmethod (setf material) ((name symbol) (data mesh-data))
-  (setf (material data) (material name)))
-
 (defclass mesh-entity (entity)
   ((mesh-asset :initform NIL :initarg :asset :accessor mesh-asset)
    (mesh :initarg :mesh :initform NIL :accessor mesh)))

@@ -16,7 +16,7 @@
          (attributes (etypecase vertex-attributes
                        ((eql T) (vertex-attributes primer))
                        (list vertex-attributes)))
-         (sizes (loop for attr in attributes collect (vertex-attribute-size primer attr)))
+         (sizes (loop for attr in attributes collect (vertex-attribute-size attr)))
          (buffer (make-vertex-data mesh :attributes attributes))
          ;; FIXME: The assumption of float-only packing here is too primitive.
          ;;        The same problem exists in geometry.lisp, though.

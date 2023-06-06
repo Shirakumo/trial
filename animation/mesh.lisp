@@ -11,34 +11,16 @@
 
 (defmethod skinned-p ((mesh static-mesh)) NIL)
 
-(defmethod make-vertex-array ((mesh static-mesh) vao)
-  (let ((vertex-data (make-instance 'vertex-buffer :buffer-data (vertex-data mesh)))
-        (index-data (index-data mesh)))
-    ;; Vertices contain: X Y Z NX NY NZ U V
-    (ensure-instance vao 'vertex-array
-                     :dependencies (list (material mesh))
-                     :vertex-form :triangles
-                     :bindings (list* `(,vertex-data :size 3 :offset 0 :stride 32)
-                                      `(,vertex-data :size 3 :offset 12 :stride 32)
-                                      `(,vertex-data :size 2 :offset 24 :stride 32)
-                                      (when index-data
-                                        (list (make-instance 'vertex-buffer :buffer-data index-data
-                                                                            :buffer-type :element-array-buffer
-                                                                            :element-type :unsigned-int))))
-                     :size (if index-data
-                               (length index-data)
-                               (truncate (length (vertex-data mesh)) (+ 3 3 2))))))
-
-(defmethod update-buffer-data ((vao vertex-array) (mesh static-mesh) &key)
-  (let ((buffer (caar (bindings vao))))
-    (update-buffer-data buffer (position-normals mesh))))
-
 (defclass skinned-mesh (mesh-data)
-  ((position-normals :initform (make-array 0 :element-type 'single-float) :accessor position-normals)
+  ((vertex-attributes :initform '(location normal uv joints weights))
+   (position-normals :initform (make-array 0 :element-type 'single-float) :accessor position-normals)
    (skinned-p :initarg :skinned-p :initform T :accessor skinned-p)))
 
+(defmethod vertex-attributes append ((data skinned-mesh))
+  '(location normal uv joints weights))
+
 (defmethod (setf vertex-data) :after (data (mesh skinned-mesh))
-  (let ((vertices (truncate (length data) (+ 3 3 2 4 4))))
+  (let ((vertices (truncate (length data) (vertex-attribute-stride mesh))))
     (setf (position-normals mesh) (adjust-array (position-normals mesh) (* vertices (+ 3 3))
                                                 :initial-element 0f0))))
 
@@ -65,11 +47,9 @@
                (transform mat (+ i 3) (+ j 3) 0.0)))))
 
 (defmethod make-vertex-array ((mesh skinned-mesh) vao)
-  (let ((vertex-data (make-instance 'vertex-buffer :buffer-data (vertex-data mesh)))
-        (position-normals (make-instance 'vertex-buffer :buffer-data (position-normals mesh)))
-        (index-data (index-data mesh)))
-    ;; Vertices contain: X Y Z NX NY NZ U V B1 B2 B3 B4 W1 W2 W3 W4
-    (loop for i from 0 below (length (vertex-data mesh)) by (+ 3 3 2 4 4)
+  (let ((position-normals (make-instance 'vertex-buffer :buffer-data (position-normals mesh)))
+        (stride (vertex-attribute-stride mesh)))
+    (loop for i from 0 below (length (vertex-data mesh)) by stride
           for j from 0 below (length (position-normals mesh)) by (+ 3 3)
           do (setf (aref (position-normals mesh) (+ j 0)) (aref (vertex-data mesh) (+ i 0)))
              (setf (aref (position-normals mesh) (+ j 1)) (aref (vertex-data mesh) (+ i 1)))
@@ -77,22 +57,10 @@
              (setf (aref (position-normals mesh) (+ j 3)) (aref (vertex-data mesh) (+ i 3)))
              (setf (aref (position-normals mesh) (+ j 4)) (aref (vertex-data mesh) (+ i 4)))
              (setf (aref (position-normals mesh) (+ j 5)) (aref (vertex-data mesh) (+ i 5))))
-    (ensure-instance vao 'vertex-array
-                     :dependencies (list (material mesh))
-                     :vertex-form :triangles
-                     :bindings (list* `(,position-normals :size 3 :offset 0 :stride 24)
-                                      `(,position-normals :size 3 :offset 12 :stride 24)
-                                      `(,vertex-data :size 2 :offset 24 :stride 64)
-                                      `(,vertex-data :size 4 :offset 32 :stride 64)
-                                      `(,vertex-data :size 4 :offset 48 :stride 64)
-                                      (when index-data
-                                        (list (make-instance 'vertex-buffer :buffer-data index-data
-                                                                            :buffer-type :element-array-buffer
-                                                                            :element-type :unsigned-int
-                                                                            :size (* (length index-data) 2)))))
-                     :size (if index-data
-                               (length index-data)
-                               (truncate (length (vertex-data mesh)) (+ 3 3 2 4 4))))))
+    (let ((vao (call-next-method)))
+      (setf (elt (bindings vao) 0) `(,position-normals :size 3 :offset 0 :stride 24))
+      (setf (elt (bindings vao) 1) `(,position-normals :size 3 :offset 12 :stride 24))
+      vao)))
 
 (defmethod update-buffer-data ((vao vertex-array) (mesh skinned-mesh) &key)
   (let ((buffer (caar (bindings vao))))
@@ -100,7 +68,7 @@
 
 (defmethod reorder ((mesh skinned-mesh) map)
   (let ((data (vertex-data mesh)))
-    (loop for i from (+ 3 3 2) below (length data) by (+ 3 3 2 4 4)
+    (loop for i from (+ 3 3 2) below (length data) by (vertex-attribute-stride mesh)
           do (setf (aref data (+ i 0)) (float (gethash (truncate (aref data (+ i 0))) map) 0f0))
              (setf (aref data (+ i 1)) (float (gethash (truncate (aref data (+ i 1))) map) 0f0))
              (setf (aref data (+ i 2)) (float (gethash (truncate (aref data (+ i 2))) map) 0f0))
