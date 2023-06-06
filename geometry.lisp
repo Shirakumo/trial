@@ -180,10 +180,10 @@
 (defmethod fill-vertex-attribute ((vertex tangent-vertex) (attribute (eql 'tangent)) data offset)
   (fill-vector-data (tangent vertex) 'vec3 data offset))
 
-(defclass basic-vertex (normal-vertex textured-vertex)
+(defclass basic-vertex (textured-vertex normal-vertex)
   ())
 
-(defclass basic+-vertex (tangent-vertex normal-vertex textured-vertex)
+(defclass basic+-vertex (tangent-vertex textured-vertex normal-vertex)
   ())
 
 ;;;; Translation
