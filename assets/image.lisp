@@ -58,7 +58,7 @@
         (apply #'load-image source (kw type) args))
       (call-next-method)))
 
-(defmethod load-image ((path pathname-type) (type (eql T)) &rest args)
+(defmethod load-image ((path pathname) (type (eql T)) &rest args)
   (let ((type (pathname-type path)))
     (apply #'load-image path (kw type) args)))
 

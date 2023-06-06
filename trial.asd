@@ -145,11 +145,7 @@
                              (:file "sprite-data" :depends-on ("image"))
                              (:file "static")
                              (:file "tile-data" :depends-on ("image"))
-                             (:file "uniform-block")))
-               (:module "formats"
-                :depends-on ("package" "geometry" "static-vector")
-                :components ((:file "collada")
-                             (:file "vertex-format"))))
+                             (:file "uniform-block"))))
   :defsystem-depends-on (:trivial-features)
   :depends-on (:alexandria
                :atomics
