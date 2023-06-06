@@ -151,10 +151,6 @@
 (define-shader-entity base-animated-entity (mesh-entity ik-controller layer-controller fade-controller listener)
   ())
 
-(defmethod initialize-instance :after ((entity base-animated-entity) &key asset)
-  (when asset
-    (register-generation-observer entity asset)))
-
 (defmethod describe-object :after ((entity base-animated-entity) stream)
   (terpri stream)
   (format stream "Available Clips:~%")

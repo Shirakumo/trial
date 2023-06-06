@@ -264,6 +264,10 @@ void main(){
   ((mesh-asset :initform NIL :initarg :asset :accessor mesh-asset)
    (mesh :initarg :mesh :initform NIL :accessor mesh)))
 
+(defmethod initialize-instance :after ((entity mesh-entity) &key)
+  (when (mesh-asset entity)
+    (register-generation-observer entity (mesh-asset entity))))
+
 (defmethod stage :after ((entity mesh-entity) (area staging-area))
   (stage (mesh-asset entity) area))
 
