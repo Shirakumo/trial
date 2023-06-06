@@ -52,12 +52,12 @@
 (define-material (cat phong-material)
   :diffuse-texture (// 'workbench 'cat))
 
-(define-shader-entity ground (trial::single-material-renderable transformed-entity)
-  ((trial::material :initform (material 'empty))
+(define-shader-entity ground (single-material-renderable transformed-entity)
+  ((material :initform (material 'empty))
    (vertex-array :initform (// 'workbench 'ground))))
 
-(define-shader-entity cube (trial::single-material-renderable rigidbody listener)
-  ((trial::material :initform (material 'cat))
+(define-shader-entity cube (single-material-renderable rigidbody listener)
+  ((material :initform (material 'cat))
    (vertex-array :initform (// 'workbench 'cube)))
   (:default-initargs
    :mass 10.0
