@@ -272,5 +272,5 @@ void main(){
         do (return (setf (mesh entity) mesh))))
 
 (defmethod material ((entity mesh-entity))
-  (when (mesh entity)
+  (when (typep (mesh entity) 'mesh-data)
     (material (mesh entity))))

@@ -175,7 +175,7 @@
                                              for attribute in (vertex-attributes mesh)
                                              for offset = 0 then (+ offset size)
                                              for size = (vertex-attribute-size attribute)
-                                             collect `(,vertex-data :size ,size :offset ,offset :stride ,stride))
+                                             collect `(,vertex-data :size ,size :offset ,(* 4 offset) :stride ,(* 4 stride)))
                                        (when index-data
                                          (list (make-instance 'vertex-buffer :buffer-data index-data
                                                                              :buffer-type :element-array-buffer
