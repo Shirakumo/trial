@@ -33,6 +33,11 @@
   (setf (specular-factor target) (specular-factor material))
   (setf (alpha-cutoff target) (alpha-cutoff material)))
 
+(defmethod transfer-to progn ((target phong-material) (material pbr-material))
+  (setf (diffuse-factor target) (albedo-factor material))
+  (setf (specular-factor target) (metallic-factor material))
+  (setf (alpha-cutoff target) (alpha-cutoff material)))
+
 (define-shader-pass phong-render-pass (standard-shadows-pass light-cache-render-pass)
   ()
   (:shader-file (trial "standard-render-phong.glsl")))
@@ -44,6 +49,14 @@
     (setf (uniform program "diffuse_tex") (local-id (aref textures 0) pass))
     (setf (uniform program "specular_tex") (local-id (aref textures 1) pass))
     (setf (uniform program "normal_tex") (local-id (aref textures 2) pass))))
+
+(defmethod render-with ((pass phong-render-pass) (material pbr-material) program)
+  (enable material pass)
+  (let ((textures (textures material)))
+    (setf (uniform program "material_id") (local-id material pass))
+    (setf (uniform program "diffuse_tex") (local-id (aref textures 0) pass))
+    (setf (uniform program "specular_tex") (local-id (aref textures 1) pass))
+    (setf (uniform program "normal_tex") (local-id (aref textures 3) pass))))
 
 (defmethod material-block-type ((pass phong-render-pass))
   'phong-material-block)
