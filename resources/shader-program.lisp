@@ -33,7 +33,8 @@
         finally (return shaders)))
 
 (defmethod dependencies ((program shader-program))
-  (append (shaders program)
+  (append (call-next-method)
+          (shaders program)
           (buffers program)))
 
 (defun link-program (program shaders &optional (program-id (data-pointer program)))

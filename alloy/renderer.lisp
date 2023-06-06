@@ -60,7 +60,8 @@
   (trial:stage (alloy:layout-element structure) area))
 
 (defmethod trial:dependencies ((renderer renderer))
-  (append (alexandria:hash-table-values (org.shirakumo.alloy.renderers.opengl.msdf:fontcache renderer))
+  (append (call-next-method)
+          (alexandria:hash-table-values (org.shirakumo.alloy.renderers.opengl.msdf:fontcache renderer))
           (alexandria:hash-table-values (opengl::resources renderer))))
 
 (defmethod trial:allocate ((renderer renderer))
@@ -273,7 +274,8 @@
   (alloy:size (trial:width image) (trial:height image)))
 
 (defmethod trial:dependencies ((font simple:font))
-  (list (org.shirakumo.alloy.renderers.opengl.msdf:atlas font)))
+  (list* (org.shirakumo.alloy.renderers.opengl.msdf:atlas font)
+         (call-next-method)))
 
 (defmethod trial:stage :before ((font simple:font) (area trial:staging-area))
   ;; FIXME: This is BAD, but Alloy gives us no way of generating the resource stubs.

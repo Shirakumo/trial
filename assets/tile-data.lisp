@@ -21,7 +21,8 @@
    (tileset :initarg :tileset :accessor tileset)))
 
 (defmethod dependencies ((tilemap tilemap))
-  (list (tileset tilemap)))
+  (list* (tileset tilemap)
+         (call-next-method)))
 
 (defclass tile-data (multi-resource-asset file-input-asset)
   ())

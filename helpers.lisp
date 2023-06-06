@@ -140,9 +140,7 @@ void main(){
          (size (size vao)))
     (declare (type (unsigned-byte 32) size))
     (gl:bind-vertex-array (gl-name vao))
-    ;; KLUDGE: Bad for performance!
-    (if (loop for binding in (bindings vao)
-              thereis (typep binding 'vertex-buffer))
+    (if (indexed-p vao)
         (%gl:draw-elements (vertex-form vao) size :unsigned-int 0)
         (%gl:draw-arrays (vertex-form vao) 0 size))
     (gl:bind-vertex-array 0)))

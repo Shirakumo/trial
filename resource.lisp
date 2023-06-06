@@ -8,9 +8,12 @@
 
 ;; FIXME: configurable defaults
 
-(defclass resource ()
+(defclass loadable () ())
+
+(defclass resource (loadable)
   ((generator :initarg :generator :initform NIL :reader generator)
-   (name :initarg :name :initform NIL :reader name)))
+   (name :initarg :name :initform NIL :reader name)
+   (dependencies :initarg :dependencies :initform () :accessor dependencies)))
 
 (defmethod print-object ((resource resource) stream)
   (print-unreadable-object (resource stream :type T :identity T)

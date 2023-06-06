@@ -36,6 +36,9 @@
   (loop for texture across (textures material)
         do (stage texture area)))
 
+(defmethod dependencies ((material material))
+  (coerce (textures material) 'list))
+
 (defgeneric texture-names (material))
 
 (defun same-texture-p (resource source)

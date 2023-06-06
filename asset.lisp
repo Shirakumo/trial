@@ -31,7 +31,7 @@
 (defmethod dependencies ((resource placeholder-resource))
   (list (generator resource)))
 
-(defclass asset (resource-generator)
+(defclass asset (resource-generator loadable)
   ((pool :initform NIL :accessor pool)
    (name :initform NIL :accessor name)
    (input :initarg :input :accessor input)

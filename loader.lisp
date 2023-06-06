@@ -69,8 +69,7 @@
     (remhash resource (staged area))))
 
 (defun dependency-sort-loads (area sequence &key (status (make-hash-table :test 'eq)) (start 0) (end (length sequence)))
-  (let ((objects (staged area))
-        (i start))
+  (let ((i start))
     (labels ((visit (object)
                (case (gethash object status :invalid)
                  (:invalid
@@ -78,10 +77,11 @@
                   (dolist (dependency (dependencies object))
                     (visit dependency))
                   (setf (gethash object status) :validated)
-                  (if (< i (length sequence))
-                      (setf (aref sequence i) object)
-                      (vector-push-extend object sequence))
-                  (incf i))
+                  (when (typep object 'loadable)
+                    (if (< i (length sequence))
+                        (setf (aref sequence i) object)
+                        (vector-push-extend object sequence))
+                    (incf i)))
                  (:temporary
                   (warn "Dependency loop detected on ~a." object)))))
       ;; TODO: It's possible we might be able to perform tarjan in-place

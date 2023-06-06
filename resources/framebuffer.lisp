@@ -28,7 +28,8 @@
   (setf (clear-bits framebuffer) (cffi:foreign-bitfield-value '%gl::ClearBufferMask bits)))
 
 (defmethod dependencies ((framebuffer framebuffer))
-  (mapcar #'second (attachments framebuffer)))
+  (append (call-next-method)
+          (mapcar #'second (attachments framebuffer))))
 
 (defun bind-framebuffer-attachments (framebuffer attachments)
   (let ((color-attachments (loop for attachment in attachments

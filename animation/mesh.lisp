@@ -16,6 +16,7 @@
         (index-data (index-data mesh)))
     ;; Vertices contain: X Y Z NX NY NZ U V
     (ensure-instance vao 'vertex-array
+                     :dependencies (list (material mesh))
                      :vertex-form :triangles
                      :bindings (list* `(,vertex-data :size 3 :offset 0 :stride 32)
                                       `(,vertex-data :size 3 :offset 12 :stride 32)
@@ -77,20 +78,21 @@
              (setf (aref (position-normals mesh) (+ j 4)) (aref (vertex-data mesh) (+ i 4)))
              (setf (aref (position-normals mesh) (+ j 5)) (aref (vertex-data mesh) (+ i 5))))
     (ensure-instance vao 'vertex-array
-                           :vertex-form :triangles
-                           :bindings (list* `(,position-normals :size 3 :offset 0 :stride 24)
-                                            `(,position-normals :size 3 :offset 12 :stride 24)
-                                            `(,vertex-data :size 2 :offset 24 :stride 64)
-                                            `(,vertex-data :size 4 :offset 32 :stride 64)
-                                            `(,vertex-data :size 4 :offset 48 :stride 64)
-                                            (when index-data
-                                              (list (make-instance 'vertex-buffer :buffer-data index-data
-                                                                                        :buffer-type :element-array-buffer
-                                                                                        :element-type :unsigned-int
-                                                                                        :size (* (length index-data) 2)))))
-                           :size (if index-data
-                                     (length index-data)
-                                     (truncate (length (vertex-data mesh)) (+ 3 3 2 4 4))))))
+                     :dependencies (list (material mesh))
+                     :vertex-form :triangles
+                     :bindings (list* `(,position-normals :size 3 :offset 0 :stride 24)
+                                      `(,position-normals :size 3 :offset 12 :stride 24)
+                                      `(,vertex-data :size 2 :offset 24 :stride 64)
+                                      `(,vertex-data :size 4 :offset 32 :stride 64)
+                                      `(,vertex-data :size 4 :offset 48 :stride 64)
+                                      (when index-data
+                                        (list (make-instance 'vertex-buffer :buffer-data index-data
+                                                                            :buffer-type :element-array-buffer
+                                                                            :element-type :unsigned-int
+                                                                            :size (* (length index-data) 2)))))
+                     :size (if index-data
+                               (length index-data)
+                               (truncate (length (vertex-data mesh)) (+ 3 3 2 4 4))))))
 
 (defmethod update-buffer-data ((vao vertex-array) (mesh skinned-mesh) &key)
   (let ((buffer (caar (bindings vao))))

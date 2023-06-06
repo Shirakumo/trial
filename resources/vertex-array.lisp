@@ -20,7 +20,8 @@
     (format stream "~@[~a~]~:[~; ALLOCATED~]" (size array) (allocated-p array))))
 
 (defmethod dependencies ((array vertex-array))
-  (mapcar #'unlist (bindings array)))
+  (append (call-next-method)
+          (mapcar #'unlist (bindings array))))
 
 (defun update-array-bindings (array bindings)
   (gl:bind-vertex-array (data-pointer array))
