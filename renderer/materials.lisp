@@ -95,3 +95,6 @@
            (apply #'reinitialize-instance existing initargs))
           (T
            (apply #'change-class existing type initargs)))))
+
+(defmacro define-material ((name type) &body args)
+  `(update-material ',name ',type ,@args))
