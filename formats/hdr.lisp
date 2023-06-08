@@ -8,8 +8,8 @@
 
 (defmethod load-image (path (type (eql :hdr)) &key)
   (let ((file (3b-hdr:read-hdr-file path :y-up T)))
-    (values (3b-hdr:data file)
-            (3b-hdr:width file)
-            (3b-hdr:height file)
-            (3b-hdr:gl-pixel-type file)
-            (3b-hdr:gl-pixel-format file))))
+    (make-image-source (3b-hdr:data file)
+                       (3b-hdr:width file)
+                       (3b-hdr:height file)
+                       (3b-hdr:gl-pixel-type file)
+                       (3b-hdr:gl-pixel-format file))))
