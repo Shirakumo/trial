@@ -91,6 +91,8 @@
 (defmethod shared-initialize :after ((pipeline pixel-pipeline) slots &key)
   (pack-pipeline pipeline T))
 
+(defgeneric setup-pipeline (pixel-pipeline))
+
 (defmethod pack-pipeline ((pipeline pixel-pipeline) (self (eql T)))
   (setup-pipeline pipeline)
   (pack-pipeline pipeline pipeline)

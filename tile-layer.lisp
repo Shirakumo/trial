@@ -89,7 +89,7 @@
       (resize (tilemap layer) nw nh))))
 
 (defmethod (setf size) :after (value (layer tile-layer))
-  (setf (bsize layer) (v* value (* tile-size 0.5))))
+  (setf (bsize layer) (v* value (* (tile-size layer) 0.5))))
 
 (defmacro %with-layer-xy ((layer location) &body body)
   `(let ((x (floor (+ (- (vx ,location) (vx (location ,layer))) (vx (bsize ,layer))) (vx (tile-size layer))))
@@ -107,7 +107,9 @@
   (let ((dat (pixel-data layer))
         (texture (tilemap layer)))
     (%with-layer-xy (layer location)
-      (set-tile dat (truncate (vx (size layer))) (truncate (vy (size layer))) x y value))
+      (let ((idx (* 2 (+ x (* y (truncate (vx (size layer))))))))
+        (setf (aref dat (+ 0 idx)) (car value))
+        (setf (aref dat (+ 1 idx)) (cdr value))))
     (%update-tile-layer layer)
     #++ ;; TODO: Optimize
     (sb-sys:with-pinned-objects (dat)

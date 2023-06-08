@@ -169,7 +169,7 @@ void main(){
 (defmethod debug-draw ((primitive general-mesh) &rest args)
   (unless (getf args :transform)
     (setf (getf args :transform) (tmat4 (primitive-transform primitive))))
-  (apply #'debugv-triangles (general-mesh-vertices primitive) (general-mesh-faces primitive) args))
+  (apply #'debug-triangles (general-mesh-vertices primitive) (general-mesh-faces primitive) args))
 
 (defmethod debug-draw ((primitive primitive) &rest args)
   (unless (getf args :transform)

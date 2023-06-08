@@ -24,6 +24,9 @@
   (when (allocated-p buffer)
     (c2mop:update-dependent (struct-class buffer) buffer)))
 
+(defmethod struct-class ((buffer struct-buffer))
+  (type-of (struct buffer)))
+
 (defmethod (setf struct) :before ((struct gl-struct) (buffer struct-buffer))
   (when (and (slot-boundp buffer 'struct) (not (eq (class-of struct) (class-of (struct buffer)))))
     (c2mop:remove-dependent (class-of (struct buffer)) buffer)
