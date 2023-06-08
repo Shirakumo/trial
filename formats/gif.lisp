@@ -30,4 +30,4 @@
          (h (skippy:height stream))
          (pixels (make-array (* w h 4) :element-type '(unsigned-byte 8) :initial-element 0)))
     (%composite-gif-image (skippy:last-image stream) pixels w)
-    (values pixels w h :unsigned-byte :rgba)))
+    (make-image-source pixels w h :unsigned-byte :rgba)))

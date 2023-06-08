@@ -9,14 +9,14 @@
 (defmethod load-image (path (type (eql :bmp)) &key)
   (multiple-value-bind (image width height channels) (org.shirakumo.bmp:read-bmp path)
     (flip-image-vertically image width height channels)
-    (values image
-            width
-            height
-            :unsigned-byte
-            (ecase channels
-              (1 :red)
-              (2 :gr)
-              (3 :rgb)
-              (4 :rgba)))))
+    (make-image-source image
+                       width
+                       height
+                       :unsigned-byte
+                       (ecase channels
+                         (1 :red)
+                         (2 :gr)
+                         (3 :rgb)
+                         (4 :rgba)))))
 
 ;; TODO: ICO to decode to mips? maybe?

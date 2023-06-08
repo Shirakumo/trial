@@ -9,8 +9,8 @@
 (defmethod load-image (path (type (eql :ter)) &key)
   (let ((terrain (terrable:read-terrain path)))
     (tg:cancel-finalization terrain)
-    (values (terrable:data terrain)
-            (terrable:width terrain)
-            (terrable:height terrain)
-            :signed-short
-            :red)))
+    (make-image-source (terrable:data terrain)
+                       (terrable:width terrain)
+                       (terrable:height terrain)
+                       :signed-short
+                       :red)))
