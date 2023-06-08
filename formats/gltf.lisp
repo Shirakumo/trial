@@ -282,13 +282,14 @@
                   name 'trial:pbr-material
                   :albedo-texture (generate-image asset (gltf:albedo pbr))
                   :metal-rough-texture (generate-image asset (gltf:metallic-roughness pbr))
-                  :occlusion-texture (generate-image asset (gltf:metallic-roughness pbr))
+                  :occlusion-texture (generate-image asset (gltf:occlusion-texture material))
                   :emissive-texture (generate-image asset (gltf:emissive-texture material))
                   :normal-texture (generate-image asset (gltf:normal-texture material))
                   :albedo-factor (to-vec (gltf:albedo-factor pbr))
                   :metallic-factor (float (gltf:metallic-factor pbr) 0f0)
                   :roughness-factor (float (gltf:roughness-factor pbr) 0f0)
                   :emissive-factor (to-vec (gltf:emissive-factor material))
+                  :occlusion-factor (if (gltf:occlusion-texture material) 1.0 0.0)
                   :alpha-cutoff (float (gltf:alpha-cutoff material) 0f0))))
       (loop for mesh across (load-meshes gltf)
             for i from 0
