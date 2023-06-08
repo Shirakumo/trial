@@ -6,6 +6,35 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(defstruct (texture-source
+            (:constructor make-texture-source (pixel-data &key pixel-type pixel-format level src-size src-window dst-window))
+            (:predicate NIL)
+            (:copier NIL))
+  (pixel-data (cffi:null-pointer))
+  (pixel-type :unsigned-byte)
+  (pixel-format :rgba)
+  (level 0)
+  ;; (w)   | (w h)     | (w h d)
+  (src-size NIL)
+  ;; (x w) | (x y w h) | (x y z w h d)
+  (src-window NIL)
+  ;; (x w) | (x y w h) | (x y z w h d)
+  (dst-window NIL))
+
+(defmethod pixel-data ((source texture-source)) (texture-source-pixel-data source))
+(defmethod pixel-type ((source texture-source)) (texture-source-pixel-type source))
+(defmethod pixel-format ((source texture-source)) (texture-source-pixel-format source))
+
+(defmethod (setf pixel-data) (value (source texture-source)) (setf (texture-source-pixel-data source) value))
+(defmethod (setf pixel-type) (value (source texture-source)) (setf (texture-source-pixel-type source) value))
+(defmethod (setf pixel-format) (value (source texture-source)) (setf (texture-source-pixel-format source) value))
+
+(defun upload-texture-source (target)
+  (ecase target
+    (:texture-1d)
+    (:texture-2d :texture-1d-array)
+    (:texture-3d :texture-2d-array)))
+
 (defclass texture (gl-resource)
   ((width :initarg :width :writer (setf width))
    (height :initarg :height :writer (setf height))
@@ -14,9 +43,7 @@
    (levels :initarg :levels :writer (setf levels))
    (samples :initarg :samples :writer (setf samples))
    (internal-format :initarg :internal-format :writer (setf internal-format))
-   (pixel-format :initarg :pixel-format :writer (setf pixel-format))
-   (pixel-type :initarg :pixel-type :writer (setf pixel-type))
-   (pixel-data :initarg :pixel-data :writer (setf pixel-data))
+   (sources :initarg :sources :initform (list (make-texture-source NIL)) :accessor sources)
    (mag-filter :initarg :mag-filter :writer (setf mag-filter))
    (min-filter :initarg :min-filter :writer (setf min-filter))
    (mipmap-levels :initarg :mipmap-levels :writer (setf mipmap-levels))
@@ -34,9 +61,6 @@
 (define-unbound-reader texture levels 1)
 (define-unbound-reader texture samples 1)
 (define-unbound-reader texture internal-format :rgba)
-(define-unbound-reader texture pixel-format :rgba)
-(define-unbound-reader texture pixel-type :unsigned-byte)
-(define-unbound-reader texture pixel-data NIL)
 (define-unbound-reader texture mag-filter :linear)
 (define-unbound-reader texture min-filter :linear-mipmap-linear)
 (define-unbound-reader texture mipmap-levels (list 0 1000))
@@ -47,9 +71,16 @@
 (define-unbound-reader texture swizzle '(:r :g :b :a))
 (define-unbound-reader texture storage :dynamic)
 
+(defmethod pixel-data ((texture texture)) (pixel-data (first (sources texture))))
+(defmethod pixel-type ((texture texture)) (pixel-type (first (sources texture))))
+(defmethod pixel-format ((texture texture)) (pixel-format (first (sources texture))))
+
+(defmethod (setf pixel-data) (value (texture texture)) (setf (pixel-data (first (sources texture))) value))
+(defmethod (setf pixel-type) (value (texture texture)) (setf (pixel-type (first (sources texture))) value))
+(defmethod (setf pixel-format) (value (texture texture)) (setf (pixel-format (first (sources texture))) value))
+
 (defun texture-texspec (texture)
   (loop for slot in '(width height depth target levels samples internal-format
-                      pixel-format pixel-type pixel-data
                       mag-filter min-filter mipmap-levels mipmap-lod
                       anisotropy wrapping border-color storage)
         when (slot-boundp texture slot)
@@ -62,12 +93,10 @@
                                         (getf args :wrapping)
                                         (getf args :wrapping))))
   (when (and (getf args :internal-format)
-             (not (getf args :pixel-format))
-             (not (slot-boundp texture 'pixel-format)))
+             (not (getf args :pixel-format)))
     (setf (getf args :pixel-format) (texture-internal-format->pixel-format (getf args :internal-format))))
   (when (and (getf args :internal-format)
-             (not (getf args :pixel-type))
-             (not (slot-boundp texture 'pixel-type)))
+             (not (getf args :pixel-type)))
     (setf (getf args :pixel-type) (texture-internal-format->pixel-type (getf args :internal-format))))
   (apply #'call-next-method texture slots args))
 
@@ -91,6 +120,11 @@
     (test #'check-texture-wrapping :wrapping #'first)
     (test #'check-texture-wrapping :wrapping #'second)
     (test #'check-texture-wrapping :wrapping #'third)))
+
+(defmethod shared-initialize :after ((texture texture) slots &key pixel-format pixel-type pixel-data)
+  (when pixel-data (setf (pixel-data texture) pixel-data))
+  (when pixel-type (setf (pixel-type texture) pixel-type))
+  (when pixel-format (setf (pixel-format texture) pixel-format)))
 
 (defmethod update-buffer-data ((buffer texture) (data (eql T)) &rest args)
   (apply #'update-buffer-data buffer (pixel-data buffer) args))
