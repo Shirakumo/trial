@@ -185,4 +185,5 @@
                :promise
                :simple-tasks
                :lru-cache
+               :memory-regions
                (:feature :windows :com-on)))

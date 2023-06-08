@@ -114,7 +114,7 @@
 (defun %capture (framebuffer x y width height file)
   (let ((array (make-array (* width height 3) :element-type '(unsigned-byte 8))))
     (gl:bind-framebuffer :read-framebuffer framebuffer)
-    (with-pointer-to-vector-data (ptr array)
+    (cffi:with-pointer-to-vector-data (ptr array)
       (gl:pixel-store :pack-alignment 1)
       (%gl:read-pixels x y width height :rgb :unsigned-byte ptr))
     (gl:bind-framebuffer :read-framebuffer 0)

@@ -275,7 +275,7 @@
   (cffi:with-foreign-object (image '(:struct image))
     (setf (cffi:foreign-slot-value image '(:struct image) 'width) (rgba-icon-width icon))
     (setf (cffi:foreign-slot-value image '(:struct image) 'height) (rgba-icon-height icon))
-    (with-pointer-to-vector-data (pixels (rgba-icon-data icon))
+    (cffi:with-pointer-to-vector-data (pixels (rgba-icon-data icon))
       (setf (cffi:foreign-slot-value image '(:struct image) 'pixels) pixels)
       (create-cursor image xoff yoff))))
 
@@ -306,7 +306,7 @@
   (cffi:with-foreign-object (image '(:struct image))
     (setf (cffi:foreign-slot-value image '(:struct image) 'width) (rgba-icon-width icon))
     (setf (cffi:foreign-slot-value image '(:struct image) 'height) (rgba-icon-height icon))
-    (with-pointer-to-vector-data (pixels (rgba-icon-data icon))
+    (cffi:with-pointer-to-vector-data (pixels (rgba-icon-data icon))
       (setf (cffi:foreign-slot-value image '(:struct image) 'pixels) pixels)
       (set-window-icon (window context) 1 image))))
 

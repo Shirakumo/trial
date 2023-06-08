@@ -10,6 +10,8 @@
   (let ((png (etypecase source
                ((or string pathname)
                 (pngload:load-file source :flatten T :flip-y T))
+               (vector
+                (pngload:load-vector source :flatten T :flip-y T))
                (memory-region
                 ;; FIXME: upstream this
                 (let ((png (pngload::make-png))

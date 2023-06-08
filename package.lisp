@@ -16,14 +16,16 @@
   (:shadow #:// #:load)
   (:import-from #:static-vectors #:static-vector-pointer)
   (:import-from #:flow #:port)
+  (:import-from #:org.shirakumo.memory-regions
+                #:memory-region #:memory-region-pointer #:memory-region-size)
   (:local-nicknames
    (#:gamepad #:org.shirakumo.fraf.gamepad)
    (#:sequences #:org.shirakumo.trivial-extensible-sequences)
    (#:v #:org.shirakumo.verbose)
    (#:promise #:org.shirakumo.promise)
    (#:3ds #:org.shirakumo.fraf.trial.space)
-   #+windows
-   (#:com #:org.shirakumo.com-on))
+   (#:mem #:org.shirakumo.memory-regions)
+   #+windows (#:com #:org.shirakumo.com-on))
   ;; animation/asset.lisp
   (:export
    #:animation-asset
@@ -752,9 +754,9 @@
    #:display-controller)
   ;; data-pointer.lisp
   (:export
-   #:with-pointer-to-vector-data
-   #:call-with-data-ptr
-   #:with-data-ptr)
+   #:memory-region
+   #:memory-region-pointer
+   #:memory-region-size)
   ;; debug.lisp
   (:export
    #:debug-draw
@@ -1240,10 +1242,7 @@
    #:foreign-resource
    #:data-pointer
    #:gl-resource
-   #:gl-name
-   #:memory-region
-   #:memory-region-start
-   #:memory-region-size)
+   #:gl-name)
   ;; resource-generator.lisp
   (:export
    #:resource-generator

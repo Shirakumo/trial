@@ -42,21 +42,21 @@
 (defmethod update-buffer-data ((buffer buffer-object) (data (eql T)) &rest args)
   (apply #'update-buffer-data buffer (buffer-data buffer) args))
 
-(defmethod update-buffer-data ((buffer buffer-object) data &key (buffer-start 0) (data-start 0) count gl-type)
-  (with-data-ptr (ptr data-size data :offset data-start :gl-type gl-type)
+(defmethod update-buffer-data ((buffer buffer-object) data &key (buffer-start 0) (data-start 0) count)
+  (mem:with-memory-region (region data :offset data-start)
     #-elide-buffer-access-checks
-    (when (and count (< data-size count))
+    (when (and count (< (memory-region-size region) count))
       (error "Attempting to update ~d bytes from ~a, when it has only ~d bytes available."
-             count data data-size))
-    (update-buffer-data/ptr buffer ptr (or count data-size) buffer-start)))
+             count data (memory-region-size region)))
+    (update-buffer-data/ptr buffer (memory-region-pointer region) (or count (memory-region-size region)) buffer-start)))
 
 (defmethod resize-buffer ((buffer buffer-object) size &key data (data-start 0) gl-type)
-  (with-data-ptr (ptr data-size (or data (cffi:null-pointer)) :offset data-start :gl-type gl-type)
+  (mem:with-memory-region (region (or data (cffi:null-pointer)) :offset data-start :gl-type gl-type)
     #-elide-buffer-access-checks
-    (when (and size (< data-size size))
+    (when (and size (< (memory-region-size region) size))
       (error "Attempting to update ~d bytes from ~a, when it has only ~d bytes available."
-             size data data-size))
-    (resize-buffer/ptr buffer size ptr)))
+             size data (memory-region-size region)))
+    (resize-buffer/ptr buffer size (memory-region-pointer region))))
 
 (defmethod allocate ((buffer buffer-object))
   (let ((vbo (gl:gen-buffer))

@@ -276,7 +276,7 @@
               (%ref 4) (%ref 5) (%ref 6)
               (%ref 8) (%ref 9) (%ref 10)))
       (:mat4 (unless container (setf container (mat4)))
-       (with-pointer-to-vector-data (dst (marr4 container))
+       (cffi:with-pointer-to-vector-data (dst (marr4 container))
          (static-vectors:replace-foreign-memory dst ptr (* 4 4 4)))))))
 
 (defun gl-memref-std430 (ptr type &optional container)
@@ -296,13 +296,13 @@
       (:vec4 (unless container (setf container (vec4)))
        (vsetf container (%ref 0) (%ref 1) (%ref 2) (%ref 3)))
       (:mat2 (unless container (setf container (mat2)))
-       (with-pointer-to-vector-data (dst (marr2 container))
+       (cffi:with-pointer-to-vector-data (dst (marr2 container))
          (static-vectors:replace-foreign-memory dst ptr (* 2 2 4))))
       (:mat3 (unless container (setf container (mat3)))
-       (with-pointer-to-vector-data (dst (marr3 container))
+       (cffi:with-pointer-to-vector-data (dst (marr3 container))
          (static-vectors:replace-foreign-memory dst ptr (* 3 3 4))))
       (:mat4 (unless container (setf container (mat4)))
-       (with-pointer-to-vector-data (dst (marr4 container))
+       (cffi:with-pointer-to-vector-data (dst (marr4 container))
          (static-vectors:replace-foreign-memory dst ptr (* 4 4 4)))))))
 
 (defun gl-memref (ptr type &key (layout 'std140) container)
@@ -346,7 +346,7 @@
              for i from 0 below 9
              do (setf (%ref (aref idx i)) (miref3 value i))))
       (:mat4
-       (with-pointer-to-vector-data (src (marr4 value))
+       (cffi:with-pointer-to-vector-data (src (marr4 value))
          (static-vectors:replace-foreign-memory ptr src (* 4 4 4))))))
   value)
 
@@ -378,13 +378,13 @@
        (setf (%ref 2) (vz4 value))
        (setf (%ref 3) (vw4 value)))
       (:mat2
-       (with-pointer-to-vector-data (src (marr2 value))
+       (cffi:with-pointer-to-vector-data (src (marr2 value))
          (static-vectors:replace-foreign-memory ptr src (* 2 2 4))))
       (:mat3
-       (with-pointer-to-vector-data (src (marr3 value))
+       (cffi:with-pointer-to-vector-data (src (marr3 value))
          (static-vectors:replace-foreign-memory ptr src (* 3 3 4))))
       (:mat4
-       (with-pointer-to-vector-data (src (marr4 value))
+       (cffi:with-pointer-to-vector-data (src (marr4 value))
          (static-vectors:replace-foreign-memory ptr src (* 4 4 4))))))
   value)
 
