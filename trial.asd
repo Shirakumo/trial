@@ -73,7 +73,6 @@
                (:file "power" :depends-on ("package"))
                (:file "prompt" :depends-on ("package"))
                (:file "queue" :depends-on ("package"))
-               (:file "rails" :depends-on ("package" "container" "helpers"))
                (:file "render-loop" :depends-on ("package" "toolkit"))
                (:file "render-texture" :depends-on ("package" "pipeline" "container"))
                (:file "resource" :depends-on ("package" "context"))
