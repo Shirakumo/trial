@@ -21,10 +21,11 @@
                                                   :use-static-vector NIL
                                                   :unknown-chunk-warnings NIL)))
                   (setf (pngload::state png) state)
-                  (3bz:with-octet-pointer (pointer-binding (start source) (size source))
+                  (3bz:with-octet-pointer (pointer-binding (memory-region-pointer source)
+                                                           (memory-region-size source))
                     (let ((source (make-instance 'pngload::octet-pointer-source
-                                                 :data (start source)
-                                                 :end (size source))))
+                                                 :data (memory-region-pointer source)
+                                                 :end (memory-region-size source))))
                       (setf (pngload::state-source state) source
                             (pngload::state-mmap-pointer state) pointer-binding
                             (pngload::parse-tree png) (pngload::parse-datastream png))))
