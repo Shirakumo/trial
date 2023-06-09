@@ -955,7 +955,7 @@
   :depth-attachment :stencil-attachment :depth-stencil-attachment)
 
 (defun internal-format-components (format)
-  (case format
+  (ecase format
     ((:red :r8 :r8-snorm :r8i :r8ui
       :r16 :r16-snorm :r16f :r16i :r16ui
       :r32f :r32i :r32ui
@@ -982,7 +982,7 @@
     ((:depth-stencil :depth24-stencil8 :depth32f-stencil8) 2)))
 
 (defun internal-format-pixel-size (format)
-  (case format
+  (ecase format
     ((:red :r8 :r8-snorm :r8i :r8ui) 8)
     ((:r16 :r16-snorm :r16f :r16i :r16ui) 16)
     ((:r32f :r32i :r32ui) 32)
@@ -1022,6 +1022,48 @@
     (:depth24-stencil8 32)
     (:depth32f-stencil8 40)))
 
+(defun internal-format-pixel-format (format)
+  (case format
+    ((:stencil-index :stencil-index1 :stencil-index4 :stencil-index8 :stencil-index16)
+     :stencil-index)
+    ((:depth-component :depth-component16 :depth-component24 :depth-component32 :depth-component32f)
+     :depth-component)
+    ((:depth-stencil :depth24-stencil8 :depth32f-stencil8)
+     :depth-stencil)
+    (T
+     (case (internal-format-components format)
+       (4 :rgba)
+       (3 :rgb)
+       (2 :rg)
+       (1 :red)))))
+
+(defun internal-format-pixel-type (format)
+  (ecase format
+    ((:red :r8 :r8-norm :rg :rg8 :rg8-snorm :rgb :rgb8 :rgb8-snorm :rgba :rgba8 :rgba8-snorm
+      :r8ui :rg8ui :rgb8ui :rgba8ui :depth-component :stencil-index :stencil-index1 :stencil-index
+      :stencil-index8)
+     :unsigned-byte)
+    ((:r16 :r16-snorm :rg16 :rg16-snorm :rgb16 :rgb16-snorm :rgba16 :rgba16-snorm
+      :r16ui :rg16ui :rgb16ui :rgba16ui :depth-component16 :stencil-index16)
+     :unsigned-short)
+    ((:r32 :r32-snorm :rg32 :rg32-snorm :rgb32 :rgb32-snorm :rgba32 :rgba32-snorm
+      :r32ui :rg32ui :rgb32ui :rgba32ui :depth-component24 :depth-component32)
+     :unsigned-int)
+    ((:r8i :rg8i :rgb8i :rgba8i)
+     :byte)
+    ((:r16i :rg16i :rgb16i :rgba16i)
+     :short)
+    ((:r32i :rg32i :rgb32i :rgba32i)
+     :int)
+    ((:r16f :rg16f :rgb16f :rgba16f)
+     :half-float)
+    ((:r32f :rg32f :rgb32f :rgba32f :depth-component32f)
+     :float)
+    (:depth-stencil :depth24-stencil8
+     :unsigned-int-24-8)
+    (:depth32f-stencil8
+     :float-32-unsigned-int-24-8-rev)))
+
 (defun infer-internal-format (pixel-type pixel-format)
   (mksym
    "KEYWORD"
@@ -1044,6 +1086,15 @@
     ((:rg :gr) '(:r :r :r :g))
     ((:rgb :bgr) '(:r :g :b 1))
     ((:rgba :bgra) '(:r :g :b :a))))
+
+(defun infer-swizzle-channels (channels)
+  (flet ((f (&rest fields)
+           (loop for c in channels thereis (find c fields))))
+    (let ((r (f :r :red)) (g (f :g :green)) (b (f :b :blue)) (a (f :a :alpha)))
+      (list (cond (r :r) (g :g) (b :b) (a :a))
+            (cond (g :g) (r :r) (b :b) (a :a))
+            (cond (b :b) (r :r) (g :g) (a :a))
+            (cond (a :a) (T 1))))))
 
 (defun infer-pixel-type (depth type)
   (ecase depth

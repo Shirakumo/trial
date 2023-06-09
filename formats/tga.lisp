@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defmethod load-image (path (type (eql :tga)) &key)
+(defmethod load-image (path (type (eql :tga)))
   (let ((tga (tga:read-tga path)))
     (make-image-source (tga:image-data tga)
                        (tga:image-width tga)
