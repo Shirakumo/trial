@@ -27,13 +27,35 @@
 (defmethod normal-texture ((material pbr-material))
   (aref (textures material) 3))
 
-;; FIXME: Allow specifying textures separated:
-;;  - Metalness
-;;  - Roughness
-;;  - Occlusion
-;;  - Metal-Rough
-;; But how do we combine them without loading them dynamically?
-;; A new kind of asset that can combine from multiple resources?
+(defmethod shared-initialize :after ((material pbr-material) slots &key metalness-texture roughness-texture occlusion-texture metal-rough-texture)
+  (cond ((and metalness-texture roughness-texture occlusion-texture)
+         (loop for source in (sources metalness-texture)
+               do (setf (target source) :r))
+         (loop for source in (sources roughness-texture)
+               do (setf (target source) :g))
+         (loop for source in (sources occlusion-texture)
+               do (setf (target source) :b))
+         (setf (aref (textures material) 1) (merge-textures (list metalness-texture roughness-texture occlusion-texture))))
+        ((and metalness-texture roughness-texture)
+         (setf (occlusion-factor material) 0.0)
+         (loop for source in (sources metalness-texture)
+               do (setf (target source) :r))
+         (loop for source in (sources roughness-texture)
+               do (setf (target source) :g))
+         (setf (aref (textures material) 1) (merge-textures (list metalness-texture roughness-texture))))
+        ((and metal-rough-texture occlusion-texture)
+         (loop for source in (sources metal-rough-texture)
+               do (setf (target source) :rg))
+         (loop for source in (sources occlusion-texture)
+               do (setf (target source) :b))
+         (setf (aref (textures material) 1) (merge-textures (list metal-rough-texture occlusion-texture))))
+        ((and metal-rough-texture)
+         (setf (occlusion-factor material) 0.0)
+         (setf (aref (textures material) 1) metal-rough-texture))
+        ((and metalness-texture)
+         (setf (occlusion-factor material) 0.0)
+         (setf (roughness-factor material) 0.0)
+         (setf (aref (textures material) 1) metalness-texture))))
 
 (defmethod texture-names ((material pbr-material))
   #(:albedo-texture :metal-rough-occlusion-texture :emission-texture :normal-texture))

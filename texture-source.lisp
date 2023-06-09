@@ -95,6 +95,7 @@
           ((rest targets)
            ;; Multiple targets and channels mean we have an actual composition of different channels.
            ;; We merge the sources on CPU-side into a single source.
+           (v:warn :trial "Performing expensive texture source merge. You may want to pre-compose these sources instead.")
            (let ((pixel-format (ecase (length channels) (4 :rgba) (3 :rgb) (2 :rg) (1 :red))))
              (destructuring-bind (wd hd dd) (texture-sources->texture-size sources)
                (let* ((cd (length channels))
@@ -188,3 +189,22 @@
              (gl:pixel-store :pack-row-length src-w)
              (gl:pixel-store :pack-image-height src-h)
              (%gl:tex-sub-image-3d target level dst-x dst-y dst-z dst-w dst-h dst-d format type (memory-region-pointer region)))))))))
+
+(defun merge-textures (textures)
+  (multiple-value-bind (sources swizzle) (normalize-texture-sources (loop for tex in textures append (sources tex)))
+    (multiple-value-bind (w h d) (texture-sources->texture-size sources)
+      (make-instance 'texture
+                     :width w :height h :depth d
+                     :sources sources
+                     :swizzle swizzle
+                     :internal-format (infer-internal-format (pixel-type (first sources)) (pixel-format (first sources)))
+                     :target (texture-sources->target sources)
+                     :samples (samples (first textures))
+                     :min-filter (min-filter (first textures))
+                     :mag-filter (mag-filter (first textures))
+                     :wrapping (wrapping (first textures))
+                     :mipmap-levels (mipmap-levels (first textures))
+                     :mipmap-lod (mipmap-lod (first textures))
+                     :anisotropy (anisotropy (first textures))
+                     :border-color (border-color (first textures))
+                     :storage (storage (first textures))))))
