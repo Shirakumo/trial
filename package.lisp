@@ -1415,6 +1415,22 @@
    #:text
    #:foreground
    #:background)
+  ;; texture-source.lisp
+  (:export
+   #:texture-source
+   #:texture-source-src
+   #:texture-source-dst
+   #:pixel-data
+   #:pixel-type
+   #:pixel-format
+   #:level
+   #:target
+   #:texture-sources->texture-size
+   #:texture-sources->target
+   #:normalize-texture-sources
+   #:make-image-source
+   #:merge-texture-sources
+   #:upload-texture-source)
   ;; tile-layer.lisp
   (:export
    #:tile-layer
