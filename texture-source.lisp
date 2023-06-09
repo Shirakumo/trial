@@ -188,7 +188,12 @@
              (gl:pixel-store :unpack-skip-images src-z)
              (gl:pixel-store :unpack-row-length src-w)
              (gl:pixel-store :unpack-image-height src-h)
-             (%gl:tex-sub-image-3d target level dst-x dst-y dst-z dst-w dst-h dst-d format type (memory-region-pointer region)))))))))
+             (%gl:tex-sub-image-3d target level dst-x dst-y dst-z dst-w dst-h dst-d format type (memory-region-pointer region))))
+          (gl:pixel-store :unpack-skip-pixels 0)
+          (gl:pixel-store :unpack-skip-rows 0)
+          (gl:pixel-store :unpack-skip-images 0)
+          (gl:pixel-store :unpack-row-length 0)
+          (gl:pixel-store :unpack-image-height 0))))))
 
 (defun merge-textures (textures)
   (multiple-value-bind (sources swizzle) (normalize-texture-sources (loop for tex in textures append (sources tex)))
