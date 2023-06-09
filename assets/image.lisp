@@ -16,27 +16,6 @@
                    do (rotatef (aref image x1) (aref image x2))))
     image))
 
-(defun downscale-image (image width height components width2 height2)
-  (let ((target (make-array (* width2 height2 components) :element-type '(unsigned-byte 8) :initial-element 0))
-        (x-ratio (float (/ width width2) 0f0))
-        (y-ratio (float (/ height height2) 0f0))
-        (offset 0))
-    (declare (optimize speed))
-    (declare (type (unsigned-byte 32) width height width2 height2 offset))
-    (declare (type (unsigned-byte 8) components))
-    (declare (type (array (unsigned-byte 8)) image))
-    (dotimes (i height2 target)
-      (dotimes (j width2)
-        (dotimes (c components)
-          (let ((avg 0) (count 0))
-            (declare (type (unsigned-byte 32) avg count))
-            (loop for fi from (max 0 (floor (* y-ratio (- i 0.5)))) to (min (1- height) (ceiling (* y-ratio (+ i 0.5))))
-                  do (loop for fj from (max 0 (floor (* x-ratio (- j 0.5)))) to (min (1- width) (ceiling (* x-ratio (+ j 0.5))))
-                           do (incf avg (aref image (+ c (* components (+ fj (* fi width))))))
-                              (incf count)))
-            (setf (aref target offset) (floor (/ avg count)))
-            (incf offset)))))))
-
 (defun convert-image-data (data-in width-in height-in &key (pixel-type-in :unsigned-byte) (pixel-format-in :rgba) (swizzle '(:r :g :b :a)) (pixel-type-out pixel-type-in) (pixel-format-out pixel-format-in)
                                                            (width-out width-in) (height-out height-in))
   (cond ((and (eql pixel-type-in pixel-type-out)
@@ -49,53 +28,50 @@
          ;; TODO: implement convert-image-data
          (error "IMPLEMENT"))))
 
-(defgeneric load-image (path type &key width height pixel-type pixel-format &allow-other-keys))
+(defgeneric load-image (source type))
 
-(defmethod load-image (source (type (eql T)) &rest args &key mime-type)
-  (if mime-type
-      (cl-ppcre:register-groups-bind (type) ("^[^/]*/([^+/]+)" mime-type)
-        (remf args :mime-type)
-        (apply #'load-image source (kw type) args))
-      (call-next-method)))
+(defgeneric save-image (source target type &key))
 
-(defmethod load-image ((path pathname) (type (eql T)) &rest args)
-  (let ((type (pathname-type path)))
-    (apply #'load-image path (kw type) args)))
+(defmethod save-image (source (path pathname) (type (eql T)) &rest args)
+  (apply #'save-image source path (kw (pathname-type path)) args))
 
-(defmethod load-image ((paths cons) type &rest args)
-  (let ((data (loop for path in paths
-                    collect (multiple-value-list (apply #'load-image path type args)))))
-    #-trial-release
-    (loop with first = (first data)
-          for other in (rest data)
-          for path in (rest paths)
-          do (unless (equal (rest first) (rest other))
-               (error "Images are not congruent! File~%  ~a~%has attributes~%  ~a~%but file~%  ~a~%has attributes~%  ~a"
-                      (first paths) (rest first) path (rest other))))
-    (values-list (list* (mapcar #'first data) (rest (first data))))))
+(defmethod save-image (source target (type string) &rest args)
+  (apply #'save-image source target
+         (or (cl-ppcre:register-groups-bind (type) ("^[^/]*/([^+/]+)" mime-type) (kw type)) (kw type))
+         args))
+
+(defmethod load-image (source (type string))
+  (or (cl-ppcre:register-groups-bind (type) ("^[^/]*/([^+/]+)" mime-type)
+        (load-image source (kw type)))
+      (load-image source (kw type))))
+
+(defmethod load-image ((path pathname) (type (eql T)))
+  (load-image path (kw (pathname-type path))))
+
+(defmethod load-image ((source texture-source) type)
+  (merge-texture-sources (load-image (texture-source-pixel-data source) type) source))
+
+(defmethod load-image ((sources cons) (type (eql T)))
+  (loop for source in sources collect (load-image source T)))
+
+(defun %load-image (source type)
+  (with-new-value-restart (source) (use-value "Specify a new image source.")
+    (with-retry-restart (retry "Retry loading the image source.")
+      (load-image source type))))
 
 (defclass image-loader (resource-generator)
   ())
 
-(defmethod generate-resources ((generator image-loader) path &rest texture-args &key (type T) internal-format pixel-format (resource (resource generator T)) (texture-class 'texture) mime-type &allow-other-keys)
-  (multiple-value-bind (bits width height pixel-type inferred-pixel-format swizzle)
-      (with-new-value-restart (path) (new-path "Specify a new image path.")
-        (with-retry-restart (retry "Retry loading the image path.")
-          (load-image path type :mime-type mime-type)))
-    (assert (not (null bits)))
-    (let ((pixel-format (or pixel-format inferred-pixel-format)))
-      (with-unwind-protection (free-data bits)
-        (apply #'ensure-instance resource texture-class
-               :width width :height height
-               :pixel-data bits
-               :pixel-type pixel-type
-               :pixel-format pixel-format
-               :internal-format (or internal-format
-                                    (infer-internal-format pixel-type pixel-format))
-               :swizzle (or swizzle (infer-swizzle-format pixel-format))
-               (remf* texture-args :mime-type :type :resource :texture-class))))))
+(defmethod generate-resources ((generator image-loader) sources &rest texture-args &key (type T) target swizzle internal-format (resource (resource generator T)) (texture-class 'texture) &allow-other-keys)
+  (multiple-value-bind (sources source-swizzle) (normalize-texture-sources (enlist (%load-image sources type)) target)
+    (destructuring-bind (width height depth) (texture-sources->texture-size sources)
+      (unwind-protect (apply #'ensure-instance resource texture-class
+                             :sources sources :width width :height height :depth depth :target (or target (texture-sources->target sources))
+                             :internal-format (or internal-format (infer-internal-format (pixel-type (first sources)) (pixel-format (first sources))))
+                             :swizzle (or swizzle source-swizzle (infer-swizzle-format (pixel-format (first sources))))
+                             (remf* texture-args :type :target :swizzle :internal-format :resource :texture-class))
+        (dolist (source sources)
+          (free-data (texture-source-pixel-data source)))))))
 
 (defclass image (single-resource-asset file-input-asset image-loader)
   ())
-
-;; FIXME: multi-image textures such as cube maps

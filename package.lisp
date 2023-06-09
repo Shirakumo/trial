@@ -147,6 +147,8 @@
    #:rotation)
   ;; assets/image.lisp
   (:export
+   #:load-image
+   #:save-image
    #:image-loader
    #:image
    #:resize)
