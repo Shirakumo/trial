@@ -1430,7 +1430,8 @@
    #:normalize-texture-sources
    #:make-image-source
    #:merge-texture-sources
-   #:upload-texture-source)
+   #:upload-texture-source
+   #:merge-textures)
   ;; tile-layer.lisp
   (:export
    #:tile-layer
