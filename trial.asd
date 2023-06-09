@@ -48,7 +48,6 @@
                (:file "fps" :depends-on ("package" ("assets" "image") ("assets" "mesh") "loader"))
                (:file "gamepad" :depends-on ("package" "event-loop" "toolkit"))
                (:file "geometry" :depends-on ("package" "toolkit" "type-info" "static-vector" ("resources" "vertex-array") ("resources" "vertex-buffer")))
-               (:file "geometry-clipmap" :depends-on ("package" "geometry-shapes" "shader-entity"))
                (:file "geometry-shapes" :depends-on ("package" "geometry" "asset-pool" ("assets" "mesh")))
                (:file "gl-features" :depends-on ("package"))
                (:file "gl-struct" :depends-on ("package" "type-info"))
