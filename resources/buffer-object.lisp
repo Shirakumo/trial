@@ -53,7 +53,7 @@
 (defmethod resize-buffer ((buffer buffer-object) size &key data (data-start 0) gl-type)
   (mem:with-memory-region (region (or data (cffi:null-pointer)) :offset data-start :gl-type gl-type)
     #-elide-buffer-access-checks
-    (when (and (not (cffi:null-pointer-p (memory-region-pointer region))) (< (memory-region-size region) size))
+    (when (and size (not (cffi:null-pointer-p (memory-region-pointer region))) (< (memory-region-size region) size))
       (error "Attempting to update ~d bytes from ~a, when it has only ~d bytes available."
              size data (memory-region-size region)))
     (resize-buffer/ptr buffer size (memory-region-pointer region))))
