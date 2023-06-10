@@ -42,6 +42,32 @@
 (define-unbound-reader texture swizzle '(:r :g :b :a))
 (define-unbound-reader texture storage :dynamic)
 
+(defmacro define-texture-property-slots (&rest props)
+  `(progn
+     ,@(loop for prop in props
+             collect `(defmethod (setf ,prop) :before (value (texture texture))
+                        (when (allocated-p texture)
+                          (gl:bind-texture (target texture) (gl-name texture))
+                          (update-texture-properties texture)
+                          (gl:bind-texture (target texture) 0))))))
+
+(define-texture-property-slots mag-filter min-filter mipmap-levels mipmap-lod anisotropy wrapping border-collor swizzle)
+
+(defmethod (setf sources) :after ((sources cons) (texture texture))
+  (when (allocated-p texture)
+    (gl:bind-texture (target texture) (gl-name texture))
+    (multiple-value-bind (w h d) (texture-sources->texture-size sources)
+      (when (or (and w (/= w (width texture)))
+                (and h (/= h (height texture)))
+                (and d (/= d (depth texture))))
+        (setf (width texture) w)
+        (setf (height texture) h)
+        (setf (depth texture) d)
+        (allocate-texture-storage texture)))
+    (dolist (source sources)
+      (upload-texture-source source texture))
+    (gl:bind-texture (target texture) 0)))
+
 (defmethod pixel-data ((texture texture)) (pixel-data (first (sources texture))))
 (defmethod pixel-type ((texture texture)) (pixel-type (first (sources texture))))
 (defmethod pixel-format ((texture texture)) (pixel-format (first (sources texture))))
@@ -161,54 +187,57 @@
            ((:texture-2d-multisample-array)
             (%gl:tex-storage-3d-multisample target samples internal-format width height depth 1))))))))
 
-(defmethod allocate ((texture texture))
+(defun update-texture-properties (texture)
   (with-accessors* (width height depth target samples internal-format pixel-format pixel-type pixel-data swizzle
                           mag-filter min-filter mipmap-levels mipmap-lod anisotropy wrapping border-color storage)
       texture
-    (let ((tex (gl:gen-texture)))
-      (with-cleanup-on-failure (gl:delete-textures (list tex))
-        (gl:bind-texture target tex)
-        (allocate-texture-storage texture)
-        (dolist (source (sources texture))
-          (upload-texture-source source texture))
-        (gl:tex-parameter target :texture-wrap-s (first wrapping))
-        (unless (find target '(:texture-1d-array :texture-1d))
-          (gl:tex-parameter target :texture-wrap-t (second wrapping)))
-        (when (eql target :texture-cube-map)
-          (gl:tex-parameter target :texture-wrap-r (third wrapping)))
-        (when (find :clamp-to-border wrapping)
-          (gl:tex-parameter target :texture-border-color
-                            (list (vx border-color) (vy border-color) (vz border-color) (vw border-color))))
-        (cffi:with-foreign-object (params :int 4)
-          (loop for c in swizzle
-                for i from 0
-                do (setf (cffi:mem-aref params :int i)
-                         (ecase c
-                           ((:r :red) (cffi:foreign-enum-value '%gl:enum :red))
-                           ((:g :green) (cffi:foreign-enum-value '%gl:enum :green))
-                           ((:b :blue) (cffi:foreign-enum-value '%gl:enum :blue))
-                           ((:a :alpha) (cffi:foreign-enum-value '%gl:enum :alpha))
-                           ((0 :zero) (cffi:foreign-enum-value '%gl:enum :zero))
-                           ((1 :one) (cffi:foreign-enum-value '%gl:enum :one)))))
-          (%gl:tex-parameter-iv target :texture-swizzle-rgba params))
-        (gl:tex-parameter target :texture-min-filter min-filter)
-        (gl:tex-parameter target :texture-mag-filter mag-filter)
-        (unless (or (eql target :texture-2d-multisample)
-                    (find internal-format '(:depth-component :depth-stencil)))
-          (when (find min-filter '(:linear-mipmap-linear :linear-mipmap-nearest
-                                   :nearest-mipmap-linear :nearest-mipmap-nearest))
-            (destructuring-bind (&optional (base 0) (max 1000)) mipmap-levels
-              (gl:tex-parameter target :texture-base-level base)
-              (gl:tex-parameter target :texture-max-level max))
-            (destructuring-bind (&optional (min -1000) (max 1000) (bias 0.0)) mipmap-lod
-              (gl:tex-parameter target :texture-min-lod min)
-              (gl:tex-parameter target :texture-max-lod max)
-              (gl:tex-parameter target :texture-lod-bias bias))
-            (gl:generate-mipmap target))
-          (when anisotropy
-            (gl:tex-parameter target :texture-max-anisotropy-ext anisotropy)))
-        (gl:bind-texture target 0)
-        (setf (data-pointer texture) tex)))))
+    (gl:tex-parameter target :texture-wrap-s (first wrapping))
+    (unless (find target '(:texture-1d-array :texture-1d))
+      (gl:tex-parameter target :texture-wrap-t (second wrapping)))
+    (when (eql target :texture-cube-map)
+      (gl:tex-parameter target :texture-wrap-r (third wrapping)))
+    (when (find :clamp-to-border wrapping)
+      (gl:tex-parameter target :texture-border-color
+                        (list (vx border-color) (vy border-color) (vz border-color) (vw border-color))))
+    (cffi:with-foreign-object (params :int 4)
+      (loop for c in swizzle
+            for i from 0
+            do (setf (cffi:mem-aref params :int i)
+                     (ecase c
+                       ((:r :red) (cffi:foreign-enum-value '%gl:enum :red))
+                       ((:g :green) (cffi:foreign-enum-value '%gl:enum :green))
+                       ((:b :blue) (cffi:foreign-enum-value '%gl:enum :blue))
+                       ((:a :alpha) (cffi:foreign-enum-value '%gl:enum :alpha))
+                       ((0 :zero) (cffi:foreign-enum-value '%gl:enum :zero))
+                       ((1 :one) (cffi:foreign-enum-value '%gl:enum :one)))))
+      (%gl:tex-parameter-iv target :texture-swizzle-rgba params))
+    (gl:tex-parameter target :texture-min-filter min-filter)
+    (gl:tex-parameter target :texture-mag-filter mag-filter)
+    (unless (or (eql target :texture-2d-multisample)
+                (find internal-format '(:depth-component :depth-stencil)))
+      (when (find min-filter '(:linear-mipmap-linear :linear-mipmap-nearest
+                               :nearest-mipmap-linear :nearest-mipmap-nearest))
+        (destructuring-bind (&optional (base 0) (max 1000)) mipmap-levels
+          (gl:tex-parameter target :texture-base-level base)
+          (gl:tex-parameter target :texture-max-level max))
+        (destructuring-bind (&optional (min -1000) (max 1000) (bias 0.0)) mipmap-lod
+          (gl:tex-parameter target :texture-min-lod min)
+          (gl:tex-parameter target :texture-max-lod max)
+          (gl:tex-parameter target :texture-lod-bias bias))
+        (gl:generate-mipmap target))
+      (when anisotropy
+        (gl:tex-parameter target :texture-max-anisotropy-ext anisotropy)))))
+
+(defmethod allocate ((texture texture))
+  (let ((tex (gl:gen-texture)))
+    (with-cleanup-on-failure (gl:delete-textures (list tex))
+      (gl:bind-texture (target texture) tex)
+      (allocate-texture-storage texture)
+      (dolist (source (sources texture))
+        (upload-texture-source source texture))
+      (update-texture-properties texture)
+      (gl:bind-texture (target texture) 0)
+      (setf (data-pointer texture) tex))))
 
 (defmethod deallocate ((texture texture))
   (gl:delete-textures (list (gl-name texture))))
