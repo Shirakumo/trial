@@ -15,10 +15,11 @@ Trial is a modular game engine written in Common Lisp. It offers many tools and 
   - "Render Pipeline"(link render-pipeline.mess)
     - "Shaders"(link shaders.mess)
     - "Standard Renderer"(link standard-renderer.mess)
-      - Phong
-      - PBR
+      - "Phong"(link phong.mess)
+      - "PBR"(link pbr.mess)
     - Post-processing
   - "Resources & Assets"(link resources.mess)
+    - "Textures"(link textures.mess)
     - "Buffer Objects"(link buffers.mess)
     - "Data Formats"(link formats.mess)
   - "Scene Graph"(link scene.mess)

@@ -1,0 +1,64 @@
+# Textures
+Trial provides very extensive support for specifying and manipulating textures. A texture itself is encapsulated via the ``texture`` resource, and gives direct access to all the individual texture properties like ``internal-format``, ``mag-filter``, ``anisotropy``, etc. When the texture is allocated, all the properties are automatically set on the GPU side. Changing the properties while the texture is allocated will similarly reflect the GL state.
+
+Note that some properties, like the ``target``, ``levels``, ``samples``, ``internal-format``, will not reflect immediately upon change, and instead require reallocating the texture.
+
+If you just need to resize the texture or its contents, you can use the buffer data functions ``update-buffer-data`` and ``resize-buffer-data`` as well.
+
+## Texture Data
+By default a texture will be empty on allocation. To provide some texture data, you can supply a ``sources`` value, which should be a list of ``texture-source`` instances. A ``texture-source`` encapsulates the raw pixel data alongside the necessary information to decode it, as well as information on where to place the image data within the texture. This effectively allows you to compose a texture through multiple input segments.
+
+### ``pixel-data``
+A ``texture-source``'s data must be delivered via the ``pixel-data``, which must be some kind of raw data source that can be coerced to a "``memory-region``"(https://shinmera.github.io//memory-regions). How to decode the data is contained in the ``pixel-type`` and ``pixel-format`` fields.
+
+### ``pixel-format``
+The pixel format sets the number and ordering of the individual channels for each pixel in the data. Typically this is either ``:red``, ``:rg``, ``:rgb``, or ``:rgba``. The valid pixel formats are listed in ``*texture-pixel-format-list*``. You can also infer the pixel format to use from the texture's internal format via ``internal-format-pixel-format`` if you're unsure.
+
+### ``pixel-type``
+The pixel type sets the data type that encodes the pixel or channel data. This parameter has some quite confusing possible values (see ``*texture-pixel-type-list*``), though most of the time you should be fine with ``:unsigned-byte``. You can also infer the pixel type to use via ``internal-format-pixel-type`` or ``infer-pixel-type`` if you're unsure.
+
+### ``target``
+The target to use can simply be left to ``NIL`` by default. However, it can be useful when composing the channel data from multiple sources, in which case the target can be set to one of the following:
+
+- ``:r`` The source will make up the red channel only.
+- ``:g`` The source will make up the green channel only.
+- ``:b`` The source will make up the blue channel only.
+- ``:a`` The source will make up the alpha channel only.
+- ``:rg`` The source will make up the red and green channels.
+- ``:ra`` The source will make up the red and alpha channels.
+- ``:gb`` The source will make up the green and blue channels.
+- ``:ba`` The source will make up the blue and alpha channels.
+- ``:rgb`` The source will make up the red, green, and blue channels.
+- ``:gba`` The source will make up the green, blue, and alpha channels.
+- ``:rgba`` The source will make up all channels.
+
+Currently this source merging happens on the CPU, and is restricted to the ``:unsigned-byte`` pixel-type. It is heavily recommended that you only use this feature on development machines, and instead save the resulting texture to disk to load it directly for real deployments.
+
+Other than channel mixing, the target is also useful when uploading cube map textures. In that case, the ``:target`` can be one of
+
+- ``:texture-cube-map-positive-x``
+- ``:texture-cube-map-negative-x``
+- ``:texture-cube-map-positive-y``
+- ``:texture-cube-map-negative-y``
+- ``:texture-cube-map-positive-z``
+- ``:texture-cube-map-negative-z``
+
+To designate the individual cube faces.
+
+### ``level``
+For multi-level textures, this sets the level at which the data should be uploaded. By default this will be zero.
+
+### ``texture-source-src``
+This is a list of six parameters, ``x y z w h d``, which may either be positive integer coordinates, or NIL (default). The ``x y z`` designate the starting coordinate of the subsection to upload, and the ``w h d`` designate the dimensions of the **total** texture source, regardless off starting coordinate or upload window.
+
+### ``texture-source-dst``
+This is a list of six parameters, ``x y z w h d``, which may either be positive integer coordinates, or NIL (default). They designate the region within the texture to upload the data into.
+
+Using src and dst you can compose a texture out of multiple, smaller sources. The sources are uploaded in the order they appear in, and can thus also overwrite each other.
+
+Please note however that, same as channel composition above, it is recommended to only use this when absolutely necessary or during development, and instead bake the completed texture to disk for faster load-times whenever possible.
+
+### Dealing With Sources
+Besides manually changing a texture-source's fields, you can also ``merge-texture-sources`` to augment the missing fields of one with those of another, similar to the behaviour of ``merge-pathnames``. To get the total size spanned by multiple texture sources, you can use ``texture-sources->texture-size``, and to get the best fit for the texture's target, ``texture-sources->target``. Finally, to ensure that texture sources can actually be uploaded as intended, they should first be normalised via ``normalize-texture-sources``, which may perform the above mentioned channel mixing.
+
+The ``image`` asset will automatically perform all of these things for you, so whenever possible you should use it.
