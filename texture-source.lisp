@@ -170,11 +170,12 @@
           (unless dst-y (setf dst-y src-y))
           (unless dst-z (setf dst-z src-z))
           (let* ((off (* stride (+ src-x (* src-y (+ src-w (* src-z src-h))))))
-                 (len (* stride (+ dst-w (* dst-h (+ src-w (* dst-d src-h))))))
+                 (len (* stride (+ dst-w (* (1- (or dst-h 1)) src-w) (* (1- (or dst-d 1)) src-w src-h))))
                  (ptr (cffi:inc-pointer (memory-region-pointer region) off)))
             #-:elide-buffer-access-checks
             (when (< (memory-region-size region) (+ off len))
-              (error "Trying to upload a region bigger than is in the image."))
+              (error "Trying to upload a region bigger than there is data in the image.~%Region is~%  ~a~%image is~%  ~a"
+                     (+ off len) (memory-region-size region)))
             (ecase target
               (:texture-1d
                (%gl:tex-sub-image-1d target level dst-x dst-w format type ptr))
