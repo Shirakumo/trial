@@ -1,0 +1,37 @@
+<article><style>article{
+    max-width: 800px;
+    font-size: 12pt;
+    font-family: sans-serif;
+    margin: 3em auto;
+}
+
+article h1{
+    text-align: center;
+    font-size: 2em;
+}
+
+article img{
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+article blockquote{
+    border-left: 0.2em solid gray;
+    margin-left: 1em;
+    padding-left: 1em;
+}
+
+article figcaption{
+    padding: 0.2em 1em;
+    background: #E0E0E0;
+}
+
+article code{
+    background: #F0F0F0;
+    padding: 0 0.1em;
+}
+
+article .code-block{
+    padding: 0.1em 0.5em;
+    overflow-x: auto;
+}</style><h1 id="textures">Textures</h1><p>Trial provides very extensive support for specifying and manipulating textures. A texture itself is encapsulated via the <code>texture</code> resource, and gives direct access to all the individual texture properties like <code>internal-format</code>, <code>mag-filter</code>, <code>anisotropy</code>, etc. When the texture is allocated, all the properties are automatically set on the GPU side. Changing the properties while the texture is allocated will similarly reflect the GL state.</p><p>Note that some properties, like the <code>target</code>, <code>levels</code>, <code>samples</code>, <code>internal-format</code>, will not reflect immediately upon change, and instead require reallocating the texture.</p><p>If you just need to resize the texture or its contents, you can use the buffer data functions <code>update-buffer-data</code> and <code>resize-buffer-data</code> as well.</p><h2 id="texture data">Texture Data</h2><p>By default a texture will be empty on allocation. To provide some texture data, you can supply a <code>sources</code> value, which should be a list of <code>texture-source</code> instances. A <code>texture-source</code> encapsulates the raw pixel data alongside the necessary information to decode it, as well as information on where to place the image data within the texture. This effectively allows you to compose a texture through multiple input segments.</p><h3 id="pixel-data"><code>pixel-data</code></h3><p>A <code>texture-source</code>'s data must be delivered via the <code>pixel-data</code>, which must be some kind of raw data source that can be coerced to a <a class="external-link" href="https://shinmera.github.io//memory-regions"><code>memory-region</code></a>. How to decode the data is contained in the <code>pixel-type</code> and <code>pixel-format</code> fields.</p><h3 id="pixel-format"><code>pixel-format</code></h3><p>The pixel format sets the number and ordering of the individual channels for each pixel in the data. Typically this is either <code>:red</code>, <code>:rg</code>, <code>:rgb</code>, or <code>:rgba</code>. The valid pixel formats are listed in <code>*texture-pixel-format-list*</code>. You can also infer the pixel format to use from the texture's internal format via <code>internal-format-pixel-format</code> if you're unsure.</p><h3 id="pixel-type"><code>pixel-type</code></h3><p>The pixel type sets the data type that encodes the pixel or channel data. This parameter has some quite confusing possible values (see <code>*texture-pixel-type-list*</code>), though most of the time you should be fine with <code>:unsigned-byte</code>. You can also infer the pixel type to use via <code>internal-format-pixel-type</code> or <code>infer-pixel-type</code> if you're unsure.</p><h3 id="target"><code>target</code></h3><p>The target to use can simply be left to <code>NIL</code> by default. However, it can be useful when composing the channel data from multiple sources, in which case the target can be set to one of the following:</p><ul><li><p><code>:r</code> The source will make up the red channel only.</p></li><li><p><code>:g</code> The source will make up the green channel only.</p></li><li><p><code>:b</code> The source will make up the blue channel only.</p></li><li><p><code>:a</code> The source will make up the alpha channel only.</p></li><li><p><code>:rg</code> The source will make up the red and green channels.</p></li><li><p><code>:ra</code> The source will make up the red and alpha channels.</p></li><li><p><code>:gb</code> The source will make up the green and blue channels.</p></li><li><p><code>:ba</code> The source will make up the blue and alpha channels.</p></li><li><p><code>:rgb</code> The source will make up the red, green, and blue channels.</p></li><li><p><code>:gba</code> The source will make up the green, blue, and alpha channels.</p></li><li><p><code>:rgba</code> The source will make up all channels.</p></li></ul><p>Currently this source merging happens on the CPU, and is restricted to the <code>:unsigned-byte</code> pixel-type. It is heavily recommended that you only use this feature on development machines, and instead save the resulting texture to disk to load it directly for real deployments.</p><p>Other than channel mixing, the target is also useful when uploading cube map textures. In that case, the <code>:target</code> can be one of</p><ul><li><p><code>:texture-cube-map-positive-x</code></p></li><li><p><code>:texture-cube-map-negative-x</code></p></li><li><p><code>:texture-cube-map-positive-y</code></p></li><li><p><code>:texture-cube-map-negative-y</code></p></li><li><p><code>:texture-cube-map-positive-z</code></p></li><li><p><code>:texture-cube-map-negative-z</code></p></li></ul><p>To designate the individual cube faces.</p><h3 id="level"><code>level</code></h3><p>For multi-level textures, this sets the level at which the data should be uploaded. By default this will be zero.</p><h3 id="texture-source-src"><code>texture-source-src</code></h3><p>This is a list of six parameters, <code>x y z w h d</code>, which may either be positive integer coordinates, or NIL (default). The <code>x y z</code> designate the starting coordinate of the subsection to upload, and the <code>w h d</code> designate the dimensions of the <strong>total</strong> texture source, regardless off starting coordinate or upload window.</p><h3 id="texture-source-dst"><code>texture-source-dst</code></h3><p>This is a list of six parameters, <code>x y z w h d</code>, which may either be positive integer coordinates, or NIL (default). They designate the region within the texture to upload the data into.</p><p>Using src and dst you can compose a texture out of multiple, smaller sources. The sources are uploaded in the order they appear in, and can thus also overwrite each other.</p><p>Please note however that, same as channel composition above, it is recommended to only use this when absolutely necessary or during development, and instead bake the completed texture to disk for faster load-times whenever possible.</p><h3 id="dealing with sources">Dealing With Sources</h3><p>Besides manually changing a texture-source's fields, you can also <code>merge-texture-sources</code> to augment the missing fields of one with those of another, similar to the behaviour of <code>merge-pathnames</code>. To get the total size spanned by multiple texture sources, you can use <code>texture-sources-&gt;texture-size</code>, and to get the best fit for the texture's target, <code>texture-sources-&gt;target</code>. Finally, to ensure that texture sources can actually be uploaded as intended, they should first be normalised via <code>normalize-texture-sources</code>, which may perform the above mentioned channel mixing.</p><p>The <code>image</code> asset will automatically perform all of these things for you, so whenever possible you should use it.</p></article>
