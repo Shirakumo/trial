@@ -1,0 +1,19 @@
+# Physically Based Rendering Model
+Trial provides a "standard renderer"(link standard-renderer.mess) that implements a Physically Based Rendering shading model and associated material. To use it, simply enter a ``pbr-render-pass`` and ensure your objects provide a ``pbr-material``, or some appropriate conversion exists.
+
+The model uses a Cook-Torrance BRDF to implement the shading behaviour, and it is recommended to use it in combination with an HDR pipeline.
+
+## Material Properties
+Each material has the following properties:
+
+- Albedo
+  This is put together through the ``albedo-texture`` and the ``albedo-factor``, both of which are 4-component. The alpha component allows you to make semi-transparent materials.
+- Metalness, Roughness, Ambient Occlusion
+  This is put together through the ``metal-rough-occlusion-texture`` and the ``metalness-factor``, ``roughness-factor`` and ``occlusion-factor``. You may also specify the textures individually through the ``metal-rough-texture`` or ``metalness-texture``, ``roughness-texture``, and ``occlusion-texture``. If you specify them individually, they will be merged manually before upload, which may be expensive.
+- Emission
+  The ``emission-texture`` and ``emission-factor`` allow you to create materials that appear to emit light. In practise this will just cause the material to be very bright, causing bloom to take hold. This only works in combination with an HDR pipeline.  
+- Normal
+  The ``normal-texture`` provides the standard normal mapping behaviour.
+- Alpha-Cutoff
+  The ``alpha-cutoff`` designates a threshold below which the material is considered fully transparent.
+

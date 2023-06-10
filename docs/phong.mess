@@ -1,0 +1,16 @@
+# Blinn-Phong Shading Model
+Trial provides a "standard renderer"(link standard-renderer.mess) that implements the Blinn-Phong shading model and associated material. To use it, simply enter a ``phong-render-pass`` and ensure your objects provide a ``phong-material``, or some appropriate conversion exists.
+
+## Material Properties
+Each material has the following properties:
+
+- Diffuse
+  This is put together through the ``diffuse-texture`` and the ``diffuse-factor``, both of which are 4-component. The alpha component allows you to make semi-transparent materials.
+- Specular
+  This is put together through the ``specular-texture`` and the ``specular-factor``, both of which are a singular component designating the "glossiness" of the surface.
+- Normal
+  The ``normal-texture`` provides the standard normal mapping behaviour.
+- Alpha-Cutoff
+  The ``alpha-cutoff`` designates a threshold below which the material is considered fully transparent.
+
+You may also use ``pbr-material``s with this pass, in which case the albedo is used for diffuse, and the metalness for specular. Other properties are discarded.
