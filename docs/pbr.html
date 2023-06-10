@@ -1,0 +1,37 @@
+<article><style>article{
+    max-width: 800px;
+    font-size: 12pt;
+    font-family: sans-serif;
+    margin: 3em auto;
+}
+
+article h1{
+    text-align: center;
+    font-size: 2em;
+}
+
+article img{
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+article blockquote{
+    border-left: 0.2em solid gray;
+    margin-left: 1em;
+    padding-left: 1em;
+}
+
+article figcaption{
+    padding: 0.2em 1em;
+    background: #E0E0E0;
+}
+
+article code{
+    background: #F0F0F0;
+    padding: 0 0.1em;
+}
+
+article .code-block{
+    padding: 0.1em 0.5em;
+    overflow-x: auto;
+}</style><h1 id="physically based rendering model">Physically Based Rendering Model</h1><p>Trial provides a <a class="external-link" href="standard-renderer.html">standard renderer</a> that implements a Physically Based Rendering shading model and associated material. To use it, simply enter a <code>pbr-render-pass</code> and ensure your objects provide a <code>pbr-material</code>, or some appropriate conversion exists.</p><p>The model uses a Cook-Torrance BRDF to implement the shading behaviour, and it is recommended to use it in combination with an HDR pipeline.</p><h2 id="material properties">Material Properties</h2><p>Each material has the following properties:</p><ul><li><p>Albedo<br>This is put together through the <code>albedo-texture</code> and the <code>albedo-factor</code>, both of which are 4-component. The alpha component allows you to make semi-transparent materials.</p></li><li><p>Metalness, Roughness, Ambient Occlusion<br>This is put together through the <code>metal-rough-occlusion-texture</code> and the <code>metalness-factor</code>, <code>roughness-factor</code> and <code>occlusion-factor</code>. You may also specify the textures individually through the <code>metal-rough-texture</code> or <code>metalness-texture</code>, <code>roughness-texture</code>, and <code>occlusion-texture</code>. If you specify them individually, they will be merged manually before upload, which may be expensive.</p></li><li><p>Emission<br>The <code>emission-texture</code> and <code>emission-factor</code> allow you to create materials that appear to emit light. In practise this will just cause the material to be very bright, causing bloom to take hold. This only works in combination with an HDR pipeline.  </p></li><li><p>Normal<br>The <code>normal-texture</code> provides the standard normal mapping behaviour.</p></li><li><p>Alpha-Cutoff<br>The <code>alpha-cutoff</code> designates a threshold below which the material is considered fully transparent.</p></li></ul></article>
