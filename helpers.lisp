@@ -121,6 +121,7 @@
   "layout (location = 0) in vec3 position;
 
 void main(){
+  maybe_call_next_method();
   gl_Position = vec4(position, 1.0f);
 }")
 
@@ -153,6 +154,7 @@ uniform mat4 view_matrix;
 uniform mat4 projection_matrix;
 
 void main(){
+  maybe_call_next_method();
   gl_Position = projection_matrix * view_matrix * model_matrix * vec4(position, 1.0f);
 }")
 
@@ -176,6 +178,7 @@ void main(){
 out vec4 color;
 
 void main(){
+  maybe_call_next_method();
   color *= objectcolor;
 }")
 
@@ -187,6 +190,7 @@ void main(){
 out vec4 vertexcolor;
 
 void main(){
+  maybe_call_next_method();
   vertexcolor = in_vertexcolor;
 }")
 
@@ -195,6 +199,7 @@ void main(){
 out vec4 color;
 
 void main(){
+  maybe_call_next_method();
   color *= vertexcolor;
 }")
 
@@ -213,6 +218,7 @@ void main(){
 out vec2 texcoord;
 
 void main(){
+  maybe_call_next_method();
   texcoord = in_texcoord;
 }")
 
@@ -222,6 +228,7 @@ out vec4 color;
 uniform sampler2D texture_image;
 
 void main(){
+  maybe_call_next_method();
   color *= texture(texture_image, texcoord);
 }")
 
