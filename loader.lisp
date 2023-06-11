@@ -38,7 +38,10 @@
 
 (defmethod stage (object (area staging-area)))
 
-(defmethod stage ((object loadable) (area staging-area))
+(defmethod stage ((object resource) (area staging-area))
+  (setf (gethash object (staged area)) (cons NIL NIL)))
+
+(defmethod stage ((object asset) (area staging-area))
   (setf (gethash object (staged area)) (cons NIL NIL)))
 
 (defmethod stage ((container container) (area staging-area))
@@ -66,25 +69,21 @@
     (remhash resource (staged area))))
 
 (defun dependency-sort-loads (area sequence &key (status (make-hash-table :test 'eq)) (start 0) (end (length sequence)))
-  (let ((i start))
+  (let ((objects (staged area))
+        (i start))
     (labels ((visit (object)
-               (typecase object
-                 (loadable
-                  (case (gethash object status :invalid)
-                    (:invalid
-                     (setf (gethash object status) :temporary)
-                     (dolist (dependency (dependencies object))
-                       (visit dependency))
-                     (setf (gethash object status) :validated)
-                     (if (< i (length sequence))
-                         (setf (aref sequence i) object)
-                         (vector-push-extend object sequence))
-                     (incf i))
-                    (:temporary
-                     (warn "Dependency loop detected on ~a." object))))
-                 (T
+               (case (gethash object status :invalid)
+                 (:invalid
+                  (setf (gethash object status) :temporary)
                   (dolist (dependency (dependencies object))
-                    (visit dependency))))))
+                    (visit dependency))
+                  (setf (gethash object status) :validated)
+                  (if (< i (length sequence))
+                      (setf (aref sequence i) object)
+                      (vector-push-extend object sequence))
+                  (incf i))
+                 (:temporary
+                  (warn "Dependency loop detected on ~a." object)))))
       ;; TODO: It's possible we might be able to perform tarjan in-place
       ;;       to avoid potentially copying thousands of elements here.
       (loop for object across (subseq sequence start end)
@@ -95,11 +94,9 @@
   (let ((sorted (make-array (hash-table-count (staged area)) :fill-pointer T :adjustable T))
         (objects (staged area)))
     ;; First push all into the sequence, unsorted.
-    (loop with i = 0
-          for object being the hash-keys of objects
-          do (when (typep object 'loadable)
-               (setf (aref sorted i) object)
-               (incf i)))
+    (loop for object being the hash-keys of objects
+          for i from 0
+          do (setf (aref sorted i) object))
     ;; Now sort to ensure assets and other generators come first.
     (sort sorted #'load-before)
     ;; Now perform Tarjan, which happens to be "stable-sorting".
