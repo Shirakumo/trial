@@ -163,7 +163,7 @@
           do (when inputs
                (let ((input (glsl-toolkit:merge-shader-sources
                              (list (glsl-toolkit:combine-methods inputs))
-                             :min-version (glsl-target-version *context*))))
+                             :min-version (glsl-target-version T))))
                  (push (make-instance 'shader :source input :type type) shaders))))
     (make-instance 'shader-program
                    :shaders shaders

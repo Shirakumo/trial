@@ -254,6 +254,9 @@
               (:core "core")
               (:es "es")))))
 
+(defmethod glsl-target-version ((default (eql T)))
+  (if *context* (glsl-target-version *context*) "330"))
+
 (defmethod (setf icon) ((path pathname) (context context))
   (multiple-value-bind (bits width height pixel-type pixel-format swizzle)
       (load-image path T)

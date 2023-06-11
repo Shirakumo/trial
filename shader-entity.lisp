@@ -179,7 +179,7 @@
                  :shaders (loop for (type source) on (effective-shaders class) by #'cddr
                                 for processed = (glsl-toolkit:merge-shader-sources
                                                  (list (glsl-toolkit:combine-methods source))
-                                                 :min-version (glsl-target-version *context*))
+                                                 :min-version (glsl-target-version T))
                                 collect (make-instance 'shader :source processed :type type))
                  :buffers (loop for resource-spec in (effective-buffers class)
                                 collect (apply #'// resource-spec))))
@@ -260,6 +260,9 @@
   `(defclass ,name ,direct-superclasses
      ,direct-slots
      ,@options))
+
+(define-class-shader (shader-entity :vertex-shader)
+  "void main(){}")
 
 (define-class-shader (shader-entity :fragment-shader)
   "
