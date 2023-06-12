@@ -342,24 +342,23 @@
   (let ((class (changed-class ev))
         (program-table (program-table pass))
         (renderable-table (renderable-table pass)))
-    (when (gethash class renderable-table)
-      ;; FIXME: What happens if the effective shader class changes?
-      ;;        We might be leaking shader programs for stale classes then.
-      (flet ((refresh (class)
-               (let ((prev (gethash class renderable-table)))
-                 (v:info :trial.shader-pass "Refreshing shader program for ~a" class)
-                 (let ((new (make-pass-shader-program pass class)))
-                   (setf (buffers prev) (buffers new))
-                   (setf (shaders prev) (shaders new))
-                   (setf (cdr (gethash prev program-table)) NIL)))))
-        (cond ((eql class (class-of pass))
-               ;; Pass changed, recompile everything
-               (loop for object being the hash-keys of renderable-table
-                     do (when (typep object 'standard-class)
-                          (refresh object))))
-              ((eql class (effective-shader-class class))
-               ;; Object changed, recompile it
-               (refresh class)))))))
+    ;; FIXME: What happens if the effective shader class changes?
+    ;;        We might be leaking shader programs for stale classes then.
+    (flet ((refresh (class)
+             (let ((prev (gethash class renderable-table)))
+               (v:info :trial.shader-pass "Refreshing shader program for ~a" class)
+               (let ((new (make-pass-shader-program pass class)))
+                 (setf (buffers prev) (buffers new))
+                 (setf (shaders prev) (shaders new))
+                 (setf (cdr (gethash prev program-table)) NIL)))))
+      (cond ((eql class (class-of pass))
+             ;; Pass changed, recompile everything
+             (loop for object being the hash-keys of renderable-table
+                   do (when (typep object 'standard-class)
+                        (refresh object))))
+            ((and (gethash class renderable-table) (eql class (effective-shader-class class)))
+             ;; Object changed, recompile it
+             (refresh class))))))
 
 (defmethod render ((pass per-object-pass) (_ null))
   (render-frame pass (construct-frame pass)))
