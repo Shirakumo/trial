@@ -194,7 +194,7 @@
 
 (defun merge-textures (textures)
   (multiple-value-bind (sources swizzle) (normalize-texture-sources (loop for tex in textures append (sources tex)))
-    (multiple-value-bind (w h d) (texture-sources->texture-size sources)
+    (destructuring-bind (w h d) (texture-sources->texture-size sources)
       (make-instance 'texture
                      :width w :height h :depth d
                      :sources sources

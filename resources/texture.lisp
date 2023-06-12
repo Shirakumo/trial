@@ -56,7 +56,7 @@
 (defmethod (setf sources) :after ((sources cons) (texture texture))
   (when (allocated-p texture)
     (gl:bind-texture (target texture) (gl-name texture))
-    (multiple-value-bind (w h d) (texture-sources->texture-size sources)
+    (destructuring-bind (w h d) (texture-sources->texture-size sources)
       (when (or (and w (/= w (width texture)))
                 (and h (/= h (height texture)))
                 (and d (/= d (depth texture))))
@@ -102,6 +102,9 @@
              (unless (eq value temp)
                (funcall func (funcall mod (getf initargs prop)))))))
     (test (lambda (x) (check-type x vec4)) :border-color)
+    (test #'integerp :width)
+    (test #'integerp :height)
+    (test #'integerp :depth)
     (test #'check-texture-target :target)
     (test #'check-texture-internal-format :internal-format)
     (test #'check-texture-mag-filter :mag-filter)
@@ -171,7 +174,10 @@
            ((:texture-2d :texture-1d-array)
             (%gl:tex-image-2d target 0 internal-format width height 0 pixel-format pixel-type (cffi:null-pointer)))
            ((:texture-cube-map)
-            (%gl:tex-image-2d target 0 internal-format width height 0 pixel-format pixel-type (cffi:null-pointer)))
+            (dolist (target '(:texture-cube-map-positive-x :texture-cube-map-negative-x
+                              :texture-cube-map-positive-y :texture-cube-map-negative-y
+                              :texture-cube-map-positive-z :texture-cube-map-negative-z))
+              (%gl:tex-image-2d target 0 internal-format width height 0 pixel-format pixel-type (cffi:null-pointer))))
            ((:texture-3d :texture-2d-array)
             (%gl:tex-image-3d target 0 internal-format width height depth 0 pixel-format pixel-type (cffi:null-pointer)))))
         (:static
