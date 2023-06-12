@@ -17,5 +17,7 @@ mat3 normal_map_cotangent_frame(in vec3 N, in vec3 p, in vec2 uv){
 }
 
 vec3 normal_map(in sampler2D normal_tex, in vec3 position, in vec2 uv, in vec3 vertex_normal){
-  return normalize(normal_map_cotangent_frame(vertex_normal, position, uv) * texture(normal_tex, uv).rgb);
+  vec3 v_normal = normalize(vertex_normal);
+  vec3 normal = texture(normal_tex, uv).rgb * 2.0 - 1.0;
+  return normalize(normal_map_cotangent_frame(v_normal, position, uv) * normal);
 }
