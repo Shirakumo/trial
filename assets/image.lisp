@@ -40,6 +40,16 @@
          (or (cl-ppcre:register-groups-bind (type) ("^[^/]*/([^+/]+)" mime-type) (kw type)) (kw type))
          args))
 
+(defmethod save-image ((region memory-region) target type &rest args)
+  (let ((vector (make-array (memory-region-size region) :element-type '(unsigned-byte 8))))
+    (declare (dynamic-extent vector))
+    (mem:replace vector region)
+    (apply #'save-image vector target type args)))
+
+(defmethod save-image ((vector vector) target type &rest args &key width height pixel-type pixel-format)
+  (let ((texture-source (make-image-source vector width height pixel-type pixel-format)))
+    (apply #'save-image texture-source target type args)))
+
 (defmethod load-image (source (type string))
   (or (cl-ppcre:register-groups-bind (type) ("^[^/]*/([^+/]+)" type)
         (load-image source (kw type)))

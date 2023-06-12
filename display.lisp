@@ -53,6 +53,7 @@
   (gl:front-face :ccw)
   (gl:cull-face :back)
   (gl:pixel-store :unpack-alignment 1)
+  (gl:pixel-store :pack-alignment 1)
   (with-vec (r g b a) (clear-color display)
     (gl:clear-color r g b a))
   (enable-feature :blend :multisample :cull-face :stencil-test :depth-test)

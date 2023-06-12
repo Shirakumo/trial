@@ -268,6 +268,22 @@
         (gl:generate-mipmap (target texture)))
       (gl:bind-texture (target texture) 0))))
 
+(defmethod size ((texture texture))
+  (let ((type (internal-format-pixel-type (internal-format texture)))
+        (format (internal-format-pixel-format (internal-format texture))))
+    (* (pixel-data-stride type format)
+       (or (width texture) 1)
+       (or (height texture) 1)
+       (or (depth texture) 1))))
+
+(defmethod save-image ((source texture) target type &rest args &key (level 0))
+  (mem:with-memory-region (region (size source))
+    (gl:bind-texture (target source) (gl-name source))
+    (let ((type (internal-format-pixel-type (internal-format source)))
+          (format (internal-format-pixel-format (internal-format source))))
+      (%gl:get-tex-image (target source) level format type (memory-region-pointer region))
+      (apply #'save-image region target type :width (width source) :height (height source) :pixel-type type :pixel-format format args))))
+
 ;;;; Texture spec wrangling
 ;; The idea of this is that, in order to maximise sharing of texture resources
 ;; between independent parts, we need to join (in the lattice sense) two texture

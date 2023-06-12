@@ -7,12 +7,10 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass framebuffer (gl-resource)
-  ((attachments :initarg :attachments :accessor attachments)
+  ((attachments :initform () :initarg :attachments :accessor attachments)
    (clear-bits :initform 17664 :accessor clear-bits)
    (width :initarg :width :initform NIL :accessor width)
-   (height :initarg :height :initform NIL :accessor height))
-  (:default-initargs
-   :attachments (error "ATTACHMENTS required.")))
+   (height :initarg :height :initform NIL :accessor height)))
 
 (defmethod shared-initialize :after ((framebuffer framebuffer) slots &key clear-bits)
   (when clear-bits (setf (clear-bits framebuffer) clear-bits)))
@@ -111,26 +109,11 @@
                         (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
                         (cffi:foreign-enum-value '%gl:enum :nearest)))
 
-(defun %capture (framebuffer x y width height file)
-  (let ((array (make-array (* width height 3) :element-type '(unsigned-byte 8))))
-    (gl:bind-framebuffer :read-framebuffer framebuffer)
-    (cffi:with-pointer-to-vector-data (ptr array)
-      (gl:pixel-store :pack-alignment 1)
-      (%gl:read-pixels x y width height :rgb :unsigned-byte ptr))
-    (gl:bind-framebuffer :read-framebuffer 0)
-    (if file
-        (zpng:write-png (make-instance 'zpng:png :color-type :truecolor
-                                                 :width width
-                                                 :height height
-                                                 :image-data (flip-image-vertically array width height 3))
-                        file)
-        array)))
-
 (defgeneric capture (thing &key &allow-other-keys))
 (defmethod capture ((framebuffer framebuffer) &key (x 0) (y 0) (width (width framebuffer)) (height (height framebuffer))
                                                    (target-width width) (target-height height) file)
   (if (and (= width target-width) (= height target-height))
-      (%capture (gl-name framebuffer) x y width height file)
+      (save-image framebuffer file T :x x :y y :width width :height height)
       (let ((dummy (gl:gen-framebuffer))
             (dummy-tex (gl:gen-texture)))
         (unwind-protect
@@ -151,15 +134,27 @@
                                      (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
                                      (cffi:foreign-enum-value '%gl:enum :linear))
                ;; Capture the buffer
-               (%capture dummy 0 0 target-width target-height file))
+               (save-image (make-instance 'framebuffer :data-pointer dummy :width target-width :height target-height) file T))
           (gl:delete-framebuffers (list dummy))
           (gl:delete-texture dummy-tex)))))
 
 (defmethod capture ((framebuffer null) &rest args)
   (unless (visible-p *context*)
     (error "Cannot capture invisible backbuffer."))
-  (apply #'capture (make-instance 'framebuffer :data-pointer 0
-                                               :attachments ()
-                                               :width (width *context*)
-                                               :height (height *context*))
-         args))
+  (apply #'capture (make-instance 'framebuffer :data-pointer 0 :width (width *context*) :height (height *context*)) args))
+
+(defmethod save-image ((source framebuffer) target type &rest args &key attachment (pixel-type :unsigned-byte) (pixel-format :rgb)
+                                                                        (x 0) (y 0) width height)
+  (if (attachments source)
+      (apply #'save-image (if attachment
+                              (or (second (find attachment (attachments source) :key #'second))
+                                  (error "No ~s attachment on ~s" attachment source))
+                              (first (attachments source)))
+             target type args)
+      (let* ((width (or width (- (width source) x)))
+             (height (or height (- (height source) y)))
+             (size (* (pixel-data-stride pixel-type pixel-format) width height)))
+        (mem:with-memory-region (region size)
+          (gl:bind-framebuffer :read-framebuffer (gl-name source))
+          (%gl:read-pixels 0 0 width height pixel-format pixel-type (memory-region-pointer region))
+          (apply #'save-image region target type :width width :height height :pixel-type pixel-type :pixel-format pixel-format args)))))
