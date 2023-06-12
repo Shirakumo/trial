@@ -272,7 +272,8 @@ void main(){
     (if mesh
         (setf (mesh entity) mesh)
         #-trial-release
-        (error "No mesh named ~s found." name))))
+        (error "No mesh named ~s found. The following are known:~{~%  ~s~}"
+               name (alexandria:hash-table-keys (meshes (mesh-asset entity)))))))
 
 (defmethod (setf mesh) ((anything (eql T)) (entity mesh-entity))
   (loop for mesh being the hash-values of (meshes (mesh-asset entity))
