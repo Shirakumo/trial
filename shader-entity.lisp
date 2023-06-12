@@ -261,9 +261,6 @@
      ,direct-slots
      ,@options))
 
-(define-class-shader (shader-entity :vertex-shader)
-  "void main(){}")
-
 (define-class-shader (shader-entity :fragment-shader)
   "
 out vec4 color;
