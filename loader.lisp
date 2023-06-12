@@ -23,7 +23,8 @@
   ;; CAR: things this object depends on
   ;; CDR: things that depend on this object
   (pushnew dependency (car (gethash object (staged area) (cons NIL NIL))))
-  (pushnew object (cdr (gethash dependency (staged area)))))
+  (when (gethash dependency (staged area))
+    (pushnew object (cdr (gethash dependency (staged area))))))
 
 (defmethod load-before (a b) NIL)
 (defmethod load-before ((generator resource-generator) (resource resource)) T)
