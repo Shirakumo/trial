@@ -19,6 +19,19 @@
   (src (list NIL NIL NIL NIL NIL NIL))
   (dst (list NIL NIL NIL NIL NIL NIL)))
 
+(defmethod print-object ((source texture-source) stream)
+  (print-unreadable-object (source stream :type T)
+    (format stream "~a ~a"
+            (pixel-type source) (pixel-format source))
+    (destructuring-bind (x y z w h d) (texture-source-src source)
+      (when (or x y z w h d)
+        (format stream " SRC: ~@[~a~]~@[,~a~]~@[,~a~]~@[:~a~]~@[x~a~]~@[x~a~]"
+                x y z w h d)))
+    (destructuring-bind (x y z w h d) (texture-source-dst source)
+      (format stream " DST: ~@[~a~]~@[,~a~]~@[,~a~]~@[:~a~]~@[x~a~]~@[x~a~]"
+              x y z w h d)
+      (format stream "~@[ ~a~]~@[ (~a)~]" (target source) (level source)))))
+
 (define-accessor-delegate-methods pixel-data (texture-source-pixel-data texture-source))
 (define-accessor-delegate-methods pixel-type (texture-source-pixel-type texture-source))
 (define-accessor-delegate-methods pixel-format (texture-source-pixel-format texture-source))

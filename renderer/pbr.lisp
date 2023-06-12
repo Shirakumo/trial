@@ -28,6 +28,13 @@
   (aref (textures material) 3))
 
 (defmethod shared-initialize :after ((material pbr-material) slots &key metalness-texture roughness-texture occlusion-texture metal-rough-texture)
+  ;; Reshuffle arguments when the textures are badly specified.
+  (when (and metalness-texture (eq metalness-texture roughness-texture))
+    (setf metal-rough-texture metalness-texture)
+    (setf metalness-texture NIL roughness-texture NIL))
+  (when (and metal-rough-texture (eq metal-rough-texture occlusion-texture))
+    (setf (aref (textures material) 1) metal-rough-texture)
+    (setf metal-rough-texture NIL occlusion-texture NIL))
   (cond ((and metalness-texture roughness-texture occlusion-texture)
          (loop for source in (sources metalness-texture)
                do (setf (target source) :r))
