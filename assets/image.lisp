@@ -41,7 +41,7 @@
          args))
 
 (defmethod load-image (source (type string))
-  (or (cl-ppcre:register-groups-bind (type) ("^[^/]*/([^+/]+)" mime-type)
+  (or (cl-ppcre:register-groups-bind (type) ("^[^/]*/([^+/]+)" type)
         (load-image source (kw type)))
       (load-image source (kw type))))
 
