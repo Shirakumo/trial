@@ -98,7 +98,8 @@
 (defmethod activate ((framebuffer framebuffer))
   (gl:bind-framebuffer :framebuffer (gl-name framebuffer))
   (gl:viewport 0 0 (width framebuffer) (height framebuffer))
-  (%gl:clear (clear-bits framebuffer)))
+  (let ((bits (slot-value framebuffer 'clear-bits)))
+    (when (< 0 bits) (%gl:clear bits))))
 
 ;; FIXME: this should ideally be more generic, with blitting from one to another framebuffer
 ;;        and handling the screen as a special framebuffer instance that's always around.
