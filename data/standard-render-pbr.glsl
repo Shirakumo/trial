@@ -37,7 +37,7 @@ vec3 F_s(float cos_theta, vec3 F0){
   return F0 + (1.0 - F0) * pow(1.0 - cos_theta, 5.0);
 }
 
-void standard_init@after(){
+void standard_init(){
   material = materials[material_id];
   normal = normal_map(normal_tex, world_position-camera_position, uv, normal);
   view_dir = normalize(camera_position - world_position);
