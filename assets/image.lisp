@@ -7,14 +7,26 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defun flip-image-vertically (image width height components)
-  (let ((stride (* width components)))
-    (loop for y1 from 0 below (floor height 2)
-          for y2 downfrom (1- height)
-          do (loop for x1 from (* y1 stride)
-                   for x2 from (* y2 stride)
-                   repeat stride
-                   do (rotatef (aref image x1) (aref image x2))))
-    image))
+  (declare (optimize speed (safety 1)))
+  (declare (type (unsigned-byte 32) width height))
+  (declare (type (unsigned-byte 8) components))
+  (macrolet ((typexpand (&body body)
+               `(etypecase image
+                  ((simple-array (unsigned-byte 8) (*))
+                   ,@body)
+                  ((simple-array single-float (*))
+                   ,@body)
+                  (T
+                   ,@body))))
+    (let ((stride (* width components)))
+      (typexpand
+       (loop for y1 of-type (unsigned-byte 32) from 0 below (floor height 2)
+             for y2 of-type (unsigned-byte 32) downfrom (1- height)
+             do (loop for x1 of-type (unsigned-byte 32) from (* y1 stride)
+                      for x2 of-type (unsigned-byte 32) from (* y2 stride)
+                      repeat stride
+                      do (rotatef (aref image x1) (aref image x2)))))
+      image)))
 
 (defun convert-image-data (data-in width-in height-in &key (pixel-type-in :unsigned-byte) (pixel-format-in :rgba) (swizzle '(:r :g :b :a)) (pixel-type-out pixel-type-in) (pixel-format-out pixel-format-in)
                                                            (width-out width-in) (height-out height-in))
