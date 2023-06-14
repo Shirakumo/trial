@@ -8,12 +8,14 @@ The following formats are supported:
   Note: Only single frames are supported at the moment. You cannot play back gif animations.
 - gltf (``trial-gltf``)
   Note: Only skinned mesh extraction is supported at the moment.
-- jpeg (``trial-jpeg``)
+- jpeg (``trial-jpeg``, ``trial-jpeg-turbo``)
 - png (``trial-png``)
 - qoi (``trial-qoi``)
 - ter / Terragen (``trial-terragen``)
 - tga (``trial-tga``)
 - tiff (``trial-tiff``)
+- * (``trial-devil``)
+  Provides a default fallback for loading and saving images. See https://openil.sourceforge.net/features.php for the list of formats.
 
 On the sound side, please consult Harmony and cl-mixed extensions for details. The following formats are currently supported:
 
