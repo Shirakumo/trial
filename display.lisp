@@ -56,7 +56,7 @@
   (gl:pixel-store :pack-alignment 1)
   (with-vec (r g b a) (clear-color display)
     (gl:clear-color r g b a))
-  (enable-feature :blend :multisample :cull-face :stencil-test :depth-test)
+  (enable-feature :blend :multisample :cull-face :stencil-test :depth-test :texture-cube-map-seamless)
   (when-gl-extension :gl-arb-depth-clamp
     (enable-feature :depth-clamp)))
 

@@ -197,7 +197,17 @@
                (%gl:tex-sub-image-2d target level dst-x dst-y dst-w dst-h format type ptr))
               ((:texture-cube-map)
                (gl:pixel-store :unpack-row-length src-w)
-               (%gl:tex-sub-image-2d (target source) level dst-x dst-y dst-w dst-h format type ptr))
+               (cond ((target source)
+                      (%gl:tex-sub-image-2d (target source) level dst-x dst-y dst-w dst-h format type ptr))
+                     ;; Assume the texture is vertically stacked, x+ x- y+ y- z+ z-
+                     ((gl-extension-p :arb-direct-state-access)
+                      (%gl:tex-sub-image-3d :texture-cube-map level dst-x dst-y dst-z dst-w dst-h dst-d format type ptr))
+                     (T
+                      (loop with len = (* stride (+ dst-w (* (1- (or dst-h 1)) src-w)))
+                            for target from (+ (cffi:foreign-enum-value '%gl::enum :texture-cube-map-positive-x) dst-z)
+                            repeat dst-d
+                            do (%gl:tex-sub-image-2d target level dst-x dst-y dst-w dst-h format type ptr)
+                               (cffi:incf-pointer ptr len)))))
               ((:texture-3d :texture-2d-array)
                (gl:pixel-store :unpack-row-length src-w)
                (gl:pixel-store :unpack-image-height src-h)

@@ -1146,6 +1146,9 @@
                 when name
                 collect (cffi:translate-name-from-foreign name *package*)))))
 
+(defun gl-extension-p (extension)
+  (find extension +gl-extensions+))
+
 (defmacro when-gl-extension (extension &body body)
   (let ((list (enlist extension)))
     ;; TODO: Optimise this by caching the test after first runtime.
