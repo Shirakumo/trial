@@ -8,7 +8,7 @@ uniform sampler2D metal_rough_occlusion_tex;
 uniform sampler2D normal_tex;
 vec3 view_dir, F0;
 vec4 albedo;
-float metallic, roughness, occlusion;
+float metalness, roughness, occlusion;
 
 const float PI = 3.14159265359;
 
@@ -44,10 +44,10 @@ void standard_init(){
   view_dir = normalize(camera_position - world_position);
   albedo = texture(albedo_tex, uv) * material.albedo_factor;
   vec3 mro = texture(metal_rough_occlusion_tex, uv).xyz;
-  metallic = mro.x * material.metallic_factor;
+  metalness = mro.x * material.metalness_factor;
   roughness = mro.y * material.roughness_factor;
   occlusion = 1.0 - (mro.z * material.occlusion_factor);
-  F0 = mix(vec3(0.04), albedo.xyz, metallic);
+  F0 = mix(vec3(0.04), albedo.xyz, metalness);
 }
 
 vec4 standard_shade(in StandardLight light){
@@ -68,7 +68,7 @@ vec4 standard_shade(in StandardLight light){
     
     vec3 kS = F;
     vec3 kD = vec3(1.0) - kS;
-    kD *= 1.0 - metallic;
+    kD *= 1.0 - metalness;
     
     vec3 numerator = NDF * G * F;
     float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
