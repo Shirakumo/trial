@@ -134,7 +134,8 @@
                (vertex :position (vec (+ x w) y (+ z _z)))))))
 
 (defun make-sphere-mesh (size &key (segments 32) mesh pack (x 0) (y 0) (z 0))
-  (let ((lat segments) (lng segments))
+  (let ((lat segments) (lng segments)
+        (off (vec x y z)))
     (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'basic-vertex)) :pack pack)
       (loop for i from lat downto 1
             for lat0 = (* PI (- (/ (1- i) lat) 0.5))
@@ -148,14 +149,14 @@
                      for x1 = (cos l1) for x2 = (cos l2)
                      for y1 = (sin l1) for y2 = (sin l2)
                      do (flet ((vertex (position)
-                                 (vertex :position position :normal (vunit position) :uv (vec 0 0))))
-                          (vertex (vec (+ x (* x1 zr0 size)) (+ y (* y1 zr0 size)) (+ z (* z0 size))))
-                          (vertex (vec (+ x (* x1 zr1 size)) (+ y (* y1 zr1 size)) (+ z (* z1 size))))
-                          (vertex (vec (+ x (* x2 zr0 size)) (+ y (* y2 zr0 size)) (+ z (* z0 size))))
+                                 (vertex :position (v+ position off) :normal (vunit position) :uv (vec 0 0))))
+                          (vertex (vec (* x1 zr0 size) (* y1 zr0 size) (* z0 size)))
+                          (vertex (vec (* x1 zr1 size) (* y1 zr1 size) (* z1 size)))
+                          (vertex (vec (* x2 zr0 size) (* y2 zr0 size) (* z0 size)))
                           
-                          (vertex (vec (+ x (* x2 zr0 size)) (+ y (* y2 zr0 size)) (+ z (* z0 size))))
-                          (vertex (vec (+ x (* x1 zr1 size)) (+ y (* y1 zr1 size)) (+ z (* z1 size))))
-                          (vertex (vec (+ x (* x2 zr1 size)) (+ y (* y2 zr1 size)) (+ z (* z1 size))))))))))
+                          (vertex (vec (* x2 zr0 size) (* y2 zr0 size) (* z0 size)))
+                          (vertex (vec (* x1 zr1 size) (* y1 zr1 size) (* z1 size)))
+                          (vertex (vec (* x2 zr1 size) (* y2 zr1 size) (* z1 size)))))))))
 
 (defun make-disc-mesh (size &key (segments 32) mesh pack (x 0) (y 0) (z 0))
   (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)

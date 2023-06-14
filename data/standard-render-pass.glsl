@@ -13,6 +13,7 @@ vec2 uv;
 vec4 color;
 
 void standard_init(){
+  maybe_call_next_method();
   color = vec4(0);
 }
 
