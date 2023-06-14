@@ -42,7 +42,7 @@
 
 (defgeneric load-image (source type))
 
-(defgeneric save-image (source target type &key))
+(defgeneric save-image (source target type &key &allow-other-keys))
 
 (defmethod save-image (source (path pathname) (type (eql T)) &rest args)
   (apply #'save-image source path (kw (pathname-type path)) args))
