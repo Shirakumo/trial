@@ -206,7 +206,8 @@
           (gl:pixel-store :unpack-image-height 0))))))
 
 (defun merge-textures (textures)
-  (multiple-value-bind (sources swizzle) (normalize-texture-sources (loop for tex in textures append (sources tex)))
+  (multiple-value-bind (sources swizzle) (normalize-texture-sources (loop for tex in textures
+                                                                          append (sources (ensure-generated tex))))
     (destructuring-bind (w h d) (texture-sources->texture-size sources)
       (make-instance 'texture
                      :width w :height h :depth d

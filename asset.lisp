@@ -18,13 +18,17 @@
 (defmethod allocated-p ((resource placeholder-resource)) NIL)
 
 (defmethod allocate ((resource placeholder-resource))
+  (allocate (ensure-generated resource)))
+
+(defmethod ensure-generated ((resource placeholder-resource))
   (load (generator resource))
-  (cond ((typep resource 'placeholder-resource)
-         (error "Loading the asset~%  ~a~%did not generate the resource~%  ~a"
-                (generator resource) resource))
-        (T
-         ;; We should have been change class'd by now, so re-call.
-         (allocate resource))))
+  (if (typep resource 'placeholder-resource)
+      (error "Loading the asset~%  ~a~%did not generate the resource~%  ~a"
+             (generator resource) resource)
+      resource))
+
+(defmethod ensure-generated ((resource resource))
+  resource)
 
 (defmethod unload ((resource placeholder-resource)))
 
