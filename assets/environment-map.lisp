@@ -74,7 +74,7 @@ void main@after(){
 
 (defmethod generate-resources ((generator environment-map-generator) input &key (width 512) (height width))
   (let* ((loader (make-instance 'loader))
-         (hdr (allocate (generate-resources 'image-loader input)))
+         (hdr (generate-resources 'image-loader input))
          (envmap (resource generator :environment-map))
          (irrmap (resource generator :irradiance-map))
          (pfemap (resource generator :prefiltered-environment-map))
