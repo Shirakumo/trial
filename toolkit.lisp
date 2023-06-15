@@ -1010,7 +1010,7 @@
      :rg)
     ((:gr :gr8 :gr16 :gr32 :gr16f :gr32f)
      :gr)
-    ((:rgb :rgb8 :rgb16 :rgb32 :rgb16f :rgb32f)
+    ((:rgb :rgb8 :rgb16 :rgb32 :rgb16f :rgb32f :rgb9-e5)
      :rgb)
     ((:bgr :bgr8 :bgr16 :bgr32 :bgr16f :bgr32f)
      :bgr)
@@ -1044,7 +1044,9 @@
     (:depth-stencil :depth24-stencil8
      :unsigned-int-24-8)
     (:depth32f-stencil8
-     :float-32-unsigned-int-24-8-rev)))
+     :float-32-unsigned-int-24-8-rev)
+    ((:rgb9-e5)
+     :unsigned-int-5-9-9-9-rev)))
 
 (defun pixel-data-stride (pixel-type pixel-format)
   (* (ecase pixel-format
@@ -1057,19 +1059,24 @@
        ((:rgba :bgra :rgba-integer :bgra-integer)
         4))
      (ecase pixel-type
-       ((:byte :unsigned-byte :unsigned-byte-3-3-2 :unsigned-byte-2-3-3-rev)
+       ((:byte :unsigned-byte)
         1)
-       ((:short :unsigned-short :short-float :unsigned-short-5-6-5 :unsigned-short-5-6-5-rev
-                :unsigned-short-4-4-4-4 :unsigned-short-4-4-4-4-rev
-                :unsigned-short-5-5-5-1 :unsigned-short-1-5-5-5-rev)
+       ((:unsigned-byte-3-3-2 :unsigned-byte-2-3-3-rev)
+        1/3)
+       ((:short :unsigned-short :short-float)
         2)
-       ((:int :unsigned-int :float
-              :unsigned-int-8-8-8-8 :unsigned-int-8-8-8-8-rev
-              :unsigned-int-5-9-9-9-rev
-              :unsigned-int-10-10-10-2 :unsigned-int-2-10-10-10-rev
-              :unsigned-int-24-8 :unsigned-int-8-24-rev-mesa
-              :float-32-unsigned-int-24-8-rev)
-        4))))
+       ((:unsigned-short-5-6-5 :unsigned-short-5-6-5-rev
+         :unsigned-short-5-5-5-1 :unsigned-short-1-5-5-5-rev)
+        2/3)
+       ((:unsigned-short-4-4-4-4 :unsigned-short-4-4-4-4-rev)
+        2/4)
+       ((:int :unsigned-int :float 
+              :unsigned-int-24-8 :unsigned-int-8-24-rev-mesa :float-32-unsigned-int-24-8-rev)
+        4)
+       ((:unsigned-int-5-9-9-9-rev :unsigned-int-10-10-10-2 :unsigned-int-2-10-10-10-rev)
+        4/3)
+       ((:unsigned-int-8-8-8-8 :unsigned-int-8-8-8-8-rev)
+        4/4))))
 
 (defun infer-internal-format (pixel-type pixel-format)
   (mksym
