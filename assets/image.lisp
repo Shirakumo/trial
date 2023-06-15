@@ -92,6 +92,8 @@
                              :internal-format (or internal-format (infer-internal-format (pixel-type (first sources)) (pixel-format (first sources))))
                              :swizzle (or swizzle source-swizzle (infer-swizzle-format (pixel-format (first sources))))
                              (remf* texture-args :type :target :swizzle :internal-format :resource :texture-class))
+        ;; FIXME: When do we dispose of the input???
+        #++
         (dolist (source sources)
           (free-data (texture-source-pixel-data source)))))))
 
