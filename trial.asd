@@ -136,7 +136,8 @@
                              (:file "vertex-struct-buffer" :depends-on ("struct-buffer"))))
                (:module "assets"
                 :depends-on ("package" "asset" "resources" "data-pointer")
-                :components ((:file "image" :depends-on ((:.. "texture-source")))
+                :components ((:file "environment-map" :depends-on ("image"))
+                             (:file "image" :depends-on ((:.. "texture-source")))
                              (:file "mesh" :depends-on ((:.. ("physics" "primitives"))))
                              (:file "sprite-data" :depends-on ("image"))
                              (:file "static")
