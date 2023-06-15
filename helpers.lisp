@@ -211,7 +211,7 @@ void main(){
 
 (defmethod bind-textures :after ((obj textured-entity))
   (%gl:active-texture :texture0)
-  (gl:bind-texture :texture-2d (gl-name (texture obj))))
+  (gl:bind-texture (target (texture obj)) (gl-name (texture obj))))
 
 (define-class-shader (textured-entity :vertex-shader)
   "layout (location = 1) in vec2 in_texcoord;
