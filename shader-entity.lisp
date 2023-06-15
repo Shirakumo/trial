@@ -285,3 +285,22 @@ void main(){
     (activate program)
     (bind-textures entity)
     (render entity program)))
+
+(defclass dynamic-shader-entity (standalone-shader-entity)
+  ((shaders :initarg :shaders :initform () :accessor shaders)
+   (buffers :initarg :buffers :initform () :accessor buffers))
+  (:metaclass shader-entity-class))
+
+(defmethod make-class-shader-program ((entity dynamic-shader-entity))
+  (let ((class (class-of entity)))
+    (make-instance 'shader-program
+                   :shaders (loop with shaders = (shaders entity)
+                                  for (type source) on (effective-shaders class) by #'cddr
+                                  for processed = (glsl-toolkit:merge-shader-sources
+                                                   (list (glsl-toolkit:combine-methods
+                                                          (list* source (getf shaders type))))
+                                                   :min-version (glsl-target-version T))
+                                  collect (make-instance 'shader :source processed :type type))
+                   :buffers (list* (loop for resource-spec in (effective-buffers class)
+                                         collect (apply #'// resource-spec))
+                                   (buffers entity)))))

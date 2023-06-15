@@ -1322,7 +1322,8 @@
    #:effective-shader-class
    #:compute-effective-shader-class
    #:standalone-shader-entity
-   #:shader-program)
+   #:shader-program
+   #:dynamic-shader-entity)
   ;; shader-pass.lisp
   (:export
    #:port
