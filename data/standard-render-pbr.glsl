@@ -50,8 +50,7 @@ vec4 standard_shade(in StandardLight light){
     vec3 prefiltered_color = textureLod(environment_map, R,  roughness * MAX_REFLECTION_LOD).rgb;
     vec3 specular = prefiltered_color * (F * envBRDF.x + envBRDF.y);
 
-    // FIXME: ao factor
-    return vec4((kD * diffuse + specular), 1);
+    return vec4((kD * diffuse + specular) * occlusion * light.color, 1);
   }else{
     StandardLightData light_data = evaluate_light(light);
     vec3 N = normal;
