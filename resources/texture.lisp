@@ -45,7 +45,7 @@
 (defmacro define-texture-property-slots (&rest props)
   `(progn
      ,@(loop for prop in props
-             collect `(defmethod (setf ,prop) :before (value (texture texture))
+             collect `(defmethod (setf ,prop) :after (value (texture texture))
                         (when (allocated-p texture)
                           (gl:bind-texture (target texture) (gl-name texture))
                           (update-texture-properties texture)
