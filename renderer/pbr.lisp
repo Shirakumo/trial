@@ -83,7 +83,7 @@
   (setf (alpha-cutoff target) (alpha-cutoff material)))
 
 (define-shader-pass pbr-render-pass (standard-shadows-pass light-cache-render-pass)
-  ()
+  ((environment :initform NIL :accessor environment))
   (:shader-file (trial "standard-render-pbr.glsl")))
 
 (defmethod render-with ((pass pbr-render-pass) (material pbr-material) program)
@@ -95,5 +95,37 @@
     (setf (uniform program "emission_tex") (local-id (aref textures 2) pass))
     (setf (uniform program "normal_tex") (local-id (aref textures 3) pass))))
 
+(defmethod prepare-pass-program :after ((pass pbr-render-pass) program)
+  (when (environment pass)
+    (setf (uniform program "irradiance_map") (local-id (irradiance-map (environment pass)) pass))
+    (setf (uniform program "environment_map") (local-id (environment-map (environment pass)) pass))
+    (setf (uniform program "brdf_lut") (local-id (// 'trial 'brdf-lut) pass))))
+
 (defmethod material-block-type ((pass pbr-render-pass))
   'pbr-material-block)
+
+(defclass environment-light (ambient-light)
+  ((irradiance-map :initarg :irradiance-map :accessor irradiance-map)
+   (environment-map :initarg :environment-map :accessor environment-map)))
+
+(defmethod stage :after ((light environment-light) (area staging-area))
+  (stage (irradiance-map light) area)
+  (stage (environment-map light) area)
+  (stage (// 'trial 'brdf-lut) area))
+
+(defmethod transfer-to progn ((target standard-light) (light ambient-light))
+  (setf (light-type target) 250))
+
+(defmethod 3ds:bsize ((light ambient-light))
+  #.(vec most-positive-single-float
+         most-positive-single-float
+         most-positive-single-float))
+
+(defmethod enable :after ((light environment-light) (pass standard-render-pass))
+  (enable (irradiance-map light) pass)
+  (enable (environment-map light) pass)
+  (enable (// 'trial 'brdf-lut) pass)
+  (setf (environment pass) light))
+
+(defmethod disable :after ((light environment-light) (pass standard-render-pass))
+  (setf (environment pass) NIL))
