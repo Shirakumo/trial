@@ -24,8 +24,12 @@
 (define-shader-entity globe (single-material-renderable transformed-entity)
   ((vertex-array :initform (// 'workbench 'sphere))))
 
+(define-asset (workbench grassy-field) trial::environment-map
+    #p"~/Projects/cl/trial-assets/data/grassy-field.hdr")
+
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
+    (enter (make-instance 'skybox :texture (// 'workbench 'grassy-field :environment-map)) scene)
     (enter (make-instance 'fps-counter) scene)
     (enter (make-instance 'editor-camera :location (vec 0 0 3.0) :fov 50 :move-speed 0.1) scene)
     (enter (make-instance 'ambient-light :color (vec .03 .03 .03)) scene)

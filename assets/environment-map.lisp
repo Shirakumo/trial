@@ -104,7 +104,6 @@ void main@after(){
       (setf (min-filter envmap) :linear)
       (render envmap-renderer envmap)
       (gl:bind-texture (target envmap) (gl-name envmap))
-      (print :bbb)
       (setf (min-filter envmap) :linear-mipmap-linear)
       ;; Now map the irradiance and prefiltered maps as usual.
       (render irrmap-renderer irrmap)

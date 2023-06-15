@@ -12,4 +12,5 @@
                :trial-jpeg
                :trial-png
                :trial-gltf
+               :trial-hdr
                :trial-assets-gltf))
