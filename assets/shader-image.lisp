@@ -7,7 +7,8 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (define-shader-entity image-renderer (standalone-shader-entity)
-  ())
+  ()
+  (:inhibit-shaders (shader-entity :fragment-shader)))
 
 (defmethod stage :after ((entity image-renderer) (area staging-area))
   (stage (// 'trial 'fullscreen-square) area))

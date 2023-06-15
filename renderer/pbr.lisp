@@ -9,7 +9,9 @@
 (define-asset (trial brdf-lut) shader-image
     #p"brdf-lut-renderer.glsl"
   :width 512
-  :height 512)
+  :height 512
+  :internal-format :rg16
+  :min-filter :linear)
 
 (define-gl-struct (pbr-material (:include material))
   (textures NIL :initform (vector (// 'trial 'missing) (// 'trial 'black) (// 'trial 'black) (// 'trial 'neutral-normal)))

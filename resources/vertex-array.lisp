@@ -54,7 +54,8 @@
                        (:double
                         (%gl:vertex-attrib-lpointer index size (element-type buffer) stride offset)))
                      (gl:enable-vertex-attrib-array index)
-                     (%gl:vertex-attrib-divisor index instancing)))))
+                     (when (/= 0 instancing)
+                       (%gl:vertex-attrib-divisor index instancing))))))
     (gl:bind-vertex-array 0)))
 
 (defmethod (setf bindings) :after (bindings (array vertex-array))
