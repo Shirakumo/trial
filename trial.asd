@@ -116,7 +116,7 @@
                 :depends-on ("package" "shader-pass" "helpers" "gl-struct" "transforms")
                 :components ((:file "lights")
                              (:file "materials")
-                             (:file "pbr" :depends-on ("standard-renderer" "shadow-map"))
+                             (:file "pbr" :depends-on ("standard-renderer" "shadow-map" (:.. "assets")))
                              (:file "phong" :depends-on ("standard-renderer" "shadow-map"))
                              (:file "shadow-map" :depends-on ("standard-renderer"))
                              (:file "standard-renderer" :depends-on ("lights" "materials"))))

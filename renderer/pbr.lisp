@@ -6,6 +6,9 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
+(define-asset (trial brdf-lut) shader-image
+    #p"brdf-lut-renderer.glsl")
+
 (define-gl-struct (pbr-material (:include material))
   (textures NIL :initform (vector (// 'trial 'missing) (// 'trial 'black) (// 'trial 'black) (// 'trial 'neutral-normal)))
   (albedo-factor :vec4 :initform (vec 1 1 1 1) :initarg :albedo-factor :accessor albedo-factor)
