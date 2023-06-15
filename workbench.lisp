@@ -19,7 +19,7 @@
 (define-pool workbench)
 
 (define-asset (workbench sphere) mesh
-    (make-sphere-mesh 0.15 :segments 64))
+    (make-sphere-mesh 0.15 :segments 16))
 
 (define-shader-entity globe (single-material-renderable transformed-entity)
   ((vertex-array :initform (// 'workbench 'sphere))))

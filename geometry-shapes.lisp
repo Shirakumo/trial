@@ -133,7 +133,7 @@
             do (vertex :position (vec (- x w) y (+ z _z)))
                (vertex :position (vec (+ x w) y (+ z _z)))))))
 
-(defun make-sphere-mesh (size &key (segments 32) mesh pack (x 0) (y 0) (z 0))
+(defun make-sphere-mesh (size &key (segments 24) mesh pack (x 0) (y 0) (z 0))
   (let ((lat segments) (lng segments)
         (off (vec x y z)))
     (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'basic-vertex)) :pack pack)
