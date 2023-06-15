@@ -271,6 +271,9 @@
 (define-asset (trial empty-vertex-array) mesh
     (make-instance 'vertex-mesh))
 
+(define-asset (trial unit-cube) mesh
+    (make-cube-mesh 1.0))
+
 (define-asset (trial axes) mesh
     (make-lines (list (list (vec 0 0 0) (vec 1 0 0 1)) (list (vec 10 0 0) (vec 1 0 0 1))
                       (list (vec 0 0 0) (vec 0 1 0 1)) (list (vec 0 10 0) (vec 0 1 0 1))
