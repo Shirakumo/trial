@@ -34,7 +34,7 @@
 (define-unbound-reader texture internal-format :rgba)
 (define-unbound-reader texture mag-filter :linear)
 (define-unbound-reader texture min-filter :linear-mipmap-linear)
-(define-unbound-reader texture mipmap-levels (list 0 1000))
+(define-unbound-reader texture mipmap-levels (list 0 10))
 (define-unbound-reader texture mipmap-lod (list -1000 1000 0.0))
 (define-unbound-reader texture anisotropy NIL)
 (define-unbound-reader texture wrapping '(:clamp-to-edge :clamp-to-edge :clamp-to-edge))
