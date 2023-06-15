@@ -39,6 +39,10 @@
 
 (defmethod stage (object (area staging-area)))
 
+(defmethod stage ((objects cons) (area staging-area))
+  (dolist (object objects)
+    (stage object area)))
+
 (defmethod stage ((object resource) (area staging-area))
   (setf (gethash object (staged area)) (cons NIL NIL)))
 

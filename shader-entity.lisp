@@ -283,4 +283,5 @@ void main(){
 (defmethod render ((entity standalone-shader-entity) target)
   (let ((program (shader-program entity)))
     (activate program)
+    (bind-textures entity)
     (render entity program)))
