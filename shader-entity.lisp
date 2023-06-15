@@ -296,11 +296,12 @@ void main(){
     (make-instance 'shader-program
                    :shaders (loop with shaders = (shaders entity)
                                   for (type source) on (effective-shaders class) by #'cddr
+                                  for dynamic = (getf shaders type)
                                   for processed = (glsl-toolkit:merge-shader-sources
                                                    (list (glsl-toolkit:combine-methods
-                                                          (list* source (getf shaders type))))
+                                                          (if dynamic (list* dynamic source) source)))
                                                    :min-version (glsl-target-version T))
                                   collect (make-instance 'shader :source processed :type type))
-                   :buffers (list* (loop for resource-spec in (effective-buffers class)
-                                         collect (apply #'// resource-spec))
-                                   (buffers entity)))))
+                   :buffers (append (loop for resource-spec in (effective-buffers class)
+                                          collect (apply #'// resource-spec))
+                                    (buffers entity)))))

@@ -1,11 +1,10 @@
 #section FRAGMENT_SHADER
 #include (trial::trial "pbr-common.glsl")
 const uint sample_count = 1024u;
-out vec2 color;
+out vec4 color;
 
 // Override
-float G_sggx(float NdotV, float roughness){
-  float a = roughness;
+float G_sggx(float NdotV, float r){
   float k = (r*r) / 2.0;
   return NdotV / (NdotV * (1.0 - k) + k);
 }
@@ -36,7 +35,7 @@ void main(){
     float VdotH = max(dot(V, H), 0.0);
 
     if(NdotL > 0.0){
-      float G = G_s(N, V, L, roughness);
+      float G = G_smith(N, V, L, roughness);
       float G_Vis = (G * VdotH) / (NdotH * NdotV);
       float Fc = pow(1.0 - VdotH, 5.0);
 
@@ -46,5 +45,5 @@ void main(){
   }
   A /= float(sample_count);
   B /= float(sample_count);
-  color = vec2(A, B);
+  color = vec4(A, B, 0, 1);
 }

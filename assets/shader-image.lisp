@@ -14,7 +14,7 @@
 
 (defmethod render ((entity image-renderer) (program shader-program))
   (declare (optimize speed))
-  (let* ((vao (vertex-array entity))
+  (let* ((vao (// 'trial 'fullscreen-square))
          (size (size vao)))
     (declare (type (unsigned-byte 32) size))
     (gl:bind-vertex-array (gl-name vao))
@@ -34,6 +34,20 @@
       (gl:bind-framebuffer :framebuffer 0)
       (gl:delete-framebuffers (list fbo)))))
 
+(define-class-shader (image-renderer :vertex-shader)
+  "
+layout (location = 0) in vec3 in_position;
+layout (location = 1) in vec2 in_uv;
+out vec2 uv;
+
+void main(){
+  gl_Position = vec4(in_position, 1.0f);
+  uv = in_uv;
+}")
+
+(define-class-shader (image-renderer :fragment-shader)
+  "in vec2 uv;")
+
 (define-shader-entity dynamic-image-renderer (image-renderer dynamic-shader-entity)
   ())
 
@@ -42,7 +56,8 @@
 
 (defmethod generate-resources ((generator shader-image-generator) input &rest texture-args &key (resource (resource generator T)) (texture-class 'texture) &allow-other-keys)
   (let* ((loader (make-instance 'loader))
-         (renderer (make-instance 'dynamic-image-renderer :shaders (resolve-shader-include input))))
+         (shaders (glsl-toolkit:preprocess (resolve-shader-include input) :include-resolution #'resolve-shader-include))
+         (renderer (make-instance 'dynamic-image-renderer :shaders shaders)))
     (apply #'ensure-instance resource texture-class (remf* texture-args :resource :texture-class))
     (with-cleanup-on-failure (finalize loader)
       (commit (list renderer resource) loader)

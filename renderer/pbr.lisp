@@ -7,7 +7,9 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (define-asset (trial brdf-lut) shader-image
-    #p"brdf-lut-renderer.glsl")
+    #p"brdf-lut-renderer.glsl"
+  :width 512
+  :height 512)
 
 (define-gl-struct (pbr-material (:include material))
   (textures NIL :initform (vector (// 'trial 'missing) (// 'trial 'black) (// 'trial 'black) (// 'trial 'neutral-normal)))
@@ -107,6 +109,13 @@
 (defclass environment-light (ambient-light)
   ((irradiance-map :initarg :irradiance-map :accessor irradiance-map)
    (environment-map :initarg :environment-map :accessor environment-map)))
+
+(defmethod shared-initialize :after ((light environment-light) slots &key asset)
+  (when asset (setf (environment-asset light) asset)))
+
+(defmethod (setf environment-asset) ((map environment-map) (light environment-light))
+  (setf (irradiance-map light) (resource map :irradiance-map))
+  (setf (environment-map light) (resource map :prefiltered-environment-map)))
 
 (defmethod stage :after ((light environment-light) (area staging-area))
   (stage (irradiance-map light) area)

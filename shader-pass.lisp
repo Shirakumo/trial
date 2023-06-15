@@ -135,6 +135,7 @@
 
 (defmethod apply-transforms progn ((object renderable)))
 (defmethod bind-textures ((object renderable)))
+(defmethod bind-textures ((object standalone-shader-entity)))
 
 (defmethod stage ((pass shader-pass) (area staging-area))
   (dolist (port (flow:ports pass))

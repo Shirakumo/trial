@@ -32,7 +32,7 @@
     (enter (make-instance 'skybox :texture (// 'workbench 'grassy-field :environment-map)) scene)
     (enter (make-instance 'fps-counter) scene)
     (enter (make-instance 'editor-camera :location (vec 0 0 3.0) :fov 50 :move-speed 0.1) scene)
-    (enter (make-instance 'ambient-light :color (vec .03 .03 .03)) scene)
+    (enter (make-instance 'trial::environment-light :asset (asset 'workbench 'grassy-field)) scene)
     (loop for (p c) in `((,(vec -10  10 10) ,(vec 300 300 300))
                          (,(vec  10  10 10) ,(vec 300 300 300))
                          (,(vec -10 -10 10) ,(vec 300 300 300))
