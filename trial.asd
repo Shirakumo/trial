@@ -139,6 +139,7 @@
                 :components ((:file "environment-map" :depends-on ("image"))
                              (:file "image" :depends-on ((:.. "texture-source")))
                              (:file "mesh" :depends-on ((:.. ("physics" "primitives"))))
+                             (:file "shader-image" :depends-on ((:.. "shader-entity")))
                              (:file "sprite-data" :depends-on ("image"))
                              (:file "static")
                              (:file "tile-data" :depends-on ("image"))
