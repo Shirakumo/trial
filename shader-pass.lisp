@@ -137,6 +137,8 @@
 (defmethod bind-textures ((object renderable)))
 
 (defmethod stage ((pass shader-pass) (area staging-area))
+  (dolist (port (flow:ports pass))
+    (stage port area))
   (stage (framebuffer pass) area))
 
 (defmethod check-consistent ((pass shader-pass))
