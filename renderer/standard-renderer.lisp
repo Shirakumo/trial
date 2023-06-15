@@ -86,13 +86,13 @@
   (call-next-method)
   (do-lru-cache (texture id (allocated-textures pass))
     (gl:active-texture id)
-    (gl:bind-texture :texture-2d (gl-name texture))))
+    (gl:bind-texture (target texture) (gl-name texture))))
 
 (defmethod enable ((texture texture) (pass standard-render-pass))
   (let ((id (lru-cache-push texture (allocated-textures pass))))
     (when id
       (gl:active-texture id)
-      (gl:bind-texture :texture-2d (gl-name texture)))))
+      (gl:bind-texture (target texture) (gl-name texture)))))
 
 (defmethod disable ((texture texture) (pass standard-render-pass))
   (lru-cache-pop texture (allocated-textures pass)))
