@@ -9,6 +9,7 @@ The following formats are supported:
 - gltf (``trial-gltf``)
   Note: Only skinned mesh extraction is supported at the moment.
 - jpeg (``trial-jpeg``, ``trial-jpeg-turbo``)
+- ktx (``trial-ktx``)
 - png (``trial-png``)
 - qoi (``trial-qoi``)
 - ter / Terragen (``trial-terragen``)
