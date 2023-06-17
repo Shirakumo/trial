@@ -145,6 +145,14 @@
    #:location
    #:scaling
    #:rotation)
+  ;; assets/environment-map.lisp
+  (:export
+   #:cubemap-renderer
+   #:environment-map-renderer
+   #:irradiance-map-renderer
+   #:prefiltered-environment-map-renderer
+   #:environment-map-generator
+   #:environment-map)
   ;; assets/image.lisp
   (:export
    #:load-image
@@ -159,6 +167,12 @@
    #:geometry-name
    #:attributes
    #:data-usage)
+  ;; assets/shader-image.lisp
+  (:export
+   #:image-renderer
+   #:dynamic-image-renderer
+   #:shader-image-generator
+   #:shader-image)
   ;; assets/sprite-data.lisp
   (:export
    #:sprite-data
@@ -1346,6 +1360,7 @@
    #:renderable
    #:transformed
    #:renderable
+   #:render-with
    #:dynamic-renderable
    #:apply-transforms
    #:bind-textures

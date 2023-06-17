@@ -180,7 +180,8 @@
 
 (defmethod render-with :before ((pass standard-render-pass) (object single-material-renderable) program)
   (prepare-pass-program pass program)
-  (render-with pass (material object) program))
+  (when (material object)
+    (render-with pass (material object) program)))
 
 (define-shader-pass light-cache-render-pass (standard-render-pass)
   ((light-cache :initform (org.shirakumo.fraf.trial.space.kd-tree:make-kd-tree) :reader light-cache)
