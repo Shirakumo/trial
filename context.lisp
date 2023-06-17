@@ -50,8 +50,8 @@
    (binding-point-allocator :initform (make-array 256 :element-type 'bit) :accessor binding-point-allocator))
   (:default-initargs
    :title "Trial"
-   :width 800
-   :height 600
+   :width 1280
+   :height 720
    :glsl-version "330"
    :version '(3 3)
    :profile :core
