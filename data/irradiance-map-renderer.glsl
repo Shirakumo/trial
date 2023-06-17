@@ -1,13 +1,13 @@
 #section FRAGMENT_SHADER
 out vec4 color;
-in vec3 world_pos;
+in vec3 world_position;
 
 uniform samplerCube environment_map;
 const float sample_delta = 0.025;
 const float PI = 3.14159265359;
 
 void main(){
-  vec3 normal = normalize(world_pos);
+  vec3 normal = normalize(world_position);
   // Gramm-Schmidt coordinate system
   vec3 up = vec3(0.0, 1.0, 0.0);
   vec3 right = normalize(cross(up, normal));

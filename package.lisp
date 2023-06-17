@@ -147,7 +147,6 @@
    #:rotation)
   ;; assets/environment-map.lisp
   (:export
-   #:cubemap-renderer
    #:environment-map-renderer
    #:irradiance-map-renderer
    #:prefiltered-environment-map-renderer
@@ -171,6 +170,7 @@
   (:export
    #:image-renderer
    #:dynamic-image-renderer
+   #:cubemap-renderer
    #:shader-image-generator
    #:shader-image)
   ;; assets/sprite-data.lisp

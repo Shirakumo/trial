@@ -1,7 +1,7 @@
 #section FRAGMENT_SHADER
 #include (trial::trial "pbr-common.glsl")
 out vec4 color;
-in vec3 world_pos;
+in vec3 world_position;
 
 uniform int mip_level;
 uniform int max_mip_levels;
@@ -11,7 +11,7 @@ const uint sample_count = 4096u;
 void main(){
   float roughness = mip_level / (max_mip_levels - 1.0);
   float resolution = textureSize(environment_map, 0).x;
-  vec3 N = normalize(world_pos);
+  vec3 N = normalize(world_position);
   vec3 R = N;
   vec3 V = R;
 
