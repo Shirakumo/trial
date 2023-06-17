@@ -124,7 +124,7 @@
   (stage (environment-map light) area)
   (stage (// 'trial 'brdf-lut) area))
 
-(defmethod transfer-to progn ((target standard-light) (light ambient-light))
+(defmethod transfer-to progn ((target standard-light) (light environment-light))
   (setf (light-type target) 250))
 
 (defmethod 3ds:bsize ((light ambient-light))
