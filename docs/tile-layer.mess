@@ -8,16 +8,16 @@ Trial includes a highly efficient way to render tile maps, in the form of the ``
 
 Let us illustrate all of these properties by way of an example. Here's a very simple tile set:
 
-[ image tileset.png ]
+[ image images/tileset.png ]
 
 In this tileset, the ``tile-size`` is ``16``.
 Here's a corresponding 40x26 tilemap (encoded as a PNG) that makes use of this tileset:
 
-[ image tilemap.png ]
+[ image images/tilemap.png ]
 
 This probably doesn't look like anything to you, so let me modify the image a little bit, converting it from grayscale-alpha to red/green, and upping the contrast:
 
-[ image tilemap2.png ]
+[ image images/tilemap2.png ]
 
 Each pixel in the image represents the X and Y offsets of the tile in the tileset that should be rendered at that point, counting from the bottom left. So for instance to select that red square tile, the tilemap would contain a pixel with the data ``1,0``.
 
@@ -31,7 +31,7 @@ Regardless, once a map has been created, all you need to do is construct a ``til
 (make-instance 'tile-layer :tileset (// 'workbench tileset) :size (vec 40 26) :tilemap #p"tilemap.dat")
 ::
 
-[ image rendered-tilemap.png ]
+[ image images/rendered-tilemap.png ]
 
 The class also provides functions to ``resize`` the map, and to access individual ``tile``s.
 
