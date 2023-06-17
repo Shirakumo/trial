@@ -1,0 +1,42 @@
+# Meshes
+Sometimes it is useful to define a static mesh programmatically. To turn such meshes into an actual ``vertex-array``, you can use a ``mesh-loader``, or the ``mesh`` asset.
+
+The ``mesh-loader`` can convert from of the following types:
+
+- ``vertex-mesh``
+  Packs the (legacy) vertex mesh structure into a single vertex buffer and index buffer, and then puts them together into a vertex-array.
+- ``mesh-data``
+  Converts the data directly using ``make-vertex-array``.
+- ``primitive``
+  Converts the primitive to a ``convex-mesh`` and then translates that into a vertex-array.
+- ``pathname``
+  Loads via the ``read-geometry`` function.
+
+Static meshes like these are mostly used for very simple meshes that can be constructed using the geometry construction functions that trial ships:
+
+- ``make-rectangle-mesh``
+- ``make-triangle-mesh``
+- ``make-cube-mesh``
+- ``make-quad-grid-mesh``
+- ``make-line-grid-mesh``
+- ``make-sphere-mesh``
+- ``make-disc-mesh``
+- ``make-cylinder-mesh``
+- ``make-cone-mesh``
+- ``make-tube-mesh``
+- ``make-lines``
+
+The functions should be self-explanatory in what they construct. All of them also take a ``:mesh`` argument so that you can combine multiple meshes together, and ``:x``, ``:y``, ``:z`` arguments to shift the constructed shape around.
+
+Trial also provides a couple of assets that are generally useful from its own pool:
+
+- ``fullscreen-square``
+  A centred square with its edges each 1 unit away from zero on X/Y. Ideal for rendering without any transformation matrices.
+- ``empty-vertex-array``
+  An empty vertex array, which can be useful when the vertex shader generates the vertices on its own.
+- ``unit-cube``
+  A cube with a diameter of 1.
+- ``axes``
+  A line mesh with a coloured line along every axis.
+- ``2d-axes``
+  A mesh with infinite extent to mark the zero axes in 2D.

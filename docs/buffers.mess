@@ -1,0 +1,44 @@
+# Buffers
+Trial provides a convenient wrapper around OpenGL's various types of data buffer objects, at the base of which lies the ``buffer-object`` resource. Note that despite the naming, this does not include ``framebuffer`` objects, as they are their own thing.
+
+A buffer object includes a ``buffer-type`` that describes the data being represented, a ``buffer-data`` slot for uploading data, a ``data-usage`` hint that tells GL how often the data will be written or read, and a ``size`` describing the number of octets the buffer currently represents.
+
+You can dynamically change the buffer with ``resize-buffer`` and update the data without reallocation with ``update-buffer-data``. to both you may pass either vectors, direct memory pointers, or other kinds of ``memory-region`` descriptor objects.
+
+## Vertex Buffers
+Most of the time you'll need ``vertex-buffer``s, which store per-vertex attribute information. By default these buffers only store single-float element data, and as such your ``buffer-data`` should be a single-float specialised vector.
+
+## Struct Buffers
+For buffers that contain more complex, structured, and possibly nested, data, the ``struct-buffer`` provides an abstraction. This uses the ``gl-struct`` mechanism to represent opaque octet data in memory with a view from Lisp. It also ensures that the data is properly packed in the required layout.
+
+When you want to access a struct buffer's contents, you should use ``with-buffer-tx``. This macro will take care of uploading the changed data on exit, rather than updating the data with every field you change.
+
+## Vertex Struct Buffers
+A ``vertex-struct-buffer`` allows you to specify a ``gl-struct`` for the per-vertex data. This in turn allows you to specify more complicated data for each vertex, including non-float fields.
+
+## Uniform Buffers
+These are ``stcruct-buffer``s that represent a Uniform Buffer Block. UBOs allow you to share a block of data with one or more shader programs at once, and allows for more efficient upload of a whole block of uniforms.
+
+Note that Trial generates the GLSL block definition for you. You must include it in the shader source code where you want to access the uniform block. Usually this is as simple as something like this:
+
+:: common lisp
+(define-class-shader (my-class :fragment-shader)
+  (gl-source (// 'pool 'my-ubo)))
+::
+
+You must also include the buffer in the class' buffer list, so that the shader program can ensure to bind the buffer:
+
+:: common lisp
+(define-shader-entity my-class ()
+  ()
+  (:buffers (pool my-ubo)))
+::
+
+By default the uniform block will receive a name translated from the ``gl-struct``'s class name. If you would like to customise the name, pass the  ``:binding`` argument. You can also set it to ``NIL`` to disable the binding point name, and instead treat each of the uniforms in the block as globals.
+
+To bind the buffer to a program, ``bind`` is used, though this is usually automatically called by the ``shader-program`` itself.
+
+Note that uniform buffers, while available in GL3.3, have a limited amount of storage. If that storage limit is too low, or the packing overhead too high, you should consider using ``shader-storage-buffer``s instead.
+
+## Shader Storage Buffers
+These are pretty much the same idea as uniform buffers, but using a different mechanism and packing layout. The packing layout should be far more efficient and allow pretty much direct memory access without padding, and the storage limit guaranteed by the standard is way higher. However, SSBOs are only available in GL 4.3 (or with ``:arb-shader-storage-buffer-object``).

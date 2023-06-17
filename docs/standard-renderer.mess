@@ -71,6 +71,15 @@ R_{effective} = R_{source} / (1 + F_{linear}*d + F_{quadratic}*d^2)
 
 A spot light also has two factors to define the size of the illuminated spot, the ``outer-radius`` and ``inner-radius``, which are specified as half-angles. The outer radius defines the maximal radius of the spot, and the inner radius describes the radius within which the radiance is at its maximum. An outer radius of 90 would equal a directional light.
 
+- ``ambient-light``
+  [ image images/lighting-ambient.png ]
+- ``point-light``
+  [ image images/lighting-point.png ]
+- ``directional-light``
+  [ image images/lighting-directional.png ]
+- ``spot-light``
+  [ image images/lighting-spot.png ]
+
 A ``standard-renderer-pass`` limits the number of active lights at once. By default this is 128, though it can be customised with the ``:max-lights`` option at construction. In order to render a light, it must be ``enabled`` on the pass, and may be ``disabled`` again to remove it. If more lights are enabled than supported in the renderer, the oldest light is automatically evicted.
 
 The assigned ID of the light (if any) can be obtained via the ``local-id`` function. This ID will not change for the light unless it is removed.
@@ -111,6 +120,9 @@ In real-time rendering systems shadows are usually handled separately, and often
   The spread between samples. Higher values create blurrier edges but may avoid shadow acne better.
 
 Since the number of shadow maps is limited, a light that is ``enable``d is only given a shadow map if there is enough space free. Please note that shadow maps are quite expensive in general, as each map requires a re-rendering of the entire scene, which can be quite costly with large numbers of objects or dense geometry.
+
+[ image images/lighting-shadows-off.png ]
+[ image images/lighting-shadows.png ]
 
 The shadow calculation is transparently hooked into the ``evaluate_light_*`` functions provided by the ``standard-renderer-pass``, and thus requires no further attention from the shading implementation.
 

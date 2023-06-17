@@ -1,0 +1,37 @@
+<article><style>article{
+    max-width: 800px;
+    font-size: 12pt;
+    font-family: sans-serif;
+    margin: 3em auto;
+}
+
+article h1{
+    text-align: center;
+    font-size: 2em;
+}
+
+article img{
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+article blockquote{
+    border-left: 0.2em solid gray;
+    margin-left: 1em;
+    padding-left: 1em;
+}
+
+article figcaption{
+    padding: 0.2em 1em;
+    background: #E0E0E0;
+}
+
+article code{
+    background: #F0F0F0;
+    padding: 0 0.1em;
+}
+
+article .code-block{
+    padding: 0.1em 0.5em;
+    overflow-x: auto;
+}</style><h1 id="meshes">Meshes</h1><p>Sometimes it is useful to define a static mesh programmatically. To turn such meshes into an actual <code>vertex-array</code>, you can use a <code>mesh-loader</code>, or the <code>mesh</code> asset.</p><p>The <code>mesh-loader</code> can convert from of the following types:</p><ul><li><p><code>vertex-mesh</code><br>Packs the (legacy) vertex mesh structure into a single vertex buffer and index buffer, and then puts them together into a vertex-array.</p></li><li><p><code>mesh-data</code><br>Converts the data directly using <code>make-vertex-array</code>.</p></li><li><p><code>primitive</code><br>Converts the primitive to a <code>convex-mesh</code> and then translates that into a vertex-array.</p></li><li><p><code>pathname</code><br>Loads via the <code>read-geometry</code> function.</p></li></ul><p>Static meshes like these are mostly used for very simple meshes that can be constructed using the geometry construction functions that trial ships:</p><ul><li><p><code>make-rectangle-mesh</code></p></li><li><p><code>make-triangle-mesh</code></p></li><li><p><code>make-cube-mesh</code></p></li><li><p><code>make-quad-grid-mesh</code></p></li><li><p><code>make-line-grid-mesh</code></p></li><li><p><code>make-sphere-mesh</code></p></li><li><p><code>make-disc-mesh</code></p></li><li><p><code>make-cylinder-mesh</code></p></li><li><p><code>make-cone-mesh</code></p></li><li><p><code>make-tube-mesh</code></p></li><li><p><code>make-lines</code></p></li></ul><p>The functions should be self-explanatory in what they construct. All of them also take a <code>:mesh</code> argument so that you can combine multiple meshes together, and <code>:x</code>, <code>:y</code>, <code>:z</code> arguments to shift the constructed shape around.</p><p>Trial also provides a couple of assets that are generally useful from its own pool:</p><ul><li><p><code>fullscreen-square</code><br>A centred square with its edges each 1 unit away from zero on X/Y. Ideal for rendering without any transformation matrices.</p></li><li><p><code>empty-vertex-array</code><br>An empty vertex array, which can be useful when the vertex shader generates the vertices on its own.</p></li><li><p><code>unit-cube</code><br>A cube with a diameter of 1.</p></li><li><p><code>axes</code><br>A line mesh with a coloured line along every axis.</p></li><li><p><code>2d-axes</code><br>A mesh with infinite extent to mark the zero axes in 2D.</p></li></ul></article>

@@ -1,0 +1,22 @@
+# Shader Images
+Sometimes it can be useful to generate a texture on the fly using a single, static shader. Trial has specific support to make that easy with the ``image-renderer`` and ``cubemap-renderer`` classes. Those classes act as standard ``standalone-shader-entity``s, but with a special ``render`` method that can be called with a ``texture`` instance as the render target. The shader output will then be directly rendered onto that texture.
+
+Both renderer classes provide two inputs to the fragment shader stage:
+
+- ``world_position``, the position of the fragment in world space
+- ``uv``, the UV coordinate of the texture being rendered to
+
+Additionally, the ``dynamic-image-renderer`` class lets you perform the same but with dynamically provided shader code, via ``dynamic-shader-entity``. This is then used to implement the ``shader-image-generator`` and the ``shader-image`` asset.
+
+The extra arguments to the ``shader-image`` asset are the texture parameters. Thus, to define an asset that implements a shader image, you would do something like this:
+
+:: common lisp
+(define-asset (trial brdf-lut) shader-image
+    #p"brdf-lut-renderer.glsl"
+  :width 512
+  :height 512
+  :internal-format :rg16
+  :min-filter :linear)
+::
+
+The input file path is, as usual, relative to the pool.

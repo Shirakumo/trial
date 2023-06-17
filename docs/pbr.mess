@@ -17,3 +17,12 @@ Each material has the following properties:
 - Alpha-Cutoff
   The ``alpha-cutoff`` designates a threshold below which the material is considered fully transparent.
 
+[ image images/pbr-1.png, caption Metalness increases towards the top\, roughness towards the right ]
+
+## Image Based Lighting
+The PBR renderer supports an image based lighting workflow. For this purpose it provides a special light type, the ``environment-light``. The light requires an "``environment-map``"(link environment-maps.mess) instance as the ``:asset`` initarg, which it uses to get the needed irradiance and prefiltered environment maps.
+
+When the light is active in the scene it will provide ambient lighting for all objects based on the environment map. You can optionally control for its strength via the light's ``color``, which simply acts as a multiplier.
+
+[ image images/ibl-1.png ]
+[ image images/ibl-2.png ]

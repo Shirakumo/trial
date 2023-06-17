@@ -1,0 +1,40 @@
+<article><style>article{
+    max-width: 800px;
+    font-size: 12pt;
+    font-family: sans-serif;
+    margin: 3em auto;
+}
+
+article h1{
+    text-align: center;
+    font-size: 2em;
+}
+
+article img{
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+article blockquote{
+    border-left: 0.2em solid gray;
+    margin-left: 1em;
+    padding-left: 1em;
+}
+
+article figcaption{
+    padding: 0.2em 1em;
+    background: #E0E0E0;
+}
+
+article code{
+    background: #F0F0F0;
+    padding: 0 0.1em;
+}
+
+article .code-block{
+    padding: 0.1em 0.5em;
+    overflow-x: auto;
+}</style><h1 id="buffers">Buffers</h1><p>Trial provides a convenient wrapper around OpenGL's various types of data buffer objects, at the base of which lies the <code>buffer-object</code> resource. Note that despite the naming, this does not include <code>framebuffer</code> objects, as they are their own thing.</p><p>A buffer object includes a <code>buffer-type</code> that describes the data being represented, a <code>buffer-data</code> slot for uploading data, a <code>data-usage</code> hint that tells GL how often the data will be written or read, and a <code>size</code> describing the number of octets the buffer currently represents.</p><p>You can dynamically change the buffer with <code>resize-buffer</code> and update the data without reallocation with <code>update-buffer-data</code>. to both you may pass either vectors, direct memory pointers, or other kinds of <code>memory-region</code> descriptor objects.</p><h2 id="vertex buffers">Vertex Buffers</h2><p>Most of the time you'll need <code>vertex-buffer</code>s, which store per-vertex attribute information. By default these buffers only store single-float element data, and as such your <code>buffer-data</code> should be a single-float specialised vector.</p><h2 id="struct buffers">Struct Buffers</h2><p>For buffers that contain more complex, structured, and possibly nested, data, the <code>struct-buffer</code> provides an abstraction. This uses the <code>gl-struct</code> mechanism to represent opaque octet data in memory with a view from Lisp. It also ensures that the data is properly packed in the required layout.</p><p>When you want to access a struct buffer's contents, you should use <code>with-buffer-tx</code>. This macro will take care of uploading the changed data on exit, rather than updating the data with every field you change.</p><h2 id="vertex struct buffers">Vertex Struct Buffers</h2><p>A <code>vertex-struct-buffer</code> allows you to specify a <code>gl-struct</code> for the per-vertex data. This in turn allows you to specify more complicated data for each vertex, including non-float fields.</p><h2 id="uniform buffers">Uniform Buffers</h2><p>These are <code>stcruct-buffer</code>s that represent a Uniform Buffer Block. UBOs allow you to share a block of data with one or more shader programs at once, and allows for more efficient upload of a whole block of uniforms.</p><p>Note that Trial generates the GLSL block definition for you. You must include it in the shader source code where you want to access the uniform block. Usually this is as simple as something like this:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(define-class-shader (my-class :fragment-shader)
+  (gl-source (// 'pool 'my-ubo)))</pre></code><p>You must also include the buffer in the class' buffer list, so that the shader program can ensure to bind the buffer:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(define-shader-entity my-class ()
+  ()
+  (:buffers (pool my-ubo)))</pre></code><p>By default the uniform block will receive a name translated from the <code>gl-struct</code>'s class name. If you would like to customise the name, pass the  <code>:binding</code> argument. You can also set it to <code>NIL</code> to disable the binding point name, and instead treat each of the uniforms in the block as globals.</p><p>To bind the buffer to a program, <code>bind</code> is used, though this is usually automatically called by the <code>shader-program</code> itself.</p><p>Note that uniform buffers, while available in GL3.3, have a limited amount of storage. If that storage limit is too low, or the packing overhead too high, you should consider using <code>shader-storage-buffer</code>s instead.</p><h2 id="shader storage buffers">Shader Storage Buffers</h2><p>These are pretty much the same idea as uniform buffers, but using a different mechanism and packing layout. The packing layout should be far more efficient and allow pretty much direct memory access without padding, and the storage limit guaranteed by the standard is way higher. However, SSBOs are only available in GL 4.3 (or with <code>:arb-shader-storage-buffer-object</code>).</p></article>

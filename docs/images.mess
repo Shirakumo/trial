@@ -1,0 +1,27 @@
+# Images
+In order to load images from files into textures, you can use the ``image`` asset. It uses the ``load-image`` API to convert its input into a ``texture``. You may also pass any number of arguments to the asset that will be forwarded to the texture construction, as well as the special arguments ``texture-class`` to specify another class for the resource, and ``type`` to provide a specific input image format type.
+
+The ``type`` will be passed on to ``load-image``, which takes either a keyword of the image type name, a mime-type, or a string that will be converted to the type name for you.
+
+If you need to dynamically construct image textures from a source, you can also do so via the ``image-loader`` without needing to tie the image to an asset.
+
+Trial also provides a few convenience functions to deal with image data:
+
+- ``flip-image-vertically``
+  Flips the pixels vertically. Some formats provide the data in Y-Down order, while Trial expects texture data to be Y-Up.
+- ``convert-image-data``
+  Converts the actual pixel data to another format. You should use this if you aren't sure about the format of the input data for whatever reason, but absolutely require a certain type.
+- ``load-image``
+  Loads the raw image data from a source and returns one or more ``texture-source`` instances.
+  The source can be:
+  - A ``pathname``
+  - A ``list`` of sources
+  - A ``texture-source`` whose ``pixel-data`` is treated as the source
+  - A ``memory-region``
+  - An octet-``vector``
+  Which ``type``s are actually understood by ``load-image`` depends on the currently loaded "format extensions"(link formats.mess). Make sure you load the needed extensions, as Trial cannot automatically load them for you, and avoids loading all of them to make things a bit leaner.
+- ``save-image``
+  Saves the raw image data from one or more ``texture-source``s to a file. The ``type`` argument is the same as for ``load-image``. Most format backends will also provide a ``save-image`` hook, though not all of them do.
+
+## Disposing of the input data
+Some image loaders will return statically allocated pixel data that needs to be manually freed. The ``image`` will automatically free this as soon as its associated ``texture`` has been loaded. If you manually use the ``image-loader``, it is up to you to call ``deallocate`` on the ``sources`` of the returned ``texture`` when appropriate.

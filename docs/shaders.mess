@@ -38,17 +38,16 @@ void main(){
 }"
  :FRAGMENT-SHADER "out vec4 color;
 
-void _GLSLTK_main_1(){
+void _GLSLTK_main_primary_1(){
   color = vec4(1.0, 1.0, 1.0, 1.0);
 }
 
-void _GLSLTK_main_2(){
+void _GLSLTK_main_1(){
   color = vec4(0, 1, 0, 1);
 }
 
 void main(){
   _GLSLTK_main_1();
-  _GLSLTK_main_2();
 }")
 ::
 
@@ -69,7 +68,13 @@ OpenGL offers many other shader types than fragment and vertex shaders, all of w
   (pool-path 'my-project #p"my-object.frag"))
 ::
 
-There are currently no plans to include a more "lispy" syntax for writing shaders, though it isn't out of the question for such an inclusion to be made. Regardless however, the raw GLSL approach will always be supported.
+There are currently no plans to include a more "lispy" syntax for writing shaders, though it isn't out of the question for such an inclusion to be made. Regardless, the raw GLSL approach will always be supported.
+
+Trial however does make use of GLSL-Toolkit's "method combination" feature. If a function with the same signature is defined multiple times, the functions are renamed. That prevents inheriting multiple code parts from clashing. However, you can also call an earlier definition with ``call_next_method();`` or ``maybe_call_next_method();``.
+
+Better still, you can add a ``@after``, ``@before``, or ``@around`` to the end of your function name to denote the same qualifier as you'd understand for CLOS' standard method combination. Such functions will then combine as expected with the rest in the same shader. Using this you can create much more modular interfaces for shaders and extend or override parts in a far more controlled manner.
+
+GLSL-Toolkit will also ensure that function signature declarations are inserted before any function definitions, allowing you to refer to any other function without having to worry about function definition ordering.
 
 Due to the looseness of GLSL code, the automated combination of fragments can sometimes end up somewhat unpredictable. Especially if the shader fragments do not agree on the names of various variables. GLSL-toolkit will do its best to try and match up the variables and rename them to slot the pieces together, but it may not always be successful at doing everything fully automated.
 
