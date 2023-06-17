@@ -36,7 +36,7 @@
                (:file "container" :depends-on ("package" "toolkit" "transforms"))
                (:file "context" :depends-on ("package"))
                (:file "controller" :depends-on ("package" "mapping" "input" "container" "asset" "text"))
-               (:file "data-pointer" :depends-on ("package" "static-vector"))
+               (:file "data-pointer" :depends-on ("package" "static-vector" "texture-source"))
                (:file "debug" :depends-on ("package" "shader-entity" "text" ("physics" "primitives")))
                (:file "deploy" :depends-on ("package" "gamepad"))
                (:file "display" :depends-on ("package" "context" "render-loop" "power" "transforms" "gl-features"))
@@ -136,7 +136,7 @@
                              (:file "vertex-struct-buffer" :depends-on ("struct-buffer"))))
                (:module "assets"
                 :depends-on ("package" "asset" "resources" "data-pointer")
-                :components ((:file "environment-map" :depends-on ("image"))
+                :components ((:file "environment-map" :depends-on ("image" "shader-image"))
                              (:file "image" :depends-on ((:.. "texture-source")))
                              (:file "mesh" :depends-on ((:.. ("physics" "primitives"))))
                              (:file "shader-image" :depends-on ((:.. "shader-entity")))

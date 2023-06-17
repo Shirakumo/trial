@@ -17,14 +17,6 @@
 ;; NOTE: UV convention is U is pointing RIGHT, V is pointing UP
 ;; NOTE: Should generate triangle vertices in CCW order
 
-(defmacro combine-shapes (&body shapes)
-  (cond ((null shapes)
-         ())
-        ((null (cdr shapes))
-         (first shapes))
-        (T
-         `(,@(first shapes) :mesh (combine-shapes ,@(rest shapes))))))
-
 (defun make-rectangle-mesh (w h &key (align :center) mesh pack (x 0) (y 0) (z 0) (u- 0) (v- 0) (u+ 1) (v+ 1))
   (let (l r u b)
     (ecase align
