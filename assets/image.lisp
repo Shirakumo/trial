@@ -95,7 +95,7 @@
         ;; FIXME: When do we dispose of the input???
         #++
         (dolist (source sources)
-          (free-data (texture-source-pixel-data source)))))))
+          (deallocate (texture-source-pixel-data source)))))))
 
 (defclass image (single-resource-asset file-input-asset image-loader)
   ())

@@ -6,16 +6,24 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defun free-data (data)
-  (etypecase data
+(defmethod deallocate (data)
+  (typecase data
     (cffi:foreign-pointer
      (cffi:foreign-free data))
-    (vector
-     (maybe-free-static-vector data))
-    (mem:memory-region
-     (mem:deallocate T data))
-    (cons
-     (mapc #'free-data data))))
+    (T
+     (no-applicable-method #'deallocate data))))
+
+(defmethod deallocate ((vector vector))
+  (maybe-free-static-vector vector))
+
+(defmethod deallocate ((mem memory-region))
+  (mem:deallocate T mem))
+
+(defmethod deallocate ((source texture-source))
+  (deallocate (pixel-data source)))
+
+(defmethod deallocate ((list list))
+  (mapc #'deallocate list))
 
 (defmethod mem:call-with-memory-region (function (data vec2) &key (offset 0))
   #-elide-buffer-access-checks
