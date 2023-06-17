@@ -7,6 +7,8 @@ The project is still in its very early stages and may change heavily as new cons
 
 Come talk to us at the shirakumo channel, reachable through [lichat](https://chat.tymoon.eu/?channel=shirakumo) or IRC on Libera.
 
+![pbr-sample](docs/images/pbr-2.png)
+
 ## Projects Using Trial
 Here are a few games that are using Trial as their engine. Kandria and Eternia: Pet Whisperer are commercial games available on Steam.
 

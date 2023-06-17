@@ -4,6 +4,8 @@ Trial is a modular game engine written in Common Lisp. It offers many tools and 
 
 "NOTE:"(bold,red) This engine is a work in progress, and this documentation even more so. API stability is //not// guaranteed. However, any subsystem documented here should be rather stable, and is very unlikely to change significantly without prior discussion.
 
+[ image images/pbr-2.png ]
+
 ## Index
 - About
   - "Style Guide"(link style.mess)
