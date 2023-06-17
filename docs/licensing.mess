@@ -1,0 +1,24 @@
+# Licensing & Trademark
+Trial and all its code is licensed under the zlib license and as such is fully open source and usable for both public, private, and commercial projects. All the included graphical assets are Creative Commons 0 licensed, meaning they, too, can be included elsewhere without repercussion.
+
+All of the libraries Trial makes use of are similarly liberally licensed. Libraries that are virally or otherwise restrictively licensed (GPL, Artistic, etc.) will not be included in any dependencies, direct or transitive.
+
+That said, we urge you to include a reference to Trial in your game's licensing information, either its splash screen or its main menu, and in the credits. Crediting it for its role in your project will at least help a little bit towards repaying us.
+
+"Trial," "The Trial Engine," and "Trial Engine" are **not** registered trademarks anywhere. However, we implore you not to make another game engine with the same name, just as a courtesy.
+
+Similarly, the below logo types for Trial are not registered marks anywhere and may be used freely under the Creative Commons 0 license. Feel free to pick any one of them to include in your documentation and game visuals.
+
+[ image images/logos/trial vertical.svg, height 5em ]
+[ image images/logos/trial vertical black angled.svg, height 5em]
+[ image images/logos/trial vertical black rounded.svg, height 5em ]
+[ image images/logos/trial vertical mixed angled.svg, height 5em ]
+[ image images/logos/trial vertical mixed square.svg, height 5em ]
+[ image images/logos/trial vertical white rounded.svg, height 5em ]
+
+The following "badge" designs are meant for use on bigger game promo art such as posters, case art, and similar.
+
+[ image images/logos/trial badge.svg, height 5em ]
+[ image images/logos/trial badge black rounded.svg, height 5em ]
+[ image images/logos/trial badge mixed rounded.svg, height 5em ]
+[ image images/logos/trial badge mixed square.svg, height 5em ]

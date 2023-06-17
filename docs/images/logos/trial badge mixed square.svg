@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="73.496841mm"
+   height="87.596725mm"
+   viewBox="0 0 73.496841 87.596725"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   sodipodi:docname="logos.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="0.67521168"
+     inkscape:cx="541.31173"
+     inkscape:cy="453.19121"
+     inkscape:window-width="1916"
+     inkscape:window-height="1029"
+     inkscape:window-x="0"
+     inkscape:window-y="25"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-195.39702,-254.32203)">
+    <path
+       id="rect1406-9"
+       style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:5.25281;stroke-linecap:round;stroke-linejoin:bevel;paint-order:markers stroke fill"
+       d="m 206.52917,254.32203 c -6.1671,0 -11.13215,4.96453 -11.13215,11.13162 v 65.33296 c 0,6.16712 4.96505,11.13214 11.13215,11.13214 h 51.23256 c 6.16712,0 11.13214,-4.96502 11.13214,-11.13214 v -65.33296 c 0,-6.16709 -4.96502,-11.13162 -11.13214,-11.13162 z m 29.98268,6.93136 8.78138,42.47286 -43.05475,5.23069 8.56847,-11.92589 17.71675,-5.35316 -0.57981,-18.49861 z m -22.23845,9.11727 a 10.880206,10.880206 0 0 1 6.08078,2.04071 10.880206,10.880206 0 0 1 2.4877,15.1846 10.880206,10.880206 0 0 1 -15.18461,2.4877 10.880206,10.880206 0 0 1 -2.48771,-15.1846 10.880206,10.880206 0 0 1 9.10384,-4.52841 z m 35.89447,21.30155 5.79604,19.72076 -20.53934,0.79943 4.29588,-5.97896 7.72356,-0.94155 -1.572,-7.62072 z m 7.7029,11.74605 4.18166,12.34912 -13.03798,-0.0227 2.7063,-3.76721 4.76096,-0.21239 -1.31775,-4.57957 z m -54.64424,20.45456 h 10.77764 v 2.78123 h -3.77445 v 9.75961 h -3.22874 v -9.75961 h -3.77445 z m 14.20483,0 h 4.99142 c 2.78139,0 4.74338,1.61405 4.74338,4.09743 0,1.56453 -0.99322,2.78168 -2.75642,3.27835 v 0.0992 l 3.82458,4.94182 v 0.12402 h -3.82458 l -3.42718,-4.8426 h -0.32298 v 4.8426 h -3.22822 z m 13.90716,0 h 3.22823 v 12.54084 h -3.22823 z m 11.47321,0 h 2.08566 l 5.48856,12.54084 h -3.42719 l -0.84439,-2.2102 h -4.49481 l -0.81959,2.2102 h -3.42718 z m 10.1322,0 h 3.22824 v 9.75962 h 4.8922 v 2.78122 h -8.12044 z m -32.28435,2.65721 v 2.85564 h 1.49035 c 0.89402,0 1.56425,-0.49657 1.56425,-1.41542 0,-0.91885 -0.69498,-1.44022 -1.63866,-1.44022 z m 23.12057,1.71359 -1.2914,3.60081 h 2.75642 l -1.3162,-3.60081 z"
+       inkscape:label="badge black rounded"
+       inkscape:export-filename="docs/images/logos/trial badge black rounded.svg"
+       inkscape:export-xdpi="142.09"
+       inkscape:export-ydpi="142.09" />
+  </g>
+</svg>

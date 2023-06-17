@@ -1,4 +1,4 @@
-[ image logo.svg, height 8em ]
+[ image images/logos/trial vertical mixed square.svg, height 7em ]
 # The Trial Game Engine
 Trial is a modular game engine written in Common Lisp. It offers many tools and systems that manage parts of a game system for you. Many of these parts are optional, composable, and customisable in case as it exists should not suit your needs. This documentation covers both details intended for users, and internals in case you need to modify or extend the engine.
 
@@ -9,6 +9,7 @@ Trial is a modular game engine written in Common Lisp. It offers many tools and 
 ## Index
 - About
   - "Style Guide"(link style.mess)
+  - "Licensing & Trademark"(link licensing.mess)
 - Projects
   - Getting Started
   - "Existing Games"(link games.mess)

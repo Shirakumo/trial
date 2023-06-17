@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="148.332mm"
+   height="37.728447mm"
+   viewBox="0 0 148.332 37.728447"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   sodipodi:docname="logos.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="0.67521168"
+     inkscape:cx="541.31173"
+     inkscape:cy="453.19121"
+     inkscape:window-width="1916"
+     inkscape:window-height="1029"
+     inkscape:window-x="0"
+     inkscape:window-y="25"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-200.10367,-210.58409)">
+    <path
+       id="rect14635"
+       style="color:#000000;fill:#000000;stroke-linecap:round;-inkscape-stroke:none;paint-order:markers stroke fill"
+       d="m 200.10366,210.58409 v 0.99994 36.7285 h 148.33203 v -37.72844 z m 1.99988,1.99988 h 35.06762 l 13.54905,33.72869 h -48.61667 z m 24.87393,1.39578 -4.86895,6.77633 0.32969,10.51098 -10.06708,3.04168 -4.86844,6.77633 24.46414,-2.97191 z m -12.96407,5.18107 c -1.92033,0.0544 -3.71572,1.00042 -4.84518,2.57246 -1.99221,2.77281 -1.35944,6.63564 1.41335,8.62789 2.77282,1.99221 6.63564,1.35944 8.6279,-1.41335 1.99221,-2.77281 1.35944,-6.63564 -1.41335,-8.62789 -0.99297,-0.71348 -2.17521,-1.11649 -3.39721,-1.15807 -0.12897,-0.004 -0.25748,-0.005 -0.38551,-10e-4 z m 39.55315,1.02475 h 15.95406 v 4.11706 h -5.58726 v 14.44718 h -4.77903 v -14.44718 h -5.58777 z m 21.02714,0 h 7.38921 c 4.11719,0 7.02128,2.3892 7.02128,6.06526 0,2.31592 -1.47089,4.11721 -4.08089,4.85242 v 0.14728 l 5.66115,7.31531 v 0.18397 h -5.66115 l -5.07256,-7.16855 h -0.47801 v 7.16855 h -4.77903 z m 20.58582,0 h 4.77904 v 18.56424 h -4.77904 z m 16.98346,0 h 3.08818 l 8.12405,18.56424 h -5.07307 l -1.25005,-3.27164 h -6.65334 l -1.21337,3.27164 h -5.07307 z m 14.99857,0 h 4.77903 v 14.44666 h 7.24142 v 4.11758 h -12.02045 z m -47.78882,3.93361 v 4.22713 h 2.20555 c 1.32337,0 2.31614,-0.73533 2.31614,-2.09548 0,-1.36013 -1.02931,-2.13165 -2.42621,-2.13165 z m 34.22427,2.53628 -1.91151,5.33042 h 4.08037 l -1.94872,-5.33042 z m -78.86082,4.6085 -2.44068,3.39773 0.89349,4.32945 -4.38888,0.53537 -2.44068,3.39721 11.67061,-0.45424 z m 4.37699,6.67401 -1.53789,2.14096 0.7488,2.60191 -2.70527,0.12092 -1.53789,2.14044 7.40834,0.0129 z"
+       inkscape:label="vertical mixed square"
+       inkscape:export-filename="docs/images/logos/trial vertical mixed square.svg"
+       inkscape:export-xdpi="142.09"
+       inkscape:export-ydpi="142.09" />
+  </g>
+</svg>
