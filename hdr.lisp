@@ -11,21 +11,19 @@
 
 (define-shader-pass tone-mapping-pass (post-effect-pass)
   ((previous-pass :port-type input :texspec (:internal-format :rgba16f))
-   (color :port-type output :attachment :color-attachment0)))
+   (color :port-type output :attachment :color-attachment0)
+   (mapping-method :initarg :mapping-method :initform :hill-aces :accessor mapping-method))
+  (:shader-file (trial "hdr-tone-mapping.glsl")))
 
-(define-class-shader (tone-mapping-pass :fragment-shader)
-  "uniform sampler2D previous_pass;
-in vec2 tex_coord;
-out vec4 color;
-uniform float gamma = 2.2;
-uniform float exposure = 0.5;
-
-void main(){
-  vec4 source = texture(previous_pass, tex_coord);
-  vec3 mapped = vec3(1.0) - exp((-source.rgb) * exposure);
-  mapped = pow(mapped, vec3(1.0 / gamma));
-  color = vec4(mapped, source.a);
-}")
+(defmethod make-class-shader-program ((pass tone-mapping-pass))
+  ;; FIXME: this is pretty tacky. We should have a way to do this more effectively
+  ;;        by just declaring slots properly.
+  (let* ((program (call-next-method))
+         (frag (find :fragment-shader (shaders program) :key #'shader-type)))
+    (setf (shader-source frag) (format NIL "#define TONE_MAP_~a~%~%~a"
+                                       (mapping-method pass)
+                                       (shader-source frag)))
+    program))
 
 (define-shader-pass high-color-pass ()
   ((high-pass :port-type output :texspec (:internal-format :rgba16f)
