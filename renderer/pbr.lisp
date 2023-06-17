@@ -100,10 +100,16 @@
     (setf (uniform program "normal_tex") (local-id (aref textures 3) pass))))
 
 (defmethod prepare-pass-program :after ((pass pbr-render-pass) program)
-  (when (environment pass)
-    (setf (uniform program "irradiance_map") (local-id (irradiance-map (environment pass)) pass))
-    (setf (uniform program "environment_map") (local-id (environment-map (environment pass)) pass))
-    (setf (uniform program "brdf_lut") (local-id (// 'trial 'brdf-lut) pass))))
+  (cond ((environment pass)
+         (setf (uniform program "irradiance_map") (local-id (irradiance-map (environment pass)) pass))
+         (setf (uniform program "environment_map") (local-id (environment-map (environment pass)) pass))
+         (setf (uniform program "brdf_lut") (local-id (// 'trial 'brdf-lut) pass)))
+        (T
+         ;; KLUDGE: Just set them to bogus values to get the AMD driver to shut up.
+         (let ((max (1- (gl:get-integer :max-combined-texture-image-units))))
+           (setf (uniform program "irradiance_map") max)
+           (setf (uniform program "environment_map") max))
+         (setf (uniform program "brdf_lut") 0))))
 
 (defmethod material-block-type ((pass pbr-render-pass))
   'pbr-material-block)
