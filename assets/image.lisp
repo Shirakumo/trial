@@ -87,15 +87,16 @@
 (defmethod generate-resources ((generator image-loader) sources &rest texture-args &key (type T) target swizzle internal-format (resource (resource generator T)) (texture-class 'texture) &allow-other-keys)
   (multiple-value-bind (sources source-swizzle) (normalize-texture-sources (enlist (%load-image sources type)) target)
     (destructuring-bind (width height depth) (texture-sources->texture-size sources)
-      (unwind-protect (apply #'ensure-instance resource texture-class
-                             :sources sources :width width :height height :depth depth :target (or target (texture-sources->target sources))
-                             :internal-format (or internal-format (infer-internal-format (pixel-type (first sources)) (pixel-format (first sources))))
-                             :swizzle (or swizzle source-swizzle (infer-swizzle-format (pixel-format (first sources))))
-                             (remf* texture-args :type :target :swizzle :internal-format :resource :texture-class))
-        ;; FIXME: When do we dispose of the input???
-        #++
-        (dolist (source sources)
-          (deallocate (texture-source-pixel-data source)))))))
+      (apply #'ensure-instance resource texture-class
+             :sources sources :width width :height height :depth depth :target (or target (texture-sources->target sources))
+             :internal-format (or internal-format (infer-internal-format (pixel-type (first sources)) (pixel-format (first sources))))
+             :swizzle (or swizzle source-swizzle (infer-swizzle-format (pixel-format (first sources))))
+             (remf* texture-args :type :target :swizzle :internal-format :resource :texture-class)))))
 
 (defclass image (single-resource-asset file-input-asset image-loader)
   ())
+
+;; FIXME: Once texture loaded, unload sources to free static memory!
+#++
+(defmethod load :after ((image image))
+  (deallocate (sources (resource image T))))

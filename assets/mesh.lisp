@@ -42,11 +42,17 @@
                                         (2 :lines)
                                         (3 :triangles))))))
 
+(defmethod generate-resources ((generator mesh-loader) (data mesh-data) &key (resource (resource generator T)))
+  (make-vertex-array data resource))
+
 (defmethod generate-resources ((generator mesh-loader) (path pathname) &key (format T))
   (let ((meshes (meshes (read-geometry path format))))
     (loop for name being the hash-keys of meshes
           for mesh being the hash-values of meshes
           collect (generate-resources generator mesh :resource (resource generator name)))))
+
+(defmethod generate-resources ((generator mesh-loader) (primitive primitive) &rest args)
+  (apply #'generate-resources generator (coerce-object primitive 'convex-mesh) args))
 
 (defmethod generate-resources ((generator mesh-loader) (primitive convex-mesh) &key (data-usage :static-draw) (resource (resource generator T)))
   (let ((vbo (make-instance 'vertex-buffer :buffer-data (convex-mesh-vertices primitive) :buffer-type :array-buffer

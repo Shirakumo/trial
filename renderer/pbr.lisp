@@ -127,11 +127,6 @@
 (defmethod transfer-to progn ((target standard-light) (light environment-light))
   (setf (light-type target) 250))
 
-(defmethod 3ds:bsize ((light ambient-light))
-  #.(vec most-positive-single-float
-         most-positive-single-float
-         most-positive-single-float))
-
 (defmethod enable :after ((light environment-light) (pass standard-render-pass))
   (enable (irradiance-map light) pass)
   (enable (environment-map light) pass)
