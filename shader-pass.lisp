@@ -167,14 +167,14 @@
                              (list (glsl-toolkit:combine-methods inputs))
                              :min-version (glsl-target-version T))))
                  (push (make-instance 'shader :source input :type type) shaders))))
-    (flet ((add-constants (object shader)
+    (flet ((add-directives (object shader)
              (setf (shader-source shader)
                    (format NIL "~a~%~a"
-                           (glsl-toolkit:serialize (compute-preprocessor-directives object))
+                           (glsl-toolkit:serialize `(glsl-toolkit:shader ,@(compute-preprocessor-directives object)))
                            (shader-source shader)))))
       (dolist (shader shaders)
-        (add-constants pass shader)
-        (add-constants object shader)))
+        (add-directives pass shader)
+        (add-directives object shader)))
     (make-instance 'shader-program
                    :shaders shaders
                    :buffers (delete-duplicates (append (buffers object) (buffers pass))))))

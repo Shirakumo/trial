@@ -344,7 +344,7 @@
                              (slot-value entity name))))))
 
 (defmethod make-class-shader-program ((entity shader-entity))
-  (let ((constants (glsl-toolkit:serialize (compute-preprocessor-directives entity)))
+  (let ((constants (glsl-toolkit:serialize `(glsl-toolkit:shader ,@(compute-preprocessor-directives entity))))
         (program (make-class-shader-program (class-of entity))))
     (dolist (shader (shaders program) program)
       (setf (shader-source shader)
