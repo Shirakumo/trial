@@ -1,0 +1,40 @@
+ # Post Processing
+Many effects can be achieved via mere post-processing on raw pixel data, without any geometry processing at all. Trial offers a simple interface for such effects, the ``post-effect-pass`` and ``simple-post-effect-pass``. A post effect pass is a pass that takes a number of input textures, and outputs a number of output textures, simply running a fragment shader for every output pixel.
+
+The simple version always declares an input port called ``previous-pass`` and an output port called ``color``. Using the port ``texspec`` you can further customise things such as the resolution of the textures, internal format, etc. See "shader passes"(link shader-passes.mess) for more info on that.
+
+Typically you'll then just implement a fragment shader on your class, using the ``uv`` input variable, and the ``color`` output variable.
+
+## Presets
+Trial also ships a number of useful preset post processing passes:
+
+- ``copy-pass``
+  Just copies the texture.
+- ``negative-pass``
+  Negates the colours. Only works on low dynamic range.
+- ``box-blur-pass``
+  Applies a box blur to the image. 
+- ``sobel-pass``
+  Applies a sobel edge detection filter.
+- ``gaussian-blur-pass``
+  Applies a gaussian blur in a single direction.
+- ``radial-blur-pass``
+  Applies a radial blur with a specific origin.
+- ``swirl-pass``
+  Swirl the pixel around the center of a circle.
+- ``fxaa``
+  A very easy-to-use and cheap anti-aliasing pass.
+- ``blend-pass``
+  Blends two images (``a-pass``, ``b-pass``) together using one of many blending methods.
+- ``high-pass-filter``
+  Only keeps pixels with a luminance above the threshold. Others are set to transparent.
+- ``low-pass-filter``
+  Only keeps pixels with a luminance below the threshold. Others are set to transparent.
+- ``chromatic-aberration-filter``
+  Applies a chromatic aberration effect, shifting the three colour channels separately.
+- ``luminance-pass``
+  Outputs a grayscale version based on the color luminance.
+- ``light-scatter-pass``
+  Performs a light scattering effect.
+- ``visualizer-pass``
+  Composes one or more textures (``t[0]``...``t[3]``) together for easier debug viewing.

@@ -12,6 +12,18 @@
   ((color :port-type output :attachment :color-attachment0 :reader color)
    (depth :port-type output :attachment :depth-stencil-attachment :reader depth)))
 
+(define-shader-pass solid-render-pass (render-pass)
+  ((color :port-type output)
+   (fill :initarg :fill :initform (vec 0 0 0 1) :uniform T :accessor fill)))
+
+(define-class-shader (solid-render-pass :fragment-shader)
+  "out vec4 color;
+uniform vec4 fill;
+
+void main(){
+  color = fill;
+}")
+
 (define-shader-pass simple-post-effect-pass (post-effect-pass)
   ((previous-pass :port-type input :reader previous-pass)
    (color :port-type output :reader color)))
@@ -141,18 +153,6 @@ void main(){
 (define-shader-pass luminance-pass (simple-post-effect-pass)
   ((color :texspec (:internal-format :r16f)))
   (:shader-file (trial "luminance.glsl")))
-
-(define-shader-pass solid-render-pass (render-pass)
-  ((color :port-type output)
-   (fill :initarg :fill :initform (vec 0 0 0 1) :uniform T :accessor fill)))
-
-(define-class-shader (solid-render-pass :fragment-shader)
-  "out vec4 color;
-uniform vec4 fill;
-
-void main(){
-  color = fill;
-}")
 
 (define-shader-pass light-scatter-pass (post-effect-pass)
   ((previous-pass :port-type input)
