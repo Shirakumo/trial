@@ -420,7 +420,10 @@
    #:metal-rough-occlusion-texture
    #:emission-texture
    #:normal-texture
-   #:pbr-render-pass)
+   #:pbr-render-pass
+   #:environment-light
+   #:irradiance-map
+   #:environment-map)
   ;; renderer/phong.lisp
   (:export
    #:phong-material
