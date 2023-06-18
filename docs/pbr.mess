@@ -26,3 +26,40 @@ When the light is active in the scene it will provide ambient lighting for all o
 
 [ image images/ibl-1.png ]
 [ image images/ibl-2.png ]
+
+## Tone Mapping
+By default the PBR renderer outputs colour in high dynamic range. This will make it look odd, unless you tone map the colours back into low dynamic range. To do so, you should add an instance of a ``tone-mapping-pass`` subclass and connect it to the ``color`` output of the PBR pass. The following tone mappers are implemented:
+
+- ``hable``
+  - ``shoulder-strength``
+  - ``linear-strength``
+  - ``linear-angle``
+  - ``toe-strength``
+  - ``toe-numerator``
+  - ``toe-denominator``
+  - ``linear-white-point``
+  - ``exposure-bias``
+- ``hill-aces``
+- ``narkowicz-aces``
+- ``reinhard``
+- ``reinhard-extended``
+  - ``c-white``
+- ``schlick``
+  - ``p``
+  - ``hi-val``
+- ``tumblin-rushmeier``
+  - ``luminance-map``
+    This should be connected to a ``luminance-pass``' output, with the luminance-pass' input being the same as the input to this pass.
+  - ``ld-max``
+  - ``c-max``
+- ``uchimura``
+  - ``max-brightness``
+  - ``contrast``
+  - ``linear-start``
+  - ``linear-length``
+  - ``black-tightness-shape``
+  - ``black-tightness-offset``
+- ``ward``
+  - ``ld-max``
+
+All tone mappers also include a ``gamma`` factor that should be adjusted according to the user's screen.
