@@ -1,3 +1,4 @@
+#section FRAGMENT_SHADER
 uniform sampler2D previous_pass;
 in vec2 uv;
 out vec4 color;

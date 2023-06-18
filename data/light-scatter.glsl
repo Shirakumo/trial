@@ -1,3 +1,4 @@
+#section FRAGMENT_SHADER
 uniform float density = 1.0;
 uniform float weight = 0.01;
 uniform float decay = 1.0;
@@ -9,7 +10,6 @@ uniform sampler2D previous_pass;
 
 in vec2 uv;
 out vec4 color;
-
 
 void main(){
   vec4 black_color = vec4(0.0, 0.0, 0.0, 0.0);

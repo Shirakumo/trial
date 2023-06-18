@@ -1,3 +1,4 @@
+#section FRAGMENT_SHADER
 uniform float offset = 3.0;
 uniform sampler2D previous_pass;
 in vec2 uv;

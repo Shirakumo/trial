@@ -78,140 +78,103 @@ void main(){
 }")
 
 (define-shader-pass negative-pass (simple-post-effect-pass)
-  ())
-
-(define-class-shader (negative-pass :fragment-shader)
-  (pool-path 'effects #p"negative.frag"))
-
-(define-shader-pass grayscale-pass (simple-post-effect-pass)
-  ())
-
-(define-class-shader (grayscale-pass :fragment-shader)
-  (pool-path 'effects #p"gray-filter.frag"))
+  ()
+  (:shader-file (trial "negative.glsl")))
 
 (define-shader-pass box-blur-pass (iterative-post-effect-pass)
-  ())
-
-(define-class-shader (box-blur-pass :fragment-shader)
-  (pool-path 'effects #p"box-blur.frag"))
+  ((intensity :initarg :intensity :initform 1.0 :uniform T :accessor intensity))
+  (:shader-file (trial "box-blur.glsl")))
 
 (define-shader-pass sobel-pass (simple-post-effect-pass)
-  ())
-
-(define-class-shader (sobel-pass :fragment-shader)
-  (pool-path 'effects #p"sobel.frag"))
+  ((intensity :initarg :intensity :initform 1.0 :uniform T :accessor intensity))
+  (:shader-file (trial "sobel.glsl")))
 
 (define-shader-pass gaussian-blur-pass (iterative-post-effect-pass)
-  ())
-
-(define-class-shader (gaussian-blur-pass :fragment-shader)
-  (pool-path 'effects #p"gaussian.frag"))
+  ((intensity :initarg :intensity :initform 1.0 :uniform T :accessor intensity)
+   (direction :initarg :direction :initform (vec 1 0) :uniform T :accessor direction))
+  (:shader-file (trial "gaussian.glsl")))
 
 (define-shader-pass radial-blur-pass (iterative-post-effect-pass)
-  ())
+  ((intensity :initarg :intensity :initform 0.2 :uniform T :accessor intensity)
+   (exposure :initarg :exposure :initform 0.8 :uniform T :accessor exposure)
+   (samples :initarg :samples :initform 12 :uniform T :accessor samples)
+   (origin :initarg :origin :initform (vec 0.5 0.5) :uniform T :accessor origin))
+  (:shader-file (trial "radial-blur.glsl")))
 
-(define-class-shader (radial-blur-pass :fragment-shader)
-  (pool-path 'effects #p"radial-blur.frag"))
+(define-shader-pass swirl-pass (simple-post-effect-pass)
+  ((radius :initarg :radius :initform 1000.0 :uniform T :accessor radius)
+   (angle :initarg :angle :initform 0.8 :uniform T :accessor angle))
+  (:shader-file (trial "swirl.glsl")))
 
 (define-shader-pass fxaa-pass (simple-post-effect-pass)
-  ())
-
-(define-class-shader (fxaa-pass :fragment-shader)
-  (pool-path 'effects #p"fxaa.frag"))
+  ()
+  (:shader-file (trial "fxaa.glsl")))
 
 (define-shader-pass blend-pass (post-effect-pass)
   ((a-pass :port-type input)
    (b-pass :port-type input)
-   (color :port-type output :reader color)))
+   (color :port-type output :reader color)
+   (blend-type :initarg :blend-type :initform 0 :uniform T :accessor blend-type))
+  (:shader-file (trial "blend.glsl")))
 
-(define-class-shader (blend-pass :fragment-shader)
-  (pool-path 'effects #p"blend.frag"))
+(defmethod (setf blend-type) ((value symbol) (pass blend-pass))
+  ;; TODO: add more
+  (setf (blend-type pass) (ecase value
+                            (:b-over 0)
+                            (:a-over 1)
+                            (:add 2)
+                            (:subtract 3)
+                            (:multiply 4))))
 
 (define-shader-pass high-pass-filter (simple-post-effect-pass)
-  ())
-
-(define-class-shader (high-pass-filter :fragment-shader)
-  (pool-path 'effects #p"high-pass-filter.frag"))
+  ((threshold :initarg :threshold :initform 1.0 :uniform T :accessor threshold))
+  (:shader-file (trial "high-pass-filter.glsl")))
 
 (define-shader-pass low-pass-filter (simple-post-effect-pass)
-  ())
-
-(define-class-shader (low-pass-filter :fragment-shader)
-  (pool-path 'effects #p"low-pass-filter.frag"))
+  ((threshold :initarg :threshold :initform 2.0 :uniform T :accessor threshold))
+  (:shader-file (trial "low-pass-filter.glsl")))
 
 (define-shader-pass chromatic-aberration-filter (simple-post-effect-pass)
-  ())
-
-(define-class-shader (chromatic-aberration-filter :fragment-shader)
-  (pool-path 'effects #p"aberration.frag"))
+  ((offset :initarg :offset :initform 3.0 :uniform T :accessor offset))
+  (:shader-file (trial "aberration.glsl")))
 
 (define-shader-pass luminance-pass (simple-post-effect-pass)
   ((color :texspec (:internal-format :r16f)))
   (:shader-file (trial "luminance.glsl")))
 
-(define-shader-pass black-render-pass (render-pass)
-  ((color :port-type output)))
+(define-shader-pass solid-render-pass (render-pass)
+  ((color :port-type output)
+   (fill :initarg :fill :initform (vec 0 0 0 1) :uniform T :accessor fill)))
 
-(define-class-shader (black-render-pass :fragment-shader)
+(define-class-shader (solid-render-pass :fragment-shader)
   "out vec4 color;
+uniform vec4 fill;
 
 void main(){
-  color *= vec4(0, 0, 0, 1);
+  color = fill;
 }")
 
 (define-shader-pass light-scatter-pass (post-effect-pass)
   ((previous-pass :port-type input)
    (black-render-pass :port-type input)
-   (color :port-type output)))
-
-(define-class-shader (light-scatter-pass :fragment-shader)
-  (pool-path 'effects #p"light-scatter.frag"))
+   (color :port-type output)
+   (density :initarg :density :initform 1.0 :uniform T :accessor density)
+   (weight :initarg :weight :initform 0.01 :uniform T :accessor weight)
+   (decay :initarg :decay :initform 1.0 :uniform T :accessor decay)
+   (exposure :initarg :exposure :initform 1.2 :uniform T :exposure threshold)
+   (samples :initarg :samples :initform 100 :uniform T :samples threshold)
+   (origin :initarg :origin :initform (vec 0.5 0.5) :uniform T :origin threshold))
+  (:shader-file (trial "light-scatter.glsl")))
 
 (define-shader-pass visualizer-pass (post-effect-pass)
   ((t[0] :port-type input)
    (t[1] :port-type input)
    (t[2] :port-type input)
    (t[3] :port-type input)
-   (color :port-type output :texspec (:internal-format :rgba))))
+   (color :port-type output :texspec (:internal-format :rgba))
+   (textures-per-line :initarg :textures-per-line :initform 1 :uniform T :accessor textures-per-line))
+  (:shader-file (trial "visualizer.glsl")))
 
 (defmethod check-consistent ((pass visualizer-pass))
   ;; Skip consistency checks to allow optional inputs
   T)
-
-(define-class-shader (visualizer-pass :fragment-shader)
-  "out vec4 color;
-in vec2 uv;
-uniform sampler2D t[4];
-uniform int channel_count[4] = int[4](4,4,4,4);
-uniform int textures_per_line = 1;
-
-void main(){
-  // Determine which texture we're currently in.
-  int x = int(mod(uv.x*textures_per_line, textures_per_line));
-  int y = int(mod(uv.y*textures_per_line, textures_per_line));
-  int i = x+y*textures_per_line;
-
-  // Compute texture and local UV
-  vec2 uv = vec2(mod(uv.x, textures_per_line)-float(x)/textures_per_line,
-                 mod(uv.y, textures_per_line)-float(y)/textures_per_line)
-            *textures_per_line;
-
-  // Sample the texture
-  vec4 local = vec4(0);
-  // Apparently we can't index with a dynamic var...
-  switch(i){
-  case 0: local = texture(t[0], uv); break;
-  case 1: local = texture(t[1], uv); break;
-  case 2: local = texture(t[2], uv); break;
-  case 3: local = texture(t[3], uv); break;
-  }
-
-  int channels = channel_count[i];
-  switch(channels){
-  case 0: color = vec4(0); break;
-  case 1: color = vec4(local.r, local.r, local.r, 1); break;
-  case 2: color = vec4(local.rg, 0, 1); break;
-  case 3: color = vec4(local.rgb, 1); break;
-  case 4: color = local; break;
-  }
-}")
