@@ -9,26 +9,6 @@
 (define-shader-pass hdr-output-pass ()
   ((color :port-type output :texspec (:internal-format :rgba16f))))
 
-(define-shader-pass tone-mapping-pass (post-effect-pass)
-  ((previous-pass :port-type input :texspec (:internal-format :rgba16f))
-   (color :port-type output :attachment :color-attachment0)
-   (mapping-method :initarg :mapping-method :initform :hill-aces :accessor mapping-method)
-   (inv-gamma :initarg :inv-gamma :initform (/ 2.2) :accessor inv-gamma :uniform T))
-  (:shader-file (trial "hdr-tone-mapping.glsl")))
-
-(defmethod (setf gamma) (gamma (pass tone-mapping-pass))
-  (setf (inv-gamma pass) (/ gamma)))
-
-(defmethod gamma ((pass tone-mapping-pass))
-  (/ (inv-gamma pass)))
-
-(defmethod effective-shaders ((pass tone-mapping-pass))
-  (let ((path (make-pathname :directory '(:relative "tone-map") :name (string-downcase (mapping-method pass)) :type "glsl"))
-        (effective (copy-list (call-next-method))))
-    (push (resolve-shader-include (list 'trial path))
-          (getf effective :fragment-shader))
-    effective))
-
 (define-shader-pass high-color-pass ()
   ((high-pass :port-type output :texspec (:internal-format :rgba16f)
               :attachment :color-attachment1)))

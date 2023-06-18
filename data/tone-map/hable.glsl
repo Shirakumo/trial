@@ -1,3 +1,4 @@
+#section FRAGMENT_SHADER
 uniform float a,b,c,d,e,f,w;
 uniform float exposure_bias = 2.0;
 

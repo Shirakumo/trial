@@ -1,3 +1,4 @@
+#section FRAGMENT_SHADER
 uniform float m_m,a,m,l,c,b;
 
 vec3 tone_map(vec3 color){

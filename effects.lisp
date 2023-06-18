@@ -145,6 +145,10 @@ void main(){
 (define-class-shader (chromatic-aberration-filter :fragment-shader)
   (pool-path 'effects #p"aberration.frag"))
 
+(define-shader-pass luminance-pass (simple-post-effect-pass)
+  ((color :texspec (:internal-format :r16f)))
+  (:shader-file (trial "luminance.glsl")))
+
 (define-shader-pass black-render-pass (render-pass)
   ((color :port-type output)))
 

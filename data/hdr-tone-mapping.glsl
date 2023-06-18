@@ -1,6 +1,7 @@
 #section FRAGMENT_SHADER
 uniform sampler2D previous_pass;
 uniform float inv_gamma;
+in vec2 uv;
 out vec4 color;
 
 float color_luminance(vec3 color){

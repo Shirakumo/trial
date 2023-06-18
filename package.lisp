@@ -453,6 +453,40 @@
    #:single-material-renderable
    #:material
    #:light-cache-render-pass)
+  ;; renderer/tone-mapping.lisp
+  (:export
+   #:tone-mapping-pass
+   #:gamma
+   #:hable
+   #:shoulder-strength
+   #:linear-strength
+   #:linear-angle
+   #:toe-strength
+   #:toe-numerator
+   #:toe-denominator
+   #:linear-white-point
+   #:exposure-bias
+   #:hill-aces
+   #:narkowicz-aces
+   #:reinhard
+   #:reinhard-extended
+   #:c-white
+   #:schlick
+   #:p
+   #:hi-val
+   #:tumblin-rushmeier
+   #:luminance-map
+   #:ld-max
+   #:c-max
+   #:uchimura
+   #:max-rightness
+   #:contrast
+   #:linear-start
+   #:linear-length
+   #:black-tightness-shape
+   #:black-tightness-offset
+   #:ward
+   #:ld-max)
   ;; resources/buffer-object.lisp
   (:export
    #:buffer-object
@@ -1030,7 +1064,6 @@
   ;; hdr.lisp
   (:export
    #:hdr-output-pass
-   #:tone-mapping-pass
    #:high-color-pass
    #:bloom-pass
    #:high-pass)

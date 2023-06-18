@@ -1,5 +1,6 @@
+#section FRAGMENT_SHADER
 uniform sampler2D luminance_map;
-uniform float ld_map, c_max;
+uniform float ld_max, c_max;
 
 vec3 tone_map(vec3 color){
   float l_in = color_luminance(color);

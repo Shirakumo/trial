@@ -1,3 +1,4 @@
+#section FRAGMENT_SHADER
 const mat3 aces_input_mat = mat3(0.59719, 0.35458, 0.04823,
                                  0.07600, 0.90834, 0.01566,
                                  0.02840, 0.13383, 0.83777);

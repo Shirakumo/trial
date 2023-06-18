@@ -119,7 +119,8 @@
                              (:file "pbr" :depends-on ("standard-renderer" "shadow-map" (:.. "assets")))
                              (:file "phong" :depends-on ("standard-renderer" "shadow-map"))
                              (:file "shadow-map" :depends-on ("standard-renderer"))
-                             (:file "standard-renderer" :depends-on ("lights" "materials"))))
+                             (:file "standard-renderer" :depends-on ("lights" "materials"))
+                             (:file "tone-mapping")))
                (:module "resources"
                 :depends-on ("package" "resource" "toolkit" "data-pointer")
                 :components ((:file "buffer-object")
