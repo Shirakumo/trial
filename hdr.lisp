@@ -9,16 +9,23 @@
 (define-shader-pass hdr-output-pass ()
   ((color :port-type output :texspec (:internal-format :rgba16f))))
 
-(define-shader-pass tone-mapping-pass (simple-post-effect-pass)
+(define-shader-pass tone-mapping-pass (post-effect-pass)
   ((previous-pass :port-type input :texspec (:internal-format :rgba16f))
    (color :port-type output :attachment :color-attachment0)
    (mapping-method :initarg :mapping-method :initform :hill-aces :accessor mapping-method))
   (:shader-file (trial "hdr-tone-mapping.glsl")))
 
-(defmethod compute-preprocessor-directives ((pass tone-mapping-pass))
-  (list* `(glsl-toolkit:preprocessor-directive
-           ,(format NIL "#define TONE_MAP_~a 1" (symbol->c-name (mapping-method pass))))
-         (call-next-method)))
+(defmethod make-class-shader-program ((pass tone-mapping-pass))
+  ;; FIXME: this is pretty tacky. We should have a way to do this more effectively
+  ;;        by just declaring slots properly.
+  (let* ((program (call-next-method))
+         (frag (find :fragment-shader (shaders program) :key #'shader-type))
+         (path (make-pathname :directory '(:relative "tone-map") :name (string-downcase (mapping-method pass)) :type "glsl"))
+         (shader (resolve-shader-include (list 'trial path))))
+    (setf (shader-source frag) (format NIL "~a~%~a"
+                                       (shader-source frag)
+                                       (glsl-toolkit:serialize shader)))
+    program))
 
 (define-shader-pass high-color-pass ()
   ((high-pass :port-type output :texspec (:internal-format :rgba16f)
