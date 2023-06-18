@@ -167,6 +167,14 @@
                              (list (glsl-toolkit:combine-methods inputs))
                              :min-version (glsl-target-version T))))
                  (push (make-instance 'shader :source input :type type) shaders))))
+    (flet ((add-constants (object shader)
+             (setf (shader-source shader)
+                   (format NIL "~a~%~a"
+                           (glsl-toolkit:serialize (compute-preprocessor-directives object))
+                           (shader-source shader)))))
+      (dolist (shader shaders)
+        (add-constants pass shader)
+        (add-constants object shader)))
     (make-instance 'shader-program
                    :shaders shaders
                    :buffers (delete-duplicates (append (buffers object) (buffers pass))))))
@@ -201,13 +209,16 @@
 (defmethod height ((pass shader-pass))
   (height (framebuffer pass)))
 
-(defmacro define-shader-pass (&environment env name direct-superclasses direct-slots &rest options)
+(defmacro define-shader-pass (name direct-superclasses direct-slots &rest options)
   (setf direct-superclasses (append direct-superclasses (list 'shader-pass)))
   (unless (find :metaclass options :key #'car)
     (push '(:metaclass shader-pass-class) options))
-  `(defclass ,name ,direct-superclasses
-     ,direct-slots
-     ,@options))
+  `(progn (defclass ,name ,direct-superclasses
+            ,direct-slots
+            ,@options)
+          ,@(when (loop for slot in direct-slots
+                        thereis (and (listp slot) (getf (rest slot) :uniform)))
+              `((define-update-uniforms ,name)))))
 
 (defmethod prepare-pass-program ((pass shader-pass) program)
   (activate program)

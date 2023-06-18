@@ -31,8 +31,29 @@
       ((or string pathname)
        (resolve-shader-include (pool-path pool name))))))
 
+(defclass constant-slot-definition ()
+  ((constant-name :initarg :constant :initform NIL :accessor constant-name)))
+
+(defmethod shared-initialize :after ((definition constant-slot-definition) slots &key constant)
+  (when (eql T constant)
+    (setf (constant-name definition) (string-upcase (symbol->c-name (c2mop:slot-definition-name definition))))))
+
+(defmethod print-object ((slotdef constant-slot-definition) stream)
+  (print-unreadable-object (slotdef stream :type T)
+    (format stream "~s ~s" (c2mop:slot-definition-name slotdef) (constant-name slotdef))))
+
+(defclass direct-constant-slot-definition (constant-slot-definition c2mop:standard-direct-slot-definition)
+  ())
+
+(defclass effective-constant-slot-definition (constant-slot-definition c2mop:standard-effective-slot-definition)
+  ())
+
 (defclass uniform-slot-definition ()
   ((uniform-name :initarg :uniform :initform NIL :accessor uniform-name)))
+
+(defmethod shared-initialize :after ((definition uniform-slot-definition) slots &key uniform)
+  (when (eql T uniform)
+    (setf (uniform-name definition) (symbol->c-name (c2mop:slot-definition-name definition)))))
 
 (defmethod print-object ((slotdef uniform-slot-definition) stream)
   (print-unreadable-object (slotdef stream :type T)
@@ -40,10 +61,6 @@
 
 (defclass direct-uniform-slot-definition (uniform-slot-definition c2mop:standard-direct-slot-definition)
   ())
-
-(defmethod shared-initialize :after ((definition direct-uniform-slot-definition) slots &key uniform)
-  (when (eql T uniform)
-    (setf (uniform-name definition) (symbol->c-name (c2mop:slot-definition-name definition)))))
 
 (defclass effective-uniform-slot-definition (uniform-slot-definition c2mop:standard-effective-slot-definition)
   ())
@@ -98,15 +115,33 @@
   (let ((initargs (compute-effective-slot-definition-initargs direct-slots))
         (uniform (loop for direct in direct-slots
                        thereis (when (typep direct 'uniform-slot-definition)
-                                 (uniform-name direct)))))
+                                 (uniform-name direct))))
+        (constant (loop for direct in direct-slots
+                        thereis (when (typep direct 'constant-slot-definition)
+                                  (constant-name direct)))))
     (when uniform (setf initargs (list* :uniform uniform initargs)))
+    (when constant (setf initargs (list* :constant constant initargs)))
     (apply #'make-instance (apply #'c2mop:effective-slot-definition-class class initargs) initargs)))
 
-(defmethod c2mop:direct-slot-definition-class ((class shader-entity-class) &key uniform)
-  (if uniform 'direct-uniform-slot-definition (call-next-method)))
+(defmethod c2mop:direct-slot-definition-class ((class shader-entity-class) &key name uniform constant)
+  (cond ((and uniform constant)
+         (error "Slot ~s cannot be constant and uniform at the same time." name))
+        (uniform
+         'direct-uniform-slot-definition)
+        (constant
+         'direct-constant-slot-definition)
+        (T
+         (call-next-method))))
 
-(defmethod c2mop:effective-slot-definition-class ((class shader-entity-class) &key uniform)
-  (if uniform 'effective-uniform-slot-definition (call-next-method)))
+(defmethod c2mop:effective-slot-definition-class ((class shader-entity-class) &key name uniform constant)
+  (cond ((and uniform constant)
+         (error "Slot ~s cannot be constant and uniform at the same time." name))
+        (uniform
+         'effective-uniform-slot-definition)
+        (constant
+         'effective-constant-slot-definition)
+        (T
+         (call-next-method))))
 
 (defmethod compute-effective-shaders ((class shader-entity-class))
   (let ((effective-shaders ())
@@ -139,6 +174,7 @@
     (loop for (type shaders) on effective-shaders by #'cddr
           do (setf (getf effective-shaders type)
                    (mapcar #'second (stable-sort shaders #'> :key #'first))))
+    ;; Add constant slot definitions
     effective-shaders))
 
 (defmethod compute-effective-buffers ((class shader-entity-class))
@@ -297,8 +333,22 @@
 (defmethod effective-shader-class ((object shader-entity))
   (effective-shader-class (class-of object)))
 
+(defmethod compute-preprocessor-directives ((entity shader-entity))
+  (loop for slot in (c2mop:class-slots (class-of entity))
+        for name = (c2mop:slot-definition-name slot)
+        when (typep slot 'constant-slot-definition)
+        collect `(glsl-toolkit:preprocessor-directive
+                  ,(format NIL "#define ~a~@[ ~a~]"
+                           (constant-name slot)
+                           (when (slot-boundp entity name)
+                             (slot-value entity name))))))
+
 (defmethod make-class-shader-program ((entity shader-entity))
-  (make-class-shader-program (class-of entity)))
+  (let ((constants (glsl-toolkit:serialize (compute-preprocessor-directives entity)))
+        (program (make-class-shader-program (class-of entity))))
+    (dolist (shader (shaders program) program)
+      (setf (shader-source shader)
+            (format NIL "~a~%~a" constants (shader-source shader))))))
 
 (defmethod buffers ((object shader-entity))
   (buffers (class-of object)))
@@ -322,8 +372,8 @@
             ,direct-slots
             ,@options)
           ,@(when (loop for slot in direct-slots
-                        thereis (getf slot :uniform))
-              `((define-update-uniforms ',name)))))
+                        thereis (and (listp slot) (getf (rest slot) :uniform)))
+              `((define-update-uniforms ,name)))))
 
 (define-class-shader (shader-entity :fragment-shader)
   "
