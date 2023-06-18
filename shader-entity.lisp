@@ -31,6 +31,23 @@
       ((or string pathname)
        (resolve-shader-include (pool-path pool name))))))
 
+(defclass uniform-slot-definition ()
+  ((uniform-name :initarg :uniform :initform NIL :accessor uniform-name)))
+
+(defmethod print-object ((slotdef uniform-slot-definition) stream)
+  (print-unreadable-object (slotdef stream :type T)
+    (format stream "~s ~s" (c2mop:slot-definition-name slotdef) (uniform-name slotdef))))
+
+(defclass direct-uniform-slot-definition (uniform-slot-definition c2mop:standard-direct-slot-definition)
+  ())
+
+(defmethod shared-initialize :after ((definition direct-uniform-slot-definition) slots &key uniform)
+  (when (eql T uniform)
+    (setf (uniform-name definition) (symbol->c-name (c2mop:slot-definition-name definition)))))
+
+(defclass effective-uniform-slot-definition (uniform-slot-definition c2mop:standard-effective-slot-definition)
+  ())
+
 (defclass shader-entity-class (standard-class)
   ((effective-shaders :initform () :accessor effective-shaders)
    (direct-shaders :initform () :initarg :shaders :accessor direct-shaders)
@@ -57,6 +74,39 @@
       (let ((*default-pathname-defaults* (pool-path pool path)))
         (loop for (type source) on (glsl-toolkit:preprocess *default-pathname-defaults* :include-resolution #'resolve-shader-include) by #'cddr
               do (setf (getf (direct-shaders class) type) (list 0 source)))))))
+
+;; SIGH. Why oh why do we have to replicate this shit just to customise the effective slot definition
+;; class conditionally.
+(defun compute-effective-slot-definition-initargs (direct-slotds)
+  (let ((args (list :name (c2mop:slot-definition-name (first direct-slotds)) :type T))
+        (_ '#:no-value))
+    (dolist (slotd direct-slotds args)
+      (when slotd
+        (when (and (eq _ (getf args :initfunction _)) (c2mop:slot-definition-initfunction slotd))
+          (setf (getf args :initfunction) (c2mop:slot-definition-initfunction slotd))
+          (setf (getf args :initform) (c2mop:slot-definition-initform slotd)))
+        (when (and (eq _ (getf args :documentation _)) (documentation slotd T))
+          (setf (getf args :documentation) (documentation slotd T)))
+        (when (and (eq _ (getf args :allocation _)) (c2mop:slot-definition-allocation slotd))
+          (setf (getf args :allocation) (c2mop:slot-definition-allocation slotd)))
+        (setf (getf args :initargs) (union (getf args :initargs) (c2mop:slot-definition-initargs slotd)))
+        (let ((slotd-type (c2mop:slot-definition-type slotd)))
+          (setf (getf args :type) (cond ((eq (getf args :type) T) slotd-type)
+                                        (T `(and ,slotd-type ,(getf args :type))))))))))
+
+(defmethod c2mop:compute-effective-slot-definition ((class shader-entity-class) name direct-slots)
+  (let ((initargs (compute-effective-slot-definition-initargs direct-slots))
+        (uniform (loop for direct in direct-slots
+                       thereis (when (typep direct 'uniform-slot-definition)
+                                 (uniform-name direct)))))
+    (when uniform (setf initargs (list* :uniform uniform initargs)))
+    (apply #'make-instance (apply #'c2mop:effective-slot-definition-class class initargs) initargs)))
+
+(defmethod c2mop:direct-slot-definition-class ((class shader-entity-class) &key uniform)
+  (if uniform 'direct-uniform-slot-definition (call-next-method)))
+
+(defmethod c2mop:effective-slot-definition-class ((class shader-entity-class) &key uniform)
+  (if uniform 'effective-uniform-slot-definition (call-next-method)))
 
 (defmethod compute-effective-shaders ((class shader-entity-class))
   (let ((effective-shaders ())
@@ -253,13 +303,27 @@
 (defmethod buffers ((object shader-entity))
   (buffers (class-of object)))
 
-(defmacro define-shader-entity (&environment env name direct-superclasses direct-slots &rest options)
+(defmethod update-uniforms ((object shader-entity) program))
+
+(defmacro define-update-uniforms (class-name)
+  (let ((class (find-class class-name)))
+    (c2mop:ensure-finalized class)
+    `(defmethod update-uniforms ((object ,class-name) program)
+       ,@(loop for slot in (c2mop:class-slots class)
+               when (typep slot 'uniform-slot-definition)
+               collect `(setf (uniform program ,(uniform-name slot))
+                              (c2mop:standard-instance-access object ,(c2mop:slot-definition-location slot)))))))
+
+(defmacro define-shader-entity (name direct-superclasses direct-slots &rest options)
   (setf direct-superclasses (append direct-superclasses (list 'shader-entity)))
   (unless (find :metaclass options :key #'first)
     (push '(:metaclass shader-entity-class) options))
-  `(defclass ,name ,direct-superclasses
-     ,direct-slots
-     ,@options))
+  `(progn (defclass ,name ,direct-superclasses
+            ,direct-slots
+            ,@options)
+          ,@(when (loop for slot in direct-slots
+                        thereis (getf slot :uniform))
+              `((define-update-uniforms ',name)))))
 
 (define-class-shader (shader-entity :fragment-shader)
   "
@@ -283,6 +347,7 @@ void main(){
 (defmethod render ((entity standalone-shader-entity) target)
   (let ((program (shader-program entity)))
     (activate program)
+    (update-uniforms entity program)
     (bind-textures entity)
     (render entity program)))
 

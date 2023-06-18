@@ -128,7 +128,6 @@
 (defgeneric bind-textures (object))
 (defgeneric object-renderable-p (object pass))
 (defgeneric compute-shader (shader-type pass object))
-(defgeneric update-uniforms (program pass object))
 
 (defmethod object-renderable-p (object (pass shader-pass)) NIL)
 (defmethod object-renderable-p ((renderable renderable) (pass shader-pass)) T)
@@ -212,6 +211,7 @@
 
 (defmethod prepare-pass-program ((pass shader-pass) program)
   (activate program)
+  (update-uniforms pass program)
   (loop for slot in (c2mop:class-slots (class-of pass))
         when (flow:port-type slot)
         do (let ((port (flow::port-slot-value pass slot)))
@@ -408,6 +408,7 @@
         (with-unwind-protection (pop-matrix)
           (apply-transforms object)
           (bind-textures object)
+          (update-uniforms object program)
           (render object program)))
     #-kandria-release
     (leave ()

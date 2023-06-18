@@ -1336,6 +1336,7 @@
    #:effective-shader-class
    #:compute-effective-shader-class
    #:standalone-shader-entity
+   #:update-uniforms
    #:shader-program
    #:dynamic-shader-entity)
   ;; shader-pass.lisp
