@@ -119,9 +119,16 @@
         (constant (loop for direct in direct-slots
                         thereis (when (typep direct 'constant-slot-definition)
                                   (constant-name direct)))))
-    (when uniform (setf initargs (list* :uniform uniform initargs)))
-    (when constant (setf initargs (list* :constant constant initargs)))
-    (apply #'make-instance (apply #'c2mop:effective-slot-definition-class class initargs) initargs)))
+    (cond ((and uniform constant)
+           (error "Slot ~s cannot be constant and uniform at the same time." name))
+          (uniform
+           (setf initargs (list* :uniform uniform initargs))
+           (apply #'make-instance (apply #'c2mop:effective-slot-definition-class class initargs) initargs))
+          (constant
+           (setf initargs (list* :constant constant initargs))
+           (apply #'make-instance (apply #'c2mop:effective-slot-definition-class class initargs) initargs))
+          (T
+           (call-next-method)))))
 
 (defmethod c2mop:direct-slot-definition-class ((class shader-entity-class) &key name uniform constant)
   (cond ((and uniform constant)
@@ -344,11 +351,15 @@
                              (slot-value entity name))))))
 
 (defmethod make-class-shader-program ((entity shader-entity))
-  (let ((constants (glsl-toolkit:serialize `(glsl-toolkit:shader ,@(compute-preprocessor-directives entity))))
-        (program (make-class-shader-program (class-of entity))))
-    (dolist (shader (shaders program) program)
-      (setf (shader-source shader)
-            (format NIL "~a~%~a" constants (shader-source shader))))))
+  (make-instance 'shader-program
+                 :shaders (loop with constants = `(glsl-toolkit:shader ,@(compute-preprocessor-directives entity))
+                                for (type source) on (effective-shaders entity) by #'cddr
+                                for processed = (glsl-toolkit:merge-shader-sources
+                                                 (list constants (glsl-toolkit:combine-methods source))
+                                                 :min-version (glsl-target-version T))
+                                collect (make-instance 'shader :source processed :type type))
+                 :buffers (loop for resource-spec in (effective-buffers entity)
+                                collect (apply #'// resource-spec))))
 
 (defmethod buffers ((object shader-entity))
   (buffers (class-of object)))

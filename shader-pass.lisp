@@ -159,22 +159,18 @@
 
 (defmethod make-pass-shader-program ((pass shader-pass) object)
   ;; TODO: alias program against identical programs
-  (let ((shaders ()))
+  (let ((shaders ())
+        (directives (append (compute-preprocessor-directives pass)
+                            (when (typep object 'shader-entity)
+                              (compute-preprocessor-directives object)))))
     (loop for type in *shader-type-list*
           for inputs = (compute-shader type pass object)
           do (when inputs
                (let ((input (glsl-toolkit:merge-shader-sources
-                             (list (glsl-toolkit:combine-methods inputs))
+                             (list `(glsl-toolkit:shader ,@directives)
+                                   (glsl-toolkit:combine-methods inputs))
                              :min-version (glsl-target-version T))))
                  (push (make-instance 'shader :source input :type type) shaders))))
-    (flet ((add-directives (object shader)
-             (setf (shader-source shader)
-                   (format NIL "~a~%~a"
-                           (glsl-toolkit:serialize `(glsl-toolkit:shader ,@(compute-preprocessor-directives object)))
-                           (shader-source shader)))))
-      (dolist (shader shaders)
-        (add-directives pass shader)
-        (add-directives object shader)))
     (make-instance 'shader-program
                    :shaders shaders
                    :buffers (delete-duplicates (append (buffers object) (buffers pass))))))

@@ -81,7 +81,4 @@ void standard_finish(){
   color.w = albedo.w;
   if(color.w < material.alpha_cutoff)
     discard;
-  // FIXME: better tone mapping, configurable gamma
-  color.xyz = color.xyz / (color.xyz + vec3(1.0));
-  color.xyz = pow(color.xyz, vec3(1.0/2.2));
 }
