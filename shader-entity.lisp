@@ -364,27 +364,20 @@
 (defmethod buffers ((object shader-entity))
   (buffers (class-of object)))
 
-(defmethod update-uniforms ((object shader-entity) program))
-
-(defmacro define-update-uniforms (class-name)
-  (let ((class (find-class class-name)))
-    (c2mop:ensure-finalized class)
-    `(defmethod update-uniforms ((object ,class-name) program)
-       ,@(loop for slot in (c2mop:class-slots class)
-               when (typep slot 'uniform-slot-definition)
-               collect `(setf (uniform program ,(uniform-name slot))
-                              (c2mop:standard-instance-access object ,(c2mop:slot-definition-location slot)))))))
+(defmethod update-uniforms ((object shader-entity) program)
+  ;; TODO: this is slow. We *could* COMPILE on finalize-inheritance, but that would be ugly.
+  (loop for slot in (c2mop:class-slots (class-of object))
+        when (typep slot 'uniform-slot-definition)
+        do (setf (uniform program (uniform-name slot))
+                 (c2mop:standard-instance-access object (c2mop:slot-definition-location slot)))))
 
 (defmacro define-shader-entity (name direct-superclasses direct-slots &rest options)
   (setf direct-superclasses (append direct-superclasses (list 'shader-entity)))
   (unless (find :metaclass options :key #'first)
     (push '(:metaclass shader-entity-class) options))
-  `(progn (defclass ,name ,direct-superclasses
-            ,direct-slots
-            ,@options)
-          ,@(when (loop for slot in direct-slots
-                        thereis (and (listp slot) (getf (rest slot) :uniform)))
-              `((define-update-uniforms ,name)))))
+  `(defclass ,name ,direct-superclasses
+     ,direct-slots
+     ,@options))
 
 (define-class-shader (shader-entity :fragment-shader)
   "

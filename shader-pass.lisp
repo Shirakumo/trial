@@ -209,12 +209,9 @@
   (setf direct-superclasses (append direct-superclasses (list 'shader-pass)))
   (unless (find :metaclass options :key #'car)
     (push '(:metaclass shader-pass-class) options))
-  `(progn (defclass ,name ,direct-superclasses
-            ,direct-slots
-            ,@options)
-          ,@(when (loop for slot in direct-slots
-                        thereis (and (listp slot) (getf (rest slot) :uniform)))
-              `((define-update-uniforms ,name)))))
+  `(defclass ,name ,direct-superclasses
+     ,direct-slots
+     ,@options))
 
 (defmethod prepare-pass-program ((pass shader-pass) program)
   (activate program)
