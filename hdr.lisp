@@ -12,20 +12,22 @@
 (define-shader-pass tone-mapping-pass (post-effect-pass)
   ((previous-pass :port-type input :texspec (:internal-format :rgba16f))
    (color :port-type output :attachment :color-attachment0)
-   (mapping-method :initarg :mapping-method :initform :hill-aces :accessor mapping-method))
+   (mapping-method :initarg :mapping-method :initform :hill-aces :accessor mapping-method)
+   (inv-gamma :initarg :inv-gamma :initform (/ 2.2) :accessor inv-gamma :uniform T))
   (:shader-file (trial "hdr-tone-mapping.glsl")))
 
-(defmethod make-class-shader-program ((pass tone-mapping-pass))
-  ;; FIXME: this is pretty tacky. We should have a way to do this more effectively
-  ;;        by just declaring slots properly.
-  (let* ((program (call-next-method))
-         (frag (find :fragment-shader (shaders program) :key #'shader-type))
-         (path (make-pathname :directory '(:relative "tone-map") :name (string-downcase (mapping-method pass)) :type "glsl"))
-         (shader (resolve-shader-include (list 'trial path))))
-    (setf (shader-source frag) (format NIL "~a~%~a"
-                                       (shader-source frag)
-                                       (glsl-toolkit:serialize shader)))
-    program))
+(defmethod (setf gamma) (gamma (pass tone-mapping-pass))
+  (setf (inv-gamma pass) (/ gamma)))
+
+(defmethod gamma ((pass tone-mapping-pass))
+  (/ (inv-gamma pass)))
+
+(defmethod effective-shaders ((pass tone-mapping-pass))
+  (let ((path (make-pathname :directory '(:relative "tone-map") :name (string-downcase (mapping-method pass)) :type "glsl"))
+        (effective (copy-list (call-next-method))))
+    (push (resolve-shader-include (list 'trial path))
+          (getf effective :fragment-shader))
+    effective))
 
 (define-shader-pass high-color-pass ()
   ((high-pass :port-type output :texspec (:internal-format :rgba16f)
