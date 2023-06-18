@@ -31,6 +31,7 @@ When the light is active in the scene it will provide ambient lighting for all o
 By default the PBR renderer outputs colour in high dynamic range. This will make it look odd, unless you tone map the colours back into low dynamic range. To do so, you should add an instance of a ``tone-mapping-pass`` subclass and connect it to the ``color`` output of the PBR pass. The following tone mappers are implemented:
 
 - ``hable``
+  Accepts the following tuning parameters:
   - ``shoulder-strength``
   - ``linear-strength``
   - ``linear-angle``
@@ -43,16 +44,20 @@ By default the PBR renderer outputs colour in high dynamic range. This will make
 - ``narkowicz-aces``
 - ``reinhard``
 - ``reinhard-extended``
+  Accepts the following tuning parameters:
   - ``c-white``
 - ``schlick``
+  Accepts the following tuning parameters:
   - ``p``
   - ``hi-val``
 - ``tumblin-rushmeier``
+  Accepts the following tuning parameters:
   - ``luminance-map``
     This should be connected to a ``luminance-pass``' output, with the luminance-pass' input being the same as the input to this pass.
   - ``ld-max``
   - ``c-max``
 - ``uchimura``
+  Accepts the following tuning parameters:
   - ``max-brightness``
   - ``contrast``
   - ``linear-start``
@@ -60,6 +65,7 @@ By default the PBR renderer outputs colour in high dynamic range. This will make
   - ``black-tightness-shape``
   - ``black-tightness-offset``
 - ``ward``
+  Accepts the following tuning parameters:
   - ``ld-max``
 
 All tone mappers also include a ``gamma`` factor that should be adjusted according to the user's screen.
