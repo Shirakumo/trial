@@ -1,5 +1,5 @@
 out vec4 color;
-in vec2 tex_coord;
+in vec2 uv;
 
 uniform sampler2D position_map;
 uniform sampler2D normal_map;
@@ -16,9 +16,9 @@ uniform float bias = 5;
 void main(){
   vec2 noiseScale = viewport_size / 4.0;
   // get input for SSAO algorithm
-  vec3 fragPos = texture(position_map, tex_coord).xyz;
-  vec3 normal = texture(normal_map, tex_coord).rgb;
-  vec3 randomVec = normalize(texture(noise_map, tex_coord * noiseScale).xyz);
+  vec3 fragPos = texture(position_map, uv).xyz;
+  vec3 normal = texture(normal_map, uv).rgb;
+  vec3 randomVec = normalize(texture(noise_map, uv * noiseScale).xyz);
   // bring into view space
   fragPos = vec3(view_matrix * vec4(fragPos, 1));
   normal = normalize(transpose(inverse(mat3(view_matrix))) * normal);

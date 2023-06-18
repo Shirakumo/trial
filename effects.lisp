@@ -70,11 +70,11 @@
 (define-class-shader (copy-pass :fragment-shader)
   "
 uniform sampler2D previous_pass;
-in vec2 tex_coord;
+in vec2 uv;
 out vec4 color;
 
 void main(){
-  color = texture(previous_pass, tex_coord);
+  color = texture(previous_pass, uv);
 }")
 
 (define-shader-pass negative-pass (simple-post-effect-pass)
@@ -176,20 +176,20 @@ void main(){
 
 (define-class-shader (visualizer-pass :fragment-shader)
   "out vec4 color;
-in vec2 tex_coord;
+in vec2 uv;
 uniform sampler2D t[4];
 uniform int channel_count[4] = int[4](4,4,4,4);
 uniform int textures_per_line = 1;
 
 void main(){
   // Determine which texture we're currently in.
-  int x = int(mod(tex_coord.x*textures_per_line, textures_per_line));
-  int y = int(mod(tex_coord.y*textures_per_line, textures_per_line));
+  int x = int(mod(uv.x*textures_per_line, textures_per_line));
+  int y = int(mod(uv.y*textures_per_line, textures_per_line));
   int i = x+y*textures_per_line;
 
   // Compute texture and local UV
-  vec2 uv = vec2(mod(tex_coord.x, textures_per_line)-float(x)/textures_per_line,
-                 mod(tex_coord.y, textures_per_line)-float(y)/textures_per_line)
+  vec2 uv = vec2(mod(uv.x, textures_per_line)-float(x)/textures_per_line,
+                 mod(uv.y, textures_per_line)-float(y)/textures_per_line)
             *textures_per_line;
 
   // Sample the texture

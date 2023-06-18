@@ -55,14 +55,14 @@ void main(){
 (define-class-shader (bloom-pass :fragment-shader)
   "uniform sampler2D previous_pass;
 uniform sampler2D high_pass;
-in vec2 tex_coord;
+in vec2 uv;
 out vec4 color;
 uniform float gamma = 2.2;
 uniform float exposure = 0.75;
 
 void main(){
-  vec4 source = texture(previous_pass, tex_coord);
-  vec4 bloom = texture(high_pass, tex_coord);
+  vec4 source = texture(previous_pass, uv);
+  vec4 bloom = texture(high_pass, uv);
   vec3 hdr = source.rgb + bloom.rgb;
   vec3 mapped = vec3(1.0) - exp((-hdr) * exposure);
   mapped = pow(mapped, vec3(1.0 / gamma));

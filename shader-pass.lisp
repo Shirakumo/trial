@@ -471,17 +471,17 @@
 (define-class-shader (post-effect-pass :vertex-shader)
   "
 layout (location = 0) in vec3 position;
-layout (location = 1) in vec2 in_tex_coord;
-out vec2 tex_coord;
+layout (location = 2) in vec2 in_uv;
+out vec2 uv;
 
 void main(){
   gl_Position = vec4(position, 1.0f);
-  tex_coord = in_tex_coord;
+  uv = in_uv;
 }")
 
 (define-class-shader (post-effect-pass :fragment-shader)
   "
-in vec2 tex_coord;")
+in vec2 uv;")
 
 (define-shader-pass sample-reduction-pass (post-effect-pass)
   ((previous-pass :port-type input :texspec (:target :texture-2d-multisample))
@@ -489,9 +489,9 @@ in vec2 tex_coord;")
 
 (define-class-shader (sample-reduction-pass :fragment-shader)
   "uniform sampler2DMS previous_pass;
-in vec2 tex_coord;
+in vec2 uv;
 out vec4 color;
 
 void main(){
-  color = texture(previous_pass, tex_coord);
+  color = texture(previous_pass, uv);
 }")

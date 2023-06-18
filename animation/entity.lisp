@@ -237,7 +237,7 @@
   "
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 in_normal;
-layout (location = 2) in vec2 in_texcoord;
+layout (location = 2) in vec2 in_uv;
 layout (location = 3) in vec4 joints;
 layout (location = 4) in vec4 weights;
 
@@ -249,7 +249,7 @@ uniform mat4 pose[100];
 
 out vec3 normal;
 out vec4 world_pos;
-out vec2 texcoord;
+out vec2 uv;
 
 void main(){
   ivec4 j = ivec4(joints);
@@ -259,7 +259,7 @@ void main(){
                    + (pose[j.w] * weights.w);
   world_pos = model_matrix * skin_matrix * vec4(position, 1.0f);
   normal = vec3(model_matrix * skin_matrix * vec4(in_normal, 0.0f));
-  texcoord = in_texcoord;
+  uv = in_uv;
   gl_Position = projection_matrix * view_matrix * world_pos;
 }")
 
@@ -277,7 +277,7 @@ void main(){
   "
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 in_normal;
-layout (location = 2) in vec2 in_texcoord;
+layout (location = 2) in vec2 in_uv;
 layout (location = 3) in vec4 joints;
 layout (location = 4) in vec4 weights;
 
@@ -289,7 +289,7 @@ uniform mat2x4 pose[120];
 
 out vec3 normal;
 out vec4 world_pos;
-out vec2 texcoord;
+out vec2 uv;
 
 vec4 quat_mul(vec4 q1, vec4 q2){
   return vec4(q2.x*q1.w + q2.y*q1.z - q2.z*q1.y + q2.w*q1.x,
@@ -334,6 +334,6 @@ void main(){
     + (pose[j.w] * weights.w));
   world_pos = model_matrix * dquat_point(skin_dq, position);
   normal = vec3(model_matrix * dquat_vector(skin_dq, in_normal));
-  texcoord = in_texcoord;
+  uv = in_uv;
   gl_Position = projection_matrix * view_matrix * world_pos;
 }")

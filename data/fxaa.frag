@@ -1,5 +1,5 @@
 uniform sampler2D previous_pass;
-in vec2 tex_coord;
+in vec2 uv;
 out vec4 color;
 
 /**
@@ -102,6 +102,6 @@ vec4 fxaa(sampler2D tex, vec2 fragCoord, vec2 resolution) {
 
 void main(){
   vec2 size = textureSize(previous_pass, 0);
-  vec2 fragCoord = tex_coord * size;
+  vec2 fragCoord = uv * size;
   color = fxaa(previous_pass, fragCoord, size);
 }

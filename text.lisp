@@ -79,21 +79,21 @@
   (setf (uniform program "background") (background text)))
 
 (define-class-shader (debug-text :vertex-shader)
-  "out vec2 texcoord;
+  "out vec2 uv;
 uniform sampler2D texture_image;
 
 void main(){
-  texcoord /= textureSize(texture_image, 0).rg;
+  uv /= textureSize(texture_image, 0).rg;
 }")
 
 (define-class-shader (debug-text :fragment-shader)
-  "in vec2 texcoord;
+  "in vec2 uv;
 out vec4 color;
 uniform sampler2D texture_image;
 uniform vec4 foreground;
 uniform vec4 background;
 
 void main(){
-  float fg_bg = texture(texture_image, texcoord, 0).r;
+  float fg_bg = texture(texture_image, uv, 0).r;
   color = mix(foreground, background, fg_bg);
 }")

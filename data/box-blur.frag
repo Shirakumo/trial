@@ -1,4 +1,4 @@
-in vec2 tex_coord;
+in vec2 uv;
 out vec4 color;
 uniform sampler2D previous_pass;
 uniform float intensity = 1.0;
@@ -11,7 +11,7 @@ void main(){
   for (int x=-4; x<=4; x++){
     for (int y=-4; y<=4; y++){
       sum += texture(previous_pass,
-                     vec2(tex_coord.x + x*blurSizeH, tex_coord.y + y*blurSizeV)) / 81.0;
+                     vec2(uv.x + x*blurSizeH, uv.y + y*blurSizeV)) / 81.0;
     }
   }
   color = sum;

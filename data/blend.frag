@@ -1,12 +1,12 @@
 out vec4 color;
-in vec2 tex_coord;
+in vec2 uv;
 uniform sampler2D a_pass;
 uniform sampler2D b_pass;
 uniform int blend_type = 0;
 
 void main(){
-  vec4 a = texture(a_pass, tex_coord);
-  vec4 b = texture(b_pass, tex_coord);
+  vec4 a = texture(a_pass, uv);
+  vec4 b = texture(b_pass, uv);
   
   switch(blend_type){
   case 0: // b-over

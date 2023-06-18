@@ -214,22 +214,22 @@ void main(){
   (gl:bind-texture (target (texture obj)) (gl-name (texture obj))))
 
 (define-class-shader (textured-entity :vertex-shader)
-  "layout (location = 1) in vec2 in_texcoord;
-out vec2 texcoord;
+  "layout (location = 2) in vec2 in_uv;
+out vec2 uv;
 
 void main(){
   maybe_call_next_method();
-  texcoord = in_texcoord;
+  uv = in_uv;
 }")
 
 (define-class-shader (textured-entity :fragment-shader)
-  "in vec2 texcoord;
+  "in vec2 uv;
 out vec4 color;
 uniform sampler2D texture_image;
 
 void main(){
   maybe_call_next_method();
-  color *= texture(texture_image, texcoord);
+  color *= texture(texture_image, uv);
 }")
 
 (defmethod enter (thing (container 3ds:container))
