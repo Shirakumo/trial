@@ -9,7 +9,7 @@
   :entry-point "workbench::launch"
   :components ((:file "workbench"))
   :depends-on (:trial-glfw
-               :trial-jpeg
+               :trial-jpeg-turbo
                :trial-png
                :trial-gltf
                :trial-hdr
