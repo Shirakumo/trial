@@ -1,0 +1,6 @@
+# Skyboxes
+Trial includes direct support for Skyboxes, through the ``skybox`` entity. It only requires a cubemap texture as its ``:texture``, everything else is handled automatically based on current camera information, and the skybox will take care of drawing behind everything on its own.
+
+If you use "environment maps"(link environment-maps.mess), you should pass the ``:environment-map`` resource of your asset as the skybox' texture.
+
+The skybox should work regardless of the shading technique used, as it doesn't require any shading to be applied at all, and instead relies on directly passing through the colour from the environment map.

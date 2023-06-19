@@ -1,0 +1,15 @@
+# Parallax Backgrounds
+Trial includes support for simple 2D parallax backgrounds via the ``parallax-background`` entity. You can also stack multiple parallax background entities to create a greater sense of depth. Each background instance takes either a ``:texture`` initarg, or a ``:default-background`` initarg, which can contain the same keyword arguments as ``change-background``:
+
+- ``:texture``
+  The texture to display as a parallax
+- ``:scaling``
+  The scaling factor of the background texture as a ``vec2``
+- ``:parallax``
+  The parallax movement speed factor as a ``vec2``
+- ``:offset``
+  The base display offset of the background compared to the camera as a ``vec2``
+- ``:unit``
+  The parallax background entity to update. Only needed when calling ``change-background`` directly.
+
+These parameters should give you complete control over the display behaviour of the background.

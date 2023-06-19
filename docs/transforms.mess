@@ -1,0 +1,36 @@
+# Transformations
+While most of the time you'll want to manipulate positioning, rotation, and scaling of entities through their own properties in the scene graph, sometimes more precise control over the transformation stack is needed, such as when implementing a camera, or more detailed effects passes.
+
+Trial separates the matrices into a set of three:
+
+- ``projection-matrix``
+  This holds the perspective projection matrix and is typically controlled by the ``camera``. It is also only updated rarely, when the screen size changes or the user changes field of view preferences.
+- ``view-matrix``
+  This holds the camera transformation matrix and is responsible for changing world coordinates into coordinates local to the camera. This is typically updated once per ``tick`` by the ``camera``.
+- ``model-matrix``
+  This holds the local transformation matrix for whichever entity is considered "current". Any changes in ``apply-transforms`` should act on this matrix.
+
+The rendering system will take care of resetting the state of the model matrix between every entity's rendering, to ensure that no transformation data leaks.
+
+You can manipulate all of the matrices with the following functions:
+
+- ``translate``, ``translate-by``
+  Translate/move/shift the coordinates to another position.
+- ``rotate``, ``rotate-by``
+  Rotate the coordinates around a given axis.
+- ``scale``, ``scale-by``
+  Scale the coordinates by a factor along each axis.
+- ``reset``, ``reset-by``
+  Reset the matrix to an identity.
+- ``look-at``
+  Pivots and translates the perspective to look at a given viewpoint.
+- ``perspective-projection``
+  Sets up a projection matrix with perspective skewing. Usually for 3D applications.
+- ``orthographic-projection``
+  Sets up an orthographic (unskewed) projection matrix. Usually for 2D applications.
+
+Each of the matrices can also be locally constrained via ``with-pushed-matrix``. This allows you to execute temporary transformations without fear of permanently altering the transformations.
+
+There's also an indefinite extent equivalent in ``push-matrix`` and ``pop-matrix``. Unlike ``with-pushed-matrix`` the depth to which the matrix stack can be pushed is limited, and it can only push the model matrix. Any other matrix is unaffected.
+
+Finally there is ``vec->screen`` and ``screen->vec`` which attempt to use the current matrices to translate a vector from world coordinates to window coordinates and back. Especially the backwards step is a bit fraught due to the lack of depth information.

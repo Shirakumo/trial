@@ -1,0 +1,52 @@
+# Getting started with Trial
+This brief guide illustrates the basic steps to get started with a new Trial project. If you instead would like to just have a look at what it can do instead, please have a look at the "workbench"(link workbench.mess).
+
+## Prerequisites
+You'll need a capable Lisp implementation. We heavily recommend using SBCL. While other implementations may work, we currently don't have the capacity to properly support them directly (patches welcome). We also currently only directly support Windows and Linux. Other systems like Mac or BSD are in a similar support state as other implementations.
+
+Since the basic Quicklisp dist is often out of date and Trial or its dependencies can move fast, we also urge you to use your custom dist to fetch Trial and the required dependencies. To install the "shirakumo dist"(https://dist.shirakumo.org), simple evaluate the following:
+
+:: common lisp
+(ql-dist:install-dist "http://dist.shirakumo.org/shirakumo.txt")
+::
+
+After that you should be able to ``(ql:quickload :trial)``.
+
+## Project scaffolding
+We recommend setting up a basic project scaffold as you would for anything else, with the following basic files in a fresh folder:
+
+- ``my-project.asd``
+  :: common lisp
+  (asdf:defsystem my-project
+    :components ((:file "package")
+                 (:file "main"))
+    :depends-on (:trial
+                 :trial-glfw
+                 :trial-png))
+  ::
+  You may want to include other dependencies based on the "formats"(link formats.mess) you'll require, or the "extensions"(link index.mess) you'll make use of, or switch GLFW out for another "backend"(link context.mess) if you require. We heavily suggest GLFW however, as it is by far the most mature backend.
+- ``package.lisp``
+  :: common lisp
+  (defpackage #:org.my.project
+    (:use #:cl+trial)
+    (:shadow #:main #:launch)
+    (:local-nicknames
+     (#:v #:org.shirakumo.verbose))
+    (:export #:main #:launch))
+  ::
+  The ``cl+trial`` package includes everything from CL and Trial with the needed shadowing in place. We also make sure to shadow ``main`` and ``launch`` as we'll define our own for convenience. Finally, the ``v`` local nickname is useful for logging using the "Verbose"(https://shinmera.github.io/verbose) framework that Trial already depends on.
+- ``main.lisp``
+  :: common lisp
+  (defclass main (trial:main)
+    ())
+
+  (defun launch (&rest args)
+    (apply #'trial:launch 'main args))
+  ::
+  Subclassing ``main`` like this allows you to add subclasses without worry, and overriding ``launch`` gives you the opportunity to perform other early initialisation steps before the engine starts up proper, besides just giving you a very convenient function to launch your game with.
+
+[ image images/start-empty.png ]
+
+After loading your project, you should be able to call ``(org.my.project:launch)`` and be presented with a blank window. Wow!
+
+## Drawing some stuff
