@@ -50,3 +50,38 @@ We recommend setting up a basic project scaffold as you would for anything else,
 After loading your project, you should be able to call ``(org.my.project:launch)`` and be presented with a blank window. Wow!
 
 ## Drawing some stuff
+Let's make this a bit more interesting, by actually creating a scene with stuff in it.
+
+:: common lisp
+(defmethod setup-scene ((main main) scene)
+  (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'unit-cube)) scene)
+  (enter (make-instance '3d-camera :location (vec 0 0 -3)) scene)
+  (enter (make-instance 'render-pass) scene))
+::
+
+Then either relaunch the game, or run evaluate ``(maybe-reload-scene)`` while the game is running.
+
+[ image images/start-cube.png ]
+
+As you might guess from the above, we're now looking at a simple cube. Let's make it move. To do so we're going to change away from creating a simple placeholder to creating our own ``entity`` type.
+
+:: common lisp
+(define-shader-entity my-cube (vertex-entity transformed-entity listener)
+  ((vertex-array :initform (// 'trial 'unit-cube))))
+
+(define-handler (my-cube tick) (dt)
+  (incf (angle my-cube) dt))
+
+(defmethod setup-scene ((main main) scene)
+  (enter (make-instance 'my-cube) scene)
+  (enter (make-instance '3d-camera :location (vec 0 0 -3)) scene)
+  (enter (make-instance 'render-pass) scene))
+::
+
+Here we make use of three helper classes, the ``vertex-entity`` to draw the cube mesh, the ``transformed-entity`` to rotate it, and the ``listener`` to react to events like ``tick``.
+
+After another scene reload the cube should now spin, though because it's still completely flat and textureless, it's a bit boring. Let's add a texture.
+
+:: common lisp
+
+::
