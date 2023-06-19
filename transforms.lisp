@@ -130,11 +130,11 @@
                    (* height (- 1 (vy norm-pos)))
                    0.0f0))))))
 
-(defun screen->vec (vec width height)
+(defun screen->vec (vec width height &key (z 0))
   (let* ((x (- (* 2 (/ (vx vec) width)) 1))
          (y (+ (* -2 (/ (vy vec) height)) 1))
          (inv (minv (m* (projection-matrix) (view-matrix))))
-         (res (m* inv (vec4 x y 0 1))))
+         (res (m* inv (vec4 x y z 1))))
     (vec3 (/ (vx res) (vw res))
           (/ (vy res) (vw res))
           0)))
