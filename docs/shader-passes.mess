@@ -1,0 +1,44 @@
+# Shader Passes
+Trial includes the concept of a ``shader-pass``, which is responsible for handling one concrete rendering step. Information on shader passes as they relate to the overall pipeline and how they integrate with other entities is described in the "render pipeline section"(link render-pipeline.mess). You should also already be familiar with the basics of the "shader entity"(link shaders.mess), as shader passes are an extension of that mechanism.
+
+The shader pass system lets you declare the inputs and outputs of a pass as slots on your class. Accessing those slots will give direct access to the underlying ``texture`` instance that is connected to the input uniform, or the output framebuffer.
+
+This mechanism is implemented using the "Flow"(https://github.com/shinmera/flow) static node system. By setting the ``:port`` initarg on your slots, you can declare an input or output. The following port types are declared by Trial:
+
+- ``input``
+  A standard texture input port. This port //must// be connected to the output of one other pass' port.
+- ``output``
+  A standard texture output port. This port may be connected to any number of other pass' input ports.
+- ``fixed-input``
+  Unlike a standard ``input``, this is meant for things like a noise texture that is manually attached to the input, without being part of the pipeline flow.
+- ``static-input``
+  Unlike a standard ``input`` and a ``fixed-input``, this port is actually allocated by the ``pipeline`` system. This can be useful for creating passes that have to be called iteratively, swapping the input and output between calls.
+
+If you need to access the actual ``port`` instance rather than the slot's value, you can use the ``port`` function, instead. This is particularly useful when actually building the shader ``pipeline``, as the ``connect`` function takes two ports to connect together in the pipeline.
+
+A usual pipeline building setup will thus look something like this:
+
+:: common lisp
+(let ((render (make-instance 'render-pass))
+      (shadows (make-instance 'shadow-pass))
+      (mapping (make-instance 'tone-mapping-pass))
+      (pipeline (make-instance 'pipeline)))
+ (connect (port shadows 'shadow-map) (port render 'shadow-map) pipeline)
+ (connect (port render 'color) (port mapping 'previous-pass) pipeline)
+ (pack-pipeline pipeline *context*))
+::
+
+After the pipeline has been packed, the ports of each of the passes will contain ``texture`` instances that have been created according to the ``:texspec`` specification on the slot. A texspec is a plist that can contain most of the usual ``texture`` initargs, though with some special handling. The pipeline may try to merge compatible textures together to save on texture space. The following initargs are of special note:
+
+- ``:internal-format``
+  The internal format to use. When textures are merged together, a strict upgrade of the internal format may be allowed (more channels are provided, or higher bit depth is provided).
+- ``:width``, ``:height``, ``:depth``
+  The size of the texture. This can be a Lisp form, where the variables ``width`` and ``height`` are bound to the current width and height of the packing target (usually the current ``context``). This allows you to use things like ``(floor width 2)`` to use half the size of the intended width, rather than relying on static sizes.
+- ``:samples``
+  Specifies the number of samples for a multisampling texture. This may be upgraded to be higher, but not lower.
+- ``:anisotropy``
+  Specifies the anisotropy level for the texture. This may be upgraded to be higher, but not lower.
+
+You can also specify the uniform the input textures are bound to with the ``:uniform`` slot initarg. It defaults to the result of ``symbol->c-name`` of the slot name.
+
+Please note that shader passes can be used outside of a ``pipeline`` instance as well, though you have to ensure that the port textures and the framebuffer are properly set yourself. Otherwise trying to load the pass will fail.
