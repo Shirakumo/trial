@@ -184,8 +184,7 @@
         (gl:clear :depth-buffer)
         (loop for (object) across frame
               do (when (typep object 'standard-renderable)
-                   (push-matrix)
-                   (apply-transforms object)
-                   (render object program)
-                   (pop-matrix)))))
+                   (with-pushed-matrix ()
+                     (apply-transforms object)
+                     (render object program))))))
     (activate (framebuffer pass))))

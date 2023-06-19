@@ -408,8 +408,7 @@
   (restart-case
       (progn
         (prepare-pass-program pass program)
-        (push-matrix)
-        (with-unwind-protection (pop-matrix)
+        (with-pushed-matrix ()
           (apply-transforms object)
           (bind-textures object)
           (update-uniforms object program)

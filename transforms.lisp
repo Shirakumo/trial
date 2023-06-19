@@ -37,19 +37,19 @@
   *view-matrix*)
 
 (defun (setf view-matrix) (mat4)
-  (setf *view-matrix* mat4))
+  (replace (marr *view-matrix*) (marr mat4)))
 
 (defun projection-matrix ()
   *projection-matrix*)
 
 (defun (setf projection-matrix) (mat4)
-  (setf *projection-matrix* mat4))
+  (replace (marr *projection-matrix*) (marr mat4)))
 
 (defun model-matrix ()
   *model-matrix*)
 
 (defun (setf model-matrix) (mat4)
-  (setf *model-matrix* mat4))
+  (replace (marr *model-matrix*) (marr mat4)))
 
 (defun look-at (eye target up)
   (setf *view-matrix* (mlookat eye target up)))
@@ -61,16 +61,12 @@
   (setf *projection-matrix* (mortho left right bottom top near far)))
 
 (defun push-matrix ()
-  (replace (marr4 (aref +matrix-stack+ (+ 0 +matrix-index+))) (marr4 *projection-matrix*))
-  (replace (marr4 (aref +matrix-stack+ (+ 1 +matrix-index+))) (marr4 *view-matrix*))
-  (replace (marr4 (aref +matrix-stack+ (+ 2 +matrix-index+))) (marr4 *model-matrix*))
-  (incf +matrix-index+ 3))
+  (replace (marr4 (aref +matrix-stack+ +matrix-index+)) (marr4 *model-matrix*))
+  (incf +matrix-index+))
 
 (defun pop-matrix ()
-  (decf +matrix-index+ 3)
-  (replace (marr4 *projection-matrix*) (marr4 (aref +matrix-stack+ (+ 0 +matrix-index+))))
-  (replace (marr4 *view-matrix*) (marr4 (aref +matrix-stack+ (+ 1 +matrix-index+))))
-  (replace (marr4 *model-matrix*) (marr4 (aref +matrix-stack+ (+ 2 +matrix-index+)))))
+  (decf +matrix-index+)
+  (replace (marr4 *model-matrix*) (marr4 (aref +matrix-stack+ +matrix-index+))))
 
 (defmacro with-pushed-matrix (specs &body body)
   (let ((specs (or specs '(((model-matrix) :copy)))))
