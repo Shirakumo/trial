@@ -68,6 +68,34 @@ OpenGL offers many other shader types than fragment and vertex shaders, all of w
   (pool-path 'my-project #p"my-object.frag"))
 ::
 
+Or you can include a shader file with multiple sections directly in the class definition:
+
+:: common lisp
+(define-shader-entity my-object (vertex-entity)
+  ()
+  (:shader-file (my-project "my-object.glsl")))
+::
+
+With the file being sectioned like this:
+
+:: glsl
+#section FRAGMENT_SHADER
+out vec4 color;
+
+void main(){
+  color = vec4(0, 1, 0, 1);
+}
+::
+
+You can also include other files, or the ``gl-source`` of assets from your shader with a ``#include``:
+
+:: glsl
+#include (my-project:my-project "my-other-shader.glsl")
+#include (trial:trial trial:standard-environment-information)
+::
+
+The acceptable include syntax being ``(POOL PATH)``, ``(POOL ASSET)``, ``CLASS-NAME``, or ``PATHNAME`` where the path is relative to the current file.
+
 There are currently no plans to include a more "lispy" syntax for writing shaders, though it isn't out of the question for such an inclusion to be made. Regardless, the raw GLSL approach will always be supported.
 
 Trial however does make use of GLSL-Toolkit's "method combination" feature. If a function with the same signature is defined multiple times, the functions are renamed. That prevents inheriting multiple code parts from clashing. However, you can also call an earlier definition with ``call_next_method();`` or ``maybe_call_next_method();``.

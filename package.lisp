@@ -675,13 +675,11 @@
    #:target-camera
    #:target
    #:up
-   #:pivot-camera
    #:following-camera
    #:fps-camera
    #:rotation
-   #:acceleration
-   #:x-inverted
-   #:y-inverted
+   #:x-acceleration
+   #:y-acceleration
    #:freeroam-camera
    #:move-speed
    #:editor-camera)

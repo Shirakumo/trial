@@ -1,0 +1,43 @@
+<article><style>article{
+    max-width: 800px;
+    font-size: 12pt;
+    font-family: sans-serif;
+    margin: 3em auto;
+}
+
+article h1{
+    text-align: center;
+    font-size: 2em;
+}
+
+article img{
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+article blockquote{
+    border-left: 0.2em solid gray;
+    margin-left: 1em;
+    padding-left: 1em;
+}
+
+article figcaption{
+    padding: 0.2em 1em;
+    background: #E0E0E0;
+}
+
+article code{
+    background: #F0F0F0;
+    padding: 0 0.1em;
+}
+
+article .code-block{
+    padding: 0.1em 0.5em;
+    overflow-x: auto;
+}</style><h1 id="shader passes">Shader Passes</h1><p>Trial includes the concept of a <code>shader-pass</code>, which is responsible for handling one concrete rendering step. Information on shader passes as they relate to the overall pipeline and how they integrate with other entities is described in the <a class="external-link" href="render-pipeline.html">render pipeline section</a>. You should also already be familiar with the basics of the <a class="external-link" href="shaders.html">shader entity</a>, as shader passes are an extension of that mechanism.</p><p>The shader pass system lets you declare the inputs and outputs of a pass as slots on your class. Accessing those slots will give direct access to the underlying <code>texture</code> instance that is connected to the input uniform, or the output framebuffer.</p><p>This mechanism is implemented using the <a class="external-link" href="https://github.com/shinmera/flow">Flow</a> static node system. By setting the <code>:port</code> initarg on your slots, you can declare an input or output. The following port types are declared by Trial:</p><ul><li><p><code>input</code><br>A standard texture input port. This port <em>must</em> be connected to the output of one other pass' port.</p></li><li><p><code>output</code><br>A standard texture output port. This port may be connected to any number of other pass' input ports.</p></li><li><p><code>fixed-input</code><br>Unlike a standard <code>input</code>, this is meant for things like a noise texture that is manually attached to the input, without being part of the pipeline flow.</p></li><li><p><code>static-input</code><br>Unlike a standard <code>input</code> and a <code>fixed-input</code>, this port is actually allocated by the <code>pipeline</code> system. This can be useful for creating passes that have to be called iteratively, swapping the input and output between calls.</p></li></ul><p>If you need to access the actual <code>port</code> instance rather than the slot's value, you can use the <code>port</code> function, instead. This is particularly useful when actually building the shader <code>pipeline</code>, as the <code>connect</code> function takes two ports to connect together in the pipeline.</p><p>A usual pipeline building setup will thus look something like this:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(let ((render (make-instance 'render-pass))
+      (shadows (make-instance 'shadow-pass))
+      (mapping (make-instance 'tone-mapping-pass))
+      (pipeline (make-instance 'pipeline)))
+ (connect (port shadows 'shadow-map) (port render 'shadow-map) pipeline)
+ (connect (port render 'color) (port mapping 'previous-pass) pipeline)
+ (pack-pipeline pipeline *context*))</pre></code><p>After the pipeline has been packed, the ports of each of the passes will contain <code>texture</code> instances that have been created according to the <code>:texspec</code> specification on the slot. A texspec is a plist that can contain most of the usual <code>texture</code> initargs, though with some special handling. The pipeline may try to merge compatible textures together to save on texture space. The following initargs are of special note:</p><ul><li><p><code>:internal-format</code><br>The internal format to use. When textures are merged together, a strict upgrade of the internal format may be allowed (more channels are provided, or higher bit depth is provided).</p></li><li><p><code>:width</code>, <code>:height</code>, <code>:depth</code><br>The size of the texture. This can be a Lisp form, where the variables <code>width</code> and <code>height</code> are bound to the current width and height of the packing target (usually the current <code>context</code>). This allows you to use things like <code>(floor width 2)</code> to use half the size of the intended width, rather than relying on static sizes.</p></li><li><p><code>:samples</code><br>Specifies the number of samples for a multisampling texture. This may be upgraded to be higher, but not lower.</p></li><li><p><code>:anisotropy</code><br>Specifies the anisotropy level for the texture. This may be upgraded to be higher, but not lower.</p></li></ul><p>You can also specify the uniform the input textures are bound to with the <code>:uniform</code> slot initarg. It defaults to the result of <code>symbol-&gt;c-name</code> of the slot name.</p><p>Please note that shader passes can be used outside of a <code>pipeline</code> instance as well, though you have to ensure that the port textures and the framebuffer are properly set yourself. Otherwise trying to load the pass will fail.</p></article>

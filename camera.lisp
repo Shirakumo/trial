@@ -113,17 +113,6 @@
 (defmethod focal-point ((camera target-camera))
   (global-location (target camera)))
 
-(defclass pivot-camera (target-camera)
-  ()
-  (:default-initargs
-   :target NIL))
-
-(defmethod project-view ((camera pivot-camera))
-  (when (target camera)
-    (look-at (location camera)
-             (location (target camera))
-             (up camera))))
-
 (defclass following-camera (target-camera)
   ()
   (:default-initargs
@@ -138,14 +127,12 @@
 
 (defclass fps-camera (3d-camera)
   ((rotation :initarg :rotation :accessor rotation)
-   (acceleration :initarg :acceleration :accessor acceleration)
-   (x-inverted :initarg :x-inverted :accessor x-inverted)
-   (y-inverted :initarg :y-inverted :accessor y-inverted))
+   (x-acceleration :initarg :x-acceleration :accessor x-acceleration)
+   (y-acceleration :initarg :x-acceleration :accessor x-acceleration))
   (:default-initargs
    :rotation (vec 0 0 0)
-   :acceleration 0.01
-   :x-inverted NIL
-   :y-inverted NIL))
+   :x-acceleration 0.01
+   :y-acceleration 0.01))
 
 (defmethod project-view ((camera fps-camera))
   (reset-matrix (view-matrix))
@@ -155,10 +142,9 @@
 
 (defun do-fps-movement (camera old-pos pos)
   (let ((delta (v- pos old-pos)))
-    (when (x-inverted camera) (setf (vx delta) (- (vx delta))))
-    (when (y-inverted camera) (setf (vy delta) (- (vy delta))))
-    (nv+ (rotation camera) (nv* (vyx_ delta)
-                                (acceleration camera)))
+    (setf (vx delta) (* (vx delta) (x-acceleration camera)))
+    (setf (vy delta) (* (vy delta) (y-acceleration camera)))
+    (nv+ (rotation camera) (vyx_ delta))
     (nvmod (rotation camera) (* 2 PI))))
 
 (define-handler (fps-camera mouse-move) (old-pos pos)
