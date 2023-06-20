@@ -13,7 +13,9 @@ Since the basic Quicklisp dist is often out of date and Trial or its dependencie
 After that you should be able to ``(ql:quickload :trial)``.
 
 ## Project scaffolding
-We recommend setting up a basic project scaffold as you would for anything else, with the following basic files in a fresh folder:
+We recommend setting up a basic project scaffold as you would for anything else, with the following basic files in a fresh folder[1]:
+
+[1] Please understand that this, along with the actual bits of trial we'll use here are just our suggestion. Trial is very flexible, and a lot of bits can be discarded or overridden completely should you need to.
 
 - ``my-project.asd``
   :: common lisp
@@ -37,9 +39,11 @@ We recommend setting up a basic project scaffold as you would for anything else,
   The ``cl+trial`` package includes everything from CL and Trial with the needed shadowing in place. We also make sure to shadow ``main`` and ``launch`` as we'll define our own for convenience. Finally, the ``v`` local nickname is useful for logging using the "Verbose"(https://shinmera.github.io/verbose) framework that Trial already depends on.
 - ``main.lisp``
   :: common lisp
+  (in-package #:org.my.project)
+  
   (defclass main (trial:main)
     ())
-
+  
   (defun launch (&rest args)
     (apply #'trial:launch 'main args))
   ::
@@ -69,8 +73,8 @@ As you might guess from the above, we're now looking at a simple cube. Let's mak
 (define-shader-entity my-cube (vertex-entity transformed-entity listener)
   ((vertex-array :initform (// 'trial 'unit-cube))))
 
-(define-handler (my-cube tick) (dt)
-  (incf (angle my-cube) dt))
+(define-handler (my-cube tick) (tt)
+  (setf (orientation my-cube) (qfrom-angle +vy+ tt)))
 
 (defmethod setup-scene ((main main) scene)
   (enter (make-instance 'my-cube) scene)
@@ -80,8 +84,89 @@ As you might guess from the above, we're now looking at a simple cube. Let's mak
 
 Here we make use of three helper classes, the ``vertex-entity`` to draw the cube mesh, the ``transformed-entity`` to rotate it, and the ``listener`` to react to events like ``tick``.
 
-After another scene reload the cube should now spin, though because it's still completely flat and textureless, it's a bit boring. Let's add a texture.
+After another scene reload the cube should now spin, though because it's still completely flat and textureless, it's a bit boring. Let's add a texture[2].
+
+[2] The asset we defined here is in the ``trial`` pool, and thus uses an image that is shipped together with the engine. You can define your own asset pool with ``define-pool`` and then place the files you want to turn into assets into a directory called ``data`` within your project's root.
 
 :: common lisp
+(define-asset (trial cat) image
+  #p"cat.png")
 
+(define-shader-entity my-cube (vertex-entity textured-entity transformed-entity listener)
+  ((vertex-array :initform (// 'trial 'unit-cube))
+   (texture :initform (// 'trial 'cat))))
 ::
+
+Redefining this will lead to an error if your game is still running, as it'll try to access a resource that wasn't loaded. No worries, though, just evaluate ``(maybe-reload-scene)`` while the debugger is up, and then continue the debugger.
+
+[ image images/start-cat-cube.png ]
+
+This is still a completely unshaded cube, however. If you'd like to dive into setting up actual lighting model shaders, please have a look at the "standard rendering system"(link standard-renderer.mess). Or if you're interested in 2D games, have a look at "sprites"(link sprites.mess) and "tile layers"(link tile-layer.mess).
+
+## Making it move
+Just having a spinning cube of cats isn't much of a game yet, so let's add some movement. To do this we'll make use of Trial's actions system, which abstracts away actions in the game so that they can be rebound by the user.
+
+:: common lisp
+(define-action-set in-game)
+(define-action move (directional-action in-game))
+(define-action hide (in-game))
+::
+
+With just the actions defined, they won't actually fire yet. Let's create a ``keymap.lisp`` file that contains the default mapping:
+
+:: common lisp
+(directional move
+  (stick :one-of ((:l-h :l-v)))
+  (keys :one-of ((:w :a :s :d))))
+
+(trigger hide
+  (button :one-of (:a))
+  (key :one-of (:space)))
+::
+
+This will make the actions work with both keyboard and game controllers. Now we just need to modify ``launch`` to load it in:
+
+:: common lisp
+(defun launch (&rest args)
+  (let ((*package* #.*package*))
+    (load-keymap)
+    (setf (active-p (action-set 'in-game)) T)
+    (apply #'trial:launch main args)))
+::
+
+We bind the ``*package*`` to the one of our current source file to ensure that all symbols in the keymap are resolved to the ones from our package. And once we have loaded the keymap, we set the ``in-game`` action set to active, to ensure that the actions are actually fired[3].
+
+[3] See "actions"(link actions.mess) for more information on the actions and action sets.
+
+Each action we defined is also an event type that you can install a handler on to catch firings of immediately. However, often it's also useful to just test whether a button is held down, or especially in the case of directional movement, what the current movement extent is.
+
+To do so, we can use the ``retained`` and ``directional`` functions. Let's extend our ``tick`` handler to make the cube move around:
+
+:: common lisp
+(define-handler (my-cube tick) (tt dt)
+  (setf (orientation my-cube) (qfrom-angle +vy+ tt))
+  (let ((movement (directional 'move))
+        (speed 10.0))
+    (incf (vx (location my-cube)) (* dt speed (- (vx movement))))
+    (incf (vz (location my-cube)) (* dt speed (vy movement)))))
+::
+
+Now you should be able to make the cube move left and right or back and forth, both with the keyboard and a controller.[4]
+
+[4] The reason for the inversion of the X movement has to do with the camera and general orientation. Don't worry about it.
+
+Let's also quickly add an action for the hiding. This time however, we'll define a new handler so we can react instantly when the action fires.
+
+:: common lisp
+(define-shader-entity my-cube (vertex-entity colored-entity textured-entity transformed-entity listener)
+  ((vertex-array :initform (// 'trial 'unit-cube))
+   (texture :initform (// 'trial 'cat))
+   (color :initform (vec 1 1 1 1))))
+
+(define-handler (my-cube hide) ()
+  (setf (vw (color my-cube)) (if (= (vw (color my-cube)) 1.0) 0.1 1.0)))
+::
+
+Now we can hide the cube by hitting the ``A`` button or space bar key.
+
+You can already see the way Trial lets you separate behaviours out into individual mixin classes and then re-combine them as needed.

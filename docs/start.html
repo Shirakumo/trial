@@ -1,0 +1,93 @@
+<article><style>article{
+    max-width: 800px;
+    font-size: 12pt;
+    font-family: sans-serif;
+    margin: 3em auto;
+}
+
+article h1{
+    text-align: center;
+    font-size: 2em;
+}
+
+article img{
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+article blockquote{
+    border-left: 0.2em solid gray;
+    margin-left: 1em;
+    padding-left: 1em;
+}
+
+article figcaption{
+    padding: 0.2em 1em;
+    background: #E0E0E0;
+}
+
+article code{
+    background: #F0F0F0;
+    padding: 0 0.1em;
+}
+
+article .code-block{
+    padding: 0.1em 0.5em;
+    overflow-x: auto;
+}</style><h1 id="getting started with trial">Getting started with Trial</h1><p>This brief guide illustrates the basic steps to get started with a new Trial project. If you instead would like to just have a look at what it can do instead, please have a look at the <a class="external-link" href="workbench.html">workbench</a>.</p><h2 id="prerequisites">Prerequisites</h2><p>You'll need a capable Lisp implementation. We heavily recommend using SBCL. While other implementations may work, we currently don't have the capacity to properly support them directly (patches welcome). We also currently only directly support Windows and Linux. Other systems like Mac or BSD are in a similar support state as other implementations.</p><p>Since the basic Quicklisp dist is often out of date and Trial or its dependencies can move fast, we also urge you to use your custom dist to fetch Trial and the required dependencies. To install the <a class="external-link" href="https://dist.shirakumo.org">shirakumo dist</a>, simple evaluate the following:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(ql-dist:install-dist &quot;http://dist.shirakumo.org/shirakumo.txt&quot;)</pre></code><p>After that you should be able to <code>(ql:quickload :trial)</code>.</p><h2 id="project scaffolding">Project scaffolding</h2><p>We recommend setting up a basic project scaffold as you would for anything else, with the following basic files in a fresh folder<sup class="footnote-reference"><a href="#footnote-1">[1]</a></sup>:</p><ul><li><p><code>my-project.asd</code></p><code style="display:block" class="code-block" data-language="common lisp"><pre>(asdf:defsystem my-project
+  :components ((:file &quot;package&quot;)
+               (:file &quot;main&quot;))
+  :depends-on (:trial
+               :trial-glfw
+               :trial-png))</pre></code><p>You may want to include other dependencies based on the <a class="external-link" href="formats.html">formats</a> you'll require, or the <a class="external-link" href="index.html">extensions</a> you'll make use of, or switch GLFW out for another <a class="external-link" href="context.html">backend</a> if you require. We heavily suggest GLFW however, as it is by far the most mature backend.</p></li><li><p><code>package.lisp</code></p><code style="display:block" class="code-block" data-language="common lisp"><pre>(defpackage #:org.my.project
+  (:use #:cl+trial)
+  (:shadow #:main #:launch)
+  (:local-nicknames
+   (#:v #:org.shirakumo.verbose))
+  (:export #:main #:launch))</pre></code><p>The <code>cl+trial</code> package includes everything from CL and Trial with the needed shadowing in place. We also make sure to shadow <code>main</code> and <code>launch</code> as we'll define our own for convenience. Finally, the <code>v</code> local nickname is useful for logging using the <a class="external-link" href="https://shinmera.github.io/verbose">Verbose</a> framework that Trial already depends on.</p></li><li><p><code>main.lisp</code></p><code style="display:block" class="code-block" data-language="common lisp"><pre>(in-package #:org.my.project)
+
+(defclass main (trial:main)
+  ())
+
+(defun launch (&amp;rest args)
+  (apply #'trial:launch 'main args))</pre></code><p>Subclassing <code>main</code> like this allows you to add subclasses without worry, and overriding <code>launch</code> gives you the opportunity to perform other early initialisation steps before the engine starts up proper, besides just giving you a very convenient function to launch your game with.</p></li></ul><figure><a href="images/start-empty.png" target="_blank"><img alt="images/start-empty.png" src="images/start-empty.png" style="display:block"></a></figure><p>After loading your project, you should be able to call <code>(org.my.project:launch)</code> and be presented with a blank window. Wow!</p><h2 id="drawing some stuff">Drawing some stuff</h2><p>Let's make this a bit more interesting, by actually creating a scene with stuff in it.</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(defmethod setup-scene ((main main) scene)
+  (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'unit-cube)) scene)
+  (enter (make-instance '3d-camera :location (vec 0 0 -3)) scene)
+  (enter (make-instance 'render-pass) scene))</pre></code><p>Then either relaunch the game, or run evaluate <code>(maybe-reload-scene)</code> while the game is running.</p><figure><a href="images/start-cube.png" target="_blank"><img alt="images/start-cube.png" src="images/start-cube.png" style="display:block"></a></figure><p>As you might guess from the above, we're now looking at a simple cube. Let's make it move. To do so we're going to change away from creating a simple placeholder to creating our own <code>entity</code> type.</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(define-shader-entity my-cube (vertex-entity transformed-entity listener)
+  ((vertex-array :initform (// 'trial 'unit-cube))))
+
+(define-handler (my-cube tick) (tt)
+  (setf (orientation my-cube) (qfrom-angle +vy+ tt)))
+
+(defmethod setup-scene ((main main) scene)
+  (enter (make-instance 'my-cube) scene)
+  (enter (make-instance '3d-camera :location (vec 0 0 -3)) scene)
+  (enter (make-instance 'render-pass) scene))</pre></code><p>Here we make use of three helper classes, the <code>vertex-entity</code> to draw the cube mesh, the <code>transformed-entity</code> to rotate it, and the <code>listener</code> to react to events like <code>tick</code>.</p><p>After another scene reload the cube should now spin, though because it's still completely flat and textureless, it's a bit boring. Let's add a texture<sup class="footnote-reference"><a href="#footnote-2">[2]</a></sup>.</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(define-asset (trial cat) image
+  #p&quot;cat.png&quot;)
+
+(define-shader-entity my-cube (vertex-entity textured-entity transformed-entity listener)
+  ((vertex-array :initform (// 'trial 'unit-cube))
+   (texture :initform (// 'trial 'cat))))</pre></code><p>Redefining this will lead to an error if your game is still running, as it'll try to access a resource that wasn't loaded. No worries, though, just evaluate <code>(maybe-reload-scene)</code> while the debugger is up, and then continue the debugger.</p><figure><a href="images/start-cat-cube.png" target="_blank"><img alt="images/start-cat-cube.png" src="images/start-cat-cube.png" style="display:block"></a></figure><p>This is still a completely unshaded cube, however. If you'd like to dive into setting up actual lighting model shaders, please have a look at the <a class="external-link" href="standard-renderer.html">standard rendering system</a>. Or if you're interested in 2D games, have a look at <a class="external-link" href="sprites.html">sprites</a> and <a class="external-link" href="tile-layer.html">tile layers</a>.</p><h2 id="making it move">Making it move</h2><p>Just having a spinning cube of cats isn't much of a game yet, so let's add some movement. To do this we'll make use of Trial's actions system, which abstracts away actions in the game so that they can be rebound by the user.</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(define-action-set in-game)
+(define-action move (directional-action in-game))
+(define-action hide (in-game))</pre></code><p>With just the actions defined, they won't actually fire yet. Let's create a <code>keymap.lisp</code> file that contains the default mapping:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(directional move
+  (stick :one-of ((:l-h :l-v)))
+  (keys :one-of ((:w :a :s :d))))
+
+(trigger hide
+  (button :one-of (:a))
+  (key :one-of (:space)))</pre></code><p>This will make the actions work with both keyboard and game controllers. Now we just need to modify <code>launch</code> to load it in:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(defun launch (&amp;rest args)
+  (let ((*package* #.*package*))
+    (load-keymap)
+    (setf (active-p (action-set 'in-game)) T)
+    (apply #'trial:launch main args)))</pre></code><p>We bind the <code>*package*</code> to the one of our current source file to ensure that all symbols in the keymap are resolved to the ones from our package. And once we have loaded the keymap, we set the <code>in-game</code> action set to active, to ensure that the actions are actually fired<sup class="footnote-reference"><a href="#footnote-3">[3]</a></sup>.</p><p>Each action we defined is also an event type that you can install a handler on to catch firings of immediately. However, often it's also useful to just test whether a button is held down, or especially in the case of directional movement, what the current movement extent is.</p><p>To do so, we can use the <code>retained</code> and <code>directional</code> functions. Let's extend our <code>tick</code> handler to make the cube move around:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(define-handler (my-cube tick) (tt dt)
+  (setf (orientation my-cube) (qfrom-angle +vy+ tt))
+  (let ((movement (directional 'move))
+        (speed 10.0))
+    (incf (vx (location my-cube)) (* dt speed (- (vx movement))))
+    (incf (vz (location my-cube)) (* dt speed (vy movement)))))</pre></code><p>Now you should be able to make the cube move left and right or back and forth, both with the keyboard and a controller.<sup class="footnote-reference"><a href="#footnote-4">[4]</a></sup></p><p>Let's also quickly add an action for the hiding. This time however, we'll define a new handler so we can react instantly when the action fires.</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(define-shader-entity my-cube (vertex-entity colored-entity textured-entity transformed-entity listener)
+  ((vertex-array :initform (// 'trial 'unit-cube))
+   (texture :initform (// 'trial 'cat))
+   (color :initform (vec 1 1 1 1))))
+
+(define-handler (my-cube hide) ()
+  (setf (vw (color my-cube)) (if (= (vw (color my-cube)) 1.0) 0.1 1.0)))</pre></code><p>Now we can hide the cube by hitting the <code>A</code> button or space bar key.</p><p>You can already see the way Trial lets you separate behaviours out into individual mixin classes and then re-combine them as needed.</p><footer class="footnotes"><hr><ol><li value="1" id="footnote-1">Please understand that this, along with the actual bits of trial we'll use here are just our suggestion. Trial is very flexible, and a lot of bits can be discarded or overridden completely should you need to.</li><li value="2" id="footnote-2">The asset we defined here is in the <code>trial</code> pool, and thus uses an image that is shipped together with the engine. You can define your own asset pool with <code>define-pool</code> and then place the files you want to turn into assets into a directory called <code>data</code> within your project's root.</li><li value="3" id="footnote-3">See <a class="external-link" href="actions.html">actions</a> for more information on the actions and action sets.</li><li value="4" id="footnote-4">The reason for the inversion of the X movement has to do with the camera and general orientation. Don't worry about it.</li></ol></footer></article>
