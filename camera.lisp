@@ -100,6 +100,9 @@
 (defmethod setup-perspective ((camera 3d-camera) width height)
   (perspective-projection (fov camera) (/ (max 1 width) (max 1 height)) (near-plane camera) (far-plane camera)))
 
+(defmethod project-view ((camera 3d-camera))
+  (look-at (location camera) (vec 0 0 0) +vy3+))
+
 (defclass target-camera (3d-camera)
   ((target :initarg :target :accessor target)
    (up :initarg :up :accessor up))
