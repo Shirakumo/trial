@@ -170,3 +170,52 @@ Let's also quickly add an action for the hiding. This time however, we'll define
 Now we can hide the cube by hitting the ``A`` button or space bar key.
 
 You can already see the way Trial lets you separate behaviours out into individual mixin classes and then re-combine them as needed.
+
+## Spawning stuff
+Before we close off this brief guide, let's talk about dynamically spawning stuff. So far we've just "staticall" added entities at the beginning when the scene is first set up. To dynamically modify the scene, let's create a new entity type.
+
+:: common lisp
+(define-shader-entity bullet (vertex-entity colored-entity transformed-entity listener)
+  ((vertex-array :initform (// 'trial 'unit-sphere))
+   (color :initform (vec 1 0 0 1))
+   (velocity :initform (vec 0 0 0) :initarg :velocity :accessor velocity)))
+
+(define-handler (bullet tick) (dt)
+  (nv+* (location bullet) (velocity bullet) dt))
+::
+
+And for testing purposes, let's temporarily just make the cube shoot it when we press ``F``.[5]
+
+[5] You really should use actions for anything that is going to be something the end-user will interact with, but for quick and dirty testing, this is fine.
+
+:: common lisp
+(define-handler (my-cube key-press) (key)
+  (case key
+    (:f (enter (make-instance 'bullet :location (location my-cube)
+                                      :scaling (vec 0.1 0.1 0.1)
+                                      :velocity (nv* (q*v (orientation my-cube) +vx3+) 5))
+               (container my-cube)))))
+::
+
+This'll spawn a bullet and make it shoot out in the direction the cube is facing. Except... trying it now will crash with some obscure error[6]. This happens because the bullet has different superclasses to the cube, and requires a different drawing method, which wasn't loaded when the scene was set up.
+
+[6] The error happens because it's trying to find the OpenGL resource identifier for the shader program of the bullet, which it has to do in order to draw it.
+
+There's two ways to fix this. We can either use ``enter-and-load`` instead of ``enter``, which will load the necessary resources dynamically there, or we can preload it like the rest of the scene. The latter is preferable, as there's a lot less work that needs to be done while the game is running, leading to smoother gameplay.
+
+:: common lisp
+(defmethod setup-scene ((main main) scene)
+  (enter (make-instance 'my-cube) scene)
+  (enter (make-instance '3d-camera :location (vec 0 0 -3)) scene)
+  (enter (make-instance 'render-pass) scene)
+  (preload (make-instance 'bullet) scene))
+::
+
+The ``preload`` function tells the scene that it shouldn't literally have that entity in the scene graph, but still pass it on to the loader system and the shader passes, so that they can perform the necessary preparations for us to easily spawn it later.
+
+[ image images/start-bullets.png ]
+
+## Further reading
+There's still a lot more to making games, collision detection, physics, sound, UI, shading, effects, particles, the list goes on forever. However, we'll end this brief introduction here, and instead let you move on to the "rest of the documentation"(link index.mess).
+
+You may also want to check out the source code of "Kandria"(https://shirakumo.org/projects/kandria), which is a commercially released Action RPG platformer game. All of the code is open for you to look at.
