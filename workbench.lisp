@@ -81,7 +81,7 @@
           (floor (make-instance 'rigidbody :physics-primitives (make-half-space :material :ice))))
       (enter floor physics)
       (loop for i from 0 below 10
-            for cube = (make-instance 'spherey :location (vec 3 (+ 5 (* i 1)) 0))
+            for cube = (make-instance 'spherey :location (vec (+ 3 (random 0.1)) (+ 5 (* i 1)) (random 0.1)))
             do (enter cube physics)
                (enter cube scene))
       (enter (make-instance 'gravity :gravity (vec 0 -10 0)) physics)
