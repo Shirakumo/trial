@@ -77,9 +77,9 @@
     (enter (make-instance 'planey :orientation (qfrom-angle +vx+ (deg->rad -90))) scene)
     (enter (make-instance 'meshy :asset (assets:asset :marble-bust) :scaling (vec 10 10 10)) scene)
 
-    (let ((physics (make-instance 'rigidbody-system :units-per-metre 0.1))
-          (floor (make-instance 'rigidbody :physics-primitives (make-half-space :material :ice))))
-      (enter floor physics)
+    (let ((physics (make-instance 'rigidbody-system :units-per-metre 0.1)))
+      (enter (make-instance 'rigidbody :physics-primitives (make-box :bsize (vec 5 1 5) :location (vec 0 -1 0) :material :ice)) physics)
+      (enter (make-instance 'rigidbody :physics-primitives (make-box :bsize (vec 5 5 1) :location (vec 0 5 -6) :material :ice)) physics)
       (loop for i from 0 below 10
             for cube = (make-instance 'spherey :location (vec (+ 3 (random 0.1)) (+ 5 (* i 1)) (random 0.1)))
             do (enter cube physics)

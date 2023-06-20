@@ -104,7 +104,7 @@
                            (:include ,super))
            ,@slots)
          
-         (defun ,constructor (&rest args &key location orientation)
+         (defun ,constructor (&rest args &key location orientation &allow-other-keys)
            (let ((primitive (apply #',int-constructor (remf* args :location :orientation))))
              (when location (setf (location primitive) location))
              (when orientation (setf (orientation primitive) orientation))

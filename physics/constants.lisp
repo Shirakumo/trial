@@ -73,6 +73,7 @@
  :wood             :wood             0.5               0.5               0.3
  :wood             :concrete         0.5               0.4               0.5
  :wood             :ice              0.2               0.1               0.3
+ :ice              :ice              0.1               0.03              0.4
  :glass            :ice              0.1               0.03              0.4
  :glass            :glass            0.95              0.4               0.4
  :metal            :metal            0.6               0.4               0.4
