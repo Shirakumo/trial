@@ -1,5 +1,5 @@
 #|
-sbcl --noinform --load "$0" --eval '(generate)' --quit && exit
+exec sbcl --noinform --disable-debugger --load "$0" --eval '(generate)' --quit
 |#
 
 #+quicklisp (ql:quickload '(cl-markless-plump lass lquery cl-ppcre clip) :silent T)
@@ -92,9 +92,12 @@ sbcl --noinform --load "$0" --eval '(generate)' --quit && exit
   (let ((dom (plump:make-root)))
     (cl-markless:output (cl-markless:parse file (make-instance 'cl-markless:parser :embed-types (list* 'youtube cl-markless:*default-embed-types*)))
                         :target dom
-                        :format (make-instance 'org.shirakumo.markless.plump:plump
-                                               :css (style)))
+                        :format (make-instance 'org.shirakumo.markless.plump:plump :css (style)))
     (lquery:$ dom "a[href]" (each #'fixup-href))
+    (when (lquery:$1 dom "[data-language=\"common lisp\"]")
+      (lquery:$ dom (append "<link rel=\"stylesheet\" href=\"highlight-lisp.css\">"))
+      (lquery:$ dom (append "<script type=\"text/javascript\" src=\"highlight-lisp.js\">"))
+      (lquery:$ dom (append "<script type=\"text/javascript\">[...document.querySelectorAll('[data-language=\"common lisp\"] pre')].map(HighlightLisp.highlight_element);</script>")))
     (with-open-file (stream (make-pathname :type "html" :defaults file)
                             :direction :output
                             :if-exists :supersede)

@@ -1,0 +1,29 @@
+/**
+ * Inspired by github's default code highlighting
+ */
+pre .hl-highlighted {white-space: pre; margin: 0; padding: 0; background: none; border: none; overflow-x: auto; font-size: 13px;}
+
+.hl-highlighted {color: #008080;}
+.hl-highlighted .function {color: #008080;}
+.hl-highlighted .function.known {color: #800603;}
+.hl-highlighted .function.known.special {color: #2d2d2d; font-weight: bold;}
+.hl-highlighted .keyword {color: #990073;}
+.hl-highlighted .keyword.known {color: #990073;}
+.hl-highlighted .symbol {color: #75a;}
+.hl-highlighted .lambda-list {color: #966;}
+.hl-highlighted .number {color: #800;}
+.hl-highlighted .variable.known {color: #c3c;}
+.hl-highlighted .variable.global {color: #939;}
+.hl-highlighted .variable.constant {color: #229;}
+.hl-highlighted .nil {color: #f00;}
+.hl-highlighted .list {color: #222;}
+
+.hl-highlighted .string, .hl-highlighted .string * {color: #d14 !important;}
+.hl-highlighted .comment,
+.hl-highlighted .comment *,
+.hl-highlighted .comment .string
+.hl-highlighted .comment .string * {color: #777777 !important;}
+.hl-highlighted .string .comment {color: #d14 !important;}
+
+.hl-highlighted .list.active {display: inline-block; background: #aefff7;}
+
