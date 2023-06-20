@@ -6,8 +6,6 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-pool effects)
-
 (define-shader-pass render-pass (per-object-pass)
   ((color :port-type output :attachment :color-attachment0 :reader color)
    (depth :port-type output :attachment :depth-stencil-attachment :reader depth)))

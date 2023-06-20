@@ -847,40 +847,56 @@
    #:render)
   ;; effects.lisp
   (:export
-   #:effects
    #:render-pass
    #:color
    #:depth
-   #:msaa-pass
+   #:solid-render-pass
+   #:fill-color
    #:simple-post-effect-pass
    #:previous-pass
    #:color
+   #:active-p
    #:iterative-post-effect-pass
    #:iterations
    #:temporal-post-effect-pass
    #:previous
    #:copy-pass
    #:negative-pass
-   #:grayscale-pass
    #:box-blur-pass
+   #:intensity
    #:sobel-pass
    #:gaussian-blur-pass
+   #:direction
    #:radial-blur-pass
+   #:exposure
+   #:samples
+   #:origin
+   #:swirl-pass
+   #:radius
+   #:angle
    #:fxaa-pass
    #:blend-pass
    #:a-pass
    #:b-pass
-   #:color
+   #:blend-type
    #:high-pass-filter
+   #:threshold
    #:low-pass-filter
    #:chromatic-aberration-filter
-   #:black-render-pass
+   #:offset
+   #:luminance-pass
    #:light-scatter-pass
-   #:previous-pass
    #:black-render-pass
-   #:color
+   #:density
+   #:weight
+   #:decay
+   #:samples
    #:visualizer-pass
-   #:t[0] #:t[1] #:t[2] #:t[3])
+   #:t[0]
+   #:t[1]
+   #:t[2]
+   #:t[3]
+   #:textures-per-line)
   ;; entity.lisp
   (:export
    #:entity
@@ -949,6 +965,7 @@
    #:make-lines
    #:fullscreen-square
    #:empty-vertex-array
+   #:unit-cube
    #:axes
    #:2d-axes)
   ;; geometry.lisp
