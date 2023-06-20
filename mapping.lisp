@@ -262,7 +262,7 @@
 
 (defmethod perform-event-mapping (event (mapping axis-directional-mapping) loop)
   (let* ((pos (pos event))
-         (value (if (< (dead-zone mapping) (abs pos)) (abs pos) 0.0))
+         (value (if (< (dead-zone mapping) (abs pos)) pos 0.0))
          (action (action-type mapping))
          (vec (directional action)))
     (ecase (axis mapping)
