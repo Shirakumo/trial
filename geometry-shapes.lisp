@@ -266,6 +266,9 @@
 (define-asset (trial unit-cube) mesh
     (make-cube-mesh 1.0 :pack T))
 
+(define-asset (trial unit-sphere) mesh
+    (make-sphere-mesh 1.0 :pack T))
+
 (define-asset (trial axes) mesh
     (make-lines (list (list (vec 0 0 0) (vec 1 0 0 1)) (list (vec 10 0 0) (vec 1 0 0 1))
                       (list (vec 0 0 0) (vec 0 1 0 1)) (list (vec 0 10 0) (vec 0 1 0 1))
