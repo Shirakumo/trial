@@ -1,8 +1,8 @@
-<article><style>article{
+<article><a class="index" href="index.html">Index</a><style>article{
     max-width: 800px;
     font-size: 12pt;
     font-family: sans-serif;
-    margin: 3em auto;
+    margin: 0 auto 3em auto;
 }
 
 article h1{
@@ -34,4 +34,19 @@ article code{
 article .code-block{
     padding: 0.1em 0.5em;
     overflow-x: auto;
+}
+
+article a.index{
+    display: block;
+    text-decoration: none;
+    text-align: center;
+    font-size: 1.1em;
+    background: #151515;
+    border: 2px solid #151515;
+    color: #FEFEFE;
+}
+
+article a.index:hover{
+    background: #FEFEFE;
+    color: #151515;
 }</style><h1 id="parallax backgrounds">Parallax Backgrounds</h1><p>Trial includes support for simple 2D parallax backgrounds via the <code>parallax-background</code> entity. You can also stack multiple parallax background entities to create a greater sense of depth. Each background instance takes either a <code>:texture</code> initarg, or a <code>:default-background</code> initarg, which can contain the same keyword arguments as <code>change-background</code>:</p><ul><li><p><code>:texture</code><br>The texture to display as a parallax</p></li><li><p><code>:scaling</code><br>The scaling factor of the background texture as a <code>vec2</code></p></li><li><p><code>:parallax</code><br>The parallax movement speed factor as a <code>vec2</code></p></li><li><p><code>:offset</code><br>The base display offset of the background compared to the camera as a <code>vec2</code></p></li><li><p><code>:unit</code><br>The parallax background entity to update. Only needed when calling <code>change-background</code> directly.</p></li></ul><p>These parameters should give you complete control over the display behaviour of the background.</p></article>

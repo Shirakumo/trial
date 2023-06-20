@@ -1,8 +1,8 @@
-<article><style>article{
+<article><a class="index" href="index.html">Index</a><style>article{
     max-width: 800px;
     font-size: 12pt;
     font-family: sans-serif;
-    margin: 3em auto;
+    margin: 0 auto 3em auto;
 }
 
 article h1{
@@ -34,4 +34,19 @@ article code{
 article .code-block{
     padding: 0.1em 0.5em;
     overflow-x: auto;
+}
+
+article a.index{
+    display: block;
+    text-decoration: none;
+    text-align: center;
+    font-size: 1.1em;
+    background: #151515;
+    border: 2px solid #151515;
+    color: #FEFEFE;
+}
+
+article a.index:hover{
+    background: #FEFEFE;
+    color: #151515;
 }</style><h1 id="blinn-phong shading model">Blinn-Phong Shading Model</h1><p>Trial provides a <a class="external-link" href="standard-renderer.html">standard renderer</a> that implements the Blinn-Phong shading model and associated material. To use it, simply enter a <code>phong-render-pass</code> and ensure your objects provide a <code>phong-material</code>, or some appropriate conversion exists.</p><h2 id="material properties">Material Properties</h2><p>Each material has the following properties:</p><ul><li><p>Diffuse<br>This is put together through the <code>diffuse-texture</code> and the <code>diffuse-factor</code>, both of which are 4-component. The alpha component allows you to make semi-transparent materials.</p></li><li><p>Specular<br>This is put together through the <code>specular-texture</code> and the <code>specular-factor</code>, both of which are a singular component designating the &quot;glossiness&quot; of the surface.</p></li><li><p>Normal<br>The <code>normal-texture</code> provides the standard normal mapping behaviour.</p></li><li><p>Alpha-Cutoff<br>The <code>alpha-cutoff</code> designates a threshold below which the material is considered fully transparent.</p></li></ul><p>You may also use <code>pbr-material</code>s with this pass, in which case the albedo is used for diffuse, and the metalness for specular. Other properties are discarded.</p></article>

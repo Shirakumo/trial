@@ -1,8 +1,8 @@
-<article><style>article{
+<article><a class="index" href="index.html">Index</a><style>article{
     max-width: 800px;
     font-size: 12pt;
     font-family: sans-serif;
-    margin: 3em auto;
+    margin: 0 auto 3em auto;
 }
 
 article h1{
@@ -34,6 +34,21 @@ article code{
 article .code-block{
     padding: 0.1em 0.5em;
     overflow-x: auto;
+}
+
+article a.index{
+    display: block;
+    text-decoration: none;
+    text-align: center;
+    font-size: 1.1em;
+    background: #151515;
+    border: 2px solid #151515;
+    color: #FEFEFE;
+}
+
+article a.index:hover{
+    background: #FEFEFE;
+    color: #151515;
 }</style><h1 id="settings storage">Settings Storage</h1><p>Trial offers a standardised way to store and access user settings for your game. The settings are stored as a nested tree of plists.</p><h2 id="using settings">Using Settings</h2><p>Setting the default properties of the settings works simply by setfing <code>+settings+</code>:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(setf +settings+
       (copy-tree '(:audio (:latency 0.005
                            :backend :default

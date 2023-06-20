@@ -1,8 +1,8 @@
-<article><style>article{
+<article><a class="index" href="index.html">Index</a><style>article{
     max-width: 800px;
     font-size: 12pt;
     font-family: sans-serif;
-    margin: 3em auto;
+    margin: 0 auto 3em auto;
 }
 
 article h1{
@@ -34,6 +34,21 @@ article code{
 article .code-block{
     padding: 0.1em 0.5em;
     overflow-x: auto;
+}
+
+article a.index{
+    display: block;
+    text-decoration: none;
+    text-align: center;
+    font-size: 1.1em;
+    background: #151515;
+    border: 2px solid #151515;
+    color: #FEFEFE;
+}
+
+article a.index:hover{
+    background: #FEFEFE;
+    color: #151515;
 }</style><h1 id="shaders and you!">Shaders and You!</h1><p>Trial is based upon OpenGL and as such uses the GLSL language for writing shaders. While you can directly create <code>shader</code> instances and then compile them to a <code>shader-program</code>, the more typically intended user interface is through <code>shader-entity</code> classes, which are defined via <code>define-shader-entity</code>.</p><h2 id="shader entities">Shader Entities</h2><p>A <code>shader-entity</code> holds shader code fragments in its class, and can inherit shader code fragments from its superclasses. Trial will combine the shaders together automatically, such that shader semantics combine like other method semantics would in CLOS. More on that later. Defining a basic custom shader class is simple:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(define-shader-entity my-object (vertex-entity)
   ())
 

@@ -1,8 +1,8 @@
-<article><style>article{
+<article><a class="index" href="index.html">Index</a><style>article{
     max-width: 800px;
     font-size: 12pt;
     font-family: sans-serif;
-    margin: 3em auto;
+    margin: 0 auto 3em auto;
 }
 
 article h1{
@@ -34,5 +34,20 @@ article code{
 article .code-block{
     padding: 0.1em 0.5em;
     overflow-x: auto;
+}
+
+article a.index{
+    display: block;
+    text-decoration: none;
+    text-align: center;
+    font-size: 1.1em;
+    background: #151515;
+    border: 2px solid #151515;
+    color: #FEFEFE;
+}
+
+article a.index:hover{
+    background: #FEFEFE;
+    color: #151515;
 }</style><h1 id="audio output with harmony">Audio Output with Harmony</h1><p><a class="external-link" href="https://shirakumo.org/projects/harmony">Harmony</a> is an independent audio server system. It is capable of creating complex audio routing systems and also provides a variety of audio effects, outputs, and inputs out of the box. Please see its documentation for more details. In this section we briefly outline how the integration system <code>trial-harmony</code> can help you bridge the gap with Trial.</p><p>First, you will want to inherit from <code>org.shirakumo.fraf.trial.harmony:settings-main</code>. This <code>main</code> subclass will take care of initializing and finalizing the audio server when the game is started up, and will also automatically interpret the audio-related <a class="external-link" href="settings.html">settings</a>. If you would like to customise how the server builds its pipeline or provide other customisations outside the settings, you can do so with <code>server-initargs</code>:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(defmethod org.shirakumo.fraf.trial.harmony:serveri-initargs append ((main main))
   '(:effects ((mixed:biquad-filter :filter :lowpass :name :lowpass))))</pre></code><p>See <code>harmony:make-simple-server</code> for more information on accepted initargs.</p><p>Second, you will want to pre-load sound files. The <code>trial-harmony</code> system provides assets and resources to encapsulate the Harmony objects you need to manage. To import sounds and simple music tracks, use the <code>org.shirakumo.fraf.trial.harmony:sound</code> to define your assets. If you want to use Harmony's environments system to do horizontal mixing, define the environment using the <code>org.shirakumo.fraf.trial.harmony:environment</code> asset.</p><p>In order to play back a sound, just access its resource and play it back:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(org.shirakumo.fraf.harmony:play (// 'my-project 'sound))</pre></code><p>Note that each asset generates exactly <em>one</em> <code>voice</code> instance. You thus cannot play the same sound twice at the same time. Usually this is not an issue, as you can pass <code>:reset T</code> to <code>play</code> to restart the effect instead. In the rare cases where it is vital that the sound effect be played back multiple times simultaneously, you can either define the same sound as multiple assets, or use <code>close</code> before playing it back.</p></article><link rel="stylesheet" href="highlight-lisp.css"><script type="text/javascript" src="highlight-lisp.js"></script><script type="text/javascript">[...document.querySelectorAll('[data-language="common lisp"] pre')].map(HighlightLisp.highlight_element);</script>

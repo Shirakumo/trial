@@ -1,8 +1,8 @@
-<article><style>article{
+<article><a class="index" href="index.html">Index</a><style>article{
     max-width: 800px;
     font-size: 12pt;
     font-family: sans-serif;
-    margin: 3em auto;
+    margin: 0 auto 3em auto;
 }
 
 article h1{
@@ -34,6 +34,21 @@ article code{
 article .code-block{
     padding: 0.1em 0.5em;
     overflow-x: auto;
+}
+
+article a.index{
+    display: block;
+    text-decoration: none;
+    text-align: center;
+    font-size: 1.1em;
+    background: #151515;
+    border: 2px solid #151515;
+    color: #FEFEFE;
+}
+
+article a.index:hover{
+    background: #FEFEFE;
+    color: #151515;
 }</style><h1 id="user interfaces with alloy">User Interfaces with Alloy</h1><p><a class="external-link" href="https://shirakumo.org/projects/alloy">Alloy</a> is the primary toolkit with which user interfaces are created for Trial games. An integration system, trial-alloy, exists, which you should use for easier access to Alloy's UIs.</p><h2 id="getting started">Getting Started</h2><p>The first step is to define a <code>ui</code> subclass, which will be used to define the styling and default UI behaviour, and to act as the rendering method. The easiest way to render UI is to use a separate pass, which is then composited with your main game render.</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(define-shader-pass ui (org.shirakumo.fraf.trial.alloy:base-ui)
   ())</pre></code><p>You can then just enter an instance of this pass into your <a class="external-link" href="render-pipeline.html">render pipeline</a>. Since it is an Alloy UI instance, you can otherwise use it as you would any other Alloy UI.</p><p>The integration system takes care of translating Trial's input events into Alloy's input events, and also includes standard UI actions that you can use in your action-sets.</p><p>Note that this way the UI is rendered on a separate pass, and as such it will not automatically combine with your game render. In order to combine the two, it is recommended to use a <code>blend-pass</code> or similar to combine the two outputs:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(let ((game (make-instance 'render-pass))
       (ui (make-instance 'ui))

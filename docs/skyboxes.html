@@ -1,8 +1,8 @@
-<article><style>article{
+<article><a class="index" href="index.html">Index</a><style>article{
     max-width: 800px;
     font-size: 12pt;
     font-family: sans-serif;
-    margin: 3em auto;
+    margin: 0 auto 3em auto;
 }
 
 article h1{
@@ -34,4 +34,19 @@ article code{
 article .code-block{
     padding: 0.1em 0.5em;
     overflow-x: auto;
+}
+
+article a.index{
+    display: block;
+    text-decoration: none;
+    text-align: center;
+    font-size: 1.1em;
+    background: #151515;
+    border: 2px solid #151515;
+    color: #FEFEFE;
+}
+
+article a.index:hover{
+    background: #FEFEFE;
+    color: #151515;
 }</style><h1 id="skyboxes">Skyboxes</h1><p>Trial includes direct support for Skyboxes, through the <code>skybox</code> entity. It only requires a cubemap texture as its <code>:texture</code>, everything else is handled automatically based on current camera information, and the skybox will take care of drawing behind everything on its own.</p><p>If you use <a class="external-link" href="environment-maps.html">environment maps</a>, you should pass the <code>:environment-map</code> resource of your asset as the skybox' texture.</p><p>The skybox should work regardless of the shading technique used, as it doesn't require any shading to be applied at all, and instead relies on directly passing through the colour from the environment map.</p></article>

@@ -1,8 +1,8 @@
-<article><style>article{
+<article><a class="index" href="index.html">Index</a><style>article{
     max-width: 800px;
     font-size: 12pt;
     font-family: sans-serif;
-    margin: 3em auto;
+    margin: 0 auto 3em auto;
 }
 
 article h1{
@@ -34,6 +34,21 @@ article code{
 article .code-block{
     padding: 0.1em 0.5em;
     overflow-x: auto;
+}
+
+article a.index{
+    display: block;
+    text-decoration: none;
+    text-align: center;
+    font-size: 1.1em;
+    background: #151515;
+    border: 2px solid #151515;
+    color: #FEFEFE;
+}
+
+article a.index:hover{
+    background: #FEFEFE;
+    color: #151515;
 }</style><h1 id="valve steam integration">VALV<sup>E</sup> Steam Integration</h1><p>The <code>trial-steam</code> extension system provides a few features to more easily integrate with <a class="external-link" href="https://github.com/shinmera/cl-steamworks">cl-steamworks</a> for Steam-specific features like achievements and, in the very least, Steam compliance.</p><p>Setup from your end should be rather trivial for the basics: just inherit from the <code>main</code> subclass and set your Steam App-Id:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(defclass main (org.shirakumo.fraf.trial.steam:main)
   ()
   (:default-initargs :app-id 170))</pre></code><p>Note that even if you do this, the game will continue to work even if launched outside of Steam or if Steam isn't even present at all. It will try to connect to Steam on startup, but will just disable the extra integration bits if unavailable.</p><p>This integration will also automatically integrate with Trial's <a class="external-link" href="achievements.html">achievements</a> system.</p><h2 id="gamepad text input">Gamepad Text Input</h2><p>For full gamepad compatibility compliance any text input must be doable with a gamepad. Under Steam you can get an on-screen keyboard by using the appropriate Steamworks calls. The integration system will take care of translating the resulting text into a <code>text-entered</code> event. For Alloy, the following integration should be suitable:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(defmethod alloy:activate :after ((input alloy:text-input-component))

@@ -1,8 +1,8 @@
-<article><style>article{
+<article><a class="index" href="index.html">Index</a><style>article{
     max-width: 800px;
     font-size: 12pt;
     font-family: sans-serif;
-    margin: 3em auto;
+    margin: 0 auto 3em auto;
 }
 
 article h1{
@@ -34,6 +34,21 @@ article code{
 article .code-block{
     padding: 0.1em 0.5em;
     overflow-x: auto;
+}
+
+article a.index{
+    display: block;
+    text-decoration: none;
+    text-align: center;
+    font-size: 1.1em;
+    background: #151515;
+    border: 2px solid #151515;
+    color: #FEFEFE;
+}
+
+article a.index:hover{
+    background: #FEFEFE;
+    color: #151515;
 }</style><h1 id="sprites">Sprites</h1><p>Trial includes direct support for both displaying and importing animated sprites. At the base there is a <code>sprite-entity</code>, which displays a single sprite frame. The sprite requires a <code>texture</code> and a <code>vertex-array</code> that is created from an array of <code>sprite-frame</code>s via <code>make-sprite-frame-mesh</code>.</p><p>This data can be automatically generated from a json file via the <code>sprite-data</code> asset. The json format should be structured as follows:</p><code style="display:block" class="code-block" data-language="json"><pre>{
   &quot;frames&quot;: [
     {

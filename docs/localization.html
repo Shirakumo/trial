@@ -1,8 +1,8 @@
-<article><style>article{
+<article><a class="index" href="index.html">Index</a><style>article{
     max-width: 800px;
     font-size: 12pt;
     font-family: sans-serif;
-    margin: 3em auto;
+    margin: 0 auto 3em auto;
 }
 
 article h1{
@@ -34,5 +34,20 @@ article code{
 article .code-block{
     padding: 0.1em 0.5em;
     overflow-x: auto;
+}
+
+article a.index{
+    display: block;
+    text-decoration: none;
+    text-align: center;
+    font-size: 1.1em;
+    background: #151515;
+    border: 2px solid #151515;
+    color: #FEFEFE;
+}
+
+article a.index:hover{
+    background: #FEFEFE;
+    color: #151515;
 }</style><h1 id="localization and language">Localization and Language</h1><p>Trial includes a simple but effective localisation system. To use it, you should have a <code>lang</code> directory in your project root, and a subdirectory within for each language supported. The languages should follow the standard ISO 3-letter language codes.</p><p>Listing available languages works with <code>languages</code>, and a specific language can be loaded with <code>load-language</code>. A &quot;language&quot; itself is simply a hash table that typically associates symbols with strings of language-specific text.</p><p>You can access such an entry with <code>language-string</code>, or with the shorthand <code>@</code> macro. If your string needs interpolation, then it can be written as a format directive string, and interpolated with <code>@format</code> or <code>@formats</code>.</p><p>If you programmatically set <code>language-string</code>, you can serialise the table out via <code>save-language</code>. To react to changes to the language dictionary, whether by setting or via <code>load-language</code>, you can define a hook via <code>define-language-change-hook</code>.</p><p>Note that the values do not <em>have</em> to be strings. Sometimes it can be useful to stuff a list of choices under a single key, for instance. Trial's system does not care, and leaves it up to you to manage the data appropriately.</p><p>The base &quot;language&quot; is stored in each <code>language-dir</code> as a collection of files with the extension <code>.sexp</code>. The files consist of alternating keys and values:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>player-name &quot;Yukari&quot;
 npc-names (&quot;Frank&quot; &quot;Tim&quot; &quot;Alex&quot;)</pre></code><p>etc. You may also of course store other language-specific files such as dialogue scripts and so forth in the language specific directory.</p><p>Loading the special language <code>:system</code> will query the current system for the native locale and try to load a language matching that locale. Loading any language will try to load the language under any alternate codes and names, and if that fails, it'll try to load <code>eng</code> and if that fails, the first entry of <code>languages</code>.</p></article><link rel="stylesheet" href="highlight-lisp.css"><script type="text/javascript" src="highlight-lisp.js"></script><script type="text/javascript">[...document.querySelectorAll('[data-language="common lisp"] pre')].map(HighlightLisp.highlight_element);</script>

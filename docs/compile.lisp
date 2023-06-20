@@ -57,7 +57,7 @@ exec sbcl --noinform --disable-debugger --load "$0" --eval '(generate)' --quit
      :max-width 800px
      :font-size 12pt
      :font-family sans-serif
-     :margin 3em auto
+     :margin 0 auto 3em auto
      (h1
       :text-align center
       :font-size 2em)
@@ -76,7 +76,18 @@ exec sbcl --noinform --disable-debugger --load "$0" --eval '(generate)' --quit
       :padding 0 0.1em)
      (.code-block
       :padding 0.1em 0.5em
-      :overflow-x auto))))
+      :overflow-x auto)
+     (a.index
+      :display block
+      :text-decoration none
+      :text-align center
+      :font-size 1.1em
+      :background (hex 151515)
+      :border 2px solid (hex 151515)
+      :color (hex FEFEFE))
+     ((:and a.index :hover)
+      :background (hex FEFEFE)
+      :color (hex 151515)))))
 
 (defun suffix-p (suffix string)
   (and (<= (length suffix) (length string))
@@ -94,6 +105,8 @@ exec sbcl --noinform --disable-debugger --load "$0" --eval '(generate)' --quit
                         :target dom
                         :format (make-instance 'org.shirakumo.markless.plump:plump :css (style)))
     (lquery:$ dom "a[href]" (each #'fixup-href))
+    (unless (string= "index" (pathname-name file))
+      (lquery:$ dom "article" (prepend "<a class=\"index\" href=\"index.html\">Index</a>")))
     (when (lquery:$1 dom "[data-language=\"common lisp\"]")
       (lquery:$ dom (append "<link rel=\"stylesheet\" href=\"highlight-lisp.css\">"))
       (lquery:$ dom (append "<script type=\"text/javascript\" src=\"highlight-lisp.js\">"))

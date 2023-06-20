@@ -1,8 +1,8 @@
-<article><style>article{
+<article><a class="index" href="index.html">Index</a><style>article{
     max-width: 800px;
     font-size: 12pt;
     font-family: sans-serif;
-    margin: 3em auto;
+    margin: 0 auto 3em auto;
 }
 
 article h1{
@@ -34,6 +34,21 @@ article code{
 article .code-block{
     padding: 0.1em 0.5em;
     overflow-x: auto;
+}
+
+article a.index{
+    display: block;
+    text-decoration: none;
+    text-align: center;
+    font-size: 1.1em;
+    background: #151515;
+    border: 2px solid #151515;
+    color: #FEFEFE;
+}
+
+article a.index:hover{
+    background: #FEFEFE;
+    color: #151515;
 }</style><h1 id="getting started with trial">Getting started with Trial</h1><p>This brief guide illustrates the basic steps to get started with a new Trial project. If you instead would like to just have a look at what it can do instead, please have a look at the <a class="external-link" href="workbench.html">workbench</a>.</p><h2 id="prerequisites">Prerequisites</h2><p>You'll need a capable Lisp implementation. We heavily recommend using SBCL. While other implementations may work, we currently don't have the capacity to properly support them directly (patches welcome). We also currently only directly support Windows and Linux. Other systems like Mac or BSD are in a similar support state as other implementations.</p><p>Since the basic Quicklisp dist is often out of date and Trial or its dependencies can move fast, we also urge you to use your custom dist to fetch Trial and the required dependencies. To install the <a class="external-link" href="https://dist.shirakumo.org">shirakumo dist</a>, simple evaluate the following:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(ql-dist:install-dist &quot;http://dist.shirakumo.org/shirakumo.txt&quot;)</pre></code><p>After that you should be able to <code>(ql:quickload :trial)</code>.</p><h2 id="project scaffolding">Project scaffolding</h2><p>We recommend setting up a basic project scaffold as you would for anything else, with the following basic files in a fresh folder<sup class="footnote-reference"><a href="#footnote-1">[1]</a></sup>:</p><ul><li><p><code>my-project.asd</code></p><code style="display:block" class="code-block" data-language="common lisp"><pre>(asdf:defsystem my-project
   :components ((:file &quot;package&quot;)
                (:file &quot;main&quot;))

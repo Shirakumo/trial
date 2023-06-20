@@ -1,8 +1,8 @@
-<article><style>article{
+<article><a class="index" href="index.html">Index</a><style>article{
     max-width: 800px;
     font-size: 12pt;
     font-family: sans-serif;
-    margin: 3em auto;
+    margin: 0 auto 3em auto;
 }
 
 article h1{
@@ -34,4 +34,19 @@ article code{
 article .code-block{
     padding: 0.1em 0.5em;
     overflow-x: auto;
+}
+
+article a.index{
+    display: block;
+    text-decoration: none;
+    text-align: center;
+    font-size: 1.1em;
+    background: #151515;
+    border: 2px solid #151515;
+    color: #FEFEFE;
+}
+
+article a.index:hover{
+    background: #FEFEFE;
+    color: #151515;
 }</style><h1 id="transformations">Transformations</h1><p>While most of the time you'll want to manipulate positioning, rotation, and scaling of entities through their own properties in the scene graph, sometimes more precise control over the transformation stack is needed, such as when implementing a camera, or more detailed effects passes.</p><p>Trial separates the matrices into a set of three:</p><ul><li><p><code>projection-matrix</code><br>This holds the perspective projection matrix and is typically controlled by the <code>camera</code>. It is also only updated rarely, when the screen size changes or the user changes field of view preferences.</p></li><li><p><code>view-matrix</code><br>This holds the camera transformation matrix and is responsible for changing world coordinates into coordinates local to the camera. This is typically updated once per <code>tick</code> by the <code>camera</code>.</p></li><li><p><code>model-matrix</code><br>This holds the local transformation matrix for whichever entity is considered &quot;current&quot;. Any changes in <code>apply-transforms</code> should act on this matrix.</p></li></ul><p>The rendering system will take care of resetting the state of the model matrix between every entity's rendering, to ensure that no transformation data leaks.</p><p>You can manipulate all of the matrices with the following functions:</p><ul><li><p><code>translate</code>, <code>translate-by</code><br>Translate/move/shift the coordinates to another position.</p></li><li><p><code>rotate</code>, <code>rotate-by</code><br>Rotate the coordinates around a given axis.</p></li><li><p><code>scale</code>, <code>scale-by</code><br>Scale the coordinates by a factor along each axis.</p></li><li><p><code>reset</code>, <code>reset-by</code><br>Reset the matrix to an identity.</p></li><li><p><code>look-at</code><br>Pivots and translates the perspective to look at a given viewpoint.</p></li><li><p><code>perspective-projection</code><br>Sets up a projection matrix with perspective skewing. Usually for 3D applications.</p></li><li><p><code>orthographic-projection</code><br>Sets up an orthographic (unskewed) projection matrix. Usually for 2D applications.</p></li></ul><p>Each of the matrices can also be locally constrained via <code>with-pushed-matrix</code>. This allows you to execute temporary transformations without fear of permanently altering the transformations.</p><p>There's also an indefinite extent equivalent in <code>push-matrix</code> and <code>pop-matrix</code>. Unlike <code>with-pushed-matrix</code> the depth to which the matrix stack can be pushed is limited, and it can only push the model matrix. Any other matrix is unaffected.</p><p>Finally there is <code>vec-&gt;screen</code> and <code>screen-&gt;vec</code> which attempt to use the current matrices to translate a vector from world coordinates to window coordinates and back. Especially the backwards step is a bit fraught due to the lack of depth information.</p></article>

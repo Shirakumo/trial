@@ -1,8 +1,8 @@
-<article><style>article{
+<article><a class="index" href="index.html">Index</a><style>article{
     max-width: 800px;
     font-size: 12pt;
     font-family: sans-serif;
-    margin: 3em auto;
+    margin: 0 auto 3em auto;
 }
 
 article h1{
@@ -34,6 +34,21 @@ article code{
 article .code-block{
     padding: 0.1em 0.5em;
     overflow-x: auto;
+}
+
+article a.index{
+    display: block;
+    text-decoration: none;
+    text-align: center;
+    font-size: 1.1em;
+    background: #151515;
+    border: 2px solid #151515;
+    color: #FEFEFE;
+}
+
+article a.index:hover{
+    background: #FEFEFE;
+    color: #151515;
 }</style><h1 id="crash reporting">Crash Reporting</h1><p>By default in release mode Trial games will show a message box on crash. The message box will include some info on the crash, but typically users will not bother to actually forward the report to you. To solve this issue, the <code>trial-feedback</code> system allows sending automated feedback reports to an instance of the <a class="external-link" href="https://shirakumo.org/projects/feedback">Feedback</a> service for you.</p><p>To integrate your game with this, you must first create a project on your Feedback system that matches the <code>+app-system+</code> you defined for your game. Then, you must set your Radiance server up with the <code>r-oauth</code> extension and generate an oAuth application. In your game sources, you will then want to set <code>*client-args*</code> like so:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(defparameter org.shirakumo.fraf.trial.feedback:*client-args*
   '(:key &quot;XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX&quot;
     :secret &quot;XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX&quot;

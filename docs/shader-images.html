@@ -1,8 +1,8 @@
-<article><style>article{
+<article><a class="index" href="index.html">Index</a><style>article{
     max-width: 800px;
     font-size: 12pt;
     font-family: sans-serif;
-    margin: 3em auto;
+    margin: 0 auto 3em auto;
 }
 
 article h1{
@@ -34,6 +34,21 @@ article code{
 article .code-block{
     padding: 0.1em 0.5em;
     overflow-x: auto;
+}
+
+article a.index{
+    display: block;
+    text-decoration: none;
+    text-align: center;
+    font-size: 1.1em;
+    background: #151515;
+    border: 2px solid #151515;
+    color: #FEFEFE;
+}
+
+article a.index:hover{
+    background: #FEFEFE;
+    color: #151515;
 }</style><h1 id="shader images">Shader Images</h1><p>Sometimes it can be useful to generate a texture on the fly using a single, static shader. Trial has specific support to make that easy with the <code>image-renderer</code> and <code>cubemap-renderer</code> classes. Those classes act as standard <code>standalone-shader-entity</code>s, but with a special <code>render</code> method that can be called with a <code>texture</code> instance as the render target. The shader output will then be directly rendered onto that texture.</p><p>Both renderer classes provide two inputs to the fragment shader stage:</p><ul><li><p><code>world_position</code>, the position of the fragment in world space</p></li><li><p><code>uv</code>, the UV coordinate of the texture being rendered to</p></li></ul><p>Additionally, the <code>dynamic-image-renderer</code> class lets you perform the same but with dynamically provided shader code, via <code>dynamic-shader-entity</code>. This is then used to implement the <code>shader-image-generator</code> and the <code>shader-image</code> asset.</p><p>The extra arguments to the <code>shader-image</code> asset are the texture parameters. Thus, to define an asset that implements a shader image, you would do something like this:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(define-asset (trial brdf-lut) shader-image
     #p&quot;brdf-lut-renderer.glsl&quot;
   :width 512
