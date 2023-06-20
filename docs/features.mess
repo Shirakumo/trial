@@ -1,0 +1,21 @@
+# Features
+Trial includes a couple of standardised features that help with turning on and off debugging or performance switches. You may make use of the features in your own code as well. They are as follows:
+
+- ``:elide-buffer-access-checks``
+  Remove buffer bounds and permission checks
+- ``:elide-coercion-size-checks``
+  Remove element bounds checks when casting values between types
+- ``:elide-container-checks``
+  Remove scene graph containment invariant checks
+- ``:elide-handler-restarts``
+  Remove restarts around event handling
+- ``:trial-debug-all``
+  Enable all debug features (``*debug-features*``)
+- ``:trial-debug-none``
+  Disable all debug features (``*debug-features*``)
+- ``:trial-optimize-all``
+  Enable all optimize features (``*optimize-features*``)
+- ``:trial-optimize-none``
+  Disable all optimize features (``*optimize-features*``)
+- ``:trial-release``
+  Build for release. See "releasing"(link release.mess).

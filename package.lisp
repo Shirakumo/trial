@@ -1587,8 +1587,6 @@
    #:cl-type->gl-type
    #:gl-type->cl-type
    #:gl-coerce
-   #:texture-internal-format->pixel-format
-   #:pixel-format->pixel-type
    #:gl-vendor
    #:check-texture-size
    #:define-enum-check
@@ -1604,6 +1602,15 @@
    #:check-vertex-buffer-element-type
    #:check-vertex-buffer-data-usage
    #:check-framebuffer-attachment
+   #:internal-format-components
+   #:internal-format-pixel-format
+   #:internal-format-pixel-type
+   #:pixel-data-stride
+   #:infer-internal-format
+   #:infer-swizzle-format
+   #:infer-swizzle-channels
+   #:infer-pixel-type
+   #:pixel-type->cl-type
    #:when-gl-extension)
   ;; transforms.lisp
   (:export

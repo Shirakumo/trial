@@ -1,0 +1,49 @@
+# OpenGL
+Trial is heavily based on the OpenGL graphics API. GL can be rather difficult to deal with at times, and Trial includes a bunch of tools to ease handling its various complications.
+
+## Extensions
+Which GL features are even available depends a lot on the target system, and can only be known once the GL context has been executed. So, once the ``context`` is established, you can use ``gl-extension-p`` to test whether an extension is available, or directly run varying branches with ``when-gl-extension`` and ``gl-extension-case``.
+
+Branching based on available extensions allows you to implement optional features or fast paths for more recent OpenGL additions without dropping backwards compatibility.
+
+The set of available extensions is also logged on context creation, though under the ``debug`` level.
+
+## Features
+OpenGL allows you to disable and enable various features at runtime. Trial tries to keep track of this feature set to ensure that, in the cases that knowing the set of features matters, the information can't drift.
+
+To disable or enable features, you should use Trial's ``disable-feature`` and ``enable-feature`` functions, rather than directly calling GL's. You can then also use ``push-features``, ``pop-features``, or simply ``with-pushed-features`` to ensure that changes to the set of enabled features don't escape your local context.
+
+For instance, to disable depth testing for a particular draw, you could wrap it in ``(with-pushed-features (disable-feature :depth-test) ...)``
+
+## Vendor Specifics
+You can fetch the name of the current graphics vendor with ``gl-vendor``. It'll return either:
+
+- ``:intel``
+- ``:nvidia``
+- ``:amd``
+  This also includes the former ATI
+- ``:unknown``
+
+Sometimes it may be necessary to implement specific hardware vendor hacks to work around driver bugs.
+
+## Texture Formats
+One of the most complicated areas of OpenGL is the texture formats and pixel data. Trial includes the following functions to allow you to deal with them a bit more easily. It also uses these functions internally to provide sane defaults for the ``texture`` and associated classes.
+
+- ``internal-format-components``
+  Returns the number of color channel components
+- ``internal-format-pixel-format``
+  Returns a suitable pixel format to upload to the internal format
+- ``internal-format-pixel-type``
+  Returns a suitable pixel type to upload to the internal format
+- ``pixel-data-stride``
+  Returns the number of octets per pixel
+- ``infer-internal-format``
+  Infer an appropriate internal format from a pixel type and format
+- ``infer-swizzle-format``
+  Infer an appropriate swizzling method for a given pixel type
+- ``infer-swizzle-channels``
+  Infer an appropriate swizzling method for a given list of used channels
+- ``infer-pixel-type``
+  Infer an appropriate pixel type for a given depth and base type
+- ``pixel-type->cl-type``
+  Convert the pixel type to an appropriate cl type to use as backing storage

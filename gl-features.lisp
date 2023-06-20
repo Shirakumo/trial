@@ -7,34 +7,34 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defvar *gl-features* #(:blend
-                          :clip-distance0
-                          :clip-distance1
-                          :color-logic-op
-                          :cull-face
-                          :debug-output
-                          :debug-output-synchronous
-                          :depth-clamp
-                          :depth-test
-                          :dither
-                          :framebuffer-srgb
-                          :line-smooth
-                          :multisample
-                          :polygon-offset-fill
-                          :polygon-offset-line
-                          :polygon-offset-point
-                          :polygon-smooth
-                          :primitive-restart
-                          :primitive-restart-fixed-index
-                          :rasterizer-discard
-                          :sample-alpha-to-coverage
-                          :sample-alpha-to-one
-                          :sample-coverage
-                          :sample-shading
-                          :sample-mask
-                          :scissor-test
-                          :stencil-test
-                          :texture-cube-map-seamless
-                          :program-point-size))
+                        :clip-distance0
+                        :clip-distance1
+                        :color-logic-op
+                        :cull-face
+                        :debug-output
+                        :debug-output-synchronous
+                        :depth-clamp
+                        :depth-test
+                        :dither
+                        :framebuffer-srgb
+                        :line-smooth
+                        :multisample
+                        :polygon-offset-fill
+                        :polygon-offset-line
+                        :polygon-offset-point
+                        :polygon-smooth
+                        :primitive-restart
+                        :primitive-restart-fixed-index
+                        :rasterizer-discard
+                        :sample-alpha-to-coverage
+                        :sample-alpha-to-one
+                        :sample-coverage
+                        :sample-shading
+                        :sample-mask
+                        :scissor-test
+                        :stencil-test
+                        :texture-cube-map-seamless
+                        :program-point-size))
 
 (defvar *default-enabled-gl-features* #(:dither :multisample))
 

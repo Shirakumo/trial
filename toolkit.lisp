@@ -817,55 +817,6 @@
                 (error "~a is not a valid ~a. Needs to be one of the following:~%~a"
                        enum ',name ,list))))))
 
-(defun texture-internal-format->pixel-format (format)
-  (ecase format
-    ((:stencil-index :stencil-index1 :stencil-index4 :stencil-index8 :stencil-index16)
-     :stencil-index)
-    ((:depth-component :depth-component16 :depth-component24 :depth-component32 :depth-component32f)
-     :depth-component)
-    ((:depth-stencil :depth32f-stencil8 :depth24-stencil8)
-     :depth-stencil)
-    ((:r8i :r8ui :r16i :r16ui :r32i :r32ui)
-     :red-integer)
-    ((:rgb8i :rgb8ui :rgb16i :rgb16ui :rgb32i :rgb32ui)
-     :rg-integer)
-    ((:rgba8i :rgba8ui :rgba16i :rgba16ui :rgba32i :rgba32ui)
-     :rgba-integer)
-    ((:red :r8 :r8-snorm :r16 :r16-snorm :r16f :r32f :compressed-red :compressed-red-rgtc1 :compressed-signed-red-rgtc1)
-     :red)
-    ((:rg :rg8 :rg8-snorm :rg16 :rg16-snorm :rg16f :rg32f :compressed-rg :compressed-rg-rgtc2 :compressed-signed-rg-rgtc2)
-     :rg)
-    ((:rgb :r3-g3-b2 :rgb4 :rgb5 :rgb8 :rgb8-snorm :rgb10 :rgb12 :rgb16-snorm :rgba2 :rgba4 :rgb16f :rgb32f
-           :r11f-g11f-b10f :rgb9-e5 :srgb :srgb8
-           :compressed-rgb :compressed-srgb :compressed-rgb-bptc-signed-float :compressed-rgb-bptc-unsigned-float)
-     :rgb)
-    ((:rgba :rgb5-a1 :rgba8 :rgba8-snorm :rgb10-a2 :rgb10-a2ui :rgba12 :rgba16 :srgb-alpha :srgb8-alpha8
-      :rgba16f :rgba32f
-      :compressed-rgba :compressed-srgb-alpha :compressed-rgba-bptc-unorm :compressed-srgb-alpha-bptc-unorm)
-     :rgba)))
-
-(defun pixel-format->pixel-type (format)
-  (case format
-    (:depth-stencil :unsigned-int-24-8)
-    (:depth24-stencil8 :unsigned-int-24-8)
-    (:depth32f-stencil8 :float-32-unsigned-int-24-8-rev)
-    (T :unsigned-byte)))
-
-(defun texture-internal-format->pixel-type (format)
-  (case format
-    (:depth-stencil :unsigned-int-24-8)
-    (:depth24-stencil8 :unsigned-int-24-8)
-    (:depth32f-stencil8 :unsigned-int-32-8)
-    ((:r8i :rg8i :rgb8i :rgba8i) :byte)
-    ((:r16i :rg16i :rgb16i :rgba16i) :short)
-    ((:r32i :rg32i :rgb32i :rgba32i) :int)
-    ((:r8ui :rg8ui :rgb8ui :rgba8ui) :unsigned-byte)
-    ((:r16ui :rg16ui :rgb16ui :rgba16ui) :unsigned-short)
-    ((:r32ui :rg32ui :rgb32ui :rgba32ui) :unsigned-int)
-    ((:r16f :rg16f :rgb16f :rgba16f) :half-float)
-    ((:r32f :rg32f :rgb32f :rgba32f) :float)
-    (T :unsigned-byte)))
-
 (define-enum-check texture-target
   :texture-1d :texture-2d :texture-3d
   :texture-1d-array :texture-2d-array
