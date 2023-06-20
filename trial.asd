@@ -81,7 +81,6 @@
                (:file "shader-pass" :depends-on ("package" "shader-entity" "resource" ("resources" "framebuffer") ("resources" "shader-program") "scene" "loader" "context" "geometry-shapes" "camera"))
                (:file "skybox" :depends-on ("package" "shader-entity" "transforms"))
                (:file "sprite" :depends-on ("package" "shader-entity" "helpers" ("assets" "sprite-data")))
-               (:file "ssao" :depends-on ("package" "shader-pass" "transforms"))
                (:file "static-vector" :depends-on ("package"))
                (:file "text" :depends-on ("package" "helpers" ("assets" "image")))
                (:file "texture-source" :depends-on ("package" "toolkit"))

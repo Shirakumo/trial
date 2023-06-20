@@ -14,14 +14,14 @@
 
 (define-shader-pass solid-render-pass (render-pass)
   ((color :port-type output)
-   (fill :initarg :fill :initform (vec 0 0 0 1) :uniform T :accessor fill)))
+   (fill-color :initarg :fill-color :initform (vec 0 0 0 1) :uniform T :accessor fill-color)))
 
 (define-class-shader (solid-render-pass :fragment-shader)
   "out vec4 color;
-uniform vec4 fill;
+uniform vec4 fill_color;
 
 void main(){
-  color = fill;
+  color = fill_color;
 }")
 
 (define-shader-pass simple-post-effect-pass (post-effect-pass)
@@ -161,9 +161,9 @@ void main(){
    (density :initarg :density :initform 1.0 :uniform T :accessor density)
    (weight :initarg :weight :initform 0.01 :uniform T :accessor weight)
    (decay :initarg :decay :initform 1.0 :uniform T :accessor decay)
-   (exposure :initarg :exposure :initform 1.2 :uniform T :exposure threshold)
-   (samples :initarg :samples :initform 100 :uniform T :samples threshold)
-   (origin :initarg :origin :initform (vec 0.5 0.5) :uniform T :origin threshold))
+   (exposure :initarg :exposure :initform 1.2 :uniform T :accessor exposure)
+   (samples :initarg :samples :initform 100 :uniform T :accessor samples)
+   (origin :initarg :origin :initform (vec 0.5 0.5) :uniform T :accessor origin))
   (:shader-file (trial "light-scatter.glsl")))
 
 (define-shader-pass visualizer-pass (post-effect-pass)
