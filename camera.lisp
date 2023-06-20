@@ -131,7 +131,7 @@
 (defclass fps-camera (3d-camera)
   ((rotation :initarg :rotation :accessor rotation)
    (x-acceleration :initarg :x-acceleration :accessor x-acceleration)
-   (y-acceleration :initarg :x-acceleration :accessor x-acceleration))
+   (y-acceleration :initarg :y-acceleration :accessor y-acceleration))
   (:default-initargs
    :rotation (vec 0 0 0)
    :x-acceleration 0.01
