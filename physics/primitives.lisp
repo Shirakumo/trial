@@ -94,25 +94,37 @@
                      :transform (primitive-transform primitive)
                      args))
 
-(defstruct (sphere (:include primitive))
+(defmacro define-primitive-type (name &body slots)
+  (let ((int-constructor (mksym *package* '%make- name))
+        (constructor (mksym *package* 'make- name)))
+    (destructuring-bind (name &optional (super 'primitive)) (enlist name)
+      `(progn
+         (declaim (inline ,constructor))
+         (defstruct (,name (:constructor ,int-constructor)
+                           (:include ,super))
+           ,@slots)
+         
+         (defun ,constructor (&rest args &key location orientation)
+           (let ((primitive (apply #',int-constructor (remf* args :location :orientation))))
+             (when location (setf (location primitive) location))
+             (when orientation (setf (orientation primitive) orientation))
+             primitive))
+
+         ,@(loop for (slot) in slots
+                 collect `(define-accessor-delegate-methods ,slot (,(mksym *package* name '- slot) ,name)))))))
+
+(define-primitive-type sphere
   (radius 1.0 :type single-float))
 
-(define-accessor-delegate-methods radius (sphere-radius sphere))
-
-(defstruct (plane (:include primitive))
+(define-primitive-type plane
   (normal (vec3 0 1 0) :type vec3)
   (offset 0.0 :type single-float))
 
-(define-accessor-delegate-methods normal (plane-normal plane))
-(define-accessor-delegate-methods offset (plane-offset plane))
-
-(defstruct (half-space (:include plane)))
+(define-primitive-type (half-space plane))
 
 ;; NOTE: the box is centred at 0,0,0 and the bsize is the half-size along each axis.
-(defstruct (box (:include primitive))
+(define-primitive-type box
   (bsize (vec3 1 1 1) :type vec3))
-
-(define-accessor-delegate-methods bsize (box-bsize box))
 
 ;; Frustums are just boxes skewed by a linear transform. We provide these shorthands
 ;; here to allow easier construction of frustum testing primitives.
@@ -130,21 +142,18 @@
     (make-frustum-box (- fw) fw (- fh) fh near far)))
 
 ;; NOTE: the cylinder is centred at 0,0,0 and points Y-up. the "height" is the half-height.
-(defstruct (cylinder (:include primitive))
+(define-primitive-type cylinder
   (radius 1.0 :type single-float)
   (height 1.0 :type single-float))
 
-(define-accessor-delegate-methods radius (cylinder-radius cylinder))
-(define-accessor-delegate-methods height (cylinder-height cylinder))
+(define-primitive-type (pill cylinder))
 
-(defstruct (pill (:include cylinder)))
-
-(defstruct (triangle (:include primitive))
+(define-primitive-type triangle
   (a (vec3 0 0 0) :type vec3)
   (b (vec3 0 0 0) :type vec3)
   (c (vec3 0 0 0) :type vec3))
 
-(defstruct (general-mesh (:include primitive))
+(define-primitive-type general-mesh
   ;; NOTE: Packed vertex positions as X Y Z triplets
   ;; [ X0 Y0 Z0 X1 Y1 Z1 X2 Y2 Z2 X3 Y3 Z3 ... ]
   (vertices #() :type (simple-array single-float (*)))
@@ -152,7 +161,7 @@
   ;; [ 0 1 2 2 3 0 ... ]
   (faces #() :type (simple-array (unsigned-byte 32) (*))))
 
-(defstruct (convex-mesh (:include general-mesh)))
+(define-primitive-type (convex-mesh general-mesh))
 
 (defmacro with-mesh-construction ((constructor &optional (finalizer 'finalize)) &body body)
   (let ((vertices (gensym "VERTICES"))
