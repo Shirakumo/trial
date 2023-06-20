@@ -1264,7 +1264,9 @@
    #:pack-pipeline)
   ;; pipelined-scene.lisp
   (:export
-   #:pipelined-scene)
+   #:pipelined-scene
+   #:to-preload
+   #:preload)
   ;; prompt.lisp
   (:export
    #:prompt-string
