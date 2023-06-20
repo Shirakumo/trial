@@ -145,10 +145,10 @@
         (when (< (* (vx impulse) (contact-static-friction contact)) planar)
           (setf (vy impulse) (/ (vy impulse) planar))
           (setf (vz impulse) (/ (vz impulse) planar))
-          (setf (vx impulse) (/ (contact-desired-delta contact)
-                                (+ (miref3 delta-vel 0)
-                                   (* (miref3 delta-vel 1) dynamic-friction (vy impulse))
-                                   (* (miref3 delta-vel 2) dynamic-friction (vz impulse)))))
+          (let ((delta-inv (+ (miref3 delta-vel 0)
+                              (* (miref3 delta-vel 1) dynamic-friction (vy impulse))
+                              (* (miref3 delta-vel 2) dynamic-friction (vz impulse)))))
+            (setf (vx impulse) (if (/= delta-inv 0.0) (/ (contact-desired-delta contact) delta-inv) 0.0)))
           (setf (vy impulse) (* (vy impulse) dynamic-friction (vx impulse)))
           (setf (vz impulse) (* (vz impulse) dynamic-friction (vx impulse))))
         impulse))))
@@ -242,8 +242,8 @@
 (defmethod (setf units-per-metre) (units (system rigidbody-system))
   ;; The default we pick here is for assuming 1un = 1cm
   (call-next-method)
-  (setf (velocity-eps system) (* 0.01 units))
-  (setf (depth-eps system) (* 0.01 units)))
+  (setf (velocity-eps system) (* units 0.01))
+  (setf (depth-eps system) (* units 0.01)))
 
 (defmethod generate-hits ((system rigidbody-system) contacts start end)
   ;; TODO: replace with something that isn't as dumb as this.
