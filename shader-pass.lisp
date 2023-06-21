@@ -488,3 +488,31 @@ out vec4 color;
 void main(){
   color = texture(previous_pass, uv);
 }")
+
+(define-shader-pass compute-pass (single-shader-pass)
+  ((work-groups :initform (vec 1 1 1) :initarg :work-groups :accessor work-groups)
+   (barrier :initform 4294967295)))
+
+(defmethod shared-initialize :after ((pass compute-pass) slots &key (barrier NIL barrier-p))
+  (when barrier-p (setf (barrier pass) barrier)))
+
+(defmethod barrier ((pass compute-pass))
+  (cffi:foreign-bitfield-symbols '%gl::MemoryBarrierMask (slot-value pass 'barrier)))
+
+(defmethod (setf barrier) ((bits list) (pass compute-pass))
+  (setf (slot-value pass 'barrier) (cffi:foreign-bitfield-value '%gl::MemoryBarrierMask bits)))
+
+(defmethod render ((pass single-shader-pass) (program shader-program))
+  (let ((work-groups (work-groups pass)))
+    (%gl:dispatch-compute
+     (truncate (vx work-groups))
+     (truncate (vy work-groups))
+     (truncate (vz work-groups)))
+    (when (/= 0 (barrier pass))
+      (%gl:memory-barrier (barrier pass)))))
+
+;; KLUDGE: this sucks as we override more than we need to.
+(defmethod (setf class-shader) :before (shader type (class shader-pass-class))
+  (when (and (c2mop:subclassp class (find-class 'compute-pass))
+             (not (eql type :compute-shader)))
+    (error "May only attach a compute shader to compute-passes.")))
