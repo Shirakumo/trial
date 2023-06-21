@@ -19,19 +19,15 @@
   (size NIL :initarg :size :initform 1000 :reader size)
   (particles (:array (:struct particle) size)))
 
-(define-gl-struct dead-particle-buffer
+(define-gl-struct particle-index-buffer
   (size NIL :initarg :size :initform 1000 :reader size)
-  (dead-particles (:array :int size)))
-
-(define-gl-struct alive-particle-buffer
-  (size NIL :initarg :size :initform 1000 :reader size)
-  (alive-particles (:array :int size)))
+  (indices (:array :int size)))
 
 (define-gl-struct particle-counter-buffer
   (alive-count :int)
   (dead-count :int)
   (real-emit-count :int)
-  (count :int))
+  (total-count :int))
 
 (define-gl-struct particle-argument-buffer
   (emit-args (:array :int 3))
@@ -77,9 +73,9 @@
     (setf particle-emitter-buffer (make-instance 'shader-storage-buffer :binding NIL :struct (make-instance 'particle-emitter-buffer)))
     (setf particle-argument-buffer (make-instance 'shader-storage-buffer :binding NIL :struct (make-instance 'particle-argument-buffer)))
     (setf particle-counter-buffer (make-instance 'shader-storage-buffer :binding NIL :struct (make-instance 'particle-counter-buffer)))
-    (setf alive-particle-buffer (make-instance 'shader-storage-buffer :binding NIL :struct (make-instance 'alive-particle-buffer :size max-particles)))
-    (setf alive-particle-buffer-back (make-instance 'shader-storage-buffer :binding NIL :struct (make-instance 'alive-particle-buffer :size max-particles)))
-    (setf dead-particle-buffer (make-instance 'shader-storage-buffer :binding NIL :struct (make-instance 'dead-particle-buffer :size max-particles)))
+    (setf alive-particle-buffer (make-instance 'shader-storage-buffer :binding "alive_particles" :struct (make-instance 'particle-index-buffer :size max-particles)))
+    (setf alive-particle-buffer-back (make-instance 'shader-storage-buffer :binding "alive_particles" :struct (make-instance 'particle-index-buffer :size max-particles)))
+    (setf dead-particle-buffer (make-instance 'shader-storage-buffer :binding "dead_particles" :struct (make-instance 'particle-index-buffer :size max-particles)))
     (setf particle-buffer (make-instance 'shader-storage-buffer :binding NIL :struct (make-instance 'particle-buffer :size max-particles)))
     
     (setf kickoff-pass (make-instance 'particle-kickoff-pass))
@@ -107,3 +103,5 @@
   (let ((particle-count (slot-value (gl-struct (slot-value emitter 'particle-counter-buffer)) 'count)))
     (%gl:draw-arrays :triangles 0 (* particle-count 6)))
   (gl:bind-vertex-array 0))
+
+;; https://github.com/turanszkij/WickedEngine/tree/9caf25a52996c6c62fc39f10784d8951f715b05d/WickedEngine
