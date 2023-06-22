@@ -31,6 +31,17 @@
          (%gl:buffer-sub-data buffer-type buffer-start count data)
       (gl:bind-buffer buffer-type 0))))
 
+(defun download-buffer-data/ptr (buffer data count &optional (buffer-start 0))
+  (let ((buffer-type (buffer-type buffer)))
+    #-elide-buffer-access-checks
+    (when (< (size buffer) (+ buffer-start count))
+      (error "Attempting to read ~d bytes of data at offset ~d from a buffer of size ~d."
+             count buffer-start (size buffer)))
+    (gl:bind-buffer buffer-type (gl-name buffer))
+    (unwind-protect
+         (%gl:get-buffer-sub-data buffer-type buffer-start count data)
+      (gl:bind-buffer buffer-type 0))))
+
 (defun resize-buffer/ptr (buffer size &optional (data (cffi:null-pointer)))
   (let ((buffer-type (buffer-type buffer)))
     (gl:bind-buffer buffer-type (gl-name buffer))
@@ -49,6 +60,17 @@
       (error "Attempting to update ~d bytes from ~a, when it has only ~d bytes available."
              count data (memory-region-size region)))
     (update-buffer-data/ptr buffer (memory-region-pointer region) (or count (memory-region-size region)) buffer-start)))
+
+(defmethod download-buffer-data ((buffer buffer-object) (data (eql T)) &rest args)
+  (apply #'download-buffer-data buffer (buffer-data buffer) args))
+
+(defmethod download-buffer-data ((buffer buffer-object) data &key (buffer-start 0) (data-start 0) count)
+  (mem:with-memory-region (region data :offset data-start)
+    #-elide-buffer-access-checks
+    (when (and count (< (memory-region-size region) count))
+      (error "Attempting to update ~d bytes from ~a, when it has only ~d bytes available."
+             count data (memory-region-size region)))
+    (download-buffer-data/ptr buffer (memory-region-pointer region) (or count (memory-region-size region)) buffer-start)))
 
 (defmethod resize-buffer ((buffer vertex-buffer) (size (eql T)) &key (data (buffer-data buffer)) (data-start 0))
   (mem:with-memory-region (region data :offset data-start)
