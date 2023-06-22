@@ -124,14 +124,16 @@ With just the actions defined, they won't actually fire yet. Let's create a ``ke
   (key :one-of (:space)))
 ::
 
-This will make the actions work with both keyboard and game controllers. Now we just need to modify ``launch`` to load it in:
+This will make the actions work with both keyboard and game controllers. Now we just need to let Trial know what our primary game's system is so it can search for the keymap in the proper place, and modify ``launch`` to load it in:
 
 :: common lisp
+(setf +app-system+ "my-project")
+
 (defun launch (&rest args)
   (let ((*package* #.*package*))
     (load-keymap)
     (setf (active-p (action-set 'in-game)) T)
-    (apply #'trial:launch main args)))
+    (apply #'trial:launch 'main args)))
 ::
 
 We bind the ``*package*`` to the one of our current source file to ensure that all symbols in the keymap are resolved to the ones from our package. And once we have loaded the keymap, we set the ``in-game`` action set to active, to ensure that the actions are actually fired[3].

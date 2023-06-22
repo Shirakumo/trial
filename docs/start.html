@@ -90,11 +90,13 @@ article a.index:hover{
 
 (trigger hide
   (button :one-of (:a))
-  (key :one-of (:space)))</pre></code><p>This will make the actions work with both keyboard and game controllers. Now we just need to modify <code>launch</code> to load it in:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(defun launch (&amp;rest args)
+  (key :one-of (:space)))</pre></code><p>This will make the actions work with both keyboard and game controllers. Now we just need to let Trial know what our primary game's system is so it can search for the keymap in the proper place, and modify <code>launch</code> to load it in:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(setf +app-system+ &quot;my-project&quot;)
+
+(defun launch (&amp;rest args)
   (let ((*package* #.*package*))
     (load-keymap)
     (setf (active-p (action-set 'in-game)) T)
-    (apply #'trial:launch main args)))</pre></code><p>We bind the <code>*package*</code> to the one of our current source file to ensure that all symbols in the keymap are resolved to the ones from our package. And once we have loaded the keymap, we set the <code>in-game</code> action set to active, to ensure that the actions are actually fired<sup class="footnote-reference"><a href="#footnote-3">[3]</a></sup>.</p><p>Each action we defined is also an event type that you can install a handler on to catch firings of immediately. However, often it's also useful to just test whether a button is held down, or especially in the case of directional movement, what the current movement extent is.</p><p>To do so, we can use the <code>retained</code> and <code>directional</code> functions. Let's extend our <code>tick</code> handler to make the cube move around:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(define-handler (my-cube tick) (tt dt)
+    (apply #'trial:launch 'main args)))</pre></code><p>We bind the <code>*package*</code> to the one of our current source file to ensure that all symbols in the keymap are resolved to the ones from our package. And once we have loaded the keymap, we set the <code>in-game</code> action set to active, to ensure that the actions are actually fired<sup class="footnote-reference"><a href="#footnote-3">[3]</a></sup>.</p><p>Each action we defined is also an event type that you can install a handler on to catch firings of immediately. However, often it's also useful to just test whether a button is held down, or especially in the case of directional movement, what the current movement extent is.</p><p>To do so, we can use the <code>retained</code> and <code>directional</code> functions. Let's extend our <code>tick</code> handler to make the cube move around:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(define-handler (my-cube tick) (tt dt)
   (setf (orientation my-cube) (qfrom-angle +vy+ tt))
   (let ((movement (directional 'move))
         (speed 10.0))
