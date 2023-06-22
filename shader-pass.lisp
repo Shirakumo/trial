@@ -248,12 +248,10 @@
 (defmethod capture ((pass shader-pass) &rest args)
   (apply #'capture (framebuffer pass) args))
 
-(defmethod render :before ((pass shader-pass) target)
-  (activate (framebuffer pass))
-  (bind-textures pass))
-
 (defmethod render (object (pass shader-pass))
   (let ((program (shader-program-for-pass pass object)))
+    (activate (framebuffer pass))
+    (bind-textures pass)
     (prepare-pass-program pass program)
     (render object program)))
 
@@ -399,6 +397,8 @@
 
 (defmethod render-frame ((pass per-object-pass) frame)
   (declare (type (and vector (not simple-vector)) frame))
+  (activate (framebuffer pass))
+  (bind-textures pass)
   (loop for (object . program) across frame
         do (render-with pass object program)))
 
@@ -441,6 +441,8 @@
   (shader-program pass))
 
 (defmethod render ((pass single-shader-pass) (_ null))
+  (activate (framebuffer pass))
+  (bind-textures pass)
   (render pass (shader-program pass)))
 
 (defmethod render :around ((pass single-shader-pass) (program shader-program))
@@ -496,14 +498,21 @@ void main(){
 (defmethod shared-initialize :after ((pass compute-pass) slots &key (barrier NIL barrier-p))
   (when barrier-p (setf (barrier pass) barrier)))
 
+(defmethod handle ((event event) (pass compute-pass)))
+
 (defmethod barrier ((pass compute-pass))
   (cffi:foreign-bitfield-symbols '%gl::MemoryBarrierMask (slot-value pass 'barrier)))
 
 (defmethod (setf barrier) ((bits list) (pass compute-pass))
   (setf (slot-value pass 'barrier) (cffi:foreign-bitfield-value '%gl::MemoryBarrierMask bits)))
 
-(defmethod render ((pass single-shader-pass) (program shader-program))
-  (let ((work-groups (work-groups pass)))
+(defmethod render ((pass compute-pass) (_ null))
+  (bind-textures pass)
+  (render pass (shader-program pass)))
+
+(defmethod render ((pass compute-pass) (program shader-program))
+  (let ((work-groups (work-groups pass))
+        (barrier (slot-value pass 'barrier)))
     (etypecase work-groups
       (vec3
        (%gl:dispatch-compute
@@ -515,8 +524,8 @@ void main(){
       (buffer-object
        (%gl:bind-buffer :dispatch-indirect-buffer (gl-name work-groups))
        (%gl:dispatch-compute-indirect 0)))
-    (when (/= 0 (barrier pass))
-      (%gl:memory-barrier (barrier pass)))))
+    (when (/= 0 barrier)
+      (%gl:memory-barrier barrier))))
 
 ;; KLUDGE: this sucks as we override more than we need to.
 (defmethod (setf class-shader) :before (shader type (class shader-pass-class))

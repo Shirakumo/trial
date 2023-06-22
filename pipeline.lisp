@@ -173,15 +173,16 @@
                             do (when (and (typep port 'output)
                                           (eql :color-attachment0 (attachment port)))
                                  (return port)))))
-          (flet ((dimension (func)
-                   (funcall func (texture output))))
-            (setf (framebuffer pass)
-                  (make-instance 'framebuffer
-                                 :width (dimension #'width)
-                                 :height (dimension #'height)
-                                 :attachments (loop for port in (flow:ports pass)
-                                                    when (typep port 'output)
-                                                    collect (list (attachment port) (texture port))))))))
+          (when output
+            (flet ((dimension (func)
+                     (funcall func (texture output))))
+              (setf (framebuffer pass)
+                    (make-instance 'framebuffer
+                                   :width (dimension #'width)
+                                   :height (dimension #'height)
+                                   :attachments (loop for port in (flow:ports pass)
+                                                      when (typep port 'output)
+                                                      collect (list (attachment port) (texture port)))))))))
       ;; Now re-set the activation to short-modify the pipeline as necessary.
       (dolist (pass passes)
         (setf (active-p pass) (active-p pass)))
