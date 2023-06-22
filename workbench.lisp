@@ -10,8 +10,7 @@
 
 (defclass workbench (main)
   ((paused-p :initform NIL :accessor paused-p))
-  (:default-initargs :clear-color (vec 0.1 0.1 0.1)
-                     :context '(:vsync T)))
+  (:default-initargs :context '(:vsync T)))
 
 (defmethod update ((main workbench) tt dt fc)
   (if (paused-p main)
@@ -67,37 +66,15 @@
   (when (string= text "s")
     (issue (scene +main+) 'tick :tt 1.0d0 :dt 0.01 :fc 1)))
 
+(define-asset (workbench balloon) sprite-data
+    #p "~/Projects/cl/kandria/data/sprite/balloon.json")
+
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
-    (enter (make-instance 'fps-counter) scene)
-    (enter (make-instance 'editor-camera :location (VEC3 0.0 2.3 7.3) :fov 50 :move-speed 0.1) scene)
-    
-    (enter (make-instance 'skybox :texture (assets:// :sandy-beach :environment-map)) scene)
-    (enter (make-instance 'planey :location (vec 0 5 -5)) scene)
-    (enter (make-instance 'planey :orientation (qfrom-angle +vx+ (deg->rad -90))) scene)
-    (enter (make-instance 'meshy :asset (assets:asset :marble-bust) :scaling (vec 10 10 10)) scene)
-
-    (let ((physics (make-instance 'rigidbody-system :units-per-metre 0.1)))
-      (enter (make-instance 'rigidbody :physics-primitives (make-box :bsize (vec 5 1 5) :location (vec 0 -1 0) :material :ice)) physics)
-      (enter (make-instance 'rigidbody :physics-primitives (make-box :bsize (vec 5 5 1) :location (vec 0 5 -6) :material :ice)) physics)
-      (loop for i from 0 below 10
-            for cube = (make-instance 'spherey :location (vec (+ 3 (random 0.1)) (+ 5 (* i 1)) (random 0.1)))
-            do (enter cube physics)
-               (enter cube scene))
-      (enter (make-instance 'gravity :gravity (vec 0 -10 0)) physics)
-      (enter physics scene))
-
-    (enter (make-instance 'environment-light :asset (assets:asset :sandy-beach) :color (vec 0.3 0.3 0.3)) scene)
-    (enter (make-instance 'point-light :location (vec 2.0 4.0 -1.0) :color (vec 15.0 0 0) :cast-shadows-p T) scene)
-    (enter (make-instance 'spot-light :location (vec -5.0 4.0 0.0) :color (vec 0 15.0 0)
-                                      :inner-radius 10 :outer-radius 20 :direction (vec 2 -1 0)
-                                      :cast-shadows-p T) scene)
-    (enter (make-instance 'directional-light  :color (vec 0 0 15.0)
-                                              :direction (vec 0 -1 1)
-                                              :cast-shadows-p T) scene)
-
-    (let ((render (make-instance 'pbr-render-pass))
-          (map (make-instance 'tone-mapping-pass)))
-      (connect (port render 'color) (port map 'previous-pass) scene)))
+    (disable-feature :cull-face :depth-test)
+    (enter (make-instance '2d-camera :location (vec -100 -100 0)) scene)
+    ;(enter (make-instance 'editor-camera :location (VEC3 0.0 2.3 7.3) :fov 50 :move-speed 0.1) scene)
+    (enter (make-instance 'animated-sprite :sprite-data (asset 'workbench 'balloon)) scene)
+    (enter (make-instance 'render-pass) scene))
   (maybe-reload-scene))
 

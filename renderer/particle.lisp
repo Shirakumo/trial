@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-gl-struct particle
+(define-gl-struct (particle-struct (:layout-standard std430))
   (location :vec3)
   (velocity :vec3)
   (rotational-velocity :float)
@@ -15,27 +15,27 @@
   (size-begin :float)
   (size-end :float))
 
-(define-gl-struct particle-buffer
+(define-gl-struct (particle-buffer (:layout-standard std430))
   (size NIL :initarg :size :initform 1000 :reader size)
-  (particles (:array (:struct particle) size)))
+  (particles (:array (:struct particle-struct) size)))
 
-(define-gl-struct particle-index-buffer
+(define-gl-struct (particle-index-buffer (:layout-standard std430))
   (size NIL :initarg :size :initform 1000 :reader size)
   (indices (:array :int size)))
 
-(define-gl-struct particle-counter-buffer
+(define-gl-struct (particle-counter-buffer (:layout-standard std430))
   (alive-count :int)
   (dead-count :int)
   (real-emit-count :int)
   (total-count :int))
 
-(define-gl-struct particle-argument-buffer
-  (emit-args (:array :int 3))
-  (simulate-args (:array :int 3))
-  (draw-args (:array :int 4))
-  (sort-args (:array :int 3)))
+(define-gl-struct (particle-argument-buffer (:layout-standard std430))
+  (emit-args :uvec3)
+  (simulate-args :uvec3)
+  (draw-args :uvec4)
+  (sort-args :uvec3))
 
-(define-gl-struct particle-emitter-buffer
+(define-gl-struct (particle-emitter-buffer (:layout-standard std430))
   (world-matrix :mat4)
   (emit-count :int)
   (mesh-index-count :int)
@@ -51,40 +51,60 @@
   (particle-lifespan-randomness :float))
 
 (define-shader-pass particle-kickoff-pass (compute-pass)
-  ())
+  ((emit-threads :constant T :initform 256 :initarg :emit-threads)
+   (simulate-threads :constant T :initform 256 :initarg :simulate-threads)
+   (particle-counter-buffer :buffer T :initarg :particle-counter-buffer)
+   (particle-argument-buffer :buffer T :initarg :particle-argument-buffer))
+  (:shader-file (trial "particle/kickoff.glsl")))
 
 (define-shader-pass particle-emit-pass (compute-pass)
-  ())
+  ((emit-threads :constant T :initform 256 :initarg :emit-threads)
+   (particle-buffer :buffer T :initarg :particle-buffer)
+   (alive-particle-buffer-0 :buffer T :initarg :alive-particle-buffer-0)
+   (alive-particle-buffer-1 :buffer T :initarg :alive-particle-buffer-1)
+   (dead-particle-buffer :buffer T :initarg :dead-particle-buffer)
+   (particle-counter-buffer :buffer T :initarg :particle-counter-buffer))
+  (:shader-file (trial "particle/emit.glsl")))
 
 (define-shader-pass particle-simulate-pass (compute-pass)
-  ())
+  ((simulate-threads :constant T :initform 256 :initarg :simulate-threads)
+   (particle-buffer :buffer T :initarg :particle-buffer)
+   (alive-particle-buffer-0 :buffer T :initarg :alive-particle-buffer-0)
+   (alive-particle-buffer-1 :buffer T :initarg :alive-particle-buffer-1)
+   (dead-particle-buffer :buffer T :initarg :dead-particle-buffer)
+   (particle-counter-buffer :buffer T :initarg :particle-counter-buffer)
+   (particle-argument-buffer :buffer T :initarg :particle-argument-buffer))
+  (:shader-file (trial "particle/simulate.glsl")))
 
 (define-shader-entity particle-emitter (standalone-shader-entity listener)
-  (kickoff-pass
-   emit-pass
-   simulate-pass
-   texture
+  ((particle-emitter-buffer)
+   (particle-argument-buffer)
+   (particle-counter-buffer)
+   (alive-particle-buffer-0)
+   (alive-particle-buffer-1)
+   (dead-particle-buffer)
+   (particle-buffer :buffer :read)
+   (kickoff-pass)
+   (emit-pass)
+   (simulate-pass)
+   (texture)
    (max-particles :initarg :max-particles :initform 1000 :reader max-particles))
   (:buffers (trial standard-environment-information))
   (:shader-file (trial "particle/render.glsl")))
 
-(defmethod initialize-instance :after ((emitter particle-emitter) &key)
+(defmethod initialize-instance :after ((emitter particle-emitter) &key (emit-threads 256) (simulate-threads 256))
   (with-all-slots-bound (emitter particle-emitter)
     (setf particle-emitter-buffer (make-instance 'shader-storage-buffer :binding NIL :struct (make-instance 'particle-emitter-buffer)))
     (setf particle-argument-buffer (make-instance 'shader-storage-buffer :binding NIL :struct (make-instance 'particle-argument-buffer)))
     (setf particle-counter-buffer (make-instance 'shader-storage-buffer :binding NIL :struct (make-instance 'particle-counter-buffer)))
-    (setf alive-particle-buffer (make-instance 'shader-storage-buffer :binding "alive_particles" :struct (make-instance 'particle-index-buffer :size max-particles)))
-    (setf alive-particle-buffer-back (make-instance 'shader-storage-buffer :binding "alive_particles" :struct (make-instance 'particle-index-buffer :size max-particles)))
+    (setf alive-particle-buffer-0 (make-instance 'shader-storage-buffer :binding "alive_particles" :struct (make-instance 'particle-index-buffer :size max-particles)))
+    (setf alive-particle-buffer-1 (make-instance 'shader-storage-buffer :binding "alive_particles" :struct (make-instance 'particle-index-buffer :size max-particles)))
     (setf dead-particle-buffer (make-instance 'shader-storage-buffer :binding "dead_particles" :struct (make-instance 'particle-index-buffer :size max-particles)))
     (setf particle-buffer (make-instance 'shader-storage-buffer :binding NIL :struct (make-instance 'particle-buffer :size max-particles)))
     
-    (setf kickoff-pass (make-instance 'particle-kickoff-pass))
-    (setf emit-pass (make-instance 'particle-emit-pass))
-    (setf simulate-pass (make-instance 'particle-simulate-pass))))
-
-(defmethod buffers ((emitter particle-emitter))
-  (list* (slot-value emitter 'particle-buffer)
-         (call-next-method)))
+    (setf kickoff-pass (make-instance 'particle-kickoff-pass :emit-threads emit-threads :simulate-threads simulate-threads :particle-counter-buffer particle-counter-buffer :particle-argument-buffer particle-argument-buffer))
+    (setf emit-pass (make-instance 'particle-emit-pass :emit-threads emit-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer))
+    (setf simulate-pass (make-instance 'particle-simulate-pass :simulate-threads simulate-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer))))
 
 (defmethod stage :after ((emitter particle-emitter) (area staging-area))
   (stage (kickoff-pass emitter) area)

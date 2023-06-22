@@ -1,14 +1,14 @@
 #section VERTEX_SHADER
 #include (trial:trial trial::standard-environment-information)
 
-static const vec3 BILLBOARD[] = {
+const vec3 BILLBOARD[6] = vec3[6](
   vec3(-1, -1, 0),
   vec3(+1, -1, 0),
   vec3(-1, +1, 0),
   vec3(-1, +1, 0),
   vec3(+1, -1, 0),
   vec3(+1, +1, 0)
-};
+);
 
 out vec3 world_position;
 out vec3 view_position;

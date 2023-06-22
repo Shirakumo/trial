@@ -25,8 +25,8 @@
    (normal :port-type output :texspec (:internal-format :rgb16f) :attachment :color-attachment1 :reader normal)
    (depth :port-type output :attachment :depth-stencil-attachment :reader depth)
    (frame-start :initform 0d0 :accessor frame-start)
-   (material-block :reader material-block)
-   (light-block :reader light-block)
+   (material-block :buffer T :reader material-block)
+   (light-block :buffer T :reader light-block)
    (allocated-textures :initform (make-lru-cache 16 'eq) :accessor allocated-textures)
    (allocated-materials :accessor allocated-materials)
    (allocated-lights :accessor allocated-lights))
@@ -54,16 +54,6 @@
 
 (defgeneric material-block-type (standard-render-pass))
 
-(defmethod compute-shader (type (pass standard-render-pass) object)
-  (if (or (typep object 'standard-renderable)
-          (subtypep object 'standard-renderable))
-      (let ((next (call-next-method)))
-        (when next
-          (list* (gl-source (material-block pass))
-                 (gl-source (light-block pass))
-                 next)))
-      (enlist (effective-shader type object))))
-
 (define-handler (standard-render-pass tick) (tt dt)
   (with-buffer-tx (buffer (// 'trial 'standard-environment-information) :update NIL)
     (setf (slot-value buffer 'tt) (float tt 0f0))
@@ -80,9 +70,6 @@
       (setf (slot-value buffer 'camera-position) (global-location (camera pass)))
       (setf (slot-value buffer 'fdt) (float fdt 0f0))
       (setf (slot-value buffer 'gamma) 2.2))))
-
-(defmethod buffers ((pass standard-render-pass))
-  (list* (material-block pass) (light-block pass) (call-next-method)))
 
 (defmethod bind-textures ((pass standard-render-pass))
   (call-next-method)
