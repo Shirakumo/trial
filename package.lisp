@@ -967,6 +967,7 @@
    #:empty-vertex-array
    #:unit-cube
    #:unit-sphere
+   #:unit-square
    #:axes
    #:2d-axes)
   ;; geometry.lisp
