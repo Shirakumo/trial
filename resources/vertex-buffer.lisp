@@ -38,4 +38,5 @@
    (gl-name program)
    (cffi:with-foreign-string (var (gl-type buffer))
      (%gl:get-program-resource-index (gl-name program) :shader-storage-block var))
-   (binding-point buffer)))
+   (or (binding-point buffer)
+       (setf (binding-point buffer) T))))

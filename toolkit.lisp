@@ -205,6 +205,14 @@
         do (when (funcall test key k) (return v))
         finally (return default)))
 
+(defun f32-vec (&rest args)
+  (let ((array (make-array (length args) :element-type 'single-float)))
+    (map-into array #'float array)))
+
+(defun u32-vec (&rest args)
+  (let ((array (make-array (length args) :element-type '(unsigned-byte 32))))
+    (map-into array #'truncate array)))
+
 (defmacro xor (a &rest options)
   (cond ((null options) a)
         (T
