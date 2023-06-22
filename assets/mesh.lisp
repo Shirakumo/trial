@@ -29,11 +29,11 @@
          (specs (loop with stride = (reduce #'+ sizes)
                       for offset = 0 then (+ offset size)
                       for size in sizes
-                      for index from 0
+                      for attribute in attributes
                       collect (list vbo :stride (* stride (gl-type-size :float))
                                         :offset (* offset (gl-type-size :float))
                                         :size size
-                                        :index index))))
+                                        :index (vertex-attribute-order attribute)))))
     (ensure-instance resource 'vertex-array
                      :bindings (list* ebo specs)
                      :vertex-form (or vertex-form
