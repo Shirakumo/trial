@@ -522,6 +522,9 @@
    #:shader
    #:shader-type
    #:shader-source)
+  ;; resources/shader-storage-buffer.lisp
+  (:export
+   #:shader-storage-buffer)
   ;; resources/texture.lisp
   (:export
    #:texture

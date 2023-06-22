@@ -6,24 +6,18 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass shader-storage-buffer (uniform-buffer)
+(defclass shader-storage-buffer (bindable-buffer struct-buffer)
   ((buffer-type :initform :shader-storage-buffer)))
 
-(defmethod gl-source ((buffer shader-storage-buffer))
-  `(glsl-toolkit:shader
-    ,@(loop for dependent in (compute-dependent-types buffer)
-            collect (gl-source (find-class dependent)))
-    (glsl-toolkit:interface-declaration
-     (glsl-toolkit:type-qualifier
-      (glsl-toolkit:layout-qualifier
-       (glsl-toolkit:layout-qualifier-id ,(intern (string (layout-standard buffer)) "KEYWORD")))
-      :buffer
-      ,@(qualifiers buffer))
-     ,(gl-type buffer)
-     ,(if (binding buffer)
-          `(glsl-toolkit:instance-name ,(binding buffer))
-          'glsl-toolkit:no-value)
-     ,@(mapcar #'gl-source (struct-fields buffer)))))
+(defmethod shared-initialize :after ((buffer shader-storage-buffer) slots &key)
+  (unless (slot-boundp buffer 'binding)
+    (setf (binding buffer) (cffi:translate-underscore-separated-name
+                            (class-name (class-of (struct buffer)))))))
+
+(defmethod binding-target ((buffer shader-storage-buffer)) :shader-storage-buffer)
+
+(defmethod allocate :after ((buffer shader-storage-buffer))
+  (unless (binding-point buffer) (setf (binding-point buffer) T)))
 
 (defmethod bind ((buffer shader-storage-buffer) (program shader-program))
   ;; TODO: Once we can do shared/packed, load offsets here.
