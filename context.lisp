@@ -52,7 +52,7 @@
    :title "Trial"
    :width 1280
    :height 720
-   :glsl-version "330"
+   :glsl-version NIL
    :version '(3 3)
    :profile :core
    :double-buffering T
@@ -246,13 +246,16 @@
              (with-output-to-string (out)
                (context-info context out)))))
 
+(defmethod glsl-target-version ((context context))
+  (let ((slot (slot-value context 'glsl-target-version)))
+    (or slot (format NIL "~{~d~d~}0" (version context)))))
+
 (defmethod glsl-version-header ((context context))
-  (when (glsl-target-version context)
-    (format NIL "#version ~a~@[ ~a~]"
-            (glsl-target-version context)
-            (case (profile context)
-              (:core "core")
-              (:es "es")))))
+  (format NIL "#version ~a~@[ ~a~]"
+          (glsl-target-version context)
+          (case (profile context)
+            (:core "core")
+            (:es "es"))))
 
 (defmethod glsl-target-version ((default (eql T)))
   (if *context* (glsl-target-version *context*) "330"))
