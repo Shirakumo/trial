@@ -213,7 +213,6 @@
 
 (defmethod prepare-pass-program ((pass shader-pass) program)
   (activate program)
-  (update-uniforms pass program)
   (loop for slot in (c2mop:class-slots (class-of pass))
         when (flow:port-type slot)
         do (let ((port (flow::port-slot-value pass slot)))
@@ -240,7 +239,8 @@
 
 (defmethod prepare-pass-program :around ((pass shader-pass) (program shader-program))
   (unless (eq +current-shader-program+ program)
-    (call-next-method)))
+    (call-next-method))
+  (update-uniforms pass program))
 
 (defmethod blit-to-screen ((pass shader-pass))
   (blit-to-screen (framebuffer pass)))

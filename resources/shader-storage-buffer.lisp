@@ -31,5 +31,6 @@
   ;; Bind the buffer to the program's specified binding point.
   (%gl:shader-storage-block-binding
    (gl-name program)
-   (%gl:get-program-resource-index (gl-name program) :shader-storage-block (gl-type buffer))
+   (cffi:with-foreign-string (var (gl-type buffer))
+     (%gl:get-program-resource-index (gl-name program) :shader-storage-block var))
    (binding-point buffer)))
