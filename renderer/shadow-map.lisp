@@ -64,7 +64,7 @@
 (define-shader-pass standard-shadows-pass (standard-render-pass)
   ((shadow-map :port-type fixed-input :reader shadow-map)
    (shadow-map-lights :accessor shadow-map-lights)
-   (shadow-map-block :reader shadow-map-block)
+   (shadow-map-block :buffer T :reader shadow-map-block)
    (shadow-map-program :reader shadow-map-program)
    (shadow-map-framebuffer :reader shadow-map-framebuffer))
   (:shader-file (trial "standard-shadows-pass.glsl")))
@@ -153,18 +153,6 @@
                (setf (dirty-p (struct (shadow-map-block pass))) T))))
         (T
          (deallocate-shadow-maps light pass))))
-
-(defmethod compute-shader (type (pass standard-shadows-pass) object)
-  (if (or (typep object 'standard-renderable)
-          (subtypep object 'standard-renderable))
-      (let ((next (call-next-method)))
-        (when next
-          (list* (gl-source (shadow-map-block pass))
-                 next)))
-      (call-next-method)))
-
-(defmethod buffers ((pass standard-shadows-pass))
-  (list* (shadow-map-block pass) (call-next-method)))
 
 (defmethod render-frame :before ((pass standard-shadows-pass) frame)
   (let ((program (shadow-map-program pass))

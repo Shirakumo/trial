@@ -15,7 +15,7 @@
 (defmethod resolve-shader-include ((source string))
   (if (position #\: source)
       (resolve-shader-include (read-from-string source))
-      (resolve-shader-include (parse-namestring source))))
+      (resolve-shader-include (parse-namestring (read-from-string source)))))
 
 (defmethod resolve-shader-include ((source pathname))
   (glsl-toolkit:parse (merge-pathnames source *default-pathname-defaults*)))
@@ -378,11 +378,11 @@
                    :buffers buffers)))
 
 (defmethod buffers ((object shader-entity))
-  (append (loop for bufferspec in (buffers (class-of object))
-                collect (apply #'// bufferspec))
-          (loop for slot in (c2mop:class-slots (class-of object))
-                when (typep slot 'buffer-slot-definition)
-                collect (c2mop:standard-instance-access object (c2mop:slot-definition-location slot)))))
+  (delete-duplicates
+   (append (buffers (class-of object))
+           (loop for slot in (c2mop:class-slots (class-of object))
+                 when (typep slot 'buffer-slot-definition)
+                 collect (c2mop:standard-instance-access object (c2mop:slot-definition-location slot))))))
 
 (defmethod update-uniforms ((object shader-entity) program)
   ;; TODO: this is slow. We *could* COMPILE on finalize-inheritance, but that would be ugly.

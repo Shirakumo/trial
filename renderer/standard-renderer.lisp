@@ -47,6 +47,11 @@
          (setf max-textures (min max-textures (unit-id port))))))
     (lru-cache-resize (allocated-textures pass) max-textures)))
 
+(defmethod make-pass-shader-program ((pass standard-render-pass) object)
+  (if (typep object 'standard-renderable)
+      (call-next-method)
+      (make-class-shader-program object)))
+
 (defmethod clear :after ((pass standard-render-pass))
   (lru-cache-clear (allocated-textures pass))
   (lru-cache-clear (allocated-materials pass))

@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass uniform-buffer (bindable-buffer struct-buffer)
+(defclass uniform-buffer (struct-buffer bindable-buffer)
   ((buffer-type :initform :uniform-buffer)))
 
 (defmethod shared-initialize :after ((buffer uniform-buffer) slots &key)

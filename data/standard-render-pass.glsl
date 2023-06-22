@@ -1,8 +1,6 @@
 #section VERTEX_SHADER
-#include (trial:trial trial::standard-environment-information)
 
 #section FRAGMENT_SHADER
-#include (trial:trial trial::standard-environment-information)
 layout (location = 0) out vec4 f_color;
 layout (location = 1) out vec3 f_normal;
 
