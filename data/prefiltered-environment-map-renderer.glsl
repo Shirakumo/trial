@@ -1,5 +1,5 @@
 #section FRAGMENT_SHADER
-#include (trial::trial "pbr-common.glsl")
+#include "pbr-common.glsl"
 out vec4 color;
 in vec3 world_position;
 

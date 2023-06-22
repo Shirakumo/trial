@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass shader-storage-buffer (bindable-buffer struct-buffer)
+(defclass shader-storage-buffer (struct-buffer bindable-buffer)
   ((buffer-type :initform :shader-storage-buffer)))
 
 (defmethod shared-initialize :after ((buffer shader-storage-buffer) slots &key)

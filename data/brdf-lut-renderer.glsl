@@ -1,5 +1,5 @@
 #section FRAGMENT_SHADER
-#include (trial::trial "pbr-common.glsl")
+#include "pbr-common.glsl"
 const uint sample_count = 1024u;
 out vec4 color;
 

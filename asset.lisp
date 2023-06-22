@@ -35,6 +35,9 @@
 (defmethod dependencies ((resource placeholder-resource))
   (list (generator resource)))
 
+(defmethod gl-source ((resource placeholder-resource))
+  (gl-source (generator resource)))
+
 (defclass asset (resource-generator loadable)
   ((pool :initform NIL :accessor pool)
    (name :initform NIL :accessor name)

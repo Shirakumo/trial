@@ -1,5 +1,4 @@
 #section VERTEX_SHADER
-#include (trial:trial trial::standard-environment-information)
 
 const vec3 BILLBOARD[6] = vec3[6](
   vec3(-1, -1, 0),
@@ -44,7 +43,6 @@ void main(){
 }
 
 #section FRAGMENT_SHADER
-#include (trial:trial trial::standard-environment-information)
 
 uniform sampler2D particle_tex;
 in vec3 world_position;

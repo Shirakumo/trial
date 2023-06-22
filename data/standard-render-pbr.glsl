@@ -1,6 +1,6 @@
 #section FRAGMENT_SHADER
-#include (trial::trial "normal_map.glsl")
-#include (trial::trial "pbr-common.glsl")
+#include "normal_map.glsl"
+#include "pbr-common.glsl"
 
 PbrMaterial material;
 uniform int material_id;

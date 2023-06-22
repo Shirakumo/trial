@@ -1,9 +1,6 @@
 #section COMPUTE_SHADER
-
 layout (local_size_x = SIMULATE_THREADS, local_size_y = 1, local_size_z = 1) in;
-
 #define FORCEFIELDS 32
-#include trial::particle-force-field
 shared ParticleForceField s_force_fields[FORCEFIELDS];
 
 vec3 evaluate_force_field(ParticleForceField field, Particle particle){
