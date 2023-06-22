@@ -14,8 +14,8 @@
   (setf (text draw) (make-array 256 :fill-pointer 0 :adjustable T :element-type 'single-float))
   (let ((vbo (make-instance 'vertex-buffer :buffer-data (text draw))))
     (setf (text-vao draw) (make-instance 'vertex-array :vertex-form :triangles :bindings
-                                         `((,vbo :size 3 :offset 0 :stride 20)
-                                           (,vbo :size 2 :offset 12 :stride 20))))))
+                                         `((,vbo :size 3 :offset 0 :stride 20 :index 0)
+                                           (,vbo :size 2 :offset 12 :stride 20 :index 2))))))
 
 (defmethod stage :after ((draw debug-draw-text) (area staging-area))
   (stage (text-vao draw) area)
@@ -34,7 +34,7 @@
 
 (define-class-shader (debug-draw-text :vertex-shader)
   "layout (location = 0) in vec3 position;
-layout (location = 1) in vec2 i_uv;
+layout (location = 2) in vec2 i_uv;
 out vec2 v_uv;
 
 uniform sampler2D texture_image;
