@@ -31,6 +31,16 @@
       ((or string pathname)
        (resolve-shader-include (pool-path pool name))))))
 
+(defclass buffer-slot-definition ()
+  ((access :initarg :access :initarg :buffer :initform NIL :accessor access)))
+
+(defmethod print-object ((slotdef buffer-slot-definition) stream)
+  (print-unreadable-object (slotdef stream :type T)
+    (format stream "~s ~s" (c2mop:slot-definition-name slotdef) (access slotdef))))
+
+(defclass direct-buffer-slot-definition (buffer-slot-definition c2mop:standard-direct-slot-definition) ())
+(defclass effective-buffer-slot-definition (buffer-slot-definition c2mop:standard-effective-slot-definition) ())
+
 (defclass constant-slot-definition ()
   ((constant-name :initarg :constant :initform NIL :accessor constant-name)))
 
@@ -42,11 +52,8 @@
   (print-unreadable-object (slotdef stream :type T)
     (format stream "~s ~s" (c2mop:slot-definition-name slotdef) (constant-name slotdef))))
 
-(defclass direct-constant-slot-definition (constant-slot-definition c2mop:standard-direct-slot-definition)
-  ())
-
-(defclass effective-constant-slot-definition (constant-slot-definition c2mop:standard-effective-slot-definition)
-  ())
+(defclass direct-constant-slot-definition (constant-slot-definition c2mop:standard-direct-slot-definition) ())
+(defclass effective-constant-slot-definition (constant-slot-definition c2mop:standard-effective-slot-definition) ())
 
 (defclass uniform-slot-definition ()
   ((uniform-name :initarg :uniform :initform NIL :accessor uniform-name)))
@@ -59,11 +66,8 @@
   (print-unreadable-object (slotdef stream :type T)
     (format stream "~s ~s" (c2mop:slot-definition-name slotdef) (uniform-name slotdef))))
 
-(defclass direct-uniform-slot-definition (uniform-slot-definition c2mop:standard-direct-slot-definition)
-  ())
-
-(defclass effective-uniform-slot-definition (uniform-slot-definition c2mop:standard-effective-slot-definition)
-  ())
+(defclass direct-uniform-slot-definition (uniform-slot-definition c2mop:standard-direct-slot-definition) ())
+(defclass effective-uniform-slot-definition (uniform-slot-definition c2mop:standard-effective-slot-definition) ())
 
 (defclass shader-entity-class (standard-class)
   ((effective-shaders :initform () :accessor effective-shaders)
@@ -118,8 +122,11 @@
                                  (uniform-name direct))))
         (constant (loop for direct in direct-slots
                         thereis (when (typep direct 'constant-slot-definition)
-                                  (constant-name direct)))))
-    (cond ((and uniform constant)
+                                  (constant-name direct))))
+        (buffer (loop for direct in direct-slots
+                      thereis (when (typep direct 'buffer-slot-definition)
+                                  (access direct)))))
+    (cond ((and (or buffer uniform constant) (not (xor buffer uniform constant)))
            (error "Slot ~s cannot be constant and uniform at the same time." name))
           (uniform
            (setf initargs (list* :uniform uniform initargs))
@@ -127,26 +134,33 @@
           (constant
            (setf initargs (list* :constant constant initargs))
            (apply #'make-instance (apply #'c2mop:effective-slot-definition-class class initargs) initargs))
+          (buffer
+           (setf initargs (list* :buffer buffer initargs))
+           (apply #'make-instance (apply #'c2mop:effective-slot-definition-class class initargs) initargs))
           (T
            (call-next-method)))))
 
-(defmethod c2mop:direct-slot-definition-class ((class shader-entity-class) &key name uniform constant)
-  (cond ((and uniform constant)
+(defmethod c2mop:direct-slot-definition-class ((class shader-entity-class) &key name uniform constant buffer)
+  (cond ((and (or buffer uniform constant) (not (xor buffer uniform constant)))
          (error "Slot ~s cannot be constant and uniform at the same time." name))
         (uniform
          'direct-uniform-slot-definition)
         (constant
          'direct-constant-slot-definition)
+        (buffer
+         'direct-buffer-slot-definition)
         (T
          (call-next-method))))
 
-(defmethod c2mop:effective-slot-definition-class ((class shader-entity-class) &key name uniform constant)
-  (cond ((and uniform constant)
+(defmethod c2mop:effective-slot-definition-class ((class shader-entity-class) &key name uniform constant buffer)
+  (cond ((and (or buffer uniform constant) (not (xor buffer uniform constant)))
          (error "Slot ~s cannot be constant and uniform at the same time." name))
         (uniform
          'effective-uniform-slot-definition)
         (constant
          'effective-constant-slot-definition)
+        (buffer
+         'effective-buffer-slot-definition)
         (T
          (call-next-method))))
 
@@ -351,18 +365,24 @@
                              (slot-value entity name))))))
 
 (defmethod make-class-shader-program ((entity shader-entity))
-  (make-instance 'shader-program
-                 :shaders (loop with constants = `(glsl-toolkit:shader ,@(compute-preprocessor-directives entity))
-                                for (type source) on (effective-shaders entity) by #'cddr
-                                for processed = (glsl-toolkit:merge-shader-sources
-                                                 (list constants (glsl-toolkit:combine-methods source))
-                                                 :min-version (glsl-target-version T))
-                                collect (make-instance 'shader :source processed :type type))
-                 :buffers (loop for resource-spec in (effective-buffers entity)
-                                collect (apply #'// resource-spec))))
+  (let ((buffers (buffers entity)))
+    (make-instance 'shader-program
+                   :shaders (loop with constants = `(glsl-toolkit:shader ,@(compute-preprocessor-directives entity))
+                                  for (type source) on (effective-shaders entity) by #'cddr
+                                  for processed = (glsl-toolkit:merge-shader-sources
+                                                   (append (list constants) 
+                                                           (mapcar #'gl-source buffers)
+                                                           (list (glsl-toolkit:combine-methods source)))
+                                                   :min-version (glsl-target-version T))
+                                  collect (make-instance 'shader :source processed :type type))
+                   :buffers buffers)))
 
 (defmethod buffers ((object shader-entity))
-  (buffers (class-of object)))
+  (append (loop for bufferspec in (buffers (class-of object))
+                collect (apply #'// bufferspec))
+          (loop for slot in (c2mop:class-slots (class-of object))
+                when (typep slot 'buffer-slot-definition)
+                collect (c2mop:standard-instance-access object (c2mop:slot-definition-location slot)))))
 
 (defmethod update-uniforms ((object shader-entity) program)
   ;; TODO: this is slow. We *could* COMPILE on finalize-inheritance, but that would be ugly.
