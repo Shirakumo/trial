@@ -34,10 +34,7 @@
      ,(if (binding buffer)
           `(glsl-toolkit:instance-name ,(binding buffer))
           'glsl-toolkit:no-value)
-     ,@(loop for field in (struct-fields buffer)
-             collect (etypecase field
-                       (cons field)
-                       (T (gl-source field)))))))
+     ,@(struct-fields buffer))))
 
 (defmethod (setf binding-point) :after ((point integer) (buffer bindable-buffer))
   (when (and (allocated-p buffer) (integerp (binding-point buffer)))

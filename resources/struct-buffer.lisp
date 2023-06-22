@@ -64,7 +64,8 @@
   (gl-type (struct buffer)))
 
 (defmethod struct-fields ((buffer struct-buffer))
-  (struct-fields (struct buffer)))
+  (let ((*dynamic-context* (struct buffer)))
+    (mapcar #'gl-source (struct-fields (struct buffer)))))
 
 (defmethod layout-standard ((buffer struct-buffer))
   (layout-standard (struct buffer)))
