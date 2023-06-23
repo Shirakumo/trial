@@ -16,13 +16,13 @@ out float size;
 out float opacity;
 
 void main(){
-  uint vertex_id = gl_VertexId % 6;
-  uint instance = gl_VertexId / 6;
+  uint vertex_id = gl_VertexID % 6;
+  uint instance = gl_VertexID / 6;
 
-  Particle particle = particle_buffer[alive_buffer[instance]];
+  Particle particle = particles[alive_particles_0[instance]];
   float interpolation = 1.0f - particle.life / particle.max_life;
-  size = lerp(particle.size_begin, particle.size_end, interpolation);
-  opacity = clamp(lerp(1.0f, 0.0f, interpolation), 0.0f, 1.0f);
+  size = mix(particle.size_begin, particle.size_end, interpolation);
+  opacity = clamp(mix(1.0f, 0.0f, interpolation), 0.0f, 1.0f);
   
   vec3 vertex = BILLBOARD[vertex_id];
   uv = vertex.xy * 0.5 + 0.5;
@@ -30,14 +30,14 @@ void main(){
   float rotation = interpolation * particle.rotational_velocity;
   mat2 rot = mat2(+cos(rotation), -sin(rotation),
                   +sin(rotation), +cos(rotation));
-  vertex.xy = rot * rotattion;
+  vertex.xy = rot * vertex.xy;
   
   vertex *= size;
 
   vec3 velocity = mat3(view_matrix) * particle.velocity;
   vertex += dot(vertex, velocity) * velocity;
 
-  world_position = particle.location;
+  world_position = particle.position;
   view_position = (view_matrix * vec4(world_position, 1)).xyz;
   gl_Position = projection_matrix * vec4(view_position+vertex, 1);
 }

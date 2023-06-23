@@ -11,7 +11,7 @@
 (defclass workbench (main)
   ((paused-p :initform NIL :accessor paused-p))
   (:default-initargs :clear-color (vec 0.1 0.1 0.1)
-                     :context '(:vsync T)))
+                     :context '(:vsync T :version (4 3))))
 
 (defmethod update ((main workbench) tt dt fc)
   (if (paused-p main)
@@ -68,6 +68,10 @@
     (issue (scene +main+) 'tick :tt 1.0d0 :dt 0.01 :fc 1)))
 
 (progn
+  (defmethod setup-scene ((workbench workbench) scene)
+    (enter (make-instance 'trial::particle-emitter) scene)
+    (enter (make-instance 'render-pass) scene))
+  #++
   (defmethod setup-scene ((workbench workbench) scene)
     (enter (make-instance 'fps-counter) scene)
     (enter (make-instance 'editor-camera :location (VEC3 0.0 2.3 7.3) :fov 50 :move-speed 0.1) scene)
