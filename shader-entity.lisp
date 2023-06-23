@@ -354,6 +354,10 @@
 (defmethod effective-shader-class ((object shader-entity))
   (effective-shader-class (class-of object)))
 
+(defmethod stage :after ((object shader-entity) (area staging-area))
+  (dolist (buffer (buffers object))
+    (stage buffer area)))
+
 (defmethod compute-preprocessor-directives ((entity shader-entity))
   (loop for slot in (c2mop:class-slots (class-of entity))
         for name = (c2mop:slot-definition-name slot)
