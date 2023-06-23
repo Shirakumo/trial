@@ -27,7 +27,11 @@
 
 (defmethod struct-fields ((buffer vertex-buffer))
   `((glsl-toolkit:struct-declarator (glsl-toolkit:type-qualifier)
-                                    (glsl-toolkit:type-specifier ,(element-type buffer))
+                                    (glsl-toolkit:type-specifier ,(ecase (element-type buffer)
+                                                                    (:unsigned-int :uint)
+                                                                    (:int :int)
+                                                                    (:float :float)
+                                                                    (:double :double)))
                                     ,(cffi:translate-underscore-separated-name
                                       (cffi:translate-camelcase-name (gl-type buffer)))
                                     (glsl-toolkit:array-specifier))))
