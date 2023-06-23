@@ -8,6 +8,11 @@
 
 (defvar *materials* (make-hash-table :test 'equal))
 
+(define-asset (trial random) image
+    #p "random.png"
+  :min-filter :linear
+  :mag-filter :linear)
+
 (define-asset (trial missing) image
     #p "missing.png"
   :min-filter :nearest
