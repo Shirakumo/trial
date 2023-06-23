@@ -171,15 +171,14 @@
     (ensure-instance vao 'vertex-array
                      :dependencies (list (material mesh))
                      :vertex-form (vertex-form mesh)
-                     :bindings (append (loop with stride = (vertex-attribute-stride mesh)
-                                             for attribute in (vertex-attributes mesh)
-                                             for offset = 0 then (+ offset size)
-                                             for size = (vertex-attribute-size attribute)
-                                             collect `(,vertex-data :size ,size :offset ,(* 4 offset) :stride ,(* 4 stride)))
-                                       (when index-data
-                                         (list (make-instance 'vertex-buffer :buffer-data index-data
-                                                                             :buffer-type :element-array-buffer
-                                                                             :element-type (cl-type->pixel-type (array-element-type index-data))))))
+                     :index-buffer (make-instance 'vertex-buffer :buffer-data index-data
+                                                                 :buffer-type :element-array-buffer
+                                                                 :element-type (cl-type->pixel-type (array-element-type index-data)))
+                     :bindings (loop with stride = (vertex-attribute-stride mesh)
+                                     for attribute in (vertex-attributes mesh)
+                                     for offset = 0 then (+ offset size)
+                                     for size = (vertex-attribute-size attribute)
+                                     collect `(,vertex-data :size ,size :offset ,(* 4 offset) :stride ,(* 4 stride)))
                      :size (if index-data
                                (length index-data)
                                (truncate (length (vertex-data mesh)) (+ 3 3 2))))))

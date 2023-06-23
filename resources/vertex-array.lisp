@@ -10,7 +10,7 @@
   ((size :initarg :size :initform NIL :accessor size)
    (bindings :initarg :bindings :accessor bindings)
    (vertex-form :initarg :vertex-form :accessor vertex-form)
-   (indexed-p :initform NIL :accessor indexed-p))
+   (index-buffer :initform NIL :accessor index-buffer :reader indexed-p))
   (:default-initargs
    :bindings (error "BINDINGS required.")
    :vertex-form :triangles))
@@ -19,13 +19,17 @@
   (print-unreadable-object (array stream :type T :identity T)
     (format stream "~@[~a~]~:[~; ALLOCATED~]" (size array) (allocated-p array))))
 
+(defmethod shared-initialize :after ((array vertex-array) slots &key (index-buffer NIL index-buffer-p))
+  (when index-buffer-p
+    (setf (index-buffer array) index-buffer)))
+
 (defmethod dependencies ((array vertex-array))
   (append (call-next-method)
           (mapcar #'unlist (bindings array))))
 
 (defun update-array-bindings (array bindings)
   (gl:bind-vertex-array (data-pointer array))
-  (setf (indexed-p array) NIL)
+  (setf (index-buffer array) NIL)
   (unwind-protect
        (loop for binding in bindings
              for i from 0
@@ -41,9 +45,7 @@
                   (gl:bind-buffer (buffer-type buffer) (gl-name buffer))
                   (ecase (buffer-type buffer)
                     (:element-array-buffer
-                     (unless (size array)
-                       (setf (size array) (/ (size buffer) (gl-type-size (element-type buffer)))))
-                     (setf (indexed-p array) buffer)
+                     (setf (index-buffer array) buffer)
                      (decf i))
                     (:array-buffer
                      (ecase (or type (element-type buffer))
@@ -61,6 +63,11 @@
 (defmethod (setf bindings) :after (bindings (array vertex-array))
   (when (allocated-p array)
     (update-array-bindings array bindings)))
+
+(defmethod (setf index-buffer) :after (buffer (array vertex-array))
+  (setf (size array) (if buffer
+                         (/ (size buffer) (gl-type-size (element-type buffer)))
+                         NIL)))
 
 (defmethod allocate ((array vertex-array))
   (let ((vao (gl:gen-vertex-array)))

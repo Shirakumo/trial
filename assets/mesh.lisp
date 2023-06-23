@@ -35,7 +35,8 @@
                                         :size size
                                         :index (vertex-attribute-order attribute)))))
     (ensure-instance resource 'vertex-array
-                     :bindings (list* ebo specs)
+                     :bindings specs
+                     :index-buffer ebo
                      :vertex-form (or vertex-form
                                       (ecase (face-length mesh)
                                         (1 :points)
@@ -60,7 +61,8 @@
         (ebo (make-instance 'vertex-buffer :buffer-data (convex-mesh-faces primitive) :buffer-type :element-array-buffer
                                            :data-usage data-usage :element-type :unsigned-int)))
     (ensure-instance resource 'vertex-array
-                     :bindings `(,ebo (,vbo :offset 0 :size 3 :stride 4))
+                     :bindings `((,vbo :offset 0 :size 3 :stride 4))
+                     :index-buffer ebo
                      :vertex-form :triangles)))
 
 (defclass mesh (multi-resource-asset mesh-loader)
