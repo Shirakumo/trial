@@ -386,7 +386,7 @@
    (append (buffers (class-of object))
            (loop for slot in (c2mop:class-slots (class-of object))
                  when (typep slot 'buffer-slot-definition)
-                 collect (c2mop:standard-instance-access object (c2mop:slot-definition-location slot))))))
+                 collect (slot-value object (c2mop:slot-definition-name slot))))))
 
 (defmethod update-uniforms ((object shader-entity) program)
   ;; TODO: this is slow. We *could* COMPILE on finalize-inheritance, but that would be ugly.
