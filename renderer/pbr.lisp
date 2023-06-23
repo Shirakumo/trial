@@ -13,7 +13,7 @@
   :internal-format :rg16
   :min-filter :linear)
 
-(define-gl-struct (pbr-material (:include material))
+(define-gl-struct (pbr-material :include material)
   (textures NIL :initform (vector (// 'trial 'missing) (// 'trial 'black) (// 'trial 'black) (// 'trial 'neutral-normal)))
   (albedo-factor :vec4 :initform (vec 1 1 1 1) :initarg :albedo-factor :accessor albedo-factor)
   (emission-factor :vec3 :initform (vec 1 1 1) :initarg :emission-factor :accessor emission-factor)
