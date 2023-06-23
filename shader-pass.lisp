@@ -214,7 +214,7 @@
 (defmethod prepare-pass-program ((pass shader-pass) program)
   (activate program)
   (loop for slot in (c2mop:class-slots (class-of pass))
-        when (flow:port-type slot)
+        when (and (typep slot 'flow::effective-port-definition) (flow:port-type slot))
         do (let ((port (flow::port-slot-value pass slot)))
              (typecase port
                (uniform-port
@@ -225,7 +225,7 @@
 (defmethod bind-textures ((pass shader-pass))
   ;; FIXME: I kinda hate this and we could definitely optimise the iteration away.
   (loop for slot in (c2mop:class-slots (class-of pass))
-        when (flow:port-type slot)
+        when (and (typep slot 'flow::effective-port-definition) (flow:port-type slot))
         do (let ((port (flow::port-slot-value pass slot)))
              (typecase port
                (uniform-port
