@@ -366,13 +366,13 @@
 (defmethod c2mop:slot-value-using-class ((class gl-struct-class) (struct gl-struct) (slot gl-struct-immediate-slot))
   (if (storage-ptr struct)
       (gl-memref (cffi:inc-pointer (storage-ptr struct) (+ (base-offset struct) (base-offset slot)))
-                 (gl-type slot))
+                 (gl-type slot) :layout (layout-standard class))
       (call-next-method)))
 
 (defmethod (setf c2mop:slot-value-using-class) (value (class gl-struct-class) (struct gl-struct) (slot gl-struct-immediate-slot))
   (if (storage-ptr struct)
       (setf (gl-memref (cffi:inc-pointer (storage-ptr struct) (+ (base-offset struct) (base-offset slot)))
-                       (gl-type slot))
+                       (gl-type slot) :layout (layout-standard class))
             value)
       (call-next-method)))
 
