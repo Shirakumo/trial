@@ -73,7 +73,8 @@
    (dead-particle-buffer :buffer T :initarg :dead-particle-buffer)
    (particle-counter-buffer :buffer T :initarg :particle-counter-buffer)
    (mesh-vertex-buffer :buffer T :initarg :mesh-vertex-buffer :accessor mesh-vertex-buffer)
-   (mesh-index-buffer :buffer T :initarg :mesh-index-buffer :accessor mesh-index-buffer))
+   (mesh-index-buffer :buffer T :initarg :mesh-index-buffer :accessor mesh-index-buffer)
+   (random-tex :port-type fixed-input :texture (// 'trial 'random)))
   (:shader-file (trial "particle/emit.glsl")))
 
 (define-shader-pass particle-simulate-pass (compute-pass)
