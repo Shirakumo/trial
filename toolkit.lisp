@@ -207,11 +207,15 @@
 
 (defun f32-vec (&rest args)
   (let ((array (make-array (length args) :element-type 'single-float)))
-    (map-into array #'float array)))
+    (map-into array #'float args)))
 
 (defun u32-vec (&rest args)
   (let ((array (make-array (length args) :element-type '(unsigned-byte 32))))
-    (map-into array #'truncate array)))
+    (map-into array #'truncate args)))
+
+(defun i32-vec (&rest args)
+  (let ((array (make-array (length args) :element-type '(signed-byte 32))))
+    (map-into array #'truncate args)))
 
 (defmacro xor (a &rest options)
   (cond ((null options) a)
