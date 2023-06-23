@@ -63,7 +63,7 @@
           do (multiple-value-bind (width height) (texspec-real-size texspec width height)
                (resize texture width height)))
     (loop for pass across (passes pipeline)
-          for binding = (first (attachments (framebuffer pass)))
+          for binding = (when (framebuffer pass) (first (attachments (framebuffer pass))))
           when binding ;; We have to do it like this to prevent updating FBOs with
                        ;; texspecs that are not window-size.
           do (setf (width (framebuffer pass)) (width (second binding)))
@@ -211,7 +211,7 @@
   (let ((passes (passes pipeline)))
     (loop for i downfrom (1- (length passes)) to 0
           for pass = (aref passes i)
-          do (when (active-p pass)
+          do (when (and (active-p pass) (framebuffer pass))
                (blit-to-screen pass)
                (return)))))
 
