@@ -90,18 +90,19 @@
     (buffer-field-stride standard (class-of struct))))
 
 (defclass gl-struct-class (standard-class)
-  ((gl-type :initarg :gl-type :accessor gl-type)
+  ((gl-type :accessor gl-type)
    (layout-standard :initform 'std140 :reader layout-standard)))
+
+(defmethod shared-initialize :after ((class gl-struct-class) slots &key layout-standard gl-type)
+  (when layout-standard
+    (setf (slot-value class 'layout-standard) (unlist layout-standard)))
+  (when gl-type
+    (setf (gl-type class) (unlist gl-type))))
 
 (defmethod initialize-instance :after ((class gl-struct-class) &key)
   (unless (slot-boundp class 'gl-type)
     (setf (gl-type class) (cffi:translate-camelcase-name (class-name class)
                                                          :upper-initial-p T))))
-
-(defmethod shared-initialize :after ((class gl-struct-class) slots &key layout-standard)
-  (when layout-standard
-    (setf (slot-value class 'layout-standard)
-          (unlist layout-standard))))
 
 (defmethod c2mop:validate-superclass ((a gl-struct-class) (b T))  NIL)
 (defmethod c2mop:validate-superclass ((a gl-struct-class) (b standard-class)) T)
@@ -382,13 +383,14 @@
 
 (defmacro define-gl-struct (name &body slots)
   (destructuring-bind (name . options) (enlist name)
-    `(defclass ,name (,@(cdr (assoc :include options)) gl-struct)
+    `(defclass ,name (,@(enlist (getf options :include)) gl-struct)
        ,(loop for (slot type . args) in slots
               collect (if type
                           (list* slot :gl-type type args)
                           (list* slot args)))
        (:metaclass gl-struct-class)
-       ,@(remove :include options :key #'car))))
+       ,@(loop for (k v) on options by #'cddr
+               unless (eql k :include) collect (list k v)))))
 
 ;;; Only for primitive types.
 ;;; FIXME: factor out into trivial-* library

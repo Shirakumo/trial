@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-gl-struct (phong-material (:include material))
+(define-gl-struct (phong-material :include material)
   (textures NIL :initform (vector (// 'trial 'missing) (// 'trial 'black) (// 'trial 'neutral-normal)))
   (diffuse-factor :vec4 :initarg :diffuse-factor :initform (vec 1 1 1 1) :accessor diffuse-factor)
   (specular-factor :float :initarg :specular-factor :initform 1.0 :accessor specular-factor)
