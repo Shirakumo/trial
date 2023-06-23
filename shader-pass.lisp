@@ -417,12 +417,11 @@
       (leave object T))))
 
 (define-shader-pass single-shader-pass ()
-  ((shader-program :initform NIL :accessor shader-program)))
-
-(defmethod initialize-instance :after ((pass single-shader-pass) &key)
-  (setf (shader-program pass) (make-class-shader-program pass)))
+  ((shader-program :accessor shader-program)))
 
 (defmethod stage ((pass single-shader-pass) (area staging-area))
+  (unless (slot-boundp pass 'shader-program)
+    (setf (shader-program pass) (make-class-shader-program pass)))
   (call-next-method)
   (stage (shader-program pass) area))
 
@@ -508,7 +507,8 @@ void main(){
 
 (defmethod render ((pass compute-pass) (_ null))
   (bind-textures pass)
-  (render pass (shader-program pass)))
+  (render pass (or (shader-program pass)
+                   (error "Shader program was never allocated!!"))))
 
 (defmethod render ((pass compute-pass) (program shader-program))
   (let ((work-groups (work-groups pass))
