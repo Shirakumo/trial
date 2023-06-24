@@ -49,7 +49,7 @@
 (defmethod stage ((object asset) (area staging-area))
   (setf (gethash object (staged area)) (cons NIL NIL)))
 
-(defmethod stage ((container container) (area staging-area))
+(defmethod stage :after ((container container) (area staging-area))
   (for:for ((child over container))
     (stage child area)))
 
@@ -173,12 +173,14 @@
   (remhash thing (loaded loader)))
 
 (defmethod load-with ((loader loader) (resource resource))
-  (unless (allocated-p resource)
-    (allocate resource)))
+  (if (allocated-p resource)
+      resource
+      (allocate resource)))
 
 (defmethod load-with ((loader loader) (asset asset))
-  (unless (loaded-p asset)
-    (load asset)))
+  (if (loaded-p asset)
+      (list-resources asset)
+      (load asset)))
 
 (defmethod load-with :after ((loader loader) (asset asset))
   (loop with state = (loaded loader)
