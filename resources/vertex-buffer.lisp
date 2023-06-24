@@ -8,7 +8,7 @@
 
 (defclass vertex-buffer (bindable-buffer)
   ((element-type :initarg :element-type :accessor element-type)
-   (gl-type :initarg :gl-type :initform "VertexData" :accessor gl-type)
+   (gl-type :initarg :gl-type :initform NIL :accessor gl-type)
    (binding :initform NIL))
   (:default-initargs
    :buffer-type :array-buffer
@@ -16,6 +16,12 @@
 
 (defmethod initialize-instance :before ((buffer vertex-buffer) &key element-type)
   (check-vertex-buffer-element-type element-type))
+
+(defmethod initialize-instance :after ((buffer vertex-buffer) &key)
+  (unless (gl-type buffer)
+    (setf (gl-type buffer) (ecase (buffer-type buffer)
+                             (:element-array-buffer "IndexData")
+                             (:array-buffer "VertexData")))))
 
 (defmethod allocate :before ((buffer vertex-buffer))
   (let ((buffer-data (buffer-data buffer)))
