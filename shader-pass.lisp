@@ -186,15 +186,13 @@
   (when (next-method-p)
     (call-next-method))
   (for:for ((object over container))
-    (when (object-renderable-p object pass)
-      (enter object pass))))
+    (enter object pass)))
 
 (defmethod leave ((container container) (pass shader-pass))
   (when (next-method-p)
     (call-next-method))
   (for:for ((object over container))
-    (when (object-renderable-p object pass)
-      (leave object pass))))
+    (leave object pass)))
 
 (defmethod render (object (pass shader-pass))
   (render object (shader-program-for-pass pass object)))
@@ -456,6 +454,8 @@
   (stage (vertex-array pass) area))
 
 (defmethod object-renderable-p ((renderable renderable) (pass post-effect-pass)) NIL)
+(defmethod enter (thing (pass post-effect-pass)))
+(defmethod leave (thing (pass post-effect-pass)))
 (defmethod handle ((event event) (pass post-effect-pass)))
 
 (defmethod render ((pass post-effect-pass) (program shader-program))
