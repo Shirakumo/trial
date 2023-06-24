@@ -297,7 +297,7 @@
     (let ((renderable-table (renderable-table pass)))
       (unless (gethash object renderable-table)
         (let* ((program-table (program-table pass))
-               (target (if (typep object 'dynamic-renderable)
+               (target (if (typep object '(or standalone-shader-entity dynamic-renderable))
                            object
                            (effective-shader-class object)))
                (program (gethash target renderable-table)))
