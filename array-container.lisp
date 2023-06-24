@@ -30,6 +30,9 @@
   (for:for ((object across (%objects container)))
     (finalize object)))
 
+(defmethod sequences:length ((container array-container))
+  (length (%objects container)))
+
 (defmethod sequences:elt ((container array-container) index)
   (aref (%objects container) index))
 
