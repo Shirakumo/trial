@@ -23,6 +23,10 @@
   (when (allocated-p buffer)
     (c2mop:update-dependent (struct-class buffer) buffer)))
 
+(defmethod finalize :after ((buffer struct-buffer))
+  (unless (generator buffer)
+    (finalize (buffer-data buffer))))
+
 (defmethod struct-class ((buffer struct-buffer))
   (type-of (buffer-data buffer)))
 
@@ -74,10 +78,7 @@
   (c2mop:add-dependent (class-of (buffer-data buffer)) buffer))
 
 (defmethod deallocate :after ((buffer struct-buffer))
-  (c2mop:remove-dependent (class-of (buffer-data buffer)) buffer)
-  (maybe-free-static-vector (buffer-data buffer))
-  (setf (size buffer) NIL)
-  (setf (buffer-data buffer) NIL))
+  (c2mop:remove-dependent (class-of (buffer-data buffer)) buffer))
 
 (defmethod update-buffer-data ((buffer struct-buffer) (data (eql T)) &key)
   (mem:with-memory-region (region (buffer-data buffer))
