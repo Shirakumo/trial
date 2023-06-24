@@ -1,6 +1,7 @@
 #section COMPUTE_SHADER
 layout (local_size_x = SIMULATE_THREADS, local_size_y = 1, local_size_z = 1) in;
 #define FORCEFIELDS 32
+uint field_count = 0;
 shared ParticleForceField s_force_fields[FORCEFIELDS];
 
 vec3 evaluate_force_field(ParticleForceField field, Particle particle){
@@ -15,7 +16,7 @@ vec3 evaluate_force_field(ParticleForceField field, Particle particle){
     dir = field.normal;
     break;
   }
-  return dir * field.strength * (1 - clamp(dist * field.range_inverse, 0.0, 1.0));
+  return dir * field.strength * (1 - clamp(dist * field.inv_range, 0.0, 1.0));
 }
 
 void simulate_particle(inout Particle particle){
@@ -33,25 +34,25 @@ void simulate_particle@after(inout Particle particle){
 
 void main(){
   uint alive = alive_count;
-  uint field_count = min(particle_force_field_count, FORCEFIELDS);
-  if(gl_WorkGroupID < field_count){
-    uint id = gl_WorkGroupID;
+  field_count = min(particle_force_field_count, FORCEFIELDS);
+  if(gl_WorkGroupID.x < field_count){
+    uint id = gl_WorkGroupID.x;
     s_force_fields[id] = particle_force_fields[id];
   }
   groupMemoryBarrier();
 
   if(gl_LocalInvocationID.x < alive){
-    uint id = alive_particles.indices[gl_LocalInvocationID.x];
+    uint id = alive_particles_0[gl_LocalInvocationID.x];
     Particle particle = particles[id];
     if(0 < particle.life){
       simulate_particle(particle);
       particles[id] = particle;
 
-      uint new_index = AtomicAdd(draw_args.x, 6) / 6;
-      alive_particles_1.indices[new_index] = id;
+      uint new_index = atomicAdd(draw_args.x, 6) / 6;
+      alive_particles_1[new_index] = id;
     }else{
-      uint dead = AtomicAdd(dead_count, 1);
-      dead_particles.indices[dead] = id;
+      uint dead = atomicAdd(dead_count, 1);
+      dead_particles[dead] = id;
     }
   }
 }
