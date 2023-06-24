@@ -38,10 +38,10 @@
   (total-count :uint :initform 0))
 
 (define-gl-struct (particle-argument-buffer :layout-standard std430)
-  (emit-args :uvec3)
-  (simulate-args :uvec3)
-  (draw-args :uvec4)
-  (sort-args :uvec3))
+  (emit-args :uvec3 :initform (vec 0 1 1))
+  (simulate-args :uvec3 :initform (vec 0 1 1))
+  (draw-args :uvec4 :initform (vec 0 1 0 0))
+  (sort-args :uvec3 :initform (vec 0 1 1)))
 
 (define-gl-struct (particle-emitter-buffer :layout-standard std430)
   (model-matrix :mat4 :accessor transform-matrix)
@@ -93,7 +93,7 @@
   (:shader-file (trial "particle/simulate.glsl")))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (define-shader-entity particle-emitter (standalone-shader-entity transformed-entity listener)
+  (define-shader-entity particle-emitter (standalone-shader-entity transformed-entity renderable listener)
     ((particle-emitter-buffer)
      (particle-force-fields)
      (particle-argument-buffer)
@@ -106,7 +106,7 @@
      (emit-pass)
      (simulate-pass)
      (texture :initform (// 'trial 'missing))
-     (to-emit :initform 0 :accessor to-emit)
+     (to-emit :initform 0 :initarg :to-emit :accessor to-emit)
      (vertex-array :initform (// 'trial 'unit-square) :accessor vertex-array)
      (max-particles :initarg :max-particles :initform 1000 :reader max-particles))
     (:buffers (trial standard-environment-information))
@@ -118,7 +118,7 @@
   (setf (slot-value emitter 'particle-force-fields) particle-force-fields)
   (with-all-slots-bound (emitter particle-emitter)
     (setf particle-emitter-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-copy :binding NIL :struct (make-instance 'particle-emitter-buffer)))
-    (setf particle-argument-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-draw :binding NIL :struct (make-instance 'particle-argument-buffer)))
+    (setf particle-argument-buffer (make-instance 'shader-storage-buffer :buffer-type :draw-indirect-buffer :data-usage :dynamic-draw :binding NIL :struct (make-instance 'particle-argument-buffer)))
     (setf particle-counter-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-copy :binding NIL :struct (make-instance 'particle-counter-buffer :max-particles max-particles)))
     (setf alive-particle-buffer-0 (make-instance 'vertex-buffer :data-usage :dynamic-copy :binding-point T :gl-type "AliveParticles0" :element-type :unsigned-int :size max-particles))
     (setf alive-particle-buffer-1 (make-instance 'vertex-buffer :data-usage :dynamic-copy :binding-point T :gl-type "AliveParticles1" :element-type :unsigned-int :size max-particles))
@@ -142,6 +142,19 @@
     (stage texture area)
     (stage vertex-array area)
     (stage (// 'trial 'empty-vertex-array) area)))
+
+(defmethod finalize :after ((emitter particle-emitter))
+  ;; FIXME: this sucks ass. We need to find a better way to ensure that gl-struct backing buffers don't leak.
+  (with-all-slots-bound (emitter particle-emitter)
+    (finalize particle-emitter-buffer)
+    (finalize particle-force-fields)
+    (finalize particle-argument-buffer)
+    (finalize particle-counter-buffer)
+    (finalize alive-particle-buffer-0)
+    (finalize alive-particle-buffer-1)
+    (finalize dead-particle-buffer)
+    (finalize particle-buffer)
+    (finalize kickoff-pass)))
 
 (defmethod (setf vertex-array) ((resource placeholder-resource) (emitter particle-emitter))
   (setf (vertex-array emitter) (ensure-generated resource)))
@@ -176,10 +189,11 @@
   (define-delegate particle-lifespan-randomness))
 
 (define-handler (particle-emitter tick) ()
+  (break)
   (with-all-slots-bound (particle-emitter particle-emitter)
     (with-buffer-tx (struct particle-emitter-buffer)
       (setf (transform-matrix struct) (tmat4 (tf particle-emitter)))
-      (setf (emit-count struct) (to-emit particle-emitter))
+      (setf (emit-count struct) 100)
       (setf (randomness struct) (random 1.0)))
     ;; Simulate with compute shaders
     (%gl:bind-buffer :dispatch-indirect-buffer (gl-name particle-argument-buffer))
@@ -192,8 +206,8 @@
     (setf (to-emit particle-emitter) 0)))
 
 (defmethod render ((emitter particle-emitter) (program shader-program))
-  (gl:bind-vertex-array (// 'trial 'empty-vertex-array))
-  (%gl:bind-buffer :dispatch-indirect-buffer (gl-name (slot-value emitter 'particle-argument-buffer)))
+  (gl:bind-vertex-array (gl-name (// 'trial 'empty-vertex-array)))
+  (%gl:bind-buffer :draw-indirect-buffer (gl-name (slot-value emitter 'particle-argument-buffer)))
   (%gl:draw-arrays-indirect :triangles (* 2 3 4))
   (gl:bind-vertex-array 0))
 
