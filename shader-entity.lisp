@@ -291,7 +291,7 @@
 (defmethod effective-shader-class ((class standard-class))
   NIL)
 
-(defmethod make-class-shader-program ((class shader-entity-class))
+(defmethod make-shader-program ((class shader-entity-class))
   (make-instance 'shader-program
                  :shaders (loop for (type source) on (effective-shaders class) by #'cddr
                                 for processed = (glsl-toolkit:merge-shader-sources
@@ -301,8 +301,8 @@
                  :buffers (loop for resource-spec in (effective-buffers class)
                                 collect (apply #'// resource-spec))))
 
-(defmethod make-class-shader-program ((class symbol))
-  (make-class-shader-program (find-class class)))
+(defmethod make-shader-program ((class symbol))
+  (make-shader-program (find-class class)))
 
 (defun combine-shader-sources (&rest sources)
   (list* 'glsl-toolkit:shader
@@ -382,7 +382,7 @@
                            (when (slot-boundp entity name)
                              (slot-value entity name))))))
 
-(defmethod make-class-shader-program ((entity shader-entity))
+(defmethod make-shader-program ((entity shader-entity))
   (make-instance 'shader-program
                  :shaders (loop with constants = `(glsl-toolkit:shader ,@(compute-preprocessor-directives entity))
                                 with sources = (buffer-sources entity)
@@ -442,7 +442,7 @@ void main(){
 
 (defmethod stage :after ((entity standalone-shader-entity) (area staging-area))
   (unless (slot-boundp entity 'shader-program)
-    (setf (shader-program entity) (make-class-shader-program entity)))
+    (setf (shader-program entity) (make-shader-program entity)))
   (stage (shader-program entity) area))
 
 (defmethod render ((entity standalone-shader-entity) target)
@@ -457,7 +457,7 @@ void main(){
    (buffers :initarg :buffers :initform () :accessor buffers))
   (:metaclass shader-entity-class))
 
-(defmethod make-class-shader-program ((entity dynamic-shader-entity))
+(defmethod make-shader-program ((entity dynamic-shader-entity))
   (let ((class (class-of entity)))
     (make-instance 'shader-program
                    :shaders (loop with shaders = (shaders entity)

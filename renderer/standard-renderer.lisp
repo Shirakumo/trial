@@ -50,12 +50,12 @@
 (defmethod make-pass-shader-program ((pass standard-render-pass) (object renderable))
   (if (typep object 'standard-renderable)
       (call-next-method)
-      (make-class-shader-program object)))
+      (make-shader-program object)))
 
 (defmethod make-pass-shader-program ((pass standard-render-pass) (class shader-entity-class))
   (if (c2mop:subclassp class (find-class 'standard-renderable))
       (call-next-method)
-      (make-class-shader-program class)))
+      (make-shader-program class)))
 
 (defmethod clear :after ((pass standard-render-pass))
   (lru-cache-clear (allocated-textures pass))

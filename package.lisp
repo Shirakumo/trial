@@ -1387,7 +1387,7 @@
    #:compute-effective-shaders
    #:class-shader
    #:remove-class-shader
-   #:make-class-shader-program
+   #:make-shader-program
    #:define-class-shader
    #:shader-entity
    #:define-shader-entity
