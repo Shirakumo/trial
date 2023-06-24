@@ -12,8 +12,8 @@
   (:default-initargs
    :name :camera
    :location (vec 0 30 200)
-   :near-plane 1f0
-   :far-plane 1000000.0f0))
+   :near-plane 0.1f0
+   :far-plane 10000.0f0))
 
 (defgeneric project-view (camera))
 (defgeneric setup-perspective (camera width height))
