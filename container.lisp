@@ -95,6 +95,10 @@
     (finalize object))
   (clear container))
 
+(defmethod describe-object :after ((container container) stream)
+  (format stream "~&~%Entity Tree:~%")
+  (3ds::describe-tree container #'identity stream))
+
 (defclass entity (scene-node)
   ((name :initform NIL :initarg :name :accessor name)))
 
