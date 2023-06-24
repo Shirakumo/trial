@@ -123,7 +123,7 @@
              (if (allocated-p (shadow-map-block pass))
                  (with-buffer-tx (struct (shadow-map-block pass))
                    (transfer-to (aref (shadow-info struct) (shadow-map light)) light))
-                 (setf (dirty-p (struct (shadow-map-block pass))) T)))
+                 (setf (dirty-p (buffer-data (shadow-map-block pass))) T)))
             (T
              (v:warn :trial.renderer.shadow-map "Failed to allocate shadow maps for ~s: no more space" light)
              (setf (shadow-map light) NIL))))))
@@ -150,7 +150,7 @@
            (if (allocated-p (shadow-map-block pass))
                (with-buffer-tx (struct (shadow-map-block pass))
                  (transfer-to struct light))
-               (setf (dirty-p (struct (shadow-map-block pass))) T))))
+               (setf (dirty-p (buffer-data (shadow-map-block pass))) T))))
         (T
          (deallocate-shadow-maps light pass))))
 
@@ -160,7 +160,7 @@
         (lights (shadow-map-lights pass)))
     (activate (shadow-map-framebuffer pass))
     (activate program)
-    (when (dirty-p (struct (shadow-map-block pass)))
+    (when (dirty-p (buffer-data (shadow-map-block pass)))
       (with-buffer-tx (struct (shadow-map-block pass))
         (loop for light across lights
               do (when light (transfer-to struct light)))

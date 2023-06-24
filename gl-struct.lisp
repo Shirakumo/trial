@@ -12,6 +12,13 @@
   ((storage :initarg :storage :accessor storage :reader org.shirakumo.memory-regions:to-memory-region)
    (base-offset :initform 0 :initarg :base-offset :accessor base-offset)))
 
+(defmethod mem:call-with-memory-region ((function function) (struct gl-struct) &key (start 0))
+  (let* ((region (storage struct))
+         (region (memory-region (cffi:inc-pointer (memory-region-pointer region) (+ (base-offset struct) start))
+                                (max 0 (- (memory-region-size region) (base-offset struct) start)))))
+    (declare (dynamic-extent region))
+    (funcall function region)))
+
 (defun compound-struct-slot-initform (struct slot standard storage)
   (case (first (gl-type slot))
     (:struct
@@ -38,12 +45,33 @@
                           :element-count count
                           :stride (buffer-field-stride standard type)))))))
 
-(defmethod shared-initialize :before ((struct gl-struct) slots &key storage)
-  (setf (slot-value struct 'storage)
-        (or storage (mem:allocate T (buffer-field-size (layout-standard struct) struct 0)))))
+(defmethod shared-initialize ((struct gl-struct) slots &key storage)
+  ;; TODO: optimise in class because this is dumb as heck
+  ;; KLUDGE: we have to init standard slots first because the size computation
+  ;;         may depend on the value of those standard slots
+  (let ((class (class-of struct)))
+    (flet ((maybe-init (slot)
+             (when (and (not (typep slot 'gl-struct-immediate-slot))
+                        (not (c2mop:slot-boundp-using-class class struct slot))
+                        (c2mop:slot-definition-initfunction slot))
+               (setf (slot-value struct (c2mop:slot-definition-name slot))
+                     (funcall (c2mop:slot-definition-initfunction slot))))))
+      (etypecase slots
+        (null)
+        ((eql T)
+         (dolist (slot (c2mop:class-slots class))
+           (maybe-init slot)))
+        (cons
+         (dolist (name slots)
+           (let ((slot (find name (c2mop:class-slots class) :key #'c2mop:slot-definition-name)))
+             (unless (typep slot 'gl-struct-slot)
+               (maybe-init slot)))))))
+    (setf (slot-value struct 'storage)
+          (or storage (mem:allocate T (buffer-field-size (layout-standard struct) struct 0))))
+    (call-next-method)))
 
 (defmethod shared-initialize :after ((struct gl-struct) slots &key)
-  ;; TODO: optimise with precompiled ctors
+  ;; TODO: use the slot-definition-initfunction instead somehow
   (loop with standard = (layout-standard struct)
         for slot in (c2mop:class-slots (class-of struct))
         for slot-name = (c2mop:slot-definition-name slot)
@@ -324,12 +352,6 @@
   (declare (ignore _))
   *effective-slot-definition-class*)
 
-;; FIXME: maybe this should be NIL during class initialisation after all so that the
-;;        slot initform can do its thing.
-(defmethod c2mop:slot-boundp-using-class ((class gl-struct-class) (object gl-struct) (slot gl-struct-effective-slot))
-  (and (storage object)
-       (call-next-method)))
-
 (defmethod c2mop:slot-makunbound-using-class ((class gl-struct-class) (object gl-struct) (slot gl-struct-effective-slot))
   (error "Cannot unbind struct slots."))
 
@@ -385,6 +407,10 @@
                        (gl-type slot) :layout (layout-standard class))
             value)
       (call-next-method)))
+
+(defmethod c2mop:slot-boundp-using-class ((class gl-struct-class) (object gl-struct) (slot gl-struct-immediate-slot))
+  (and (storage object)
+       (call-next-method)))
 
 (defmethod c2mop:slot-definition-allocation ((slot gl-struct-immediate-slot))
   :instance)

@@ -11,8 +11,7 @@
 
 (defmethod shared-initialize :after ((buffer uniform-buffer) slots &key)
   (unless (slot-boundp buffer 'binding)
-    (setf (binding buffer) (cffi:translate-underscore-separated-name
-                            (class-name (class-of (struct buffer)))))))
+    (setf (binding buffer) (cffi:translate-underscore-separated-name (struct-class buffer)))))
 
 (defmethod binding-target ((buffer uniform-buffer)) :uniform-buffer)
 
