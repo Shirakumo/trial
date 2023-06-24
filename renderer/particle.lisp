@@ -147,7 +147,8 @@
   (setf (vertex-array emitter) (ensure-generated resource)))
 
 (defmethod (setf vertex-array) :after ((vao vertex-array) (emitter particle-emitter))
-  (setf (mesh-index-buffer (slot-value emitter 'emit-pass)) (indexed-p vao))
+  (setf (mesh-index-buffer (slot-value emitter 'emit-pass)) (or (index-buffer vao)
+                                                                (error "VAO must be indexed!")))
   (setf (mesh-vertex-buffer (slot-value emitter 'emit-pass)) (first (find-if #'consp (bindings vao))))
   (with-buffer-tx (struct (slot-value emitter 'particle-emitter-buffer) :update NIL)
     (setf (mesh-index-count struct) (size vao))

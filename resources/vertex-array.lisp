@@ -29,7 +29,6 @@
 
 (defun update-array-bindings (array bindings)
   (gl:bind-vertex-array (data-pointer array))
-  (setf (index-buffer array) NIL)
   (unwind-protect
        (loop for binding in bindings
              for i from 0

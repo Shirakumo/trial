@@ -70,6 +70,7 @@
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
     (enter (make-instance 'trial::particle-emitter) scene)
+    (enter (make-instance 'editor-camera :location (VEC3 0.0 2.3 7.3) :fov 50 :move-speed 0.1) scene)
     (enter (make-instance 'render-pass) scene))
   #++
   (defmethod setup-scene ((workbench workbench) scene)
@@ -104,4 +105,3 @@
           (map (make-instance 'tone-mapping-pass)))
       (connect (port render 'color) (port map 'previous-pass) scene)))
   (maybe-reload-scene))
-
