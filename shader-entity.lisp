@@ -32,11 +32,24 @@
        (resolve-shader-include (pool-path pool name))))))
 
 (defclass buffer-slot-definition ()
-  ((access :initarg :access :initarg :buffer :initform NIL :accessor access)))
+  ((buffer-type :initarg :buffer :initform NIL :accessor buffer-type)
+   (binding :initarg :binding :initform NIL :accessor binding)
+   (qualifiers :initarg :qualifiers :initform () :accessor qualifiers)))
 
 (defmethod print-object ((slotdef buffer-slot-definition) stream)
   (print-unreadable-object (slotdef stream :type T)
-    (format stream "~s ~s" (c2mop:slot-definition-name slotdef) (access slotdef))))
+    (format stream "~s ~s" (c2mop:slot-definition-name slotdef) (buffer-type slotdef))))
+
+(defmethod gl-source ((definition buffer-slot-definition))
+  (case (buffer-type definition)
+    ((T) NIL)
+    (vertex-buffer
+     (gl-source (make-instance 'vertex-buffer :binding (binding definition)
+                                              :qualifiers (qualifiers definition))))
+    (T
+     (gl-source (make-instance 'shader-storage-buffer :binding (binding definition)
+                                                      :qualifiers (qualifiers definition)
+                                                      :struct-class (buffer-type definition))))))
 
 (defclass direct-buffer-slot-definition (buffer-slot-definition c2mop:standard-direct-slot-definition) ())
 (defclass effective-buffer-slot-definition (buffer-slot-definition c2mop:standard-effective-slot-definition) ())
@@ -118,24 +131,21 @@
 (defmethod c2mop:compute-effective-slot-definition ((class shader-entity-class) name direct-slots)
   (let ((initargs (compute-effective-slot-definition-initargs direct-slots))
         (uniform (loop for direct in direct-slots
-                       thereis (when (typep direct 'uniform-slot-definition)
-                                 (uniform-name direct))))
+                       thereis (when (typep direct 'uniform-slot-definition) direct)))
         (constant (loop for direct in direct-slots
-                        thereis (when (typep direct 'constant-slot-definition)
-                                  (constant-name direct))))
+                        thereis (when (typep direct 'constant-slot-definition) direct)))
         (buffer (loop for direct in direct-slots
-                      thereis (when (typep direct 'buffer-slot-definition)
-                                  (access direct)))))
+                      thereis (when (typep direct 'buffer-slot-definition) direct))))
     (cond ((and (or buffer uniform constant) (not (xor buffer uniform constant)))
            (error "Slot ~s cannot be constant and uniform at the same time." name))
           (uniform
-           (setf initargs (list* :uniform uniform initargs))
+           (setf initargs (list* :uniform (uniform-name uniform) initargs))
            (apply #'make-instance (apply #'c2mop:effective-slot-definition-class class initargs) initargs))
           (constant
-           (setf initargs (list* :constant constant initargs))
+           (setf initargs (list* :constant (constant-name constant) initargs))
            (apply #'make-instance (apply #'c2mop:effective-slot-definition-class class initargs) initargs))
           (buffer
-           (setf initargs (list* :buffer buffer initargs))
+           (setf initargs (list* :buffer (buffer-type buffer) :qualifiers (qualifiers buffer) :binding (binding buffer) initargs))
            (apply #'make-instance (apply #'c2mop:effective-slot-definition-class class initargs) initargs))
           (T
            (call-next-method)))))
@@ -322,6 +332,10 @@
   (loop for spec in (effective-buffers object)
         collect (apply #'// spec)))
 
+(defmethod buffer-sources ((object shader-entity-class))
+  (loop for spec in (effective-buffers object)
+        collect (gl-source (apply #'// spec))))
+
 (defclass shader-entity (entity)
   ()
   (:metaclass shader-entity-class))
@@ -369,17 +383,26 @@
                              (slot-value entity name))))))
 
 (defmethod make-class-shader-program ((entity shader-entity))
-  (let ((buffers (buffers entity)))
-    (make-instance 'shader-program
-                   :shaders (loop with constants = `(glsl-toolkit:shader ,@(compute-preprocessor-directives entity))
-                                  for (type source) on (effective-shaders entity) by #'cddr
-                                  for processed = (glsl-toolkit:merge-shader-sources
-                                                   (append (list constants) 
-                                                           (mapcar #'gl-source buffers)
-                                                           (list (glsl-toolkit:combine-methods source)))
-                                                   :min-version (glsl-target-version T))
-                                  collect (make-instance 'shader :source processed :type type))
-                   :buffers buffers)))
+  (make-instance 'shader-program
+                 :shaders (loop with constants = `(glsl-toolkit:shader ,@(compute-preprocessor-directives entity))
+                                with sources = (buffer-sources entity)
+                                for (type source) on (effective-shaders entity) by #'cddr
+                                for processed = (glsl-toolkit:merge-shader-sources
+                                                 (append (list* constants sources)
+                                                         (list (glsl-toolkit:combine-methods source)))
+                                                 :min-version (glsl-target-version T))
+                                collect (make-instance 'shader :source processed :type type))
+                 :buffers (buffers entity)))
+
+;; This is hacky and I hate it.
+(defmethod buffer-sources ((object shader-entity))
+  (append (buffer-sources (class-of object))
+          (loop for slot in (c2mop:class-slots (class-of object))
+                when (typep slot 'buffer-slot-definition)
+                collect (or (gl-source slot)
+                            (gl-source (or (slot-value object (c2mop:slot-definition-name slot))
+                                           (error "Buffer slot~%  ~s~%is unset in~%  ~a!"
+                                                  (c2mop:slot-definition-name slot) object)))))))
 
 (defmethod buffers ((object shader-entity))
   (delete-duplicates
