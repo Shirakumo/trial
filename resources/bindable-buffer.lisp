@@ -8,6 +8,7 @@
 
 (defclass bindable-buffer (buffer-object)
   ((binding-point :initarg :binding-point :initform NIL :accessor binding-point)
+   (qualifiers :initarg :qualifiers :initform NIL :accessor qualifiers)
    (binding :initarg :binding :accessor binding)))
 
 (defmethod shared-initialize :after ((buffer bindable-buffer) slots &key (binding NIL binding-p))
@@ -29,7 +30,8 @@
       ;; KLUDGE: this is kinda dirty.
       ,(ecase (binding-target buffer)
          (:shader-storage-buffer :buffer)
-         (:uniform-buffer :uniform)))
+         (:uniform-buffer :uniform))
+      ,@(qualifiers buffer))
      ,(gl-type buffer)
      ,(if (binding buffer)
           `(glsl-toolkit:instance-name ,(binding buffer))
