@@ -422,14 +422,14 @@
 
 (defmethod stage ((pass single-shader-pass) (area staging-area))
   (unless (slot-boundp pass 'shader-program)
-    (setf (shader-program pass) (make-class-shader-program pass)))
+    (setf (shader-program pass) (make-shader-program pass)))
   (call-next-method)
   (stage (shader-program pass) area))
 
 (defmethod handle ((ev class-changed) (pass single-shader-pass))
   (when (eql (changed-class ev) (class-of pass))
     (let ((prev (shader-program pass))
-          (new (make-class-shader-program pass)))
+          (new (make-shader-program pass)))
       (v:info :trial.shader-pass "Refreshing shader program for ~a" (class-of pass))
       (setf (buffers prev) (buffers new))
       (setf (shaders prev) (shaders new)))))
