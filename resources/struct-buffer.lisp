@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass struct-buffer (buffer-object)
-  ((data-usage :initform :stream-draw)))
+  ((data-usage :initform :dynamic-draw)))
 
 (defmethod print-object ((buffer struct-buffer) stream)
   (print-unreadable-object (buffer stream :type T :identity T)
