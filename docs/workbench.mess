@@ -3,4 +3,4 @@ Trial includes a system called ``trial-workbench`` which loads a bunch of common
 
 The workbench is meant as a simple playground you can use to try things out with Trial. Many a feature or effect have been created using it, and it can be a good debugging aid to give a very minimal base case to test stuff against.
 
-Do note that the workbench also uses the "trial-assets"(https://irakumo.org/project/trial-assets) repository to provide sample data. You can make use of those samples in your own projects as well.
+Do note that the workbench also uses the "trial-assets"(https://shirakumo.org/projects/trial-assets) repository to provide sample data. You can make use of those samples in your own projects as well.
