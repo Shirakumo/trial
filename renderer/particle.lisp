@@ -32,10 +32,10 @@
   (particles (:array (:struct particle-struct) size)))
 
 (define-gl-struct (particle-counter-buffer :layout-standard std430)
-  (alive-count :int :initform 0)
-  (dead-count :int :initarg :max-particles :initform 0)
-  (real-emit-count :int :initform 0)
-  (total-count :int :initform 0))
+  (alive-count :uint :initform 0)
+  (dead-count :uint :initarg :max-particles :initform 0)
+  (real-emit-count :uint :initform 0)
+  (total-count :uint :initform 0))
 
 (define-gl-struct (particle-argument-buffer :layout-standard std430)
   (emit-args :uvec3)
@@ -62,7 +62,8 @@
   ((emit-threads :constant T :initform 256 :initarg :emit-threads)
    (simulate-threads :constant T :initform 256 :initarg :simulate-threads)
    (particle-counter-buffer :buffer T :initarg :particle-counter-buffer)
-   (particle-argument-buffer :buffer T :initarg :particle-argument-buffer))
+   (particle-argument-buffer :buffer T :initarg :particle-argument-buffer)
+   (particle-emitter-buffer :buffer T :initarg :particle-emitter-buffer))
   (:shader-file (trial "particle/kickoff.glsl")))
 
 (define-shader-pass particle-emit-pass (compute-pass)
@@ -73,9 +74,10 @@
    (alive-particle-buffer-1 :buffer T :initarg :alive-particle-buffer-1)
    (dead-particle-buffer :buffer T :initarg :dead-particle-buffer)
    (particle-counter-buffer :buffer T :initarg :particle-counter-buffer)
-   (mesh-vertex-buffer :buffer "vertex_buffer" :initarg :mesh-vertex-buffer :accessor mesh-vertex-buffer)
-   (mesh-index-buffer :buffer "index_buffer" :initarg :mesh-index-buffer :accessor mesh-index-buffer)
+   (mesh-vertex-buffer :buffer T :initarg :mesh-vertex-buffer :accessor mesh-vertex-buffer)
+   (mesh-index-buffer :buffer T :initarg :mesh-index-buffer :accessor mesh-index-buffer)
    (random-tex :port-type fixed-input :texture (// 'trial 'random)))
+  (:buffers (trial standard-environment-information))
   (:shader-file (trial "particle/emit.glsl")))
 
 (define-shader-pass particle-simulate-pass (compute-pass)
@@ -87,6 +89,7 @@
    (dead-particle-buffer :buffer T :initarg :dead-particle-buffer)
    (particle-counter-buffer :buffer T :initarg :particle-counter-buffer)
    (particle-argument-buffer :buffer T :initarg :particle-argument-buffer))
+  (:buffers (trial standard-environment-information))
   (:shader-file (trial "particle/simulate.glsl")))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -111,10 +114,8 @@
 
 (defmethod initialize-instance :after ((emitter particle-emitter) &key (emit-threads 256) (simulate-threads 256) particle-force-fields vertex-array)
   (unless particle-force-fields
-    (setf particle-force-fields (make-instance 'shader-storage-buffer :binding NIL :struct (make-instance 'particle-force-fields :size 0))))
-  (setf (slot-value emitter 'particle-force-fields)
-        (or particle-force-fields
-            (make-instance 'shader-storage-buffer :binding NIL :struct (make-instance 'particle-force-fields))))
+    (setf particle-force-fields (make-instance 'shader-storage-buffer :binding NIL :struct (make-instance 'particle-force-fields :size 1))))
+  (setf (slot-value emitter 'particle-force-fields) particle-force-fields)
   (with-all-slots-bound (emitter particle-emitter)
     (setf particle-emitter-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-copy :binding NIL :struct (make-instance 'particle-emitter-buffer)))
     (setf particle-argument-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-draw :binding NIL :struct (make-instance 'particle-argument-buffer)))
@@ -126,7 +127,7 @@
                                                 (dotimes (i max-particles buffer) (setf (aref buffer i) i)))))
     (setf particle-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-copy :binding NIL :struct (make-instance 'particle-buffer :size max-particles)))
     
-    (setf kickoff-pass (make-instance 'particle-kickoff-pass :emit-threads emit-threads :simulate-threads simulate-threads :particle-counter-buffer particle-counter-buffer :particle-argument-buffer particle-argument-buffer))
+    (setf kickoff-pass (make-instance 'particle-kickoff-pass :emit-threads emit-threads :simulate-threads simulate-threads :particle-counter-buffer particle-counter-buffer :particle-argument-buffer particle-argument-buffer :particle-emitter-buffer particle-emitter-buffer))
     (setf emit-pass (make-instance 'particle-emit-pass :emit-threads emit-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer :particle-emitter-buffer particle-emitter-buffer
                                                        :work-groups 0))
     (setf simulate-pass (make-instance 'particle-simulate-pass :simulate-threads simulate-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer :particle-argument-buffer particle-argument-buffer :particle-force-fields particle-force-fields
@@ -148,7 +149,6 @@
 (defmethod (setf vertex-array) :after ((vao vertex-array) (emitter particle-emitter))
   (setf (mesh-index-buffer (slot-value emitter 'emit-pass)) (indexed-p vao))
   (setf (mesh-vertex-buffer (slot-value emitter 'emit-pass)) (first (find-if #'consp (bindings vao))))
-  (print (list (indexed-p vao) (first (find-if #'consp (bindings vao)))))
   (with-buffer-tx (struct (slot-value emitter 'particle-emitter-buffer) :update NIL)
     (setf (mesh-index-count struct) (size vao))
     (setf (mesh-vertex-position-stride struct)
@@ -183,9 +183,8 @@
     ;; Simulate with compute shaders
     (%gl:bind-buffer :dispatch-indirect-buffer (gl-name particle-argument-buffer))
     (render kickoff-pass NIL)
-    ;; ;; Bind the VAO somehow?
-    ;; (render emit-pass NIL)
-    ;; (render simulate-pass NIL)
+    (render emit-pass NIL)
+    (render simulate-pass NIL)
     ;; Swap the buffers
     (rotatef (binding-point alive-particle-buffer-0)
              (binding-point alive-particle-buffer-1))
