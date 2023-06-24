@@ -40,7 +40,7 @@
         for i from 0 below (length vector)
         for offset = 0 then (+ offset size)
         do (setf (aref vector i) (make-instance struct
-                                                :storage-ptr (static-vector-pointer data)
+                                                :storage (mem:to-memory-region data)
                                                 :base-offset offset))
         finally (setf (struct-vector buffer) vector)))
 

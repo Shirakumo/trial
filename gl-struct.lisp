@@ -9,13 +9,13 @@
 (defvar *dynamic-context*)
 
 (defclass gl-struct ()
-  ((storage-ptr :initform NIL :initarg :storage-ptr :accessor storage-ptr)
+  ((storage :initarg :storage :accessor storage :reader org.shirakumo.memory-regions:to-memory-region)
    (base-offset :initform 0 :initarg :base-offset :accessor base-offset)))
 
-(defun compound-struct-slot-initform (struct slot standard storage-ptr)
+(defun compound-struct-slot-initform (struct slot standard storage)
   (case (first (gl-type slot))
     (:struct
-     (make-instance (second (gl-type slot)) :storage-ptr storage-ptr
+     (make-instance (second (gl-type slot)) :storage storage
                                             :base-offset (base-offset slot)))
     (:array
      (destructuring-bind (identifier type count) (gl-type slot)
@@ -28,15 +28,19 @@
                  for i from 0 below count
                  for offset = (base-offset slot) then (+ offset size)
                  do (setf (aref vector i) (make-instance (second type)
-                                                         :storage-ptr storage-ptr
+                                                         :storage storage
                                                          :base-offset offset))
                  finally (return vector))
            (make-instance 'gl-vector
-                          :storage-ptr storage-ptr
+                          :storage storage
                           :base-offset (base-offset slot)
                           :element-type type
                           :element-count count
                           :stride (buffer-field-stride standard type)))))))
+
+(defmethod shared-initialize :before ((struct gl-struct) slots &key storage)
+  (setf (slot-value struct 'storage)
+        (or storage (mem:allocate T (buffer-field-size (layout-standard struct) struct 0)))))
 
 (defmethod shared-initialize :after ((struct gl-struct) slots &key)
   ;; TODO: optimise with precompiled ctors
@@ -46,9 +50,14 @@
         do (when (and (typep slot 'gl-struct-effective-slot)
                       (not (typep slot 'gl-struct-immediate-slot)))
              (setf (slot-value struct slot-name)
-                   (compound-struct-slot-initform struct slot standard (storage-ptr struct))))))
+                   (compound-struct-slot-initform struct slot standard (storage struct))))))
 
-(defmethod (setf storage-ptr) :after (pointer (struct gl-struct))
+(defmethod finalize ((struct gl-struct))
+  (when (storage struct)
+    (mem:deallocate T (storage struct))
+    (setf (storage struct) NIL)))
+
+(defmethod (setf storage) :after (pointer (struct gl-struct))
   (loop with standard = (layout-standard struct)
         for slot in (c2mop:class-slots (class-of struct))
         do (when (and (typep slot 'gl-struct-effective-slot)
@@ -57,9 +66,9 @@
                (typecase value
                  (vector
                   (loop for v across value
-                        do (setf (storage-ptr v) pointer)))
+                        do (setf (storage v) pointer)))
                  ((or gl-vector gl-struct)
-                  (setf (storage-ptr value) pointer)))))))
+                  (setf (storage value) pointer)))))))
 
 (defmethod compute-dependent-types ((struct gl-struct))
   (compute-dependent-types (class-of struct)))
@@ -318,8 +327,8 @@
 ;; FIXME: maybe this should be NIL during class initialisation after all so that the
 ;;        slot initform can do its thing.
 (defmethod c2mop:slot-boundp-using-class ((class gl-struct-class) (object gl-struct) (slot gl-struct-effective-slot))
-  (or (not (null (storage-ptr object)))
-      (call-next-method)))
+  (and (storage object)
+       (call-next-method)))
 
 (defmethod c2mop:slot-makunbound-using-class ((class gl-struct-class) (object gl-struct) (slot gl-struct-effective-slot))
   (error "Cannot unbind struct slots."))
@@ -365,14 +374,14 @@
 ;; TODO: generate optimised accessor functions
 
 (defmethod c2mop:slot-value-using-class ((class gl-struct-class) (struct gl-struct) (slot gl-struct-immediate-slot))
-  (if (storage-ptr struct)
-      (gl-memref (cffi:inc-pointer (storage-ptr struct) (+ (base-offset struct) (base-offset slot)))
+  (if (storage struct)
+      (gl-memref (cffi:inc-pointer (memory-region-pointer (storage struct)) (+ (base-offset struct) (base-offset slot)))
                  (gl-type slot) :layout (layout-standard class))
       (call-next-method)))
 
 (defmethod (setf c2mop:slot-value-using-class) (value (class gl-struct-class) (struct gl-struct) (slot gl-struct-immediate-slot))
-  (if (storage-ptr struct)
-      (setf (gl-memref (cffi:inc-pointer (storage-ptr struct) (+ (base-offset struct) (base-offset slot)))
+  (if (storage struct)
+      (setf (gl-memref (cffi:inc-pointer (memory-region-pointer (storage struct)) (+ (base-offset struct) (base-offset slot)))
                        (gl-type slot) :layout (layout-standard class))
             value)
       (call-next-method)))
@@ -395,7 +404,7 @@
 ;;; Only for primitive types.
 ;;; FIXME: factor out into trivial-* library
 (defclass gl-vector (standard-object #+(or abcl sbcl) sequence)
-  ((storage-ptr :initarg :storage-ptr :accessor storage-ptr)
+  ((storage :initarg :storage :accessor storage)
    (base-offset :initform 0 :initarg :base-offset :accessor base-offset)
    (element-count :initarg :element-count :reader sb-sequence:length)
    (element-type :initarg :element-type :reader element-type)
@@ -407,12 +416,12 @@
 
 #+sbcl
 (defmethod sb-sequence:elt ((vector gl-vector) index)
-  (gl-memref (cffi:inc-pointer (storage-ptr vector) (+ (base-offset vector) (* index (stride vector))))
+  (gl-memref (cffi:inc-pointer (memory-region-pointer (storage vector)) (+ (base-offset vector) (* index (stride vector))))
              (element-type vector)))
 
 #+sbcl
 (defmethod (setf sb-sequence:elt) (value (vector gl-vector) index)
-  (setf (gl-memref (cffi:inc-pointer (storage-ptr vector) (+ (base-offset vector) (* index (stride vector))))
+  (setf (gl-memref (cffi:inc-pointer (memory-region-pointer (storage vector)) (+ (base-offset vector) (* index (stride vector))))
                    (element-type vector))
         value))
 
@@ -422,7 +431,7 @@
          (end (or end (sb-sequence:length vector)))
          (state (if from-end (1- end) start))
          (limit (if from-end (1- start) end))
-         (ptr (cffi:inc-pointer (storage-ptr vector) (base-offset vector)))
+         (ptr (cffi:inc-pointer (memory-region-pointer (storage vector)) (base-offset vector)))
          (type (element-type vector))
          (stride (stride vector)))
     (values state limit from-end

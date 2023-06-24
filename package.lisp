@@ -1041,7 +1041,7 @@
   ;; gl-struct.lisp
   (:export
    #:gl-struct
-   #:storage-ptr
+   #:storage
    #:compute-depedent-types
    #:gl-source
    #:gl-struct-class
