@@ -26,16 +26,23 @@
 (defmethod struct-class ((buffer struct-buffer))
   (type-of (buffer-data buffer)))
 
-(defmethod (setf struct) :before ((struct gl-struct) (buffer struct-buffer))
-  (when (and (slot-boundp buffer 'struct) (not (eq (class-of struct) (class-of (buffer-data buffer)))))
-    (c2mop:remove-dependent (class-of (buffer-data buffer)) buffer)
-    (c2mop:add-dependent (class-of struct) buffer)))
-
 (defmethod buffer-field-size ((standard symbol) (buffer struct-buffer) base)
   (buffer-field-size standard (buffer-data buffer) 0))
 
 (defmethod buffer-field-size ((standard (eql T)) (buffer struct-buffer) base)
   (buffer-field-size (layout-standard buffer) buffer 0))
+
+(defmethod (setf buffer-data) :before ((struct gl-struct) (buffer struct-buffer))
+  (when (and (buffer-data buffer) (not (eq (class-of struct) (class-of (buffer-data buffer)))))
+    (c2mop:remove-dependent (class-of (buffer-data buffer)) buffer)
+    (c2mop:add-dependent (class-of struct) buffer)))
+
+(defmethod (setf buffer-data) :around (object (buffer struct-buffer))
+  (check-type object (or null gl-struct))
+  (call-next-method))
+
+(defmethod (setf buffer-data) :after ((object gl-struct) (buffer struct-buffer))
+  (setf (size buffer) (buffer-field-size (layout-standard buffer) buffer 0)))
 
 ;;; FIXME: we update the buffer just fine, but what about the shader programs?
 ;;; FIXME: we currently only catch dependents for the top level class, not any of its includes!
@@ -62,11 +69,6 @@
 
 (defmethod compute-dependent-types ((buffer struct-buffer))
   (compute-dependent-types (buffer-data buffer)))
-
-(defmethod allocate :before ((buffer struct-buffer))
-  (unless (size buffer)
-    (setf (size buffer) (buffer-field-size T buffer 0))
-    (setf (buffer-data buffer) (make-static-vector (size buffer) :initial-element 0))))
 
 (defmethod allocate :after ((buffer struct-buffer))
   (c2mop:add-dependent (class-of (buffer-data buffer)) buffer))
