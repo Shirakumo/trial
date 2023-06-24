@@ -90,6 +90,9 @@
   (error "The asset~%  ~a~%does not hold a resource named~%  ~a"
          asset id))
 
+(defmethod generate-resources :around ((asset asset) (input (eql T)) &rest args)
+  (apply #'generate-resources asset (input* asset) (append args (generation-arguments asset))))
+
 (defmethod reload ((asset asset))
   (when (and (loaded-p asset) *context*)
     (with-context (*context*)
