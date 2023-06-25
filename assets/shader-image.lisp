@@ -15,14 +15,7 @@
 
 (defmethod render ((entity image-renderer) (program shader-program))
   (declare (optimize speed))
-  (let* ((vao (// 'trial 'fullscreen-square))
-         (size (size vao)))
-    (declare (type (unsigned-byte 32) size))
-    (gl:bind-vertex-array (gl-name vao))
-    (if (indexed-p vao)
-        (%gl:draw-elements (vertex-form vao) size :unsigned-int 0)
-        (%gl:draw-arrays (vertex-form vao) 0 size))
-    (gl:bind-vertex-array 0)))
+  (render (// 'trial 'fullscreen-square) program))
 
 (defmethod render ((renderer image-renderer) (texture texture))
   (let ((fbo (gl:gen-framebuffer)))

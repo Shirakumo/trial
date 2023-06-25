@@ -157,10 +157,7 @@
     (gl:bind-texture :texture-2d (gl-name (tilemap layer)))
     (gl:active-texture :texture1)
     (gl:bind-texture :texture-2d (gl-name (tileset layer)))
-    (gl:bind-vertex-array (gl-name (vertex-array layer)))
-    (unwind-protect
-         (%gl:draw-elements :triangles (size (vertex-array layer)) :unsigned-int 0)
-      (gl:bind-vertex-array 0))))
+    (render (vertex-array layer) program)))
 
 (define-class-shader (tile-layer :vertex-shader)
   "layout (location = 0) in vec3 vertex;

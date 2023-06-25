@@ -69,8 +69,7 @@
         (update-buffer-data buf T)))
     (gl:active-texture :texture0)
     (gl:bind-texture :texture-2d (gl-name (// 'trial 'fps-texture)))
-    (gl:bind-vertex-array (gl-name vao))
-    (%gl:draw-elements :triangles (* 6 6) :unsigned-int 0)))
+    (render vao program)))
 
 (define-class-shader (fps-counter :vertex-shader)
   "

@@ -161,15 +161,9 @@
 
 (defmethod render ((renderable standard-renderable) (program shader-program))
   (declare (optimize speed))
-  (let* ((vao (vertex-array renderable))
-         (size (size vao)))
-    (declare (type (unsigned-byte 32) size))
-    (setf (uniform program "model_matrix") (model-matrix))
-    (setf (uniform program "inv_model_matrix") (minv (model-matrix)))
-    (gl:bind-vertex-array (gl-name vao))
-    (if (indexed-p vao)
-        (%gl:draw-elements (vertex-form vao) size :unsigned-int 0)
-        (%gl:draw-arrays (vertex-form vao) 0 size))))
+  (setf (uniform program "model_matrix") (model-matrix))
+  (setf (uniform program "inv_model_matrix") (minv (model-matrix)))
+  (render (vertex-array renderable) program))
 
 (define-shader-entity single-material-renderable (standard-renderable)
   ((material :initarg :material :accessor material)))

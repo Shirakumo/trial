@@ -459,10 +459,7 @@
 (defmethod handle ((event event) (pass post-effect-pass)))
 
 (defmethod render ((pass post-effect-pass) (program shader-program))
-  (let ((vao (vertex-array pass)))
-    (gl:bind-vertex-array (gl-name vao))
-    (%gl:draw-elements :triangles (size vao) :unsigned-int (cffi:null-pointer))
-    (gl:bind-vertex-array 0)))
+  (render (vertex-array pass) program))
 
 (define-class-shader (post-effect-pass :vertex-shader)
   "

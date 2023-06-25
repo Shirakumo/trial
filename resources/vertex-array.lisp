@@ -43,7 +43,7 @@
                     (:element-array-buffer
                      (unless (size array)
                        (setf (size array) (/ (size buffer) (gl-type-size (element-type buffer)))))
-                     (setf (indexed-p array) T)
+                     (setf (indexed-p array) buffer)
                      (decf i))
                     (:array-buffer
                      (ecase (or type (element-type buffer))
@@ -77,3 +77,12 @@
         do (if (listp binding)
                (unload (first binding))
                (unload binding))))
+
+(defmethod render ((array vertex-array) target)
+  (let* ((size (size array)))
+    (declare (type (unsigned-byte 32) size))
+    (gl:bind-vertex-array (gl-name array))
+    (if (indexed-p array)
+        (%gl:draw-elements (vertex-form array) size (element-type (indexed-p array)) 0)
+        (%gl:draw-arrays (vertex-form array) 0 size))
+    (gl:bind-vertex-array 0)))

@@ -166,9 +166,8 @@
 
 (defmethod opengl:draw-vertex-array ((array trial:vertex-array) primitive-type offset count)
   (gl:bind-vertex-array (trial:gl-name array))
-  (if (loop for binding in (trial:bindings array)
-            thereis (typep binding 'trial:vertex-buffer))
-      (%gl:draw-elements primitive-type count :unsigned-int offset)
+  (if (trial:indexed-p array)
+      (%gl:draw-elements primitive-type count (trial:element-type (trial:indexed-p array)) offset)
       (%gl:draw-arrays primitive-type offset count)))
 
 (defclass framebuffer (trial:framebuffer)

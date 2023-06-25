@@ -108,14 +108,7 @@
 
 (defmethod render ((entity fullscreen-entity) (program shader-program))
   (declare (optimize speed))
-  (let* ((vao (vertex-array entity))
-         (size (size vao)))
-    (declare (type (unsigned-byte 32) size))
-    (gl:bind-vertex-array (gl-name vao))
-    (if (indexed-p vao)
-        (%gl:draw-elements (vertex-form vao) size :unsigned-int 0)
-        (%gl:draw-arrays (vertex-form vao) 0 size))
-    (gl:bind-vertex-array 0)))
+  (render (vertex-array entity) program))
 
 (define-class-shader (fullscreen-entity :vertex-shader)
   "layout (location = 0) in vec3 position;
@@ -137,14 +130,7 @@ void main(){
   (setf (uniform program "model_matrix") (model-matrix))
   (setf (uniform program "view_matrix") (view-matrix))
   (setf (uniform program "projection_matrix") (projection-matrix))
-  (let* ((vao (vertex-array entity))
-         (size (size vao)))
-    (declare (type (unsigned-byte 32) size))
-    (gl:bind-vertex-array (gl-name vao))
-    (if (indexed-p vao)
-        (%gl:draw-elements (vertex-form vao) size :unsigned-int 0)
-        (%gl:draw-arrays (vertex-form vao) 0 size))
-    (gl:bind-vertex-array 0)))
+  (render (vertex-array entity) program))
 
 (define-class-shader (vertex-entity :vertex-shader)
   "layout (location = 0) in vec3 position;
