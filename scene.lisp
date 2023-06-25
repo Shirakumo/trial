@@ -8,7 +8,7 @@
 
 (defclass scene (bag event-loop)
   ((camera :initarg :camera :initform NIL :accessor camera)
-   (name-map :initform (make-hash-table :test 'eq) :accessor name-map)))
+   (name-map :initform (make-hash-table :test 'equal) :accessor name-map)))
 
 (defmethod enter :after ((camera camera) (scene scene))
   (setf (camera scene) camera))
