@@ -300,8 +300,7 @@
 
 (defclass asset (file-input-asset
                  multi-resource-asset
-                 animation-asset
-                 trial::full-load-asset)
+                 animation-asset)
   ((scenes :initform (make-hash-table :test 'equal) :accessor scenes)))
 
 (defmethod generate-resources ((asset asset) input &key load-scene)
@@ -313,6 +312,8 @@
             for i from 0
             do (unless (name mesh)
                  (setf (name mesh) i))
+               ;; FIXME: meshes composed out of multiple primitives will have the same name
+               ;;        and only one will get assigned here, essentially discarding the other.
                (setf (gethash (name mesh) meshes) mesh)
                (trial::make-vertex-array mesh (resource asset (name mesh))))
       ;; Patch up
@@ -329,6 +330,7 @@
       ;; Construct scene graphs
       (labels ((construct (node)
                  (cond ((gltf:mesh node)
+                        ;; FIXME: coerce name to be lisp-native, otherwise node lookups will fail
                         (let ((mesh-name (or (gltf:name (gltf:mesh node)) (gltf:name node))))
                           (make-instance 'static-gltf-entity :transform (gltf-node-transform node)
                                                              :name (gltf:name node)
