@@ -50,8 +50,12 @@
              count data (memory-region-size region)))
     (update-buffer-data/ptr buffer (memory-region-pointer region) (or count (memory-region-size region)) buffer-start)))
 
-(defmethod resize-buffer ((buffer buffer-object) size &key data (data-start 0) gl-type)
-  (mem:with-memory-region (region (or data (cffi:null-pointer)) :offset data-start :gl-type gl-type)
+(defmethod resize-buffer ((buffer vertex-buffer) (size (eql T)) &key (data (buffer-data buffer)) (data-start 0))
+  (mem:with-memory-region (region data :offset data-start)
+    (resize-buffer/ptr buffer (memory-region-size region) (memory-region-pointer region))))
+
+(defmethod resize-buffer ((buffer buffer-object) size &key data (data-start 0))
+  (mem:with-memory-region (region (or data (cffi:null-pointer)) :offset data-start)
     #-elide-buffer-access-checks
     (when (and size (not (cffi:null-pointer-p (memory-region-pointer region))) (< (memory-region-size region) size))
       (error "Attempting to update ~d bytes from ~a, when it has only ~d bytes available."
@@ -59,12 +63,12 @@
     (resize-buffer/ptr buffer size (memory-region-pointer region))))
 
 (defmethod allocate ((buffer buffer-object))
+  (assert (not (null (size buffer))))
   (let ((vbo (gl:gen-buffer))
         (buffer-data (buffer-data buffer)))
     (with-cleanup-on-failure (progn (gl:delete-buffers (list vbo))
                                     (setf (data-pointer buffer) NIL))
       (setf (data-pointer buffer) vbo)
-      (assert (not (null (size buffer))))
       (resize-buffer buffer (size buffer) :data buffer-data))))
 
 (defmethod deallocate ((buffer buffer-object))

@@ -15,22 +15,7 @@
 (defmethod initialize-instance :before ((buffer vertex-buffer) &key element-type)
   (check-vertex-buffer-element-type element-type))
 
-(defmethod update-buffer-data ((buffer vertex-buffer) data &key (buffer-start 0) (data-start 0) count)
-  (call-next-method buffer data :buffer-start buffer-start :data-start data-start :count count
-                                :gl-type (element-type buffer)))
-
-(defmethod resize-buffer ((buffer vertex-buffer) size &key (data (cffi:null-pointer)) (data-start 0))
-  (call-next-method buffer size :data data :data-start data-start
-                                :gl-type (element-type buffer)))
-
-(defmethod resize-buffer ((buffer vertex-buffer) (size (eql T)) &key data (data-start 0))
-  (let* ((data (or data (buffer-data buffer)))
-         (size (* (gl-type-size (element-type buffer))
-                  (- (length data) data-start))))
-    (call-next-method buffer size :data data :data-start data-start)))
-
 (defmethod allocate :before ((buffer vertex-buffer))
   (let ((buffer-data (buffer-data buffer)))
     (when (and (not (size buffer)) (vectorp buffer-data))
-      (setf (size buffer) (* (length buffer-data)
-                             (gl-type-size (element-type buffer)))))))
+      (setf (size buffer) (* (length buffer-data) (gl-type-size (element-type buffer)))))))

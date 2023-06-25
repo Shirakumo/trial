@@ -1089,10 +1089,30 @@
     (:unsigned-short '(unsigned-byte 16))
     (:int '(signed-byte 32))
     (:unsigned-int '(unsigned-byte 32))
-    (:half-float 'short-flfoat)
+    (:half-float 'short-float)
     (:float 'single-float)
     (:double 'double-float)
     (T T)))
+
+(defun cl-type->pixel-type (type)
+  (typecase type
+    (cons
+     (destructuring-bind (form arity) type
+       (ecase form
+         (signed-byte
+          (ecase arity
+            (8 :byte)
+            (16 :short)
+            (32 :int)))
+         (unsigned-byte
+          (ecase arity
+            (8 :unsigned-byte)
+            (16 :unsigned-short)
+            (32 :unsigned-int))))))
+    (symbol
+     (ecase type
+       (single-float :float)
+       (double-flot :double)))))
 
 (define-global +gl-extensions+ ())
 

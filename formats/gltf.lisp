@@ -208,6 +208,13 @@
                    (setf (aref data (+ (* i stride) offset 2)) (qz el))
                    (setf (aref data (+ (* i stride) offset 3)) (qw el)))))))))
 
+(defmethod org.shirakumo.memory-regions:call-with-memory-region ((function function) (accessor gltf:accessor) &key (start 0))
+  (let ((region (org.shirakumo.memory-regions:memory-region
+                 (cffi:inc-pointer (gltf:start accessor) start)
+                 (* (gltf:size accessor) (gltf:byte-stride accessor)))))
+    (declare (dynamic-extent region))
+    (funcall function region)))
+
 (defun load-meshes (gltf)
   (let ((meshes (make-array 0 :adjustable T :fill-pointer T)))
     (loop for node across (gltf:nodes gltf)
@@ -233,10 +240,12 @@
                                    (load-vertex-attribute mesh native accessor skin)))
                         (when (gltf:indices primitive)
                           (let* ((accessor (gltf:indices primitive))
-                                 (indexes (make-array (length accessor) :element-type '(unsigned-byte 32))))
+                                 (indexes (make-array (length accessor) :element-type (ecase (gltf:component-type accessor)
+                                                                                        (:uint8  '(unsigned-byte 8))
+                                                                                        (:uint16 '(unsigned-byte 16))
+                                                                                        (:uint32 '(unsigned-byte 32))))))
                             (setf (index-data mesh) indexes)
-                            (loop for i from 0 below (length indexes)
-                                  do (setf (aref indexes i) (elt accessor i))))))))
+                            (org.shirakumo.memory-regions:replace indexes accessor))))))
     meshes))
 
 (defun load-image (asset texinfo)

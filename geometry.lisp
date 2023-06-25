@@ -179,7 +179,7 @@
                                        (when index-data
                                          (list (make-instance 'vertex-buffer :buffer-data index-data
                                                                              :buffer-type :element-array-buffer
-                                                                             :element-type :unsigned-int))))
+                                                                             :element-type (cl-type->pixel-type (array-element-type index-data))))))
                      :size (if index-data
                                (length index-data)
                                (truncate (length (vertex-data mesh)) (+ 3 3 2))))))
