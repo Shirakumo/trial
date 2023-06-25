@@ -278,10 +278,12 @@
     (loop for material across (gltf:materials gltf)
           for pbr = (gltf:pbr material)
           for name = (or (gltf:name material) (gltf:idx material))
-          do (trial:update-material
+          for mr = (load-image asset (gltf:metallic-roughness pbr))
+          do (setf (trial::swizzle mr) '(:b :g :r :a))
+             (trial:update-material
               name 'trial:pbr-material
               :albedo-texture (load-image asset (gltf:albedo pbr))
-              :metal-rough-texture (load-image asset (gltf:metallic-roughness pbr))
+              :metal-rough-texture mr
               :occlusion-texture (load-image asset (gltf:occlusion-texture material))
               :emissive-texture (load-image asset (gltf:emissive-texture material))
               :normal-texture (load-image asset (gltf:normal-texture material))
@@ -347,8 +349,7 @@
         (loop for node across (gltf:scenes gltf)
               for scene = (make-instance 'static-gltf-container :name (gltf:name node))
               do (setf (gethash (gltf:name node) (scenes asset)) scene)
-                 (recurse (gltf:nodes node) scene)
-                 (describe scene)))
+                 (recurse (gltf:nodes node) scene)))
       ;; Enter it.
       (flet ((load-scene (scene)
                (enter scene (scene +main+))))
