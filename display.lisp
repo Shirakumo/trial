@@ -48,7 +48,7 @@
   (gl:stencil-op :keep :keep :keep)
   (gl:depth-mask T)
   (gl:depth-func :lequal)
-  (gl:blend-func :src-alpha :one-minus-src-alpha)
+  (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha)
   #-arm64 (gl:clear-depth 1.0)
   (gl:front-face :ccw)
   (gl:cull-face :back)

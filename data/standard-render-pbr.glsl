@@ -22,7 +22,9 @@ void standard_init(){
   material = materials[material_id];
   normal = normal_map(normal_tex, world_position-camera_position, uv, normal);
   view_dir = normalize(camera_position - world_position);
-  albedo = texture(albedo_tex, uv) * material.albedo_factor;
+  albedo = texture(albedo_tex, uv);
+  albedo.xyz = pow(albedo.xyz,vec3(gamma));
+  albedo *= material.albedo_factor;
   vec3 mro = texture(metal_rough_occlusion_tex, uv).xyz;
   metalness = mro.x * material.metalness_factor;
   roughness = mro.y * material.roughness_factor;

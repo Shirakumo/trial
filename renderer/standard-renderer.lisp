@@ -13,7 +13,8 @@
   (camera-position :vec3 :accessor location)
   (tt :float :accessor tt)
   (dt :float :accessor dt)
-  (fdt :float :accessor fdt))
+  (fdt :float :accessor fdt)
+  (gamma :float :initform 2.2 :accessor gamma))
 
 (define-asset (trial standard-environment-information) uniform-block
     'standard-environment-information
@@ -77,7 +78,8 @@
       (setf (slot-value buffer 'projection-matrix) (projection-matrix))
       (setf (slot-value buffer 'view-size) (vec2 (width (framebuffer pass)) (height (framebuffer pass))))
       (setf (slot-value buffer 'camera-position) (global-location (camera pass)))
-      (setf (slot-value buffer 'fdt) (float fdt 0f0)))))
+      (setf (slot-value buffer 'fdt) (float fdt 0f0))
+      (setf (slot-value buffer 'gamma) 2.2))))
 
 (defmethod buffers ((pass standard-render-pass))
   (list* (material-block pass) (light-block pass) (call-next-method)))
