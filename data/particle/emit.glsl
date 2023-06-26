@@ -41,12 +41,12 @@ void main(){
     vec3 nor = n0 + f*(n1-n0) + g*(n2-n0);
     pos = (model_matrix * vec4(pos, 1)).xyz;
     nor = normalize(mat3(model_matrix)*nor);
-    float starting_size = particle_size + particle_size * particle_random_factor * (randoms.y-0.5);
+    float starting_size = particle_size + particle_size * particle_randomness * (randoms.y-0.5);
 
     Particle particle;
     particle.position = pos;
-    particle.velocity = particle_normal_factor * (nor + particle_random_factor*(randoms-0.5));
-    particle.rotational_velocity = particle_rotation * particle_random_factor * (randoms.z-0.5);
+    particle.velocity = particle_velocity * (nor + particle_randomness*(randoms-0.5));
+    particle.rotational_velocity = particle_rotation * particle_randomness * (randoms.z-0.5);
     particle.max_life = particle_lifespan + particle_lifespan * particle_lifespan_randomness * (randoms.x-0.5);
     particle.life = particle.max_life;
     particle.size_begin = particle_size;
