@@ -309,7 +309,9 @@
 
 (defclass asset (file-input-asset
                  multi-resource-asset
-                 animation-asset)
+                 animation-asset
+                 ;; KLUDGE: this should not be necessary if we can figure out the loading correctly
+                 trial::full-load-asset)
   ((scenes :initform (make-hash-table :test 'equal) :accessor scenes)))
 
 (defmethod generate-resources ((asset asset) input &key load-scene)
