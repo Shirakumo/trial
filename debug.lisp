@@ -148,7 +148,7 @@ void main(){
 (defmethod debug-draw ((string string) &rest args)
   (let ((point (getf args :point)))
     (remf args :point)
-    (apply #'debug-text (or point (vec 0 0 0)) args)))
+    (apply #'debug-text (or point (vec 0 0 0)) string args)))
 
 (define-debug-draw-function (debug-text text) (point text &key (scale 0.2))
   (let ((i (print-ascii-text text data :start (fill-pointer data)
