@@ -14,7 +14,7 @@
                        (:greyscale-alpha :rg)
                        (:truecolour :rgb)
                        (:truecolour-alpha :rgba)
-                       (:indexed-colour :rgb))))
+                       (:indexed-colour :rgba))))
 
 (defmethod load-image ((source vector) (type (eql :png)))
   (%png-source (pngload:load-vector source :flatten T :flip-y T :static-vector (static-vector-p source))))
