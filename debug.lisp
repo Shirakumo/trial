@@ -25,12 +25,10 @@
   (setf (uniform program "view_matrix") (view-matrix))
   (setf (uniform program "projection_matrix") (projection-matrix))
   (setf (uniform program "texture_image") 0)
-  (disable-feature :depth-test)
   (gl:active-texture :texture0)
   (gl:bind-texture :texture-2d (gl-name (// 'trial 'ascii)))
   (gl:bind-vertex-array (gl-name (text-vao draw)))
-  (gl:draw-arrays :triangles 0 (truncate (length (text draw)) 5))
-  (enable-feature :depth-test))
+  (gl:draw-arrays :triangles 0 (truncate (length (text draw)) 5)))
 
 (define-class-shader (debug-draw-text :vertex-shader)
   "layout (location = 0) in vec3 position;
@@ -54,6 +52,7 @@ void main(){
   modelView[2][2] = 1.0;
 
   gl_Position = projection_matrix * modelView * vec4(position, 1.0f);
+  gl_Position.z = -1.0;
   v_uv = i_uv / textureSize(texture_image, 0).rg;
 }")
 
