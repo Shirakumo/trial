@@ -91,7 +91,13 @@
     (gl:bind-texture (target texture) (gl-name texture))))
 
 (defmethod enable ((texture texture) (pass standard-render-pass))
-  (let ((id (lru-cache-push texture (allocated-textures pass))))
+  ;; KLUDGE: We effectively disable the cache here BECAUSE the texture binds are
+  ;;         shared between standard-renderables and non, and the latter can
+  ;;         thrash our bindings without our noticing. I'm not sure what the best
+  ;;         solution is here at the moment, but this less-performant hack at
+  ;;         least makes things work for now.
+  (let ((id (or (lru-cache-push texture (allocated-textures pass))
+                (lru-cache-id texture (allocated-textures pass)))))
     (when id
       (gl:active-texture id)
       (gl:bind-texture (target texture) (gl-name texture)))))
