@@ -59,8 +59,8 @@
 (defmethod initialize-instance :after ((text debug-text) &key)
   (let* ((array (make-array 0 :element-type 'single-float :adjustable T))
          (vbo (make-instance 'vertex-buffer :buffer-data array))
-         (vao (make-instance 'vertex-array :bindings `((,vbo :size 3 :offset 0 :stride 20)
-                                                       (,vbo :size 2 :offset 12 :stride 20)))))
+         (vao (make-instance 'vertex-array :bindings `((,vbo :size 3 :offset 0 :stride 20 :index 0)
+                                                       (,vbo :size 2 :offset 12 :stride 20 :index 2)))))
     (setf (vertex-array text) vao)
     (setf (text text) (text text))))
 
@@ -82,7 +82,7 @@
   "out vec2 uv;
 uniform sampler2D texture_image;
 
-void main(){
+void main@after(){
   uv /= textureSize(texture_image, 0).rg;
 }")
 
