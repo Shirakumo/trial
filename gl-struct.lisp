@@ -306,8 +306,15 @@
                         (cons
                          (ecase (first type)
                            (:struct (list (gl-type (find-class (second type)))))
-                           (:array (push `(glsl-toolkit:array-specifier ,(resolve (third type))) array)
-                            (translate-type (second type)))))
+                           (:array
+                            (let ((size (resolve (third type))))
+                              ;; KLUDGE: Trying to emit large arrays into source causes the driver to
+                              ;;         spend an *absolutely insane* amount of time trying to compile
+                              ;;         it to do whatever, so we just truncate it here.
+                              (if (<= size 20)
+                                  (push `(glsl-toolkit:array-specifier ,size) array)
+                                  (push `(glsl-toolkit:array-specifier) array))
+                              (translate-type (second type))))))
                         (symbol (list type)))))
              (translate-type (gl-type slot))))
         ,(gl-name slot)
