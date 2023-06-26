@@ -1,4 +1,5 @@
 #section VERTEX_SHADER
+uniform float motion_blur = 0.0;
 
 const vec3 BILLBOARD[6] = vec3[6](
   vec3(-1, -1, 0),
@@ -26,16 +27,16 @@ void main(){
   
   vec3 vertex = BILLBOARD[vertex_id];
   uv = vertex.xy * 0.5 + 0.5;
-  
+  // Rotate it
   float rotation = interpolation * particle.rotational_velocity;
   mat2 rot = mat2(+cos(rotation), -sin(rotation),
                   +sin(rotation), +cos(rotation));
   vertex.xy = rot * vertex.xy;
-  
+  // Scale it
   vertex *= size;
-
+  // Scale along the motion vector in view space
   vec3 velocity = mat3(view_matrix) * particle.velocity;
-  vertex += dot(vertex, velocity) * velocity;
+  vertex += dot(vertex, velocity) * velocity * motion_blur;
 
   world_position = particle.position;
   view_position = (view_matrix * vec4(world_position, 1)).xyz;
