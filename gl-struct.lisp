@@ -9,7 +9,7 @@
 (defvar *dynamic-context*)
 
 (defclass gl-struct ()
-  ((storage :initarg :storage :accessor storage :reader org.shirakumo.memory-regions:to-memory-region)
+  ((storage :accessor storage :reader org.shirakumo.memory-regions:to-memory-region)
    (base-offset :initform 0 :initarg :base-offset :accessor base-offset)))
 
 (defmethod mem:call-with-memory-region ((function function) (struct gl-struct) &key (start 0))
@@ -45,17 +45,23 @@
                           :element-count count
                           :stride (buffer-field-stride standard type)))))))
 
-(defmethod shared-initialize ((struct gl-struct) slots &key storage)
+(defmethod shared-initialize ((struct gl-struct) slots &rest initargs &key (storage NIL storage-p))
   ;; TODO: optimise in class because this is dumb as heck
   ;; KLUDGE: we have to init standard slots first because the size computation
   ;;         may depend on the value of those standard slots
   (let ((class (class-of struct)))
     (flet ((maybe-init (slot)
+             ;; THis suuuuucks.
              (when (and (not (typep slot 'gl-struct-immediate-slot))
-                        (not (c2mop:slot-boundp-using-class class struct slot))
-                        (c2mop:slot-definition-initfunction slot))
-               (setf (slot-value struct (c2mop:slot-definition-name slot))
-                     (funcall (c2mop:slot-definition-initfunction slot))))))
+                        (not (c2mop:slot-boundp-using-class class struct slot)))
+               (loop for initarg in (c2mop:slot-definition-initargs slot)
+                     for val = (getf initargs initarg #1='#:no-value)
+                     do (unless (eq val #1#)
+                          (setf (slot-value struct (c2mop:slot-definition-name slot)) val)
+                          (return))
+                     finally (when (c2mop:slot-definition-initfunction slot)
+                               (setf (slot-value struct (c2mop:slot-definition-name slot))
+                                     (funcall (c2mop:slot-definition-initfunction slot))))))))
       (etypecase slots
         (null)
         ((eql T)
@@ -66,8 +72,13 @@
            (let ((slot (find name (c2mop:class-slots class) :key #'c2mop:slot-definition-name)))
              (unless (typep slot 'gl-struct-slot)
                (maybe-init slot)))))))
-    (setf (slot-value struct 'storage)
-          (or storage (mem:allocate T (buffer-field-size (layout-standard struct) struct 0))))
+    (cond ((not storage-p)
+           (unless (slot-boundp struct 'storage)
+             (setf (slot-value struct 'storage) (mem:allocate T (buffer-field-size (layout-standard struct) struct 0)))))
+          ((null storage)
+           (setf (slot-value struct 'storage) (mem:memory-region (cffi:null-pointer) (buffer-field-size (layout-standard struct) struct 0))))
+          (T
+           (setf (slot-value struct 'storage) storage)))
     (call-next-method)))
 
 (defmethod shared-initialize :after ((struct gl-struct) slots &key)
