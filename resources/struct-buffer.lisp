@@ -17,7 +17,9 @@
   (when struct-class
     (setf (buffer-data buffer) (make-instance struct-class)))
   (when struct
-    (setf (buffer-data buffer) struct)))
+    (setf (buffer-data buffer) (etypecase struct
+                                 ((or symbol class) (make-instance struct))
+                                 ((or vector memory-region gl-struct) struct)))))
 
 (defmethod reinitialize-instance :after ((buffer struct-buffer) &key)
   (when (allocated-p buffer)
