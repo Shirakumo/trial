@@ -11,7 +11,8 @@
 (define-asset (trial random) image
     #p "random.png"
   :min-filter :linear
-  :mag-filter :linear)
+  :mag-filter :linear
+  :wrapping '(:repeat :repeat :repeat))
 
 (define-asset (trial missing) image
     #p "missing.png"

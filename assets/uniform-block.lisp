@@ -14,7 +14,7 @@
   (gl-source (resource generator T)))
 
 (defmethod generate-resources ((generator buffer-block) input &rest args)
-  (apply #'ensure-instance (resource generator T) (buffer-type generator) :struct-class (ensure-class input) args))
+  (apply #'ensure-instance (resource generator T) (buffer-type generator) :struct input args))
 
 (defclass uniform-block (buffer-block)
   ((buffer-type :initform 'uniform-buffer)))
