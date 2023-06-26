@@ -91,6 +91,7 @@
     (with-cleanup-on-failure (progn (gl:delete-buffers (list vbo))
                                     (setf (data-pointer buffer) NIL))
       (setf (data-pointer buffer) vbo)
+      (v:debug :trial.resource "Allocating ~d KB buffer." (truncate (size buffer) 1024))
       (resize-buffer buffer (size buffer) :data buffer-data))))
 
 (defmethod deallocate ((buffer buffer-object))
