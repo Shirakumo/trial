@@ -154,18 +154,29 @@
          material pass))
 
 (define-shader-entity standard-renderable (renderable)
-  ((vertex-array :initarg :vertex-array :initform NIL :accessor vertex-array))
+  ((vertex-arrays :initarg :vertex-arrays :initform #() :accessor vertex-arrays))
   (:shader-file (trial "standard-renderable.glsl"))
   (:inhibit-shaders (shader-entity :fragment-shader)))
 
+(defmethod shared-initialize :after ((renderable standard-renderable) slots &key vertex-array)
+  (when vertex-array (setf (vertex-arrays renderable) (vector vertex-array))))
+
 (defmethod stage :after ((renderable standard-renderable) (area staging-area))
-  (stage (vertex-array renderable) area))
+  (loop for vao across (vertex-arrays renderable)
+        do (stage vao area)))
 
 (defmethod render ((renderable standard-renderable) (program shader-program))
   (declare (optimize speed))
   (setf (uniform program "model_matrix") (model-matrix))
   (setf (uniform program "inv_model_matrix") (minv (model-matrix)))
-  (render (vertex-array renderable) program))
+  (loop for vao across (vertex-arrays renderable)
+        do (render vao program)))
+
+(defmethod vertex-array ((renderable standard-renderable))
+  (aref (vertex-arrays renderable) 0))
+
+(defmethod (setf vertex-array) ((array vertex-array) (renderable standard-renderable))
+  (setf (vertex-arrays renderable) (vector array)))
 
 (define-shader-entity single-material-renderable (standard-renderable)
   ((material :initarg :material :accessor material)))
@@ -178,6 +189,25 @@
   (prepare-pass-program pass program)
   (when (material object)
     (render-with pass (material object) program)))
+
+(define-shader-entity per-array-material-renderable (standard-renderable)
+  ((materials :initarg :materials :initform #() :accessor materials)))
+
+(defmethod stage :after ((renderable per-array-material-renderable) (area staging-area))
+  (loop for material across (materials renderable)
+        do (stage material area)))
+
+(defmethod render-with :before ((pass standard-render-pass) (object per-array-material-renderable) program)
+  (prepare-pass-program pass program)
+  ;; FIXME: this is NOT correct, as only the last material will truly be in effect.
+  ;;        need to somehow be able to call RENDER-WITH on the pass and program within the RENDER???
+  (loop for material across (materials object)
+        do (render-with pass material program)))
+
+(defmethod (setf mesh) :after ((meshes cons) (object per-array-material-renderable))
+  (let ((arrays (make-array (length meshes))))
+    (map-into arrays #'material meshes)
+    (setf (materials object) arrays)))
 
 (define-shader-pass light-cache-render-pass (standard-render-pass)
   ((light-cache :initform (org.shirakumo.fraf.trial.space.kd-tree:make-kd-tree) :reader light-cache)

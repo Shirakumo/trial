@@ -268,3 +268,39 @@ void main(){
 (defmethod material ((entity mesh-entity))
   (when (typep (mesh entity) 'mesh-data)
     (material (mesh entity))))
+
+(defclass multi-mesh-entity (entity)
+  ((mesh-asset :initform NIL :initarg :asset :accessor mesh-asset)
+   (mesh :initarg :mesh :initform NIL :accessor mesh)))
+
+(defmethod initialize-instance :after ((entity multi-mesh-entity) &key)
+  (when (mesh-asset entity)
+    (register-generation-observer entity (mesh-asset entity))))
+
+(defmethod stage :after ((entity multi-mesh-entity) (area staging-area))
+  (stage (mesh-asset entity) area))
+
+(defmethod observe-generation ((entity multi-mesh-entity) (asset asset) res)
+  (setf (mesh-asset entity) asset))
+
+(defmethod (setf mesh-asset) :after ((asset asset) (entity multi-mesh-entity))
+  (setf (mesh entity) (or (mesh entity) T)))
+
+(defmethod (setf mesh) :after ((meshes cons) (entity multi-mesh-entity))
+  (let ((arrays (make-array (length meshes))))
+    (map-into arrays (lambda (mesh) (resource (mesh-asset entity) (name mesh))) meshes)
+    (setf (vertex-arrays entity) arrays)))
+
+(defmethod (setf mesh) ((name string) (entity multi-mesh-entity))
+  (let ((mesh (gethash name (meshes (mesh-asset entity)))))
+    (setf (mesh entity) (if mesh
+                            (list mesh)
+                            (or (loop for i from 0
+                                      for mesh = (gethash (cons name i) (meshes (mesh-asset entity)))
+                                      while mesh collect mesh)
+                                #-trial-release
+                                (error "No mesh named ~s found. The following are known:~{~%  ~s~}"
+                                       name (alexandria:hash-table-keys (meshes (mesh-asset entity)))))))))
+
+(defmethod (setf mesh) ((all (eql T)) (entity multi-mesh-entity))
+  (setf (mesh entity) (alexandria:hash-table-values (meshes (mesh-asset entity)))))
