@@ -41,8 +41,8 @@ void main(){
   }
   groupMemoryBarrier();
 
-  if(gl_LocalInvocationID.x < alive){
-    uint id = alive_particles_0[gl_LocalInvocationID.x];
+  if(gl_GlobalInvocationID.x < alive){
+    uint id = alive_particles_0[gl_GlobalInvocationID.x];
     Particle particle = particles[id];
     if(0 < particle.life){
       simulate_particle(particle);
@@ -51,7 +51,7 @@ void main(){
       uint new_index = atomicAdd(draw_args.x, 6) / 6;
       alive_particles_1[new_index] = id;
     }else{
-      uint dead = atomicAdd(dead_count, 1);
+      uint dead = atomicAdd(dead_count, +1);
       dead_particles[dead] = id;
     }
   }

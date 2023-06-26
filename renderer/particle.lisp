@@ -28,20 +28,20 @@
   (size-end :float))
 
 (define-gl-struct (particle-buffer :layout-standard std430)
-  (size NIL :initarg :size :initform 1000 :reader size)
+  (size NIL :initarg :size :reader size)
   (particles (:array (:struct particle-struct) size)))
 
 (define-gl-struct (particle-counter-buffer :layout-standard std430)
   (alive-count :uint :initform 0)
-  (dead-count :uint :initarg :max-particles :initform 0)
+  (dead-count :uint :initarg :max-particles)
   (real-emit-count :uint :initform 0)
   (total-count :uint :initform 0))
 
 (define-gl-struct (particle-argument-buffer :layout-standard std430)
-  (emit-args :uvec3 :initform (vec 0 1 1))
-  (simulate-args :uvec3 :initform (vec 0 1 1))
-  (draw-args :uvec4 :initform (vec 0 1 0 0))
-  (sort-args :uvec3 :initform (vec 0 1 1)))
+  (emit-args :uvec3)
+  (simulate-args :uvec3)
+  (draw-args :uvec4)
+  (sort-args :uvec3))
 
 (define-gl-struct (particle-emitter-buffer :layout-standard std430)
   (model-matrix :mat4 :accessor transform-matrix)
@@ -105,8 +105,9 @@
      (kickoff-pass)
      (emit-pass)
      (simulate-pass)
-     (texture :initform (// 'trial 'missing))
-     (to-emit :initform 0 :initarg :to-emit :accessor to-emit)
+     (texture :initform (// 'trial 'missing) :accessor texture)
+     (to-emit :initform 0.0 :initarg :to-emit :accessor to-emit)
+     (particle-rate :initform 0.0 :initarg :particle-rate :accessor particle-rate)
      (vertex-array :initform (// 'trial 'unit-square) :accessor vertex-array)
      (max-particles :initarg :max-particles :initform 1000 :reader max-particles))
     (:buffers (trial standard-environment-information))
@@ -117,21 +118,21 @@
     (setf particle-force-fields (make-instance 'shader-storage-buffer :binding NIL :struct (make-instance 'particle-force-fields :size 1))))
   (setf (slot-value emitter 'particle-force-fields) particle-force-fields)
   (with-all-slots-bound (emitter particle-emitter)
-    (setf particle-emitter-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-copy :binding NIL :struct (make-instance 'particle-emitter-buffer)))
-    (setf particle-argument-buffer (make-instance 'shader-storage-buffer :buffer-type :draw-indirect-buffer :data-usage :dynamic-draw :binding NIL :struct (make-instance 'particle-argument-buffer)))
+    (setf particle-emitter-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-draw :binding NIL :struct (make-instance 'particle-emitter-buffer)))
+    (setf particle-argument-buffer (make-instance 'shader-storage-buffer :buffer-type :draw-indirect-buffer :data-usage :dynamic-draw :binding NIL :struct (make-instance 'particle-argument-buffer :storage NIL)))
     (setf particle-counter-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-copy :binding NIL :struct (make-instance 'particle-counter-buffer :max-particles max-particles)))
     (setf alive-particle-buffer-0 (make-instance 'vertex-buffer :data-usage :dynamic-copy :binding-point T :gl-type "AliveParticles0" :element-type :unsigned-int :size max-particles))
     (setf alive-particle-buffer-1 (make-instance 'vertex-buffer :data-usage :dynamic-copy :binding-point T :gl-type "AliveParticles1" :element-type :unsigned-int :size max-particles))
     (setf dead-particle-buffer (make-instance 'vertex-buffer :data-usage :dynamic-copy :binding-point T :gl-type "DeadParticles" :element-type :unsigned-int :buffer-data
                                               (let ((buffer (make-array max-particles :element-type '(unsigned-byte 32))))
                                                 (dotimes (i max-particles buffer) (setf (aref buffer i) i)))))
-    (setf particle-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-copy :binding NIL :struct (make-instance 'particle-buffer :size max-particles)))
+    (setf particle-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-copy :binding NIL :struct (make-instance 'particle-buffer :size max-particles :storage NIL)))
     
     (setf kickoff-pass (make-instance 'particle-kickoff-pass :emit-threads emit-threads :simulate-threads simulate-threads :particle-counter-buffer particle-counter-buffer :particle-argument-buffer particle-argument-buffer :particle-emitter-buffer particle-emitter-buffer))
     (setf emit-pass (make-instance 'particle-emit-pass :emit-threads emit-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer :particle-emitter-buffer particle-emitter-buffer
                                                        :work-groups 0))
     (setf simulate-pass (make-instance 'particle-simulate-pass :simulate-threads simulate-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer :particle-argument-buffer particle-argument-buffer :particle-force-fields particle-force-fields
-                                                               :work-groups (* 3 4))))
+                                                               :work-groups (* 4 4))))
   (setf (vertex-array emitter) (or vertex-array (vertex-array emitter))))
 
 (defmethod stage :after ((emitter particle-emitter) (area staging-area))
@@ -176,10 +177,10 @@
 
 (macrolet ((define-delegate (accessor)
              `(progn (defmethod ,accessor ((emitter particle-emitter))
-                       (,accessor (struct (slot-value emitter 'particle-emitter-buffer))))
+                       (,accessor (buffer-data (slot-value emitter 'particle-emitter-buffer))))
 
                      (defmethod (setf ,accessor) (value (emitter particle-emitter))
-                       (setf (,accessor (struct (slot-value emitter 'particle-emitter-buffer))) value)))))
+                       (setf (,accessor (buffer-data (slot-value emitter 'particle-emitter-buffer))) value)))))
   (define-delegate particle-size)
   (define-delegate particle-scaling)
   (define-delegate particle-rotation)
@@ -188,27 +189,35 @@
   (define-delegate particle-lifespan)
   (define-delegate particle-lifespan-randomness))
 
-(define-handler (particle-emitter tick) ()
-  (break)
+(define-handler (particle-emitter tick) (dt)
   (with-all-slots-bound (particle-emitter particle-emitter)
-    (with-buffer-tx (struct particle-emitter-buffer)
-      (setf (transform-matrix struct) (tmat4 (tf particle-emitter)))
-      (setf (emit-count struct) 100)
-      (setf (randomness struct) (random 1.0)))
-    ;; Simulate with compute shaders
-    (%gl:bind-buffer :dispatch-indirect-buffer (gl-name particle-argument-buffer))
-    (render kickoff-pass NIL)
-    (render emit-pass NIL)
-    (render simulate-pass NIL)
-    ;; Swap the buffers
-    (rotatef (binding-point alive-particle-buffer-0)
-             (binding-point alive-particle-buffer-1))
-    (setf (to-emit particle-emitter) 0)))
+    (multiple-value-bind (to-emit emit-carry) (floor (incf (to-emit particle-emitter) (* dt (particle-rate particle-emitter))))
+      (with-buffer-tx (struct particle-emitter-buffer)
+        (setf (transform-matrix struct) (tmat4 (tf particle-emitter)))
+        (setf (emit-count struct) to-emit)
+        (setf (randomness struct) (random 1.0)))
+      ;; Simulate with compute shaders
+      (%gl:bind-buffer :dispatch-indirect-buffer (gl-name particle-argument-buffer))
+      (render kickoff-pass NIL)
+      (render emit-pass NIL)
+      (render simulate-pass NIL)
+      ;; Swap the buffers
+      (rotatef (binding-point alive-particle-buffer-0)
+               (binding-point alive-particle-buffer-1))
+      (setf (to-emit particle-emitter) emit-carry))))
+
+(defmethod bind-textures ((emitter particle-emitter))
+  (gl:active-texture :texture0)
+  (gl:bind-texture (target (texture emitter)) (gl-name (texture emitter))))
 
 (defmethod render ((emitter particle-emitter) (program shader-program))
-  (gl:bind-vertex-array (gl-name (// 'trial 'empty-vertex-array)))
-  (%gl:bind-buffer :draw-indirect-buffer (gl-name (slot-value emitter 'particle-argument-buffer)))
-  (%gl:draw-arrays-indirect :triangles (* 2 3 4))
-  (gl:bind-vertex-array 0))
+  (with-pushed-features
+    (disable-feature :depth-test)
+    (gl:blend-func :src-alpha :one)
+    (gl:bind-vertex-array (gl-name (// 'trial 'empty-vertex-array)))
+    (%gl:bind-buffer :draw-indirect-buffer (gl-name (slot-value emitter 'particle-argument-buffer)))
+    (%gl:draw-arrays-indirect :triangles (* 2 4 4))
+    (gl:bind-vertex-array 0)
+    (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha)))
 
 ;; https://github.com/turanszkij/WickedEngine/tree/9caf25a52996c6c62fc39f10784d8951f715b05d/WickedEngine
