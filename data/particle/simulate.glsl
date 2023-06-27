@@ -35,11 +35,12 @@ void simulate_particle@after(inout Particle particle){
 void main(){
   uint alive = alive_count;
   field_count = min(particle_force_field_count, FORCEFIELDS);
-  if(gl_WorkGroupID.x < field_count){
-    uint id = gl_WorkGroupID.x;
+  if(gl_LocalInvocationIndex < field_count){
+    uint id = gl_LocalInvocationIndex;
     s_force_fields[id] = particle_force_fields[id];
   }
   groupMemoryBarrier();
+  barrier();
 
   if(gl_GlobalInvocationID.x < alive){
     uint id = alive_particles_0[gl_GlobalInvocationID.x];
