@@ -118,23 +118,33 @@
     (:buffers (trial standard-environment-information))
     (:shader-file (trial "particle/render.glsl"))))
 
-(defmethod initialize-instance :after ((emitter particle-emitter) &key (emit-threads 256) (simulate-threads 256) particle-force-fields vertex-array particle-options)
+(defmethod initialize-instance :after ((emitter particle-emitter) &key (local-threads 256) particle-force-fields vertex-array particle-options)
   (with-all-slots-bound (emitter particle-emitter)
+    ;; Check that the counts are within ranges that the GPU can even compute.
+    ;; On dev we error, on prod we simply clamp.
+    (let ((max-threads (gl:get* :max-compute-work-group-invocations))
+          (max-groups (aref (gl:get* :max-compute-work-group-count) 0)))
+      #-trial-release (assert (< local-threads max-threads) (local-threads))
+      #+trial-release (setf local-threads (min max-threads local-threads))
+      #-trial-release (assert (< max-particles (* local-threads max-groups)) (max-particles))
+      #+trial-release (setf max-particles (min max-particles (* local-threads max-groups))))
+    ;; Allocate all the necessary SSBOs
     (setf particle-emitter-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-draw :binding NIL :struct (make-instance 'particle-emitter-buffer)))
     (setf particle-argument-buffer (make-instance 'shader-storage-buffer :buffer-type :draw-indirect-buffer :data-usage :dynamic-draw :binding NIL :struct (make-instance 'particle-argument-buffer :storage NIL)))
-    (setf particle-counter-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-copy :binding NIL :struct (make-instance 'particle-counter-buffer :max-particles max-particles)))
-    (setf alive-particle-buffer-0 (make-instance 'vertex-buffer :data-usage :dynamic-copy :binding-point T :gl-type "AliveParticles0" :element-type :unsigned-int :size max-particles))
-    (setf alive-particle-buffer-1 (make-instance 'vertex-buffer :data-usage :dynamic-copy :binding-point T :gl-type "AliveParticles1" :element-type :unsigned-int :size max-particles))
+    (setf particle-counter-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-read :binding NIL :struct (make-instance 'particle-counter-buffer :max-particles max-particles)))
+    (setf alive-particle-buffer-0 (make-instance 'vertex-buffer :data-usage :dynamic-copy :binding-point T :gl-type "AliveParticles0" :element-type :unsigned-int :count max-particles))
+    (setf alive-particle-buffer-1 (make-instance 'vertex-buffer :data-usage :dynamic-copy :binding-point T :gl-type "AliveParticles1" :element-type :unsigned-int :count max-particles))
     (setf dead-particle-buffer (make-instance 'vertex-buffer :data-usage :dynamic-copy :binding-point T :gl-type "DeadParticles" :element-type :unsigned-int :buffer-data
                                               (let ((buffer (make-array max-particles :element-type '(unsigned-byte 32))))
                                                 (dotimes (i max-particles buffer) (setf (aref buffer i) i)))))
     (setf particle-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-copy :binding NIL :struct (make-instance 'particle-buffer :size max-particles :storage NIL)))
-    
-    (setf kickoff-pass (make-instance 'particle-kickoff-pass :emit-threads emit-threads :simulate-threads simulate-threads :particle-counter-buffer particle-counter-buffer :particle-argument-buffer particle-argument-buffer :particle-emitter-buffer particle-emitter-buffer))
-    (setf emit-pass (make-instance 'particle-emit-pass :emit-threads emit-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer :particle-emitter-buffer particle-emitter-buffer
+    ;; Allocate the compute passes
+    (setf kickoff-pass (make-instance 'particle-kickoff-pass :emit-threads local-threads :simulate-threads local-threads :particle-counter-buffer particle-counter-buffer :particle-argument-buffer particle-argument-buffer :particle-emitter-buffer particle-emitter-buffer))
+    (setf emit-pass (make-instance 'particle-emit-pass :emit-threads local-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer :particle-emitter-buffer particle-emitter-buffer
                                                        :work-groups 0))
-    (setf simulate-pass (make-instance 'particle-simulate-pass :simulate-threads simulate-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer :particle-argument-buffer particle-argument-buffer
+    (setf simulate-pass (make-instance 'particle-simulate-pass :simulate-threads local-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer :particle-argument-buffer particle-argument-buffer
                                                                :work-groups (* 4 4))))
+  ;; And configure our particle defaults
   (setf (vertex-array emitter) (or vertex-array (vertex-array emitter)))
   (destructuring-bind (&key size scaling rotation randomness velocity lifespan lifespan-randomness) particle-options
     (when size
