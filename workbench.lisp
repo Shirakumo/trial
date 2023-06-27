@@ -69,7 +69,7 @@
     (setf (paused-p +main+) (not (paused-p +main+))))
   (when (string= text "s")
     (issue (scene +main+) 'tick :tt 1.0d0 :dt 0.01 :fc 1))
-  (when (string= text "e")
+  (when (string= text "b")
     (trial::emit (unit :emitter (scene +main+)) 10000)))
 
 (define-asset (workbench tileset) image
