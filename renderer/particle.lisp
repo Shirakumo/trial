@@ -93,7 +93,8 @@
   (:shader-file (trial "particle/simulate.glsl")))
 
 (define-asset (trial empty-force-fields) shader-storage-block
-    (make-instance 'particle-force-fields :size 1))
+    (make-instance 'particle-force-fields :size 1)
+  :binding NIL)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (define-shader-entity particle-emitter (standalone-shader-entity transformed-entity renderable listener)
@@ -203,7 +204,7 @@
   (when (allocated-p (particle-force-fields emitter))
     (update-buffer-data (particle-force-fields emitter) T)))
 
-(defmethod (setf particle-force-fields) ((buffer shader-storage-buffer) (emitter particle-emitter))
+(defmethod (setf particle-force-fields) ((buffer resource) (emitter particle-emitter))
   (setf (slot-value emitter 'particle-force-fields) buffer)
   (setf (slot-value (slot-value emitter 'simulate-pass) 'particle-force-fields) buffer))
 
@@ -254,6 +255,7 @@
       ;; Swap the buffers
       (rotatef (binding-point alive-particle-buffer-0)
                (binding-point alive-particle-buffer-1))
+      (%gl:bind-buffer :dispatch-indirect-buffer 0)
       (setf (to-emit particle-emitter) emit-carry))))
 
 (defmethod bind-textures ((emitter particle-emitter))
@@ -268,6 +270,7 @@
     (%gl:bind-buffer :draw-indirect-buffer (gl-name (slot-value emitter 'particle-argument-buffer)))
     (%gl:draw-arrays-indirect :triangles (* 2 4 4))
     (gl:bind-vertex-array 0)
+    (%gl:bind-buffer :draw-indirect-buffer 0)
     (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha)))
 
 ;; https://github.com/turanszkij/WickedEngine/tree/9caf25a52996c6c62fc39f10784d8951f715b05d/WickedEngine
