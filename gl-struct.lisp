@@ -430,6 +430,20 @@
   (and (storage object)
        (call-next-method)))
 
+(defmethod slot-offset ((struct gl-struct) (slot gl-struct-immediate-slot))
+  (+ (base-offset struct) (base-offset slot)))
+
+(defmethod slot-offset ((struct gl-struct) (slot symbol))
+  (slot-offset struct (or (find slot (c2mop:class-slots (class-of struct)) :key #'c2mop:slot-definition-name)
+                          (error "No slot named~%  ~s~%  on~%  ~s" slot struct))))
+
+(defmethod slot-offset ((struct gl-struct-class) (slot symbol))
+  (base-offset (or (find slot (c2mop:class-slots struct) :key #'c2mop:slot-definition-name)
+                   (error "No slot named~%  ~s~%  on~%  ~s" slot struct))))
+
+(defmethod slot-offset ((name symbol) slot)
+  (slot-offset (find-class name) slot))
+
 (defmethod c2mop:slot-definition-allocation ((slot gl-struct-immediate-slot))
   :instance)
 ;; FIXME: Figure out direct accessor functions

@@ -170,7 +170,7 @@
     (setf emit-pass (make-instance 'particle-emit-pass :emit-threads local-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer :particle-emitter-buffer particle-emitter-buffer
                                                        :work-groups 0))
     (setf simulate-pass (make-instance 'particle-simulate-pass :simulate-threads local-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer :particle-argument-buffer particle-argument-buffer
-                                                               :work-groups (* 4 4))))
+                                                               :work-groups (slot-offset 'particle-argument-buffer 'simulate-args))))
   ;; And configure our particle defaults
   (setf (vertex-array emitter) (or vertex-array (vertex-array emitter)))
   (setf (particle-options emitter) particle-options)
@@ -325,7 +325,7 @@
   (gl:blend-func :src-alpha :one)
   (gl:bind-vertex-array (gl-name (// 'trial 'empty-vertex-array)))
   (%gl:bind-buffer :draw-indirect-buffer (gl-name (slot-value emitter 'particle-argument-buffer)))
-  (%gl:draw-arrays-indirect :triangles (* 2 4 4))
+  (%gl:draw-arrays-indirect :triangles (slot-offset 'particle-argument-buffer 'draw-args))
   (gl:bind-vertex-array 0)
   (%gl:bind-buffer :draw-indirect-buffer 0)
   (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha)
