@@ -4,28 +4,43 @@ layout (local_size_x = SIMULATE_THREADS, local_size_y = 1, local_size_z = 1) in;
 uint field_count = 0;
 shared ParticleForceField s_force_fields[FORCEFIELDS];
 
-vec3 evaluate_force_field(ParticleForceField field, Particle particle){
+vec3 evaluate_force_field_point(ParticleForceField field, Particle particle){
   vec3 dir = field.position - particle.position;
-  float dist = 0.0;
-  switch(field.type){
-  case 0: // NONE
-    return vec3(0);
-  case 1: // POINT
-    dist = length(dir);
-    break;
-  case 2: // GRAVITY
-    dist = length(dir);
-    dist *= dist;
-    break;
-  case 3: // PLANE
-    dist = dot(field.normal, dir);
-    dir = field.normal;
-    break;
-  case 4: // VORTEX
-    dist = dot(field.normal, dir);
-    dir = normalize(cross(field.normal, dir));
+  return dir * field.strength * (1 - clamp(length(dir) * field.inv_range, 0.0, 1.0));
+}
+
+vec3 evaluate_force_field_planet(ParticleForceField field, Particle particle){
+  vec3 dir = field.position - particle.position;
+  float dist = length(dir);
+  if(dist < field.range){
+    dir = normalize(cross(particle.velocity, dir));
+    dist = field.range - dist;
+    vec3 bounce = dir * field.strength * dist * 10.0;
+    return (-particle.velocity) / dt + bounce;
+  }else{
+    return dir * field.strength / (dist * dist);
   }
-  return dir * field.strength * (1 - clamp(dist * field.inv_range, 0.0, 1.0));
+}
+
+vec3 evaluate_force_field_plane(ParticleForceField field, Particle particle){
+  float dist = dot(field.normal, particle.position - field.position);
+  return field.normal * field.strength * (1 - clamp(dist * field.inv_range, 0.0, 1.0));
+}
+
+vec3 evaluate_force_field_vortex(ParticleForceField field, Particle particle){
+  vec3 dir = field.position - particle.position;
+  vec3 perp = normalize(cross(field.normal, dir));
+  return perp * field.strength * (1 - clamp(length(dir) * field.inv_range, 0.0, 1.0));
+}
+
+vec3 evaluate_force_field(ParticleForceField field, Particle particle){
+  switch(field.type){
+  case 1: return evaluate_force_field_point(field, particle);
+  case 2: return evaluate_force_field_planet(field, particle);
+  case 3: return evaluate_force_field_plane(field, particle);
+  case 4: return evaluate_force_field_vortex(field, particle);
+  default: return vec3(0);
+  }
 }
 
 void simulate_particle(inout Particle particle){
