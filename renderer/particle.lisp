@@ -62,11 +62,11 @@
   (real-emit-count :uint :initform 0)
   (total-count :uint :initform 0))
 
-(define-gl-struct (particle-argument-buffer :layout-standard std430)
-  (emit-args :uvec3)
-  (simulate-args :uvec3)
-  (draw-args :uvec4)
-  (sort-args :uvec3))
+(define-gl-struct (particle-argument-buffer :layout-standard std140)
+  (emit-args :uvec3 :initform (vec 0 0 0))
+  (simulate-args :uvec3 :initform (vec 0 0 0))
+  (draw-args :uvec4 :initform (vec 0 0 0 0))
+  (sort-args :uvec3 :initform (vec 0 0 0)))
 
 (define-gl-struct (particle-emitter-buffer :layout-standard std430)
   (model-matrix :mat4 :accessor transform-matrix)
@@ -157,7 +157,7 @@
       #+trial-release (setf max-particles (min max-particles (* local-threads max-groups))))
     ;; Allocate all the necessary SSBOs
     (setf particle-emitter-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-draw :binding NIL :struct (make-instance 'particle-emitter-buffer)))
-    (setf particle-argument-buffer (make-instance 'shader-storage-buffer :buffer-type :draw-indirect-buffer :data-usage :dynamic-draw :binding NIL :struct (make-instance 'particle-argument-buffer :storage NIL)))
+    (setf particle-argument-buffer (make-instance 'shader-storage-buffer :buffer-type :draw-indirect-buffer :data-usage :dynamic-read :binding NIL :struct (make-instance 'particle-argument-buffer)))
     (setf particle-counter-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-read :binding NIL :struct (make-instance 'particle-counter-buffer :max-particles max-particles)))
     (setf alive-particle-buffer-0 (make-instance 'vertex-buffer :data-usage :dynamic-copy :binding-point T :gl-type "AliveParticles0" :element-type :unsigned-int :count max-particles))
     (setf alive-particle-buffer-1 (make-instance 'vertex-buffer :data-usage :dynamic-copy :binding-point T :gl-type "AliveParticles1" :element-type :unsigned-int :count max-particles))
