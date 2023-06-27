@@ -220,11 +220,11 @@
     (setf (mesh-vertex-position-stride struct)
           (loop for binding in (bindings vao)
                 do (when (and (listp binding) (= 0 (getf (rest binding) :index)))
-                     (return (getf (rest binding) :stride)))))
+                     (return (floor (getf (rest binding) :stride) (gl-type-size (element-type (first binding))))))))
     (setf (mesh-vertex-normal-stride struct)
           (loop for binding in (bindings vao)
                 do (when (and (listp binding) (= 1 (getf (rest binding) :index)))
-                     (return (getf (rest binding) :stride)))))))
+                     (return (floor (getf (rest binding) :stride) (gl-type-size (element-type (first binding))))))))))
 
 (macrolet ((define-delegate (accessor)
              `(progn (defmethod ,accessor ((emitter particle-emitter))
