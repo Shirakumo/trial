@@ -34,6 +34,7 @@
   (type :int :initform 0)
   (position :vec3 :initform (vec 0 0 0))
   (strength :float :initform 0.0)
+  (range :float :initform 0.0)
   (inv-range :float :initform 0.0)
   (normal :vec3 :initform (vec 0 0 0)))
 
@@ -215,11 +216,12 @@
                (setf (slot-value target 'type) (ecase type
                                                  ((NIL :none) 0)
                                                  (:point 1)
-                                                 (:gravity 2)
+                                                 (:planet 2)
                                                  (:plane 3)
                                                  (:vortex 4)))
                (setf (slot-value target 'position) position)
                (setf (slot-value target 'strength) strength)
+               (setf (slot-value target 'range) range)
                (setf (slot-value target 'inv-range) (if (= 0.0 range) 0.0 (/ range)))
                (setf (slot-value target 'normal) normal)))
     (setf (particle-force-fields emitter) struct)))
