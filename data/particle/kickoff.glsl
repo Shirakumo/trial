@@ -4,7 +4,7 @@ layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 void main(){
   uint dead = dead_count;
-  uint alive_new = draw_args.x / 6;
+  uint alive_new = MAX_PARTICLES-dead_count;
   uint real_emit = min(dead, emit_count);
   
   emit_args = uvec3(ceil(float(real_emit) / float(EMIT_THREADS)), 1, 1);
