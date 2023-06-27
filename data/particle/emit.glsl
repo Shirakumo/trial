@@ -19,7 +19,7 @@ void main(){
   uint emit = real_emit_count;
   if(gl_GlobalInvocationID.x < emit){
     vec3 randoms = texture(random_tex, vec2(float(gl_GlobalInvocationID.x)/float(EMIT_THREADS), randomness+tt)).xyz;
-    uint tri = uint((mesh_index_count/3)*randoms.x);
+    uint tri = uint((mesh_index_count/3)*randoms.z);
     uint i0 = index_data[tri*3+0];
     uint i1 = index_data[tri*3+1];
     uint i2 = index_data[tri*3+2];
