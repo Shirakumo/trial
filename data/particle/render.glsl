@@ -14,7 +14,7 @@ out vec3 world_position;
 out vec3 view_position;
 out vec2 uv;
 out float size;
-out float opacity;
+out vec4 particle_color;
 
 void main(){
   uint vertex_id = gl_VertexID % 6;
@@ -23,10 +23,18 @@ void main(){
   Particle particle = particles[alive_particles_0[instance]];
   float interpolation = 1.0f - particle.life / particle.max_life;
   size = mix(particle.size_begin, particle.size_end, interpolation);
-  opacity = clamp(mix(1.0f, 0.0f, interpolation), 0.0f, 1.0f);
+  float opacity = clamp(mix(1.0f, 0.0f, interpolation), 0.0f, 1.0f);
+  particle_color.r = ((particle.color >> 0)  & 0x000000FF) / 255.0f;
+  particle_color.g = ((particle.color >> 8)  & 0x000000FF) / 255.0f;
+  particle_color.b = ((particle.color >> 16) & 0x000000FF) / 255.0f;
+  particle_color.a = opacity;
   
   vec3 vertex = BILLBOARD[vertex_id];
   uv = vertex.xy * 0.5 + 0.5;
+  // High bits mark the mirroring
+  uv.x = (0 < (particle.color & 0x10000000)) ? 1.0f - uv.x : uv.x;
+  uv.y = (0 < (particle.color & 0x20000000)) ? 1.0f - uv.y : uv.y;
+  
   // Rotate it
   float rotation = interpolation * particle.rotational_velocity;
   mat2 rot = mat2(+cos(rotation), -sin(rotation),
@@ -49,10 +57,9 @@ uniform sampler2D particle_tex;
 in vec3 world_position;
 in vec2 uv;
 in float size;
-in float opacity;
+in vec4 particle_color;
 out vec4 color;
 
 void main(){
-  color = texture(particle_tex, uv);
-  color.w *= opacity;
+  color = texture(particle_tex, uv)*particle_color;
 }
