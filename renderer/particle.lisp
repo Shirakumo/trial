@@ -321,15 +321,15 @@
   (gl:bind-texture (target (texture emitter)) (gl-name (texture emitter))))
 
 (defmethod render ((emitter particle-emitter) (program shader-program))
-  (with-pushed-features
-    (disable-feature :depth-test)
-    (gl:blend-func :src-alpha :one)
-    (gl:bind-vertex-array (gl-name (// 'trial 'empty-vertex-array)))
-    (%gl:bind-buffer :draw-indirect-buffer (gl-name (slot-value emitter 'particle-argument-buffer)))
-    (%gl:draw-arrays-indirect :triangles (* 2 4 4))
-    (gl:bind-vertex-array 0)
-    (%gl:bind-buffer :draw-indirect-buffer 0)
-    (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha)))
+  (gl:depth-mask NIL)
+  (gl:blend-func :src-alpha :one)
+  (gl:bind-vertex-array (gl-name (// 'trial 'empty-vertex-array)))
+  (%gl:bind-buffer :draw-indirect-buffer (gl-name (slot-value emitter 'particle-argument-buffer)))
+  (%gl:draw-arrays-indirect :triangles (* 2 4 4))
+  (gl:bind-vertex-array 0)
+  (%gl:bind-buffer :draw-indirect-buffer 0)
+  (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha)
+  (gl:depth-mask T))
 
 (defmethod emit ((particle-emitter particle-emitter) count &rest particle-options &key vertex-array location orientation scaling transform)
   ;; We do the emit **right now** so that the particle options are only active for the
