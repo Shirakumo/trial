@@ -70,15 +70,12 @@
   (when (string= text "s")
     (issue (scene +main+) 'tick :tt 1.0d0 :dt 0.01 :fc 1))
   (when (string= text "b")
-    (trial::emit (unit :emitter (scene +main+)) 10000)))
-
-(define-asset (workbench tileset) image
-    #p"~/test.png")
+    (trial::emit (unit :emitter (scene +main+)) 100)))
 
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
     (enter (make-instance 'display-controller) scene)
-    (enter (make-instance 'trial::particle-emitter :name :emitter :max-particles 1000000
+    (enter (make-instance 'trial::particle-emitter :name :emitter :max-particles 1000000 :particle-rate 1000
                                                    :particle-force-fields (list (list :position (vec 2.0 0.0 0.0)
                                                                                       :range 100.0
                                                                                       :strength 10.0
