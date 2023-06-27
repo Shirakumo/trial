@@ -196,7 +196,9 @@
     (finalize alive-particle-buffer-1)
     (finalize dead-particle-buffer)
     (finalize particle-buffer)
-    (finalize kickoff-pass)))
+    (finalize kickoff-pass)
+    (finalize emit-pass)
+    (finalize simulate-pass)))
 
 (defmethod (setf particle-force-fields) ((null null) (emitter particle-emitter))
   (setf (particle-force-fields emitter) (// 'trial 'empty-force-fields)))
