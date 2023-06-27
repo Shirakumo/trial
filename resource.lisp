@@ -29,10 +29,14 @@
     (allocate resource)))
 
 (defmethod allocate :around ((resource resource))
+  #-trial-release
+  (v:trace :trial.resource "Allocating ~a" resource)
   (call-next-method)
   resource)
 
 (defmethod deallocate :around ((resource resource))
+  #-trial-release
+  (v:trace :trial.resource "Deallocating ~a" resource)
   (call-next-method)
   resource)
 
