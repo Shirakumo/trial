@@ -33,6 +33,9 @@
 (define-asset (workbench plane) mesh
     (make-rectangle-mesh 10 10))
 
+(define-asset (workbench grid) mesh
+    (make-line-grid-mesh 10 10 10))
+
 (define-material (none pbr-material)
   :albedo-texture (// 'trial 'white)
   :metal-rough-occlusion-texture (// 'trial 'white)
@@ -65,43 +68,36 @@
   (when (string= text "p")
     (setf (paused-p +main+) (not (paused-p +main+))))
   (when (string= text "s")
-    (issue (scene +main+) 'tick :tt 1.0d0 :dt 0.01 :fc 1)))
+    (issue (scene +main+) 'tick :tt 1.0d0 :dt 0.01 :fc 1))
+  (when (string= text "e")
+    (trial::emit (unit :emitter (scene +main+)) 10000)))
+
+(define-asset (workbench tileset) image
+    #p"~/test.png")
 
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
-    (enter (make-instance 'trial::particle-emitter :to-emit 500) scene)
+    (enter (make-instance 'display-controller) scene)
+    (enter (make-instance 'trial::particle-emitter :name :emitter :max-particles 1000000
+                                                   :particle-force-fields (list (list :position (vec 2.0 0.0 0.0)
+                                                                                      :range 100.0
+                                                                                      :strength 10.0
+                                                                                      :type :gravity)
+                                                                                (list :position (vec 0.0 0.0 -3.0)
+                                                                                      :range 5.0
+                                                                                      :strength -40.0
+                                                                                      :type :gravity))
+                                                   :texture (assets:// :circle-05)
+                                                   :location (vec 0 0 0)
+                                                   :particle-options `(:velocity 10.0 :randomness 0.1 :size 0.1 :scaling 1.0 
+                                                                       :lifespan 10.0 :lifespan-randomness 0.5
+                                                                       :color ,(vec 0.5 0.3 0.1))) scene)
+    (observe! (let ((emitter (unit :emitter (scene +main+))))
+                (with-buffer-tx (struct (slot-value emitter 'trial::particle-counter-buffer) :update :read)
+                  (slot-value struct 'trial::alive-count)))
+              :title "Alive Particles")
+    (enter (make-instance 'vertex-entity :vertex-array (// 'workbench 'grid)) scene)
     (enter (make-instance 'editor-camera :location (VEC3 0.0 2.3 7.3) :fov 50 :move-speed 0.1) scene)
+    ;; Need a standard render pass here because we need the standard-environment-information.
     (enter (make-instance 'phong-render-pass) scene))
-  #++
-  (defmethod setup-scene ((workbench workbench) scene)
-    (enter (make-instance 'fps-counter) scene)
-    (enter (make-instance 'editor-camera :location (VEC3 0.0 2.3 7.3) :fov 50 :move-speed 0.1) scene)
-    
-    (enter (make-instance 'skybox :texture (assets:// :sandy-beach :environment-map)) scene)
-    (enter (make-instance 'planey :location (vec 0 5 -5)) scene)
-    (enter (make-instance 'planey :orientation (qfrom-angle +vx+ (deg->rad -90))) scene)
-    (enter (make-instance 'meshy :asset (assets:asset :marble-bust) :scaling (vec 10 10 10)) scene)
-
-    (let ((physics (make-instance 'rigidbody-system :units-per-metre 0.1)))
-      (enter (make-instance 'rigidbody :physics-primitives (make-box :bsize (vec 5 1 5) :location (vec 0 -1 0) :material :ice)) physics)
-      (enter (make-instance 'rigidbody :physics-primitives (make-box :bsize (vec 5 5 1) :location (vec 0 5 -6) :material :ice)) physics)
-      (loop for i from 0 below 10
-            for cube = (make-instance 'spherey :location (vec (+ 3 (random 0.1)) (+ 5 (* i 1)) (random 0.1)))
-            do (enter cube physics)
-               (enter cube scene))
-      (enter (make-instance 'gravity :gravity (vec 0 -10 0)) physics)
-      (enter physics scene))
-
-    (enter (make-instance 'environment-light :asset (assets:asset :sandy-beach) :color (vec 0.3 0.3 0.3)) scene)
-    (enter (make-instance 'point-light :location (vec 2.0 4.0 -1.0) :color (vec 15.0 0 0) :cast-shadows-p T) scene)
-    (enter (make-instance 'spot-light :location (vec -5.0 4.0 0.0) :color (vec 0 15.0 0)
-                                      :inner-radius 10 :outer-radius 20 :direction (vec 2 -1 0)
-                                      :cast-shadows-p T) scene)
-    (enter (make-instance 'directional-light  :color (vec 0 0 15.0)
-                                              :direction (vec 0 -1 1)
-                                              :cast-shadows-p T) scene)
-
-    (let ((render (make-instance 'pbr-render-pass))
-          (map (make-instance 'tone-mapping-pass)))
-      (connect (port render 'color) (port map 'previous-pass) scene)))
   (maybe-reload-scene))
