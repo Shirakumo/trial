@@ -8,13 +8,22 @@ vec3 evaluate_force_field(ParticleForceField field, Particle particle){
   vec3 dir = field.position - particle.position;
   float dist = 0.0;
   switch(field.type){
-  case 0:
+  case 0: // NONE
+    return vec3(0);
+  case 1: // POINT
     dist = length(dir);
     break;
-  case 1:
+  case 2: // GRAVITY
+    dist = length(dir);
+    dist *= dist;
+    break;
+  case 3: // PLANE
     dist = dot(field.normal, dir);
     dir = field.normal;
     break;
+  case 4: // VORTEX
+    dist = dot(field.normal, dir);
+    dir = normalize(cross(field.normal, dir));
   }
   return dir * field.strength * (1 - clamp(dist * field.inv_range, 0.0, 1.0));
 }

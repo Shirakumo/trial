@@ -200,10 +200,13 @@
     (loop for info in cons
           for i from 0
           for target = (elt (slot-value struct 'particle-force-fields) i)
-          do (destructuring-bind (&key (type :point) (position (vec 0 0 0)) (strength 0.0) (range 0.0) (normal (vec 0 0 0))) info
+          do (destructuring-bind (&key (type :point) (position (vec 0 0 0)) (strength 0.0) (range 0.0) (normal +vy3+)) info
                (setf (slot-value target 'type) (ecase type
-                                                 (:point 0)
-                                                 (:plane 1)))
+                                                 ((NIL :none) 0)
+                                                 (:point 1)
+                                                 (:gravity 2)
+                                                 (:plane 3)
+                                                 (:vortex 4)))
                (setf (slot-value target 'position) position)
                (setf (slot-value target 'strength) strength)
                (setf (slot-value target 'inv-range) (if (= 0.0 range) 0.0 (/ range)))
