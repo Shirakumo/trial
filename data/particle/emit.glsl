@@ -51,6 +51,10 @@ void main(){
     particle.life = particle.max_life;
     particle.size_begin = particle_size;
     particle.size_end = particle_size * particle_scaling;
+    particle.color = 0;
+    particle.color |= ((randoms.x > 0.5f ? 1 : 0) << 31) & 0x10000000;
+    particle.color |= ((randoms.y < 0.5f ? 1 : 0) << 30) & 0x20000000;
+    particle.color |= particle_color & 0x00FFFFFF;
 
     uint dead = atomicAdd(dead_count, -1)-1;
     uint new_index = dead_particles[dead];

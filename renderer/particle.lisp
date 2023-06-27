@@ -25,7 +25,8 @@
   (life :float)
   (max-life :float)
   (size-begin :float)
-  (size-end :float))
+  (size-end :float)
+  (color :uint))
 
 (define-gl-struct (particle-buffer :layout-standard std430)
   (size NIL :initarg :size :reader size)
@@ -50,6 +51,7 @@
   (mesh-vertex-position-stride :int :initform 0 :accessor mesh-vertex-position-stride)
   (mesh-vertex-normal-stride :int :initform 0 :accessor mesh-vertex-normal-stride)
   (randomness :float :initform 0.0 :accessor randomness)
+  (particle-color :uint :initform #xFFFFFF :accessor particle-color)
   (particle-size :float :initform 1.0 :accessor particle-size)
   (particle-scaling :float :initform 1.0 :accessor particle-scaling)
   (particle-rotation :float :initform 1.0 :accessor particle-rotation)
@@ -146,13 +148,15 @@
                                                                :work-groups (* 4 4))))
   ;; And configure our particle defaults
   (setf (vertex-array emitter) (or vertex-array (vertex-array emitter)))
-  (destructuring-bind (&key size scaling rotation randomness velocity lifespan lifespan-randomness) particle-options
+  (destructuring-bind (&key size scaling rotation color randomness velocity lifespan lifespan-randomness) particle-options
     (when size
       (setf (particle-size emitter) size))
     (when scaling
       (setf (particle-scaling emitter) scaling))
     (when rotation
       (setf (particle-rotation emitter) rotation))
+    (when color
+      (setf (particle-color emitter) color))
     (when randomness
       (setf (particle-randomness emitter) randomness))
     (when velocity
@@ -249,6 +253,19 @@
   (define-delegate particle-velocity)
   (define-delegate particle-lifespan)
   (define-delegate particle-lifespan-randomness))
+
+(defmethod particle-color ((emitter particle-emitter))
+  (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
+    (vec (/ (ldb (byte 8  0) int) 255)
+         (/ (ldb (byte 8  8) int) 255)
+         (/ (ldb (byte 8 16) int) 255))))
+
+(defmethod (setf particle-color) ((color vec3) (emitter particle-emitter))
+  (let ((int 0))
+    (setf (ldb (byte 8 16) int) (clamp 0 (truncate (* (vz color) 255)) 255))
+    (setf (ldb (byte 8  8) int) (clamp 0 (truncate (* (vy color) 255)) 255))
+    (setf (ldb (byte 8  0) int) (clamp 0 (truncate (* (vx color) 255)) 255))
+    (setf (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer))) int)))
 
 (define-handler (particle-emitter tick) (dt)
   (with-all-slots-bound (particle-emitter particle-emitter)
