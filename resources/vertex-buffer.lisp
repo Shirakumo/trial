@@ -23,6 +23,9 @@
                              (:element-array-buffer "IndexData")
                              (:array-buffer "VertexData")))))
 
+(defmethod shared-initialize :after ((buffer vertex-buffer) slots &key count)
+  (when count (setf (size buffer) (* (gl-type-size (element-type buffer)) count))))
+
 (defmethod allocate :before ((buffer vertex-buffer))
   (let ((buffer-data (buffer-data buffer)))
     (when (and (not (size buffer)) (vectorp buffer-data))
