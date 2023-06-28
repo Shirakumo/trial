@@ -8,7 +8,9 @@
 
 (define-gl-struct standard-environment-information
   (view-matrix :mat4)
+  (inv-view-matrix :mat4)
   (projection-matrix :mat4)
+  (inv-projection-matrix :mat4)
   (view-size :vec2 :accessor view-size)
   (camera-position :vec3 :accessor location)
   (tt :float :accessor tt)
@@ -75,7 +77,9 @@
          (fdt (- frame-time old-time)))
     (with-buffer-tx (buffer (// 'trial 'standard-environment-information))
       (setf (slot-value buffer 'view-matrix) (view-matrix))
+      (setf (slot-value buffer 'inv-view-matrix) (minv (view-matrix)))
       (setf (slot-value buffer 'projection-matrix) (projection-matrix))
+      (setf (slot-value buffer 'inv-projection-matrix) (minv (projection-matrix)))
       (setf (slot-value buffer 'view-size) (vec2 (width (framebuffer pass)) (height (framebuffer pass))))
       (setf (slot-value buffer 'camera-position) (global-location (camera pass)))
       (setf (slot-value buffer 'fdt) (float fdt 0f0))
