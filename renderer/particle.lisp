@@ -14,7 +14,10 @@
 ;;; tests, we can run around 100'000 particles with this on an old
 ;;; Nvidia 1050 Ti with nothing else going on. Going higher starts
 ;;; to dip into the frames, especially while recording.  Not sure
-;;; if it's worth optimising this even further, though.
+;;; if it's worth optimising this even further, though, as the
+;;; slowness is caused by excessive overdraw, not the simulation
+;;; itself. In circumstances that are less degenerate, this would
+;;; not be a bottleneck.
 ;;;
 ;;; The basic idea is to perform simulation in four steps:
 ;;; 1. Configure the internal dispatch buffers in a "kickoff pass"
@@ -26,6 +29,20 @@
 ;;;
 ;;; Rendering then just goes over the alive particle list, making
 ;;; a quad for each.
+;;;
+;;; Special notes about the COLOR mask in the particle field:
+;;; this mask is both used for the multiplicative particle color
+;;; and for a bit mask, which is stored in the upper 8 bits of the
+;;; integer. The 8 bits are assigned as follows:
+;;;
+;;; 0x01 24 --- 
+;;; 0x02 25 --- 
+;;; 0x04 26 --- 
+;;; 0x08 27 --- 
+;;; 0x10 28 --- 
+;;; 0x20 29 --- rectangle rendering mode
+;;; 0x40 30 --- vertical flip (randomised)
+;;; 0x80 31 --- horizontal flip (randomised)
 ;;;
 ;;; [1] https://wickedengine.net/2017/11/07/gpu-based-particle-simulation/
 ;;; [2] https://github.com/turanszkij/WickedEngine/tree/9caf25a52996c6c62fc39f10784d8951f715b05d/WickedEngine
@@ -232,7 +249,7 @@
     (setf (particle-force-fields emitter) (make-instance 'shader-storage-buffer :struct NIL :binding NIL)))
   (setf (buffer-data (particle-force-fields emitter)) struct)
   (when (allocated-p (particle-force-fields emitter))
-    (update-buffer-data (particle-force-fields emitter) T)))
+    (resize-buffer-data (particle-force-fields emitter) T)))
 
 (defmethod (setf particle-force-fields) ((buffer resource) (emitter particle-emitter))
   (setf (slot-value emitter 'particle-force-fields) buffer)
@@ -257,7 +274,7 @@
                      (return (floor (getf (rest binding) :stride) (gl-type-size (element-type (first binding))))))))))
 
 (defmethod (setf particle-options) (options (emitter particle-emitter))
-  (destructuring-bind (&key size scaling rotation color randomness velocity lifespan lifespan-randomness) options
+  (destructuring-bind (&key size scaling rotation color randomness velocity lifespan lifespan-randomness mode) options
     (when size
       (setf (particle-size emitter) size))
     (when scaling
@@ -273,7 +290,9 @@
     (when lifespan
       (setf (particle-lifespan emitter) lifespan))
     (when lifespan-randomness
-      (setf (particle-lifespan-randomness emitter) lifespan-randomness))))
+      (setf (particle-lifespan-randomness emitter) lifespan-randomness))
+    (when mode
+      (setf (particle-mode emitter) mode))))
 
 (macrolet ((define-delegate (accessor)
              `(progn (defmethod ,accessor ((emitter particle-emitter))
@@ -289,6 +308,18 @@
   (define-delegate particle-lifespan)
   (define-delegate particle-lifespan-randomness))
 
+(defmethod particle-mode ((emitter particle-emitter))
+  (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
+    (if (logbitp 29 int) :square :billboard)))
+
+(defmethod (setf particle-mode) (mode (emitter particle-emitter))
+  (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
+    (setf (ldb (byte 1 29) int) (ecase mode
+                                  (:square 1)
+                                  (:billboard 0)))
+    (setf (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer))) int)
+    mode))
+
 (defmethod particle-color ((emitter particle-emitter))
   (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
     (vec (/ (ldb (byte 8  0) int) 255)
@@ -300,7 +331,8 @@
     (setf (ldb (byte 8 16) int) (clamp 0 (truncate (* (vz color) 255)) 255))
     (setf (ldb (byte 8  8) int) (clamp 0 (truncate (* (vy color) 255)) 255))
     (setf (ldb (byte 8  0) int) (clamp 0 (truncate (* (vx color) 255)) 255))
-    (setf (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer))) int)))
+    (setf (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer))) int)
+    color))
 
 (defmethod simulate-particles ((emitter particle-emitter))
   (render (slot-value emitter 'simulate-pass) NIL))

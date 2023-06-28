@@ -54,10 +54,12 @@ void main(){
     particle.life = particle.max_life;
     particle.size_begin = particle_size + particle_size * particle_randomness * (randoms.y-0.5);
     particle.size_end = particle.size_begin * particle_scaling;
-    particle.color = 0;
-    particle.color |= ((randoms.x > 0.5f ? 1 : 0) << 31) & 0x10000000;
-    particle.color |= ((randoms.y < 0.5f ? 1 : 0) << 30) & 0x20000000;
-    particle.color |= particle_color & 0x3FFFFFFF;
+
+    // Bit masking bullshit
+    uint bitmask = particle_color & 0xFF000000;
+    particle.color = particle_color & 0x3FFFFFFF;
+    particle.color |= ((randoms.x > 0.5f ? 1 : 0) << 31) & bitmask;
+    particle.color |= ((randoms.y < 0.5f ? 1 : 0) << 30) & bitmask;
 
     // Update the lists
     uint dead = atomicAdd(dead_count, -1)-1;
