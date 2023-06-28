@@ -311,7 +311,7 @@
                               ;; KLUDGE: Trying to emit large arrays into source causes the driver to
                               ;;         spend an *absolutely insane* amount of time trying to compile
                               ;;         it to do whatever, so we just truncate it here.
-                              (if (<= size 20)
+                              (if (<= size 256)
                                   (push `(glsl-toolkit:array-specifier ,size) array)
                                   (push `(glsl-toolkit:array-specifier) array))
                               (translate-type (second type))))))
