@@ -1,5 +1,5 @@
 #section FRAGMENT_SHADER
-#include "normal_map.glsl"
+#include "normal-map.glsl"
 #include "pbr-common.glsl"
 
 PbrMaterial material;
