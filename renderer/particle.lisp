@@ -60,14 +60,12 @@
 (define-gl-struct (particle-counter-buffer :layout-standard std430)
   (alive-count :uint :initform 0)
   (dead-count :uint :initarg :max-particles)
-  (real-emit-count :uint :initform 0)
-  (total-count :uint :initform 0))
+  (real-emit-count :uint :initform 0))
 
 (define-gl-struct (particle-argument-buffer :layout-standard std140)
   (emit-args :uvec3 :initform (vec 0 0 0))
   (simulate-args :uvec3 :initform (vec 0 0 0))
-  (draw-args :uvec4 :initform (vec 0 0 0 0))
-  (sort-args :uvec3 :initform (vec 0 0 0)))
+  (draw-args :uvec4 :initform (vec 0 0 0 0)))
 
 (define-gl-struct (particle-emitter-buffer :layout-standard std430)
   (model-matrix :mat4 :accessor transform-matrix)
@@ -137,6 +135,7 @@
      (kickoff-pass)
      (emit-pass)
      (simulate-pass)
+     (local-threads :initarg :local-threads :initform 256 :reader local-threads)
      (texture :initform (// 'trial 'missing) :initarg :texture :accessor texture)
      (to-emit :initform 0.0 :initarg :to-emit :accessor to-emit)
      (particle-rate :initform 0.0 :initarg :particle-rate :accessor particle-rate)
@@ -146,7 +145,7 @@
     (:buffers (trial standard-environment-information))
     (:shader-file (trial "particle/render.glsl"))))
 
-(defmethod initialize-instance :after ((emitter particle-emitter) &key (local-threads 256) particle-force-fields vertex-array particle-options)
+(defmethod initialize-instance :after ((emitter particle-emitter) &key particle-force-fields vertex-array particle-options)
   (with-all-slots-bound (emitter particle-emitter)
     ;; Check that the counts are within ranges that the GPU can even compute.
     ;; On dev we error, on prod we simply clamp.
@@ -303,6 +302,9 @@
     (setf (ldb (byte 8  0) int) (clamp 0 (truncate (* (vx color) 255)) 255))
     (setf (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer))) int)))
 
+(defmethod simulate-particles ((emitter particle-emitter))
+  (render (slot-value emitter 'simulate-pass) NIL))
+
 (define-handler (particle-emitter tick) (dt)
   (with-all-slots-bound (particle-emitter particle-emitter)
     (multiple-value-bind (to-emit emit-carry) (floor (incf (to-emit particle-emitter) (* dt (particle-rate particle-emitter))))
@@ -314,7 +316,7 @@
       (%gl:bind-buffer :dispatch-indirect-buffer (gl-name particle-argument-buffer))
       (render kickoff-pass NIL)
       (render emit-pass NIL)
-      (render simulate-pass NIL)
+      (simulate-particles particle-emitter)
       ;; Swap the buffers
       (rotatef (binding-point alive-particle-buffer-0)
                (binding-point alive-particle-buffer-1))
@@ -380,3 +382,75 @@
 
 (defmethod (setf surface-thickness) (value (emitter depth-colliding-particle-emitter))
   (setf (surface-thickness (slot-value emitter 'simulate-pass)) (float value 0f0)))
+
+
+
+(define-shader-pass particle-sort-pass (compute-pass)
+  ()
+  (:shader-file (trial "particle/sort.glsl")))
+
+(define-shader-pass particle-sort-step-pass (compute-pass)
+  ()
+  (:shader-file (trial "particle/sort-step.glsl")))
+
+(define-shader-pass particle-sort-inner-pass (compute-pass)
+  ()
+  (:shader-file (trial "particle/sort-inner.glsl")))
+
+(define-shader-pass sorted-particle-simulate-pass (particle-simulate-pass)
+  ((particle-distances :buffer T :initarg :particle-distances))
+  (:shader-file (trial "particle/sort-simulate.glsl")))
+
+(define-shader-entity sorted-particle-emitter (particle-emitter)
+  (particle-distances
+   sort-pass
+   sort-step-pass
+   sort-inner-pass))
+
+(defmethod initialize-instance :after ((emitter sorted-particle-emitter) &key)
+  (with-all-slots-bound (emitter sorted-particle-emitter)
+    (setf sort-pass (construct-delegate-object-type 'particle-sort-pass emitter))
+    (setf sort-step-pass (construct-delegate-object-type 'particle-sort-step-pass emitter))
+    (setf sort-inner-pass (construct-delegate-object-type 'particle-sort-inner-pass emitter))))
+
+(defmethod construct-delegate-object-type ((type (eql 'particle-simulate-pass)) (emitter sorted-particle-simulate-pass) &rest args)
+  (let ((buffer (make-instance 'vertex-buffer :data-usage :dynamic-copy :binding-point T :gl-type "ParticleDistances" :element-type :float :count (max-particles emitter))))
+    (setf (slot-value emitter 'particle-distances) buffer)
+    (apply #'make-instance 'sorted-particle-simulate-pass :particle-distances buffer args)))
+
+(defmethod finalize :after ((emitter sorted-particle-emitter))
+  (with-all-slots-bound (emitter sorted-particle-emitter)
+    (finalize sort-kickoff-pass)
+    (finalize sort-pass)
+    (finalize sort-step-pass)
+    (finalize sort-inner-pass)))
+
+(defmethod simulate-particles :after ((emitter sorted-particle-emitter))
+  (let* ((max-particles (max-particles emitter))
+         (local-threads (local-threads emitter))
+         (thread-groups (ceiling max-particles local-threads))
+         (survivors (with-buffer-tx (struct (slot-value emitter 'particle-counter-buffer) :update :read)
+                      (- (max-particles emitter) (slot-value struct 'particle-counter-buffer))))
+         (presorted 512))
+    (setf (vx (work-groups (slot-value emitter 'sort-pass))) (ceiling survivors presorted))
+    (render (slot-value emitter 'sort-pass) NIL)
+    (loop with done = (= 1 thread-groups)
+          for thread-groups = 9
+          until done
+          do (when (< presorted max-particles)
+               (when (< (* presorted 2) max-particles)
+                 (setf done T))
+               ;; Set number of thread groups to fit
+               (setf thread-groups (ceiling (ash 1 (ceiling (log presorted 2))) local-threads)))
+             (loop with merge-size = (ash (* presorted 2) -1)
+                   for sub-size = merge-size then (ash sub-size -1)
+                   until (< sub-size 256)
+                   do (setf (slot-value (slot-value emitter 'sort-step-pass) 'job-params)
+                            (if (= sub-size merge-size)
+                                (vec sub-size (1- (* sub-size 2)) -1 0)
+                                (vec sub-size sub-size -1 0)))
+                      (setf (vx (work-groups (slot-value emitter 'sort-step-pass))) thread-groups)
+                      (render (slot-value emitter 'sort-step-pass) NIL))
+             (setf (vx (work-groups (slot-value emitter 'sort-inner-pass))) thread-groups)
+             (render (slot-value emitter 'sort-inner-pass) NIL)
+             (setf presorted (* presorted 2)))))
