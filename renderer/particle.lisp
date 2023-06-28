@@ -410,6 +410,10 @@
 (defmethod port ((emitter depth-colliding-particle-emitter) (name (eql 'depth)))
   (port (slot-value emitter 'simulate-pass) 'depth-tex))
 
+(defmethod connect ((pass standard-render-pass) (emitter depth-colliding-particle-emitter) scene)
+  (flow:connect (port pass 'depth) (port emitter 'depth) 'flow:directed-connection)
+  (enter pass scene))
+
 (defmethod surface-thickness ((emitter depth-colliding-particle-emitter))
   (surface-thickness (slot-value emitter 'simulate-pass)))
 

@@ -52,13 +52,12 @@ void main(){
     uint candidate = index_high + index_low + sub_size;
     
     if(candidate < tgp.w){
-        vec2 a = local_storage[index];
-        vec2 b = local_storage[candidate];
+      vec2 a = local_storage[index];
+      vec2 b = local_storage[candidate];
           
-        if(b.x < a.x){
-          local_storage[index] = b;
-          local_storage[candidate] = a;
-        }
+      if(b.x < a.x){
+        local_storage[index] = b;
+        local_storage[candidate] = a;
       }
       groupMemoryBarrier();
       barrier();
