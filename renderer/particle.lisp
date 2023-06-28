@@ -167,10 +167,10 @@
                                                 (dotimes (i max-particles buffer) (setf (aref buffer i) i)))))
     (setf particle-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-copy :binding NIL :struct (make-instance 'particle-buffer :size max-particles :storage NIL)))
     ;; Allocate the compute passes
-    (setf kickoff-pass (make-instance 'particle-kickoff-pass :emit-threads local-threads :simulate-threads local-threads :max-particles max-particles :particle-counter-buffer particle-counter-buffer :particle-argument-buffer particle-argument-buffer :particle-emitter-buffer particle-emitter-buffer))
-    (setf emit-pass (make-instance 'particle-emit-pass :emit-threads local-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer :particle-emitter-buffer particle-emitter-buffer
+    (setf kickoff-pass (construct-delegate-object-type 'particle-kickoff-pass emitter :emit-threads local-threads :simulate-threads local-threads :max-particles max-particles :particle-counter-buffer particle-counter-buffer :particle-argument-buffer particle-argument-buffer :particle-emitter-buffer particle-emitter-buffer))
+    (setf emit-pass (construct-delegate-object-type 'particle-emit-pass emitter :emit-threads local-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer :particle-emitter-buffer particle-emitter-buffer
                                                        :work-groups 0))
-    (setf simulate-pass (make-instance 'particle-simulate-pass :simulate-threads local-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer :particle-argument-buffer particle-argument-buffer
+    (setf simulate-pass (construct-delegate-object-type 'particle-simulate-pass emitter :simulate-threads local-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer :particle-argument-buffer particle-argument-buffer
                                                                :work-groups (slot-offset 'particle-argument-buffer 'simulate-args))))
   ;; And configure our particle defaults
   (setf (vertex-array emitter) (or vertex-array (vertex-array emitter)))
@@ -218,7 +218,8 @@
                                                  (:point 1)
                                                  (:planet 2)
                                                  (:plane 3)
-                                                 (:vortex 4)))
+                                                 (:vortex 4)
+                                                 (:sphere 5)))
                (setf (slot-value target 'position) position)
                (setf (slot-value target 'strength) strength)
                (setf (slot-value target 'range) range)
@@ -296,7 +297,7 @@
          (/ (ldb (byte 8 16) int) 255))))
 
 (defmethod (setf particle-color) ((color vec3) (emitter particle-emitter))
-  (let ((int 0))
+  (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
     (setf (ldb (byte 8 16) int) (clamp 0 (truncate (* (vz color) 255)) 255))
     (setf (ldb (byte 8  8) int) (clamp 0 (truncate (* (vy color) 255)) 255))
     (setf (ldb (byte 8  0) int) (clamp 0 (truncate (* (vx color) 255)) 255))
@@ -319,6 +320,11 @@
                (binding-point alive-particle-buffer-1))
       (%gl:bind-buffer :dispatch-indirect-buffer 0)
       (setf (to-emit particle-emitter) emit-carry))))
+
+(define-handler (particle-emitter class-changed) ()
+  (handle class-changed (slot-value particle-emitter 'kickoff-pass))
+  (handle class-changed (slot-value particle-emitter 'emit-pass))
+  (handle class-changed (slot-value particle-emitter 'simulate-pass)))
 
 (defmethod bind-textures ((emitter particle-emitter))
   (gl:active-texture :texture0)
@@ -353,3 +359,17 @@
     (render kickoff-pass NIL)
     (render emit-pass NIL)
     (%gl:bind-buffer :dispatch-indirect-buffer 0)))
+
+(define-shader-pass depth-colliding-particle-simulate-pass (particle-simulate-pass)
+  ((depth-tex :port-type fixed-input :accessor depth))
+  (:shader-file (trial "particle/depth-collisions.glsl")))
+
+(define-shader-entity depth-colliding-particle-emitter (particle-emitter)
+  ())
+
+;; KLUDGE: This is NOT great for composing stuff.
+(defmethod construct-delegate-object-type ((type (eql 'particle-simulate-pass)) (emitter depth-colliding-particle-emitter) &rest args)
+  (apply #'make-instance 'depth-colliding-particle-simulate-pass args))
+
+(defmethod port ((emitter depth-colliding-particle-emitter) (name (eql 'depth)))
+  (port (slot-value emitter 'simulate-pass) 'depth-tex))

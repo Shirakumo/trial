@@ -18,7 +18,9 @@ vec3 read_normal(uint i){
 void main(){
   uint emit = real_emit_count;
   if(gl_GlobalInvocationID.x < emit){
-    vec3 randoms = texture(random_tex, vec2(float(gl_GlobalInvocationID.x)/float(EMIT_THREADS), randomness+tt)).xyz;
+    vec3 randoms = texture(random_tex, vec2(float(gl_GlobalInvocationID.x)/float(EMIT_THREADS), randomness)).xyz;
+
+    // Evaluate the surface to emit on
     uint tri = uint((mesh_index_count/3)*randoms.z);
     uint i0 = index_data[tri*3+0];
     uint i1 = index_data[tri*3+1];
@@ -30,6 +32,7 @@ void main(){
     vec3 n1 = read_normal(i1);
     vec3 n2 = read_normal(i2);
 
+    // Use barycentric coordinates to randomly distribute on the triangle
     float f = randoms.x;
     float g = randoms.y;
     if(1 < f+g){
@@ -38,24 +41,25 @@ void main(){
     }
 
     vec3 pos = p0 + f*(p1-p0) + g*(p2-p0);
-    vec3 nor = n0 + f*(n1-n0) + g*(n2-n0);
     pos = (model_matrix * vec4(pos, 1)).xyz;
+    vec3 nor = n0 + f*(n1-n0) + g*(n2-n0);
     nor = normalize(mat3(model_matrix)*nor);
-    float starting_size = particle_size + particle_size * particle_randomness * (randoms.y-0.5);
 
+    // Compute the particle properties
     Particle particle;
     particle.position = pos;
     particle.velocity = particle_velocity * (nor + particle_randomness*(randoms-0.5));
     particle.rotational_velocity = particle_rotation * particle_randomness * (randoms.z-0.5);
     particle.max_life = particle_lifespan + particle_lifespan * particle_lifespan_randomness * (randoms.x-0.5);
     particle.life = particle.max_life;
-    particle.size_begin = particle_size;
-    particle.size_end = particle_size * particle_scaling;
+    particle.size_begin = particle_size + particle_size * particle_randomness * (randoms.y-0.5);
+    particle.size_end = particle.size_begin * particle_scaling;
     particle.color = 0;
     particle.color |= ((randoms.x > 0.5f ? 1 : 0) << 31) & 0x10000000;
     particle.color |= ((randoms.y < 0.5f ? 1 : 0) << 30) & 0x20000000;
-    particle.color |= particle_color & 0x00FFFFFF;
+    particle.color |= particle_color & 0x3FFFFFFF;
 
+    // Update the lists
     uint dead = atomicAdd(dead_count, -1)-1;
     uint new_index = dead_particles[dead];
     particles[new_index] = particle;
