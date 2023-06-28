@@ -6,10 +6,18 @@ Every ``standard-renderer-pass`` will provide the following variables to the sha
 
 - ``mat4`` ``view_matrix``
   The camera's view matrix
+- ``mat4`` ``inv_view_matrix``
+  The camera's inverse view matrix
 - ``mat4`` ``projection_matrix``
   The camera's projection matrix
+- ``mat4`` ``inv_projection_matrix``
+  The camera's inverse projection matrix
 - ``vec2`` ``view_size``
   The size of the view / window
+- ``float`` ``near_plane``
+  The near view clipping plane
+- ``float`` ``far_plane``
+  The far view clipping plane
 - ``vec3`` ``camera_position``
   The position of the camera in world space
 - ``float`` ``tt``
