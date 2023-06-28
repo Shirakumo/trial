@@ -75,26 +75,27 @@
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
     (enter (make-instance 'display-controller) scene)
-    (enter (make-instance 'trial::particle-emitter :name :emitter :max-particles 1000000 :particle-rate 1000
-                                                   :particle-force-fields (list (list :position (vec 2.0 0.0 0.0)
-                                                                                      :range 100.0
-                                                                                      :strength 10.0
-                                                                                      :type :gravity)
-                                                                                (list :position (vec 0.0 0.0 -3.0)
-                                                                                      :range 5.0
-                                                                                      :strength -40.0
-                                                                                      :type :gravity))
-                                                   :texture (assets:// :circle-05)
-                                                   :location (vec 0 0 0)
-                                                   :particle-options `(:velocity 10.0 :randomness 0.1 :size 0.1 :scaling 1.0 
-                                                                       :lifespan 10.0 :lifespan-randomness 0.5
-                                                                       :color ,(vec 0.5 0.3 0.1))) scene)
+    ;; (enter (make-instance 'planey :location (vec 0 5 -5)) scene)
+    ;; (enter (make-instance 'planey :orientation (qfrom-angle +vx+ (deg->rad -90))) scene)
+    (enter (make-instance 'planey :vertex-array (// 'workbench 'sphere) :scaling (vec 3 3 3) :location (vec 0 3 0)) scene)
+    ;; (enter (make-instance 'meshy :asset (assets:asset :marble-bust) :scaling (vec 10 10 10)) scene)
+    (enter (make-instance 'trial::depth-colliding-particle-emitter
+                          :name :emitter :max-particles 1000000 :particle-rate 1000
+                          :texture (assets:// :circle-05)
+                          :location (vec 0 3 5)
+                          :particle-options `(:velocity -10.0 :randomness 0.1 :size 0.1 :scaling 1.0 
+                                              :lifespan 10.0 :lifespan-randomness 0.5
+                                              :color ,(vec 0.5 0.3 0.1))) scene)
     (observe! (let ((emitter (unit :emitter (scene +main+))))
                 (with-buffer-tx (struct (slot-value emitter 'trial::particle-counter-buffer) :update :read)
                   (slot-value struct 'trial::alive-count)))
               :title "Alive Particles")
     (enter (make-instance 'vertex-entity :vertex-array (// 'workbench 'grid)) scene)
     (enter (make-instance 'editor-camera :location (VEC3 0.0 2.3 7.3) :fov 50 :move-speed 0.1) scene)
+    (enter (make-instance 'ambient-light :color (vec 0.5 0.5 0.5)) scene)
     ;; Need a standard render pass here because we need the standard-environment-information.
-    (enter (make-instance 'phong-render-pass) scene))
+    (let ((pass (make-instance 'pbr-render-pass)))
+      ;; FIXME: we need to use FLOW:CONNECT here to avoid the emitter's pass being added to the pipeline...
+      (flow:connect (port pass 'depth) (port (unit :emitter scene) 'depth) 'flow:directed-connection)
+      (enter pass scene)))
   (maybe-reload-scene))
