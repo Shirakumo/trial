@@ -1,6 +1,5 @@
 #section COMPUTE_SHADER
 #include (trial::trial "depth.glsl")
-#include (trial::trial "positioning.glsl")
 
 uniform sampler2D depth_tex;
 uniform float surface_thickness = 1.5;
@@ -23,9 +22,9 @@ void simulate_particle(inout Particle particle){
     // Check if within thickness of surface
     if((surface_linear_depth < pos_2d.w + particle_size) && 
        (pos_2d.w - particle_size < surface_linear_depth + surface_thickness)){
-      mat4 inv_view_projection_matrix = inv_projection_matrix * inv_view_matrix;
-      vec3 surface_normal = depth_normal(depth_tex, pix_uv, inv_view_projection_matrix);
-      const float restitution = 0.9;
+      mat4 inv_view_projection_matrix = inv_view_matrix * inv_projection_matrix;
+      vec3 surface_normal = depth_normal(depth_tex, uv, inv_view_projection_matrix);
+      const float restitution = 0.8;
       particle.velocity = reflect(particle.velocity, surface_normal) * restitution;
     }
   }
