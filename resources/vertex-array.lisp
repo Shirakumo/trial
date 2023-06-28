@@ -66,7 +66,11 @@
     (update-array-bindings array bindings)))
 
 (defmethod (setf index-buffer) :after ((buffer vertex-buffer) (array vertex-array))
-  (setf (size array) (/ (size buffer) (gl-type-size (element-type buffer))))
+  (setf (size array) (cond ((size buffer)
+                            (/ (size buffer) (gl-type-size (element-type buffer))))
+                           ((buffer-data buffer)
+                            (length (buffer-data buffer)))
+                           (T (error "???"))))
   (when (allocated-p array)
     (gl:bind-vertex-array (data-pointer array))
     (gl:bind-buffer (buffer-type buffer) (gl-name buffer))))

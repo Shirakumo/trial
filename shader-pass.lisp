@@ -163,8 +163,8 @@
          (directives (append (compute-preprocessor-directives pass)
                              (when (typep object 'shader-entity)
                                (compute-preprocessor-directives object))
-                             (mapcar #'gl-source (buffer-sources object))
-                             (mapcar #'gl-source (buffer-sources pass)))))
+                             (buffer-sources object)
+                             (buffer-sources pass))))
     (loop for type in *shader-type-list*
           for inputs = (compute-shader type pass object)
           do (when inputs

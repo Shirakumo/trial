@@ -35,7 +35,7 @@
 
 (defmethod transfer-to progn ((target phong-material) (material pbr-material))
   (setf (diffuse-factor target) (albedo-factor material))
-  (setf (specular-factor target) (metallic-factor material))
+  (setf (specular-factor target) (metalness-factor material))
   (setf (alpha-cutoff target) (alpha-cutoff material)))
 
 (define-shader-pass phong-render-pass (standard-shadows-pass light-cache-render-pass)

@@ -622,6 +622,17 @@
        (declare (ignorable ,@slots))
        ,@body)))
 
+(defmethod find-slot ((name symbol) (class class))
+  (unless (c2mop:class-finalized-p class)
+    (c2mop:finalize-inheritance class))
+  (find name (c2mop:class-slots class)))
+
+(defmethod find-slot (name (object standard-object))
+  (find-slot name (class-of object)))
+
+(defmethod construct-delegate-object-type (delegate base &rest args)
+  (apply #'make-instance delegate args))
+
 (defmacro define-constant-fold-function (name (arg) &body body)
   (let ((whole (gensym "WHOLE"))
         (env (gensym "ENV"))

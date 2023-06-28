@@ -139,7 +139,10 @@
 (defmethod pack-pipeline ((pipeline pipeline) target)
   (check-consistent pipeline)
   (v:info :trial.pipeline "~a packing for ~a (~ax~a)" pipeline target (width target) (height target))
-  (let* ((passes (flow:topological-sort (nodes pipeline)))
+  ;; KLUDGE: We need to do the intersection here to ensure that we remove passes
+  ;;         that are not part of this pipeline, but still connected to one of the
+  ;;         passes that *is* part of the pipeline.
+  (let* ((passes (intersection (flow:topological-sort (nodes pipeline)) (nodes pipeline)))
          (textures (make-array 0 :initial-element NIL :fill-pointer 0 :adjustable T)))
     ;; Compute minimised texture set
     ;; (let ((texspecs (loop for port in (mapcan #'flow:ports passes)
