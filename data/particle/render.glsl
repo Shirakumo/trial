@@ -32,8 +32,8 @@ void main(){
   vec3 vertex = BILLBOARD[vertex_id];
   uv = vertex.xy * 0.5 + 0.5;
   // High bits mark the mirroring
-  uv.x = (0 < (particle.color & 0x10000000)) ? 1.0f - uv.x : uv.x;
-  uv.y = (0 < (particle.color & 0x20000000)) ? 1.0f - uv.y : uv.y;
+  uv.x = (0 < (particle.color & 0x80000000)) ? 1.0f - uv.x : uv.x;
+  uv.y = (0 < (particle.color & 0x40000000)) ? 1.0f - uv.y : uv.y;
   
   // Rotate it
   float rotation = interpolation * particle.rotational_velocity;
@@ -46,9 +46,18 @@ void main(){
   vec3 velocity = mat3(view_matrix) * particle.velocity;
   vertex += dot(vertex, velocity) * velocity * motion_blur;
 
-  world_position = particle.position;
-  view_position = (view_matrix * vec4(world_position, 1)).xyz;
-  gl_Position = projection_matrix * vec4(view_position+vertex, 1);
+  // Check if billboard or not
+  if(0 == (particle.color & 0x20000000)){
+    world_position = particle.position;
+    view_position = (view_matrix * vec4(world_position, 1)).xyz;
+    gl_Position = projection_matrix * vec4(view_position+vertex, 1);
+  }else{
+    vec4 position = model_matrix * vec4(particle.position+vertex, 1);
+    world_position = position.xyz;
+    position = view_matrix * position;
+    view_position = position.xyz;
+    gl_Position = projection_matrix * position;
+  }
 }
 
 #section FRAGMENT_SHADER
