@@ -18,7 +18,10 @@
       (resolve-shader-include (parse-namestring (read-from-string source)))))
 
 (defmethod resolve-shader-include ((source pathname))
-  (glsl-toolkit:parse (merge-pathnames source *default-pathname-defaults*)))
+  (let ((source (merge-pathnames source *default-pathname-defaults*))
+        (*default-pathname-defaults* source))
+    (getf (glsl-toolkit:preprocess (glsl-toolkit:parse source) :include-resolution #'resolve-shader-include)
+          :global)))
 
 (defmethod resolve-shader-include ((source symbol))
   (gl-source (find-class source)))
