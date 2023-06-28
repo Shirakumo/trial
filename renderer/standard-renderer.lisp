@@ -11,7 +11,7 @@
   (inv-view-matrix :mat4)
   (projection-matrix :mat4)
   (inv-projection-matrix :mat4)
-  (view-size :vec2 :accessor view-size)
+  (view-size :uvec2 :accessor view-size)
   (camera-position :vec3 :accessor location)
   (near-plane :float :accessor near-plane)
   (far-plane :float :accessor far-plane)
