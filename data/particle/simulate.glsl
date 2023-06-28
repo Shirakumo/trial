@@ -9,6 +9,10 @@ vec3 evaluate_force_field_point(in ParticleForceField field, in Particle particl
   return dir * field.strength * (1 - clamp(length(dir) * field.inv_range, 0.0, 1.0));
 }
 
+vec3 evaluate_force_field_direction(in ParticleForceField field, in Particle particle){
+  return field.normal * field.strength;
+}
+
 vec3 evaluate_force_field_planet(in ParticleForceField field, in Particle particle){
   vec3 dir = field.position - particle.position;
   float dist = length(dir);
