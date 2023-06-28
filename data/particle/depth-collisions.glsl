@@ -3,6 +3,7 @@
 #include (trial::trial "positioning.glsl")
 
 uniform sampler2D depth_tex;
+uniform float surface_thickness = 1.5;
 
 void simulate_particle(inout Particle particle){
   call_next_method();
@@ -16,7 +17,6 @@ void simulate_particle(inout Particle particle){
     
     float depth = 1.0-texelFetch(depth_tex, pix_uv, 0).x;
     float surface_linear_depth = to_linear_depth(depth, near_plane, far_plane);
-    float surface_thickness = 1.5;
 
     float life_lerp = 1 - (particle.life / particle.max_life);
     float particle_size = mix(particle.size_begin, particle.size_end, life_lerp);

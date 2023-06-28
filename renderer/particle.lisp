@@ -361,7 +361,8 @@
     (%gl:bind-buffer :dispatch-indirect-buffer 0)))
 
 (define-shader-pass depth-colliding-particle-simulate-pass (particle-simulate-pass)
-  ((depth-tex :port-type fixed-input :accessor depth))
+  ((depth-tex :port-type fixed-input :accessor depth)
+   (surface-thickness :uniform T :initform 1.5 :accessor surface-thickness))
   (:shader-file (trial "particle/depth-collisions.glsl")))
 
 (define-shader-entity depth-colliding-particle-emitter (particle-emitter)
@@ -373,3 +374,9 @@
 
 (defmethod port ((emitter depth-colliding-particle-emitter) (name (eql 'depth)))
   (port (slot-value emitter 'simulate-pass) 'depth-tex))
+
+(defmethod surface-thickness ((emitter depth-colliding-particle-emitter))
+  (surface-thickness (slot-value emitter 'simulate-pass)))
+
+(defmethod (setf surface-thickness) (value (emitter depth-colliding-particle-emitter))
+  (setf (surface-thickness (slot-value emitter 'simulate-pass)) (float value 0f0)))
