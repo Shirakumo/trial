@@ -1,1 +1,52 @@
 #section COMPUTE_SHADER
+//
+// Copyright (c) 2016 Advanced Micro Devices, Inc. All rights reserved.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
+
+layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+uniform int elements;
+uniform vec4 job_params;
+
+void main(){
+  uvec4 tgp = uvec4(SV_GroupID.x * 256, 0, elements, clamp(elements - SV_GroupID.x*512, 0, 512));
+  uint local_id = tgp.x + SV_GroupThreadID.x;
+  uint index_low = local_id & (uint(job_params.x) - 1);
+  uint index_high = 2 * (local_id-index_low);
+
+  uint index = tpg.y + index_high + index_low;
+  uint candidate = tgp.y + index_high + job_params.y + job_params.z*index_low;
+
+  if(candidate < tgp.y + tgp.z){
+    float a = particle_distances[index];
+    float b = particle_distances[candidate];
+
+    if(b < a){
+      particle_distances[index] = b;
+      particle_distances[candidate] = a;
+
+      uint a_index = index_buffer[index];
+      uint b_index = index_buffer[candidate];
+      index_buffer[index] = b_index;
+      index_buffer[candidate] = a_index;
+    }
+  }
+}
