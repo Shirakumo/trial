@@ -366,6 +366,7 @@
 
 (defmethod render ((emitter particle-emitter) (program shader-program))
   (gl:depth-mask NIL)
+  (setf (uniform program "model_matrix") (tmat4 (tf emitter)))
   (gl:blend-func :src-alpha :one)
   (gl:bind-vertex-array (gl-name (// 'trial 'empty-vertex-array)))
   (%gl:bind-buffer :draw-indirect-buffer (gl-name (slot-value emitter 'particle-argument-buffer)))
@@ -433,11 +434,12 @@
   ((particle-distances :buffer T :initarg :particle-distances))
   (:shader-file (trial "particle/sort-simulate.glsl")))
 
-(define-shader-entity sorted-particle-emitter (particle-emitter)
-  (particle-distances
-   sort-pass
-   sort-step-pass
-   sort-inner-pass))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (define-shader-entity sorted-particle-emitter (particle-emitter)
+    (particle-distances
+     sort-pass
+     sort-step-pass
+     sort-inner-pass)))
 
 (defmethod initialize-instance :after ((emitter sorted-particle-emitter) &key)
   (with-all-slots-bound (emitter sorted-particle-emitter)
