@@ -68,6 +68,14 @@ void simulate_particle@after(inout Particle particle){
   particle.life -= dt;
 }
 
+void particle_tick(uint id, inout Particle particle){
+  simulate_particle(particle);
+  particles[id] = particle;
+  
+  uint new_index = atomicAdd(draw_args.x, 6) / 6;
+  alive_particles_1[new_index] = id;
+}
+
 void main(){
   uint alive = alive_count;
   field_count = min(particle_force_field_count, FORCEFIELDS);
@@ -82,11 +90,7 @@ void main(){
     uint id = alive_particles_0[gl_GlobalInvocationID.x];
     Particle particle = particles[id];
     if(0 < particle.life){
-      simulate_particle(particle);
-      particles[id] = particle;
-
-      uint new_index = atomicAdd(draw_args.x, 6) / 6;
-      alive_particles_1[new_index] = id;
+      particle_tick(id, particle);
     }else{
       uint dead = atomicAdd(dead_count, +1);
       dead_particles[dead] = id;
