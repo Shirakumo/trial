@@ -78,7 +78,7 @@
     (enter (make-instance 'planey :location (vec 0 5 -5)) scene)
     (enter (make-instance 'planey :orientation (qfrom-angle +vx+ (deg->rad -90))) scene)
     (enter (make-instance 'meshy :asset (assets:asset :marble-bust) :scaling (vec 10 10 10)) scene)
-    (enter (make-instance 'trial::depth-colliding-particle-emitter
+    (enter (make-instance 'trial::sorted-particle-emitter
                           :name :emitter :max-particles 1000000 :particle-rate 1000
                           :particle-force-fields `((:type :plane :range 10000.0 :strength -5.0))
                           :texture (assets:// :circle-05)
@@ -98,6 +98,6 @@
     ;; Need a standard render pass here because we need the standard-environment-information.
     (let ((render (make-instance 'pbr-render-pass))
           (map (make-instance 'tone-mapping-pass)))
-      (connect render (unit :emitter scene) scene)
+      ;(connect render (unit :emitter scene) scene)
       (connect (port render 'color) (port map 'previous-pass) scene)))
   (maybe-reload-scene))

@@ -22,23 +22,24 @@
 //
 
 #define HALF_SIZE (SORT_SIZE/2)
-#define ITERATIONS (HALF_SIZE > 1024 ? HALF_SIZE/1024 : 1)
+#define ITERATIONS (1024 < HALF_SIZE ? HALF_SIZE/1024 : 1)
 #define NUM_THREADS (HALF_SIZE/ITERATIONS)
-
-layout (local_size_x = NUM_THREADS, local_size_y = 1, local_size_z = 1) in;
+// FIXME: This should be NUM_THREADS, but glsl doesn't allow it since it's not
+//        an immediate expression.
+layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
 uniform int elements;
 shared vec2 local_storage[SORT_SIZE];
 
 void main(){
-  int global_base_index = (SV_GroupID.x * SORT_SIZE) + SV_GroupThreadID.x;
-  int local_base_index = SV_GroupIndex;
-  uint elements_in_thread_group = min(SORT_SIZE, elements - (SV_GroupID.x * SORT_SIZE));
+  uint global_base_index = (gl_WorkGroupID.x * SORT_SIZE) + gl_LocalInvocationID.x;
+  uint local_base_index = gl_LocalInvocationIndex;
+  uint elements_in_thread_group = min(SORT_SIZE, elements - (gl_WorkGroupID.x * SORT_SIZE));
 
   for(uint i=0; i<2*ITERATIONS; ++i){
-    if(SV_GroupIndex + i*NUM_THREADS < elements_in_thread_group){
+    if(gl_LocalInvocationIndex + i*NUM_THREADS < elements_in_thread_group){
       uint load_index = global_base_index + i*NUM_THREADS;
-      local_storage[local_base_index + i*NUM_THREADS] = vec2(particle_distances[load_index], float(index_buffer[load_index]));
+      local_storage[local_base_index + i*NUM_THREADS] = vec2(particle_distances[load_index], float(alive_particles_1[load_index]));
     }
   }
   groupMemoryBarrier();
@@ -47,10 +48,10 @@ void main(){
   for(uint merge_size = 2; merge_size <= SORT_SIZE; merge_size = merge_size*2){
     for(uint sub_size = merge_size >> 1; 0 < sub_size; sub_size = sub_size >> 1){
       for(uint i=0; i<ITERATIONS; ++i){
-        int tmp_index = SV_GroupIndex + NUM_THREADS*i;
-        int index_low = tmp_index & (sub_size-1);
-        int index_high = 2 * (tmp_index-index_low);
-        int index = index_low + index_high;
+        uint tmp_index = gl_LocalInvocationIndex + NUM_THREADS*i;
+        uint index_low = tmp_index & (sub_size-1);
+        uint index_high = 2 * (tmp_index-index_low);
+        uint index = index_low + index_high;
 
         uint candidate = sub_size == (merge_size >> 1)
           ? index_high - index_low + (2*sub_size - 1)
@@ -72,11 +73,11 @@ void main(){
   }
 
   for(uint i=0; i<2*ITERATIONS; ++i){
-    if(SV_GroupIndex + i*NUM_THREADS < elements_in_thread_group){
+    if(gl_LocalInvocationIndex + i*NUM_THREADS < elements_in_thread_group){
       uint load_index = local_base_index + i*NUM_THREADS;
       uint store_index = global_base_index + i*NUM_THREADS;
       particle_distances[store_index] = local_storage[load_index].x;
-      index_buffer[store_index] = uint(local_storage[load_index].y);
+      alive_particles_1[store_index] = uint(local_storage[load_index].y);
     }
   }
 }

@@ -35,9 +35,9 @@
 ;;; and for a bit mask, which is stored in the upper 8 bits of the
 ;;; integer. The 8 bits are assigned as follows:
 ;;;
-;;; 0x01 24 --- 
-;;; 0x02 25 --- 
-;;; 0x04 26 --- 
+;;; 0x01 24 --- [ sprite selector ]
+;;; 0x02 25 --- [ sprite selector ]
+;;; 0x04 26 --- [ sprite selector ]
 ;;; 0x08 27 --- 
 ;;; 0x10 28 --- 
 ;;; 0x20 29 --- rectangle rendering mode
@@ -274,7 +274,7 @@
                      (return (floor (getf (rest binding) :stride) (gl-type-size (element-type (first binding))))))))))
 
 (defmethod (setf particle-options) (options (emitter particle-emitter))
-  (destructuring-bind (&key size scaling rotation color randomness velocity lifespan lifespan-randomness mode) options
+  (destructuring-bind (&key size scaling rotation color randomness velocity lifespan lifespan-randomness mode &allow-other-keys) options
     (when size
       (setf (particle-size emitter) size))
     (when scaling
@@ -364,17 +364,21 @@
   (gl:active-texture :texture0)
   (gl:bind-texture (target (texture emitter)) (gl-name (texture emitter))))
 
-(defmethod render ((emitter particle-emitter) (program shader-program))
+(defmethod render :before ((emitter particle-emitter) (program shader-program))
   (gl:depth-mask NIL)
   (setf (uniform program "model_matrix") (tmat4 (tf emitter)))
-  (gl:blend-func :src-alpha :one)
   (gl:bind-vertex-array (gl-name (// 'trial 'empty-vertex-array)))
-  (%gl:bind-buffer :draw-indirect-buffer (gl-name (slot-value emitter 'particle-argument-buffer)))
-  (%gl:draw-arrays-indirect :triangles (slot-offset 'particle-argument-buffer 'draw-args))
+  (%gl:bind-buffer :draw-indirect-buffer (gl-name (slot-value emitter 'particle-argument-buffer))))
+
+(defmethod render :after ((emitter particle-emitter) (program shader-program))
   (gl:bind-vertex-array 0)
   (%gl:bind-buffer :draw-indirect-buffer 0)
-  (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha)
   (gl:depth-mask T))
+
+(defmethod render ((emitter particle-emitter) (program shader-program))
+  (gl:blend-func :src-alpha :one)
+  (%gl:draw-arrays-indirect :triangles (slot-offset 'particle-argument-buffer 'draw-args))
+  (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha))
 
 (defmethod emit ((particle-emitter particle-emitter) count &rest particle-options &key vertex-array location orientation scaling transform)
   ;; We do the emit **right now** so that the particle options are only active for the
@@ -420,18 +424,26 @@
 (defmethod (setf surface-thickness) (value (emitter depth-colliding-particle-emitter))
   (setf (surface-thickness (slot-value emitter 'simulate-pass)) (float value 0f0)))
 
-
-
 (define-shader-pass particle-sort-pass (compute-pass)
-  ()
+  ((sort-size :initform 512 :constant T :initarg :sort-size)
+   (elements :initform 0 :uniform T)
+   (particle-distances :buffer T :initarg :particle-distances)
+   (alive-particle-buffer-1 :buffer T :initarg :alive-particle-buffer-1))
   (:shader-file (trial "particle/sort.glsl")))
 
 (define-shader-pass particle-sort-step-pass (compute-pass)
-  ()
+  ((sort-size :initform 512 :constant T :initarg :sort-size)
+   (elements :initform 0 :uniform T)
+   (job-params :initform (vec 0 0 0 0) :uniform T)
+   (particle-distances :buffer T :initarg :particle-distances)
+   (alive-particle-buffer-1 :buffer T :initarg :alive-particle-buffer-1))
   (:shader-file (trial "particle/sort-step.glsl")))
 
 (define-shader-pass particle-sort-inner-pass (compute-pass)
-  ()
+  ((sort-size :initform (/ 512 2) :constant T :initarg :sort-size)
+   (elements :initform 0 :uniform T)
+   (particle-distances :buffer T :initarg :particle-distances)
+   (alive-particle-buffer-1 :buffer T :initarg :alive-particle-buffer-1))
   (:shader-file (trial "particle/sort-inner.glsl")))
 
 (define-shader-pass sorted-particle-simulate-pass (particle-simulate-pass)
@@ -447,48 +459,60 @@
 
 (defmethod initialize-instance :after ((emitter sorted-particle-emitter) &key)
   (with-all-slots-bound (emitter sorted-particle-emitter)
-    (setf sort-pass (construct-delegate-object-type 'particle-sort-pass emitter))
-    (setf sort-step-pass (construct-delegate-object-type 'particle-sort-step-pass emitter))
-    (setf sort-inner-pass (construct-delegate-object-type 'particle-sort-inner-pass emitter))))
+    (setf sort-pass (construct-delegate-object-type 'particle-sort-pass emitter :particle-distances particle-distances :alive-particle-buffer-1 alive-particle-buffer-1))
+    (setf sort-step-pass (construct-delegate-object-type 'particle-sort-step-pass emitter :particle-distances particle-distances :alive-particle-buffer-1 alive-particle-buffer-1))
+    (setf sort-inner-pass (construct-delegate-object-type 'particle-sort-inner-pass emitter :particle-distances particle-distances :alive-particle-buffer-1 alive-particle-buffer-1))))
 
-(defmethod construct-delegate-object-type ((type (eql 'particle-simulate-pass)) (emitter sorted-particle-simulate-pass) &rest args)
+(defmethod construct-delegate-object-type ((type (eql 'particle-simulate-pass)) (emitter sorted-particle-emitter) &rest args)
   (let ((buffer (make-instance 'vertex-buffer :data-usage :dynamic-copy :binding-point T :gl-type "ParticleDistances" :element-type :float :count (max-particles emitter))))
     (setf (slot-value emitter 'particle-distances) buffer)
     (apply #'make-instance 'sorted-particle-simulate-pass :particle-distances buffer args)))
 
+(defmethod stage :after ((emitter sorted-particle-emitter) (area staging-area))
+  (with-all-slots-bound (emitter sorted-particle-emitter)
+    (stage sort-pass area)
+    (stage sort-step-pass area)
+    (stage sort-inner-pass area)))
+
 (defmethod finalize :after ((emitter sorted-particle-emitter))
   (with-all-slots-bound (emitter sorted-particle-emitter)
-    (finalize sort-kickoff-pass)
     (finalize sort-pass)
     (finalize sort-step-pass)
     (finalize sort-inner-pass)))
 
 (defmethod simulate-particles :after ((emitter sorted-particle-emitter))
-  (let* ((max-particles (max-particles emitter))
-         (local-threads (local-threads emitter))
-         (thread-groups (ceiling max-particles local-threads))
-         (survivors (with-buffer-tx (struct (slot-value emitter 'particle-counter-buffer) :update :read)
-                      (- (max-particles emitter) (slot-value struct 'particle-counter-buffer))))
-         (presorted 512))
-    (setf (vx (work-groups (slot-value emitter 'sort-pass))) (ceiling survivors presorted))
-    (render (slot-value emitter 'sort-pass) NIL)
-    (loop with done = (= 1 thread-groups)
-          for thread-groups = 9
-          until done
-          do (when (< presorted max-particles)
-               (when (< (* presorted 2) max-particles)
-                 (setf done T))
-               ;; Set number of thread groups to fit
-               (setf thread-groups (ceiling (ash 1 (ceiling (log presorted 2))) local-threads)))
-             (loop with merge-size = (ash (* presorted 2) -1)
-                   for sub-size = merge-size then (ash sub-size -1)
-                   until (< sub-size 256)
-                   do (setf (slot-value (slot-value emitter 'sort-step-pass) 'job-params)
-                            (if (= sub-size merge-size)
-                                (vec sub-size (1- (* sub-size 2)) -1 0)
-                                (vec sub-size sub-size -1 0)))
-                      (setf (vx (work-groups (slot-value emitter 'sort-step-pass))) thread-groups)
-                      (render (slot-value emitter 'sort-step-pass) NIL))
-             (setf (vx (work-groups (slot-value emitter 'sort-inner-pass))) thread-groups)
-             (render (slot-value emitter 'sort-inner-pass) NIL)
-             (setf presorted (* presorted 2)))))
+  (with-all-slots-bound (emitter sorted-particle-emitter)
+    (let* ((max-particles (max-particles emitter))
+           (local-threads (local-threads emitter))
+           (thread-groups (ceiling max-particles local-threads))
+           (elements (with-buffer-tx (struct particle-counter-buffer :update :read)
+                       (- (max-particles emitter) (slot-value struct 'dead-count))))
+           (presorted 512))
+      (setf (slot-value sort-pass 'elements) elements)
+      (setf (slot-value sort-step-pass 'elements) elements)
+      (setf (slot-value sort-inner-pass 'elements) elements)
+      (setf (vx (work-groups sort-pass)) (ceiling elements presorted))
+      (render sort-pass NIL)
+      (loop with done = (= 1 thread-groups)
+            for thread-groups = 9
+            until done
+            do (when (< presorted max-particles)
+                 (when (< (* presorted 2) max-particles)
+                   (setf done T))
+                 ;; Set number of thread groups to fit
+                 (setf thread-groups (ceiling (ash 1 (ceiling (log presorted 2))) local-threads)))
+               (loop with merge-size = (ash (* presorted 2) -1)
+                     for sub-size = merge-size then (ash sub-size -1)
+                     until (< sub-size 256)
+                     do (setf (slot-value sort-step-pass 'job-params)
+                              (if (= sub-size merge-size)
+                                  (vec sub-size (1- (* sub-size 2)) -1 0)
+                                  (vec sub-size sub-size -1 0)))
+                        (setf (vx (work-groups sort-step-pass)) thread-groups)
+                        (render sort-step-pass NIL))
+               (setf (vx (work-groups sort-inner-pass)) thread-groups)
+               (render sort-inner-pass NIL)
+               (setf presorted (* presorted 2))))))
+
+(defmethod render ((emitter sorted-particle-emitter) (program shader-program))
+  (%gl:draw-arrays-indirect :triangles (slot-offset 'particle-argument-buffer 'draw-args)))
