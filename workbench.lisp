@@ -70,21 +70,20 @@
   (when (string= text "s")
     (issue (scene +main+) 'tick :tt 1.0d0 :dt 0.01 :fc 1))
   (when (string= text "b")
-    (trial::emit (unit :emitter (scene +main+)) 100)))
+    (trial::emit (unit :emitter (scene +main+)) 100))
+  (when (string= text "c")
+    (clear (unit :emitter (scene +main+)))))
 
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
     (enter (make-instance 'display-controller) scene)
-    (enter (make-instance 'planey :location (vec 0 5 -5)) scene)
-    (enter (make-instance 'planey :orientation (qfrom-angle +vx+ (deg->rad -90))) scene)
-    (enter (make-instance 'meshy :asset (assets:asset :marble-bust) :scaling (vec 10 10 10)) scene)
-    (enter (make-instance 'trial::sorted-particle-emitter
-                          :name :emitter :max-particles 1000000 :particle-rate 1000
-                          :particle-force-fields `((:type :plane :range 10000.0 :strength -5.0))
+    (enter (make-instance 'trial::particle-emitter
+                          :name :emitter :max-particles 1000000 :particle-rate 10000
+                          :particle-force-fields `((:type :direction :strength -5.0)
+                                                   (:type :vortex :strength 10.0))
                           :texture (assets:// :circle-05)
-                          :location (vec 0 8 5) :scaling (vec 0.1 0.1 0.1)
-                          :orientation (qfrom-angle +vx+ (* -0.25 PI))
-                          :particle-options `(:velocity -10.0 :randomness 0.1 :size 0.1 :scaling 1.0 
+                          :orientation (qfrom-angle +vx+ (deg->rad 90))
+                          :particle-options `(:velocity -10.0 :randomness 0.5 :size 0.1 :scaling 1.0
                                               :lifespan 10.0 :lifespan-randomness 0.5
                                               :color ,(vec 0.5 0.3 0.1))) scene)
     (observe! (let ((emitter (unit :emitter (scene +main+))))
@@ -93,11 +92,10 @@
               :title "Alive Particles")
     (enter (make-instance 'vertex-entity :vertex-array (// 'workbench 'grid)) scene)
     (enter (make-instance 'editor-camera :location (VEC3 0.0 2.3 7.3) :fov 50 :move-speed 0.1) scene)
-    (enter (make-instance 'ambient-light :color (vec 0.5 0.5 0.5)) scene)
-    (enter (make-instance 'directional-light :color (vec 2.0 2.0 2.0) :direction (vec 0 -1 -1)) scene)
     ;; Need a standard render pass here because we need the standard-environment-information.
     (let ((render (make-instance 'pbr-render-pass))
-          (map (make-instance 'tone-mapping-pass)))
-      ;(connect render (unit :emitter scene) scene)
+          (map (make-instance 'ward)))
+      (when (typep (unit :emitter scene) 'trial::depth-colliding-particle-emitter)
+        (connect render (unit :emitter scene) scene))
       (connect (port render 'color) (port map 'previous-pass) scene)))
   (maybe-reload-scene))
