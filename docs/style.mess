@@ -11,7 +11,7 @@ This style guide is for Trial, but applies for all Shirakumo projects in general
 - Always use ``setf``, no ``setq``
 - Always use looping constructs for iteration instead of recursion
 - All user documentation strings must be in ``documentation.lisp``
-- All implementer-facing source documentation should be in comments
+- All implementer-facing source documentation should be in comments or in sections in this documentation
 - Documentation strings should follow this format:
   ::
   Single summary line

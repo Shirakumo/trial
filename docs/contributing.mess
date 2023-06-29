@@ -1,0 +1,37 @@
+# Contribution Guidelines
+First, please make sure you've read the "Licensing"(link licensing.mess) and the "Style"(link style.mess) guides. We'll assume you've agreed to both if you submit code to Trial.
+
+## Before you start
+Before you start working on something, we recommend that you either submit an issue ticket, or better yet, talk to us directly in the Shirakumo chat channel. You can find the channel as ``#shirakumo`` on the "Libera.chat"(https://libera.chat) IRC network, or as ``shirakumo`` on our "Lichat"(https://chat.tymoon.eu) server. They're both bridged, so use whichever you prefer.
+
+## Branching
+When you start on a new feature or refactor please create a new branch and submit it as a pull request. This also goes if you're part of the Shirakumo Collective and have direct commit bit. If your patch is only minor or affects documentation only, it is usually fine to commit directly to master. If you aren't part of Shirakumo, you'll still have to create a PR to get things merged upstream, though.
+
+## Committing
+Please only ever use the rebase strategy for merging changes from upstream. We do not want ugly merge commits in our history. If you submit a PR with merge commits, your history will get squashed instead. We'd hate to lose potentially important commit data though, so it's better to just avoid merge commits altogether.
+
+If you're working on your own branch, feel free to amend commits and force-push to keep the history clean, too.
+
+Commit messages don't have to be detailed, but it is encouraged to write at least something legible and understandable about what the commit is about, so that bisection and other regression testing is made a bit easier. Ideally every commit of yours should also leave Trial in a buildable state, though we understand that that's not always easy, and we won't explicitly check for it. It's just something to keep in mind.
+
+## Getting your stuff merged
+When you submit a PR, please make sure to keep it in draft state if you're still actively working on it. People may give you advance comments already, but a proper review of the changes will be held until you mark it as ready.
+
+Once ready, someone from the team will take a look at the code, and potentially ask for some changes. Once all issues have been dealt with, your commits will be either rebased or squashed onto master.
+
+Please be patient with the review. Shirakumo is a volunteer collective, and many will not have a lot of free time or leftover energy, so it might take a bit for your patches to get addressed. We want to do a proper job of it and review the changes well, which can take some effort.
+
+## Things to do
+Game engines are an endless endeavour, so there'll never be a point at which Trial is a finished product or done deal. While the state of major features will naturally change over time, and what's needed at the moment depends heavily on current user demands, there's a few general things that can always be improved:
+
+- **User Documentation**
+  Expanding these documentation sections to be more detailed, easier to understand and approach, and in general keeping them up to date and accurate is something that's always appreciated.
+- **Code Documentation**
+  Beyond the broader documentation in these pages, writing docstrings for classes and functions that are done features in Trial is a gargantuan effort that won't ever be truly done.
+- **Regression Testing**
+  Adding test cases for documented features to ensure that they will continue to work correctly is an area Trial is currently extremely lacking in. Adding tests would help massively to ensure the stability of Trial for users.
+- **Bug Fixing**
+  While bugs will usually be fixed as they're encountered, it's also not unusual for a feature to be implemented in a known buggy or suboptimal way. In that case, it will usually be marked in code with a comment starting with ``FIXME``, ``TODO``, ``KLUDGE``, or ``WTF``. Searching the code base for such comments should give plenty of ideas on stuff to do.
+
+## I have an idea...
+Great! If you have ideas for major features you'd like to add to Trial, please talk to us about it! We're usually very forthcoming about adding new parts to Trial, and talking through the steps involved will help everyone get a clearer picture of what's involved.
