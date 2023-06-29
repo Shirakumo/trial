@@ -119,7 +119,8 @@
    (particle-counter-buffer :buffer T :initarg :particle-counter-buffer)
    (mesh-vertex-buffer :buffer T :initarg :mesh-vertex-buffer :accessor mesh-vertex-buffer)
    (mesh-index-buffer :buffer T :initarg :mesh-index-buffer :accessor mesh-index-buffer)
-   (random-tex :port-type fixed-input :texture (// 'trial 'random)))
+   (random-tex :port-type fixed-input :texture (// 'trial 'random))
+   (barrier :initform :shader-storage-barrier))
   (:buffers (trial standard-environment-information))
   (:shader-file (trial "particle/emit.glsl")))
 
@@ -131,7 +132,8 @@
    (alive-particle-buffer-1 :buffer T :initarg :alive-particle-buffer-1)
    (dead-particle-buffer :buffer T :initarg :dead-particle-buffer)
    (particle-counter-buffer :buffer T :initarg :particle-counter-buffer)
-   (particle-argument-buffer :buffer T :initarg :particle-argument-buffer))
+   (particle-argument-buffer :buffer T :initarg :particle-argument-buffer)
+   (barrier :initform :shader-storage-barrier))
   (:buffers (trial standard-environment-information))
   (:shader-file (trial "particle/simulate.glsl")))
 

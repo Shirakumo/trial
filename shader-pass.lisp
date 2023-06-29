@@ -495,6 +495,10 @@ void main(){
   ((work-groups :initform (vec 1 1 1) :initarg :work-groups :accessor work-groups)
    (barrier :initform 4294967295)))
 
+(defmethod initialize-instance :after ((pass compute-pass) &key)
+  (unless (integerp (slot-value pass 'barrier))
+    (setf (barrier pass) (slot-value pass 'barrier))))
+
 (defmethod shared-initialize :after ((pass compute-pass) slots &key (barrier NIL barrier-p))
   (when barrier-p (setf (barrier pass) barrier)))
 
@@ -505,6 +509,9 @@ void main(){
 
 (defmethod (setf barrier) ((bits list) (pass compute-pass))
   (setf (slot-value pass 'barrier) (cffi:foreign-bitfield-value '%gl::MemoryBarrierMask bits)))
+
+(defmethod (setf barrier) ((bits symbol) (pass compute-pass))
+  (setf (slot-value pass 'barrier) (cffi:foreign-bitfield-value '%gl::MemoryBarrierMask (list bits))))
 
 (defmethod render ((pass compute-pass) (_ null))
   (bind-textures pass)
