@@ -166,12 +166,16 @@
          material pass))
 
 (define-shader-entity standard-renderable (renderable)
-  ((vertex-arrays :initarg :vertex-arrays :initform #() :accessor vertex-arrays))
+  (vertex-array ;; Backwards compatibility stub
+   (vertex-arrays :initarg :vertex-arrays :initform #() :accessor vertex-arrays))
   (:shader-file (trial "standard-renderable.glsl"))
   (:inhibit-shaders (shader-entity :fragment-shader)))
 
 (defmethod shared-initialize :after ((renderable standard-renderable) slots &key vertex-array)
-  (when vertex-array (setf (vertex-arrays renderable) (vector vertex-array))))
+  (cond (vertex-array
+         (setf (vertex-array renderable) vertex-array))
+        ((slot-boundp renderable 'vertex-array)
+         (setf (vertex-array renderable) (slot-value renderable 'vertex-array)))))
 
 (defmethod stage :after ((renderable standard-renderable) (area staging-area))
   (loop for vao across (vertex-arrays renderable)
@@ -187,8 +191,8 @@
 (defmethod vertex-array ((renderable standard-renderable))
   (aref (vertex-arrays renderable) 0))
 
-(defmethod (setf vertex-array) ((array vertex-array) (renderable standard-renderable))
-  (setf (vertex-arrays renderable) (vector array)))
+(defmethod (setf vertex-array) ((resource resource) (renderable standard-renderable))
+  (setf (vertex-arrays renderable) (vector resource)))
 
 (define-shader-entity single-material-renderable (standard-renderable)
   ((material :initarg :material :accessor material)))
