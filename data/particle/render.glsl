@@ -72,4 +72,5 @@ out vec4 color;
 
 void main(){
   color = texture(particle_tex, uv)*particle_color;
+  color.xyz = pow(color.xyz, vec3(gamma));
 }
