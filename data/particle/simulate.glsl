@@ -32,9 +32,11 @@ vec3 evaluate_force_field_plane(in ParticleForceField field, in Particle particl
 }
 
 vec3 evaluate_force_field_vortex(in ParticleForceField field, in Particle particle){
-  vec3 dir = field.position - particle.position;
+  vec3 dir = particle.position - field.position;
+  float t0 = dot(field.normal, dir) / dot(field.normal, field.normal);
+  float dist = distance(particle.position, field.position*t0);
   vec3 perp = normalize(cross(field.normal, dir));
-  return perp * field.strength * (1 - clamp(length(dir) * field.inv_range, 0.0, 1.0));
+  return perp * field.strength * (1 - clamp(dist * field.inv_range, 0.0, 1.0));
 }
 
 vec3 evaluate_force_field_sphere(in ParticleForceField field, in Particle particle){
@@ -51,10 +53,11 @@ vec3 evaluate_force_field_sphere(in ParticleForceField field, in Particle partic
 vec3 evaluate_force_field(in ParticleForceField field, in Particle particle){
   switch(field.type){
   case 1: return evaluate_force_field_point(field, particle);
-  case 2: return evaluate_force_field_planet(field, particle);
+  case 2: return evaluate_force_field_direction(field, particle);
   case 3: return evaluate_force_field_plane(field, particle);
   case 4: return evaluate_force_field_vortex(field, particle);
   case 5: return evaluate_force_field_sphere(field, particle);
+  case 6: return evaluate_force_field_planet(field, particle);
   default: return vec3(0);
   }
 }
