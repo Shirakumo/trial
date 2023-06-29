@@ -1,3 +1,5 @@
+#section COMPUTE_SHADER
+
 void particle_tick(uint id, inout Particle particle){
   simulate_particle(particle);
   particles[id] = particle;

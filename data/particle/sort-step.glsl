@@ -27,13 +27,13 @@ uniform int elements;
 uniform vec4 job_params;
 
 void main(){
-  uvec4 tgp = uvec4(SV_GroupID.x * 256, 0, elements, clamp(elements - SV_GroupID.x*512, 0, 512));
-  uint local_id = tgp.x + SV_GroupThreadID.x;
+  uvec4 tgp = uvec4(gl_WorkGroupID.x * 256, 0, elements, clamp(elements - gl_WorkGroupID.x*512, uint(0), uint(512)));
+  uint local_id = tgp.x + gl_LocalInvocationID.x;
   uint index_low = local_id & (uint(job_params.x) - 1);
   uint index_high = 2 * (local_id-index_low);
 
-  uint index = tpg.y + index_high + index_low;
-  uint candidate = tgp.y + index_high + job_params.y + job_params.z*index_low;
+  uint index = tgp.y + index_high + index_low;
+  uint candidate = tgp.y + index_high + uint(job_params.y) + uint(job_params.z)*index_low;
 
   if(candidate < tgp.y + tgp.z){
     float a = particle_distances[index];
@@ -43,10 +43,10 @@ void main(){
       particle_distances[index] = b;
       particle_distances[candidate] = a;
 
-      uint a_index = index_buffer[index];
-      uint b_index = index_buffer[candidate];
-      index_buffer[index] = b_index;
-      index_buffer[candidate] = a_index;
+      uint a_index = alive_particles_1[index];
+      uint b_index = alive_particles_1[candidate];
+      alive_particles_1[index] = b_index;
+      alive_particles_1[candidate] = a_index;
     }
   }
 }

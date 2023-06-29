@@ -21,33 +21,31 @@
 // THE SOFTWARE.
 //
 
-#define NUM_THREADS (SORT_SIZE/2)
-
-layout (local_size_x = NUM_THREADS, local_size_y = 1, local_size_z = 1) in;
+layout (local_size_x = SORT_SIZE, local_size_y = 1, local_size_z = 1) in;
 
 uniform int elements;
 shared vec2 local_storage[SORT_SIZE];
 
 void main(){
-  uvec4 tgp = uvec4(SV_GroupID.x * 256, 0, elements, clamp(elements-SV_GroupID.x*512, 0, 512));
+  uvec4 tgp = uvec4(gl_WorkGroupID.x * 256, 0, elements, clamp(elements-gl_WorkGroupID.x*512, uint(0), uint(512)));
   
-  int global_base_index = tgp.y + tgp.x*2 + SV_GroupThreadID.x;
-  int local_base_index = SV_GroupIndex;
+  uint global_base_index = tgp.y + tgp.x*2 + gl_LocalInvocationID.x;
+  uint local_base_index = gl_LocalInvocationIndex;
 
   for(uint i=0; i<2; ++i){
-    if(SV_GroupIndex + i*NUM_THREADS < tgp.w){
-      uint load_index = global_base_index + i*NUM_THREADS;
-      local_storage[local_base_index + i*NUM_THREADS] = vec2(particle_distances[load_index], float(index_buffer[load_index]));
+    if(gl_LocalInvocationIndex + i*SORT_SIZE < tgp.w){
+      uint load_index = global_base_index + i*SORT_SIZE;
+      local_storage[local_base_index + i*SORT_SIZE] = vec2(particle_distances[load_index], float(alive_particles_1[load_index]));
     }
   }
   groupMemoryBarrier();
   barrier();
 
-  for(uint sub_size = SORT_SIZE >> 1; 0 < sub_size; sub_size = sub_size >> 1){
-    int tmp_index = SV_GroupIndex;
-    int index_low = tmp_index & (sub_size-1);
-    int index_high = 2 * (tmp_index-index_low);
-    int index = index_low + index_high;
+  for(uint sub_size = SORT_SIZE; 0 < sub_size; sub_size = sub_size >> 1){
+    uint tmp_index = gl_LocalInvocationIndex;
+    uint index_low = tmp_index & (sub_size-1);
+    uint index_high = 2 * (tmp_index-index_low);
+    uint index = index_low + index_high;
 
     uint candidate = index_high + index_low + sub_size;
     
@@ -65,11 +63,11 @@ void main(){
   }
 
   for(uint i=0; i<2; ++i){
-    if(SV_GroupIndex + i*NUM_THREADS < elements_in_thread_group){
-      uint load_index = local_base_index + i*NUM_THREADS;
-      uint store_index = global_base_index + i*NUM_THREADS;
+    if(gl_LocalInvocationIndex + i*SORT_SIZE < tgp.w){
+      uint load_index = local_base_index + i*SORT_SIZE;
+      uint store_index = global_base_index + i*SORT_SIZE;
       particle_distances[store_index] = local_storage[load_index].x;
-      index_buffer[store_index] = uint(local_storage[load_index].y);
+      alive_particles_1[store_index] = uint(local_storage[load_index].y);
     }
   }
 }
