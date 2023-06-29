@@ -137,6 +137,10 @@
   (:buffers (trial standard-environment-information))
   (:shader-file (trial "particle/simulate.glsl")))
 
+(define-asset (trial empty-force-fields) shader-storage-block
+    (make-instance 'particle-force-fields :size 1)
+  :binding NIL)
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (define-shader-entity particle-emitter (standalone-shader-entity transformed-entity renderable listener)
     ((particle-emitter-buffer)
