@@ -135,10 +135,6 @@
   (:buffers (trial standard-environment-information))
   (:shader-file (trial "particle/simulate.glsl")))
 
-(define-asset (trial empty-force-fields) shader-storage-block
-    (make-instance 'particle-force-fields :size 1)
-  :binding NIL)
-
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (define-shader-entity particle-emitter (standalone-shader-entity transformed-entity renderable listener)
     ((particle-emitter-buffer)
@@ -221,8 +217,12 @@
   (setf (particle-force-fields emitter) (// 'trial 'empty-force-fields)))
 
 (defmethod (setf particle-force-fields) ((cons cons) (emitter particle-emitter))
-  (let* ((size (length cons))
-         (struct (make-instance 'particle-force-fields :size size)))
+  (when (or (not (slot-boundp emitter 'particle-force-fields))
+            (generator (particle-force-fields emitter)))
+    ;; We have a hard max of 32 anyway in the shader....
+    (setf (particle-force-fields emitter) (make-instance 'particle-force-fields :size 32)))
+  (let ((size (length cons))
+        (struct (buffer-data (particle-force-fields emitter))))
     ;; FIXME: copy over and resize instead of this nonsense.
     (setf (slot-value struct 'particle-force-field-count) size)
     (loop for info in cons
@@ -232,21 +232,28 @@
                (setf (slot-value target 'type) (ecase type
                                                  ((NIL :none) 0)
                                                  (:point 1)
-                                                 (:planet 2)
+                                                 (:direction 2)
                                                  (:plane 3)
                                                  (:vortex 4)
-                                                 (:sphere 5)))
+                                                 (:sphere 5)
+                                                 (:planet 6)))
                (setf (slot-value target 'position) position)
                (setf (slot-value target 'strength) strength)
                (setf (slot-value target 'range) range)
                (setf (slot-value target 'inv-range) (if (= 0.0 range) 0.0 (/ range)))
                (setf (slot-value target 'normal) normal)))
-    (setf (particle-force-fields emitter) struct)))
+    (when (allocated-p (particle-force-fields emitter))
+      (update-buffer-data (particle-force-fields emitter) T))))
 
 (defmethod (setf particle-force-fields) ((struct particle-force-fields) (emitter particle-emitter))
-  ;; FIXME: potentially leaky!!
-  (unless (slot-boundp emitter 'particle-force-fields)
-    (setf (particle-force-fields emitter) (make-instance 'shader-storage-buffer :struct NIL :binding NIL)))
+  (cond ((not (slot-boundp emitter 'particle-force-fields))
+         (setf (particle-force-fields emitter) (make-instance 'shader-storage-buffer :struct NIL :binding NIL)))
+        ;; FIXME: potentially leaky!!
+        ;; IF the buffer wasn't generated then we probably constructed it and thus own the data.
+        ;; Free it here since we're replacing it.
+        ((not (generator (particle-force-fields emitter)))
+         (unless (eq struct (buffer-data (particle-force-fields emitter)))
+           (finalize (buffer-data (particle-force-fields emitter))))))
   (setf (buffer-data (particle-force-fields emitter)) struct)
   (when (allocated-p (particle-force-fields emitter))
     (resize-buffer-data (particle-force-fields emitter) T)))
@@ -274,7 +281,9 @@
                      (return (floor (getf (rest binding) :stride) (gl-type-size (element-type (first binding))))))))))
 
 (defmethod (setf particle-options) (options (emitter particle-emitter))
-  (destructuring-bind (&key size scaling rotation color randomness velocity lifespan lifespan-randomness mode &allow-other-keys) options
+  (destructuring-bind (&key texture size scaling rotation color randomness velocity lifespan lifespan-randomness sprite (flip NIL flip-t) mode &allow-other-keys) options
+    (when texture
+      (setf (texture emitter) texture))
     (when size
       (setf (particle-size emitter) size))
     (when scaling
@@ -291,6 +300,10 @@
       (setf (particle-lifespan emitter) lifespan))
     (when lifespan-randomness
       (setf (particle-lifespan-randomness emitter) lifespan-randomness))
+    (when sprite
+      (setf (particle-sprite emitter) sprite))
+    (when flip-t
+      (setf (particle-flip emitter) flip))
     (when mode
       (setf (particle-mode emitter) mode))))
 
@@ -310,15 +323,33 @@
 
 (defmethod particle-mode ((emitter particle-emitter))
   (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
-    (if (logbitp 29 int) :square :billboard)))
+    (if (logbitp 29 int) :quad :billboard)))
 
 (defmethod (setf particle-mode) (mode (emitter particle-emitter))
   (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
     (setf (ldb (byte 1 29) int) (ecase mode
-                                  (:square 1)
+                                  (:quad 1)
                                   (:billboard 0)))
     (setf (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer))) int)
     mode))
+
+(defmethod particle-flip ((emitter particle-emitter))
+  (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
+    (case (ldb (byte 2 30) int)
+      (0 NIL)
+      (1 :y)
+      (2 :x)
+      (3 T))))
+
+(defmethod (setf particle-flip) (flip (emitter particle-emitter))
+  (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
+    (setf (ldb (byte 2 30) int) (ecase flip
+                                  ((NIL) 0)
+                                  (:y 1)
+                                  (:x 2)
+                                  ((T) 3)))
+    (setf (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer))) int)
+    flip))
 
 (defmethod particle-color ((emitter particle-emitter))
   (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
@@ -359,6 +390,10 @@
   (handle class-changed (slot-value particle-emitter 'kickoff-pass))
   (handle class-changed (slot-value particle-emitter 'emit-pass))
   (handle class-changed (slot-value particle-emitter 'simulate-pass)))
+
+(defmethod clear ((emitter particle-emitter))
+  (with-buffer-tx (struct (slot-value emitter 'particle-counter-buffer) :update :write)
+    (setf (slot-value struct 'dead-count) (max-particles emitter))))
 
 (defmethod bind-textures ((emitter particle-emitter))
   (gl:active-texture :texture0)
@@ -516,3 +551,23 @@
 
 (defmethod render ((emitter sorted-particle-emitter) (program shader-program))
   (%gl:draw-arrays-indirect :triangles (slot-offset 'particle-argument-buffer 'draw-args)))
+
+(define-shader-entity multi-texture-particle-emitter (particle-emitter)
+  ()
+  (:inhibit-shaders (particle-emitter :fragment-shader))
+  (:shader-file (trial "particle/multi-render.glsl")))
+
+(defmethod particle-sprite ((emitter multi-texture-particle-emitter))
+  (let* ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer))))
+         (sprite (ldb (byte 3 24) int)))
+    (if (= #b111 sprite) :random sprite)))
+
+(defmethod (setf particle-sprite) (sprite (emitter multi-texture-particle-emitter))
+  (check-type sprite (unsigned-byte 3))
+  (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
+    (setf (ldb (byte 3 24) int) sprite)
+    (setf (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer))) int)
+    sprite))
+
+(defmethod (setf particle-sprite) ((sprite (eql :random)) (emitter multi-texture-particle-emitter))
+  (setf (particle-sprite emitter) #b111))

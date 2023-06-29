@@ -1,0 +1,113 @@
+# Particles
+Trial includes a high performance particle simulation system that performs almost all of the work on the GPU, allowing you to create particles with hundreds of thousands of particles (if needed).
+
+| "NOTE:"(red, bold) This section refers to particles used for visual effects. For particles as used in physics simulations (Verlet, etc) see "Mass Aggregate Physics"(link mass-aggregate.mess).
+
+[ image images/particles.png ]
+
+| "NOTE:"(red, bold) This system requires "OpenGL 4.2"(bold) or later. Most of the engine is built around OpenGL 3.3, but that would proclude using Compute Shaders, which are required for this approach. In order to use these particle systems, make sure to construct your context with ``:version '(4 2)``.
+
+In order to create a particle system, simply create a ``particle-emitter`` and enter it into a scene. You can then use ``emit`` to burst particles on demand, or set the ``particle-rate`` to create a continuous stream of particles.
+
+| "NOTE:"(red, bold) In order for the system to work correctly you need a "standard renderer"(link standard-renderer.mess) derived renderer in your scene such as the ``pbr-render-pass``. The particles aren't actually shaded by the renderer, but they require the environment information that the pass also takes care of providing.
+
+Particles have a variety of attributes that can be set either with the ``:particle-options`` initarg on the construction of the emitter, or using accessors:
+
+- ``size``
+  The size of the particle when it is created (affected by ``:randomness``).
+- ``scaling``
+  The scaling factor of the particle over its lifetime.
+- ``rotation``
+  The rotation factor of the particle over its lifetime (affected by ``:randomness``).
+- ``color``
+  The multiplicative color mask of the particle. This must be a ``vec3``.
+- ``randomness``
+  The randomness factor. If 0 all particles will receive the same properties. This randomness also applies to the distribution of the origin of each particle over the emitter's surface.
+- ``velocity``
+  The initial velocity of a particle when it is created (affected by ``:randomness``).
+- ``lifespan``
+  The default lifespan of a particle in seconds.
+- ``lifespan-randomness``
+  The randomness factor applied to the particle's lifespan. This is separate from the other randomness factor.
+- ``mode``
+  Can be either ``:billboard`` (default) or ``:quad``. In the former case the sprite always faces the camera, whereas in the latter case it uses the emitter's model matrix and behaves as a normal quad otherwise. Please note that this also means that already emitted particles in quad mode will be influenced by changes to the emitter's transform.
+- ``flip``
+  Can be either ``NIL`` (default) for no flipping, ``:x`` for horizontal flipping, ``:y`` for vertical flipping, or ``T`` for both. Whether the particle's texture is flipped or not is randomised subject to this flip option.
+- ``texture``
+  The texture used for each particle's quad. Note that this is applied for every particle and a change also applies to already emitted particles.
+
+Besides the per-particle properties, the emitter itself also has a number of useful properties:
+
+- ``vertex-array``
+  This sets the surface across which particles are emitted. By default this is a unit square.
+  | "NOTE:"(red, bold) It must be a triangle mesh with position and normals and it must have an index buffer.
+- ``location``
+  The location of the particle emitter surface. Changing this will only affect particles that are emitted in the future (unless in ``:quad`` mode, see above).
+- ``orientation``
+  The orientation of the particle emitter surface. Changing this will only affect particles that are emitted in the future (unless in ``:quad`` mode, see above).
+- ``scaling``
+  The scaling of the particle emitter surface. Changing this will only affect particles that are emitted in the future (unless in ``:quad`` mode, see above).
+- ``particle-rate``
+  The rate in particles per second that are emitted from this emitter.
+- ``to-emit``
+  How many particles to emit on next tick. You should probably use the ``emit`` function instead.
+- ``motion-blur``
+  If set to non-zero, particle quads will be stretched along their motion vector to simulate motion blur. Note that this will not actually interpolate positions, but may lend the illusion of motion blur due to the stretching of the texture.
+- ``local-threads``
+  The number of local work group threads run on the GPU.
+  | "NOTE:"(red, bold) Setting this to too high a value may signal an error in development mode if the hardware does not support it. In release mode Trial will simply truncate the setting to the maximum allowed value. OpenGL only guarantees a value of up to 1024.
+- ``max-particles``
+  The maximum number of particles the emitter can display. This cannot be changed once the emitter has been created. Trying to create more particles than this will simply "drop" them. In order to set this you must pass it as an initarg.
+  | "NOTE:"(red, bold) There is a system maximum of particles that can be supported by the hardware. If ``max-particles`` is set higher than can be supported by ``local-threads`` and the underlying hardware, an error is signalled in development mode. In release mode Trial will simply truncate the setting to the maximum allowed value.
+- ``particle-force-fields``
+  See below
+
+Due to the high flexibility afforded by the emitter, you can probably re-use the same emitter to spawn particles in multiple places. To do so, simply use the ``emit`` function, which also allows you to conveniently place the emitter.
+
+## Force Fields
+One of the factors that makes particles so fast is that they typically don't interact with the environment. However, it can still be useful to be able to make the particles be affected by various forces, whether to simulate gravity, wind, or other interactions.
+
+To do so you can set the ``particle-force-fields`` on the emitter. This can either be a ``shader-storage-buffer`` backing a ``particle-force-fields`` structure, in which case the force fields can be shared between multiple emitters, or simply a list of force field descriptions to update the existing buffer. Each field should be a plist with the following attributes:
+
+- ``:type``
+  The type of field that is defined. Can be one of:
+  - ``NIL``
+    Has no effect.
+  - ``:point``
+    A point field, with the strength being linear to the distance within its spherical range.
+  - ``:direction``
+    A directional field, exerting a constant force in its direction everywhere.
+  - ``:plane``
+    A planar field, with the force in the direction of the plane and the strength being linear to the distance within its spherical range.
+  - ``:vortex``
+    A vortex field, applying a tangential force along its normal, proportional to the distance from its centre normal.
+  - ``:sphere``
+    A field that simulates a smooth sphere. Particles that go within its spherical range are rebounded and receive a tangential force to cause them to "slip" off.
+  - ``:planet``
+    A gravitational field with infinite extent. If the range is positive, particles that would go within the spherical range receive a sphere force instead.
+- ``:position``
+  The world-space position of the field.
+- ``:strength``
+  The "strength" of the field's force.
+- ``:range``
+  The world-space range of the field if it has an extent.
+- ``:normal``
+  The world-space normal vector if the field has a directionality.
+
+## Collisions
+If you would like your particles to bounce off of geometry, you can use a ``depth-colliding-particle-emitter`` and connect it to the render pass like so:
+
+:: common lisp
+(connect my-standard-render-pass my-emitter-instance scene)
+::
+
+Note that the bounce is determined directly from the depth buffer and not from real geometry, and as such anything that isn't visible from the camera's point of view will not cause the particles to bounce as expected.
+
+## Alpha blending
+By default the emitter uses additive blending, which is a lot cheaper to simulate, as particles can be rendered in any order. If you require standard alpha blending for your particles, then you should use the ``sorted-particle-emitter`` instead, which runs a bitonic sort after simulation to ensure that all particles are drawn back to front.
+
+## Multiple Textures
+The default emitter only allows using a single texture per particle. Sometimes it can be useful to vary the texture a little between particles. To do so you can use the ``multi-texture-particle-emitter``, whose ``texture`` must be a ``texture-2d-array``. You can then use this particle option to configure the sprite selection:
+
+- ``sprite``
+  The sprite index to be used. This is useful if multiple textures are attached and the displayed sprite should be a specific one. You may use up to 15 different sprites, or ``:random`` if it should be shuffled.
