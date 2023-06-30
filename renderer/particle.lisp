@@ -531,32 +531,33 @@
                     (- (max-particles emitter) (slot-value struct 'dead-count))))
            (presorted 512))
       (setf (slot-value sort-pass 'elements) alive)
-      (setf (slot-value sort-step-pass 'elements) alive)
-      (setf (slot-value sort-inner-pass 'elements) alive)
       (render sort-pass (vec (1+ (ash (1- alive) -9)) 1 1))
-      (loop with done = (<= thread-groups 1)
-            for thread-groups = 0
-            until done
-            do (setf done T)
-               (when (< presorted max-particles)
-                 (when (< (* presorted 2) max-particles)
-                   (setf done NIL))
-                 ;; Set number of thread groups to fit. This is imo done real dumb in the
-                 ;; original code. Why not just a log?
-                 (let ((pow2 presorted))
-                   (loop while (< pow2 max-particles)
-                         do (setf pow2 (* pow2 2)))
-                   (setf thread-groups (ash pow2 -9))))
-               (loop with merge-size = (* presorted 2)
-                     for sub-size = (ash merge-size -1) then (ash sub-size -1)
-                     while (< 256 sub-size)
-                     do (setf (slot-value sort-step-pass 'job-params)
-                              (if (= sub-size (ash merge-size -1))
-                                  (vec sub-size (1- (* sub-size 2)) -1 0)
-                                  (vec sub-size sub-size -1 0)))
-                        (render sort-step-pass (vec thread-groups 1 1)))
-               (render sort-inner-pass (vec thread-groups 1 1))
-               (setf presorted (* presorted 2))))))
+      (when (< 1 thread-groups)
+        (setf (slot-value sort-step-pass 'elements) alive)
+        (setf (slot-value sort-inner-pass 'elements) alive)
+        (loop with done = NIL
+              for thread-groups = 0
+              until done
+              do (setf done T)
+                 (when (< presorted max-particles)
+                   (when (< (* presorted 2) max-particles)
+                     (setf done NIL))
+                   ;; Set number of thread groups to fit. This is imo done real dumb in the
+                   ;; original code. Why not just a log?
+                   (let ((pow2 presorted))
+                     (loop while (< pow2 max-particles)
+                           do (setf pow2 (* pow2 2)))
+                     (setf thread-groups (ash pow2 -9))))
+                 (loop with merge-size = (* presorted 2)
+                       for sub-size = (ash merge-size -1) then (ash sub-size -1)
+                       while (< 256 sub-size)
+                       do (setf (slot-value sort-step-pass 'job-params)
+                                (if (= sub-size (ash merge-size -1))
+                                    (vec sub-size (1- (* sub-size 2)) -1 0)
+                                    (vec sub-size sub-size -1 0)))
+                          (render sort-step-pass (vec thread-groups 1 1)))
+                 (render sort-inner-pass (vec thread-groups 1 1))
+                 (setf presorted (* presorted 2)))))))
 
 (defmethod render ((emitter sorted-particle-emitter) (program shader-program))
   (%gl:draw-arrays-indirect :triangles (slot-offset 'particle-argument-buffer 'draw-args)))
