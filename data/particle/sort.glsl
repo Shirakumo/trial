@@ -54,7 +54,7 @@ void main(){
         uint index = index_low + index_high;
 
         uint candidate = (sub_size == (merge_size >> 1))
-          ? (index_high - index_low + (2*sub_size - 1))
+          ? (index_high + (2*sub_size - 1) - index_low)
           : (index_high + index_low + sub_size);
 
         if(candidate < elements_in_thread_group){
