@@ -38,20 +38,20 @@
       (vertex :position (vec l b z) :normal +vz3+ :uv (vec u- v-)))))
 
 (defun make-triangle-mesh (w h &key (orientation :right) mesh pack (x 0) (y 0) (z 0))
-  (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
+  (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'basic-vertex)) :pack pack)
     (let ((l (- x (/ w 2)))
           (r (+ x (/ w 2)))
           (u (+ y (/ h 2)))
           (b (- y (/ h 2))))
       (ecase orientation
         (:up
-         (vertex :position (vec l b z))
-         (vertex :position (vec r b z))
-         (vertex :position (vec x u z)))
+         (vertex :position (vec l b z) :normal +vz3+ :uv (vec 0 0))
+         (vertex :position (vec r b z) :normal +vz3+ :uv (vec 1 0))
+         (vertex :position (vec x u z) :normal +vz3+ :uv (vec 0.5 1)))
         (:right
-         (vertex :position (vec l u z))
-         (vertex :position (vec l b z))
-         (vertex :position (vec r y z)))))))
+         (vertex :position (vec l u z) :normal +vz3+ :uv (vec 0 1))
+         (vertex :position (vec l b z) :normal +vz3+ :uv (vec 0 0))
+         (vertex :position (vec r y z) :normal +vz3+ :uv (vec 1 0.5)))))))
 
 (defun make-cube-mesh (size &key mesh pack (x 0) (y 0) (z 0))
   (destructuring-bind (w h d) (enlist size size size)
@@ -151,13 +151,13 @@
                           (vertex (vec (* x2 zr1 size) (* y2 zr1 size) (* z1 size)) (vec x2 y2))))))))
 
 (defun make-disc-mesh (size &key (segments 32) mesh pack (x 0) (y 0) (z 0))
-  (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
+  (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'basic-vertex)) :pack pack)
     (loop with step = (/ (* 2 PI) segments)
           for i1 = (- step) then i2
           for i2 from 0 to (* 2 PI) by step
-          do (vertex :position (vec x y z))
-             (vertex :position (vec (+ x (* size (cos i1))) (+ y (* size (sin i1))) z))
-             (vertex :position (vec (+ x (* size (cos i2))) (+ y (* size (sin i2))) z)))))
+          do (vertex :position (vec x y z) :normal +vz3+ :uv (vec 0.5 0.5))
+             (vertex :position (vec (+ x (* size (cos i1))) (+ y (* size (sin i1))) z) :normal +vz3+ :uv (vec (+ 0.5 (* 0.5 (cos i1))) (+ 0.5 (* 0.5 (sin i1)))))
+             (vertex :position (vec (+ x (* size (cos i2))) (+ y (* size (sin i2))) z) :normal +vz3+ :uv (vec (+ 0.5 (* 0.5 (cos i2))) (+ 0.5 (* 0.5 (sin i2))))))))
 
 (defun make-cylinder-mesh (size height &key (segments 32) mesh pack (x 0) (y 0) (z 0))
   (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
@@ -271,6 +271,12 @@
 
 (define-asset (trial unit-square) mesh
     (make-rectangle-mesh 1 1 :pack T))
+
+(define-asset (trial unit-disc) mesh
+    (make-disc-mesh 1.0 :pack T))
+
+(define-asset (trial unit-point) mesh
+    (make-triangle-mesh 0.0 0.0 :pack T))
 
 (define-asset (trial axes) mesh
     (make-lines (list (list (vec 0 0 0) (vec 1 0 0 1)) (list (vec 10 0 0) (vec 1 0 0 1))
