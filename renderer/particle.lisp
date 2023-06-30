@@ -554,7 +554,7 @@
                        do (setf (slot-value sort-step-pass 'job-params)
                                 (if (= sub-size (ash merge-size -1))
                                     (vec sub-size (1- (* sub-size 2)) -1 0)
-                                    (vec sub-size sub-size -1 0)))
+                                    (vec sub-size sub-size +1 0)))
                           (render sort-step-pass (vec thread-groups 1 1)))
                  (render sort-inner-pass (vec thread-groups 1 1))
                  (setf presorted (* presorted 2)))))))
