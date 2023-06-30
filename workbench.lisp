@@ -11,7 +11,7 @@
 (defclass workbench (main)
   ((paused-p :initform NIL :accessor paused-p))
   (:default-initargs :clear-color (vec 0.1 0.1 0.1)
-                     :context '(:vsync T :version (4 3))))
+                     :context '(:vsync T)))
 
 (defmethod update ((main workbench) tt dt fc)
   (if (paused-p main)
@@ -32,9 +32,6 @@
 
 (define-asset (workbench plane) mesh
     (make-rectangle-mesh 10 10))
-
-(define-asset (workbench grid) mesh
-    (make-line-grid-mesh 10 10 10))
 
 (define-material (none pbr-material)
   :albedo-texture (// 'trial 'white)
@@ -68,31 +65,38 @@
   (when (string= text "p")
     (setf (paused-p +main+) (not (paused-p +main+))))
   (when (string= text "s")
-    (issue (scene +main+) 'tick :tt 1.0d0 :dt 0.01 :fc 1))
-  (when (string= text "b")
-    (trial::emit (unit :emitter (scene +main+)) 100))
-  (when (string= text "c")
-    (clear (unit :emitter (scene +main+)))))
+    (issue (scene +main+) 'tick :tt 1.0d0 :dt 0.01 :fc 1)))
 
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
-    (enter (make-instance 'display-controller) scene)
-    (enter (make-instance 'trial::sorted-particle-emitter
-                          :name :emitter :max-particles 1000000 :particle-rate 300
-                          :texture (assets:// :circle-05)
-                          :vertex-array (// 'trial 'unit-point)
-                          :particle-options `(:velocity -5.0 :randomness 0.0 :size 0.1 :scaling 1.0
-                                              :lifespan 1.0 :lifespan-randomness 0.0)) scene)
-    (observe! (let ((emitter (unit :emitter (scene +main+))))
-                (with-buffer-tx (struct (slot-value emitter 'trial::particle-counter-buffer) :update :read)
-                  (slot-value struct 'trial::alive-count)))
-              :title "Alive Particles")
-    (enter (make-instance 'vertex-entity :vertex-array (// 'workbench 'grid)) scene)
+    (enter (make-instance 'fps-counter) scene)
     (enter (make-instance 'editor-camera :location (VEC3 0.0 2.3 7.3) :fov 50 :move-speed 0.1) scene)
-    ;; Need a standard render pass here because we need the standard-environment-information.
+    
+    (enter (make-instance 'skybox :texture (assets:// :sandy-beach :environment-map)) scene)
+    (enter (make-instance 'planey :location (vec 0 5 -5)) scene)
+    (enter (make-instance 'planey :orientation (qfrom-angle +vx+ (deg->rad -90))) scene)
+    (enter (make-instance 'meshy :asset (assets:asset :marble-bust) :scaling (vec 10 10 10)) scene)
+
+    (let ((physics (make-instance 'rigidbody-system :units-per-metre 0.1)))
+      (enter (make-instance 'rigidbody :physics-primitives (make-box :bsize (vec 5 1 5) :location (vec 0 -1 0) :material :ice)) physics)
+      (enter (make-instance 'rigidbody :physics-primitives (make-box :bsize (vec 5 5 1) :location (vec 0 5 -6) :material :ice)) physics)
+      (loop for i from 0 below 10
+            for cube = (make-instance 'spherey :location (vec (+ 3 (random 0.1)) (+ 5 (* i 1)) (random 0.1)))
+            do (enter cube physics)
+               (enter cube scene))
+      (enter (make-instance 'gravity :gravity (vec 0 -10 0)) physics)
+      (enter physics scene))
+
+    (enter (make-instance 'environment-light :asset (assets:asset :sandy-beach) :color (vec 0.3 0.3 0.3)) scene)
+    (enter (make-instance 'point-light :location (vec 2.0 4.0 -1.0) :color (vec 15.0 0 0) :cast-shadows-p T) scene)
+    (enter (make-instance 'spot-light :location (vec -5.0 4.0 0.0) :color (vec 0 15.0 0)
+                                      :inner-radius 10 :outer-radius 20 :direction (vec 2 -1 0)
+                                      :cast-shadows-p T) scene)
+    (enter (make-instance 'directional-light  :color (vec 0 0 15.0)
+                                              :direction (vec 0 -1 1)
+                                              :cast-shadows-p T) scene)
+
     (let ((render (make-instance 'pbr-render-pass))
-          (map (make-instance 'ward)))
-      (when (typep (unit :emitter scene) 'trial::depth-colliding-particle-emitter)
-        (connect render (unit :emitter scene) scene))
+          (map (make-instance 'tone-mapping-pass)))
       (connect (port render 'color) (port map 'previous-pass) scene)))
   (maybe-reload-scene))
