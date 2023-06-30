@@ -535,6 +535,10 @@ void main(){
     (when (/= 0 barrier)
       (%gl:memory-barrier barrier))))
 
+(defmethod render ((pass compute-pass) (work-groups vec3))
+  (setf (work-groups pass) work-groups)
+  (render pass NIL))
+
 ;; KLUDGE: this sucks as we override more than we need to.
 (defmethod (setf class-shader) :before (shader type (class shader-pass-class))
   (when (and (c2mop:subclassp class (find-class 'compute-pass))
