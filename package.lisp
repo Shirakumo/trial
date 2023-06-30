@@ -1000,6 +1000,8 @@
    #:unit-cube
    #:unit-sphere
    #:unit-square
+   #:unit-disc
+   #:unit-point
    #:axes
    #:2d-axes)
   ;; geometry.lisp
