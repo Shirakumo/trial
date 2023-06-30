@@ -24,7 +24,7 @@
 layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
 uniform int elements;
-uniform vec4 job_params;
+uniform ivec4 job_params;
 
 void main(){
   uvec4 tgp = uvec4(gl_WorkGroupID.x * 256, 0, elements, clamp(elements - gl_WorkGroupID.x*512, uint(0), uint(512)));
@@ -33,7 +33,7 @@ void main(){
   uint index_high = 2 * (local_id-index_low);
 
   uint index = tgp.y + index_high + index_low;
-  uint candidate = tgp.y + index_high + uint(job_params.y) + uint(job_params.z)*index_low;
+  uint candidate = tgp.y + index_high + job_params.y + job_params.z*index_low;
 
   if(candidate < tgp.y + tgp.z){
     float a = particle_distances[index];
