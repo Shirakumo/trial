@@ -39,7 +39,7 @@ void main(){
     float a = particle_distances[index];
     float b = particle_distances[candidate];
 
-    if(b < a){
+    if(a < b){
       particle_distances[index] = b;
       particle_distances[candidate] = a;
 

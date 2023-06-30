@@ -54,7 +54,7 @@ void main(){
       vec2 a = local_storage[index];
       vec2 b = local_storage[candidate];
           
-      if(b.x < a.x){
+      if(a.x < b.x){
         local_storage[index] = b;
         local_storage[candidate] = a;
       }
