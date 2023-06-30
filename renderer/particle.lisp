@@ -483,7 +483,7 @@
   (:shader-file (trial "particle/sort-step.glsl")))
 
 (define-shader-pass particle-sort-inner-pass (compute-pass)
-  ((sort-size :initform (/ 512 2) :constant T :initarg :sort-size)
+  ((sort-size :initform 512 :constant T :initarg :sort-size)
    (elements :initform 0 :uniform T)
    (particle-distances :buffer T :initarg :particle-distances)
    (alive-particle-buffer-1 :buffer T :initarg :alive-particle-buffer-1))
