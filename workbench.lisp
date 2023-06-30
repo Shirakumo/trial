@@ -78,7 +78,7 @@
   (defmethod setup-scene ((workbench workbench) scene)
     (enter (make-instance 'display-controller) scene)
     (enter (make-instance 'trial::sorted-particle-emitter
-                          :name :emitter :max-particles 500 :particle-rate 200
+                          :name :emitter :max-particles 1000000 :particle-rate 300
                           :texture (assets:// :circle-05)
                           :vertex-array (// 'trial 'unit-point)
                           :particle-options `(:velocity -5.0 :randomness 0.0 :size 0.1 :scaling 1.0
