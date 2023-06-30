@@ -407,6 +407,35 @@
    #:list-materials
    #:update-material
    #:define-material)
+  ;; renderer/particle.lisp
+  (:export
+   #:particle-force-field
+   #:particle-force-fields
+   #:particle-emitter
+   #:local-threads
+   #:texture
+   #:to-emit
+   #:particle-rate
+   #:vertex-array
+   #:max-particles
+   #:particle-force-fields
+   #:particle-options
+   #:particle-size
+   #:particle-scaling
+   #:particle-rotation
+   #:particle-randomness
+   #:particle-velocity
+   #:particle-lifespan
+   #:particle-lifespan-randomness
+   #:particle-mode
+   #:particle-flip
+   #:particle-color
+   #:emit
+   #:depth-colliding-particle-emitter
+   #:surface-thickness
+   #:sorted-particle-emitter
+   #:multi-texture-particle-emitter
+   #:particle-sprite)
   ;; renderer/pbr.lisp
   (:export
    #:pbr-material
