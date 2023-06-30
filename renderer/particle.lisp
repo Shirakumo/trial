@@ -280,11 +280,13 @@
     (setf (mesh-vertex-position-stride struct)
           (loop for binding in (bindings vao)
                 do (when (and (listp binding) (= 0 (getf (rest binding) :index)))
-                     (return (floor (getf (rest binding) :stride) (gl-type-size (element-type (first binding))))))))
+                     (return (floor (getf (rest binding) :stride) (gl-type-size (element-type (first binding))))))
+                finally (error "VAO must have a position binding at index 0.")))
     (setf (mesh-vertex-normal-stride struct)
           (loop for binding in (bindings vao)
                 do (when (and (listp binding) (= 1 (getf (rest binding) :index)))
-                     (return (floor (getf (rest binding) :stride) (gl-type-size (element-type (first binding))))))))))
+                     (return (floor (getf (rest binding) :stride) (gl-type-size (element-type (first binding))))))
+                finally (error "VAO must have a normal binding at index 1.")))))
 
 (defmethod (setf particle-options) (options (emitter particle-emitter))
   (destructuring-bind (&key texture size scaling rotation color randomness velocity lifespan lifespan-randomness sprite (flip NIL flip-t) mode &allow-other-keys) options
