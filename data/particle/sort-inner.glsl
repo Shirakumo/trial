@@ -58,9 +58,9 @@ void main(){
         local_storage[index] = b;
         local_storage[candidate] = a;
       }
-      groupMemoryBarrier();
-      barrier();
     }
+    groupMemoryBarrier();
+    barrier();
   }
 
   for(uint i=0; i<2; ++i){
