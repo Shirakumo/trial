@@ -24,8 +24,8 @@
 #define HALF_SIZE (SORT_SIZE/2)
 #define ITERATIONS (1024 < HALF_SIZE ? HALF_SIZE/1024 : 1)
 #define NUM_THREADS (HALF_SIZE/ITERATIONS)
-// FIXME: This should be NUM_THREADS, but glsl doesn't allow it since it's not
-//        an immediate expression.
+// KLUDGE: This should be NUM_THREADS, but glsl doesn't allow it since it's not
+//         an immediate expression.
 layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
 uniform int elements;
@@ -53,9 +53,9 @@ void main(){
         uint index_high = 2 * (tmp_index-index_low);
         uint index = index_low + index_high;
 
-        uint candidate = sub_size == (merge_size >> 1)
-          ? index_high - index_low + (2*sub_size - 1)
-          : index_high + index_low + sub_size;
+        uint candidate = (sub_size == (merge_size >> 1))
+          ? (index_high - index_low + (2*sub_size - 1))
+          : (index_high + index_low + sub_size);
 
         if(candidate < elements_in_thread_group){
           vec2 a = local_storage[index];

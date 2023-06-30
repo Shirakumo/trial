@@ -77,14 +77,12 @@
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
     (enter (make-instance 'display-controller) scene)
-    (enter (make-instance 'trial::particle-emitter
-                          :name :emitter :max-particles 1000000 :particle-rate 10000
-                          :particle-force-fields `((:type :direction :strength -5.0)
-                                                   (:type :vortex :strength 10.0))
+    (enter (make-instance 'trial::sorted-particle-emitter
+                          :name :emitter :max-particles 500 :particle-rate 200
                           :texture (assets:// :circle-05)
                           :orientation (qfrom-angle +vx+ (deg->rad 90))
-                          :particle-options `(:velocity -10.0 :randomness 0.5 :size 0.1 :scaling 1.0
-                                              :lifespan 10.0 :lifespan-randomness 0.5
+                          :particle-options `(:velocity -0.5 :randomness 0.0 :size 0.1 :scaling 1.0
+                                              :lifespan 1.0 :lifespan-randomness 0.0
                                               :color ,(vec 0.5 0.3 0.1))) scene)
     (observe! (let ((emitter (unit :emitter (scene +main+))))
                 (with-buffer-tx (struct (slot-value emitter 'trial::particle-counter-buffer) :update :read)
