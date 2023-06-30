@@ -35,7 +35,7 @@ void main(){
   uint global_base_index = (gl_WorkGroupID.x * SORT_SIZE) + gl_LocalInvocationID.x;
   uint local_base_index = gl_LocalInvocationIndex;
   uint elements_in_thread_group = min(SORT_SIZE, elements - (gl_WorkGroupID.x * SORT_SIZE));
-
+  // Load data into local storage
   for(uint i=0; i<2*ITERATIONS; ++i){
     if(gl_LocalInvocationIndex + i*NUM_THREADS < elements_in_thread_group){
       uint load_index = global_base_index + i*NUM_THREADS;
@@ -44,7 +44,7 @@ void main(){
   }
   groupMemoryBarrier();
   barrier();
-
+  // Perform the bitonic sort
   for(uint merge_size = 2; merge_size <= SORT_SIZE; merge_size = merge_size*2){
     for(uint sub_size = merge_size >> 1; 0 < sub_size; sub_size = sub_size >> 1){
       for(uint i=0; i<ITERATIONS; ++i){
@@ -71,7 +71,7 @@ void main(){
       }
     }
   }
-
+  // Store the data back
   for(uint i=0; i<2*ITERATIONS; ++i){
     if(gl_LocalInvocationIndex + i*NUM_THREADS < elements_in_thread_group){
       uint load_index = local_base_index + i*NUM_THREADS;
