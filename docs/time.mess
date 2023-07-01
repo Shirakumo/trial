@@ -1,0 +1,14 @@
+# Time and Physics Steps
+Trial includes its own way to deal with physics updates and time passage separate from the rendering. This logic is typically handled by the ``render-loop`` class, which is a superclass of ``display`` (and thus ``main``). The ``render-loop`` keeps a separate thread to perform physics steps and rendering, and to keep the main thread free to handle inputs and OS interactions.
+
+The ``render-loop`` will periodically call ``update`` on itself in a fixed time step, determined by ``delta-time``, defaulting to 0.01s. This is suitable for physics updates. Despite the fact that the time step (``dt``) is kept fixed, you should nevertheless not rely on that, and instead only rely on the ``dt`` value for all your physics updates. This will make your code more robust and allow the implementation of features such as time slowdown or speedup. The ``update`` calls will typically happen in lock-step with real-time. If rendering causes things to slow down beyond real-time, ``update`` will be repeatedly called until physics have "caught up", unless the delay is beyond ten seconds, in which case lost time is simply dropped.
+
+The ``render-loop`` will also call ``render`` on itself as frequently as possible by default. You can force a frame limit using ``target-frame-rate``, in which case a fast system will slow itself down automatically to avoid overuse of resources. Another way to restrict frame rate is to enable ``vsync`` on the "context"(link context.mess), though it should be left up to the end user to choose whether to activate vsync or to impose a frame limit.
+
+Typically with ``main`` the calls to ``update`` are translated to a ``tick`` event, which carries the associated information:
+
+- ``tt`` A double-float holding the total physics run-time so far.
+- ``dt`` A single-float holding the period this update should advance physics by.
+- ``fc`` An integer holding the count of updates so far.
+
+Every ``update``, "events"(link event-loop.mess) are then issued and processed. This will cause the ``tick`` to be processed last, //after// any other pending events, though //before// any events issued during the event processing itself.
