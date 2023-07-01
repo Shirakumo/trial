@@ -1,0 +1,245 @@
+(defpackage #:org.shirakumo.fraf.trial.v-clip
+  (:use #:cl #:3d-vectors #:3d-matrices)
+  (:export))
+
+(in-package #:org.shirakumo.fraf.trial.v-clip)
+
+(defstruct transform-cache
+  (feature NIL :type T)
+  (location (vec 0 0 0) :type vec3)
+  (tail (vec 0 0 0) :type vec3)
+  (head (vec 0 0 0) :type vec3)
+  (segment (vec 0 0 0) :type vec3))
+
+(defun cache-vertex (mat vertex cache)
+  (unless (eq vertex (transform-cache-feature cache))
+    (n*m mat (v<- (transform-cache-location cache) (vertex-location vertex)))
+    (setf (transform-cache-feature cache) vertex)))
+
+(defun cache-edge* (cache)
+  (v<- (transform-cache-segment cache) (transform-cache-head cache))
+  (nv- (transform-cache-segment cache) (transform-cache-tail cache)))
+
+(defun cache-edge (mat edge cache)
+  (unless (eq edge (transform-cache-feature cache))
+    (n*m mat (v<- (transform-cache-tail cache) (edge-tail edge)))
+    (n*m mat (v<- (transform-cache-head cache) (edge-head edge)))
+    (cache-edge* cache)
+    (setf (transform-cache-feature cache) edge)))
+
+(defstruct state
+  (a (vec 0 0 0) :type vec3)
+  (b (vec 0 0 0) :type vec3)
+  (distance 0.0 :type single-float)
+  (lf NIL :type T)
+  (rf NIL :type T))
+
+(defstruct plane
+  (normal (vec 0 0 0) :type vec3)
+  (offset 0.0 :type single-float))
+
+(defun plane-distance (plane vertex)
+  (+ (v. (plane-normal plane) vertex) (plane-offset plane)))
+
+(defstruct vertex
+  (location (vec 0 0 0) :type vec3)
+  (cone NIL :type list))
+
+(defstruct edge
+  (tail NIL :type vertex)
+  (head NIL :type vertex)
+  (left NIL :type face)
+  (right NIL :type face)
+  (length 0.0 :type single-float)
+  (direction (vec 0 0 0) :type vec3)
+  (tplane NIL :type plane)
+  (hplane NIL :type plane)
+  (lplane NIL :type plane)
+  (rplane NIL :type plane))
+
+(defstruct face
+  (plane NIl :type plane)
+  (cone NIL :type list))
+
+(defstruct cone
+  (plane NIL :type plane)
+  (neighbor NIL))
+
+(defstruct (vertex-cone (:include cone)))
+
+(defstruct (face-cone (:include cone))
+  ccw
+  cw
+  (index 0 :type (member 0 1 2)))
+
+(defmacro define-tester (name args &body body)
+  `(defun ,name (,@args state)
+     (flet ((next ()
+              (setf (state-lf state) ,(first args))
+              (setf (state-rf state) ,(second args))
+              (return-from ,name :continue))
+            (finish (result a b &optional distance)
+              (v<- (state-a state) a)
+              (v<- (state-b state) b)
+              (setf (state-distance state) (or distance
+                                               (vdistance (state-a state) (state-b state))))
+              (return-from ,name result)))
+       (declare (inline next finish))
+       ,@body)))
+
+(define-tester vertex-vertex (v1 v2 cv1 cv2 m1 m2)
+  (cache-vertex m2 v2 cv2)
+  (dolist (cone (vertex-cone v1))
+    (when (< (plane-distance (cone-plane cone) (transform-cache-location cv2)) 0)
+      (setf v1 (cone-neighbor cone))
+      (next)))
+  
+  (cache-vertex m1 v1 cv1)
+  (dolist (cone (vertex-cone v2))
+    (when (< (plane-distance (cone-plane cone) (transform-cache-location cv1)) 0)
+      (setf v2 (cone-neighbor cone))
+      (next)))
+
+  (finish (if (< 0 (state-distance state)) :disjoint :penetration)
+          (vertex-location v1)
+          (vertex-location v2)))
+
+(define-tester vertex-face (v f cv m mesh)
+  (cache-vertex m v cv)
+  (let ((updated NIL)
+        (dmin 0.0))
+    (dolist (cone (face-cone f))
+      (let ((d (plane-distance (cone-plane cone) (transform-cache-location cv))))
+        (when (< d dmin)
+          (setf f (cone-neighbor cone))
+          (setf dmin d)
+          (setf updated T))))
+    (when updated (next)))
+
+  (let ((d (plane-distance (face-plane f) (transform-cache-location cv)))
+        (d2 0.0)
+        (xother (vec3 0 0 0)))
+    (declare (dynamic-extent xother))
+    (when (= 0 d)
+      (finish :penetration
+              (vertex-location v)
+              (transform-cache-location cv)))
+    (dolist (cone (vertex-cone v))
+      (let ((edge (cone-neighbor cone)))
+        (v<- xother (vertex-location
+                     (if (eq v (edge-tail edge))
+                         (edge-head edge)
+                         (edge-tail edge))))
+        (n*m m xother)
+        (setf d2 (plane-distance (face-plane f) xother))
+        (when (or (and (< d 0) (< d d2))
+                  (and (< 0 d) (< d2 d)))
+          (v<- (transform-cache-tail cv) (transform-cache-location cv))
+          (v<- (transform-cache-head cv) xother)
+          (unless (eq v (edge-tail edge))
+            (rotatef (transform-cache-tail cv) (transform-cache-head cv)))
+          (cache-line* cv)
+          (setf (transform-cache-feature cv) edge)
+          (setf v edge)
+          (next))))
+    (when (< 0 d)
+      (finish :disjoint
+              (vertex-location v)
+              (nv+* (vcopy (transform-cache-location cv))
+                    (plane-normal (face-plane f)) (- d))
+              d))
+
+    (dolist (face (mesh-faces mesh))
+      (let ((d2 (plane-distance (face-plane face) (transform-cache-location cv))))
+        (when (< d d2)
+          (setf d d2)
+          (setf f face))))
+    (when (< 0 d)
+      (next))
+    (finish :penetration
+            (vertex-location v)
+            (nv+* (transform-cache-location cv) (plane-normal (face-plane f)) (- d))
+            d)))
+
+(define-tester vertex-edge (v e cv ce mve mev)
+  (cache-vertex mve v cv)
+  (when (< 0 (plane-distance (edge-tplane e) (transform-cache-location cv)))
+    (setf e (edge-tail e)) (next))
+  (when (< 0 (plane-distance (edge-hplane e) (transform-cache-location cv)))
+    (setf e (edge-head e)) (next))
+  (when (< 0 (plane-distance (edge-lplane e) (transform-cache-location cv)))
+    (setf e (edge-left e)) (next))
+  (when (< 0 (plane-distance (edge-rplane e) (transform-cache-location cv)))
+    (setf e (edge-right e)) (next))
+
+  (cache-edge mev e ce)
+  (let ((min 0) (max 1) min-neighbor max-neighbor)
+    (dolist (cone (vertex-cone v))
+      (let ((dt (plane-distance (cone-plane cone) (transform-cache-tail ce)))
+            (dh (plane-distance (cone-plane cone) (transform-cache-head ce))))
+        (if (<= 0 dt)
+            (when (and (not (<= 0 dh)) (< (/ dt (- dt dh)) max))
+              (setf max (/ dt (- dt dh)))
+              (setf max-neighbor (cone-neighbor cone))
+              (when (< max min) (return)))
+            (cond ((< dh 0)
+                   (setf min-neighbor (cone-neighbor cone))
+                   (setf max-neighbor (cone-neighbor cone)))
+                  ((< min (/ dt (- dt dh)))
+                   (setf min (/ dt (- dt dh)))
+                   (setf min-neighbor (cone-neighbor cone))
+                   (when (< max min) (return)))))))
+
+    (when (and min-neighbor (eq min-neighbor max-neighbor))
+      (setf v min-neighbor)
+      (next))
+
+    (when min-neighbor
+      (let ((offset (nv- (nv+* (vcopy (edge-tail e)) (transform-cache-segment ce) min)
+                         (vertex-location v))))
+        (when (v= offset 0)
+          (finish :penetration
+                  (vertex-location v)
+                  (transform-cache-location cv)))
+        (when (< 0 (v. offset (transform-cache-segment ce)))
+          (setf v min-neighbor)
+          (next))))
+
+    (when max-neighbor
+      (let ((offset (nv- (nv+* (vcopy (edge-tail e)) (transform-cache-segment ce) max)
+                         (vertex-location v))))
+        (when (v= offset 0)
+          (finish :penetration
+                  (vertex-location v)
+                  (transform-cache-location cv)))
+        (when (< 0 (v. offset (transform-cache-segment ce)))
+          (setf v max-neighbor)
+          (next))))
+
+    (let ((h (v- (transform-cache-location cv)
+                 (vertex-location (edge-tail e)))))
+      (finish :disjoint
+              (vertex-location v)
+              (nv+* (vcopy (vertex-location (edge-tail e)))
+                    (edge-direction e) (v. h (edge-direction e)))
+              (vdistance (state-b state) (transform-cache-location cv))))))
+
+(defun edge-edge-subtest (e ce cp)
+  (flet ((next (e)
+           (return-from edge-edge-subtest e)))
+    (let ((min 0) (max 1) min-neighbor max-neighbor)
+      (flet ((clip (plane neighbor)
+               (let ((dt (- (plane-distance plane (transform-cache-tail ce))))
+                     (dh (- (plane-distance plane (transform-cache-head ce)))))
+                 (cond ((< dt 0)
+                        (when (< dh 0)
+                          (next neighbor))
+                        (setf min (/ dt (- dt dh)))
+                        (setf min-neighbor neighbor))
+                       ((< dh 0)
+                        (setf max (/ dt (- dt dh)))
+                        (setf max-neighbor neighbor))))))
+        (clip (edge-tplane e) (edge-tail e))
+        (clip (edge-hplane e) (edge-head e)))
+      (dotimes (i 2)
+        ))))
