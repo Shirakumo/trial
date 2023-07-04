@@ -586,7 +586,9 @@
    #:vertex-array
    #:vertex-form
    #:size
-   #:bindings)
+   #:bindings
+   #:index-buffer
+   #:indexed-p)
   ;; resources/vertex-buffer.lisp
   (:export
    #:vertex-buffer
