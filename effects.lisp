@@ -47,13 +47,14 @@ void main(){
   ((iterations :initarg :iterations :initform 1 :accessor iterations)))
 
 (defmethod render ((pass iterative-post-effect-pass) (program shader-program))
-  (let* ((color (gl-name (color pass)))
+  (let* ((color (color pass))
          (ocolor color)
-         (previous (gl-name (previous-pass pass))))
+         (framebuffer (framebuffer pass))
+         (previous (previous-pass pass)))
     (flet ((swap-buffers ()
              (rotatef color previous)
-             (%gl:framebuffer-texture :framebuffer :color-attachment0 color 0)
-             (gl:bind-texture :texture-2d previous)))
+             (bind color framebuffer)
+             (bind previous 0)))
       (call-next-method)
       (loop with limit = (iterations pass)
             for i from 0
@@ -63,8 +64,8 @@ void main(){
                    (return)))
       ;; KLUDGE: this is wrong for even number of iterations. It essentially
       ;;         discards the last iteration, as it won't be displayed....
-      (when (/= ocolor color)
-        (%gl:framebuffer-texture :framebuffer :color-attachment0 ocolor 0)))))
+      (unless (eq ocolor color)
+        (bind ocolor (framebuffer pass))))))
 
 (define-shader-pass temporal-post-effect-pass (post-effect-pass)
   ((previous :port-type static-input :accessor previous)
@@ -72,7 +73,7 @@ void main(){
 
 (defmethod render :after ((pass temporal-post-effect-pass) thing)
   (rotatef (gl-name (previous pass)) (gl-name (color pass)))
-  (%gl:framebuffer-texture :framebuffer :color-attachment0 (gl-name (color pass)) 0))
+  (bind (color pass) (framebuffer pass)))
 
 (define-shader-pass copy-pass (simple-post-effect-pass)
   ())

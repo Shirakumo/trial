@@ -384,14 +384,12 @@
         (setf (emit-count struct) to-emit)
         (setf (randomness struct) (random 1.0)))
       ;; Simulate with compute shaders
-      (%gl:bind-buffer :dispatch-indirect-buffer (gl-name particle-argument-buffer))
-      (render kickoff-pass NIL)
-      (render emit-pass NIL)
+      (render kickoff-pass particle-argument-buffer)
+      (render emit-pass 0)
       (simulate-particles particle-emitter)
       ;; Swap the buffers
       (rotatef (binding-point alive-particle-buffer-0)
                (binding-point alive-particle-buffer-1))
-      (%gl:bind-buffer :dispatch-indirect-buffer 0)
       (setf (to-emit particle-emitter) emit-carry))))
 
 (define-handler (particle-emitter class-changed) ()
@@ -429,10 +427,8 @@
     (with-buffer-tx (struct particle-emitter-buffer)
       (setf (emit-count struct) count)
       (setf (randomness struct) (random 1.0)))
-    (%gl:bind-buffer :dispatch-indirect-buffer (gl-name particle-argument-buffer))
-    (render kickoff-pass NIL)
-    (render emit-pass NIL)
-    (%gl:bind-buffer :dispatch-indirect-buffer 0)))
+    (render kickoff-pass (gl-name particle-argument-buffer))
+    (render emit-pass NIL)))
 
 (define-shader-pass depth-colliding-particle-simulate-pass (particle-simulate-pass)
   ((depth-tex :port-type fixed-input :accessor depth)

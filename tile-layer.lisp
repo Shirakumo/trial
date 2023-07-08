@@ -60,7 +60,7 @@
 
 (defmethod (setf pixel-data) ((data vector) (layer tile-layer))
   (replace (pixel-data (tilemap layer)) data)
-  (%update-tile-layer layer))
+  (update-buffer-data (tilemap layer) T))
 
 (defmethod resize ((layer tile-layer) w h)
   (let ((size (vec2 (floor w (vx (tile-size layer))) (floor h (vy (tile-size layer))))))
@@ -110,12 +110,8 @@
       (let ((idx (* 2 (+ x (* y (truncate (vx (size layer))))))))
         (setf (aref dat (+ 0 idx)) (car value))
         (setf (aref dat (+ 1 idx)) (cdr value))))
-    (%update-tile-layer layer)
-    #++ ;; TODO: Optimize
-    (sb-sys:with-pinned-objects (dat)
-      (bind texture)
-      (%gl:tex-sub-image-2d :texture-2d 0 x y 1 1 (pixel-format texture) (pixel-type texture)
-                            (cffi:inc-pointer (sb-sys:vector-sap dat) pos))))
+    ;; TODO: Optimize
+    (update-buffer-data (tilemap layer) T))
   value)
 
 (defmethod tile ((location vec3) (layer tile-layer))
@@ -124,22 +120,11 @@
 (defmethod (setf tile) (value (location vec3) (layer tile-layer))
   (setf (tile (vxy location) layer) value))
 
-(defun %update-tile-layer (layer)
-  (let ((dat (pixel-data layer)))
-    (sb-sys:with-pinned-objects (dat)
-      (let ((texture (tilemap layer))
-            (width (truncate (vx (size layer))))
-            (height (truncate (vy (size layer)))))
-        (bind texture NIL)
-        (%gl:tex-sub-image-2d :texture-2d 0 0 0 width height
-                              (pixel-format texture) (pixel-type texture)
-                              (sb-sys:vector-sap dat))))))
-
 (defmethod clear ((layer tile-layer))
   (let ((dat (pixel-data layer)))
     (dotimes (i (truncate (* 2 (vx (size layer)) (vy (size layer)))))
       (setf (aref dat i) 0))
-    (%update-tile-layer layer)))
+    (update-buffer-data (tilemap layer) T)))
 
 (defmethod render ((layer tile-layer) (program shader-program))
   (when (< 0.0 (visibility layer))

@@ -216,6 +216,7 @@
                           :location (uniform-location program name))))))
 
 (defmethod activate ((program shader-program))
+  ;; FIXME: BAD leakage between runs. Bind to context instead.
   (unless (eq +current-shader-program+ program)
     (setf +current-shader-program+ program)
     (gl:use-program (gl-name program))))

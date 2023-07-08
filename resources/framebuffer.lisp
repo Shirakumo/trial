@@ -29,6 +29,18 @@
   (append (call-next-method)
           (mapcar #'second (attachments framebuffer))))
 
+(defun check-framebuffer-size (framebuffer texture)
+  (cond ((null (width framebuffer))
+         (setf (width framebuffer) (width texture)))
+        ((/= (width framebuffer) (width texture))
+         (error "Cannot attach~%  ~a~%to~%  ~a~%, as the width is mismatched."
+                texture framebuffer)))
+  (cond ((null (height framebuffer))
+         (setf (height framebuffer) (height texture)))
+        ((/= (height framebuffer) (height texture))
+         (error "Cannot attach~%  ~a~%to~%  ~a~%, as the height is mismatched."
+                texture framebuffer))))
+
 (defun bind-framebuffer-attachments (framebuffer attachments)
   (let ((color-attachments (loop for attachment in attachments
                                  unless (find (first attachment) '(:depth-attachment :stencil-attachment :depth-stencil-attachment))
@@ -42,18 +54,9 @@
           (check-framebuffer-attachment attachment)
           (check-type texture texture)
           (check-allocated texture)
+          (check-framebuffer-size framebuffer texture)
           (v:debug :trial.framebuffer "Attaching ~a~@[:~a~] as ~a to ~a."
                    texture layer attachment framebuffer)
-          (cond ((null (width framebuffer))
-                 (setf (width framebuffer) (width texture)))
-                ((/= (width framebuffer) (width texture))
-                 (error "Cannot attach~%  ~a~%to~%  ~a~%, as the width is mismatched."
-                        texture framebuffer)))
-          (cond ((null (height framebuffer))
-                 (setf (height framebuffer) (height texture)))
-                ((/= (height framebuffer) (height texture))
-                 (error "Cannot attach~%  ~a~%to~%  ~a~%, as the height is mismatched."
-                        texture framebuffer)))
           (if layer
               (%gl:framebuffer-texture-layer :framebuffer attachment (gl-name texture) level layer)
               (%gl:framebuffer-texture :framebuffer attachment (gl-name texture) level))
@@ -78,6 +81,19 @@
     (with-cleanup-on-failure (bind-framebuffer-attachments framebuffer (attachments framebuffer))
       (bind-framebuffer-attachments framebuffer attachments))))
 
+(defmethod bind ((texture texture) (framebuffer framebuffer))
+  (check-framebuffer-size framebuffer texture)
+  (gl:bind-framebuffer (gl-name framebuffer))
+  (case (internal-format texture)
+    ((:depth-component :depth-component16 :depth-component24 :depth-component32 :depth-component32f)
+     (%gl:framebuffer-texture :framebuffer :depth-attachment (gl-name texture) 0))
+    ((:stencil-index :stencil-index1 :stencil-index4 :stencil-index8 :stencil-index16)
+     (%gl:framebuffer-texture :framebuffer :stencil-attachment (gl-name texture) 0))
+    ((:depth-stencil :depth24-stencil8 :depth32f-stencil8)
+     (%gl:framebuffer-texture :framebuffer :depth-stencil-attachment (gl-name texture) 0))
+    (T
+     (%gl:framebuffer-texture :framebuffer :color-attachment0 (gl-name texture) 0))))
+
 (defmethod allocate ((framebuffer framebuffer))
   (let ((fbo (gl:gen-framebuffer)))
     (with-cleanup-on-failure (gl:delete-framebuffers (list fbo))
@@ -95,9 +111,15 @@
     (setf (width framebuffer) width)
     (setf (height framebuffer) height)))
 
+;; TODO: avoid rebinding framebuffer if already bound
 (defmethod activate ((framebuffer framebuffer))
   (gl:bind-framebuffer :framebuffer (gl-name framebuffer))
   (gl:viewport 0 0 (width framebuffer) (height framebuffer))
+  (let ((bits (slot-value framebuffer 'clear-bits)))
+    (when (< 0 bits) (%gl:clear bits))))
+
+(defmethod clear ((framebuffer framebuffer))
+  (gl:bind-framebuffer :framebuffer (gl-name framebuffer))
   (let ((bits (slot-value framebuffer 'clear-bits)))
     (when (< 0 bits) (%gl:clear bits))))
 

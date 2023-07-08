@@ -156,7 +156,7 @@
 
 (defmethod render-frame :before ((pass standard-shadows-pass) frame)
   (let ((program (shadow-map-program pass))
-        (map (gl-name (shadow-map pass)))
+        (map (shadow-map pass))
         (lights (shadow-map-lights pass)))
     (activate (shadow-map-framebuffer pass))
     (activate program)
@@ -168,8 +168,8 @@
     (dotimes (id (length lights))
       (when (aref lights id)
         (setf (uniform program "shadow_map_id") id)
-        (%gl:framebuffer-texture-layer :framebuffer :depth-attachment map 0 id)
-        (gl:clear :depth-buffer)
+        (bind map (shadow-map-framebuffer pass))
+        (clear (shadow-map-framebuffer pass))
         (loop for (object) across frame
               do (when (typep object 'standard-renderable)
                    (with-pushed-matrix ()
