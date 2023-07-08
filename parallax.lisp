@@ -31,11 +31,8 @@
                          :offset (vec 0 0)
                          :parallax (vec 2 2)))))
   (setf (uniform program "view_matrix") (minv *view-matrix*))
-  (gl:active-texture :texture0)
-  (gl:bind-texture :texture-2d (gl-name (texture parallax-background)))
-  (gl:bind-vertex-array (gl-name (// 'trial:trial 'trial::empty-vertex-array)))
-  (gl:draw-arrays :triangle-strip 0 4)
-  (gl:bind-vertex-array 0))
+  (bind (texture parallax-background) NIL)
+  (render (// 'trial:trial 'trial::empty-vertex-array) NIL))
 
 (defmethod handle ((ev resize) (parallax-background parallax-background))
   (with-buffer-tx (bg (// 'trial 'parallax))

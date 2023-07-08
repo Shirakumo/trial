@@ -67,8 +67,7 @@
                 for div = 1 then (* 10 div)
                 do (set-rect i (mod (floor fps div) 10))))
         (update-buffer-data buf T)))
-    (gl:active-texture :texture0)
-    (gl:bind-texture :texture-2d (gl-name (// 'trial 'fps-texture)))
+    (bind (// 'trial 'fps-texture) NIL)
     (render vao program)))
 
 (define-class-shader (fps-counter :vertex-shader)

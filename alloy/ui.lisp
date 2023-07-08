@@ -133,7 +133,7 @@
 (defmethod trial:render :around ((pass ui-pass) target)
   (trial:with-pushed-features
     (trial:enable-feature :depth-test)
-    (gl:clear-color 0 0 0 0)
+    (setf (clear-color *context*) 0)
     (call-next-method)))
 
 ;; KLUDGE: No idea why this is necessary, fuck me.

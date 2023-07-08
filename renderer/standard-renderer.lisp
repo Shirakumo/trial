@@ -93,8 +93,7 @@
 (defmethod bind-textures ((pass standard-render-pass))
   (call-next-method)
   (do-lru-cache (texture id (allocated-textures pass))
-    (gl:active-texture id)
-    (gl:bind-texture (target texture) (gl-name texture))))
+    (bind texture id)))
 
 (defmethod enable ((texture texture) (pass standard-render-pass))
   ;; KLUDGE: We effectively disable the cache here BECAUSE the texture binds are
@@ -105,8 +104,7 @@
   (let ((id (or (lru-cache-push texture (allocated-textures pass))
                 (lru-cache-id texture (allocated-textures pass)))))
     (when id
-      (gl:active-texture id)
-      (gl:bind-texture (target texture) (gl-name texture)))))
+      (bind texture id))))
 
 (defmethod disable ((texture texture) (pass standard-render-pass))
   (lru-cache-pop texture (allocated-textures pass)))

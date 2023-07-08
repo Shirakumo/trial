@@ -284,6 +284,14 @@
       (%gl:get-tex-image (target source) level format type (memory-region-pointer region))
       (apply #'save-image region target type :width (width source) :height (height source) :pixel-type type :pixel-format format args))))
 
+(defmethod bind ((texture texture) (port null))
+  (gl:active-texture :texture0)
+  (gl:bind-texture (target texture) (gl-name texture)))
+
+(defmethod bind ((texture texture) (port integer))
+  (gl:active-texture port)
+  (gl:bind-texture (target texture) (gl-name texture)))
+
 ;;;; Texture spec wrangling
 ;; The idea of this is that, in order to maximise sharing of texture resources
 ;; between independent parts, we need to join (in the lattice sense) two texture

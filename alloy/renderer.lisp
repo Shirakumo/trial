@@ -119,7 +119,7 @@
        (%gl:uniform-1f loc value)))))
 
 (defmethod opengl:bind ((shader trial:shader-program))
-  (gl:use-program (trial:gl-name shader)))
+  (trial:activate shader))
 
 (defmethod alloy:allocate ((shader trial:shader))
   (trial:allocate shader))
@@ -165,10 +165,8 @@
                  :vertex-form NIL))
 
 (defmethod opengl:draw-vertex-array ((array trial:vertex-array) primitive-type offset count)
-  (gl:bind-vertex-array (trial:gl-name array))
-  (if (trial:indexed-p array)
-      (%gl:draw-elements primitive-type count (trial:element-type (trial:indexed-p array)) offset)
-      (%gl:draw-arrays primitive-type offset count)))
+  (setf (trial:size array) count)
+  (trial:render array offset))
 
 (defclass framebuffer (trial:framebuffer)
   ((target :initform NIL :accessor target)))
@@ -196,7 +194,7 @@
 
 (defmethod opengl:bind ((framebuffer trial:framebuffer))
   (setf (target framebuffer) (gl:get-integer :draw-framebuffer-binding))
-  (gl:bind-framebuffer :draw-framebuffer (gl-resource-name framebuffer))
+  (trial:activate framebuffer)
   (gl:clear :color-buffer :depth-buffer :stencil-buffer))
 
 (defmethod opengl:blit-framebuffer ((framebuffer trial:framebuffer))
@@ -266,8 +264,7 @@
   (trial:deallocate texture))
 
 (defmethod opengl:bind ((texture trial:texture))
-  (gl:active-texture :texture0)
-  (gl:bind-texture :texture-2D (trial:gl-name texture)))
+  (trial:bind texture NIL))
 
 (defmethod simple:size ((image trial:image))
   (alloy:size (trial:width image) (trial:height image)))

@@ -57,7 +57,7 @@
       ;; then we let GL bake the mips for the envmap.
       (setf (min-filter envmap) :linear)
       (render envmap-renderer envmap)
-      (gl:bind-texture (target envmap) (gl-name envmap))
+      (bind envmap NIL)
       (setf (min-filter envmap) :linear-mipmap-linear)
       ;; Now map the irradiance and prefiltered maps as usual.
       (render irrmap-renderer irrmap)

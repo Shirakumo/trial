@@ -231,8 +231,7 @@
              (typecase port
                (uniform-port
                 (when (texture port)
-                  (gl:active-texture (unit-id port))
-                  (gl:bind-texture (target (texture port)) (gl-name (texture port)))))
+                  (bind (texture port) (unit-id port))))
                (image-port
                 (when (texture port)
                   (%gl:bind-image-texture (binding port) (gl-name (texture port)) 0 T 0 (access port)
