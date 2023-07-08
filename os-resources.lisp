@@ -82,36 +82,31 @@
 #-(or linux windows)
 (defun cpu-time () 0d0)
 
-;; https://www.khronos.org/registry/OpenGL/extensions/ATI/ATI_meminfo.txt
-(defun gpu-room-ati ()
-  (let* ((vbo-free-memory-ati (gl:get-integer #x87FB 4))
-         (tex-free-memory-ati (gl:get-integer #x87FC 4))
-         (buf-free-memory-ati (gl:get-integer #x87FD 4))
-         (total (+ (aref vbo-free-memory-ati 0)
-                   (aref tex-free-memory-ati 0)
-                   (aref buf-free-memory-ati 0))))
-    (values total total)))
-
-;; http://developer.download.nvidia.com/opengl/specs/GL_NVX_gpu_memory_info.txt
-(defun gpu-room-nvidia ()
-  (let ((vidmem-total (gl:get-integer #x9047 1))
-        (vidmem-free  (gl:get-integer #x9049 1)))
-    (values vidmem-free
-            vidmem-total)))
-
-(defun gpu-room ()
-  (macrolet ((jit (thing)
-               `(ignore-errors
-                 (return-from gpu-room
-                   (multiple-value-prog1 ,thing
-                     (compile 'gpu-room (lambda ()
-                                          ,thing)))))))
-    (jit (gpu-room-ati))
-    (jit (gpu-room-nvidia))
-    (jit (values 1 1))))
-
 (defun cpu-room ()
   #+sbcl
   (values (round (- (sb-ext:dynamic-space-size) (sb-kernel:dynamic-usage)) 1024.0)
           (round (sb-ext:dynamic-space-size) 1024.0))
   #-sbcl (values 1 1))
+
+#+windows
+(cffi:define-foreign-library secur32
+  (T (:default "Secur32")))
+
+(defun fallback-username ()
+  (or
+   #+windows
+   (cffi:with-foreign-objects ((size :ulong)
+                               (name :uint16 128))
+     (unless (cffi:foreign-library-loaded-p 'secur32)
+       (cffi:load-foreign-library 'secur32))
+     (setf (cffi:mem-ref size :ulong) 128)
+     ;; Constant 3 here specifies a "display name".
+     (cond ((< 0 (cffi:foreign-funcall "GetUserNameExW" :int 13 :pointer name :pointer size :int))
+            (org.shirakumo.com-on:wstring->string name (cffi:mem-ref size :ulong)))
+           (T
+            (setf (cffi:mem-ref size :ulong) 128)
+            (when (< 0 (cffi:foreign-funcall "GetUserNameW" :pointer name :pointer size :int))
+              (org.shirakumo.com-on:wstring->string name (cffi:mem-ref size :ulong))))))
+   #+unix
+   (cffi:foreign-funcall "getlogin" :string)
+   (pathname-utils:directory-name (user-homedir-pathname))))

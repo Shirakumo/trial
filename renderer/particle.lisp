@@ -384,14 +384,12 @@
         (setf (emit-count struct) to-emit)
         (setf (randomness struct) (random 1.0)))
       ;; Simulate with compute shaders
-      (%gl:bind-buffer :dispatch-indirect-buffer (gl-name particle-argument-buffer))
-      (render kickoff-pass NIL)
-      (render emit-pass NIL)
+      (render kickoff-pass particle-argument-buffer)
+      (render emit-pass 0)
       (simulate-particles particle-emitter)
       ;; Swap the buffers
       (rotatef (binding-point alive-particle-buffer-0)
                (binding-point alive-particle-buffer-1))
-      (%gl:bind-buffer :dispatch-indirect-buffer 0)
       (setf (to-emit particle-emitter) emit-carry))))
 
 (define-handler (particle-emitter class-changed) ()
@@ -404,24 +402,16 @@
     (setf (slot-value struct 'dead-count) (max-particles emitter))))
 
 (defmethod bind-textures ((emitter particle-emitter))
-  (gl:active-texture :texture0)
-  (gl:bind-texture (target (texture emitter)) (gl-name (texture emitter))))
+  (bind (texture emitter) 0))
 
 (defmethod render :before ((emitter particle-emitter) (program shader-program))
-  (gl:depth-mask NIL)
-  (setf (uniform program "model_matrix") (tmat4 (tf emitter)))
-  (gl:bind-vertex-array (gl-name (// 'trial 'empty-vertex-array)))
-  (%gl:bind-buffer :draw-indirect-buffer (gl-name (slot-value emitter 'particle-argument-buffer))))
-
-(defmethod render :after ((emitter particle-emitter) (program shader-program))
-  (gl:bind-vertex-array 0)
-  (%gl:bind-buffer :draw-indirect-buffer 0)
-  (gl:depth-mask T))
+  (setf (uniform program "model_matrix") (tmat4 (tf emitter))))
 
 (defmethod render ((emitter particle-emitter) (program shader-program))
-  (gl:blend-func :src-alpha :one)
-  (%gl:draw-arrays-indirect :triangles (slot-offset 'particle-argument-buffer 'draw-args))
-  (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha))
+  (setf (offset (// 'trial 'empty-vertex-array)) (slot-offset 'particle-argument-buffer 'draw-args))
+  (with-render-settings (:additive-blend :no-depth-writes)
+    (render (// 'trial 'empty-vertex-array) (slot-value emitter 'particle-argument-buffer)))
+  (setf (offset (// 'trial 'empty-vertex-array)) 0))
 
 (defmethod emit ((particle-emitter particle-emitter) count &rest particle-options &key vertex-array location orientation scaling transform)
   ;; We do the emit **right now** so that the particle options are only active for the
@@ -437,10 +427,8 @@
     (with-buffer-tx (struct particle-emitter-buffer)
       (setf (emit-count struct) count)
       (setf (randomness struct) (random 1.0)))
-    (%gl:bind-buffer :dispatch-indirect-buffer (gl-name particle-argument-buffer))
-    (render kickoff-pass NIL)
-    (render emit-pass NIL)
-    (%gl:bind-buffer :dispatch-indirect-buffer 0)))
+    (render kickoff-pass (gl-name particle-argument-buffer))
+    (render emit-pass NIL)))
 
 (define-shader-pass depth-colliding-particle-simulate-pass (particle-simulate-pass)
   ((depth-tex :port-type fixed-input :accessor depth)
@@ -548,7 +536,10 @@
               until (< alive sorted))))))
 
 (defmethod render ((emitter sorted-particle-emitter) (program shader-program))
-  (%gl:draw-arrays-indirect :triangles (slot-offset 'particle-argument-buffer 'draw-args)))
+  (setf (offset (// 'trial 'empty-vertex-array)) (slot-offset 'particle-argument-buffer 'draw-args))
+  (with-render-settings (:no-depth-writes)
+    (render (// 'trial 'empty-vertex-array) (slot-value emitter 'particle-argument-buffer)))
+  (setf (offset (// 'trial 'empty-vertex-array)) 0))
 
 (define-shader-entity multi-texture-particle-emitter (particle-emitter)
   ()

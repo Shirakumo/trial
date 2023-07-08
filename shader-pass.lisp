@@ -113,7 +113,7 @@
   (:inhibit-shaders (shader-entity :fragment-shader)))
 
 (defmethod shared-initialize :after ((pass shader-pass) slots &key)
-  (loop with texture-index = (max 16 (gl:get-integer :max-texture-image-units))
+  (loop with texture-index = (if *context* (max-texture-id *context*) 16)
         for port in (flow:ports pass)
         do (typecase port
              (texture-port
@@ -231,8 +231,7 @@
              (typecase port
                (uniform-port
                 (when (texture port)
-                  (gl:active-texture (unit-id port))
-                  (gl:bind-texture (target (texture port)) (gl-name (texture port)))))
+                  (bind (texture port) (unit-id port))))
                (image-port
                 (when (texture port)
                   (%gl:bind-image-texture (binding port) (gl-name (texture port)) 0 T 0 (access port)
@@ -491,49 +490,19 @@ void main(){
   color = texture(previous_pass, uv);
 }")
 
-(define-shader-pass compute-pass (single-shader-pass)
-  ((work-groups :initform (vec 1 1 1) :initarg :work-groups :accessor work-groups)
-   (barrier :initform 4294967295)))
-
-(defmethod initialize-instance :after ((pass compute-pass) &key)
-  (unless (integerp (slot-value pass 'barrier))
-    (setf (barrier pass) (slot-value pass 'barrier))))
-
-(defmethod shared-initialize :after ((pass compute-pass) slots &key (barrier NIL barrier-p))
-  (when barrier-p (setf (barrier pass) barrier)))
+(define-shader-pass compute-pass (single-shader-pass compute-shader)
+  ())
 
 (defmethod handle ((event event) (pass compute-pass)))
 
-(defmethod barrier ((pass compute-pass))
-  (cffi:foreign-bitfield-symbols '%gl::MemoryBarrierMask (slot-value pass 'barrier)))
+(defmethod shader-program ((pass compute-pass))
+  pass)
 
-(defmethod (setf barrier) ((bits list) (pass compute-pass))
-  (setf (slot-value pass 'barrier) (cffi:foreign-bitfield-value '%gl::MemoryBarrierMask bits)))
+(defmethod shaders ((pass compute-pass))
+  (shaders (make-shader-program pass)))
 
-(defmethod (setf barrier) ((bits symbol) (pass compute-pass))
-  (setf (slot-value pass 'barrier) (cffi:foreign-bitfield-value '%gl::MemoryBarrierMask (list bits))))
-
-(defmethod render ((pass compute-pass) (_ null))
-  (bind-textures pass)
-  (render pass (or (shader-program pass)
-                   (error "Shader program was never allocated!!"))))
-
-(defmethod render ((pass compute-pass) (program shader-program))
-  (let ((work-groups (work-groups pass))
-        (barrier (slot-value pass 'barrier)))
-    (etypecase work-groups
-      (vec3
-       (%gl:dispatch-compute
-        (truncate (vx work-groups))
-        (truncate (vy work-groups))
-        (truncate (vz work-groups))))
-      (integer
-       (%gl:dispatch-compute-indirect work-groups))
-      (buffer-object
-       (%gl:bind-buffer :dispatch-indirect-buffer (gl-name work-groups))
-       (%gl:dispatch-compute-indirect 0)))
-    (when (/= 0 barrier)
-      (%gl:memory-barrier barrier))))
+(defmethod render :before ((pass compute-pass) (_ null))
+  (bind-textures pass))
 
 (defmethod render ((pass compute-pass) (work-groups vec3))
   (setf (work-groups pass) work-groups)

@@ -18,15 +18,13 @@
   (render (// 'trial 'fullscreen-square) program))
 
 (defmethod render ((renderer image-renderer) (texture texture))
-  (let ((fbo (gl:gen-framebuffer)))
-    (gl:bind-framebuffer :framebuffer fbo)
+  (let ((framebuffer (make-instance 'framebuffer :data-pointer (gl:gen-framebuffer))))
     (unwind-protect
          (progn
-           (gl:viewport 0 0 (width texture) (height texture))
-           (%gl:framebuffer-texture :framebuffer :color-attachment0 (gl-name texture) 0)
+           (bind texture framebuffer)
+           (activate framebuffer)
            (render renderer NIL))
-      (gl:bind-framebuffer :framebuffer 0)
-      (gl:delete-framebuffers (list fbo)))))
+      (deallocate framebuffer))))
 
 (define-class-shader (image-renderer :vertex-shader)
   "

@@ -68,20 +68,19 @@
          ,@(when iterate
              (destructuring-bind (times (a b)) iterate
                `((defmethod render ((pass ,name) (program shader-program))
-                   (let ((in (gl-name (slot-value pass ',a)))
-                         (out (gl-name (slot-value pass ',b)))
+                   (let ((in (slot-value pass ',a))
+                         (out (slot-value pass ',b))
                          (unit-id (unit-id (port pass ',a)))
                          (attachment (attachment (port pass ',b)))
                          (times ,times))
-                     (gl:active-texture unit-id)
                      (dotimes (i times)
                        (call-next-method)
                        (when (< i (1- times))
                          (rotatef in out)
-                         (%gl:bind-texture :texture-2d in)
-                         (%gl:framebuffer-texture :framebuffer attachment out 0)))
-                     (setf (gl-name (slot-value pass ',a)) in)
-                     (setf (gl-name (slot-value pass ',b)) out))))))))))
+                         (bind in unit-id)
+                         (bind out framebuffer)))
+                     (setf (gl-name (slot-value pass ',a)) (gl-name in))
+                     (setf (gl-name (slot-value pass ',b)) (gl-name out)))))))))))
 
 (defclass pixel-pipeline (pipeline)
   ((width :initarg :width :accessor width)
@@ -177,13 +176,11 @@
              (setf (dirty-p pipeline) NIL))
            (let ((in (aref (passes pipeline) 0))
                  (out (aref (passes pipeline) (1- (length (passes pipeline))))))
-             (%gl:bind-framebuffer :framebuffer (gl-name (framebuffer out)))
+             (activate (framebuffer out))
              ,@(loop for (out in) in loopback
                      collect `(rotatef (gl-name (slot-value in ',in))
                                        (gl-name (slot-value out ',out)))
-                     collect `(%gl:framebuffer-texture
-                               :framebuffer (attachment (port out ',out))
-                               (gl-name (slot-value out ',out)) 0))))
+                     collect `(bind (slot-value out ',out) (framebuffer out)))))
 
          ,@(loop for (kind name type . args) in slots
                  when (eql :uniform kind)

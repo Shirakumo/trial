@@ -16,16 +16,11 @@
   (stage (vertex-array skybox) area))
 
 (defmethod render ((skybox skybox) (shader shader-program))
-  (let ((texture (texture skybox)))
-    (setf (uniform shader "view_matrix") (view-matrix))
-    (setf (uniform shader "projection_matrix") (projection-matrix))
-    (gl:depth-mask NIL)
-    (gl:active-texture :texture0)
-    (gl:bind-vertex-array (gl-name (vertex-array skybox)))
-    (gl:bind-texture (target texture) (gl-name texture))
-    (gl:draw-arrays :triangle-strip 0 4)
-    (gl:bind-texture (target texture) 0)
-    (gl:depth-mask T)))
+  (setf (uniform shader "view_matrix") (view-matrix))
+  (setf (uniform shader "projection_matrix") (projection-matrix))
+  (with-render-settings (:no-depth-writes)
+    (bind (texture skybox) NIL)
+    (render (vertex-array skybox) NIL)))
 
 (define-class-shader (skybox :vertex-shader)
   "const vec2 quad_vertices[4] = vec2[4](vec2(-1.0, -1.0), vec2(1.0, -1.0), vec2(-1.0, 1.0), vec2(1.0, 1.0));

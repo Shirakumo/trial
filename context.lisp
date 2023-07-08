@@ -46,15 +46,11 @@
    (wait-lock :initform (bt:make-lock "Context wait lock") :reader context-wait-lock)
    (handler :initarg :handler :accessor handler)
    (shared-with :initarg :share-with :reader shared-with)
-   (glsl-target-version :initarg :glsl-version :initform NIL :accessor glsl-target-version)
    (binding-point-allocator :initform (make-array 256 :element-type 'bit) :accessor binding-point-allocator))
   (:default-initargs
    :title "Trial"
    :width 1280
    :height 720
-   :glsl-version NIL
-   :version '(3 3)
-   :profile :core
    :double-buffering T
    :stereo-buffer NIL
    :vsync :off
@@ -134,8 +130,7 @@
     (call-next-method)
     (v:info :trial.context "Recreated context successfully.")
     (make-current context)
-    (context-note-debug-info context)
-    (cache-gl-extensions)))
+    (context-note-debug-info context)))
 
 (defmethod current-p ((context context) &optional (thread (bt:current-thread)))
   (eql thread (current-thread context)))
@@ -208,63 +203,11 @@
 (defmethod describe-object :after ((context context) stream)
   (context-info context stream))
 
-(defun context-info (context &key (stream *standard-output*) (show-extensions T))
-  (format stream "~&~%Running GL~a.~a ~a~%~
-                    Sample buffers:     ~a (~a sample~:p)~%~
-                    Max texture size:   ~a~%~
-                    Max texture units:  ~a ~a ~a ~a ~a ~a~%~
-               ~@[~{Max compute groups: ~a ~a ~a~%~
-                    Max work groups:    ~a ~a ~a (~a)~%~}~]~
-                    GL Vendor:          ~a~%~
-                    GL Renderer:        ~a~%~
-                    GL Version:         ~a~%~
-                    GL Shader Language: ~a~%~
-                    ~@[GL Extensions:      ~{~a~^ ~}~%~]"
-          (gl-property :major-version)
-          (gl-property :minor-version)
-          (profile context)
-          (gl-property :sample-buffers)
-          (gl-property :samples)
-          (gl-property :max-texture-size)
-          (gl-property :max-vertex-texture-image-units)
-          ;; Fuck you, GL, and your stupid legacy crap.
-          (gl-property :max-texture-image-units)
-          (gl-property :max-tess-control-texture-image-units)
-          (gl-property :max-tess-evaluation-texture-image-units)
-          (gl-property :max-geometry-texture-image-units)
-          (gl-property :max-compute-texture-image-units)
-          (when-gl-extension :GL-ARB-COMPUTE-SHADER
-            (append (coerce (gl-property :max-compute-work-group-count) 'list)
-                    (coerce (gl-property :max-compute-work-group-size) 'list)
-                    (list (gl-property :max-compute-work-group-invocations))))
-          (gl-property :vendor)
-          (gl-property :renderer)
-          (gl-property :version)
-          (gl-property :shading-language-version)
-          (when show-extensions
-            (ignore-errors
-             (loop for i from 0 below (gl:get* :num-extensions)
-                   collect (gl:get-string-i :extensions i))))))
-
 (defun context-note-debug-info (context)
   (v:debug :trial.context "Context information: ~a"
            (let ((*print-right-margin* 1000)) ; SBCL fails otherwise. Huh?
              (with-output-to-string (out)
                (context-info context :stream out)))))
-
-(defmethod glsl-target-version ((context context))
-  (let ((slot (slot-value context 'glsl-target-version)))
-    (or slot (format NIL "~{~d~d~}0" (version context)))))
-
-(defmethod glsl-version-header ((context context))
-  (format NIL "#version ~a~@[ ~a~]"
-          (glsl-target-version context)
-          (case (profile context)
-            (:core "core")
-            (:es "es"))))
-
-(defmethod glsl-target-version ((default (eql T)))
-  (if *context* (glsl-target-version *context*) "330"))
 
 (defmethod (setf icon) ((path pathname) (context context))
   (multiple-value-bind (bits width height pixel-type pixel-format swizzle)
