@@ -46,15 +46,11 @@
    (wait-lock :initform (bt:make-lock "Context wait lock") :reader context-wait-lock)
    (handler :initarg :handler :accessor handler)
    (shared-with :initarg :share-with :reader shared-with)
-   (glsl-target-version :initarg :glsl-version :initform NIL :accessor glsl-target-version)
    (binding-point-allocator :initform (make-array 256 :element-type 'bit) :accessor binding-point-allocator))
   (:default-initargs
    :title "Trial"
    :width 1280
    :height 720
-   :glsl-version NIL
-   :version '(3 3)
-   :profile :core
    :double-buffering T
    :stereo-buffer NIL
    :vsync :off
@@ -134,8 +130,7 @@
     (call-next-method)
     (v:info :trial.context "Recreated context successfully.")
     (make-current context)
-    (context-note-debug-info context)
-    (cache-gl-extensions)))
+    (context-note-debug-info context)))
 
 (defmethod current-p ((context context) &optional (thread (bt:current-thread)))
   (eql thread (current-thread context)))
@@ -213,20 +208,6 @@
            (let ((*print-right-margin* 1000)) ; SBCL fails otherwise. Huh?
              (with-output-to-string (out)
                (context-info context :stream out)))))
-
-(defmethod glsl-target-version ((context context))
-  (let ((slot (slot-value context 'glsl-target-version)))
-    (or slot (format NIL "~{~d~d~}0" (version context)))))
-
-(defmethod glsl-version-header ((context context))
-  (format NIL "#version ~a~@[ ~a~]"
-          (glsl-target-version context)
-          (case (profile context)
-            (:core "core")
-            (:es "es"))))
-
-(defmethod glsl-target-version ((default (eql T)))
-  (if *context* (glsl-target-version *context*) "330"))
 
 (defmethod (setf icon) ((path pathname) (context context))
   (multiple-value-bind (bits width height pixel-type pixel-format swizzle)
