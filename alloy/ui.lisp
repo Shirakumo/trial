@@ -131,10 +131,8 @@
   (trial:stage (trial:framebuffer pass) area))
 
 (defmethod trial:render :around ((pass ui-pass) target)
-  (trial:with-pushed-features
-    (trial:enable-feature :depth-test)
-    (setf (clear-color *context*) 0)
-    (call-next-method)))
+  (setf (clear-color *context*) 0)
+  (call-next-method))
 
 ;; KLUDGE: No idea why this is necessary, fuck me.
 (defmethod simple:request-font :around ((pass ui-pass) font &key)

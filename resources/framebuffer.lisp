@@ -101,14 +101,25 @@
   (let ((bits (slot-value framebuffer 'clear-bits)))
     (when (< 0 bits) (%gl:clear bits))))
 
-;; FIXME: this should ideally be more generic, with blitting from one to another framebuffer
-;;        and handling the screen as a special framebuffer instance that's always around.
+(defmethod render ((source framebuffer) (target integer))
+  (gl:bind-framebuffer :read-framebuffer (gl-name source))
+  (gl:bind-framebuffer :draw-framebuffer target)
+  (%gl:blit-framebuffer 0 0 (trial:width source) (trial:height source)
+                        0 0 (trial:width source) (trial:height source)
+                        '(:color-buffer :depth-buffer :stencil-buffer) :linear))
+
+(defmethod render ((source framebuffer) (target framebuffer))
+  (gl:bind-framebuffer :read-framebuffer (gl-name source))
+  (gl:bind-framebuffer :draw-framebuffer (gl-name target))
+  (%gl:blit-framebuffer 0 0 (trial:width source) (trial:height source)
+                        0 0 (trial:width target) (trial:height target)
+                        '(:color-buffer :depth-buffer :stencil-buffer) :linear))
+
+(defmethod render ((source framebuffer) (target null))
+  (render source 0))
+
 (defmethod blit-to-screen ((framebuffer framebuffer))
-  (gl:bind-framebuffer :read-framebuffer (gl-name framebuffer))
-  (gl:bind-framebuffer :draw-framebuffer 0)
-  (%gl:blit-framebuffer 0 0 (width framebuffer) (height framebuffer) 0 0 (width *context*) (height *context*)
-                        (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
-                        (cffi:foreign-enum-value '%gl:enum :nearest)))
+  (render framebuffer 0))
 
 (defgeneric capture (thing &key &allow-other-keys))
 (defmethod capture ((framebuffer framebuffer) &key (x 0) (y 0) (width (width framebuffer)) (height (height framebuffer))

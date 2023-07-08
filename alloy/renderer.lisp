@@ -194,15 +194,10 @@
 
 (defmethod opengl:bind ((framebuffer trial:framebuffer))
   (setf (target framebuffer) (gl:get-integer :draw-framebuffer-binding))
-  (trial:activate framebuffer)
-  (gl:clear :color-buffer :depth-buffer :stencil-buffer))
+  (trial:activate framebuffer))
 
 (defmethod opengl:blit-framebuffer ((framebuffer trial:framebuffer))
-  (gl:bind-framebuffer :read-framebuffer (trial:gl-name framebuffer))
-  (gl:bind-framebuffer :draw-framebuffer (target framebuffer))
-  (let ((w (trial:width framebuffer))
-        (h (trial:height framebuffer)))
-    (%gl:blit-framebuffer 0 0 w h 0 0 w h '(:color-buffer :depth-buffer :stencil-buffer) :nearest)))
+  (trial:render framebuffer (target framebuffer)))
 
 (defclass image (trial:texture simple:image)
   ())
