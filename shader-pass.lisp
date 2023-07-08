@@ -113,7 +113,7 @@
   (:inhibit-shaders (shader-entity :fragment-shader)))
 
 (defmethod shared-initialize :after ((pass shader-pass) slots &key)
-  (loop with texture-index = (max 16 (gl:get-integer :max-texture-image-units))
+  (loop with texture-index = (if *context* (max-texture-id *context*) 16)
         for port in (flow:ports pass)
         do (typecase port
              (texture-port

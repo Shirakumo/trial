@@ -44,7 +44,7 @@
   (setf (slot-value pass 'light-block) (make-instance 'uniform-buffer :binding NIL :struct (make-instance 'standard-light-block :size max-lights))))
 
 (defmethod shared-initialize :after ((pass standard-render-pass) slots &key)
-  (let ((max-textures (max 16 (if *context* (gl:get-integer :max-texture-image-units) 256))))
+  (let ((max-textures (max 16 (if *context* (max-texture-id *context*) 256))))
     (dolist (port (flow:ports pass))
       (typecase port
         (texture-port

@@ -77,11 +77,6 @@
 (defun round-to (base number)
   (* base (ceiling number base)))
 
-(defun gl-property (name)
-  (handler-case (gl:get* name)
-    (error (err) (declare (ignore err))
-      :unavailable)))
-
 (defmethod apply-class-changes ((class standard-class)))
 
 (defmethod apply-class-changes :before ((class standard-class))
@@ -816,14 +811,6 @@
                      (write-char (char-upcase c) out)))))
    package))
 
-(defun gl-vendor ()
-  (let ((vendor (gl:get-string :vendor)))
-    (cond ((search "Intel" vendor) :intel)
-          ((search "NVIDIA" vendor) :nvidia)
-          ((search "ATI" vendor) :amd)
-          ((search "AMD" vendor) :amd)
-          (T :unknown))))
-
 (defun check-texture-size (width height)
   (let ((max (gl:get* :max-texture-size)))
     (when (< max (max width height))
@@ -1136,36 +1123,6 @@
      (ecase type
        (single-float :float)
        (double-flot :double)))))
-
-(define-global +gl-extensions+ ())
-
-(defun cache-gl-extensions ()
-  (let ((*package* (find-package "KEYWORD")))
-    (setf +gl-extensions+
-          (loop for i from 0 below (gl:get* :num-extensions)
-                for name = (ignore-errors (gl:get-string-i :extensions i))
-                when name
-                collect (cffi:translate-name-from-foreign name *package*)))))
-
-(defun gl-extension-p (extension)
-  (find extension +gl-extensions+))
-
-(defmacro when-gl-extension (extension &body body)
-  (let ((list (enlist extension)))
-    ;; TODO: Optimise this by caching the test after first runtime.
-    `(when (and ,@(loop for extension in list
-                        collect `(find ,extension +gl-extensions+)))
-       ,@body)))
-
-(defmacro gl-extension-case (&body cases)
-  `(cond ,@(loop for (extensions . body) in cases
-                 collect (case extensions
-                           ((T otherwise)
-                            `(T ,@body))
-                           (T
-                            `((and ,@(loop for extension in (enlist extensions)
-                                           collect `(find ,extension +gl-extensions+)))
-                              ,@body))))))
 
 (declaim (inline dbg))
 #-trial-release

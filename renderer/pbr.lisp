@@ -106,7 +106,7 @@
          (setf (uniform program "brdf_lut") (local-id (// 'trial 'brdf-lut) pass)))
         (T
          ;; KLUDGE: Just set them to bogus values to get the AMD driver to shut up.
-         (let ((max (1- (gl:get-integer :max-combined-texture-image-units))))
+         (let ((max (1- (max-texture-id *context*))))
            (setf (uniform program "irradiance_map") max)
            (setf (uniform program "environment_map") max))
          (setf (uniform program "brdf_lut") 0))))

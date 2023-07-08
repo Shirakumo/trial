@@ -232,3 +232,116 @@
         (b (ldb (byte 8 16) int))
         (a (ldb (byte 8 24) int)))
     (gl:clear-color (/ r 255.0) (/ g 255.0) (/ b 255.0) (/ a 255.0))))
+
+;; https://www.khronos.org/registry/OpenGL/extensions/ATI/ATI_meminfo.txt
+(defun %gl-gpu-room-ati ()
+  (let* ((vbo-free-memory-ati (gl:get-integer #x87FB 4))
+         (tex-free-memory-ati (gl:get-integer #x87FC 4))
+         (buf-free-memory-ati (gl:get-integer #x87FD 4))
+         (total (+ (aref vbo-free-memory-ati 0)
+                   (aref tex-free-memory-ati 0)
+                   (aref buf-free-memory-ati 0))))
+    (values total total)))
+
+;; http://developer.download.nvidia.com/opengl/specs/GL_NVX_gpu_memory_info.txt
+(defun %gl-gpu-room-nvidia ()
+  (let ((vidmem-total (gl:get-integer #x9047 1))
+        (vidmem-free  (gl:get-integer #x9049 1)))
+    (values vidmem-free
+            vidmem-total)))
+
+(defmethod gpu-room ((context context))
+  (macrolet ((jit (thing)
+               `(ignore-errors
+                 (return-from gpu-room
+                   (multiple-value-prog1 ,thing
+                     (compile 'gpu-room (lambda ()
+                                          ,thing)))))))
+    (jit (%gl-gpu-room-ati))
+    (jit (%gl-gpu-room-nvidia))
+    (jit (values 1 1))))
+
+(defmethod max-texture-id ((context context))
+  (gl:get-integer :max-texture-image-units))
+
+(define-global +gl-extensions+ ())
+
+(defun cache-gl-extensions ()
+  (let ((*package* (find-package "KEYWORD")))
+    (setf +gl-extensions+
+          (loop for i from 0 below (gl:get* :num-extensions)
+                for name = (ignore-errors (gl:get-string-i :extensions i))
+                when name
+                collect (cffi:translate-name-from-foreign name *package*)))))
+
+(defun gl-extension-p (extension)
+  (find extension +gl-extensions+))
+
+(defun list-gl-extensions ()
+  (or +gl-extensions*
+      (cache-gl-extensions)))
+
+(defmacro when-gl-extension (extension &body body)
+  (let ((list (enlist extension)))
+    ;; TODO: Optimise this by caching the test after first runtime.
+    `(when (and ,@(loop for extension in list
+                        collect `(find ,extension +gl-extensions+)))
+       ,@body)))
+
+(defmacro gl-extension-case (&body cases)
+  `(cond ,@(loop for (extensions . body) in cases
+                 collect (case extensions
+                           ((T otherwise)
+                            `(T ,@body))
+                           (T
+                            `((and ,@(loop for extension in (enlist extensions)
+                                           collect `(find ,extension +gl-extensions+)))
+                              ,@body))))))
+
+(defun gl-property (name)
+  (handler-case (gl:get* name)
+    (error (err) (declare (ignore err))
+      :unavailable)))
+
+(defun gl-vendor ()
+  (let ((vendor (gl:get-string :vendor)))
+    (cond ((search "Intel" vendor) :intel)
+          ((search "NVIDIA" vendor) :nvidia)
+          ((search "ATI" vendor) :amd)
+          ((search "AMD" vendor) :amd)
+          (T :unknown))))
+
+(defmethod context-info ((context context) &key (stream *standard-output*) (show-extensions T))
+  (format stream "~&~%Running GL~a.~a ~a~%~
+                    Sample buffers:     ~a (~a sample~:p)~%~
+                    Max texture size:   ~a~%~
+                    Max texture units:  ~a ~a ~a ~a ~a ~a~%~
+               ~@[~{Max compute groups: ~a ~a ~a~%~
+                    Max work groups:    ~a ~a ~a (~a)~%~}~]~
+                    GL Vendor:          ~a~%~
+                    GL Renderer:        ~a~%~
+                    GL Version:         ~a~%~
+                    GL Shader Language: ~a~%~
+                    ~@[GL Extensions:      ~{~a~^ ~}~%~]"
+          (gl-property :major-version)
+          (gl-property :minor-version)
+          (profile context)
+          (gl-property :sample-buffers)
+          (gl-property :samples)
+          (gl-property :max-texture-size)
+          (gl-property :max-vertex-texture-image-units)
+          ;; Fuck you, GL, and your stupid legacy crap.
+          (gl-property :max-texture-image-units)
+          (gl-property :max-tess-control-texture-image-units)
+          (gl-property :max-tess-evaluation-texture-image-units)
+          (gl-property :max-geometry-texture-image-units)
+          (gl-property :max-compute-texture-image-units)
+          (when-gl-extension :GL-ARB-COMPUTE-SHADER
+                             (append (coerce (gl-property :max-compute-work-group-count) 'list)
+                                     (coerce (gl-property :max-compute-work-group-size) 'list)
+                                     (list (gl-property :max-compute-work-group-invocations))))
+          (gl-property :vendor)
+          (gl-property :renderer)
+          (gl-property :version)
+          (gl-property :shading-language-version)
+          (when show-extensions (list-gl-extensions))))

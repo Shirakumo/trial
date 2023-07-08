@@ -208,44 +208,6 @@
 (defmethod describe-object :after ((context context) stream)
   (context-info context stream))
 
-(defun context-info (context &key (stream *standard-output*) (show-extensions T))
-  (format stream "~&~%Running GL~a.~a ~a~%~
-                    Sample buffers:     ~a (~a sample~:p)~%~
-                    Max texture size:   ~a~%~
-                    Max texture units:  ~a ~a ~a ~a ~a ~a~%~
-               ~@[~{Max compute groups: ~a ~a ~a~%~
-                    Max work groups:    ~a ~a ~a (~a)~%~}~]~
-                    GL Vendor:          ~a~%~
-                    GL Renderer:        ~a~%~
-                    GL Version:         ~a~%~
-                    GL Shader Language: ~a~%~
-                    ~@[GL Extensions:      ~{~a~^ ~}~%~]"
-          (gl-property :major-version)
-          (gl-property :minor-version)
-          (profile context)
-          (gl-property :sample-buffers)
-          (gl-property :samples)
-          (gl-property :max-texture-size)
-          (gl-property :max-vertex-texture-image-units)
-          ;; Fuck you, GL, and your stupid legacy crap.
-          (gl-property :max-texture-image-units)
-          (gl-property :max-tess-control-texture-image-units)
-          (gl-property :max-tess-evaluation-texture-image-units)
-          (gl-property :max-geometry-texture-image-units)
-          (gl-property :max-compute-texture-image-units)
-          (when-gl-extension :GL-ARB-COMPUTE-SHADER
-            (append (coerce (gl-property :max-compute-work-group-count) 'list)
-                    (coerce (gl-property :max-compute-work-group-size) 'list)
-                    (list (gl-property :max-compute-work-group-invocations))))
-          (gl-property :vendor)
-          (gl-property :renderer)
-          (gl-property :version)
-          (gl-property :shading-language-version)
-          (when show-extensions
-            (ignore-errors
-             (loop for i from 0 below (gl:get* :num-extensions)
-                   collect (gl:get-string-i :extensions i))))))
-
 (defun context-note-debug-info (context)
   (v:debug :trial.context "Context information: ~a"
            (let ((*print-right-margin* 1000)) ; SBCL fails otherwise. Huh?
