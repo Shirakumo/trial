@@ -87,3 +87,26 @@
   (values (round (- (sb-ext:dynamic-space-size) (sb-kernel:dynamic-usage)) 1024.0)
           (round (sb-ext:dynamic-space-size) 1024.0))
   #-sbcl (values 1 1))
+
+#+windows
+(cffi:define-foreign-library secur32
+  (T (:default "Secur32")))
+
+(defun fallback-username ()
+  (or
+   #+windows
+   (cffi:with-foreign-objects ((size :ulong)
+                               (name :uint16 128))
+     (unless (cffi:foreign-library-loaded-p 'secur32)
+       (cffi:load-foreign-library 'secur32))
+     (setf (cffi:mem-ref size :ulong) 128)
+     ;; Constant 3 here specifies a "display name".
+     (cond ((< 0 (cffi:foreign-funcall "GetUserNameExW" :int 13 :pointer name :pointer size :int))
+            (org.shirakumo.com-on:wstring->string name (cffi:mem-ref size :ulong)))
+           (T
+            (setf (cffi:mem-ref size :ulong) 128)
+            (when (< 0 (cffi:foreign-funcall "GetUserNameW" :pointer name :pointer size :int))
+              (org.shirakumo.com-on:wstring->string name (cffi:mem-ref size :ulong))))))
+   #+unix
+   (cffi:foreign-funcall "getlogin" :string)
+   (pathname-utils:directory-name (user-homedir-pathname))))
