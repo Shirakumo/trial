@@ -95,9 +95,9 @@
                      args))
 
 (defmacro define-primitive-type (name &body slots)
-  (let ((int-constructor (mksym *package* '%make- name))
-        (constructor (mksym *package* 'make- name)))
-    (destructuring-bind (name &optional (super 'primitive)) (enlist name)
+  (destructuring-bind (name &optional (super 'primitive)) (enlist name)
+    (let ((int-constructor (mksym *package* '%make- name))
+          (constructor (mksym *package* 'make- name)))
       `(progn
          (declaim (inline ,constructor))
          (defstruct (,name (:constructor ,int-constructor)
@@ -167,7 +167,7 @@
   (let ((vertices (gensym "VERTICES"))
         (faces (gensym "FACES"))
         (face-table (gensym "FACE-TABLE")))
-    `(let ((,vertices (make-array 0 :element-type 'single-float :adjustable T :fill-pointer T))
+    `(let ((,vertices (make-array 0 :element-type 'single-float :adjustable T))
            (,faces (make-array 0 :element-type '(unsigned-byte 32) :adjustable T :fill-pointer T))
            (,face-table (make-hash-table :test 'equal))
            (i 0))
@@ -179,6 +179,8 @@
                         (T
                          (vector-push-extend i ,faces)
                          (let ((j (* 3 i)))
+                           (when (< (length ,vertices) (+ j 3))
+                             (adjust-array ,vertices (+ j 3)))
                            (setf (aref ,vertices (+ j 0)) (float x 0f0))
                            (setf (aref ,vertices (+ j 1)) (float y 0f0))
                            (setf (aref ,vertices (+ j 2)) (float z 0f0)))
