@@ -184,6 +184,7 @@
                            (setf (aref ,vertices (+ j 0)) (float x 0f0))
                            (setf (aref ,vertices (+ j 1)) (float y 0f0))
                            (setf (aref ,vertices (+ j 2)) (float z 0f0)))
+                         (setf (gethash c ,face-table) i)
                          (incf i)))))
               (,finalizer ()
                 (values (make-array (length ,vertices) :element-type 'single-float :initial-contents ,vertices)
