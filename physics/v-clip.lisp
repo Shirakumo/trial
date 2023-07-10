@@ -11,6 +11,10 @@
   (lf NIL :type T)
   (rf NIL :type T))
 
+(defmethod print-object ((state state) stream)
+  (print-unreadable-object (state stream :type T :identity T)
+    (format stream "~a" (state-distance state))))
+
 (defstruct (plane (:constructor %make-plane (normal offset)))
   (normal (vec 0 0 0) :type vec3)
   (offset 0.0 :type single-float))
@@ -21,7 +25,12 @@
 (defun make-plane (normal offset)
   (etypecase offset
     (real (%make-plane normal (float offset 0f0)))
-    (vec3 (%make-plane normal (- (v. offset normal))))))
+    (vec3 (%make-plane normal (- (v. offset normal))))
+    (vertex (make-plane normal (vertex-location offset)))))
+
+(defmethod print-object ((plane plane) stream)
+  (print-unreadable-object (plane stream :type T)
+    (format stream "~a ~a" (plane-normal plane) (plane-offset plane))))
 
 (defstruct cone
   (plane NIL :type plane)
@@ -31,6 +40,10 @@
             (:include cone)
             (:constructor make-vertex-cone (plane neighbor))))
 
+(defmethod print-object ((cone vertex-cone) stream)
+  (print-unreadable-object (cone stream :type T)
+    (format stream "~a ~a" (plane-normal (cone-plane cone)) (plane-offset (cone-plane cone)))))
+
 (defstruct (face-cone 
             (:include cone)
             (:constructor make-face-cone (plane neighbor)))
@@ -38,9 +51,17 @@
   (cw NIL)
   (index 0 :type (integer 0 2)))
 
+(defmethod print-object ((cone face-cone) stream)
+  (print-unreadable-object (cone stream :type T)
+    (format stream "~a ~a" (plane-normal (cone-plane cone)) (plane-offset (cone-plane cone)))))
+
 (defstruct (vertex (:constructor %make-vertex (location)))
   (location (vec 0 0 0) :type vec3)
   (cone (make-array 0 :adjustable T :fill-pointer T) :type vector))
+
+(defmethod print-object ((vertex vertex) stream)
+  (print-unreadable-object (vertex stream :type T)
+    (format stream "~a" (vertex-location vertex))))
 
 (defun make-vertex (x y z)
   (%make-vertex (vec x y z)))
@@ -48,6 +69,10 @@
 (defstruct (face (:constructor %make-face (plane)))
   (plane NIL :type plane)
   (cone (make-array 0 :adjustable T :fill-pointer T) :type vector))
+
+(defmethod print-object ((face face) stream)
+  (print-unreadable-object (face stream :type T)
+    (format stream "~a ~a" (plane-normal (face-plane face)) (plane-offset (face-plane face)))))
 
 (defun make-face (v0 v1 v2 edges)
   (let* ((u (v- (vertex-location v1) (vertex-location v0)))
@@ -75,6 +100,10 @@
   (hplane NIL :type plane)
   (lplane NIL :type plane)
   (rplane NIL :type plane))
+
+(defmethod print-object ((edge edge) stream)
+  (print-unreadable-object (edge stream :type T)
+    (format stream "~a ~a" (vertex-location (edge-tail edge)) (vertex-location (edge-head edge)))))
 
 (defun make-edge (f tail head edges)
   (flet ((add-cone (cone vec)
@@ -128,6 +157,13 @@
   (faces NIL :type (simple-array face (*)))
   (edges NIL :type (simple-array edge (*))))
 
+(defmethod print-object ((mesh mesh) stream)
+  (print-unreadable-object (mesh stream :type T)
+    (format stream "~a verts ~a faces ~a edges"
+            (length (mesh-vertices mesh))
+            (length (mesh-faces mesh))
+            (length (mesh-edges mesh)))))
+
 (defun make-triangle-mesh (locations indices)
   (let* ((vertices (make-array (truncate (length locations) 3)))
          (faces (make-array (truncate (length indices) 3)))
@@ -146,6 +182,13 @@
                                 edges)
           do (setf (aref faces j) face))
     (make-mesh :vertices vertices :faces faces :edges (make-array (length edges) :initial-contents edges))))
+
+(defmethod make-primitive-mesh ((primitive trial:primitive))
+  (make-primitive-mesh (trial::coerce-object primitive 'trial::convex-mesh)))
+
+(defmethod make-primitive-mesh ((primitive trial::convex-mesh))
+  (make-triangle-mesh (trial::convex-mesh-vertices primitive)
+                      (trial::convex-mesh-faces primitive)))
 
 (defmacro define-tester (name args &body body)
   `(defun ,name (state ,@(cddr args))
