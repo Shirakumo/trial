@@ -131,6 +131,7 @@
   (trial:stage (trial:framebuffer pass) area))
 
 (defmethod trial:render :around ((pass ui-pass) target)
+  (trial:activate (trial:framebuffer pass))
   (trial:with-pushed-features
     (trial:enable-feature :depth-test)
     (gl:clear-color 0 0 0 0)
