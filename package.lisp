@@ -315,6 +315,7 @@
    #:primitive-material
    #:primitive-local-transform
    #:primitive-transform
+   #:define-primitive-type
    #:entity
    #:material
    #:sphere
@@ -345,7 +346,13 @@
    #:triangle-a
    #:triangle-b
    #:triangle-c
-   #:make-triangle)
+   #:make-triangle
+   #:general-mesh
+   #:general-mesh-vertices
+   #:general-mesh-faces
+   #:make-general-mesh
+   #:convex-mesh
+   #:make-convex-mesh)
   ;; physics/ray.lisp
   (:export
    #:ray
