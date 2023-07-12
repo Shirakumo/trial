@@ -8,7 +8,8 @@
   #-(or linux bsd win32) "trial-examples"
   :entry-point "trial-examples::launch"
   :components ((:file "trial-examples")
-               (:file "triangle"))
+               (:file "triangle")
+               (:file "vclip"))
   :depends-on (:trial-glfw
                :trial-alloy
                :trial-jpeg-turbo

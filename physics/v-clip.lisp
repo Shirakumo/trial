@@ -159,17 +159,17 @@
     (cache-edge* cache)
     (setf (tf-feature cache) edge)))
 
-(trial::define-primitive-type mesh
-  (vertices NIL :type (simple-array vertex (*)))
-  (faces NIL :type (simple-array face (*)))
-  (edges NIL :type (simple-array edge (*))))
+(trial:define-primitive-type (mesh trial:convex-mesh)
+  (%vertices NIL :type (simple-array vertex (*)))
+  (%faces NIL :type (simple-array face (*)))
+  (%edges NIL :type (simple-array edge (*))))
 
 (defmethod print-object ((mesh mesh) stream)
   (print-unreadable-object (mesh stream :type T)
     (format stream "~a verts ~a faces ~a edges"
-            (length (mesh-vertices mesh))
-            (length (mesh-faces mesh))
-            (length (mesh-edges mesh)))))
+            (length (mesh-%vertices mesh))
+            (length (mesh-%faces mesh))
+            (length (mesh-%edges mesh)))))
 
 (defun make-triangle-mesh (locations indices &key location orientation)
   (let* ((vertices (make-array (truncate (length locations) 3)))
@@ -188,18 +188,18 @@
                                 (aref vertices (aref indices (+ i 2)))
                                 edges)
           do (setf (aref faces j) face))
-    (make-mesh :vertices vertices
-               :faces faces
-               :edges (make-array (length edges) :initial-contents edges)
+    (make-mesh :%vertices vertices :vertices locations
+               :%faces faces :faces indices
+               :%edges (make-array (length edges) :initial-contents edges)
                :location location
                :orientation orientation)))
 
-(defmethod trial:coerce-object ((primitive trial::primitive) (type (eql 'mesh)) &key)
-  (trial:coerce-object (trial::coerce-object primitive 'trial::convex-mesh) type))
+(defmethod trial:coerce-object ((primitive trial:primitive) (type (eql 'mesh)) &key)
+  (trial:coerce-object (trial:coerce-object primitive 'trial:convex-mesh) type))
 
-(defmethod trial:coerce-object ((primitive trial::convex-mesh) (type (eql 'mesh)) &key)
-  (make-triangle-mesh (trial::convex-mesh-vertices primitive)
-                      (trial::convex-mesh-faces primitive)
+(defmethod trial:coerce-object ((primitive trial:convex-mesh) (type (eql 'mesh)) &key)
+  (make-triangle-mesh (trial:general-mesh-vertices primitive)
+                      (trial:general-mesh-faces primitive)
                       :location (trial:location primitive)
                       :orientation (trial:orientation primitive)))
 
@@ -283,7 +283,7 @@
                     (plane-normal (face-plane f)) (- d))
               d))
 
-    (loop for face across (mesh-faces mesh)
+    (loop for face across (mesh-%faces mesh)
           for d2 = (plane-distance (face-plane face) (tf-location cv))
           do (when (< d d2)
                (setf d d2)
@@ -464,8 +464,8 @@
           ;; FIXME: might be able to deduplicate with above?
           (etypecase max-neighbor
             (face
-             (let* ((dt (plane-distance (face-plane min-neighbor) (tf-tail ce)))
-                    (dh (plane-distance (face-plane min-neighbor) (tf-head ce)))
+             (let* ((dt (plane-distance (face-plane max-neighbor) (tf-tail ce)))
+                    (dh (plane-distance (face-plane max-neighbor) (tf-head ce)))
                     (dmin (if min-neighbor (+ dt (* min (- dh dt))) dt))
                     (dmax (+ dt (* max (- dh dt)))))
                (when (= 0 dmin)
@@ -672,23 +672,23 @@
          (etypecase (state-rf state)
            (vertex (test #'vertex-vertex cf1 cf2 m12 m21))
            (edge (test #'vertex-edge cf1 cf2 m12 m21))
-           (face (test #'vertex-face cf1 cf2 m12 m21 mesh2))))
+           (face (test #'vertex-face cf1 m12 mesh2))))
         (edge
          (etypecase (state-rf state)
            (vertex (swap) (test #'vertex-edge cf2 cf1 m21 m12))
            (edge (test #'edge-edge cf1 cf2 m12 m21))
-           (face (test #'edge-face cf1 cf2 m12 m21))))
+           (face (test #'edge-face cf1 m12))))
         (face
          (etypecase (state-rf state)
-           (vertex (swap) (test #'vertex-face cf2 cf1 m21 m12 mesh1))
-           (edge (swap) (test #'edge-face cf2 cf1 m21 m12))))))))
+           (vertex (swap) (test #'vertex-face cf2 m21 mesh1))
+           (edge (swap) (test #'edge-face cf2 m21))))))))
 
 (defun vclip-mesh (mesh1 mesh2 m1 m2 &key (max-iterations 5000) state)
   ;; FIXME: dunno if the A B initialisation here is ok.
   (let ((state (or state (make-state :a (m* m1 (vec 0 0 0))
                                      :b (m* m2 (vec 0 0 0))
-                                     :lf (aref (mesh-vertices mesh1) 0)
-                                     :rf (aref (mesh-vertices mesh2) 0))))
+                                     :lf (aref (mesh-%vertices mesh1) 0)
+                                     :rf (aref (mesh-%vertices mesh2) 0))))
         (cf1 (make-transform-cache))
         (cf2 (make-transform-cache))
         (m12 (mat4)) (m21 (mat4)))
@@ -725,7 +725,7 @@
          (state (make-state :a ray-location
                             :b (trial::global-location identity)
                             :lf edge
-                            :rf (aref (mesh-vertices identity) 0)))
+                            :rf (aref (mesh-%vertices identity) 0)))
          (cf1 (make-transform-cache))
          (cf2 (make-transform-cache))
          (m12 (mat4)) (m21 (mat4)))

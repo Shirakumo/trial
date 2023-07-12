@@ -35,7 +35,10 @@
   (process (scene main)))
 
 (defun list-examples ()
-  (sort (copy-list *examples*) #+sb-unicode #'sb-unicode:unicode< #-sb-unicode #'string<))
+  (sort (copy-list *examples*)
+        #+sb-unicode #'sb-unicode:unicode<
+        #-sb-unicode #'string<
+        :key #'string))
 
 (defmacro define-example (name &body body)
   (form-fiddle:with-body-options (body options title (scene-class (trial::mksym #.*package* name '-scene))) body
@@ -55,7 +58,7 @@
        (defmethod change-scene ((main example) (scene (eql ',name)) &key (old (scene main)))
          (change-scene main (make-instance ',scene-class) :old old))
 
-       (when (and +main+ (slot-boundp +main+ 'scene) (typep (scene +main+) ',name))
+       (when (and +main+ (slot-boundp +main+ 'scene) (typep (scene +main+) ',scene-class))
          (issue T 'reload-scene)))))
 
 (define-shader-pass ui (trial-alloy:base-ui)
