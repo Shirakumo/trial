@@ -1,6 +1,10 @@
 (defpackage #:org.shirakumo.fraf.trial.v-clip
   (:use #:cl #:3d-vectors #:3d-matrices)
-  (:export))
+  (:export
+   #:state
+   #:v-clip
+   #:mesh
+   #:make-triangle-mesh))
 
 (in-package #:org.shirakumo.fraf.trial.v-clip)
 
@@ -78,9 +82,12 @@
   (let* ((u (v- (vertex-location v1) (vertex-location v0)))
          (v (v- (vertex-location v2) (vertex-location v1)))
          (face (%make-face (make-plane (nvunit (vc u v)) v0))))
-    (make-edge face v0 v1 edges)
-    (make-edge face v1 v2 edges)
-    (make-edge face v2 v0 edges)
+    (flet ((make-edge (a b)
+             (let ((edge (make-edge face a b)))
+               (when edge (vector-push-extend edge edges)))))
+      (make-edge v0 v1)
+      (make-edge v1 v2)
+      (make-edge v2 v0))
     (let ((cone (face-cone face)))
       (loop for i from 0 below (length cone)
             for cur = (aref cone i)
@@ -105,7 +112,7 @@
   (print-unreadable-object (edge stream :type T)
     (format stream "~a ~a" (vertex-location (edge-tail edge)) (vertex-location (edge-head edge)))))
 
-(defun make-edge (f tail head edges)
+(defun make-edge (f tail head)
   (flet ((add-cone (cone vec)
            (vector-push-extend cone vec)))
     (loop for cone across (vertex-cone head)
@@ -115,7 +122,7 @@
                (let ((v (nvunit (vc (edge-direction edge) (plane-normal (face-plane f))))))
                  (setf (edge-rplane edge) (make-plane v (vertex-location head)))
                  (add-cone (make-face-cone (edge-rplane edge) edge) (face-cone f)))
-               (return-from make-edge)))
+               (return-from make-edge NIL)))
     (let* ((dir (v- (vertex-location head) (vertex-location tail)))
            (edge (%make-edge :tail tail :head head :left f :right f
                              :length (vlength dir) :direction (nvunit dir)
@@ -123,10 +130,10 @@
                              :hplane (make-plane dir (vertex-location head))
                              :lplane (make-plane (nvunit (vc (plane-normal (face-plane f)) dir)) (vertex-location tail))
                              :rplane (make-plane (vec 0 0 0) 0.0))))
-      (vector-push-extend edge edges)
       (add-cone (make-vertex-cone (edge-tplane edge) edge) (vertex-cone tail))
       (add-cone (make-vertex-cone (edge-hplane edge) edge) (vertex-cone head))
-      (add-cone (make-face-cone (edge-lplane edge) edge) (face-cone f)))))
+      (add-cone (make-face-cone (edge-lplane edge) edge) (face-cone f))
+      edge)))
 
 (defstruct (transform-cache
             (:conc-name tf-))
@@ -322,7 +329,7 @@
       (next))
 
     (when min-neighbor
-      (let ((offset (nv- (nv+* (vcopy (edge-tail e)) (tf-segment ce) min)
+      (let ((offset (nv- (nv+* (vcopy (vertex-location (edge-tail e))) (tf-segment ce) min)
                          (vertex-location v))))
         (when (v= offset 0)
           (finish :penetration
@@ -333,7 +340,7 @@
           (next))))
 
     (when max-neighbor
-      (let ((offset (nv- (nv+* (vcopy (edge-tail e)) (tf-segment ce) max)
+      (let ((offset (nv- (nv+* (vcopy (vertex-location (edge-tail e))) (tf-segment ce) max)
                          (vertex-location v))))
         (when (v= offset 0)
           (finish :penetration
@@ -651,6 +658,31 @@
   (replace (marr4 m12) (marr4 (minv m1)))
   (nm* m12 m2))
 
+(defun %vclip (state cf1 cf2 m12 m21 mesh1 mesh2 max-iterations)
+  (dotimes (i max-iterations (values state NIL))
+    (flet ((swap ()
+             (rotatef (state-a state) (state-b state))
+             (rotatef (state-lf state) (state-rf state)))
+           (test (fun &rest args)
+             (let ((result (apply fun state args)))
+               (unless (eq result :continue)
+                 (return (values state result))))))
+      (etypecase (state-lf state)
+        (vertex
+         (etypecase (state-rf state)
+           (vertex (test #'vertex-vertex cf1 cf2 m12 m21))
+           (edge (test #'vertex-edge cf1 cf2 m12 m21))
+           (face (test #'vertex-face cf1 cf2 m12 m21 mesh2))))
+        (edge
+         (etypecase (state-rf state)
+           (vertex (swap) (test #'vertex-edge cf2 cf1 m21 m12))
+           (edge (test #'edge-edge cf1 cf2 m12 m21))
+           (face (test #'edge-face cf1 cf2 m12 m21))))
+        (face
+         (etypecase (state-rf state)
+           (vertex (swap) (test #'vertex-face cf2 cf1 m21 m12 mesh1))
+           (edge (swap) (test #'edge-face cf2 cf1 m21 m12))))))))
+
 (defun vclip-mesh (mesh1 mesh2 m1 m2 &key (max-iterations 5000) state)
   ;; FIXME: dunno if the A B initialisation here is ok.
   (let ((state (or state (make-state :a (m* m1 (vec 0 0 0))
@@ -660,42 +692,50 @@
         (cf1 (make-transform-cache))
         (cf2 (make-transform-cache))
         (m12 (mat4)) (m21 (mat4)))
-    (declare (dynamic-extent m12 m21))
+    (declare (dynamic-extent state m12 m21))
     (global-to-relative-mat m1 m2 m12)
     (global-to-relative-mat m2 m1 m21)
-    (dotimes (i max-iterations (values state NIL))
-      (flet ((swap ()
-               (rotatef (state-a state) (state-b state))
-               (rotatef (state-lf state) (state-rf state)))
-             (test (fun &rest args)
-               (let ((result (apply fun state args)))
-                 (unless (eq result :continue)
-                   (return (values state result))))))
-        (etypecase (state-lf state)
-          (vertex
-           (etypecase (state-rf state)
-             (vertex (test #'vertex-vertex cf1 cf2 m12 m21))
-             (edge (test #'vertex-edge cf1 cf2 m12 m21))
-             (face (test #'vertex-face cf1 cf2 m12 m21 mesh2))))
-          (edge
-           (etypecase (state-rf state)
-             (vertex (swap) (test #'vertex-edge cf2 cf1 m21 m12))
-             (edge (test #'edge-edge cf1 cf2 m12 m21))
-             (face (test #'edge-face cf1 cf2 m12 m21))))
-          (face
-           (etypecase (state-rf state)
-             (vertex (swap) (test #'vertex-face cf2 cf1 m21 m12 mesh1))
-             (edge (swap) (test #'edge-face cf2 cf1 m21 m12)))))))))
+    (%vclip state cf1 cf2 m12 m21 mesh1 mesh2 max-iterations)))
 
-(trial::define-hit-detector (mesh mesh)
+(trial:define-hit-detector (mesh mesh)
   (multiple-value-bind (state result) (vclip-mesh a b (trial:primitive-transform a) (trial:primitive-transform b))
     (when (eql result :penetration)
       (let ((feature (state-rf state)))
-        (v<- (trial:hit-normal trial:hit) (etypecase feature
-                                            (face (plane-normal (face-plane feature)))
-                                            ;; Dunno that this is right?
-                                            (vertex (nvunit (v- (state-a state) (state-b state))))
-                                            (edge (nvunit (v- (state-a state) (state-b state)))))))
+        (v<- (trial:hit-normal trial:hit)
+             (etypecase feature
+               (face (plane-normal (face-plane feature)))
+               ;; Dunno that this is right?
+               (vertex (nvunit* (v- (state-a state) (state-b state))))
+               (edge (nvunit* (v- (state-a state) (state-b state))))))
+        (when (v= 0 (trial:hit-normal trial:hit))
+          ;; We have a bad normal, so let's just pick up as a default.
+          (setf (vy (trial:hit-normal trial:hit)) 1.0)))
       (setf (trial:hit-depth trial:hit) (state-distance state))
       (v<- (trial:hit-location trial:hit) (state-a state))
       (trial:finish-hit))))
+
+(trial:define-ray-test (mesh (identity mesh))
+  (let* ((head (%make-vertex ray-location))
+         ;; FIXME: this sucks.
+         (tail (%make-vertex (nv+ (v* ray-direction 10000.0) ray-location)))
+         (edge (make-edge (%make-face (make-plane (cond ((v= ray-direction +vy3+) (vc +vy3+ +vz3+))
+                                                        (T (nvunit (vc ray-direction +vy3+))))
+                                                  ray-location))
+                          tail head))
+         (state (make-state :a ray-location
+                            :b (trial::global-location identity)
+                            :lf edge
+                            :rf (aref (mesh-vertices identity) 0)))
+         (cf1 (make-transform-cache))
+         (cf2 (make-transform-cache))
+         (m12 (mat4)) (m21 (mat4)))
+    (declare (dynamic-extent state cf1 cf2 m12 m21))
+    ;; FIXME: m12 m21
+    (%vclip state cf1 cf2 m12 m21 NIL identity 5000)))
+
+(defun test (a b)
+  (let ((a (trial:coerce-object a 'mesh))
+        (b (trial:coerce-object b 'mesh)))
+    (replace (marr4 (trial:primitive-transform a)) (marr4 (trial:primitive-local-transform a)))
+    (replace (marr4 (trial:primitive-transform b)) (marr4 (trial:primitive-local-transform b)))
+    (trial:detect-hit a b)))

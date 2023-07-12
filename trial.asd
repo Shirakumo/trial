@@ -108,7 +108,8 @@
                              (:file "rigidbody" :depends-on ("primitives"))
                              (:file "primitives" :depends-on ("core"))
                              (:file "ray" :depends-on ("primitives"))
-                             (:file "resolution" :depends-on ("rigidbody"))))
+                             (:file "resolution" :depends-on ("rigidbody"))
+                             (:file "v-clip" :depends-on ("hit-detection" "ray"))))
                (:module "renderer"
                 :depends-on ("package" "shader-pass" "helpers" "gl-struct" "transforms")
                 :components ((:file "lights")
