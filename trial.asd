@@ -105,7 +105,7 @@
                              (:file "hit-detection" :depends-on ("primitives"))
                              (:file "inertia-tensors" :depends-on ("core"))
                              (:file "particle" :depends-on ("core"))
-                             (:file "rigidbody" :depends-on ("primitives"))
+                             (:file "rigidbody" :depends-on ("primitives" "hit-detection"))
                              (:file "primitives" :depends-on ("core"))
                              (:file "ray" :depends-on ("primitives"))
                              (:file "resolution" :depends-on ("rigidbody"))
