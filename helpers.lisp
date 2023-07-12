@@ -172,7 +172,7 @@ void main(){
   ())
 
 (define-class-shader (vertex-colored-entity :vertex-shader)
-  "layout (location = 1) in vec4 in_vertexcolor;
+  "layout (location = 4) in vec4 in_vertexcolor;
 out vec4 vertexcolor;
 
 void main(){
