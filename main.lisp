@@ -79,8 +79,11 @@
   (quit (context main)))
 
 (defmethod update ((main main) tt dt fc)
-  (issue (scene main) 'tick :tt tt :dt dt :fc fc)
-  (process (scene main)))
+  (let ((scene (scene main)))
+    (issue scene 'pre-tick :tt tt :dt dt :fc fc)
+    (issue scene 'tick :tt tt :dt dt :fc fc)
+    (issue scene 'post-tick :tt tt :dt dt :fc fc)
+    (process scene)))
 
 (defmethod commit (thing (main main) &rest args)
   (apply #'commit thing (loader main) args))

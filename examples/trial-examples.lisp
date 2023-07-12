@@ -26,9 +26,12 @@
   (call-next-method))
 
 (defmethod update ((main example) tt dt fc)
-  (if (paused-p main)
-      (handle (make-event 'tick :tt tt :dt dt :fc fc) (camera (scene main)))
-      (issue (scene main) 'tick :tt tt :dt dt :fc fc))
+  (cond ((paused-p main)
+         (handle (make-event 'tick :tt tt :dt dt :fc fc) (camera (scene main))))
+        (T
+         (issue (scene main) 'pre-tick :tt tt :dt dt :fc fc)
+         (issue (scene main) 'tick :tt tt :dt dt :fc fc)
+         (issue (scene main) 'post-tick :tt tt :dt dt :fc fc)))
   (process (scene main)))
 
 (defun list-examples ()

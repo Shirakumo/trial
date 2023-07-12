@@ -191,5 +191,7 @@
 (defmacro define-event-pool (class count)
   `(setf (gethash ',class +event-pools+) (make-event-pool ',class ,count)))
 
+(define-event pre-tick () tt dt fc)
 (define-event tick () tt dt fc)
+(define-event post-tick () tt dt fc)
 (define-event class-changed () changed-class)

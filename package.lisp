@@ -980,6 +980,8 @@
    #:tt
    #:dt
    #:fc
+   #:pre-tick
+   #:post-tick
    #:class-changed
    #:changed-class)
   ;; features.lisp
