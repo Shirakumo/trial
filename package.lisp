@@ -305,13 +305,15 @@
    #:hit-generators)
   ;; physics/primitives.lisp
   (:export
+   #:detect-hit
+   #:intersects-p
    #:detect-hits
    #:define-hit-detector
    #:finish-hit
    #:primitive
    #:primitive-entity
    #:primitive-material
-   #:primitive-local-thransform
+   #:primitive-local-transform
    #:primitive-transform
    #:entity
    #:material
@@ -344,6 +346,13 @@
    #:triangle-b
    #:triangle-c
    #:make-triangle)
+  ;; physics/ray.lisp
+  (:export
+   #:ray
+   #:ray-location
+   #:ray-direction
+   #:copy-ray
+   #:define-ray-test)
   ;; physics/resolution.lisp
   (:export
    #:contact

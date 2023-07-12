@@ -26,18 +26,21 @@
        (vcopy3 (ray-direction ray))))
 
 (defmacro define-ray-test ((b &rest props) &body body)
-  (let ((implicit-name (intern (format NIL "~a-~a-~a" 'ray b 'p))))
+  (let ((implicit-name (intern (format NIL "~a-~a-~a" 'ray b 'p)))
+        (loc (intern (string '#:ray-location)))
+        (dir (intern (string '#:ray-direction)))
+        (normal (intern (string '#:ray-normal))))
     `(progn
        ;; The implicit function is useful to handle composite tests where we depend on the
        ;; result of another shape in some fashion. All implicit functions assume the other
        ;; shape is centred at the origin and axis-aligned, as we handle those kinds of
        ;; shifts using the primitive's transform in the DETECT-HITS function.
-       (defun ,implicit-name (ray-location ray-direction ,@(mapcar #'first props) &optional (normal (vec3)))
+       (defun ,implicit-name (,loc ,dir ,@(mapcar #'first props) &optional (,normal (vec3)))
          (declare (optimize speed (safety 1))
-                  (type vec3 ray-location ray-direction)
+                  (type vec3 ,loc ,dir)
                   ,@(loop for (prop type) in props
                           collect `(type ,type ,prop))
-                  (ignorable normal))
+                  (ignorable ,normal))
          (block NIL
            ,@body))
        
