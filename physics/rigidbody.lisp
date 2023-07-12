@@ -15,6 +15,15 @@
   (when inertia-tensor (setf (inertia-tensor body) inertia-tensor))
   (when physics-primitives (setf (physics-primitives body) physics-primitives)))
 
+(define-hit-detector (rigidbody primitive)
+  (loop for ai across (physics-primitives a)
+        do (detect-hits ai b)))
+
+(define-hit-detector (rigidbody rigidbody)
+  (loop for ai across (physics-primitives a)
+        do (loop for bi across (physics-primitives b)
+                 do (detect-hits ai b))))
+
 (defmethod (setf awake-p) :after ((false null) (entity rigidbody))
   (vsetf (rotation entity) 0 0 0))
 

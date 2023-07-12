@@ -38,7 +38,10 @@
                       (incf start)
                       (if (< start end)
                           (setf hit (aref hits start))
-                          (return))))
+                          (return)))
+                    (detect-hits (,av ,bv)
+                      (setf start (detect-hits ,av ,bv hits start end))))
+               (declare (ignorable #'finish-hit #'detect-hits))
                ,@body))
            start))
        ,@(unless (eql a b)
@@ -319,3 +322,10 @@
 (defmethod coerce-object ((primitive convex-mesh) (type (eql 'pill)) &key)
   (implement!))
 
+(defmethod make-vertex-array ((primitive primitive) vao)
+  (let* ((mesh (coerce-object primitive 'general-mesh))
+         (vbo (make-instance 'vertex-buffer :buffer-data (general-mesh-vertices mesh)))
+         (ebo (make-instance 'vertex-buffer :buffer-data (general-mesh-faces mesh)
+                                            :buffer-type :element-array-buffer
+                                            :element-type :unsigned-int)))
+    (ensure-instance vao 'vertex-array :index-buffer ebo :bindings `((,vbo :size 3)))))

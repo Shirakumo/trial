@@ -37,11 +37,11 @@
           for i from 0
           do (destructuring-bind (buffer &key (index i)
                                               (size 3)
-                                              (stride 0)
+                                              (type (element-type buffer))
+                                              (stride (* size (gl-type-size type)))
                                               (offset 0)
                                               (normalize NIL)
-                                              (instancing 0)
-                                              (type))
+                                              (instancing 0))
                  (enlist binding)
                (check-allocated buffer)
                (gl:bind-buffer (buffer-type buffer) (gl-name buffer))
@@ -50,7 +50,7 @@
                   (setf (index-buffer array) buffer)
                   (decf i))
                  (:array-buffer
-                  (ecase (or type (element-type buffer))
+                  (ecase type
                     ((:half-float :float :fixed)
                      (gl:vertex-attrib-pointer index size (element-type buffer) normalize stride offset))
                     ((:byte :unsigned-byte :short :unsigned-short :int :unsigned-int)
