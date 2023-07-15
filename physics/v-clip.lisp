@@ -8,6 +8,11 @@
 
 (in-package #:org.shirakumo.fraf.trial.v-clip)
 
+(declaim (inline dbg))
+(defun dbg (format &rest args)
+  #++
+  (format T "~&~?~%" format args))
+
 (defstruct state
   (a (vec 0 0 0) :type vec3)
   (b (vec 0 0 0) :type vec3)
@@ -18,6 +23,14 @@
 (defmethod print-object ((state state) stream)
   (print-unreadable-object (state stream :type T :identity T)
     (format stream "~a" (state-distance state))))
+
+(defun kind (thing)
+  (etypecase thing (vertex 0) (edge 1) (face 2)))
+
+(defmethod describe-object ((state state) stream)
+  (format stream "F1: ~a CP1: ~a~%" (kind (state-lf state)) (state-a state))
+  (format stream "F2: ~a CP2: ~a~%" (kind (state-rf state)) (state-b state))
+  (format stream "Distance: ~a" (state-distance state)))
 
 (defstruct (plane (:constructor %make-plane (normal offset)))
   (normal (vec 0 0 0) :type vec3)
@@ -171,6 +184,30 @@
             (length (mesh-%faces mesh))
             (length (mesh-%edges mesh)))))
 
+(defmethod describe-object ((mesh mesh) stream)
+  (let ((verts (mesh-%vertices mesh))
+        (faces (mesh-%faces mesh))
+        (edges (mesh-%edges mesh)))
+    (format stream "~d verts :  ~%" (length verts))
+    (format stream "~d edges :  ~%" (length edges))
+    (format stream "~d faces :  ~%" (length faces))
+    (terpri stream)
+    (loop for v across verts
+          for i from 0
+          do (format stream "vertex ~d ~a   ~a neighbors~%"
+                     i (vertex-location v) (length (vertex-cone v)))
+             (loop for c across (vertex-cone v)
+                   do (format stream "             ~a~%" c)))
+    (loop for e across edges
+          for i from 0
+          do (format stream "edge ~d ~a~%" i (edge-direction e)))
+    (loop for f across faces
+          for i from 0
+          do (format stream "face ~d ~a   3 neighbors~%"
+                     i (face-plane f))
+             (loop for c across (face-cone f)
+                   do (format stream "             ~a~%" c)))))
+
 (defun make-triangle-mesh (locations indices &key location orientation)
   (let* ((vertices (make-array (truncate (length locations) 3)))
          (faces (make-array (truncate (length indices) 3)))
@@ -214,8 +251,7 @@
               (finish (result &optional a b distance)
                 (when a (v<- (state-a state) a))
                 (when b (v<- (state-b state) b))
-                (setf (state-distance state) (or distance
-                                                 (vdistance (state-a state) (state-b state))))
+                (when distance (setf (state-distance state) distance))
                 (return-from ,name result)))
          (declare (inline next finish))
          (declare (ignorable #'next #'finish))
@@ -234,9 +270,11 @@
              (setf v2 (cone-neighbor cone))
              (next)))
 
-  (finish (if (< 0 (state-distance state)) :disjoint :penetration)
-          (vertex-location v1)
-          (vertex-location v2)))
+  (let ((distance (vdistance (vertex-location v2) (tf-location cv1))))
+    (finish (if (< 0 distance) :disjoint :penetration)
+            (vertex-location v1)
+            (vertex-location v2)
+            distance)))
 
 (define-tester vertex-face (v f cv m mesh)
   (cache-vertex m v cv)
@@ -311,26 +349,27 @@
     (loop for cone across (vertex-cone v)
           for dt = (plane-distance (cone-plane cone) (tf-tail ce))
           for dh = (plane-distance (cone-plane cone) (tf-head ce))
-          do (if (<= 0 dt)
-                 (when (and (not (<= 0 dh)) (< (/ dt (- dt dh)) max))
-                   (setf max (/ dt (- dt dh)))
-                   (setf max-neighbor (cone-neighbor cone))
-                   (when (< max min) (return)))
-                 (cond ((< dh 0)
-                        (setf min-neighbor (cone-neighbor cone))
+          do (cond ((<= 0 dt)
+                    (unless (<= 0 dh)
+                      (when (< (/ dt (- dt dh)) max)
+                        (setf max (/ dt (- dt dh)))
                         (setf max-neighbor (cone-neighbor cone))
-                        (return))
-                       ((< min (/ dt (- dt dh)))
-                        (setf min (/ dt (- dt dh)))
-                        (setf min-neighbor (cone-neighbor cone))
-                        (when (< max min) (return))))))
-
+                        (when (< max min) (return)))))
+                   ((< dh 0)
+                    (setf min-neighbor (cone-neighbor cone))
+                    (setf max-neighbor (cone-neighbor cone))
+                    (return))
+                   ((< min (/ dt (- dt dh)))
+                    (setf min (/ dt (- dt dh)))
+                    (setf min-neighbor (cone-neighbor cone))
+                    (when (< max min) (return)))))
+    
     (when (and min-neighbor (eq min-neighbor max-neighbor))
       (setf v min-neighbor)
       (next))
-
+    
     (when min-neighbor
-      (let ((offset (nv- (nv+* (vcopy (vertex-location (edge-tail e))) (tf-segment ce) min)
+      (let ((offset (nv- (nv+* (vcopy (tf-tail ce)) (tf-segment ce) min)
                          (vertex-location v))))
         (when (v= offset 0)
           (finish :penetration
@@ -339,25 +378,23 @@
         (when (< 0 (v. offset (tf-segment ce)))
           (setf v min-neighbor)
           (next))))
-
+    
     (when max-neighbor
-      (let ((offset (nv- (nv+* (vcopy (vertex-location (edge-tail e))) (tf-segment ce) max)
+      (let ((offset (nv- (nv+* (vcopy (tf-tail ce)) (tf-segment ce) max)
                          (vertex-location v))))
         (when (v= offset 0)
           (finish :penetration
                   (vertex-location v)
                   (tf-location cv)))
-        (when (< 0 (v. offset (tf-segment ce)))
+        (when (< (v. offset (tf-segment ce)) 0)
           (setf v max-neighbor)
           (next))))
-
-    (let ((h (v- (tf-location cv)
-                 (vertex-location (edge-tail e)))))
-      (finish :disjoint
-              (vertex-location v)
-              (nv+* (vcopy (vertex-location (edge-tail e)))
-                    (edge-direction e) (v. h (edge-direction e)))
-              (vdistance (state-b state) (tf-location cv))))))
+    
+    (let* ((h (v- (tf-location cv)
+                  (vertex-location (edge-tail e))))
+           (cpe (nv+* (vcopy (vertex-location (edge-tail e)))
+                      (edge-direction e) (v. h (edge-direction e)))))
+      (finish :disjoint (vertex-location v) cpe (vdistance cpe (tf-location cv))))))
 
 (defun edge-edge-subtest (e ce cp)
   (flet ((next (v)
@@ -656,19 +693,28 @@
              (setf (tf-feature ce) e)))
       (next))))
 
-(defun global-to-relative-mat (m1 m2 m12)
-  (replace (marr4 m12) (marr4 (minv m1)))
-  (nm* m12 m2))
+(defun global-to-relative-mat (m1 m2 &optional (m12 (mat4)))
+  (nm* (minv-affine m1 m12) m2))
 
 (defun %vclip (state cf1 cf2 m12 m21 mesh1 mesh2 max-iterations)
   (dotimes (i max-iterations (values state NIL))
-    (flet ((swap ()
-             (rotatef (state-a state) (state-b state))
-             (rotatef (state-lf state) (state-rf state)))
-           (test (fun &rest args)
-             (let ((result (apply fun state args)))
-               (unless (eq result :continue)
-                 (return (values state result))))))
+    (labels ((swap ()
+               (rotatef (state-a state) (state-b state))
+               (rotatef (state-lf state) (state-rf state)))
+             (test (fun &rest args)
+               (let ((result (apply fun state args)))
+                 (dbg "   Result: ~a" result)
+                 (unless (eq result :continue)
+                   (return (values state result)))))
+             (test-1 (fun &rest args)
+               (swap)
+               (let ((result (apply fun state args)))
+                 (dbg "   Result: ~a" result)
+                 (swap)
+                 (unless (eq result :continue)
+                   (return (values state result))))))
+      (dbg "[~d] FL: ~a FR: ~a~%   Dist: ~a"
+           i (kind (state-lf state)) (kind (state-rf state)) (state-distance state))
       (etypecase (state-lf state)
         (vertex
          (etypecase (state-rf state)
@@ -677,13 +723,13 @@
            (face (test #'vertex-face cf1 m12 mesh2))))
         (edge
          (etypecase (state-rf state)
-           (vertex (swap) (test #'vertex-edge cf2 cf1 m21 m12))
+           (vertex (test-1 #'vertex-edge cf2 cf1 m21 m12))
            (edge (test #'edge-edge cf1 cf2 m12 m21))
            (face (test #'edge-face cf1 m12))))
         (face
          (etypecase (state-rf state)
-           (vertex (swap) (test #'vertex-face cf2 m21 mesh1))
-           (edge (swap) (test #'edge-face cf2 m21))))))))
+           (vertex (test-1 #'vertex-face cf2 m21 mesh1))
+           (edge (test-1 #'edge-face cf2 m21))))))))
 
 (defun vclip-mesh (mesh1 mesh2 m1 m2 &key (max-iterations 5000) state)
   ;; FIXME: dunno if the A B initialisation here is ok.
@@ -738,6 +784,9 @@
 (defun test (a b)
   (let ((a (trial:coerce-object a 'mesh))
         (b (trial:coerce-object b 'mesh)))
-    (replace (marr4 (trial:primitive-transform a)) (marr4 (trial:primitive-local-transform a)))
-    (replace (marr4 (trial:primitive-transform b)) (marr4 (trial:primitive-local-transform b)))
-    (trial:detect-hit a b)))
+    (multiple-value-bind (state result)
+        (vclip-mesh a b
+                    (trial:primitive-local-transform a)
+                    (trial:primitive-local-transform b))
+      (describe state)
+      result)))
