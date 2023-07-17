@@ -286,7 +286,7 @@
           for pbr = (gltf:pbr material)
           for name = (or (gltf:name material) (gltf:idx material))
           for mr = (load-image asset (gltf:metallic-roughness pbr))
-          do (setf (trial::swizzle mr) '(:b :g :r :a))
+          do (when mr (setf (trial::swizzle mr) '(:b :g :r :a)))
              (trial:update-material
               name 'trial:pbr-material
               :albedo-texture (load-image asset (gltf:albedo pbr))
