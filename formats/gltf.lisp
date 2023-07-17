@@ -304,6 +304,29 @@
               :occlusion-factor (if (gltf:occlusion-texture material) 1.0 0.0)
               :alpha-cutoff (float (gltf:alpha-cutoff material) 0f0)))))
 
+(defun load-light (light)
+  (flet ((make (type &rest initargs)
+           (apply #'make-instance type
+                  ;; FIXME: intensity is not correctly handled here.
+                  :color (v* (gltf:color light) (gltf:intensity light))
+                  initargs)))
+    (ecase (gltf:kind light)
+      (:directional
+       (make 'trial:directional-light :direction (vec 0 0 -1)))
+      (:point
+       (make 'trial:point-light :linear-attenuation (or (gltf:range light) 0.0)))
+      (:spot
+       (make 'trial:spot-light :direction (vec 0 0 -1)
+                               :linear-attenuation (or (gltf:range light) 0.0)
+                               :inner-radius (gltf:inner-angle light)
+                               :outer-radius (gltf:outer-angle light))))))
+
+(defun load-environment-light (light)
+  (make-instance 'trial:environment-light
+                 :color (vec (gltf:intensity light) (gltf:intensity light) (gltf:intensity light))
+                 :irradiance-map (trial:implement!)
+                 :environment-map (trial:implement!)))
+
 (defclass static-gltf-container (transformed-entity array-container)
   ())
 
@@ -357,10 +380,14 @@
                  (loop for node across children
                        for child = (construct node)
                        do (recurse (gltf:children node) child)
+                          (loop for light across (gltf:lights node)
+                                do (enter (load-light light) child))
                           (enter child container))))
         (loop for node across (gltf:scenes gltf)
               for scene = (make-instance 'static-gltf-container :name (gltf:name node))
               do (setf (gethash (gltf:name node) (scenes asset)) scene)
+                 (when (gltf:light scene)
+                   (enter (load-environment-light (gltf:light scene)) scene))
                  (recurse (gltf:nodes node) scene)))
       ;; Enter it.
       (flet ((load-scene (scene)
