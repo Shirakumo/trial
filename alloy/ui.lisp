@@ -127,6 +127,9 @@
    (trial:color :port-type trial:output :attachment :color-attachment0)
    (trial:depth :port-type trial:output :attachment :depth-stencil-attachment)))
 
+(defmethod trial:enter (thing (pass ui-pass)))
+(defmethod trial:leave (thing (pass ui-pass)))
+
 (defmethod trial:stage :after ((pass ui-pass) (area trial:staging-area))
   (trial:stage (trial:framebuffer pass) area))
 
