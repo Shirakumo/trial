@@ -403,7 +403,7 @@
   (loop for (object . program) across frame
         do (render-with pass object program)))
 
-(defmethod render-with ((pass per-object-pass) object program)
+(defmethod render-with :around ((pass per-object-pass) (object renderable) (program shader-program))
   (restart-case
       (progn
         (prepare-pass-program pass program)
@@ -411,11 +411,14 @@
           (apply-transforms object)
           (bind-textures object)
           (update-uniforms object program)
-          (render object program)))
+          (call-next-method)))
     #-kandria-release
     (leave ()
       :report "Leave the object"
       (leave object T))))
+
+(defmethod render-with ((pass shader-pass) object program)
+  (render object program))
 
 (define-shader-pass single-shader-pass ()
   ((shader-program :accessor shader-program)))
