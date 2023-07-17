@@ -8,13 +8,20 @@
 
 (defun %png-source (png)
   (make-image-source (pngload:data png) (pngload:width png) (pngload:height png)
-                     (infer-pixel-type (pngload:bit-depth png) :unsigned)
+                     (infer-pixel-type (max 8 (pngload:bit-depth png)) :unsigned)
                      (ecase (pngload:color-type png)
                        (:greyscale :red)
                        (:greyscale-alpha :rg)
                        (:truecolour :rgb)
                        (:truecolour-alpha :rgba)
-                       (:indexed-colour :rgba))))
+                       (:indexed-colour
+                        ;; This fucking sucks, man.
+                        (ecase (truncate (length (pngload:data png))
+                                         (* (pngload:width png) (pngload:height png)))
+                          (4 :rgba)
+                          (3 :rgb)
+                          (2 :rg)
+                          (1 :red))))))
 
 (defmethod load-image ((source vector) (type (eql :png)))
   (%png-source (pngload:load-vector source :flatten T :flip-y T :static-vector (static-vector-p source))))
