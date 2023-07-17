@@ -11,7 +11,10 @@
    (#:gltf #:org.shirakumo.fraf.gltf)
    (#:v #:org.shirakumo.verbose))
   (:export
-   #:asset))
+   #:asset
+   #:static-gltf-container
+   #:static-gltf-entity
+   #:animated-gltf-entity))
 (in-package #:org.shirakumo.fraf.trial.gltf)
 
 (defun gltf-node-transform (node)
@@ -304,7 +307,10 @@
 (defclass static-gltf-container (transformed-entity array-container)
   ())
 
-(define-shader-entity static-gltf-entity (trial::multi-mesh-entity trial::per-array-material-renderable transformed-entity array-container)
+(define-shader-entity static-gltf-entity (trial::multi-mesh-entity trial::per-array-material-renderable static-gltf-container)
+  ())
+
+(define-shader-entity animated-gltf-entity (trial::multi-mesh-entity trial::per-array-material-renderable static-gltf-container )
   ())
 
 (defclass asset (file-input-asset
@@ -337,10 +343,13 @@
       (labels ((construct (node)
                  (cond ((gltf:mesh node)
                         (let ((mesh-name (or (gltf:name (gltf:mesh node)) (gltf:idx (gltf:mesh node)))))
-                          (make-instance 'static-gltf-entity :transform (gltf-node-transform node)
-                                                             :name (gltf:name node)
-                                                             :asset asset
-                                                             :mesh mesh-name)))
+                          (make-instance (etypecase (gethash mesh-name meshes)
+                                           (static-mesh 'static-gltf-entity)
+                                           (skinned-mesh 'animated-gltf-entity))
+                                         :transform (gltf-node-transform node)
+                                         :name (gltf:name node)
+                                         :asset asset
+                                         :mesh mesh-name)))
                        (T
                         (make-instance 'static-gltf-container :transform (gltf-node-transform node)
                                                               :name (gltf:name node)))))
