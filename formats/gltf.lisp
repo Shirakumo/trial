@@ -274,7 +274,7 @@
                           :min-filter (if sampler (gltf:min-filter sampler) :linear)
                           :wrapping (list (if sampler (gltf:wrap-s sampler) :clamp-to-edge)
                                           (if sampler (gltf:wrap-t sampler) :clamp-to-edge)
-                                          :clamp-to-edge)))))
+                                          (if sampler (gltf:wrap-t sampler) :clamp-to-edge))))))
 
 (defun load-materials (gltf asset)
   (flet ((to-vec (array)
@@ -304,7 +304,7 @@
 (defclass static-gltf-container (transformed-entity array-container)
   ())
 
-(define-shader-entity static-gltf-entity (trial::multi-mesh-entity trial::per-array-material-renderable transformed-entity)
+(define-shader-entity static-gltf-entity (trial::multi-mesh-entity trial::per-array-material-renderable transformed-entity array-container)
   ())
 
 (defclass asset (file-input-asset
@@ -320,9 +320,7 @@
           (clips (clips asset)))
       (load-materials gltf asset)
       (loop for mesh across (load-meshes gltf)
-            do ;; FIXME: meshes composed out of multiple primitives will have the same name
-               ;;        and only one will get assigned here, essentially discarding the other.
-               (setf (gethash (name mesh) meshes) mesh)
+            do (setf (gethash (name mesh) meshes) mesh)
                (trial::make-vertex-array mesh (resource asset (name mesh))))
       ;; Patch up
       (when (loop for mesh being the hash-values of meshes
