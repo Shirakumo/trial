@@ -342,6 +342,8 @@
    #:height
    #:pill
    #:make-pill
+   #:pill-radius
+   #:pill-height
    #:triangle
    #:triangle-a
    #:triangle-b
@@ -352,6 +354,8 @@
    #:general-mesh-faces
    #:make-general-mesh
    #:convex-mesh
+   #:convex-mesh-vertices
+   #:convex-mesh-faces
    #:make-convex-mesh)
   ;; physics/ray.lisp
   (:export
