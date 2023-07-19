@@ -17,7 +17,8 @@
     (not (null (detect-hit a b hit)))))
 
 (defmacro define-hit-detector ((a b) &body body)
-  (let ((av (intern "A")) (bv (intern "B")))
+  (let ((av (intern "A")) (bv (intern "B"))
+        (block (gensym "BLOCK")))
     `(progn
        (defmethod detect-hits ((,av ,a) (,bv ,b) hits start end)
          (declare (type (unsigned-byte 32) start end))
@@ -25,7 +26,7 @@
          (when (<= end start)
            (return-from detect-hits start))
          (let ((hit (aref hits start)))
-           (block NIL
+           (block ,block
              (flet ((finish-hit ()
                       #-trial-release (when (v= 0 (hit-normal hit)) (error "Hit normal not set correctly."))
                       (let ((properties (material-interaction-properties
@@ -38,7 +39,7 @@
                       (incf start)
                       (if (< start end)
                           (setf hit (aref hits start))
-                          (return)))
+                          (return-from ,block)))
                     (detect-hits (,av ,bv)
                       (setf start (detect-hits ,av ,bv hits start end))))
                (declare (ignorable #'finish-hit #'detect-hits))
@@ -194,6 +195,9 @@
                 (values (make-array (length ,vertices) :element-type 'single-float :initial-contents ,vertices)
                         (make-array (length ,faces) :element-type '(unsigned-byte 32) :initial-contents ,faces))))
          ,@body))))
+
+(defmethod coerce-object ((primitive primitive) (type (eql 'general-mesh)) &rest args &key &allow-other-keys)
+  (apply #'coerce-object primitive 'convex-mesh args))
 
 (defmethod coerce-object ((primitive sphere) (type (eql 'convex-mesh)) &key (segments 32))
   (with-mesh-construction (v)
