@@ -22,6 +22,13 @@
   (b (vec 0 0 0) :type vec3))
 
 (trial:define-hit-detector (trial:primitive trial:primitive)
+  (when (gjk a b trial:hit)
+    (trial:finish-hit)))
+
+(defun gjk (a b hit)
+  (declare (optimize speed))
+  (declare (type trial:primitive a b))
+  (declare (type trial:hit hit))
   (let ((s0 (point)) (s1 (point)) (s2 (point)) (s3 (point)) (dir (point)) (s12 (point)))
     (declare (dynamic-extent s0 s1 s2 s3 dir s12))
     (v<- dir (trial::global-location a))
@@ -38,7 +45,7 @@
         (vc s12 +vx3+ dir)
         (when (v= 0 dir)
           (vc s12 +vz3+ dir)))
-      (loop with dim = 2
+      (loop with dim of-type (unsigned-byte 8) = 2
             for i from 0 below GJK-ITERATIONS
             do (search-point s0 dir a b)
                (when (< (v. s0 dir) 0)
@@ -49,11 +56,13 @@
                      ((null (test-simplex s0 s1 s2 s3 dir))
                       (setf dim 3))
                      (T
-                      (epa s0 s1 s2 s3 a b trial:hit)
-                      (trial:finish-hit)
-                      (return)))))))
+                      (epa s0 s1 s2 s3 a b hit)
+                      (return T)))))))
 
 (defun update-simplex (s0 s1 s2 s3 dir)
+  (declare (optimize speed (safety 0)))
+  (declare (type point s0 s1 s2 s3))
+  (declare (type vec3 dir))
   (let ((n (vec3)) (ao (v- s0)))
     (declare (dynamic-extent n ao))
     (vc (v- s1 s0) (v- s2 s0) n)
@@ -79,6 +88,9 @@
            3))))
 
 (defun test-simplex (s0 s1 s2 s3 dir)
+  (declare (optimize speed (safety 0)))
+  (declare (type point s0 s1 s2 s3))
+  (declare (type vec3 dir))
   (let ((abc (vec3)) (acd (vec3)) (adb (vec3)) (ao (v- s0)))
     (declare (dynamic-extent abc acd adb ao))
     (vc (v- s1 s0) (v- s2 s0) abc)
@@ -104,6 +116,9 @@
            T))))
 
 (defun search-point (p +dir a b)
+  (declare (optimize speed))
+  (declare (type point p))
+  (declare (type vec3 +dir))
   (let ((-dir (v- +dir)))
     (declare (dynamic-extent -dir))
     (%support-function b +dir (point-b p))
@@ -114,11 +129,15 @@
 ;;;; EPA for depth and normal computation
 ;;; FIXME: stack allocation bullshit
 (defun epa (s0 s1 s2 s3 a b hit)
+  (declare (optimize speed (safety 1)))
+  (declare (type point s0 s1 s2 s3))
+  (declare (type trial:hit hit))
   (let ((faces (make-array (* 4 EPA-MAX-FACES)))
         (loose-edges (make-array (* 2 EPA-MAX-LOOSE-EDGES)))
         (num-faces 4) (closest-face 0) (min-dist 0.0)
         (search-dir (vec3)) (p (point)))
     (declare (dynamic-extent faces loose-edges search-dir p))
+    (declare (type (unsigned-byte 16) num-faces))
     (macrolet ((v (f v)
                  `(aref faces (+ (* 4 ,f) ,v)))
                (e (e v)
@@ -154,6 +173,7 @@
         (when (< (- (v. p search-dir) min-dist) EPA-TOLERANCE)
           (return))
         (let ((num-loose-edges 0))
+          (declare (type (unsigned-byte 16) num-loose-edges))
           ;; Find triangles facing our current search point
           (dotimes (i num-faces)
             (when (< 0 (v. (v i 3) (v- p (v i 0))))
@@ -215,6 +235,8 @@
               (nv/ (trial:hit-normal hit) (trial:hit-depth hit))))))))
 
 (defun barycentric (a b c p)
+  (declare (optimize speed (safety 0)))
+  (declare (type vec3 a b c p))
   (let* ((v0 (v- b a)) 
          (v1 (v- c a))
          (v2 (v- p a))
@@ -232,6 +254,8 @@
           (values (- 1 v w) v w)))))
 
 (defun plane-point (a b c &optional (res (vec3)))
+  (declare (optimize speed (safety 0)))
+  (declare (type vec3 a b c res))
   (let* ((normal (vc (v- b a) (v- c a) res))
          (offset (- (v. normal a)))
          (mag2 (v. normal normal)))
@@ -243,6 +267,9 @@
 
 ;;;; Support function implementations
 (defun %support-function (primitive global-direction next)
+  (declare (optimize speed (safety 0)))
+  (declare (type trial:primitive primitive))
+  (declare (type vec3 global-direction next))
   (let ((local (vcopy3 global-direction)))
     (declare (dynamic-extent local))
     (trial::ntransform-inverse local (trial:primitive-transform primitive))
@@ -251,7 +278,13 @@
 
 (defgeneric support-function (primitive local-direction next))
 
-(defmethod support-function ((primitive trial:plane) dir next)
+(defmacro define-support-function (type (dir next) &body body)
+  `(defmethod support-function ((primitive ,type) ,dir ,next)
+     (declare (type vec3 ,dir ,next))
+     (declare (optimize speed))
+     ,@body))
+
+(define-support-function trial:plane (dir next)
   (let ((denom (v. (trial:plane-normal primitive) dir)))
     (vsetf next 0 0 0)
     (if (<= denom 0.000001)
@@ -259,31 +292,31 @@
         (let ((tt (/ (trial:plane-offset primitive) denom)))
           (nv+* next dir tt)))))
 
-(defmethod support-function ((primitive trial:sphere) dir next)
+(define-support-function trial:sphere (dir next)
   (nv* (nvunit* (v<- next dir)) (trial:sphere-radius primitive)))
 
-(defmethod support-function ((primitive trial:box) dir next)
+(define-support-function trial:box (dir next)
   (let ((bsize (trial:box-bsize primitive)))
     (vsetf next
-           (if (< 0 (vx dir)) (vx bsize) (- (vx bsize)))
-           (if (< 0 (vy dir)) (vy bsize) (- (vy bsize)))
-           (if (< 0 (vz dir)) (vz bsize) (- (vz bsize))))))
+           (if (< 0 (vx3 dir)) (vx3 bsize) (- (vx3 bsize)))
+           (if (< 0 (vy3 dir)) (vy3 bsize) (- (vy3 bsize)))
+           (if (< 0 (vz3 dir)) (vz3 bsize) (- (vz3 bsize))))))
 
-(defmethod support-function ((primitive trial:pill) dir next)
+(define-support-function trial:pill (dir next)
   (nv* (nvunit* (v<- next dir)) (trial:pill-radius primitive))
   (let ((bias (- (trial:pill-height primitive) (trial:pill-radius primitive))))
     (if (< 0 (vy dir))
         (incf (vy next) bias)
         (decf (vy next) bias))))
 
-(defmethod support-function ((primitive trial:cylinder) dir next)
+(define-support-function trial:cylinder (dir next)
   (vsetf next (vx dir) 0 (vz dir))
   (nv* (nvunit* next) (trial:cylinder-radius primitive))
   (if (< 0 (vy dir))
       (incf (vy next) (trial:cylinder-height primitive))
       (decf (vy next) (trial:cylinder-height primitive))))
 
-(defmethod support-function ((primitive trial:triangle) dir next)
+(define-support-function trial:triangle (dir next)
   (let ((furthest most-negative-single-float))
     (flet ((test (vert)
              (let ((dist (v. vert dir)))
@@ -294,7 +327,7 @@
       (test (trial:triangle-b primitive))
       (test (trial:triangle-c primitive)))))
 
-(defmethod support-function ((primitive trial:convex-mesh) dir next)
+(define-support-function trial:convex-mesh (dir next)
   (let ((verts (trial::convex-mesh-vertices primitive))
         (vert (vec3))
         (furthest most-negative-single-float))
