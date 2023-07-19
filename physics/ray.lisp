@@ -25,11 +25,12 @@
   (ray (vcopy3 (ray-location ray))
        (vcopy3 (ray-direction ray))))
 
-(defmacro define-ray-test ((b &rest props) &body body)
+(defmacro define-ray-test (b (&rest props) &body body)
   (let ((implicit-name (intern (format NIL "~a-~a-~a" 'ray b 'p)))
         (loc (intern (string '#:ray-location)))
         (dir (intern (string '#:ray-direction)))
-        (normal (intern (string '#:ray-normal))))
+        (normal (intern (string '#:ray-normal)))
+        (props (mapcar #'enlist props)))
     `(progn
        ;; The implicit function is useful to handle composite tests where we depend on the
        ;; result of another shape in some fashion. All implicit functions assume the other
@@ -39,6 +40,7 @@
          (declare (optimize speed (safety 1))
                   (type vec3 ,loc ,dir)
                   ,@(loop for (prop type) in props
+                          when type
                           collect `(type ,type ,prop))
                   (ignorable ,normal))
          (block NIL
@@ -89,7 +91,7 @@
       (return-from detect-hits start))
     (setf start (detect-hits a element hits start end))))
 
-(define-ray-test (plane (plane-normal vec3) (plane-offset single-float))
+(define-ray-test plane ((plane-normal vec3) (plane-offset single-float))
   (let ((denom (v. plane-normal ray-direction)))
     (when (/= 0.0 denom)
       (let ((tt (/ (- plane-offset (v. plane-normal ray-location)) denom)))
@@ -97,7 +99,7 @@
           (v<- normal plane-normal)
           tt)))))
 
-(define-ray-test (sphere (sphere-radius single-float))
+(define-ray-test sphere ((sphere-radius single-float))
   (let* ((em ray-location)
          (eb (v. em ray-direction))
          (ec (- (v. em em) (* sphere-radius sphere-radius))))
@@ -110,7 +112,7 @@
             (nvunit normal)
             tt))))))
 
-(define-ray-test (box (box-bsize vec3))
+(define-ray-test box ((box-bsize vec3))
   ;; Since the ray variables are within local space of the box, the box is
   ;; axis-aligned relative to the ray, so we can simplify the test to an AABB case.
   (let ((tmin 0.0)
@@ -145,7 +147,7 @@
     (when (/= tmax most-positive-single-float)
       tmin)))
 
-(define-ray-test (triangle (triangle-a vec3) (triangle-b vec3) (triangle-c vec3))
+(define-ray-test triangle ((triangle-a vec3) (triangle-b vec3) (triangle-c vec3))
   (let* ((p ray-location)
          (a triangle-a)
          (b triangle-b)
@@ -173,7 +175,7 @@
           (when (or (< w 0.0) (< (+ v w) d)) (return))
           (/ tt d))))))
 
-(define-ray-test (cylinder (cylinder-height single-float) (cylinder-radius single-float))
+(define-ray-test cylinder ((cylinder-height single-float) (cylinder-radius single-float))
   ;; Note: the cylinder is always centred around 0,0,0 and oriented along Y.
   ;;       As such we can simplify the logic here.
   (let* ((r cylinder-radius)
@@ -223,7 +225,7 @@
                  (setf (vy normal) 0.0)
                  tt)))))))
 
-(define-ray-test (pill (pill-height single-float) (pill-radius single-float))
+(define-ray-test pill ((pill-height single-float) (pill-radius single-float))
   (cond ((= 0.0 pill-height)
          (ray-sphere-p ray-location ray-direction pill-radius normal))
         (T
