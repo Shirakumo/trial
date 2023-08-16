@@ -762,7 +762,7 @@
       (v<- (trial:hit-location trial:hit) (state-a state))
       (trial:finish-hit))))
 
-(trial:define-ray-test (mesh (identity mesh))
+(trial:define-ray-test mesh (identity mesh)
   (let* ((head (%make-vertex ray-location))
          ;; FIXME: this sucks.
          (tail (%make-vertex (nv+ (v* ray-direction 10000.0) ray-location)))

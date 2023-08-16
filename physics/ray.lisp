@@ -36,7 +36,7 @@
        ;; result of another shape in some fashion. All implicit functions assume the other
        ;; shape is centred at the origin and axis-aligned, as we handle those kinds of
        ;; shifts using the primitive's transform in the DETECT-HITS function.
-       (defun ,implicit-name (,loc ,dir ,@(mapcar #'first props) &optional (,normal (vec3)))
+       (defun ,implicit-name (,loc ,dir ,@(if props (mapcar #'first props) (list b)) &optional (,normal (vec3)))
          (declare (optimize speed (safety 1))
                   (type vec3 ,loc ,dir)
                   ,@(loop for (prop type) in props
@@ -65,8 +65,10 @@
            (let ((transform-scaling (vlength ray-direction)))
              (nv/ ray-direction transform-scaling)
              (block NIL
-               (let ((tt (,implicit-name ray-location ray-direction ,@(loop for prop in props
-                                                                            collect `(,(first prop) b))
+               (let ((tt (,implicit-name ray-location ray-direction ,@ (if props
+                                                                           (loop for prop in props
+                                                                                 collect `(,(first prop) b))
+                                                                           (list b))
                                          (hit-normal hit))))
                  (when tt
                    (v<- (hit-location hit) (ray-location a))
