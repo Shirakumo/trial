@@ -22,13 +22,7 @@
   (b (vec 0 0 0) :type vec3))
 
 (trial:define-hit-detector (trial:primitive trial:primitive)
-  (when (gjk a b trial:hit)
-    (trial:finish-hit)))
-
-(defun gjk (a b hit)
   (declare (optimize speed))
-  (declare (type trial:primitive a b))
-  (declare (type trial:hit hit))
   (let ((s0 (point)) (s1 (point)) (s2 (point)) (s3 (point)) (dir (point)) (s12 (point)))
     (declare (dynamic-extent s0 s1 s2 s3 dir s12))
     (v<- dir (trial::global-location a))
@@ -56,8 +50,12 @@
                      ((null (test-simplex s0 s1 s2 s3 dir))
                       (setf dim 3))
                      (T
-                      (epa s0 s1 s2 s3 a b hit)
-                      (return T)))))))
+                      (epa s0 s1 s2 s3 a b trial:hit)
+                      (trial:finish-hit)))))))
+
+(trial:define-ray-test trial:primitive ()
+  ;; TODO: Implement
+  (trial:implement!))
 
 (defun update-simplex (s0 s1 s2 s3 dir)
   (declare (optimize speed (safety 0)))
