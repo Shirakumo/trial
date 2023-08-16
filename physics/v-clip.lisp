@@ -1,5 +1,5 @@
 (defpackage #:org.shirakumo.fraf.trial.v-clip
-  (:use #:cl #:3d-vectors #:3d-matrices)
+  (:use #:cl #:org.shirakumo.fraf.math)
   (:export
    #:state
    #:v-clip

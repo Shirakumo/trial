@@ -1,5 +1,5 @@
 (defpackage #:org.shirakumo.fraf.trial.gjk
-  (:use #:cl #:3d-vectors #:3d-matrices)
+  (:use #:cl #:org.shirakumo.fraf.math)
   (:export))
 
 (in-package #:org.shirakumo.fraf.trial.gjk)
