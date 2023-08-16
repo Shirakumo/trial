@@ -80,7 +80,7 @@
                            ,(case fill
                               (:zero `(mat4))
                               (:identity `(meye 4))
-                              ((:copy NIL) `(mcopy4 ,variable))
+                              ((:copy NIL) `(mcopy ,variable))
                               (T fill))))
        ,@body)))
 
@@ -89,7 +89,7 @@
   (nmtranslate matrix v))
 
 (defun translate-by (x y z &optional (matrix (model-matrix)))
-  (let ((vec (3d-vectors::%vec3 (float x 0f0) (float y 0f0) (float z 0f0))))
+  (let ((vec (vec (float x 0f0) (float y 0f0) (float z 0f0))))
     (declare (dynamic-extent vec))
     (nmtranslate matrix vec)))
 
@@ -98,7 +98,7 @@
   (nmrotate matrix v angle))
 
 (defun rotate-by (x y z angle &optional (matrix (model-matrix)))
-  (let ((vec (3d-vectors::%vec3 (float x 0f0) (float y 0f0) (float z 0f0))))
+  (let ((vec (vec (float x 0f0) (float y 0f0) (float z 0f0))))
     (declare (dynamic-extent vec))
     (nmrotate matrix vec angle)))
 
@@ -107,17 +107,12 @@
   (nmscale matrix v))
 
 (defun scale-by (x y z &optional (matrix (model-matrix)))
-  (let ((vec (3d-vectors::%vec3 (float x 0f0) (float y 0f0) (float z 0f0))))
+  (let ((vec (vec (float x 0f0) (float y 0f0) (float z 0f0))))
     (declare (dynamic-extent vec))
     (nmscale matrix vec)))
 
 (defun reset-matrix (&optional (matrix (model-matrix)))
-  (with-fast-matref (a matrix 4)
-    (setf (a 0 0) 1.0 (a 0 1) 0.0 (a 0 2) 0.0 (a 0 3) 0.0
-          (a 1 0) 0.0 (a 1 1) 1.0 (a 1 2) 0.0 (a 1 3) 0.0
-          (a 2 0) 0.0 (a 2 1) 0.0 (a 2 2) 1.0 (a 2 3) 0.0
-          (a 3 0) 0.0 (a 3 1) 0.0 (a 3 2) 0.0 (a 3 3) 1.0)
-    matrix))
+  (!meye matrix))
 
 (defun vec->screen (vec width height)
   (let ((clip-pos (m* (projection-matrix) (view-matrix) (model-matrix) (vxyz_ vec))))

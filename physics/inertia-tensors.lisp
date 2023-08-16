@@ -3,7 +3,7 @@
 (defmacro define-tensor-fun (name args &body body)
   `(defun ,name (,@args &optional (tensor (mat3)))
      (fill (marr3 tensor) 0.0)
-     (with-fast-matref (m tensor 3)
+     (with-fast-matref (m tensor)
        ,@body
        tensor)))
 

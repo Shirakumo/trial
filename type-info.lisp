@@ -422,11 +422,11 @@
       (:mat2
        (loop with idx = #(0 1 4 5)
              for i from 0 below 4
-             do (setf (%ref (aref idx i)) (miref2 value i))))
+             do (setf (%ref (aref idx i)) (miref value i))))
       (:mat3
        (loop with idx = #(0 1 2 4 5 6 8 9 10)
              for i from 0 below 9
-             do (setf (%ref (aref idx i)) (miref3 value i))))
+             do (setf (%ref (aref idx i)) (miref value i))))
       (:mat4
        (cffi:with-pointer-to-vector-data (src (marr4 value))
          (static-vectors:replace-foreign-memory ptr src (* 4 4 4))))))

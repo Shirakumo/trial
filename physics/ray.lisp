@@ -22,8 +22,8 @@
   (prin1 `(ray ,(location ray) ,(direction ray)) stream))
 
 (defun copy-ray (ray)
-  (ray (vcopy3 (ray-location ray))
-       (vcopy3 (ray-direction ray))))
+  (ray (vcopy (ray-location ray))
+       (vcopy (ray-direction ray))))
 
 (defmacro define-ray-test (b (&rest props) &body body)
   (let ((implicit-name (intern (format NIL "~a-~a-~a" 'ray b 'p)))
@@ -161,7 +161,7 @@
     (declare (dynamic-extent ab ac e))
     (nv- (v<- ab b) a)
     (nv- (v<- ac c) a)
-    (let* ((n (vc ab ac normal))
+    (let* ((n (!vc normal ab ac))
            (d (v. qp n)))
       ;; If we're parallel, exit early.
       (when (<= d 0.0) (return))
@@ -170,7 +170,7 @@
              (tt (v. ap n)))
         (when (< tt 0.0) (return))
         ;; Compute the barycentric coordinates and test bounds
-        (let* ((e (vc qp ap e))
+        (let* ((e (!vc e qp ap))
                (v (v. ac e))
                (w (- (v. ab e))))
           (when (or (< v 0.0) (< v d)) (return))

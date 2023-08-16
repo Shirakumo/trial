@@ -149,10 +149,7 @@
   :defsystem-depends-on (:trivial-features)
   :depends-on (:alexandria
                :atomics
-               :3d-vectors
-               :3d-matrices
-               :3d-quaternions
-               :3d-transforms
+               :3d-math
                :3d-spaces
                :verbose
                :deploy

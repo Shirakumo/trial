@@ -52,7 +52,7 @@
          (minv (make-array (length pose)))
          (qinv (make-array (length pose))))
     (dotimes (i (length minv) (setf (mat-inv-bind-pose skeleton) minv))
-      (setf (svref minv i) (minv (tmat4 (global-transform pose i)))))
+      (setf (svref minv i) (minv (tmat (global-transform pose i)))))
     (dotimes (i (length qinv) (setf (quat-inv-bind-pose skeleton) qinv))
       (setf (svref qinv i) (qconjugate (global-dquat pose i))))
     skeleton))

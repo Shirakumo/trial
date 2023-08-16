@@ -67,5 +67,5 @@
                  :specular-texture (metal-rough-occlusion-texture material)
                  :normal-texture (normal-texture material)
                  :diffuse-factor (diffuse-factor material)
-                 :specular-factor (vx (metallic-factor material))
+                 :specular-factor (vx (metalness-factor material))
                  :alpha-cutoff (alpha-cutoff material)))

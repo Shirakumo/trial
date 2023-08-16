@@ -162,17 +162,17 @@ void main(){
 
 (defmethod debug-draw :around ((entity transformed-entity) &rest args)
   (unless (getf args :transform)
-    (setf (getf args :transform) (tmat4 (tf entity))))
+    (setf (getf args :transform) (tmat (tf entity))))
   (apply #'call-next-method entity args))
 
 (defmethod debug-draw ((primitive general-mesh) &rest args)
   (unless (getf args :transform)
-    (setf (getf args :transform) (tmat4 (primitive-transform primitive))))
+    (setf (getf args :transform) (primitive-transform primitive)))
   (apply #'debug-triangles (general-mesh-vertices primitive) (general-mesh-faces primitive) args))
 
 (defmethod debug-draw ((primitive primitive) &rest args)
   (unless (getf args :transform)
-    (setf (getf args :transform) (tmat4 (primitive-transform primitive))))
+    (setf (getf args :transform) (primitive-transform primitive)))
   (let ((primitive (coerce-object primitive 'convex-mesh)))
     (apply #'debug-triangles (general-mesh-vertices primitive) (general-mesh-faces primitive) args)))
 

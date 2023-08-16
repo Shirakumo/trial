@@ -8,10 +8,7 @@
 (defpackage #:trial
   (:nicknames #:org.shirakumo.fraf.trial)
   (:use #:cl
-        #:org.shirakumo.flare.vector
-        #:org.shirakumo.flare.matrix
-        #:org.shirakumo.flare.quaternion
-        #:org.shirakumo.flare.transform
+        #:org.shirakumo.fraf.math
         #:org.shirakumo.lru-cache)
   (:shadow #:// #:load)
   (:import-from #:static-vectors #:static-vector-pointer)
@@ -1711,10 +1708,7 @@
   (:shadowing-import-from #:trial #:// #:load)
   (:use #:cl
         #:trial
-        #:org.shirakumo.flare.vector
-        #:org.shirakumo.flare.matrix
-        #:org.shirakumo.flare.quaternion
-        #:org.shirakumo.flare.transform))
+        #:org.shirakumo.fraf.math))
 
 (let ((symbols ()))
   (do-symbols (symb '#:cl+trial) (push symb symbols))

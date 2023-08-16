@@ -656,13 +656,13 @@
 (defmethod clone (thing &key)
   thing)
 
-(defmethod clone ((vec vec2) &key) (vcopy2 vec))
-(defmethod clone ((vec vec3) &key) (vcopy3 vec))
-(defmethod clone ((vec vec4) &key) (vcopy4 vec))
-(defmethod clone ((mat mat2) &key) (mcopy2 mat))
-(defmethod clone ((mat mat3) &key) (mcopy3 mat))
-(defmethod clone ((mat mat4) &key) (mcopy4 mat))
-(defmethod clone ((mat matn) &key) (mcopyn mat))
+(defmethod clone ((vec vec2) &key) (vcopy vec))
+(defmethod clone ((vec vec3) &key) (vcopy vec))
+(defmethod clone ((vec vec4) &key) (vcopy vec))
+(defmethod clone ((mat mat2) &key) (mcopy mat))
+(defmethod clone ((mat mat3) &key) (mcopy mat))
+(defmethod clone ((mat mat4) &key) (mcopy mat))
+(defmethod clone ((mat matn) &key) (mcopy mat))
 
 (defmethod clone ((cons cons) &key)
   (cons (clone (car cons)) (clone (cdr cons))))
@@ -682,11 +682,11 @@
 (defmethod location ((vec vec2)) vec)
 
 (defmethod location ((mat mat3))
-  (with-fast-matref (m mat 3)
+  (with-fast-matref (m mat)
     (vec (m 0 2) (m 1 2))))
 
 (defmethod location ((mat mat4))
-  (with-fast-matref (m mat 4)
+  (with-fast-matref (m mat)
     (vec (m 0 3) (m 1 3) (m 2 3))))
 
 (defmethod global-location ((vec vec2))

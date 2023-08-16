@@ -380,7 +380,7 @@
   (with-all-slots-bound (particle-emitter particle-emitter)
     (multiple-value-bind (to-emit emit-carry) (floor (incf (to-emit particle-emitter) (* dt (particle-rate particle-emitter))))
       (with-buffer-tx (struct particle-emitter-buffer)
-        (setf (transform-matrix struct) (tmat4 (tf particle-emitter)))
+        (setf (transform-matrix struct) (tmat (tf particle-emitter)))
         (setf (emit-count struct) to-emit)
         (setf (randomness struct) (random 1.0)))
       ;; Simulate with compute shaders
@@ -409,7 +409,7 @@
 
 (defmethod render :before ((emitter particle-emitter) (program shader-program))
   (gl:depth-mask NIL)
-  (setf (uniform program "model_matrix") (tmat4 (tf emitter)))
+  (setf (uniform program "model_matrix") (tmat (tf emitter)))
   (gl:bind-vertex-array (gl-name (// 'trial 'empty-vertex-array)))
   (%gl:bind-buffer :draw-indirect-buffer (gl-name (slot-value emitter 'particle-argument-buffer))))
 
