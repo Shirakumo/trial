@@ -386,8 +386,8 @@
         (loop for node across (gltf:scenes gltf)
               for scene = (make-instance 'static-gltf-container :name (gltf:name node))
               do (setf (gethash (gltf:name node) (scenes asset)) scene)
-                 (when (gltf:light scene)
-                   (enter (load-environment-light (gltf:light scene)) scene))
+                 (when (gltf:light node)
+                   (enter (load-environment-light (gltf:light node)) scene))
                  (recurse (gltf:nodes node) scene)))
       ;; Enter it.
       (flet ((load-scene (scene)
