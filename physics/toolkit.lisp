@@ -21,14 +21,23 @@
 
 (defun ntransform-inverse (vec3 mat)
   (declare (type vec3 vec3))
-  (declare (type mat4 mat))
-  (with-fast-matref (m mat)
-    (let ((x (- (vx3 vec3) (m 0 3)))
-          (y (- (vy3 vec3) (m 1 3)))
-          (z (- (vz3 vec3) (m 2 3))))
-      (setf (vx3 vec3) (+ (* x (m 0 0)) (* y (m 1 0)) (* z (m 2 0))))
-      (setf (vy3 vec3) (+ (* x (m 0 1)) (* y (m 1 1)) (* z (m 2 1))))
-      (setf (vz3 vec3) (+ (* x (m 0 2)) (* y (m 1 2)) (* z (m 2 2))))))
+  (etypecase mat
+    (mat4
+     (with-fast-matref (m mat)
+       (let ((x (- (vx3 vec3) (m 0 3)))
+             (y (- (vy3 vec3) (m 1 3)))
+             (z (- (vz3 vec3) (m 2 3))))
+         (setf (vx3 vec3) (+ (* x (m 0 0)) (* y (m 1 0)) (* z (m 2 0))))
+         (setf (vy3 vec3) (+ (* x (m 0 1)) (* y (m 1 1)) (* z (m 2 1))))
+         (setf (vz3 vec3) (+ (* x (m 0 2)) (* y (m 1 2)) (* z (m 2 2)))))))
+    (mat3
+     (with-fast-matref (m mat)
+       (let ((x (vx3 vec3))
+             (y (vy3 vec3))
+             (z (vz3 vec3)))
+         (setf (vx3 vec3) (+ (* x (m 0 0)) (* y (m 1 0)) (* z (m 2 0))))
+         (setf (vy3 vec3) (+ (* x (m 0 1)) (* y (m 1 1)) (* z (m 2 1))))
+         (setf (vz3 vec3) (+ (* x (m 0 2)) (* y (m 1 2)) (* z (m 2 2))))))))
   vec3)
 
 (defun compute-world-inertia-tensor (iitworld iitbody rotmat)

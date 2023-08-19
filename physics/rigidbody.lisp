@@ -62,7 +62,7 @@
 
 (defun %update-rigidbody-cache (rigidbody)
   ;; NOTE: Re-normalising the orientation here aids in stability by eliminating drift.
-  (nqunit (orientation rigidbody))
+  (nqunit* (orientation rigidbody))
   (tmat (tf rigidbody) (transform-matrix rigidbody))
   (compute-world-inertia-tensor (world-inverse-inertia-tensor rigidbody) (inverse-inertia-tensor rigidbody) (transform-matrix rigidbody))
   (loop for primitive across (physics-primitives rigidbody)
