@@ -52,13 +52,13 @@
   (replace (marr *model-matrix*) (marr mat4)))
 
 (defun look-at (eye target up)
-  (setf *view-matrix* (mlookat eye target up)))
+  (nmlookat *view-matrix* eye target up))
 
 (defun perspective-projection (fovy aspect near far)
-  (setf *projection-matrix* (mperspective fovy aspect near far)))
+  (nmperspective *projection-matrix* fovy aspect near far))
 
 (defun orthographic-projection (left right bottom top near far)
-  (setf *projection-matrix* (mortho left right bottom top near far)))
+  (nmortho *projection-matrix* left right bottom top near far))
 
 (defun push-matrix ()
   (replace (marr4 (aref +matrix-stack+ +matrix-index+)) (marr4 *model-matrix*))
