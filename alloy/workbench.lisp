@@ -7,7 +7,7 @@
 (in-package #:org.shirakumo.fraf.trial.alloy)
 
 (defclass workbench (trial:main) ()
-  (:default-initargs :clear-color (3d-vectors:vec 0.1 0.1 0.1)))
+  (:default-initargs :clear-color (math:vec 0.1 0.1 0.1)))
 
 (defclass dui (ui
                alloy:smooth-scaling-ui
@@ -19,7 +19,7 @@
     (let* ((ui (trial:enter (make-instance 'dui :target-resolution (alloy:px-size 800 600)) scene))
            (focus (make-instance 'alloy:focus-list :focus-parent (alloy:focus-tree ui)))
            (layout (make-instance 'alloy:vertical-linear-layout :layout-parent (alloy:layout-tree ui))))
-      (let* ((data (3d-vectors:vec2 0 1))
+      (let* ((data (math:vec2 0 1))
              (vec (alloy:represent data 'vec2 :focus-parent focus :layout-parent layout)))
         (alloy:on alloy:value (value vec)
           (print value)))

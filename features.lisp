@@ -44,5 +44,5 @@ Fix GIT to not convert line endings to CRLF:
 By the way, I'd like to punch whoever added that feature to
 GIT and made it default in the fucking throat."))
 
-#+3d-vectors-double-floats
-(error "Trial does not work with double-float vectors.")
+#-3d-math-f32
+(error "Trial does not work without single-float math.")

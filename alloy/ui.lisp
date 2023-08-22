@@ -14,7 +14,7 @@
      (alloy:handle (make-instance ',alloy-type ,@args) bridge)))
 
 (defun vec->point (vec)
-  (alloy:px-point (3d-vectors:vx vec) (3d-vectors:vy vec)))
+  (alloy:px-point (math:vx vec) (math:vy vec)))
 
 (define-event-translator trial:mouse-move alloy:pointer-move
   :old-location (vec->point (trial:old-pos ev))

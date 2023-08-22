@@ -89,12 +89,12 @@
 
     (enter (make-instance 'environment-light :asset (assets:asset :sandy-beach) :color (vec 0.3 0.3 0.3)) scene)
     (enter (make-instance 'point-light :location (vec 2.0 4.0 -1.0) :color (vec 15.0 0 0) :cast-shadows-p T) scene)
-    (enter (make-instance 'spot-light :location (vec -5.0 4.0 0.0) :color (vec 0 15.0 0)
-                                      :inner-radius 10 :outer-radius 20 :direction (vec 2 -1 0)
-                                      :cast-shadows-p T) scene)
-    (enter (make-instance 'directional-light  :color (vec 0 0 15.0)
-                                              :direction (vec 0 -1 1)
-                                              :cast-shadows-p T) scene)
+    ;; (enter (make-instance 'spot-light :location (vec -5.0 4.0 0.0) :color (vec 0 15.0 0)
+    ;;                                   :inner-radius 10 :outer-radius 20 :direction (vec 2 -1 0)
+    ;;                                   :cast-shadows-p T) scene)
+    ;; (enter (make-instance 'directional-light  :color (vec 0 0 15.0)
+    ;;                                           :direction (vec 0 -1 1)
+    ;;                                           :cast-shadows-p T) scene)
 
     (let ((render (make-instance 'pbr-render-pass))
           (map (make-instance 'tone-mapping-pass)))

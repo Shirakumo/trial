@@ -48,7 +48,7 @@
     (handle event vec)))
 
 (defmethod alloy:value-changed ((vec vec))
-  (let ((els '(3d-vectors:vx 3d-vectors:vy 3d-vectors:vz 3d-vectors:vw)))
+  (let ((els '(math:vx math:vy math:vz math:vw)))
     (alloy:do-elements (element vec)
       (setf (alloy:value element) (funcall (pop els) (alloy:value vec))))))
 
@@ -59,11 +59,11 @@
   (let ((object (alloy:value vec)))
     (setf (alloy:col-sizes vec) (if labels '(20 T 20 T) '(T T)))
     (when labels (alloy:enter (alloy:represent "X" 'alloy:label :style '((:label :halign :middle))) vec))
-    (alloy:enter (alloy:represent (3d-vectors:vx2 object) 'alloy:wheel :step step) vec)
+    (alloy:enter (alloy:represent (math:vx2 object) 'alloy:wheel :step step) vec)
     (when labels (alloy:enter (alloy:represent "Y" 'alloy:label :style '((:label :halign :middle))) vec))
-    (alloy:enter (alloy:represent (3d-vectors:vy2 object) 'alloy:wheel :step step) vec)))
+    (alloy:enter (alloy:represent (math:vy2 object) 'alloy:wheel :step step) vec)))
 
-(defmethod alloy:component-class-for-object ((_ 3d-vectors:vec2)) (find-class 'vec2))
+(defmethod alloy:component-class-for-object ((_ math:vec2)) (find-class 'vec2))
 
 (defclass vec3 (vec)
   ())
@@ -72,13 +72,13 @@
   (let ((object (alloy:value vec)))
     (setf (alloy:col-sizes vec) (if labels '(20 T 20 T 20 T) '(T T T)))
     (when labels (alloy:enter (alloy:represent "X" 'alloy:label :style '((:label :halign :middle))) vec))
-    (alloy:enter (alloy:represent (3d-vectors:vx3 object) 'alloy:wheel :step step) vec)
+    (alloy:enter (alloy:represent (math:vx3 object) 'alloy:wheel :step step) vec)
     (when labels (alloy:enter (alloy:represent "Y" 'alloy:label :style '((:label :halign :middle))) vec))
-    (alloy:enter (alloy:represent (3d-vectors:vy3 object) 'alloy:wheel :step step) vec)
+    (alloy:enter (alloy:represent (math:vy3 object) 'alloy:wheel :step step) vec)
     (when labels (alloy:enter (alloy:represent "Z" 'alloy:label :style '((:label :halign :middle))) vec))
-    (alloy:enter (alloy:represent (3d-vectors:vz3 object) 'alloy:wheel :step step) vec)))
+    (alloy:enter (alloy:represent (math:vz3 object) 'alloy:wheel :step step) vec)))
 
-(defmethod alloy:component-class-for-object ((_ 3d-vectors:vec3)) (find-class 'vec3))
+(defmethod alloy:component-class-for-object ((_ math:vec3)) (find-class 'vec3))
 
 (defclass vec4 (vec)
   ())
@@ -87,15 +87,15 @@
   (let ((object (alloy:value vec)))
     (setf (alloy:col-sizes vec) (if labels '(20 T 20 T 20 T 20 T) '(T T T T)))
     (when labels (alloy:enter (alloy:represent "X" 'alloy:label :style '((:label :halign :middle))) vec))
-    (alloy:enter (alloy:represent (3d-vectors:vx4 object) 'alloy:wheel :step step) vec)
+    (alloy:enter (alloy:represent (math:vx4 object) 'alloy:wheel :step step) vec)
     (when labels (alloy:enter (alloy:represent "Y" 'alloy:label :style '((:label :halign :middle))) vec))
-    (alloy:enter (alloy:represent (3d-vectors:vy4 object) 'alloy:wheel :step step) vec)
+    (alloy:enter (alloy:represent (math:vy4 object) 'alloy:wheel :step step) vec)
     (when labels (alloy:enter (alloy:represent "Z" 'alloy:label :style '((:label :halign :middle))) vec))
-    (alloy:enter (alloy:represent (3d-vectors:vz4 object) 'alloy:wheel :step step) vec)
+    (alloy:enter (alloy:represent (math:vz4 object) 'alloy:wheel :step step) vec)
     (when labels (alloy:enter (alloy:represent "W" 'alloy:label :style '((:label :halign :middle))) vec))
-    (alloy:enter (alloy:represent (3d-vectors:vw4 object) 'alloy:wheel :step step) vec)))
+    (alloy:enter (alloy:represent (math:vw4 object) 'alloy:wheel :step step) vec)))
 
-(defmethod alloy:component-class-for-object ((_ 3d-vectors:vec4)) (find-class 'vec4))
+(defmethod alloy:component-class-for-object ((_ math:vec4)) (find-class 'vec4))
 
 (defmacro define-set-representation (name &body value-set)
   (form-fiddle:with-body-options (body options item-text represents) value-set

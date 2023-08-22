@@ -13,7 +13,8 @@
    (#:presentations #:org.shirakumo.alloy.renderers.simple.presentations)
    (#:opengl #:org.shirakumo.alloy.renderers.opengl)
    (#:colored #:org.shirakumo.alloy.colored)
-   (#:animation #:org.shirakumo.alloy.animation))
+   (#:animation #:org.shirakumo.alloy.animation)
+   (#:math #:org.shirakumo.fraf.math))
   (:export
    #:renderer
    #:event-bridge
@@ -41,7 +42,7 @@
    #:menuing-panel)
   (:export
    #:language-data
-   #:vec
+   #:vec3
    #:vec2
    #:vec3
    #:vec4
