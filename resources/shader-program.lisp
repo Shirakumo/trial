@@ -80,21 +80,6 @@
   (clrhash (uniform-map program))
   (gl:delete-program (gl-name program)))
 
-#+sbcl
-(declaim (notinline %gl-uniform-matrix-4fv))
-#+sbcl
-(defun %gl-uniform-matrix-4fv (loc arr)
-  (let ((ptr (%gl::gl-get-proc-address "glUniformMatrix4fv")))
-    (compile '%gl-uniform-matrix-4fv
-             `(lambda (loc arr)
-                (declare (type (unsigned-byte 32) loc))
-                (declare (type (simple-array single-float (16)) arr))
-                (declare (optimize speed (safety 0)))
-                (sb-sys:with-pinned-objects (arr)
-                  (cffi:foreign-funcall-pointer
-                   ,ptr () :int loc %gl::sizei 1 %gl::boolean T :pointer (sb-sys:vector-sap arr) :void)))))
-  (%gl-uniform-matrix-4fv loc arr))
-
 (declaim (inline %set-dquat))
 (defun %set-quat2 (dquat dat i)
   (let ((qreal (q2real dquat))
