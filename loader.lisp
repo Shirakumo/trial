@@ -81,7 +81,8 @@
                  (:invalid
                   (setf (gethash object status) :temporary)
                   (dolist (dependency (dependencies object))
-                    (visit dependency))
+                    (when dependency
+                      (visit dependency)))
                   (setf (gethash object status) :validated)
                   (if (< i (length sequence))
                       (setf (aref sequence i) object)
