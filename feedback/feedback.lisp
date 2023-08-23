@@ -1,9 +1,3 @@
-#|
- This file is a part of trial
- (c) 2016 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
- Author: Nicolas Hafner <shinmera@tymoon.eu>
-|#
-
 (defpackage #:org.shirakumo.fraf.trial.feedback
   (:use #:cl)
   (:local-nicknames (#:v #:org.shirakumo.verbose))

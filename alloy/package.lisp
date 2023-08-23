@@ -1,9 +1,3 @@
-#|
- This file is a part of trial
- (c) 2019 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
- Author: Nicolas Hafner <shinmera@tymoon.eu>
-|#
-
 (defpackage #:org.shirakumo.fraf.trial.alloy
   (:use #:cl)
   (:local-nicknames

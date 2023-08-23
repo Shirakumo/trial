@@ -1,12 +1,6 @@
-#|
- This file is a part of trial
- (c) 2020 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
- Author: Nicolas Hafner <shinmera@tymoon.eu>
-|#
-
 (asdf:defsystem trial-harmony
-  :author "Nicolas Hafner <shinmera@tymoon.eu>"
-  :maintainer "Nicolas Hafner <shinmera@tymoon.eu>"
+  :author "Yukari Hafner <shinmera@tymoon.eu>"
+  :maintainer "Yukari Hafner <shinmera@tymoon.eu>"
   :license "zlib"
   :description "Integration with the Harmony sound engine"
   :homepage "https://Shirakumo.github.io/trial/"

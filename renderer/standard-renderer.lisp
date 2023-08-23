@@ -1,9 +1,3 @@
-#|
- This file is a part of trial
- (c) 2023 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
- Author: Nicolas Hafner <shinmera@tymoon.eu>
-|#
-
 (in-package #:org.shirakumo.fraf.trial)
 
 (define-gl-struct standard-environment-information
@@ -44,7 +38,7 @@
   (setf (slot-value pass 'light-block) (make-instance 'uniform-buffer :binding NIL :struct (make-instance 'standard-light-block :size max-lights))))
 
 (defmethod shared-initialize :after ((pass standard-render-pass) slots &key)
-  (let ((max-textures (max 16 (if *context* (gl:get-integer :max-texture-image-units) 256))))
+  (let ((max-textures (max 16 (if *context* (gl:get-integer :max-texture-image-units) 0))))
     (dolist (port (flow:ports pass))
       (typecase port
         (texture-port
@@ -108,7 +102,8 @@
                 (lru-cache-id texture (allocated-textures pass)))))
     (when id
       (gl:active-texture id)
-      (gl:bind-texture (target texture) (gl-name texture)))))
+      (gl:bind-texture (target texture) (gl-name texture)))
+    id))
 
 (defmethod disable ((texture texture) (pass standard-render-pass))
   (lru-cache-pop texture (allocated-textures pass)))

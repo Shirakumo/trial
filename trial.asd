@@ -1,9 +1,3 @@
-#|
- This file is a part of trial
- (c) 2016 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
- Author: Nicolas Hafner <shinmera@tymoon.eu>
-|#
-
 (defmethod asdf/find-component:resolve-dependency-combination (component (combinator (eql :..)) args)
   (asdf/find-component:resolve-dependency-spec
    (asdf:component-parent component) (first args)))
@@ -15,8 +9,8 @@
 
 (asdf:defsystem trial
   :version "1.2.0"
-  :author "Nicolas Hafner <shinmera@tymoon.eu>"
-  :maintainer "Nicolas Hafner <shinmera@tymoon.eu>"
+  :author "Yukari Hafner <shinmera@tymoon.eu>"
+  :maintainer "Yukari Hafner <shinmera@tymoon.eu>"
   :license "zlib"
   :description "A flexible and extensible video game engine."
   :homepage "https://Shirakumo.github.io/trial/"

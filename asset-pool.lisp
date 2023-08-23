@@ -1,9 +1,3 @@
-#|
- This file is a part of trial
- (c) 2017 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
- Author: Nicolas Hafner <shinmera@tymoon.eu>
-|#
-
 (in-package #:org.shirakumo.fraf.trial)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)

@@ -1,9 +1,3 @@
-#|
- This file is a part of trial
- (c) 2019 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
- Author: Nicolas Hafner <shinmera@tymoon.eu>
-|#
-
 (in-package #:org.shirakumo.fraf.trial.alloy)
 
 (defclass renderer (org.shirakumo.alloy.renderers.opengl.msdf:renderer trial:renderable trial:resource)
