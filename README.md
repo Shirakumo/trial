@@ -1,6 +1,6 @@
 <p align="center">
-  <img src="docs/images/logos/trial%20vertical%20mixed%20square.svg#gh-light-mode-only" />
-  <img src="docs/images/logos/trial%20vertical%20mixed%20square white.svg#gh-dark-mode-only" />
+  <img alt="Trial Logo" src="docs/images/logos/trial%20vertical%20mixed%20square.svg#gh-light-mode-only" />
+  <img alt="Trial Logo" src="docs/images/logos/trial%20vertical%20mixed%20square white.svg#gh-dark-mode-only" />
 </p>
 
 ## About Trial
@@ -24,3 +24,10 @@ Here are a few games that are using Trial as their engine. Kandria and Eternia: 
 - [Outsider](https://shinmera.itch.io/outsider)
 
 If you made use of Trial yourself, let us know! We'd be happy to include your game in this list.
+
+## Support
+If you'd like to support the continued development of Trial, please consider becoming a backer on Patreon:
+
+<a href="https://patreon.com/shinmera">
+  <img alt="Patreon" src="https://filebox.tymoon.eu//file/TWpjeU9RPT0=" />
+</a>
