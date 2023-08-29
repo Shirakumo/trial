@@ -2,6 +2,8 @@
 
 (defvar *monitor* (make-instance 'monitor))
 
+(setf trial:*open-in-browser-hook* #'nxgl:open-url)
+
 (defclass context (trial:context)
   ((pointer :accessor pointer)
    (thread :initform NIL :accessor thread)
