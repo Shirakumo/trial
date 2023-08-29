@@ -148,24 +148,6 @@
           do (setf (slot-value copy name) (if deep (copy-instance value) value)))
     copy))
 
-(defvar *open-in-browser-hook* (constantly NIL))
-(defun open-in-browser (url)
-  (or (funcall *open-in-browser-hook* url)
-      #+windows
-      (uiop:launch-program (list "rundll32" "url.dll,FileProtocolHandler" url))
-      #+linux
-      (uiop:launch-program (list "xdg-open" url))
-      #+darwin
-      (uiop:launch-program (list "open" url))))
-
-(defun open-in-file-manager (path)
-  #+windows
-  (uiop:launch-program (list "explorer.exe" (uiop:native-namestring path)))
-  #+linux
-  (uiop:launch-program (list "xdg-open" (uiop:native-namestring path)))
-  #+darwin
-  (uiop:launch-program (list "open" (uiop:native-namestring path))))
-
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun kw (thing)
     (intern (string-upcase thing) "KEYWORD"))
@@ -421,22 +403,6 @@
     (v:define-pipe ()
       (v:file-faucet :file (logfile)))
     (v:info :trial "Running on ~a ~a ~a" (machine-type) (machine-instance) (machine-version))))
-
-(cffi:defctype size_t #+64-bit :uint64 #+32-bit :uint32)
-
-(defun rename-thread (name)
-  #+windows
-  (com:with-wstring (name name)
-    (ignore-errors
-     (cffi:foreign-funcall "SetThreadDescription"
-                           size_t (cffi:foreign-funcall "GetCurrentThread" size_t)
-                           :string name
-                           size_t)))
-  #-windows
-  (cffi:foreign-funcall "pthread_setname_np"
-                        size_t (cffi:foreign-funcall "pthread_self" size_t)
-                        :string name
-                        :int))
 
 (defun make-thread (name func)
   (bt:make-thread (lambda ()

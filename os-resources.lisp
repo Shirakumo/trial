@@ -1,5 +1,38 @@
 (in-package #:org.shirakumo.fraf.trial)
 
+(defvar *open-in-browser-hook* (constantly NIL))
+(defun open-in-browser (url)
+  (or (funcall *open-in-browser-hook* url)
+      #+windows
+      (uiop:launch-program (list "rundll32" "url.dll,FileProtocolHandler" url))
+      #+linux
+      (uiop:launch-program (list "xdg-open" url))
+      #+darwin
+      (uiop:launch-program (list "open" url))))
+
+(defun open-in-file-manager (path)
+  #+windows
+  (uiop:launch-program (list "explorer.exe" (uiop:native-namestring path)))
+  #+linux
+  (uiop:launch-program (list "xdg-open" (uiop:native-namestring path)))
+  #+darwin
+  (uiop:launch-program (list "open" (uiop:native-namestring path))))
+
+(defun rename-thread (name)
+  #+windows
+  (com:with-wstring (name name)
+    (ignore-errors
+     (cffi:foreign-funcall "SetThreadDescription"
+                           :size (cffi:foreign-funcall "GetCurrentThread" :size)
+                           :string name
+                           :size)))
+  #+unix
+  (ignore-errors
+   (cffi:foreign-funcall "pthread_setname_np"
+                         :size (cffi:foreign-funcall "pthread_self" :size)
+                         :string name
+                         :int)))
+
 #+windows
 (progn
   (cffi:defcstruct (io-counters :conc-name io-counters-)
