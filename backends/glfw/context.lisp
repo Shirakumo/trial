@@ -201,10 +201,12 @@
   (not (null (window context))))
 
 (defmethod make-current ((context context))
-  (%glfw:make-context-current (window context)))
+  (float-features:with-float-traps-masked T
+    (%glfw:make-context-current (window context))))
 
 (defmethod done-current ((context context))
-  (%glfw:make-context-current (cffi:null-pointer)))
+  (float-features:with-float-traps-masked T
+    (%glfw:make-context-current (cffi:null-pointer))))
 
 (defmethod hide ((context context))
   (cl-glfw3:hide-window (window context))
@@ -247,7 +249,8 @@
   (cl-glfw3:set-window-should-close (window context) T))
 
 (defmethod swap-buffers ((context context))
-  (cl-glfw3:swap-buffers (window context)))
+  (float-features:with-float-traps-masked T
+    (cl-glfw3:swap-buffers (window context))))
 
 (defmethod show-cursor ((context context))
   (cl-glfw3:set-input-mode :cursor :normal (window context))
