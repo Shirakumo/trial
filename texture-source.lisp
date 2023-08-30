@@ -181,8 +181,18 @@
                  (ptr (cffi:inc-pointer (memory-region-pointer region) off)))
             #-:elide-buffer-access-checks
             (when (< (memory-region-size region) (+ off len))
-              (error "Trying to upload a region bigger than there is data in the image.~%Region is~%  ~a~%image is~%  ~a"
-                     (+ off len) (memory-region-size region)))
+              (error "Trying to upload a region bigger than there is data in the image.~%Region is:
+  ~a bytes,
+  ~d , ~d , ~d
+  ~d x ~d x ~d
+  ~a ~a
+image is
+  ~a bytes
+  ~d , ~d , ~d
+  ~d x ~d x ~d @ ~a
+  ~a ~a"
+                     (+ off len) src-x src-y src-z src-w src-h src-d format format type
+                     (memory-region-size region) dst-x dst-y dst-z dst-w dst-h dst-d (pixel-format texture) (pixel-type texture)))
             (ecase target
               (:texture-1d
                (%gl:tex-sub-image-1d target level dst-x dst-w format type ptr))
