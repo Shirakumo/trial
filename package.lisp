@@ -599,7 +599,8 @@
    #:size
    #:bindings
    #:index-buffer
-   #:indexed-p)
+   #:indexed-p
+   #:compute-buffer-bindings)
   ;; resources/vertex-buffer.lisp
   (:export
    #:vertex-buffer

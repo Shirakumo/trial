@@ -101,3 +101,21 @@
     #++
     (%gl:draw-arrays (vertex-form array) 0 size)
     (gl:bind-vertex-array 0)))
+
+(defun compute-buffer-bindings (buffer fields)
+  (let* ((fields (loop for field in fields
+                       collect (etypecase field
+                                 (cons field)
+                                 (integer (list field :float))
+                                 (keyword (case field
+                                            (:vec2 '(2 :float))
+                                            (:vec3 '(3 :float))
+                                            (:vec4 '(4 :float))
+                                            (T (list 1 field)))))))
+         (stride (loop for (size type) in fields
+                       sum (* size (gl-type-size type)))))
+    (loop with offset = 0
+          for (size type) in fields
+          for i from 0
+          collect `(,buffer :index ,i :size ,size :offset ,offset :type ,type :stride ,stride)
+          do (incf offset (* size (gl-type-size type))))))
