@@ -153,8 +153,8 @@
           for world = (global-transform solver i)
           do (let* ((location (tlocation world))
                     (rinv (qinv (trotation world)))
-                    (to-next (q*v rinv (v- (tlocation next) location)))
-                    (to-desired (q*v rinv (v- (aref world-chain (1+ i)) location)))
+                    (to-next (q* rinv (v- (tlocation next) location)))
+                    (to-desired (q* rinv (v- (aref world-chain (1+ i)) location)))
                     (delta (qtowards to-next to-desired)))
                (q<- (trotation (svref joints joint)) (q* delta (trotation (svref joints joint))))))))
 
@@ -201,8 +201,8 @@
   (when (< 0 i)
     (let* ((parent (trotation (global-transform solver (1- i))))
            (this (trotation (global-transform solver i)))
-           (parent-dir (q*v parent (axis constraint)))
-           (this-dir (q*v this (axis constraint)))
+           (parent-dir (q* parent (axis constraint)))
+           (this-dir (q* this (axis constraint)))
            (angle (vangle parent-dir this-dir)))
       (when (< (limit constraint) angle)
         (let* ((correction (vc parent-dir this-dir))
@@ -216,8 +216,8 @@
 
 (defmethod apply-constraint ((constraint hinge-constraint) solver i)
   (when (< 0 i)
-    (let* ((current (q*v (trotation (global-transform solver i)) (axis constraint)))
-           (desired (q*v (trotation (global-transform solver (1- i))) (axis constraint)))
+    (let* ((current (q* (trotation (global-transform solver i)) (axis constraint)))
+           (desired (q* (trotation (global-transform solver (1- i))) (axis constraint)))
            (rot (trotation (elt solver i))))
       ;; FIXME: allow constraining the angle as well
       (nq* rot (qtowards current desired))

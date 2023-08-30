@@ -195,7 +195,7 @@ And for testing purposes, let's temporarily just make the cube shoot it when we 
   (case key
     (:f (enter (make-instance 'bullet :location (location my-cube)
                                       :scaling (vec 0.1 0.1 0.1)
-                                      :velocity (nv* (q*v (orientation my-cube) +vx3+) 5))
+                                      :velocity (nv* (q* (orientation my-cube) +vx3+) 5))
                (container my-cube)))))
 ::
 

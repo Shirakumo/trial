@@ -117,7 +117,7 @@ article a.index:hover{
   (case key
     (:f (enter (make-instance 'bullet :location (location my-cube)
                                       :scaling (vec 0.1 0.1 0.1)
-                                      :velocity (nv* (q*v (orientation my-cube) +vx3+) 5))
+                                      :velocity (nv* (q* (orientation my-cube) +vx3+) 5))
                (container my-cube)))))</pre></code><p>This'll spawn a bullet and make it shoot out in the direction the cube is facing. Except... trying it now will crash with some obscure error<sup class="footnote-reference"><a href="#footnote-6">[6]</a></sup>. This happens because the bullet has different superclasses to the cube, and requires a different drawing method, which wasn't loaded when the scene was set up.</p><p>There's two ways to fix this. We can either use <code>enter-and-load</code> instead of <code>enter</code>, which will load the necessary resources dynamically there, or we can preload it like the rest of the scene. The latter is preferable, as there's a lot less work that needs to be done while the game is running, leading to smoother gameplay.</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(defmethod setup-scene ((main main) scene)
   (enter (make-instance 'my-cube) scene)
   (enter (make-instance '3d-camera :location (vec 0 0 -3)) scene)
