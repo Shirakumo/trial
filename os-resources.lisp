@@ -1,5 +1,27 @@
 (in-package #:org.shirakumo.fraf.trial)
 
+#+windows
+(cffi:define-foreign-library secur32
+    (T (:default "Secur32")))
+
+(defun system-username ()
+  (or #+windows
+      (cffi:with-foreign-objects ((size :ulong)
+                                  (name :uint16 128))
+        (unless (cffi:foreign-library-loaded-p 'secur32)
+          (cffi:load-foreign-library 'secur32))
+        (setf (cffi:mem-ref size :ulong) 128)
+        ;; Constant 3 here specifies a "display name".
+        (cond ((< 0 (cffi:foreign-funcall "GetUserNameExW" :int 13 :pointer name :pointer size :int))
+               (org.shirakumo.com-on:wstring->string name (cffi:mem-ref size :ulong)))
+              (T
+               (setf (cffi:mem-ref size :ulong) 128)
+               (when (< 0 (cffi:foreign-funcall "GetUserNameW" :pointer name :pointer size :int))
+                 (org.shirakumo.com-on:wstring->string name (cffi:mem-ref size :ulong))))))
+      #+unix
+      (cffi:foreign-funcall "getlogin" :string)
+      (pathname-utils:directory-name (user-homedir-pathname))))
+
 (defvar *open-in-browser-hook* (constantly NIL))
 (defun open-in-browser (url)
   (or (funcall *open-in-browser-hook* url)

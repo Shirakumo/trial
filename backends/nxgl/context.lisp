@@ -182,6 +182,9 @@
       (unwind-protect (finalize main)
         (nxgl:shutdown)))))
 
+(defun system-username ()
+  (nxgl:username))
+
 (defmacro define-callback (name args &body body)
   `(cffi:defcallback ,name :void ((context :pointer) (user :pointer) ,@args)
      (declare (ignore context user))

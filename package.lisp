@@ -1286,6 +1286,11 @@
    #:update-action-mappings)
   ;; os-resources.lisp
   (:export
+   #:*open-in-browser-hook*
+   #:system-username
+   #:open-in-browser
+   #:open-in-file-manager
+   #:rename-thread
    #:cpu-time
    #:io-bytes
    #:gpu-room
@@ -1579,8 +1584,6 @@
    #:finalize
    #:gl-property
    #:current-time
-   #:open-in-browser
-   #:open-in-file-manager
    #:kw
    #:enlist
    #:unlist
@@ -1604,7 +1607,6 @@
    #:logfile
    #:config-directory
    #:standalone-logging-handler
-   #:rename-thread
    #:make-thread
    #:with-thread
    #:thread-did-not-exit

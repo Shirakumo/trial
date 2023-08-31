@@ -387,10 +387,10 @@
 (defun config-directory (&rest app-path)
   (apply #'pathname-utils:subdirectory
          (or (envvar-directory "TRIAL_CONFIG_HOME")
-             #+(or windows win32)
+             #+windows
              (or (envvar-directory "AppData")
                  (pathname-utils:subdirectory (user-homedir-pathname) "AppData" "Roaming"))
-             #-(or windows win32)
+             #+nx #p"save:/"
              (or (envvar-directory "XDG_CONFIG_HOME")
                  (pathname-utils:subdirectory (user-homedir-pathname) ".config")))
          (or app-path (list +app-vendor+ +app-system+))))
