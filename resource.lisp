@@ -16,19 +16,29 @@
 (defgeneric allocate (resource))
 (defgeneric deallocate (resource))
 (defgeneric allocated-p (resource))
+(defgeneric load (resource))
 
-(defmethod load ((resource resource))
+(defmethod load :around ((resource resource))
   (unless (allocated-p resource)
-    (v:trace :trial.resource "Loading ~a" resource)
-    (allocate resource)))
+    (allocate resource))
+  #-trial-release
+  (v:trace :trial.resource "Loading ~a" resource)
+  (call-next-method)
+  resource)
 
 (defmethod allocate :around ((resource resource))
+  #-trial-release
+  (when (allocated-p resource)
+    (error "Resource ~s is already allocated." resource))
   #-trial-release
   (v:trace :trial.resource "Allocating ~a" resource)
   (call-next-method)
   resource)
 
 (defmethod deallocate :around ((resource resource))
+  #-trial-release
+  (unless (allocated-p resource)
+    (error "Resource ~s is already deallocated." resource))
   #-trial-release
   (v:trace :trial.resource "Deallocating ~a" resource)
   (call-next-method)
