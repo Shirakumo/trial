@@ -189,9 +189,9 @@
 image is
   ~a bytes
   ~d , ~d , ~d
-  ~d x ~d x ~d @ ~a
+  ~d x ~d x ~d
   ~a ~a"
-                     (+ off len) src-x src-y src-z src-w src-h src-d format format type
+                     (+ off len) src-x src-y src-z src-w src-h src-d format type
                      (memory-region-size region) dst-x dst-y dst-z dst-w dst-h dst-d (pixel-format texture) (pixel-type texture)))
             (ecase target
               (:texture-1d
