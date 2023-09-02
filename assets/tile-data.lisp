@@ -7,8 +7,6 @@
 
 (defclass tilemap (texture)
   ((target :initform :texture-2d)
-   (pixel-type :initform :unsigned-byte)
-   (pixel-format :initform :rg-integer)
    (internal-format :initform :rg8ui)
    (min-filter :initform :nearest)
    (mag-filter :initform :nearest)
@@ -54,7 +52,7 @@
     (ensure-instance (resource asset (gethash "id"  data)) 'tilemap
                      :width width
                      :height height
-                     :pixel-data pixel-data
+                     :sources (list (make-image-source pixel-data width height :unsigned-byte :rg-integer))
                      :tileset tileset)))
 
 (defun decode-tiled-tileset (data path asset)
