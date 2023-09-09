@@ -14,6 +14,7 @@
 (defgeneric map-visible (function camera container))
 (defgeneric in-view-p (object camera))
 (defgeneric focal-point (camera))
+(defgeneric world-screen-area (camera))
 
 (defmethod handle ((ev tick) (camera camera))
   (project-view camera))
@@ -67,6 +68,9 @@
   (reset-matrix *view-matrix*)
   (translate (v- (location camera)) *view-matrix*))
 
+(defmethod world-screen-area ((camera 2d-camera))
+  (* (width *context*) (height *context*)))
+
 (defclass sidescroll-camera (2d-camera)
   ((zoom :initarg :zoom :accessor zoom)
    (target :initarg :target :accessor target))
@@ -96,6 +100,10 @@
 
 (defmethod project-view ((camera 3d-camera))
   (look-at (location camera) (vec 0 0 0) +vy3+))
+
+(defmethod world-screen-area ((camera 3d-camera))
+  (let ((x (* 2 (near-plane camera) (tan (* 0.5 (fov camera))))))
+    (/ (* x x) (/ (width *context*) (height *context*)))))
 
 (defclass target-camera (3d-camera)
   ((target :initarg :target :accessor target)
