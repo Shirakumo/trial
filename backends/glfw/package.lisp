@@ -3,6 +3,9 @@
   (:use #:cl+trial #:org.shirakumo.fraf.math.vectors)
   (:shadow #:context #:window #:monitor #:initargs)
   (:shadowing-import-from #:trial #:load)
-  (:local-nicknames (#:v #:org.shirakumo.verbose))
+  (:local-nicknames
+   (#:v #:org.shirakumo.verbose)
+   (#:glfw #:org.shirakumo.fraf.glfw)
+   (#:%glfw #:org.shirakumo.fraf.glfw.cffi))
   (:export
    #:context))

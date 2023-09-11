@@ -1,44 +1,10 @@
 (in-package #:org.shirakumo.fraf.trial.glfw)
 
-(defvar *window-table* (tg:make-weak-hash-table :test 'eq :weakness :value))
-
-(cffi:defcvar (optimus "NvOptimusEnablement") :uint32)
-(cffi:defcvar (xpress "AmdPowerXpressRequestHighPerformance") :int)
-(cffi:defcfun (wait-events-timeout "glfwWaitEventsTimeout") :void
-  (timeout :double))
-(cffi:defcfun (window-hint-string "glfwWindowHintString") :void
-  (target :int) (hint :string))
-(cffi:defcfun (get-key-name "glfwGetKeyName") :string
-  (key %glfw::key) (scan-code :int))
-(cffi:defcfun (create-standard-cursor "glfwCreateStandardCursor") :pointer
-  (cursor :int))
-(cffi:defcfun (create-cursor "glfwCreateCursor") :pointer
-  (image :pointer)
-  (x :int)
-  (y :int))
-(cffi:defcfun (set-cursor "glfwSetCursor") :int
-  (window :pointer)
-  (cursor :pointer))
-(cffi:defcfun (destroy-cursor "glfwDestroyCursor") :void
-  (cursor :pointer))
-(cffi:defcfun (set-drop-callback "glfwSetDropCallback") :void
-  (window :pointer)
-  (callback :pointer))
-(cffi:defcfun (set-window-icon "glfwSetWindowIcon") :void
-  (window :pointer)
-  (count :int)
-  (images :pointer))
-(cffi:defcstruct image
-  (width :int)
-  (height :int)
-  (pixels :pointer))
-
-(defclass monitor (trial:monitor)
+(defclass monitor (trial:monitor glfw:monitor)
   ((pointer :initarg :pointer :reader pointer)))
 
 (defmethod name ((monitor monitor))
-  (handler-case
-      (%glfw:get-monitor-name (pointer monitor))
+  (handler-case (glfw:name monitor)
     (error () "<UNKNOWN>")))
 
 (defstruct last-click
@@ -46,73 +12,56 @@
   (time 0 :type (unsigned-byte 64))
   (pos (vec 0 0) :type vec2))
 
-(defclass context (trial:context)
-  ((title :initarg :title :accessor title)
-   (profile :initarg :profile :initform NIL :reader profile)
+(defclass context (trial:context glfw:window)
+  ((profile :initarg :profile :initform NIL :reader profile)
    (cursor-visible :initform T :accessor cursor-visible)
    (mouse-pos :initform (vec 0 0) :accessor mouse-pos)
    (last-click :initform (make-last-click) :accessor last-click)
-   (initargs :initform NIL :accessor initargs)
    (visible-p :initform T :accessor visible-p)
-   (window :initform NIL :accessor window)
-   (monitors :initform () :accessor monitors)
-   (vsync :initarg :vsync :accessor vsync)
-   (width :initform 1 :accessor width)
-   (height :initform 1 :accessor height)
-   (cursor :initform NIL :reader cursor)
-   (cursor-cache :initform (make-hash-table :test 'eql) :reader cursor-cache)
+   ;; We track w/h separately here as Trial cares about the framebuffer size, not the window size.
+   (width :initform 0 :accessor width)
+   (height :initform 0 :accessor height)
    (event-queue :initform (make-event-queue) :accessor event-queue))
   (:default-initargs
    :resizable T
    :visible T
    :decorated T
-   :robustness :no-robustness
    :forward-compat T
-   :debug-context NIL))
+   :debug-context NIL
+   :initialize-context NIL
+   :x11-class-name "trial"
+   :x11-instance-name trial:+app-system+))
 
 (defmethod initialize-instance ((context context) &key)
-  (call-next-method)
-  (create-context context))
+  (v:info :trial.backend.glfw "Creating context ~a" context)
+  (handler-case
+      (call-next-method)
+    (glfw:glfw-error (e)
+      (error 'trial:context-creation-error :message (glfw:message e) :context context))))
 
-(defmethod shared-initialize :after ((context context) slots
-                                     &key (version NIL version-p)
-                                          (profile NIL profile-p)
-                                          (width NIL width-p)
-                                          (height NIL height-p)
-                                          (title NIL title-p)
-                                          (double-buffering NIL double-buffering-p)
-                                          (stereo-buffer NIL stereo-buffer-p)
-                                          (vsync NIL vsync-p)
-                                     ;; Extra options
-                                          (fullscreen NIL fullscreen-p)
-                                          (resizable NIL resizable-p)
-                                          (visible NIL visible-p)
-                                          (decorated NIL decorated-p)
-                                          (robustness NIL robustness-p)
-                                          (forward-compat NIL forward-compat-p)
-                                          (debug-context NIL debug-context-p)
-                                          (api (if (eql profile :es) :opengl-es-api :opengl-api)))
-  #+windows (ignore-errors (setf optimus 1))
-  #+windows (ignore-errors (setf xpress 1))
-  (flet (((setf g) (value name) (setf (getf (initargs context) name) value)))
+(defmethod shared-initialize :around ((context context) slots
+                                      &rest initargs
+                                      &key (version NIL version-p)
+                                           (profile NIL profile-p)
+                                           (double-buffering NIL double-buffering-p)
+                                           (vsync NIL vsync-p)
+                                      ;; Extra options
+                                           (robustness NIL robustness-p)
+                                           (forward-compat NIL forward-compat-p)
+                                           (debug-context NIL debug-context-p)
+                                           (api (if (eql profile :es) :opengl-es-api :opengl-api)))
+  (flet (((setf g) (value name)
+           (setf (getf initargs name) value)))
     (macrolet ((maybe-set (var &optional (name (intern (string var) :keyword)))
                  `(when ,(let ((*print-case* (readtable-case *readtable*)))
                            (intern (format NIL "~a-~a" var 'p)))
                     (setf (g ,name) ,var))))
-      (maybe-set width)
-      (maybe-set height)
-      (maybe-set double-buffering)
-      (maybe-set stereo-buffer)
-      (maybe-set fullscreen)
-      (maybe-set resizable)
-      (maybe-set visible)
-      (maybe-set decorated)
+      (maybe-set double-buffering :doublebuffer)
       (maybe-set robustness :context-robustness)
       (maybe-set forward-compat :opengl-forward-compat)
-      (maybe-set debug-context :opengl-debug-context)
+      (maybe-set debug-context :context-debug)
       (setf (g :client-api) api)
-      (setf (g :refresh-rate)
-            (ecase vsync ((NIL :off) 0) ((T :on) 1) (:adaptive -1)))
+      (setf (g :vsync) vsync)
       (when version-p
         (setf (g :context-version-major) (first version))
         (setf (g :context-version-minor) (second version)))
@@ -120,96 +69,41 @@
         (setf (g :opengl-profile) (ecase profile
                                     ((NIL :es) :opengl-any-profile)
                                     (:core :opengl-core-profile)
-                                    (:compatibility :opengl-compat-profile)))))))
+                                    (:compatibility :opengl-compat-profile)))))
+    ;; Merge initargs into retained
+    (loop for (k v) on initargs by #'cddr
+          do (setf (getf (initargs context) k) v))
+    ;; Do the actual initialization
+    (apply #'call-next-method context slots initargs)
+    ;; Some extra handling for internal options
+    (when (glfw:visible-p context)
+      (etypecase fullscreen
+        ((eql T) (show context :fullscreen T))
+        (string (show context :fullscreen T :mode fullscreen))
+        ((eql NIL))))
+    (refresh-window-size context)
+    (when vsync-p (setf (vsync context) vsync))))
 
 (defmethod create-context ((context context))
-  (let ((initargs (initargs context)))
-    (when (eql T (getf initargs :width))
-      (let ((mode (glfw:get-video-mode (first (glfw:get-monitors)))))
-        (setf (getf initargs :width) (getf mode '%glfw:width))
-        (setf (getf initargs :height) (getf mode '%glfw:height))))
-    (macrolet ((output-hints (&rest hints)
-                 `(progn
-                    ,@(loop for (name type attrib) in hints
-                            collect `(%glfw:window-hint
-                                      ,(or attrib name)
-                                      (cffi:convert-to-foreign
-                                       (getf initargs ,name) ,type))))))
-      (output-hints
-       (:resizable :boolean)
-       (:visible :boolean)
-       (:decorated :boolean)
-       (:refresh-rate :int)
-       (:stereo-buffer :boolean :stereo)
-       (:context-version-major :int)
-       (:context-version-minor :int)
-       (:context-robustness '%glfw::robustness)
-       (:opengl-forward-compat :boolean)
-       (:opengl-debug-context :boolean)
-       (:opengl-profile '%glfw::opengl-profile)
-       (:client-api '%glfw::opengl-api)
-       ;; This option is not in cl-glfw3 for some reason.
-       (:double-buffering :boolean #x00021010))
-      (window-hint-string 147457 "trial")
-      (window-hint-string 147458 trial:+app-system+)
-      (v:info :trial.backend.glfw "Creating context ~a" context)
-      (float-features:with-float-traps-masked T
-        (let ((window (%glfw:create-window (getf initargs :width)
-                                           (getf initargs :height)
-                                           (title context)
-                                           (cffi:null-pointer)
-                                           (if (shared-with context)
-                                               (window (shared-with context))
-                                               (cffi:null-pointer)))))
-          (when (cffi:null-pointer-p window)
-            (cffi:with-foreign-object (message :pointer)
-              (cffi:foreign-funcall "glfwGetError" :pointer message :int)
-              (error 'trial:context-creation-error :message (cffi:foreign-string-to-lisp (cffi:mem-ref message :pointer))
-                                                   :context context)))
-          (setf (gethash (cffi:pointer-address window) *window-table*) context)
-          (setf (window context) window)
-          (when (getf initargs :visible T)
-            (etypecase (getf initargs :fullscreen)
-              ((eql T) (show context :fullscreen T))
-              (string (show context :fullscreen T :mode (getf initargs :fullscreen)))
-              ((eql NIL))))
-          (cffi:with-foreign-objects ((w :int) (h :int))
-            (cffi:foreign-funcall "glfwGetFramebufferSize" %glfw::window window :pointer w :pointer h :void)
-            (setf (width context) (cffi:mem-ref w :int))
-            (setf (height context) (cffi:mem-ref h :int)))
-          (cl-glfw3:make-context-current window)
-          (cl-glfw3:swap-interval (getf initargs :refresh-rate))
-          (cl-glfw3:set-window-size-callback 'ctx-size window)
-          (cl-glfw3:set-window-focus-callback 'ctx-focus window)
-          (cl-glfw3:set-window-iconify-callback 'ctx-iconify window)
-          (cl-glfw3:set-key-callback 'ctx-key window)
-          (cl-glfw3:set-char-callback 'ctx-char window)
-          (cl-glfw3:set-mouse-button-callback 'ctx-button window)
-          (cl-glfw3:set-cursor-position-callback 'ctx-pos window)
-          (cl-glfw3:set-scroll-callback 'ctx-scroll window)
-          (cl-glfw3:set-window-close-callback 'ctx-close window)
-          (set-drop-callback window (cffi:callback ctx-drop)))))))
+  (handler-case
+      (apply #'reinitialize-instance context :initialize-context T (initargs context))
+    (glfw:glfw-error (e)
+      (error 'trial:context-creation-error :message (glfw:message e) :context context))))
 
 (defmethod destroy-context ((context context))
-  (loop for v being the hash-values of (cursor-cache context)
-        do (destroy-cursor v))
-  (clrhash (cursor-cache context))
-  (cl-glfw3:destroy-window (window context))
-  (setf (window context) NIL))
+  (glfw:destroy context))
 
 (defmethod valid-p ((context context))
-  (not (null (window context))))
+  (not (null (glfw:pointer context))))
 
 (defmethod make-current ((context context))
-  (float-features:with-float-traps-masked T
-    (%glfw:make-context-current (window context))))
+  (glfw:make-current context))
 
 (defmethod done-current ((context context))
-  (float-features:with-float-traps-masked T
-    (%glfw:make-context-current (cffi:null-pointer))))
+  (glfw:make-current NIL))
 
 (defmethod hide ((context context))
-  (cl-glfw3:hide-window (window context))
+  (glfw:hide context)
   (setf (visible-p context) NIL))
 
 (defun ensure-monitor (monitor context)
@@ -219,10 +113,10 @@
     (string (find-monitor monitor context))))
 
 (defmethod show ((context context) &key (fullscreen NIL f-p) mode)
-  (cl-glfw3:show-window (window context))
+  (glfw:show context)
   (setf (visible-p context) T)
   (cond (f-p
-         (destructuring-bind (w h &optional (r %glfw:+dont-care+) monitor)
+         (destructuring-bind (w h &optional r monitor)
              (etypecase mode
                (monitor (current-video-mode mode))
                (string (current-video-mode (find-monitor mode context)))
@@ -232,93 +126,71 @@
              (when (eql T w)
                (destructuring-bind (cw ch cr cm) (current-video-mode monitor)
                  (setf w cw h ch r cr)))
-             (cl-glfw3:set-window-monitor (when fullscreen (pointer monitor)) w h :window (window context) :refresh-rate r)))
+             (setf (glfw:monitor context) (list (when fullscreen (pointer monitor)) :width w :height h :refresh-rate r))))
          (unless fullscreen
-           (center-window context)))
+           (glfw:center context)))
         (mode
          (resize context (first mode) (second mode)))))
 
 (defmethod resize ((context context) width height)
   (v:info :trial.backend.glfw "Resizing window to ~ax~a" width height)
-  (cl-glfw3:set-window-size width height (window context))
-  (setf (width context) width)
-  (setf (height context) height)
-  (center-window context))
+  (setf (glfw:size context) (list width height))
+  (glfw:center context))
 
 (defmethod quit ((context context))
-  (cl-glfw3:set-window-should-close (window context) T))
+  (setf (glfw:should-close-p context) T))
 
 (defmethod swap-buffers ((context context))
-  (float-features:with-float-traps-masked T
-    (cl-glfw3:swap-buffers (window context))))
+  (glfw:swap-buffers context))
 
 (defmethod show-cursor ((context context))
-  (cl-glfw3:set-input-mode :cursor :normal (window context))
+  (setf (glfw:input-mode :cursor context) :normal)
   (setf (cursor-visible context) T))
 
 (defmethod hide-cursor ((context context))
-  (cl-glfw3:set-input-mode :cursor :hidden (window context))
+  (setf (glfw:input-mode :cursor context) :hidden)
   (setf (cursor-visible context) NIL))
 
 (defmethod lock-cursor ((context context))
-  (cl-glfw3:set-input-mode :cursor :disabled (window context)))
+  (setf (glfw:input-mode :cursor context) :disabled))
 
 (defmethod unlock-cursor ((context context))
   (if (cursor-visible context)
       (show-cursor context)
       (hide-cursor context)))
 
-(defun create-cursor-from-icon (icon &key (xoff 0) (yoff 0))
-  (cffi:with-foreign-object (image '(:struct image))
-    (setf (cffi:foreign-slot-value image '(:struct image) 'width) (rgba-icon-width icon))
-    (setf (cffi:foreign-slot-value image '(:struct image) 'height) (rgba-icon-height icon))
-    (cffi:with-pointer-to-vector-data (pixels (rgba-icon-data icon))
-      (setf (cffi:foreign-slot-value image '(:struct image) 'pixels) pixels)
-      (create-cursor image xoff yoff))))
-
-(defun get-cursor (cursor context)
-  (or (gethash cursor (cursor-cache context))
-      (setf (gethash cursor (cursor-cache context))
-            (etypecase cursor
-              ;; FIXME: some way to provide fallbacks for standard cursors
-              (null               (cffi:null-pointer))
-              (rgba-icon          (create-cursor-from-icon cursor))
-              ((eql :arrow)       (create-standard-cursor #x00036001))
-              ((eql :text)        (create-standard-cursor #x00036002))
-              ((eql :hand)        (create-standard-cursor #x00036004))
-              ((eql :crosshair)   (create-standard-cursor #x00036003))
-              ((eql :ew-resize)   (create-standard-cursor #x00036005))
-              ((eql :ns-resize)   (create-standard-cursor #x00036006))
-              ((eql :nwse-resize) (create-standard-cursor #x00036007))
-              ((eql :nesw-resize) (create-standard-cursor #x00036008))
-              ((eql :resize)      (create-standard-cursor #x00036009))
-              ((eql :disallowed)  (create-standard-cursor #x0003600A))))))
+(defmethod cursor ((context context))
+  (glfw:cursor context))
 
 (defmethod (setf cursor) (cursor (context context))
-  (unless (eq cursor (slot-value context 'cursor))
-    (set-cursor (window context) (get-cursor cursor context))
-    (setf (slot-value context 'cursor) cursor)))
+  (setf (glfw:cursor context) cursor))
 
 (defmethod (setf icon) ((icon rgba-icon) (context context))
-  (cffi:with-foreign-object (image '(:struct image))
-    (setf (cffi:foreign-slot-value image '(:struct image) 'width) (rgba-icon-width icon))
-    (setf (cffi:foreign-slot-value image '(:struct image) 'height) (rgba-icon-height icon))
-    (cffi:with-pointer-to-vector-data (pixels (rgba-icon-data icon))
-      (setf (cffi:foreign-slot-value image '(:struct image) 'pixels) pixels)
-      (set-window-icon (window context) 1 image))))
+  (setf (glfw:icon context) (list (list (rgba-icon-data icon)
+                                        (rgba-icon-width icon)
+                                        (rgba-icon-height icon)))))
 
 (defmethod (setf icon) ((none null) (context context))
-  (set-window-icon (window context) 0 (cffi:null-pointer)))
+  (setf (glfw:icon context) none))
 
-(defmethod (setf title) :before (value (context context))
-  (cl-glfw3:set-window-title value (window context)))
+(defmethod title ((context context))
+  (glfw:title context))
 
-(defmethod (setf vsync) :before (value (context context))
-  (cl-glfw3:swap-interval (ecase value ((NIL :off) 0) ((:on T) 1) (:adaptive -1))))
+(defmethod (setf title) (value (context context))
+  (setf (glfw:title context) value))
+
+(defmethod vsync ((context context))
+  (ecase (glfw:swap-interval context)
+    (0 :off)
+    (-1 :adaptive)
+    (T :on)))
+
+(defmethod (setf vsync) (value (context context))
+  (setf (glfw:swap-interval context) (ecase value ((NIL :off) 0) ((:on T) 1) (:adaptive -1))))
 
 (defmethod version ((context context))
-  (list (cl-glfw3:get-window-attribute :context-version-major (window context))
-        (cl-glfw3:get-window-attribute :context-version-minor (window context))))
+  (list (glfw:attribute :context-version-major context)
+        (glfw:attribute :context-version-minor context)))
 
 (defmethod clipboard ((context context))
   (request-event-queue (event-queue context) :get-clipboard))
@@ -327,29 +199,23 @@
   (request-event-queue (event-queue context) :set-clipboard text))
 
 (defmethod cursor-position ((context context))
-  (cffi:with-foreign-objects ((x :double) (y :double))
-    (cffi:foreign-funcall "glfwGetCursorPos" :pointer (window context) :pointer x :pointer y :void)
+  (destructuring-bind (x y) (glfw:cursor-location context)
     (let ((x-scale 1.0)
           (y-scale 1.0))
       #+darwin
-      (cffi:with-foreign-objects ((x :float) (y :float))
-        (cffi:foreign-funcall "glfwGetWindowContentScale" :pointer (window context) :pointer x :pointer y :void)
-        (setf x-scale (cffi:mem-ref x :float))
-        (setf y-scale (cffi:mem-ref y :float)))
-      (vec (* x-scale (cffi:mem-ref x :double))
-           (* y-scale (- (second (cl-glfw3:get-window-size (window context))) (cffi:mem-ref y :double)))))))
+      (destructuring-bind (x y) (glfw:content-scale context)
+        (setf x-scale x y-scale y))
+      (vec (* x-scale x)
+           (* y-scale (- (glfw:height context) y))))))
 
 (defmethod (setf cursor-position) (pos (context context))
   (let ((x-scale 1.0)
         (y-scale 1.0))
     #+darwin
-    (cffi:with-foreign-objects ((x :float) (y :float))
-      (cffi:foreign-funcall "glfwGetWindowContentScale" :pointer (window context) :pointer x :pointer y :void)
-      (setf x-scale (cffi:mem-ref x :float))
-      (setf y-scale (cffi:mem-ref y :float)))
-    (cffi:foreign-funcall "glfwSetCursorPos" :pointer (window context)
-                                             :double (float (* x-scale (vx pos)) 0d0)
-                                             :double (float (* y-scale (- (second (cl-glfw3:get-window-size (window context))) (vy pos))) 0d0)))
+    (destructuring-bind (x y) (glfw:content-scale context)
+      (setf x-scale x y-scale y))
+    (setf (glfw:cursor-location context) (list (* x-scale (vx pos))
+                                               (* y-scale (- (glfw:height context) (vy pos))))))
   pos)
 
 (defun make-context (&optional handler &rest initargs)
@@ -358,28 +224,26 @@
 (defun launch-with-context (&optional main &rest initargs)
   (declare (optimize speed))
   (flet ((body ()
-           (handler-case (cl-glfw3:initialize)
+           (handler-case (glfw:init)
              #+trial-release (error () (error 'trial:context-creation-error :message "Failed to initialize GLFW.")))
-           (cl-glfw3:set-error-callback 'ctx-error)
            (let ((main (apply #'make-instance main initargs)))
              (start main)
              (trial:rename-thread "input-loop")
              (v:debug :trial.backend.glfw "Entering input loop")
              (unwind-protect
-                  (let* ((context (trial:context main))
-                         (window (window context)))
+                  (let ((context (trial:context main)))
                     (flet ((handler (request arg)
                              (ecase request
-                               (:get-clipboard (glfw:get-clipboard-string window))
-                               (:set-clipboard (glfw:set-clipboard-string arg window)))))
+                               (:get-clipboard (glfw:clipboard-string context))
+                               (:set-clipboard (setf (glfw:clipboard-string context) arg)))))
                       (declare (dynamic-extent #'handler))
-                      (loop until (cl-glfw3:window-should-close-p window)
-                            do (wait-events-timeout 0.005d0)
+                      (loop until (glfw:should-close-p context)
+                            do (glfw:poll-events :timeout 0.005d0)
                                (poll-input main)
                                (handle-event-queue (event-queue context) #'handler))))
                (v:debug :trial.backend.glfw "Cleaning up")
                (unwind-protect (finalize main)
-                 (%glfw:terminate))))))
+                 (glfw:shutdown))))))
     #+darwin
     (tmt:with-body-in-main-thread ()
       (handler-bind ((error #'trial:standalone-error-handler))
@@ -388,167 +252,95 @@
     (body)))
 
 (defun refresh-window-size (context)
-  (destructuring-bind (w h) (glfw:get-window-size (window context))
-    (let ((x-scale 1.0)
-          (y-scale 1.0))
-      #+darwin
-      (cffi:with-foreign-objects ((x :float) (y :float))
-        (cffi:foreign-funcall "glfwGetWindowContentScale" :pointer (window context) :pointer x :pointer y :void)
-        (setf x-scale (cffi:mem-ref x :float))
-        (setf y-scale (cffi:mem-ref y :float)))
-      (let ((w (round (* x-scale w)))
-            (h (round (* y-scale h))))
-        (unless (or (= 0 w) (= 0 h))
-          (setf (width context) w)
-          (setf (height context) h)
-          (handle (make-event 'resize :width w :height h) (handler context)))))))
+  (destructuring-bind (w h) (glfw:framebuffer-size context)
+    (glfw:framebuffer-resized context w h)))
 
-(defmacro %with-context (&body body)
-  `(let ((context (gethash (cffi:pointer-address window) *window-table*)))
-     ,@body))
+(defmethod glfw:framebuffer-resized ((context context) w h)
+  (let ((x-scale 1.0)
+        (y-scale 1.0))
+    #+darwin
+    (destructuring-bind (x y) (glfw:content-scale context)
+      (setf x-scale x y-scale y))
+    (let ((w (round (* x-scale w)))
+          (h (round (* y-scale h))))
+      (when (and (< 0 w) (< 0 h) (not (= w (width context))) (not (= h (height context))))
+        (v:info :trial.backend.glfw "Framebuffer resized to ~ax~a" w h)
+        (setf (width context) w)
+        (setf (height context) h)
+        (handle (make-event 'resize :width w :height h) (handler context))))))
 
-(cl-glfw3:def-error-callback ctx-error (message)
-  (v:severe :trial.backend.glfw "~a" message))
+(defmethod glfw:window-focused ((context context) focusedp)
+  (v:info :trial.backend.glfw "Window has ~:[lost~;gained~] focus" focusedp)
+  (when focusedp (refresh-window-size context))
+  (handle (if focusedp (make-event 'gain-focus) (make-event 'lose-focus)) (handler context)))
 
-(cl-glfw3:def-framebuffer-size-callback ctx-size (window w h)
-  (%with-context
-   (v:info :trial.backend.glfw "Framebuffer resized to ~ax~a" w h)
-   (let ((x-scale 1.0)
-         (y-scale 1.0))
-     #+darwin
-     (cffi:with-foreign-objects ((x :float) (y :float))
-       (cffi:foreign-funcall "glfwGetWindowContentScale" :pointer window :pointer x :pointer y :void)
-       (setf x-scale (cffi:mem-ref x :float))
-       (setf y-scale (cffi:mem-ref y :float)))
-     (let ((w (round (* x-scale w)))
-           (h (round (* y-scale h))))
-       (when (and (< 0 w) (< 0 h))
-         (setf (width context) w)
-         (setf (height context) h)
-         (handle (make-event 'resize :width w :height h) (handler context)))))))
+(defmethod glfw:window-iconified ((context context) iconifiedp)
+  (v:info :trial.backend.glfw "Window has been ~:[restored~;iconified~]" iconifiedp)
+  (setf (visible-p context) (and (not iconifiedp) (glfw:visible-p context)))
+  (unless iconifiedp (refresh-window-size context))
+  (handle (if iconifiedp (make-event 'window-hidden) (make-event 'window-shown)) (handler context)))
 
-(cl-glfw3:def-window-focus-callback ctx-focus (window focusedp)
-  (%with-context
-    (v:info :trial.backend.glfw "Window has ~:[lost~;gained~] focus" focusedp)
-    (when focusedp (refresh-window-size context))
-    (handle (if focusedp (make-event 'gain-focus) (make-event 'lose-focus))
-            (handler context))))
-
-(cl-glfw3:def-window-iconify-callback ctx-iconify (window iconifiedp)
-  (%with-context
-    (v:info :trial.backend.glfw "Window has been ~:[restored~;iconified~]" iconifiedp)
-    (setf (visible-p context)
-          (and (not iconifiedp)
-               (cl-glfw3:get-window-attribute :visible (window context))))
-    (unless iconifiedp (refresh-window-size context))
-    (handle (if iconifiedp (make-event 'window-hidden) (make-event 'window-shown))
-            (handler context))))
-
-(cl-glfw3:def-key-callback ctx-key (window key scancode action modifiers)
+(defmethod glfw:key-changed ((context context) key scancode action modifiers)
   (declare (ignore scancode))
   (unless (eql :unknown key)
-    (%with-context
-      (case action
-        (:press
-         (v:debug :trial.input "Key pressed: ~a" key)
-         (handle (make-event 'key-press
-                                :key (glfw-key->key key)
-                                :modifiers modifiers)
-                 (handler context)))
-        (:repeat
-         (handle (make-event 'key-press
-                                :key (glfw-key->key key)
-                                :modifiers modifiers
-                                :repeat T)
-                 (handler context)))
-        (:release
-         (v:debug :trial.input "Key released: ~a" key)
-         (handle (make-event 'key-release
-                                :key (glfw-key->key key)
-                                :modifiers modifiers)
-                 (handler context)))))))
+    (case action
+      (:press
+       (v:trace :trial.input "Key pressed: ~a" key)
+       (handle (make-event 'key-press :key (glfw-key->key key) :modifiers modifiers) (handler context)))
+      (:repeat
+       (v:trace :trial.input "Key repeated: ~a" key)
+       (handle (make-event 'key-press :key (glfw-key->key key) :modifiers modifiers :repeat T) (handler context)))
+      (:release
+       (v:trace :trial.input "Key released: ~a" key)
+       (handle (make-event 'key-release :key (glfw-key->key key) :modifiers modifiers) (handler context))))))
 
-(cffi:defcallback ctx-char :void ((window :pointer) (char :unsigned-int))
+(defmethod glfw:char-entered ((context context) char modifiers)
   (when (< char #x110000)
     (let ((char (code-char char)))
-      (%with-context
-        (handle (make-event 'text-entered :text (string char))
-                (handler context))))))
+      (handle (make-event 'text-entered :text (string char)) (handler context)))))
 
-(cl-glfw3:def-mouse-button-callback ctx-button (window button action modifiers)
+(defmethod glfw:mouse-button-changed ((context context) button action modifiers)
   (declare (ignore modifiers))
-  (%with-context
-    (let ((pos (mouse-pos context))
-          (button (glfw-button->button button)))
-      (case action
-        (:press
-         (v:debug :trial.input "Mouse pressed: ~a" button)
-         (handle (make-event 'mouse-press :pos pos :button button)
-                 (handler context)))
-        (:release
-         (v:debug :trial.input "Mouse released: ~a" button)
-         (handle (make-event 'mouse-release :pos pos :button button)
-                 (handler context))
-         (let* ((click (last-click context))
-                (time (get-internal-real-time))
-                (diff (/ (- time (last-click-time click)) internal-time-units-per-second)))
-           (when (and (< diff 0.5) (eql (last-click-button click) button) (v= pos (last-click-pos click)))
-             (v:debug :trial.input "Double click")
-             (handle (make-event 'mouse-double-click :pos pos :button button)
-                     (handler context)))
-           (setf (last-click-button click) button)
-           (setf (last-click-time click) time)
-           (v<- (last-click-pos click) pos)))))))
+  (let ((pos (mouse-pos context))
+        (button (glfw-button->button button)))
+    (case action
+      (:press
+       (v:trace :trial.input "Mouse pressed: ~a" button)
+       (handle (make-event 'mouse-press :pos pos :button button) (handler context)))
+      (:release
+       (v:trace :trial.input "Mouse released: ~a" button)
+       (handle (make-event 'mouse-release :pos pos :button button) (handler context))
+       (let* ((click (last-click context))
+              (time (get-internal-real-time))
+              (diff (/ (- time (last-click-time click)) internal-time-units-per-second)))
+         (when (and (< diff 0.5) (eql (last-click-button click) button) (v= pos (last-click-pos click)))
+           (v:trace :trial.input "Double click")
+           (handle (make-event 'mouse-double-click :pos pos :button button)
+                   (handler context)))
+         (setf (last-click-button click) button)
+         (setf (last-click-time click) time)
+         (v<- (last-click-pos click) pos))))))
 
-(cl-glfw3:def-scroll-callback ctx-scroll (window x y)
-  (%with-context
-    (v:debug :trial.input "Mouse wheel: ~a ~a" x y)
-    (handle (make-event 'mouse-scroll
-                           :pos (mouse-pos context)
-                           :delta y)
-            (handler context))))
+(defmethod glfw:mouse-scrolled ((context context) x y)
+  (v:trace :trial.input "Mouse wheel: ~a ~a" x y)
+  (handle (make-event 'mouse-scroll :pos (mouse-pos context) :delta y) (handler context)))
 
-(cl-glfw3:def-cursor-pos-callback ctx-pos (window x y)
-  (%with-context
-    (let ((x-scale 1.0)
-          (y-scale 1.0))
-      #+darwin
-      (cffi:with-foreign-objects ((x :float) (y :float))
-        (cffi:foreign-funcall "glfwGetWindowContentScale" :pointer window :pointer x :pointer y :void)
-        (setf x-scale (cffi:mem-ref x :float))
-        (setf y-scale (cffi:mem-ref y :float)))
-      (let ((current (vec (* x-scale x)
-                          (* y-scale (- (second (cl-glfw3:get-window-size window)) y)))))
-        (handle (make-event 'mouse-move
-                               :pos current
-                               :old-pos (mouse-pos context))
-                (handler context))
-        (setf (mouse-pos context) current)))))
+(defmethod glfw:mouse-moved ((context context) x y)
+  (let ((x-scale 1.0)
+        (y-scale 1.0))
+    #+darwin
+    (destructuring-bind (x y) (glfw:content-scale context)
+      (setf x-scale x y-scale y))
+    (let ((current (vec (* x-scale x) (* y-scale (- (glfw:height context) y)))))
+      (handle (make-event 'mouse-move :pos current :old-pos (mouse-pos context)) (handler context))
+      (setf (mouse-pos context) current))))
 
-(cl-glfw3:def-monitor-callback ctx-monitor (monitor event)
-  (ecase event
-    (:connected
-     (loop for context being the hash-values of *window-table*
-           do (push (make-instance 'monitor :pointer monitor) (monitors context))))
-    (:disconnected
-     (loop for context being the hash-values of *window-table*
-           do (setf (monitors context) (remove monitor (monitors context) :test #'cffi:pointer-eq :key #'pointer))))))
+(defmethod glfw:window-closed :after ((context context))
+  (handle (make-event 'window-close) (handler context)))
 
-(cl-glfw3:def-window-close-callback ctx-close (window)
-  (glfw:set-window-should-close window NIL)
-  (%with-context
-    (handle (make-event 'window-close) (handler context))))
-
-(cffi:defcallback ctx-drop :void ((window :pointer) (count :int) (paths :pointer))
-  (%with-context
-    (let ((paths (loop for i from 0 below count
-                       for ptr = (cffi:mem-aref paths :pointer i)
-                       for string = (cffi:foreign-string-to-lisp ptr)
-                       for path = (handler-case (pathname-utils:parse-native-namestring string :junk-allowed T)
-                                    (error (e) (v:warn :trial.glfw "Failed to parse drop path: ~a" string)))
-                       when path collect path)))
-      (when paths
-        (handle (make-event 'file-drop-event :paths paths :pos (mouse-pos context)) (handler context))))))
+(defmethod glfw:file-dropped ((context context) paths)
+  (when paths
+    (handle (make-event 'file-drop-event :paths paths :pos (mouse-pos context)) (handler context))))
 
 (defun glfw-button->button (button)
   (case button
@@ -579,93 +371,21 @@
   (get-key-name (key->glfw-key key) 0))
 
 (defmethod current-monitor ((context context))
-  (let* ((monitors (glfw:get-monitors))
-         (best (first monitors))
-         (window (window context)))
-    (destructuring-bind (ww wh) (glfw:get-window-size window)
-      (destructuring-bind (wx wy) (glfw:get-window-position window)
-        (flet ((monitor-area (monitor)
-                 (destructuring-bind (mx my) (glfw:get-monitor-position monitor)
-                   (let* ((mode (glfw:get-video-mode monitor))
-                          (x- (max wx mx))
-                          (y- (max wy my))
-                          (x+ (min (+ wx ww) (+ mx (getf mode '%glfw:width))))
-                          (y+ (min (+ wy wh) (+ my (getf mode '%glfw:height)))))
-                     (* (- x+ x-) (- y+ y-))))))
-          (dolist (monitor (rest monitors))
-            (when (< (monitor-area best) (monitor-area monitor))
-              (setf best monitor)))
-          (or (find best (list-monitors context) :test #'cffi:pointer-eq :key #'pointer)
-              (first (list-monitors context))))))))
+  (glfw:monitor context))
 
 (defmethod current-video-mode ((monitor monitor))
-  (let ((mode (glfw:get-video-mode (pointer monitor))))
-    (list (getf mode '%CL-GLFW3:WIDTH)
-          (getf mode '%CL-GLFW3:HEIGHT)
-          (getf mode '%CL-GLFW3::REFRESH-RATE)
-          (name monitor))))
+  (let ((mode (glfw:video-mode monitor)))
+    (list (first mode) (second mode) (third mode) (name monitor))))
 
 (defmethod list-monitors ((context context))
-  (or (monitors context)
-      (setf (monitors context)
-            (loop for pointer in (glfw:get-monitors)
-                  collect (make-instance 'monitor :pointer pointer)))))
-
-(defun center-window (context)
-  (let* ((window (window context))
-         (monitor (pointer (current-monitor context)))
-         (mode (glfw:get-video-mode monitor)))
-    (destructuring-bind (x y) (glfw:get-monitor-position monitor)
-      (destructuring-bind (w h) (glfw:get-window-size window)
-        (glfw:set-window-position (+ x (floor (- (getf mode '%glfw:width) w) 2))
-                                  (+ y (floor (- (getf mode '%glfw:height) h) 2))
-                                  window)))))
+  (loop for monitor in (glfw:list-monitors)
+        do (unless (typep monitor 'monitor)
+             (change-class monitor 'monitor))
+        collect monitor))
 
 (defmethod list-video-modes ((context context))
   (list-video-modes (current-monitor context)))
 
 (defmethod list-video-modes ((monitor monitor))
-  (cffi:with-foreign-object (count :int)
-    (let ((ptr (cffi:foreign-funcall "glfwGetVideoModes" :pointer (pointer monitor) :pointer count :pointer)))
-      (loop for i from 0 below (cffi:mem-ref count :int)
-            for mode-ptr = (cffi:mem-aptr ptr '(:struct %cl-glfw3:video-mode) i)
-            collect (list (cffi:foreign-slot-value mode-ptr '(:struct %cl-glfw3:video-mode) '%cl-glfw3::width)
-                          (cffi:foreign-slot-value mode-ptr '(:struct %cl-glfw3:video-mode) '%cl-glfw3::height)
-                          (cffi:foreign-slot-value mode-ptr '(:struct %cl-glfw3:video-mode) '%cl-glfw3::refresh-rate)
-                          (name monitor))))))
-
-;; Runtime support for Wayland and X11
-#+linux
-(progn
-  (cffi:define-foreign-library glfw-x11
-    (T "libglfw-x11.so"))
-  (cffi:define-foreign-library glfw-wayland
-    (T "libglfw-wayland.so"))
-  
-  (deploy:define-library %glfw::glfw
-    :dont-open T
-    :dont-deploy T)
-  (deploy:define-library glfw-x11
-    :dont-open T
-    :dont-deploy T)
-  (deploy:define-library glfw-wayland
-    :dont-open T
-    :dont-deploy T)
-
-  (deploy:define-hook (:deploy copy-glfw) (directory)
-    (let ((path (deploy:library-path (deploy:ensure-library '%glfw::glfw)))
-          (target (make-pathname :name (if (deploy:env-set-p "WAYLAND_DISPLAY")
-                                           "libglfw-wayland"
-                                           "libglfw-x11")
-                                 :type "so"
-                                 :defaults directory)))
-      (unless (uiop:file-exists-p target)
-        (uiop:copy-file path target))))
-
-  (deploy:define-hook (:boot load-glfw) ()
-    (cond ((deploy:env-set-p "WAYLAND_DISPLAY")
-           (deploy:status 1 "Detected Wayland, loading GLFW3-Wayland.")
-           (deploy:open-library 'glfw-wayland))
-          (T
-           (deploy:status 1 "Assuming X11, loading GLFW3-X11.")
-           (deploy:open-library 'glfw-x11)))))
+  (loop for (w h r) in (glfw:video-modes monitor)
+        collect (list w h r (name monitor))))

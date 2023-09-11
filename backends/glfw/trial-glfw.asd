@@ -11,9 +11,7 @@
   :components ((:file "package")
                (:file "queue")
                (:file "context"))
-  :depends-on (:cl-glfw3
+  :depends-on (:glfw
                :atomics
                :trial
-               :pathname-utils
-               :trivial-main-thread
-               :trivial-garbage))
+               :trivial-main-thread))
