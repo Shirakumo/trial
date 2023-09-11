@@ -19,8 +19,9 @@
    (last-click :initform (make-last-click) :accessor last-click)
    (visible-p :initform T :accessor visible-p)
    ;; We track w/h separately here as Trial cares about the framebuffer size, not the window size.
-   (width :initform 0 :accessor width)
-   (height :initform 0 :accessor height)
+   (fb-width :initform 0 :accessor width)
+   (fb-height :initform 0 :accessor height)
+   (initargs :initform () :accessor initargs)
    (event-queue :initform (make-event-queue) :accessor event-queue))
   (:default-initargs
    :resizable T
@@ -28,7 +29,6 @@
    :decorated T
    :forward-compat T
    :debug-context NIL
-   :initialize-context NIL
    :x11-class-name "trial"
    :x11-instance-name trial:+app-system+))
 
@@ -45,6 +45,7 @@
                                            (profile NIL profile-p)
                                            (double-buffering NIL double-buffering-p)
                                            (vsync NIL vsync-p)
+                                           fullscreen
                                       ;; Extra options
                                            (robustness NIL robustness-p)
                                            (forward-compat NIL forward-compat-p)
@@ -71,18 +72,21 @@
                                     (:core :opengl-core-profile)
                                     (:compatibility :opengl-compat-profile)))))
     ;; Merge initargs into retained
-    (loop for (k v) on initargs by #'cddr
-          do (setf (getf (initargs context) k) v))
+    (if (slot-boundp context 'initargs)
+        (loop for (k v) on initargs by #'cddr
+              do (setf (getf (initargs context) k) v))
+        (setf (initargs context) initargs))
     ;; Do the actual initialization
-    (apply #'call-next-method context slots initargs)
-    ;; Some extra handling for internal options
-    (when (glfw:visible-p context)
-      (etypecase fullscreen
-        ((eql T) (show context :fullscreen T))
-        (string (show context :fullscreen T :mode fullscreen))
-        ((eql NIL))))
-    (refresh-window-size context)
-    (when vsync-p (setf (vsync context) vsync))))
+    (apply #'call-next-method context slots :allow-other-keys T initargs)
+    (with-cleanup-on-failure (destroy-context context)
+      ;; Some extra handling for internal options
+      (when (glfw:visible-p context)
+        (etypecase fullscreen
+          ((eql T) (show context :fullscreen T))
+          (string (show context :fullscreen T :mode fullscreen))
+          ((eql NIL))))
+      (refresh-window-size context)
+      (when vsync-p (setf (vsync context) vsync)))))
 
 (defmethod create-context ((context context))
   (handler-case
@@ -255,6 +259,10 @@
   (destructuring-bind (w h) (glfw:framebuffer-size context)
     (glfw:framebuffer-resized context w h)))
 
+(defmacro %handle (context event-type &rest args)
+  `(when (handler ,context)
+     (handle (make-event ,event-type ,@args) (handler ,context))))
+
 (defmethod glfw:framebuffer-resized ((context context) w h)
   (let ((x-scale 1.0)
         (y-scale 1.0))
@@ -267,18 +275,22 @@
         (v:info :trial.backend.glfw "Framebuffer resized to ~ax~a" w h)
         (setf (width context) w)
         (setf (height context) h)
-        (handle (make-event 'resize :width w :height h) (handler context))))))
+        (%handle context 'resize :width w :height h)))))
 
 (defmethod glfw:window-focused ((context context) focusedp)
   (v:info :trial.backend.glfw "Window has ~:[lost~;gained~] focus" focusedp)
   (when focusedp (refresh-window-size context))
-  (handle (if focusedp (make-event 'gain-focus) (make-event 'lose-focus)) (handler context)))
+  (if focusedp
+      (%handle context 'gain-focus)
+      (%handle context 'lose-focus)))
 
 (defmethod glfw:window-iconified ((context context) iconifiedp)
   (v:info :trial.backend.glfw "Window has been ~:[restored~;iconified~]" iconifiedp)
   (setf (visible-p context) (and (not iconifiedp) (glfw:visible-p context)))
   (unless iconifiedp (refresh-window-size context))
-  (handle (if iconifiedp (make-event 'window-hidden) (make-event 'window-shown)) (handler context)))
+  (if iconifiedp
+      (%handle context 'window-hidden)
+      (%handle context 'window-shown)))
 
 (defmethod glfw:key-changed ((context context) key scancode action modifiers)
   (declare (ignore scancode))
@@ -286,18 +298,18 @@
     (case action
       (:press
        (v:trace :trial.input "Key pressed: ~a" key)
-       (handle (make-event 'key-press :key (glfw-key->key key) :modifiers modifiers) (handler context)))
+       (%handle context 'key-press :key (glfw-key->key key) :modifiers modifiers))
       (:repeat
        (v:trace :trial.input "Key repeated: ~a" key)
-       (handle (make-event 'key-press :key (glfw-key->key key) :modifiers modifiers :repeat T) (handler context)))
+       (%handle context 'key-press :key (glfw-key->key key) :modifiers modifiers :repeat T))
       (:release
        (v:trace :trial.input "Key released: ~a" key)
-       (handle (make-event 'key-release :key (glfw-key->key key) :modifiers modifiers) (handler context))))))
+       (%handle context 'key-release :key (glfw-key->key key) :modifiers modifiers)))))
 
 (defmethod glfw:char-entered ((context context) char modifiers)
   (when (< char #x110000)
     (let ((char (code-char char)))
-      (handle (make-event 'text-entered :text (string char)) (handler context)))))
+      (%handle context 'text-entered :text (string char)))))
 
 (defmethod glfw:mouse-button-changed ((context context) button action modifiers)
   (declare (ignore modifiers))
@@ -306,24 +318,23 @@
     (case action
       (:press
        (v:trace :trial.input "Mouse pressed: ~a" button)
-       (handle (make-event 'mouse-press :pos pos :button button) (handler context)))
+       (%handle context 'mouse-press :pos pos :button button))
       (:release
        (v:trace :trial.input "Mouse released: ~a" button)
-       (handle (make-event 'mouse-release :pos pos :button button) (handler context))
+       (%handle context 'mouse-release :pos pos :button button)
        (let* ((click (last-click context))
               (time (get-internal-real-time))
               (diff (/ (- time (last-click-time click)) internal-time-units-per-second)))
          (when (and (< diff 0.5) (eql (last-click-button click) button) (v= pos (last-click-pos click)))
            (v:trace :trial.input "Double click")
-           (handle (make-event 'mouse-double-click :pos pos :button button)
-                   (handler context)))
+           (%handle context 'mouse-double-click :pos pos :button button))
          (setf (last-click-button click) button)
          (setf (last-click-time click) time)
          (v<- (last-click-pos click) pos))))))
 
 (defmethod glfw:mouse-scrolled ((context context) x y)
   (v:trace :trial.input "Mouse wheel: ~a ~a" x y)
-  (handle (make-event 'mouse-scroll :pos (mouse-pos context) :delta y) (handler context)))
+  (%handle context 'mouse-scroll :pos (mouse-pos context) :delta y))
 
 (defmethod glfw:mouse-moved ((context context) x y)
   (let ((x-scale 1.0)
@@ -332,15 +343,15 @@
     (destructuring-bind (x y) (glfw:content-scale context)
       (setf x-scale x y-scale y))
     (let ((current (vec (* x-scale x) (* y-scale (- (glfw:height context) y)))))
-      (handle (make-event 'mouse-move :pos current :old-pos (mouse-pos context)) (handler context))
+      (%handle context 'mouse-move :pos current :old-pos (mouse-pos context))
       (setf (mouse-pos context) current))))
 
 (defmethod glfw:window-closed :after ((context context))
-  (handle (make-event 'window-close) (handler context)))
+  (%handle context 'window-close))
 
 (defmethod glfw:file-dropped ((context context) paths)
   (when paths
-    (handle (make-event 'file-drop-event :paths paths :pos (mouse-pos context)) (handler context))))
+    (%handle context 'file-drop-event :paths paths :pos (mouse-pos context))))
 
 (defun glfw-button->button (button)
   (case button
