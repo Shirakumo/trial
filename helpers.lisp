@@ -304,7 +304,10 @@ void main(){
   (setf (mesh entity) (alexandria:hash-table-values (meshes (mesh-asset entity)))))
 
 (defclass lod-entity (entity)
-  ((lods :initform #() :initarg :lods :reader lods)))
+  ((lods :initform #() :reader lods)))
+
+(defmethod shared-initialize :after ((entity lod-entity) slots &key (lods NIL lods-p))
+  (when lods-p (setf (lods entity) lods)))
 
 (defgeneric select-lod (lod entity))
 

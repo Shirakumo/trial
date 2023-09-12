@@ -321,13 +321,13 @@
                  :irradiance-map (trial:implement!)
                  :environment-map (trial:implement!)))
 
-(defclass static-gltf-container (transformed-entity array-container)
+(defclass static-gltf-container (distance-lod-entity transformed-entity array-container)
   ())
 
 (define-shader-entity static-gltf-entity (trial::multi-mesh-entity trial::per-array-material-renderable static-gltf-container)
   ())
 
-(define-shader-entity animated-gltf-entity (trial::multi-mesh-entity trial::per-array-material-renderable static-gltf-container )
+(define-shader-entity animated-gltf-entity (trial::multi-mesh-entity trial::per-array-material-renderable static-gltf-container)
   ())
 
 (defclass asset (file-input-asset
@@ -357,13 +357,19 @@
           (loop for mesh being the hash-values of (meshes asset)
                 do (trial::reorder mesh map))))
       ;; Construct scene graphs
-      (labels ((construct (node)
+      (labels ((mesh-name (node)
+                 (or (gltf:name (gltf:mesh node)) (gltf:idx (gltf:mesh node))))
+               (construct (node)
                  (cond ((gltf:mesh node)
-                        (let ((mesh-name (or (gltf:name (gltf:mesh node)) (gltf:idx (gltf:mesh node)))))
+                        (let ((mesh-name (mesh-name node)))
                           (make-instance (etypecase (or (gethash mesh-name meshes)
                                                         (gethash (cons mesh-name 0) meshes))
                                            (static-mesh 'static-gltf-entity)
                                            (skinned-mesh 'animated-gltf-entity))
+                                         :lods (loop for i from -1
+                                                     for threshold across (gltf:lod-screen-coverage node)
+                                                     for lod = mesh-name then (mesh-name (aref (gltf:lods node) i))
+                                                     collect (make-instance 'lod :threshold threshold :mesh lod))
                                          :transform (gltf-node-transform node)
                                          :name (gltf:name node)
                                          :asset asset
