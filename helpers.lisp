@@ -346,6 +346,9 @@ void main(){
 (defclass coverage-lod-entity (lod-entity)
   ())
 
+;; KLUDGE: early def to avoid dependency cycle
+(defclass camera () ())
+
 (defmethod select-lod ((camera camera) (entity coverage-lod-entity))
   (select-lod (float (/ (screen-area entity camera) (screen-area NIL camera)) 0f0) entity))
 

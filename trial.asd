@@ -92,7 +92,7 @@
                              (:file "skeleton" :depends-on ("pose"))
                              (:file "track")))
                (:module "physics"
-                :depends-on ("package" "conditions")
+                :depends-on ("package" "conditions" "helpers")
                 :components ((:file "toolkit")
                              (:file "constants" :depends-on ("toolkit"))
                              (:file "core" :depends-on ("toolkit"))
@@ -134,7 +134,7 @@
                 :depends-on ("package" "asset" "resources" "data-pointer")
                 :components ((:file "environment-map" :depends-on ("image" "shader-image"))
                              (:file "image" :depends-on ((:.. "texture-source")))
-                             (:file "mesh" :depends-on ((:.. ("physics" "primitives"))))
+                             (:file "mesh")
                              (:file "shader-image" :depends-on ((:.. "shader-entity")))
                              (:file "sprite-data" :depends-on ("image"))
                              (:file "static")
