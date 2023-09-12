@@ -711,7 +711,7 @@
    #:setup-perspective
    #:map-visible
    #:in-view-p
-   #:world-screen-area
+   #:screen-area
    #:do-visible
    #:2d-camera
    #:sidescroll-camera

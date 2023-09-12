@@ -14,7 +14,7 @@
 (defgeneric map-visible (function camera container))
 (defgeneric in-view-p (object camera))
 (defgeneric focal-point (camera))
-(defgeneric world-screen-area (camera))
+(defgeneric screen-area (thing camera))
 
 (defmethod handle ((ev tick) (camera camera))
   (project-view camera))
@@ -68,8 +68,11 @@
   (reset-matrix *view-matrix*)
   (translate (v- (location camera)) *view-matrix*))
 
-(defmethod world-screen-area ((camera 2d-camera))
+(defmethod screen-area ((null null) (camera 2d-camera))
   (* (width *context*) (height *context*)))
+
+(defmethod screen-area ((entity sized-entity) (camera 2d-camera))
+  (* (vx (bsize entity)) (vy (bsize entity))))
 
 (defclass sidescroll-camera (2d-camera)
   ((zoom :initarg :zoom :accessor zoom)
@@ -101,9 +104,36 @@
 (defmethod project-view ((camera 3d-camera))
   (look-at (location camera) (vec 0 0 0) +vy3+))
 
-(defmethod world-screen-area ((camera 3d-camera))
+(defmethod screen-area ((null null) (camera 3d-camera))
   (let ((x (* 2 (near-plane camera) (tan (* 0.5 (fov camera))))))
     (/ (* x x) (/ (width *context*) (height *context*)))))
+
+(defmethod screen-area ((entity sized-entity) (camera 3d-camera))
+  (with-vec (x y z) (the *vec3 (bsize entity))
+    (let ((p1 (vec (- x) (- y) (- z)))
+          (p2 (vec (+ x) (- y) (- z))) ;   p7 -- p8
+          (p3 (vec (- x) (+ y) (- z))) ;  /|    / |
+          (p4 (vec (+ x) (+ y) (- z))) ; p3 -- p4 |
+          (p5 (vec (- x) (- y) (+ z))) ; | p5 --|p6
+          (p6 (vec (+ x) (- y) (+ z))) ; |/     |/
+          (p7 (vec (- x) (+ y) (+ z))) ; p1 -- p2
+          (p8 (vec (+ x) (+ y) (+ z))))
+      (declare (dynamic-extent p1 p2 p3 p4 p5 p6 p7 p8))
+      (let* ((matrix (meye 4))
+             (*model-matrix* matrix))
+        (declare (dynamic-extent matrix))
+        (apply-transforms entity)
+        (n*m *view-matrix* matrix)
+        (n*m *projection-matrix* matrix)
+        (n*m matrix p1) (n*m matrix p2) (n*m matrix p3) (n*m matrix p4)
+        (n*m matrix p5) (n*m matrix p6) (n*m matrix p7) (n*m matrix p8)
+        (let ((f1 (vlength (vc (v- p2 p1) (v- p3 p1))))
+              (f2 (vlength (vc (v- p7 p3) (v- p4 p3))))
+              (f3 (vlength (vc (v- p7 p5) (v- p6 p5))))
+              (f4 (vlength (vc (v- p5 p1) (v- p2 p1))))
+              (f5 (vlength (vc (v- p4 p2) (v- p6 p2))))
+              (f6 (vlength (vc (v- p3 p1) (v- p5 p1)))))
+          (* 0.5 (+ f1 f2 f3 f4 f5 f6)))))))
 
 (defclass target-camera (3d-camera)
   ((target :initarg :target :accessor target)
