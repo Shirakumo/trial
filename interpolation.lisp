@@ -63,8 +63,8 @@
 
 #+sbcl
 (progn
-  (sb-c:defknown interpolate (T T T) T)
-  (sb-c:defknown ninterpolate (T T T T) T))
+  (sb-c:defknown interpolate (T T T) T (sb-c:any) :overwrite-fndb-silently T)
+  (sb-c:defknown ninterpolate (T T T T) T (sb-c:any) :overwrite-fndb-silently T))
 
 (defmacro define-inlined-method (name args &body expansion)
   `(progn
