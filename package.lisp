@@ -1131,7 +1131,15 @@
    #:texture
    #:mesh-entity
    #:mesh-asset
-   #:mesh)
+   #:mesh
+   #:multi-mesh-entity
+   #:lod-entity
+   #:lods
+   #:select-lod
+   #:lod
+   #:treshold
+   #:coverage-lod-entity
+   #:distance-lod-entity)
   ;; hdr.lisp
   (:export
    #:hdr-output-pass

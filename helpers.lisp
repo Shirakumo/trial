@@ -302,3 +302,48 @@ void main(){
 
 (defmethod (setf mesh) ((all (eql T)) (entity multi-mesh-entity))
   (setf (mesh entity) (alexandria:hash-table-values (meshes (mesh-asset entity)))))
+
+(defclass lod-entity (entity)
+  ((lods :initform #() :initarg :lods :reader lods)))
+
+(defgeneric select-lod (lod entity))
+
+(defmethod select-lod ((default (eql T)) (entity lod-entity))
+  (select-lod (camera (scene +main+)) entity))
+
+(defclass lod ()
+  ((mesh :initform () :initarg :mesh :accessor mesh)
+   (threshold :initform 0.0 :initarg :threshold :accessor threshold)))
+
+(defmethod (setf lods) ((lods vector) (entity lod-entity))
+  (setf (slot-value entity 'lods) (sort lods #'< :key #'threshold)))
+
+(defmethod (setf lods) ((lods sequence) (entity lod-entity))
+  (setf (lods entity) (map 'vector #'identity lods)))
+
+(defmethod select-lod ((lod lod) (entity lod-entity))
+  (setf (mesh entity) (mesh lod)))
+
+(defmethod select-lod ((level integer) (entity lod-entity))
+  (select-lod (aref (lods entity) (clamp 0 level (1- (length (lods entity))))) entity))
+
+(defmethod select-lod ((value single-float) (entity lod-entity))
+  (let* ((lods (lods entity))
+         (optimal-lod (aref lods 0)))
+    (loop for i from 1 below (length lods)
+          for lod = (aref lods i)
+          while (< value (threshold lod))
+          do (setf optimal-lod lod))
+    (select-lod optimal-lod entity)))
+
+(defclass coverage-lod-entity (lod-entity)
+  ())
+
+(defmethod select-lod ((camera camera) (entity coverage-lod-entity))
+  (select-lod (float (/ (screen-area entity camera) (screen-area NIL camera)) 0f0) entity))
+
+(defclass distance-lod-entity (lod-entity)
+  ())
+
+(defmethod select-lod ((camera camera) (entity distance-lod-entity))
+  (select-lod (vdistance (location entity) (location camera)) entity))
