@@ -96,7 +96,7 @@
 
 (defclass 3d-camera (camera)
   ((fov :initarg :fov :accessor fov)
-   (frustum :initform NIL :accessor frustum))
+   (frustum :initform (make-perspective-box 1.0 1.0 0.1 1.0) :accessor frustum))
   (:default-initargs
    :fov 75))
 
