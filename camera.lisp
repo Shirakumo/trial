@@ -74,6 +74,10 @@
 (defmethod screen-area ((entity sized-entity) (camera 2d-camera))
   (* (vx (bsize entity)) (vy (bsize entity))))
 
+(defmethod in-view-p ((entity sized-entity) (camera 2d-camera))
+  (and (<= (abs (- (vx (location entity)) (vx (location camera)))) (+ (vx (bsize entity)) (width *context*)))
+       (<= (abs (- (vy (location entity)) (vy (location camera)))) (+ (vy (bsize entity)) (height *context*)))))
+
 (defclass sidescroll-camera (2d-camera)
   ((zoom :initarg :zoom :accessor zoom)
    (target :initarg :target :accessor target))
@@ -91,7 +95,8 @@
   (global-location (target camera)))
 
 (defclass 3d-camera (camera)
-  ((fov :initarg :fov :accessor fov))
+  ((fov :initarg :fov :accessor fov)
+   (frustum :initform NIL :accessor frustum))
   (:default-initargs
    :fov 75))
 
@@ -99,7 +104,8 @@
   (setup-perspective camera (max 1 (width *context*)) (max 1 (height *context*))))
 
 (defmethod setup-perspective ((camera 3d-camera) width height)
-  (perspective-projection (fov camera) (/ (max 1 width) (max 1 height)) (near-plane camera) (far-plane camera)))
+  (perspective-projection (fov camera) (/ (max 1 width) (max 1 height)) (near-plane camera) (far-plane camera))
+  (setf (frustum camera) (make-perspective-box (fov camera) (/ (max 1 width) (max height)) (near-plane camera) (far-plane camera))))
 
 (defmethod project-view ((camera 3d-camera))
   (look-at (location camera) (vec 0 0 0) +vy3+))
@@ -108,6 +114,7 @@
   (let ((x (* 2 (near-plane camera) (tan (* 0.5 (fov camera))))))
     (/ (* x x) (/ (width *context*) (height *context*)))))
 
+;; FIXME: Test this stuff
 (defmethod screen-area ((entity sized-entity) (camera 3d-camera))
   (with-vec (x y z) (the *vec3 (bsize entity))
     (let ((p1 (vec (- x) (- y) (- z)))
@@ -134,6 +141,17 @@
               (f5 (vlength (vc (v- p4 p2) (v- p6 p2))))
               (f6 (vlength (vc (v- p3 p1) (v- p5 p1)))))
           (* 0.5 (+ f1 f2 f3 f4 f5 f6)))))))
+
+(defmethod in-view-p ((entity sized-entity) (camera 3d-camera))
+  (let ((box (make-box :bsize (bsize entity))))
+    (declare (dynamic-extent box))
+    (let* ((matrix (meye 4))
+           (*model-matrix* matrix))
+      (declare (dynamic-extent matrix))
+      (apply-transforms entity)
+      (n*m *view-matrix* matrix)
+      (!m* (primitive-transform box) matrix (primitive-local-transform box))
+      (intersects-p box (frustum camera)))))
 
 (defclass target-camera (3d-camera)
   ((target :initarg :target :accessor target)
