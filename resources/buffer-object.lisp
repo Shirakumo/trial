@@ -66,7 +66,7 @@
              count data (memory-region-size region)))
     (download-buffer-data/ptr buffer (memory-region-pointer region) (or count (memory-region-size region)) buffer-start)))
 
-(defmethod resize-buffer ((buffer vertex-buffer) (size (eql T)) &key (data (buffer-data buffer)) (data-start 0))
+(defmethod resize-buffer ((buffer buffer-object) (size (eql T)) &key (data (buffer-data buffer)) (data-start 0))
   (mem:with-memory-region (region data :offset data-start)
     (resize-buffer/ptr buffer (memory-region-size region) (memory-region-pointer region))))
 

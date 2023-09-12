@@ -1,5 +1,9 @@
 (in-package #:org.shirakumo.fraf.trial)
 
+(defclass transformed () ())
+(defclass renderable () ())
+(defclass dynamic-renderable (renderable) ())
+
 (defclass located-entity (transformed entity)
   ((location :initarg :location :initform (vec 0 0 0) :reader location :reader 3ds:location)))
 

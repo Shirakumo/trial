@@ -113,10 +113,6 @@
              (texture-port
               (setf (unit-id port) (decf texture-index))))))
 
-(defclass transformed () ())
-(defclass renderable () ())
-(defclass dynamic-renderable (renderable) ())
-
 (defgeneric apply-transforms (object)
   (:method-combination progn :most-specific-last))
 (defgeneric bind-textures (object))
