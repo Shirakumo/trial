@@ -284,7 +284,7 @@
 (defmethod vertex= and ((a tangent-vertex) (b tangent-vertex))
   (v= (tangent a) (tangent b)))
 
-(defmethod vertex-attributes append ((vertex tangent-vertex))
+(defmethod vertex-attributes ((vertex tangent-vertex))
   (append (call-next-method) '(tangent)))
 
 (defmethod fill-vertex-attribute ((vertex tangent-vertex) (attribute (eql 'tangent)) data offset)

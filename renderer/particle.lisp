@@ -156,7 +156,7 @@
      (max-particles :initarg :max-particles :initform 1000 :reader max-particles)
      (motion-blur :initarg :motion-blur :initform 0.0 :uniform T))
     (:buffers (trial standard-environment-information))
-    (:shader-file (trial "particle/render.glsl"))))
+    (:shader-file (trial "particle/gpu-render.glsl"))))
 
 (defmethod initialize-instance :after ((emitter particle-emitter) &key particle-force-fields vertex-array particle-options)
   (with-all-slots-bound (emitter particle-emitter)

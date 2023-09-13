@@ -115,7 +115,6 @@
          (stride (loop for (size type) in fields
                        sum (* size (gl-type-size type)))))
     (loop with offset = 0
-          for (size type) in fields
-          for i from 0
-          collect `(,buffer :index ,i :size ,size :offset ,offset :type ,type :stride ,stride)
+          for (size type instance) in fields
+          collect `(,buffer :size ,size :offset ,offset :type ,type :stride ,stride :instancing ,(or instance 0))
           do (incf offset (* size (gl-type-size type))))))

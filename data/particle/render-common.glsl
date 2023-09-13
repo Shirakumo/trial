@@ -1,7 +1,3 @@
-#section VERTEX_SHADER
-uniform float motion_blur = 0.0;
-uniform mat4 model_matrix;
-
 const vec3 BILLBOARD[6] = vec3[6](
   vec3(-1, -1, 0),
   vec3(+1, -1, 0),
@@ -11,18 +7,15 @@ const vec3 BILLBOARD[6] = vec3[6](
   vec3(+1, +1, 0)
 );
 
+uniform float motion_blur = 0.0;
 out vec3 world_position;
 out vec3 view_position;
 out vec2 uv;
 out float size;
 out vec4 particle_color;
 
-void main(){
-  uint vertex_id = gl_VertexID % 6;
-  uint instance = gl_VertexID / 6;
-
-  Particle particle = particles[alive_particles_0[instance]];
-  float interpolation = 1.0f - particle.life / particle.max_life;
+void derive_particle_properties(in Particle particle, in uint vertex_id, in mat4 model_matrix){
+  float interpolation = 1.0f - life / particle.max_life;
   size = mix(particle.size_begin, particle.size_end, interpolation);
   float opacity = clamp(mix(1.0f, 0.0f, interpolation), 0.0f, 1.0f);
   particle_color.r = ((particle.color >> 0)  & uint(0x000000FF)) / 255.0f;
@@ -59,18 +52,4 @@ void main(){
     view_position = position.xyz;
     gl_Position = projection_matrix * position;
   }
-}
-
-#section FRAGMENT_SHADER
-
-uniform sampler2D particle_tex;
-in vec3 world_position;
-in vec2 uv;
-in float size;
-in vec4 particle_color;
-out vec4 color;
-
-void main(){
-  color = texture(particle_tex, uv)*particle_color;
-  color.xyz = pow(color.xyz, vec3(gamma));
 }

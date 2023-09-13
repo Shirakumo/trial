@@ -2,7 +2,7 @@
 #include (trial:trial "random.glsl")
 out flat uint sprite;
 
-void main@after(){
+void derive_particle_properties@after(in Particle particle, in uint vertex_id, in mat4 model_matrix){
   sprite = (particle.color >> 24) & uint(0x00000007);
   if(sprite == 0x7){
     // We use the particle instance ID as a random seed to keep the
@@ -14,7 +14,6 @@ void main@after(){
 }
 
 #section FRAGMENT_SHADER
-
 uniform sampler2DArray particle_tex;
 in vec3 world_position;
 in vec2 uv;

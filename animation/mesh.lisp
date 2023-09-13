@@ -10,8 +10,8 @@
    (position-normals :initform (make-array 0 :element-type 'single-float) :accessor position-normals)
    (skinned-p :initarg :skinned-p :initform T :accessor skinned-p)))
 
-(defmethod vertex-attributes append ((data skinned-mesh))
-  '(location normal uv joints weights))
+(defmethod vertex-attributes ((data skinned-mesh))
+  (append (call-next-method) '(location normal uv joints weights)))
 
 (defmethod (setf vertex-data) :after (data (mesh skinned-mesh))
   (let ((vertices (truncate (length data) (vertex-attribute-stride mesh))))

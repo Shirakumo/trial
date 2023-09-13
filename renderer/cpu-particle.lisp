@@ -114,7 +114,8 @@
     (when (logbitp 30 color) (setf (ldb (byte 1 30) color) (round (vx randoms))))
     (when (logbitp 31 color) (setf (ldb (byte 1 31) color) (round (vy randoms))))
     (setf (aref properties (+ prop 4)) (float-features:bits-single-float color))
-    (replace properties (marr4 matrix) :start1 (+ prop 5))
+    ;; We pad the matrix to offset 8 to get things vec4 aligned.
+    (replace properties (marr4 matrix) :start1 (+ prop 8))
     ;; Now set dynamic particle properties
     (setf (aref particles (+ pos 0)) (vx location))
     (setf (aref particles (+ pos 1)) (vy location))
@@ -130,7 +131,7 @@
         (properties (make-array (* max-particles 21) :element-type 'single-float))
         (free-list (make-array max-particles :element-type '(unsigned-byte 32) :fill-pointer 0)))
     (dotimes (i max-particles (values particles properties free-list))
-      (vector-push (* i 21) free-list))))
+      (vector-push (* i 24) free-list))))
 
 (define-shader-entity cpu-particle-emitter (standalone-shader-entity transformed-entity renderable listener)
   (particles
@@ -138,6 +139,8 @@
    free-list
    particle-buffer
    particle-property-buffer
+   (texture :initform (// 'trial 'missing) :accessor texture)
+   (draw-vertex-array :initform NIL :accessor draw-vertex-array)
    (live-particles :initform 0 :accessor live-particles)
    (max-particles :initform 32 :accessor max-particles))
   (:buffers (trial standard-environment-information))
@@ -145,18 +148,30 @@
 
 (defmethod initialize-instance :after ((emitter cpu-particle-emitter) &key)
   (multiple-value-bind (particles properties free-list) (%allocate-particle-data max-particles)
-    ))
+    (setf (slot-value emitter 'particles) particles)
+    (setf (slot-value emitter 'properties) properties)
+    (setf (slot-value emitter 'free-list) free-list)
+    (setf (slot-value emitter 'particle-buffer)
+          (make-instance 'vertex-buffer :data-usage :dynamic-copy :element-type :float :data-usage :stream-draw :buffer-data particles))
+    (setf (draw-vertex-array emitter)
+          (make-instance 'vertex-array :bindings (compute-buffer-bindings (slot-value emitter 'particle-buffer)
+                                                                          '((3 :float 1) (3 :float 1) (1 :float 1) (1 :float 1)))))
+    (setf (slot-value emitter 'particle-property-buffer)
+          (make-instance 'texture :width (truncate (length properties) 4) :height 1 :target :texture-1d :min-filter :nearest :mag-filter :nearest
+                                  :internal-format :rgba32f :pixel-data properties :pixel-format :rgba :pixel-type :float))))
 
-(defmethod simulate-particles ((emitter cpu-particle-emitter))
-  (multiple-value-bind (to-emit emit-carry) (floor (incf (to-emit particle-emitter) (* dt (particle-rate particle-emitter))))
-    (dotimes (i (min to-emit (length free-list)))
-      (let ((prop (vector-pop free-list))
-            (mat (tmat4 (tf emitter))))
-        (%emit-particle particles properties live prop (vrand (vec 0.5 0.5 0.5)) randomness
-                        mat velocity rotation lifespan size scaling color
-                        vertex-data vertex-stride index-data)
-        (incf live-particles)))
-    (setf live-particles (%simulate-particles particles live-particles free-list dt force-fields))))
+(defmethod stage ((emitter cpu-particle-emitter) (area staging-area))
+  (stage (draw-vertex-array emitter) area)
+  (stage (particle-property-buffer emitter) area)
+  (stage (texture emitter) area))
+
+(define-handler ((emitter cpu-particle-emitter) tick) (dt)
+  (multiple-value-bind (to-emit emit-carry) (floor (incf (to-emit emitter) (* dt (particle-rate emitter))))
+    (when (< 0 to-emit) (emit emitter to-emit))
+    (setf (to-emit emitter) emit-carry)
+    (when (< 0 live-particles)
+      (setf live-particles (%simulate-particles particles live-particles free-list dt force-fields))
+      (update-buffer-data particle-buffer T :count (* live-particles 8)))))
 
 (defmethod emit ((emitter cpu-particle-emitter) count &rest particle-options &key vertex-array location orientation scaling transform)
   (setf (particle-options emitter) (remf* particle-options :vertex-array :location :orientation :scaling :transform))
@@ -172,7 +187,9 @@
         (%emit-particle particles properties live prop (vrand (vec 0.5 0.5 0.5)) randomness
                         mat velocity rotation lifespan size scaling color
                         vertex-data vertex-stride index-data)
-        (incf live-particles)))))
+        (incf live-particles)))
+    (when (< 0 live-particles)
+      (update-buffer-data particle-property-buffer T :width (* live-particles (/ 24 4))))))
 
 (defmethod clear ((emitter cpu-particle-emitter))
   (setf (live-particles emitter) 0)
@@ -183,11 +200,17 @@
 
 (defmethod bind-textures ((emitter cpu-particle-emitter))
   (gl:active-texture :texture0)
-  (gl:bind-texture (target (texture emitter)) (gl-name (texture emitter))))
+  (gl:bind-texture (target (texture emitter)) (gl-name (texture emitter)))
+  (gl:active-texture :texture1)
+  (gl:bind-texture (target (particle-property-buffer emitter)) (gl-name (particle-property-buffer emitter))))
+
+(defmethod render :around ((emitter cpu-particle-emitter) (program shader-program))
+  (when (< 0 (live-particles emitter))
+    (call-next-method)))
 
 (defmethod render :before ((emitter cpu-particle-emitter) (program shader-program))
   (gl:depth-mask NIL)
-  (gl:bind-vertex-array (gl-name (// 'trial 'empty-vertex-array))))
+  (gl:bind-vertex-array (gl-name (draw-vertex-array emitter))))
 
 (defmethod render :after ((emitter cpu-particle-emitter) (program shader-program))
   (gl:bind-vertex-array 0)
@@ -197,3 +220,23 @@
   (gl:blend-func :src-alpha :one)
   (%gl:draw-arrays-instanced :triangles 0 6 (live-particles emitter))
   (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha))
+
+(define-shader-entity multi-texture-cpu-particle-emitter (cpu-particle-emitter)
+  ()
+  (:inhibit-shaders (cpu-particle-emitter :fragment-shader))
+  (:shader-file (trial "particle/multi-render.glsl")))
+
+(defmethod particle-sprite ((emitter multi-texture-cpu-particle-emitter))
+  (let* ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer))))
+         (sprite (ldb (byte 3 24) int)))
+    (if (= #b111 sprite) :random sprite)))
+
+(defmethod (setf particle-sprite) (sprite (emitter multi-texture-cpu-particle-emitter))
+  (check-type sprite (unsigned-byte 3))
+  (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
+    (setf (ldb (byte 3 24) int) sprite)
+    (setf (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer))) int)
+    sprite))
+
+(defmethod (setf particle-sprite) ((sprite (eql :random)) (emitter multi-texture-cpu-particle-emitter))
+  (setf (particle-sprite emitter) #b111))
