@@ -107,9 +107,11 @@
                              (:file "v-clip" :depends-on ("hit-detection" "ray"))))
                (:module "renderer"
                 :depends-on ("package" "shader-pass" "helpers" "gl-struct" "transforms")
-                :components ((:file "lights")
+                :components ((:file "cpu-particle" :depends-on ("particle-common"))
+                             (:file "gpu-particle" :depends-on ("particle-common"))
+                             (:file "lights")
                              (:file "materials")
-                             (:file "particle" :depends-on ("standard-renderer"))
+                             (:file "particle-common" :depends-on ("standard-renderer"))
                              (:file "pbr" :depends-on ("standard-renderer" "shadow-map" (:.. "assets")))
                              (:file "phong" :depends-on ("standard-renderer" "shadow-map"))
                              (:file "shadow-map" :depends-on ("standard-renderer"))

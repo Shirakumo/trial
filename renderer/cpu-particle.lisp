@@ -90,13 +90,13 @@
              (eval-barycentric normal n0 n1 n2)
              (values location (nvunit normal)))))))
 
-(defun %emit-particle (particles properties pos prop randoms randomness
+(defun %emit-particle (particles properties pos prop randoms randomness lifespan-randomness
                       matrix velocity rotation lifespan size scaling color
                       vertex-data vertex-stride faces)
   (declare (type (simple-array single-float (*)) particles properties vertex-data))
   (declare (type (simple-array (unsigned-byte 32) (*)) faces))
   (declare (type (unsigned-byte 32) pos prop))
-  (declare (type single-float lifespan randomness size scaling rotation))
+  (declare (type single-float lifespan lifespan-randomness randomness size scaling rotation))
   (declare (type vec3 velocity randoms))
   (let* ((location (vec 0 0 0))
          (normal (vec 0 0 0))
@@ -106,7 +106,7 @@
     (random-point-on-mesh-surface vertex-data vertex-stride faces (vz randoms) location normal)
     (n*m4/3 matrix normal)
     (nv* velocity (nv+ (v* (v- randoms 0.5) randomness) normal))
-    (setf (aref properties (+ prop 0)) (+ lifespan (* lifespan randomness (- (vx randoms) 0.5))))
+    (setf (aref properties (+ prop 0)) (+ lifespan (* lifespan lifespan-randomness (- (vx randoms) 0.5))))
     (setf (aref properties (+ prop 1)) (* rotation randomness (- (vz randoms) 0.5)))
     (setf (aref properties (+ prop 2)) (+ size (* size randomness (- (vy randoms) 0.5))))
     (setf (aref properties (+ prop 3)) (* (aref properties (+ prop 2)) scaling))
@@ -133,21 +133,32 @@
     (dotimes (i max-particles (values particles properties free-list))
       (vector-push (* i 24) free-list))))
 
-(define-shader-entity cpu-particle-emitter (standalone-shader-entity transformed-entity renderable listener)
-  (particles
-   properties
-   free-list
-   particle-buffer
-   particle-property-buffer
-   (texture :initform (// 'trial 'missing) :accessor texture)
-   (draw-vertex-array :initform NIL :accessor draw-vertex-array)
-   (live-particles :initform 0 :accessor live-particles)
-   (max-particles :initform 32 :accessor max-particles))
-  (:buffers (trial standard-environment-information))
-  (:shader-file (trial "particle/cpu-render.glsl")))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (define-shader-entity cpu-particle-emitter (particle-emitter)
+    (particles
+     properties
+     free-list
+     particle-buffer
+     particle-property-buffer
+     index-data
+     vertex-data
+     vertex-stride
+     (live-particles :initform 0 :accessor live-particles)
+     (force-fields :initform () :accessor force-fields)
+     (draw-vertex-array :initform NIL :accessor draw-vertex-array)
+     (particle-size :initform 1.0 :accessor particle-size)
+     (particle-scaling :initform 1.0 :accessor particle-scaling)
+     (particle-rotation :initform 1.0 :accessor particle-rotation)
+     (particle-randomness :initform 0.0 :accessor particle-randomness)
+     (particle-velocity :initform 1.0 :accessor particle-velocity)
+     (particle-lifespan :initform 1.0 :accessor particle-lifespan)
+     (particle-lifespan-randomness :initform 0.0 :accessor particle-lifespan-randomness)
+     (particle-color :initform #xFFFFFF :accessor particle-color))
+    (:buffers (trial standard-environment-information))
+    (:shader-file (trial "particle/cpu-render.glsl"))))
 
 (defmethod initialize-instance :after ((emitter cpu-particle-emitter) &key)
-  (multiple-value-bind (particles properties free-list) (%allocate-particle-data max-particles)
+  (multiple-value-bind (particles properties free-list) (%allocate-particle-data (max-particles emitter))
     (setf (slot-value emitter 'particles) particles)
     (setf (slot-value emitter 'properties) properties)
     (setf (slot-value emitter 'free-list) free-list)
@@ -160,18 +171,27 @@
           (make-instance 'texture :width (truncate (length properties) 4) :height 1 :target :texture-1d :min-filter :nearest :mag-filter :nearest
                                   :internal-format :rgba32f :pixel-data properties :pixel-format :rgba :pixel-type :float))))
 
-(defmethod stage ((emitter cpu-particle-emitter) (area staging-area))
+(defmethod stage :after ((emitter cpu-particle-emitter) (area staging-area))
   (stage (draw-vertex-array emitter) area)
-  (stage (particle-property-buffer emitter) area)
-  (stage (texture emitter) area))
+  (stage (slot-value emitter 'particle-property-buffer) area))
+
+(defmethod (setf mesh-index-buffer) (buffer (emitter cpu-particle-emitter))
+  (setf (slot-value emitter 'index-data) (buffer-data buffer)))
+
+(defmethod (setf mesh-vertex-buffer) (buffer (emitter cpu-particle-emitter))
+  (setf (slot-value emitter 'vertex-data) (buffer-data buffer)))
+
+(defmethod (setf mesh-vertex-stride) (stride (emitter cpu-particle-emitter))
+  (setf (slot-value emitter 'vertex-stride) stride))
 
 (define-handler ((emitter cpu-particle-emitter) tick) (dt)
-  (multiple-value-bind (to-emit emit-carry) (floor (incf (to-emit emitter) (* dt (particle-rate emitter))))
-    (when (< 0 to-emit) (emit emitter to-emit))
-    (setf (to-emit emitter) emit-carry)
-    (when (< 0 live-particles)
-      (setf live-particles (%simulate-particles particles live-particles free-list dt force-fields))
-      (update-buffer-data particle-buffer T :count (* live-particles 8)))))
+  (with-all-slots-bound (emitter cpu-particle-emitter)
+    (multiple-value-bind (to-emit emit-carry) (floor (incf (to-emit emitter) (* dt (particle-rate emitter))))
+      (when (< 0 to-emit) (emit emitter to-emit))
+      (setf (to-emit emitter) emit-carry)
+      (when (< 0 live-particles)
+        (setf live-particles (%simulate-particles particles live-particles free-list dt force-fields))
+        (update-buffer-data particle-buffer T :count (* live-particles 8))))))
 
 (defmethod emit ((emitter cpu-particle-emitter) count &rest particle-options &key vertex-array location orientation scaling transform)
   (setf (particle-options emitter) (remf* particle-options :vertex-array :location :orientation :scaling :transform))
@@ -181,19 +201,22 @@
   (when orientation (setf (orientation emitter) orientation))
   (when vertex-array (setf (vertex-array emitter) vertex-array))
   (with-all-slots-bound (emitter cpu-particle-emitter)
-    (dotimes (i (min count (length free-list)))
-      (let ((prop (vector-pop free-list))
-            (mat (tmat4 (tf emitter))))
-        (%emit-particle particles properties live prop (vrand (vec 0.5 0.5 0.5)) randomness
-                        mat velocity rotation lifespan size scaling color
-                        vertex-data vertex-stride index-data)
-        (incf live-particles)))
+    (let ((mat (tmat (tf emitter))))
+      (declare (dynamic-extent mat))
+      (dotimes (i (min count (length free-list)))
+        (let ((prop (vector-pop free-list)))
+          (%emit-particle particles properties live-particles prop (vrand (vec 0.5 0.5 0.5))
+                          particle-randomness particle-lifespan-randomness mat
+                          particle-velocity particle-rotation particle-lifespan
+                          particle-size particle-scaling particle-color
+                          vertex-data vertex-stride index-data)
+          (incf live-particles))))
     (when (< 0 live-particles)
       (update-buffer-data particle-property-buffer T :width (* live-particles (/ 24 4))))))
 
 (defmethod clear ((emitter cpu-particle-emitter))
   (setf (live-particles emitter) 0)
-  (let ((free-list (free-list emitter)))
+  (let ((free-list (slot-value emitter 'free-list)))
     (setf (fill-pointer free-list) 0)
     (dotimes (i (max-particles emitter))
       (vector-push (* i 21) free-list))))
@@ -202,7 +225,8 @@
   (gl:active-texture :texture0)
   (gl:bind-texture (target (texture emitter)) (gl-name (texture emitter)))
   (gl:active-texture :texture1)
-  (gl:bind-texture (target (particle-property-buffer emitter)) (gl-name (particle-property-buffer emitter))))
+  (let ((properties (slot-value emitter 'particle-property-buffer)))
+    (gl:bind-texture (target properties) (gl-name properties))))
 
 (defmethod render :around ((emitter cpu-particle-emitter) (program shader-program))
   (when (< 0 (live-particles emitter))

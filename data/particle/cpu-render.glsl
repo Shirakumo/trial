@@ -19,10 +19,12 @@ void main(){
   uint instance = gl_InstanceID;
 
   vec4 a = texelFetch(particle_data, instance*6+0, 0);
-  Particle particle = {
-    a.x, a.y, a.z, a.w, floatBitsToInt(texelFetch(particle_data, instance*6+1, 0).r)
-  };
   
+  Particle particle = Particle(a.x,
+                               a.y,
+                               a.z,
+                               a.w,
+                               floatBitsToUInt(texelFetch(particle_data, instance*6+1, 0).r));
   mat4 model_matrix = mat4(texelFetch(particle_data, instance*6 + 2, 0),
                            texelFetch(particle_data, instance*6 + 3, 0),
                            texelFetch(particle_data, instance*6 + 4, 0),

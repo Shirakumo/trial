@@ -82,8 +82,7 @@
   (model-matrix :mat4 :accessor transform-matrix)
   (emit-count :int :initform 0 :accessor emit-count)
   (mesh-index-count :int :initform 0 :accessor mesh-index-count)
-  (mesh-vertex-position-stride :int :initform 0 :accessor mesh-vertex-position-stride)
-  (mesh-vertex-normal-stride :int :initform 0 :accessor mesh-vertex-normal-stride)
+  (mesh-vertex-stride :int :initform 0 :accessor mesh-vertex-stride)
   (randomness :float :initform 0.0 :accessor randomness)
   (particle-color :uint :initform #xFFFFFF :accessor particle-color)
   (particle-size :float :initform 1.0 :accessor particle-size)
@@ -136,7 +135,7 @@
   :binding NIL)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (define-shader-entity particle-emitter (standalone-shader-entity transformed-entity renderable listener)
+  (define-shader-entity gpu-particle-emitter (particle-emitter)
     ((particle-emitter-buffer)
      (particle-force-fields :reader particle-force-fields)
      (particle-argument-buffer)
@@ -148,18 +147,11 @@
      (kickoff-pass)
      (emit-pass)
      (simulate-pass)
-     (local-threads :initarg :local-threads :initform 256 :reader local-threads)
-     (texture :initform (// 'trial 'missing) :initarg :texture :accessor texture)
-     (to-emit :initform 0.0 :initarg :to-emit :accessor to-emit)
-     (particle-rate :initform 0.0 :initarg :particle-rate :accessor particle-rate)
-     (vertex-array :initform (// 'trial 'unit-square) :accessor vertex-array)
-     (max-particles :initarg :max-particles :initform 1000 :reader max-particles)
-     (motion-blur :initarg :motion-blur :initform 0.0 :uniform T))
-    (:buffers (trial standard-environment-information))
+     (local-threads :initarg :local-threads :initform 256 :reader local-threads))
     (:shader-file (trial "particle/gpu-render.glsl"))))
 
-(defmethod initialize-instance :after ((emitter particle-emitter) &key particle-force-fields vertex-array particle-options)
-  (with-all-slots-bound (emitter particle-emitter)
+(defmethod initialize-instance :after ((emitter gpu-particle-emitter) &key)
+  (with-all-slots-bound (emitter gpu-particle-emitter)
     ;; Check that the counts are within ranges that the GPU can even compute.
     ;; On dev we error, on prod we simply clamp.
     (let ((max-threads (gl:get* :max-compute-work-group-invocations))
@@ -183,22 +175,15 @@
     (setf emit-pass (construct-delegate-object-type 'particle-emit-pass emitter :emit-threads local-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer :particle-emitter-buffer particle-emitter-buffer
                                                        :work-groups 0))
     (setf simulate-pass (construct-delegate-object-type 'particle-simulate-pass emitter :simulate-threads local-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer :particle-argument-buffer particle-argument-buffer
-                                                               :work-groups (slot-offset 'particle-argument-buffer 'simulate-args))))
-  ;; And configure our particle defaults
-  (setf (vertex-array emitter) (or vertex-array (vertex-array emitter)))
-  (setf (particle-options emitter) particle-options)
-  (setf (particle-force-fields emitter) particle-force-fields))
+                                                               :work-groups (slot-offset 'particle-argument-buffer 'simulate-args)))))
 
-(defmethod stage :after ((emitter particle-emitter) (area staging-area))
-  (with-all-slots-bound (emitter particle-emitter)
+(defmethod stage :after ((emitter gpu-particle-emitter) (area staging-area))
+  (with-all-slots-bound (emitter gpu-particle-emitter)
     (stage kickoff-pass area)
     (stage emit-pass area)
-    (stage simulate-pass area)
-    (stage texture area)
-    (stage vertex-array area)
-    (stage (// 'trial 'empty-vertex-array) area)))
+    (stage simulate-pass area)))
 
-(defmethod finalize :after ((emitter particle-emitter))
+(defmethod finalize :after ((emitter gpu-particle-emitter))
   ;; FIXME: this sucks ass. We need to find a better way to ensure that gl-struct backing buffers don't leak.
   (with-all-slots-bound (emitter particle-emitter)
     (finalize particle-emitter-buffer)
@@ -213,10 +198,10 @@
     (finalize emit-pass)
     (finalize simulate-pass)))
 
-(defmethod (setf particle-force-fields) ((null null) (emitter particle-emitter))
+(defmethod (setf particle-force-fields) ((null null) (emitter gpu-particle-emitter))
   (setf (particle-force-fields emitter) (// 'trial 'empty-force-fields)))
 
-(defmethod (setf particle-force-fields) ((cons cons) (emitter particle-emitter))
+(defmethod (setf particle-force-fields) ((cons cons) (emitter gpu-particle-emitter))
   (when (or (not (slot-boundp emitter 'particle-force-fields))
             (generator (particle-force-fields emitter)))
     ;; We have a hard max of 32 anyway in the shader....
@@ -245,7 +230,7 @@
     (when (allocated-p (particle-force-fields emitter))
       (update-buffer-data (particle-force-fields emitter) T))))
 
-(defmethod (setf particle-force-fields) ((struct particle-force-fields) (emitter particle-emitter))
+(defmethod (setf particle-force-fields) ((struct particle-force-fields) (emitter gpu-particle-emitter))
   (cond ((not (slot-boundp emitter 'particle-force-fields))
          (setf (particle-force-fields emitter) (make-instance 'shader-storage-buffer :struct NIL :binding NIL)))
         ;; FIXME: potentially leaky!!
@@ -258,62 +243,26 @@
   (when (allocated-p (particle-force-fields emitter))
     (resize-buffer-data (particle-force-fields emitter) T)))
 
-(defmethod (setf particle-force-fields) ((buffer resource) (emitter particle-emitter))
+(defmethod (setf particle-force-fields) ((buffer resource) (emitter gpu-particle-emitter))
   (setf (slot-value emitter 'particle-force-fields) buffer)
   (setf (slot-value (slot-value emitter 'simulate-pass) 'particle-force-fields) buffer))
 
-(defmethod (setf vertex-array) ((resource placeholder-resource) (emitter particle-emitter))
-  (setf (vertex-array emitter) (ensure-generated resource)))
+(defmethod (setf mesh-index-buffer) (buffer (emitter gpu-particle-emitter))
+  (setf (mesh-index-buffer (slot-value emitter 'emit-pass)) buffer))
 
-(defmethod (setf vertex-array) :after ((vao vertex-array) (emitter particle-emitter))
-  (setf (mesh-index-buffer (slot-value emitter 'emit-pass)) (or (index-buffer vao)
-                                                                (error "VAO must be indexed!")))
-  (setf (mesh-vertex-buffer (slot-value emitter 'emit-pass)) (first (find-if #'consp (bindings vao))))
+(defmethod (setf mesh-vertex-buffer) (buffer (emitter gpu-particle-emitter))
+  (setf (mesh-vertex-buffer (slot-value emitter 'emit-pass)) buffer))
+
+(defmethod (setf mesh-vertex-stride) (stride (emitter gpu-particle-emitter))
   (with-buffer-tx (struct (slot-value emitter 'particle-emitter-buffer) :update NIL)
-    (setf (mesh-index-count struct) (size vao))
-    (setf (mesh-vertex-position-stride struct)
-          (loop for binding in (bindings vao)
-                do (when (and (listp binding) (= 0 (getf (rest binding) :index)))
-                     (return (floor (getf (rest binding) :stride) (gl-type-size (element-type (first binding))))))
-                finally (error "VAO must have a position binding at index 0.")))
-    (setf (mesh-vertex-normal-stride struct)
-          (loop for binding in (bindings vao)
-                do (when (and (listp binding) (= 1 (getf (rest binding) :index)))
-                     (return (floor (getf (rest binding) :stride) (gl-type-size (element-type (first binding))))))
-                finally (error "VAO must have a normal binding at index 1.")))))
-
-(defmethod (setf particle-options) (options (emitter particle-emitter))
-  (destructuring-bind (&key texture size scaling rotation color randomness velocity lifespan lifespan-randomness sprite (flip NIL flip-t) mode &allow-other-keys) options
-    (when texture
-      (setf (texture emitter) texture))
-    (when size
-      (setf (particle-size emitter) size))
-    (when scaling
-      (setf (particle-scaling emitter) scaling))
-    (when rotation
-      (setf (particle-rotation emitter) rotation))
-    (when color
-      (setf (particle-color emitter) color))
-    (when randomness
-      (setf (particle-randomness emitter) randomness))
-    (when velocity
-      (setf (particle-velocity emitter) velocity))
-    (when lifespan
-      (setf (particle-lifespan emitter) lifespan))
-    (when lifespan-randomness
-      (setf (particle-lifespan-randomness emitter) lifespan-randomness))
-    (when sprite
-      (setf (particle-sprite emitter) sprite))
-    (when flip-t
-      (setf (particle-flip emitter) flip))
-    (when mode
-      (setf (particle-mode emitter) mode))))
+    (setf (mesh-index-count struct) (size (vertex-array emitter)))
+    (setf (mesh-vertex-stride struct) stride)))
 
 (macrolet ((define-delegate (accessor)
-             `(progn (defmethod ,accessor ((emitter particle-emitter))
+             `(progn (defmethod ,accessor ((emitter gpu-particle-emitter))
                        (,accessor (buffer-data (slot-value emitter 'particle-emitter-buffer))))
 
-                     (defmethod (setf ,accessor) (value (emitter particle-emitter))
+                     (defmethod (setf ,accessor) (value (emitter gpu-particle-emitter))
                        (setf (,accessor (buffer-data (slot-value emitter 'particle-emitter-buffer))) value)))))
   (define-delegate particle-size)
   (define-delegate particle-scaling)
@@ -323,56 +272,12 @@
   (define-delegate particle-lifespan)
   (define-delegate particle-lifespan-randomness))
 
-(defmethod particle-mode ((emitter particle-emitter))
-  (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
-    (if (logbitp 29 int) :quad :billboard)))
-
-(defmethod (setf particle-mode) (mode (emitter particle-emitter))
-  (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
-    (setf (ldb (byte 1 29) int) (ecase mode
-                                  (:quad 1)
-                                  (:billboard 0)))
-    (setf (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer))) int)
-    mode))
-
-(defmethod particle-flip ((emitter particle-emitter))
-  (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
-    (case (ldb (byte 2 30) int)
-      (0 NIL)
-      (1 :y)
-      (2 :x)
-      (3 T))))
-
-(defmethod (setf particle-flip) (flip (emitter particle-emitter))
-  (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
-    (setf (ldb (byte 2 30) int) (ecase flip
-                                  ((NIL) 0)
-                                  (:y 1)
-                                  (:x 2)
-                                  ((T) 3)))
-    (setf (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer))) int)
-    flip))
-
-(defmethod particle-color ((emitter particle-emitter))
-  (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
-    (vec (/ (ldb (byte 8  0) int) 255)
-         (/ (ldb (byte 8  8) int) 255)
-         (/ (ldb (byte 8 16) int) 255))))
-
-(defmethod (setf particle-color) ((color vec3) (emitter particle-emitter))
-  (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
-    (setf (ldb (byte 8 16) int) (clamp 0 (truncate (* (vz color) 255)) 255))
-    (setf (ldb (byte 8  8) int) (clamp 0 (truncate (* (vy color) 255)) 255))
-    (setf (ldb (byte 8  0) int) (clamp 0 (truncate (* (vx color) 255)) 255))
-    (setf (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer))) int)
-    color))
-
-(defmethod simulate-particles ((emitter particle-emitter))
+(defmethod simulate-particles ((emitter gpu-particle-emitter))
   (render (slot-value emitter 'simulate-pass) NIL))
 
-(define-handler (particle-emitter tick) (dt)
-  (with-all-slots-bound (particle-emitter particle-emitter)
-    (multiple-value-bind (to-emit emit-carry) (floor (incf (to-emit particle-emitter) (* dt (particle-rate particle-emitter))))
+(define-handler ((emitter gpu-particle-emitter) tick) (dt)
+  (with-all-slots-bound (emitter gpu-particle-emitter)
+    (multiple-value-bind (to-emit emit-carry) (floor (incf to-emit (* dt particle-rate)))
       (with-buffer-tx (struct particle-emitter-buffer)
         (setf (transform-matrix struct) (tmat (tf particle-emitter)))
         (setf (emit-count struct) to-emit)
@@ -388,36 +293,36 @@
       (%gl:bind-buffer :dispatch-indirect-buffer 0)
       (setf (to-emit particle-emitter) emit-carry))))
 
-(define-handler (particle-emitter class-changed) ()
-  (handle class-changed (slot-value particle-emitter 'kickoff-pass))
-  (handle class-changed (slot-value particle-emitter 'emit-pass))
-  (handle class-changed (slot-value particle-emitter 'simulate-pass)))
+(define-handler (gpu-particle-emitter class-changed) ()
+  (handle class-changed (slot-value gpu-particle-emitter 'kickoff-pass))
+  (handle class-changed (slot-value gpu-particle-emitter 'emit-pass))
+  (handle class-changed (slot-value gpu-particle-emitter 'simulate-pass)))
 
-(defmethod clear ((emitter particle-emitter))
+(defmethod clear ((emitter gpu-particle-emitter))
   (with-buffer-tx (struct (slot-value emitter 'particle-counter-buffer) :update :write)
     (setf (slot-value struct 'dead-count) (max-particles emitter))))
 
-(defmethod bind-textures ((emitter particle-emitter))
+(defmethod bind-textures ((emitter gpu-particle-emitter))
   (gl:active-texture :texture0)
   (gl:bind-texture (target (texture emitter)) (gl-name (texture emitter))))
 
-(defmethod render :before ((emitter particle-emitter) (program shader-program))
+(defmethod render :before ((emitter gpu-particle-emitter) (program shader-program))
   (gl:depth-mask NIL)
   (setf (uniform program "model_matrix") (tmat (tf emitter)))
   (gl:bind-vertex-array (gl-name (// 'trial 'empty-vertex-array)))
   (%gl:bind-buffer :draw-indirect-buffer (gl-name (slot-value emitter 'particle-argument-buffer))))
 
-(defmethod render :after ((emitter particle-emitter) (program shader-program))
+(defmethod render :after ((emitter gpu-particle-emitter) (program shader-program))
   (gl:bind-vertex-array 0)
   (%gl:bind-buffer :draw-indirect-buffer 0)
   (gl:depth-mask T))
 
-(defmethod render ((emitter particle-emitter) (program shader-program))
+(defmethod render ((emitter gpu-particle-emitter) (program shader-program))
   (gl:blend-func :src-alpha :one)
   (%gl:draw-arrays-indirect :triangles (slot-offset 'particle-argument-buffer 'draw-args))
   (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha))
 
-(defmethod emit ((particle-emitter particle-emitter) count &rest particle-options &key vertex-array location orientation scaling transform)
+(defmethod emit ((particle-emitter gpu-particle-emitter) count &rest particle-options &key vertex-array location orientation scaling transform)
   ;; We do the emit **right now** so that the particle options are only active for the
   ;; current emit. Otherwise, if we wanted to emit multiple configurations in a single tick,
   ;; we'd be overwriting it until the next simulation run.
@@ -441,7 +346,7 @@
    (surface-thickness :uniform T :initform 1.5 :accessor surface-thickness))
   (:shader-file (trial "particle/depth-collisions.glsl")))
 
-(define-shader-entity depth-colliding-particle-emitter (particle-emitter)
+(define-shader-entity depth-colliding-particle-emitter (gpu-particle-emitter)
   ())
 
 ;; KLUDGE: This is NOT great for composing stuff.
@@ -487,7 +392,7 @@
   (:shader-file (trial "particle/sort-simulate.glsl")))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (define-shader-entity sorted-particle-emitter (particle-emitter)
+  (define-shader-entity sorted-particle-emitter (gpu-particle-emitter)
     (particle-distances
      sort-pass
      sort-step-pass
@@ -544,7 +449,7 @@
 (defmethod render ((emitter sorted-particle-emitter) (program shader-program))
   (%gl:draw-arrays-indirect :triangles (slot-offset 'particle-argument-buffer 'draw-args)))
 
-(define-shader-entity multi-texture-particle-emitter (particle-emitter)
+(define-shader-entity multi-texture-particle-emitter (gpu-particle-emitter)
   ()
   (:inhibit-shaders (particle-emitter :fragment-shader))
   (:shader-file (trial "particle/multi-render.glsl")))

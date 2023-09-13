@@ -4,15 +4,15 @@ layout (local_size_x = EMIT_THREADS, local_size_y = 1, local_size_z = 1) in;
 uniform sampler2D random_tex;
 
 vec3 read_vertex(uint i){
-  return vec3(vertex_data[i*mesh_vertex_position_stride + 0],
-              vertex_data[i*mesh_vertex_position_stride + 1],
-              vertex_data[i*mesh_vertex_position_stride + 2]);
+  return vec3(vertex_data[i*mesh_vertex_stride + 0],
+              vertex_data[i*mesh_vertex_stride + 1],
+              vertex_data[i*mesh_vertex_stride + 2]);
 }
 
 vec3 read_normal(uint i){
-  return vec3(vertex_data[i*mesh_vertex_normal_stride + 3],
-              vertex_data[i*mesh_vertex_normal_stride + 4],
-              vertex_data[i*mesh_vertex_normal_stride + 5]);
+  return vec3(vertex_data[i*mesh_vertex_stride + 3],
+              vertex_data[i*mesh_vertex_stride + 4],
+              vertex_data[i*mesh_vertex_stride + 5]);
 }
 
 void main(){
