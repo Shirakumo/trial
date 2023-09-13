@@ -5,9 +5,9 @@ Trial includes a high performance particle simulation system that performs almos
 
 [ image images/particles.png ]
 
-| "NOTE:"(red, bold) This system requires "OpenGL 4.2"(bold) or later. Most of the engine is built around OpenGL 3.3, but that would proclude using Compute Shaders, which are required for this approach. In order to use these particle systems, make sure to construct your context with ``:version '(4 2)``.
+| "NOTE:"(red, bold) This system requires "OpenGL 4.2"(bold) or later. Most of the engine is built around OpenGL 3.3, but that would proclude using Compute Shaders, which are required for this approach. In order to use these particle systems, make sure to construct your context with ``:version '(4 2)``. If you want to run particles on OpenGL 3.3 see the "section below"(link #cpu simulation).
 
-In order to create a particle system, simply create a ``particle-emitter`` and enter it into a scene. You can then use ``emit`` to burst particles on demand, or set the ``particle-rate`` to create a continuous stream of particles.
+In order to create a particle system, simply create a ``gpu-particle-emitter`` and enter it into a scene. You can then use ``emit`` to burst particles on demand, or set the ``particle-rate`` to create a continuous stream of particles.
 
 | "NOTE:"(red, bold) In order for the system to work correctly you need a "standard renderer"(link standard-renderer.mess) derived renderer in your scene such as the ``pbr-render-pass``. The particles aren't actually shaded by the renderer, but they require the environment information that the pass also takes care of providing.
 
@@ -111,3 +111,6 @@ The default emitter only allows using a single texture per particle. Sometimes i
 
 - ``sprite``
   The sprite index to be used. This is useful if multiple textures are attached and the displayed sprite should be a specific one. You may use up to 15 different sprites, or ``:random`` if it should be shuffled.
+
+## CPU Simulation
+On systems with restricted GPU capabilities (GL 3.3) or for particle systems with a very small number of particles it can be more useful to simulate on the CPU instead of the GPU. In this case you can use the ``cpu-particle-emitter``. The interface of the emitter is the same as for the ``gpu-particle-emitter``, though it has one crucial difference: particles in both quad render modes can be spawned at different places and still work fine. This means that you can spawn particles from different locations and directions with the same emitter without the simulation going awry.
