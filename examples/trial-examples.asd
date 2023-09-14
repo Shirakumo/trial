@@ -9,7 +9,10 @@
   :entry-point "trial-examples::launch"
   :components ((:file "trial-examples")
                (:file "triangle")
-               (:file "vclip"))
+               (:file "vclip")
+               (:file "gjk")
+               (:file "cpu-particle")
+               (:file "gpu-particle"))
   :depends-on (:trial-glfw
                :trial-alloy
                :trial-jpeg-turbo

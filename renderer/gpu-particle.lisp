@@ -171,7 +171,7 @@
 
 (defmethod finalize :after ((emitter gpu-particle-emitter))
   ;; FIXME: this sucks ass. We need to find a better way to ensure that gl-struct backing buffers don't leak.
-  (with-all-slots-bound (emitter particle-emitter)
+  (with-all-slots-bound (emitter gpu-particle-emitter)
     (finalize particle-emitter-buffer)
     (finalize particle-force-fields)
     (finalize particle-argument-buffer)
@@ -265,19 +265,19 @@
   (with-all-slots-bound (emitter gpu-particle-emitter)
     (multiple-value-bind (to-emit emit-carry) (floor (incf to-emit (* dt particle-rate)))
       (with-buffer-tx (struct particle-emitter-buffer)
-        (setf (transform-matrix struct) (tmat (tf particle-emitter)))
+        (setf (transform-matrix struct) (tmat (tf emitter)))
         (setf (emit-count struct) to-emit)
         (setf (randomness struct) (random 1.0)))
       ;; Simulate with compute shaders
       (%gl:bind-buffer :dispatch-indirect-buffer (gl-name particle-argument-buffer))
       (render kickoff-pass NIL)
       (render emit-pass NIL)
-      (simulate-particles particle-emitter)
+      (simulate-particles emitter)
       ;; Swap the buffers
       (rotatef (binding-point alive-particle-buffer-0)
                (binding-point alive-particle-buffer-1))
       (%gl:bind-buffer :dispatch-indirect-buffer 0)
-      (setf (to-emit particle-emitter) emit-carry))))
+      (setf (to-emit emitter) emit-carry))))
 
 (define-handler (gpu-particle-emitter class-changed) ()
   (handle class-changed (slot-value gpu-particle-emitter 'kickoff-pass))

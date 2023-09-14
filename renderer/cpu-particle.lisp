@@ -287,6 +287,8 @@
   (%gl:draw-arrays-instanced :triangles 0 6 (live-particles emitter))
   (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha))
 
+;; FIXME: implement sorting?
+
 (define-shader-entity multi-texture-cpu-particle-emitter (cpu-particle-emitter)
   ()
   (:inhibit-shaders (cpu-particle-emitter :fragment-shader))

@@ -23,7 +23,8 @@
    (particle-force-fields :reader particle-force-fields))
   (:buffers (trial standard-environment-information)))
 
-(defmethod shared-initialize :after ((emitter particle-emitter) slots &key particle-options particle-force-fields vertex-array)
+(defmethod initialize-instance :around ((emitter particle-emitter) &key particle-options particle-force-fields vertex-array)
+  (call-next-method)
   (setf (vertex-array emitter) (or vertex-array (vertex-array emitter)))
   (setf (particle-options emitter) particle-options)
   (setf (particle-force-fields emitter) particle-force-fields))
@@ -114,7 +115,8 @@
              (let ((stride (floor (getf (rest binding) :stride) (gl-type-size (element-type (first binding)))))
                    (buffer (first binding)))
                (setf (mesh-vertex-buffer emitter) buffer)
-               (setf (mesh-vertex-stride emitter) stride)))
+               (setf (mesh-vertex-stride emitter) stride)
+               (return)))
         finally (error "VAO must have a position binding at index 0.")))
 
 (defmethod (setf particle-force-fields) ((cons cons) (emitter particle-emitter))

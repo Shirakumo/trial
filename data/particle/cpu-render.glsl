@@ -5,6 +5,9 @@ layout(location = 1) in vec3 vel;
 layout(location = 2) in float life;
 
 struct Particle{
+  vec3 position;
+  vec3 velocity;
+  float life;
   float max_life;
   float rotational_velocity;
   float size_begin;
@@ -20,7 +23,10 @@ void main(){
 
   vec4 a = texelFetch(particle_data, instance*6+0, 0);
   
-  Particle particle = Particle(a.x,
+  Particle particle = Particle(pos,
+                               vel,
+                               life,
+                               a.x,
                                a.y,
                                a.z,
                                a.w,

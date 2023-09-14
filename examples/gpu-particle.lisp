@@ -1,0 +1,26 @@
+(in-package #:org.shirakumo.fraf.trial.examples)
+
+(define-example gpu-particle
+  (gl:clear-color 0 0 0 0)
+  (enter (make-instance 'display-controller) scene)
+  (enter (make-instance 'gpu-particle-emitter
+                        :name :emitter :max-particles 1000000 :particle-rate 10000
+                        :particle-force-fields `((:type :direction :strength -5.0)
+                                                 (:type :vortex :strength 10.0))
+                        :texture (assets:// :circle-05)
+                        :orientation (qfrom-angle +vx+ (deg->rad 90))
+                        :particle-options `(:velocity -10.0 :randomness 0.5 :size 0.1 :scaling 1.0
+                                            :lifespan 10.0 :lifespan-randomness 0.5
+                                            :color ,(vec 0.5 0.3 0.1))) scene)
+  (observe! (let ((emitter (unit :emitter (scene +main+))))
+              (with-buffer-tx (struct (slot-value emitter 'trial::particle-counter-buffer) :update :read)
+                (slot-value struct 'trial::alive-count)))
+            :title "Alive Particles")
+  (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)
+  (enter (make-instance 'editor-camera :location (VEC3 0.0 2.3 7.3) :fov 50 :move-speed 0.1) scene)
+  ;; Need a standard render pass here because we need the standard-environment-information.
+  (let ((render (make-instance 'pbr-render-pass))
+        (map (make-instance 'ward)))
+    (when (typep (unit :emitter scene) 'trial::depth-colliding-particle-emitter)
+      (connect render (unit :emitter scene) scene))
+    (connect (port render 'color) (port map 'previous-pass) scene)))

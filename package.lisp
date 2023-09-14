@@ -418,12 +418,11 @@
    #:list-materials
    #:update-material
    #:define-material)
-  ;; renderer/particle.lisp
+  ;; renderer/particle-common.lisp
   (:export
    #:particle-force-field
    #:particle-force-fields
    #:particle-emitter
-   #:local-threads
    #:texture
    #:to-emit
    #:particle-rate
@@ -441,7 +440,16 @@
    #:particle-mode
    #:particle-flip
    #:particle-color
-   #:emit
+   #:emit)
+  ;; renderer/cpu-particle.lisp
+  (:export
+   #:cpu-particle-emitter
+   #:multi-texture-cpu-particle-emitter
+   #:particle-sprite)
+  ;; renderer/gpu-particle.lisp
+  (:export
+   #:gpu-particle-emitter
+   #:local-threads
    #:depth-colliding-particle-emitter
    #:surface-thickness
    #:sorted-particle-emitter
