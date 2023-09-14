@@ -1019,6 +1019,7 @@
    #:unit-square
    #:unit-disc
    #:unit-point
+   #:grid
    #:axes
    #:2d-axes)
   ;; geometry.lisp

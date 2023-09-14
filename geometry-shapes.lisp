@@ -272,6 +272,9 @@
 (define-asset (trial unit-point) mesh
     (make-triangle-mesh 0.0 0.0 :pack T))
 
+(define-asset (trial grid) mesh
+    (make-line-grid-mesh 10 10 10))
+
 (define-asset (trial axes) mesh
     (make-lines (list (list (vec 0 0 0) (vec 1 0 0 1)) (list (vec 10 0 0) (vec 1 0 0 1))
                       (list (vec 0 0 0) (vec 0 1 0 1)) (list (vec 0 10 0) (vec 0 1 0 1))
