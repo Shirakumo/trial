@@ -1,12 +1,26 @@
 (in-package #:org.shirakumo.fraf.trial)
 
+(define-gl-struct (particle-force-field :layout-standard std430)
+  (type :int :initform 0)
+  (position :vec3 :initform (vec 0 0 0))
+  (strength :float :initform 0.0)
+  (range :float :initform 0.0)
+  (inv-range :float :initform 0.0)
+  (normal :vec3 :initform (vec 0 0 0)))
+
+(define-gl-struct (particle-force-fields :layout-standard std430)
+  (size NIL :initarg :size :initform 32 :reader size)
+  (particle-force-field-count :int :initform 0 :accessor particle-force-field-count)
+  (particle-force-fields (:array (:struct particle-force-field) size) :reader particle-force-fields))
+
 (define-shader-entity particle-emitter (standalone-shader-entity transformed-entity renderable listener)
   ((texture :initform (// 'trial 'missing) :initarg :texture :accessor texture)
    (to-emit :initform 0.0 :initarg :to-emit :accessor to-emit)
    (particle-rate :initform 0.0 :initarg :particle-rate :accessor particle-rate)
    (vertex-array :initform (// 'trial 'unit-square) :accessor vertex-array)
    (max-particles :initarg :max-particles :initform 1000 :reader max-particles)
-   (motion-blur :initarg :motion-blur :initform 0.0 :uniform T))
+   (motion-blur :initarg :motion-blur :initform 0.0 :uniform T)
+   (particle-force-fields :reader particle-force-fields))
   (:buffers (trial standard-environment-information)))
 
 (defmethod shared-initialize :after ((emitter particle-emitter) slots &key particle-options particle-force-fields vertex-array)
@@ -102,3 +116,32 @@
                (setf (mesh-vertex-buffer emitter) buffer)
                (setf (mesh-vertex-stride emitter) stride)))
         finally (error "VAO must have a position binding at index 0.")))
+
+(defmethod (setf particle-force-fields) ((cons cons) (emitter particle-emitter))
+  (when (or (not (slot-boundp emitter 'particle-force-fields))
+            (generator (particle-force-fields emitter)))
+    ;; We have a hard max of 32 anyway in the shader....
+    (setf (particle-force-fields emitter) (make-instance 'particle-force-fields :size 32)))
+  (let ((size (length cons))
+        (struct (buffer-data (particle-force-fields emitter))))
+    ;; FIXME: copy over and resize instead of this nonsense.
+    (setf (slot-value struct 'particle-force-field-count) size)
+    (loop for info in cons
+          for i from 0
+          for target = (elt (slot-value struct 'particle-force-fields) i)
+          do (destructuring-bind (&key (type :point) (position (vec 0 0 0)) (strength 0.0) (range 0.0) (normal +vy3+)) info
+               (setf (slot-value target 'type) (ecase type
+                                                 ((NIL :none) 0)
+                                                 (:point 1)
+                                                 (:direction 2)
+                                                 (:plane 3)
+                                                 (:vortex 4)
+                                                 (:sphere 5)
+                                                 (:planet 6)))
+               (setf (slot-value target 'position) position)
+               (setf (slot-value target 'strength) strength)
+               (setf (slot-value target 'range) range)
+               (setf (slot-value target 'inv-range) (if (= 0.0 range) 0.0 (/ range)))
+               (setf (slot-value target 'normal) normal)))
+    (when (allocated-p (particle-force-fields emitter))
+      (update-buffer-data (particle-force-fields emitter) T))))

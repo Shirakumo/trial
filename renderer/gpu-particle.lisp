@@ -41,19 +41,6 @@
 ;;; [1] https://wickedengine.net/2017/11/07/gpu-based-particle-simulation/
 ;;; [2] https://github.com/turanszkij/WickedEngine/tree/9caf25a52996c6c62fc39f10784d8951f715b05d/WickedEngine
 
-(define-gl-struct (particle-force-field :layout-standard std430)
-  (type :int :initform 0)
-  (position :vec3 :initform (vec 0 0 0))
-  (strength :float :initform 0.0)
-  (range :float :initform 0.0)
-  (inv-range :float :initform 0.0)
-  (normal :vec3 :initform (vec 0 0 0)))
-
-(define-gl-struct (particle-force-fields :layout-standard std430)
-  (size NIL :initarg :size :initform 32 :reader size)
-  (particle-force-field-count :int :initform 0 :accessor particle-force-field-count)
-  (particle-force-fields (:array (:struct particle-force-field) size) :reader particle-force-fields))
-
 (define-gl-struct (particle-struct :layout-standard std430 :gl-type "Particle")
   (position :vec3)
   (velocity :vec3)
@@ -137,7 +124,6 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (define-shader-entity gpu-particle-emitter (particle-emitter)
     ((particle-emitter-buffer)
-     (particle-force-fields :reader particle-force-fields)
      (particle-argument-buffer)
      (particle-counter-buffer)
      (alive-particle-buffer-0 :buffer T)

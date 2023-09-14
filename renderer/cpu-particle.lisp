@@ -62,7 +62,9 @@
          (particle (make-raw-particle loc vel)))
     (declare (dynamic-extent loc vel acc particle))
     ;; Apply force fields
-    (loop for field across force-fields
+    (loop with fields = (particle-force-fields force-fields)
+          for i from 0 below (particle-force-field-count force-fields)
+          for field = (aref fields i)
           do (apply-force field particle dt))
     ;; Simulate
     (nv+* vel acc dt)
@@ -183,8 +185,8 @@
      index-data
      vertex-data
      vertex-stride
+     (particle-force-fields :accessor particle-force-fields)
      (live-particles :initform 0 :accessor live-particles)
-     (force-fields :initform () :accessor force-fields)
      (draw-vertex-array :initform NIL :accessor draw-vertex-array)
      (particle-size :initform 1.0 :accessor particle-size)
      (particle-scaling :initform 1.0 :accessor particle-scaling)
@@ -230,7 +232,7 @@
       (when (< 0 to-emit) (emit emitter to-emit))
       (setf (to-emit emitter) emit-carry)
       (when (< 0 live-particles)
-        (setf live-particles (%simulate-particles particles live-particles free-list dt force-fields))
+        (setf live-particles (%simulate-particles particles live-particles free-list dt particle-force-fields))
         (update-buffer-data particle-buffer T :count (* live-particles 8))))))
 
 (defmethod emit ((emitter cpu-particle-emitter) count &rest particle-options &key vertex-array location orientation scaling transform)
