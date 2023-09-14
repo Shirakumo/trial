@@ -278,6 +278,7 @@
     (call-next-method)))
 
 (defmethod render ((emitter cpu-particle-emitter) (program shader-program))
+  (setf (uniform program "particle_data") 1)
   (gl:depth-mask NIL)
   (gl:blend-func :src-alpha :one)
   (gl:bind-vertex-array (gl-name (draw-vertex-array emitter)))

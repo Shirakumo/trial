@@ -641,6 +641,8 @@
 
 (defmethod location ((vec vec2)) vec)
 
+(defmethod location ((vec vec3)) vec)
+
 (defmethod location ((mat mat3))
   (with-fast-matref (m mat)
     (vec (m 0 2) (m 1 2))))

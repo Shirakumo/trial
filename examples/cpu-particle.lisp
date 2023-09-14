@@ -2,7 +2,7 @@
 
 (define-example cpu-particle
   (gl:clear-color 0 0 0 0)
-  (enter (make-instance '3d-camera :location (vec 0 0 -5)) scene)
+  (enter (make-instance 'target-camera :location (vec 0 5 -5)) scene)
   (enter (make-instance 'cpu-particle-emitter
                         :name :emitter :max-particles 100 :particle-rate 10
                         :texture (assets:// :circle-05)
