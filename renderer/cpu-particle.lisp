@@ -195,7 +195,7 @@
      (particle-velocity :initform 1.0 :accessor particle-velocity)
      (particle-lifespan :initform 1.0 :accessor particle-lifespan)
      (particle-lifespan-randomness :initform 0.0 :accessor particle-lifespan-randomness)
-     (particle-color :initform #xFFFFFF :accessor particle-color))
+     (particle-full-color :initform #xFFFFFF :accessor particle-full-color))
     (:buffers (trial standard-environment-information))
     (:shader-file (trial "particle/cpu-render.glsl"))))
 
@@ -292,18 +292,3 @@
   ()
   (:inhibit-shaders (cpu-particle-emitter :fragment-shader))
   (:shader-file (trial "particle/multi-render.glsl")))
-
-(defmethod particle-sprite ((emitter multi-texture-cpu-particle-emitter))
-  (let* ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer))))
-         (sprite (ldb (byte 3 24) int)))
-    (if (= #b111 sprite) :random sprite)))
-
-(defmethod (setf particle-sprite) (sprite (emitter multi-texture-cpu-particle-emitter))
-  (check-type sprite (unsigned-byte 3))
-  (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
-    (setf (ldb (byte 3 24) int) sprite)
-    (setf (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer))) int)
-    sprite))
-
-(defmethod (setf particle-sprite) ((sprite (eql :random)) (emitter multi-texture-cpu-particle-emitter))
-  (setf (particle-sprite emitter) #b111))

@@ -62,19 +62,19 @@
       (setf (particle-mode emitter) mode))))
 
 (defmethod particle-mode ((emitter particle-emitter))
-  (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
+  (let ((int (particle-full-color emitter)))
     (if (logbitp 29 int) :quad :billboard)))
 
 (defmethod (setf particle-mode) (mode (emitter particle-emitter))
-  (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
+  (let ((int (particle-full-color emitter)))
     (setf (ldb (byte 1 29) int) (ecase mode
                                   (:quad 1)
                                   (:billboard 0)))
-    (setf (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer))) int)
+    (setf (particle-full-color emitter) int)
     mode))
 
 (defmethod particle-flip ((emitter particle-emitter))
-  (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
+  (let ((int (particle-full-color emitter)))
     (case (ldb (byte 2 30) int)
       (0 NIL)
       (1 :y)
@@ -82,28 +82,43 @@
       (3 T))))
 
 (defmethod (setf particle-flip) (flip (emitter particle-emitter))
-  (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
+  (let ((int (particle-full-color emitter)))
     (setf (ldb (byte 2 30) int) (ecase flip
                                   ((NIL) 0)
                                   (:y 1)
                                   (:x 2)
                                   ((T) 3)))
-    (setf (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer))) int)
+    (setf (particle-full-color emitter) int)
     flip))
 
 (defmethod particle-color ((emitter particle-emitter))
-  (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
+  (let ((int (particle-full-color emitter)))
     (vec (/ (ldb (byte 8  0) int) 255)
          (/ (ldb (byte 8  8) int) 255)
          (/ (ldb (byte 8 16) int) 255))))
 
 (defmethod (setf particle-color) ((color vec3) (emitter particle-emitter))
-  (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
+  (let ((int (particle-full-color emitter)))
     (setf (ldb (byte 8 16) int) (clamp 0 (truncate (* (vz color) 255)) 255))
     (setf (ldb (byte 8  8) int) (clamp 0 (truncate (* (vy color) 255)) 255))
     (setf (ldb (byte 8  0) int) (clamp 0 (truncate (* (vx color) 255)) 255))
-    (setf (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer))) int)
+    (setf (particle-full-color emitter) int)
     color))
+
+(defmethod particle-sprite ((emitter particle-emitter))
+  (let* ((int (particle-full-color emitter))
+         (sprite (ldb (byte 3 24) int)))
+    (if (= #b111 sprite) :random sprite)))
+
+(defmethod (setf particle-sprite) (sprite (emitter particle-emitter))
+  (check-type sprite (unsigned-byte 3))
+  (let ((int (particle-full-color emitter)))
+    (setf (ldb (byte 3 24) int) sprite)
+    (setf (particle-full-color emitter) int)
+    sprite))
+
+(defmethod (setf particle-sprite) ((sprite (eql :random)) (emitter particle-emitter))
+  (setf (particle-sprite emitter) #b111))
 
 (defmethod (setf vertex-array) ((resource placeholder-resource) (emitter particle-emitter))
   (setf (vertex-array emitter) (ensure-generated resource)))

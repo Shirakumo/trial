@@ -244,19 +244,20 @@
     (setf (mesh-index-count struct) (size (vertex-array emitter)))
     (setf (mesh-vertex-stride struct) stride)))
 
-(macrolet ((define-delegate (accessor)
+(macrolet ((define-delegate (accessor &optional (inner accessor))
              `(progn (defmethod ,accessor ((emitter gpu-particle-emitter))
-                       (,accessor (buffer-data (slot-value emitter 'particle-emitter-buffer))))
+                       (,inner (buffer-data (slot-value emitter 'particle-emitter-buffer))))
 
                      (defmethod (setf ,accessor) (value (emitter gpu-particle-emitter))
-                       (setf (,accessor (buffer-data (slot-value emitter 'particle-emitter-buffer))) value)))))
+                       (setf (,inner (buffer-data (slot-value emitter 'particle-emitter-buffer))) value)))))
   (define-delegate particle-size)
   (define-delegate particle-scaling)
   (define-delegate particle-rotation)
   (define-delegate particle-randomness)
   (define-delegate particle-velocity)
   (define-delegate particle-lifespan)
-  (define-delegate particle-lifespan-randomness))
+  (define-delegate particle-lifespan-randomness)
+  (define-delegate particle-full-color particle-color))
 
 (defmethod simulate-particles ((emitter gpu-particle-emitter))
   (render (slot-value emitter 'simulate-pass) NIL))
@@ -440,17 +441,3 @@
   (:inhibit-shaders (particle-emitter :fragment-shader))
   (:shader-file (trial "particle/multi-render.glsl")))
 
-(defmethod particle-sprite ((emitter multi-texture-particle-emitter))
-  (let* ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer))))
-         (sprite (ldb (byte 3 24) int)))
-    (if (= #b111 sprite) :random sprite)))
-
-(defmethod (setf particle-sprite) (sprite (emitter multi-texture-particle-emitter))
-  (check-type sprite (unsigned-byte 3))
-  (let ((int (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer)))))
-    (setf (ldb (byte 3 24) int) sprite)
-    (setf (particle-color (buffer-data (slot-value emitter 'particle-emitter-buffer))) int)
-    sprite))
-
-(defmethod (setf particle-sprite) ((sprite (eql :random)) (emitter multi-texture-particle-emitter))
-  (setf (particle-sprite emitter) #b111))
