@@ -107,6 +107,9 @@
   (perspective-projection (fov camera) (/ (max 1 width) (max 1 height)) (near-plane camera) (far-plane camera))
   (setf (frustum camera) (make-perspective-box (fov camera) (/ (max 1 width) (max height)) (near-plane camera) (far-plane camera))))
 
+(defmethod focal-point ((camera 3d-camera))
+  #.(vec 0 0 0))
+
 (defmethod project-view ((camera 3d-camera))
   (look-at (location camera) (vec 0 0 0) +vy3+))
 

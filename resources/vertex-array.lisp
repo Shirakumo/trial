@@ -46,11 +46,11 @@
                  (:array-buffer
                   (ecase type
                     ((:half-float :float :fixed)
-                     (gl:vertex-attrib-pointer index size (element-type buffer) normalize stride offset))
+                     (gl:vertex-attrib-pointer index size type normalize stride offset))
                     ((:byte :unsigned-byte :short :unsigned-short :int :unsigned-int)
-                     (gl:vertex-attrib-ipointer index size (element-type buffer) stride offset))
+                     (gl:vertex-attrib-ipointer index size type stride offset))
                     (:double
-                     (%gl:vertex-attrib-lpointer index size (element-type buffer) stride offset)))
+                     (%gl:vertex-attrib-lpointer index size type stride offset)))
                   (gl:enable-vertex-attrib-array index)
                   (when (/= 0 instancing)
                     (%gl:vertex-attrib-divisor index instancing))))))))

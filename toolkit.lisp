@@ -498,7 +498,7 @@
 (defun simplify (array)
   (if (typep array 'simple-array)
       array
-      (make-array (array-dimensions array)
+      (make-array (length array)
                   :element-type (array-element-type array)
                   :initial-contents array)))
 

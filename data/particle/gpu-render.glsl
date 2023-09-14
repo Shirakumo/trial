@@ -4,8 +4,8 @@ uniform mat4 model_matrix;
 #include (trial:trial "particle/render-common.glsl")
 
 void main(){
-  uint vertex_id = gl_VertexID % 6;
-  uint instance = gl_VertexID / 6;
+  int vertex_id = gl_VertexID % 6;
+  int instance = gl_VertexID / 6;
   Particle particle = particles[alive_particles_0[instance]];
   derive_particle_properties(particle, vertex_id, model_matrix);
 }

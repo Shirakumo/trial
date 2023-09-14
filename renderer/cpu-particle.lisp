@@ -84,7 +84,7 @@
         for in from 0 below (* live-particles 8) by 8
         for life = (%simulate-particle particles in out dt force-fields)
         do (if (<= life 0)
-               (vector-push (aref particles (+ in 7)) free-list)
+               (vector-push (truncate (aref particles (+ in 7))) free-list)
                (incf out 8))
         finally (return (truncate out 8))))
 
@@ -104,7 +104,7 @@
          (setf (vz normal) (aref vertex-data 5)))
         (T
          ;; Pick a random triangle and read out the properties
-         (let* ((tri (truncate (* (length faces) (vz randoms))))
+         (let* ((tri (* 3 (truncate (* (length faces) (vz randoms)) 3)))
                 (i0 (* vertex-stride (aref faces (+ tri 0))))
                 (i1 (* vertex-stride (aref faces (+ tri 1))))
                 (i2 (* vertex-stride (aref faces (+ tri 2))))
@@ -138,14 +138,14 @@
   (declare (type (simple-array single-float (*)) particles properties vertex-data))
   (declare (type (simple-array (unsigned-byte 32) (*)) faces))
   (declare (type (unsigned-byte 32) pos prop))
-  (declare (type single-float lifespan lifespan-randomness randomness size scaling rotation))
-  (declare (type vec3 velocity randoms))
+  (declare (type single-float lifespan lifespan-randomness randomness size scaling rotation velocity))
+  (declare (type vec3 randoms))
   (let* ((location (vec 0 0 0))
          (normal (vec 0 0 0))
-         (velocity (vcopy velocity)))
+         (velocity (vec velocity velocity velocity)))
     (declare (dynamic-extent location normal velocity))
     ;; Evaluate static particle properties first
-    (random-point-on-mesh-surface vertex-data vertex-stride faces (vz randoms) location normal)
+    (random-point-on-mesh-surface vertex-data vertex-stride faces randoms location normal)
     (n*m4/3 matrix normal)
     (nv* velocity (nv+ (v* (v- randoms 0.5) randomness) normal))
     (setf (aref properties (+ prop 0)) (+ lifespan (* lifespan lifespan-randomness (- (vx randoms) 0.5))))
@@ -170,7 +170,7 @@
 
 (defun %allocate-particle-data (max-particles)
   (let ((particles (make-array (* max-particles 8) :element-type 'single-float))
-        (properties (make-array (* max-particles 21) :element-type 'single-float))
+        (properties (make-array (* max-particles 24) :element-type 'single-float))
         (free-list (make-array max-particles :element-type '(unsigned-byte 32) :fill-pointer 0)))
     (dotimes (i max-particles (values particles properties free-list))
       (vector-push (* i 24) free-list))))
@@ -205,7 +205,7 @@
     (setf (slot-value emitter 'properties) properties)
     (setf (slot-value emitter 'free-list) free-list)
     (setf (slot-value emitter 'particle-buffer)
-          (make-instance 'vertex-buffer :data-usage :dynamic-copy :element-type :float :data-usage :stream-draw :buffer-data particles))
+          (make-instance 'vertex-buffer :data-usage :stream-draw :element-type :float :buffer-data particles))
     (setf (draw-vertex-array emitter)
           (make-instance 'vertex-array :bindings (compute-buffer-bindings (slot-value emitter 'particle-buffer)
                                                                           '((3 :float 1) (3 :float 1) (1 :float 1) (1 :float 1)))))
@@ -216,6 +216,9 @@
 (defmethod stage :after ((emitter cpu-particle-emitter) (area staging-area))
   (stage (draw-vertex-array emitter) area)
   (stage (slot-value emitter 'particle-property-buffer) area))
+
+(defmethod (setf particle-force-fields) ((null null) (emitter cpu-particle-emitter))
+  (setf (particle-force-fields emitter) (make-instance 'particle-force-fields :size 0)))
 
 (defmethod (setf mesh-index-buffer) (buffer (emitter cpu-particle-emitter))
   (setf (slot-value emitter 'index-data) (buffer-data buffer)))
@@ -274,18 +277,13 @@
   (when (< 0 (live-particles emitter))
     (call-next-method)))
 
-(defmethod render :before ((emitter cpu-particle-emitter) (program shader-program))
-  (gl:depth-mask NIL)
-  (gl:bind-vertex-array (gl-name (draw-vertex-array emitter))))
-
-(defmethod render :after ((emitter cpu-particle-emitter) (program shader-program))
-  (gl:bind-vertex-array 0)
-  (gl:depth-mask T))
-
 (defmethod render ((emitter cpu-particle-emitter) (program shader-program))
+  (gl:depth-mask NIL)
   (gl:blend-func :src-alpha :one)
+  (gl:bind-vertex-array (gl-name (draw-vertex-array emitter)))
   (%gl:draw-arrays-instanced :triangles 0 6 (live-particles emitter))
-  (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha))
+  (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha)
+  (gl:depth-mask T))
 
 ;; FIXME: implement sorting?
 

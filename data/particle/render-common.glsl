@@ -14,7 +14,7 @@ out vec2 uv;
 out float size;
 out vec4 particle_color;
 
-void derive_particle_properties(in Particle particle, in uint vertex_id, in mat4 model_matrix){
+void derive_particle_properties(in Particle particle, in int vertex_id, in mat4 model_matrix){
   float interpolation = 1.0f - particle.life / particle.max_life;
   size = mix(particle.size_begin, particle.size_end, interpolation);
   float opacity = clamp(mix(1.0f, 0.0f, interpolation), 0.0f, 1.0f);

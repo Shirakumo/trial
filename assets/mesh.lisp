@@ -17,7 +17,7 @@
          (vbo (make-instance 'vertex-buffer :buffer-data buffer :buffer-type :array-buffer
                                             :data-usage data-usage :element-type :float
                                             :size (* (length buffer) (gl-type-size :float))))
-         (ebo (make-instance 'vertex-buffer :buffer-data (faces mesh) :buffer-type :element-array-buffer
+         (ebo (make-instance 'vertex-buffer :buffer-data (simplify (faces mesh)) :buffer-type :element-array-buffer
                                             :data-usage data-usage :element-type :unsigned-int
                                             :size (* (length (faces mesh)) (gl-type-size :unsigned-int))))
          (specs (loop with stride = (reduce #'+ sizes)
