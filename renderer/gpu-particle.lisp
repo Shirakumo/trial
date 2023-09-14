@@ -126,6 +126,7 @@
     ((particle-emitter-buffer)
      (particle-argument-buffer)
      (particle-counter-buffer)
+     (particle-force-fields-buffer :accessor particle-force-fields-buffer)
      (alive-particle-buffer-0 :buffer T)
      (alive-particle-buffer-1)
      (dead-particle-buffer)
@@ -173,7 +174,7 @@
   ;; FIXME: this sucks ass. We need to find a better way to ensure that gl-struct backing buffers don't leak.
   (with-all-slots-bound (emitter gpu-particle-emitter)
     (finalize particle-emitter-buffer)
-    (finalize particle-force-fields)
+    (finalize particle-force-fields-buffer)
     (finalize particle-argument-buffer)
     (finalize particle-counter-buffer)
     (finalize alive-particle-buffer-0)
@@ -185,53 +186,31 @@
     (finalize simulate-pass)))
 
 (defmethod (setf particle-force-fields) ((null null) (emitter gpu-particle-emitter))
-  (setf (particle-force-fields emitter) (// 'trial 'empty-force-fields)))
+  (setf (particle-force-fields-buffer emitter) (// 'trial 'empty-force-fields)))
 
-(defmethod (setf particle-force-fields) ((cons cons) (emitter gpu-particle-emitter))
-  (when (or (not (slot-boundp emitter 'particle-force-fields))
-            (generator (particle-force-fields emitter)))
-    ;; We have a hard max of 32 anyway in the shader....
-    (setf (particle-force-fields emitter) (make-instance 'particle-force-fields :size 32)))
-  (let ((size (length cons))
-        (struct (buffer-data (particle-force-fields emitter))))
-    ;; FIXME: copy over and resize instead of this nonsense.
-    (setf (slot-value struct 'particle-force-field-count) size)
-    (loop for info in cons
-          for i from 0
-          for target = (elt (slot-value struct 'particle-force-fields) i)
-          do (destructuring-bind (&key (type :point) (position (vec 0 0 0)) (strength 0.0) (range 0.0) (normal +vy3+)) info
-               (setf (slot-value target 'type) (ecase type
-                                                 ((NIL :none) 0)
-                                                 (:point 1)
-                                                 (:direction 2)
-                                                 (:plane 3)
-                                                 (:vortex 4)
-                                                 (:sphere 5)
-                                                 (:planet 6)))
-               (setf (slot-value target 'position) position)
-               (setf (slot-value target 'strength) strength)
-               (setf (slot-value target 'range) range)
-               (setf (slot-value target 'inv-range) (if (= 0.0 range) 0.0 (/ range)))
-               (setf (slot-value target 'normal) normal)))
-    (when (allocated-p (particle-force-fields emitter))
-      (update-buffer-data (particle-force-fields emitter) T))))
+(defmethod (setf particle-force-fields) :after ((cons cons) (emitter gpu-particle-emitter))
+  (when (allocated-p (particle-force-fields-buffer emitter))
+    (update-buffer-data (particle-force-fields-buffer emitter) T)))
 
 (defmethod (setf particle-force-fields) ((struct particle-force-fields) (emitter gpu-particle-emitter))
-  (cond ((not (slot-boundp emitter 'particle-force-fields))
-         (setf (particle-force-fields emitter) (make-instance 'shader-storage-buffer :struct NIL :binding NIL)))
+  (cond ((not (slot-boundp emitter 'particle-force-fields-buffer))
+         (setf (particle-force-fields-buffer emitter) (make-instance 'shader-storage-buffer :struct NIL :binding NIL)))
         ;; FIXME: potentially leaky!!
         ;; IF the buffer wasn't generated then we probably constructed it and thus own the data.
         ;; Free it here since we're replacing it.
-        ((not (generator (particle-force-fields emitter)))
-         (unless (eq struct (buffer-data (particle-force-fields emitter)))
-           (finalize (buffer-data (particle-force-fields emitter))))))
-  (setf (buffer-data (particle-force-fields emitter)) struct)
-  (when (allocated-p (particle-force-fields emitter))
-    (resize-buffer-data (particle-force-fields emitter) T)))
+        ((not (generator (particle-force-fields-buffer emitter)))
+         (unless (eq struct (buffer-data (particle-force-fields-buffer emitter)))
+           (finalize (buffer-data (particle-force-fields-buffer emitter))))))
+  (setf (buffer-data (particle-force-fields-buffer emitter)) struct)
+  (when (allocated-p (particle-force-fields-buffer emitter))
+    (resize-buffer-data (particle-force-fields-buffer emitter) T)))
 
 (defmethod (setf particle-force-fields) ((buffer resource) (emitter gpu-particle-emitter))
-  (setf (slot-value emitter 'particle-force-fields) buffer)
+  (setf (slot-value emitter 'particle-force-fields-buffer) buffer)
   (setf (slot-value (slot-value emitter 'simulate-pass) 'particle-force-fields) buffer))
+
+(defmethod particle-force-fields ((emitter gpu-particle-emitter))
+  (particle-force-fields-buffer emitter))
 
 (defmethod (setf mesh-index-buffer) (buffer (emitter gpu-particle-emitter))
   (setf (mesh-index-buffer (slot-value emitter 'emit-pass)) buffer))
@@ -243,6 +222,10 @@
   (with-buffer-tx (struct (slot-value emitter 'particle-emitter-buffer) :update NIL)
     (setf (mesh-index-count struct) (size (vertex-array emitter)))
     (setf (mesh-vertex-stride struct) stride)))
+
+(defmethod live-particles ((emitter gpu-particle-emitter))
+  (with-buffer-tx (struct (slot-value emitter 'trial::particle-counter-buffer) :update :read)
+    (slot-value struct 'trial::alive-count)))
 
 (macrolet ((define-delegate (accessor &optional (inner accessor))
              `(progn (defmethod ,accessor ((emitter gpu-particle-emitter))
@@ -319,8 +302,8 @@
   (when scaling (setf (scaling particle-emitter) scaling))
   (when orientation (setf (orientation particle-emitter) orientation))
   (when vertex-array (setf (vertex-array particle-emitter) vertex-array))
-  (with-all-slots-bound (particle-emitter particle-emitter)
-    (with-buffer-tx (struct particle-emitter-buffer)
+  (with-all-slots-bound (particle-emitter gpu-particle-emitter)
+    (with-buffer-tx (struct particle-emitter)
       (setf (emit-count struct) count)
       (setf (randomness struct) (random 1.0)))
     (%gl:bind-buffer :dispatch-indirect-buffer (gl-name particle-argument-buffer))

@@ -428,6 +428,7 @@
    #:particle-rate
    #:vertex-array
    #:max-particles
+   #:live-particles
    #:particle-force-fields
    #:particle-options
    #:particle-size

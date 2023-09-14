@@ -12,10 +12,7 @@
                         :particle-options `(:velocity -10.0 :randomness 0.5 :size 0.1 :scaling 1.0
                                             :lifespan 10.0 :lifespan-randomness 0.5
                                             :color ,(vec 0.5 0.3 0.1))) scene)
-  (observe! (let ((emitter (unit :emitter (scene +main+))))
-              (with-buffer-tx (struct (slot-value emitter 'trial::particle-counter-buffer) :update :read)
-                (slot-value struct 'trial::alive-count)))
-            :title "Alive Particles")
+  (observe! (live-particles (node :emitter T)) :title "Alive Particles")
   (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)
   (enter (make-instance 'editor-camera :location (VEC3 0.0 2.3 7.3) :fov 50 :move-speed 0.1) scene)
   ;; Need a standard render pass here because we need the standard-environment-information.

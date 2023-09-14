@@ -2,12 +2,17 @@
 
 (define-example cpu-particle
   (gl:clear-color 0 0 0 0)
-  (enter (make-instance 'target-camera :location (vec 0 5 -5)) scene)
+  (enter (make-instance 'display-controller) scene)
   (enter (make-instance 'cpu-particle-emitter
-                        :name :emitter :max-particles 100 :particle-rate 10
+                        :name :emitter :max-particles 200 :particle-rate 100
+                        :particle-force-fields `((:type :direction :strength -5.0)
+                                                 (:type :vortex :strength 10.0))
                         :texture (assets:// :circle-05)
-                        :vertex-array (// 'trial 'unit-point)
-                        :particle-options `(:velocity -5.0 :randomness 0.0 :size 0.1 :scaling 1.0
-                                            :lifespan 1.0 :lifespan-randomness 0.0)) scene)
+                        :orientation (qfrom-angle +vx+ (deg->rad 90))
+                        :particle-options `(:velocity -10.0 :randomness 0.5 :size 0.1 :scaling 1.0
+                                            :lifespan 10.0 :lifespan-randomness 0.5
+                                            :color ,(vec 0.5 0.3 0.1))) scene)
+  (observe! (live-particles (node :emitter T)) :title "Alive Particles")
   (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)
+  (enter (make-instance 'editor-camera :location (VEC3 0.0 2.3 7.3) :fov 50 :move-speed 0.1) scene)
   (enter (make-instance 'phong-render-pass) scene))

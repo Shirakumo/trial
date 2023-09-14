@@ -253,7 +253,7 @@
           (%emit-particle particles properties live-particles prop (vrand (vec 0.5 0.5 0.5))
                           particle-randomness particle-lifespan-randomness mat
                           particle-velocity particle-rotation particle-lifespan
-                          particle-size particle-scaling particle-color
+                          particle-size particle-scaling particle-full-color
                           vertex-data vertex-stride index-data)
           (incf live-particles))))
     (when (< 0 live-particles)

@@ -140,7 +140,7 @@
     ;; We have a hard max of 32 anyway in the shader....
     (setf (particle-force-fields emitter) (make-instance 'particle-force-fields :size 32)))
   (let ((size (length cons))
-        (struct (buffer-data (particle-force-fields emitter))))
+        (struct (particle-force-fields emitter)))
     ;; FIXME: copy over and resize instead of this nonsense.
     (setf (slot-value struct 'particle-force-field-count) size)
     (loop for info in cons
@@ -159,6 +159,4 @@
                (setf (slot-value target 'strength) strength)
                (setf (slot-value target 'range) range)
                (setf (slot-value target 'inv-range) (if (= 0.0 range) 0.0 (/ range)))
-               (setf (slot-value target 'normal) normal)))
-    (when (allocated-p (particle-force-fields emitter))
-      (update-buffer-data (particle-force-fields emitter) T))))
+               (setf (slot-value target 'normal) normal)))))
