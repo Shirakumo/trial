@@ -7,6 +7,46 @@
   (location (vec 0 0 0) :type vec3)
   (velocity (vec 0 0 0) :type vec3))
 
+(defmethod apply-force ((field particle-force-field) (particle raw-particle) dt)
+  (let ((force (vec 0 0 0))
+        (location (raw-particle-location particle))
+        (velocity (raw-particle-velocity particle)))
+    (declare (dynamic-extent force))
+    (with-slots (type position strength range inv-range normal) field
+      (ecase type
+        (0)
+        (1 ; Point
+         (let ((dir (v- position location)))
+           (nv+* force dir (* strength (- 1 (clamp 0.0 (* (vlength dir) inv-range) 1.0))))))
+        (2 ; Direction
+         (nv+* force normal strength))
+        (3 ; Plane
+         (let ((dist (v. normal (v- location position))))
+           (nv+* force normal (* strength (- 1 (clamp 0.0 (* dist inv-range) 1.0))))))
+        (4 ; Vortex
+         (let* ((dir (v- location position))
+                (t0 (/ (v. normal dir) (v. normal normal)))
+                (dist (vdistance location (v* position t0)))
+                (perp (nvunit (vc normal dir))))
+           (nv+* force perp (* strength (- 1 (clamp 0.0 (* dist inv-range) 1.0))))))
+        (5 ; Sphere
+         (let* ((dir (v- position location))
+                (dist (vlength dir)))
+           (when (< dist range)
+             (let* ((push (nvunit (nv- dir)))
+                    (slide (vc (vc velocity push) (v- push))))
+               (nv+* force (v- slide velocity) (/ dt))))))
+        (6 ; Planet
+         (let* ((dir (v- position location))
+                (dist (vlength dir)))
+           (cond ((< dist range)
+                  (let* ((push (nvunit (nv- dir)))
+                         (slide (vc (vc velocity push) (v- push))))
+                    (nv+* force (v- slide velocity) (/ dt))))
+                 (T
+                  (nv+* force dir (/ strength (* dist dist)))))))))
+    (nv+* (raw-particle-velocity particle) force dt)))
+
 (defun %simulate-particle (data in out dt force-fields)
   (declare (type (simple-array single-float (*)) data))
   (declare (type (unsigned-byte 32) in out))

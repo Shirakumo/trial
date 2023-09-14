@@ -13,19 +13,6 @@ vec3 evaluate_force_field_direction(in ParticleForceField field, in Particle par
   return field.normal * field.strength;
 }
 
-vec3 evaluate_force_field_planet(in ParticleForceField field, in Particle particle){
-  vec3 dir = field.position - particle.position;
-  float dist = length(dir);
-  if(dist < field.range){
-    // Same as sphere below.
-    vec3 push = normalize(-dir);
-    vec3 slide = cross(cross(particle.velocity, push), -push);
-    return (slide-particle.velocity) / dt;
-  }else{
-    return dir * field.strength / (dist * dist);
-  }
-}
-
 vec3 evaluate_force_field_plane(in ParticleForceField field, in Particle particle){
   float dist = dot(field.normal, particle.position - field.position);
   return field.normal * field.strength * (1 - clamp(dist * field.inv_range, 0.0, 1.0));
@@ -48,6 +35,19 @@ vec3 evaluate_force_field_sphere(in ParticleForceField field, in Particle partic
     return (slide-particle.velocity) / dt;
   }
   return vec3(0);
+}
+
+vec3 evaluate_force_field_planet(in ParticleForceField field, in Particle particle){
+  vec3 dir = field.position - particle.position;
+  float dist = length(dir);
+  if(dist < field.range){
+    // Same as sphere above.
+    vec3 push = normalize(-dir);
+    vec3 slide = cross(cross(particle.velocity, push), -push);
+    return (slide-particle.velocity) / dt;
+  }else{
+    return dir * field.strength / (dist * dist);
+  }
 }
 
 vec3 evaluate_force_field(in ParticleForceField field, in Particle particle){
