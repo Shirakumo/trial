@@ -57,17 +57,14 @@
          (vel (vec (aref data (+ in 3))
                    (aref data (+ in 4))
                    (aref data (+ in 5))))
-         (acc (vec 0 0 0))
          (tt (aref data (+ in 6)))
          (particle (make-raw-particle loc vel)))
-    (declare (dynamic-extent loc vel acc particle))
-    ;; Apply force fields
+    (declare (dynamic-extent loc vel particle))
+    ;; Perform simulation
     (loop with fields = (particle-force-fields force-fields)
           for i from 0 below (particle-force-field-count force-fields)
           for field = (aref fields i)
           do (apply-force field particle dt))
-    ;; Simulate
-    (nv+* vel acc dt)
     (nv+* loc vel dt)
     ;; Store
     (setf (aref data (+ out 0)) (vx loc))
@@ -249,8 +246,9 @@
     (let ((mat (tmat (tf emitter))))
       (declare (dynamic-extent mat))
       (dotimes (i (min count (length free-list)))
-        (let ((prop (vector-pop free-list)))
-          (%emit-particle particles properties live-particles prop (vrand (vec 0.5 0.5 0.5))
+        (let ((pos (* 8 live-particles))
+              (prop (vector-pop free-list)))
+          (%emit-particle particles properties pos prop (vrand (vec 0.5 0.5 0.5))
                           particle-randomness particle-lifespan-randomness mat
                           particle-velocity particle-rotation particle-lifespan
                           particle-size particle-scaling particle-full-color

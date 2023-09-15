@@ -4,7 +4,7 @@
   (gl:clear-color 0 0 0 0)
   (enter (make-instance 'display-controller) scene)
   (enter (make-instance 'cpu-particle-emitter
-                        :name :emitter :max-particles 200 :particle-rate 100
+                        :name :emitter :max-particles 200 :particle-rate 20
                         :particle-force-fields `((:type :direction :strength -5.0)
                                                  (:type :vortex :strength 10.0))
                         :texture (assets:// :circle-05)
