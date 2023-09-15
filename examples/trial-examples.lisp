@@ -18,7 +18,7 @@
 (defclass example (main)
   ((paused-p :initform NIL :accessor paused-p))
   (:default-initargs :clear-color (vec 0.13 0.15 0.1)
-                     :context '(:vsync T)))
+                     :context '(:vsync T :version (4 3))))
 
 (defmethod initialize-instance ((main example) &key example)
   (when example
