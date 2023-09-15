@@ -139,8 +139,9 @@
   (declare (type vec3 randoms))
   (let* ((location (vec 0 0 0))
          (normal (vec 0 0 0))
-         (velocity (vec velocity velocity velocity)))
-    (declare (dynamic-extent location normal velocity))
+         (velocity (vec velocity velocity velocity))
+         (matrix (mtranspose matrix)))
+    (declare (dynamic-extent location normal velocity matrix))
     ;; Evaluate static particle properties first
     (random-point-on-mesh-surface vertex-data vertex-stride faces randoms location normal)
     (n*m4/3 matrix normal)
@@ -154,6 +155,9 @@
     (when (logbitp 31 color) (setf (ldb (byte 1 31) color) (round (vy randoms))))
     (setf (aref properties (+ prop 4)) (float-features:bits-single-float color))
     ;; We pad the matrix to offset 8 to get things vec4 aligned.
+    (setf (aref properties (+ prop 5)) 0.0)
+    (setf (aref properties (+ prop 6)) 0.0)
+    (setf (aref properties (+ prop 7)) 0.0)
     (replace properties (marr4 matrix) :start1 (+ prop 8))
     ;; Now set dynamic particle properties
     (setf (aref particles (+ pos 0)) (vx location))

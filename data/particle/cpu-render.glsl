@@ -19,22 +19,15 @@ struct Particle{
 
 void main(){
   int vertex_id = gl_VertexID;
-  int instance = gl_InstanceID;
+  int prop = gl_InstanceID*6;
+  vec4 a = texelFetch(particle_data, prop+0, 0);
+  uint c = floatBitsToUint(texelFetch(particle_data, prop+1, 0).r);
 
-  vec4 a = texelFetch(particle_data, instance*6+0, 0);
-  
-  Particle particle = Particle(pos,
-                               vel,
-                               life,
-                               a.x,
-                               a.y,
-                               a.z,
-                               a.w,
-                               floatBitsToUint(texelFetch(particle_data, instance*6+1, 0).r));
-  mat4 model_matrix = mat4(texelFetch(particle_data, instance*6 + 2, 0),
-                           texelFetch(particle_data, instance*6 + 3, 0),
-                           texelFetch(particle_data, instance*6 + 4, 0),
-                           texelFetch(particle_data, instance*6 + 5, 0));
+  Particle particle = Particle(pos, vel, life, a.x, a.y, a.z, a.w, c);
+  mat4 model_matrix = mat4(texelFetch(particle_data, prop+2, 0),
+                           texelFetch(particle_data, prop+3, 0),
+                           texelFetch(particle_data, prop+4, 0),
+                           texelFetch(particle_data, prop+5, 0));
 
   derive_particle_properties(particle, vertex_id, model_matrix);
 }
