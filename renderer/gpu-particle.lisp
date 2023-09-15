@@ -186,7 +186,7 @@
     (finalize simulate-pass)))
 
 (defmethod (setf particle-force-fields) ((null null) (emitter gpu-particle-emitter))
-  (setf (particle-force-fields-buffer emitter) (// 'trial 'empty-force-fields)))
+  (setf (particle-force-fields emitter) (// 'trial 'empty-force-fields)))
 
 (defmethod (setf particle-force-fields) :after ((cons cons) (emitter gpu-particle-emitter))
   (when (allocated-p (particle-force-fields-buffer emitter))
@@ -194,7 +194,7 @@
 
 (defmethod (setf particle-force-fields) ((struct particle-force-fields) (emitter gpu-particle-emitter))
   (cond ((not (slot-boundp emitter 'particle-force-fields-buffer))
-         (setf (particle-force-fields-buffer emitter) (make-instance 'shader-storage-buffer :struct NIL :binding NIL)))
+         (setf (particle-force-fields emitter) (make-instance 'shader-storage-buffer :struct NIL :binding NIL)))
         ;; FIXME: potentially leaky!!
         ;; IF the buffer wasn't generated then we probably constructed it and thus own the data.
         ;; Free it here since we're replacing it.
@@ -210,7 +210,7 @@
   (setf (slot-value (slot-value emitter 'simulate-pass) 'particle-force-fields) buffer))
 
 (defmethod particle-force-fields ((emitter gpu-particle-emitter))
-  (particle-force-fields-buffer emitter))
+  (buffer-data (particle-force-fields-buffer emitter)))
 
 (defmethod (setf mesh-index-buffer) (buffer (emitter gpu-particle-emitter))
   (setf (mesh-index-buffer (slot-value emitter 'emit-pass)) buffer))
