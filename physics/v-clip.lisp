@@ -694,7 +694,7 @@
       (next))))
 
 (defun global-to-relative-mat (m1 m2 &optional (m12 (mat4)))
-  (nm* (minv-affine m1 m12) m2))
+  (nm* (!minv-affine m12 m1) m2))
 
 (defun %vclip (state cf1 cf2 m12 m21 mesh1 mesh2 max-iterations)
   (dotimes (i max-iterations (values state NIL))
