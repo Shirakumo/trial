@@ -110,7 +110,7 @@
         (combine (make-instance 'blend-pass)))
     (connect (port game 'color) (port combine 'a-pass) scene)
     (connect (port ui 'color) (port combine 'b-pass) scene))
-  (enter (make-instance '3d-camera :location (vec 0 0 -2.5)) scene)
+  (enter (make-instance 'pivot-camera :radius 2.5) scene)
   (let ((structure (make-instance 'spatial-structure
                                   :q (ecase :kd
                                        (:kd (org.shirakumo.fraf.trial.space.kd-tree:make-kd-tree))

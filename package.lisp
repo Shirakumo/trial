@@ -731,6 +731,9 @@
    #:target-camera
    #:target
    #:up
+   #:pivot-camera
+   #:rotation
+   #:radius
    #:following-camera
    #:fps-camera
    #:rotation

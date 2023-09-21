@@ -169,6 +169,27 @@
 (defmethod focal-point ((camera target-camera))
   (global-location (target camera)))
 
+(defclass pivot-camera (target-camera)
+  ((rotation :initform (quat) :accessor rotation)
+   (radius :initform 1.0 :initarg :radius :accessor radius)))
+
+(defmethod initialize-instance :after ((camera pivot-camera) &key)
+  (setf (rotation camera) (rotation camera)))
+
+(defmethod (setf rotation) :after (r (camera pivot-camera))
+  (vsetf (location camera) (radius camera) 0 0)
+  (!q* (location camera) (rotation camera) (location camera)))
+
+(define-handler (pivot-camera mouse-move) (old-pos pos)
+  ;; FIXME: this isn't right yet.
+  (when (or (retained :middle)
+            (retained :left-control))
+    (let ((dp (vyx (v- pos old-pos)))
+          (rot (rotation pivot-camera)))
+      (nq* rot (qfrom-angle +vx+ (* -0.01 (vx dp))))
+      (nq* rot (qfrom-angle +vy+ (* -0.01 (vy dp))))
+      (setf (rotation pivot-camera) rot))))
+
 (defclass following-camera (target-camera)
   ()
   (:default-initargs
