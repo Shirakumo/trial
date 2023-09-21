@@ -6,6 +6,7 @@
    (#:alloy #:org.shirakumo.alloy)
    (#:trial-alloy #:org.shirakumo.fraf.trial.alloy)
    (#:assets #:org.shirakumo.fraf.trial.assets)
+   (#:spaces #:org.shirakumo.fraf.trial.space)
    (#:v #:org.shirakumo.verbose))
   (:export #:launch))
 

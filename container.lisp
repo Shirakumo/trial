@@ -41,6 +41,8 @@
 (defclass container (scene-node sequences:sequence)
   ())
 
+(defmethod apply-transforms progn ((container container)))
+
 (defmethod contains-p ((node scene-node) (container container))
   (eq (container node) container))
 

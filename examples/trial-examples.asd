@@ -12,7 +12,8 @@
                (:file "vclip")
                (:file "gjk")
                (:file "cpu-particle")
-               (:file "gpu-particle"))
+               (:file "gpu-particle")
+               (:file "spatial-query"))
   :depends-on (:trial-glfw
                :trial-alloy
                :trial-jpeg-turbo
