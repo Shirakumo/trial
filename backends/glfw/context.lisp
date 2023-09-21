@@ -376,10 +376,10 @@
     (T key)))
 
 (defmethod local-key-string ((context context) (scancode integer))
-  (get-key-name :unknown scancode))
+  (%glfw:get-key-name :unknown scancode))
 
 (defmethod local-key-string ((context context) (key symbol))
-  (get-key-name (key->glfw-key key) 0))
+  (%glfw:get-key-name (key->glfw-key key) 0))
 
 (defmethod current-monitor ((context context))
   (glfw:monitor context))
