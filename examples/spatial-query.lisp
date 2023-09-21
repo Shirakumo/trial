@@ -16,14 +16,28 @@
   (nv* (spaces:region-size region) 2)
   region)
 
+(define-shader-entity ubox* (ubox)
+  ((color :initform (vec4 1))))
+
+(defmethod render ((ubox ubox*) (program shader-program))
+  (with-pushed-features
+    (disable-feature :cull-face)
+    (gl:polygon-mode :front-and-back :line)
+    (call-next-method)
+    (gl:polygon-mode :front-and-back :fill)))
+
 (defclass spatial-structure (trial:array-container listener)
   ((q :initarg :q  :accessor q)
-   (f :initarg :f :accessor f)
+   (f :initarg :f :initform (make-instance 'ubox* :scaling (vec3 0.5)) :accessor f)
    (dirty :initform NIL :accessor dirty)))
+
+(defmethod initialize-instance :after ((structure spatial-structure) &key)
+  (enter (f structure) structure))
 
 (defmethod enter :after ((box ubox) (structure spatial-structure))
   (setf (dirty structure) T)
-  (spaces:enter box (q structure)))
+  (unless (eql box (f structure))
+    (spaces:enter box (q structure))))
 
 (defmethod leave :after ((box ubox) (structure spatial-structure))
   (setf (dirty structure) T)
@@ -36,7 +50,8 @@
 (defmethod (setf q) :after ((q spaces:container) (structure spatial-structure))
   (setf (dirty structure) T)
   (for:for ((entity over structure))
-    (spaces:enter entity q)))
+    (unless (eql entity (f structure))
+      (spaces:enter entity q))))
 
 (defmethod start-frame ((structure spatial-structure))
   (spaces:do-all (e (q structure))
@@ -83,7 +98,8 @@
     (let ((size (alloy:represent cube-size 'alloy:ranged-wheel :range '(0.001 . 0.5) :step 0.01 :layout-parent layout :focus-parent focus)))
       (alloy:on alloy:value (value size)
         (for:for ((entity over structure))
-          (setf (scaling entity) (vec3 cube-size)))
+          (unless (eql entity (f structure))
+            (setf (scaling entity) (vec3 cube-size))))
         (spaces:clear (q structure))
         (setf (q structure) (q structure))))
     (alloy:finish-structure panel layout focus)))
@@ -98,8 +114,7 @@
   (let ((structure (make-instance 'spatial-structure
                                   :q (ecase :kd
                                        (:kd (org.shirakumo.fraf.trial.space.kd-tree:make-kd-tree))
-                                       (:grid (org.shirakumo.fraf.trial.space.grid3:make-grid 0.01 :bsize (vec3 1))))
-                                  :f (make-instance 'ubox :scaling (vec3 0.5)))))
+                                       (:grid (org.shirakumo.fraf.trial.space.grid3:make-grid 0.01 :bsize (vec3 1)))))))
     (enter structure scene)
     (loop for i from 0 below 1000
           for box = (make-instance 'ubox :location (vrand (vec3 0) (vec3 2)) :scaling (vec3 0.01))
