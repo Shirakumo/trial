@@ -46,16 +46,22 @@
     (alloy:do-elements (element vec)
       (setf (alloy:value element) (funcall (pop els) (alloy:value vec))))))
 
+(defmacro %vec-slot (vec accessor label)
+  `(let ((comp (alloy:represent (,accessor object) 'alloy:wheel :step step)))
+     (when labels (alloy:enter (alloy:represent ,label 'alloy:label :style '((:label :halign :middle))) ,vec))
+     (alloy:enter comp ,vec)
+     (alloy:on alloy:value (v comp)
+       (declare (ignore v))
+       (alloy:notify-observers 'alloy:value vec (alloy:value vec) vec))))
+
 (defclass vec2 (vec)
   ())
 
 (defmethod initialize-instance :after ((vec vec2) &key labels (step 0.1))
   (let ((object (alloy:value vec)))
     (setf (alloy:col-sizes vec) (if labels '(20 T 20 T) '(T T)))
-    (when labels (alloy:enter (alloy:represent "X" 'alloy:label :style '((:label :halign :middle))) vec))
-    (alloy:enter (alloy:represent (math:vx2 object) 'alloy:wheel :step step) vec)
-    (when labels (alloy:enter (alloy:represent "Y" 'alloy:label :style '((:label :halign :middle))) vec))
-    (alloy:enter (alloy:represent (math:vy2 object) 'alloy:wheel :step step) vec)))
+    (%vec-slot vec math:vx2 "X")
+    (%vec-slot vec math:vy2 "Y")))
 
 (defmethod alloy:component-class-for-object ((_ math:vec2)) (find-class 'vec2))
 
@@ -65,12 +71,9 @@
 (defmethod initialize-instance :after ((vec vec3) &key labels (step 0.1))
   (let ((object (alloy:value vec)))
     (setf (alloy:col-sizes vec) (if labels '(20 T 20 T 20 T) '(T T T)))
-    (when labels (alloy:enter (alloy:represent "X" 'alloy:label :style '((:label :halign :middle))) vec))
-    (alloy:enter (alloy:represent (math:vx3 object) 'alloy:wheel :step step) vec)
-    (when labels (alloy:enter (alloy:represent "Y" 'alloy:label :style '((:label :halign :middle))) vec))
-    (alloy:enter (alloy:represent (math:vy3 object) 'alloy:wheel :step step) vec)
-    (when labels (alloy:enter (alloy:represent "Z" 'alloy:label :style '((:label :halign :middle))) vec))
-    (alloy:enter (alloy:represent (math:vz3 object) 'alloy:wheel :step step) vec)))
+    (%vec-slot vec math:vx3 "X")
+    (%vec-slot vec math:vy3 "Y")
+    (%vec-slot vec math:vz3 "Z")))
 
 (defmethod alloy:component-class-for-object ((_ math:vec3)) (find-class 'vec3))
 
@@ -80,14 +83,10 @@
 (defmethod initialize-instance :after ((vec vec4) &key labels (step 0.1))
   (let ((object (alloy:value vec)))
     (setf (alloy:col-sizes vec) (if labels '(20 T 20 T 20 T 20 T) '(T T T T)))
-    (when labels (alloy:enter (alloy:represent "X" 'alloy:label :style '((:label :halign :middle))) vec))
-    (alloy:enter (alloy:represent (math:vx4 object) 'alloy:wheel :step step) vec)
-    (when labels (alloy:enter (alloy:represent "Y" 'alloy:label :style '((:label :halign :middle))) vec))
-    (alloy:enter (alloy:represent (math:vy4 object) 'alloy:wheel :step step) vec)
-    (when labels (alloy:enter (alloy:represent "Z" 'alloy:label :style '((:label :halign :middle))) vec))
-    (alloy:enter (alloy:represent (math:vz4 object) 'alloy:wheel :step step) vec)
-    (when labels (alloy:enter (alloy:represent "W" 'alloy:label :style '((:label :halign :middle))) vec))
-    (alloy:enter (alloy:represent (math:vw4 object) 'alloy:wheel :step step) vec)))
+    (%vec-slot vec math:vx4 "X")
+    (%vec-slot vec math:vy4 "Y")
+    (%vec-slot vec math:vz4 "Z")
+    (%vec-slot vec math:vw4 "W")))
 
 (defmethod alloy:component-class-for-object ((_ math:vec4)) (find-class 'vec4))
 
