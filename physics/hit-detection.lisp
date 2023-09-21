@@ -1,5 +1,9 @@
 (in-package #:org.shirakumo.fraf.trial)
 
+(define-distance (sphere sphere)
+  (- (vdistance (global-location a) (global-location b))
+     (sphere-radius a) (sphere-radius b)))
+
 (define-hit-detector (sphere sphere)
   (let* ((al (global-location a))
          (bl (global-location b))
@@ -14,6 +18,11 @@
       (setf (hit-depth hit) (- (+ (sphere-radius a) (sphere-radius b)) len))
       (finish-hit))))
 
+(define-distance (sphere half-space)
+  (- (v. (plane-normal b) (global-location a))
+     (sphere-radius a)
+     (plane-offset b)))
+
 (define-hit-detector (sphere half-space)
   (let* ((al (global-location a))
          (dist (- (v. (plane-normal b) al)
@@ -25,6 +34,11 @@
       (v<- (hit-location hit) al)
       (nv+* (hit-location hit) (plane-normal b) (- (+ dist (sphere-radius a))))
       (finish-hit))))
+
+(define-distance (sphere plane)
+  (- (abs (- (v. (plane-normal b) (global-location a))
+             (plane-offset b)))
+     (sphere-radius a)))
 
 (define-hit-detector (sphere plane)
   (let* ((al (global-location a))

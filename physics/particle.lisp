@@ -85,21 +85,21 @@
       (finish-hit))))
 
 (defclass particle-rod (particle-link)
-  ((distance :initarg :distance :accessor distance)))
+  ((rest-length :initarg :rest-length :accessor rest-length)))
 
 (define-hit-generation (link particle-rod)
   (let ((length (vdistance (location (a link)) (location (b link)))))
-    (unless (= length (distance link))
+    (unless (= length (rest-length link))
       (setf (hit-a hit) (a link))
       (setf (hit-b hit) (b link))
       (v<- (hit-normal hit) (location (b link)))
       (nv- (hit-normal hit) (location (a link)))
       (nvunit (hit-normal hit))
-      (cond ((< (distance link) length)
-             (setf (hit-depth hit) (- length (distance link))))
+      (cond ((< (rest-length link) length)
+             (setf (hit-depth hit) (- length (rest-length link))))
             (T
              (nv- (hit-normal hit))
-             (setf (hit-depth hit) (- (distance link) length))))
+             (setf (hit-depth hit) (- (rest-length link) length))))
       (setf (hit-restitution hit) 0.0)
       (finish-hit))))
 

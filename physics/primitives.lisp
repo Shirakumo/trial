@@ -1,7 +1,14 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defgeneric intersects-p (a b))
+(defgeneric distance (a b))
 (defgeneric detect-hits (a b contacts start end))
+
+(defmethod distance ((a vec3) (b vec3))
+  (vdistance a b))
+
+(defmethod distance ((a vec2) (b vec2))
+  (vdistance a b))
 
 (defun detect-hit (a b &optional (hit (make-hit)))
   (let ((array (make-array 1)))
@@ -15,6 +22,18 @@
   (let ((hit (make-hit)))
     (declare (dynamic-extent hit))
     (not (null (detect-hit a b hit)))))
+
+(defmacro define-distance ((a b) &body body)
+  (let ((av (intern "A")) (bv (intern "B"))
+        (block (gensym "BLOCK")))
+    `(progn
+       (defmethod distance ((,av ,a) (,bv ,b))
+         (block ,block
+           ,@body))
+       ,@(unless (eql a b)
+           `((defmethod distance ((b ,b) (a ,a))
+               (block ,block
+                 ,@body)))))))
 
 (defmacro define-hit-detector ((a b) &body body)
   (let ((av (intern "A")) (bv (intern "B"))
