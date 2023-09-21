@@ -167,7 +167,13 @@
   (glfw:cursor context))
 
 (defmethod (setf cursor) (cursor (context context))
-  (setf (glfw:cursor context) cursor))
+  (setf (glfw:cursor context) (case cursor
+                                ((:cursor :pointer) :arrow)
+                                (:text :ibeam)
+                                (:hand :pointing-hand)
+                                (:resize :resize-all)
+                                (:disallowed :not-allowed)
+                                (T cursor))))
 
 (defmethod (setf icon) ((icon rgba-icon) (context context))
   (setf (glfw:icon context) (list (list (rgba-icon-data icon)
