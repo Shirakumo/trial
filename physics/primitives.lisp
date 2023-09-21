@@ -35,6 +35,18 @@
                (block ,block
                  ,@body)))))))
 
+(defmacro define-intersection-test ((a b) &body body)
+  (let ((av (intern "A")) (bv (intern "B"))
+        (block (gensym "BLOCK")))
+    `(progn
+       (defmethod intersects-p ((,av ,a) (,bv ,b))
+         (block ,block
+           ,@body))
+       ,@(unless (eql a b)
+           `((defmethod intersects-p ((b ,b) (a ,a))
+               (block ,block
+                 ,@body)))))))
+
 (defmacro define-hit-detector ((a b) &body body)
   (let ((av (intern "A")) (bv (intern "B"))
         (block (gensym "BLOCK")))

@@ -4,6 +4,10 @@
   (- (vdistance (global-location a) (global-location b))
      (sphere-radius a) (sphere-radius b)))
 
+(define-intersection-test (sphere sphere)
+  (< (vdistance (global-location a) (global-location b))
+     (+ (sphere-radius a) (sphere-radius b))))
+
 (define-hit-detector (sphere sphere)
   (let* ((al (global-location a))
          (bl (global-location b))
@@ -23,6 +27,10 @@
      (sphere-radius a)
      (plane-offset b)))
 
+(define-intersection-test (sphere half-space)
+  (< (v. (plane-normal b) (global-location a))
+     (+ (sphere-radius a) (plane-offset b))))
+
 (define-hit-detector (sphere half-space)
   (let* ((al (global-location a))
          (dist (- (v. (plane-normal b) al)
@@ -37,6 +45,11 @@
 
 (define-distance (sphere plane)
   (- (abs (- (v. (plane-normal b) (global-location a))
+             (plane-offset b)))
+     (sphere-radius a)))
+
+(define-intersection-test (sphere plane)
+  (< (abs (- (v. (plane-normal b) (global-location a))
              (plane-offset b)))
      (sphere-radius a)))
 
