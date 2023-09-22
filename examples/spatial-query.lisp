@@ -11,9 +11,10 @@
   (unless region
     (setf region (spaces:region 0 0 0 0 0 0)))
   (v<- region (location object))
-  (nv- region (scaling object))
-  (v<- (spaces:region-size region) (scaling object))
-  (nv* (spaces:region-size region) 2)
+  (let ((size/2 (v* (vec .5 .5 .5) (scaling object))))
+    (nv- region size/2)
+    (v<- (spaces:region-size region) size/2)
+    (nv* (spaces:region-size region) 2))
   region)
 
 (define-shader-entity ubox* (ubox)
