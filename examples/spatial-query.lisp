@@ -86,18 +86,28 @@
 (defclass query-panel (trial-alloy:panel) ())
 
 (defmethod initialize-instance :after ((panel query-panel) &key structure)
-  (let ((layout (make-instance 'alloy:grid-layout :col-sizes '(100 100 T) :row-sizes '(30)))
+  (let ((layout (make-instance 'alloy:grid-layout :col-sizes '(120 140 T) :row-sizes '(30)))
         (focus (make-instance 'alloy:vertical-focus-list))
+        (index-kind :kd)
         (cube-size 0.01))
-    (alloy:enter "query size" layout :row 0 :col 0)
+    (alloy:enter "index structure" layout :row 0 :col 0)
+    (let ((index-kind-select (alloy:represent index-kind 'alloy:combo-set :value-set '(:kd :grid) :layout-parent layout :focus-parent focus
+                                 )))
+      (alloy:on alloy:value (value index-kind-select)
+        (setf (spatial-index structure) (make-spatial-index index-kind))
+        (setf (dirty structure) T)))
+
+    (alloy:enter "query size" layout :row 1 :col 0)
     (let ((size (alloy:represent-with T (make-instance 'alloy:accessor-data :object structure :accessor #'bsize) :layout-parent layout :focus-parent focus)))
       (alloy:on alloy:value (value size)
         (setf (dirty structure) T)))
-    (alloy:enter "location" layout :row 1 :col 0)
+
+    (alloy:enter "location" layout :row 2 :col 0)
     (let ((loc (alloy:represent-with T (make-instance 'alloy:accessor-data :object structure :accessor #'location) :layout-parent layout :focus-parent focus)))
       (alloy:on alloy:value (value loc)
         (setf (dirty structure) T)))
-    (alloy:enter "cube size" layout :row 2 :col 0)
+
+    (alloy:enter "cube size" layout :row 3 :col 0)
     (let ((size (alloy:represent cube-size 'alloy:ranged-wheel :range '(0.001 . 0.5) :step 0.01 :layout-parent layout :focus-parent focus)))
       (alloy:on alloy:value (value size)
         (for:for ((entity over structure))
@@ -105,7 +115,14 @@
             (setf (scaling entity) (vec3 cube-size))))
         (spaces:clear (spatial-index structure))
         (setf (spatial-index structure) (spatial-index structure))))
+
     (alloy:finish-structure panel layout focus)))
+
+(defun make-spatial-index (kind)
+  (ecase kind
+    (:kd (org.shirakumo.fraf.trial.space.kd-tree:make-kd-tree))
+    (:grid (org.shirakumo.fraf.trial.space.grid3:make-grid
+            0.1 :bsize (vec3 3)))))
 
 (define-example spatial-query
   (let ((game (make-instance 'render-pass))
