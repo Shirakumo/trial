@@ -11,7 +11,7 @@
   (unless region
     (setf region (spaces:region 0 0 0 0 0 0)))
   (v<- region (location object))
-  (let ((size/2 (v* (vec .5 .5 .5) (scaling object))))
+  (let ((size/2 (v* (scaling object) .5)))
     (nv- region size/2)
     (v<- (spaces:region-size region) size/2)
     (nv* (spaces:region-size region) 2))
@@ -91,8 +91,7 @@
         (index-kind :kd)
         (cube-size 0.01))
     (alloy:enter "index structure" layout :row 0 :col 0)
-    (let ((index-kind-select (alloy:represent index-kind 'alloy:combo-set :value-set '(:kd :grid) :layout-parent layout :focus-parent focus
-                                 )))
+    (let ((index-kind-select (alloy:represent index-kind 'alloy:combo-set :value-set '(:kd :grid) :layout-parent layout :focus-parent focus)))
       (alloy:on alloy:value (value index-kind-select)
         (setf (spatial-index structure) (make-spatial-index index-kind))
         (setf (dirty structure) T)))
@@ -130,11 +129,9 @@
         (combine (make-instance 'blend-pass)))
     (connect (port game 'color) (port combine 'a-pass) scene)
     (connect (port ui 'color) (port combine 'b-pass) scene))
-  (enter (make-instance 'pivot-camera :radius 2.5) scene)
+  (enter (make-instance 'pivot-camera :radius 7) scene)
   (let ((structure (make-instance 'spatial-structure
-                                  :spatial-index (ecase :kd
-                                                   (:kd (org.shirakumo.fraf.trial.space.kd-tree:make-kd-tree))
-                                                   (:grid (org.shirakumo.fraf.trial.space.grid3:make-grid 0.01 :bsize (vec3 1)))))))
+                                  :spatial-index (make-spatial-index :kd))))
     (enter structure scene)
     (loop for i from 0 below 10000
           for box = (make-instance 'ubox :location (vrand (vec3 0) (vec3 6)) :scaling (vec3 0.05))
