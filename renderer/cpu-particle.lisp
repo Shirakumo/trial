@@ -8,6 +8,7 @@
   (velocity (vec 0 0 0) :type vec3))
 
 (defmethod apply-force ((field particle-force-field) (particle raw-particle) dt)
+  ;; FIXME: this produces a ton of garbage due to std430-refs from the field struct.
   (let ((force (vec 0 0 0))
         (location (raw-particle-location particle))
         (velocity (raw-particle-velocity particle)))
