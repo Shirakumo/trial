@@ -3,6 +3,7 @@ uniform sampler1D particle_data;
 layout(location = 0) in vec3 pos;
 layout(location = 1) in vec3 vel;
 layout(location = 2) in float life;
+layout(location = 3) in float in_prop;
 
 struct Particle{
   vec3 position;
@@ -18,8 +19,8 @@ struct Particle{
 #include (trial:trial "particle/render-common.glsl")
 
 void main(){
-  int vertex_id = gl_VertexID;
-  int prop = gl_InstanceID*6;
+  int vertex_id = gl_VertexID % 6;
+  int prop = floatBitsToInt(in_prop) / 4;
   vec4 a = texelFetch(particle_data, prop+0, 0);
   uint c = floatBitsToUint(texelFetch(particle_data, prop+1, 0).r);
 

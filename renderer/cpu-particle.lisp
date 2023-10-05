@@ -73,7 +73,8 @@
     (setf (aref data (+ out 3)) (vx vel))
     (setf (aref data (+ out 4)) (vy vel))
     (setf (aref data (+ out 5)) (vz vel))
-    (setf (aref data (+ out 6)) (- tt dt))))
+    (prog1 (setf (aref data (+ out 6)) (- tt dt))
+      (setf (aref data (+ out 7)) (aref data (+ in 7))))))
 
 (defun %simulate-particles (particles live-particles free-list dt force-fields)
   ;; Returns updated live particle count
@@ -81,7 +82,7 @@
         for in from 0 below (* live-particles 8) by 8
         for life = (%simulate-particle particles in out dt force-fields)
         do (if (<= life 0)
-               (vector-push (truncate (aref particles (+ in 7))) free-list)
+               (vector-push (float-features:single-float-bits (aref particles (+ in 7))) free-list)
                (incf out 8))
         finally (return (truncate out 8))))
 
@@ -167,14 +168,14 @@
     (setf (aref particles (+ pos 4)) (vy velocity))
     (setf (aref particles (+ pos 5)) (vz velocity))
     (setf (aref particles (+ pos 6)) (aref properties (+ prop 0)))
-    (setf (aref particles (+ pos 7)) (float prop))))
+    (setf (aref particles (+ pos 7)) (float-features:bits-single-float prop))))
 
 (defun %allocate-particle-data (max-particles)
   (let ((particles (make-array (* max-particles 8) :element-type 'single-float))
         (properties (make-array (* max-particles 24) :element-type 'single-float))
         (free-list (make-array max-particles :element-type '(unsigned-byte 32) :fill-pointer 0)))
     (dotimes (i max-particles (values particles properties free-list))
-      (vector-push (* i 24) free-list))))
+      (vector-push (- (* (1- max-particles) 24) (* i 24)) free-list))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (define-shader-entity cpu-particle-emitter (particle-emitter)
@@ -237,7 +238,7 @@
       (setf (to-emit emitter) emit-carry)
       (when (< 0 live-particles)
         (setf live-particles (%simulate-particles particles live-particles free-list dt particle-force-fields))
-        (update-buffer-data particle-buffer T :count (* live-particles 8))))))
+        (update-buffer-data particle-buffer T :count (* live-particles 8 4))))))
 
 (defmethod emit ((emitter cpu-particle-emitter) count &rest particle-options &key vertex-array location orientation scaling transform)
   (setf (particle-options emitter) (remf* particle-options :vertex-array :location :orientation :scaling :transform))
