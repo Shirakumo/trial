@@ -86,10 +86,9 @@
   (let* ((joints (joints pose))
          (parents (parents pose)))
     (t<- result (svref joints i))
-    ;; FIXME: optimize to only allocate one transform
     (loop for parent = (aref parents i) then (aref parents parent)
           while (<= 0 parent)
-          do (setf result (t+ (svref joints parent) result)))
+          do (!t+ result (svref joints parent) result))
     result))
 
 (defmethod global-dquat ((pose pose) i &optional (result (dquat)))
