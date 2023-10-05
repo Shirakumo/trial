@@ -275,6 +275,7 @@
   (ecase (first type)
     (:struct (buffer-field-size standard (second type) 0))))
 
+(declaim (inline gl-memref-std140))
 (defun gl-memref-std140 (ptr type &optional container)
   (flet ((%ref (i)  (cffi:mem-aref ptr :float i))
          (%iref (i) (cffi:mem-aref ptr :int32 i))
@@ -317,6 +318,7 @@
        (cffi:with-pointer-to-vector-data (dst (marr4 container))
          (static-vectors:replace-foreign-memory dst ptr (* 4 4 4)))))))
 
+(declaim (inline gl-memref-std430))
 (defun gl-memref-std430 (ptr type &optional container)
   (flet ((%ref (i)  (cffi:mem-aref ptr :float i))
          (%iref (i) (cffi:mem-aref ptr :int32 i))
@@ -356,11 +358,13 @@
        (cffi:with-pointer-to-vector-data (dst (marr4 container))
          (static-vectors:replace-foreign-memory dst ptr (* 4 4 4)))))))
 
+(declaim (inline gl-memref))
 (defun gl-memref (ptr type &key (layout 'std140) container)
   (etypecase layout
     ((or std430 (eql std430)) (gl-memref-std430 ptr type container))
     ((or std140 (eql std140)) (gl-memref-std140 ptr type container))))
 
+(declaim (inline (setf gl-memref-std140)))
 (defun (setf gl-memref-std140) (value ptr type)
   (flet (((setf %ref) (value i) (setf (cffi:mem-aref ptr :float i) value))
          ((setf %iref) (value i) (setf (cffi:mem-aref ptr :int32 i) value))
@@ -426,6 +430,7 @@
          (static-vectors:replace-foreign-memory ptr src (* 4 4 4))))))
   value)
 
+(declaim (inline (setf gl-memref-std430)))
 (defun (setf gl-memref-std430) (value ptr type)
   (flet (((setf %ref) (value i) (setf (cffi:mem-aref ptr :float i) value))
          ((setf %iref) (value i) (setf (cffi:mem-aref ptr :int32 i) value))
@@ -489,6 +494,7 @@
          (static-vectors:replace-foreign-memory ptr src (* 4 4 4))))))
   value)
 
+(declaim (inline (setf gl-memref)))
 (defun (setf gl-memref) (value ptr type &key (layout 'std140))
   (etypecase layout
     ((or std430 (eql std430)) (setf (gl-memref-std430 ptr type) value))
