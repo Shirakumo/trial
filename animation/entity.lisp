@@ -257,17 +257,17 @@ void main(){
   gl_Position = projection_matrix * view_matrix * world_pos;
 }")
 
-(define-shader-entity dquat-animated-entity (animated-entity)
+(define-shader-entity quat2-animated-entity (animated-entity)
   ()
   (:inhibit-shaders (animated-entity :vertex-shader)))
 
-(defmethod update-palette ((entity dquat-animated-entity))
-  (let ((palette (dquat-palette (pose entity) (palette entity)))
+(defmethod update-palette ((entity quat2-animated-entity))
+  (let ((palette (quat2-palette (pose entity) (palette entity)))
         (inv (quat-inv-bind-pose (skeleton (mesh-asset entity)))))
     (dotimes (i (length palette) (setf (palette entity) palette))
       (nq* (svref palette i) (svref inv i)))))
 
-(define-class-shader (dquat-animated-entity :vertex-shader)
+(define-class-shader (quat2-animated-entity :vertex-shader)
   "
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 in_normal;

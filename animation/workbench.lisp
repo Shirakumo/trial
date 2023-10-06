@@ -18,7 +18,7 @@
     (enter (make-instance 'fps-counter) scene)
     (enter (make-instance 'vertex-entity :vertex-array (// 'workbench 'grid)) scene)
     (enter (make-instance 'animated-entity :asset (assets:asset :woman) :location (vec -2 0 0)) scene)
-    (enter (make-instance 'trial::dquat-animated-entity :asset (assets:asset :woman) :location (vec +2 0 0)) scene)
+    (enter (make-instance 'trial::quat2-animated-entity :asset (assets:asset :woman) :location (vec +2 0 0)) scene)
     (enter (make-instance 'target-camera :target (vec 0 2 0) :location (vec 0 3 5)) scene)
     (enter (make-instance 'render-pass) scene))
   (maybe-reload-scene))
