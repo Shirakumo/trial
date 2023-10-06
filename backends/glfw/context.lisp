@@ -312,7 +312,7 @@
        (v:trace :trial.input "Key released: ~a" key)
        (%handle context 'key-release :key (glfw-key->key key) :modifiers modifiers)))))
 
-(defmethod glfw:char-entered ((context context) char modifiers)
+(defmethod glfw:char-entered ((context context) char)
   (when (< char #x110000)
     (let ((char (code-char char)))
       (%handle context 'text-entered :text (string char)))))
