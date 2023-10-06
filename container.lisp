@@ -74,6 +74,13 @@
   (sequences:dosequence (node child)
     (deregister node parent)))
 
+(defmethod node (name (container container))
+  (sequences:dosequence (child container)
+    (when (equal name (name child))
+      (return child))
+    (when (typep child 'container)
+      (node name child))))
+
 #-elide-container-checks
 (defmethod enter :before ((node scene-node) (container container))
   (when (container node)
