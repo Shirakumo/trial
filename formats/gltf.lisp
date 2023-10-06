@@ -360,7 +360,12 @@
       (labels ((mesh-name (node)
                  (or (gltf:name (gltf:mesh node)) (gltf:idx (gltf:mesh node))))
                (construct (node)
-                 (cond ((gltf:mesh node)
+                 (cond ((loop for skin across (gltf:skins gltf)
+                              thereis (loop for joint across (gltf:joints skin)
+                                            thereis (eq joint node)))
+                        ;; Eliminate nodes that are parts of a skin
+                        NIL)
+                       ((gltf:mesh node)
                         (let ((mesh-name (mesh-name node)))
                           (make-instance (etypecase (or (gethash mesh-name meshes)
                                                         (gethash (cons mesh-name 0) meshes))
@@ -380,6 +385,7 @@
                (recurse (children container)
                  (loop for node across children
                        for child = (construct node)
+                       when child
                        do (recurse (gltf:children node) child)
                           (loop for light across (gltf:lights node)
                                 do (enter (load-light light) child))
