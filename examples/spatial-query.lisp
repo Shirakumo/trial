@@ -120,7 +120,7 @@
         (alloy:on alloy:value (value loc)
           (setf (dirty structure) T)))
 
-      (alloy:enter "fine" layout :row 4 :col 0)
+      (alloy:enter "re-check fine" layout :row 4 :col 0)
       (let ((fine (alloy:represent-with T (make-instance 'alloy:accessor-data :object structure :accessor 'fine) :layout-parent layout :focus-parent focus)))
         (alloy:on alloy:value (value fine)
           (setf (dirty structure) T)))
