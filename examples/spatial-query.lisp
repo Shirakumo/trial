@@ -5,7 +5,7 @@
    (vertex-array :initform (// 'trial 'unit-cube))))
 
 (defmethod spaces:bsize ((box ubox))
-  (scaling box))
+  (v* (scaling box) .5))
 
 (defmethod spaces:ensure-region ((object ubox) &optional region)
   (unless region
