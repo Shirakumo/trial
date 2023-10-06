@@ -42,13 +42,14 @@
   (update-inv-bind-pose skeleton))
 
 (defmethod update-inv-bind-pose ((skeleton skeleton))
-  (let* ((pose (bind-pose skeleton))
-         (minv (make-array (length pose)))
-         (qinv (make-array (length pose))))
-    (dotimes (i (length minv) (setf (mat-inv-bind-pose skeleton) minv))
-      (setf (svref minv i) (minv (tmat (global-transform pose i)))))
-    (dotimes (i (length qinv) (setf (quat-inv-bind-pose skeleton) qinv))
-      (setf (svref qinv i) (q2conjugate (global-quat2 pose i))))
+  (let ((pose (bind-pose skeleton)))
+    (let ((minv (make-array (length pose))))
+      (dotimes (i (length minv) (setf (mat-inv-bind-pose skeleton) minv))
+        (setf (svref minv i) (minv (tmat (global-transform pose i))))))
+    #++
+    (let ((qinv (make-array (length pose))))
+      (dotimes (i (length qinv) (setf (quat-inv-bind-pose skeleton) qinv))
+        (setf (svref qinv i) (q2conjugate (global-quat2 pose i)))))
     skeleton))
 
 (defmethod reorder ((skeleton skeleton) map)
