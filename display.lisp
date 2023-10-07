@@ -75,6 +75,7 @@
     (unwind-protect
          (call-next-method)
       (when (context display)
+        (quit (context display))
         (release-context (context display))))))
 
 (defmethod width ((display display))

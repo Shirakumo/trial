@@ -71,5 +71,4 @@
                               (render render-loop render-loop))))))
           (v:info :trial.render-loop "Exiting render-loop for ~a." render-loop))
       (exit-render-loop ()
-        :report "Exit the render loop entirely."
-        (quit *context*)))))
+        :report "Exit the render loop entirely."))))
