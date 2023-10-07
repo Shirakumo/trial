@@ -176,7 +176,7 @@
 (defmethod enter ((container container) (pass shader-pass))
   (when (next-method-p)
     (call-next-method))
-  (for:for ((object over container))
+  (sequence:dosequence (object container)
     (enter object pass)))
 
 (defmethod leave ((container container) (pass shader-pass))

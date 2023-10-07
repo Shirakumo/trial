@@ -327,7 +327,7 @@
 (define-shader-entity static-gltf-entity (trial::multi-mesh-entity trial::per-array-material-renderable static-gltf-container)
   ())
 
-(define-shader-entity animated-gltf-entity (trial::multi-mesh-entity trial::per-array-material-renderable static-gltf-container)
+(define-shader-entity animated-gltf-entity (trial::multi-mesh-entity animated-entity trial::per-array-material-renderable static-gltf-container)
   ())
 
 (defclass asset (file-input-asset
@@ -336,6 +336,10 @@
                  ;; KLUDGE: this should not be necessary if we can figure out the loading correctly
                  trial::full-load-asset)
   ((scenes :initform (make-hash-table :test 'equal) :accessor scenes)))
+
+(defmethod node (name (asset asset))
+  (loop for scene being the hash-values of (scenes asset)
+        thereis (node name scene)))
 
 (defmethod generate-resources ((asset asset) input &key load-scene)
   (gltf:with-gltf (gltf input)
