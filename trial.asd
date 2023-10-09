@@ -180,4 +180,5 @@
                :simple-tasks
                :lru-cache
                :memory-regions
+               :trivial-deprecate
                (:feature :windows :com-on)))

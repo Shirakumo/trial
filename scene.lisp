@@ -10,6 +10,11 @@
 (defmethod unit (name (scene scene))
   (gethash name (name-map scene)))
 
+(trivial-deprecate:declaim-deprecated (function unit)
+                                      :software "trial"
+                                      :version "1.2.0"
+                                      :alternatives (node))
+
 (defmethod node (name (scene scene))
   (gethash name (name-map scene)))
 
