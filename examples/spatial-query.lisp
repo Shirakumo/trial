@@ -96,6 +96,7 @@
   (let ((layout (make-instance 'alloy:grid-layout :col-sizes '(120 140 T) :row-sizes '(30)))
         (focus (make-instance 'alloy:vertical-focus-list))
         (index-kind :kd)
+        (shape :uniform)
         (cube-size 0.01))
     (flet ((re-index ()
              (spaces:clear (spatial-index structure))
@@ -125,7 +126,14 @@
         (alloy:on alloy:value (value fine)
           (setf (dirty structure) T)))
 
-      (alloy:enter "cube size" layout :row 5 :col 0)
+      (alloy:enter "shape" layout :row 5 :col 0)
+      (let ((shape-select (alloy:represent shape 'alloy:combo-set :value-set '(:uniform :ring) :layout-parent layout :focus-parent focus)))
+        (alloy:on alloy:value (value shape-select)
+          (clear structure)
+          (enter-boxes structure shape 10000)
+          (re-index)))
+
+      (alloy:enter "cube size" layout :row 6 :col 0)
       (let ((size (alloy:represent cube-size 'alloy:ranged-wheel :range '(0.001 . 0.5) :step 0.01 :layout-parent layout :focus-parent focus)))
         (alloy:on alloy:value (value size)
           (for:for ((entity over structure))
@@ -141,6 +149,25 @@
     (:grid (org.shirakumo.fraf.trial.space.grid3:make-grid
             0.1 :bsize (vec3 3)))))
 
+(defun enter-boxes (structure shape count)
+  (let ((generator (ecase shape
+                     (:uniform
+                      (lambda ()
+                        (make-instance 'ubox :location (vrand (vec3 0) (vec3 6))
+                                             :scaling (vec3 0.05))))
+                     (:ring
+                      (lambda ()
+                        (let ((radius (* 3 (+ .5 (random .5))))
+                              (angle (random (* 2 pi)))
+                              (y (* 3 (+ -.3 (random .6)))))
+                          (make-instance 'ubox :location (vec3 (* (cos angle) radius)
+                                                               y
+                                                               (* (sin angle) radius))
+                                               :scaling (vec3 0.05))))))))
+    (loop repeat count
+          for box = (funcall generator)
+          do (enter box structure))))
+
 (define-example spatial-query
   (let ((game (make-instance 'render-pass))
         (ui (make-instance 'ui))
@@ -151,7 +178,5 @@
   (let ((structure (make-instance 'spatial-structure
                                   :spatial-index (make-spatial-index :kd))))
     (enter structure scene)
-    (loop for i from 0 below 10000
-          for box = (make-instance 'ubox :location (vrand (vec3 0) (vec3 6)) :scaling (vec3 0.05))
-          do (enter box structure))
+    (enter-boxes structure :uniform 10000)
     (trial-alloy:show-panel 'query-panel :structure structure)))
