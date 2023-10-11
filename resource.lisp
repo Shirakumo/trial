@@ -34,6 +34,9 @@
   (call-next-method)
   resource)
 
+(defmethod loaded-p ((resource resource))
+  (allocated-p resource))
+
 (defun check-allocated (resource)
   (unless (allocated-p resource)
     (restart-case

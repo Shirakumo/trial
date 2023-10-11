@@ -47,6 +47,7 @@
                (:file "gl-struct" :depends-on ("package" "type-info"))
                (:file "hash-table-container" :depends-on ("package" "container"))
                (:file "helpers" :depends-on ("package" "container" "transforms" "shader-entity" "asset" "asset-pool" "resources" "loader" "geometry" "geometry-shapes"))
+               (:file "incremental-loader" :depends-on ("package" "loader" "shader-pass"))
                (:file "input" :depends-on ("package" "event-loop"))
                (:file "interpolation" :depends-on ("package"))
                (:file "language" :depends-on ("package" "toolkit" "settings"))
