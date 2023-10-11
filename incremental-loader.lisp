@@ -3,21 +3,21 @@
 (defclass load-op (staging-area)
   ((observers :initform (make-hash-table :test 'eq) :accessor observers)))
 
-(defgeneric observe-load-state (load-op observer changing new-state))
+(defgeneric observe-load-state (observer changing new-state load-op))
 (defgeneric change-state (load-op object new-state))
 (defgeneric register-load-observer (load-op observer changing))
 
 (defmethod change-state ((op load-op) object new-state)
   (setf (gethash object (staged op)) new-state)
   (loop for observer in (gethash object (observers op))
-        do (observe-load-state op observer object new-state)))
+        do (observe-load-state observer object new-state op)))
 
 (defmethod register-load-observer ((op load-op) observer changing)
   (unless (member observer (gethash changing (observers op)))
     (push observer (gethash changing (observers op)))
     ;; Backfill for current state if registration occurs live.
     (let ((state (gethash changing (staged op))))
-      (when state (observe-load-state op observer changing state)))))
+      (when state (observe-load-state observer changing state op)))))
 
 (defmethod stage :around (object (op load-op))
   (unless (gethash object (staged op))
@@ -35,7 +35,19 @@
 
 (defmethod stage :after ((container container) (op load-op))
   (for:for ((child over container))
-           (stage child op)))
+    (stage child op)))
+
+;;; This is pretty hacky.
+(defmethod stage :after ((renderable renderable) (op load-op))
+  (loop for observer in (gethash 'renderable (observers op))
+        do (observe-load-state observer renderable :staged op)))
+
+(defmethod stage :after ((pass per-object-pass) (op load-op))
+  (register-load-observer op pass 'renderable))
+
+(defmethod observe-load-state ((pass per-object-pass) (renderable renderable) state (op load-op))
+  (let ((program (enter renderable pass)))
+    (when program (stage program op))))
 
 (defmethod stage ((object resource) (op load-op))
   (change-state op object :to-allocate)
@@ -48,11 +60,11 @@
   (change-state op object :loaded))
 
 (defmethod unstage ((object resource) (op load-op))
-  (deallocate asset)
+  (deallocate object)
   (change-state op object NIL))
 
 (defmethod unstage ((object asset) (op load-op))
-  (unload asset)
+  (unload object)
   (change-state op object NIL))
 
 (defmethod abort-commit ((op load-op))
@@ -64,7 +76,7 @@
 (defclass incremental-loader (loader)
   ())
 
-(defmethod commit ((op load-op) (loader incremenal-loader) &key (unload T))
+(defmethod commit ((op load-op) (loader incremental-loader) &key (unload T))
   (when unload
     (loop for resource being the hash-keys of (loaded loader) using (hash-value status)
           do (case status
@@ -77,6 +89,13 @@
              (unless (loaded-p resource)
                (vector-push-extend resource to-load)))
     (load-with loader to-load)))
+
+(defmethod commit (object (loader incremental-loader) &rest args)
+  (let ((op (make-instance 'load-op)))
+    (loop for resource being the hash-keys of (loaded loader) using (hash-value state)
+          do (setf (gethash resource (staged op)) state))
+    (stage object op)
+    (apply #'commit op loader args)))
 
 (defmethod load-with ((loader incremental-loader) (resources vector))
   (loop for resource across resources

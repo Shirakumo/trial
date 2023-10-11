@@ -18,7 +18,7 @@
   ;;         because not doing so leads to real ???? OpenGL driver state.
   (discard-events scene 'class-changed))
 
-(defmethod stage :after ((scene pipelined-scene) (area staging-area))
+(defmethod stage :before ((scene pipelined-scene) (area staging-area))
   (loop for texture across (textures scene)
         do (stage texture area))
   (loop for entity in (to-preload scene)
