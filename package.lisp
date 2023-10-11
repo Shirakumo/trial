@@ -802,6 +802,7 @@
    #:rgba-icon-width
    #:rgba-icon-height
    #:rgba-icon-data
+   #:create-child-context
    #:create-context
    #:destroy-context
    #:valid-p

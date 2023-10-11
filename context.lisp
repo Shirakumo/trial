@@ -73,6 +73,7 @@
   (height 0 :type (unsigned-byte 16))
   (data #() :type (simple-array (unsigned-byte 8))))
 
+(defgeneric create-child-context (context))
 (defgeneric create-context (context))
 (defgeneric destroy-context (context))
 (defgeneric valid-p (context))
@@ -114,6 +115,15 @@
 (defmethod finalize ((context context))
   (destroy-context context)
   (call-next-method))
+
+(defmethod create-child-context ((context context))
+  (let ((restore (current-p context))
+        (child (make-instance 'context :share-with context)))
+    (create-context child)
+    (when restore
+      (done-current child)
+      (make-current context))
+    child))
 
 (defmethod destroy-context :around ((context context))
   (when (valid-p context)

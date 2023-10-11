@@ -29,24 +29,27 @@
    (make-instance 'promise-task :promise (promise:make) :func function)
    main))
 
-(defclass task-runner-main (main)
+(defclass task-runner ()
   ((task-thread :initform (make-instance 'task-thread) :accessor task-thread)))
 
-(defmethod initialize-instance ((main task-runner-main) &key)
+(defmethod initialize-instance ((runner task-runner) &key)
   (call-next-method)
-  (start (task-thread main)))
+  (start (task-thread runner)))
 
-(defmethod finalize :after ((main task-runner-main))
-  (stop (task-thread main)))
+(defmethod finalize :after ((runner task-runner))
+  (stop (task-thread runner)))
+
+(defmethod simple-tasks:schedule-task (task (runner task-runner))
+  (simple-tasks:schedule-task task (task-thread runner)))
+
+(defclass task-runner-main (task-runner main)
+  ())
 
 (defmethod update :before ((main task-runner-main) tt dt fc)
   (promise:tick-all dt))
 
 (defmethod simple-tasks:schedule-task (task (default (eql T)))
   (simple-tasks:schedule-task task +main+))
-
-(defmethod simple-tasks:schedule-task (task (main task-runner-main))
-  (simple-tasks:schedule-task task (task-thread +main+)))
 
 (defclass promise-task (simple-tasks:task)
   ((promise :initarg :promise :accessor promise :reader promise:ensure-promise)
