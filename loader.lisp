@@ -16,7 +16,8 @@
   (stage dependency area)
   ;; CAR: things this object depends on
   ;; CDR: things that depend on this object
-  (pushnew dependency (car (gethash object (staged area) (cons NIL NIL))))
+  (pushnew dependency (car (or (gethash object (staged area))
+                               (setf (gethash object (staged area)) (cons NIL NIL)))))
   (when (gethash dependency (staged area))
     (pushnew object (cdr (gethash dependency (staged area))))))
 
@@ -27,7 +28,7 @@
   (unless (gethash object (staged area))
     (call-next-method)))
 
-(defmethod stage :after (object (area staging-area))
+(defmethod stage :before (object (area staging-area))
   (dolist (dependency (dependencies object))
     (mark-dependent dependency object area)))
 

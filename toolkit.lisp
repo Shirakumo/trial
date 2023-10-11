@@ -462,7 +462,7 @@
   `(with-simple-restart (continue "Ignore the error and continue.")
      ,@body))
 
-(defmacro with-timing-report ((level category format &rest args) &body body)
+(defmacro with-timing-report ((level category &optional (format "Operation took ~fs run-time ~fs real-time") &rest args) &body body)
   (let ((run (gensym "RUNTIME"))
         (real (gensym "REALTIME")))
     `(let ((,run (get-internal-run-time))

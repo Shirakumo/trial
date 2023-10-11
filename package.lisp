@@ -1160,6 +1160,14 @@
    #:high-color-pass
    #:bloom-pass
    #:high-pass)
+  ;; incremental-loader.lisp
+  (:export
+   #:load-op
+   #:observe-load-state
+   #:change-state
+   #:register-load-observer
+   #:incremental-loader
+   #:streamed-loader)
   ;; input.lisp
   (:export
    #:+input-source+
