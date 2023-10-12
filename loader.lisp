@@ -121,7 +121,7 @@
   (loop for resource being the hash-keys of (loaded loader)
         for status being the hash-values of (loaded loader)
         do (case status
-             ((:to-unload :to-keep :loaded)
+             ((:to-unload :to-keep :loaded :allocated)
               (unload-with loader resource))))
   (clrhash (loaded loader)))
 
