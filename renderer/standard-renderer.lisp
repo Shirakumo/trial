@@ -191,6 +191,12 @@
 (defmethod (setf vertex-array) ((resource resource) (renderable standard-renderable))
   (setf (vertex-arrays renderable) (vector resource)))
 
+(define-shader-entity standard-animated-renderable (standard-renderable animated-entity)
+  ()
+  (:shader-file (trial "standard-animated-renderable.glsl"))
+  (:inhibit-shaders (animated-entity :vertex-shader)
+                    (standard-renderable :vertex-shader)))
+
 (define-shader-entity single-material-renderable (standard-renderable)
   ((material :initarg :material :accessor material)))
 

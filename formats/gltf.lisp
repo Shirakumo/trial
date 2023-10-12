@@ -327,7 +327,7 @@
 (define-shader-entity static-gltf-entity (trial::multi-mesh-entity trial::per-array-material-renderable static-gltf-container)
   ())
 
-(define-shader-entity animated-gltf-entity (trial::multi-mesh-entity animated-entity trial::per-array-material-renderable static-gltf-container)
+(define-shader-entity animated-gltf-entity (trial::multi-mesh-entity trial::standard-animated-renderable trial::per-array-material-renderable static-gltf-container)
   ())
 
 (defclass asset (file-input-asset
