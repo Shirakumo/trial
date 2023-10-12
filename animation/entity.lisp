@@ -198,7 +198,12 @@
 
 (define-shader-entity animated-entity (base-animated-entity transformed-entity)
   ((palette :initform #() :accessor palette)
+   (palette-texture :initform (make-instance 'texture :target :texture-1d-array :width 3 :height 1 :internal-format :rgba32f :min-filter :nearest :mag-filter :nearest) :accessor palette-texture)
+   (palette-data :initform (make-array 0 :element-type 'single-float) :accessor palette-data)
    (mesh :initarg :mesh :initform NIL :accessor mesh)))
+
+(defmethod stage :after ((entity animated-entity) (area staging-area))
+  (stage (palette-texture entity) area))
 
 (defmethod (setf mesh-asset) :after ((asset animation-asset) (entity animated-entity))
   (unless (skeleton asset)
@@ -213,10 +218,17 @@
   (setf (slot-value system 'transform) (tf entity)))
 
 (defmethod update-palette ((entity animated-entity))
-  (let ((palette (matrix-palette (pose entity) (palette entity)))
-        (inv (mat-inv-bind-pose (skeleton (mesh-asset entity)))))
+  (let* ((palette (matrix-palette (pose entity) (palette entity)))
+         (texinput (%adjust-array (palette-data entity) (* 12 (length (pose entity))) (constantly 0f0)))
+         (texture (palette-texture entity))
+         (inv (mat-inv-bind-pose (skeleton (mesh-asset entity)))))
     (dotimes (i (length palette) (setf (palette entity) palette))
-      (nm* (svref palette i) (svref inv i)))))
+      (let ((mat (nm* (svref palette i) (svref inv i))))
+        (replace texinput (marr4 mat) :start1 (* i 12) :end2 12)))
+    (setf (palette-data entity) texinput)
+    (setf (height texture) (length palette))
+    (when (gl-name texture)
+      (update-buffer-data texture texinput :pixel-type :float :pixel-format :rgba))))
 
 (defmethod handle ((ev tick) (entity animated-entity))
   (when (pose entity)
@@ -225,7 +237,10 @@
 
 (defmethod render :before ((entity animated-entity) (program shader-program))
   (declare (optimize speed))
-  (setf (uniform program "pose") (palette entity)))
+  ;; KLUDGE: This is Bad
+  (%gl:active-texture :texture5)
+  (gl:bind-texture :texture-1d-array (gl-name (palette-texture entity)))
+  (setf (uniform program "pose") 5))
 
 (define-class-shader (animated-entity :vertex-shader)
   "
@@ -235,18 +250,26 @@ layout (location = 2) in vec2 in_uv;
 layout (location = 3) in vec4 joints;
 layout (location = 4) in vec4 weights;
 
-uniform mat4 pose[100];
+uniform sampler1DArray pose;
 
 out vec3 normal;
 out vec4 world_pos;
 out vec2 uv;
 
+mat4 pose_matrix(in int i){
+  return transpose(mat4(
+    texelFetch(pose, ivec2(0, i), 0),
+    texelFetch(pose, ivec2(1, i), 0),
+    texelFetch(pose, ivec2(2, i), 0),
+    vec4(0,0,0,1)));
+}
+
 void main(){
   ivec4 j = ivec4(joints);
-  mat4 skin_matrix = (pose[j.x] * weights.x)
-                   + (pose[j.y] * weights.y)
-                   + (pose[j.z] * weights.z)
-                   + (pose[j.w] * weights.w);
+  mat4 skin_matrix = (pose_matrix(j.x) * weights.x)
+                   + (pose_matrix(j.y) * weights.y)
+                   + (pose_matrix(j.z) * weights.z)
+                   + (pose_matrix(j.w) * weights.w);
   world_pos = model_matrix * skin_matrix * vec4(position, 1.0f);
   normal = vec3(model_matrix * skin_matrix * vec4(in_normal, 0.0f));
   uv = in_uv;
