@@ -235,15 +235,13 @@ void main(){
   ((mesh-asset :initform NIL :initarg :asset :accessor mesh-asset)
    (mesh :initarg :mesh :initform NIL :accessor mesh)))
 
-(defmethod initialize-instance :after ((entity mesh-entity) &key)
-  (when (mesh-asset entity)
-    (register-generation-observer entity (mesh-asset entity))))
+(defmethod stage :after ((entity mesh-entity) (op load-op))
+  (register-load-observer op entity (mesh-asset entity))
+  (stage (mesh-asset entity) op))
 
-(defmethod stage :after ((entity mesh-entity) (area staging-area))
-  (stage (mesh-asset entity) area))
-
-(defmethod observe-generation ((entity mesh-entity) (asset asset) res)
-  (setf (mesh-asset entity) asset))
+(defmethod observe-load-state ((entity mesh-entity) (asset asset) (state (eql :loaded)) (op load-op))
+  (setf (mesh-asset entity) asset)
+  (restage entity op))
 
 (defmethod (setf mesh-asset) :after ((asset asset) (entity mesh-entity))
   (setf (mesh entity) (or (mesh entity) T)))
@@ -271,15 +269,13 @@ void main(){
   ((mesh-asset :initform NIL :initarg :asset :accessor mesh-asset)
    (mesh :initarg :mesh :initform NIL :accessor mesh)))
 
-(defmethod initialize-instance :after ((entity multi-mesh-entity) &key)
-  (when (mesh-asset entity)
-    (register-generation-observer entity (mesh-asset entity))))
+(defmethod stage :after ((entity multi-mesh-entity) (op load-op))
+  (register-load-observer op entity (mesh-asset entity))
+  (stage (mesh-asset entity) op))
 
-(defmethod stage :after ((entity multi-mesh-entity) (area staging-area))
-  (stage (mesh-asset entity) area))
-
-(defmethod observe-generation ((entity multi-mesh-entity) (asset asset) res)
-  (setf (mesh-asset entity) asset))
+(defmethod observe-load-state ((entity multi-mesh-entity) (asset asset) (state (eql :loaded)) (op load-op))
+  (setf (mesh-asset entity) asset)
+  (restage entity op))
 
 (defmethod (setf mesh-asset) :after ((asset asset) (entity multi-mesh-entity))
   (setf (mesh entity) (or (mesh entity) T)))

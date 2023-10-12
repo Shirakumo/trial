@@ -4,6 +4,7 @@
   ((vertex-array :initform (// 'trial 'fullscreen-square) :accessor vertex-array)
    (tilemap :initform NIL :accessor tilemap)
    (tileset :initform NIL :initarg :tileset :accessor tileset)
+   (tile-data :initform NIL :initarg :tile-data :accessor tile-data)
    (visibility :initform 1.0 :accessor visibility)
    (tile-size :initform (vec 16 16) :accessor tile-size)
    (size :initarg :size :initform (vec 1 1) :accessor size))
@@ -12,8 +13,7 @@
 (defmethod initialize-instance :after ((layer tile-layer) &key tilemap (map-name 1) tile-data tile-size)
   (when tile-size (setf (tile-size layer) tile-size))
   (cond (tile-data
-         (setf (tilemap layer) (resource tile-data map-name))
-         (register-generation-observer layer tile-data))
+         (setf (tilemap layer) (resource tile-data map-name)))
         (T
          (let* ((size (size layer))
                 (data (etypecase tilemap
@@ -33,7 +33,7 @@
                                                          :min-filter :nearest
                                                          :mag-filter :nearest))))))
 
-(defmethod observe-generation ((layer tile-layer) (data tile-data) result)
+(defmethod observe-load-state ((layer tile-layer) (data tile-data) (state (eql :loaded)) (op load-op))
   (let ((tileset (tileset (tilemap layer))))
     (setf (tileset layer) tileset)
     (setf (tile-size layer) (tile-size tileset))
@@ -41,7 +41,9 @@
     (setf (vy (size layer)) (height (tilemap layer)))
     (setf (bsize layer) (v* (size layer) (tile-size tileset) 0.5))))
 
-(defmethod stage ((layer tile-layer) (area staging-area))
+(defmethod stage ((layer tile-layer) (op load-op))
+  (when (tile-data layer)
+    (register-load-observer op layer (tile-data layer)))
   (stage (vertex-array layer) area)
   (when (tilemap layer) (stage (tilemap layer) area))
   (when (tileset layer) (stage (tileset layer) area)))

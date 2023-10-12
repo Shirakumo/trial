@@ -137,10 +137,6 @@
 (defmethod input* ((asset asset))
   (coerce-asset-input asset (input asset)))
 
-(defmethod register-generation-observer :after (observer (asset asset))
-  (when (loaded-p asset)
-    (observe-generation observer asset (list-resources asset))))
-
 (defmacro define-asset ((pool name) type input &rest options)
   (check-type pool symbol)
   (check-type name symbol)
