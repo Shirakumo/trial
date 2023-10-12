@@ -80,6 +80,9 @@
 (defmethod (setf scaling) (vec (obj transformed-entity))
   (v<- (tscaling (tf obj)) vec))
 
+(defmethod (setf scaling) ((value real) (obj transformed-entity))
+  (vsetf (tscaling (tf obj)) value value value))
+
 (defmethod orientation ((obj transformed-entity))
   (trotation (tf obj)))
 
