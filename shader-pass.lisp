@@ -285,19 +285,19 @@
   (when (or (object-renderable-p object pass)
             (typep object 'shader-entity-class))
     (let ((renderable-table (renderable-table pass)))
-      (unless (gethash object renderable-table)
-        (let* ((program-table (program-table pass))
-               (target (if (typep object '(or standalone-shader-entity dynamic-renderable))
-                           object
-                           (effective-shader-class object)))
-               (program (gethash target renderable-table)))
-          (unless program
-            (setf program (make-pass-shader-program pass target))
-            (unless (gethash program program-table)
-              (setf (gethash program program-table) (cons 0 NIL))
-              (setf (gethash target renderable-table) program)))
-          (incf (car (gethash program program-table)))
-          (setf (gethash object renderable-table) program))))))
+      (or (gethash object renderable-table)
+          (let* ((program-table (program-table pass))
+                 (target (if (typep object '(or standalone-shader-entity dynamic-renderable))
+                             object
+                             (effective-shader-class object)))
+                 (program (gethash target renderable-table)))
+            (unless program
+              (setf program (make-pass-shader-program pass target))
+              (unless (gethash program program-table)
+                (setf (gethash program program-table) (cons 0 NIL))
+                (setf (gethash target renderable-table) program)))
+            (incf (car (gethash program program-table)))
+            (setf (gethash object renderable-table) program))))))
 
 (defmethod leave (object (pass per-object-pass))
   (when (next-method-p)
