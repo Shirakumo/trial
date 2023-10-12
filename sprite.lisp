@@ -69,8 +69,7 @@
   (let ((sprite-data (sprite-data sprite)))
     (when sprite-data
       (setf (texture sprite) (resource sprite-data 'texture))
-      (setf (vertex-array sprite) (resource sprite-data 'vertex-array))
-      (register-generation-observer sprite sprite-data))))
+      (setf (vertex-array sprite) (resource sprite-data 'vertex-array)))))
 
 (defmethod (setf sprite-data) :after ((data sprite-data) (sprite animated-sprite))
   (setf (texture sprite) (resource data 'texture))
@@ -80,7 +79,10 @@
   (unless (animation sprite)
     (setf (animation sprite) 0)))
 
-(defmethod observe-generation ((sprite animated-sprite) (data sprite-data) result)
+(defmethod stage :after ((sprite animated-sprite) (op load-op))
+  (register-load-observer op sprite (sprite-data sprite)))
+
+(defmethod observe-load-state ((sprite animated-sprite) (data sprite-data) (state (eql :loaded)) (op load-op))
   (setf (frames sprite) (frames data))
   (setf (animations sprite) (animations data))
   (unless (animation sprite)

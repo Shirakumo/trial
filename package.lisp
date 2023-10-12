@@ -1404,9 +1404,6 @@
   (:export
    #:resource-generator
    #:generate-resources
-   #:register-generation-observer
-   #:clear-observers
-   #:observe-generation
    #:resource
    #:compiled-generator
    #:compile-resources
