@@ -174,16 +174,16 @@
     (finalize (framebuffer pass))))
 
 (defmethod enter ((container container) (pass shader-pass))
-  (when (next-method-p)
-    (call-next-method))
-  (sequence:dosequence (object container)
-    (enter object pass)))
+  (prog1 (when (next-method-p)
+           (call-next-method))
+    (sequence:dosequence (object container)
+      (enter object pass))))
 
 (defmethod leave ((container container) (pass shader-pass))
-  (when (next-method-p)
-    (call-next-method))
-  (for:for ((object over container))
-    (leave object pass)))
+  (prog1 (when (next-method-p)
+           (call-next-method))
+    (for:for ((object over container))
+      (leave object pass))))
 
 (defmethod render (object (pass shader-pass))
   (render object (shader-program-for-pass pass object)))
@@ -409,6 +409,19 @@
 
 (defmethod render-with ((pass shader-pass) object program)
   (render object program))
+
+;;; This is pretty hacky.
+(defmethod stage :after ((renderable renderable) (op load-op))
+  (loop for observer in (gethash 'renderable (observers op))
+        do (observe-load-state observer renderable :staged op)))
+
+(defmethod stage :after ((pass per-object-pass) (op load-op))
+  (register-load-observer op pass 'renderable))
+
+(defmethod observe-load-state ((pass per-object-pass) (renderable renderable) (state (eql :staged)) (op load-op))
+  (let ((program (enter renderable pass)))
+    (when program
+      (stage program op))))
 
 (define-shader-pass single-shader-pass ()
   ((shader-program :accessor shader-program)))
