@@ -198,7 +198,7 @@
                     (standard-renderable :vertex-shader)))
 
 (defmethod render-with :before ((pass standard-render-pass) (renderable standard-animated-renderable) (program shader-program))
-  (setf (uniform program "pose") (palette renderable)))
+  (setf (uniform program "pose") (enable (palette-texture renderable) pass)))
 
 (define-shader-entity single-material-renderable (standard-renderable)
   ((material :initarg :material :accessor material)))
