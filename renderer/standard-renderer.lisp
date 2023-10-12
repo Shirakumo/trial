@@ -197,6 +197,9 @@
   (:inhibit-shaders (animated-entity :vertex-shader)
                     (standard-renderable :vertex-shader)))
 
+(defmethod render-with :before ((pass standard-render-pass) (renderable standard-animated-renderable) (program shader-program))
+  (setf (uniform program "pose") (palette renderable)))
+
 (define-shader-entity single-material-renderable (standard-renderable)
   ((material :initarg :material :accessor material)))
 
