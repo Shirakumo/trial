@@ -13,7 +13,8 @@
                (:file "gjk")
                (:file "cpu-particle")
                (:file "gpu-particle")
-               (:file "spatial-query"))
+               (:file "spatial-query")
+               (:file "rigging"))
   :depends-on (:trial-glfw
                :trial-alloy
                :trial-jpeg-turbo
