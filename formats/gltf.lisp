@@ -91,6 +91,13 @@
                                 (:step :constant)
                                 (:linear :linear)
                                 (:cubicspline :hermite)))
+  #++
+  (let ((input (make-array (length (gltf:input sampler)) :element-type 'single-float))
+        (min (float (aref (gltf:minimum (gltf:input sampler)) 0) 0f0))
+        (max (float (aref (gltf:maximum (gltf:input sampler)) 0) 0f0)))
+    (flet ((clamp (x)
+             (clamp min x max)))
+      (map-into input #'clamp (gltf:input sampler))))
   (setf (frames track) (cons (gltf:input sampler) (gltf:output sampler))))
 
 (defun load-clip (animation)
