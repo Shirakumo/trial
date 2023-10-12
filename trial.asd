@@ -32,7 +32,7 @@
                (:file "controller" :depends-on ("package" "mapping" "input" "container" "asset" "text"))
                (:file "data-pointer" :depends-on ("package" "static-vector" "texture-source"))
                (:file "debug" :depends-on ("package" "shader-entity" "text" ("physics" "primitives")))
-               (:file "deploy" :depends-on ("package" "gamepad"))
+               (:file "deploy" :depends-on ("package" "gamepad" "os-resources"))
                (:file "display" :depends-on ("package" "context" "render-loop" "power" "transforms" "gl-features"))
                (:file "documentation" :depends-on ("package"))
                (:file "effects" :depends-on ("package" "shader-pass"))
