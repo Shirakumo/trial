@@ -25,6 +25,10 @@
   ;; We don't care about actual staging, so just stage immediately.
   (stage dependency op))
 
+(defmethod restage (object (op load-op))
+  (setf (gethash object (staged op)) NIL)
+  (stage object op))
+
 (defmethod stage :before (object (op load-op))
   (when (eql :tentative (gethash object (staged op)))
     (error "Circular staging on ~a!" object))
@@ -43,25 +47,11 @@
   (for:for ((child over container))
     (stage child op)))
 
-;;; This is pretty hacky.
-(defmethod stage :after ((renderable renderable) (op load-op))
-  (loop for observer in (gethash 'renderable (observers op))
-        do (observe-load-state observer renderable :staged op)))
-
-(defmethod stage :after ((pass per-object-pass) (op load-op))
-  (register-load-observer op pass 'renderable))
-
-(defmethod observe-load-state ((pass per-object-pass) (renderable renderable) state (op load-op))
-  (let ((program (enter renderable pass)))
-    (when program (stage program op))))
-
 (defmethod stage ((object resource) (op load-op))
-  (v:info :test "~a" object)
   (allocate object)
   (change-state op object :allocated))
 
 (defmethod stage ((object asset) (op load-op))
-  (v:info :test "~a" object)
   (load object)
   (change-state op object :loaded))
 

@@ -18,9 +18,10 @@
     (setf (index-buffer array) index-buffer)))
 
 (defmethod dependencies ((array vertex-array))
-  (append (call-next-method)
-          (if (index-buffer array) (list (index-buffer array)))
-          (mapcar #'unlist (bindings array))))
+  (delete-duplicates
+   (append (call-next-method)
+           (if (index-buffer array) (list (index-buffer array)))
+           (mapcar #'unlist (bindings array)))))
 
 (defun update-array-bindings (array bindings &optional index)
   (gl:bind-vertex-array (data-pointer array))
