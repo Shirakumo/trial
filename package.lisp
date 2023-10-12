@@ -502,6 +502,7 @@
    #:notice-update
    #:standard-renderable
    #:vertex-array
+   #:standard-animated-renderable
    #:single-material-renderable
    #:material
    #:light-cache-render-pass)
