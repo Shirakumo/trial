@@ -3,8 +3,8 @@
 (defclass clip (sequences:sequence standard-object)
   ((name :initarg :name :initform NIL :accessor name)
    (tracks :initform #() :accessor tracks)
-   (start-time :initform 0.0 :accessor start-time)
-   (end-time :initform 0.0 :accessor end-time)
+   (start-time :initform 0f0 :accessor start-time)
+   (end-time :initform 0f0 :accessor end-time)
    (loop-p :initarg :loop-p :initform T :accessor loop-p)))
 
 (defmethod shared-initialize :after ((clip clip) slots &key tracks)
@@ -14,6 +14,20 @@
 (defmethod print-object ((clip clip) stream)
   (print-unreadable-object (clip stream :type T)
     (format stream "~s ~a ~a" (name clip) (start-time clip) (end-time clip))))
+
+(defmethod describe-object ((clip clip) stream)
+  (format stream "~a
+  [~a]
+
+NAME:     ~a
+START:    ~a
+END:      ~a
+DURATION: ~a
+LOOP:     ~a
+TRACKS: ~a~&"
+          clip (type-of clip)
+          (name clip) (start-time clip) (end-time clip) (duration clip)
+          (loop-p clip) (map 'list #'name (tracks clip))))
 
 (defun fit-to-clip (clip time)
   (let ((start (start-time clip))
@@ -26,8 +40,8 @@
   (loop for track across (tracks clip)
         when (valid-p track) minimize (start-time track) into start
         when (valid-p track) maximize (end-time track) into end
-        finally (setf (start-time clip) (float start 0.0)
-                      (end-time clip) (float end 0.0)))
+        finally (setf (start-time clip) (float start 0f0)
+                      (end-time clip) (float end 0f0)))
   clip)
 
 (defmethod duration ((clip clip))
