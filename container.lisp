@@ -79,7 +79,8 @@
     (when (equal name (name child))
       (return child))
     (when (typep child 'container)
-      (node name child))))
+      (let ((result (node name child)))
+        (when result (return result))))))
 
 #-elide-container-checks
 (defmethod enter :before ((node scene-node) (container container))
