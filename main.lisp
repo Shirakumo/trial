@@ -2,7 +2,7 @@
 
 (defclass main (display gamepad-input-handler)
   ((scene :initform (make-instance 'pipelined-scene) :accessor scene)
-   (loader :initform (make-instance 'loader) :accessor loader)))
+   (loader :initform (make-instance 'incremental-loader) :accessor loader)))
 
 (defmethod initialize-instance :before ((main main) &key)
   (clear-retained)
