@@ -218,7 +218,9 @@
       (if (= max most-negative-single-float)
           0.0 max))))
 
-(defmethod sample (transform (track transform-track) time &key loop-p)
+(defmethod sample ((transform transform) (track transform-track) time &key loop-p)
+  (declare (type single-float time))
+  (declare (optimize speed))
   (when (< 1 (length (location track)))
     (sample (tlocation transform) (location track) time :loop-p loop-p))
   (when (< 1 (length (scaling track)))
