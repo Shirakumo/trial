@@ -1161,14 +1161,6 @@
    #:high-color-pass
    #:bloom-pass
    #:high-pass)
-  ;; incremental-loader.lisp
-  (:export
-   #:load-op
-   #:observe-load-state
-   #:change-state
-   #:register-load-observer
-   #:incremental-loader
-   #:streamed-loader)
   ;; input.lisp
   (:export
    #:+input-source+
@@ -1251,12 +1243,12 @@
    #:dependencies
    #:stage
    #:unstage
-   #:compute-load-sequence
+   #:observe-load-state
+   #:change-state
+   #:register-load-observer
    #:loader
    #:commit
    #:abort-commit
-   #:load-with
-   #:unload-with
    #:progress)
   ;; main.lisp
   (:export

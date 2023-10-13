@@ -411,17 +411,17 @@
   (render object program))
 
 ;;; This is pretty hacky.
-(defmethod stage :after ((renderable renderable) (op load-op))
-  (loop for observer in (gethash 'renderable (observers op))
-        do (observe-load-state observer renderable :staged op)))
+(defmethod stage :after ((renderable renderable) (area staging-area))
+  (loop for observer in (gethash 'renderable (observers area))
+        do (observe-load-state observer renderable :staged area)))
 
-(defmethod stage :after ((pass per-object-pass) (op load-op))
-  (register-load-observer op pass 'renderable))
+(defmethod stage :after ((pass per-object-pass) (area staging-area))
+  (register-load-observer area pass 'renderable))
 
-(defmethod observe-load-state ((pass per-object-pass) (renderable renderable) (state (eql :staged)) (op load-op))
+(defmethod observe-load-state ((pass per-object-pass) (renderable renderable) (state (eql :staged)) (area staging-area))
   (let ((program (enter renderable pass)))
     (when program
-      (stage program op))))
+      (stage program area))))
 
 (define-shader-pass single-shader-pass ()
   ((shader-program :accessor shader-program)))
