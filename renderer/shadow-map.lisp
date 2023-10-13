@@ -25,7 +25,7 @@
 (defmethod transfer-to progn ((struct shadow-map-info) (light directional-light))
   (let ((point (focal-point (camera (scene +main+)))))
     (setf (slot-value struct 'projection-matrix)
-          (n*m (mortho -100.0 +100.0 -100.0 +100.0 1.0 1000.0)
+          (n*m (mortho -50.0 +50.0 -50.0 +50.0 1.0 200.0)
                (mlookat (nv+ (v* (direction light) -100) point) point +vy3+)))))
 
 (defmethod transfer-to progn ((struct shadow-map-info) (light spot-light))
@@ -79,6 +79,7 @@
                                                   :width shadow-map-resolution :height shadow-map-resolution)))
     (setf (slot-value pass 'shadow-map) texture)
     (setf (slot-value pass 'shadow-map-framebuffer) framebuffer))
+  ;; FIXME: animated entities don't cast shadows
   (let* ((*default-pathname-defaults* (pool-path 'trial "standard-shadow-map.glsl"))
          (shaders (loop with buffer = (glsl-toolkit:serialize (gl-source (shadow-map-block pass)))
                         for (type source) on (glsl-toolkit:preprocess *default-pathname-defaults* :include-resolution #'resolve-shader-include) by #'cddr
