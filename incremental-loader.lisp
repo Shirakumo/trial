@@ -95,10 +95,11 @@
   (with-timing-report (:info :trial.loader)
     (progress loader 0 100)
     (let ((op (make-instance 'load-op)))
-      (loop for resource being the hash-keys of (loaded loader) using (hash-value state)
-            do (setf (gethash resource (staged op)) state))
-      (stage object op)
-      (apply #'commit op loader args))))
+      (with-cleanup-on-failure (abort-commit op)
+        (loop for resource being the hash-keys of (loaded loader) using (hash-value state)
+              do (setf (gethash resource (staged op)) state))
+        (stage object op)
+        (apply #'commit op loader args)))))
 
 (defmethod load-with ((loader incremental-loader) (resources vector))
   (loop for resource across resources
