@@ -61,8 +61,9 @@
       (setf (frames track) frames))))
 
 (declaim (ftype (function (animation-track single-float boolean) single-float) fit-to-track))
+(declaim (inline fit-to-track))
 (defun fit-to-track (track time loop-p)
-  (declare (optimize speed))
+  (declare (optimize speed (safety 0)))
   (let ((frames (frames track)))
     (declare (type simple-vector frames))
     (declare (type single-float time))
