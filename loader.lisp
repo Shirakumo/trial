@@ -1,8 +1,8 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass staging-area ()
-  ((staged :initform (make-hash-table :test 'eq) :reader staged)
-   (observers :initform (make-hash-table :test 'eq) :accessor observers)))
+  ((load-state :initform (make-hash-table :test 'eq) :reader load-state)
+   (observers :initform (make-hash-table :test 'eq) :reader observers)))
 
 (defgeneric dependencies (object))
 (defgeneric stage (object staging-area))
@@ -12,11 +12,11 @@
 (defgeneric register-load-observer (staging-area observer changing))
 
 (defmethod dependencies (object) ())
-
+(defmethod stage (object (area staging-area)))
 (defmethod observe-load-state (object changing new-state (area staging-area)))
 
 (defmethod change-state ((area staging-area) object new-state)
-  (setf (gethash object (staged area)) new-state)
+  (setf (gethash object (load-state area)) new-state)
   (loop for observer in (gethash object (observers area))
         do (observe-load-state observer object new-state area)))
 
@@ -24,24 +24,22 @@
   (unless (member observer (gethash changing (observers area)))
     (push observer (gethash changing (observers area)))
     ;; Backfill for current state if registration occurs live.
-    (let ((state (gethash changing (staged area))))
+    (let ((state (gethash changing (load-state area))))
       (when state (observe-load-state observer changing state area)))))
 
 (defmethod restage (object (area staging-area))
-  (setf (gethash object (staged area)) NIL)
+  (setf (gethash object (load-state area)) NIL)
   (stage object area))
 
-(defmethod stage (object (area staging-area)))
-
 (defmethod stage :around (object (area staging-area))
-  (case (gethash object (staged area))
+  (case (gethash object (load-state area))
     (:tentative
      (error "Circular staging on ~a!" object))
     ((NIL)
-     (setf (gethash object (staged area)) :tentative)
+     (setf (gethash object (load-state area)) :tentative)
      (prog1 (call-next-method)
-       (when (eql :tentative (gethash object (staged area)))
-         (setf (gethash object (staged area)) :done))))))
+       (when (eql :tentative (gethash object (load-state area)))
+         (setf (gethash object (load-state area)) :done))))))
 
 (defmethod stage :before (object (area staging-area))
   (dolist (dependency (dependencies object))
@@ -66,6 +64,10 @@
   (load object)
   (change-state area object :loaded))
 
+(defmethod stage ((other staging-area) (area staging-area))
+  (loop for resource being the hash-keys of (load-state other) using (hash-value state)
+        do (setf (gethash resource (load-state area)) state)))
+
 (defmethod unstage ((object resource) (area staging-area))
   (deallocate object)
   (change-state area object NIL))
@@ -75,7 +77,7 @@
   (change-state area object NIL))
 
 (defmethod abort-commit ((area staging-area))
-  (loop for resource being the hash-keys of (staged area) using (hash-value state)
+  (loop for resource being the hash-keys of (load-state area) using (hash-value state)
         do (case state
              ((:loaded :allocated)
               (unstage resource area)))))
@@ -84,7 +86,8 @@
   (abort-commit area))
 
 (defclass loader ()
-  ((loaded :initform (make-hash-table :test 'eq) :reader loaded)))
+  ((loaded :initform (make-hash-table :test 'eq) :reader loaded)
+   (current-area :initform NIL :accessor current-area)))
 
 (defgeneric commit (staging-area loader &key unload))
 (defgeneric abort-commit (loader))
@@ -101,34 +104,50 @@
 (defmethod progress ((loader loader) so-far total))
 
 (defmethod commit ((area staging-area) (loader loader) &key (unload T))
-  (when unload
-    (loop for resource being the hash-keys of (loaded loader) using (hash-value status)
-          do (case status
-               ((:loaded :allocated)
-                (unless (gethash resource (staged area))
-                  (deallocate resource)
-                  (remhash resource (loaded loader))))))
-    (trivial-garbage:gc :full T))
-  (let ((to-load (make-array 0 :adjustable T :fill-pointer T)))
-    (loop for resource being the hash-keys of (staged area) using (hash-value status)
-          do (when (typep resource 'loadable)
-               (setf (gethash resource (loaded loader)) status)
-               (unless (loaded-p resource)
-                 (vector-push-extend resource to-load))))
-    (prog1 (load-with loader to-load)
-      (remhash to-load (loaded loader))
-      (progress loader 100 100))))
+  (cond ((eq area (current-area loader)))
+        ((current-area loader)
+         (stage area (current-area loader)))
+        (T
+         (with-unwind-protection (setf (current-area loader) NIL)
+           (setf (current-area loader) area)
+           (with-simple-restart (abort-commit "Abort the load operation")
+             (with-cleanup-on-failure (abort-commit area)
+               (when unload
+                 (loop for resource being the hash-keys of (loaded loader) using (hash-value status)
+                       do (case status
+                            ((:loaded :allocated)
+                             (unless (gethash resource (load-state area))
+                               (deallocate resource)
+                               (remhash resource (loaded loader))))))
+                 (trivial-garbage:gc :full T))
+               (let ((to-load (make-array 0 :adjustable T :fill-pointer T)))
+                 (loop for resource being the hash-keys of (load-state area) using (hash-value status)
+                       do (when (typep resource 'loadable)
+                            (setf (gethash resource (loaded loader)) status)
+                            (unless (loaded-p resource)
+                              (vector-push-extend resource to-load))))
+                 (prog1 (load-with loader to-load)
+                   (remhash to-load (loaded loader))
+                   (progress loader 100 100)))))))))
 
 (defmethod commit (object (loader loader) &rest args)
   (v:info :trial.loader "Incrementally loading ~a" object)
   (with-timing-report (:info :trial.loader)
     (progress loader 0 100)
-    (let ((area (make-instance 'staging-area)))
-      (with-cleanup-on-failure (abort-commit area)
-        (loop for resource being the hash-keys of (loaded loader) using (hash-value state)
-              do (setf (gethash resource (staged area)) state))
-        (stage object area)
-        (apply #'commit area loader args)))))
+    (if (current-area loader)
+        (stage object (current-area loader))
+        (let ((area (make-instance 'staging-area)))
+          (loop for resource being the hash-keys of (loaded loader) using (hash-value state)
+                do (setf (gethash resource (load-state area)) state))
+          (stage object area)
+          (apply #'commit area loader args)))))
+
+(defmethod abort-commit ((loader loader))
+  (cond ((find-restart 'abort-commit)
+         (invoke-restart 'abort-commit))
+        ((current-area loader)
+         (abort-commit (current-area loader))
+         (setf (current-area loader) NIL))))
 
 (defmethod load-with ((loader loader) (resources vector))
   (loop for resource across resources
@@ -147,3 +166,7 @@
     (with-context ((context loader) :reentrant T)
       (loop for resource across resources
             do (load resource)))))
+
+(defmethod abort-commit ((loader streamed-loader))
+  ;; TODO: implement commit abort for streamed loaders
+  (implement!))
