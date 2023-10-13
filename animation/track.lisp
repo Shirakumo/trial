@@ -125,7 +125,8 @@
 
 (defclass fast-animation-track (animation-track)
   ((sampled-frames :initform (make-array 0 :element-type '(unsigned-byte 32)) :accessor sampled-frames)
-   (sample-rate :initform 60.0 :initarg :sample-rate :accessor sample-rate)))
+   (sample-rate :initform 60.0 :initarg :sample-rate :accessor sample-rate)
+   (duration :initform 0f0 :accessor duration)))
 
 (defmethod update-instance-for-different-class :after ((current animation-track) (new fast-animation-track) &key)
   (setf (sampled-frames new) (generate-index-lookup-table new)))
@@ -137,12 +138,14 @@
     (declare (type simple-vector frames))
     (when (< 1 frame-count)
       (let* ((rate (sample-rate track))
-             (duration (duration track))
+             (duration (- (animation-frame-time (svref frames (1- frame-count)))
+                          (animation-frame-time (svref frames 0))))
              (samples (truncate (+ rate (* rate duration))))
              (sampled (make-array samples :element-type '(unsigned-byte 32)))
              (dt (/ duration (float (1- samples) 0f0)))
              (time (start-time track)))
         (declare (type single-float rate duration dt time))
+        (setf (duration track) duration)
         (dotimes (i samples sampled)
           (let ((frame-index 0))
             (loop for j downfrom (1- frame-count) to 0
