@@ -33,7 +33,7 @@
                                                          :min-filter :nearest
                                                          :mag-filter :nearest))))))
 
-(defmethod observe-load-state ((layer tile-layer) (data tile-data) (state (eql :loaded)) (op load-op))
+(defmethod observe-load-state ((layer tile-layer) (data tile-data) (state (eql :loaded)) (area staging-area))
   (let ((tileset (tileset (tilemap layer))))
     (setf (tileset layer) tileset)
     (setf (tile-size layer) (tile-size tileset))
@@ -41,7 +41,7 @@
     (setf (vy (size layer)) (height (tilemap layer)))
     (setf (bsize layer) (v* (size layer) (tile-size tileset) 0.5))))
 
-(defmethod stage ((layer tile-layer) (op load-op))
+(defmethod stage ((layer tile-layer) (area staging-area))
   (when (tile-data layer)
     (register-load-observer op layer (tile-data layer)))
   (stage (vertex-array layer) area)

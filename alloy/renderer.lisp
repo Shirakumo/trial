@@ -276,6 +276,3 @@
 
 (defmethod trial:stage ((object simple:font) (area trial:staging-area))
   (setf (gethash object (trial:staged area)) (cons NIL NIL)))
-
-(defmethod trial:load-with (loader (object simple:font)))
-(defmethod trial:unload-with (loader (object simple:font)))

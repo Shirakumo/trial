@@ -36,9 +36,6 @@
   (loop for texture across (textures material)
         do (stage texture area)))
 
-(defmethod load-with ((loader loader) (material material)))
-(defmethod unload-with ((loader loader) (material material)))
-
 (defmethod dependencies ((material material))
   (coerce (textures material) 'list))
 
