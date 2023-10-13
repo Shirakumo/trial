@@ -91,14 +91,7 @@
                                 (:step :constant)
                                 (:linear :linear)
                                 (:cubicspline :hermite)))
-  (let ((input (make-array (length (gltf:input sampler)) :element-type 'single-float))
-        (min (float (aref (gltf:minimum (gltf:input sampler)) 0) 0f0))
-        (max (float (aref (gltf:maximum (gltf:input sampler)) 0) 0f0)))
-    (flet ((clamp (x)
-             ;; WTF: What in the absolute fuck why does blender need this I do not understand
-             (* 0.1 (clamp min x max))))
-      (map-into input #'clamp (gltf:input sampler)))
-    (setf (frames track) (cons input (gltf:output sampler)))))
+  (setf (frames track) (cons (gltf:input sampler) (gltf:output sampler))))
 
 (defun load-clip (animation)
   (let ((clip (make-instance 'clip :name (gltf:name animation))))
