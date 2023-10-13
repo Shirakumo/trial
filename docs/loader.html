@@ -1,0 +1,57 @@
+<article><a class="index" href="index.html">Index</a><style>article{
+    max-width: 800px;
+    font-size: 12pt;
+    font-family: sans-serif;
+    margin: 0 auto 3em auto;
+}
+
+article h1{
+    text-align: center;
+    font-size: 2em;
+}
+
+article img{
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+article blockquote{
+    border-left: 0.2em solid gray;
+    margin-left: 1em;
+    padding-left: 1em;
+}
+
+article figcaption{
+    padding: 0.2em 1em;
+    background: #E0E0E0;
+}
+
+article code{
+    background: #F0F0F0;
+    padding: 0 0.1em;
+}
+
+article .code-block{
+    padding: 0.1em 0.5em;
+    overflow-x: auto;
+}
+
+article a.index{
+    display: block;
+    text-decoration: none;
+    text-align: center;
+    font-size: 1.1em;
+    background: #151515;
+    border: 2px solid #151515;
+    color: #FEFEFE;
+}
+
+article a.index:hover{
+    background: #FEFEFE;
+    color: #151515;
+}</style><h1 id="loading and resource management">Loading and Resource Management</h1><p>Trial encapsulates the resource management state through <code>loader</code>s. The <code>main</code> includes a <code>loader</code> instance through which the load state of <code>asset</code>s and <code>resource</code>s is tracked.</p><p>Since <code>loadable</code>s can be manually allocated or loaded, too, the purpose of a loader is primarily through its <code>commit</code> feature, which allows you to load all the things necessary for an entire scene tree.</p><p>A <code>commit</code> will construct a <code>staging-area</code> which is used for tracking everything involved in an incremental load operation. The root you committed is then passed to the staging area via <code>stage</code>. This function is called recursively for everything in the graph and all of the things nodes in the graph require.</p><p>If you manage your own entities that require extra resources or assets, you might need to write a <code>stage :after</code> method to stage those resources as well, or instead return them from a <code>dependencies</code> method. </p><p>If you need to read out some asset metadata or depend on an inferred resource, you can similarly use a <code>stage :after</code> method to call <code>register-load-observer</code>. This will cause <code>observe-load-state</code> to be called whenever the state of the object you want to observe changes. For instance:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(defmethod stage :after ((object my-object) (area staging-area))
+  (register-load-observer area object (asset 'my-project 'asset))
+  (stage (asset 'my-project 'asset) area))
+
+(defmethod observe-load-state ((object my-object) (asset asset) (state (eql :loaded)) (area staging-area))
+  ...)</pre></code><p>Since <code>observe-load-state</code> also gives you the current <code>staging-area</code>, you can use the callback to further stage resources and nodes that you might now have realised are needed to complete the load operation.</p><p>By default resources and assets are loaded as soon as they are staged. If a problem occurs, you can abort the transaction and everything that was loaded during the process will be unloaded again. If the staging completes successfully, the new state introduced by the <code>staging-area</code> is transferred over and remembered by the <code>loader</code>. If <code>:unload T</code> is passed to <code>commit</code>, any resources that were loaded before but are no longer needed according to the staging will be unloaded. This is useful to handle larger scene switches, where many objects will no longer be needed.</p></article><link rel="stylesheet" href="highlight-lisp.css"><script type="text/javascript" src="highlight-lisp.js"></script><script type="text/javascript">[...document.querySelectorAll('[data-language="common lisp"] pre')].map(HighlightLisp.highlight_element);</script>

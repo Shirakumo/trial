@@ -1,0 +1,23 @@
+# Loading and Resource Management
+Trial encapsulates the resource management state through ``loader``s. The ``main`` includes a ``loader`` instance through which the load state of ``asset``s and ``resource``s is tracked.
+
+Since ``loadable``s can be manually allocated or loaded, too, the purpose of a loader is primarily through its ``commit`` feature, which allows you to load all the things necessary for an entire scene tree.
+
+A ``commit`` will construct a ``staging-area`` which is used for tracking everything involved in an incremental load operation. The root you committed is then passed to the staging area via ``stage``. This function is called recursively for everything in the graph and all of the things nodes in the graph require.
+
+If you manage your own entities that require extra resources or assets, you might need to write a ``stage :after`` method to stage those resources as well, or instead return them from a ``dependencies`` method. 
+
+If you need to read out some asset metadata or depend on an inferred resource, you can similarly use a ``stage :after`` method to call ``register-load-observer``. This will cause ``observe-load-state`` to be called whenever the state of the object you want to observe changes. For instance:
+
+:: common lisp
+(defmethod stage :after ((object my-object) (area staging-area))
+  (register-load-observer area object (asset 'my-project 'asset))
+  (stage (asset 'my-project 'asset) area))
+
+(defmethod observe-load-state ((object my-object) (asset asset) (state (eql :loaded)) (area staging-area))
+  ...)
+::
+
+Since ``observe-load-state`` also gives you the current ``staging-area``, you can use the callback to further stage resources and nodes that you might now have realised are needed to complete the load operation.
+
+By default resources and assets are loaded as soon as they are staged. If a problem occurs, you can abort the transaction and everything that was loaded during the process will be unloaded again. If the staging completes successfully, the new state introduced by the ``staging-area`` is transferred over and remembered by the ``loader``. If ``:unload T`` is passed to ``commit``, any resources that were loaded before but are no longer needed according to the staging will be unloaded. This is useful to handle larger scene switches, where many objects will no longer be needed.
