@@ -80,6 +80,7 @@
   ((targets :initform (make-array 0 :adjustable T :fill-pointer T) :accessor targets)
    (clip :initarg :clip :initform NIL :accessor clip)
    (clock :initform 0.0 :accessor clock)
+   (playback-speed :initarg :playback-speed :initform 1.0 :accessor playback-speed)
    (pose :accessor pose)
    (skeleton :initform NIL :accessor skeleton)))
 
@@ -107,11 +108,13 @@
       (format stream "  No current fade targets.~%")))
 
 (defmethod play ((target clip) (controller fade-controller))
-  (setf (fill-pointer (targets controller)) 0)
-  (setf (clip controller) target)
-  (pose<- (pose controller) (rest-pose (skeleton controller)))
-  (setf (clock controller) (start-time target))
-  (sample (pose controller) (clip controller) (clock controller)))
+  (unless (eq target (clip controller))
+    (setf (playback-speed controller) 1.0)
+    (setf (fill-pointer (targets controller)) 0)
+    (setf (clip controller) target)
+    (pose<- (pose controller) (rest-pose (skeleton controller)))
+    (setf (clock controller) (start-time target))
+    (sample (pose controller) (clip controller) (clock controller))))
 
 (defmethod fade-to ((target clip) (controller fade-controller) &key (duration 0.2))
   (let ((targets (targets controller)))
@@ -120,6 +123,7 @@
           ((and (or (= 0 (length targets))
                     (not (eq target (fade-target-clip (aref targets (1- (length targets)))))))
                 (not (eq target (clip controller))))
+           (setf (playback-speed controller) 1.0)
            (vector-push-extend (make-fade-target target (rest-pose (skeleton controller)) duration) targets)))))
 
 (defmethod update ((controller fade-controller) tt dt fc)
@@ -134,7 +138,7 @@
                  (pose<- (pose controller) (fade-target-pose target))
                  (array-utils:vector-pop-position targets i)
                  (return)))
-      (let ((time (sample (pose controller) (clip controller) (+ (clock controller) dt))))
+      (let ((time (sample (pose controller) (clip controller) (+ (clock controller) (* (playback-speed controller) dt)))))
         (setf (clock controller) time)
         (loop for target across targets
               do (setf (fade-target-clock target) (sample (fade-target-pose target) (fade-target-clip target) (+ (fade-target-clock target) dt)))
