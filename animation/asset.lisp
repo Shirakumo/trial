@@ -17,8 +17,8 @@
 
 (defmethod find-clip (name (asset animation-asset) &optional (errorp T))
   (or (gethash name (clips asset))
-      (when errorp (error "No clip with name~%  ~a~%on~%  ~a"
-                          name asset))))
+      (when errorp (error "No clip with name~%  ~a~%on~%  ~a~%known clips:~%  ~a"
+                          name asset (alexandria:hash-table-keys (clips asset))))))
 
 (defmethod (setf find-clip) ((clip clip) name (asset animation-asset))
   (setf (gethash name (clips asset)) clip))
