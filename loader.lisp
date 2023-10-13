@@ -20,7 +20,7 @@
   (loop for observer in (gethash object (observers area))
         do (observe-load-state observer object new-state area)))
 
-(defmethod register-load-observer ((op staging-area) observer changing)
+(defmethod register-load-observer ((area staging-area) observer changing)
   (unless (member observer (gethash changing (observers area)))
     (push observer (gethash changing (observers area)))
     ;; Backfill for current state if registration occurs live.
@@ -37,13 +37,15 @@
   (case (gethash object (staged area))
     (:tentative
      (error "Circular staging on ~a!" object))
-    (null
-     (setf (gethash object (staged op)) :tentative)
-     (call-next-method))))
+    ((NIL)
+     (setf (gethash object (staged area)) :tentative)
+     (prog1 (call-next-method)
+       (when (eql :tentative (gethash object (staged area)))
+         (setf (gethash object (staged area)) :done))))))
 
 (defmethod stage :before (object (area staging-area))
   (dolist (dependency (dependencies object))
-    (stage dependency op)))
+    (stage dependency area)))
 
 (defmethod stage ((objects cons) (area staging-area))
   (dolist (object objects)
@@ -91,8 +93,8 @@
 (defmethod finalize ((loader loader))
   (loop for resource being the hash-keys of (loaded loader) using (hash-value status)
         do (case status
-             ((:to-unload :to-keep :loaded :allocated)
-              (when (allocated-p resource)
+             ((:loaded :allocated)
+              (when (loaded-p resource)
                 (deallocate resource)))))
   (clrhash (loaded loader)))
 
@@ -102,7 +104,7 @@
   (when unload
     (loop for resource being the hash-keys of (loaded loader) using (hash-value status)
           do (case status
-               ((:to-unload :to-keep :loaded)
+               ((:loaded :allocated)
                 (unless (gethash resource (staged area))
                   (deallocate resource)
                   (remhash resource (loaded loader))))))
