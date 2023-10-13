@@ -78,7 +78,8 @@
           do (case status
                ((:to-unload :to-keep :loaded)
                 (unless (gethash resource (staged op))
-                  (unload-with loader resource)))))
+                  (deallocate resource)
+                  (remhash resource (loaded loader))))))
     (trivial-garbage:gc :full T))
   (let ((to-load (make-array 0 :adjustable T :fill-pointer T)))
     (loop for resource being the hash-keys of (staged op) using (hash-value status)
