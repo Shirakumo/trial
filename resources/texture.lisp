@@ -62,9 +62,19 @@
       (upload-texture-source source texture))
     (gl:bind-texture (target texture) 0)))
 
-(defmethod pixel-data ((texture texture)) (pixel-data (first (sources texture))))
-(defmethod pixel-type ((texture texture)) (pixel-type (first (sources texture))))
-(defmethod pixel-format ((texture texture)) (pixel-format (first (sources texture))))
+(defmethod pixel-data ((texture texture))
+  (when (sources texture)
+    (pixel-data (first (sources texture)))))
+
+(defmethod pixel-type ((texture texture)) 
+  (if (sources texture)
+      (pixel-type (first (sources texture)))
+      (internal-format-pixel-type (internal-format texture))))
+
+(defmethod pixel-format ((texture texture))
+  (if (sources texture)
+      (pixel-format (first (sources texture)))
+      (internal-format-pixel-format (internal-format texture))))
 
 (defmethod (setf pixel-data) (value (texture texture)) (setf (pixel-data (first (sources texture))) value))
 (defmethod (setf pixel-type) (value (texture texture)) (setf (pixel-type (first (sources texture))) value))
@@ -280,6 +290,30 @@
 
 (defmethod activate ((source texture))
   (gl:bind-texture (target source) (gl-name source)))
+
+(defmethod clear ((texture texture))
+  (gl-extension-case
+    (:gl-arb-clear-texture
+     (let ((size (pixel-data-stride (pixel-type texture) (pixel-format texture))))
+       (cffi:with-foreign-object (fill :uint8 size)
+         (static-vectors:fill-foreign-memory fill size 0)
+         (%gl:clear-tex-image (gl-name texture) 0
+                              (pixel-format texture)
+                              (pixel-type texture)
+                              fill))))
+    (T
+     (let ((size (* (width texture) (or (height texture) 1) (or (depth texture) 1)
+                    (pixel-data-stride (pixel-type texture) (pixel-format texture)))))
+       (cffi:with-foreign-object (fill :uint8 size)
+         (static-vectors:fill-foreign-memory fill size 0)
+         (gl:bind-texture (target texture) (gl-name texture))
+         (ecase (target texture)
+           (:texture-1d
+            (%gl:tex-sub-image-1d :texture-1d 0 0 (width texture) (pixel-format texture) (pixel-type texture) fill))
+           ((:texture-2d :texture-1d-array)
+            (%gl:tex-sub-image-2d (target texture) 0 0 0 (width texture) (height texture) (pixel-format texture) (pixel-type texture) fill))
+           ((:texture-3d :texture-2d-array)
+            (%gl:tex-sub-image-3d (target texture) 0 0 0 0 (width texture) (height texture) (depth texture) (pixel-format texture) (pixel-type texture) fill))))))))
 
 ;;;; Texture spec wrangling
 ;; The idea of this is that, in order to maximise sharing of texture resources
