@@ -32,6 +32,7 @@
    #:start-time
    #:end-time
    #:loop-p
+   #:next-clip
    #:duration
    #:find-animation-track
    #:clip
