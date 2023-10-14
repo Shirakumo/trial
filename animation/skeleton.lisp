@@ -41,6 +41,9 @@
 (defmethod (setf bind-pose) :after (pose (skeleton skeleton))
   (update-inv-bind-pose skeleton))
 
+(defmethod node (name (skeleton skeleton))
+  (position name (joint-names skeleton) :test #'equalp))
+
 (defmethod update-inv-bind-pose ((skeleton skeleton))
   (let ((pose (bind-pose skeleton)))
     (let ((minv (make-array (length pose))))
