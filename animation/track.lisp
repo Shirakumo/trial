@@ -190,7 +190,7 @@
                                   time1))
                     do (incf index)
                     finally (return r))
-              -1))
+              (aref sampled (1- (length sampled)))))
         -1)))
 
 (defclass transform-track ()
