@@ -19,6 +19,7 @@
   (setf (context display) context)
   (setf (handler context) display)
   (setf +matrix-index+ 0)
+  (cache-gl-extensions)
   #-arm64 (prevent-powersave)
   (with-context ((context display))
     (setup-rendering display)))
