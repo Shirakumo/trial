@@ -1,6 +1,6 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass buffer-object (gl-resource)
+(defclass buffer-object (gl-resource deferrable-resource)
   ((buffer-type :initarg :buffer-type :initform (error "BUFFER-TYPE required.") :accessor buffer-type)
    (buffer-data :initarg :buffer-data :initform NIL :accessor buffer-data)
    (data-usage :initarg :data-usage :initform :static-draw :accessor data-usage)
@@ -79,14 +79,12 @@
     (resize-buffer/ptr buffer size (memory-region-pointer region))))
 
 (defmethod allocate ((buffer buffer-object))
-  (assert (not (null (size buffer))))
-  (let ((vbo (gl:gen-buffer))
-        (buffer-data (buffer-data buffer)))
-    (with-cleanup-on-failure (progn (gl:delete-buffers (list vbo))
-                                    (setf (data-pointer buffer) NIL))
-      (setf (data-pointer buffer) vbo)
-      (v:debug :trial.resource "Allocating ~d KB buffer." (truncate (size buffer) 1024))
-      (resize-buffer buffer (size buffer) :data buffer-data))))
+  (setf (data-pointer buffer) (gl:gen-buffer))
+  (when (size buffer)
+    (resize-buffer buffer (size buffer))))
+
+(defmethod load ((buffer buffer-object))
+  (resize-buffer buffer (size buffer) :data (buffer-data buffer)))
 
 (defmethod deallocate ((buffer buffer-object))
   (gl:delete-buffers (list (gl-name buffer))))

@@ -66,3 +66,15 @@
 
 (defclass gl-resource (foreign-resource)
   ((data-pointer :accessor gl-name)))
+
+(defclass deferrable-resource (resource)
+  ((loaded-p :initform NIL :accessor loaded-p)))
+
+(defmethod load :after ((resource deferrable-resource))
+  (setf (loaded-p resource) T))
+
+(defmethod unload :after ((resource deferrable-resource))
+  (setf (loaded-p resource) NIL))
+
+(defmethod deallocate :after ((resource deferrable-resource))
+  (setf (loaded-p resource) NIL))
