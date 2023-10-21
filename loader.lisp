@@ -69,17 +69,19 @@
         do (setf (gethash resource (load-state area)) state)))
 
 (defmethod unstage ((object resource) (area staging-area))
-  (deallocate object)
+  (when (allocated-p object)
+    (deallocate object))
   (change-state area object NIL))
 
 (defmethod unstage ((object asset) (area staging-area))
-  (unload object)
+  (when (loaded-p object)
+    (unload object))
   (change-state area object NIL))
 
 (defmethod abort-commit ((area staging-area))
   (loop for resource being the hash-keys of (load-state area) using (hash-value state)
         do (case state
-             ((:loaded :allocated)
+             ((:loaded :allocated :tentative)
               (unstage resource area)))))
 
 (defmethod deallocate ((area staging-area))
