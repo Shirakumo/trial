@@ -14,11 +14,14 @@
                (:file "cpu-particle")
                (:file "gpu-particle")
                (:file "spatial-query")
-               (:file "rigging"))
+               (:file "rigging")
+               (:file "video"))
   :depends-on (:trial-glfw
+               :trial-theora
                :trial-alloy
                :trial-jpeg-turbo
                :trial-png
                :trial-gltf
                :trial-hdr
-               :trial-assets-gltf))
+               :trial-assets-gltf
+               :trial-assets-theora))
