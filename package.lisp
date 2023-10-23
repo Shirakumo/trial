@@ -559,6 +559,10 @@
    #:capture
    #:blit-to-screen
    #:activate)
+  ;; resources/memory.lisp
+  (:export
+   #:memory
+   #:size)
   ;; resources/shader-program.lisp
   (:export
    #:shader-program
