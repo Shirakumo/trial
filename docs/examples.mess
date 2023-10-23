@@ -1,0 +1,21 @@
+# Examples
+Trial includes a system with a variety of examples called ``trial-examples``. After loading it, you can fire it up via ``trial-examples:launch`` which will show a menu where you can pick an example to run. You can also run a specific example directly by passing an initarg.
+
+The following examples are currently available:
+
+- **triangle**
+  A simple triangle
+- **riggging**
+  An example of an animated character model
+- **cpu-particle**
+  A demo of the CPU particle system
+- **gpu-particle**
+  A demo of the large-scale GPU particle system
+- **video**
+  An example of video playback
+- **spatial-query**
+  A test application for spatial query data structures
+- **gjk**
+  A test application for the GJK collision detection algorithm
+- **vclip**
+  A test application for the V-clip collision detection algorithm
