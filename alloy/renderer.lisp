@@ -274,5 +274,4 @@
   ;; FIXME: This is BAD, but Alloy gives us no way of generating the resource stubs.
   (alloy:allocate font))
 
-(defmethod trial:stage ((object simple:font) (area trial:staging-area))
-  (setf (gethash object (trial:staged area)) (cons NIL NIL)))
+(defmethod trial:stage ((object simple:font) (area trial:staging-area)))

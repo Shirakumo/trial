@@ -9,7 +9,7 @@
 (define-shader-entity basic-triangle (vertex-entity vertex-colored-entity)
   ((vertex-array :initform (// 'examples 'triangle))))
 
-(define-example basic-triangle
+(define-example triangle
   :title "Basic Triangle"
   (enter (make-instance 'basic-triangle) scene)
   (enter (make-instance 'render-pass) scene))
