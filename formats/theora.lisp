@@ -76,3 +76,16 @@
           (update (resource asset :u))
           (update (resource asset :v)))))
     fc))
+
+(defmethod done-p ((asset asset))
+  (org.shirakumo.fraf.theora:done-p (file asset)))
+
+(defmethod duration ((asset asset))
+  (implement!))
+
+(defmethod seek ((asset asset) to)
+  (cond ((= 0 to)
+         (org.shirakumo.fraf.theora:reset (file asset))
+         0.0)
+        (T
+         (implement!))))

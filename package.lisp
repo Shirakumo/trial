@@ -1721,7 +1721,10 @@
   (:export
    #:video
    #:clock
-   #:state))
+   #:state
+   #:duration
+   #:seek
+   #:done-p))
 
 (defpackage #:cl+trial
   (:nicknames #:org.shirakumo.fraf.trial.cl+trial)

@@ -5,9 +5,10 @@
 (define-shader-entity video (vertex-entity listener)
   ((textures :accessor textures)
    (asset :initarg :asset)
-   (clock :initform 0f0 :accessor clock)
+   (clock :initform 0f0 :reader clock)
    (frame :initform 0 :accessor frame)
-   (state :initarg :state :initform :paused :accessor state)))
+   (state :initarg :state :initform :paused :accessor state)
+   (loop-p :initform NIL :accessor loop-p)))
 
 (defmethod shared-initialize :after ((video video) slots &key asset)
   (when asset
@@ -31,11 +32,30 @@
   (setf (uniform program "U_plane") 1)
   (setf (uniform program "V_plane") 2))
 
+(defmethod (setf clock) (new (video video))
+  (seek video new))
+
+(defmethod duration ((video video))
+  (duration (slot-value video 'asset)))
+
+(defmethod seek ((video video) to)
+  (setf (slot-value video 'clock) (seek (slot-value video 'asset) to))
+  (setf (frame video) 0))
+
+(defmethod done-p ((video video))
+  (done-p (slot-value video 'asset)))
+
 (define-handler (video tick) (dt)
   (when (eql :playing (state video))
-    (let* ((tt (incf (clock video) dt))
-           (fc (update (slot-value video 'asset) tt dt (frame video))))
-      (setf (frame video) fc))))
+    (let* ((asset (slot-value video 'asset))
+           (tt (+ (clock video) dt))
+           (fc (update asset tt dt (frame video))))
+      (setf (slot-value video 'clock) tt)
+      (setf (frame video) fc)
+      (when (done-p asset)
+        (if (loop-p video)
+            (setf (clock video) 0.0)
+            (setf (state video) :paused))))))
 
 (define-class-shader (video :vertex-shader)
   "layout (location = 2) in vec2 in_uv;
