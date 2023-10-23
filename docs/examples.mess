@@ -6,7 +6,7 @@ The following examples are currently available:
 - **triangle**
   [ image images/example triangle.png, width 15em ]
   A simple triangle
-- **riggging**
+- **rigging**
   [ image images/example rigging.png, width 15em ]
   An example of an animated character model
 - **cpu-particle**
