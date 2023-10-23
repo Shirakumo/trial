@@ -4,18 +4,26 @@ Trial includes a system with a variety of examples called ``trial-examples``. Af
 The following examples are currently available:
 
 - **triangle**
+  [ image images/example triangle.png, width 15em ]
   A simple triangle
 - **riggging**
+  [ image images/example rigging.png, width 15em ]
   An example of an animated character model
 - **cpu-particle**
+  [ image images/example cpu-particle.png, width 15em ]
   A demo of the CPU particle system
 - **gpu-particle**
+  [ image images/example gpu-particle.png, width 15em ]
   A demo of the large-scale GPU particle system
 - **video**
+  [ image images/example video.png, width 15em ]
   An example of video playback
 - **spatial-query**
+  [ image images/example spatial-query.png, width 15em ]
   A test application for spatial query data structures
 - **gjk**
+  [ image images/example gjk.png, width 15em ]
   A test application for the GJK collision detection algorithm
 - **vclip**
   A test application for the V-clip collision detection algorithm
+
