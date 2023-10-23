@@ -268,11 +268,11 @@
   (declare (optimize speed (safety 0)))
   (declare (type trial:primitive primitive))
   (declare (type vec3 global-direction next))
-  (let ((local (vcopy3 global-direction)))
+  (let ((local (vcopy global-direction)))
     (declare (dynamic-extent local))
     (trial::ntransform-inverse local (trial:primitive-transform primitive))
     (support-function primitive local next)
-    (n*m next (trial:primitive-transform primitive))))
+    (n*m (trial:primitive-transform primitive) next)))
 
 (defgeneric support-function (primitive local-direction next))
 
