@@ -81,6 +81,7 @@
                (:file "toolkit" :depends-on ("package" "conditions"))
                (:file "transforms" :depends-on ("package"))
                (:file "type-info" :depends-on ("package" "toolkit" "data-pointer"))
+               (:file "video" :depends-on ("package" "helpers"))
                (:module "animation"
                 :depends-on ("package" "shader-entity" "helpers")
                 :components ((:file "asset" :depends-on ("clip"))

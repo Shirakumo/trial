@@ -589,6 +589,7 @@
    #:target
    #:level
    #:samples
+   #:sources
    #:internal-format
    #:pixel-format
    #:pixel-type
@@ -1581,6 +1582,7 @@
    #:texture-sources->texture-size
    #:texture-sources->target
    #:normalize-texture-sources
+   #:make-texture-source
    #:make-image-source
    #:merge-texture-sources
    #:upload-texture-source
@@ -1715,16 +1717,11 @@
    #:reset-matrix
    #:vec->screen
    #:screen->vec)
-  ;; window.lisp
+  ;; video.lisp
   (:export
-   #:window
-   #:register-window
-   #:deregister-window
-   #:list-windows
-   #:window
-   #:name)
-  ;; workbench.lisp
-  (:export))
+   #:video
+   #:clock
+   #:state))
 
 (defpackage #:cl+trial
   (:nicknames #:org.shirakumo.fraf.trial.cl+trial)

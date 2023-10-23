@@ -8,8 +8,8 @@
     (format stream "~a bytes~:[~; ALLOCATED~]" (size resource) (allocated-p resource))))
 
 (defmethod allocate ((resource memory))
-  (setf (data-pointer resource) (cffi:foreign-alloc (or (size resource)
-                                                        (error "SIZE required")))))
+  (setf (data-pointer resource) (cffi:foreign-alloc :uint8 :count (or (size resource)
+                                                                      (error "SIZE required")))))
 
 (defmethod deallocate ((resource memory))
   (cffi:foreign-free (data-pointer resource)))
