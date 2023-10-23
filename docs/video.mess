@@ -1,0 +1,15 @@
+# Video Playback
+Trial supports a generic video player through the ``video`` entity. It'll need an appropriate video asset it can use to load and stream the data, which is currently only implemented through the ``trial-theora`` system, which allows playback of ogg/vorbis/theora video files.
+
+The basic playback of video is really simple, however:
+
+:: common lisp
+(define-asset (pool video) org.shirakumo.fraf.trial.theora:asset
+    #p"video.ogv")
+
+... (enter (make-instance 'video :asset (asset 'pool 'video)) scene)
+::
+
+By default the video size is always forced to be 1 unit wide, with the height fitting to the aspect ratio of the video in the file.
+
+You can control the playback of the video with the functions ``clock``, ``loop-p``, and ``state``.
