@@ -5,7 +5,6 @@
    (#:gltf #:org.shirakumo.fraf.gltf)
    (#:v #:org.shirakumo.verbose))
   (:export
-   #:asset
    #:static-gltf-container
    #:static-gltf-entity
    #:animated-gltf-entity))
@@ -273,7 +272,7 @@
                                           (if sampler (gltf:wrap-t sampler) :clamp-to-edge)
                                           (if sampler (gltf:wrap-t sampler) :clamp-to-edge))))))
 
-(defun load-materials (gltf asset)
+(defun load-materials (gltf model asset)
   (flet ((to-vec (array)
            (ecase (length array)
              (2 (vec (aref array 0) (aref array 1)))
@@ -284,19 +283,20 @@
           for name = (or (gltf:name material) (gltf:idx material))
           for mr = (load-image asset (gltf:metallic-roughness pbr))
           do (when mr (setf (trial::swizzle mr) '(:b :g :r :a)))
-             (trial:update-material
-              name 'trial:pbr-material
-              :albedo-texture (load-image asset (gltf:albedo pbr))
-              :metal-rough-texture mr
-              :occlusion-texture (load-image asset (gltf:occlusion-texture material))
-              :emissive-texture (load-image asset (gltf:emissive-texture material))
-              :normal-texture (load-image asset (gltf:normal-texture material))
-              :albedo-factor (to-vec (gltf:albedo-factor pbr))
-              :metallic-factor (float (gltf:metallic-factor pbr) 0f0)
-              :roughness-factor (float (gltf:roughness-factor pbr) 0f0)
-              :emissive-factor (to-vec (gltf:emissive-factor material))
-              :occlusion-factor (if (gltf:occlusion-texture material) 1.0 0.0)
-              :alpha-cutoff (float (gltf:alpha-cutoff material) 0f0)))))
+             (let ((material (trial:ensure-instance
+                              (trial:find-material name model NIL) 'trial:pbr-material
+                              :albedo-texture (load-image asset (gltf:albedo pbr))
+                              :metal-rough-texture mr
+                              :occlusion-texture (load-image asset (gltf:occlusion-texture material))
+                              :emissive-texture (load-image asset (gltf:emissive-texture material))
+                              :normal-texture (load-image asset (gltf:normal-texture material))
+                              :albedo-factor (to-vec (gltf:albedo-factor pbr))
+                              :metallic-factor (float (gltf:metallic-factor pbr) 0f0)
+                              :roughness-factor (float (gltf:roughness-factor pbr) 0f0)
+                              :emissive-factor (to-vec (gltf:emissive-factor material))
+                              :occlusion-factor (if (gltf:occlusion-texture material) 1.0 0.0)
+                              :alpha-cutoff (float (gltf:alpha-cutoff material) 0f0))))
+               (setf (trial:find-material name model) material)))))
 
 (defun load-light (light)
   (flet ((make (type &rest initargs)
@@ -330,35 +330,28 @@
 (define-shader-entity animated-gltf-entity (trial::multi-mesh-entity trial::standard-animated-renderable trial::per-array-material-renderable static-gltf-container)
   ())
 
-(defclass asset (file-input-asset
-                 multi-resource-asset
-                 animation-asset
-                 ;; KLUDGE: this should not be necessary if we can figure out the loading correctly
-                 trial::full-load-asset)
-  ((scenes :initform (make-hash-table :test 'equal) :accessor scenes)))
+(defmethod load-model (input (type (eql :glb)) &rest args)
+  (apply #'load-model input :gltf args))
 
-(defmethod node (name (asset asset))
-  (loop for scene being the hash-values of (scenes asset)
-        thereis (node name scene)))
-
-(defmethod generate-resources ((asset asset) input &key load-scene)
+(defmethod load-model (input (type (eql :gltf)) &key generator (model (make-instance 'model)))
   (gltf:with-gltf (gltf input)
-    (let ((meshes (meshes asset))
-          (clips (clips asset)))
-      (load-materials gltf asset)
+    (let ((meshes (meshes model))
+          (clips (clips model))
+          (scenes (scenes model)))
+      (load-materials gltf model generator)
       (loop for mesh across (load-meshes gltf)
             do (setf (gethash (name mesh) meshes) mesh)
-               (trial::make-vertex-array mesh (resource asset (name mesh))))
+               (trial::make-vertex-array mesh (resource generator (name mesh))))
       ;; Patch up
       (when (loop for mesh being the hash-values of meshes
                   thereis (skinned-p mesh))
-        (setf (skeleton asset) (load-skeleton gltf))
+        (setf (skeleton model) (load-skeleton gltf))
         (load-clips gltf clips)
         (let ((map (make-hash-table :test 'eql)))
-          (trial::reorder (skeleton asset) map)
-          (loop for clip being the hash-values of (clips asset)
+          (trial::reorder (skeleton model) map)
+          (loop for clip being the hash-values of clips
                 do (trial::reorder clip map))
-          (loop for mesh being the hash-values of (meshes asset)
+          (loop for mesh being the hash-values of meshes
                 do (trial::reorder mesh map))))
       ;; Construct scene graphs
       (labels ((mesh-name (node)
@@ -381,7 +374,7 @@
                                                      collect (make-instance 'lod :threshold threshold :mesh lod))
                                          :transform (gltf-node-transform node)
                                          :name (gltf:name node)
-                                         :asset asset
+                                         :asset generator
                                          :mesh mesh-name)))
                        (T
                         (make-instance 'static-gltf-container :transform (gltf-node-transform node)
@@ -396,18 +389,8 @@
                           (enter child container))))
         (loop for node across (gltf:scenes gltf)
               for scene = (make-instance 'static-gltf-container :name (gltf:name node))
-              do (setf (gethash (gltf:name node) (scenes asset)) scene)
+              do (setf (gethash (gltf:name node) scenes) scene)
                  (when (gltf:light node)
                    (enter (load-environment-light (gltf:light node)) scene))
                  (recurse (gltf:nodes node) scene)))
-      ;; Enter it.
-      (flet ((load-scene (scene)
-               (enter scene (scene +main+))))
-        (etypecase load-scene
-          (string
-           (load-scene (or (gethash load-scene (scenes asset))
-                           (error "No scene named~%  ~s~%in~%  ~a" load-scene asset))))
-          ((eql T)
-           (loop for scene being the hash-values of (scenes asset)
-                 do (load-scene scene)))
-          (null))))))
+      model)))
