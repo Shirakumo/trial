@@ -158,6 +158,13 @@
    #:geometry-name
    #:attributes
    #:data-usage)
+  ;; assets/model.lisp
+  (:export
+   #:load-model
+   #:save-model
+   #:model-loader
+   #:model-file
+   #:model)
   ;; assets/shader-image.lisp
   (:export
    #:image-renderer
@@ -1314,6 +1321,21 @@
    #:save-mapping
    #:find-action-mappings
    #:update-action-mappings)
+  ;; model.lisp
+  (:export
+   #:model
+   #:materials
+   #:meshes
+   #:clips
+   #:scenes
+   #:find-material
+   #:find-meshe
+   #:find-clip
+   #:find-scene
+   #:list-clips
+   #:list-meshes
+   #:list-scenes
+   #:skeleton)
   ;; os-resources.lisp
   (:export
    #:*open-in-browser-hook*

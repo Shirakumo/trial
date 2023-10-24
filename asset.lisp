@@ -137,6 +137,16 @@
 (defmethod input* ((asset asset))
   (coerce-asset-input asset (input asset)))
 
+(defun check-loaded (asset)
+  (restart-case
+      (unless (loaded-p asset)
+        (error "The asset~%  ~a~%needs to be loaded, but is not."
+               asset))
+    (continue ()
+      :report (lambda (s) (format s "Load ~a now" asset))
+      (load asset)))
+  asset)
+
 (defmacro define-asset ((pool name) type input &rest options)
   (check-type pool symbol)
   (check-type name symbol)

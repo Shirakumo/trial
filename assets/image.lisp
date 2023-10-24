@@ -32,7 +32,7 @@
          data-in)
         (T
          ;; TODO: implement convert-image-data
-         (error "IMPLEMENT"))))
+         (implement!))))
 
 (defgeneric load-image (source type))
 
@@ -56,6 +56,14 @@
   (let ((texture-source (make-image-source vector width height pixel-type pixel-format)))
     (apply #'save-image texture-source target type args)))
 
+(defmethod save-image (source target (type symbol) &key &allow-other-keys)
+  (let ((types (delete T (list-eql-specializers #'save-image 2))))
+    (if (find type types)
+        (error "Don't know how to save~%  ~a~%to ~a~%  ~a~%"
+               source type target)
+        (error "Don't know how to save to ~a~%known types are:~%  ~a~%Did you load the respective format system?"
+               type types))))
+
 (defmethod load-image (source (type string))
   (or (cl-ppcre:register-groups-bind (type) ("^[^/]*/([^+/]+)" type)
         (load-image source (kw type)))
@@ -69,6 +77,14 @@
 
 (defmethod load-image ((sources cons) (type (eql T)))
   (loop for source in sources collect (load-image source T)))
+
+(defmethod load-image (source (type symbol))
+  (let ((types (delete T (list-eql-specializers #'load-image 1))))
+    (if (find type types)
+        (error "Don't know how to load~%  ~a~%from ~a"
+               source type)
+        (error "Don't know how to load from ~a~%known types are:~%  ~a~%Did you load the respective format system?"
+               type types))))
 
 (defun %load-image (source type)
   (with-new-value-restart (source) (use-value "Specify a new image source.")
