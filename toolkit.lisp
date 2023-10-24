@@ -539,6 +539,13 @@
            (c2mop:finalize-inheritance class))
          (c2mop:class-prototype class)))))
 
+(defun list-eql-specializers (function arg)
+  (delete-duplicates
+   (loop for method in (c2mop:generic-function-methods function)
+         for spec = (nth arg (c2mop:method-specializers method))
+         when (typep spec 'c2mop:eql-specializer)
+         collect (c2mop:eql-specializer-object spec))))
+
 (defun maybe-finalize-inheritance (class)
   (let ((class (etypecase class
                  (class class)
