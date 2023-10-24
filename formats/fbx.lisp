@@ -3,17 +3,10 @@
   (:shadow #:asset)
   (:local-nicknames
    (#:fbx #:org.shirakumo.fraf.fbx))
-  (:export
-   #:asset))
+  (:export))
 (in-package #:org.shirakumo.fraf.trial.fbx)
 
-(defclass asset (file-input-asset
-                 multi-resource-asset
-                 animation-asset
-                 trial::full-load-asset)
-  ())
-
-(defmethod generate-resources ((asset asset) input &key)
+(defmethod load-model (input (type (eql :fbx)) &key generator (model (make-instance 'model)))
   (fbx:with-freeing ((axes (make-instance 'fbx:coordinate-axes
                                           :right :positive-x
                                           :up :positive-y
@@ -22,4 +15,4 @@
                                             :normalize-normals T
                                             :target-axes axes)))
     ;; FIXME: do this some day.
-    ))
+    (implement!)))
