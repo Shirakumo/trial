@@ -59,9 +59,8 @@
 (defmethod unload :after ((asset model-file))
   (setf (model asset) NIL))
 
-(defmacro %define-model-file-delegate (name)
-  (let ((find (intern (format NIL "~a-~a" 'find name)))
-        (read (intern (format NIL "~a~a" name 's))))
+(defmacro %define-model-file-delegate (name read)
+  (let ((find (intern (format NIL "~a-~a" 'find name))))
     `(progn
        (defmethod ,read ((asset model-file))
          (check-loaded asset)
@@ -75,10 +74,10 @@
          (check-loaded asset)
          (setf (,find name (model asset)) value)))))
 
-(%define-model-file-delegate material)
-(%define-model-file-delegate mesh)
-(%define-model-file-delegate clip)
-(%define-model-file-delegate scene)
+(%define-model-file-delegate material materials)
+(%define-model-file-delegate mesh meshes)
+(%define-model-file-delegate clip clips)
+(%define-model-file-delegate scene scenes)
 
 (defmethod skeleton ((asset model-file))
   (check-loaded asset)
