@@ -1,91 +1,93 @@
 (defpackage #:org.shirakumo.fraf.trial.theora
   (:use #:cl+trial)
-  (:shadow #:asset)
-  (:export #:asset))
+  (:shadow #:video)
+  (:export #:video))
 (in-package #:org.shirakumo.fraf.trial.theora)
 
-(defclass asset (file-input-asset multi-resource-asset)
-  ((file :accessor file)))
+(defclass video (trial:video org.shirakumo.fraf.theora:file)
+  ((org.shirakumo.fraf.theora:width :reader width)
+   (org.shirakumo.fraf.theora:height :reader height)
+   (org.shirakumo.fraf.theora:framerate :reader framerate)
+   (clock :initform 0f0 :accessor clock)
+   (frame :initform 0 :accessor frame)
+   (generator :initarg :generator :reader generator)))
 
-(defmethod generate-resources ((asset asset) input &key)
-  (let* ((file (org.shirakumo.fraf.theora:open input))
+(defmethod load-video (input (type (eql :ogv)) &key generator)
+  (let* ((file (make-instance 'video :source input :generator generator))
          (width (org.shirakumo.fraf.theora:width file))
          (height (org.shirakumo.fraf.theora:height file))
          (uv-width width)
-         (uv-height height)
-         data)
-    (setf (file asset) file)
+         (uv-height height))
     (ecase (org.shirakumo.fraf.theora:pixel-format file)
       (:420 (setf uv-width (truncate width 2)
                   uv-height (truncate height 2)))
       (:422 (setf uv-width (truncate width 2)))
       (:444))
-    (setf data (ensure-instance (resource asset :yuv-data) 'memory
-                                :size (+ (* width height)
-                                         (* uv-width uv-height)
-                                         (* uv-width uv-height))))
-    (ensure-instance (resource asset :y) 'texture
+    (ensure-instance (resource generator :yuv-data) 'memory
+                     :size (+ (* width height)
+                              (* uv-width uv-height)
+                              (* uv-width uv-height)))
+    (ensure-instance (resource generator :y) 'texture
+                     :sources (list (make-texture-source :pixel-data (resource generator :yuv-data)
+                                                         :pixel-format :red))
                      :width width
                      :height height
                      :min-filter :linear
                      :mag-filter :linear
                      :internal-format :r8)
-    (ensure-instance (resource asset :u) 'texture
+    (ensure-instance (resource generator :u) 'texture
                      :width uv-width
                      :height uv-height
                      :min-filter :linear
                      :mag-filter :linear
                      :internal-format :r8)
-    (ensure-instance (resource asset :v) 'texture
+    (ensure-instance (resource generator :v) 'texture
                      :width uv-width
                      :height uv-height
                      :min-filter :linear
                      :mag-filter :linear
                      :internal-format :r8)
     (generate-resources 'mesh-loader (make-rectangle-mesh 1.0 (/ height width))
-                        :resource (resource asset :mesh))))
+                        :resource (resource generator :mesh))
+    file))
 
-(defmethod load :after ((asset asset))
-  (unless (allocated-p (resource asset :yuv-data))
-    (allocate (resource asset :yuv-data))))
+(defmethod finalize ((video video))
+  (org.shirakumo.fraf.theora:free video))
 
-(defmethod unload :after ((asset asset))
-  (when (file asset)
-    (org.shirakumo.fraf.theora:free (file asset))
-    (setf (file asset) NIL))
-  (when (allocated-p (resource asset :yuv-data))
-    (deallocate (resource asset :yuv-data))))
-
-(defmethod update ((asset asset) tt dt fc)
-  (let* ((file (file asset))
-         (framerate (org.shirakumo.fraf.theora:framerate file))
-         (frame (truncate (* tt framerate)))
-         (data (resource asset :yuv-data))
-         (old-fc fc))
-    (loop while (< fc frame)
-          do (let ((read (org.shirakumo.fraf.theora:read-video data file)))
+(defmethod update ((video video) tt dt fc)
+  (let* ((framerate (org.shirakumo.fraf.theora:framerate video))
+         (generator (generator video))
+         (clock (incf (clock video) dt))
+         (frame (frame video))
+         (new-frame (truncate (* clock framerate)))
+         (old-frame frame)
+         (data (resource generator :yuv-data)))
+    (loop while (< frame new-frame)
+          do (let ((read (org.shirakumo.fraf.theora:read-video data video)))
                (when (< read 1) (return))
-               (incf fc read)))
-    (when (/= old-fc fc)
+               (incf frame read)))
+    (when (/= frame old-frame)
       (let ((mem (data-pointer data)))
         (flet ((update (texture)
                  (gl:bind-texture :texture-2d (gl-name texture))
                  (gl:tex-sub-image-2d :texture-2d 0 0 0 (width texture) (height texture) :red :unsigned-byte mem)
                  (cffi:incf-pointer mem (* (width texture) (height texture)))))
-          (update (resource asset :y))
-          (update (resource asset :u))
-          (update (resource asset :v)))))
-    fc))
+          (update (resource generator :y))
+          (update (resource generator :u))
+          (update (resource generator :v))))
+      (setf (frame video) frame))))
 
-(defmethod done-p ((asset asset))
-  (org.shirakumo.fraf.theora:done-p (file asset)))
+(defmethod done-p ((video video))
+  (org.shirakumo.fraf.theora:done-p video))
 
-(defmethod duration ((asset asset))
+(defmethod duration ((video video))
   (implement!))
 
-(defmethod seek ((asset asset) to)
+(defmethod seek ((video video) to)
   (cond ((= 0 to)
-         (org.shirakumo.fraf.theora:reset (file asset))
+         (org.shirakumo.fraf.theora:reset video)
          0.0)
         (T
-         (implement!))))
+         (implement!)))
+  (setf (clock video) (float to 0f0))
+  (setf (frame video) 0))

@@ -193,6 +193,11 @@
   ;; assets/uniform-block.lisp
   (:export
    #:uniform-block)
+  ;; assets/video.lisp
+  (:export
+   #:load-video
+   #:video-loader
+   #:video-file)
   ;; formats/collada.lisp
   (:export)
   ;; formats/vertex-format.lisp
@@ -1742,11 +1747,18 @@
   ;; video.lisp
   (:export
    #:video
+   #:width
+   #:height
+   #:update
    #:clock
-   #:state
    #:duration
    #:seek
-   #:done-p))
+   #:done-p
+   #:framerate
+   #:video-display
+   #:video-player
+   #:state
+   #:loop-p))
 
 (defpackage #:cl+trial
   (:nicknames #:org.shirakumo.fraf.trial.cl+trial)

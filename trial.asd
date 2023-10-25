@@ -144,7 +144,8 @@
                              (:file "sprite-data" :depends-on ("image"))
                              (:file "static")
                              (:file "tile-data" :depends-on ("image"))
-                             (:file "uniform-block"))))
+                             (:file "uniform-block")
+                             (:file "video" :depends-on ((:.. "video"))))))
   :defsystem-depends-on (:trivial-features)
   :depends-on (:alexandria
                :atomics

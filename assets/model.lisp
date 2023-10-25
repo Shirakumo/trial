@@ -34,55 +34,27 @@
 (defclass model-loader (resource-generator)
   ())
 
-(defmethod generate-resources ((loader model-loader) input &rest args)
+(defmethod generate-resources ((loader model-loader) input &rest args &key load-scene)
   (with-new-value-restart (input) (use-value "Specify a new model source.")
     (with-retry-restart (retry "Retry loading the model source.")
-      (apply #'load-model input T :generator loader args))))
+      (let ((model (apply #'load-model input T :generator loader args)))
+        (flet ((load-scene (value)
+                 (enter value (scene +main+))))
+          (etypecase load-scene
+            (null)
+            ((eql T)
+             (loop for scene being the hash-values of (scenes model)
+                   do (load-scene scene)))
+            ((or string symbol)
+             (load-scene (find-scene load-scene model)))))
+        model))))
 
-(defclass model-file (file-input-asset multi-resource-asset model-loader)
-  ((model :initform NIL :accessor model)))
+(defclass model-file (file-input-asset multi-resource-asset model-loader model)
+  ())
 
-(defmethod generate-resources ((asset model-file) input &key load-scene)
-  (let ((model (call-next-method)))
-    (setf (model asset) model)
-    (flet ((load-scene (scene)
-             (enter scene (scene +main+))))
-      (etypecase load-scene
-        (null)
-        ((eql T)
-         (loop for scene being the hash-values of (scenes asset)
-               do (load-scene scene)))
-        ((or string symbol)
-         (load-scene (find-scene load-scene model)))))
-    (alexandria:hash-table-values (meshes model))))
+(defmethod generate-resources ((asset model-file) input &key)
+  (call-next-method)
+  (alexandria:hash-table-values (meshes asset)))
 
 (defmethod unload :after ((asset model-file))
-  (setf (model asset) NIL))
-
-(defmacro %define-model-file-delegate (name read)
-  (let ((find (intern (format NIL "~a-~a" 'find name))))
-    `(progn
-       (defmethod ,read ((asset model-file))
-         (check-loaded asset)
-         (,read (model asset)))
-       
-       (defmethod ,find (name (asset model-file) &optional (errorp T))
-         (check-loaded asset)
-         (,find name (model asset) errorp))
-       
-       (defmethod (setf ,find) (value name (asset model-file))
-         (check-loaded asset)
-         (setf (,find name (model asset)) value)))))
-
-(%define-model-file-delegate material materials)
-(%define-model-file-delegate mesh meshes)
-(%define-model-file-delegate clip clips)
-(%define-model-file-delegate scene scenes)
-
-(defmethod skeleton ((asset model-file))
-  (check-loaded asset)
-  (skeleton (model asset)))
-
-(defmethod node (name (asset model-file))
-  (check-loaded asset)
-  (node name (model asset)))
+  (clear asset))
