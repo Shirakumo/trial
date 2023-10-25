@@ -122,10 +122,10 @@ void main(){
            (with-eval-in-render-loop (T)
              (,name))))))
 
-(defmethod debug-draw ((point vec2) &rest args)
+(defmethod debug-draw ((point vec2) &rest args &key &allow-other-keys)
   (apply #'debug-point (vxy_ point) args))
 
-(defmethod debug-draw ((point vec3) &rest args)
+(defmethod debug-draw ((point vec3) &rest args &key &allow-other-keys)
   (apply #'debug-point point args))
 
 (define-debug-draw-function (debug-point points) (point &key (color #.(vec 1 0 0)))
@@ -138,7 +138,7 @@ void main(){
   (v b)
   (v color-b))
 
-(defmethod debug-draw ((string string) &rest args)
+(defmethod debug-draw ((string string) &rest args &key &allow-other-keys)
   (let ((point (getf args :point)))
     (remf args :point)
     (apply #'debug-text (or point (vec 0 0 0)) string args)))
@@ -151,20 +151,23 @@ void main(){
                                        :scale scale)))
     (setf (fill-pointer data) i)))
 
-(defmethod debug-draw ((entity vertex-entity) &rest args)
+(defmethod debug-draw ((entity vertex-entity) &rest args &key &allow-other-keys)
   (apply #'debug-vertex-array (vertex-array entity) args))
 
-(defmethod debug-draw :around ((entity transformed-entity) &rest args)
+(defmethod debug-draw :around ((entity transformed-entity) &rest args &key &allow-other-keys)
   (unless (getf args :transform)
     (setf (getf args :transform) (tmat (tf entity))))
   (apply #'call-next-method entity args))
 
-(defmethod debug-draw ((primitive general-mesh) &rest args)
+(defmethod debug-draw ((data mesh-data) &rest args &key &allow-other-keys)
+  (apply #'debug-triangles (reordered-vertex-data data '(location)) (index-data data) args))
+
+(defmethod debug-draw ((primitive general-mesh) &rest args &key &allow-other-keys)
   (unless (getf args :transform)
     (setf (getf args :transform) (primitive-transform primitive)))
   (apply #'debug-triangles (general-mesh-vertices primitive) (general-mesh-faces primitive) args))
 
-(defmethod debug-draw ((primitive primitive) &rest args)
+(defmethod debug-draw ((primitive primitive) &rest args &key &allow-other-keys)
   (unless (getf args :transform)
     (setf (getf args :transform) (primitive-transform primitive)))
   (let ((primitive (coerce-object primitive 'convex-mesh)))

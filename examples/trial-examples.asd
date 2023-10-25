@@ -22,5 +22,7 @@
                :trial-jpeg-turbo
                :trial-png
                :trial-gltf
+               :trial-obj
                :trial-hdr
-               :trial-assets))
+               :trial-assets
+               :file-select))

@@ -7,6 +7,8 @@
    (#:trial-alloy #:org.shirakumo.fraf.trial.alloy)
    (#:assets #:org.shirakumo.fraf.trial.assets)
    (#:spaces #:org.shirakumo.fraf.trial.space)
+   (#:colored #:org.shirakumo.alloy.colored)
+   (#:colors #:org.shirakumo.alloy.colored.colors)
    (#:v #:org.shirakumo.verbose))
   (:export #:launch))
 

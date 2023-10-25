@@ -1081,6 +1081,14 @@
    #:vertex-attribute-category
    #:vertex-attribute-order
    #:vertex-attribute<
+   #:mesh-data
+   #:name
+   #:vertex-data
+   #:index-data
+   #:material
+   #:vertex-form
+   #:vertex-attributes
+   #:reordered-vertex-data
    #:location
    #:uv
    #:normal
@@ -1334,7 +1342,7 @@
    #:clips
    #:scenes
    #:find-material
-   #:find-meshe
+   #:find-mesh
    #:find-clip
    #:find-scene
    #:list-clips

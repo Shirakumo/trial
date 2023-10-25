@@ -135,9 +135,11 @@
               (vertex-attribute-order b-cat))))))
 
 (defmethod vertex-attribute-offset (attribute (container list))
-  (loop for attr in container
-        until (eq attr attribute)
-        sum (vertex-attribute-size attr)))
+  (let ((offset 0))
+    (dolist (attr container NIL)
+      (when (eq attr attribute)
+        (return offset))
+      (incf offset (vertex-attribute-size attr)))))
 
 (defclass mesh-data ()
   ((name :initarg :name :initform NIL :accessor name)
@@ -158,6 +160,33 @@
 
 (defmethod (setf material) ((name symbol) (data mesh-data))
   (setf (material data) (material name)))
+
+(defmethod reordered-vertex-data ((mesh mesh-data) new-attributes)
+  (if (equal new-attributes (vertex-attributes mesh))
+      (vertex-data mesh)
+      (let* ((vertices (length (index-data mesh)))
+             (new-stride (loop for attribute in new-attributes
+                               sum (vertex-attribute-size attribute)))
+             (old-stride (vertex-attribute-size mesh))
+             (new-data (make-array (* new-stride vertices) :element-type 'single-float))
+             (old-data (vertex-data mesh))
+             (new-offsets (loop for attribute in new-attributes
+                                collect (vertex-attribute-offset attribute new-attributes)))
+             (old-offsets (loop for attribute in new-attributes
+                                collect (vertex-attribute-offset attribute (vertex-attributes mesh))))
+             (new-base 0)
+             (old-base 0))
+        (dotimes (vertex vertices new-data)
+          (loop for new in new-offsets
+                for old in old-offsets
+                for attr in new-attributes
+                do (if old
+                       (dotimes (i (vertex-attribute-size attr))
+                         (setf (aref new-data (+ i new new-base)) (aref old-data (+ i old old-base))))
+                       (dotimes (i (vertex-attribute-size attr))
+                         (setf (aref new-data (+ i new new-base)) 0f0))))
+          (incf new-base new-stride)
+          (incf old-base old-stride)))))
 
 (defmethod make-vertex-array ((mesh mesh-data) vao)
   (let ((vertex-data (make-instance 'vertex-buffer :buffer-data (vertex-data mesh)))
