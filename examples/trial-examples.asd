@@ -23,4 +23,4 @@
                :trial-png
                :trial-gltf
                :trial-hdr
-               :trial-assets-theora))
+               :trial-assets))
