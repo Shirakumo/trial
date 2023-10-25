@@ -165,8 +165,8 @@
   (format stream "Skeleton:~%")
   (describe-skeleton (skeleton entity) stream))
 
-(defmethod (setf mesh-asset) :after ((asset animation-asset) (entity base-animated-entity))
-  (when (skeleton asset)
+(defmethod (setf mesh-asset) :after ((asset model-file) (entity base-animated-entity))
+  (when (loaded-p asset)
     (setf (skeleton entity) (skeleton asset)))
   (play (or (clip entity) T) entity))
 
@@ -214,8 +214,8 @@
 (defmethod stage :after ((entity animated-entity) (area staging-area))
   (stage (palette-texture entity) area))
 
-(defmethod (setf mesh-asset) :after ((asset animation-asset) (entity animated-entity))
-  (unless (skeleton asset)
+(defmethod (setf mesh-asset) :after ((asset model-file) (entity animated-entity))
+  (unless (loaded-p asset)
     (setf (palette entity) #(#.(meye 4)))))
 
 (defmethod (setf pose) :after ((pose pose) (entity animated-entity))
