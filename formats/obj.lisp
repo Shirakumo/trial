@@ -22,7 +22,8 @@
     (3 (vec (aref a 0) (aref a 1) (aref a 2)))
     (4 (vec (aref a 0) (aref a 1) (aref a 2) (aref a 3)))))
 
-(defmethod load-model (input (type (eql :obj)) &key generator (model (make-instance 'trial:model)))
+(defmethod load-model (input (type (eql :obj)) &key (generator (make-instance 'resource-generator))
+                                                    (model (make-instance 'trial:model)))
   (let ((context (obj:parse input)))
     (loop for material being the hash-values of (obj:materials context)
           do (setf (trial:find-material (obj:name material) model)

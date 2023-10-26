@@ -335,7 +335,8 @@
 (defmethod load-model (input (type (eql :glb)) &rest args)
   (apply #'load-model input :gltf args))
 
-(defmethod load-model (input (type (eql :gltf)) &key generator (model (make-instance 'model)))
+(defmethod load-model (input (type (eql :gltf)) &key (generator (make-instance 'resource-generator))
+                                                     (model (make-instance 'model)))
   (gltf:with-gltf (gltf input)
     (let ((meshes (meshes model))
           (clips (clips model))

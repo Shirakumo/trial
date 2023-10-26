@@ -52,9 +52,9 @@
 (defclass model-file (file-input-asset multi-resource-asset model-loader model)
   ())
 
-(defmethod generate-resources ((asset model-file) input &key)
-  (call-next-method)
-  (alexandria:hash-table-values (meshes asset)))
+(defmethod generate-resources ((asset model-file) input &rest args)
+  (apply #'call-next-method asset input :model asset args)
+  (list-resources asset))
 
 (defmethod unload :after ((asset model-file))
   (clear asset))
