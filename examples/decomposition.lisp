@@ -28,7 +28,7 @@
           (setf (alloy:value-set selector) meshes)
           (when meshes (setf (mesh panel) (find-mesh (first meshes) model)))))
       (alloy:on alloy:value (mesh selector)
-        (setf (mesh panel) (find-mesh mesh (model selector)))))
+        (setf (mesh panel) (find-mesh mesh (model panel)))))
     (alloy:enter "Show Original" layout :row 2 :col 0)
     (let* ((mode NIL)
            (switch (alloy:represent mode 'alloy:switch)))

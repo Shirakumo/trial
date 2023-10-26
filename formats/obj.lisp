@@ -16,11 +16,13 @@
                                         (if (obj:clamp texture-map) :clamp-to-edge :repeat)
                                         (if (obj:clamp texture-map) :clamp-to-edge :repeat)))))
 
-(defun to-vec (a)
-  (ecase (length a)
-    (2 (vec (aref a 0) (aref a 1)))
-    (3 (vec (aref a 0) (aref a 1) (aref a 2)))
-    (4 (vec (aref a 0) (aref a 1) (aref a 2) (aref a 3)))))
+(defun to-vec (a &optional (arity (length a)))
+  (flet ((ref (x)
+           (if (< x (length a)) (aref a x) 0f0)))
+    (ecase arity
+      (2 (vec (ref 0) (ref 1)))
+      (3 (vec (ref 0) (ref 1) (ref 2)))
+      (4 (vec (ref 0) (ref 1) (ref 2) (ref 3))))))
 
 (defmethod load-model (input (type (eql :obj)) &key (generator (make-instance 'resource-generator))
                                                     (model (make-instance 'trial:model)))
@@ -31,19 +33,19 @@
                            (obj:metallic-map material) (obj:roughness-map material)
                            (obj:rough-metal-occlusion-map material))
                        (trial:ensure-instance
-                        (trial:find-material (obj:name material) model) 'trial:pbr-material
+                        (trial:find-material (obj:name material) model NIL) 'trial:pbr-material
                         :albedo-texture (generate-image generator (obj:diffuse-map material))
                         :metal-rough-texture (generate-image generator (obj:rough-metal-occlusion-map material))
                         :metallic-texture (generate-image generator (obj:metallic-map material))
                         :roughness-texture (generate-image generator (obj:roughness-map material))
                         :emissive-texture (generate-image generator (obj:emissive-map material))
                         :normal-texture (generate-image generator (obj:normal-map material))
-                        :albedo-factor (to-vec (obj:diffuse-factor material))
+                        :albedo-factor (to-vec (obj:diffuse-factor material) 4)
                         :metallic-factor (obj:metallic-factor material)
                         :roughness-factor (obj:roughness-factor material)
                         :emissive-factor (to-vec (obj:emissive-factor material)))
                        (trial:update-material
-                        (trial:find-material (obj:name material) model) 'trial::phong-material
+                        (trial:find-material (obj:name material) model NIL) 'trial::phong-material
                         :diffuse-texture (generate-image generator (obj:diffuse-map material))
                         :specular-texture (generate-image generator (obj:specular-map material))
                         :normal-texture (generate-image generator (obj:normal-map material))
