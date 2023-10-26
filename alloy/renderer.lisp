@@ -113,7 +113,7 @@
        (%gl:uniform-1f loc value)))))
 
 (defmethod opengl:bind ((shader trial:shader-program))
-  (gl:use-program (trial:gl-name shader)))
+  (trial:activate shader))
 
 (defmethod alloy:allocate ((shader trial:shader))
   (trial:allocate shader))
