@@ -1,6 +1,6 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(defgeneric load-model (source type &key generator &allow-other-keys))
+(defgeneric load-model (source type &key generator model &allow-other-keys))
 (defgeneric save-model (source target type &key &allow-other-keys))
 
 (defmethod load-model (source (type string) &rest args &key &allow-other-keys)
