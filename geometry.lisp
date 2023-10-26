@@ -155,9 +155,6 @@
 (defmethod (setf material) ((name string) (data mesh-data))
   (setf (material data) (material name)))
 
-(defmethod (setf material) ((none null) (data mesh-data))
-  (setf (material data) NIL))
-
 (defmethod (setf material) ((name symbol) (data mesh-data))
   (setf (material data) (material name)))
 
