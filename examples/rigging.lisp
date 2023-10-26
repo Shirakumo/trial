@@ -13,7 +13,7 @@
     (nv+ (tlocation (tf entity)) (nv* vel dt))))
 
 (define-example rigging
-  (disable-feature :cull-face)
+  :title "Animated Model"
   (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)
   (enter (make-instance 'rigging-entity :asset (assets:asset :woman)) scene)
   (enter (make-instance 'target-camera :target (vec 0 2 0) :location (vec 0 3 5)) scene)

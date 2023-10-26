@@ -1,6 +1,7 @@
 (in-package #:org.shirakumo.fraf.trial.examples)
 
 (define-example gpu-particle
+  :title "GPU Particle Simulation"
   (gl:clear-color 0 0 0 0)
   (enter (make-instance 'display-controller) scene)
   (enter (make-instance 'gpu-particle-emitter
@@ -18,6 +19,6 @@
   ;; Need a standard render pass here because we need the standard-environment-information.
   (let ((render (make-instance 'pbr-render-pass))
         (map (make-instance 'ward)))
-    (when (typep (unit :emitter scene) 'trial::depth-colliding-particle-emitter)
-      (connect render (unit :emitter scene) scene))
+    (when (typep (node :emitter scene) 'trial::depth-colliding-particle-emitter)
+      (connect render (node :emitter scene) scene))
     (connect (port render 'color) (port map 'previous-pass) scene)))

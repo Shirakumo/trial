@@ -1,6 +1,7 @@
 (in-package #:org.shirakumo.fraf.trial.examples)
 
 (define-example cpu-particle
+  :title "CPU Particle Simulation"
   (gl:clear-color 0 0 0 0)
   (enter (make-instance 'display-controller) scene)
   (enter (make-instance 'cpu-particle-emitter

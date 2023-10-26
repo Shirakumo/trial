@@ -50,6 +50,7 @@
              (incf (vy (location physics-player)) (* -1.0 spd dt)))))))
 
 (define-example gjk
+  :title "GJK Collision Detection"
   (enter (make-instance '3d-camera :location (vec 0 0 -5)) scene)
   (enter (make-instance 'physics-body :primitive (make-box)) scene)
   (enter (make-instance 'physics-player :primitive (make-cylinder)) scene)

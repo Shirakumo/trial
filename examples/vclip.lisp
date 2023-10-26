@@ -50,6 +50,7 @@
              (incf (vy (location vclip-player)) (* -1.0 spd dt)))))))
 
 (define-example vclip
+  :title "V-Clip Collision Detection"
   (enter (make-instance '3d-camera :location (vec 0 0 -5)) scene)
   (enter (make-instance 'vclip-body) scene)
   (enter (make-instance 'vclip-player) scene)

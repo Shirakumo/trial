@@ -169,6 +169,7 @@
           do (enter box structure))))
 
 (define-example spatial-query
+  :title "Spatial Query Tests"
   (let ((game (make-instance 'render-pass))
         (ui (make-instance 'ui))
         (combine (make-instance 'blend-pass)))

@@ -25,7 +25,10 @@
 
 (defmethod initialize-instance ((main example) &key example)
   (when example
-    (setf (scene main) (make-instance (trial::mksym #.*package* example '-scene))))
+    (let ((scene (trial::mksym #.*package* example '-scene)))
+      (if (and (find-class scene NIL) (subtypep scene 'scene))
+          (setf (scene main) (make-instance scene))
+          (v:error :trial.examples "No such example ~s" example))))
   (call-next-method))
 
 (defmethod update ((main example) tt dt fc)
