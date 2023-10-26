@@ -495,11 +495,12 @@
 (defmethod descriptor ((string string))
   (format NIL "~s" string))
 
-(defun simplify (array)
-  (if (typep array 'simple-array)
+(defun simplify (array &optional (element-type (array-element-type array)))
+  (if (and (typep array 'simple-array)
+           (equal element-type (array-element-type array)))
       array
       (make-array (length array)
-                  :element-type (array-element-type array)
+                  :element-type element-type
                   :initial-contents array)))
 
 (defun ensure-instance (object type &rest initargs)
