@@ -16,6 +16,12 @@
                                         (if (obj:clamp texture-map) :clamp-to-edge :repeat)
                                         (if (obj:clamp texture-map) :clamp-to-edge :repeat)))))
 
+(defun to-vec (a)
+  (ecase (length a)
+    (2 (vec (aref a 0) (aref a 1)))
+    (3 (vec (aref a 0) (aref a 1) (aref a 2)))
+    (4 (vec (aref a 0) (aref a 1) (aref a 2) (aref a 3)))))
+
 (defmethod load-model (input (type (eql :obj)) &key generator (model (make-instance 'trial:model)))
   (let ((context (obj:parse input)))
     (loop for material being the hash-values of (obj:materials context)
@@ -41,22 +47,20 @@
                         :specular-texture (generate-image generator (obj:specular-map material))
                         :normal-texture (generate-image generator (obj:normal-map material))
                         :diffuse-factor (to-vec (obj:diffuse-factor material))
-                        :specular-factor (obj:specular-factor)))))
-    (loop for object being the hash-values of (obj:objects context)
-          for meshes = (obj:extract-meshes context object)
-          for material = (obj:material mesh)
-          do (if (rest meshes)
-                 (loop for mesh in meshes
-                       for i from 0
-                       do (setf (trial:find-mesh (cons (obj:name object) i) model)
-                                (make-instance 'trial:static-mesh 
-                                               :name (obj:name object)
-                                               :vertex-data (obj:vertex-data mesh)
-                                               :index-data (obj:index-data mesh)
-                                               :material (when material (obj:name material)))))
-                 (setf (trial:find-mesh (obj:name object) model)
-                       (make-instance 'trial:static-mesh 
-                                      :name (obj:name object)
-                                      :vertex-data (obj:vertex-data (first meshes))
-                                      :index-data (obj:index-data (first meshes))
-                                      :material (when material (obj:name material))))))))
+                        :specular-factor (obj:specular-factor material)))))
+    (flet ((add-mesh (name mesh)
+             (setf (trial:find-mesh name model)
+                   (make-instance 'trial:static-mesh
+                                  :name name
+                                  :vertex-data (obj:vertex-data mesh)
+                                  :index-data (obj:index-data mesh)
+                                  :material (when (obj:material mesh)
+                                              (trial:find-material (obj:name (obj:material mesh)) model))))))
+      (loop for object being the hash-values of (obj:objects context)
+            for meshes = (obj:extract-meshes context object)
+            do (if (rest meshes)
+                   (loop for mesh in meshes
+                         for i from 0
+                         do (add-mesh (cons (obj:name object) i) mesh))
+                   (add-mesh (obj:name object) (first meshes))))
+      model)))
