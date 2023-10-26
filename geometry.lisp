@@ -161,16 +161,16 @@
 (defmethod reordered-vertex-data ((mesh mesh-data) new-attributes)
   (if (equal new-attributes (vertex-attributes mesh))
       (vertex-data mesh)
-      (let* ((vertices (length (index-data mesh)))
-             (new-stride (loop for attribute in new-attributes
-                               sum (vertex-attribute-size attribute)))
-             (old-stride (vertex-attribute-size mesh))
-             (new-data (make-array (* new-stride vertices) :element-type 'single-float))
-             (old-data (vertex-data mesh))
-             (new-offsets (loop for attribute in new-attributes
-                                collect (vertex-attribute-offset attribute new-attributes)))
+      (let* ((old-stride (vertex-attribute-stride mesh))
              (old-offsets (loop for attribute in new-attributes
                                 collect (vertex-attribute-offset attribute (vertex-attributes mesh))))
+             (old-data (vertex-data mesh))
+             (vertices (truncate (length old-data) old-stride))
+             (new-stride (loop for attribute in new-attributes
+                               sum (vertex-attribute-size attribute)))
+             (new-data (make-array (* new-stride vertices) :element-type 'single-float))
+             (new-offsets (loop for attribute in new-attributes
+                                collect (vertex-attribute-offset attribute new-attributes)))
              (new-base 0)
              (old-base 0))
         (dotimes (vertex vertices new-data)
