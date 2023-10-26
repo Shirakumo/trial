@@ -72,7 +72,9 @@
 
 (defmethod deallocate ((program shader-program))
   (clrhash (uniform-map program))
-  (gl:delete-program (gl-name program)))
+  (gl:delete-program (gl-name program))
+  (when (eq +current-shader-program+ program)
+    (setf +current-shader-program+ NIL)))
 
 (declaim (inline %set-dquat))
 (defun %set-quat2 (dquat dat i)
