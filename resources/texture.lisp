@@ -1,6 +1,6 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass texture (gl-resource)
+(defclass texture (gl-resource deferrable-resource)
   ((width :initarg :width :writer (setf width))
    (height :initarg :height :writer (setf height))
    (depth :initarg :depth :writer (setf depth))
@@ -249,11 +249,13 @@
     (with-cleanup-on-failure (gl:delete-textures (list tex))
       (gl:bind-texture (target texture) tex)
       (allocate-texture-storage texture)
-      (dolist (source (sources texture))
-        (upload-texture-source source texture))
-      (update-texture-properties texture)
-      (gl:bind-texture (target texture) 0)
       (setf (data-pointer texture) tex))))
+
+(defmethod load ((texture texture))
+  (gl:bind-texture (target texture) (data-pointer texture))
+  (dolist (source (sources texture))
+    (upload-texture-source source texture))
+  (update-texture-properties texture))
 
 (defmethod deallocate ((texture texture))
   (gl:delete-textures (list (gl-name texture))))

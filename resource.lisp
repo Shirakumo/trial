@@ -16,19 +16,29 @@
 (defgeneric allocate (resource))
 (defgeneric deallocate (resource))
 (defgeneric allocated-p (resource))
+(defgeneric load (resource))
 
-(defmethod load ((resource resource))
+(defmethod load :around ((resource resource))
   (unless (allocated-p resource)
-    (v:trace :trial.resource "Loading ~a" resource)
-    (allocate resource)))
+    (allocate resource))
+  #-trial-release
+  (v:trace :trial.resource "Loading ~a" resource)
+  (call-next-method)
+  resource)
 
 (defmethod allocate :around ((resource resource))
+  #-trial-release
+  (when (allocated-p resource)
+    (error "Resource ~s is already allocated." resource))
   #-trial-release
   (v:trace :trial.resource "Allocating ~a" resource)
   (call-next-method)
   resource)
 
 (defmethod deallocate :around ((resource resource))
+  #-trial-release
+  (unless (allocated-p resource)
+    (error "Resource ~s is already deallocated." resource))
   #-trial-release
   (v:trace :trial.resource "Deallocating ~a" resource)
   (call-next-method)
@@ -56,3 +66,15 @@
 
 (defclass gl-resource (foreign-resource)
   ((data-pointer :accessor gl-name)))
+
+(defclass deferrable-resource (resource)
+  ((loaded-p :initform NIL :accessor loaded-p)))
+
+(defmethod load :after ((resource deferrable-resource))
+  (setf (loaded-p resource) T))
+
+(defmethod unload :after ((resource deferrable-resource))
+  (setf (loaded-p resource) NIL))
+
+(defmethod deallocate :after ((resource deferrable-resource))
+  (setf (loaded-p resource) NIL))
