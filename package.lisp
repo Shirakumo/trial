@@ -1089,6 +1089,7 @@
    #:vertex-form
    #:vertex-attributes
    #:reordered-vertex-data
+   #:make-vertex-array
    #:location
    #:uv
    #:normal

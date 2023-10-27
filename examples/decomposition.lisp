@@ -1,9 +1,18 @@
 (in-package #:org.shirakumo.fraf.trial.examples)
 
+(define-shader-entity decomposition-entity (vertex-entity colored-entity transformed-entity)
+  ((panel :initarg :panel :accessor panel)))
+
+(defmethod render :around ((entity decomposition-entity) (program shader-program))
+  (gl:polygon-mode :front-and-back (polygon-mode (panel entity)))
+  (call-next-method)
+  (gl:polygon-mode :front-and-back :fill))
+
 (defclass decomposition-panel (trial-alloy:panel)
   ((container :initarg :container :accessor container)
    (model :initform NIL :accessor model)
-   (mesh :initform NIL :accessor mesh)))
+   (mesh :initform NIL :accessor mesh)
+   (polygon-mode :initform :fill :accessor polygon-mode)))
 
 (alloy:define-observable (setf model) (value alloy:observable))
 (alloy:define-observable (setf mesh) (value alloy:observable))
@@ -35,10 +44,8 @@
       (alloy:on alloy:value (mode switch)
         ))
     (alloy:enter "Wireframe" layout :row 3 :col 0)
-    (let* ((mode NIL)
-           (switch (alloy:represent mode 'alloy:switch)))
-      (alloy:on alloy:value (mode switch)
-        ))
+    (alloy:represent (slot-value panel 'polygon-mode) 'alloy:switch :layout-parent layout :focus-parent focus
+                                                                    :on :line :off :fill)
     (alloy:finish-structure panel layout focus)
     (load (assets:asset :woman))
     (setf (model panel) (assets:asset :woman))))
@@ -49,9 +56,14 @@
                          (reordered-vertex-data mesh '(location))
                          (trial::simplify (index-data mesh) '(unsigned-byte 32)))
         for (name . color) in (apply #'alexandria:circular-list (colored:list-colors))
-        do (debug-draw (make-convex-mesh :vertices (org.shirakumo.fraf.convex-covering:vertices hull)
-                                         :faces (org.shirakumo.fraf.convex-covering:faces hull))
-                       :color (vec (colored:r color) (colored:g color) (colored:b color)))))
+        do (enter (make-instance 'decomposition-entity
+                                 :panel panel
+                                 :color (vec (colored:r color) (colored:g color) (colored:b color))
+                                 :vertex-array (make-vertex-array (make-convex-mesh :vertices (org.shirakumo.fraf.convex-covering:vertices hull)
+                                                                                    :faces (org.shirakumo.fraf.convex-covering:faces hull))
+                                                                  NIL))
+                  (container panel)))
+  (commit (scene +main+) (loader +main+)))
 
 (define-example decomposition
   :title "Convex Hull Decomposition"
