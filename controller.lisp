@@ -82,7 +82,7 @@
 (defun call-in-render-loop (function scene)
   (issue scene 'eval-request :func function))
 
-(defmacro with-eval-in-render-loop ((scene) &body body)
+(defmacro with-eval-in-render-loop ((&optional (scene '(scene +main+))) &body body)
   `(call-in-render-loop (lambda () ,@body) ,scene))
 
 (define-shader-entity display-controller (controller debug-text)
