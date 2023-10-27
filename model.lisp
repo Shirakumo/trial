@@ -28,13 +28,13 @@
 (%define-model-accessor scene scenes)
 
 (defmethod list-clips ((model model))
-  (alexandria:hash-table-keys (clips model)))
+  (alexandria:hash-table-values (clips model)))
 
 (defmethod list-meshes ((model model))
-  (alexandria:hash-table-keys (meshes model)))
+  (alexandria:hash-table-values (meshes model)))
 
 (defmethod list-scenes ((model model))
-  (alexandria:hash-table-keys (scenes model)))
+  (alexandria:hash-table-values (scenes model)))
 
 (defmethod node (name (model model))
   (loop for scene being the hash-values of (scenes model)
