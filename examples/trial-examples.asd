@@ -17,7 +17,8 @@
                (:file "rigging")
                (:file "video")
                (:file "pbr"))
-  :depends-on (:trial-glfw
+  :depends-on (#-nx :trial-glfw
+               #+nx :trial-nxgl
                :trial-theora
                :trial-alloy
                :trial-jpeg-turbo
