@@ -40,7 +40,7 @@
       (alloy:on alloy:value (mode switch)
         ))
     (alloy:finish-structure panel layout focus)
-    (generate-resources (assets:asset :woman) T)
+    (load (assets:asset :woman))
     (setf (model panel) (assets:asset :woman))))
 
 (defmethod (setf mesh) :before ((mesh mesh-data) (panel decomposition-panel))
@@ -60,7 +60,8 @@
         (combine (make-instance 'blend-pass)))
     (connect (port game 'color) (port combine 'a-pass) scene)
     (connect (port ui 'color) (port combine 'b-pass) scene))
-  (enter (make-instance 'editor-camera) scene)
+  (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)
+  (enter (make-instance 'editor-camera :location (VEC3 0.0 2.3 10) :fov 50 :move-speed 0.1) scene)
   (let ((container (make-instance 'array-container)))
     (enter container scene)
     (trial-alloy:show-panel 'decomposition-panel :container container)))
