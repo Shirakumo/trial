@@ -12,7 +12,8 @@
   ((container :initarg :container :accessor container)
    (model :initform NIL :accessor model)
    (mesh :initform NIL :accessor mesh)
-   (polygon-mode :initform :fill :accessor polygon-mode)))
+   (polygon-mode :initform :fill :accessor polygon-mode)
+   (file :initform NIL :accessor file)))
 
 (alloy:define-observable (setf model) (value alloy:observable))
 (alloy:define-observable (setf mesh) (value alloy:observable))
@@ -26,9 +27,9 @@
         (let ((file (org.shirakumo.file-select:existing :title "Load Model File..."
                                                         :filter '(("Wavefront OBJ" "obj")
                                                                   ("glTF File" "gltf")
-                                                                  ("glTF Binary" "glb")))))
-          (when file
-            (setf (model panel) (generate-resources 'model-loader file))))))
+                                                                  ("glTF Binary" "glb"))
+                                                        :default (file panel))))
+          (when file (setf (file panel) file)))))
     (alloy:enter "Mesh" layout :row 1 :col 0)
     (let* ((mesh NIL)
            (selector (alloy:represent mesh 'alloy:combo-set :value-set () :layout-parent layout :focus-parent focus)))
@@ -49,6 +50,9 @@
     (alloy:finish-structure panel layout focus)
     (load (assets:asset :woman))
     (setf (model panel) (assets:asset :woman))))
+
+(defmethod (setf file) :before (file (panel decomposition-panel))
+  (setf (model panel) (generate-resources 'model-loader file)))
 
 (defmethod (setf mesh) :before ((mesh mesh-data) (panel decomposition-panel))
   (clear (container panel))
