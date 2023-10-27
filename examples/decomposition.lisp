@@ -1,18 +1,21 @@
 (in-package #:org.shirakumo.fraf.trial.examples)
 
 (define-shader-entity decomposition-entity (vertex-entity colored-entity transformed-entity)
-  ((panel :initarg :panel :accessor panel)))
+  ((panel :initarg :panel :accessor panel)
+   (visible-p :initarg :visible-p :initform T :accessor visible-p)))
 
 (defmethod render :around ((entity decomposition-entity) (program shader-program))
-  (gl:polygon-mode :front-and-back (polygon-mode (panel entity)))
-  (call-next-method)
-  (gl:polygon-mode :front-and-back :fill))
+  (when (visible-p entity)
+    (gl:polygon-mode :front-and-back (polygon-mode (panel entity)))
+    (call-next-method)
+    (gl:polygon-mode :front-and-back :fill)))
 
 (defclass decomposition-panel (trial-alloy:panel)
   ((container :initarg :container :accessor container)
    (model :initform NIL :accessor model)
    (mesh :initform NIL :accessor mesh)
    (polygon-mode :initform :fill :accessor polygon-mode)
+   (show-original :initform NIL :accessor show-original)
    (file :initform NIL :accessor file)))
 
 (alloy:define-observable (setf model) (value alloy:observable))
@@ -40,13 +43,10 @@
       (alloy:on alloy:value (mesh selector)
         (setf (mesh panel) (find-mesh mesh (model panel)))))
     (alloy:enter "Show Original" layout :row 2 :col 0)
-    (let* ((mode NIL)
-           (switch (alloy:represent mode 'alloy:switch)))
-      (alloy:on alloy:value (mode switch)
-        ))
+    (alloy:represent (show-original panel) 'alloy:switch :layout-parent layout :focus-parent focus)
     (alloy:enter "Wireframe" layout :row 3 :col 0)
-    (alloy:represent (slot-value panel 'polygon-mode) 'alloy:switch :layout-parent layout :focus-parent focus
-                                                                    :on :line :off :fill)
+    (alloy:represent (polygon-mode panel) 'alloy:switch :layout-parent layout :focus-parent focus
+                                                        :on :line :off :fill)
     (alloy:finish-structure panel layout focus)
     (load (assets:asset :woman))
     (setf (model panel) (assets:asset :woman))))
@@ -54,8 +54,23 @@
 (defmethod (setf file) :before (file (panel decomposition-panel))
   (setf (model panel) (generate-resources 'model-loader file)))
 
+(defmethod (setf show-original) :after (value (panel decomposition-panel))
+  (let ((orig (node :original (container panel))))
+    (when orig (setf (visible-p orig) value))))
+
 (defmethod (setf mesh) :before ((mesh mesh-data) (panel decomposition-panel))
   (clear (container panel))
+  (enter (make-instance 'decomposition-entity
+                        :name :original
+                        :panel panel
+                        :color (vec 1 1 1 0.5)
+                        :visible-p (show-original panel)
+                        :vertex-array (make-vertex-array 
+                                       (make-convex-mesh
+                                        :vertices (reordered-vertex-data mesh '(location))
+                                        :faces (trial::simplify (index-data mesh) '(unsigned-byte 32)))
+                                       NIL))
+         (container panel))
   (loop for hull across (org.shirakumo.fraf.convex-covering:decompose
                          (reordered-vertex-data mesh '(location))
                          (trial::simplify (index-data mesh) '(unsigned-byte 32)))
