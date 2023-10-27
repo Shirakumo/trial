@@ -158,6 +158,9 @@
 (defmethod (setf material) ((name symbol) (data mesh-data))
   (setf (material data) (material name)))
 
+(defmethod (setf material) ((name null) (data mesh-data))
+  (setf (slot-value data 'material) NIL))
+
 (defmethod reordered-vertex-data ((mesh mesh-data) new-attributes)
   (if (equal new-attributes (vertex-attributes mesh))
       (vertex-data mesh)
