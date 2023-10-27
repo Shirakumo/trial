@@ -15,7 +15,8 @@
                (:file "gpu-particle")
                (:file "spatial-query")
                (:file "rigging")
-               (:file "video"))
+               (:file "video")
+               (:file "pbr"))
   :depends-on (:trial-glfw
                :trial-theora
                :trial-alloy

@@ -13,5 +13,4 @@
                :trial-jpeg-turbo
                :trial-png
                :trial-gltf
-               :trial-hdr
-               :trial-assets-gltf))
+               :trial-hdr))
