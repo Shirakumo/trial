@@ -180,10 +180,11 @@
         (dotimes (vertex vertices new-data)
           (loop for attr in new-attributes
                 for new in new-offsets
-                for old = (nth (position attr old-attributes) old-offsets)
+                for old = (position attr old-attributes)
                 do (if old
-                       (dotimes (i (vertex-attribute-size attr))
-                         (setf (aref new-data (+ i new new-base)) (aref old-data (+ i old old-base))))
+                       (let ((old (nth old old-offsets)))
+                         (dotimes (i (vertex-attribute-size attr))
+                           (setf (aref new-data (+ i new new-base)) (aref old-data (+ i old old-base)))))
                        (dotimes (i (vertex-attribute-size attr))
                          (setf (aref new-data (+ i new new-base)) 0f0))))
           (incf new-base new-stride)
