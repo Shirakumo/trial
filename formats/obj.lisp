@@ -55,6 +55,11 @@
              (setf (trial:find-mesh name model)
                    (make-instance 'trial:static-mesh
                                   :name name
+                                  :vertex-attributes (loop for attribute in (obj:attributes mesh)
+                                                           collect (ecase attribute
+                                                                     (:position 'location)
+                                                                     (:normal 'normal)
+                                                                     (:uv 'uv)))
                                   :vertex-data (obj:vertex-data mesh)
                                   :index-data (obj:index-data mesh)
                                   :material (when (obj:material mesh)
