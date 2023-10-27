@@ -356,3 +356,6 @@ void main(){
 
 (defmethod select-lod ((camera camera) (entity distance-lod-entity))
   (select-lod (vdistance (location entity) (location camera)) entity))
+
+(defclass basic-node (transformed-entity array-container)
+  ())

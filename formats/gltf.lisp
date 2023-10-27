@@ -3,11 +3,7 @@
   (:shadow #:asset #:load-image)
   (:local-nicknames
    (#:gltf #:org.shirakumo.fraf.gltf)
-   (#:v #:org.shirakumo.verbose))
-  (:export
-   #:static-gltf-container
-   #:static-gltf-entity
-   #:animated-gltf-entity))
+   (#:v #:org.shirakumo.verbose)))
 (in-package #:org.shirakumo.fraf.trial.gltf)
 
 (defun gltf-node-transform (node)
@@ -323,15 +319,6 @@
                  :irradiance-map (trial:implement!)
                  :environment-map (trial:implement!)))
 
-(defclass static-gltf-container (distance-lod-entity transformed-entity array-container)
-  ())
-
-(define-shader-entity static-gltf-entity (trial::multi-mesh-entity trial::per-array-material-renderable static-gltf-container)
-  ())
-
-(define-shader-entity animated-gltf-entity (trial::multi-mesh-entity trial::standard-animated-renderable trial::per-array-material-renderable static-gltf-container)
-  ())
-
 (defmethod load-model (input (type (eql :glb)) &rest args)
   (apply #'load-model input :gltf args))
 
@@ -369,8 +356,8 @@
                         (let ((mesh-name (mesh-name node)))
                           (make-instance (etypecase (or (gethash mesh-name meshes)
                                                         (gethash (cons mesh-name 0) meshes))
-                                           (static-mesh 'static-gltf-entity)
-                                           (skinned-mesh 'animated-gltf-entity))
+                                           (static-mesh 'basic-entity)
+                                           (skinned-mesh 'basic-animated-entity))
                                          :lods (loop for i from -1
                                                      for threshold across (gltf:lod-screen-coverage node)
                                                      for lod = mesh-name then (mesh-name (aref (gltf:lods node) i))
@@ -380,7 +367,7 @@
                                          :asset generator
                                          :mesh mesh-name)))
                        (T
-                        (make-instance 'static-gltf-container :transform (gltf-node-transform node)
+                        (make-instance 'basic-node :transform (gltf-node-transform node)
                                                               :name (gltf:name node)))))
                (recurse (children container)
                  (loop for node across children
@@ -391,7 +378,7 @@
                                 do (enter (load-light light) child))
                           (enter child container))))
         (loop for node across (gltf:scenes gltf)
-              for scene = (make-instance 'static-gltf-container :name (gltf:name node))
+              for scene = (make-instance 'basic-node :name (gltf:name node))
               do (setf (gethash (gltf:name node) scenes) scene)
                  (when (gltf:light node)
                    (enter (load-environment-light (gltf:light node)) scene))

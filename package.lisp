@@ -518,7 +518,9 @@
    #:standard-animated-renderable
    #:single-material-renderable
    #:material
-   #:light-cache-render-pass)
+   #:light-cache-render-pass
+   #:basic-entity
+   #:basic-animated-entity)
   ;; renderer/tone-mapping.lisp
   (:export
    #:tone-mapping-pass
@@ -1181,7 +1183,8 @@
    #:lod
    #:treshold
    #:coverage-lod-entity
-   #:distance-lod-entity)
+   #:distance-lod-entity
+   #:basic-node)
   ;; hdr.lisp
   (:export
    #:hdr-output-pass

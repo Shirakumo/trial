@@ -107,7 +107,7 @@
                              (:file "resolution" :depends-on ("rigidbody"))
                              (:file "v-clip" :depends-on ("hit-detection" "ray"))))
                (:module "renderer"
-                :depends-on ("package" "shader-pass" "helpers" "gl-struct" "transforms")
+                :depends-on ("package" "shader-pass" "helpers" "gl-struct" "transforms" "animation")
                 :components ((:file "cpu-particle" :depends-on ("particle-common"))
                              (:file "gpu-particle" :depends-on ("particle-common"))
                              (:file "lights")
