@@ -102,14 +102,14 @@
   (setf (trotation (tf obj)) (qfrom-angle (axis obj) angle)))
 
 (define-shader-entity fullscreen-entity (renderable)
-  ((vertex-array :initform (// 'trial 'fullscreen-square) :accessor vertex-array)))
+  ())
 
 (defmethod stage :after ((entity fullscreen-entity) (area staging-area))
-  (stage (vertex-array entity) area))
+  (stage (// 'trial 'fullscreen-square) area))
 
 (defmethod render ((entity fullscreen-entity) (program shader-program))
   (declare (optimize speed))
-  (render (vertex-array entity) program))
+  (render-array (// 'trial 'fullscreen-square)))
 
 (define-class-shader (fullscreen-entity :vertex-shader)
   "layout (location = 0) in vec3 position;
