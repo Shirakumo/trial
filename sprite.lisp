@@ -52,10 +52,8 @@
   (setf (uniform program "model_matrix") (model-matrix))
   (setf (uniform program "view_matrix") (view-matrix))
   (setf (uniform program "projection_matrix") (projection-matrix))
-  (let ((vao (vertex-array entity)))
-    (gl:bind-vertex-array (gl-name vao))
-    (%gl:draw-arrays :triangle-strip (* 4 (the (unsigned-byte 32) (frame-idx entity))) 4)
-    (gl:bind-vertex-array 0)))
+  (activate (vertex-array entity))
+  (%gl:draw-arrays :triangle-strip (* 4 (the (unsigned-byte 32) (frame-idx entity))) 4))
 
 (define-shader-entity animated-sprite (listener sprite-entity)
   ((clock :initform 0f0 :accessor clock)

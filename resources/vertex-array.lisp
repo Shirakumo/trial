@@ -1,5 +1,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
+(define-global +current-vertex-array+ NIL)
+
 (defclass vertex-array (gl-resource)
   ((size :initarg :size :initform NIL :accessor size)
    (bindings :initarg :bindings :accessor bindings)
@@ -24,37 +26,36 @@
            (mapcar #'unlist (bindings array)))))
 
 (defun update-array-bindings (array bindings &optional index)
-  (gl:bind-vertex-array (data-pointer array))
-  (with-unwind-protection (gl:bind-vertex-array 0)
-    (when index
-      (gl:bind-buffer (buffer-type index) (gl-name index)))
-    (loop for binding in bindings
-          for i from 0
-          do (destructuring-bind (buffer &key (index i)
-                                              (size 3)
-                                              (type (element-type buffer))
-                                              (stride (* size (gl-type-size type)))
-                                              (offset 0)
-                                              (normalize NIL)
-                                              (instancing 0))
-                 (enlist binding)
-               (check-allocated buffer)
-               (gl:bind-buffer (buffer-type buffer) (gl-name buffer))
-               (ecase (buffer-type buffer)
-                 (:element-array-buffer
-                  (setf (index-buffer array) buffer)
-                  (decf i))
-                 (:array-buffer
-                  (ecase type
-                    ((:half-float :float :fixed)
-                     (gl:vertex-attrib-pointer index size type normalize stride offset))
-                    ((:byte :unsigned-byte :short :unsigned-short :int :unsigned-int)
-                     (gl:vertex-attrib-ipointer index size type stride offset))
-                    (:double
-                     (%gl:vertex-attrib-lpointer index size type stride offset)))
-                  (gl:enable-vertex-attrib-array index)
-                  (when (/= 0 instancing)
-                    (%gl:vertex-attrib-divisor index instancing))))))))
+  (activate array)
+  (when index
+    (gl:bind-buffer (buffer-type index) (gl-name index)))
+  (loop for binding in bindings
+        for i from 0
+        do (destructuring-bind (buffer &key (index i)
+                                            (size 3)
+                                            (type (element-type buffer))
+                                            (stride (* size (gl-type-size type)))
+                                            (offset 0)
+                                            (normalize NIL)
+                                            (instancing 0))
+               (enlist binding)
+             (check-allocated buffer)
+             (gl:bind-buffer (buffer-type buffer) (gl-name buffer))
+             (ecase (buffer-type buffer)
+               (:element-array-buffer
+                (setf (index-buffer array) buffer)
+                (decf i))
+               (:array-buffer
+                (ecase type
+                  ((:half-float :float :fixed)
+                   (gl:vertex-attrib-pointer index size type normalize stride offset))
+                  ((:byte :unsigned-byte :short :unsigned-short :int :unsigned-int)
+                   (gl:vertex-attrib-ipointer index size type stride offset))
+                  (:double
+                   (%gl:vertex-attrib-lpointer index size type stride offset)))
+                (gl:enable-vertex-attrib-array index)
+                (when (/= 0 instancing)
+                  (%gl:vertex-attrib-divisor index instancing)))))))
 
 (defmethod (setf bindings) :after (bindings (array vertex-array))
   (when (allocated-p array)
@@ -67,13 +68,13 @@
                             (length (buffer-data buffer)))
                            (T (error "???"))))
   (when (allocated-p array)
-    (gl:bind-vertex-array (data-pointer array))
+    (activate array)
     (gl:bind-buffer (buffer-type buffer) (gl-name buffer))))
 
 (defmethod (setf index-buffer) :after ((null null) (array vertex-array))
   (setf (size array) NIL)
   (when (allocated-p array)
-    (gl:bind-vertex-array (data-pointer array))
+    (activate array)
     (gl:bind-buffer :element-array-buffer 0)))
 
 (defmethod allocate ((array vertex-array))
@@ -84,6 +85,8 @@
       (update-array-bindings array (bindings array) (index-buffer array)))))
 
 (defmethod deallocate ((array vertex-array))
+  (when (eq array +current-vertex-array+)
+    (setf +current-vertex-array+ NIL))
   (gl:delete-vertex-arrays (list (gl-name array))))
 
 (defmethod unload ((array vertex-array))
@@ -93,18 +96,19 @@
                (unload binding))))
 
 (defmethod activate ((array vertex-array))
-  (gl:bind-vertex-array (gl-name array)))
+  (unless (eq array +current-vertex-array+)
+    (gl:bind-vertex-array (gl-name array))
+    (setf +current-vertex-array+ array)))
 
 (defmethod render ((array vertex-array) target)
   (let* ((size (size array)))
     (declare (type (unsigned-byte 32) size))
-    (gl:bind-vertex-array (gl-name array))
+    (activate array)
     (if (indexed-p array)
         (%gl:draw-elements (vertex-form array) size (element-type (indexed-p array)) 0)
         (%gl:draw-arrays (vertex-form array) 0 size))
     #++
-    (%gl:draw-arrays (vertex-form array) 0 size)
-    (gl:bind-vertex-array 0)))
+    (%gl:draw-arrays (vertex-form array) 0 size)))
 
 (defun compute-buffer-bindings (buffer fields)
   (let* ((fields (loop for field in fields

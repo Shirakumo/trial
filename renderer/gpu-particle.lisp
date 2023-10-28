@@ -279,11 +279,10 @@
 (defmethod render :before ((emitter gpu-particle-emitter) (program shader-program))
   (gl:depth-mask NIL)
   (setf (uniform program "model_matrix") (tmat (tf emitter)))
-  (gl:bind-vertex-array (gl-name (// 'trial 'empty-vertex-array)))
+  (activate (gl-name (// 'trial 'empty-vertex-array)))
   (%gl:bind-buffer :draw-indirect-buffer (gl-name (slot-value emitter 'particle-argument-buffer))))
 
 (defmethod render :after ((emitter gpu-particle-emitter) (program shader-program))
-  (gl:bind-vertex-array 0)
   (%gl:bind-buffer :draw-indirect-buffer 0)
   (gl:depth-mask T))
 

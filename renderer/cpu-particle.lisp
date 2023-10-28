@@ -293,7 +293,7 @@
   (setf (uniform program "particle_data") 1)
   (gl:depth-mask NIL)
   (gl:blend-func :src-alpha :one)
-  (gl:bind-vertex-array (gl-name (draw-vertex-array emitter)))
+  (activate (draw-vertex-array emitter))
   (%gl:draw-arrays-instanced :triangles 0 6 (live-particles emitter))
   (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha)
   (gl:depth-mask T))

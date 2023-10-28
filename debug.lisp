@@ -21,7 +21,7 @@
   (setf (uniform program "texture_image") 0)
   (gl:active-texture :texture0)
   (gl:bind-texture :texture-2d (gl-name (// 'trial 'ascii)))
-  (gl:bind-vertex-array (gl-name (text-vao draw)))
+  (activate (text-vao draw))
   (gl:draw-arrays :triangles 0 (truncate (length (text draw)) 5)))
 
 (define-class-shader (debug-draw-text :vertex-shader)
@@ -97,9 +97,9 @@ void main(){
 (defmethod render ((draw debug-draw) (program shader-program))
   (setf (uniform program "view_matrix") (view-matrix))
   (setf (uniform program "projection_matrix") (projection-matrix))
-  (gl:bind-vertex-array (gl-name (points-vao draw)))
+  (activate (points-vao draw))
   (gl:draw-arrays :points 0 (truncate (length (points draw)) 6))
-  (gl:bind-vertex-array (gl-name (lines-vao draw)))
+  (activate (lines-vao draw))
   (gl:draw-arrays :lines 0 (truncate (length (lines draw)) 6))
   (render (text-render draw) T))
 
