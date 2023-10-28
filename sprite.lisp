@@ -52,8 +52,9 @@
   (setf (uniform program "model_matrix") (model-matrix))
   (setf (uniform program "view_matrix") (view-matrix))
   (setf (uniform program "projection_matrix") (projection-matrix))
-  (activate (vertex-array entity))
-  (%gl:draw-arrays :triangle-strip (* 4 (the (unsigned-byte 32) (frame-idx entity))) 4))
+  (render-array (vertex-array entity) :vertex-start (* 4 (the (unsigned-byte 32) (frame-idx entity)))
+                                      :vertex-count 4
+                                      :vertex-form :triangle-strip))
 
 (define-shader-entity animated-sprite (listener sprite-entity)
   ((clock :initform 0f0 :accessor clock)

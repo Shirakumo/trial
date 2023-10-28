@@ -6,7 +6,8 @@
   ((size :initarg :size :initform NIL :accessor size)
    (bindings :initarg :bindings :accessor bindings)
    (vertex-form :initarg :vertex-form :accessor vertex-form)
-   (index-buffer :initform NIL :accessor index-buffer :reader indexed-p))
+   (index-buffer :initform NIL :accessor index-buffer :reader indexed-p)
+   (instanced-p :initform NIL :accessor instanced-p))
   (:default-initargs
    :bindings (error "BINDINGS required.")
    :vertex-form :triangles))
@@ -29,6 +30,7 @@
   (with-unwind-protection (deactivate array)
     (activate array)
     (when index (activate index))
+    (setf (instanced-p array) NIL)
     (loop for binding in bindings
           for i from 0
           do (destructuring-bind (buffer &key (index i)
@@ -55,7 +57,8 @@
                      (%gl:vertex-attrib-lpointer index size type stride offset)))
                   (gl:enable-vertex-attrib-array index)
                   (when (/= 0 instancing)
-                    (%gl:vertex-attrib-divisor index instancing))))))))
+                    (%gl:vertex-attrib-divisor index instancing)
+                    (setf (instanced-p array) T))))))))
 
 (defmethod (setf bindings) :after (bindings (array vertex-array))
   (when (allocated-p array)
@@ -105,15 +108,22 @@
     (setf +current-vertex-array+ NIL)
     (gl:bind-vertex-array 0)))
 
-(defmethod render ((array vertex-array) target)
+(declaim (inline render-array))
+(defun render-array (array &key (vertex-start 0) (vertex-count (size array)) (instances 1)
+                                (vertex-form (vertex-form array)))
+  (declare (type (unsigned-byte 32) vertex-start vertex-count instances))
   (activate array)
-  (let ((size (size array)))
-    (declare (type (unsigned-byte 32) size))
-    (if (indexed-p array)
-        (%gl:draw-elements (vertex-form array) size (element-type (indexed-p array)) 0)
-        (%gl:draw-arrays (vertex-form array) 0 size))
-    #++
-    (%gl:draw-arrays (vertex-form array) 0 size)))
+  (if (instanced-p array)
+      (if (indexed-p array)
+          (%gl:draw-elements-instanced vertex-form vertex-count (element-type (indexed-p array)) vertex-start instances)
+          (%gl:draw-arrays-instanced vertex-form vertex-start vertex-count instances))
+      (if (indexed-p array)
+          (%gl:draw-elements vertex-form vertex-count (element-type (indexed-p array)) 0)
+          (%gl:draw-arrays vertex-form vertex-start vertex-count)))
+  (deactivate array))
+
+(defmethod render ((array vertex-array) target)
+  (render-array array))
 
 (defun compute-buffer-bindings (buffer fields)
   (let* ((fields (loop for field in fields

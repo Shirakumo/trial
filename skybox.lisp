@@ -17,8 +17,7 @@
     (gl:active-texture :texture0)
     (gl:bind-texture (target texture) (gl-name texture))
     (gl:depth-mask NIL)
-    (activate (vertex-array skybox))
-    (gl:draw-arrays :triangle-strip 0 4)
+    (render-array (vertex-array skybox) :vertex-form :triangle-strip :vertex-count 4)
     (gl:depth-mask T)))
 
 (define-class-shader (skybox :vertex-shader)

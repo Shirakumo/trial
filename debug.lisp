@@ -21,8 +21,7 @@
   (setf (uniform program "texture_image") 0)
   (gl:active-texture :texture0)
   (gl:bind-texture :texture-2d (gl-name (// 'trial 'ascii)))
-  (activate (text-vao draw))
-  (gl:draw-arrays :triangles 0 (truncate (length (text draw)) 5)))
+  (render-array (text-vao draw) :vertex-count (truncate (length (text draw)) 5)))
 
 (define-class-shader (debug-draw-text :vertex-shader)
   "layout (location = 0) in vec3 position;
@@ -97,10 +96,8 @@ void main(){
 (defmethod render ((draw debug-draw) (program shader-program))
   (setf (uniform program "view_matrix") (view-matrix))
   (setf (uniform program "projection_matrix") (projection-matrix))
-  (activate (points-vao draw))
-  (gl:draw-arrays :points 0 (truncate (length (points draw)) 6))
-  (activate (lines-vao draw))
-  (gl:draw-arrays :lines 0 (truncate (length (lines draw)) 6))
+  (render-array (points-vao draw) :vertex-count (truncate (length (points draw)) 6))
+  (render-array (lines-vao draw) :vertex-count (truncate (length (lines draw)) 6))
   (render (text-render draw) T))
 
 (defmacro define-debug-draw-function ((name type) args &body body)
