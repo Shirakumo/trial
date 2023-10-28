@@ -39,6 +39,8 @@ vec4 standard_shade(in StandardLight light){
     vec3 N = normal;
     vec3 V = view_dir;
     vec3 R = reflect(-V, N);
+    // Invert Y as our maps are mirrored.
+    R.y *= -1;
 
     vec3 F = F_s_r(max(dot(N, V), 0.0), F0, roughness);
     vec3 kS = F;
