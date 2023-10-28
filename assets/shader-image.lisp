@@ -99,7 +99,7 @@ void main@after(){
 (defmethod generate-resources ((generator shader-image-generator) input &rest texture-args &key (resource (resource generator T)) (texture-class 'texture) &allow-other-keys)
   (let* ((loader (make-instance 'loader))
          (shaders (glsl-toolkit:preprocess (resolve-shader-include input) :include-resolution #'resolve-shader-include))
-         (renderer (make-instance 'dynamic-image-renderer :shaders shaders)))
+         (renderer (make-instance 'dynamic-image-renderer :shaders (list :fragment-shader (getf shaders :global)))))
     (apply #'ensure-instance resource texture-class (remf* texture-args :resource :texture-class))
     (with-cleanup-on-failure (finalize loader)
       (commit (list renderer resource) loader)
