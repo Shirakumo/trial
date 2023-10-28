@@ -103,6 +103,26 @@
 
 (defmethod progress ((loader loader) so-far total))
 
+(defun dependency-sort-loads (sequence &key (status (make-hash-table :test 'eq)))
+  (let ((i 0))
+    (labels ((visit (object)
+               (case (gethash object status :invalid)
+                 (:invalid
+                  (setf (gethash object status) :temporary)
+                  (dolist (dependency (dependencies object))
+                    (when dependency
+                      (visit dependency)))
+                  (setf (gethash object status) :validated)
+                  (setf (aref sequence i) object)
+                  (incf i))
+                 (:temporary
+                  (warn "Dependency loop detected on ~a." object)))))
+      ;; TODO: It's possible we might be able to perform tarjan in-place
+      ;;       to avoid potentially copying thousands of elements here.
+      (loop for object across (copy-seq sequence)
+            do (visit object))
+      sequence)))
+
 (defmethod commit ((area staging-area) (loader loader) &key (unload T))
   (cond ((eq area (current-area loader)))
         ((current-area loader)
@@ -126,7 +146,7 @@
                             (setf (gethash resource (loaded loader)) status)
                             (unless (loaded-p resource)
                               (vector-push-extend resource to-load))))
-                 (prog1 (load-with loader to-load)
+                 (prog1 (load-with loader (dependency-sort-loads to-load))
                    (remhash to-load (loaded loader))
                    (progress loader 100 100)))))))))
 
@@ -137,8 +157,6 @@
     (if (current-area loader)
         (stage object (current-area loader))
         (let ((area (make-instance 'staging-area)))
-          (loop for resource being the hash-keys of (loaded loader) using (hash-value state)
-                do (setf (gethash resource (load-state area)) state))
           (stage object area)
           (apply #'commit area loader args)))))
 
