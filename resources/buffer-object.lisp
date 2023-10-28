@@ -97,3 +97,6 @@
 
 (defmethod activate ((buffer buffer-object))
   (gl:bind-buffer (buffer-type buffer) (gl-name buffer)))
+
+(defmethod deactivate ((buffer buffer-object))
+  (gl:bind-buffer (buffer-type buffer) 0))

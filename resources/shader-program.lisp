@@ -204,3 +204,8 @@
   (unless (eq +current-shader-program+ program)
     (setf +current-shader-program+ program)
     (gl:use-program (gl-name program))))
+
+(defmethod deactivate ((program shader-program))
+  (when (eq program +current-shader-program+)
+    (setf +current-shader-program+ NIL)
+    (gl:use-program 0)))

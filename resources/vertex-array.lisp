@@ -85,9 +85,9 @@
       (update-array-bindings array (bindings array) (index-buffer array)))))
 
 (defmethod deallocate ((array vertex-array))
+  (gl:delete-vertex-arrays (list (gl-name array)))
   (when (eq array +current-vertex-array+)
-    (setf +current-vertex-array+ NIL))
-  (gl:delete-vertex-arrays (list (gl-name array))))
+    (setf +current-vertex-array+ NIL)))
 
 (defmethod unload ((array vertex-array))
   (loop for binding in (bindings array)
@@ -97,13 +97,18 @@
 
 (defmethod activate ((array vertex-array))
   (unless (eq array +current-vertex-array+)
-    (gl:bind-vertex-array (gl-name array))
-    (setf +current-vertex-array+ array)))
+    (setf +current-vertex-array+ array)
+    (gl:bind-vertex-array (gl-name array))))
+
+(defmethod deactivate ((array vertex-array))
+  (when (eq array +current-vertex-array+)
+    (setf +current-vertex-array+ NIL)
+    (gl:bind-vertex-array 0)))
 
 (defmethod render ((array vertex-array) target)
-  (let* ((size (size array)))
+  (activate array)
+  (let ((size (size array)))
     (declare (type (unsigned-byte 32) size))
-    (activate array)
     (if (indexed-p array)
         (%gl:draw-elements (vertex-form array) size (element-type (indexed-p array)) 0)
         (%gl:draw-arrays (vertex-form array) 0 size))

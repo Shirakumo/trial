@@ -295,6 +295,9 @@
 (defmethod activate ((source texture))
   (gl:bind-texture (target source) (gl-name source)))
 
+(defmethod deactivate ((source texture))
+  (gl:bind-texture (target source) 0))
+
 (defmethod clear ((texture texture))
   (gl-extension-case
     (:gl-arb-clear-texture

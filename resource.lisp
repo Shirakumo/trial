@@ -58,3 +58,4 @@
   ((data-pointer :accessor gl-name)))
 
 (defgeneric activate (gl-resource))
+(defgeneric deactivate (gl-resource))
