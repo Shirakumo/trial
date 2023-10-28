@@ -30,7 +30,7 @@
     (ensure-instance envmap 'texture :internal-format :rgb16f
                                      :target :texture-cube-map
                                      :width width :height height
-                                     :min-filter :linear-mipmap-linear
+                                     :min-filter :linear
                                      :mag-filter :linear)
     (ensure-instance irrmap 'texture :internal-format :rgb16f
                                      :target :texture-cube-map
@@ -46,17 +46,16 @@
                                      :min-filter :linear-mipmap-linear
                                      :mag-filter :linear)
     (with-cleanup-on-failure (finalize loader)
-      (commit (list envmap-renderer irrmap-renderer pfemap-renderer irrmap pfemap) loader)
+      (commit (list envmap-renderer irrmap-renderer pfemap-renderer envmap irrmap pfemap) loader)
       ;; We do a lil' switcheroo to prevent the cubemap renderer from rendering mips,
       ;; then we let GL bake the mips for the envmap.
-      (setf (min-filter envmap) :linear)
       (render envmap-renderer envmap)
-      (gl:bind-texture (target envmap) (gl-name envmap))
       (setf (min-filter envmap) :linear-mipmap-linear)
       ;; Now map the irradiance and prefiltered maps as usual.
       (render irrmap-renderer irrmap)
       (render pfemap-renderer pfemap)
-      (commit (list envmap irrmap pfemap) loader :unload T))))
+      (commit (list envmap irrmap pfemap) loader :unload T)
+      (list-resources generator))))
 
 (defclass environment-map (file-input-asset
                            multi-resource-asset

@@ -241,7 +241,7 @@
           (gl:tex-parameter target :texture-max-lod max)
           (gl:tex-parameter target :texture-lod-bias bias))
         (gl:generate-mipmap target))
-      (when anisotropy
+      (when (and anisotropy (not (eq min-filter :nearest)))
         (gl:tex-parameter target :texture-max-anisotropy-ext anisotropy)))))
 
 (defmethod allocate ((texture texture))

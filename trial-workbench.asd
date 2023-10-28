@@ -11,6 +11,7 @@
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
                :trial-jpeg-turbo
+               :trial-assets
                :trial-png
                :trial-gltf
                :trial-hdr))
