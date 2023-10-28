@@ -6,6 +6,9 @@ The following examples are currently available:
 - **triangle**
   [ image images/example triangle.png, width 15em ]
   A simple triangle
+- **pbr**
+  [ image images/example pbr.png, width 15em ]
+  An illustration of the Physically Based Rendering system
 - **rigging**
   [ image images/example rigging.png, width 15em ]
   An example of an animated character model
