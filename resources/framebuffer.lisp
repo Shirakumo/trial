@@ -95,6 +95,9 @@
   (let ((bits (slot-value framebuffer 'clear-bits)))
     (when (< 0 bits) (%gl:clear bits))))
 
+(defmethod deactivate ((framebuffer framebuffer))
+  (gl:bind-framebuffer :framebuffer 0))
+
 ;; FIXME: this should ideally be more generic, with blitting from one to another framebuffer
 ;;        and handling the screen as a special framebuffer instance that's always around.
 (defmethod blit-to-screen ((framebuffer framebuffer))

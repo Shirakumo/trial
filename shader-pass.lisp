@@ -240,11 +240,13 @@
   (apply #'capture (framebuffer pass) args))
 
 (defmethod render (object (pass shader-pass))
-  (let ((program (shader-program-for-pass pass object)))
-    (activate (framebuffer pass))
+  (let ((program (shader-program-for-pass pass object))
+        (framebuffer (framebuffer pass)))
+    (activate framebuffer)
     (bind-textures pass)
     (prepare-pass-program pass program)
-    (render object program)))
+    (render object program)
+    (deactivate framebuffer)))
 
 (define-shader-pass per-object-pass (listener)
   ((program-table :initform (make-hash-table :test 'eq) :accessor program-table)
@@ -388,10 +390,12 @@
 
 (defmethod render-frame ((pass per-object-pass) frame)
   (declare (type (and vector (not simple-vector)) frame))
-  (activate (framebuffer pass))
-  (bind-textures pass)
-  (loop for (object . program) across frame
-        do (render-with pass object program)))
+  (let ((framebuffer (framebuffer pass)))
+    (activate framebuffer)
+    (bind-textures pass)
+    (loop for (object . program) across frame
+          do (render-with pass object program))
+    (deactivate framebuffer)))
 
 (defmethod render-with :around ((pass per-object-pass) (object renderable) (program shader-program))
   (restart-case
@@ -447,9 +451,11 @@
   (shader-program pass))
 
 (defmethod render ((pass single-shader-pass) (_ null))
-  (activate (framebuffer pass))
-  (bind-textures pass)
-  (render pass (shader-program pass)))
+  (let ((framebuffer (framebuffer pass)))
+    (activate framebuffer)
+    (bind-textures pass)
+    (render pass (shader-program pass))
+    (deactivate framebuffer)))
 
 (defmethod render :around ((pass single-shader-pass) (program shader-program))
   (prepare-pass-program pass program)
