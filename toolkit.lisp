@@ -29,7 +29,7 @@
            (string-trim '(#\Return #\Linefeed #\Space) string)))
     (when (probe-file (file ".git/HEAD"))
       (let* ((head (trim (alexandria:read-file-into-string (file ".git/HEAD"))))
-             (path (subseq head (1+ (position #\Space head)))))
+             (path (subseq head (1+ (or (position #\Space head) -1)))))
         (cond ((probe-file (file (merge-pathnames path ".git/")))
                (trim (alexandria:read-file-into-string (file (merge-pathnames path ".git/")))))
               ((probe-file (file ".git/packed-refs"))
