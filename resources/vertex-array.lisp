@@ -26,36 +26,36 @@
            (mapcar #'unlist (bindings array)))))
 
 (defun update-array-bindings (array bindings &optional index)
-  (activate array)
-  (when index
-    (gl:bind-buffer (buffer-type index) (gl-name index)))
-  (loop for binding in bindings
-        for i from 0
-        do (destructuring-bind (buffer &key (index i)
-                                            (size 3)
-                                            (type (element-type buffer))
-                                            (stride (* size (gl-type-size type)))
-                                            (offset 0)
-                                            (normalize NIL)
-                                            (instancing 0))
-               (enlist binding)
-             (check-allocated buffer)
-             (gl:bind-buffer (buffer-type buffer) (gl-name buffer))
-             (ecase (buffer-type buffer)
-               (:element-array-buffer
-                (setf (index-buffer array) buffer)
-                (decf i))
-               (:array-buffer
-                (ecase type
-                  ((:half-float :float :fixed)
-                   (gl:vertex-attrib-pointer index size type normalize stride offset))
-                  ((:byte :unsigned-byte :short :unsigned-short :int :unsigned-int)
-                   (gl:vertex-attrib-ipointer index size type stride offset))
-                  (:double
-                   (%gl:vertex-attrib-lpointer index size type stride offset)))
-                (gl:enable-vertex-attrib-array index)
-                (when (/= 0 instancing)
-                  (%gl:vertex-attrib-divisor index instancing)))))))
+  (with-unwind-protection (deactivate array)
+    (activate array)
+    (when index (activate index))
+    (loop for binding in bindings
+          for i from 0
+          do (destructuring-bind (buffer &key (index i)
+                                              (size 3)
+                                              (type (element-type buffer))
+                                              (stride (* size (gl-type-size type)))
+                                              (offset 0)
+                                              (normalize NIL)
+                                              (instancing 0))
+                 (enlist binding)
+               (check-allocated buffer)
+               (activate buffer)
+               (ecase (buffer-type buffer)
+                 (:element-array-buffer
+                  (setf (index-buffer array) buffer)
+                  (decf i))
+                 (:array-buffer
+                  (ecase type
+                    ((:half-float :float :fixed)
+                     (gl:vertex-attrib-pointer index size type normalize stride offset))
+                    ((:byte :unsigned-byte :short :unsigned-short :int :unsigned-int)
+                     (gl:vertex-attrib-ipointer index size type stride offset))
+                    (:double
+                     (%gl:vertex-attrib-lpointer index size type stride offset)))
+                  (gl:enable-vertex-attrib-array index)
+                  (when (/= 0 instancing)
+                    (%gl:vertex-attrib-divisor index instancing))))))))
 
 (defmethod (setf bindings) :after (bindings (array vertex-array))
   (when (allocated-p array)
@@ -69,7 +69,7 @@
                            (T (error "???"))))
   (when (allocated-p array)
     (activate array)
-    (gl:bind-buffer (buffer-type buffer) (gl-name buffer))))
+    (activate buffer)))
 
 (defmethod (setf index-buffer) :after ((null null) (array vertex-array))
   (setf (size array) NIL)

@@ -571,8 +571,7 @@
    #:clear-bits
    #:resize
    #:capture
-   #:blit-to-screen
-   #:activate)
+   #:blit-to-screen)
   ;; resources/memory.lisp
   (:export
    #:memory
@@ -584,8 +583,7 @@
    #:shaders
    #:uniform
    #:uniform-location
-   #:uniforms
-   #:activate)
+   #:uniforms)
   ;; resources/shader.lisp
   (:export
    #:shader
@@ -1437,7 +1435,9 @@
    #:foreign-resource
    #:data-pointer
    #:gl-resource
-   #:gl-name)
+   #:gl-name
+   #:activate
+   #:deactivate)
   ;; resource-generator.lisp
   (:export
    #:resource-generator
