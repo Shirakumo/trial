@@ -57,11 +57,13 @@
   (stage (generator object) area))
 
 (defmethod stage ((object resource) (area staging-area))
-  (allocate object)
+  (unless (allocated-p object)
+    (allocate object))
   (change-state area object :allocated))
 
 (defmethod stage ((object asset) (area staging-area))
-  (load object)
+  (unless (loaded-p object)
+    (load object))
   (change-state area object :loaded))
 
 (defmethod stage ((other staging-area) (area staging-area))

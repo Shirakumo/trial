@@ -5,6 +5,7 @@
   (defvar *optimize-features* '(:elide-buffer-access-checks
                                 :elide-coercion-size-checks
                                 :elide-container-checks
+                                :elide-allocation-checks
                                 :elide-handler-restarts))
 
   #+trial-debug-all

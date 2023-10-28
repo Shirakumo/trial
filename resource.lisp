@@ -23,12 +23,18 @@
     (allocate resource)))
 
 (defmethod allocate :around ((resource resource))
+  #-elide-allocation-checks
+  (when (allocated-p resource)
+    (error "~a is already loaded!" resource))
   #-trial-release
   (v:trace :trial.resource "Allocating ~a" resource)
   (call-next-method)
   resource)
 
 (defmethod deallocate :around ((resource resource))
+  #-elide-allocation-checks
+  (unless (allocated-p resource)
+    (error "~a is not loaded!" resource))
   #-trial-release
   (v:trace :trial.resource "Deallocating ~a" resource)
   (call-next-method)
