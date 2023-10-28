@@ -3,10 +3,12 @@
 (defmethod load-image (source (type (eql :jpeg)))
   (mem:with-memory-region (region source)
     (multiple-value-bind (buffer width height)
-        (org.shirakumo.fraf.turbojpeg:load-image (mem:memory-region-pointer region) T
-                                                 :size (mem:memory-region-size region)
-                                                 :pixel-format :rgb
-                                                 :buffer :vector)
+        (let ((jpeg (make-instance 'org.shirakumo.fraf.turbojpeg:decompressor :bottom-up T)))
+          (unwind-protect (org.shirakumo.fraf.turbojpeg:load-image (mem:memory-region-pointer region) jpeg
+                                                                   :size (mem:memory-region-size region)
+                                                                   :pixel-format :rgb
+                                                                   :buffer :vector)
+            (org.shirakumo.fraf.turbojpeg:free jpeg)))
       (make-image-source buffer width height :unsigned-byte :rgb))))
 
 (defmethod load-image (path (type (eql :jpg)))
