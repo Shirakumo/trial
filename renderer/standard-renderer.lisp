@@ -289,5 +289,5 @@
 (define-shader-entity basic-entity (multi-mesh-entity per-array-material-renderable distance-lod-entity basic-node)
   ())
 
-(define-shader-entity basic-animated-entity (animated-entity basic-entity)
+(define-shader-entity basic-animated-entity (multi-mesh-entity standard-animated-renderable per-array-material-renderable distance-lod-entity basic-node)
   ())
