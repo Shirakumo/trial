@@ -92,6 +92,9 @@
                (unload (first binding))
                (unload binding))))
 
+(defmethod activate ((array vertex-array))
+  (gl:bind-vertex-array (gl-name array)))
+
 (defmethod render ((array vertex-array) target)
   (let* ((size (size array)))
     (declare (type (unsigned-byte 32) size))

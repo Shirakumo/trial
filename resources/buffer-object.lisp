@@ -94,3 +94,6 @@
 (defmethod unload ((buffer buffer-object))
   (maybe-free-static-vector (buffer-data buffer))
   (setf (buffer-data buffer) NIL))
+
+(defmethod activate ((buffer buffer-object))
+  (gl:bind-buffer (buffer-type buffer) (gl-name buffer)))

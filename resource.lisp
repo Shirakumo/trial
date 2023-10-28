@@ -56,3 +56,5 @@
 
 (defclass gl-resource (foreign-resource)
   ((data-pointer :accessor gl-name)))
+
+(defgeneric activate (gl-resource))
