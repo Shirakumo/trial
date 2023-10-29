@@ -130,6 +130,33 @@
               (dolist (connection (flow:connections port))
                 (setf (texture (flow:right connection)) texture)))))))))
 
+(defmethod pack-pipeline ((pass shader-pass) target)
+  ;; Allocate port textures
+  (dolist (port (flow:ports pass))
+    (when (typep port '(and (or static-input flow:out-port) texture-port))
+      (let ((texture (apply #'make-instance 'texture (normalized-texspec port))))
+        (multiple-value-bind (width height) (texspec-real-size (texture-texspec texture) (width target) (height target))
+          (setf (width texture) width)
+          (setf (height texture) height))
+        (setf (texture port) texture)
+        (dolist (connection (flow:connections port))
+          (setf (texture (flow:right connection)) texture)))))
+  ;; Allocate the framebuffer
+  (let* ((output (loop for port in (flow:ports pass)
+                       do (when (and (typep port 'output)
+                                     (eql :color-attachment0 (attachment port)))
+                            (return port))))
+         (width (width (texture output)))
+         (height (height (texture output))))
+    (setf (framebuffer pass)
+          (make-instance 'framebuffer
+                         :width width
+                         :height height
+                         :attachments (loop for port in (flow:ports pass)
+                                            when (typep port 'output)
+                                            collect (list (attachment port) (texture port))))))
+  pass)
+
 (defmethod pack-pipeline ((pipeline pipeline) target)
   (check-consistent pipeline)
   (v:info :trial.pipeline "~a packing for ~a (~ax~a)" pipeline target (width target) (height target))

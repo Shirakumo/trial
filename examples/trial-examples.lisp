@@ -47,7 +47,7 @@
         :key #'string))
 
 (defmacro define-example (name &body body)
-  (form-fiddle:with-body-options (body options title (scene-class (trial::mksym #.*package* name '-scene))) body
+  (form-fiddle:with-body-options (body options title (scene-class (trial::mksym #.*package* name '-scene)) slots) body
     (assert (null options))
     `(progn
        (pushnew ',name *examples*)
@@ -55,7 +55,7 @@
        (defmethod title ((example (eql ',name)))
          ,(or title (string-downcase name)))
        
-       (defclass ,scene-class (pipelined-scene) ())
+       (defclass ,scene-class (pipelined-scene) ,slots)
        
        (defmethod setup-scene ((main example) (scene ,scene-class))
          ,@body

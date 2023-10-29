@@ -1456,6 +1456,10 @@
    #:node
    #:scene
    #:name-map)
+  ;; selection-buffer.lisp
+  (:export
+   #:selection-buffer
+   #:select)
   ;; serialize.lisp
   (:export
    #:define-type-serializer

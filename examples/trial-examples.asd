@@ -16,7 +16,8 @@
                (:file "spatial-query")
                (:file "rigging")
                (:file "video")
-               (:file "pbr"))
+               (:file "pbr")
+               (:file "selection"))
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
                :trial-theora
