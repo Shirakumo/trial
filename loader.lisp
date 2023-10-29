@@ -115,8 +115,10 @@
                     (when dependency
                       (visit dependency)))
                   (setf (gethash object status) :validated)
-                  (setf (aref sequence i) object)
-                  (incf i))
+                  (when (and (typep object 'loadable)
+                             (not (loaded-p object)))
+                    (setf (aref sequence i) object)
+                    (incf i)))
                  (:temporary
                   (warn "Dependency loop detected on ~a." object)))))
       ;; TODO: It's possible we might be able to perform tarjan in-place
