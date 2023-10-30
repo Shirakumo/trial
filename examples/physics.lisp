@@ -32,17 +32,20 @@
 (define-shader-entity physics-player (single-material-renderable rigidbody listener)
   ((vertex-array :initform (// 'trial 'unit-cube))
    (material :initform (material 'red)))
-  (:default-initargs :mass 1000.0 :physics-primitives (make-box :bsize (vec 0.5 0.5 0.5))))
+  (:default-initargs :mass 1000.0 :physics-primitives (make-box :bsize (vec3 0.5))))
 
 (define-handler (physics-player tick) (dt)
   (let ((vel (velocity physics-player))
+        (rot (orientation physics-player))
         (spd (* dt 10.0)))
     (when (retained :w) (incf (vz vel) (- spd)))
     (when (retained :s) (incf (vz vel) (+ spd)))
     (when (retained :a) (incf (vx vel) (- spd)))
     (when (retained :d) (incf (vx vel) (+ spd)))
-    (when (retained :q) (incf (vy (torque physics-player)) (+ (* 10 dt))))
-    (when (retained :e) (incf (vy (torque physics-player)) (- (* 10 dt))))))
+    (when (retained :q) (nq* rot (qfrom-angle +vy+ (+ (* dt)))))
+    (when (retained :e) (nq* rot (qfrom-angle +vy+ (- (* dt)))))))
+
+(defmethod awake-p ((player physics-player)) T)
 
 (define-example physics
   :title "3D Physics System"
@@ -73,7 +76,8 @@
       (enter player scene)
       (enter player physics)
       (observe! (location player) :title "Location")
-      (observe! (velocity player) :title "Velocity")))
+      (observe! (velocity player) :title "Velocity")
+      (observe! (rotation player) :title "Rotation")))
   (let ((render (make-instance 'pbr-render-pass))
         (map (make-instance 'ward)))
     (connect (port render 'color) (port map 'previous-pass) scene)))
