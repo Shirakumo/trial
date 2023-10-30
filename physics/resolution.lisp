@@ -314,7 +314,7 @@
                (incf (contact-depth other)
                      (* sign (v. (nv+ (vc rotation-change loc) velocity-change)
                                  (contact-normal other)))))
-          finally (dbg "Adjust position overflow"))
+          finally (v:info :trial.physics "Adjust position overflow"))
 
     ;; Adjust Velocities
     (loop repeat iterations
@@ -335,4 +335,4 @@
                  (nv+* (contact-velocity other) tmp (- sign))
                  (setf (contact-desired-delta other)
                        (desired-delta-velocity other (contact-velocity other) dt))))
-          finally (dbg "Adjust velocity overflow"))))
+          finally (v:info :trial.physics "Adjust velocity overflow"))))
