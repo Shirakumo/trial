@@ -1,7 +1,5 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(defvar *observers* (make-array 0 :adjustable T :fill-pointer T))
-
 (define-action-set system-action)
 
 (define-action reload-scene (system-action))
@@ -26,33 +24,6 @@
 (defmethod handle ((ev reload-scene) (controller controller))
   (let ((old (scene +main+)))
     (change-scene +main+ (make-instance (type-of old)))))
-
-(defmethod observe ((func function) &key title)
-  (let ((title (or title (format NIL "~d" (length *observers*)))))
-    (let ((position (position title *observers* :key #'car :test #'equal)))
-      (if position
-          (setf (aref *observers* position) (cons title func))
-          (vector-push-extend (cons title func) *observers*)))
-    func))
-
-(defmethod observe (thing &rest args &key &allow-other-keys)
-  (apply #'observe (compile NIL `(lambda (ev)
-                                   (declare (ignorable ev))
-                                   ,thing))
-         args))
-
-(defmacro observe! (form &rest args)
-  (let ((ev (gensym "EV")))
-    `(observe (lambda (,ev) (declare (ignore ,ev)) ,form) ,@args)))
-
-(defmethod stop-observing (&optional title)
-  (let ((observers *observers*))
-    (if title
-        (let ((pos (position title observers :key #'car :test #'equal)))
-          (when pos (array-utils:vector-pop-position observers pos)))
-        (loop for i from 0 below (array-total-size observers)
-              do (setf (aref observers i) NIL)
-              finally (setf (fill-pointer observers) 0)))))
 
 (defclass load-request (event)
   ((thing :initarg :thing)))
@@ -87,6 +58,7 @@
 
 (define-shader-entity display-controller (controller debug-text)
   ((fps-buffer :initform (make-array 100 :fill-pointer T :initial-element 1) :reader fps-buffer)
+   (observers :initform (make-array 0 :adjustable T :fill-pointer T) :accessor observers)
    (background :initform (vec4 1 1 1 0.3))
    (show-overlay :initform T :accessor show-overlay)))
 
@@ -97,6 +69,36 @@
   (/ (loop for i from 0 below (array-total-size fps-buffer)
            sum (aref fps-buffer i))
      (array-total-size fps-buffer)))
+
+(defmethod observe ((func function) &key title)
+  (let ((observers (ignore-errors (observers (node :controller T)))))
+    (when observers
+      (let* ((title (or title (format NIL "~d" (length observers))))
+             (position (position title observers :key #'car :test #'equal)))
+        (if position
+            (setf (aref observers position) (cons title func))
+            (vector-push-extend (cons title func) observers))
+        func))))
+
+(defmethod observe (thing &rest args &key &allow-other-keys)
+  (let ((func (compile NIL `(lambda (ev)
+                              (declare (ignorable ev))
+                              ,thing))))
+    (apply #'observe func args)))
+
+(defmacro observe! (form &rest args)
+  (let ((ev (gensym "EV")))
+    `(observe (lambda (,ev) (declare (ignore ,ev)) ,form) ,@args)))
+
+(defmethod stop-observing (&optional title)
+  (let ((observers (ignore-errors (observers (node :controller T)))))
+    (when observers
+      (if title
+          (let ((pos (position title observers :key #'car :test #'equal)))
+            (when pos (array-utils:vector-pop-position observers pos)))
+          (loop for i from 0 below (array-total-size observers)
+                do (setf (aref observers i) NIL)
+                finally (setf (fill-pointer observers) 0))))))
 
 (defparameter *controller-pprint*
   (let ((table (copy-pprint-dispatch)))
@@ -117,7 +119,7 @@
                 (- gtotal gfree) (floor (/ (- gtotal gfree) gtotal 0.01))
                 (hash-table-count (loaded (loader +main+))))
         (let ((*print-pprint-dispatch* *controller-pprint*))
-          (loop with observers = *observers*
+          (loop with observers = (observers controller)
                 for i from 0 below (length observers)
                 for (title . func) = (aref observers i)
                 when func
