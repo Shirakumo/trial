@@ -293,7 +293,7 @@
   (setf (uniform program "particle_data") 1)
   (gl:depth-mask NIL)
   (gl:blend-func :src-alpha :one)
-  (render-array (draw-vertex-array emitter) :instances (live-particles emitter))
+  (render-array (draw-vertex-array emitter) :vertex-count 6 :instances (live-particles emitter))
   (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha)
   (gl:depth-mask T))
 
