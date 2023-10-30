@@ -210,7 +210,13 @@
 (defmethod start-frame ((system physics-system))
   (loop for entity across (%objects system)
         when (awake-p entity)
-        do (start-frame entity)))
+        do (start-frame entity)
+           ;; Make sure we disable entities without mass now
+           ;; It's important we do this after START-FRAME, as
+           ;; we still need the physics properties it computes
+           ;; to resolve collisions with them.
+           (when (= 0.0 (inverse-mass entity))
+             (setf (awake-p entity) NIL))))
 
 (defmethod update :before ((system physics-system) tt dt fc)
   (start-frame system))
