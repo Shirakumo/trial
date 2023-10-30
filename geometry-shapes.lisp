@@ -269,6 +269,15 @@
 (define-asset (trial unit-disc) mesh
     (make-disc-mesh 1.0 :pack T))
 
+(define-asset (trial unit-cylinder) mesh
+    (make-cylinder-mesh 1.0 1.0 :pack T))
+
+(define-asset (trial unit-cone) mesh
+    (make-cone-mesh 1.0 1.0 :pack T))
+
+(define-asset (trial unit-tube) mesh
+    (make-tube-mesh 1.0 1.0 0.5 :pack T))
+
 (define-asset (trial unit-point) mesh
     (make-triangle-mesh 0.0 0.0 :pack T))
 

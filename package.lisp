@@ -1050,6 +1050,9 @@
    #:unit-sphere
    #:unit-square
    #:unit-disc
+   #:unit-cylinder
+   #:unit-cone
+   #:unit-tube
    #:unit-point
    #:grid
    #:axes
