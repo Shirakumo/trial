@@ -17,7 +17,8 @@
                (:file "rigging")
                (:file "video")
                (:file "pbr")
-               (:file "selection"))
+               (:file "selection")
+               (:file "physics"))
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
                :trial-theora
