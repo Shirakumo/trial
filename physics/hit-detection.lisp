@@ -161,6 +161,8 @@
           (n*m (box-transform b) closest)
           (v<- (hit-normal hit) center)
           (nv- (hit-normal hit) closest)
+          (when (= 0 (vsqrlength (hit-normal hit)))
+            (v<- (hit-normal hit) +vy3+))
           (nvunit (hit-normal hit))
           (v<- (hit-location hit) closest)
           (setf (hit-depth hit) (- radius (sqrt dist)))
