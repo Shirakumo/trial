@@ -98,6 +98,12 @@
            sum (aref fps-buffer i))
      (array-total-size fps-buffer)))
 
+(defparameter *controller-pprint*
+  (let ((table (copy-pprint-dispatch)))
+    (set-pprint-dispatch 'float (lambda (s o) (format s "~,3@f" o))
+                         10 table)
+    table))
+
 (defun compose-controller-debug-text (controller ev)
   (multiple-value-bind (gfree gtotal) (gpu-room)
     (multiple-value-bind (cfree ctotal) (cpu-room)
@@ -110,14 +116,15 @@
                 (- ctotal cfree) (floor (/ (- ctotal cfree) ctotal 0.01))
                 (- gtotal gfree) (floor (/ (- gtotal gfree) gtotal 0.01))
                 (hash-table-count (loaded (loader +main+))))
-        (loop with observers = *observers*
-              for i from 0 below (length observers)
-              for (title . func) = (aref observers i)
-              when func
-              do (restart-case (format stream "~%~a:~12t~a" title (funcall func ev))
-                   (remove-observer ()
-                     :report "Remove the offending observer."
-                     (setf (aref observers i) NIL))))))))
+        (let ((*print-pprint-dispatch* *controller-pprint*))
+          (loop with observers = *observers*
+                for i from 0 below (length observers)
+                for (title . func) = (aref observers i)
+                when func
+                do (restart-case (format stream "~%~a:~12t~a" title (funcall func ev))
+                     (remove-observer ()
+                       :report "Remove the offending observer."
+                       (setf (aref observers i) NIL)))))))))
 
 (defmethod handle ((ev tick) (controller display-controller))
   (when (and (show-overlay controller)
