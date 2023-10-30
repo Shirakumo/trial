@@ -60,6 +60,12 @@
     (declare (dynamic-extent color))
     (setf (uniform program "selection_color") color)))
 
+;; TODO: allow some leniency in the selection. How do we do this best? by
+;;       grabbing more pixels around the selection point, or by trying to
+;;       render objects to the buffer bigger? The latter is the outline
+;;       problem, which is quite hard to do generically. Just scaling the
+;;       objects won't work right.
+
 (defmethod make-pass-shader-program ((buffer selection-buffer) object)
   (let* ((program (call-next-method))
          (fragment (find :fragment-shader (shaders program) :key #'shader-type)))
