@@ -53,8 +53,9 @@
   (for:for ((child over container))
     (stage child area)))
 
-(defmethod stage :before ((object placeholder-resource) (area staging-area))
-  (stage (generator object) area))
+(defmethod stage :before ((object resource) (area staging-area))
+  (when (generator object)
+    (stage (generator object) area)))
 
 (defmethod stage ((object resource) (area staging-area))
   (unless (allocated-p object)
@@ -106,7 +107,7 @@
 (defmethod progress ((loader loader) so-far total))
 
 (defun dependency-sort-loads (sequence &key (status (make-hash-table :test 'eq)))
-  (let ((i 0))
+  (let ((orig-seq (copy-seq sequence)))
     (labels ((visit (object)
                (case (gethash object status :invalid)
                  (:invalid
@@ -115,16 +116,13 @@
                     (when dependency
                       (visit dependency)))
                   (setf (gethash object status) :validated)
-                  (when (and (typep object 'loadable)
-                             (not (loaded-p object)))
-                    (setf (aref sequence i) object)
-                    (incf i)))
+                  (vector-push-extend object sequence))
                  (:temporary
                   (warn "Dependency loop detected on ~a." object)))))
       ;; TODO: It's possible we might be able to perform tarjan in-place
       ;;       to avoid potentially copying thousands of elements here.
-      (loop for object across (copy-seq sequence)
-            do (visit object))
+      (setf (fill-pointer sequence) 0)
+      (map NIL #'visit orig-seq)
       sequence)))
 
 (defmethod commit ((area staging-area) (loader loader) &key (unload T))
