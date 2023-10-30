@@ -259,9 +259,12 @@
         for a = (aref objects i)
         do (loop for j from (1+ i) below (length objects)
                  for b = (aref objects j)
-                 do (loop for a-p across (physics-primitives a)
-                          do (loop for b-p across (physics-primitives b)
-                                   do (setf start (detect-hits a-p b-p contacts start end))))))
+                 do (unless (and (= 0.0 (inverse-mass a))
+                                 (= 0.0 (inverse-mass b)))
+                      ;; Don't bother detecting hits between immovable objects
+                      (loop for a-p across (physics-primitives a)
+                            do (loop for b-p across (physics-primitives b)
+                                     do (setf start (detect-hits a-p b-p contacts start end)))))))
   start)
 
 (defmethod resolve-hits ((system rigidbody-system) contacts start end dt &key (iterations 200))
