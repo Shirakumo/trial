@@ -21,6 +21,7 @@
 
 (defconstant F-PI (float PI 0f0))
 (defconstant F-2PI (float (* 2 PI) 0f0))
+(defconstant F-PI/2 (float (* 0.5 PI) 0f0))
 
 (defun git-repo-commit (dir)
   (flet ((file (path)

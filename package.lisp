@@ -1649,6 +1649,10 @@
    #:define-global
    #:+app-vendor+
    #:+app-system+
+   #:+main+
+   #:F-PI
+   #:F-2PI
+   #:F-PI/2
    #:data-root
    #:git-repo-commit
    #:version
