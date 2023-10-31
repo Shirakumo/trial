@@ -123,7 +123,7 @@
              (let ((dist (v. p pd)))
                (when (<= dist po)
                  (v<- (hit-location hit) pd)
-                 (nv* (hit-location hit) (- dist po))
+                 (nv* (hit-location hit) po)
                  (nv+ (hit-location hit) p)
                  (v<- (hit-normal hit) pd)
                  (setf (hit-depth hit) (- po dist))
