@@ -96,8 +96,10 @@ void main(){
 (defmethod render ((draw debug-draw) (program shader-program))
   (setf (uniform program "view_matrix") (view-matrix))
   (setf (uniform program "projection_matrix") (projection-matrix))
+  (disable-feature :depth-test)
   (render-array (points-vao draw) :vertex-count (truncate (length (points draw)) 6))
   (render-array (lines-vao draw) :vertex-count (truncate (length (lines draw)) 6))
+  (enable-feature :depth-test)
   (render (text-render draw) T))
 
 (defmacro define-debug-draw-function ((name type) args &body body)
