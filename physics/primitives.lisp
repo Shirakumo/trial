@@ -78,7 +78,13 @@
            start))
        ,@(unless (eql a b)
            `((defmethod detect-hits ((a ,b) (b ,a) hits start end)
-               (detect-hits b a hits start end)))))))
+               (let ((nstart (detect-hits b a hits start end)))
+                 ;; Reverse the information to ensure consistency with hit-a/hit-b
+                 (loop for i from start below nstart
+                       for hit = (aref hits i)
+                       do (nv- (hit-normal hit))
+                          (rotatef (hit-a hit) (hit-b hit)))
+                 nstart)))))))
 
 (defstruct primitive
   (entity NIL :type T)
