@@ -230,12 +230,12 @@
 (defmethod vertex-attribute-offset (attribute (mesh mesh-data))
   (vertex-attribute-offset attribute (vertex-attributes mesh)))
 
-(defmethod update-buffer-data ((vbo vertex-buffer) (mesh mesh-data) &key)
-  (update-buffer-data vbo (vertex-data mesh)))
+(defmethod update-buffer-data ((vbo vertex-buffer) (mesh mesh-data) &rest args &key)
+  (apply #'update-buffer-data vbo (vertex-data mesh) args))
 
-(defmethod update-buffer-data ((vao vertex-array) (mesh mesh-data) &key)
+(defmethod update-buffer-data ((vao vertex-array) (mesh mesh-data) &rest args &key)
   (let ((buffer (caar (bindings vao))))
-    (update-buffer-data buffer (vertex-data mesh))))
+    (apply #'update-buffer-data buffer (vertex-data mesh) args)))
 
 (defclass vertex ()
   ((location :initform (vec 0 0 0) :initarg :position :initarg :location :accessor location :type vec3)))
