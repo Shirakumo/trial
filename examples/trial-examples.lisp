@@ -46,8 +46,27 @@
         #-sb-unicode #'string<
         :key #'string))
 
+(defgeneric setup-ui (scene panel))
+
+(defclass example-scene (pipelined-scene)
+  ())
+
+(defmethod setup-scene :after ((main example) (scene example-scene))
+  (let ((output (car (last (nodes scene))))
+        (ui (make-instance 'ui))
+        (combine (make-instance 'blend-pass)))
+    (connect (port output 'color) (port combine 'a-pass) scene)
+    (connect (port ui 'color) (port combine 'b-pass) scene)
+    (ignore-errors (show (make-instance 'example-ui :scene scene) :ui ui))))
+
+(defclass example-ui (trial-alloy:panel)
+  ())
+
+(defmethod initialize-instance :after ((panel example-ui) &key scene)
+  (setup-ui scene panel))
+
 (defmacro define-example (name &body body)
-  (form-fiddle:with-body-options (body options title (scene-class (trial::mksym #.*package* name '-scene)) slots) body
+  (form-fiddle:with-body-options (body options title (scene-class (trial::mksym #.*package* name '-scene)) slots superclasses) body
     (assert (null options))
     `(progn
        (pushnew ',name *examples*)
@@ -55,7 +74,8 @@
        (defmethod title ((example (eql ',name)))
          ,(or title (string-downcase name)))
        
-       (defclass ,scene-class (pipelined-scene) ,slots)
+       (defclass ,scene-class (,@superclasses example-scene)
+         ,slots)
        
        (defmethod setup-scene ((main example) (scene ,scene-class))
          ,@body

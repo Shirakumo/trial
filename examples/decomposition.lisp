@@ -1,12 +1,11 @@
 (in-package #:org.shirakumo.fraf.trial.examples)
 
 (define-shader-entity decomposition-entity (vertex-entity colored-entity transformed-entity)
-  ((panel :initarg :panel :accessor panel)
-   (visible-p :initarg :visible-p :initform T :accessor visible-p)))
+  ((visible-p :initarg :visible-p :initform T :accessor visible-p)))
 
 (defmethod render :around ((entity decomposition-entity) (program shader-program))
   (when (visible-p entity)
-    (gl:polygon-mode :front-and-back (polygon-mode (panel entity)))
+    (gl:polygon-mode :front-and-back (polygon-mode (scene +main+)))
     (call-next-method)
     (gl:polygon-mode :front-and-back :fill)))
 
@@ -16,18 +15,22 @@
 (defmethod alloy:combo-item ((item mesh-data) (combo alloy:combo))
   (make-instance 'mesh-item :value item))
 
-(defclass decomposition-panel (trial-alloy:panel)
-  ((container :initarg :container :accessor container)
-   (model :initform NIL :accessor model)
-   (mesh :initform NIL :accessor mesh)
-   (polygon-mode :initform :fill :accessor polygon-mode)
-   (show-original :initform NIL :accessor show-original)
-   (file :initform NIL :accessor file)))
+(define-example decomposition
+  :title "Convex Hull Decomposition"
+  :slots ((model :initform NIL :accessor model)
+          (mesh :initform NIL :accessor mesh)
+          (polygon-mode :initform :fill :accessor polygon-mode)
+          (show-original :initform NIL :accessor show-original)
+          (file :initform NIL :accessor file))
+  (enter (make-instance 'render-pass) scene)
+  (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)
+  (enter (make-instance 'editor-camera :location (VEC3 0.0 2.3 10) :fov 50 :move-speed 0.1) scene)
+  (enter (make-instance 'array-container :name :container) scene))
 
 (alloy:define-observable (setf model) (value alloy:observable))
 (alloy:define-observable (setf mesh) (value alloy:observable))
 
-(defmethod initialize-instance :after ((panel decomposition-panel) &key)
+(defmethod setup-ui ((scene decomposition-scene) panel)
   (let ((layout (make-instance 'alloy:grid-layout :col-sizes '(120 140 T) :row-sizes '(30)))
         (focus (make-instance 'alloy:vertical-focus-list)))
     (alloy:enter "Load Model" layout :row 0 :col 0)
@@ -56,48 +59,35 @@
     (load (assets:asset :woman))
     (setf (model panel) (assets:asset :woman))))
 
-(defmethod (setf file) :before (file (panel decomposition-panel))
-  (setf (model panel) (generate-resources 'model-loader file)))
+(defmethod (setf file) :before (file (scene decomposition-scene))
+  (setf (model scene) (generate-resources 'model-loader file)))
 
-(defmethod (setf show-original) :after (value (panel decomposition-panel))
-  (let ((orig (node :original (container panel))))
+(defmethod (setf show-original) :after (value (scene decomposition-scene))
+  (let ((orig (node :original (container scene))))
     (when orig (setf (visible-p orig) value))))
 
-(defmethod (setf mesh) :before ((mesh mesh-data) (panel decomposition-panel))
-  (clear (container panel))
+(defmethod (setf mesh) :before ((mesh mesh-data) (scene decomposition-scene))
+  (clear (container scene))
   (enter (make-instance 'decomposition-entity
                         :name :original
-                        :panel panel
+                        :scene scene
                         :color (vec 1 1 1 0.5)
-                        :visible-p (show-original panel)
+                        :visible-p (show-original scene)
                         :vertex-array (make-vertex-array 
                                        (make-convex-mesh
                                         :vertices (reordered-vertex-data mesh '(location))
                                         :faces (trial::simplify (index-data mesh) '(unsigned-byte 32)))
                                        NIL))
-         (container panel))
+         (container scene))
   (loop for hull across (org.shirakumo.fraf.convex-covering:decompose
                          (reordered-vertex-data mesh '(location))
                          (trial::simplify (index-data mesh) '(unsigned-byte 32)))
         for (name . color) in (apply #'alexandria:circular-list (colored:list-colors))
         do (enter (make-instance 'decomposition-entity
-                                 :panel panel
+                                 :scene scene
                                  :color (vec (colored:r color) (colored:g color) (colored:b color))
                                  :vertex-array (make-vertex-array (make-convex-mesh :vertices (org.shirakumo.fraf.convex-covering:vertices hull)
                                                                                     :faces (org.shirakumo.fraf.convex-covering:faces hull))
                                                                   NIL))
-                  (container panel)))
+                  (container scene)))
   (commit (scene +main+) (loader +main+)))
-
-(define-example decomposition
-  :title "Convex Hull Decomposition"
-  (let ((game (make-instance 'render-pass))
-        (ui (make-instance 'ui))
-        (combine (make-instance 'blend-pass)))
-    (connect (port game 'color) (port combine 'a-pass) scene)
-    (connect (port ui 'color) (port combine 'b-pass) scene))
-  (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)
-  (enter (make-instance 'editor-camera :location (VEC3 0.0 2.3 10) :fov 50 :move-speed 0.1) scene)
-  (let ((container (make-instance 'array-container)))
-    (enter container scene)
-    (trial-alloy:show-panel 'decomposition-panel :container container)))

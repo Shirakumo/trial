@@ -27,7 +27,7 @@
     (call-next-method)
     (gl:polygon-mode :front-and-back :fill)))
 
-(defclass spatial-structure (trial:array-container listener)
+(defclass spatial-structure (trial:array-container entity listener)
   ((spatial-index :initarg :spatial-index :accessor spatial-index)
    (reoptimize :initarg :reoptimize :initform nil :accessor reoptimize)
    (query-region :initarg :query-region :initform (make-instance 'ubox* :scaling (vec3 1)) :accessor query-region)
@@ -90,10 +90,44 @@
   (when (dirty spatial-structure)
     (start-frame spatial-structure)))
 
-(defclass query-panel (trial-alloy:panel) ())
+(defun make-spatial-index (kind)
+  (ecase kind
+    (:kd (org.shirakumo.fraf.trial.space.kd-tree:make-kd-tree))
+    (:grid (org.shirakumo.fraf.trial.space.grid3:make-grid
+            0.1 :bsize (vec3 3)))))
 
-(defmethod initialize-instance :after ((panel query-panel) &key structure)
-  (let ((layout (make-instance 'alloy:grid-layout :col-sizes '(120 140 T) :row-sizes '(30)))
+(defun enter-boxes (structure shape count)
+  (let ((generator (ecase shape
+                     (:uniform
+                      (lambda ()
+                        (make-instance 'ubox :location (vrand (vec3 0) (vec3 6))
+                                             :scaling (vec3 0.05))))
+                     (:ring
+                      (lambda ()
+                        (let ((radius (* 3 (+ .5 (random .5))))
+                              (angle (random (* 2 pi)))
+                              (y (* 3 (+ -.3 (random .6)))))
+                          (make-instance 'ubox :location (vec3 (* (cos angle) radius)
+                                                               y
+                                                               (* (sin angle) radius))
+                                               :scaling (vec3 0.05))))))))
+    (loop repeat count
+          for box = (funcall generator)
+          do (enter box structure))))
+
+(define-example spatial-query
+  :title "Spatial Query Tests"
+  (enter (make-instance 'render-pass) scene)
+  (enter (make-instance 'pivot-camera :radius 7) scene)
+  (let ((structure (make-instance 'spatial-structure
+                                  :name :structure
+                                  :spatial-index (make-spatial-index :kd))))
+    (enter structure scene)
+    (enter-boxes structure :uniform 10000)))
+
+(defmethod setup-ui ((scene spatial-query-scene) panel)
+  (let ((structure (node :structure scene))
+        (layout (make-instance 'alloy:grid-layout :col-sizes '(120 140 T) :row-sizes '(30)))
         (focus (make-instance 'alloy:vertical-focus-list))
         (index-kind :kd)
         (shape :uniform)
@@ -142,42 +176,3 @@
           (re-index))))
 
     (alloy:finish-structure panel layout focus)))
-
-(defun make-spatial-index (kind)
-  (ecase kind
-    (:kd (org.shirakumo.fraf.trial.space.kd-tree:make-kd-tree))
-    (:grid (org.shirakumo.fraf.trial.space.grid3:make-grid
-            0.1 :bsize (vec3 3)))))
-
-(defun enter-boxes (structure shape count)
-  (let ((generator (ecase shape
-                     (:uniform
-                      (lambda ()
-                        (make-instance 'ubox :location (vrand (vec3 0) (vec3 6))
-                                             :scaling (vec3 0.05))))
-                     (:ring
-                      (lambda ()
-                        (let ((radius (* 3 (+ .5 (random .5))))
-                              (angle (random (* 2 pi)))
-                              (y (* 3 (+ -.3 (random .6)))))
-                          (make-instance 'ubox :location (vec3 (* (cos angle) radius)
-                                                               y
-                                                               (* (sin angle) radius))
-                                               :scaling (vec3 0.05))))))))
-    (loop repeat count
-          for box = (funcall generator)
-          do (enter box structure))))
-
-(define-example spatial-query
-  :title "Spatial Query Tests"
-  (let ((game (make-instance 'render-pass))
-        (ui (make-instance 'ui))
-        (combine (make-instance 'blend-pass)))
-    (connect (port game 'color) (port combine 'a-pass) scene)
-    (connect (port ui 'color) (port combine 'b-pass) scene))
-  (enter (make-instance 'pivot-camera :radius 7) scene)
-  (let ((structure (make-instance 'spatial-structure
-                                  :spatial-index (make-spatial-index :kd))))
-    (enter structure scene)
-    (enter-boxes structure :uniform 10000)
-    (trial-alloy:show-panel 'query-panel :structure structure)))
