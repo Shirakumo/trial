@@ -237,6 +237,43 @@
   (let ((buffer (caar (bindings vao))))
     (apply #'update-buffer-data buffer (vertex-data mesh) args)))
 
+(defmethod replace-vertex-data ((vao vertex-array) (mesh mesh-data) &key)
+  (update-buffer-data (index-buffer vao) (index-data mesh))
+  (let ((vertex-data (caar (bindings vao))))
+    (update-buffer-data vertex-data (vertex-data mesh))
+    (setf (bindings vao) (loop with stride = (vertex-attribute-stride mesh)
+                               for attribute in (vertex-attributes mesh)
+                               for offset = 0 then (+ offset size)
+                               for size = (vertex-attribute-size attribute)
+                               collect `(,vertex-data :size ,size :offset ,(* 4 offset) :stride ,(* 4 stride))))
+    vao))
+
+(defmethod coerce-object ((vao vertex-array) (type (eql 'mesh-data)) &rest args &key index-attribute &allow-other-keys)
+  (let ((primary (caar (bindings vao)))
+        (attributes (loop for index from 0
+                          for (buffer . attrs) in (bindings vao)
+                          collect (let ((index (or (getf attrs :index) index)))
+                                    (if index-attribute
+                                        (funcall index-attribute index)
+                                        (case index
+                                          (0 'location)
+                                          (1 'normal)
+                                          (2 'uv)
+                                          (3 'tangent)
+                                          (4 'color)
+                                          (5 'joints)
+                                          (6 'weights)
+                                          (7 'unknown)))))))
+    (remf args :index-attribute)
+    (if (loop for (binding) in (cdr (bindings vao))
+              always (eq binding primary))
+        (apply #'make-instance 'mesh-data
+               :index-data (buffer-data (index-buffer vao))
+               :vertex-data (buffer-data (caar (bindings vao)))
+               :vertex-attributes attributes
+               args)
+        (implement!))))
+
 (defclass vertex ()
   ((location :initform (vec 0 0 0) :initarg :position :initarg :location :accessor location :type vec3)))
 
