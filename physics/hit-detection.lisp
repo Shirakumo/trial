@@ -40,7 +40,7 @@
       (v<- (hit-normal hit) (plane-normal b))
       (setf (hit-depth hit) (- dist))
       (v<- (hit-location hit) al)
-      (nv+* (hit-location hit) (plane-normal b) (- (+ dist (sphere-radius a))))
+      (nv+* (hit-location hit) (plane-normal b) (- (sphere-radius a)))
       (finish-hit))))
 
 (define-distance (sphere plane)
@@ -65,7 +65,7 @@
         (setf (hit-depth hit) (- (hit-depth hit))))
       (incf (hit-depth hit) (sphere-radius a))
       (v<- (hit-location hit) al)
-      (nv+* (hit-location hit) (plane-normal b) dist)
+      (nv+* (hit-location hit) (hit-normal hit) (- (sphere-radius a)))
       (finish-hit))))
 
 (define-hit-detector (cylinder sphere)
