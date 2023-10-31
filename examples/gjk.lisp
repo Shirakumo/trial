@@ -52,21 +52,18 @@
              (incf (vy (location gjk-player)) (+ spd)))))
     (debug-clear)
     (setf (color gjk-player) #.(vec 0 1 0 0.5))
-    (for:for ((entity over (scene +main+)))
-      (when (and (not (eq entity gjk-player)) (typep entity 'gjk-body))
-        (let ((hit (detect-hit gjk-player entity (hit gjk-player))))
-          (when hit
-            (setf (color gjk-player) #.(vec 1 0 0 0.5))
-            (debug-line (hit-location hit) (v+* (hit-location hit) (hit-normal hit) 2)
-                        :color-a #.(vec 0 0 0) :color-b #.(vec 0 1 0))
-            (return)))))))
+    (let ((hit (detect-hit gjk-player (node :a (container gjk-player)) (hit gjk-player))))
+      (when hit
+        (setf (color gjk-player) #.(vec 1 0 0 0.5))
+        (debug-line (hit-location hit) (v+* (hit-location hit) (hit-normal hit) 2)
+                    :color-a #.(vec 0 0 0) :color-b #.(vec 0 1 0))))))
 
 (define-example gjk
   :title "GJK Collision Detection"
   (enter (make-instance 'display-controller) scene)
   (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)
   (enter (make-instance 'gjk-body :name :a :primitive (make-sphere)) scene)
-  (enter (make-instance 'gjk-player :name :b :primitive (make-sphere) :location (vec 0 0 +2.5)) scene)
+  (enter (make-instance 'gjk-player :name :b :primitive (make-box) :location (vec 0 0 +2.5)) scene)
   (enter (make-instance 'target-camera :location (vec3 0.0 8 9) :target (vec 0 0 0) :fov 50) scene)
   (observe! (hit-location (hit (node :b scene))) :title "Location")
   (observe! (hit-normal (hit (node :b scene))) :title "Normal")
@@ -75,16 +72,18 @@
 
 (defmethod setup-ui ((scene gjk-scene) panel)
   (let ((layout (make-instance 'alloy:grid-layout :col-sizes '(T 120 140) :row-sizes '(30)))
-        (focus (make-instance 'alloy:vertical-focus-list))
-        (shapes (list (make-sphere)
-                      (make-box)
-                      (make-plane)
-                      (make-cylinder)
-                      (make-pill))))
-    (alloy:enter "Shape A" layout :row 0 :col 1)
-    (alloy:represent (physics-primitive (node :a scene)) 'alloy:combo-set
-                     :value-set shapes :layout-parent layout :focus-parent focus)
-    (alloy:enter "Shape B" layout :row 1 :col 1)
-    (alloy:represent (physics-primitive (node :b scene)) 'alloy:combo-set
-                     :value-set shapes :layout-parent layout :focus-parent focus)
-    (alloy:finish-structure panel layout focus)))
+        (focus (make-instance 'alloy:vertical-focus-list)))
+    (flet ((shapes ()
+             (list (make-sphere)
+                   (make-box)
+                   (make-cylinder)
+                   (make-pill)
+                   (make-plane)
+                   (make-half-space))))
+      (alloy:enter "Shape A" layout :row 0 :col 1)
+      (alloy:represent (physics-primitive (node :a scene)) 'alloy:combo-set
+                       :value-set (shapes) :layout-parent layout :focus-parent focus)
+      (alloy:enter "Shape B" layout :row 1 :col 1)
+      (alloy:represent (physics-primitive (node :b scene)) 'alloy:combo-set
+                       :value-set (shapes) :layout-parent layout :focus-parent focus)
+      (alloy:finish-structure panel layout focus))))
