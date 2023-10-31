@@ -6,17 +6,18 @@
 (defmethod preload (object (scene pipelined-scene))
   (pushnew object (to-preload scene)))
 
-(defmethod setup-scene :after (main (scene scene))
-  (pack-pipeline scene (context main))
-  (loop for pass across (passes scene)
-        do (enter scene pass)
-           (dolist (thing (to-preload scene))
-             (when (typep thing '(or class entity))
-               (enter thing pass))))
-  ;; KLUDGE: this will trigger class changed events which we can ignore.
-  ;;         we have to do this both because it's a waste of time, but also
-  ;;         because not doing so leads to real ???? OpenGL driver state.
-  (discard-events scene 'class-changed))
+(defmethod setup-scene :around (main (scene scene))
+  (prog1 (call-next-method)
+    (pack-pipeline scene (context main))
+    (loop for pass across (passes scene)
+          do (enter scene pass)
+             (dolist (thing (to-preload scene))
+               (when (typep thing '(or class entity))
+                 (enter thing pass))))
+    ;; KLUDGE: this will trigger class changed events which we can ignore.
+    ;;         we have to do this both because it's a waste of time, but also
+    ;;         because not doing so leads to real ???? OpenGL driver state.
+    (discard-events scene 'class-changed)))
 
 (defmethod stage :before ((scene pipelined-scene) (area staging-area))
   (loop for texture across (textures scene)
