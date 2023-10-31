@@ -238,14 +238,15 @@
     (apply #'update-buffer-data buffer (vertex-data mesh) args)))
 
 (defmethod replace-vertex-data ((vao vertex-array) (mesh mesh-data) &key)
-  (update-buffer-data (index-buffer vao) (index-data mesh))
+  (resize-buffer-data (index-buffer vao) (index-data mesh))
   (let ((vertex-data (caar (bindings vao))))
-    (update-buffer-data vertex-data (vertex-data mesh))
+    (resize-buffer-data vertex-data (vertex-data mesh))
     (setf (bindings vao) (loop with stride = (vertex-attribute-stride mesh)
                                for attribute in (vertex-attributes mesh)
                                for offset = 0 then (+ offset size)
                                for size = (vertex-attribute-size attribute)
                                collect `(,vertex-data :size ,size :offset ,(* 4 offset) :stride ,(* 4 stride))))
+    (setf (size vao) (length (index-data mesh)))
     vao))
 
 (defmethod coerce-object ((vao vertex-array) (type (eql 'mesh-data)) &rest args &key index-attribute &allow-other-keys)

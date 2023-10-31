@@ -55,6 +55,9 @@
              count data (memory-region-size region)))
     (update-buffer-data/ptr buffer (memory-region-pointer region) (or count (memory-region-size region)) buffer-start)))
 
+(defmethod resize-buffer-data ((buffer buffer-object) data &rest args)
+  (apply #'resize-buffer buffer T :data data args))
+
 (defmethod download-buffer-data ((buffer buffer-object) (data (eql T)) &rest args)
   (apply #'download-buffer-data buffer (buffer-data buffer) args))
 
