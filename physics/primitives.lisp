@@ -156,15 +156,27 @@
 (define-primitive-type sphere
   (radius 1.0 :type single-float))
 
+(defmethod print-object ((primitive sphere) stream)
+  (print-unreadable-object (primitive stream :type T :identity T)
+    (format stream "~f" (radius primitive))))
+
 (define-primitive-type plane
   (normal (vec3 0 1 0) :type vec3)
   (offset 0.0 :type single-float))
+
+(defmethod print-object ((primitive plane) stream)
+  (print-unreadable-object (primitive stream :type T :identity T)
+    (format stream "~a ~f" (normal primitive) (offset primitive))))
 
 (define-primitive-type (half-space plane))
 
 ;; NOTE: the box is centred at 0,0,0 and the bsize is the half-size along each axis.
 (define-primitive-type box
   (bsize (vec3 1 1 1) :type vec3))
+
+(defmethod print-object ((primitive box) stream)
+  (print-unreadable-object (primitive stream :type T :identity T)
+    (format stream "~a" (bsize primitive))))
 
 ;; Frustums are just boxes skewed by a linear transform. We provide these shorthands
 ;; here to allow easier construction of frustum testing primitives.
@@ -186,12 +198,20 @@
   (radius 1.0 :type single-float)
   (height 1.0 :type single-float))
 
+(defmethod print-object ((primitive cylinder) stream)
+  (print-unreadable-object (primitive stream :type T :identity T)
+    (format stream "~f ~f" (radius primitive) (height primitive))))
+
 (define-primitive-type (pill cylinder))
 
 (define-primitive-type triangle
   (a (vec3 0 0 0) :type vec3)
   (b (vec3 0 0 0) :type vec3)
   (c (vec3 0 0 0) :type vec3))
+
+(defmethod print-object ((primitive triangle) stream)
+  (print-unreadable-object (primitive stream :type T :identity T)
+    (format stream "~a ~a ~a" (a primitive) (b primitive) (c primitive))))
 
 (define-primitive-type general-mesh
   ;; NOTE: Packed vertex positions as X Y Z triplets
@@ -200,6 +220,10 @@
   ;; NOTE: Vertex indices pointing into the vertex array / 3
   ;; [ 0 1 2 2 3 0 ... ]
   (faces #() :type (simple-array (unsigned-byte 32) (*))))
+
+(defmethod print-object ((primitive general-mesh) stream)
+  (print-unreadable-object (primitive stream :type T :identity T)
+    (format stream "~d tris" (truncate (length (faces primitive)) 3))))
 
 (define-primitive-type (convex-mesh general-mesh))
 
