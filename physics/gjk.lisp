@@ -200,7 +200,7 @@
               (decf i)))
           ;; Reconstruct the polytope with the search point added
           (dotimes (i num-loose-edges)
-            (when (<= EPA-MAX-FACES num-faces) 
+            (when (<= EPA-MAX-FACES num-faces)
               (return))
             (setf (v num-faces 0) (e i 0))
             (setf (v num-faces 1) (e i 1))
@@ -230,7 +230,7 @@
           (v<- (trial:hit-location hit) local-b)
           (if (= 0.0 (trial:hit-depth hit))
               (v<- (trial:hit-normal hit) +vy3+)
-              (nv/ (trial:hit-normal hit) (trial:hit-depth hit))))))))
+              (nv/ (trial:hit-normal hit) (- (trial:hit-depth hit)))))))))
 
 (declaim (ftype (function (vec3 vec3 vec3 vec3) (values single-float single-float single-float)) barycentric))
 (defun barycentric (a b c p)
@@ -246,11 +246,11 @@
          (d21 (v. v2 v1))
          (denom (- (* d00 d11) (* d01 d01))))
     (declare (dynamic-extent v0 v1 v2))
-    (if (<= denom 0.000001)
-        (values 1 0 0)
+    (if (<= denom 0.000001f0)
+        (values 1f0 0f0 0f0)
         (let ((v (/ (- (* d11 d20) (* d01 d21)) denom))
               (w (/ (- (* d00 d21) (* d01 d20)) denom)))
-          (values (- 1 v w) v w)))))
+          (values (- 1f0 v w) v w)))))
 
 (defun plane-point (a b c &optional (res (vec3)))
   (declare (optimize speed (safety 0)))
