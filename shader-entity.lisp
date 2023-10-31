@@ -438,9 +438,12 @@ void main(){
   ((shader-program :initarg :shader-program :accessor shader-program))
   (:metaclass shader-entity-class))
 
-(defmethod stage :after ((entity standalone-shader-entity) (area staging-area))
+(defmethod initialize-instance :around ((entity standalone-shader-entity) &key)
+  (call-next-method)
   (unless (slot-boundp entity 'shader-program)
-    (setf (shader-program entity) (make-shader-program entity)))
+    (setf (shader-program entity) (make-shader-program entity))))
+
+(defmethod stage :after ((entity standalone-shader-entity) (area staging-area))
   (stage (shader-program entity) area))
 
 (defmethod render ((entity standalone-shader-entity) target)
