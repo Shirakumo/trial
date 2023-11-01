@@ -52,7 +52,7 @@
   (enter (make-instance 'display-controller) scene)
   (enter (make-instance 'target-camera :location (VEC3 0.0 13.5 15) :target (vec 0 0 0) :fov 50) scene)
   (enter (make-instance 'directional-light :direction -vy3+) scene)
-  (enter (make-instance 'ambient-light :color (vec3 0.1)) scene)
+  (enter (make-instance 'ambient-light :color (vec3 0.2)) scene)
   (let ((physics (make-instance 'rigidbody-system :units-per-metre 0.1)))
     (enter (make-instance 'gravity :gravity (vec 0 -10 0)) physics)
     (enter physics scene)
