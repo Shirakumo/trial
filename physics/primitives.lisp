@@ -202,7 +202,11 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~f ~f" (radius primitive) (height primitive))))
 
-(define-primitive-type (pill cylinder))
+;; NOTE: the pill is centred at 0,0,0, and points Y-up. the "height" is the half-height
+;;       and does not include the caps, meaning the total height of the pill is 2r+2h.
+(define-primitive-type pill
+  (radius 1.0 :type single-float)
+  (height 1.0 :type single-float))
 
 (define-primitive-type triangle
   (a (vec3 0 0 0) :type vec3)
@@ -339,16 +343,53 @@
             (v (* s (cos i1)) (+ h) (* s (sin i1)))
             ;; Wall
             (v (* s (cos i2)) (- h) (* s (sin i2)))
-            (v (* s (cos i2)) (+ h) (* s (sin i2)))
             (v (* s (cos i1)) (- h) (* s (sin i1)))
             (v (* s (cos i2)) (+ h) (* s (sin i2)))
-            (v (* s (cos i2)) (- h) (* s (sin i2)))
-            (v (* s (cos i1)) (+ h) (* s (sin i1)))))
+            (v (* s (cos i1)) (+ h) (* s (sin i1)))
+            (v (* s (cos i2)) (+ h) (* s (sin i2)))
+            (v (* s (cos i1)) (- h) (* s (sin i1)))))
     (multiple-value-bind (vertices faces) (finalize)
       (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces))))
 
-(defmethod coerce-object ((primitive pill) (type (eql 'convex-mesh)) &key)
-  (implement!))
+(defmethod coerce-object ((primitive pill) (type (eql 'convex-mesh)) &key (segments 32))
+  (with-mesh-construction (v)
+    (let ((s (pill-radius primitive))
+          (h (pill-height primitive))
+          (lat (float segments 0f0))
+          (lng (float segments 0f0)))
+      (loop with step = (/ F-2PI segments)
+            for i1 = (- step) then i2
+            for i2 from 0 to F-2PI by step
+            do ;; Wall
+            (v (* s (cos i2)) (- h) (* s (sin i2)))
+            (v (* s (cos i1)) (- h) (* s (sin i1)))
+            (v (* s (cos i2)) (+ h) (* s (sin i2)))
+            (v (* s (cos i1)) (+ h) (* s (sin i1)))
+            (v (* s (cos i2)) (+ h) (* s (sin i2)))
+            (v (* s (cos i1)) (- h) (* s (sin i1))))
+      (flet ((cap (h lng-start lng-end)
+               (loop for i from lat downto 1
+                     for lat0 = (* F-PI (- (/ (1- i) lat) 0.5))
+                     for lat1 = (* F-PI (- (/ i lat) 0.5))
+                     for z0 = (sin lat0)
+                     for zr0 = (cos lat0)
+                     for z1 = (sin lat1)
+                     for zr1 = (cos lat1)
+                     do (loop for j from lng-start downto lng-end
+                              for l1 = (* F-2PI (/ (- j 1) lng))
+                              for l2 = (* F-2PI (/ (- j 2) lng))
+                              for x1 = (cos l1) for x2 = (cos l2)
+                              for y1 = (sin l1) for y2 = (sin l2)
+                              do (v (* x1 zr0 s) (+ h (* y1 zr0 s)) (* z0 s))
+                                 (v (* x1 zr1 s) (+ h (* y1 zr1 s)) (* z1 s))
+                                 (v (* x2 zr0 s) (+ h (* y2 zr0 s)) (* z0 s))
+                                 (v (* x2 zr0 s) (+ h (* y2 zr0 s)) (* z0 s))
+                                 (v (* x1 zr1 s) (+ h (* y1 zr1 s)) (* z1 s))
+                                 (v (* x2 zr1 s) (+ h (* y2 zr1 s)) (* z1 s))))))
+        (cap (+ h) (1+ (truncate lng 2)) 2)
+        (cap (- h) (1+ lng) (+ (truncate lng 2) 2))))
+    (multiple-value-bind (vertices faces) (finalize)
+      (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces))))
 
 (defmethod coerce-object ((primitive triangle) (type (eql 'convex-mesh)) &key)
   (with-mesh-construction (v)
