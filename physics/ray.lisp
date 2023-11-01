@@ -36,6 +36,8 @@
        ;; result of another shape in some fashion. All implicit functions assume the other
        ;; shape is centred at the origin and axis-aligned, as we handle those kinds of
        ;; shifts using the primitive's transform in the DETECT-HITS function.
+       (declaim (ftype (function (vec3 vec3 ,@(if props (mapcar #'second props) (list b)) &optional vec3)
+                                 (or null single-float)) ,implicit-name))
        (defun ,implicit-name (,loc ,dir ,@(if props (mapcar #'first props) (list b)) &optional (,normal (vec3)))
          (declare (optimize speed (safety 1))
                   (type vec3 ,loc ,dir ,normal)
