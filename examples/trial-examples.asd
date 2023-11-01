@@ -9,8 +9,7 @@
   :entry-point "trial-examples::launch"
   :components ((:file "trial-examples")
                (:file "triangle")
-               (:file "vclip")
-               (:file "gjk")
+               (:file "collision")
                (:file "cpu-particle")
                (:file "gpu-particle")
                (:file "spatial-query")

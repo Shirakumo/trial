@@ -24,9 +24,9 @@ The following examples are currently available:
 - **spatial-query**
   [ image images/example spatial-query.png, width 15em ]
   A test application for spatial query data structures
-- **gjk**
-  [ image images/example gjk.png, width 15em ]
-  A test application for the GJK collision detection algorithm
-- **vclip**
-  A test application for the V-clip collision detection algorithm
-
+- **collision**
+  [ image images/example collision.png, width 15em ]
+  A test application to show off collision detection methods
+- **physics**
+  [ image images/example physics.png, width 15em ]
+  A simple rigid body physics demo
