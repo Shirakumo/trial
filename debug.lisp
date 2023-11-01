@@ -103,10 +103,10 @@ void main(){
   (render (text-render draw) T))
 
 (defmacro define-debug-draw-function ((name type) args &body body)
-  `(defun ,name (,@args (debug-draw (node 'debug-draw T)) (update T))
+  `(defun ,name (,@args (debug-draw (node 'debug-draw T)) (update T) (container (scene +main+)))
      (flet ((,name ()
               (unless debug-draw
-                (setf debug-draw (enter-and-load (make-instance 'debug-draw) (scene +main+) +main+)))
+                (setf debug-draw (enter-and-load (make-instance 'debug-draw) container +main+)))
               (let ((data (,type debug-draw)))
                 (flet ((v (v)
                          (vector-push-extend (vx v) data)
@@ -115,7 +115,8 @@ void main(){
                   (declare (ignorable #'v))
                   ,@body))
               (when update
-                (resize-buffer (caar (bindings (,(ecase type (points 'points-vao) (lines 'lines-vao) (text 'text-vao)) debug-draw))) T))))
+                (resize-buffer (caar (bindings (,(ecase type (points 'points-vao) (lines 'lines-vao) (text 'text-vao)) debug-draw))) T))
+              debug-draw))
        (if (current-p *context*)
            (,name)
            (with-eval-in-render-loop (T)
