@@ -21,7 +21,7 @@
 
 (define-shader-entity collision-player (collision-body)
   ((hit :initform (make-hit) :accessor hit)
-   (test-method :initform 'generic :accessor test-method)))
+   (test-method :initform 'gjk :accessor test-method)))
 
 (defun detect-hit* (method a b &optional (hit (make-hit)))
   (let ((array (make-array 1))
@@ -93,7 +93,10 @@
                    (make-cylinder)
                    (make-pill)
                    (make-plane)
-                   (make-half-space))))
+                   (make-half-space)
+                   (make-triangle :a (vec -0.5 +0.0 -0.5)
+                                  :b (vec +0.5 +0.0 -0.5)
+                                  :c (vec +0.0 +0.0 +0.5)))))
       (alloy:enter "Shape A" layout :row 0 :col 1)
       (alloy:represent (physics-primitive (node :a scene)) 'alloy:combo-set
                        :value-set (shapes) :layout-parent layout :focus-parent focus)
