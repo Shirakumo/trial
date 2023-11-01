@@ -25,7 +25,7 @@
   (enter (make-instance 'render-pass) scene)
   (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)
   (enter (make-instance 'editor-camera :location (VEC3 0.0 2.3 10) :fov 50 :move-speed 0.1) scene)
-  (enter (make-instance 'array-container :name :container) scene))
+  (enter (make-instance 'basic-node :name :container) scene))
 
 (alloy:define-observable (setf model) (value alloy:observable))
 (alloy:define-observable (setf mesh) (value alloy:observable))
@@ -67,7 +67,7 @@
     (when orig (setf (visible-p orig) value))))
 
 (defmethod (setf mesh) :before ((mesh mesh-data) (scene decomposition-scene))
-  (clear (container scene))
+  (clear (node :container scene))
   (enter (make-instance 'decomposition-entity
                         :name :original
                         :scene scene
@@ -78,7 +78,7 @@
                                         :vertices (reordered-vertex-data mesh '(location))
                                         :faces (trial::simplify (index-data mesh) '(unsigned-byte 32)))
                                        NIL))
-         (container scene))
+         (node :container scene))
   (loop for hull across (org.shirakumo.fraf.convex-covering:decompose
                          (reordered-vertex-data mesh '(location))
                          (trial::simplify (index-data mesh) '(unsigned-byte 32)))
@@ -89,5 +89,5 @@
                                  :vertex-array (make-vertex-array (make-convex-mesh :vertices (org.shirakumo.fraf.convex-covering:vertices hull)
                                                                                     :faces (org.shirakumo.fraf.convex-covering:faces hull))
                                                                   NIL))
-                  (container scene)))
+                  (node :container scene)))
   (commit (scene +main+) (loader +main+)))
