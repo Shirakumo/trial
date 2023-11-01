@@ -16,8 +16,12 @@
   thing)
 
 (defmethod leave (thing (container array-container))
-  (array-utils:vector-pop-position (%objects container)
-                                   (position thing (%objects container)))
+  (let ((position (position thing (%objects container))))
+    (when (null position)
+      (error "The entity~%  ~a~%cannot be left from~%  ~a~%since the entity is not contained in the container.~
+              ~@[~% It is contained in~%  ~a~]"
+             thing container (container thing)))
+    (array-utils:vector-pop-position (%objects container) position))
   thing)
 
 (defmethod finalize ((container array-container))
