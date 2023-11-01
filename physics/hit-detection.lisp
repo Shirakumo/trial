@@ -162,6 +162,7 @@
           (when (< 0.0 (hit-depth hit))
             (n*m (box-transform b) closest)
             (v<- (hit-normal hit) center)
+            (n*m (box-transform b) (hit-normal hit))
             (nv- (hit-normal hit) closest)
             (if (= 0 (vsqrlength (hit-normal hit)))
                 (v<- (hit-normal hit) +vy3+)
