@@ -1,6 +1,8 @@
 (defpackage #:org.shirakumo.fraf.trial.gjk
   (:use #:cl #:org.shirakumo.fraf.math)
-  (:export))
+  (:export
+   #:detect-hits
+   #:support-function))
 
 (in-package #:org.shirakumo.fraf.trial.gjk)
 
@@ -22,36 +24,53 @@
   (b (vec3 0 0 0) :type vec3))
 
 (trial:define-hit-detector (trial:primitive trial:primitive)
+  (detect-hits a b trial:hits trial:start trial:end))
+
+(defun detect-hits (a b hits start end)
+  (declare (type trial:primitive a b))
+  (declare (type (unsigned-byte 32) start end))
+  (declare (type simple-vector hits))
   (declare (optimize speed))
-  (let ((s0 (point)) (s1 (point)) (s2 (point)) (s3 (point)) (dir (point)) (s12 (point)))
-    (declare (dynamic-extent s0 s1 s2 s3 dir s12))
-    (v<- dir (trial::global-location a))
-    (nv- dir (trial::global-location b))
-    (search-point s2 dir a b)
-    (v<- dir s2)
-    (nv- dir)
-    (search-point s1 dir a b)
-    (v<- s12 s2)
-    (nv- s12 s1)
-    (unless (< (v. s1 dir) 0)
-      (!vc dir (!vc dir s12 (v- s1)) s12)
-      (when (v= 0 dir)
-        (!vc dir s12 +vx3+)
-        (when (v= 0 dir)
-          (!vc dir s12 +vz3+)))
-      (loop with dim of-type (unsigned-byte 8) = 2
-            for i from 0 below GJK-ITERATIONS
-            do (search-point s0 dir a b)
-               (when (< (v. s0 dir) 0)
-                 (return))
-               (incf dim)
-               (cond ((= 3 dim)
-                      (setf dim (update-simplex s0 s1 s2 s3 dir)))
-                     ((null (test-simplex s0 s1 s2 s3 dir))
-                      (setf dim 3))
-                     (T
-                      (epa s0 s1 s2 s3 a b trial:hit)
-                      (trial:finish-hit)))))))
+  (when (<= end start)
+    (return-from detect-hits start))
+  (let ((hit (aref hits start)))
+    (block block
+      (flet ((finish-hit ()
+               (trial:finish-hit hit a b)
+               (incf start)
+               (if (< start end)
+                   (setf hit (aref hits start))
+                   (return-from block))))
+        (let ((s0 (point)) (s1 (point)) (s2 (point)) (s3 (point)) (dir (point)) (s12 (point)))
+          (declare (dynamic-extent s0 s1 s2 s3 dir s12))
+          (v<- dir (the vec3 (trial::global-location a)))
+          (nv- dir (the vec3 (trial::global-location b)))
+          (search-point s2 dir a b)
+          (v<- dir s2)
+          (nv- dir)
+          (search-point s1 dir a b)
+          (v<- s12 s2)
+          (nv- s12 s1)
+          (unless (< (v. s1 dir) 0)
+            (!vc dir (!vc dir s12 (v- s1)) s12)
+            (when (v= 0 dir)
+              (!vc dir s12 +vx3+)
+              (when (v= 0 dir)
+                (!vc dir s12 +vz3+)))
+            (loop with dim of-type (unsigned-byte 8) = 2
+                  for i from 0 below GJK-ITERATIONS
+                  do (search-point s0 dir a b)
+                     (when (< (v. s0 dir) 0)
+                       (return))
+                     (incf dim)
+                     (cond ((= 3 dim)
+                            (setf dim (update-simplex s0 s1 s2 s3 dir)))
+                           ((null (test-simplex s0 s1 s2 s3 dir))
+                            (setf dim 3))
+                           (T
+                            (epa s0 s1 s2 s3 a b hit)
+                            (finish-hit))))))))
+    start))
 
 (trial:define-ray-test trial:primitive ()
   ;; TODO: Implement

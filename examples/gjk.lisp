@@ -20,7 +20,21 @@
   (start-frame gjk-body))
 
 (define-shader-entity gjk-player (gjk-body)
-  ((hit :initform (make-hit) :accessor hit)))
+  ((hit :initform (make-hit) :accessor hit)
+   (test-method :initform 'generic :accessor test-method)))
+
+(defun detect-hit* (method a b &optional (hit (make-hit)))
+  (let ((array (make-array 1))
+        (a (physics-primitive a))
+        (b (physics-primitive b)))
+    (declare (dynamic-extent array))
+    (setf (aref array 0) hit)
+    (let ((count (ecase method
+                   (generic (detect-hits a b array 0 1))
+                   (gjk (org.shirakumo.fraf.trial.gjk:detect-hits a b array 0 1))
+                   (v-clip (org.shirakumo.fraf.trial.v-clip:detect-hits a b array 0 1)))))
+      (when (< 0 count)
+        hit))))
 
 (define-handler (gjk-player tick :after) (dt)
   (let ((spd (* 3.0 dt)))
@@ -52,7 +66,7 @@
              (incf (vy (location gjk-player)) (+ spd)))))
     (debug-clear)
     (setf (color gjk-player) #.(vec 0 1 0 0.5))
-    (let ((hit (detect-hit gjk-player (node :a (container gjk-player)) (hit gjk-player))))
+    (let ((hit (detect-hit* (test-method gjk-player) gjk-player (node :a (container gjk-player)) (hit gjk-player))))
       (when hit
         (setf (color gjk-player) #.(vec 1 0 0 0.5))
         (debug-line (hit-location hit) (v+* (hit-location hit) (hit-normal hit) 2)
@@ -62,8 +76,8 @@
   :title "GJK Collision Detection"
   (enter (make-instance 'display-controller) scene)
   (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)
-  (enter (make-instance 'gjk-body :name :a :primitive (make-sphere)) scene)
-  (enter (make-instance 'gjk-player :name :b :primitive (make-box) :location (vec 0 0 +2.5)) scene)
+  (enter (make-instance 'gjk-body :name :a :primitive (make-box)) scene)
+  (enter (make-instance 'gjk-player :name :b :primitive (make-sphere) :location (vec 0 0 +2.5)) scene)
   (enter (make-instance 'target-camera :location (vec3 0.0 8 9) :target (vec 0 0 0) :fov 50) scene)
   (observe! (hit-location (hit (node :b scene))) :title "Location")
   (observe! (hit-normal (hit (node :b scene))) :title "Normal")
@@ -86,4 +100,7 @@
       (alloy:enter "Shape B" layout :row 1 :col 1)
       (alloy:represent (physics-primitive (node :b scene)) 'alloy:combo-set
                        :value-set (shapes) :layout-parent layout :focus-parent focus)
+      (alloy:enter "Method" layout :row 2 :col 1)
+      (alloy:represent (test-method (node :b scene)) 'alloy:combo-set
+                       :value-set '(generic gjk v-clip) :layout-parent layout :focus-parent focus)
       (alloy:finish-structure panel layout focus))))

@@ -4,7 +4,8 @@
    #:state
    #:v-clip
    #:mesh
-   #:make-triangle-mesh))
+   #:make-triangle-mesh
+   #:detect-hits))
 
 (in-package #:org.shirakumo.fraf.trial.v-clip)
 

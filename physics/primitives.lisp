@@ -47,26 +47,33 @@
                (block ,block
                  ,@body)))))))
 
+(defun finish-hit (hit a b)
+  (declare (type hit hit))
+  (declare (type primitive a))
+  (declare (optimize speed))
+  #-trial-release (when (v= 0 (hit-normal hit)) (error "Hit normal not set correctly."))
+  (let ((properties (material-interaction-properties
+                     (primitive-material a) (if (typep b 'primitive) (primitive-material b) NIL))))
+    (setf (hit-a hit) (primitive-entity a))
+    (setf (hit-b hit) (if (typep b 'primitive) (primitive-entity b) b))
+    (setf (hit-static-friction hit) (material-interaction-properties-static-friction properties))
+    (setf (hit-dynamic-friction hit) (material-interaction-properties-dynamic-friction properties))
+    (setf (hit-restitution hit) (material-interaction-properties-restitution properties))
+    hit))
+
 (defmacro define-hit-detector ((a b) &body body)
   (let ((av (intern "A")) (bv (intern "B"))
         (block (gensym "BLOCK")))
     `(progn
        (defmethod detect-hits ((,av ,a) (,bv ,b) hits start end)
          (declare (type (unsigned-byte 32) start end))
-         (declare (type (simple-vector ,(1- (ash 1 32)))))
+         (declare (type simple-vector hits))
          (when (<= end start)
            (return-from detect-hits start))
          (let ((hit (aref hits start)))
            (block ,block
              (flet ((finish-hit ()
-                      #-trial-release (when (v= 0 (hit-normal hit)) (error "Hit normal not set correctly."))
-                      (let ((properties (material-interaction-properties
-                                         (primitive-material ,av) ,(if (subtypep b 'primitive) `(primitive-material ,bv) NIL))))
-                        (setf (hit-a hit) (primitive-entity ,av))
-                        (setf (hit-b hit) ,(if (subtypep b 'primitive) `(primitive-entity ,bv) bv))
-                        (setf (hit-static-friction hit) (material-interaction-properties-static-friction properties))
-                        (setf (hit-dynamic-friction hit) (material-interaction-properties-dynamic-friction properties))
-                        (setf (hit-restitution hit) (material-interaction-properties-restitution properties)))
+                      (finish-hit hit ,av ,bv)
                       (incf start)
                       (if (< start end)
                           (setf hit (aref hits start))
@@ -207,6 +214,10 @@
 (define-primitive-type pill
   (radius 1.0 :type single-float)
   (height 1.0 :type single-float))
+
+(defmethod print-object ((primitive pill) stream)
+  (print-unreadable-object (primitive stream :type T :identity T)
+    (format stream "~f ~f" (radius primitive) (height primitive))))
 
 (define-primitive-type triangle
   (a (vec3 0 0 0) :type vec3)
