@@ -409,6 +409,10 @@
           (c (triangle-c primitive)))
       (v (vx a) (vy a) (vz a))
       (v (vx b) (vy b) (vz b))
+      (v (vx c) (vy c) (vz c))
+      ;; Make it double-faced.
+      (v (vx b) (vy b) (vz b))
+      (v (vx a) (vy a) (vz a))
       (v (vx c) (vy c) (vz c)))
     (multiple-value-bind (vertices faces) (finalize)
       (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces))))
