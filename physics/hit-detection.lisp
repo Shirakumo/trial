@@ -96,7 +96,7 @@
     (n*m atf r)
     (n*m4/3 atf d)
     (let ((tt (ray-cylinder-p r d (cylinder-height a) (cylinder-radius a) (hit-normal hit))))
-      (when (< 0.0 tt)
+      (when (and tt (< 0.0 tt))
         ;; Compute the location in A's reference frame, then transform back.
         (v<- (hit-location hit) r)
         (nv+* (hit-location hit) d tt)
