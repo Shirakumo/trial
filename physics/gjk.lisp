@@ -303,7 +303,7 @@
 
 (define-support-function trial:pill (dir next)
   (nv* (nvunit* (v<- next dir)) (trial:pill-radius primitive))
-  (let ((bias (- (trial:pill-height primitive) (trial:pill-radius primitive))))
+  (let ((bias (trial:pill-height primitive)))
     (if (< 0 (vy dir))
         (incf (vy next) bias)
         (decf (vy next) bias))))
