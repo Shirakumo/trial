@@ -57,7 +57,12 @@
         (combine (make-instance 'blend-pass)))
     (connect (port output 'color) (port combine 'a-pass) scene)
     (connect (port ui 'color) (port combine 'b-pass) scene)
-    (ignore-errors (show (make-instance 'example-ui :scene scene) :ui ui))))
+    (show (make-instance 'example-ui :scene scene) :ui ui)))
+
+(defmethod setup-ui ((scene example-scene) panel)
+  (alloy:finish-structure panel
+                          (make-instance 'alloy:fixed-layout)
+                          (make-instance 'alloy:focus-list)))
 
 (defclass example-ui (trial-alloy:panel)
   ())

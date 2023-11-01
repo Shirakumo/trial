@@ -17,6 +17,7 @@
 
 (define-example decomposition
   :title "Convex Hull Decomposition"
+  :superclasses (alloy:observable)
   :slots ((model :initform NIL :accessor model)
           (mesh :initform NIL :accessor mesh)
           (polygon-mode :initform :fill :accessor polygon-mode)
@@ -43,21 +44,21 @@
                                                         :default (file panel))))
           (when file (setf (file panel) file)))))
     (alloy:enter "Mesh" layout :row 1 :col 0)
-    (let ((selector (alloy:represent (mesh panel) 'alloy:combo-set :value-set () :layout-parent layout :focus-parent focus)))
-      (alloy:on model (model panel)
+    (let ((selector (alloy:represent (mesh scene) 'alloy:combo-set :value-set () :layout-parent layout :focus-parent focus)))
+      (alloy:on model (model scene)
         (let ((meshes (if (typep model 'model) (list-meshes model) ())))
           (setf (alloy:value-set selector) meshes)
           (when meshes (setf (alloy:value selector) (first meshes)))))
       (alloy:on alloy:value (mesh selector)
-        (setf (mesh panel) mesh)))
+        (setf (mesh scene) mesh)))
     (alloy:enter "Show Original" layout :row 2 :col 0)
-    (alloy:represent (show-original panel) 'alloy:switch :layout-parent layout :focus-parent focus)
+    (alloy:represent (show-original scene) 'alloy:switch :layout-parent layout :focus-parent focus)
     (alloy:enter "Wireframe" layout :row 3 :col 0)
-    (alloy:represent (polygon-mode panel) 'alloy:switch :layout-parent layout :focus-parent focus
+    (alloy:represent (polygon-mode scene) 'alloy:switch :layout-parent layout :focus-parent focus
                                                         :on :line :off :fill)
-    (alloy:finish-structure panel layout focus)
     (load (assets:asset :woman))
-    (setf (model panel) (assets:asset :woman))))
+    (setf (model scene) (assets:asset :woman))
+    (alloy:finish-structure panel layout focus)))
 
 (defmethod (setf file) :before (file (scene decomposition-scene))
   (setf (model scene) (generate-resources 'model-loader file)))
@@ -70,7 +71,6 @@
   (clear (node :container scene))
   (enter (make-instance 'decomposition-entity
                         :name :original
-                        :scene scene
                         :color (vec 1 1 1 0.5)
                         :visible-p (show-original scene)
                         :vertex-array (make-vertex-array 
@@ -84,7 +84,6 @@
                          (trial::simplify (index-data mesh) '(unsigned-byte 32)))
         for (name . color) in (apply #'alexandria:circular-list (colored:list-colors))
         do (enter (make-instance 'decomposition-entity
-                                 :scene scene
                                  :color (vec (colored:r color) (colored:g color) (colored:b color))
                                  :vertex-array (make-vertex-array (make-convex-mesh :vertices (org.shirakumo.fraf.convex-covering:vertices hull)
                                                                                     :faces (org.shirakumo.fraf.convex-covering:faces hull))
