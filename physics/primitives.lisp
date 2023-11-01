@@ -220,9 +220,9 @@
     (format stream "~f ~f" (radius primitive) (height primitive))))
 
 (define-primitive-type triangle
-  (a (vec3 0 0 0) :type vec3)
-  (b (vec3 0 0 0) :type vec3)
-  (c (vec3 0 0 0) :type vec3))
+  (a (vec3 -1 0 -1) :type vec3)
+  (b (vec3 +1 0 -1) :type vec3)
+  (c (vec3 +0 0 +1) :type vec3))
 
 (defmethod print-object ((primitive triangle) stream)
   (print-unreadable-object (primitive stream :type T :identity T)

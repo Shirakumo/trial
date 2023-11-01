@@ -76,8 +76,8 @@
   :title "Collision Detection"
   (enter (make-instance 'display-controller) scene)
   (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)
-  (enter (make-instance 'collision-body :name :a :primitive (make-box)) scene)
-  (enter (make-instance 'collision-player :name :b :primitive (make-sphere) :location (vec 0 0 +2.5)) scene)
+  (enter (make-instance 'collision-body :name :a :primitive (make-triangle)) scene)
+  (enter (make-instance 'collision-player :name :b :primitive (make-triangle) :location (vec 0 0 +2.5)) scene)
   (enter (make-instance 'target-camera :location (vec3 0.0 8 9) :target (vec 0 0 0) :fov 50) scene)
   (observe! (hit-location (hit (node :b scene))) :title "Location")
   (observe! (hit-normal (hit (node :b scene))) :title "Normal")
@@ -85,7 +85,7 @@
   (enter (make-instance 'render-pass) scene))
 
 (defmethod setup-ui ((scene collision-scene) panel)
-  (let ((layout (make-instance 'alloy:grid-layout :col-sizes '(T 120 140) :row-sizes '(30)))
+  (let ((layout (make-instance 'alloy:grid-layout :col-sizes '(T 120 200) :row-sizes '(30)))
         (focus (make-instance 'alloy:vertical-focus-list)))
     (flet ((shapes ()
              (list (make-sphere)
@@ -94,9 +94,7 @@
                    (make-pill)
                    (make-plane)
                    (make-half-space)
-                   (make-triangle :a (vec -0.5 +0.0 -0.5)
-                                  :b (vec +0.5 +0.0 -0.5)
-                                  :c (vec +0.0 +0.0 +0.5)))))
+                   (make-triangle))))
       (alloy:enter "Shape A" layout :row 0 :col 1)
       (alloy:represent (physics-primitive (node :a scene)) 'alloy:combo-set
                        :value-set (shapes) :layout-parent layout :focus-parent focus)
