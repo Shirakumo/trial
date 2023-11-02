@@ -147,8 +147,7 @@
     (declare (dynamic-extent -dir))
     (%support-function b +dir (point-b p))
     (%support-function a -dir (point-a p))
-    (v<- p (point-b p))
-    (nv- p (point-a p))))
+    (!v- p (point-b p) (point-a p))))
 
 ;;;; EPA for depth and normal computation
 ;;; FIXME: stack allocation bullshit
@@ -175,19 +174,19 @@
       (p<- (v 0 0) s0)
       (p<- (v 0 1) s1)
       (p<- (v 0 2) s2)
-      (nvunit* (plane-normal s0 s1 s2 (v 0 3)))
+      (plane-normal s0 s1 s2 (v 0 3))
       (p<- (v 1 0) s0)
       (p<- (v 1 1) s2)
       (p<- (v 1 2) s3)
-      (nvunit* (plane-normal s0 s2 s3 (v 1 3)))
+      (plane-normal s0 s2 s3 (v 1 3))
       (p<- (v 2 0) s0)
       (p<- (v 2 1) s3)
       (p<- (v 2 2) s1)
-      (nvunit* (plane-normal s0 s3 s1 (v 2 3)))
+      (plane-normal s0 s3 s1 (v 2 3))
       (p<- (v 3 0) s1)
       (p<- (v 3 1) s3)
       (p<- (v 3 2) s2)
-      (nvunit* (plane-normal s1 s3 s2 (v 3 3)))
+      (plane-normal s1 s3 s2 (v 3 3))
       ;; Main iteration loop to find the involved faces
       (dotimes (i EPA-ITERATIONS)
         ;; Find the closest face in our set of known polytope faces
@@ -305,13 +304,13 @@
   (let ((ba (v- b a))
         (ca (v- c a)))
     (declare (dynamic-extent ba ca))
-    (!vc res ba ca)))
+    (nvunit* (!vc res ba ca))))
 
 (defun plane-point (a b c &optional (res (vec3)))
   (declare (optimize speed (safety 0)))
   (declare (type vec3 a b c res))
   ;; Compute "the" central point of the plane spanned by A B C via its normal
-  (let* ((normal (nvunit* (plane-normal a b c res)))
+  (let* ((normal (plane-normal a b c res))
          (offset (v. normal a)))
     (nv* normal offset)))
 
