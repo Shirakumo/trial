@@ -2,7 +2,8 @@
 
 (define-shader-entity collision-body (vertex-entity colored-entity rigidbody listener)
   ((vertex-array :initform NIL)
-   (color :initform (vec 0 0 1 0.5))))
+   (color :initform (vec 0 0 1 0.5)))
+  (:inhibit-shaders (colored-entity :fragment-shader)))
 
 (defmethod shared-initialize :after ((body collision-body) slots &key primitive)
   (when primitive (setf (physics-primitive body) primitive)))
@@ -18,6 +19,23 @@
 
 (define-handler (collision-body pre-tick) ()
   (start-frame collision-body))
+
+(define-class-shader (collision-body :fragment-shader)
+  "in vec3 v_view_position;
+uniform vec4 objectcolor;
+out vec4 color;
+
+void main(){
+  vec3 normal = cross(dFdx(v_view_position), dFdy(v_view_position));
+  normal = normalize(normal * sign(normal.z));
+
+  // Shitty phong diffuse lighting
+  vec3 light_dir = vec3(0,1,0);
+  vec3 reflect_dir = reflect(-light_dir, normal);
+  vec3 radiance = vec3(0.75) * (objectcolor.xyz * max(dot(normal, light_dir), 0));
+  radiance += vec3(0.2) * objectcolor.xyz;
+  color = vec4(radiance, objectcolor.w);
+}")
 
 (define-shader-entity collision-player (collision-body)
   ((hit :initform (make-hit) :accessor hit)
