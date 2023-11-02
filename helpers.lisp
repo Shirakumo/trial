@@ -139,10 +139,16 @@ void main(){
 uniform mat4 model_matrix;
 uniform mat4 view_matrix;
 uniform mat4 projection_matrix;
+out vec3 v_world_position;
+out vec3 v_view_position;
 
 void main(){
   maybe_call_next_method();
-  gl_Position = projection_matrix * view_matrix * model_matrix * vec4(position, 1.0f);
+  vec4 world_position = model_matrix * vec4(position, 1.0f);
+  vec4 view_position = view_matrix * world_position;
+  gl_Position = projection_matrix * view_position;
+  v_world_position = world_position.xyz;
+  v_view_position = view_position.xyz;
 }")
 
 (define-shader-entity colored-entity ()
