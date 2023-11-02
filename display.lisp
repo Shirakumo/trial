@@ -52,6 +52,7 @@
   (with-vec (r g b a) (clear-color display)
     (gl:clear-color r g b a))
   (enable-feature :blend :multisample :cull-face :stencil-test :depth-test :texture-cube-map-seamless)
+  (gl:point-size 3.0)
   (when-gl-extension :gl-arb-depth-clamp
     (enable-feature :depth-clamp)))
 
