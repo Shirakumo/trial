@@ -285,7 +285,7 @@
             for zr0 = (cos lat0)
             for z1 = (sin lat1)
             for zr1 = (cos lat1)
-            do (loop for j from lng downto 0
+            do (loop for j from lng downto 1
                      for l1 = (* F-2PI (/ (- j 1) lng))
                      for l2 = (* F-2PI (/ (- j 2) lng))
                      for x1 = (cos l1) for x2 = (cos l2)
