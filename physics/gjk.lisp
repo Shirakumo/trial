@@ -217,11 +217,11 @@
                              for edge-b = (v i (mod (1+ j) 3))
                              for edge-found-p = NIL
                              do (dotimes (k num-loose-edges)
-                                  (when (and (eq (e k 1) edge-a)
-                                             (eq (e k 0) edge-b))
+                                  (when (and (v= (e k 1) edge-a)
+                                             (v= (e k 0) edge-b))
                                     (decf num-loose-edges)
-                                    (setf edge-a (e num-loose-edges 0))
-                                    (setf edge-b (e num-loose-edges 1))
+                                    (p<- (e k 0) (e num-loose-edges 0))
+                                    (p<- (e k 1) (e num-loose-edges 1))
                                     (setf edge-found-p T)
                                     (return)))
                                 (unless edge-found-p
@@ -246,7 +246,7 @@
             (p<- (v num-faces 0) (e i 0))
             (p<- (v num-faces 1) (e i 1))
             (p<- (v num-faces 2) p)
-            (v<- (v num-faces 3) (nvunit* (vc (v- (e i 0) (e i 1)) (v- (e i 0) p))))
+            (plane-normal (e i 0) (e i 1) p (v num-faces 3))
             ;; Check the CCW winding order via normal test
             (when (< (+ (v. (v num-faces 0) (v num-faces 3)) 0.000001) 0)
               (rotatef (v num-faces 0) (v num-faces 1))
