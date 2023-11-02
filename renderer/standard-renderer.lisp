@@ -186,7 +186,8 @@
         do (render vao program)))
 
 (defmethod vertex-array ((renderable standard-renderable))
-  (aref (vertex-arrays renderable) 0))
+  (when (< 0 (length (vertex-arrays renderable)))
+    (aref (vertex-arrays renderable) 0)))
 
 (defmethod (setf vertex-array) ((resource resource) (renderable standard-renderable))
   (setf (vertex-arrays renderable) (vector resource)))
