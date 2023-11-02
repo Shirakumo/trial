@@ -65,6 +65,9 @@
 (defmethod handle ((ev toggle-overlay) (controller display-controller))
   (setf (show-overlay controller) (not (show-overlay controller))))
 
+(defmethod handle ((ev resize) (controller display-controller))
+  (setf (font-size controller) (if (< 1920 (width ev)) 32 17)))
+
 (defun compute-fps-buffer-fps (fps-buffer)
   (/ (loop for i from 0 below (array-total-size fps-buffer)
            sum (aref fps-buffer i))
@@ -132,7 +135,7 @@
   (when (and (show-overlay controller)
              *context*)
     (setf (text controller) (compose-controller-debug-text controller ev))
-    (setf (vy (location controller)) (- (vy (size controller))))
+    (setf (vy (location controller)) (- (vy (size controller)) (font-size controller)))
     (setf (vx (location controller)) 5)))
 
 (defmethod apply-transforms progn ((controller display-controller))
