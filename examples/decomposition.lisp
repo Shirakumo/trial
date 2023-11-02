@@ -6,7 +6,8 @@
    (polygon-mode :initarg :polygon-mode :initform nil :accessor polygon-mode)
    (panel :initarg :panel :accessor panel)
    (scene :initarg :scene :accessor scene)
-   (visible-p :initarg :visible-p :initform T :accessor visible-p)))
+   (visible-p :initarg :visible-p :initform T :accessor visible-p))
+  (:inhibit-shaders (colored-entity :fragment-shader)))
 
 (defmethod spaces:location ((object decomposition-entity))
   (let* (; (debug-info (org.shirakumo.fraf.convex-covering::debug-info (hull object)))
@@ -21,6 +22,23 @@
          (patch (hull object))
          (hull (org.shirakumo.fraf.convex-covering::patch-hull patch)))
     (spaces:bsize hull)))
+
+(define-class-shader (decomposition-entity :fragment-shader)
+  "in vec3 v_view_position;
+in vec3 v_world_position;
+uniform vec4 objectcolor;
+out vec4 color;
+
+void main(){
+  vec3 normal = cross(dFdx(v_view_position), dFdy(v_view_position));
+  normal = normalize(normal * sign(normal.z));
+
+  // Shitty phong diffuse lighting
+  vec3 light_dir = normalize(vec3(20, 15, 0) - v_world_position);
+  vec3 radiance = vec3(0.75) * (objectcolor.xyz * max(dot(normal, light_dir), 0));
+  radiance += vec3(0.4) * objectcolor.xyz;
+  color = vec4(radiance, objectcolor.w);
+}")
 
 (defmethod render-with :around ((pass render-pass) (entity decomposition-entity) (program shader-program))
   (when (visible-p entity)
@@ -159,21 +177,20 @@
   (commit (scene +main+) (loader +main+)))
 
 (defun clear-debug-entities (scene)
+  (debug-clear)
   (let ((container (node :container scene)))
     (map nil (lambda (entity) (leave entity container))
          (debug-entities scene)))
   (setf (debug-entities scene) '()))
 
-(defun add-debug-hull (patch color scene)
+(defun add-debug-hull (patch color scene &key (polygon-mode :fill))
   (let ((hull (org.shirakumo.fraf.convex-covering::patch-hull patch)))
     (when hull
       (loop for (centroid . normal) in (org.shirakumo.fraf.convex-covering::hull-facet-normals
                                         hull)
-            for entity = (debug-line (vec centroid) (vec (v+ centroid (v* normal .5)))
-                                     :debug-draw nil
-                                     :container (node :container scene)
-                                     :color (v* color .4))
-            do (push entity (debug-entities scene))))
+            do (debug-line (vec centroid) (vec (v+ centroid (v* normal .5)))
+                           :container (node :container scene)
+                           :color (v* color .4))))
 
     (multiple-value-bind (vertices faces)
         (if hull
@@ -194,7 +211,7 @@
                                                             :original-color color
                                                             :color color
                                                             :visible-p t
-                                                            :polygon-mode :fill
+                                                            :polygon-mode polygon-mode
                                                             :vertex-array (make-vertex-array mesh NIL))))
           (push entity (debug-entities scene))
           (enter entity (node :container scene))
@@ -214,8 +231,8 @@
     (when link
       (let ((a (org.shirakumo.fraf.convex-covering::patch-link-a link))
             (b (org.shirakumo.fraf.convex-covering::patch-link-b link)))
-        (add-debug-hull a (vec 0 1 0 1) decomposition-panel)
-        (add-debug-hull b (vec 1 0 0 1) decomposition-panel)
+        (add-debug-hull a (vec 0 1 0 1) decomposition-panel :polygon-mode :line)
+        (add-debug-hull b (vec 1 0 0 1) decomposition-panel :polygon-mode :line)
         (spaces:do-all (patch (index decomposition-panel))
           (setf (color patch) (vec .3 .3 .3)
                 (polygon-mode patch) :line))))))
@@ -264,9 +281,8 @@
                (let ((color (etypecase color
                               (list (apply #'vec color))
                               (vec color))))
-                 (register (apply function (append arguments (list :color      color
-                                                                   :debug-draw NIL
-                                                                   :container  container))))))
+                 (apply function (append arguments (list :color     color
+                                                         :container container)))))
              (point (position color)
                (draw #'debug-point color (vec position)))
              (line (start end color)
@@ -370,4 +386,7 @@
            (validate (patch-of-interest)  '(:normals)))
           ((string= text "l")     ; "line" since e for "edge" is taken
            (clear-debug-entities decomposition-scene)
-           (validate (patch-of-interest) '(:edges))))))
+           (let ((patch (patch-of-interest)))
+             (explain-merge patch decomposition-scene)
+             (validate patch '(:edges)))
+           (commit (scene +main+) (loader +main+))))))
