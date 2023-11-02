@@ -159,6 +159,7 @@
                  `(the vec3 (aref faces (+ (* 4 ,f) ,v))))
                (e (e v)
                  `(the vec3 (aref loose-edges (+ (* 2 ,e) ,v)))))
+      ;; Construct the initial polytope
       (setf (v 0 0) s0)
       (setf (v 0 1) s1)
       (setf (v 0 2) s2)
@@ -177,6 +178,7 @@
       (setf (v 3 3) (nvunit* (vc (v- s3 s1) (v- s3 s1))))
       ;; Main iteration loop to find the involved faces
       (dotimes (i EPA-ITERATIONS)
+        ;; Find the closest face in our set of known polytope faces
         (setf min-dist (v. (v 0 0) (v 0 3)))
         (setf closest-face 0)
         (loop for i from 1 below num-faces
@@ -185,24 +187,30 @@
                    (setf min-dist dist)
                    (setf closest-face i)))
         (v<- search-dir (v closest-face 3))
+        ;; Find a new direction to search in via the support functions
         (search-point p search-dir a b)
         (when (< (- (v. p search-dir) min-dist) EPA-TOLERANCE)
           (return))
+        ;; We still haven't found a face that's good enough, so expand the
+        ;; polytope from our current face set
         (let ((num-loose-edges 0)
               (i 0))
           (declare (type (unsigned-byte 16) num-loose-edges i))
           ;; Find triangles facing our current search point
           (loop (when (<= num-faces i) (return))
                 (cond ((< 0 (v. (v i 3) (v- p (v i 0))))
+                       ;; ... I'm not sure how this part works, exactly.
+                       ;; It manages the loose edge list to expand the polytope?
                        (loop for j from 0 below 3
                              for edge-a = (v i j)
                              for edge-b = (v i (mod (1+ j) 3))
                              for edge-found-p = NIL
                              do (dotimes (k num-loose-edges)
-                                  (when (and (eq (e k 1) edge-a) (eq (e k 0) edge-b))
-                                    (setf edge-a (e (1- num-loose-edges) 0))
-                                    (setf edge-b (e (1- num-loose-edges) 1))
+                                  (when (and (eq (e k 1) edge-a)
+                                             (eq (e k 0) edge-b))
                                     (decf num-loose-edges)
+                                    (setf edge-a (e num-loose-edges 0))
+                                    (setf edge-b (e num-loose-edges 1))
                                     (setf edge-found-p T)
                                     (return)))
                                 (unless edge-found-p
@@ -211,6 +219,8 @@
                                   (setf (e num-loose-edges 0) edge-a)
                                   (setf (e num-loose-edges 1) edge-b)
                                   (incf num-loose-edges)))
+                       ;; This face is no longer facing our search point, so we remove
+                       ;; it by replacing it with the tail face
                        (decf num-faces)
                        (setf (v i 0) (v num-faces 0))
                        (setf (v i 1) (v num-faces 1))
@@ -218,7 +228,7 @@
                        (setf (v i 3) (v num-faces 3)))
                       (T
                        (incf i))))
-          ;; Reconstruct the polytope with the search point added
+          ;; Expand the polytope with the search point added to the new loose edge faces
           (dotimes (i num-loose-edges)
             (when (<= EPA-MAX-FACES num-faces)
               (return))
@@ -233,7 +243,7 @@
             (incf num-faces))))
       
       ;; Compute the actual intersection
-      ;; If we did not converge, we just use the closest face we reached.
+      ;; If we did not converge, we just use the closest face we reached
       (let ((p (vec3)) (local-a (vec3)) (local-b (vec3)))
         (declare (dynamic-extent p local-a local-b))
         (barycentric (v closest-face 0) (v closest-face 1) (v closest-face 2)
