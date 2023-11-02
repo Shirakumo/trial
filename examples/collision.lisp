@@ -22,6 +22,7 @@
 
 (define-class-shader (collision-body :fragment-shader)
   "in vec3 v_view_position;
+in vec3 v_world_position;
 uniform vec4 objectcolor;
 out vec4 color;
 
@@ -30,7 +31,7 @@ void main(){
   normal = normalize(normal * sign(normal.z));
 
   // Shitty phong diffuse lighting
-  vec3 light_dir = vec3(0,1,0);
+  vec3 light_dir = normalize(vec3(0, 5, 0) - v_world_position);
   vec3 reflect_dir = reflect(-light_dir, normal);
   vec3 radiance = vec3(0.75) * (objectcolor.xyz * max(dot(normal, light_dir), 0));
   radiance += vec3(0.2) * objectcolor.xyz;
