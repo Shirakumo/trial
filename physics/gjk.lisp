@@ -288,7 +288,7 @@
             (p<- (v num-faces 0) (e i 0))
             (p<- (v num-faces 1) (e i 1))
             (p<- (v num-faces 2) p)
-            (plane-normal (e i 0) (e i 1) p (v num-faces 3))
+            (plane-normal (v num-faces 0) (v num-faces 1) (v num-faces 2) (v num-faces 3))
             ;; Check the CCW winding order via normal test
             (when (< (+ (v. (v num-faces 0) (v num-faces 3)) 0.000001) 0)
               (rotatef (v num-faces 0) (v num-faces 1))
