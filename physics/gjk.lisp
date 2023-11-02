@@ -15,6 +15,46 @@
 ;;;; GJK main algorithm
 ;; TODO: avoid consing from v-
 
+(declaim (ftype (function (vec3 vec3 vec3 vec3 &optional vec3) vec3) barycentric))
+(defun barycentric (a b c p &optional (res (vec3)))
+  (declare (optimize speed (safety 0)))
+  (declare (type vec3 a b c p res))
+  ;; Compute the barycentric coordinates of P within the triangle spanned by A B C
+  (let* ((v0 (v- b a))
+         (v1 (v- c a))
+         (v2 (v- p a))
+         (d00 (v. v0 v0))
+         (d01 (v. v0 v1))
+         (d11 (v. v1 v1))
+         (d20 (v. v2 v0))
+         (d21 (v. v2 v1))
+         (denom (- (* d00 d11) (* d01 d01))))
+    (declare (dynamic-extent v0 v1 v2))
+    (if (<= denom 0.0000001f0)
+        (vsetf res 1 0 0)
+        (let ((v (/ (- (* d11 d20) (* d01 d21)) denom))
+              (w (/ (- (* d00 d21) (* d01 d20)) denom)))
+          (vsetf res (- 1f0 v w) v w)))))
+
+(declaim (inline plane-normal))
+(defun plane-normal (a b c &optional (res (vec3)))
+  (declare (optimize speed (safety 0)))
+  (declare (type vec3 a b c res))
+  (let ((ba (v- b a))
+        (ca (v- c a)))
+    (declare (dynamic-extent ba ca))
+    (nvunit* (!vc res ba ca))))
+
+(defun plane-point (a b c &optional (res (vec3)))
+  (declare (optimize speed (safety 0)))
+  (declare (type vec3 a b c res))
+  ;; Compute "the" central point of the plane spanned by A B C via its normal
+  ;; This is the same as computing the plane, then projecting the zero point
+  ;; onto that plane.
+  (let* ((normal (plane-normal a b c res))
+         (offset (v. normal a)))
+    (nv* normal offset)))
+
 (defstruct (point
             (:constructor point (&optional (varr3 (make-array 3 :element-type 'single-float))))
             (:include vec3)
@@ -29,6 +69,16 @@
   (v<- target src)
   (v<- (point-a target) (point-a src))
   (v<- (point-b target) (point-b src)))
+
+(defun search-point (p +dir a b)
+  (declare (optimize speed))
+  (declare (type point p))
+  (declare (type vec3 +dir))
+  (let ((-dir (v- +dir)))
+    (declare (dynamic-extent -dir))
+    (%support-function a -dir (point-a p))
+    (%support-function b +dir (point-b p))
+    (!v- p (point-b p) (point-a p))))
 
 (trial:define-hit-detector (trial:primitive trial:primitive)
   (detect-hits a b trial:hits trial:start trial:end))
@@ -138,16 +188,6 @@
            NIL)
           (T
            T))))
-
-(defun search-point (p +dir a b)
-  (declare (optimize speed))
-  (declare (type point p))
-  (declare (type vec3 +dir))
-  (let ((-dir (v- +dir)))
-    (declare (dynamic-extent -dir))
-    (%support-function b +dir (point-b p))
-    (%support-function a -dir (point-a p))
-    (!v- p (point-b p) (point-a p))))
 
 ;;;; EPA for depth and normal computation
 ;;; FIXME: stack allocation bullshit
@@ -275,44 +315,6 @@
         (if (= 0.0 (trial:hit-depth hit))
             (v<- (trial:hit-normal hit) +vy3+)
             (nv/ (trial:hit-normal hit) (trial:hit-depth hit)))))))
-
-(declaim (ftype (function (vec3 vec3 vec3 vec3 &optional vec3) vec3) barycentric))
-(defun barycentric (a b c p &optional (res (vec3)))
-  (declare (optimize speed (safety 0)))
-  (declare (type vec3 a b c p res))
-  ;; Compute the barycentric coordinates of P within the triangle spanned by A B C
-  (let* ((v0 (v- b a)) 
-         (v1 (v- c a))
-         (v2 (v- p a))
-         (d00 (v. v0 v0))
-         (d01 (v. v0 v1))
-         (d11 (v. v1 v1))
-         (d20 (v. v2 v0))
-         (d21 (v. v2 v1))
-         (denom (- (* d00 d11) (* d01 d01))))
-    (declare (dynamic-extent v0 v1 v2))
-    (if (<= denom 0.000001f0)
-        (vsetf res 1 0 0)
-        (let ((v (/ (- (* d11 d20) (* d01 d21)) denom))
-              (w (/ (- (* d00 d21) (* d01 d20)) denom)))
-          (vsetf res (- 1f0 v w) v w)))))
-
-(declaim (inline plane-normal))
-(defun plane-normal (a b c &optional (res (vec3)))
-  (declare (optimize speed (safety 0)))
-  (declare (type vec3 a b c res))
-  (let ((ba (v- b a))
-        (ca (v- c a)))
-    (declare (dynamic-extent ba ca))
-    (nvunit* (!vc res ba ca))))
-
-(defun plane-point (a b c &optional (res (vec3)))
-  (declare (optimize speed (safety 0)))
-  (declare (type vec3 a b c res))
-  ;; Compute "the" central point of the plane spanned by A B C via its normal
-  (let* ((normal (plane-normal a b c res))
-         (offset (v. normal a)))
-    (nv* normal offset)))
 
 ;;;; Support function implementations
 (defun %support-function (primitive global-direction next)
