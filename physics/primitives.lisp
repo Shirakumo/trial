@@ -313,7 +313,10 @@
       (nv+* (!q* c q c) n o)
       (nv+* (!q* d q d) n o)
       (v (vx a) (vy a) (vz a)) (v (vx b) (vy b) (vz b)) (v (vx c) (vy c) (vz c))
-      (v (vx c) (vy c) (vz c)) (v (vx d) (vy d) (vz d)) (v (vx a) (vy a) (vz a)))
+      (v (vx c) (vy c) (vz c)) (v (vx d) (vy d) (vz d)) (v (vx a) (vy a) (vz a))
+      ;; Make it double-faced.
+      (v (vx a) (vy a) (vz a)) (v (vx c) (vy c) (vz c)) (v (vx b) (vy b) (vz b))
+      (v (vx c) (vy c) (vz c)) (v (vx a) (vy a) (vz a)) (v (vx d) (vy d) (vz d)))
     (multiple-value-bind (vertices faces) (finalize)
       (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces))))
 
