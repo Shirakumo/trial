@@ -59,6 +59,7 @@
          (offset (v. normal a)))
     (nv* normal offset)))
 
+(declaim (inline point))
 (defstruct (point
             (:constructor point (&optional (varr3 (make-array 3 :element-type 'single-float))))
             (:include vec3)
