@@ -1093,6 +1093,7 @@
    #:vertex-form
    #:vertex-attributes
    #:reordered-vertex-data
+   #:compute-vertex-attribute
    #:make-vertex-array
    #:location
    #:uv

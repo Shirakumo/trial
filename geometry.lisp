@@ -275,6 +275,39 @@
                args)
         (implement!))))
 
+(defmethod compute-vertex-attribute :around ((mesh mesh-data) new-attribute)
+  (unless (find new-attribute (vertex-attributes mesh))
+    (call-next-method))
+  mesh)
+
+(defmethod compute-vertex-attribute :before ((mesh mesh-data) new-attribute)
+  ;; Since we have to reshuffle the vertex data for every computation,
+  ;; just do so here.
+  (let* ((new-attributes (sort (append (vertex-attributes mesh) (list 'normal)) #'vertex-attribute<))
+         (new-vertices (reordered-vertex-data mesh new-attributes)))
+    (setf (vertex-attributes mesh) new-attributes)
+    (setf (vertex-data mesh) new-vertices)))
+
+(defmethod compute-vertex-attribute ((mesh mesh-data) (new-attribute (eql 'normal)))
+  (let* ((adjacency (org.shirakumo.fraf.manifolds:vertex-adjacency-list (index-data mesh)))
+         (vertices (vertex-data mesh))
+         (offset (vertex-attribute-offset new-attribute mesh)))
+    (loop for i from 0 below (length vertices) by (vertex-attribute-stride mesh)
+          for v from 0
+          for normal = (org.shirakumo.fraf.manifolds:vertex-normal vertices v (aref adjacency v))
+          do (setf (aref vertices (+ i offset 0)) (vx normal))
+             (setf (aref vertices (+ i offset 1)) (vy normal))
+             (setf (aref vertices (+ i offset 2)) (vz normal)))))
+
+(defmethod compute-vertex-attribute ((mesh mesh-data) (_ (eql 'uv)))
+  ;; TODO: unwrap UVs
+  (implement!))
+
+(defmethod compute-vertex-attribute ((mesh mesh-data) (_ (eql 'tangent)))
+  (compute-vertex-attribute mesh 'normal)
+  ;; TODO: compute tangents
+  (implement!))
+
 (defclass vertex ()
   ((location :initform (vec 0 0 0) :initarg :position :initarg :location :accessor location :type vec3)))
 
