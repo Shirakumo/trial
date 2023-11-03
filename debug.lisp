@@ -63,6 +63,7 @@ void main(){
 
 (define-shader-entity debug-draw (renderable)
   ((name :initform 'debug-draw)
+   (instances :accessor instances)
    (points-vao :accessor points-vao)
    (points :accessor points)
    (lines-vao :accessor lines-vao)
@@ -70,6 +71,7 @@ void main(){
    (text-render :accessor text-render)))
 
 (defmethod initialize-instance :after ((draw debug-draw) &key)
+  (setf (instances draw) (make-array 64 :adjustable T :fill-pointer T :element-type '(unsigned-byte 32)))
   (setf (points draw) (make-array 64 :fill-pointer 0 :adjustable T :element-type 'single-float))
   (let ((vbo (make-instance 'vertex-buffer :buffer-data (points draw))))
     (setf (points-vao draw) (make-instance 'vertex-array :vertex-form :points :bindings
@@ -103,24 +105,43 @@ void main(){
   (render (text-render draw) T))
 
 (defmacro define-debug-draw-function ((name type) args &body body)
-  `(defun ,name (,@args (debug-draw (node 'debug-draw T)) (update T) (container (scene +main+)))
-     (flet ((,name ()
-              (unless debug-draw
-                (setf debug-draw (enter-and-load (make-instance 'debug-draw) container +main+)))
-              (let ((data (,type debug-draw)))
-                (flet ((v (v)
-                         (vector-push-extend (vx v) data)
-                         (vector-push-extend (vy v) data)
-                         (vector-push-extend (vz v) data)))
-                  (declare (ignorable #'v))
-                  ,@body))
-              (when update
-                (resize-buffer (caar (bindings (,(ecase type (points 'points-vao) (lines 'lines-vao) (text 'text-vao)) debug-draw))) T))
-              debug-draw))
-       (if (current-p *context*)
-           (,name)
-           (with-eval-in-render-loop (T)
-             (,name))))))
+  (let ((type-id (ecase type (points 0) (lines 1) (text 2))))
+    `(defun ,name (,@args (debug-draw (node 'debug-draw T)) (update T) (container (scene +main+)) instance)
+       (flet ((,name ()
+                (unless debug-draw
+                  (setf debug-draw (enter-and-load (make-instance 'debug-draw) container +main+)))
+                (let* ((data (,type debug-draw))
+                       (instances (instances debug-draw))
+                       (i (if instance (aref instances (1+ (* 3 instance))) (length data))))
+                  (flet ((v (v)
+                           (setf (aref data (+ 0 i)) (vx v))
+                           (setf (aref data (+ 1 i)) (vy v))
+                           (setf (aref data (+ 2 i)) (vz v))
+                           (incf i 3))
+                         (allocate (n)
+                           (cond (instance
+                                  (let ((diff (- (* 3 n) (aref instances (+ 2 (* 3 instance))))))
+                                    (unless (= 0 diff)
+                                      (array-utils:array-shift data :n diff :from i)
+                                      (loop for inst from (* 3 (1+ instance)) below (length instances) by 3
+                                            when (= ,type-id (aref instances inst))
+                                            do (incf (aref instances (1+ inst)) diff)))))
+                                 (T
+                                  (adjust-array data (+ (length data) (* 3 n)))
+                                  (incf (fill-pointer data) (* 3 n))
+                                  (setf instance (truncate (length instances) 3))
+                                  (vector-push-extend ,type-id instances)
+                                  (vector-push-extend i instances)
+                                  (vector-push-extend n instances)))))
+                    (declare (ignorable #'v))
+                    ,@body))
+                (when update
+                  (resize-buffer (caar (bindings (,(ecase type (points 'points-vao) (lines 'lines-vao) (text 'text-vao)) debug-draw))) T))
+                instance))
+         (if (current-p *context*)
+             (,name)
+             (with-eval-in-render-loop (T)
+               (,name)))))))
 
 (defmethod debug-draw ((point vec2) &rest args &key &allow-other-keys)
   (apply #'debug-point (vxy_ point) args))
@@ -129,10 +150,12 @@ void main(){
   (apply #'debug-point point args))
 
 (define-debug-draw-function (debug-point points) (point &key (color #.(vec 1 0 0)))
+  (allocate 2)
   (v point)
   (v color))
 
 (define-debug-draw-function (debug-line lines) (a b &key (color #.(vec 1 0 0)) (color-a color) (color-b color))
+  (allocate 4)
   (v a)
   (v color-a)
   (v b)
@@ -144,12 +167,13 @@ void main(){
     (apply #'debug-text (or point (vec 0 0 0)) string args)))
 
 (define-debug-draw-function (debug-text text) (point text &key (scale 0.2))
-  (let ((i (print-ascii-text text data :start (fill-pointer data)
-                                       :x (vx point)
-                                       :y (vy point)
-                                       :z (if (typep point 'vec2) 0.0 (vz point))
-                                       :scale scale)))
-    (setf (fill-pointer data) i)))
+  (allocate (* 5 2 (length text)))
+  (print-ascii-text text data :start i
+                              :adjust NIL
+                              :x (vx point)
+                              :y (vy point)
+                              :z (if (typep point 'vec2) 0.0 (vz point))
+                              :scale scale))
 
 (defmethod debug-draw ((entity vertex-entity) &rest args &key &allow-other-keys)
   (apply #'debug-vertex-array (vertex-array entity) args))
@@ -174,24 +198,25 @@ void main(){
     (apply #'debug-triangles (general-mesh-vertices primitive) (general-mesh-faces primitive) args)))
 
 (define-debug-draw-function (debug-triangles lines) (vertices faces &key (color #.(vec 1 0 0)) (transform (model-matrix)))
-  (let (prev)
-    (flet ((lines (vec)
-             (v vec)
-             (v color)))
-      (loop for e across faces
-            for c = 0 then (mod (1+ c) 3)
-            for i = (* e 3)
-            do (let ((vec (vec (aref vertices (+ 0 i)) (aref vertices (+ 1 i)) (aref vertices (+ 2 i)) 1.0)))
-                 (declare (dynamic-extent vec))
-                 (n*m transform vec)
-                 (case c
-                   (0 (lines vec)
-                    (setf prev vec))
-                   (1 (lines vec)
-                    (lines vec))
-                   (T (lines vec)
-                    (lines prev)
-                    (lines vec))))))))
+  (allocate (* (length faces) 2 2))
+  (flet ((lines (vec)
+           (v vec)
+           (v color)))
+    (loop with prev
+          for e across faces
+          for c = 0 then (mod (1+ c) 3)
+          for i = (* e 3)
+          do (let ((vec (vec (aref vertices (+ 0 i)) (aref vertices (+ 1 i)) (aref vertices (+ 2 i)) 1.0)))
+               (declare (dynamic-extent vec))
+               (n*m transform vec)
+               (case c
+                 (0 (lines vec)
+                  (setf prev vec))
+                 (1 (lines vec)
+                  (lines vec))
+                 (T (lines vec)
+                  (lines prev)
+                  (lines vec)))))))
 
 (define-debug-draw-function (debug-vertex-array lines) (vao &key (color #.(vec 1 0 0)) (transform (model-matrix)))
   (let ((count 0) prev pprev)
@@ -205,7 +230,8 @@ void main(){
                  (1 (lines vec)
                   (lines vec))))
              (line-loop (vec)
-               (error "Not implemented"))
+               (declare (ignore vec))
+               (implement!))
              (triangles (vec)
                (case count
                  (0 (lines vec)
@@ -243,7 +269,15 @@ void main(){
                   (lines prev)
                   (lines vec)
                   (lines pprev)
-                  (setf prev vec)))))
+                  (setf prev vec))))
+             (alloc (verts)
+               (ecase (vertex-form vao)
+                 (:lines (allocate (* 2 verts)))
+                 (:line-strip (allocate (* 2 2 (1- verts))))
+                 (:line-loop (allocate (* 2 2 verts)))
+                 (:triangles (allocate (* 2 2 verts)))
+                 (:triangle-strip (allocate (* 2 2 (1+ (* 2 (- verts 2))))))
+                 (:triangle-fan (allocate (* 2 2 (1+ (* 2 (- verts 2)))))))))
       (let ((vertex (ecase (vertex-form vao)
                       (:lines #'lines)
                       (:line-strip #'line-strip)
@@ -262,6 +296,7 @@ void main(){
         (destructuring-bind (buffer &key (size 3) (stride 0) (offset 0) &allow-other-keys) vbo
           (let ((data (buffer-data buffer)))
             (cond (ebo
+                   (alloc (length ebo))
                    (loop for e across ebo
                          for i = (+ (floor offset 4) (* (floor stride 4) e))
                          do (ecase size
@@ -276,6 +311,7 @@ void main(){
                                  (n*m transform vec)
                                  (funcall vertex vec))))))
                   (T
+                   (alloc (truncate (- (length data) (floor offset 4)) (floor stride 4)))
                    (loop for i from (floor offset 4) by (floor stride 4) below (length data)
                          do (ecase size
                               (3
@@ -289,15 +325,19 @@ void main(){
                                  (n*m transform vec)
                                  (funcall vertex vec)))))))))))))
 
-(defun debug-clear (&key (debug-draw (node 'debug-draw T)) (update T))
+(defun debug-clear (&key (debug-draw (node 'debug-draw T)) (update T) instance)
   (when debug-draw
-    (setf (fill-pointer (points debug-draw)) 0)
-    (setf (fill-pointer (lines debug-draw)) 0)
-    (setf (fill-pointer (text debug-draw)) 0)
-    (when update
-      (resize-buffer (caar (bindings (points-vao debug-draw))) T)
-      (resize-buffer (caar (bindings (lines-vao debug-draw))) T)
-      (resize-buffer (caar (bindings (text-vao debug-draw))) T))))
+    (cond (instance
+           (implement!))
+          (T
+           (setf (fill-pointer (points debug-draw)) 0)
+           (setf (fill-pointer (lines debug-draw)) 0)
+           (setf (fill-pointer (text debug-draw)) 0)
+           (setf (fill-pointer (instances debug-draw)) 0)
+           (when update
+             (resize-buffer (caar (bindings (points-vao debug-draw))) T)
+             (resize-buffer (caar (bindings (lines-vao debug-draw))) T)
+             (resize-buffer (caar (bindings (text-vao debug-draw))) T))))))
 
 (define-class-shader (debug-draw :vertex-shader)
   "layout (location = 0) in vec3 position;
