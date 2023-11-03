@@ -241,3 +241,24 @@
 
 (define-handler (physics-system tick) (tt dt fc)
   (update physics-system tt dt fc))
+
+(defclass physics-scene (scene)
+  ((physics-system :initform (make-instance 'physics-system) :accessor physics-system)))
+
+(defmethod enter :after ((thing physics-entity) (scene physics-scene))
+  (enter thing (physics-system scene)))
+
+(defmethod leave :after ((thing physics-entity) (scene physics-scene))
+  (leave thing (physics-system scene)))
+
+(defmethod enter ((thing force) (scene physics-scene))
+  (enter thing (physics-system scene)))
+
+(defmethod leave ((thing force) (scene physics-scene))
+  (leave thing (physics-system scene)))
+
+(defmethod clear :after ((scene physics-scene))
+  (clear (physics-system scene)))
+
+(define-handler (physics-scene tick :after) (tt dt fc)
+  (update (physics-system physics-scene) tt dt fc))

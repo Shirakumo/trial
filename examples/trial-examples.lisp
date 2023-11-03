@@ -1,7 +1,7 @@
 (defpackage #:org.shirakumo.fraf.trial.examples
   (:nicknames #:trial-examples)
   (:use #:cl+trial)
-  (:shadow #:launch)
+  (:shadow #:launch #:physics-scene)
   (:local-nicknames
    (#:alloy #:org.shirakumo.alloy)
    (#:trial-alloy #:org.shirakumo.fraf.trial.alloy)

@@ -274,7 +274,8 @@
    #:sleep-eps
    #:units-per-metre
    #:generate-hits
-   #:resolve-hits)
+   #:resolve-hits
+   #:physics-scene)
   ;; physics/inertia-tensors.lisp
   (:export
    #:define-tensor-fun
