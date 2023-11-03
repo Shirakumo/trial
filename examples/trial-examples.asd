@@ -17,7 +17,8 @@
                (:file "video")
                (:file "pbr")
                (:file "selection")
-               (:file "physics"))
+               (:file "physics")
+               (:file "convex-physics"))
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
                :trial-theora
