@@ -288,6 +288,10 @@
     (setf (vertex-attributes mesh) new-attributes)
     (setf (vertex-data mesh) new-vertices)))
 
+(defmethod compute-vertex-attribute ((mesh mesh-data) (_ (eql 'uv)))
+  ;; TODO: unwrap UVs
+  (implement!))
+
 (defmethod compute-vertex-attribute ((mesh mesh-data) (new-attribute (eql 'normal)))
   (let* ((adjacency (org.shirakumo.fraf.manifolds:vertex-adjacency-list (index-data mesh)))
          (vertices (vertex-data mesh))
@@ -299,14 +303,34 @@
              (setf (aref vertices (+ i offset 1)) (vy normal))
              (setf (aref vertices (+ i offset 2)) (vz normal)))))
 
-(defmethod compute-vertex-attribute ((mesh mesh-data) (_ (eql 'uv)))
-  ;; TODO: unwrap UVs
-  (implement!))
-
 (defmethod compute-vertex-attribute ((mesh mesh-data) (_ (eql 'tangent)))
-  (compute-vertex-attribute mesh 'normal)
-  ;; TODO: compute tangents
-  (implement!))
+  (compute-vertex-attribute mesh 'uv)
+  (let ((vertices (vertex-data mesh))
+        (faces (index-data mesh))
+        (stride (vertex-attribute-stride mesh))
+        (voff (vertex-attribute-offset 'location mesh))
+        (uoff (vertex-attribute-offset 'uv mesh))
+        (toff (vertex-attribute-offset 'tangent mesh)))
+    (flet ((v (f)
+             (vec (aref vertices (+ (* stride (aref faces f)) voff 0))
+                  (aref vertices (+ (* stride (aref faces f)) voff 1))
+                  (aref vertices (+ (* stride (aref faces f)) voff 2))))
+           (u (f)
+             (vec (aref vertices (+ (* stride (aref faces f)) uoff 0))
+                  (aref vertices (+ (* stride (aref faces f)) uoff 1)))))
+      (loop for face from 0 below (length faces) by 3
+            for v0 = (v (+ face 0))
+            for u0 = (u (+ face 0))
+            for e0 = (nv- (v (+ face 1)) v0)
+            for e1 = (nv- (v (+ face 2)) v0)
+            for d0 = (nv- (u (+ face 1)) u0)
+            for d1 = (nv- (u (+ face 2)) u0)
+            for tt = (nv* (nv- (v* e0 (vy d1)) (v* e1 (vy d0)))
+                          (/ (- (* (vx d0) (vy d1)) (* (vx d1) (vy d0)))))
+            do (dotimes (j 3)
+                 (setf (aref vertices (+ (* stride (aref faces (+ face j))) toff 0)) (vx tt))
+                 (setf (aref vertices (+ (* stride (aref faces (+ face j))) toff 1)) (vy tt))
+                 (setf (aref vertices (+ (* stride (aref faces (+ face j))) toff 2)) (vz tt)))))))
 
 (defclass vertex ()
   ((location :initform (vec 0 0 0) :initarg :position :initarg :location :accessor location :type vec3)))
