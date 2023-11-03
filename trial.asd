@@ -186,4 +186,7 @@
                :lru-cache
                :memory-regions
                :trivial-deprecate
+               :manifolds
+               :quickhull
+               :convex-covering
                (:feature :windows :com-on)))
