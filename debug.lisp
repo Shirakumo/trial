@@ -71,7 +71,7 @@ void main(){
    (text-render :accessor text-render)))
 
 (defmethod initialize-instance :after ((draw debug-draw) &key)
-  (setf (instances draw) (make-array 64 :adjustable T :fill-pointer T :element-type '(unsigned-byte 32)))
+  (setf (instances draw) (make-array 64 :fill-pointer 0 :adjustable T :element-type '(unsigned-byte 32)))
   (setf (points draw) (make-array 64 :fill-pointer 0 :adjustable T :element-type 'single-float))
   (let ((vbo (make-instance 'vertex-buffer :buffer-data (points draw))))
     (setf (points-vao draw) (make-instance 'vertex-array :vertex-form :points :bindings
@@ -104,35 +104,46 @@ void main(){
   (enable-feature :depth-test)
   (render (text-render draw) T))
 
+(defun debug-draw-allocate (data instances instance type n)
+  (cond (instance
+         (let ((diff (- (* 3 n) (aref instances (+ 2 (* 3 instance)))))
+               (i (aref instances (+ 1 (* 3 instance)))))
+           (unless (= 0 diff)
+             (array-utils:array-shift data :n diff :from i)
+             (loop for inst from (* 3 instance) below (length instances) by 3
+                   when (= type (aref instances inst))
+                   do (incf (aref instances (1+ inst)) diff)))
+           (values i instance)))
+        (T
+         (let ((i (length data)))
+           (adjust-array data (+ (length data) (* 3 n)))
+           (incf (fill-pointer data) (* 3 n))
+           (setf instance (truncate (length instances) 3))
+           (vector-push-extend type instances)
+           (vector-push-extend i instances)
+           (vector-push-extend (* 3 n) instances)
+           (values i instance)))))
+
 (defmacro define-debug-draw-function ((name type) args &body body)
-  (let ((type-id (ecase type (points 0) (lines 1) (text 2))))
+  (let ((type-id (ecase type (points 1) (lines 2) (text 3))))
     `(defun ,name (,@args (debug-draw (node 'debug-draw T)) (update T) (container (scene +main+)) instance)
        (flet ((,name ()
                 (unless debug-draw
                   (setf debug-draw (enter-and-load (make-instance 'debug-draw) container +main+)))
                 (let* ((data (,type debug-draw))
                        (instances (instances debug-draw))
-                       (i (if instance (aref instances (1+ (* 3 instance))) (length data))))
+                       (i 0))
+                  (declare (type (vector single-float) data))
+                  (declare (type (vector (unsigned-byte 32)) instances))
+                  (declare (type (unsigned-byte 32) i))
                   (flet ((v (v)
                            (setf (aref data (+ 0 i)) (vx v))
                            (setf (aref data (+ 1 i)) (vy v))
                            (setf (aref data (+ 2 i)) (vz v))
                            (incf i 3))
                          (allocate (n)
-                           (cond (instance
-                                  (let ((diff (- (* 3 n) (aref instances (+ 2 (* 3 instance))))))
-                                    (unless (= 0 diff)
-                                      (array-utils:array-shift data :n diff :from i)
-                                      (loop for inst from (* 3 (1+ instance)) below (length instances) by 3
-                                            when (= ,type-id (aref instances inst))
-                                            do (incf (aref instances (1+ inst)) diff)))))
-                                 (T
-                                  (adjust-array data (+ (length data) (* 3 n)))
-                                  (incf (fill-pointer data) (* 3 n))
-                                  (setf instance (truncate (length instances) 3))
-                                  (vector-push-extend ,type-id instances)
-                                  (vector-push-extend i instances)
-                                  (vector-push-extend n instances)))))
+                           (multiple-value-setq (i instance)
+                             (debug-draw-allocate data instances instance ,type-id n))))
                     (declare (ignorable #'v))
                     ,@body))
                 (when update
@@ -140,7 +151,7 @@ void main(){
                 instance))
          (if (current-p (context +main+))
              (,name)
-             (with-eval-in-render-loop (T)
+             (with-eval-in-render-loop (T :block T)
                (,name)))))))
 
 (defmethod debug-draw ((point vec2) &rest args &key &allow-other-keys)
@@ -328,16 +339,24 @@ void main(){
 (defun debug-clear (&key (debug-draw (node 'debug-draw T)) (update T) instance)
   (when debug-draw
     (cond (instance
-           (implement!))
+           (let* ((type (aref (instances debug-draw) (+ 0 (* 3 instance))))
+                  (start (aref (instances debug-draw) (+ 1 (* 3 instance))))
+                  (size (aref (instances debug-draw) (+ 2 (* 3 instance))))
+                  (data (ecase type
+                          (1 (points debug-draw))
+                          (2 (lines debug-draw))
+                          (3 (text debug-draw)))))
+             (array-utils:array-shift data :n size :from start)
+             (array-utils:array-shift (instances debug-draw) :n -3 :from (* 3 (1+ instance)))))
           (T
            (setf (fill-pointer (points debug-draw)) 0)
            (setf (fill-pointer (lines debug-draw)) 0)
            (setf (fill-pointer (text debug-draw)) 0)
-           (setf (fill-pointer (instances debug-draw)) 0)
-           (when update
-             (resize-buffer (caar (bindings (points-vao debug-draw))) T)
-             (resize-buffer (caar (bindings (lines-vao debug-draw))) T)
-             (resize-buffer (caar (bindings (text-vao debug-draw))) T))))))
+           (setf (fill-pointer (instances debug-draw)) 0)))
+    (when update
+      (resize-buffer (caar (bindings (points-vao debug-draw))) T)
+      (resize-buffer (caar (bindings (lines-vao debug-draw))) T)
+      (resize-buffer (caar (bindings (text-vao debug-draw))) T))))
 
 (define-class-shader (debug-draw :vertex-shader)
   "layout (location = 0) in vec3 position;

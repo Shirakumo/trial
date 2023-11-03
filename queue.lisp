@@ -51,7 +51,8 @@
            (return)
            (setf elements (queue-reallocating queue))))
       ;; 4. commit the write by bumping the index
-      (loop until (atomics:cas (queue-write-index queue) write (1+ write))))))
+      (loop until (atomics:cas (queue-write-index queue) write (1+ write)))
+      element)))
 
 (defun queue-discard (queue)
   (declare (optimize speed (safety 1)))
