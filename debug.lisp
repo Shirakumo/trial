@@ -138,7 +138,7 @@ void main(){
                 (when update
                   (resize-buffer (caar (bindings (,(ecase type (points 'points-vao) (lines 'lines-vao) (text 'text-vao)) debug-draw))) T))
                 instance))
-         (if (current-p *context*)
+         (if (current-p (context +main+))
              (,name)
              (with-eval-in-render-loop (T)
                (,name)))))))
