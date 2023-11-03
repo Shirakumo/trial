@@ -48,24 +48,17 @@ All of these are copying, meaning they won't update if their arguments are modif
   The ``debug-draw`` instance used to draw the elements. Defaults to using an entity named ``debug-draw`` and will create one if it doesn't exist yet.
 - ``:update``
   Whether the data should be uploaded to the GPU immediately. You may want to set this to NIL if you intend on drawing a large batch of debug info.
+- ``:instance``
+  The debug instance to update, if any. Each ``debug-*`` function returns an instance ID that you can use to clear or update that debug draw instance with new data.
 
 Note that all drawing calls are synchronised to the render thread. Meaning that if the call occurs outside of the render thread, it is scheduled asynchronously to run on it.
 
 ## Renderdoc
 Special mention should be made of the "Renderdoc"(https://renderdoc.org) tool. While Trial allows redefinition of shaders at runtime, sometimes being able to capture the entire pipeline state and inspect it can be invaluable to figure out weird graphical issues. Renderdoc is ideal for this situation and works fine with Trial, as long as the underlying lisp process is called via Renderdoc.
 
-To do so, create a small script like so:
-
-:: common lisp
-(ql:quickload :swank)
-(swank:create-server)
-(ql:quickload :my-project)
-(my-project::launch)
-::
-
-Then you can configure your implementation as a launch option in Rendedoc:
+You can configure your implementation as a launch option in Rendedoc:
 
 - ``Executable Path`` Eg: ``/usr/bin/sbcl``
-- ``Command-line Arguments`` Eg: ``--load /tmp/renderdoc.lisp``
+- ``Command-line Arguments`` Eg: ``--load /path/to/trial/renderdoc.lisp``
 
 Launching it like that should allow you to connect via Slime on port 4005, and capture snapshots of the running process via Renderdoc.
