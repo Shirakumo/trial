@@ -313,8 +313,6 @@
         (nv+* b-point (point-b (v closest-face 0)) (vx p))
         (nv+* b-point (point-b (v closest-face 1)) (vy p))
         (nv+* b-point (point-b (v closest-face 2)) (vz p))
-        (trial:debug-point b-point :color (vec 1 1 0 1))
-        (trial:debug-point a-point :color (vec 1 1 0 1))
         (v<- (trial:hit-location hit) a-point)
         (v<- (trial:hit-normal hit) b-point)
         (nv- (trial:hit-normal hit) a-point)
