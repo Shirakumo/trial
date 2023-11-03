@@ -113,7 +113,8 @@ void main(){
                    (make-pill)
                    (make-plane)
                    (make-half-space)
-                   (make-triangle))))
+                   (make-triangle)
+                   (coerce-object (make-sphere) 'convex-mesh))))
       (alloy:enter "Shape A" layout :row 0 :col 1)
       (alloy:represent (physics-primitive (node :a scene)) 'alloy:combo-set
                        :value-set (shapes) :layout-parent layout :focus-parent focus)
