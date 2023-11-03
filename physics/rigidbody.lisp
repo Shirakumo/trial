@@ -50,6 +50,15 @@
 (defmethod (setf inertia-tensor) ((primitive cylinder) (entity rigidbody))
   (setf (inertia-tensor entity) (cylinder-tensor (mass entity) (cylinder-radius primitive) (cylinder-height primitive))))
 
+(defmethod (setf inertia-tensor) ((primitive pill) (entity rigidbody))
+  (setf (inertia-tensor entity) (pill-tensor (mass entity) (pill-radius primitive) (pill-height primitive))))
+
+(defmethod (setf inertia-tensor) ((primitive triangle) (entity rigidbody))
+  (implement!))
+
+(defmethod (setf inertia-tensor) ((primitive general-mesh) (entity rigidbody))
+  (setf (inertia-tensor entity) (mesh-tensor (mass entity) (general-mesh-vertices primitive) (general-mesh-faces primitive))))
+
 (defmethod (setf physics-primitives) ((primitive primitive) (entity rigidbody))
   (setf (physics-primitives entity) (vector primitive))
   (when (and (/= 0 (inverse-mass entity))
