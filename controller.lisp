@@ -45,16 +45,22 @@
     (issue (scene main) 'reload-scene)))
 
 (defclass eval-request (event)
-  ((func :initarg :func)))
+  ((func :initarg :func)
+   (return-values :accessor return-values)))
 
 (define-handler (controller eval-request) (func)
-  (funcall func))
+  (let ((vals (multiple-value-list (funcall func))))
+    (setf (return-values eval-request) vals)))
 
-(defun call-in-render-loop (function scene)
-  (issue scene 'eval-request :func function))
+(defun call-in-render-loop (function scene &key block)
+  (let ((event (issue scene 'eval-request :func function)))
+    (when block
+      (loop until (slot-boundp event 'return-values)
+            do (sleep 0.01))
+      (values-list (return-values event)))))
 
-(defmacro with-eval-in-render-loop ((&optional (scene '(scene +main+))) &body body)
-  `(call-in-render-loop (lambda () ,@body) ,scene))
+(defmacro with-eval-in-render-loop ((&optional (scene '(scene +main+)) &rest args) &body body)
+  `(call-in-render-loop (lambda () ,@body) ,scene ,@args))
 
 (define-shader-entity display-controller (controller debug-text)
   ((fps-buffer :initform (make-array 100 :fill-pointer T :initial-element 1) :reader fps-buffer)
