@@ -2,6 +2,7 @@
 
 (defmacro define-tensor-fun (name args &body body)
   `(defun ,name (,@args &optional (tensor (mat3)))
+     (declare (type mat3 tensor))
      (fill (marr3 tensor) 0.0)
      (with-fast-matref (m tensor)
        ,@body
@@ -33,9 +34,33 @@
       (setf (m 2 1) iyz)
       (setf (m 2 2) (s vz vz)))))
 
+(define-tensor-fun voxel-tensor (mass voxel-grid)
+  (macrolet ((s (a b)
+               `(* pm
+                   (loop for z from 0 below (array-dimension voxel-grid 0)
+                         sum (loop for y from 0 below (array-dimension voxel-grid 1)
+                                   sum (loop for x from 0 below (array-dimension voxel-grid 2)
+                                             when (< 0 (aref voxel-grid z y x))
+                                             sum (float (* ,a ,b) 0f0)))))))
+    (let* ((pm (/ (float mass 0f0)
+                  (loop for i from 0 below (array-total-size voxel-grid)
+                        count (< 0 (row-major-aref voxel-grid i)))))
+           (ixy (- (s x y)))
+           (ixz (- (s x z)))
+           (iyz (- (s y z))))
+      (setf (m 0 0) (s x x))
+      (setf (m 0 1) ixy)
+      (setf (m 0 2) ixz)
+      (setf (m 1 0) ixy)
+      (setf (m 1 1) (s y y))
+      (setf (m 1 2) iyz)
+      (setf (m 2 0) ixz)
+      (setf (m 2 1) iyz)
+      (setf (m 2 2) (s z z)))))
+
 (define-tensor-fun combine-tensor (tensor-a tensor-b distance)
   ;; TODO
-  )
+  (implement!))
 
 (define-tensor-fun box-tensor (mass bsize)
   (let ((x2 (* (vx bsize) (vx bsize)))
@@ -100,9 +125,6 @@
     (setf (m 0 0) (+ x y))
     (setf (m 1 1) (+ x y))
     (setf (m 2 2) (+ x (* 1/4 mc 2 r r)))))
-
-(define-tensor-fun voxel-tensor (mass voxel-grid)
-  (implement!))
 
 (define-tensor-fun mesh-tensor (mass vertices faces)
   (voxel-tensor mass (org.shirakumo.fraf.manifolds:voxelize vertices faces :grid 0.1) tensor))
