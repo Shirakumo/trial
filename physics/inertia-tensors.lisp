@@ -105,4 +105,4 @@
   (implement!))
 
 (define-tensor-fun mesh-tensor (mass vertices faces)
-  (implement!))
+  (voxel-tensor mass (org.shirakumo.fraf.manifolds:voxelize vertices faces :grid 0.1) tensor))
