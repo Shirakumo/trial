@@ -70,7 +70,7 @@
                (let ((tt (,implicit-name ray-location ray-direction ,@ (if props
                                                                            (loop for prop in props
                                                                                  collect `(,(first prop) b))
-                                                                           (list b))
+                                                                           (list 'b))
                                          (hit-normal hit))))
                  (when tt
                    (v<- (hit-location hit) (ray-location a))
