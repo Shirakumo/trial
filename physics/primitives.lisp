@@ -420,8 +420,8 @@
     (multiple-value-bind (vertices faces) (finalize)
       (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces))))
 
-(defmethod coerce-object ((primitive convex-mesh) (type (eql 'sphere)) &key)
-  (let ((vertices (convex-mesh-vertices primitive))
+(defmethod coerce-object ((primitive general-mesh) (type (eql 'sphere)) &key)
+  (let ((vertices (general-mesh-vertices primitive))
         (max 0.0))
     (loop for i from 0 below (length vertices) by 3
           for dist = (+ (expt (aref vertices (+ i 0)) 2)
@@ -430,8 +430,8 @@
           do (setf max (max max dist)))
     (make-primitive-like primitive #'make-sphere :radius (sqrt max))))
 
-(defmethod coerce-object ((primitive convex-mesh) (type (eql 'box)) &key)
-  (let ((vertices (convex-mesh-vertices primitive))
+(defmethod coerce-object ((primitive general-mesh) (type (eql 'box)) &key)
+  (let ((vertices (general-mesh-vertices primitive))
         (max (vec 0 0 0)))
     ;; TODO: This does not try to adjust the rotation of the resulting primitive to fit better.
     ;;       ideally we'd first try to find the ideal orientation along which to fit the bounding
@@ -443,8 +443,8 @@
              (setf (vz max) (max (vz max) (abs (aref vertices (+ i 2))))))
     (make-primitive-like primitive #'make-box :bsize max)))
 
-(defmethod coerce-object ((primitive convex-mesh) (type (eql 'cylinder)) &key)
-  (let ((vertices (convex-mesh-vertices primitive))
+(defmethod coerce-object ((primitive general-mesh) (type (eql 'cylinder)) &key)
+  (let ((vertices (general-mesh-vertices primitive))
         (height 0.0) (radius 0.0))
     ;; TODO: This does not try to adjust the rotation of the resulting primitive to fit better.
     ;;       ideally we'd first try to find the ideal orientation along which to fit the bounding
@@ -456,8 +456,13 @@
              (setf radius (max radius (abs (aref vertices (+ i 2))))))
     (make-primitive-like primitive #'make-cylinder :radius radius :height height)))
 
-(defmethod coerce-object ((primitive convex-mesh) (type (eql 'pill)) &key)
+(defmethod coerce-object ((primitive general-mesh) (type (eql 'pill)) &key)
   (implement!))
+
+(defmethod coerce-object ((primitive general-mesh) (type (eql 'convex-mesh)) &key)
+  (multiple-value-bind (vertices faces)
+      (org.shirakumo.fraf.quickhull:convex-hull (general-mesh-vertices primitive))
+    (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces)))
 
 (defmethod make-vertex-array ((primitive primitive) vao)
   (let* ((mesh (coerce-object primitive 'general-mesh))
