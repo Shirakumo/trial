@@ -100,7 +100,7 @@
 (defmethod initialize-instance :after ((list example-list) &key)
   (let ((layout (make-instance 'alloy:vertical-linear-layout))
         (focus (make-instance 'alloy:vertical-focus-list)))
-    (dolist (example (list-examples))
+    (dolist (example (sort (list-examples) #'string< :key #'title))
       (make-instance 'alloy:button* :value (title example) :layout-parent layout :focus-parent focus
                                     :on-activate (lambda () (change-scene +main+ example))))
     (alloy:finish-structure list layout focus)))
