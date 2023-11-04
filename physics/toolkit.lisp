@@ -1,5 +1,6 @@
 (in-package #:org.shirakumo.fraf.trial)
 
+(declaim (inline mcol3))
 (defun mcol3 (mat n &optional (vec (vec3 0 0 0)))
   (declare (type mat4 mat))
   (with-fast-matref (e mat)
@@ -19,6 +20,7 @@
     (setf (vz3 b) (+ (* (VX3 B) (E 2 0)) (* (VY3 B) (E 2 1)) (* (VZ3 B) (E 2 2))))
     b))
 
+(declaim (ftype (function (vec3 (or mat4 mat3)) vec3) ntransform-inverse))
 (defun ntransform-inverse (vec3 mat)
   (declare (optimize speed))
   (declare (type vec3 vec3))
