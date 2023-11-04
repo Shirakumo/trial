@@ -32,15 +32,14 @@
            (when (retained :space)
              (incf (vy (location raycast-player)) (+ spd)))))
     (debug-clear)
-    
     (let* ((ray (ray (location raycast-player)
                      (q* (orientation raycast-player) +vx3+)))
            (hit (detect-hit ray (node :a (container raycast-player)) (hit raycast-player))))
       (cond (hit
-             (debug-line (hit-location hit) (v+* (hit-location hit) (hit-normal hit) -2)
-                         :color-a #.(vec 0 0 0) :color-b #.(vec 0 1 0))
              (debug-line (ray-location ray) (hit-location hit) :color (vec 1 1 1 1))
-             (debug-line (hit-location hit) (v+* (hit-location hit) (ray-direction ray) 100) :color (vec 1 0 0 1)))
+             (debug-line (hit-location hit) (v+* (hit-location hit) (ray-direction ray) 100) :color (vec 1 0 0 1))
+             (debug-line (hit-location hit) (v+* (hit-location hit) (hit-normal hit) -2)
+                         :color-a #.(vec 0 0 0) :color-b #.(vec 0 1 0)))
             (T
              (debug-line (ray-location ray) (v+* (ray-location ray) (ray-direction ray) 100) :color (vec 0 1 0 1)))))))
 
