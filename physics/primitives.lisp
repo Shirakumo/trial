@@ -167,6 +167,11 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~f" (radius primitive))))
 
+(defmethod global-bsize ((primitive sphere))
+  (vec (sphere-radius primitive)
+       (sphere-radius primitive)
+       (sphere-radius primitive)))
+
 (define-primitive-type plane
   (normal (vec3 0 1 0) :type vec3)
   (offset 0.0 :type single-float))
@@ -175,7 +180,20 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~a ~f" (normal primitive) (offset primitive))))
 
+(defmethod global-bsize ((primitive plane))
+  (cond ((v= +vx3+ (vabs (plane-normal primitive)))
+         (vec 1.0 most-positive-single-float most-positive-single-float))
+        ((v= +vy3+ (vabs (plane-normal primitive)))
+         (vec most-positive-single-float 1.0 most-positive-single-float))
+        ((v= +vz3+ (vabs (plane-normal primitive)))
+         (vec most-positive-single-float most-positive-single-float 1.0))
+        (T ;; The plane is slightly tilted, so its bsize is infinite.
+         (vec most-positive-single-float most-positive-single-float most-positive-single-float))))
+
 (define-primitive-type (half-space plane))
+
+(defmethod global-bsize ((primitive half-space))
+  (vec most-positive-single-float most-positive-single-float most-positive-single-float))
 
 ;; NOTE: the box is centred at 0,0,0 and the bsize is the half-size along each axis.
 (define-primitive-type box
@@ -184,6 +202,28 @@
 (defmethod print-object ((primitive box) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~a" (bsize primitive))))
+
+(defmethod global-bsize ((primitive box))
+  (let ((vmin (vec3)) (vmax (vec3)) (tmp (vec3))
+        (bsize (box-bsize primitive)))
+    (declare (dynamic-extent vmin tmp))
+    (flet ((test (x y z)
+             (vsetf tmp
+                    (* x (vx bsize))
+                    (* y (vy bsize))
+                    (* z (vz bsize)))
+             (n*m (primitive-transform primitive) tmp)
+             (vmin vmin tmp)
+             (vmax vmax tmp)))
+      (test +1f0 +1f0 +1f0)
+      (test -1f0 +1f0 +1f0)
+      (test +1f0 -1f0 +1f0)
+      (test -1f0 -1f0 +1f0)
+      (test +1f0 +1f0 -1f0)
+      (test -1f0 +1f0 -1f0)
+      (test +1f0 -1f0 -1f0)
+      (test -1f0 -1f0 -1f0)
+      (nv* (nv- vmax vmin) 0.5))))
 
 ;; Frustums are just boxes skewed by a linear transform. We provide these shorthands
 ;; here to allow easier construction of frustum testing primitives.
@@ -209,6 +249,14 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~f ~f" (radius primitive) (height primitive))))
 
+(defmethod global-bsize ((primitive cylinder))
+  (let ((dir (n*m4/3 (primitive-transform primitive) (vec 0 1 0)))
+        (h (cylinder-height primitive))
+        (r (cylinder-radius primitive)))
+    (vec (+ (* (vx dir) h) (* 2 r (sqrt (1- (* (vx dir) (vx dir))))))
+         (+ (* (vy dir) h) (* 2 r (sqrt (1- (* (vy dir) (vy dir))))))
+         (+ (* (vz dir) h) (* 2 r (sqrt (1- (* (vz dir) (vz dir)))))))))
+
 ;; NOTE: the pill is centred at 0,0,0, and points Y-up. the "height" is the half-height
 ;;       and does not include the caps, meaning the total height of the pill is 2r+2h.
 (define-primitive-type pill
@@ -219,6 +267,15 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~f ~f" (radius primitive) (height primitive))))
 
+(defmethod global-bsize ((primitive pill))
+  (let ((dir (n*m4/3 (primitive-transform primitive) (vec 0 1 0)))
+        (h (pill-height primitive))
+        (r (pill-radius primitive)))
+    ;; FIXME: this is not quite correct and the bounding box is over-big, but w/e.
+    (vec (+ r (* (vx dir) h) (* 2 r (sqrt (1- (* (vx dir) (vx dir))))))
+         (+ r (* (vy dir) h) (* 2 r (sqrt (1- (* (vy dir) (vy dir))))))
+         (+ r (* (vz dir) h) (* 2 r (sqrt (1- (* (vz dir) (vz dir)))))))))
+
 (define-primitive-type triangle
   (a (vec3 -1 0 -1) :type vec3)
   (b (vec3 +1 0 -1) :type vec3)
@@ -227,6 +284,18 @@
 (defmethod print-object ((primitive triangle) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~a ~a ~a" (a primitive) (b primitive) (c primitive))))
+
+(defmethod global-bsize ((primitive triangle))
+  (let ((vmin (vec3)) (vmax (vec3)) (tmp (vec3)))
+    (declare (dynamic-extent vmin vmax tmp))
+    (flet ((test (vec)
+             (!m* tmp (primitive-transform primitive) vec)
+             (vmin vmin tmp)
+             (vmax vmax tmp)))
+      (test (triangle-a primitive))
+      (test (triangle-b primitive))
+      (test (triangle-c primitive))
+      (nv* (nv- vmax vmin) 0.5))))
 
 (define-primitive-type general-mesh
   ;; NOTE: Packed vertex positions as X Y Z triplets
@@ -239,6 +308,20 @@
 (defmethod print-object ((primitive general-mesh) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~d tris" (truncate (length (faces primitive)) 3))))
+
+(defmethod global-bsize ((primitive general-mesh))
+  (let ((vmin (vec3)) (vmax (vec3)) (tmp (vec3))
+        (vertices (general-mesh-vertices primitive)))
+    (declare (dynamic-extent vmin vmax tmp))
+    (loop for i from 0 below (length vertices) by 3
+          do (vsetf tmp
+                    (aref vertices (+ i 0))
+                    (aref vertices (+ i 1))
+                    (aref vertices (+ i 2)))
+             (n*m (primitive-transform primitive) tmp)
+             (vmin vmin tmp)
+             (vmax vmax tmp))
+    (nv* (nv- vmax vmin) 0.5)))
 
 (define-primitive-type (convex-mesh general-mesh))
 
