@@ -132,7 +132,6 @@
                 (- ctotal cfree) (floor (/ (- ctotal cfree) ctotal 0.01))
                 (- gtotal gfree) (floor (/ (- gtotal gfree) gtotal 0.01))
                 (hash-table-count (loaded (loader +main+))))
-        #++
         (let ((*print-pprint-dispatch* *controller-pprint*))
           (loop with observers = (observers controller)
                 for i from 0 below (length observers)
