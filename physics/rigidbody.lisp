@@ -85,6 +85,20 @@
       (nv* bsize 0.5)
       (setf (bradius entity) (max (vx bsize) (vy bsize) (vz bsize))))))
 
+(defmethod (setf physics-primitives) ((primitive general-mesh) (entity rigidbody))
+  (flet ((convert (hull)
+           (make-convex-mesh :vertices (org.shirakumo.fraf.convex-covering:vertices hull)
+                             :faces (org.shirakumo.fraf.convex-covering:faces hull))))
+    ;; General case, assume convexity.
+    (let ((hulls (org.shirakumo.fraf.convex-covering:decompose
+                  (general-mesh-vertices primitive)
+                  (general-mesh-faces primitive))))
+      (setf (physics-primitives entity) (map-into hulls #'convert hulls)))))
+
+(defmethod (setf physics-primitives) ((mesh mesh-data) (entity rigidbody))
+  (setf (physics-primitives entity) (make-general-mesh :vertices (reordered-vertex-data mesh '(location))
+                                                       :faces (index-data mesh))))
+
 (defun %update-rigidbody-cache (rigidbody)
   ;; NOTE: Re-normalising the orientation here aids in stability by eliminating drift.
   ;;       But doing so can lead to bi-stable states, as it'll change normalisation
