@@ -6,6 +6,7 @@
    (torque :initform (vec 0 0 0) :reader torque)
    (angular-damping :initform 0.8 :accessor angular-damping)
    (physics-primitives :initform #() :accessor physics-primitives)
+   (bsize :initform (vec 0 0 0) :reader bsize)
    ;; Cache
    (transform-matrix :initform (mat4) :reader transform-matrix)
    (world-inverse-inertia-tensor :initform (mat3) :reader world-inverse-inertia-tensor)
@@ -66,8 +67,15 @@
     (setf (inertia-tensor entity) primitive)))
 
 (defmethod (setf physics-primitives) :after ((primitives vector) (entity rigidbody))
-  (loop for primitive across primitives
-        do (setf (primitive-entity primitive) entity)))
+  (let ((vmin (vec3)) (vmax (vec3)))
+    (loop for primitive across primitives
+          do (setf (primitive-entity primitive) entity)
+             (let ((bsize (global-bsize primitive))
+                   (location (location primitive)))
+               (vmin vmin (v- location bsize))
+               (vmax vmax (v+ location bsize))))
+    (!v- (bsize entity) vmax vmin)
+    (nv* (bsize entity) 0.5)))
 
 (defun %update-rigidbody-cache (rigidbody)
   ;; NOTE: Re-normalising the orientation here aids in stability by eliminating drift.
