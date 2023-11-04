@@ -96,7 +96,7 @@
 
 (defmethod (setf physics-primitives) ((mesh mesh-data) (entity rigidbody))
   (setf (physics-primitives entity) (make-general-mesh :vertices (reordered-vertex-data mesh '(location))
-                                                       :faces (index-data mesh))))
+                                                       :faces (faces mesh))))
 
 (defun %update-rigidbody-cache (rigidbody)
   ;; NOTE: Re-normalising the orientation here aids in stability by eliminating drift.

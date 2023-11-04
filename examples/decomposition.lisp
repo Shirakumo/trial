@@ -119,7 +119,7 @@
   (multiple-value-bind (all-vertices all-faces)
       (org.shirakumo.fraf.manifolds:normalize
        (reordered-vertex-data mesh '(location))
-       (trial::simplify (index-data mesh) '(unsigned-byte 32))
+       (trial::simplify (faces mesh) '(unsigned-byte 32))
        :threshold .000001)
     (enter (make-instance 'decomposition-entity
                           :name :original

@@ -230,7 +230,7 @@
                                                                     (:uint8  '(unsigned-byte 8))
                                                                     (:uint16 '(unsigned-byte 16))
                                                                     (:uint32 '(unsigned-byte 32))))))
-        (setf (index-data mesh) indexes)
+        (setf (faces mesh) indexes)
         (org.shirakumo.memory-regions:replace indexes accessor)))
     mesh))
 

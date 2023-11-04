@@ -195,7 +195,7 @@ void main(){
   (apply #'call-next-method entity args))
 
 (defmethod debug-draw ((data mesh-data) &rest args &key &allow-other-keys)
-  (apply #'debug-triangles (reordered-vertex-data data '(location)) (index-data data) args))
+  (apply #'debug-triangles (reordered-vertex-data data '(location)) (faces data) args))
 
 (defmethod debug-draw ((primitive general-mesh) &rest args &key &allow-other-keys)
   (unless (getf args :transform)

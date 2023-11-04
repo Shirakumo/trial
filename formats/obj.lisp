@@ -61,7 +61,7 @@
                                                                      (:normal 'normal)
                                                                      (:uv 'uv)))
                                   :vertex-data (obj:vertex-data mesh)
-                                  :index-data (obj:index-data mesh)
+                                  :faces (obj:index-data mesh)
                                   :material (when (obj:material mesh)
                                               (trial:find-material (obj:name (obj:material mesh)) model))))))
       (loop for object being the hash-values of (obj:objects context)

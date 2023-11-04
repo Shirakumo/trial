@@ -91,9 +91,6 @@
    #:ik-system)
   ;; animation/mesh.lisp
   (:export
-   #:mesh-data
-   #:vertex-data
-   #:index-data
    #:skinned-p
    #:static-mesh
    #:skinned-mesh
@@ -1088,7 +1085,7 @@
    #:mesh-data
    #:name
    #:vertex-data
-   #:index-data
+   #:faces
    #:material
    #:vertex-form
    #:vertex-attributes

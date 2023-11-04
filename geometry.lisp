@@ -144,7 +144,7 @@
 (defclass mesh-data ()
   ((name :initarg :name :initform NIL :accessor name)
    (vertex-data :initarg :vertex-data :initform (make-array 0 :element-type 'single-float) :accessor vertex-data)
-   (index-data :initarg :index-data :initform NIL :accessor index-data)
+   (faces :initarg :faces :initform NIL :accessor faces)
    (material :initform NIL :accessor material)
    (vertex-form :initarg :vertex-form :initform :triangles :accessor vertex-form)
    (vertex-attributes :initarg :vertex-attributes :initform '(location normal uv) :accessor vertex-attributes)))
@@ -192,20 +192,20 @@
 
 (defmethod make-vertex-array ((mesh mesh-data) vao)
   (let ((vertex-data (make-instance 'vertex-buffer :buffer-data (vertex-data mesh)))
-        (index-data (index-data mesh)))
+        (faces (faces mesh)))
     (ensure-instance vao 'vertex-array
                      :dependencies (list (material mesh))
                      :vertex-form (vertex-form mesh)
-                     :index-buffer (make-instance 'vertex-buffer :buffer-data index-data
+                     :index-buffer (make-instance 'vertex-buffer :buffer-data faces
                                                                  :buffer-type :element-array-buffer
-                                                                 :element-type (cl-type->pixel-type (array-element-type index-data)))
+                                                                 :element-type (cl-type->pixel-type (array-element-type faces)))
                      :bindings (loop with stride = (vertex-attribute-stride mesh)
                                      for attribute in (vertex-attributes mesh)
                                      for offset = 0 then (+ offset size)
                                      for size = (vertex-attribute-size attribute)
                                      collect `(,vertex-data :size ,size :offset ,(* 4 offset) :stride ,(* 4 stride)))
-                     :size (if index-data
-                               (length index-data)
+                     :size (if faces
+                               (length faces)
                                (truncate (length (vertex-data mesh)) (+ 3 3 2))))))
 
 (defmethod gl-source ((mesh mesh-data))
@@ -238,7 +238,7 @@
     (apply #'update-buffer-data buffer (vertex-data mesh) args)))
 
 (defmethod replace-vertex-data ((vao vertex-array) (mesh mesh-data) &key)
-  (resize-buffer-data (index-buffer vao) (index-data mesh))
+  (resize-buffer-data (index-buffer vao) (faces mesh))
   (let ((vertex-data (caar (bindings vao))))
     (resize-buffer-data vertex-data (vertex-data mesh))
     (setf (bindings vao) (loop with stride = (vertex-attribute-stride mesh)
@@ -246,7 +246,7 @@
                                for offset = 0 then (+ offset size)
                                for size = (vertex-attribute-size attribute)
                                collect `(,vertex-data :size ,size :offset ,(* 4 offset) :stride ,(* 4 stride))))
-    (setf (size vao) (length (index-data mesh)))
+    (setf (size vao) (length (faces mesh)))
     vao))
 
 (defmethod coerce-object ((vao vertex-array) (type (eql 'mesh-data)) &rest args &key index-attribute &allow-other-keys)
@@ -269,7 +269,7 @@
     (if (loop for (binding) in (cdr (bindings vao))
               always (eq binding primary))
         (apply #'make-instance 'mesh-data
-               :index-data (buffer-data (index-buffer vao))
+               :faces (buffer-data (index-buffer vao))
                :vertex-data (buffer-data (caar (bindings vao)))
                :vertex-attributes attributes
                args)
@@ -293,7 +293,7 @@
   (implement!))
 
 (defmethod compute-vertex-attribute ((mesh mesh-data) (new-attribute (eql 'normal)))
-  (let* ((adjacency (org.shirakumo.fraf.manifolds:vertex-adjacency-list (index-data mesh)))
+  (let* ((adjacency (org.shirakumo.fraf.manifolds:vertex-adjacency-list (faces mesh)))
          (vertices (vertex-data mesh))
          (offset (vertex-attribute-offset new-attribute mesh)))
     (loop for i from 0 below (length vertices) by (vertex-attribute-stride mesh)
@@ -306,7 +306,7 @@
 (defmethod compute-vertex-attribute ((mesh mesh-data) (_ (eql 'tangent)))
   (compute-vertex-attribute mesh 'uv)
   (let ((vertices (vertex-data mesh))
-        (faces (index-data mesh))
+        (faces (faces mesh))
         (stride (vertex-attribute-stride mesh))
         (voff (vertex-attribute-offset 'location mesh))
         (uoff (vertex-attribute-offset 'uv mesh))

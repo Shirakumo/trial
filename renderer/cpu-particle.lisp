@@ -185,7 +185,7 @@
      free-list
      particle-buffer
      particle-property-buffer
-     index-data
+     face-data
      vertex-data
      vertex-stride
      (particle-force-fields :accessor particle-force-fields)
@@ -224,7 +224,7 @@
   (setf (particle-force-fields emitter) (make-instance 'particle-force-fields :size 0)))
 
 (defmethod (setf mesh-index-buffer) (buffer (emitter cpu-particle-emitter))
-  (setf (slot-value emitter 'index-data) (buffer-data buffer)))
+  (setf (slot-value emitter 'face-data) (buffer-data buffer)))
 
 (defmethod (setf mesh-vertex-buffer) (buffer (emitter cpu-particle-emitter))
   (setf (slot-value emitter 'vertex-data) (buffer-data buffer)))
@@ -262,7 +262,7 @@
                           particle-randomness particle-lifespan-randomness mat
                           particle-velocity particle-rotation particle-lifespan
                           particle-size particle-scaling particle-full-color
-                          vertex-data vertex-stride index-data)
+                          vertex-data vertex-stride face-data)
           (incf live-particles)))
       (when (< 0 live-particles)
         (let ((src (first (sources particle-property-buffer))))

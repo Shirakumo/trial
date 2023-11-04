@@ -54,7 +54,7 @@
   (multiple-value-bind (all-vertices all-faces)
       (org.shirakumo.fraf.manifolds:normalize
        (reordered-vertex-data mesh '(location))
-       (trial::simplify (index-data mesh) '(unsigned-byte 32))
+       (trial::simplify (faces mesh) '(unsigned-byte 32))
        :threshold .000001)
     (flet ((make-mesh (hull)
              (make-convex-mesh :vertices (org.shirakumo.fraf.convex-covering:vertices hull)

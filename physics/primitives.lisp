@@ -561,7 +561,7 @@
 (defmethod coerce-object ((mesh mesh-data) (type (eql 'primitive)) &rest args &key &allow-other-keys)
   (apply #'make-general-mesh
          :vertices (reordered-vertex-data mesh '(location))
-         :faces (index-data mesh)
+         :faces (faces mesh)
          args))
 
 (defmethod replace-vertex-data (target (primitive primitive) &rest args &key &allow-other-keys)
