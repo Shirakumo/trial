@@ -84,6 +84,9 @@
     (nv* bsize 0.5)
     (setf (bradius entity) (max (vx bsize) (vy bsize) (vz bsize)))))
 
+(defmethod (setf physics-primitives) :after ((primitives vector) (entity rigidbody))
+  (%update-rigidbody-cache entity))
+
 (defmethod (setf physics-primitives) ((primitive general-mesh) (entity rigidbody))
   (flet ((convert (hull)
            (make-convex-mesh :vertices (org.shirakumo.fraf.convex-covering:vertices hull)

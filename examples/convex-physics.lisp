@@ -1,7 +1,7 @@
 (in-package #:org.shirakumo.fraf.trial.examples)
 
 (define-example convex-physics
-  :title "Complex Physics Scenes"
+  :title "Convex Physics Scenes"
   :superclasses (trial:physics-scene alloy:observable)
   :slots ((model :initform NIL :accessor model)
           (mesh :initform NIL :accessor mesh)
@@ -9,6 +9,7 @@
           (physics-system :initform (make-instance 'rigidbody-system :units-per-metre 0.1)))
   (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)
   (enter (make-instance 'editor-camera :location (VEC3 0.0 2.3 10) :fov 50 :move-speed 0.1) scene)
+  (enter (make-instance 'physics-wall :name :wall) scene)
   (enter (make-instance 'directional-light :direction -vy3+) scene)
   (enter (make-instance 'ambient-light :color (vec3 0.2)) scene)
   (enter (make-instance 'gravity :gravity (vec 0 -10 0)) scene)
@@ -51,16 +52,7 @@
   (setf (model scene) (generate-resources 'model-loader file)))
 
 (defmethod (setf mesh) :before ((mesh mesh-data) (scene convex-physics-scene))
-  (multiple-value-bind (all-vertices all-faces)
-      (org.shirakumo.fraf.manifolds:normalize
-       (reordered-vertex-data mesh '(location))
-       (trial::simplify (faces mesh) '(unsigned-byte 32))
-       :threshold .000001)
-    (flet ((make-mesh (hull)
-             (make-convex-mesh :vertices (org.shirakumo.fraf.convex-covering:vertices hull)
-                               :faces (org.shirakumo.fraf.convex-covering:faces hull))))
-      (let* ((primitives (map 'vector #'make-mesh (org.shirakumo.fraf.convex-covering:decompose all-vertices all-faces)))
-             (entity (make-instance 'physics-wall :vertex-array (make-vertex-array mesh NIL)
-                                                  :physics-primitives primitives)))
-        (enter entity scene))))
+  (let ((wall (node :wall scene)))
+    (setf (vertex-array wall) (make-vertex-array mesh NIL))
+    (setf (physics-primitives wall) mesh))
   (commit (scene +main+) (loader +main+)))
