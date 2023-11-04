@@ -253,9 +253,9 @@
   (let ((dir (n*m4/3 (primitive-transform primitive) (vec 0 1 0)))
         (h (cylinder-height primitive))
         (r (cylinder-radius primitive)))
-    (vec (+ (* (vx dir) h) (* 2 r (sqrt (1- (* (vx dir) (vx dir))))))
-         (+ (* (vy dir) h) (* 2 r (sqrt (1- (* (vy dir) (vy dir))))))
-         (+ (* (vz dir) h) (* 2 r (sqrt (1- (* (vz dir) (vz dir)))))))))
+    (vec (+ (* (vx dir) h) (* 2 r (sqrt (- 1 (* (vx dir) (vx dir))))))
+         (+ (* (vy dir) h) (* 2 r (sqrt (- 1 (* (vy dir) (vy dir))))))
+         (+ (* (vz dir) h) (* 2 r (sqrt (- 1 (* (vz dir) (vz dir)))))))))
 
 ;; NOTE: the pill is centred at 0,0,0, and points Y-up. the "height" is the half-height
 ;;       and does not include the caps, meaning the total height of the pill is 2r+2h.
@@ -272,9 +272,9 @@
         (h (pill-height primitive))
         (r (pill-radius primitive)))
     ;; FIXME: this is not quite correct and the bounding box is over-big, but w/e.
-    (vec (+ r (* (vx dir) h) (* 2 r (sqrt (1- (* (vx dir) (vx dir))))))
-         (+ r (* (vy dir) h) (* 2 r (sqrt (1- (* (vy dir) (vy dir))))))
-         (+ r (* (vz dir) h) (* 2 r (sqrt (1- (* (vz dir) (vz dir)))))))))
+    (vec (+ r (* (vx dir) h) (* 2 r (sqrt (- 1 (* (vx dir) (vx dir))))))
+         (+ r (* (vy dir) h) (* 2 r (sqrt (- 1 (* (vy dir) (vy dir))))))
+         (+ r (* (vz dir) h) (* 2 r (sqrt (- 1 (* (vz dir) (vz dir)))))))))
 
 (define-primitive-type triangle
   (a (vec3 -1 0 -1) :type vec3)
@@ -287,7 +287,7 @@
 
 (defmethod global-bsize ((primitive triangle))
   (let ((vmin (vec3)) (vmax (vec3)) (tmp (vec3)))
-    (declare (dynamic-extent vmin vmax tmp))
+    (declare (dynamic-extent vmin tmp))
     (flet ((test (vec)
              (!m* tmp (primitive-transform primitive) vec)
              (vmin vmin tmp)
