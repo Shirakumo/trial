@@ -312,7 +312,7 @@
 (defmethod global-bsize ((primitive general-mesh))
   (let ((vmin (vec3)) (vmax (vec3)) (tmp (vec3))
         (vertices (general-mesh-vertices primitive)))
-    (declare (dynamic-extent vmin vmax tmp))
+    (declare (dynamic-extent vmin tmp))
     (loop for i from 0 below (length vertices) by 3
           do (vsetf tmp
                     (aref vertices (+ i 0))
