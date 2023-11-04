@@ -660,17 +660,17 @@
   (with-fast-matref (m mat)
     (vec (m 0 3) (m 1 3) (m 2 3))))
 
-(defmethod global-location ((vec vec2))
+(defmethod global-location ((vec vec2) &optional (target (vec3)))
   (let ((vec (vec (vx vec) (vy vec) 0 0)))
     (declare (dynamic-extent vec))
     (n*m (model-matrix) vec)
-    (vxyz vec)))
+    (vsetf target (vx vec) (vy vec) (vz vec))))
 
-(defmethod global-location ((vec vec3))
+(defmethod global-location ((vec vec3) &optional (target (vec3)))
   (let ((vec (vec (vx vec) (vy vec) (vz vec) 0)))
     (declare (dynamic-extent vec))
     (n*m (model-matrix) vec)
-    (vxyz vec)))
+    (vsetf target (vx vec) (vy vec) (vz vec))))
 
 (defun initarg-slot (class initarg)
   (let ((class (etypecase class

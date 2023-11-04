@@ -99,11 +99,11 @@
   (local-transform (meye 4) :type mat4)
   (transform (mat4) :type mat4))
 
-(defmethod global-location ((primitive primitive))
-  (mcol3 (primitive-transform primitive) 3))
+(defmethod global-location ((primitive primitive) &optional (target (vec3)))
+  (mcol3 (primitive-transform primitive) 3 target))
 
-(defmethod global-orientation ((primitive primitive))
-  (qfrom-mat (primitive-transform primitive)))
+(defmethod global-orientation ((primitive primitive) &optional (quat (quat)))
+  (!qfrom-mat quat (primitive-transform primitive)))
 
 (defmethod location ((primitive primitive))
   (mcol3 (primitive-local-transform primitive) 3))

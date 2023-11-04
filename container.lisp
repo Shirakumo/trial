@@ -140,8 +140,8 @@
   (when (container entity)
     (apply-transforms (container entity))))
 
-(defmethod global-location ((entity entity))
+(defmethod global-location ((entity entity) &optional (target (vec3)))
   (with-pushed-matrix ()
     (apply-transforms entity)
     (with-fast-matref (m (model-matrix))
-      (vec (m 0 3) (m 1 3) (m 2 3)))))
+      (vsetf target (m 0 3) (m 1 3) (m 2 3)))))
