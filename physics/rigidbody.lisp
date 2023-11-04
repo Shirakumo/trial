@@ -71,18 +71,19 @@
              (every #'zerop (marr3 (inverse-inertia-tensor entity))))
     (setf (inertia-tensor entity) primitive)))
 
-(defmethod (setf physics-primitives) :after ((primitives vector) (entity rigidbody))
-  (let ((vmin (vec3)) (vmax (vec3))
-        (bsize (bsize entity)))
-    (loop for primitive across primitives
-          do (setf (primitive-entity primitive) entity)
-             (let ((bsize (global-bsize primitive))
-                   (location (location primitive)))
-               (vmin vmin (v- location bsize))
-               (vmax vmax (v+ location bsize))))
-    (!v- bsize vmax vmin)
-    (nv* bsize 0.5)
-    (setf (bradius entity) (max (vx bsize) (vy bsize) (vz bsize)))))
+(defmethod (setf physics-primitives) :before ((primitives vector) (entity rigidbody))
+  (unless (equal primitives (physics-primitives entity))
+    (let ((vmin (vec3)) (vmax (vec3))
+          (bsize (bsize entity)))
+      (loop for primitive across primitives
+            do (setf (primitive-entity primitive) entity)
+               (let ((bsize (global-bsize primitive))
+                     (location (location primitive)))
+                 (vmin vmin (v- location bsize))
+                 (vmax vmax (v+ location bsize))))
+      (!v- bsize vmax vmin)
+      (nv* bsize 0.5)
+      (setf (bradius entity) (max (vx bsize) (vy bsize) (vz bsize))))))
 
 (defun %update-rigidbody-cache (rigidbody)
   ;; NOTE: Re-normalising the orientation here aids in stability by eliminating drift.
