@@ -21,6 +21,10 @@
   (loop for ai across (physics-primitives a)
         do (detect-hits ai b)))
 
+(define-hit-detector (rigidbody ray)
+  (loop for ai across (physics-primitives a)
+        do (detect-hits b ai)))
+
 (define-hit-detector (rigidbody rigidbody)
   (loop for ai across (physics-primitives a)
         do (loop for bi across (physics-primitives b)

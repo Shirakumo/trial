@@ -10,6 +10,7 @@
   :components ((:file "trial-examples")
                (:file "triangle")
                (:file "collision")
+               (:file "raycast")
                (:file "cpu-particle")
                (:file "gpu-particle")
                (:file "spatial-query")
