@@ -33,24 +33,24 @@
     (labels ((process (event)
                (typecase event
                  (gamepad:button-down
-                  (handle (make-instance 'gamepad-press
-                                         :button (or (gamepad:event-label event)
-                                                     (gamepad:event-code event))
-                                         :device (gamepad:event-device event))
+                  (handle (make-event 'gamepad-press
+                                      :button (or (gamepad:event-label event)
+                                                  (gamepad:event-code event))
+                                      :device (gamepad:event-device event))
                           handler))
                  (gamepad:button-up
-                  (handle (make-instance 'gamepad-release
-                                         :button (or (gamepad:event-label event)
-                                                     (gamepad:event-code event))
-                                         :device (gamepad:event-device event))
+                  (handle (make-event 'gamepad-release
+                                      :button (or (gamepad:event-label event)
+                                                  (gamepad:event-code event))
+                                      :device (gamepad:event-device event))
                           handler))
                  (gamepad:axis-move
-                  (handle (make-instance 'gamepad-move
-                                         :pos (gamepad:event-value event)
-                                         :old-pos (gamepad:event-old-value event)
-                                         :axis (or (gamepad:event-label event)
-                                                   (gamepad:event-code event))
-                                         :device (gamepad:event-device event))
+                  (handle (make-event 'gamepad-move
+                                      :pos (gamepad:event-value event)
+                                      :old-pos (gamepad:event-old-value event)
+                                      :axis (or (gamepad:event-label event)
+                                                (gamepad:event-code event))
+                                      :device (gamepad:event-device event))
                           handler))))
              (poll (device)
                (gamepad:poll-events device #'process)))

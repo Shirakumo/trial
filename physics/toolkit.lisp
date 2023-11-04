@@ -20,6 +20,7 @@
     b))
 
 (defun ntransform-inverse (vec3 mat)
+  (declare (optimize speed))
   (declare (type vec3 vec3))
   (etypecase mat
     (mat4

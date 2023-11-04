@@ -249,7 +249,7 @@
           (declare (type (unsigned-byte 16) num-loose-edges i))
           ;; Find triangles facing our current search point
           (loop (when (<= num-faces i) (return))
-                (cond ((< 0 (v. (v i 3) (v- p (v i 0))))
+                (cond ((< 0 (v. (v i 3) (!v- search-dir p (v i 0))))
                        ;; ... I'm not sure how this part works, exactly.
                        ;; It manages the loose edge list to expand the polytope?
                        (loop for j from 0 below 3
@@ -295,24 +295,28 @@
 
       ;; Compute the actual intersection
       ;; If we did not converge, we just use the closest face we reached
-      (let ((p (vec3)) (a-point (vec3)) (b-point (vec3)))
-        (declare (dynamic-extent p a-point b-point))
-        (barycentric (v closest-face 0) (v closest-face 1) (v closest-face 2)
-                     (plane-point (v closest-face 0) (v closest-face 1) (v closest-face 2) p)
-                     p)
-        (nv+* a-point (point-a (v closest-face 0)) (vx p))
-        (nv+* a-point (point-a (v closest-face 1)) (vy p))
-        (nv+* a-point (point-a (v closest-face 2)) (vz p))
-        (nv+* b-point (point-b (v closest-face 0)) (vx p))
-        (nv+* b-point (point-b (v closest-face 1)) (vy p))
-        (nv+* b-point (point-b (v closest-face 2)) (vz p))
-        (v<- (trial:hit-location hit) a-point)
-        (v<- (trial:hit-normal hit) b-point)
-        (nv- (trial:hit-normal hit) a-point)
-        (setf (trial:hit-depth hit) (vlength (trial:hit-normal hit)))
-        (if (= 0.0 (trial:hit-depth hit))
-            (v<- (trial:hit-normal hit) +vy3+)
-            (nv/ (trial:hit-normal hit) (trial:hit-depth hit)))))))
+      (%epa-finish hit (v closest-face 0) (v closest-face 1) (v closest-face 2)))))
+
+(defun %epa-finish (hit c0 c1 c2)
+  (declare (type point c0 c1 c2))
+  (declare (type trial:hit hit))
+  (declare (optimize speed (safety 0)))
+  (let ((p (vec3)) (a-point (vec3)) (b-point (vec3)))
+    (declare (dynamic-extent p a-point b-point))
+    (barycentric c0 c1 c2 (plane-point c0 c1 c2 p) p)
+    (nv+* a-point (point-a c0) (vx p))
+    (nv+* a-point (point-a c1) (vy p))
+    (nv+* a-point (point-a c2) (vz p))
+    (nv+* b-point (point-b c0) (vx p))
+    (nv+* b-point (point-b c1) (vy p))
+    (nv+* b-point (point-b c2) (vz p))
+    (v<- (trial:hit-location hit) a-point)
+    (v<- (trial:hit-normal hit) b-point)
+    (nv- (trial:hit-normal hit) a-point)
+    (setf (trial:hit-depth hit) (vlength (trial:hit-normal hit)))
+    (if (= 0.0 (trial:hit-depth hit))
+        (v<- (trial:hit-normal hit) +vy3+)
+        (nv/ (trial:hit-normal hit) (trial:hit-depth hit)))))
 
 ;;;; Support function implementations
 (defun %support-function (primitive global-direction next)
@@ -377,7 +381,7 @@
       (test (trial:triangle-c primitive)))))
 
 (define-support-function trial:convex-mesh (dir next)
-  (let ((verts (trial::convex-mesh-vertices primitive))
+  (let ((verts (trial:convex-mesh-vertices primitive))
         (vert (vec3))
         (furthest most-negative-single-float))
     (declare (dynamic-extent vert))

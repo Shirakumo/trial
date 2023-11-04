@@ -148,6 +148,7 @@
     (values vidmem-free
             vidmem-total)))
 
+(declaim (ftype (function () (values (unsigned-byte 32) (unsigned-byte 32))) gpu-room cpu-room))
 (defun gpu-room ()
   (macrolet ((jit (thing)
                `(ignore-errors
