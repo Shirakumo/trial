@@ -6,7 +6,8 @@
    (torque :initform (vec 0 0 0) :reader torque)
    (angular-damping :initform 0.8 :accessor angular-damping)
    (physics-primitives :initform #() :accessor physics-primitives)
-   (bsize :initform (vec 0 0 0) :reader bsize)
+   (bsize :initform (vec 0 0 0) :reader bsize :reader org.shirakumo.fraf.trial.space:bsize)
+   (bradius :initform 0f0 :accessor bradius :reader org.shirakumo.fraf.trial.space:radius)
    ;; Cache
    (transform-matrix :initform (mat4) :reader transform-matrix)
    (world-inverse-inertia-tensor :initform (mat3) :reader world-inverse-inertia-tensor)
@@ -67,15 +68,17 @@
     (setf (inertia-tensor entity) primitive)))
 
 (defmethod (setf physics-primitives) :after ((primitives vector) (entity rigidbody))
-  (let ((vmin (vec3)) (vmax (vec3)))
+  (let ((vmin (vec3)) (vmax (vec3))
+        (bsize (bsize entity)))
     (loop for primitive across primitives
           do (setf (primitive-entity primitive) entity)
              (let ((bsize (global-bsize primitive))
                    (location (location primitive)))
                (vmin vmin (v- location bsize))
                (vmax vmax (v+ location bsize))))
-    (!v- (bsize entity) vmax vmin)
-    (nv* (bsize entity) 0.5)))
+    (!v- bsize vmax vmin)
+    (nv* bsize 0.5)
+    (setf (bradius entity) (max (vx bsize) (vy bsize) (vz bsize)))))
 
 (defun %update-rigidbody-cache (rigidbody)
   ;; NOTE: Re-normalising the orientation here aids in stability by eliminating drift.
