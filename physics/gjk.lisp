@@ -86,7 +86,7 @@
     (!v- p (point-b p) (point-a p))))
 
 (trial:define-hit-detector (trial:primitive trial:primitive)
-  (setf trial:start (or (detect-hits a b trial:hits trial:start trial:end) trial:start)))
+  (setf trial:start (detect-hits a b trial:hits trial:start trial:end)))
 
 (defun detect-hits (a b hits start end)
   (declare (type trial:primitive a b))
@@ -106,26 +106,28 @@
       (search-point s1 dir a b)
       (v<- s12 s2)
       (nv- s12 s1)
-      (unless (< (v. s1 dir) 0)
-        (!vc dir (!vc dir s12 (v- s1)) s12)
-        (when (v= 0 dir)
-          (!vc dir s12 +vx3+)
-          (when (v= 0 dir)
-            (!vc dir s12 +vz3+)))
-        (loop with dim of-type (unsigned-byte 8) = 2
-              for i from 0 below GJK-ITERATIONS
-              do (search-point s0 dir a b)
-                 (when (< (v. s0 dir) 0)
-                   (return))
-                 (incf dim)
-                 (cond ((= 3 dim)
-                        (setf dim (update-simplex s0 s1 s2 s3 dir)))
-                       ((null (test-simplex s0 s1 s2 s3 dir))
-                        (setf dim 3))
-                       (T
-                        (epa s0 s1 s2 s3 a b hit)
-                        (trial:finish-hit hit a b)
-                        (return (1+ start)))))))))
+      (cond ((< (v. s1 dir) 0)
+             start)
+            (T
+             (!vc dir (!vc dir s12 (v- s1)) s12)
+             (when (v= 0 dir)
+               (!vc dir s12 +vx3+)
+               (when (v= 0 dir)
+                 (!vc dir s12 +vz3+)))
+             (loop with dim of-type (unsigned-byte 8) = 2
+                   for i from 0 below GJK-ITERATIONS
+                   do (search-point s0 dir a b)
+                      (when (< (v. s0 dir) 0)
+                        (return start))
+                      (incf dim)
+                      (cond ((= 3 dim)
+                             (setf dim (update-simplex s0 s1 s2 s3 dir)))
+                            ((null (test-simplex s0 s1 s2 s3 dir))
+                             (setf dim 3))
+                            (T
+                             (epa s0 s1 s2 s3 a b hit)
+                             (trial:finish-hit hit a b)
+                             (return (1+ start))))))))))
 
 (trial:define-ray-test trial:primitive ()
   ;; TODO: Implement
