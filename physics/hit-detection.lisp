@@ -1,5 +1,8 @@
 (in-package #:org.shirakumo.fraf.trial)
 
+;; FIXME: none of these properly take the scaling
+;;        of the transform into account.
+
 (define-distance (sphere sphere)
   (- (vdistance (global-location a) (global-location b))
      (sphere-radius a) (sphere-radius b)))
