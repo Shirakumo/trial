@@ -27,6 +27,16 @@ The following examples are currently available:
 - **collision**
   [ image images/example collision.png, width 15em ]
   A test application to show off collision detection methods
+- **raycast**
+  [ image images/example raycast.png, width 15em ]
+  A test application to illustrate raycasting
+- **selection**
+  [ image images/example selection.png, width 15em ]
+  A demo for the selection buffer feature
 - **physics**
   [ image images/example physics.png, width 15em ]
   A simple rigid body physics demo
+- **convex-physics**
+  [ image images/example convex-physics.png, width 15em ]
+  An illustration of automated convex decomposition of arbitrary models
+
