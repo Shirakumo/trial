@@ -109,9 +109,8 @@
   (tmat (tf rigidbody) (transform-matrix rigidbody))
   (compute-world-inertia-tensor (world-inverse-inertia-tensor rigidbody) (inverse-inertia-tensor rigidbody) (transform-matrix rigidbody))
   (loop for primitive across (physics-primitives rigidbody)
-        do (replace (marr4 (primitive-transform primitive))
-                    (marr4 (transform-matrix rigidbody)))
-           (nm* (primitive-transform primitive)
+        do (!m* (primitive-transform primitive)
+                (transform-matrix rigidbody)
                 (primitive-local-transform primitive))))
 
 (defmethod impact-local ((entity rigidbody) force point)

@@ -19,7 +19,7 @@
 
 (define-handler ((scene convex-physics-scene) mouse-press :after) ()
   (let ((ball (make-instance 'physics-sphere :location (location (camera scene))))
-        (force (n*m (minv-affine (view-matrix)) (nv- (vec 0 2 -100) (location (camera scene))))))
+        (force (n*m (minv (view-matrix)) (nv- (vec 0 2 -100) (location (camera scene))))))
     (nv+ (velocity ball) force)
     (enter-and-load ball scene +main+)))
 
@@ -46,6 +46,11 @@
           (when meshes (setf (alloy:value selector) (first meshes)))))
       (alloy:on alloy:value (mesh selector)
         (setf (mesh scene) mesh)))
+    (alloy:enter "Scale" layout :row 2 :col 0)
+    (let* ((wall (node :wall scene))
+           (size (alloy:represent (scaling wall) T :layout-parent layout :focus-parent focus)))
+      (alloy:on alloy:value (value size)
+        (setf (physics-primitives wall) (physics-primitives wall))))
     (alloy:finish-structure panel layout focus)))
 
 (defmethod (setf file) :before (file (scene convex-physics-scene))
