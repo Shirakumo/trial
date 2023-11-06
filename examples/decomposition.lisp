@@ -146,7 +146,7 @@ void main(){
                           :visible-p (show-original scene)
                           :transform (transform (vec -3 0 0))
                           :vertex-array (make-vertex-array
-                                         (make-convex-mesh :vertices all-vertices :faces all-faces)
+                                         (make-general-mesh :vertices all-vertices :faces all-faces)
                                          NIL))
            (node :container scene))
     (multiple-value-bind (hulls context)
