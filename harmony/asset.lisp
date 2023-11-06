@@ -1,13 +1,5 @@
 (in-package #:org.shirakumo.fraf.trial.harmony)
 
-(defun run (&rest args)
-  (uiop:run-program (loop for arg in args
-                          collect (typecase arg
-                                    (pathname (uiop:native-namestring arg))
-                                    (string arg)
-                                    (T (princ-to-string arg))))
-                    :output :string :error-output *error-output*))
-
 (defclass sound-loader (trial:compiled-generator)
   ())
 
@@ -29,7 +21,7 @@
            (unless (and (equal samplerate source-samplerate)
                         (equal sample-type source-sample-type))
              (v:info :trial.harmony "Reencoding sound file from ~a..." path)
-             (run "ffmpeg" "-hide_banner" "-loglevel" "error"
+             (trial::run "ffmpeg" "-hide_banner" "-loglevel" "error"
                   "-i" path
                   "-c:a" (format NIL "pcm_~ale"
                                  (case sample-type
@@ -48,7 +40,7 @@
                       (probe-file source)
                       (trial:recompile-needed-p path source))
              (v:info :trial.harmony "Compiling sound from ~a...." path)
-             (run "ffmpeg" "-hide_banner" "-loglevel" "error"
+             (trial::run "ffmpeg" "-hide_banner" "-loglevel" "error"
                   "-i" source
                   "-c:a" (cond (codec codec)
                                ((string-equal "oga" (pathname-type path)) "libvorbis")
@@ -94,7 +86,7 @@
                    (probe-file source)
                    (trial:recompile-needed-p target source))
           (v:info :trial.harmony "Compiling music track from ~a...." source)
-          (run "ffmpeg" "-hide_banner" "-loglevel" "error"
+          (trial::run "ffmpeg" "-hide_banner" "-loglevel" "error"
                "-i" source
                "-c:a" (cond (codec codec)
                             ((string-equal "oga" (pathname-type target)) "libvorbis")
