@@ -101,6 +101,9 @@
   (setf (physics-primitives entity) (make-general-mesh :vertices (reordered-vertex-data mesh '(location))
                                                        :faces (faces mesh))))
 
+(defmethod (setf physics-primitives) ((primitives list) (entity rigidbody))
+  (setf (physics-primitives entity) (coerce primitives 'vector)))
+
 (defun %update-rigidbody-cache (rigidbody)
   ;; NOTE: Re-normalising the orientation here aids in stability by eliminating drift.
   ;;       But doing so can lead to bi-stable states, as it'll change normalisation
