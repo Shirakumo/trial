@@ -132,7 +132,7 @@
   (let* ((tt 0.0)
          (x (vcopy ray-location))
          (w (vec3)) (p (vec3))
-         (dir (v- x (the vec3 (trial:location trial:primitive))))
+         (dir x)
          (dim 0) (maxdist 1.0)
          (s0 (vec3)) (s1 (vec3)) (s2 (vec3)) (s3 (vec3)))
     (declare (dynamic-extent x dir w p s0 s1 s2 s3))
@@ -140,7 +140,7 @@
     (vsetf ray-normal 0 0 0)
     (loop for i from 0 below GJK-ITERATIONS
           while (<= (* 0.000001f0 maxdist) (vsqrlength dir))
-          do (%support-function trial:primitive dir p)
+          do (support-function trial:primitive dir p)
              (!v- w x p)
              (let ((vw (v. dir w))
                    (vr (v. dir ray-direction)))
@@ -171,7 +171,7 @@
                  (when (v= s3 dir)
                    (v<- s0 s3))))
           finally (progn
-                    (nvunit ray-normal)
+                    (nvunit* ray-normal)
                     (return tt)))))
 
 (defun update-simplex (s0 s1 s2 s3 dir)

@@ -70,10 +70,16 @@
                    (make-half-space)
                    (make-triangle)
                    (coerce-object (make-sphere) 'convex-mesh))))
-      (alloy:enter "Shape A" layout :row 0 :col 1)
+      (alloy:enter "Shape" layout :row 0 :col 1)
       (alloy:represent (physics-primitive (node :a scene)) 'alloy:combo-set
                        :value-set (shapes) :layout-parent layout :focus-parent focus)
-      (alloy:enter "Reset Ray" layout :row 1 :col 1)
+      (alloy:enter "Location" layout :row 1 :col 1)
+      (alloy:represent (location (node :a scene)) T
+                       :layout-parent layout :focus-parent focus)
+      (alloy:enter "Orientation" layout :row 2 :col 1)
+      (alloy:represent (orientation (node :a scene)) T
+                       :layout-parent layout :focus-parent focus)
+      (alloy:enter "Reset Ray" layout :row 3 :col 1)
       (make-instance 'alloy:button* :value "..." :on-activate (lambda () (reset (node :b scene)))
                                     :layout-parent layout :focus-parent focus)
       (alloy:finish-structure panel layout focus))))

@@ -57,12 +57,12 @@
                (ray-location (vec3))
                (ray-direction (vec3)))
            (declare (dynamic-extent ray-location ray-direction))
-           (v<- ray-location (ray-location a))
            (v<- ray-direction (ray-direction a))
+           (v<- ray-location (ray-location a))
            ;; Bring the ray into the local transform space of the primitive
-           (n*m (primitive-transform b) ray-location)
-           ;; We apply this weird transform to avoid translation on the ray direction
-           (n*m4/3 (primitive-transform b) ray-direction)
+           (let ((local (minv (primitive-transform b))))
+             (n*m local ray-location)
+             (n*m4/3 local ray-direction))
            ;; We have to renormalise in case the transform has scaling.
            (let ((transform-scaling (vlength ray-direction)))
              (nv/ ray-direction transform-scaling)
@@ -77,10 +77,11 @@
                    ;; We have to use the world-space ray location and direction here, and thus also
                    ;; multiply the time by the transform-scaling to ensure we get the time dilation
                    ;; induced by the primitive's transform scaling sorted out.
-                   (nv+* (hit-location hit) (ray-direction a) (max 0.0 (* tt transform-scaling)))
+                   (nv+* (hit-location hit) (ray-direction a) (* tt transform-scaling))
                    (setf (hit-a hit) a)
                    (setf (hit-b hit) ,(if (subtypep b 'primitive) `(primitive-entity b) b))
-                   (ntransform-inverse (hit-normal hit) (primitive-transform b))
+                   ;; Bring the normal back into global space
+                   (n*m4/3 (primitive-transform b) (hit-normal hit))
                    (incf start)))))
            start))
        
