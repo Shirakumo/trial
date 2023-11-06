@@ -17,6 +17,10 @@
       (replace-vertex-data (vertex-array body) primitive)
       (setf (vertex-array body) (make-vertex-array primitive NIL))))
 
+(defmethod reset ((body collision-body))
+  (qsetf (orientation body) 0 0 0 1)
+  (vsetf (location body) 0 0 0))
+
 (define-handler (collision-body pre-tick) ()
   (start-frame collision-body))
 

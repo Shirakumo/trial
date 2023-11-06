@@ -61,32 +61,44 @@
            (v<- ray-location (ray-location a))
            ;; Bring the ray into the local transform space of the primitive
            (let ((local (minv (primitive-transform b))))
-             (n*m local ray-location)
-             (n*m4/3 local ray-direction))
+             (n*m4/3 local ray-direction)
+             (n*m local ray-location))
            ;; We have to renormalise in case the transform has scaling.
            (let ((transform-scaling (vlength ray-direction)))
              (nv/ ray-direction transform-scaling)
-             (block NIL
-               (let ((tt (,implicit-name ray-location ray-direction ,@ (if props
-                                                                           (loop for prop in props
-                                                                                 collect `(,(first prop) b))
-                                                                           (list 'b))
-                                         (hit-normal hit))))
-                 (when tt
-                   (v<- (hit-location hit) (ray-location a))
-                   ;; We have to use the world-space ray location and direction here, and thus also
-                   ;; multiply the time by the transform-scaling to ensure we get the time dilation
-                   ;; induced by the primitive's transform scaling sorted out.
-                   (nv+* (hit-location hit) (ray-direction a) (* tt transform-scaling))
-                   (setf (hit-a hit) a)
-                   (setf (hit-b hit) ,(if (subtypep b 'primitive) `(primitive-entity b) b))
-                   ;; Bring the normal back into global space
-                   (n*m4/3 (primitive-transform b) (hit-normal hit))
-                   (incf start)))))
+             (let ((tt (,implicit-name ray-location ray-direction ,@ (if props
+                                                                         (loop for prop in props
+                                                                               collect `(,(first prop) b))
+                                                                         (list 'b))
+                                       (hit-normal hit))))
+               (when tt
+                 (v<- (hit-location hit) (ray-location a))
+                 ;; We have to use the world-space ray location and direction here, and thus also
+                 ;; multiply the time by the transform-scaling to ensure we get the time dilation
+                 ;; induced by the primitive's transform scaling sorted out.
+                 (nv+* (hit-location hit) (ray-direction a) (* tt transform-scaling))
+                 (setf (hit-a hit) a)
+                 (setf (hit-b hit) ,(if (subtypep b 'primitive) `(primitive-entity b) b))
+                 ;; Bring the normal back into global space
+                 (n*m (primitive-transform b) (hit-normal hit))
+                 (incf start))))
            start))
        
        (defmethod detect-hits ((a ,b) (b ray) hits start end)
          (detect-hits b a hits start end)))))
+
+(define-ray-test sphere ((sphere-radius single-float))
+  (let* ((em ray-location)
+         (eb (v. em ray-direction))
+         (ec (- (v. em em) (* sphere-radius sphere-radius))))
+    (unless (and (< 0 ec) (< 0 eb))
+      (let ((discriminant (- (* eb eb) ec)))
+        (when (<= 0.0 discriminant)
+          (let ((tt (- (- eb) (sqrt discriminant))))
+            (v<- ray-normal ray-location)
+            (nv+* ray-normal ray-direction tt)
+            (nvunit ray-normal)
+            tt))))))
 
 (defmethod detect-hits ((a ray) (b 3ds:container) hits start end)
   (declare (type (unsigned-byte 32) start end))
@@ -114,19 +126,6 @@
         (when (or (<= 0.0 tt) (<= (v. plane-normal tmp) 0.0))
           (v<- ray-normal plane-normal)
           tt)))))
-
-(define-ray-test sphere ((sphere-radius single-float))
-  (let* ((em ray-location)
-         (eb (v. em ray-direction))
-         (ec (- (v. em em) (* sphere-radius sphere-radius))))
-    (unless (and (< 0 ec) (< 0 eb))
-      (let ((discriminant (- (* eb eb) ec)))
-        (when (<= 0.0 discriminant)
-          (let ((tt (- (- eb) (sqrt discriminant))))
-            (v<- ray-normal ray-location)
-            (nv+* ray-normal ray-direction tt)
-            (nvunit ray-normal)
-            tt))))))
 
 (define-ray-test box ((box-bsize vec3))
   ;; Since the ray variables are within local space of the box, the box is

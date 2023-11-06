@@ -79,7 +79,9 @@
       (alloy:enter "Orientation" layout :row 2 :col 1)
       (alloy:represent (orientation (node :a scene)) T
                        :layout-parent layout :focus-parent focus)
-      (alloy:enter "Reset Ray" layout :row 3 :col 1)
-      (make-instance 'alloy:button* :value "..." :on-activate (lambda () (reset (node :b scene)))
+      (alloy:enter "Reset" layout :row 3 :col 1)
+      (make-instance 'alloy:button* :value "..." :on-activate (lambda ()
+                                                                (reset (node :a scene))
+                                                                (reset (node :b scene)))
                                     :layout-parent layout :focus-parent focus)
       (alloy:finish-structure panel layout focus))))
