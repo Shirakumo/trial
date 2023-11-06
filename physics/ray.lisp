@@ -80,7 +80,7 @@
                  (setf (hit-a hit) a)
                  (setf (hit-b hit) ,(if (subtypep b 'primitive) `(primitive-entity b) b))
                  ;; Bring the normal back into global space
-                 (n*m (primitive-transform b) (hit-normal hit))
+                 (n*m4/3 (primitive-transform b) (hit-normal hit))
                  (incf start))))
            start))
        
