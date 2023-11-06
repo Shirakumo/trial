@@ -52,7 +52,6 @@
   (enter (make-instance 'target-camera :location (vec3 0.0 8 9) :target (vec 0 0 0) :fov 50) scene)
   (observe! (hit-location (hit (node :b scene))) :title "Location")
   (observe! (hit-normal (hit (node :b scene))) :title "Normal")
-  (observe! (hit-depth (hit (node :b scene))) :title "Depth")
   (enter (make-instance 'render-pass) scene))
 
 (defmethod setup-ui ((scene raycast-scene) panel)
