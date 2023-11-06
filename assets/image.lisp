@@ -91,7 +91,7 @@
     (with-retry-restart (retry "Retry loading the image source.")
       (load-image source type))))
 
-(defclass image-loader (resource-generator)
+(defclass image-loader (compiled-generator)
   ())
 
 (defmethod generate-resources ((generator image-loader) sources &rest texture-args &key (type T) target swizzle internal-format (resource (resource generator T)) (texture-class 'texture) &allow-other-keys)
@@ -102,6 +102,14 @@
              :internal-format (or internal-format (infer-internal-format (pixel-type (first sources)) (pixel-format (first sources))))
              :swizzle (or swizzle source-swizzle (infer-swizzle-format (pixel-format (first sources))))
              (remf* texture-args :type :target :swizzle :internal-format :resource :texture-class)))))
+
+(defmethod compile-resources ((generator image-loader) sources &key (source-file-type "png"))
+  (loop for out in (enlist sources)
+        for in = (make-pathname :type source-file-type :defaults out)
+        do (unless (string-equal source-file-type (pathname-type out))
+             (run "convert" in out))
+           (when (string-equal "png" (pathname-type out))
+             (run "optipng" "-o" "5" "-clobber" "-out" out in))))
 
 (defclass image (single-resource-asset file-input-asset image-loader)
   ())

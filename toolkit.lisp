@@ -1160,3 +1160,20 @@
       (loop for i from old below length
             do (setf (aref array i) (funcall constructor))))
     array))
+
+(defun find-program (program)
+  (loop for dir in (uiop:getenv-absolute-directories "PATH")
+        thereis (when dir (probe-file (merge-pathnames program dir)))))
+
+(defun run (program &rest args)
+  (let ((args (loop for arg in args
+                    collect (etypecase arg
+                              (pathname (uiop:native-namestring arg))
+                              (real (princ-to-string arg))
+                              (string arg))))
+        (program (or #+windows (find-program (format NIL "~a.exe" program))
+                     (find-program program)
+                     (error "Can't find external program:~%  ~a"
+                            program))))
+    (uiop:run-program (list* program args)
+                      :output :string :error-output *error-output*)))
