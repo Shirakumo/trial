@@ -13,11 +13,15 @@
 (defun n*m4/3 (mat b)
   (declare (optimize speed))
   (declare (type mat4 mat))
+  (declare (type vec3 b))
   ;; Ignoring the fourth column to eliminate translation
   (with-fast-matref (e mat)
-    (setf (vx3 B) (+ (* (VX3 B) (E 0 0)) (* (VY3 B) (E 0 1)) (* (VZ3 B) (E 0 2))))
-    (setf (vy3 b) (+ (* (VX3 B) (E 1 0)) (* (VY3 B) (E 1 1)) (* (VZ3 B) (E 1 2))))
-    (setf (vz3 b) (+ (* (VX3 B) (E 2 0)) (* (VY3 B) (E 2 1)) (* (VZ3 B) (E 2 2))))
+    (let ((x (vx3 b))
+          (y (vy3 b))
+          (z (vz3 b)))
+      (setf (vx3 b) (+ (* x (e 0 0)) (* y (e 0 1)) (* z (e 0 2))))
+      (setf (vy3 b) (+ (* x (e 1 0)) (* y (e 1 1)) (* z (e 1 2))))
+      (setf (vz3 b) (+ (* x (e 2 0)) (* y (e 2 1)) (* z (e 2 2)))))
     b))
 
 (declaim (ftype (function (vec3 (or mat4 mat3)) vec3) ntransform-inverse))
