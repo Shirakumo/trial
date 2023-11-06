@@ -102,11 +102,9 @@
       (trial::global-location b s0)
       (nv- dir s0)
       (search-point s2 dir a b)
-      (v<- dir s2)
-      (nv- dir)
+      (!v- dir s2)
       (search-point s1 dir a b)
-      (v<- s12 s2)
-      (nv- s12 s1)
+      (!v- s12 s2 s1)
       (cond ((< (v. s1 dir) 0)
              start)
             (T
@@ -131,8 +129,32 @@
                              (return (1+ start))))))))))
 
 (trial:define-ray-test trial:primitive ()
-  ;; TODO: Implement
-  (trial:implement!))
+  (let* ((tt 0.0)
+         (x (vcopy ray-location))
+         (w (vec3)) (p (vec3))
+         (dir (v- x (the vec3 (trial:location trial:primitive))))
+         (dim 0) (maxdist 1.0)
+         (s0 (point)) (s1 (point)) (s2 (point)) (s3 (point)))
+    (declare (dynamic-extent x dir w p s0 s1 s2 s3))
+    (vsetf ray-normal 0 0 0)
+    (loop for i from 0 below GJK-ITERATIONS
+          while (<= (* 0.000001f0 maxdist) (vsqrlength dir))
+          do (%support-function trial:primitive dir p)
+             (!v- w x p)
+             (let ((vw (v. dir w))
+                   (vr (v. dir ray-direction)))
+               (cond ((<= vw 0))
+                     ((<= 0 vr)
+                      (return NIL))
+                     (T
+                      (decf tt (/ vw vr))
+                      (!v+* x ray-location ray-direction tt)
+                      (v<- ray-normal dir)))
+               ;; Add p to the simplex
+               ;; Update v as the closest point to zero within the simplex
+               ;; Reduce the simplex
+               )
+          finally (return tt))))
 
 (defun update-simplex (s0 s1 s2 s3 dir)
   (declare (optimize speed (safety 0)))
