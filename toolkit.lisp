@@ -61,6 +61,11 @@
 (defmethod coerce-object (object type &key)
   (coerce object type))
 
+(defmethod coerce-object :around (object type &key)
+  (if (eql (type-of object) type)
+      object
+      (call-next-method)))
+
 (defgeneric finalize (object))
 
 (defmethod finalize :before (object)
