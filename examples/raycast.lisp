@@ -43,6 +43,10 @@
             (T
              (debug-line (ray-location ray) (v+* (ray-location ray) (ray-direction ray) 100) :color (vec 0 1 0 1)))))))
 
+(defmethod reset ((player raycast-player))
+  (vsetf (location player) 0 0 2.5)
+  (qsetf (orientation player) 0 0 0 1))
+
 (define-example raycast
   :title "Raycasting"
   (enter (make-instance 'display-controller) scene)
@@ -69,4 +73,7 @@
       (alloy:enter "Shape A" layout :row 0 :col 1)
       (alloy:represent (physics-primitive (node :a scene)) 'alloy:combo-set
                        :value-set (shapes) :layout-parent layout :focus-parent focus)
+      (alloy:enter "Reset Ray" layout :row 1 :col 1)
+      (make-instance 'alloy:button* :value "..." :on-activate (lambda () (reset (node :b scene)))
+                                    :layout-parent layout :focus-parent focus)
       (alloy:finish-structure panel layout focus))))
