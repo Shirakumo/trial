@@ -46,12 +46,13 @@
     (alloy:do-elements (element vec)
       (setf (alloy:value element) (funcall (pop els) (alloy:value vec))))))
 
-(defmacro %vec-slot (vec accessor label)
+(defmacro %vec-slot (vec accessor label &body body)
   `(let ((comp (alloy:represent (,accessor object) 'alloy:wheel :step step)))
      (when labels (alloy:enter (alloy:represent ,label 'alloy:label :style '((:label :halign :middle))) ,vec))
      (alloy:enter comp ,vec)
      (alloy:on alloy:value (v comp)
        (declare (ignore v))
+       ,@body
        (alloy:notify-observers 'alloy:value vec (alloy:value vec) vec))))
 
 (defclass vec2 (vec)
@@ -89,6 +90,19 @@
     (%vec-slot vec math:vw4 "W")))
 
 (defmethod alloy:component-class-for-object ((_ math:vec4)) (find-class 'vec4))
+
+(defclass quat (vec)
+  ())
+
+(defmethod initialize-instance :after ((vec quat) &key labels (step 0.1))
+  (let ((object (alloy:value vec)))
+    (setf (alloy:col-sizes vec) (if labels '(20 T 20 T 20 T 20 T) '(T T T T)))
+    (%vec-slot vec math:qi "I" (math:nqunit* object))
+    (%vec-slot vec math:qj "J" (math:nqunit* object))
+    (%vec-slot vec math:qk "K" (math:nqunit* object))
+    (%vec-slot vec math:qr "R" (math:nqunit* object))))
+
+(defmethod alloy:component-class-for-object ((_ math:quat)) (find-class 'quat))
 
 (defmacro define-set-representation (name &body value-set)
   (form-fiddle:with-body-options (body options item-text represents) value-set
