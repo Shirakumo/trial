@@ -134,8 +134,9 @@
          (w (vec3)) (p (vec3))
          (dir (v- x (the vec3 (trial:location trial:primitive))))
          (dim 0) (maxdist 1.0)
-         (s0 (point)) (s1 (point)) (s2 (point)) (s3 (point)))
+         (s0 (vec3)) (s1 (vec3)) (s2 (vec3)) (s3 (vec3)))
     (declare (dynamic-extent x dir w p s0 s1 s2 s3))
+    (declare (type (unsigned-byte 8) dim))
     (vsetf ray-normal 0 0 0)
     (loop for i from 0 below GJK-ITERATIONS
           while (<= (* 0.000001f0 maxdist) (vsqrlength dir))
@@ -151,10 +152,27 @@
                       (!v+* x ray-location ray-direction tt)
                       (v<- ray-normal dir)))
                ;; Add p to the simplex
-               ;; Update v as the closest point to zero within the simplex
+               (incf dim)
+               (!v- s3 x s2)
+               (!v- s2 x s1)
+               (!v- s1 x s0)
+               (!v- s0 x p)
+               ;; Update dir as the closest point to zero within the simplex
+               (v<- dir s0)
+               (when (and (< 1 dim) (< (vsqrlength s1) (vsqrlength dir)))
+                 (v<- dir s1))
+               (when (and (< 2 dim) (< (vsqrlength s2) (vsqrlength dir)))
+                 (v<- dir s2))
+               (when (and (< 3 dim) (< (vsqrlength s3) (vsqrlength dir)))
+                 (v<- dir s3))
                ;; Reduce the simplex
-               )
-          finally (return tt))))
+               (when (= 4 dim)
+                 (decf dim)
+                 (when (v= s3 dir)
+                   (v<- s0 s3))))
+          finally (progn
+                    (nvunit ray-normal)
+                    (return tt)))))
 
 (defun update-simplex (s0 s1 s2 s3 dir)
   (declare (optimize speed (safety 0)))
