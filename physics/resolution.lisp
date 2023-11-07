@@ -272,11 +272,7 @@
   (setf (depth-eps system) (* units 0.01)))
 
 (defmethod generate-hits ((system rigidbody-system) contacts start end)
-  ;; TODO: replace with something that isn't as dumb as this.
-  ;;       particularly: use a spatial query structure to speed up
-  ;;       the search of close objects, and then process close objects
-  ;;       in batches to avoid updating contacts that are far apart
-  ;;       in the resolver.
+  ;; If this seems inefficient to you, it is! Use the ACCELERATED-RIGIDBODY-SYSTEM instead.
   (loop with objects = (%objects system)
         for i from 0 below (length objects)
         for a = (aref objects i)
@@ -363,3 +359,30 @@
                  (setf (contact-desired-delta other)
                        (desired-delta-velocity other (contact-velocity other) dt))))
           finally (v:info :trial.physics "Adjust velocity overflow"))))
+
+(defclass accelerated-rigidbody-system (rigidbody-system)
+  ((acceleration-structure :initform (org.shirakumo.fraf.trial.space.kd-tree:make-kd-tree) :accessor acceleration-structure)))
+
+(defmethod enter :before ((body rigidbody) (system accelerated-rigidbody-system))
+  (assert (/= 0 (length (physics-primitives body))))
+  (loop with structure = (acceleration-structure system)
+        for primitive across (physics-primitives body)
+        do (3ds:enter primitive structure)))
+
+(defmethod leave :after ((body rigidbody) (system accelerated-rigidbody-system))
+  (loop with structure = (acceleration-structure system)
+        for primitive across (physics-primitives body)
+        do (3ds:leave primitive structure)))
+
+(defmethod start-frame :after ((system accelerated-rigidbody-system))
+  (loop with structure = (acceleration-structure system)
+        for object across (%objects system)
+        do (loop for primitive across (physics-primitives object)
+                 do (3ds:update primitive structure))))
+
+(defmethod generate-hits ((system accelerated-rigidbody-system) contacts start end)
+  (3ds:do-pairs (a b (acceleration-structure system) start)
+    (unless (and (= 0.0 (inverse-mass (primitive-entity a)))
+                 (= 0.0 (inverse-mass (primitive-entity b))))
+      (setf start (detect-hits a b contacts start end))
+      (when (<= end start) (return start)))))

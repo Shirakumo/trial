@@ -377,7 +377,8 @@
    #:make-contact
    #:rigidbody-system
    #:velocity-eps
-   #:depth-eps)
+   #:depth-eps
+   #:accelerated-rigidbody-system)
   ;; physics/rigidbody.lisp
   (:export
    #:rigidbody
