@@ -54,7 +54,7 @@
 (define-example physics
   :title "3D Physics System"
   :superclasses (trial:physics-scene)
-  :slots ((physics-system :initform (make-instance 'rigidbody-system :units-per-metre 0.1)))
+  :slots ((physics-system :initform (make-instance 'accelerated-rigidbody-system :units-per-metre 0.1)))
   (enter (make-instance 'display-controller) scene)
   (enter (make-instance 'target-camera :location (VEC3 0.0 13.5 15) :target (vec 0 0 0) :fov 50) scene)
   (enter (make-instance 'directional-light :direction -vy3+) scene)
