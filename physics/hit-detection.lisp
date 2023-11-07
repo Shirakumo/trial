@@ -3,6 +3,46 @@
 ;; FIXME: none of these properly take the scaling
 ;;        of the transform into account.
 
+(defmethod detect-hits ((a primitive) (b 3ds:container) hits start end)
+  (declare (type (unsigned-byte 32) start end))
+  (declare (type (simple-vector #.(1- (ash 1 32)))))
+  (3ds:do-overlapping (element b a)
+    (when (<= end start)
+      (return-from detect-hits start))
+    (setf start (detect-hits a element hits start end))))
+
+(defmethod detect-hits ((sequence sequence) other hits start end)
+  (sequences:dosequence (a sequence start)
+    (unless (eq a other)
+      (setf start (detect-hits a other hits start end))
+      (when (<= end start)
+        (return-from detect-hits start)))))
+
+(defmethod detect-hits (other (sequence sequence) hits start end)
+  (sequences:dosequence (b sequence start)
+    (unless (eq b other)
+      (setf start (detect-hits other b hits start end))
+      (when (<= end start)
+        (return-from detect-hits start)))))
+
+(defmethod detect-hits ((container 3ds:container) (self (eql T)) hits start end)
+  (declare (type (unsigned-byte 32) start end))
+  (declare (type (simple-vector #.(1- (ash 1 32)))))
+  (3ds:do-pairs (a b container start)
+    (when (<= end start)
+      (return-from detect-hits start))
+    (setf start (detect-hits a b hits start end))))
+
+(defmethod detect-hits ((sequence sequence) (self (eql T)) hits start end)
+  (let ((i 0) (length (length sequence)))
+    (sequences:dosequence (a sequence start)
+      (loop for j from (1+ i) below length
+            for b = (elt sequence j)
+            do (setf start (detect-hits a b hits start end))
+               (when (<= end start)
+                 (return-from detect-hits start)))
+      (incf i))))
+
 (define-distance (sphere sphere)
   (- (vdistance (global-location a) (global-location b))
      (sphere-radius a) (sphere-radius b)))
