@@ -1,6 +1,9 @@
 ;;; This implementation was initially roughly based on the following implementation
-;;; https://github.com/Another-Ghost/3D-Collision-Detection-and-Resolution-Using-GJK-and-EPA
+;;;   https://github.com/Another-Ghost/3D-Collision-Detection-and-Resolution-Using-GJK-and-EPA
 ;;; Though it has been largely modified and extended.
+;;; The raycast implementation is largely based on "Ray Casting against General Convex Objects
+;;; with Application to Continuous Collision Detection" by Gino Van Den Bergen available at
+;;;   http://dtecta.com/papers/jgt04raycast.pdf
 
 (defpackage #:org.shirakumo.fraf.trial.gjk
   (:use #:cl #:org.shirakumo.fraf.math)
