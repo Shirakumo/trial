@@ -130,6 +130,12 @@
         (setf (d 2 0) (s 2 0) (d 2 1) (s 2 1) (d 2 2) (s 2 2))))
     quat))
 
+(defmethod 3ds:location ((primitive primitive))
+  (global-location primitive))
+
+(defmethod 3ds:bsize ((primitive primitive))
+  (global-bsize primitive))
+
 (define-accessor-delegate-methods entity (primitive-entity primitive))
 (define-accessor-delegate-methods material (primitive-material primitive))
 (define-accessor-delegate-methods transform-matrix (primitive-transform primitive))
@@ -172,6 +178,9 @@
        (sphere-radius primitive)
        (sphere-radius primitive)))
 
+(defmethod 3ds:radius ((primitive sphere))
+  (sphere-radius primitive))
+
 (define-primitive-type plane
   (normal (vec3 0 1 0) :type vec3)
   (offset 0.0 :type single-float))
@@ -189,6 +198,9 @@
          (vec most-positive-single-float most-positive-single-float 1.0))
         (T ;; The plane is slightly tilted, so its bsize is infinite.
          (vec most-positive-single-float most-positive-single-float most-positive-single-float))))
+
+(defmethod 3ds:radius ((primitive plane))
+  most-positive-single-float)
 
 (define-primitive-type (half-space plane))
 
@@ -225,6 +237,10 @@
       (test -1f0 -1f0 -1f0)
       (nv* (nv- vmax vmin) 0.5))))
 
+(defmethod 3ds:radius ((primitive box))
+  (let ((bsize (box-bsize primitive)))
+    (max (vx bsize) (vy bsize) (vz bsize))))
+
 ;; Frustums are just boxes skewed by a linear transform. We provide these shorthands
 ;; here to allow easier construction of frustum testing primitives.
 (defun make-frustum-box (left right bottom top near far)
@@ -257,6 +273,10 @@
          (+ (* (vy dir) h) (* 2 r (sqrt (- 1 (* (vy dir) (vy dir))))))
          (+ (* (vz dir) h) (* 2 r (sqrt (- 1 (* (vz dir) (vz dir)))))))))
 
+(defmethod 3ds:radius ((primitive cylinder))
+  (sqrt (+ (expt (cylinder-radius primitive) 2)
+           (expt (cylinder-height primitive) 2))))
+
 ;; NOTE: the pill is centred at 0,0,0, and points Y-up. the "height" is the half-height
 ;;       and does not include the caps, meaning the total height of the pill is 2r+2h.
 (define-primitive-type pill
@@ -275,6 +295,9 @@
     (vec (+ r (* (vx dir) h) (* 2 r (sqrt (- 1 (* (vx dir) (vx dir))))))
          (+ r (* (vy dir) h) (* 2 r (sqrt (- 1 (* (vy dir) (vy dir))))))
          (+ r (* (vz dir) h) (* 2 r (sqrt (- 1 (* (vz dir) (vz dir)))))))))
+
+(defmethod 3ds:radius ((primitive pill))
+  (+ (pill-height primitive) (pill-radius primitive)))
 
 (define-primitive-type triangle
   (a (vec3 -1 0 -1) :type vec3)
@@ -296,6 +319,11 @@
       (test (triangle-b primitive))
       (test (triangle-c primitive))
       (nv* (nv- vmax vmin) 0.5))))
+
+(defmethod 3ds:radius ((primitive triangle))
+  (sqrt (max (vsqrlength (triangle-a primitive))
+             (vsqrlength (triangle-b primitive))
+             (vsqrlength (triangle-c primitive)))))
 
 (define-primitive-type general-mesh
   ;; NOTE: Packed vertex positions as X Y Z triplets
@@ -322,6 +350,16 @@
              (vmin vmin tmp)
              (vmax vmax tmp))
     (nv* (nv- vmax vmin) 0.5)))
+
+(defmethod 3ds:radius ((primitive general-mesh))
+  ;; NOTE: because we cannot move the location of the fitting sphere to be
+  ;;       different from the location of the primitive, this radius is not
+  ;;       necessarily the ideal radius.
+  (sqrt (loop with vertices = (general-mesh-vertices primitive)
+              for i from 0 below (length vertices) by 3
+              maximize (+ (expt (aref vertices (+ i 0)) 2)
+                          (expt (aref vertices (+ i 1)) 2)
+                          (expt (aref vertices (+ i 2)) 2)))))
 
 (define-primitive-type (convex-mesh general-mesh))
 
