@@ -47,7 +47,9 @@
                   (ignorable ,normal))
          (block NIL
            ,@body))
-       
+
+       ;; TODO: would be better to have most of this logic factored out into a common function,
+       ;;       the only problem with that is the extraction of the properties...
        (defmethod detect-hits ((a ray) (b ,b) hits start end)
          (declare (type (unsigned-byte 32) start end))
          (declare (type (simple-vector ,(1- (ash 1 32)))))
@@ -82,10 +84,10 @@
                  ;; Bring the normal back into global space
                  (n*m4/3 (primitive-transform b) (hit-normal hit))
                  (incf start))))
-           start))
-       
-       (defmethod detect-hits ((a ,b) (b ray) hits start end)
-         (detect-hits b a hits start end)))))
+           start)))))
+
+(defmethod detect-hits (a (b ray) hits start end)
+  (detect-hits b a hits start end))
 
 (define-ray-test sphere ((sphere-radius single-float))
   (let* ((em ray-location)
