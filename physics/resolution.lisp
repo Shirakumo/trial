@@ -13,6 +13,7 @@
 
 (defun hit-basis (hit &optional (basis (mat3)))
   (declare (optimize speed (safety 1)))
+  (declare (type hit hit))
   (let ((normal (hit-normal hit))
         (tangent-0 (vec3 0 0 0))
         (tangent-1 (vec3 0 0 0)))
@@ -66,6 +67,7 @@
 
 (defun desired-delta-velocity (hit velocity dt)
   (declare (optimize speed (safety 1)))
+  (declare (type hit hit))
   (declare (type vec3 velocity))
   (declare (type single-float dt))
   (flet ((acc (entity)
@@ -81,6 +83,7 @@
 
 (defun upgrade-hit-to-contact (hit dt)
   (declare (optimize speed (safety 1)))
+  (declare (type contact hit))
   (declare (type single-float dt))
   (let* ((to-world (hit-basis hit (contact-to-world hit)))
          (a-relative (!v- (contact-a-relative hit) (hit-location hit) (the vec3 (location (hit-a hit)))))
@@ -96,6 +99,7 @@
     hit))
 
 (defun match-awake-state (contact)
+  (declare (type contact contact))
   (let ((a (contact-a contact))
         (b (contact-b contact)))
     (when (and (/= 0 (inverse-mass a))
@@ -106,6 +110,8 @@
           (setf (awake-p a) T)))))
 
 (defun frictionless-impulse (contact &optional (impulse (vec3 0 0 0)))
+  (declare (type contact contact))
+  (declare (type vec3 impulse))
   (declare (optimize speed (safety 1)))
   (flet ((body-delta-vel (loc body)
            (let ((delta-vel (vec3)))
@@ -122,8 +128,9 @@
            0.0)))
 
 (defun frictionful-impulse (contact &optional (impulse (vec3 0 0 0)))
-  (declare (optimize speed (safety 1)))
+  (declare (type contact contact))
   (declare (type vec3 impulse))
+  (declare (optimize speed (safety 1)))
   (flet ((delta-vel (loc inverse-inertia-tensor)
            (declare (type mat3 inverse-inertia-tensor))
            (let* ((impulse-to-torque (mat 0 (- (vz loc)) (vy loc)
@@ -287,6 +294,10 @@
   start)
 
 (defmethod resolve-hits ((system rigidbody-system) contacts start end dt &key (iterations 200))
+  (declare (type (simple-array contact (*)) contacts))
+  (declare (type (unsigned-byte 32) start end iterations))
+  (declare (type single-float dt))
+  (declare (optimize speed))
   (macrolet ((do-contacts ((contact) &body body)
                `(loop for i from start below end
                       for ,contact = (aref contacts i)
@@ -317,13 +328,11 @@
     
     ;; Adjust Positions
     (loop repeat iterations
-          for worst = (depth-eps system)
+          for worst = (the single-float (depth-eps system))
           for contact = NIL
-          for contact-i = -1
           do (do-contacts (tentative)
                (when (< worst (contact-depth tentative))
                  (setf contact tentative)
-                 (setf contact-i i)
                  (setf worst (contact-depth contact))))
              (unless contact (return))
              (match-awake-state contact)
@@ -339,13 +348,11 @@
 
     ;; Adjust Velocities
     (loop repeat iterations
-          for worst = (velocity-eps system) ;; Some kinda epsilon.
+          for worst = (the single-float (velocity-eps system)) ;; Some kinda epsilon.
           for contact = NIL
-          for contact-i = -1
           do (do-contacts (tentative)
                (when (< worst (contact-desired-delta tentative))
                  (setf contact tentative)
-                 (setf contact-i i)
                  (setf worst (contact-desired-delta contact))))
              (unless contact (return))
              (match-awake-state contact)
