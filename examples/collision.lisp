@@ -127,5 +127,5 @@ void main(){
                        :value-set (shapes) :layout-parent layout :focus-parent focus)
       (alloy:enter "Method" layout :row 2 :col 1)
       (alloy:represent (test-method (node :b scene)) 'alloy:combo-set
-                       :value-set '(generic gjk v-clip) :layout-parent layout :focus-parent focus)
+                       :value-set '(generic gjk #|v-clip|#) :layout-parent layout :focus-parent focus)
       (alloy:finish-structure panel layout focus))))
