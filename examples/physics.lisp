@@ -68,16 +68,18 @@
     (wall (vec -10 -5 0) (qfrom-angle +vz+ (/ PI 2)))
     (wall (vec +10 -5 0) (qfrom-angle +vz+ (/ PI 2))))
   
-  (loop for x from -8.5 to +9 by 2.1
-        do (loop for z from -8.5 to +0.0 by 2.1
-                 for sphere = (make-instance 'physics-sphere :location (vec x 2.1 z))
-                 do (enter sphere scene)))
+  (loop for y from 2.1 to 2.1 by 2.1
+        do (loop for x from -8.5 to +9 by 2.1
+                 do (loop for z from -8.5 to +0.0 by 2.1
+                          for sphere = (make-instance 'physics-sphere :location (vec x y z))
+                          do (enter sphere scene))))
 
   (let ((player (make-instance 'physics-player :name :player :location (vec 0 1 +5))))
     (enter player scene)
     (observe! (location player) :title "Location")
     (observe! (velocity player) :title "Velocity")
-    (observe! (rotation player) :title "Rotation"))
+    (observe! (rotation player) :title "Rotation")
+    (observe! (awake-count (physics-system scene)) :title "Awake #"))
   (let ((render (make-instance 'pbr-render-pass))
         (map (make-instance 'ward)))
     (connect (port render 'color) (port map 'previous-pass) scene)))

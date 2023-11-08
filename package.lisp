@@ -270,6 +270,7 @@
    #:hits
    #:sleep-eps
    #:units-per-metre
+   #:awake-count
    #:generate-hits
    #:resolve-hits
    #:physics-scene)
