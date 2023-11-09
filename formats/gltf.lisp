@@ -280,11 +280,16 @@
           for pbr = (gltf:pbr material)
           for name = (or (gltf:name material) (gltf:idx material))
           for mr = (load-image asset (gltf:metallic-roughness pbr))
+          for omr = (load-image asset (gltf:occlusion-metalness-roughness-texture material))
+          for rmo = (load-image asset (gltf:roughness-metallic-occlusion-texture material))
           do (when mr (setf (trial::swizzle mr) '(:b :g :r :a)))
+             (when omr (setf (trial::swizzle omr) '(:g :b :r :a)))
+             (when rmo (setf (trial::swizzle rmo) '(:g :r :b :a)))
              (let ((material (trial:ensure-instance
                               (trial:find-material name model NIL) 'trial:pbr-material
                               :albedo-texture (load-image asset (gltf:albedo pbr))
                               :metal-rough-texture mr
+                              :metal-rough-occlusion-texture (or omr rmo)
                               :occlusion-texture (load-image asset (gltf:occlusion-texture material))
                               :emissive-texture (load-image asset (gltf:emissive-texture material))
                               :normal-texture (load-image asset (gltf:normal-texture material))
