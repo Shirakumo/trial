@@ -52,42 +52,43 @@ exec sbcl --noinform --disable-debugger --load "$0" --eval '(generate)' --quit
 
 ;;;; Compiling documentation pages
 (defun style ()
-  (lass:compile-and-write
-   '(article
-     :max-width 800px
-     :font-size 12pt
-     :font-family sans-serif
-     :margin 0 auto 3em auto
-     (h1
-      :text-align center
-      :font-size 2em)
-     (img
-      :margin 0 auto
-      :max-width 100%)
-     (blockquote
-      :border-left 0.2em solid gray
-      :margin-left 1em
-      :padding-left 1em)
-     (figcaption
-      :padding 0.2em 1em
-      :background (hex E0E0E0))
-     (code
-      :background (hex F0F0F0)
-      :padding 0 0.1em)
-     (.code-block
-      :padding 0.1em 0.5em
-      :overflow-x auto)
-     (a.index
-      :display block
-      :text-decoration none
-      :text-align center
-      :font-size 1.1em
-      :background (hex 151515)
-      :border 2px solid (hex 151515)
-      :color (hex FEFEFE))
-     ((:and a.index :hover)
-      :background (hex FEFEFE)
-      :color (hex 151515)))))
+  (let ((lass:*pretty* NIL))
+    (lass:compile-and-write
+     '(article
+       :max-width 800px
+       :font-size 12pt
+       :font-family sans-serif
+       :margin 0 auto 3em auto
+       (h1
+        :text-align center
+        :font-size 2em)
+       (img
+        :margin 0 auto
+        :max-width 100%)
+       (blockquote
+        :border-left 0.2em solid gray
+        :margin-left 1em
+        :padding-left 1em)
+       (figcaption
+        :padding 0.2em 1em
+        :background (hex E0E0E0))
+       (code
+        :background (hex F0F0F0)
+        :padding 0 0.1em)
+       (.code-block
+        :padding 0.1em 0.5em
+        :overflow-x auto)
+       (a.index
+        :display block
+        :text-decoration none
+        :text-align center
+        :font-size 1.1em
+        :background (hex 151515)
+        :border 2px solid (hex 151515)
+        :color (hex FEFEFE))
+       ((:and a.index :hover)
+        :background (hex FEFEFE)
+        :color (hex 151515))))))
 
 (defun suffix-p (suffix string)
   (and (<= (length suffix) (length string))
