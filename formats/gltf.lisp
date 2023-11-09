@@ -313,6 +313,37 @@
                                :inner-radius (gltf:inner-angle light)
                                :outer-radius (gltf:outer-angle light))))))
 
+(defun load-camera (camera)
+  (etypecase camera
+    (gltf:orthographic-camera
+     (make-instance 'trial:2d-camera :near-plane (gltf:znear camera)
+                                     :far-plane (gltf:zfar camera)))
+    (gltf:perspective-camera
+     (make-instance 'trial:3d-camera :fov (gltf:fov camera)
+                                     :near-plane (gltf:znear camera)
+                                     :far-plane (gltf:zfar camera)))))
+
+(defun load-collider (collider model)
+  (etypecase collider
+    (gltf:box-collider
+     (trial:make-box :bsize (vec (aref (gltf:size collider) 0)
+                                 (aref (gltf:size collider) 1)
+                                 (aref (gltf:size collider) 2))))
+    (gltf:capsule-collider
+     (trial:make-pill :height (gltf:height collider) :radius (gltf:radius collider)))
+    (gltf:convex-collider
+     (let ((mesh (find-mesh (name (gltf:mesh collider)) model)))
+       (trial:make-convex-mesh :vertices (trial:reordered-vertex-data mesh '(trial:location))
+                               :faces (trial:faces mesh))))
+    (gltf:cylinder-collider
+     (trial:make-cylinder :height (gltf:height collider) :radius (gltf:radius collider)))
+    (gltf:sphere-collider
+     (trial:make-sphere :radius (gltf:radius collider)))
+    (gltf:trimesh-collider
+     (let ((mesh (find-mesh (name (gltf:mesh collider)) model)))
+       (trial:make-general-mesh :vertices (trial:reordered-vertex-data mesh '(trial:location))
+                                :faces (trial:faces mesh))))))
+
 (defun load-environment-light (light)
   (make-instance 'trial:environment-light
                  :color (vec (gltf:intensity light) (gltf:intensity light) (gltf:intensity light))
@@ -376,6 +407,8 @@
                        do (recurse (gltf:children node) child)
                           (loop for light across (gltf:lights node)
                                 do (enter (load-light light) child))
+                          (when (gltf:camera node)
+                            (enter (load-camera (gltf:camera node)) node))
                           (enter child container))))
         (loop for node across (gltf:scenes gltf)
               for scene = (make-instance 'basic-node :name (gltf:name node))
