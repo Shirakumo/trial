@@ -148,15 +148,15 @@
   (glfw:swap-buffers context))
 
 (defmethod show-cursor ((context context))
-  (setf (glfw:input-mode :cursor context) :normal)
+  (setf (glfw:input-mode :cursor context) :cursor-normal)
   (setf (cursor-visible context) T))
 
 (defmethod hide-cursor ((context context))
-  (setf (glfw:input-mode :cursor context) :hidden)
+  (setf (glfw:input-mode :cursor context) :cursor-hidden)
   (setf (cursor-visible context) NIL))
 
 (defmethod lock-cursor ((context context))
-  (setf (glfw:input-mode :cursor context) :disabled))
+  (setf (glfw:input-mode :cursor context) :cursor-disabled))
 
 (defmethod unlock-cursor ((context context))
   (if (cursor-visible context)
