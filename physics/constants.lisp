@@ -4,7 +4,7 @@
 
 (defstruct (material-interaction-properties
             (:constructor make-material-interaction-properties
-                (a b &optional (static-friction 0.0) (dynamic-friction 0.0) (restitution 0.5) (friction-combine :average) (restitution-combine :average)))
+                (a b &optional (static-friction 0.0) (dynamic-friction 0.0) (restitution 0.5) (friction-combine NIL) (restitution-combine NIL)))
             (:copier NIL)
             (:predicate NIL))
   (a NIL :type T)
@@ -12,8 +12,8 @@
   (static-friction 0.0 :type single-float)
   (dynamic-friction 0.0 :type single-float)
   (restitution 0.5 :type single-float)
-  (friction-combine :average :type keyword)
-  (restitution-combine :average :type keyword))
+  (friction-combine NIL :type (member :average :minimum :maximum :multiply NIL))
+  (restitution-combine NIL :type (member :average :minimum :maximum :multiply NIL)))
 
 (defmethod print-object ((properties material-interaction-properties) stream)
   (print-unreadable-object (properties stream :type T)
@@ -42,7 +42,7 @@
   (material-interaction-properties-restitution-combine material-interaction-properties))
 
 (defvar *default-material-interaction-properties*
-  (make-material-interaction-properties NIL NIL 0.0 0.0 0.5))
+  (make-material-interaction-properties NIL NIL 0.8 0.8 0.25))
 
 (declaim (ftype (function (material-interaction-properties material-interaction-properties)
                           (values single-float single-float single-float &optional))
@@ -61,8 +61,8 @@
                       (lambda (a b) (max a b)))
                      ((or (eql :multiply a) (eql :multiply b))
                       (lambda (a b) (* a b)))
-                     (T
-                      (error "Unknown combine types: ~a and ~a" a b)))))
+                     (T ;; IF neither have a preference, default to :AVERAGE
+                      (lambda (a b) (* 0.5 (+ a b)))))))
         (values (funcall (combine-function (material-interaction-properties-friction-combine a)
                                            (material-interaction-properties-friction-combine b))
                          (material-interaction-properties-static-friction a)
@@ -119,7 +119,7 @@
                (setf (material-interaction-properties ab) (apply #'make-material-interaction-properties ab NIL args)))))
 
 (set-material-interaction-properties
- '(;;A-----------------|B----------------|static friction--|dynamic friciton-|restitution------|
+ '(#|A-----------------|B----------------|static friction--|dynamic friciton-|restitution-|#
    ((:wood             :wood)             0.5               0.5               0.3)
    ((:wood             :concrete)         0.5               0.4               0.5)
    ((:wood             :ice)              0.2               0.1               0.3)
@@ -131,4 +131,16 @@
    ((:rubber           :concrete)         1.0               0.8               0.9)
    ((:wet-rubber       :concrete)         0.7               0.5               0.85)
    ((:tire             :concrete)         1.5               1.0               0.8)
-   ((:velcro           :velcro)           6.0               4.0               0.0)))
+   ((:velcro           :velcro)           6.0               4.0               0.0)
+   #|A-----------------------------------|static friction--|dynamic friciton-|restitution-|fcomb|rcomb|#
+   (:metal                                0.8               0.8               0.25)
+   (:lubricated-metal                     0.1               0.1               0.15)
+   (:dirt                                 0.8               0.8               0.01)
+   (:wood                                 0.8               0.8               0.1)
+   (:slime                                0.9               0.9               0.1)
+   (:glass                                0.5               0.5               0.2)
+   (:concrete                             0.8               0.8               0.2)
+   (:ice                                  0.1               0.1               0.1)
+   (:rubber                               0.8               0.8               0.2)
+   (:tire                                 1.0               1.0               0.2)
+   (:velcro                               6.0               4.0               0.0          :maximum)))
