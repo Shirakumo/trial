@@ -520,7 +520,9 @@
    #:material
    #:light-cache-render-pass
    #:basic-entity
-   #:basic-animated-entity)
+   #:basic-physics-entity
+   #:basic-animated-entity
+   #:animated-physics-entity)
   ;; renderer/tone-mapping.lisp
   (:export
    #:tone-mapping-pass

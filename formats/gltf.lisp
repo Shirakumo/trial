@@ -439,6 +439,9 @@
                           (when (gltf:camera node)
                             (enter (load-camera (gltf:camera node)) child))
                           (when (gltf:rigidbody node)
+                            (etypecase child
+                              (basic-entity (change-class child 'trial:basic-physics-entity))
+                              (basic-animated-entity (change-class child 'trial:animated-physics-entity)))
                             (setf (trial:mass child) (if (gltf:kinematic-p (gltf:rigidbody node)) 0.0 (gltf:mass (gltf:rigidbody node))))
                             (replace (trial:inertia-tensor child) (gltf:inertia-tensor (gltf:rigidbody node)))
                             (replace (trial:velocity child) (gltf:linear-velocity (gltf:rigidbody node)))
