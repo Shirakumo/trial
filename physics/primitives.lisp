@@ -52,13 +52,14 @@
   (declare (type primitive a))
   (declare (optimize speed))
   #-trial-release (when (v= 0 (hit-normal hit)) (error "Hit normal not set correctly."))
-  (let ((properties (material-interaction-properties
-                     (primitive-material a) (if (typep b 'primitive) (primitive-material b) NIL))))
-    (setf (hit-a hit) (primitive-entity a))
-    (setf (hit-b hit) (if (typep b 'primitive) (primitive-entity b) b))
-    (setf (hit-static-friction hit) (material-interaction-properties-static-friction properties))
-    (setf (hit-dynamic-friction hit) (material-interaction-properties-dynamic-friction properties))
-    (setf (hit-restitution hit) (material-interaction-properties-restitution properties))
+  (setf (hit-a hit) (primitive-entity a))
+  (setf (hit-b hit) (if (typep b 'primitive) (primitive-entity b) b))
+  (multiple-value-bind (static-friction dynamic-friction restitution)
+      (material-interaction-properties
+       (primitive-material a) (if (typep b 'primitive) (primitive-material b) NIL))
+    (setf (hit-static-friction hit) static-friction)
+    (setf (hit-dynamic-friction hit) dynamic-friction)
+    (setf (hit-restitution hit) restitution)
     hit))
 
 (defmacro define-hit-detector ((a b) &body body)
