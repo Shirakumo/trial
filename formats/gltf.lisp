@@ -349,6 +349,30 @@
        (trial:make-general-mesh :vertices (trial:reordered-vertex-data mesh '(trial:location))
                                 :faces (trial:faces mesh))))))
 
+(defun find-colliders (node model)
+  (let ((primitives (make-array 0 :adjustable T :fill-pointer T)))
+    (labels ((recurse (node tf material)
+               (let ((tf (t+ tf (gltf-node-transform node))))
+                 (when (gltf:physics-material node)
+                   ;; FIXME: cache identical materials instead
+                   (setf material (trial:make-material-interaction-properties
+                                   NIL NIL
+                                   (gltf:static-friction (gltf:physics-material node))
+                                   (gltf:dynamic-friction (gltf:physics-material node))
+                                   (gltf:restitution (gltf:physics-material node))
+                                   (gltf:friction-combine (gltf:physics-material node))
+                                   (gltf:restitution-combine (gltf:physics-material node)))))
+                 (when (gltf:collider node)
+                   (let ((primitive (load-collider (gltf:collider node) model)))
+                     (tmat tf (trial:primitive-local-transform primitive))
+                     (setf (trial:primitive-material primitive) material)
+                     (vector-push-extend primitive primitives)))
+                 ;; Collision filtering is ignored for now.
+                 (loop for child across (gltf:children node)
+                       do (recurse child tf material)))))
+      (recurse node (transform) :wood)
+      (trial::simplify primitives))))
+
 (defun load-environment-light (light)
   (make-instance 'trial:environment-light
                  :color (vec (gltf:intensity light) (gltf:intensity light) (gltf:intensity light))
@@ -404,7 +428,7 @@
                                          :mesh mesh-name)))
                        (T
                         (make-instance 'basic-node :transform (gltf-node-transform node)
-                                                              :name (gltf:name node)))))
+                                                   :name (gltf:name node)))))
                (recurse (children container)
                  (loop for node across children
                        for child = (construct node)
@@ -413,7 +437,14 @@
                           (loop for light across (gltf:lights node)
                                 do (enter (load-light light) child))
                           (when (gltf:camera node)
-                            (enter (load-camera (gltf:camera node)) node))
+                            (enter (load-camera (gltf:camera node)) child))
+                          (when (gltf:rigidbody node)
+                            (setf (trial:mass child) (if (gltf:kinematic-p (gltf:rigidbody node)) 0.0 (gltf:mass (gltf:rigidbody node))))
+                            (replace (trial:inertia-tensor child) (gltf:inertia-tensor (gltf:rigidbody node)))
+                            (replace (trial:velocity child) (gltf:linear-velocity (gltf:rigidbody node)))
+                            (replace (trial:rotation child) (gltf:angular-velocity (gltf:rigidbody node)))
+                            ;; Gravity factor is ignored
+                            (setf (trial:physics-primitives child) (find-colliders node model)))
                           (enter child container))))
         (loop for node across (gltf:scenes gltf)
               for scene = (make-instance 'basic-node :name (gltf:name node))
