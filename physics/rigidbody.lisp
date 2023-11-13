@@ -30,6 +30,25 @@
         do (loop for bi across (physics-primitives b)
                  do (detect-hits ai b))))
 
+;; TODO: cache and update when rotating?
+(defmethod global-bsize ((entity rigidbody))
+  (let ((bsize (vec 0 0 0)))
+    (loop for primitive across (physics-primitives entity)
+          for bsize = (global-bsize primitive)
+          for loc = (global-location primitive)
+          do (nvmax bsize (v+ loc bsize) (v- loc bsize)))
+    bsize))
+
+(defmethod 3ds:location ((entity rigidbody))
+  (global-location entity))
+
+(defmethod 3ds:bsize ((entity rigidbody))
+  (global-bsize entity))
+
+(defmethod 3ds:radius ((entity rigidbody))
+  (loop for primitive across (physics-primitives entity)
+        maximize (3ds:radius primitive)))
+
 (defmethod (setf awake-p) :after ((false null) (entity rigidbody))
   (vsetf (rotation entity) 0 0 0))
 
