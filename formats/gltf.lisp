@@ -444,12 +444,15 @@
                               (basic-entity (change-class child 'trial:basic-physics-entity))
                               (basic-animated-entity (change-class child 'trial:animated-physics-entity)))
                             (setf (trial:mass child) (if (gltf:kinematic-p (gltf:rigidbody node)) 0.0 (gltf:mass (gltf:rigidbody node))))
-                            ;; FIXME: implement inertia-orientation
                             ;; FIXME: implement center-of-mass
                             ;; FIXME: implement gravity-factor ???
-                            (loop for e across (gltf:inertia-diagonal (gltf:rigidbody node))
-                                  for i from 0
-                                  do (setf (mcref (trial:inertia-tensor child) i i) e))
+                            (let ((r (qmat (gltf:inertia-orientation (gltf:rigidbody node)))))
+                              (loop for e across (gltf:inertia-diagonal (gltf:rigidbody node))
+                                    for i from 0
+                                    do (setf (mcref (trial:inertia-tensor child) i i) e))
+                              ;; I = R * D * R^-1
+                              (!m* (trial:inertia-tensor child) (trial:inertia-tensor child) (mtranspose r))
+                              (!m* (trial:inertia-tensor child) r (trial:inertia-tensor child)))
                             (replace (trial:velocity child) (gltf:linear-velocity (gltf:rigidbody node)))
                             (replace (trial:rotation child) (gltf:angular-velocity (gltf:rigidbody node)))
                             (setf (trial:physics-primitives child) (find-colliders node model)))
