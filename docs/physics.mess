@@ -55,11 +55,31 @@ Finally, the basic physics system also provides an ``update`` entry function, wh
 The ``physics-system`` is also an ``entity`` and ``listener`` such that it can simply be added into a ``scene`` and automatically manage the timesteps.
 
 ## Material Properties
-Trial ships a small library of known material property constants. These constants describe how two different materials interact with each other, which is used in collision resolution. To access the properties structure, use ``material-interaction-properties`` on a set of materials, usually named by keywords.
+Trial ships a small library of known material property constants. These constants describe how two different materials interact with each other, which is used in collision resolution. To access the properties structure, use ``material-interaction-properties`` on a material or pair of materials, usually named by keywords. It'll return the static friction, dynamic friction, and restitution values, performing the necessary property combination as needed.
 
-The property holds the materials (``a`` and ``b``), the ``static-friction`` and ``dynamic-friction`` factors, and the ``restitution`` (see "Contacts").
+The property holds the material names (``a`` and ``b``), the ``static-friction`` and ``dynamic-friction`` factors, the ``restitution`` (see "Contacts"), and the ``friction-combine`` and ``restitution-combine`` names, which are used if the materials involved don't have specific paired values, and instead need to be dynamically combined. The combination methods are:
 
-You can list the known interactions with ``list-material-interaction-properties``. If a material you would like to use is not provided by default, you can add it with ``set-material-interaction-properties`` (and send us a PR!)
+- ``:average`` Average the two values together
+- ``:minimum`` Pick the minimum of each
+- ``:maximum`` Pick the maximum of each
+- ``:multiply`` Multiply the two together
+- ``NIL`` Don't care
+
+If both materials define a combination method, the precedence is in the order above, with ``:average`` being used if neither care.
+
+You can list the known interactions with ``list-material-interaction-properties``. If a material you would like to use is not provided by default, you can add it with ``set-material-interaction-properties`` (and send us a PR!). The default set includes:
+
+- ``:concrete``
+- ``:dirt``
+- ``:glass``
+- ``:ice``
+- ``:lubricated-metal``
+- ``:metal``
+- ``:rubber``
+- ``:slime``
+- ``:tire``
+- ``:velcro``
+- ``:wood``
 
 You may also set the ``*default-material-interaction-properties*`` which is used if the system attempts to look up any properties that aren't defined explicitly.
 
