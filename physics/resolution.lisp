@@ -131,6 +131,7 @@
   (declare (type contact contact))
   (declare (type vec3 impulse))
   (declare (optimize speed (safety 1)))
+  ;; FIXME: this is fucked up somewhere.
   (flet ((delta-vel (loc inverse-inertia-tensor)
            (declare (type mat3 inverse-inertia-tensor))
            (let* ((impulse-to-torque (mat 0 (- (vz loc)) (vy loc)
