@@ -68,7 +68,9 @@
 (defmethod texture-names ((material pbr-material))
   #(:albedo-texture :metal-rough-occlusion-texture :emission-texture :normal-texture))
 
-(define-material (none pbr-material))
+(define-material (missing pbr-material))
+(define-material (none pbr-material)
+  :albedo-texture (// 'trial 'white))
 
 (define-gl-struct pbr-material-block
   (size NIL :initarg :size :initform 64 :reader size)
