@@ -106,15 +106,11 @@
 (defmethod (setf physics-primitives) :after ((primitives vector) (entity rigidbody))
   (%update-rigidbody-cache entity))
 
-(defmethod (setf physics-primitives) ((primitive general-mesh) (entity rigidbody))
-  (flet ((convert (hull)
-           (make-convex-mesh :vertices (org.shirakumo.fraf.convex-covering:vertices hull)
-                             :faces (org.shirakumo.fraf.convex-covering:faces hull))))
-    ;; General case, assume convexity.
-    (let ((hulls (org.shirakumo.fraf.convex-covering:decompose
-                  (general-mesh-vertices primitive)
-                  (general-mesh-faces primitive))))
-      (setf (physics-primitives entity) (map-into hulls #'convert hulls)))))
+(defmethod (setf physics-primitives) :around ((primitives vector) (entity rigidbody))
+  (let ((primitives (if (find 'general-mesh primitives :key #'type-of)
+                        (convexify primitives)
+                        primitives)))
+    (call-next-method primitives entity)))
 
 (defmethod (setf physics-primitives) ((mesh mesh-data) (entity rigidbody))
   (setf (physics-primitives entity) (make-general-mesh :vertices (reordered-vertex-data mesh '(location))

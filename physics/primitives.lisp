@@ -605,3 +605,19 @@
 
 (defmethod replace-vertex-data (target (primitive primitive) &rest args &key &allow-other-keys)
   (apply #'replace-vertex-data target (coerce-object primitive 'mesh-data) args))
+
+(defun convexify (primitives)
+  (let ((new (make-array 0 :adjustable T :fill-pointer T)))
+    (loop for primitive across primitives
+          do (etypecase primitive
+               ((and general-mesh (not convex-mesh))
+                (let ((hulls (org.shirakumo.fraf.convex-covering:decompose
+                              (general-mesh-vertices primitive)
+                              (general-mesh-faces primitive))))
+                  (loop for hull across hulls
+                        for mesh = (make-convex-mesh :vertices (org.shirakumo.fraf.convex-covering:vertices hull)
+                                                     :faces (org.shirakumo.fraf.convex-covering:faces hull))
+                        do (vector-push-extend mesh new))))
+               (primitive
+                (vector-push-extend primitive new))))
+    (simplify new)))
