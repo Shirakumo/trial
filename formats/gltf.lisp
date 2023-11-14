@@ -335,40 +335,43 @@
                                  (aref (gltf:size shape) 1)
                                  (aref (gltf:size shape) 2))))
     (gltf:capsule-shape
-     (trial:make-pill :height (gltf:height shape) :radius (gltf:radius shape)))
+     (trial:make-pill :height (float (gltf:height shape) 0f0)
+                      :radius (float (gltf:radius shape) 0f0)))
     (gltf:convex-shape
-     (let ((mesh (find-mesh (name (gltf:mesh shape)) model)))
+     (let ((mesh (find-mesh (gltf:name (gltf:mesh shape)) model)))
        (trial:make-convex-mesh :vertices (trial:reordered-vertex-data mesh '(trial:location))
-                               :faces (trial:faces mesh))))
+                               :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 32)))))
     (gltf:cylinder-shape
-     (trial:make-cylinder :height (gltf:height shape) :radius (gltf:radius shape)))
+     (trial:make-cylinder :height (float (gltf:height shape) 0f0)
+                          :radius (float (gltf:radius shape) 0f0)))
     (gltf:sphere-shape
-     (trial:make-sphere :radius (gltf:radius shape)))
+     (trial:make-sphere :radius (float (gltf:radius shape) 0f0)))
     (gltf:trimesh-shape
-     (let ((mesh (find-mesh (name (gltf:mesh shape)) model)))
+     (let ((mesh (find-mesh (gltf:name (gltf:mesh shape)) model)))
        (trial:make-general-mesh :vertices (trial:reordered-vertex-data mesh '(trial:location))
-                                :faces (trial:faces mesh))))))
+                                :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 32)))))))
 
 (defun find-colliders (node model)
   ;; FIXME: implement triggers
   (let ((primitives (make-array 0 :adjustable T :fill-pointer T)))
     (labels ((recurse (node tf material)
                (let ((tf (t+ tf (gltf-node-transform node))))
-                 (when (gltf:physics-material node)
-                   ;; TODO: cache identical materials
-                   (setf material (trial:make-material-interaction-properties
-                                   NIL NIL
-                                   (gltf:static-friction (gltf:physics-material node))
-                                   (gltf:dynamic-friction (gltf:physics-material node))
-                                   (gltf:restitution (gltf:physics-material node))
-                                   (gltf:friction-combine (gltf:physics-material node))
-                                   (gltf:restitution-combine (gltf:physics-material node)))))
                  (when (gltf:collider node)
-                   ;; FIXME: implement collision filtering
-                   (let ((primitive (load-shape (gltf:shape (gltf:collider node)) model)))
-                     (tmat tf (trial:primitive-local-transform primitive))
-                     (setf (trial:primitive-material primitive) material)
-                     (vector-push-extend primitive primitives)))
+                   (let ((collider (gltf:collider node)))
+                     (when (gltf:physics-material collider)
+                       ;; TODO: cache identical materials
+                       (setf material (trial:make-material-interaction-properties
+                                       NIL NIL
+                                       (gltf:static-friction (gltf:physics-material collider))
+                                       (gltf:dynamic-friction (gltf:physics-material collider))
+                                       (gltf:restitution (gltf:physics-material collider))
+                                       (gltf:friction-combine (gltf:physics-material collider))
+                                       (gltf:restitution-combine (gltf:physics-material collider)))))
+                     ;; FIXME: implement collision filtering
+                     (let ((primitive (load-shape (gltf:shape collider) model)))
+                       (tmat tf (trial:primitive-local-transform primitive))
+                       (setf (trial:primitive-material primitive) material)
+                       (vector-push-extend primitive primitives))))
                  (loop for child across (gltf:children node)
                        do (recurse child tf material)))))
       (recurse node (transform) :wood)
@@ -439,6 +442,7 @@
                                 do (enter (load-light light) child))
                           (when (gltf:camera node)
                             (enter (load-camera (gltf:camera node)) child))
+                          ;; FIXME: implement joints
                           (when (gltf:rigidbody node)
                             (etypecase child
                               (basic-entity (change-class child 'trial:basic-physics-entity))
@@ -446,15 +450,18 @@
                             (setf (trial:mass child) (if (gltf:kinematic-p (gltf:rigidbody node)) 0.0 (gltf:mass (gltf:rigidbody node))))
                             ;; FIXME: implement center-of-mass
                             ;; FIXME: implement gravity-factor ???
-                            (let ((r (qmat (gltf:inertia-orientation (gltf:rigidbody node)))))
+                            (let* ((r (gltf:inertia-orientation (gltf:rigidbody node)))
+                                   (r (qmat (quat (aref r 0) (aref r 1) (aref r 2) (aref r 3))))
+                                   (i (mat3)))
                               (loop for e across (gltf:inertia-diagonal (gltf:rigidbody node))
-                                    for i from 0
-                                    do (setf (mcref (trial:inertia-tensor child) i i) e))
+                                    for r from 0
+                                    do (setf (mcref i r r) e))
                               ;; I = R * D * R^-1
-                              (!m* (trial:inertia-tensor child) (trial:inertia-tensor child) (mtranspose r))
-                              (!m* (trial:inertia-tensor child) r (trial:inertia-tensor child)))
-                            (replace (trial:velocity child) (gltf:linear-velocity (gltf:rigidbody node)))
-                            (replace (trial:rotation child) (gltf:angular-velocity (gltf:rigidbody node)))
+                              (!m* i i (mtranspose r))
+                              (!m* i r i)
+                              (setf (trial:inertia-tensor child) i))
+                            (replace (varr (trial:velocity child)) (gltf:linear-velocity (gltf:rigidbody node)))
+                            (replace (varr (trial:rotation child)) (gltf:angular-velocity (gltf:rigidbody node)))
                             (setf (trial:physics-primitives child) (find-colliders node model)))
                           (enter child container))))
         (loop for node across (gltf:scenes gltf)
