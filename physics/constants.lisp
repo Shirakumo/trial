@@ -3,8 +3,8 @@
 (define-global +material-interaction-properties+ (make-hash-table :test 'equal))
 
 (defstruct (material-interaction-properties
-            (:constructor make-material-interaction-properties
-                (a b &optional (static-friction 0.0) (dynamic-friction 0.0) (restitution 0.5) (friction-combine NIL) (restitution-combine NIL)))
+            (:constructor %make-material-interaction-properties
+                (a b static-friction dynamic-friction restitution friction-combine restitution-combine))
             (:copier NIL)
             (:predicate NIL))
   (a NIL :type T)
@@ -14,6 +14,9 @@
   (restitution 0.5 :type single-float)
   (friction-combine NIL :type (member :average :minimum :maximum :multiply NIL))
   (restitution-combine NIL :type (member :average :minimum :maximum :multiply NIL)))
+
+(defun make-material-interaction-properties (a b &optional (static-friction 0.0) (dynamic-friction 0.0) (restitution 0.5) (friction-combine NIL) (restitution-combine NIL))
+  (%make-material-interaction-properties a b (float static-friction 0f0) (float dynamic-friction 0f0) (float restitution 0f0) friction-combine restitution-combine))
 
 (defmethod print-object ((properties material-interaction-properties) stream)
   (print-unreadable-object (properties stream :type T)
