@@ -68,6 +68,8 @@
 (defmethod texture-names ((material pbr-material))
   #(:albedo-texture :metal-rough-occlusion-texture :emission-texture :normal-texture))
 
+(define-material (none pbr-material))
+
 (define-gl-struct pbr-material-block
   (size NIL :initarg :size :initform 64 :reader size)
   (materials (:array (:struct pbr-material) size) :accessor materials))

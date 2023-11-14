@@ -236,7 +236,7 @@
 
 (defmethod (setf mesh) :after ((meshes cons) (renderable per-array-material-renderable))
   (let ((arrays (make-array (length meshes))))
-    (map-into arrays #'material meshes)
+    (map-into arrays (lambda (m) (or (material m) (material 'none))) meshes)
     (setf (materials renderable) arrays)))
 
 (define-shader-pass light-cache-render-pass (standard-render-pass)
