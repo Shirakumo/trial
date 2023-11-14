@@ -355,23 +355,23 @@
   ;; FIXME: implement triggers
   (let ((primitives (make-array 0 :adjustable T :fill-pointer T)))
     (labels ((recurse (node tf material)
+               (when (gltf:collider node)
+                 (let ((collider (gltf:collider node)))
+                   (when (gltf:physics-material collider)
+                     ;; TODO: cache identical materials
+                     (setf material (trial:make-material-interaction-properties
+                                     NIL NIL
+                                     (gltf:static-friction (gltf:physics-material collider))
+                                     (gltf:dynamic-friction (gltf:physics-material collider))
+                                     (gltf:restitution (gltf:physics-material collider))
+                                     (gltf:friction-combine (gltf:physics-material collider))
+                                     (gltf:restitution-combine (gltf:physics-material collider)))))
+                   ;; FIXME: implement collision filtering
+                   (let ((primitive (load-shape (gltf:shape collider) model)))
+                     (tmat tf (trial:primitive-local-transform primitive))
+                     (setf (trial:primitive-material primitive) material)
+                     (vector-push-extend primitive primitives))))
                (let ((tf (t+ tf (gltf-node-transform node))))
-                 (when (gltf:collider node)
-                   (let ((collider (gltf:collider node)))
-                     (when (gltf:physics-material collider)
-                       ;; TODO: cache identical materials
-                       (setf material (trial:make-material-interaction-properties
-                                       NIL NIL
-                                       (gltf:static-friction (gltf:physics-material collider))
-                                       (gltf:dynamic-friction (gltf:physics-material collider))
-                                       (gltf:restitution (gltf:physics-material collider))
-                                       (gltf:friction-combine (gltf:physics-material collider))
-                                       (gltf:restitution-combine (gltf:physics-material collider)))))
-                     ;; FIXME: implement collision filtering
-                     (let ((primitive (load-shape (gltf:shape collider) model)))
-                       (tmat tf (trial:primitive-local-transform primitive))
-                       (setf (trial:primitive-material primitive) material)
-                       (vector-push-extend primitive primitives))))
                  (loop for child across (gltf:children node)
                        do (recurse child tf material)))))
       (recurse node (transform) :wood)
