@@ -7,7 +7,9 @@
 (defmethod print-object ((resource placeholder-resource) stream)
   (let ((asset (generator resource)))
     (print-unreadable-object (resource stream :type T)
-      (format stream "~a/~a[~a]" (name (pool asset)) (name asset) (name resource)))))
+      (if (pool asset)
+          (format stream "~a/~a[~a]" (name (pool asset)) (name asset) (name resource))
+          (format stream "?/~a[~a]" (name asset) (name resource))))))
 
 (defmethod allocated-p ((resource placeholder-resource)) NIL)
 
@@ -35,7 +37,7 @@
 (defclass asset (resource-generator loadable)
   ((pool :initform NIL :accessor pool)
    (name :initform NIL :accessor name)
-   (input :initarg :input :accessor input)
+   (input :initarg :input :initform NIL :accessor input)
    (loaded-p :initform NIL :accessor loaded-p)
    (generation-arguments :initform () :initarg :generation-arguments :accessor generation-arguments)))
 
@@ -65,7 +67,8 @@
     (setf (pool asset) (etypecase pool
                          (symbol (find-pool pool T))
                          (pool pool))))
-  (setf (asset pool name) asset))
+  (when (name asset)
+    (setf (asset pool name) asset)))
 
 (defmethod reinitialize-instance :after ((asset asset) &key)
   (when (loaded-p asset)
