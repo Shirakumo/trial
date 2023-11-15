@@ -111,3 +111,15 @@
 
 (defun launch (&optional example &rest args)
   (apply #'trial:launch 'example :example example args))
+
+#+linux
+(trial::dont-deploy
+ org.shirakumo.file-select.gtk::gmodule
+ org.shirakumo.file-select.gtk::gio
+ org.shirakumo.file-select.gtk::gtk
+ org.shirakumo.file-select.gtk::glib)
+#+darwin
+(trial::dont-deploy
+ org.shirakumo.file-select.macos::foundation
+ org.shirakumo.file-select.macos::appkit
+ org.shirakumo.file-select.macos::cocoa)
