@@ -365,13 +365,13 @@
 (defclass accelerated-rigidbody-system (rigidbody-system)
   ((acceleration-structure :initform (org.shirakumo.fraf.trial.space.kd-tree:make-kd-tree) :accessor acceleration-structure)))
 
-(defmethod register :before ((body rigidbody) (system accelerated-rigidbody-system))
+(defmethod enter :before ((body rigidbody) (system accelerated-rigidbody-system))
   (assert (/= 0 (length (physics-primitives body))))
   (loop with structure = (acceleration-structure system)
         for primitive across (physics-primitives body)
         do (3ds:enter primitive structure)))
 
-(defmethod deregister :after ((body rigidbody) (system accelerated-rigidbody-system))
+(defmethod leave :after ((body rigidbody) (system accelerated-rigidbody-system))
   (loop with structure = (acceleration-structure system)
         for primitive across (physics-primitives body)
         do (3ds:leave primitive structure)))

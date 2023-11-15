@@ -251,16 +251,22 @@
 (defclass physics-scene (scene)
   ((physics-system :initform (make-instance 'physics-system) :accessor physics-system)))
 
-(defmethod enter :after ((thing physics-entity) (scene physics-scene))
+(defmethod register :after ((thing physics-entity) (scene physics-scene))
   (enter thing (physics-system scene)))
 
-(defmethod leave :after ((thing physics-entity) (scene physics-scene))
+(defmethod deregsiter :after ((thing physics-entity) (scene physics-scene))
   (leave thing (physics-system scene)))
 
 (defmethod enter ((thing force) (scene physics-scene))
   (enter thing (physics-system scene)))
 
 (defmethod leave ((thing force) (scene physics-scene))
+  (leave thing (physics-system scene)))
+
+(defmethod register ((thing force) (scene physics-scene))
+  (enter thing (physics-system scene)))
+
+(defmethod deregister ((thing force) (scene physics-scene))
   (leave thing (physics-system scene)))
 
 (defmethod clear :after ((scene physics-scene))
