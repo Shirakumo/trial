@@ -376,7 +376,7 @@
         for primitive across (physics-primitives body)
         do (3ds:leave primitive structure)))
 
-(defmethod start-frame :after ((system accelerated-rigidbody-system))
+(defmethod integrate :after ((system accelerated-rigidbody-system) dt)
   (loop with structure = (acceleration-structure system)
         for object across (%objects system)
         do (loop for primitive across (physics-primitives object)
