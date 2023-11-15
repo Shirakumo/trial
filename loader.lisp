@@ -139,7 +139,13 @@
                        do (case status
                             ((:loaded :allocated)
                              (unless (gethash resource (load-state area))
-                               (deallocate resource)
+                               (typecase resource
+                                 (asset
+                                  (when (loaded-p resource)
+                                    (unload resource)))
+                                 (resource
+                                  (when (allocated-p resource)
+                                    (deallocate resource))))
                                (remhash resource (loaded loader))))))
                  (trivial-garbage:gc :full T))
                (let ((to-load (make-array 0 :adjustable T :fill-pointer T)))
