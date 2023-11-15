@@ -342,8 +342,7 @@
                  (declare (dynamic-extent cross))
                  (incf (contact-depth other)
                        (* sign (v. (nv+ cross velocity-change)
-                                   (contact-normal other))))))
-          finally (v:info :trial.physics "Adjust position overflow"))
+                                   (contact-normal other)))))))
 
     ;; Adjust Velocities
     (loop repeat iterations
@@ -363,8 +362,7 @@
                  (declare (dynamic-extent cross))
                  (nv+* (contact-velocity other) tmp (- sign))
                  (setf (contact-desired-delta other)
-                       (desired-delta-velocity other (contact-velocity other) dt))))
-          finally (v:info :trial.physics "Adjust velocity overflow"))))
+                       (desired-delta-velocity other (contact-velocity other) dt)))))))
 
 (defclass accelerated-rigidbody-system (rigidbody-system)
   ((acceleration-structure :initform (org.shirakumo.fraf.trial.space.kd-tree:make-kd-tree) :accessor acceleration-structure)))
