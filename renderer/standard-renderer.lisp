@@ -84,7 +84,7 @@
       (setf (slot-value buffer 'near-plane) (near-plane camera))
       (setf (slot-value buffer 'far-plane) (far-plane camera))
       (setf (slot-value buffer 'fdt) (float fdt 0f0))
-      (setf (slot-value buffer 'gamma) 2.2))))
+      (setf (slot-value buffer 'gamma) (setting :display :gamma)))))
 
 (defmethod bind-textures ((pass standard-render-pass))
   (call-next-method)
