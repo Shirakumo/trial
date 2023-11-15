@@ -20,6 +20,7 @@
   (declare (optimize speed))
   (declare (type mat4 mat))
   (declare (type vec3 b))
+  (declare (dynamic-extent mat))
   ;; Ignoring the fourth column to eliminate translation
   (with-fast-matref (e mat)
     (let ((x (vx3 b))
@@ -34,6 +35,7 @@
 (defun ntransform-inverse (vec3 mat)
   (declare (optimize speed))
   (declare (type vec3 vec3))
+  (declare (dynamic-extent mat))
   (etypecase mat
     (mat4
      (with-fast-matref (m mat)

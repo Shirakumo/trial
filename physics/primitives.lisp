@@ -216,7 +216,7 @@
 
 (defmethod global-bsize ((primitive box) &optional (target (vec3)))
   (v<- target (box-bsize primitive))
-  (n*m4/3 (primitive-transform primitive) target))
+  (n*m4/3 (mapply (primitive-transform primitive) #'abs) target))
 
 (defmethod 3ds:radius ((primitive box))
   (let ((bsize (box-bsize primitive)))

@@ -31,7 +31,7 @@
   (with-pushed-matrix ()
     (apply-transforms entity)
     (v<- target (bsize entity))
-    (n*m4/3 (model-matrix) target)))
+    (n*m4/3 (mapply (primitive-transform primitive) #'abs) target)))
 
 (defclass oriented-entity (transformed entity)
   ((orientation :initarg :orientation :initform (vec 1 0 0) :accessor orientation)
