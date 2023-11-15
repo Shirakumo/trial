@@ -367,6 +367,7 @@
 
 (defmethod enter :before ((body rigidbody) (system accelerated-rigidbody-system))
   (assert (/= 0 (length (physics-primitives body))))
+  (start-frame body)
   (loop with structure = (acceleration-structure system)
         for primitive across (physics-primitives body)
         do (3ds:enter primitive structure)))
