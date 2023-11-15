@@ -4,6 +4,7 @@
   :title "Load Arbitrary Scenes"
   :superclasses (trial:physics-scene)
   :slots ((physics-system :initform (make-instance 'accelerated-rigidbody-system :units-per-metre 0.1))
+          (incremental-load :initform NIL :accessor incremental-load)
           (file :initform NIL :accessor file))
   (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)
   (enter (make-instance 'editor-camera :location (VEC3 10.0 20 14) :rotation (vec3 0.75 5.5 0.0) :fov 50 :move-speed 0.1) scene)
@@ -26,10 +27,11 @@
           (when file (setf (file scene) file)))))
     (alloy:finish-structure panel layout focus)))
 
-(defmethod (setf file) :after (file (loader scene-loader-scene))
-  (for:for ((entity over (scene +main+)))
-    (when (typep entity 'basic-node)
-      (leave entity T)))
+(defmethod (setf file) :after (file (scene scene-loader-scene))
+  (unless (incremental-load scene)
+    (for:for ((entity over scene))
+      (when (typep entity 'basic-node)
+        (leave entity T))))
   (generate-resources 'model-file file :load-scene T)
   ;; FIXME: auto-fit camera to model
-  (commit loader (loader +main+)))
+  (commit scene (loader +main+)))
