@@ -57,6 +57,8 @@ Settings related to graphics and context. See "context.mess"(link context.mess)
 - ``:display :target-framerate`` What framerate should be targeted (frame throttle). Should default to ``NIL``
 - ``:display :gamma`` The gamma value by which to map from HDR to SDR. Should default to ``2.2``
 - ``:display :ui-scale`` The base scaling of all UI elements. Should default to ``1.0``
+- ``:display :texture :filter`` The texture filtering to use. Can be one of ``:nearest`` ``:linear`` ``:trilinear``. Should default to ``:trilinear``.
+- ``:display :texture :anisotropy`` The anisotropic filtering level to use. Can be any power of two. Should default to ``2``.
 
 ### Gameplay
 General gameplay options and tweaks for the user.

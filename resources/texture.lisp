@@ -26,11 +26,19 @@
 (define-unbound-reader texture levels 1)
 (define-unbound-reader texture samples 1)
 (define-unbound-reader texture internal-format :rgba)
-(define-unbound-reader texture mag-filter :linear)
-(define-unbound-reader texture min-filter :linear-mipmap-linear)
+(define-unbound-reader texture mag-filter
+  (case (setting :display :texture :filter)
+    (:nearest :nearest)
+    (T :linear)))
+(define-unbound-reader texture min-filter
+  (case (setting :display :texture :filter)
+    (:nearest :nearest)
+    (:linear :linear)
+    (T :linear-mipmap-linear)))
 (define-unbound-reader texture mipmap-levels (list 0 10))
 (define-unbound-reader texture mipmap-lod (list -1000 1000 0.0))
-(define-unbound-reader texture anisotropy NIL)
+(define-unbound-reader texture anisotropy
+  (setting :display :texture :anisotropy))
 (define-unbound-reader texture wrapping '(:clamp-to-edge :clamp-to-edge :clamp-to-edge))
 (define-unbound-reader texture border-color (vec 0 0 0 0))
 (define-unbound-reader texture swizzle '(:r :g :b :a))
