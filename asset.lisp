@@ -84,7 +84,7 @@
 
 (defmethod print-object ((asset asset) stream)
   (print-unreadable-object (asset stream :type T)
-    (format stream "~a/~a" (name (pool asset)) (name asset))))
+    (format stream "~a/~a" (when (pool asset) (name (pool asset))) (name asset))))
 
 (defmethod resource ((asset asset) id)
   (error "The asset~%  ~a~%does not hold a resource named~%  ~a"
@@ -107,7 +107,7 @@
 
 (defmethod load :around ((asset asset))
   (unless (loaded-p asset)
-    (v:trace :trial.asset "Loading ~a/~a" (name (pool asset)) (name asset))
+    (v:trace :trial.asset "Loading ~a" asset)
     (with-cleanup-on-failure (deallocate asset)
       (call-next-method))))
 
@@ -116,7 +116,7 @@
 
 (defmethod unload :around ((asset asset))
   (when (loaded-p asset)
-    (v:trace :trial.asset "Unloading ~a/~a" (name (pool asset)) (name asset))
+    (v:trace :trial.asset "Unloading ~a" asset)
     (call-next-method)))
 
 (defmethod unload :after ((asset asset))
