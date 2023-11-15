@@ -15,10 +15,9 @@
     (connect (port render 'color) (port map 'previous-pass) scene)))
 
 (defmethod setup-ui ((scene scene-loader-scene) panel)
-  (let ((layout (make-instance 'alloy:grid-layout :col-sizes '(120 140 T) :row-sizes '(30)))
+  (let ((layout (make-instance 'alloy:grid-layout :col-sizes '(140 T) :row-sizes '(30)))
         (focus (make-instance 'alloy:vertical-focus-list)))
-    (alloy:enter "Load File" layout :row 0 :col 0)
-    (let ((button (alloy:represent "..." 'alloy:button :layout-parent layout :focus-parent focus)))
+    (let ((button (alloy:represent "Load File" 'alloy:button :layout-parent layout :focus-parent focus)))
       (alloy:on alloy:activate (button)
         (let ((file (org.shirakumo.file-select:existing :title "Load Model File..."
                                                         :filter '(("glTF Binary" "glb")
@@ -32,4 +31,5 @@
     (when (typep entity 'basic-node)
       (leave entity T)))
   (generate-resources 'model-file file :load-scene T)
+  ;; FIXME: auto-fit camera to model
   (commit loader (loader +main+)))
