@@ -19,7 +19,8 @@
                (:file "pbr")
                (:file "selection")
                (:file "physics")
-               (:file "convex-physics"))
+               (:file "convex-physics")
+               (:file "scene-loader"))
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
                :trial-theora

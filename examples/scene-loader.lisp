@@ -28,5 +28,8 @@
     (alloy:finish-structure panel layout focus)))
 
 (defmethod (setf file) :after (file (loader scene-loader-scene))
-  (generate-resources 'model-loader file :load-scene T)
+  (for:for ((entity over (scene +main+)))
+    (when (typep entity 'basic-node)
+      (leave entity T)))
+  (generate-resources 'model-file file :load-scene T)
   (commit loader (loader +main+)))
