@@ -1,5 +1,11 @@
 (in-package #:org.shirakumo.fraf.trial)
 
+(declaim (inline /*))
+(defun /* (a b)
+  (if (<= (abs b) 0.0000001f0)
+      0.0
+      (/ a b)))
+
 (declaim (inline mcol3))
 (defun mcol3 (mat n &optional (vec (vec3 0 0 0)))
   (declare (type mat4 mat))
