@@ -204,7 +204,7 @@
 (define-primitive-type (half-space plane))
 
 (defmethod global-bsize ((primitive half-space) &optional (target (vec3)))
-  (vsetf target most-positive-single-float))
+  (v<- target most-positive-single-float))
 
 ;; NOTE: the box is centred at 0,0,0 and the bsize is the half-size along each axis.
 (define-primitive-type box
