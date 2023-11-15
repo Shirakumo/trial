@@ -2,7 +2,25 @@
 
 (defvar *save-settings* T)
 (define-global +settings-observers+ (make-hash-table :test 'equal))
-(define-global +settings+ '(:language "eng"))
+(define-global +settings+ '(:audio (:latency 0.005
+                                    :backend :default
+                                    :device :default
+                                    :volume (:master 0.5
+                                             :effect 1.0
+                                             :music 1.0))
+                            :display (:resolution (T T)
+                                      :fullscreen T
+                                      :vsync T
+                                      :target-framerate :none
+                                      :gamma 2.2
+                                      :ui-scale 1.0
+                                      :texture (:filter :trilinear :anisotropy 2))
+                            :gameplay (:rumble 1.0
+                                       :screen-shake 1.0
+                                       :fov 75)
+                            :language :system
+                            :debugging (:swank NIL
+                                        :fps-counter NIL)))
 
 (defun setting-file-path ()
   (make-pathname :name "settings" :type "lisp"
