@@ -39,8 +39,7 @@
     (with-retry-restart (retry "Retry loading the model source.")
       (let ((model (apply #'load-model input T :generator loader args)))
         (flet ((load-scene (value)
-                 (sequences:dosequence (entity value)
-                   (enter (leave entity T) (scene +main+)))))
+                 (enter value (scene +main+))))
           (etypecase load-scene
             (null)
             ((eql T)
