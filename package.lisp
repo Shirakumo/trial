@@ -1152,6 +1152,9 @@
    #:hash-table-container)
   ;; helpers.lisp
   (:export
+   #:global-location
+   #:global-bsize
+   #:global-bbox
    #:located-entity
    #:location
    #:sized-entity

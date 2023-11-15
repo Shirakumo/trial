@@ -39,6 +39,16 @@
         do (nvmax target (v+ loc bsize) (v- loc bsize)))
   target)
 
+(defmethod global-bbox ((entity rigidbody))
+  (let ((primitives (physics-primitives entity)))
+    (destructuring-bind (min . max) (aref primitives 0)
+      (loop for i from 1 below (length primitives)
+            for primitive = (aref primitives i)
+            for (p-min . p-max) = (global-bbox primitive)
+            do (nvmin min p-min)
+               (nvmax max p-max))
+      (cons min max))))
+
 (defmethod 3ds:location ((entity rigidbody))
   (global-location entity))
 
