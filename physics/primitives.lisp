@@ -174,10 +174,8 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~f" (radius primitive))))
 
-(defmethod global-bsize ((primitive sphere))
-  (vec (sphere-radius primitive)
-       (sphere-radius primitive)
-       (sphere-radius primitive)))
+(defmethod global-bsize ((primitive sphere) &optional (target (vec3)))
+  (v<- target (sphere-radius primitive)))
 
 (defmethod 3ds:radius ((primitive sphere))
   (sphere-radius primitive))
@@ -190,23 +188,23 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~a ~f" (normal primitive) (offset primitive))))
 
-(defmethod global-bsize ((primitive plane))
+(defmethod global-bsize ((primitive plane) &optional (target (vec3)))
   (cond ((v= +vx3+ (vabs (plane-normal primitive)))
-         (vec 1.0 most-positive-single-float most-positive-single-float))
+         (vsetf target 1.0 most-positive-single-float most-positive-single-float))
         ((v= +vy3+ (vabs (plane-normal primitive)))
-         (vec most-positive-single-float 1.0 most-positive-single-float))
+         (vsetf target most-positive-single-float 1.0 most-positive-single-float))
         ((v= +vz3+ (vabs (plane-normal primitive)))
-         (vec most-positive-single-float most-positive-single-float 1.0))
+         (vsetf target most-positive-single-float most-positive-single-float 1.0))
         (T ;; The plane is slightly tilted, so its bsize is infinite.
-         (vec most-positive-single-float most-positive-single-float most-positive-single-float))))
+         (vsetf target most-positive-single-float most-positive-single-float most-positive-single-float))))
 
 (defmethod 3ds:radius ((primitive plane))
   most-positive-single-float)
 
 (define-primitive-type (half-space plane))
 
-(defmethod global-bsize ((primitive half-space))
-  (vec most-positive-single-float most-positive-single-float most-positive-single-float))
+(defmethod global-bsize ((primitive half-space) &optional (target (vec3)))
+  (vsetf target most-positive-single-float))
 
 ;; NOTE: the box is centred at 0,0,0 and the bsize is the half-size along each axis.
 (define-primitive-type box
@@ -216,27 +214,9 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~a" (bsize primitive))))
 
-(defmethod global-bsize ((primitive box))
-  (let ((vmin (vec3)) (vmax (vec3)) (tmp (vec3))
-        (bsize (box-bsize primitive)))
-    (declare (dynamic-extent vmin tmp))
-    (flet ((test (x y z)
-             (vsetf tmp
-                    (* x (vx bsize))
-                    (* y (vy bsize))
-                    (* z (vz bsize)))
-             (n*m (primitive-transform primitive) tmp)
-             (nvmin vmin tmp)
-             (nvmax vmax tmp)))
-      (test +1f0 +1f0 +1f0)
-      (test -1f0 +1f0 +1f0)
-      (test +1f0 -1f0 +1f0)
-      (test -1f0 -1f0 +1f0)
-      (test +1f0 +1f0 -1f0)
-      (test -1f0 +1f0 -1f0)
-      (test +1f0 -1f0 -1f0)
-      (test -1f0 -1f0 -1f0)
-      (nv* (nv- vmax vmin) 0.5))))
+(defmethod global-bsize ((primitive box) &optional (target (vec3)))
+  (v<- target (box-bsize primitive))
+  (n*m4/3 (primitive-transform primitive) target))
 
 (defmethod 3ds:radius ((primitive box))
   (let ((bsize (box-bsize primitive)))
@@ -266,13 +246,14 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~f ~f" (radius primitive) (height primitive))))
 
-(defmethod global-bsize ((primitive cylinder))
+(defmethod global-bsize ((primitive cylinder) &optional (target (vec3)))
   (let ((dir (n*m4/3 (primitive-transform primitive) (vec 0 1 0)))
         (h (cylinder-height primitive))
         (r (cylinder-radius primitive)))
-    (vec (+ (* (vx dir) h) (* 2 r (sqrt (- 1 (* (vx dir) (vx dir))))))
-         (+ (* (vy dir) h) (* 2 r (sqrt (- 1 (* (vy dir) (vy dir))))))
-         (+ (* (vz dir) h) (* 2 r (sqrt (- 1 (* (vz dir) (vz dir)))))))))
+    (vsetf target
+           (+ (* (vx dir) h) (* 2 r (sqrt (- 1 (* (vx dir) (vx dir))))))
+           (+ (* (vy dir) h) (* 2 r (sqrt (- 1 (* (vy dir) (vy dir))))))
+           (+ (* (vz dir) h) (* 2 r (sqrt (- 1 (* (vz dir) (vz dir)))))))))
 
 (defmethod 3ds:radius ((primitive cylinder))
   (sqrt (+ (expt (cylinder-radius primitive) 2)
@@ -288,14 +269,15 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~f ~f" (radius primitive) (height primitive))))
 
-(defmethod global-bsize ((primitive pill))
+(defmethod global-bsize ((primitive pill) &optional (target (vec3)))
   (let ((dir (n*m4/3 (primitive-transform primitive) (vec 0 1 0)))
         (h (pill-height primitive))
         (r (pill-radius primitive)))
     ;; FIXME: this is not quite correct and the bounding box is over-big, but w/e.
-    (vec (+ r (* (vx dir) h) (* 2 r (sqrt (- 1 (* (vx dir) (vx dir))))))
-         (+ r (* (vy dir) h) (* 2 r (sqrt (- 1 (* (vy dir) (vy dir))))))
-         (+ r (* (vz dir) h) (* 2 r (sqrt (- 1 (* (vz dir) (vz dir)))))))))
+    (vsetf target
+           (+ r (* (vx dir) h) (* 2 r (sqrt (- 1 (* (vx dir) (vx dir))))))
+           (+ r (* (vy dir) h) (* 2 r (sqrt (- 1 (* (vy dir) (vy dir))))))
+           (+ r (* (vz dir) h) (* 2 r (sqrt (- 1 (* (vz dir) (vz dir)))))))))
 
 (defmethod 3ds:radius ((primitive pill))
   (+ (pill-height primitive) (pill-radius primitive)))
@@ -309,7 +291,7 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~a ~a ~a" (a primitive) (b primitive) (c primitive))))
 
-(defmethod global-bsize ((primitive triangle))
+(defmethod global-bsize ((primitive triangle) &optional (target (vec3)))
   (let ((vmin (vec3)) (vmax (vec3)) (tmp (vec3)))
     (declare (dynamic-extent vmin tmp))
     (flet ((test (vec)
@@ -319,7 +301,7 @@
       (test (triangle-a primitive))
       (test (triangle-b primitive))
       (test (triangle-c primitive))
-      (nv* (nv- vmax vmin) 0.5))))
+      (nv* (!v- target vmax vmin) 0.5))))
 
 (defmethod 3ds:radius ((primitive triangle))
   (sqrt (max (vsqrlength (triangle-a primitive))
@@ -338,7 +320,7 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~d tris" (truncate (length (faces primitive)) 3))))
 
-(defmethod global-bsize ((primitive general-mesh))
+(defmethod global-bsize ((primitive general-mesh) &optional (target (vec3)))
   (let ((vmin (vec3)) (vmax (vec3)) (tmp (vec3))
         (vertices (general-mesh-vertices primitive)))
     (declare (dynamic-extent vmin tmp))
@@ -350,7 +332,7 @@
              (n*m (primitive-transform primitive) tmp)
              (vmin vmin tmp)
              (vmax vmax tmp))
-    (nv* (nv- vmax vmin) 0.5)))
+    (nv* (!v- target vmax vmin) 0.5)))
 
 (defmethod 3ds:radius ((primitive general-mesh))
   ;; NOTE: because we cannot move the location of the fitting sphere to be

@@ -16,6 +16,12 @@
 (defclass sized-entity (entity)
   ((bsize :initarg :bsize :initform (vec 0 0 0) :accessor bsize :reader 3ds:bsize)))
 
+(defmethod global-bsize ((entity sized-entity) &optional (target (vec3)))
+  (with-pushed-matrix ()
+    (apply-transforms entity)
+    (v<- target (bsize entity))
+    (n*m4/3 (model-matrix) target)))
+
 (defclass oriented-entity (transformed entity)
   ((orientation :initarg :orientation :initform (vec 1 0 0) :accessor orientation)
    (up :initarg :up :initform (vec 0 1 0) :accessor up)))

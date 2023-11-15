@@ -31,13 +31,13 @@
                  do (detect-hits ai b))))
 
 ;; TODO: cache and update when rotating?
-(defmethod global-bsize ((entity rigidbody))
-  (let ((bsize (vec 0 0 0)))
-    (loop for primitive across (physics-primitives entity)
-          for bsize = (global-bsize primitive)
-          for loc = (global-location primitive)
-          do (nvmax bsize (v+ loc bsize) (v- loc bsize)))
-    bsize))
+(defmethod global-bsize ((entity rigidbody) &optional (target (vec3)))
+  (v<- target 0)
+  (loop for primitive across (physics-primitives entity)
+        for bsize = (global-bsize primitive)
+        for loc = (global-location primitive)
+        do (nvmax target (v+ loc bsize) (v- loc bsize)))
+  target)
 
 (defmethod 3ds:location ((entity rigidbody))
   (global-location entity))
