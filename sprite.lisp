@@ -78,7 +78,7 @@
   (unless (animation sprite)
     (setf (animation sprite) 0)))
 
-(defmethod stage :after ((sprite animated-sprite) (area staging-area))
+(defmethod stage :before ((sprite animated-sprite) (area staging-area))
   (register-load-observer area sprite (sprite-data sprite)))
 
 (defmethod observe-load-state ((sprite animated-sprite) (data sprite-data) (state (eql :loaded)) (area staging-area))

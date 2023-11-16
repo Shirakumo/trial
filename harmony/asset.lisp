@@ -74,6 +74,9 @@
   (unless (typep (trial:resource sound T) 'trial:placeholder-resource)
     (apply #'trial:generate-resources sound (trial:input* sound) (trial::generation-arguments sound))))
 
+(defmethod trial:unload ((sound sound))
+  ())
+
 (defclass environment-loader (trial:compiled-generator)
   ())
 
@@ -109,6 +112,9 @@
 
 (defmethod trial:reload ((asset environment))
   )
+
+(defmethod trial:unload ((environment environment))
+  ())
 
 (defmethod trial:coerce-asset-input ((asset environment) (input string))
   (trial:coerce-asset-input asset (pathname input)))
@@ -163,6 +169,10 @@
 
 (defmethod trial:allocated-p ((voice voice))
   (not (null (voice voice))))
+
+(defmethod trial:unload ((voice voice))
+  (when (trial:allocated-p voice)
+    (trial:deallocate voice)))
 
 (defmethod harmony:play ((voice voice) &key reset location velocity (volume (mixed:volume voice)) (min-distance (mixed:min-distance voice)) (max-distance (mixed:max-distance voice)))
   (let ((voice (or (voice voice)
