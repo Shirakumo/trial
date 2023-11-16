@@ -118,7 +118,8 @@
           (%gl:draw-elements-instanced vertex-form vertex-count (element-type (indexed-p array)) vertex-start instances)
           (%gl:draw-arrays-instanced vertex-form vertex-start vertex-count instances))
       (if (indexed-p array)
-          (%gl:draw-elements vertex-form vertex-count (element-type (indexed-p array)) 0)
+          (%gl:draw-elements vertex-form vertex-count (element-type (indexed-p array))
+                             (* vertex-start (gl-type-size (element-type (index-buffer array)))))
           (%gl:draw-arrays vertex-form vertex-start vertex-count)))
   (deactivate array))
 
