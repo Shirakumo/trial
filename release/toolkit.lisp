@@ -1,26 +1,27 @@
 (in-package #:org.shirakumo.fraf.trial.release)
 
 (defparameter *config*
-  '(:build (:features ()
-            :build-arguments ()
-            :dynamic-space-size 4096
-            :linux "sbcl-lin"
-            :windows "sbcl-win"
-            :macos "sbcl-mac"
-            :targets (:linux :windows)
-            :prune ()
-            :copy ())
-    :upload (:targets (:steam))
-    :depots (:all ("**/*.*"))
-    :bundles (:default (:depots T :file-format "~a-~*~a"))
-    :itch (:user "CONFIGURE-ME"
-           :project NIL)
-    :steam (:branch "default"
-            :preview NIL
-            :user "CONFIGURE-ME"
-            :password NIL)
-    :system "CONFIGURE-ME"
-    :output "CONFIGURE-ME"))
+  (copy-tree
+   '(:build (:features ()
+             :build-arguments ()
+             :dynamic-space-size 4096
+             :linux "sbcl-lin"
+             :windows "sbcl-win"
+             :macos "sbcl-mac"
+             :targets (:linux :windows)
+             :prune ()
+             :copy ())
+     :upload (:targets (:steam))
+     :depots (:all ("**/*.*"))
+     :bundles (:default (:depots T :file-format "~a-~*~a"))
+     :itch (:user "CONFIGURE-ME"
+            :project NIL)
+     :steam (:branch "default"
+             :preview NIL
+             :user "CONFIGURE-ME"
+             :password NIL)
+     :system "CONFIGURE-ME"
+     :output "CONFIGURE-ME")))
 
 (defun map-leaf-config (function &optional (config *config*))
   (labels ((recurse (node rpath)
