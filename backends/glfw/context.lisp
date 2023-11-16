@@ -388,7 +388,7 @@
   (%glfw:get-key-name (key->glfw-key key) 0))
 
 (defmethod current-monitor ((context context))
-  (glfw:monitor context))
+  (change-class (glfw:monitor context) 'monitor))
 
 (defmethod current-video-mode ((monitor monitor))
   (let ((mode (glfw:video-mode monitor)))
