@@ -1,7 +1,7 @@
 (in-package #:org.shirakumo.fraf.trial.glfw)
 
 (defclass monitor (trial:monitor glfw:monitor)
-  ((pointer :initarg :pointer :reader pointer)))
+  ())
 
 (defmethod name ((monitor monitor))
   (handler-case (glfw:name monitor)
@@ -130,7 +130,7 @@
              (when (eql T w)
                (destructuring-bind (cw ch cr cm) (current-video-mode monitor)
                  (setf w cw h ch r cr)))
-             (setf (glfw:monitor context) (list (when fullscreen (pointer monitor)) :width w :height h :refresh-rate r))))
+             (setf (glfw:monitor context) (list (when fullscreen monitor) :width w :height h :refresh-rate r))))
          (unless fullscreen
            (glfw:center context)))
         (mode
