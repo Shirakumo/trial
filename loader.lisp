@@ -58,14 +58,18 @@
     (stage (generator object) area)))
 
 (defmethod stage ((object resource) (area staging-area))
-  (unless (allocated-p object)
-    (allocate object))
-  (change-state area object :allocated))
+  (cond ((allocated-p object)
+         (change-state area object :was-allocated))
+        (T
+         (allocate object)
+         (change-state area object :allocated))))
 
 (defmethod stage ((object asset) (area staging-area))
-  (unless (loaded-p object)
-    (load object))
-  (change-state area object :loaded))
+  (cond ((loaded-p object)
+         (change-state area object :was-loaded))
+        (T
+         (load object)
+         (change-state area object :loaded))))
 
 (defmethod stage ((other staging-area) (area staging-area))
   (loop for resource being the hash-keys of (load-state other) using (hash-value state)
@@ -77,6 +81,7 @@
 
 (defmethod unstage ((object asset) (area staging-area))
   (unload object)
+  (deallocate object)
   (change-state area object NIL))
 
 (defmethod abort-commit ((area staging-area))
@@ -97,11 +102,15 @@
 (defgeneric progress (loader so-far total))
 
 (defmethod finalize ((loader loader))
-  (loop for resource being the hash-keys of (loaded loader) using (hash-value status)
-        do (case status
-             ((:loaded :allocated)
-              (when (loaded-p resource)
-                (deallocate resource)))))
+  (loop for loadable being the hash-keys of (loaded loader)
+        do (typecase loadable
+             (resource
+              (when (allocated-p loadable)
+                (deallocate loadable)))
+             (asset
+              (when (loaded-p loadable)
+                (unload loadable))
+              (deallocate loadable))))
   (clrhash (loaded loader)))
 
 (defmethod progress ((loader loader) so-far total))
@@ -148,6 +157,11 @@
                                     (deallocate resource))))
                                (remhash resource (loaded loader))))))
                  (trivial-garbage:gc :full T))
+               ;; Persist load state into loader
+               (loop for loadable being the hash-keys of (load-state area) using (hash-value status)
+                     do (case status
+                          ((:loaded :allocated)
+                           (setf (gethash loadable (loaded loader)) status))))
                (let ((to-load (make-array 0 :adjustable T :fill-pointer T)))
                  (loop for resource being the hash-keys of (load-state area) using (hash-value status)
                        do (when (typep resource 'loadable)
