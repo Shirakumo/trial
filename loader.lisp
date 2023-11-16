@@ -16,16 +16,22 @@
 (defmethod observe-load-state (object changing new-state (area staging-area)))
 
 (defmethod change-state ((area staging-area) object new-state)
-  (setf (gethash object (load-state area)) new-state)
-  (loop for observer in (gethash object (observers area))
-        do (observe-load-state observer object new-state area)))
+  (let ((normalized-state (ecase new-state
+                            ((:loaded :was-loaded) :loaded)
+                            ((:allocated :was-allocated) :allocated)
+                            ((NIL) NIL))))
+    (setf (gethash object (load-state area)) new-state)
+    (loop for observer in (gethash object (observers area))
+          do (observe-load-state observer object normalized-state area))))
 
 (defmethod register-load-observer ((area staging-area) observer changing)
   (unless (member observer (gethash changing (observers area)))
     (push observer (gethash changing (observers area)))
     ;; Backfill for current state if registration occurs live.
     (let ((state (gethash changing (load-state area))))
-      (when state (observe-load-state observer changing state area)))))
+      (case state
+        ((:loaded :was-loaded) (observe-load-state observer changing :loaded area))
+        ((:allocated :was-allocated) (observe-load-state observer changing :allocated area))))))
 
 (defmethod restage (object (area staging-area))
   (setf (gethash object (load-state area)) NIL)
