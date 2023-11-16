@@ -131,7 +131,7 @@
   (gl:clear-color 0 0 0 0)
   (trial:activate (trial:framebuffer pass))
   (trial:with-pushed-features
-    (trial:enable-feature :depth-test)
+    (trial:enable-feature :depth-test :stencil-test)
     (call-next-method)))
 
 ;; KLUDGE: No idea why this is necessary, fuck me.

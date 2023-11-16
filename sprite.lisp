@@ -67,16 +67,16 @@
 (defmethod initialize-instance :after ((sprite animated-sprite) &key)
   (let ((sprite-data (sprite-data sprite)))
     (when sprite-data
-      (setf (texture sprite) (resource sprite-data 'texture))
-      (setf (vertex-array sprite) (resource sprite-data 'vertex-array)))))
+      (setf (sprite-data sprite) sprite-data))))
 
 (defmethod (setf sprite-data) :after ((data sprite-data) (sprite animated-sprite))
   (setf (texture sprite) (resource data 'texture))
   (setf (vertex-array sprite) (resource data 'vertex-array))
-  (setf (animations sprite) (animations data))
-  (setf (frames sprite) (frames data))
-  (unless (animation sprite)
-    (setf (animation sprite) 0)))
+  (when (loaded-p data)
+    (setf (frames sprite) (frames data))
+    (setf (animations sprite) (animations data))
+    (unless (animation sprite)
+      (setf (animation sprite) 0))))
 
 (defmethod stage :before ((sprite animated-sprite) (area staging-area))
   (register-load-observer area sprite (sprite-data sprite)))
