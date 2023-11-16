@@ -451,15 +451,15 @@
   (shader-program pass))
 
 (defmethod render ((pass single-shader-pass) (_ null))
-  (let ((framebuffer (framebuffer pass)))
-    (activate framebuffer)
-    (bind-textures pass)
-    (render pass (shader-program pass))
-    (deactivate framebuffer)))
+  (bind-textures pass)
+  (render pass (shader-program pass)))
 
 (defmethod render :around ((pass single-shader-pass) (program shader-program))
-  (prepare-pass-program pass program)
-  (call-next-method))
+  (let ((framebuffer (framebuffer pass)))
+    (activate framebuffer)
+    (prepare-pass-program pass program)
+    (call-next-method)
+    (deactivate framebuffer)))
 
 (define-shader-pass post-effect-pass (single-shader-pass)
   ((vertex-array :initform (// 'trial 'fullscreen-square) :accessor vertex-array)))
