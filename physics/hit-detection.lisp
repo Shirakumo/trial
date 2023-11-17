@@ -113,41 +113,17 @@
       (nv+* (hit-location hit) (hit-normal hit) (- (sphere-radius a)))
       (finish-hit))))
 
-(define-hit-detector (cylinder sphere)
-  ;; We embiggen the sphere by the cylinder's radius, and then pretend the cylinder is
-  ;; a ray
-  (let ((atf (primitive-transform a))
-        (r (global-location b))
-        (d (n*m4/3 (primitive-transform b) (vec 0 (* (cylinder-height a) 2) 0))))
-    (nv+* r d (- 0.5))
-    (n*m atf r)
-    (n*m4/3 atf d)
-    (let ((tt (ray-sphere-p r d (sphere-radius b) (hit-normal hit))))
-      (when (and tt (< 0.0 tt))
-        ;; Compute the location in A's reference frame, then transform back.
-        (v<- (hit-location hit) r)
-        (nv+* (hit-location hit) d tt)
-        (ntransform-inverse (hit-location hit) atf)
-        (ntransform-inverse (hit-normal hit) atf)
-        (finish-hit)))))
+#++
+(define-hit-detector (sphere cylinder)
+  ;; IDEA: We embiggen the sphere by the cylinder's radius, and then pretend
+  ;;       the cylinder is a ray
+  )
 
+#++
 (define-hit-detector (cylinder cylinder)
-  ;; Similar to the cylinder-sphere test we can embiggen one cylinder and then just do
-  ;; a ray test
-  (let ((atf (primitive-transform a))
-        (r (global-location b))
-        (d (n*m4/3 (primitive-transform b) (vec 0 (* (cylinder-height b) 2) 0))))
-    (nv+* r d (- 0.5))
-    (n*m atf r)
-    (n*m4/3 atf d)
-    (let ((tt (ray-cylinder-p r d (cylinder-height a) (cylinder-radius a) (hit-normal hit))))
-      (when (and tt (< 0.0 tt))
-        ;; Compute the location in A's reference frame, then transform back.
-        (v<- (hit-location hit) r)
-        (nv+* (hit-location hit) d tt)
-        (ntransform-inverse (hit-location hit) atf)
-        (ntransform-inverse (hit-normal hit) atf)
-        (finish-hit)))))
+  ;; IDEA: Similar to the cylinder-sphere test we can embiggen one cylinder and
+  ;;       then just do a ray test
+  )
 
 (define-hit-detector (box half-space)
   (let* ((bs (box-bsize a))
