@@ -336,14 +336,16 @@
                                  (* 0.5 (aref (gltf:size shape) 2)))))
     (gltf:capsule-shape
      (trial:make-pill :height (float (gltf:height shape) 0f0)
-                      :radius (float (gltf:radius shape) 0f0)))
+                      :radius (max (float (gltf:radius-top shape) 0f0)
+                                   (float (gltf:radius-bottom shape) 0f0))))
     (gltf:convex-shape
      (let ((mesh (find-mesh (gltf:name (gltf:mesh shape)) model)))
        (trial:make-convex-mesh :vertices (trial:reordered-vertex-data mesh '(trial:location))
                                :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 32)))))
     (gltf:cylinder-shape
      (trial:make-cylinder :height (float (gltf:height shape) 0f0)
-                          :radius (float (gltf:radius shape) 0f0)))
+                          :radius (max (float (gltf:radius-top shape) 0f0)
+                                       (float (gltf:radius-bottom shape) 0f0))))
     (gltf:sphere-shape
      (trial:make-sphere :radius (float (gltf:radius shape) 0f0)))
     (gltf:trimesh-shape
