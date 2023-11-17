@@ -331,9 +331,9 @@
 (defun load-shape (shape model)
   (etypecase shape
     (gltf:box-shape
-     (trial:make-box :bsize (vec (aref (gltf:size shape) 0)
-                                 (aref (gltf:size shape) 1)
-                                 (aref (gltf:size shape) 2))))
+     (trial:make-box :bsize (vec (* 0.5 (aref (gltf:size shape) 0))
+                                 (* 0.5 (aref (gltf:size shape) 1))
+                                 (* 0.5 (aref (gltf:size shape) 2)))))
     (gltf:capsule-shape
      (trial:make-pill :height (float (gltf:height shape) 0f0)
                       :radius (float (gltf:radius shape) 0f0)))
