@@ -452,8 +452,8 @@
             for i1 = (- step) then i2
             for i2 from 0 to F-2PI by step
             do ;; Bottom disc
-            (v 0.0            (- h) 0.0)
             (v (* s (cos i2)) (- h) (* s (sin i2)))
+            (v 0.0            (- h) 0.0)
             (v (* s (cos i1)) (- h) (* s (sin i1)))
             ;; Top Disc
             (v 0.0            (+ h) 0.0)
