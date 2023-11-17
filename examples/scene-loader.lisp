@@ -16,7 +16,8 @@
   (observe! (paused-p scene) :title "Pause [P]")
   (let ((render (make-instance 'pbr-render-pass))
         (map (make-instance 'ward)))
-    (connect (port render 'color) (port map 'previous-pass) scene)))
+    (connect (port render 'color) (port map 'previous-pass) scene))
+  (setf (file scene) (input* (assets:asset :physics-test))))
 
 (defmethod setup-ui ((scene scene-loader-scene) panel)
   (let ((layout (make-instance 'alloy:grid-layout :col-sizes '(T 140) :row-sizes '(30)))
