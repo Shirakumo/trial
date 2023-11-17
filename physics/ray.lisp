@@ -62,7 +62,9 @@
            (v<- ray-direction (ray-direction a))
            (v<- ray-location (ray-location a))
            ;; Bring the ray into the local transform space of the primitive
-           (let ((local (minv (primitive-transform b))))
+           (let ((local (mat4)))
+             (declare (dynamic-extent local))
+             (!minv local (primitive-transform b))
              (n*m4/3 local ray-direction)
              (n*m local ray-location))
            ;; We have to renormalise in case the transform has scaling.
@@ -74,11 +76,10 @@
                                                                          (list 'b))
                                        (hit-normal hit))))
                (when tt
-                 (v<- (hit-location hit) (ray-location a))
                  ;; We have to use the world-space ray location and direction here, and thus also
                  ;; multiply the time by the transform-scaling to ensure we get the time dilation
                  ;; induced by the primitive's transform scaling sorted out.
-                 (nv+* (hit-location hit) (ray-direction a) (* tt transform-scaling))
+                 (!v+* (hit-location hit) (ray-location a) (ray-direction a) (* tt transform-scaling))
                  (setf (hit-a hit) a)
                  (setf (hit-b hit) ,(if (subtypep b 'primitive) `(primitive-entity b) b))
                  ;; Bring the normal back into global space
