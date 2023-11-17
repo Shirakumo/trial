@@ -98,8 +98,7 @@
       (let ((discriminant (- (* eb eb) ec)))
         (when (<= 0.0 discriminant)
           (let ((tt (- (- eb) (sqrt discriminant))))
-            (v<- ray-normal ray-location)
-            (nv+* ray-normal ray-direction tt)
+            (!v+* ray-normal ray-location ray-direction tt)
             (nvunit ray-normal)
             tt))))))
 
