@@ -312,9 +312,7 @@ Evaluation took:
 
 ;; consing test
 #++
-(let* ((org.shirakumo.fraf.trial.gjk::*f* nil)
-       (org.shirakumo.fraf.trial.gjk::*debug-state* nil)
-       (ray (trial:ray (vec3 1 2 3)
+(let* ((ray (trial:ray (vec3 1 2 3)
                        (nvunit (vec3 -2 -7 -9))))
        (mesh (trial:coerce-object (trial:make-sphere) 'trial:convex-mesh))
        (obj (make-instance 'trial:rigidbody :physics-primitives (vector mesh))))
