@@ -55,14 +55,14 @@
          (c (vec4))
          (mdet 0f0)
          (flat nil)
-         (ϵ 0.00001))
+         (epsilon 0.00001))
     (declare (dynamic-extent m c)
              (type single-float mdet))
     (loop for j below 4
           for cj = (mcofactor m 3 j)
           do (setf (vref c j) cj)
              (incf mdet cj))
-    (setf flat (< (abs mdet) ϵ))
+    (setf flat (< (abs mdet) epsilon))
     (cond
       ;; contained in simplex
       ((and (not flat)
@@ -144,20 +144,20 @@
          ;;(n (vc ac ab))
          ;;(l² (vsqrlength n))
          (n (vec3))
-         (l² 0.0)
-         (p₀ (vec3))
-         (μₘₐₓ 0.0)
+         (l^2 0.0)
+         (p0 (vec3))
+         (umax 0.0)
          (j -1)
          (flat nil)
-         (ϵ 0.00001))
-    (declare (dynamic-extent ab ac bc n p₀)
-             (type single-float μₘₐₓ))
+         (epsilon 0.00001))
+    (declare (dynamic-extent ab ac bc n p0)
+             (type single-float umax))
     (!vc n ac ab)
-    (setf l² (vsqrlength n))
+    (setf l^2 (vsqrlength n))
     ;; project origin onto plane (if possible)
-    (if (< l² (expt ϵ 2))
+    (if (< l^2 (expt epsilon 2))
         (setf flat t)
-        (!v* p₀ n (/ (v. s0 n) l²)))
+        (!v* p0 n (/ (v. s0 n) l^2)))
 
     ;; if too flat, just pick best result from 1d test against all edges
     (when flat
@@ -199,41 +199,41 @@
 
     ;; otherwise pick axis-aligned plane with largest projection
     (loop for i below 3
-          for μ of-type single-float = (projected-cross ab ac i)
-          when (> (abs μ) (abs μₘₐₓ))
-            do (setf μₘₐₓ μ
+          for u of-type single-float = (projected-cross ab ac i)
+          when (> (abs u) (abs umax))
+            do (setf umax u
                      j i))
-    (setf flat (< (abs μₘₐₓ) ϵ))
+    (setf flat (< (abs umax) epsilon))
     (assert (not flat))
 
     ;; calculate barycentric coordinates on that plane (seems slightly
     ;; more accurate than calling BARYCENTRIC, and not sure that
     ;; handles points outside the triangle the way we want?
-    (let* ((ap (v- p₀ s0))
-           (pb (v- p₀ s1))
-           (pc (v- p₀ s2))
+    (let* ((ap (v- p0 s0))
+           (pb (v- p0 s1))
+           (pc (v- p0 s2))
            (sabc (projected-cross ab ac j))
            (s (if (minusp sabc) -1 1))
            (abc (abs sabc))
-           (λ₁ (* s (projected-cross pb pc j)))
-           (n₁ (<= λ₁ 0))
-           (λ₂ (* s (projected-cross ap ac j)))
-           (n₂ (<= λ₂ 0))
-           (λ₃ (* s (projected-cross ab ap j)))
-           (n₃ (<= λ₃ 0))
-           (out (+ (if n₁ 1 0) (if n₂ 1 0) (if n₃ 1 0))))
+           (t1 (* s (projected-cross pb pc j)))
+           (n1 (<= t1 0))
+           (t2 (* s (projected-cross ap ac j)))
+           (n2 (<= t2 0))
+           (t3 (* s (projected-cross ab ap j)))
+           (n3 (<= t3 0))
+           (out (+ (if n1 1 0) (if n2 1 0) (if n3 1 0))))
       (declare (dynamic-extent ap pb pc))
       (cond
         ;; support is entire triangle
         ((and (zerop out)
-              (< λ₁ abc)
-              (< λ₂ abc)
-              (< λ₃ abc))
+              (< t1 abc)
+              (< t2 abc)
+              (< t3 abc))
          ;; possibly should recalculate one of the coords from the
          ;; other 2, but not sure which.
-         (!v* dir s0 (/ λ₁ abc))
-         (!v+* dir dir s1 (/ λ₂ abc))
-         (!v+* dir dir s2 (/ λ₃ abc))
+         (!v* dir s0 (/ t1 abc))
+         (!v+* dir dir s1 (/ t2 abc))
+         (!v+* dir dir s2 (/ t3 abc))
          (p<- s3 s2)
          (p<- s2 s1)
          (p<- s1 s0)
@@ -241,28 +241,28 @@
         ((= out 1)
          ;; support is line opposite negative λ
          (flet ((edge (a b m)
-                  (let* ((t₀ (- (/ (v. m a)
+                  (let* ((t0 (- (/ (v. m a)
                                    (v. m m)))))
-                    (!v+* dir a m t₀))
+                    (!v+* dir a m t0))
                   (p<- s2 b)
                   (p<- s1 a)
                   2))
            (cond
-             (n₁ (edge s1 s2 bc))
-             (n₂ (edge s0 s2 ac))
-             (n₃ (edge s0 s1 ab)))))
+             (n1 (edge s1 s2 bc))
+             (n2 (edge s0 s2 ac))
+             (n3 (edge s0 s1 ab)))))
         ((= out 2)
          ;; support is point with positive λ
          (cond
-           ((not n₁)
+           ((not n1)
             (v<- dir s0)
             (p<- s1 s0)
             1)
-           ((not n₂)
+           ((not n2)
             (v<- dir s1)
             (p<- s1 s1)
             1)
-           ((not n₃)
+           ((not n3)
             (v<- dir s2)
             (p<- s1 s2)
             1)))
@@ -275,29 +275,29 @@
   (declare (ignore s3))
   (let* ((m (v- s1 s0))
          (mm (v. m m))
-         (ϵ 0.00001))
+         (epsilon 0.00001))
     (declare (dynamic-extent m))
     (cond
-      ((< (abs mm) ϵ)
+      ((< (abs mm) epsilon)
        ;; degenerate segment, return either point (s1 to avoid a copy)
        (v<- dir s1)
        1)
       (t
-       (let* ((t₀ (- (/ (v. m s0)
+       (let* ((t0 (- (/ (v. m s0)
                         mm))))
          (cond
-           ((<= t₀ 0)
+           ((<= t0 0)
             ;; start point (keep s0 in s1)
             (v<- dir s0)
             (p<- s1 s0)
             1)
-           ((<= 1 t₀)
+           ((<= 1 t0)
             ;; end point (keep s1 in s1)
             (v<- dir s1)
             1)
            (t
             ;; keep both points (in s1,s2)
-            (!v+* dir s0 m t₀)
+            (!v+* dir s0 m t0)
             (p<- s2 s1)
             (p<- s1 s0)
             2)))))))
@@ -307,7 +307,7 @@
          (s ray-location)
          (r ray-direction)
          ;; state
-         (λ 0.0)
+         (tt 0.0)
          (x (vcopy s))
          (w (vec3))
          (p (vec3))
@@ -331,14 +331,14 @@
          ;; is ~4x, 2 is ~7x).
          ;; we mostly detect the loops though, so this just tunes tiny
          ;; performance difference vs tiny precision differences.
-         (ϵ (* 6 single-float-negative-epsilon)))
-    (declare (dynamic-extent λ x v w p s0 s1 s2 s3))
+         (epsilon (* 6 single-float-negative-epsilon)))
+    (declare (dynamic-extent tt x v w p s0 s1 s2 s3))
     (declare (type (unsigned-byte 8) dim stuck)
              (type point s0 s1 s2 s3)
              (type single-float maxdist))
     (vsetf ray-normal 0 0 0)
     (loop for i from 0 below GJK-ITERATIONS
-          do ;; we test v after updating λ since a final adjustment to
+          do ;; we test v after updating tt since a final adjustment to
              ;; that improves results slightly. but we need to use the
              ;; values corresponding to v to determine cutoff
              ;; tolerance, so calculate that here
@@ -357,14 +357,14 @@
                       (return NIL))
                      (T
                       (let ((dt (/ vw vr)))
-                        (if (= (- λ dt) λ)
+                        (if (= (- tt dt) tt)
                             ;; if we failed to advance, we are
                             ;; probably stuck, so give up after a few
                             ;; tries
                             (incf stuck)
                             (setf stuck 0))
-                        (decf λ dt))
-                      (!v+* x s r λ)
+                        (decf tt dt))
+                      (!v+* x s r tt)
                       (v<- ray-normal v)
                       (setf last-updated i)
                       ;; update s[0-3] for new X
@@ -399,10 +399,10 @@
                 (when (/= i last-updated)
                   (incf stuck))))
              ;; check if we are done
-          while (and (<= (* ϵ maxdist) (vsqrlength v))
+          while (and (<= (* epsilon maxdist) (vsqrlength v))
                      (<= stuck 3))
           do ;; update the simplex and find new direction
              (setf dim (signed-volumes dim s0 s1 s2 s3 v))
           finally (progn
                     (nvunit* ray-normal)
-                    (return λ)))))
+                    (return tt)))))
