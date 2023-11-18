@@ -54,7 +54,7 @@
                   1 1 1 1))
          (c (vec4))
          (mdet 0f0)
-         (flat nil)
+         (flat NIL)
          (epsilon 0.00001))
     (declare (dynamic-extent m c)
              (type single-float mdet))
@@ -73,9 +73,9 @@
        (!v+* dir dir s3 (/ (vw c) mdet))
        4)
       ;; otherwise find best of the faces
-      (t
+      (T
        (let (;;
-             (d most-positive-single-float)
+             (d MOST-POSITIVE-SINGLE-FLOAT)
              ;; best result seen so far
              (best-dim 0)
              (best-dir (vec3))
@@ -109,7 +109,7 @@
                         (when (> r 1) (p<- b1 c2))
                         (when (> r 2) (p<- b2 c3)))))
          ;; should always find a solution
-         (assert (/= d most-positive-single-float))
+         (assert (/= d MOST-POSITIVE-SINGLE-FLOAT))
          ;; copy results to output
          (v<- dir best-dir)
          (p<- s1 b0)
@@ -148,7 +148,7 @@
          (p0 (vec3))
          (umax 0.0)
          (j -1)
-         (flat nil)
+         (flat NIL)
          (epsilon 0.00001))
     (declare (dynamic-extent ab ac bc n p0)
              (type single-float umax))
@@ -156,12 +156,12 @@
     (setf l^2 (vsqrlength n))
     ;; project origin onto plane (if possible)
     (if (< l^2 (expt epsilon 2))
-        (setf flat t)
+        (setf flat T)
         (!v* p0 n (/ (v. s0 n) l^2)))
 
     ;; if too flat, just pick best result from 1d test against all edges
     (when flat
-      (let ((d most-positive-single-float)
+      (let ((d MOST-POSITIVE-SINGLE-FLOAT)
             ;; best result seen so far
             (best-dim 0)
             (best-dir (vec3))
@@ -190,7 +190,7 @@
                      (p<- b0 c1)
                      (when (> r 1) (p<- b1 c2)))))
         ;; should always find a solution
-        (assert (/= d most-positive-single-float))
+        (assert (/= d MOST-POSITIVE-SINGLE-FLOAT))
         ;; copy results to output
         (v<- dir best-dir)
         (p<- s1 b0)
@@ -266,7 +266,7 @@
             (v<- dir s2)
             (p<- s1 s2)
             1)))
-        (t (error "shouldn't get here?"))))))
+        (T (error "shouldn't get here?"))))))
 
 (defun sv1d (s0 s1 s2 s3 dir)
   (declare (type point s0 s1 s2 s3)
@@ -282,7 +282,7 @@
        ;; degenerate segment, return either point (s1 to avoid a copy)
        (v<- dir s1)
        1)
-      (t
+      (T
        (let* ((t0 (- (/ (v. m s0)
                         mm))))
          (cond
@@ -295,7 +295,7 @@
             ;; end point (keep s1 in s1)
             (v<- dir s1)
             1)
-           (t
+           (T
             ;; keep both points (in s1,s2)
             (!v+* dir s0 m t0)
             (p<- s2 s1)
@@ -331,7 +331,7 @@
          ;; is ~4x, 2 is ~7x).
          ;; we mostly detect the loops though, so this just tunes tiny
          ;; performance difference vs tiny precision differences.
-         (epsilon (* 6 single-float-negative-epsilon)))
+         (epsilon (* 6 SINGLE-FLOAT-NEGATIVE-EPSILON)))
     (declare (dynamic-extent tt x v w p s0 s1 s2 s3))
     (declare (type (unsigned-byte 8) dim stuck)
              (type point s0 s1 s2 s3)
