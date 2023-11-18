@@ -9,14 +9,14 @@
                              ;; scale multiplier of target object (assumes
                              ;; objects are within ±1 to start with)
                              (target-scale 1.0)
-                             (normalize-dir t))
+                             (normalize-dir T))
   ;;
   (assert (> start-scale (* 2 target-scale)))
   (let* ((seed (or seed (+ (get-internal-real-time)
                            (get-universal-time))))
          (rnd (random-state:make-generator :pcg seed))
          (mesh-cache (make-hash-table)))
-    (format t "~%running raycast tests with seed #x~x~%" seed)
+    (format T "~%running raycast tests with seed #x~x~%" seed)
     (labels ((get-mesh (type)
                (destructuring-bind (&optional mesh verts)
                    (gethash type mesh-cache)
@@ -24,7 +24,7 @@
                    (verts
                     (replace (trial:vertices mesh) verts)
                     mesh)
-                   (t
+                   (T
                     (let ((m (trial:coerce-object
                               (ecase type
                                 (:box (trial:make-box))
@@ -71,7 +71,7 @@
                            (* (- start-scale target-scale) 1/2 r))))
                    ;; rest completely random points between
                    ;; target-scale and start-scale
-                   (t
+                   (T
                     (v* (random-point-on-sphere 1)
                         (+ (* d target-scale)
                            (* (- start-scale target-scale)
@@ -94,7 +94,7 @@
                     (v- (random-point-on-sphere (* 4 target-scale))
                         from))
                    ;; rest completely random
-                   (t
+                   (T
                     (random-point-on-sphere 1)))))
              (random-obj (type orientation)
                (let* ((mat (qmat orientation))
@@ -131,7 +131,7 @@
                           (1 :cylinder)
                           (2 :sphere))
             for obj = (random-obj otype orientation)
-            for (ref nil in) = (multiple-value-list
+            for (ref NIL in) = (multiple-value-list
                                 (ref start dir (aref (trial:physics-primitives obj) 0)))
             for (.hit err) = (multiple-value-list
                               (ignore-errors
@@ -153,35 +153,35 @@
                    (setf dist (when (and hit ref) (vdistance hit ref)))
                    (when (when (or (and or ref (< 0.0001 (vdistance or ref)))
                                    (alexandria:xor or ref)))
-                     (format t "~&try rat/ref: moved ~s~%    ~s~% -> ~s~% in ~s -> ~s~%"
+                     (format T "~&try rat/ref: moved ~s~%    ~s~% -> ~s~% in ~s -> ~s~%"
                              (when (and or ref)
                                (vdistance or ref))
                              or ref oin in)
-                     (format t "  dist ~s -> ~s~%" od dist)))
+                     (format T "  dist ~s -> ~s~%" od dist)))
             when err
-              do (format t "~&error: #x~x @ ~s~%  ~a~%hit ~s~%  ref ~s~%"
+              do (format T "~&error: #x~x @ ~s~%  ~a~%hit ~s~%  ref ~s~%"
                          seed i err hit ref)
-                 (format t "--start=~s~%  dir=~s~%  obj=~s @ ~s~%"
+                 (format T "--start=~s~%  dir=~s~%  obj=~s @ ~s~%"
                          start dir otype orientation)
                  (save-case start dir otype orientation
                             :hit hit :ref ref :in in)
             else when (alexandria:xor hit ref)
-                   do (format t "~&mismatch: #x~x @ ~s~%  hit ~s~%  ref ~s~%"
+                   do (format T "~&mismatch: #x~x @ ~s~%  hit ~s~%  ref ~s~%"
                               seed i hit ref)
-                      (format t "--start=~s~%  dir=~s~%  obj=~s @ ~s~%"
+                      (format T "--start=~s~%  dir=~s~%  obj=~s @ ~s~%"
                               start dir otype orientation)
                       (save-case start dir otype orientation
                                  :hit hit :ref ref :in in)
             when (and dist (> dist 0.01) (not in))
-              do (format t "~&dist ~s > 0.01? #x~x @ ~s~%  hit ~s~%  ref ~s~%"
+              do (format T "~&dist ~s > 0.01? #x~x @ ~s~%  hit ~s~%  ref ~s~%"
                          dist seed i hit ref)
-                 (format t "--start=~s~%  dir=~s~%  obj=~s @ ~s~%"
+                 (format T "--start=~s~%  dir=~s~%  obj=~s @ ~s~%"
                          start dir otype orientation)
                  (save-case start dir otype orientation
                             :dist dist :hit hit :ref ref :in in)
             when (zerop (mod i 1000))
-              do (format t "~s~%" i)
-            else do (when (zerop (mod i 10)) (format t "."))
+              do (format T "~s~%" i)
+            else do (when (zerop (mod i 10)) (format T "."))
             do (if hit (incf hits) (incf miss))
                (when in (incf ins) (unless hit (incf ins-no-hit)))
                (when ref (incf ref-hits))
@@ -193,25 +193,25 @@
                (incf (gethash s steps-hist 0))
                (when (< 60 s)
                  (incf stuck)
-                 (format t "~&step=~s: #x~x @ ~s~%"
+                 (format T "~&step=~s: #x~x @ ~s~%"
                          (gethash :steps *debug-state* 0) seed i)))
             finally
-               (format t "~&~s hits (~s ref) / ~s miss @ :seed #x~x~%"
+               (format T "~&~s hits (~s ref) / ~s miss @ :seed #x~x~%"
                        hits ref-hits miss seed)
                (when ins
-                 (format t "~s start in object (~s not detected)~%"
+                 (format T "~s start in object (~s not detected)~%"
                          ins ins-no-hit))
                (unless (zerop steps)
-                 (format t "~s steps total (avg ~s) | ~s stuck~%"
+                 (format T "~s steps total (avg ~s) | ~s stuck~%"
                          steps (float (/ steps count)) stuck))
-               (format t "max dist ~s~%" (reduce 'max distances))
-               (format t "mean ~s, median ~s, dev ~s, variance ~s~%"
+               (format T "max dist ~s~%" (reduce 'max distances))
+               (format T "mean ~s, median ~s, dev ~s, variance ~s~%"
                        (alexandria:mean distances)
                        (alexandria:median distances)
                        (alexandria:standard-deviation distances)
                        (alexandria:variance distances))
                (unless (zerop (hash-table-count steps-hist))
-                 (format t "steps:~%~{  ~s ~s~%~}"
+                 (format T "steps:~%~{  ~s ~s~%~}"
                          (alexandria:alist-plist
                           (sort (alexandria:hash-table-alist steps-hist)
                                 '< :key 'car))))))))
@@ -350,14 +350,14 @@ Evaluation took:
                         (vert v3 (aref faces (+ f 2))))))))
 
 (defun ref (ray-start ray-dir o)
-  (let* ((d most-positive-single-float) ;; closest tₙ seen so far
+  (let* ((d MOST-POSITIVE-SINGLE-FLOAT) ;; closest tₙ seen so far
          (p (vec3))
          (n (vec3))
-         (found nil)
+         (found NIL)
          (found-behind 0)
          (p- (vec3))
          (n- (vec3))
-         (d- most-positive-single-float)
+         (d- MOST-POSITIVE-SINGLE-FLOAT)
          (epsilon 0.00001)
          (epsilon^2 (expt epsilon 2)))
     (map-convex-mesh-faces
@@ -402,7 +402,7 @@ Evaluation took:
                                     (< (vsqrdistance p1 p2) epsilon^2)
                                     ;; and closest point so far
                                     (< t1/d1 d))
-                               (setf found t
+                               (setf found T
                                      d t1/d1)
                                (v<- p p1)
                                (!vc n (!vc n ab ray-dir) ab)))))))
@@ -421,14 +421,14 @@ Evaluation took:
                          (< (- epsilon) t3 (1+ epsilon))
                          (< (+ t2 t3) (1+ epsilon)))
                 (when (< t1 d)
-                  (setf found t
+                  (setf found T
                         d t1)
                   (v<- p p0)
                   (v<- n ab*ac)))))
            ;; intersects plane behind ray. If start is inside object,
            ;; we want to return hit behind start, but if entire object
            ;; is behind ray, we return NIL
-           (t
+           (T
             ;; t1 already divided by det in previous test
             (let* ((p0 (v+* ray-start ray-dir t1))
                    (ap (v- p0 a))
@@ -450,9 +450,9 @@ Evaluation took:
     (cond
       ((and found (not (zerop found-behind)))
        ;;(assert (= found-behind 1)) ;; this happens sometimes :/
-       (values p- (nvunit n) t))
+       (values p- (nvunit n) T))
       (found
-       (values p (nvunit n) nil)))))
+       (values p (nvunit n) NIL)))))
 
 
 (defun rv (a)
@@ -518,16 +518,16 @@ Evaluation took:
 
 (defun ref/rat (.ray-start .ray-dir o)
   (flet ((rat (a) (map 'vector 'rational (varr a))))
-    (let* ((d most-positive-single-float) ;; closest tₙ seen so far
+    (let* ((d MOST-POSITIVE-SINGLE-FLOAT) ;; closest tₙ seen so far
            (ray-start (rat .ray-start))
            (ray-dir (rat .ray-dir))
            (p (vec3))
            (n (vec3))
-           (found nil)
+           (found NIL)
            (found-behind 0)
            (p- (vec3))
            (n- (vec3))
-           (d- most-positive-single-float))
+           (d- MOST-POSITIVE-SINGLE-FLOAT))
       (map-convex-mesh-faces
        (lambda (.a .b .c)
          (let* ((a (rat .a))
@@ -573,7 +573,7 @@ Evaluation took:
                                       (= (rsqrdistance p1 p2) 0)
                                       ;; and closest point so far
                                       (< t1/d1 d))
-                                 (setf found t
+                                 (setf found T
                                        d t1/d1)
                                  (v<- p (rv p1))
                                  (setf n (rc (rc ab ray-dir) ab))))))))
@@ -592,14 +592,14 @@ Evaluation took:
                            (<= 0 t3 1)
                            (<= (+ t2 t3) 1))
                   (when (<= t1 d)
-                    (setf found t
+                    (setf found T
                           d t1)
                     (v<- p (rv p0))
                     (v<- n (rv ab*ac))))))
              ;; intersects plane behind ray. If start is inside
              ;; object, we want to return hit behind start, but if
              ;; entire object is behind ray, we return NIL
-             (t
+             (T
               ;; t1 already divided by det in previous test
               (let* ((p0 (r+* ray-start ray-dir t1))
                      (ap (r- p0 a))
@@ -621,6 +621,6 @@ Evaluation took:
       (cond
         ((and found (not (zerop found-behind)))
          (assert (= found-behind 1))
-         (values p- (nvunit n) t))
+         (values p- (nvunit n) T))
         (found
-         (values p (nvunit n) nil))))))
+         (values p (nvunit n) NIL))))))
