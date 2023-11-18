@@ -30,16 +30,14 @@
   ;; s1,s2,s3 (unless 3-simplex contains origin in which case 4 is
   ;; returned and s0-3 are unchanged). also returns point on simplex
   ;; nearest to origin in DIR
-  (float-features:with-float-traps-masked (:divide-by-zero
-                                           :invalid)
-    (ecase dim
-      (1
-       (p<- s1 s0)
-       (v<- dir s1)
-       1)
-      (2 (sv1d s0 s1 s2 s3 dir))
-      (3 (sv2d s0 s1 s2 s3 dir))
-      (4 (sv3d s0 s1 s2 s3 dir)))))
+  (ecase dim
+    (1
+     (p<- s1 s0)
+     (v<- dir s1)
+     1)
+    (2 (sv1d s0 s1 s2 s3 dir))
+    (3 (sv2d s0 s1 s2 s3 dir))
+    (4 (sv3d s0 s1 s2 s3 dir))))
 
 (declaim (inline sv-compare-signs))
 (defun sv-compare-signs (a b)
@@ -159,7 +157,7 @@
     ;; project origin onto plane (if possible)
     (if (< l² (expt ϵ 2))
         (setf flat t)
-        (!v* p₀ n (/ (v. s0 n) (vsqrlength n))))
+        (!v* p₀ n (/ (v. s0 n) l²)))
 
     ;; if too flat, just pick best result from 1d test against all edges
     (when flat
@@ -286,7 +284,7 @@
        1)
       (t
        (let* ((t₀ (- (/ (v. m s0)
-                        (v. m m)))))
+                        mm))))
          (cond
            ((<= t₀ 0)
             ;; start point (keep s0 in s1)
