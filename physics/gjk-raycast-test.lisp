@@ -358,94 +358,94 @@ Evaluation took:
          (p- (vec3))
          (n- (vec3))
          (d- most-positive-single-float)
-         (ϵ 0.00001)
-         (ϵ² (expt ϵ 2)))
+         (epsilon 0.00001)
+         (epsilon^2 (expt epsilon 2)))
     (map-convex-mesh-faces
      (lambda (a b c)
        (let* ((ab (v- b a))
               (ac (v- c a))
-              (ab×ac (vc ab ac))
+              (ab*ac (vc ab ac))
               (-rd (v- ray-dir))
-              (det (v. -rd ab×ac))
+              (det (v. -rd ab*ac))
               (as (v- ray-start a))
-              (t₁ (v. ab×ac as))
-              ;;(t₂ (v. (vc ac -rd) ap))
-              ;;(t₃ (v. (vc -rd ab) ap))
+              (t1 (v. ab*ac as))
+              ;;(t2 (v. (vc ac -rd) ap))
+              ;;(t3 (v. (vc -rd ab) ap))
               )
          (cond
            ;; ray is (almost) parallel to or on plane of triangle, test edges
-           ((<= (abs det) ϵ)
-            (when (<= (abs t₁) ϵ) ;; distance from ray-start to plane
+           ((<= (abs det) epsilon)
+            (when (<= (abs t1) epsilon) ;; distance from ray-start to plane
               (flet ((edge (a ab)
                        (let* ((as (v- ray-dir ab))
-                              (n₁ (vc ray-dir ab))
-                              (n₂ (vc ab n₁))
-                              ;; line 1 = ray-start + t₁*ray-dir/d₁
-                              (t₁ (v. as n₂))
-                              (d₁ (v. ray-dir n₂))
-                              ;; line 2 = a + t₂*ab/d₂
-                              (t₂ (- (v. as n₁)))
-                              (d₂ (v. ab n₁)))
+                              (n1 (vc ray-dir ab))
+                              (n2 (vc ab n1))
+                              ;; line 1 = ray-start + t1*ray-dir/d1
+                              (t1 (v. as n2))
+                              (d1 (v. ray-dir n2))
+                              ;; line 2 = a + t2*ab/d2
+                              (t2 (- (v. as n1)))
+                              (d2 (v. ab n1)))
                          (when (and
                                 ;; lines are not parallel
-                                (> (abs d₁) ϵ)
-                                (> (abs d₂) ϵ)
+                                (> (abs d1) epsilon)
+                                (> (abs d2) epsilon)
                                 ;; closest point is in ray
-                                (> t₁ (- ϵ))
+                                (> t1 (- epsilon))
                                 ;; and in edge
-                                (> (1+ ϵ) t₂ (- ϵ)))
-                           (let* ((t₁/d₁ (/ t₁ d₁))
-                                  (p₁ (v+* ray-start ray-dir t₁/d₁))
-                                  (p₂ (v+* a ab (/ t₂ d₂))))
+                                (> (1+ epsilon) t2 (- epsilon)))
+                           (let* ((t1/d1 (/ t1 d1))
+                                  (p1 (v+* ray-start ray-dir t1/d1))
+                                  (p2 (v+* a ab (/ t2 d2))))
                              (when (and
                                     ;;points are (nearly) same point
-                                    (< (vsqrdistance p₁ p₂) ϵ²)
+                                    (< (vsqrdistance p1 p2) epsilon^2)
                                     ;; and closest point so far
-                                    (< t₁/d₁ d))
+                                    (< t1/d1 d))
                                (setf found t
-                                     d t₁/d₁)
-                               (v<- p p₁)
+                                     d t1/d1)
+                               (v<- p p1)
                                (!vc n (!vc n ab ray-dir) ab)))))))
                 (edge a ab)
                 (edge a ac)
                 (edge b (v- c b)))))
-           ;; ray intersects plane at ray-start + t₁*ray-dir
-           ((<= 0 (setf t₁ (/ t₁ det)))
-            (let* ((p₀ (v+* ray-start ray-dir t₁))
-                   (ap (v- p₀ a))
-                   (l (vsqrlength ab×ac))
-                   (λ₂ (/ (v. (vc ap ac) ab×ac) l))
-                   (λ₃ (/ (v. (vc ab ap) ab×ac) l)))
+           ;; ray intersects plane at ray-start + t1*ray-dir
+           ((<= 0 (setf t1 (/ t1 det)))
+            (let* ((p0 (v+* ray-start ray-dir t1))
+                   (ap (v- p0 a))
+                   (l (vsqrlength ab*ac))
+                   (t2 (/ (v. (vc ap ac) ab*ac) l))
+                   (t3 (/ (v. (vc ab ap) ab*ac) l)))
               ;; test if point is in triangle
-              (when (and (< (- ϵ) λ₂ (1+ ϵ))
-                         (< (- ϵ) λ₃ (1+ ϵ))
-                         (< (+ λ₂ λ₃) (1+ ϵ)))
-                (when (< t₁ d)
+              (when (and (< (- epsilon) t2 (1+ epsilon))
+                         (< (- epsilon) t3 (1+ epsilon))
+                         (< (+ t2 t3) (1+ epsilon)))
+                (when (< t1 d)
                   (setf found t
-                        d t₁)
-                  (v<- p p₀)
-                  (v<- n ab×ac)))))
+                        d t1)
+                  (v<- p p0)
+                  (v<- n ab*ac)))))
            ;; intersects plane behind ray. If start is inside object,
            ;; we want to return hit behind start, but if entire object
            ;; is behind ray, we return NIL
            (t
-            ;; t₁ already divided by det in previous test
-            (let* ((p₀ (v+* ray-start ray-dir t₁))
-                   (ap (v- p₀ a))
-                   (l (vsqrlength ab×ac))
-                   (λ₂ (/ (v. (vc ap ac) ab×ac) l))
-                   (λ₃ (/ (v. (vc ab ap) ab×ac) l)))
+            ;; t1 already divided by det in previous test
+            (let* ((p0 (v+* ray-start ray-dir t1))
+                   (ap (v- p0 a))
+                   (l (vsqrlength ab*ac))
+                   (t2 (/ (v. (vc ap ac) ab*ac) l))
+                   (t3 (/ (v. (vc ab ap) ab*ac) l)))
               ;; test if point is in triangle
-              (when (and (< (- ϵ) λ₂ (1+ ϵ))
-                         (< (- ϵ) λ₃ (1+ ϵ))
-                         (< (+ λ₂ λ₃) (1+ ϵ)))
+              (when (and (< (- epsilon) t2 (1+ epsilon))
+                         (< (- epsilon) t3 (1+ epsilon))
+                         (< (+ t2 t3) (1+ epsilon)))
                 ;; count # of hits behind ray
                 (incf found-behind)
                 ;; and remember best hit behind ray
-                (when (< t₁ d-)
-                  (setf d- t₁)
-                  (v<- p- p₀)
-                  (v<- n- ab×ac))))))))
+                (when (< t1 d-)
+                  (setf d- t1)
+                  (v<- p- p0)
+                  (v<- n- ab*ac))))))))
      o)
     (cond
       ((and found (not (zerop found-behind)))
@@ -480,18 +480,18 @@ Evaluation took:
     (v. d d)))
 
 (defun rat-line-plane (rs rd pn p0)
-  ;; line p=rs+t*rd, plane (p-p₀)*n=0
+  ;; line p=rs+t*rd, plane (p-p0)*n=0
   (flet ((rat (x) (rational x)))
     (let* ((l0 (map 'vector #'rat rs))
            (l (map 'vector #'rat rd))
            (n (map 'vector #'rat pn))
            ;;(dl (print (reduce '+ (map 'vector (alexandria:rcurry 'expt 2) n))))
            (p0 (map 'vector #'rat p0))
-           (l⋅n (r. l n))
+           (l.n (r. l n))
            (p0-l0 (map 'vector '- p0 l0))
-           (p0-l0⋅n (r. p0-l0 n))
-           (d (unless (zerop l⋅n)
-                (/ p0-l0⋅n l⋅n)))
+           (p0-l0.n (r. p0-l0 n))
+           (d (unless (zerop l.n)
+                (/ p0-l0.n l.n)))
            (r (when d
                 (map 'vector '+ l0 (map 'vector (alexandria:curry '* d) l)))))
       (values (map 'vector 'float r) r))))
@@ -504,16 +504,16 @@ Evaluation took:
            (m (map 'vector #'rat rd))
            (p (map 'vector #'rat p0))
            (p-b (map 'vector '- p b))
-           (m⋅p-b (reduce '+ (map 'vector '* m p-b)))
-           (m⋅m (reduce '+ (map 'vector '* m m)))
-           (t0 (unless (zerop m⋅m)
-                 (/ m⋅p-b m⋅m)))
+           (m.p-b (reduce '+ (map 'vector '* m p-b)))
+           (m.m (reduce '+ (map 'vector '* m m)))
+           (t0 (unless (zerop m.m)
+                 (/ m.p-b m.m)))
            (p1 (when t0
                  (map 'vector '+ b (map 'vector (alexandria:curry '* t0) m))))
-           (d² (when p1
+           (d^2 (when p1
                  (reduce '+ (map 'vector (alexandria:rcurry 'expt 2)
                                  (map 'vector '- p1 p))))))
-      (values (sqrt d²) (float d²) d²
+      (values (sqrt d^2) (float d^2) d^2
               (map 'vector 'float p1)))))
 
 (defun ref/rat (.ray-start .ray-dir o)
@@ -535,88 +535,88 @@ Evaluation took:
                 (c (rat .c))
                 (ab (r- b a))
                 (ac (r- c a))
-                (ab×ac (rc ab ac))
+                (ab*ac (rc ab ac))
                 (-rd (r- ray-dir))
-                (det (r. -rd ab×ac))
+                (det (r. -rd ab*ac))
                 (as (r- ray-start a))
-                (t₁ (r. ab×ac as))
-                ;;(t₂ (v. (vc ac -rd) ap))
-                ;;(t₃ (v. (vc -rd ab) ap))
+                (t1 (r. ab*ac as))
+                ;;(t2 (v. (vc ac -rd) ap))
+                ;;(t3 (v. (vc -rd ab) ap))
                 )
            (cond
              ;; ray is (almost) parallel to or on plane of triangle, test edges
              ((= det 0)
-              (when (= t₁ 0) ;; distance from ray-start to plane
+              (when (= t1 0) ;; distance from ray-start to plane
                 (flet ((edge (a ab)
                          (let* ((as (r- ray-dir ab))
-                                (n₁ (rc ray-dir ab))
-                                (n₂ (rc ab n₁))
-                                ;; line 1 = ray-start + t₁*ray-dir/d₁
-                                (t₁ (r. as n₂))
-                                (d₁ (r. ray-dir n₂))
-                                ;; line 2 = a + t₂*ab/d₂
-                                (t₂ (- (r. as n₁)))
-                                (d₂ (r. ab n₁)))
+                                (n1 (rc ray-dir ab))
+                                (n2 (rc ab n1))
+                                ;; line 1 = ray-start + t1*ray-dir/d1
+                                (t1 (r. as n2))
+                                (d1 (r. ray-dir n2))
+                                ;; line 2 = a + t2*ab/d2
+                                (t2 (- (r. as n1)))
+                                (d2 (r. ab n1)))
                            (when (and
                                   ;; lines are not parallel
-                                  (/= d₁ 0)
-                                  (/= d₂ 0)
+                                  (/= d1 0)
+                                  (/= d2 0)
                                   ;; closest point is in ray
-                                  (>= t₁ 0)
+                                  (>= t1 0)
                                   ;; and in edge
-                                  (>= 1 t₂ 0))
-                             (let* ((t₁/d₁ (/ t₁ d₁))
-                                    (p₁ (r+* ray-start ray-dir t₁/d₁))
-                                    (p₂ (r+* a ab (/ t₂ d₂))))
+                                  (>= 1 t2 0))
+                             (let* ((t1/d1 (/ t1 d1))
+                                    (p1 (r+* ray-start ray-dir t1/d1))
+                                    (p2 (r+* a ab (/ t2 d2))))
                                (when (and
                                       ;;points are (nearly) same point
-                                      (= (rsqrdistance p₁ p₂) 0)
+                                      (= (rsqrdistance p1 p2) 0)
                                       ;; and closest point so far
-                                      (< t₁/d₁ d))
+                                      (< t1/d1 d))
                                  (setf found t
-                                       d t₁/d₁)
-                                 (v<- p (rv p₁))
+                                       d t1/d1)
+                                 (v<- p (rv p1))
                                  (setf n (rc (rc ab ray-dir) ab))))))))
                   (edge a ab)
                   (edge a ac)
                   (edge b (r- c b)))))
-             ;; ray intersects plane at ray-start + t₁*ray-dir
-             ((<= 0 (setf t₁ (/ t₁ det)))
-              (let* ((p₀ (r+* ray-start ray-dir t₁))
-                     (ap (r- p₀ a))
-                     (l (r. ab×ac ab×ac))
-                     (λ₂ (/ (r. (rc ap ac) ab×ac) l))
-                     (λ₃ (/ (r. (rc ab ap) ab×ac) l)))
+             ;; ray intersects plane at ray-start + t1*ray-dir
+             ((<= 0 (setf t1 (/ t1 det)))
+              (let* ((p0 (r+* ray-start ray-dir t1))
+                     (ap (r- p0 a))
+                     (l (r. ab*ac ab*ac))
+                     (t2 (/ (r. (rc ap ac) ab*ac) l))
+                     (t3 (/ (r. (rc ab ap) ab*ac) l)))
                 ;; test if point is in triangle
-                (when (and (<= 0 λ₂ 1)
-                           (<= 0 λ₃ 1)
-                           (<= (+ λ₂ λ₃) 1))
-                  (when (<= t₁ d)
+                (when (and (<= 0 t2 1)
+                           (<= 0 t3 1)
+                           (<= (+ t2 t3) 1))
+                  (when (<= t1 d)
                     (setf found t
-                          d t₁)
-                    (v<- p (rv p₀))
-                    (v<- n (rv ab×ac))))))
+                          d t1)
+                    (v<- p (rv p0))
+                    (v<- n (rv ab*ac))))))
              ;; intersects plane behind ray. If start is inside
              ;; object, we want to return hit behind start, but if
              ;; entire object is behind ray, we return NIL
              (t
-              ;; t₁ already divided by det in previous test
-              (let* ((p₀ (r+* ray-start ray-dir t₁))
-                     (ap (r- p₀ a))
-                     (l (r. ab×ac ab×ac))
-                     (λ₂ (/ (r. (rc ap ac) ab×ac) l))
-                     (λ₃ (/ (r. (rc ab ap) ab×ac) l)))
+              ;; t1 already divided by det in previous test
+              (let* ((p0 (r+* ray-start ray-dir t1))
+                     (ap (r- p0 a))
+                     (l (r. ab*ac ab*ac))
+                     (t2 (/ (r. (rc ap ac) ab*ac) l))
+                     (t3 (/ (r. (rc ab ap) ab*ac) l)))
                 ;; test if point is in triangle
-                (when (and (<= 0 λ₂ 1)
-                           (<= 0 λ₃ 1)
-                           (<= (+ λ₂ λ₃) 1))
+                (when (and (<= 0 t2 1)
+                           (<= 0 t3 1)
+                           (<= (+ t2 t3) 1))
                   ;; count # of hits behind ray
                   (incf found-behind)
                   ;; and remember best hit behind ray
-                  (when (< t₁ d-)
-                    (setf d- t₁)
-                    (v<- p- (rv p₀))
-                    (v<- n- (rv ab×ac)))))))))
+                  (when (< t1 d-)
+                    (setf d- t1)
+                    (v<- p- (rv p0))
+                    (v<- n- (rv ab*ac)))))))))
        o)
       (cond
         ((and found (not (zerop found-behind)))
