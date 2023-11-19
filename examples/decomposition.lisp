@@ -66,7 +66,11 @@ void main(){
           (show-original :initform NIL :accessor show-original)
           (show-decomposition :initform NIL :accessor show-decomposition)
           (file :initform NIL :accessor file)
-          ;;
+          ;; Decomposition
+          (prefer-symmetric-p :initform NIL :accessor prefer-symmetric-p)
+          (patch-size-limit :initform 1000 :accessor patch-size-limit)
+          (tolerance :initform -4.0 :accessor tolerance)
+          ;; Debugging
           (index :initform (org.shirakumo.fraf.trial.space.kd-tree:make-kd-tree
                             :dimensions 3)
                  :reader index)
@@ -119,6 +123,16 @@ void main(){
     (alloy:enter "Wireframe" layout :row 4 :col 0)
     (alloy:represent (polygon-mode scene) 'alloy:switch :layout-parent layout :focus-parent focus
                                                         :on :line :off :fill)
+
+    (alloy:enter "Prefer symmetric" layout :row 5 :col 0)
+    (alloy:represent (prefer-symmetric-p scene) T :layout-parent layout :focus-parent focus)
+
+    (alloy:enter "Patch size limit" layout :row 6 :col 0)
+    (alloy:represent (patch-size-limit scene) 'alloy:ranged-wheel :range '(3 . 1000) :step 1 :layout-parent layout :focus-parent focus)
+
+    (alloy:enter "Tolerance (log)" layout :row 7 :col 0)
+    (alloy:represent (tolerance scene) 'alloy:ranged-wheel :range '(-5.0 . 5.0) :step .1 :layout-parent layout :focus-parent focus)
+
     ;; Reduce startup time by not loading a model
     ;; (load (assets:asset :woman))
     ;; (setf (model scene) (assets:asset :woman))
@@ -136,6 +150,8 @@ void main(){
 
 (defmethod (setf show-decomposition) :after (value (scene decomposition-scene))
   (when value
+    (clear (node :container scene)) ; TODO(jmoringe): keep original mesh
+    (spaces:clear (index scene))
     ;; TODO(jmoringe): `normalize' has already been done in setf mesh
     (let ((mesh (mesh scene)))
       (multiple-value-bind (all-vertices all-faces)
@@ -146,7 +162,15 @@ void main(){
         (multiple-value-bind (hulls context)
             (let ((org.shirakumo.fraf.convex-covering::*debug-output* nil)
                   (org.shirakumo.fraf.convex-covering::*debug-visualizations* nil))
-              (org.shirakumo.fraf.convex-covering:decompose all-vertices all-faces))
+              (org.shirakumo.fraf.convex-covering:decompose
+               all-vertices all-faces
+               :merge-cost (append '(org.shirakumo.fraf.convex-covering::/compactness)
+                                   (when (prefer-symmetric-p scene)
+                                     '(org.shirakumo.fraf.convex-covering::patch-size-symmetry))
+                                   (when (< (patch-size-limit scene) 1000)
+                                     (list (org.shirakumo.fraf.convex-covering::make-patch-size-limit
+                                            (patch-size-limit scene)))))
+               :tolerance (expt 10 (tolerance scene))))
           (setf (context scene) context)
           (loop for hull across hulls
                 for vertices = (org.shirakumo.fraf.convex-covering:vertices hull)
@@ -335,13 +359,13 @@ void main(){
                      (patch1)
                      (patch2)))))
     (cond ;; Inspect first selected patch
-          ((string= text "1")
+          #+no ((string= text "1") ; interferes with inputting numbers
            (inspect-patch (selected-patch1 decomposition-scene)))
           ;; Inspect second selected patch
-          ((string= text "2")
+          #+no ((string= text "2")
            (inspect-patch (selected-patch2 decomposition-scene)))
           ;; Inspect patch that results from merging the two selected patches
-          ((string= text "3")
+          #+no ((string= text "3")
            (let ((patch1 (selected-patch1 decomposition-scene))
                  (patch2 (selected-patch2 decomposition-scene)))
              (unless (and patch1 patch2)
