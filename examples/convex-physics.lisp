@@ -17,11 +17,12 @@
         (map (make-instance 'ward)))
     (connect (port render 'color) (port map 'previous-pass) scene)))
 
-(define-handler ((scene convex-physics-scene) mouse-press :after) ()
-  (let ((ball (make-instance 'physics-sphere :location (location (camera scene))))
-        (force (n*m (minv (view-matrix)) (nv- (vec 0 2 -100) (location (camera scene))))))
-    (nv+ (velocity ball) force)
-    (enter-and-load ball scene +main+)))
+(define-handler ((scene convex-physics-scene) mouse-press :after) (button)
+  (when (eq button :left)
+    (let ((ball (make-instance 'physics-sphere :location (location (camera scene))))
+          (force (n*m (minv (view-matrix)) (nv- (vec 0 2 -100) (location (camera scene))))))
+      (nv+ (velocity ball) force)
+      (enter-and-load ball scene +main+))))
 
 (alloy:define-observable (setf model) (value alloy:observable))
 (alloy:define-observable (setf mesh) (value alloy:observable))
