@@ -9,19 +9,23 @@
    (visible-p :initarg :visible-p :initform T :accessor visible-p))
   (:inhibit-shaders (colored-entity :fragment-shader)))
 
+(defun debug-hull (entity)
+  (check-type entity decomposition-entity)
+  (let* ((hull       (hull entity))
+         (debug-info (org.shirakumo.fraf.convex-covering::debug-info hull)))
+    (getf debug-info :hull)))
+
+(defun debug-patch (entity)
+  (check-type entity decomposition-entity)
+  (let* ((hull       (hull entity))
+         (debug-info (org.shirakumo.fraf.convex-covering::debug-info hull)))
+    (getf debug-info :patch)))
+
 (defmethod spaces:location ((object decomposition-entity))
-  (let* (; (debug-info (org.shirakumo.fraf.convex-covering::debug-info (hull object)))
-         ; (hull (getf debug-info :hull))
-         (patch (hull object))
-         (hull (org.shirakumo.fraf.convex-covering::patch-hull patch)))
-    (spaces:location hull)))
+  (spaces:location (debug-hull object)))
 
 (defmethod spaces:bsize ((object decomposition-entity))
-  (let* (; (debug-info (org.shirakumo.fraf.convex-covering::debug-info (hull object)))
-         ; (hull (getf debug-info :hull))
-         (patch (hull object))
-         (hull (org.shirakumo.fraf.convex-covering::patch-hull patch)))
-    (spaces:bsize hull)))
+  (spaces:bsize (debug-hull object)))
 
 (define-class-shader (decomposition-entity :fragment-shader)
   "in vec3 v_view_position;
@@ -105,7 +109,9 @@ void main(){
           (setf (alloy:value-set selector) meshes)
           (when meshes (setf (alloy:value selector) (first meshes)))))
       (alloy:on alloy:value (mesh selector)
-        (setf (mesh scene) mesh)))
+        (setf (mesh scene) mesh)
+        (setf (show-original scene) t
+              (show-decomposition scene) nil)))
     (alloy:enter "Show Original" layout :row 2 :col 0)
     (alloy:represent (show-original scene) 'alloy:switch :layout-parent layout :focus-parent focus)
     (alloy:enter "Show Decomposition" layout :row 3 :col 0)
@@ -129,7 +135,37 @@ void main(){
     (when orig (setf (visible-p orig) value))))
 
 (defmethod (setf show-decomposition) :after (value (scene decomposition-scene))
-  )
+  (when value
+    ;; TODO(jmoringe): `normalize' has already been done in setf mesh
+    (let ((mesh (mesh scene)))
+      (multiple-value-bind (all-vertices all-faces)
+          (org.shirakumo.fraf.manifolds:normalize
+           (reordered-vertex-data mesh '(location))
+           (trial::simplify (faces mesh) '(unsigned-byte 32))
+           :threshold .000001)
+        (multiple-value-bind (hulls context)
+            (let ((org.shirakumo.fraf.convex-covering::*debug-output* nil)
+                  (org.shirakumo.fraf.convex-covering::*debug-visualizations* nil))
+              (org.shirakumo.fraf.convex-covering:decompose all-vertices all-faces))
+          (setf (context scene) context)
+          (loop for hull across hulls
+                for vertices = (org.shirakumo.fraf.convex-covering:vertices hull)
+                for faces = (org.shirakumo.fraf.convex-covering:faces hull)
+                for (name . color) in (apply #'alexandria:circular-list (colored:list-colors))
+                for color* = (vec (colored:r color) (colored:g color) (colored:b color))
+                for entity = (make-instance 'decomposition-entity
+                                            :hull hull
+                                            :scene scene
+                                            :original-color color*
+                                            :color color*
+                                            :visible-p (show-decomposition scene)
+                                            :vertex-array (make-vertex-array (make-convex-mesh :vertices vertices
+                                                                                               :faces faces)
+                                                                             NIL))
+                do (enter entity (node :container scene))
+                   (enter entity (selection-buffer scene))
+                   (enter entity (index scene))))))
+    (commit (scene +main+) (loader +main+))))
 
 (defmethod (setf mesh) :before ((mesh mesh-data) (scene decomposition-scene))
   (clear (node :container scene))
@@ -148,32 +184,7 @@ void main(){
                           :vertex-array (make-vertex-array
                                          (make-general-mesh :vertices all-vertices :faces all-faces)
                                          NIL))
-           (node :container scene))
-    (multiple-value-bind (hulls context)
-        (let ((org.shirakumo.fraf.convex-covering::*debug-output* nil)
-              (org.shirakumo.fraf.convex-covering::*debug-visualizations* nil))
-          (org.shirakumo.fraf.convex-covering:decompose all-vertices all-faces))
-      (setf (context scene) context)
-      (loop for hull across hulls
-            for vertices = (org.shirakumo.fraf.convex-covering:vertices hull)
-            for faces = (org.shirakumo.fraf.convex-covering:faces hull)
-            for (name . color) in (apply #'alexandria:circular-list (colored:list-colors))
-            for color* = (vec (colored:r color) (colored:g color) (colored:b color))
-            for debug-info = (org.shirakumo.fraf.convex-covering::debug-info hull)
-            for patch =      (getf debug-info :patch)
-            for entity = (make-instance 'decomposition-entity
-                                        :hull patch
-                                        :scene scene
-                                        :original-color color*
-                                        :color color*
-                                        :visible-p (show-decomposition scene)
-                                        ; :transform (transform (vec 3 0 0))
-                                        :vertex-array (make-vertex-array (make-convex-mesh :vertices vertices
-                                                                                           :faces faces)
-                                                                         NIL))
-            do (enter entity (node :container scene))
-               (enter entity (selection-buffer scene))
-               (enter entity (index scene)))))
+           (node :container scene)))
   (commit (scene +main+) (loader +main+)))
 
 (defun clear-debug-entities (scene)
@@ -218,12 +229,10 @@ void main(){
           entity)))))
 
 (defun patch-merged-patches (patch)
-  (let* ((patch      (hull patch))
-         ; (debug-info (org.shirakumo.fraf.convex-covering::debug-info hull))
-         ; (patch      (getf debug-info :patch))
-         (link       (org.shirakumo.fraf.convex-covering::patch-link patch))
-         (a          (org.shirakumo.fraf.convex-covering::patch-link-a link))
-         (b          (org.shirakumo.fraf.convex-covering::patch-link-b link)))
+  (let* ((patch (hull patch))
+         (link  (org.shirakumo.fraf.convex-covering::patch-link patch))
+         (a     (org.shirakumo.fraf.convex-covering::patch-link-a link))
+         (b     (org.shirakumo.fraf.convex-covering::patch-link-b link)))
     (values a b)))
 
 (defun explain-merge (patch decomposition-panel)
@@ -238,46 +247,29 @@ void main(){
                 (polygon-mode patch) :line))))))
 
 (define-handler (decomposition-scene mouse-press :after) (button pos)
-  (flet ((compute-selection (old-selection)
-           (let* ((camera-position (vxyz (org.shirakumo.fraf.math.matrices:m* (minv (view-matrix)) (vec4 0 0 0 1))))
-                  (camera-forward  (org.shirakumo.fraf.math.matrices:m* (view-matrix) (vec4 0 0 1 0)))
-                  (camera-forward  (vec (vxy camera-forward) (- (vz camera-forward)))))
-             (format *trace-output* "pos ~A~%fwd ~A~%" camera-position camera-forward)
-             (let ((hits '()))
-               (spaces:do-intersecting (patch (index decomposition-scene) camera-position camera-forward)
-                 (push patch hits))
-               (let ((new-selection (if (alexandria:set-equal hits old-selection)
-                                        (let ((first (pop old-selection)))
-                                          (append old-selection (list first)))
-                                        hits)))
-
-                 (format *trace-output* "Selection ~A~%" new-selection)
-                 new-selection)))))
-    (case button
-      (:left
-       (let ((object (select (pos mouse-press) (selection-buffer decomposition-scene))))
-         (setf (selection1 decomposition-scene) (if object (list object) '()))))
-      (:right
-       (let ((object (select (pos mouse-press) (selection-buffer decomposition-scene))))
-         (setf (selection2 decomposition-scene) (if object (list object) '())))))
-    (case button
-      ((:left :right)
-       (clear-debug-entities decomposition-scene)
-       (let ((selected1 (selected-patch1 decomposition-scene))
-             (selected2 (selected-patch2 decomposition-scene)))
-         (spaces:do-all (patch (index decomposition-scene))
-           (setf (visible-p patch) t)
-           (cond ((or (eq patch selected1) (eq patch selected2))
-                  (setf (polygon-mode patch) :fill))
-                 (t
-                  (setf (color patch) (original-color patch)
-                        (polygon-mode patch) nil)))))))))
+  (case button
+    (:left
+     (let ((object (select pos (selection-buffer decomposition-scene))))
+       (setf (selection1 decomposition-scene) (if object (list object) '()))))
+    (:right
+     (let ((object (select pos (selection-buffer decomposition-scene))))
+       (setf (selection2 decomposition-scene) (if object (list object) '())))))
+  (case button
+    ((:left :right)
+     (clear-debug-entities decomposition-scene)
+     (let ((selected1 (selected-patch1 decomposition-scene))
+           (selected2 (selected-patch2 decomposition-scene)))
+       (spaces:do-all (patch (index decomposition-scene))
+         (setf (visible-p patch) t)
+         (cond ((or (eq patch selected1) (eq patch selected2))
+                (setf (polygon-mode patch) :fill))
+               (t
+                (setf (color patch) (original-color patch)
+                      (polygon-mode patch) nil))))))))
 
 (defun draw-annotations (annotations scene)
   (let ((container (node :container scene)))
-    (labels ((register (entity)
-               (push entity (debug-entities scene)))
-             (draw (function color &rest arguments)
+    (labels ((draw (function color &rest arguments)
                (let ((color (etypecase color
                               (list (apply #'vec color))
                               (vec color))))
@@ -305,12 +297,15 @@ void main(){
                     (line c a color))))))))
 
 (define-handler (decomposition-scene text-entered :after) (text)
-  (labels ((debug-patch (patch)
-             (let* ((hull       (hull patch))
+  (labels ((inspect-patch (entity)
+             (check-type entity decomposition-entity)
+             (let* ((hull       (hull entity))
                     (debug-info (org.shirakumo.fraf.convex-covering::debug-info hull)))
-               (clouseau:inspect debug-info :new-process t)))
+               (break "Add inspector here")
+               ;; (clouseau:inspect debug-info :new-process t)
+               ))
            (validate (patch aspects)
-             (let ((context    (context decomposition-scene)))
+             (let ((context (context decomposition-scene)))
                (let ((*print-circle* t)
                      (*print-level* 3)
                      (*print-length* 3))
@@ -319,6 +314,7 @@ void main(){
                            (org.shirakumo.fraf.convex-covering::valid-patch-p patch context)))
                  (let ((hull (org.shirakumo.fraf.convex-covering::patch-hull patch)))
                    (when hull
+                     (format *trace-output* "Flat: ~A~%" (org.shirakumo.fraf.convex-covering::hull-flat-p hull))
                      (draw-annotations
                       (org.shirakumo.fraf.convex-covering::hull-annotations hull)
                       decomposition-scene)
@@ -331,17 +327,31 @@ void main(){
                (org.shirakumo.fraf.convex-covering::patch-link-merge-result link)))
            (patch-of-interest ()
              (let ((patch1 (when (selected-patch1 decomposition-scene)
-                             (hull (selected-patch1 decomposition-scene))))
+                             (debug-patch (selected-patch1 decomposition-scene))))
                    (patch2 (when (selected-patch2 decomposition-scene)
-                             (hull (selected-patch2 decomposition-scene)))))
+                             (debug-patch (selected-patch2 decomposition-scene)))))
                (cond ((and patch1 patch2)
                       (find-merged-patch patch1 patch2))
                      (patch1)
                      (patch2)))))
-    (cond ((string= text "1")
-           (debug-patch (selected-patch1 decomposition-scene)))
+    (cond ;; Inspect first selected patch
+          ((string= text "1")
+           (inspect-patch (selected-patch1 decomposition-scene)))
+          ;; Inspect second selected patch
           ((string= text "2")
-           (debug-patch (selected-patch2 decomposition-scene)))
+           (inspect-patch (selected-patch2 decomposition-scene)))
+          ;; Inspect patch that results from merging the two selected patches
+          ((string= text "3")
+           (let ((patch1 (selected-patch1 decomposition-scene))
+                 (patch2 (selected-patch2 decomposition-scene)))
+             (unless (and patch1 patch2)
+               (format *trace-output* "Selected two patches~%"))
+             (let* ((patch1       (debug-patch patch1))
+                    (patch2       (debug-patch patch2))
+                    (merged-patch (find-merged-patch patch1 patch2)))
+               (break "Add inspector here")
+               ;; (clouseau:inspect merged-patch :new-process t)
+               )))
           ;; "E"xplain why mergable/not mergable
           ((string= text "e")
            (let ((patch1 (selected-patch1 decomposition-scene))
@@ -349,21 +359,21 @@ void main(){
              (cond ((and patch1 (not patch2)) ; why was this created?
                     (format *trace-output* "Why merged ~A?~%" patch1)
                     (setf (polygon-mode patch1) :line)
-                    (let ((patch (hull patch1)))
+                    (let ((patch (debug-patch patch1)))
                       (explain-merge patch decomposition-scene)))
                    ((and patch1 patch2) ; why were these not merged?
                     (format *trace-output* "Why not merged ~A and ~A?~%" patch1 patch2)
                     (setf (polygon-mode patch1) :line)
                     (setf (polygon-mode patch2) :line)
-                    (let* ((patch1       (hull patch1))
-                           (patch2       (hull patch2))
+                    (let* ((patch1       (debug-patch patch1))
+                           (patch2       (debug-patch patch2))
                            (merged-patch (find-merged-patch patch1 patch2)))
                       (let ((debug-hull (add-debug-hull merged-patch (vec 1 1 1) decomposition-scene)))
                         (setf (polygon-mode debug-hull) :line))
-                      (clouseau:inspect merged-patch :new-process t)
                       (explain-merge merged-patch decomposition-scene)))))
            (commit (scene +main+) (loader +main+)))
-          ((string= text "g")           ; green
+          ;; "G"reen patch
+          ((string= text "g")
            (clear-debug-entities decomposition-scene)
            (let* ((selection1 (selected-patch1 decomposition-scene))
                   (patch      (patch-merged-patches selection1))
@@ -372,7 +382,8 @@ void main(){
              (setf (selection1 decomposition-scene) (list entity))
              (explain-merge patch decomposition-scene))
            (commit (scene +main+) (loader +main+)))
-          ((string= text "r")           ; red
+          ;; "R"ed patch
+          ((string= text "r")
            (clear-debug-entities decomposition-scene)
            (let* ((selection1 (selected-patch1 decomposition-scene))
                   (patch      (nth-value 1 (patch-merged-patches selection1)))
@@ -381,10 +392,12 @@ void main(){
              (setf (selection1 decomposition-scene) (list entity))
              (explain-merge patch decomposition-scene))
            (commit (scene +main+) (loader +main+)))
-          ((string= text "n")           ; normals
+          ;; Validate "n"ormals
+          ((string= text "n")
            ;; (clear-debug-entities decomposition-scene)
-           (validate (patch-of-interest)  '(:normals)))
-          ((string= text "l")     ; "line" since e for "edge" is taken
+           (validate (patch-of-interest) '(:normals)))
+          ;; Validate "l"ines (since e for "edge" is taken)
+          ((string= text "l")
            (clear-debug-entities decomposition-scene)
            (let ((patch (patch-of-interest)))
              (explain-merge patch decomposition-scene)
