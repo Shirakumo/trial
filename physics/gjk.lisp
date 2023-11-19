@@ -73,7 +73,8 @@
   (declare (type point target src))
   (v<- target src)
   (v<- (point-a target) (point-a src))
-  (v<- (point-b target) (point-b src)))
+  (v<- (point-b target) (point-b src))
+  target)
 
 (defun search-point (p +dir a b)
   (declare (optimize speed))

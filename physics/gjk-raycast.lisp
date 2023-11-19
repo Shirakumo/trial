@@ -21,9 +21,7 @@
 ;; extra copies of unused B slot in P<-
 (declaim (inline pcopy))
 (defun pcopy (p)
-  (let ((a (point)))
-    (p<- a p)
-    a))
+  (p<- (point) p))
 
 (defun signed-volumes (dim s0 s1 s2 s3 dir)
   ;; returns # of dimensions remaining, and any remaining points in
