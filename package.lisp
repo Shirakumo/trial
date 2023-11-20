@@ -474,7 +474,7 @@
    #:pbr-material
    #:albedo-factor
    #:emission-factor
-   #:metallic-factor
+   #:metalness-factor
    #:roughness-factor
    #:occlusion-factor
    #:alpha-cutoff

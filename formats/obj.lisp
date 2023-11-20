@@ -24,6 +24,14 @@
       (3 (vec (ref 0) (ref 1) (ref 2)))
       (4 (vec (ref 0) (ref 1) (ref 2) (ref 3))))))
 
+(defun from-vec (v &optional (arity (length (varr v))))
+  (flet ((ref (x)
+           (if (< x (length (varr v))) (aref (varr v) x) 0f0)))
+    (ecase arity
+      (2 (vector (ref 0) (ref 1)))
+      (3 (vector (ref 0) (ref 1) (ref 2)))
+      (4 (vector (ref 0) (ref 1) (ref 2) (ref 3))))))
+
 (defmethod load-model (input (type (eql :obj)) &key (generator (make-instance 'resource-generator))
                                                     (model (make-instance 'trial:model)))
   (let ((context (obj:parse input)))
@@ -72,3 +80,32 @@
                          do (add-mesh (cons (obj:name object) i) mesh))
                    (add-mesh (obj:name object) (first meshes))))
       model)))
+
+(defmethod save-model ((model model) target (type (eql :obj)) &rest args &key &allow-other-keys)
+  (let ((context (make-instance 'obj:context)))
+    (loop for name being the hash-keys of (materials model) using (hash-value material)
+          do (setf (gethash name (obj:materials context))
+                   (flet ((from-texture (type texture)
+                            (let ((name (format NIL "~a-~a" name type)))
+                              (save-image texture (make-pathname :name name :type "png" :defaults target) :png))))
+                     (etypecase material
+                       (pbr-material
+                        (make-instance 'obj:material
+                                       :diffuse-map (from-texture "diffuse" (albedo-texture material))
+                                       :rough-metal-occlusion-map (from-texture "metal-rough-occlusion" (metal-rough-occlusion-texture material))
+                                       :emissive-map (from-texture "emissive" (emission-texture material))
+                                       :normal-map (from-texture "normal" (normal-texture material))
+                                       :diffuse-factor (from-vec (albedo-factor material) 3)
+                                       :metallic-factor (metalness-factor material)
+                                       :roughness-factor (roughness-factor material)
+                                       :emissive-factor (from-vec (emission-factor material))))
+                       (phong-material
+                        (make-instance 'obj:material
+                                       :diffuse-map (from-texture "diffuse" (diffuse-texture material))
+                                       :specular-map (from-texture "specular" (specular-texture material))
+                                       :normal-map (from-texture "normal" (normal-texture material))
+                                       :diffuse-factor (from-vec (diffuse-factor material) 3)
+                                       :specular-factor (specular-factor material)))))))
+    (loop for name being the hash-keys of (meshes model) using (hash-value mesh)
+          do (print :a))
+    (apply #'obj:serialize context target args)))
