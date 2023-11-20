@@ -20,7 +20,8 @@
                (:file "selection")
                (:file "physics")
                (:file "convex-physics")
-               (:file "scene-loader"))
+               (:file "scene-loader")
+               (:file "decomposition"))
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
                :trial-theora
