@@ -114,6 +114,7 @@
                          (pbr-material
                           (make-instance 'obj:material
                                          :diffuse-map (from-texture "diffuse" (albedo-texture material))
+                                         ;; FIXME: reorder?
                                          :rough-metal-occlusion-map (from-texture "metal-rough-occlusion" (metal-rough-occlusion-texture material))
                                          :emissive-map (from-texture "emissive" (emission-texture material))
                                          :normal-map (from-texture "normal" (normal-texture material))

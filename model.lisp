@@ -5,7 +5,6 @@
    (meshes :initform (make-hash-table :test 'equal) :accessor meshes)
    (clips :initform (make-hash-table :test 'equal) :accessor clips)
    (scenes :initform (make-hash-table :test 'equal) :accessor scenes)
-   (physics-primitives :initform NIL :accessor physics-primitives)
    (skeleton :initform NIL :accessor skeleton)))
 
 (defmacro %define-model-accessor (type accessor)
@@ -47,3 +46,5 @@
   (clrhash (clips model))
   (clrhash (scenes model))
   (setf (skeleton model) NIL))
+
+;; TODO: coerce-object multi-mesh-entity mesh-entity etc to model
