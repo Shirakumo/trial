@@ -3,7 +3,9 @@
   (:shadow #:asset #:load-image)
   (:local-nicknames
    (#:gltf #:org.shirakumo.fraf.gltf)
-   (#:v #:org.shirakumo.verbose)))
+   (#:v #:org.shirakumo.verbose))
+  (:export
+   #:precompile))
 (in-package #:org.shirakumo.fraf.trial.gltf)
 
 (defun gltf-node-transform (node)
@@ -483,7 +485,7 @@
                                                  :shape shape
                                                  :gltf (gltf:gltf base-node)))
          (child (gltf:make-indexed 'gltf:node base-node :collider collider)))
-    (vector-push-extend child (gltf:children base-node))))
+    (gltf:push-child child base-node)))
 
 (defun precompile (file &rest args &key (output file) &allow-other-keys)
   (let ((decomposition-args (remf* args :output)))
@@ -496,7 +498,10 @@
                           (primitives (gltf:primitives (gltf:mesh shape)))
                           (mesh (load-mesh (aref primitives 0) NIL "" NIL))
                           (verts (reordered-vertex-data mesh '(location))))
-                     (loop for hull across (apply #'org.shirakumo.fraf.convex-covering:decompose verts (faces mesh) decomposition-args)
+                     (loop for hull across (handler-bind ((warning #'muffle-warning))
+                                             (apply #'org.shirakumo.fraf.convex-covering:decompose
+                                                    verts (trial::simplify (faces mesh) '(unsigned-byte 32))
+                                                    decomposition-args))
                            do (add-convex-shape node
                                                 (org.shirakumo.fraf.convex-covering:vertices hull)
                                                 (org.shirakumo.fraf.convex-covering:faces hull)))
