@@ -476,7 +476,7 @@
                  (recurse (gltf:nodes node) scene)))
       model)))
 
-(defun add-convex-shape (base-node vertices faces)
+(defun add-convex-shape (base-node name vertices faces)
   (let* ((primitive (gltf:make-mesh-primitive base-node vertices faces '(:position)))
          (mesh (gltf:make-indexed 'gltf:mesh base-node :primitives (vector primitive)))
          (shape (gltf:make-indexed 'gltf:convex-shape base-node :mesh mesh :kind "convex"))
@@ -484,7 +484,7 @@
                                                  :physics-material (gltf:physics-material (gltf:collider base-node))
                                                  :shape shape
                                                  :gltf (gltf:gltf base-node)))
-         (child (gltf:make-indexed 'gltf:node base-node :collider collider)))
+         (child (gltf:make-indexed 'gltf:node base-node :collider collider :name name)))
     (gltf:push-child child base-node)))
 
 (defun precompile (file &rest args &key (output file) &allow-other-keys)
@@ -498,11 +498,12 @@
                           (primitives (gltf:primitives (gltf:mesh shape)))
                           (mesh (load-mesh (aref primitives 0) NIL "" NIL))
                           (verts (reordered-vertex-data mesh '(location))))
-                     (loop for hull across (handler-bind ((warning #'muffle-warning))
+                     (loop for i from 0
+                           for hull across (handler-bind ((warning #'muffle-warning))
                                              (apply #'org.shirakumo.fraf.convex-covering:decompose
                                                     verts (trial::simplify (faces mesh) '(unsigned-byte 32))
                                                     decomposition-args))
-                           do (add-convex-shape node
+                           do (add-convex-shape node (format NIL "~a-hull-~a" (gltf:name node) i)
                                                 (org.shirakumo.fraf.convex-covering:vertices hull)
                                                 (org.shirakumo.fraf.convex-covering:faces hull)))
                      (setf (gltf:collider node) NIL)
