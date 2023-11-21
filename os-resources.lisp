@@ -165,3 +165,21 @@
   (values (round (- (sb-ext:dynamic-space-size) (sb-kernel:dynamic-usage)) 1024.0)
           (round (sb-ext:dynamic-space-size) 1024.0))
   #-sbcl (values 1 1))
+
+(defun gc-time ()
+  #+sbcl
+  (/ (float sb-ext:*gc-real-time* 0d0)
+     INTERNAL-TIME-UNITS-PER-SECOND)
+  #-sbcl 0d0)
+
+(define-global +gpu-time-query-object+ NIL)
+(define-global +gpu-time+ 0)
+
+(defun gpu-time ()
+  (cond (+gpu-time-query-object+
+         (gl:end-query :time-elapsed)
+         (incf +gpu-time+ (gl:get-query-object +gpu-time-query-object+ :query-result)))
+        (T
+         (setf +gpu-time-query-object+ (first (gl:gen-queries 1)))))
+  (gl:begin-query :time-elapsed +gpu-time-query-object+)
+  (* (float +gpu-time+ 0d0) 10e-9))

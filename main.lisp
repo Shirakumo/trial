@@ -21,7 +21,9 @@
 
 (defmethod finalize :after ((main main))
   (setf +main+ NIL)
-  (setf +input-source+ :keyboard))
+  (setf +input-source+ :keyboard)
+  (setf +gpu-time-query-object+ NIL)
+  (setf +gpu-time+ 0))
 
 (defmethod username ((main main))
   (system-username))

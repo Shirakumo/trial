@@ -1370,7 +1370,9 @@
    #:cpu-time
    #:io-bytes
    #:gpu-room
-   #:cpu-room)
+   #:cpu-room
+   #:gc-time
+   #:gpu-time)
   ;; parallax.lisp
   (:export
    #:parallax
