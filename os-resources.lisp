@@ -55,20 +55,24 @@
                          :string name
                          :int)))
 
-(defun io-bytes ()
-  (org.shirakumo.machine-state:process-io-bytes))
+(macrolet ((define-wrap (name fun)
+             `(progn
+                (defun ,name ()
+                  (,fun))
 
-(defun cpu-time ()
-  (org.shirakumo.machine-state:process-time))
+                (trivial-deprecate:declaim-deprecated (function ,name)
+                                                      :software "trial"
+                                                      :version "1.2.0"
+                                                      :alternatives (,fun)))))
 
-(defun cpu-room ()
-  (org.shirakumo.machine-state:gc-room))
+  (define-wrap io-bytes org.shirakumo.machine-state:process-io-bytes)
 
-(defun gpu-room ()
-  (org.shirakumo.machine-state:gpu-room))
+  (define-wrap cpu-time org.shirakumo.machine-state:process-time)
 
-(defun gpu-time ()
-  (org.shirakumo.machine-state:gpu-time))
+  (define-wrap cpu-room org.shirakumo.machine-state:gc-room)
 
-(defun gc-time ()
-  (org.shirakumo.machine-state:gc-time))
+  (define-wrap gpu-room org.shirakumo.machine-state:gpu-room)
+
+  (define-wrap gpu-time org.shirakumo.machine-state:gpu-time)
+
+  (define-wrap gc-time org.shirakumo.machine-state:gc-time))
