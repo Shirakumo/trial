@@ -135,8 +135,10 @@
 
 #++(define-hit-detector (sphere pill))
 #++(define-hit-detector (sphere cylinder))
+#++(define-hit-detector (sphere triangle))
 #++(define-hit-detector (cylinder pill))
 #++(define-hit-detector (cylinder cylinder))
+#++(define-hit-detector (cylinder triangle))
 
 (define-hit-detector (cylinder vec3)
   (let ((bl (vcopy b)))
@@ -151,6 +153,7 @@
         (finish-hit)))))
 
 #++(define-hit-detector (pill pill))
+#++(define-hit-detector (pill triangle))
 
 (define-hit-detector (pill vec3)
   (let ((bl (vcopy b)))
@@ -180,6 +183,8 @@
 
 #++(define-hit-detector (box cylinder))
 #++(define-hit-detector (box pill))
+#++(define-hit-detector (box triangle))
+#++(define-hit-detector (triangle triangle))
 
 (define-hit-detector (box half-space)
   (let* ((bs (box-bsize a))
