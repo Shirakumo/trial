@@ -105,6 +105,7 @@ void main(){
   (observe! (hit-location (hit (node :b scene))) :title "Location")
   (observe! (hit-normal (hit (node :b scene))) :title "Normal")
   (observe! (hit-depth (hit (node :b scene))) :title "Depth")
+  (observe! (distance (node :a scene) (node :b scene)) :title "Distance")
   (enter (make-instance 'render-pass) scene))
 
 (defmethod setup-ui ((scene collision-scene) panel)

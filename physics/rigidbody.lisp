@@ -30,6 +30,15 @@
         do (loop for bi across (physics-primitives b)
                  do (detect-hits ai b))))
 
+(define-distance (rigidbody primitive)
+  (loop for ai across (physics-primitives a)
+        minimize (distance ai b)))
+
+(define-distance (rigidbody rigidbody)
+  (loop for ai across (physics-primitives a)
+        minimize (loop for bi across (physics-primitives b)
+                       minimize (distance ai bi))))
+
 ;; TODO: cache and update when rotating?
 (defmethod global-bsize ((entity rigidbody) &optional (target (vec3)))
   (v<- target 0)
