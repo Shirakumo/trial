@@ -190,4 +190,5 @@
                :manifolds
                :quickhull
                :convex-covering
+               :machine-state/opengl
                (:feature :windows :com-on)))
