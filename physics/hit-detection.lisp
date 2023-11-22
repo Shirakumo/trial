@@ -67,6 +67,17 @@
         (setf (hit-depth hit) (- (+ (sphere-radius a) (sphere-radius b)) len))
         (finish-hit)))))
 
+(define-hit-detector (sphere vec3)
+  (let ((al (vec3)))
+    (declare (dynamic-extent al))
+    (global-location a al)
+    (let ((dist (vsqrdistance al b)))
+      (when (< dist (* (sphere-radius a) (sphere-radius a)))
+        (v<- (hit-location hit) b)
+        (setf (hit-depth hit) (sqrt dist))
+        (nvunit (!v- (hit-normal hit) b al))
+        (finish-hit)))))
+
 (define-distance (sphere half-space)
   (- (v. (plane-normal b) (global-location a))
      (sphere-radius a)
@@ -87,6 +98,15 @@
       (v<- (hit-location hit) al)
       (nv+* (hit-location hit) (plane-normal b) (- (sphere-radius a)))
       (finish-hit))))
+
+(define-hit-detector (half-space vec3)
+    (let ((dist (- (v. (plane-normal a) b)
+                   (plane-offset a))))
+      (when (< dist 0)
+        (v<- (hit-location hit) b)
+        (setf (hit-depth hit) (- dist))
+        (v<- (hit-normal hit) (plane-normal a))
+        (finish-hit))))
 
 (define-distance (sphere plane)
   (- (abs (- (v. (plane-normal b) (global-location a))
@@ -113,17 +133,53 @@
       (nv+* (hit-location hit) (hit-normal hit) (- (sphere-radius a)))
       (finish-hit))))
 
-#++
-(define-hit-detector (sphere cylinder)
-  ;; IDEA: We embiggen the sphere by the cylinder's radius, and then pretend
-  ;;       the cylinder is a ray
-  )
+#++(define-hit-detector (sphere pill))
+#++(define-hit-detector (sphere cylinder))
+#++(define-hit-detector (cylinder pill))
+#++(define-hit-detector (cylinder cylinder))
 
-#++
-(define-hit-detector (cylinder cylinder)
-  ;; IDEA: Similar to the cylinder-sphere test we can embiggen one cylinder and
-  ;;       then just do a ray test
-  )
+(define-hit-detector (cylinder vec3)
+  (let ((bl (vcopy b)))
+    (declare (dynamic-extent bl))
+    (ntransform-inverse bl (primitive-transform a))
+    (let ((dist (+ (expt (vx bl) 2) (expt (vz bl) 2))))
+      (when (and (< (abs (vy bl)) (cylinder-height a))
+                 (< dist (expt (cylinder-radius a) 2)))
+        (v<- (hit-location hit) bl)
+        (setf (hit-depth hit) (sqrt dist))
+        (nvunit (vsetf (hit-normal hit) (vx bl) 0 (vy bl)))
+        (finish-hit)))))
+
+#++(define-hit-detector (pill pill))
+
+(define-hit-detector (pill vec3)
+  (let ((bl (vcopy b)))
+    (declare (dynamic-extent bl))
+    (ntransform-inverse bl (primitive-transform a))
+    (let ((dist (+ (expt (vx bl) 2) (expt (vz bl) 2))))
+      (when (and (< dist (expt (pill-radius a) 2)))
+        (cond ((< (abs (vy bl)) (pill-height a)) ; cylinder hit
+               (v<- (hit-location hit) bl)
+               (setf (hit-depth hit) (sqrt dist))
+               (nvunit (vsetf (hit-normal hit) (vx bl) 0 (vy bl)))
+               (finish-hit))
+              ((< 0 (vy bl) (+ (pill-height a) (pill-radius a))) ; top sphere hit
+               (v<- (hit-location hit) bl)
+               (let ((p (vec3 0 (pill-height a) 0)))
+                 (declare (dynamic-extent p))
+                 (setf (hit-depth hit) (vdistance bl p))
+                 (nvunit (!v- (hit-normal hit) bl p)))
+               (finish-hit))
+              ((< (- (+ (pill-height a) (pill-radius a))) (vy bl) 0) ; bottom sphere hit
+               (v<- (hit-location hit) bl)
+               (let ((p (vec3 0 (- (pill-height a)) 0)))
+                 (declare (dynamic-extent p))
+                 (setf (hit-depth hit) (vdistance bl p))
+                 (nvunit (!v- (hit-normal hit) bl p)))
+               (finish-hit)))))))
+
+#++(define-hit-detector (box cylinder))
+#++(define-hit-detector (box pill))
 
 (define-hit-detector (box half-space)
   (let* ((bs (box-bsize a))

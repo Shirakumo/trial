@@ -21,7 +21,7 @@
 (defmethod intersects-p (a b)
   (let ((hit (make-hit)))
     (declare (dynamic-extent hit))
-    (not (null (detect-hit a b hit)))))
+    (detect-hit a b hit)))
 
 (defmacro define-distance ((a b) &body body)
   (let ((av (intern "A")) (bv (intern "B"))
