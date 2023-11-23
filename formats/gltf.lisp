@@ -488,9 +488,10 @@
     (gltf:push-child child base-node)))
 
 (defun precompile (file &rest args &key (output file) &allow-other-keys)
-  (let ((decomposition-args (remf* args :output)))
-    (gltf:with-gltf (gltf file)
-      (let ((work-done-p NIL))
+  (let ((decomposition-args (remf* args :output))
+        (work-done-p NIL))
+    (trial:with-tempfile (tmp :type "glb")
+      (gltf:with-gltf (gltf file)
         (loop for node across (gltf:nodes gltf)
               do (when (and (gltf:collider node)
                             (typep (gltf:shape (gltf:collider node)) 'gltf:trimesh-shape))
@@ -509,4 +510,6 @@
                      (setf (gltf:collider node) NIL)
                      (setf work-done-p T))))
         (when work-done-p
-          (gltf:serialize gltf output))))))
+          (gltf:serialize gltf tmp))))
+    (when work-done-p
+      (rename-file tmp output))))
