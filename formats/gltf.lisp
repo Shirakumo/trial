@@ -232,8 +232,8 @@
                                                                     (:uint8  '(unsigned-byte 8))
                                                                     (:uint16 '(unsigned-byte 16))
                                                                     (:uint32 '(unsigned-byte 32))))))
-        (setf (faces mesh) indexes)
-        (org.shirakumo.memory-regions:replace indexes accessor)))
+        (org.shirakumo.memory-regions:replace indexes accessor)
+        (setf (faces mesh) (coerce indexes '(simple-array (unsigned-byte 32) 1)))))
     mesh))
 
 (defun load-meshes (gltf model)
