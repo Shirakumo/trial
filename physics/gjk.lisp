@@ -357,6 +357,10 @@
      (declare (optimize speed))
      ,@body))
 
+(define-support-function trial:half-space (dir next)
+  ;; TODO: implement
+  (trial:implement!))
+
 (define-support-function trial:plane (dir next)
   (let ((denom (v. (trial:plane-normal primitive) dir)))
     (if (<= denom 0.000001)
