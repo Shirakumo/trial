@@ -157,7 +157,7 @@
          (defstruct (,name (:constructor ,int-constructor)
                            (:include ,super))
            ,@slots)
-         
+
          (defun ,constructor (&rest args &key location orientation &allow-other-keys)
            (let ((primitive (apply #',int-constructor (remf* args :location :orientation))))
              (when location (setf (location primitive) location))
@@ -270,14 +270,15 @@
     (format stream "~f ~f" (radius primitive) (height primitive))))
 
 (defmethod global-bsize ((primitive pill) &optional (target (vec3)))
-  (let ((dir (n*m4/3 (primitive-transform primitive) (vec 0 1 0)))
-        (h (pill-height primitive))
-        (r (pill-radius primitive)))
-    ;; FIXME: this is not quite correct and the bounding box is over-big, but w/e.
+  (let* ((h (pill-height primitive))
+         (r (pill-radius primitive))
+         (dir (n*m4/3 (primitive-transform primitive) (vec 0 h 0))))
+    ;; FIXME: this assumes that the primitive transform is length- and
+    ;; angle-preserving (that is, it does not include scaling or
+    ;; worse). Just scaling could be easily taken into account if
+    ;; isotropic.
     (vsetf target
-           (+ r (* (vx dir) h) (* 2 r (sqrt (- 1 (* (vx dir) (vx dir))))))
-           (+ r (* (vy dir) h) (* 2 r (sqrt (- 1 (* (vy dir) (vy dir))))))
-           (+ r (* (vz dir) h) (* 2 r (sqrt (- 1 (* (vz dir) (vz dir)))))))))
+           (+ r (abs (vx dir))) (+ r (abs (vy dir))) (+ r (abs (vz dir))))))
 
 (defmethod 3ds:radius ((primitive pill))
   (+ (pill-height primitive) (pill-radius primitive)))
