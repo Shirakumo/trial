@@ -321,7 +321,9 @@
     (format stream "~d tris" (truncate (length (faces primitive)) 3))))
 
 (defmethod global-bsize ((primitive general-mesh) &optional (target (vec3)))
-  (let ((vmin (vec3)) (vmax (vec3)) (tmp (vec3))
+  (let ((vmin (vec3 #1=most-positive-single-float #1# #1#))
+        (vmax (vec3 #2=most-negative-single-float #2# #2#))
+        (tmp (vec3))
         (vertices (general-mesh-vertices primitive)))
     (declare (dynamic-extent vmin tmp))
     (loop for i from 0 below (length vertices) by 3
@@ -330,8 +332,8 @@
                     (aref vertices (+ i 1))
                     (aref vertices (+ i 2)))
              (n*m (primitive-transform primitive) tmp)
-             (vmin vmin tmp)
-             (vmax vmax tmp))
+             (nvmin vmin tmp)
+             (nvmax vmax tmp))
     (nv* (!v- target vmax vmin) 0.5)))
 
 (defmethod 3ds:radius ((primitive general-mesh))
