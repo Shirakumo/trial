@@ -26,8 +26,7 @@
       (alloy:enter button layout :row 0 :col 1)
       (alloy:on alloy:activate (button)
         (let ((file (org.shirakumo.file-select:existing :title "Load Model File..."
-                                                        :filter '(("glTF Binary" "glb")
-                                                                  ("glTF File" "gltf"))
+                                                        :filter '(("glTF" "glb" "gltf"))
                                                         :default (file scene))))
           (when file (setf (file scene) file)))))
     (alloy:finish-structure panel layout focus)))

@@ -101,9 +101,7 @@ void main(){
     (let ((button (alloy:represent "..." 'alloy:button :layout-parent layout :focus-parent focus)))
       (alloy:on alloy:activate (button)
         (let ((file (org.shirakumo.file-select:existing :title "Load Model File..."
-                                                        :filter '(("Wavefront OBJ" "obj")
-                                                                  ("glTF File" "gltf")
-                                                                  ("glTF Binary" "glb"))
+                                                        :filter '(("Model file" "obj" "gltf" "glb"))
                                                         :default (file scene))))
           (when file (setf (file scene) file)))))
     (alloy:enter "Mesh" layout :row 1 :col 0)
