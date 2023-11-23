@@ -366,12 +366,6 @@
        (when (probe-file ,path)
          (delete-file ,path)))))
 
-(defun rename-file* (file new-file)
-  (when (uiop:file-exists-p new-file)
-    (delete-file new-file))
-  (unless (equal file new-file)
-    (rename-file file new-file)))
-
 (defun make-uuid (&optional (id NIL id-p))
   (let ((val (random #xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF))
         (id (cond (id-p id)

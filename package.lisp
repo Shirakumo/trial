@@ -1688,7 +1688,6 @@
    #:tempdir
    #:tempfile
    #:with-tempfile
-   #:rename-file*
    #:make-uuid
    #:logfile
    #:config-directory
