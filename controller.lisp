@@ -67,7 +67,8 @@
    (fps-buffer-idx :initform 0 :accessor fps-buffer-idx)
    (observers :initform (make-array 0 :adjustable T :fill-pointer T) :accessor observers)
    (background :initform (vec4 1 1 1 0.3))
-   (show-overlay :initform T :accessor show-overlay)))
+   (show-overlay :initform T :accessor show-overlay)
+   (%string :initform (make-array 4096 :element-type 'character :fill-pointer 0) :accessor %string)))
 
 (defmethod handle ((ev toggle-overlay) (controller display-controller))
   (setf (show-overlay controller) (not (show-overlay controller))))
@@ -121,16 +122,17 @@
     table))
 
 (defun compose-controller-debug-text (controller ev)
-  (multiple-value-bind (gfree gtotal) (gpu-room)
-    (multiple-value-bind (cfree ctotal) (cpu-room)
-      (with-output-to-string (stream)
+  (multiple-value-bind (gfree gtotal) (org.shirakumo.machine-state:gpu-room)
+    (multiple-value-bind (cfree ctotal) (org.shirakumo.machine-state:gc-room)
+      (setf (fill-pointer (%string controller)) 0)
+      (with-output-to-string (stream (%string controller))
         (format stream "FPS  [Hz]: ~8,2f~%~
                         RAM  [KB]: ~8d (~2d%)~%~
                         VRAM [KB]: ~8d (~2d%)~%~
                         RESOURCES: ~8d"
                 (compute-fps-buffer-fps (fps-buffer controller))
-                (- ctotal cfree) (floor (/ (- ctotal cfree) ctotal 0.01))
-                (- gtotal gfree) (floor (/ (- gtotal gfree) gtotal 0.01))
+                (truncate (- ctotal cfree) 1024) (floor (/ (- ctotal cfree) ctotal 0.01))
+                (truncate (- gtotal gfree) 1024) (floor (/ (- gtotal gfree) gtotal 0.01))
                 (hash-table-count (loaded (loader +main+))))
         (let ((*print-pprint-dispatch* *controller-pprint*))
           (loop with observers = (observers controller)
@@ -140,7 +142,8 @@
                 do (restart-case (format stream "~%~a:~12t~a" title (funcall func ev))
                      (remove-observer ()
                        :report "Remove the offending observer."
-                       (setf (aref observers i) NIL)))))))))
+                       (setf (aref observers i) NIL))))))
+      (%string controller))))
 
 (defmethod handle ((ev tick) (controller display-controller))
   (when (and (show-overlay controller)
