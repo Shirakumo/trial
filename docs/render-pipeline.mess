@@ -39,7 +39,7 @@ Important to note here are that ``construct-frame`` is called //for every frame/
 
 Additionally, only ``renderables`` that are tied to the pass will be considered for rendering within the pass' context //at all//. Meaning that any object first needs to be tied to the pass by ``enter``ing it. An object may also be dynamically removed by using ``leave``.
 
-A pass only distinguishes between 1. Setup and 2. Runtime above by whether a ``containter`` is passed to the pass or a single ``renderable``. Entering and leaving renderables potentially causes allocations to happen, as new shader programs may need to be compiled. More details on this are illustrated in §3.
+A pass only distinguishes between 1. Setup and 2. Runtime above by whether a ``container`` is passed to the pass or a single ``renderable``. Entering and leaving renderables potentially causes allocations to happen, as new shader programs may need to be compiled. More details on this are illustrated in §3.
 
 The specifics of frame construction and rendering are elaborated upon in §4.
 
