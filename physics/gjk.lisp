@@ -140,6 +140,9 @@
     (declare (dynamic-extent s0 s1 s2 s3))
     (cond ((%gjk a b hit s0 s1 s2 s3)
            (epa s0 s1 s2 s3 a b hit)
+           #++(trial:debug-point (trial:hit-location hit))
+           #++(trial:debug-line (trial:hit-location hit) (v+* (trial:hit-location hit) (trial:hit-normal hit) -2)
+                                :color-a #.(vec 0 0 0) :color-b #.(vec 0 1 0))
            (trial:finish-hit hit a b)
            (1+ start))
           (T
