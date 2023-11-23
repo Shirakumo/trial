@@ -82,8 +82,8 @@
   (declare (type vec3 +dir))
   (let ((-dir (v- +dir)))
     (declare (dynamic-extent -dir))
-    (%support-function a -dir (point-a p))
     (%support-function b +dir (point-b p))
+    (%support-function a -dir (point-a p))
     (!v- p (point-b p) (point-a p))))
 
 (defun %gjk (a b s0 s1 s2 s3)
@@ -359,11 +359,9 @@
 
 (define-support-function trial:plane (dir next)
   (let ((denom (v. (trial:plane-normal primitive) dir)))
-    (vsetf next 0 0 0)
     (if (<= denom 0.000001)
-        (nv+* next dir (trial:plane-offset primitive))
-        (let ((tt (/ (trial:plane-offset primitive) denom)))
-          (nv+* next dir tt)))))
+        (!v* next dir (trial:plane-offset primitive))
+        (!v* next dir (/ (trial:plane-offset primitive) denom)))))
 
 (define-support-function trial:sphere (dir next)
   (nv* (nvunit* (v<- next dir)) (trial:sphere-radius primitive)))
