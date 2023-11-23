@@ -254,7 +254,7 @@
 (defmethod register :after ((thing physics-entity) (scene physics-scene))
   (enter thing (physics-system scene)))
 
-(defmethod deregsiter :after ((thing physics-entity) (scene physics-scene))
+(defmethod deregister :after ((thing physics-entity) (scene physics-scene))
   (leave thing (physics-system scene)))
 
 (defmethod enter ((thing force) (scene physics-scene))
