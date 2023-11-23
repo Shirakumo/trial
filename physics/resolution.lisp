@@ -326,7 +326,7 @@
     ;; Prepare Contacts
     (do-contacts (contact)
       (upgrade-hit-to-contact contact dt))
-    
+
     ;; Adjust Positions
     (loop repeat iterations
           for worst = (the single-float (depth-eps system))
@@ -394,3 +394,71 @@
                  (= 0.0 (inverse-mass (primitive-entity b))))
       (setf start (detect-hits a b contacts start end))
       (when (<= end start) (return start)))))
+
+;;;
+
+(defclass debug-rigidbody-mixin ()
+  ((include-fixed-p :initarg :include-fixed-p
+                    :accessor include-fixed-p
+                    :initform NIL)))
+
+(defmethod generate-hits :around ((system debug-rigidbody-mixin) contacts start end)
+  (labels ((interesting-entity-p (entity)
+             (not (= 0.0 (inverse-mass entity))))
+           (interesting-entity-pair-p (entity1 entity2)
+             (case (include-fixed-p system)
+               ((T)
+                T)
+               (:mixed
+                (or (interesting-entity-p entity1)
+                    (interesting-entity-p entity2)))
+               ((NIL)
+                (and (interesting-entity-p entity1)
+                     (interesting-entity-p entity2))))))
+    (let* ((broadphase-pairs '())
+           (collision-pairs '())
+           (result (let ((start start))
+                     (3ds:do-pairs (a b (acceleration-structure system) start)
+                       (unless (and (= 0.0 (inverse-mass (primitive-entity a)))
+                                    (= 0.0 (inverse-mass (primitive-entity b))))
+                         (push (cons a b) broadphase-pairs)
+                         (let ((new-start (detect-hits a b contacts start end)))
+                           (when (> new-start start)
+                             (push (cons a b) collision-pairs))
+                           (setf start new-start))
+                         (when (<= end start) (return start))))))
+           (drawn '()))
+      (debug-clear)
+      (labels ((draw-box (min max color)
+                 (let ((corners (alexandria:map-product #'list '(min max) '(min max) '(min max)))
+                       (seen '()))
+                   (alexandria:map-product
+                    (lambda (corner1 corner2)
+                      (when (= 2 (count t (map 'list #'eq corner1 corner2)))
+                        (labels ((which (which)
+                                   (case which
+                                     (min min)
+                                     (max max)))
+                                 (corner (corner)
+                                   (destructuring-bind (x y z) corner
+                                     (vec (vx (which x)) (vy (which y)) (vz (which z))))))
+                          (unless (or (member (cons corner1 corner2) seen :test #'equal)
+                                      (member (cons corner2 corner1) seen :test #'equal))
+                            (push (cons corner1 corner2) seen)
+                            (debug-line (corner corner1) (corner corner2) :color color)))))
+                    corners corners)))
+               (draw-primitive (primitive color)
+                 (when (not (find primitive drawn))
+                   (push primitive drawn)
+                   (let ((min (v- (3ds:location primitive) (3ds:bsize primitive)))
+                         (max (v+ (3ds:location primitive) (3ds:bsize primitive))))
+                     (draw-box min max color))))
+               (draw-phase (pairs color)
+                 (loop for (a . b) in pairs
+                       when (interesting-entity-pair-p (primitive-entity a)
+                                                       (primitive-entity b))
+                       do (draw-primitive a color)
+                          (draw-primitive b color))))
+        (draw-phase collision-pairs (vec3 1 0 0))
+        (draw-phase broadphase-pairs (vec3 .8 .8 0)))
+      result)))
