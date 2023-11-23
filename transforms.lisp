@@ -63,19 +63,21 @@
   (replace (marr4 *model-matrix*) (marr4 (aref +matrix-stack+ +matrix-index+))))
 
 (defmacro with-pushed-matrix (specs &body body)
-  (let ((specs (or specs '(((model-matrix) :copy)))))
-    `(let ,(loop for spec in specs
-                 for (accessor fill) = (enlist spec :copy)
-                 for variable = (ecase (unlist accessor)
-                                  ((*view-matrix* view-matrix) '*view-matrix*)
-                                  ((*projection-matrix* projection-matrix) '*projection-matrix*)
-                                  ((*model-matrix* model-matrix) '*model-matrix*))
+  (let ((specs (loop for spec in (or specs '(((model-matrix) :copy)))
+                     for (accessor fill) = (enlist spec :copy)
+                     for variable = (ecase (unlist accessor)
+                                      ((*view-matrix* view-matrix) '*view-matrix*)
+                                      ((*projection-matrix* projection-matrix) '*projection-matrix*)
+                                      ((*model-matrix* model-matrix) '*model-matrix*))
+                     collect (list variable fill))))
+    `(let ,(loop for (variable fill) in specs
                  collect `(,variable
                            ,(case fill
                               (:zero `(mat4))
                               (:identity `(meye 4))
                               ((:copy NIL) `(mcopy ,variable))
                               (T fill))))
+       (declare (dynamic-extent ,@(mapcar #'first specs)))
        ,@body)))
 
 (defun translate (v &optional (matrix (model-matrix)))

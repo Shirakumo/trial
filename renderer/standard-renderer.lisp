@@ -181,7 +181,10 @@
 (defmethod render ((renderable standard-renderable) (program shader-program))
   (declare (optimize speed))
   (setf (uniform program "model_matrix") (model-matrix))
-  (setf (uniform program "inv_model_matrix") (minv (model-matrix)))
+  (let ((inv (mat4)))
+    (declare (dynamic-extent inv))
+    (!minv inv (model-matrix))
+    (setf (uniform program "inv_model_matrix") inv))
   (loop for vao across (vertex-arrays renderable)
         do (render vao program)))
 
@@ -228,7 +231,10 @@
   ;;         need to set the per-vao material. This will break user expectations, as the RENDER
   ;;         primary on the renderable is not invoked. Not sure how to fix this issue.
   (setf (uniform program "model_matrix") (model-matrix))
-  (setf (uniform program "inv_model_matrix") (minv (model-matrix)))
+  (let ((inv (mat4)))
+    (declare (dynamic-extent inv))
+    (!minv inv (model-matrix))
+    (setf (uniform program "inv_model_matrix") inv))
   (loop for vao across (vertex-arrays renderable)
         for material across (materials renderable)
         do (render-with pass material program)

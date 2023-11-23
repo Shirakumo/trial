@@ -77,9 +77,8 @@
   (when orientation (setf (orientation entity) orientation)))
 
 (defmethod apply-transforms progn ((obj transformed-entity))
-  (let* ((marr (make-array 16 :element-type 'single-float))
-         (mat (mat4 marr)))
-    (declare (dynamic-extent mat marr))
+  (let ((mat (mat4)))
+    (declare (dynamic-extent mat))
     (nm* (model-matrix) (tmat (tf obj) mat))))
 
 (defmethod location ((obj transformed-entity))
