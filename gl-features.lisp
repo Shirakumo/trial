@@ -47,10 +47,16 @@
                (setf (gethash k table) T)
                (setf (gethash k table) NIL))))
 
-(defvar *feature-stack* (list (make-feature-table)))
+(define-global +feature-table-stack-ptr+ 0)
+(define-global +feature-table-stack+ #())
+
+(setf +feature-table-stack+
+      (let ((array (make-array 32)))
+        (dotimes (i (length array) array)
+          (setf (aref array i) (make-feature-table)))))
 
 (defun feature-table ()
-  (first *feature-stack*))
+  (aref +feature-table-stack+ +feature-table-stack-ptr+))
 
 (defun enable-feature (&rest features)
   (let ((table (feature-table)))
@@ -104,21 +110,26 @@
                                  (gl:disable ,feature)
                                  (setf (gethash ,feature ,table) NIL))))))))
 
-(defun push-features (&optional (table (make-feature-table (feature-table))))
-  (push table *feature-stack*))
+(defun push-features ()
+  (let ((prev (aref +feature-table-stack+ +feature-table-stack-ptr+))
+        (cur (aref +feature-table-stack+ (1+ +feature-table-stack-ptr+))))
+    (loop for k being the hash-keys of prev using (hash-value v)
+          do (setf (gethash k cur) v))
+    (incf +feature-table-stack-ptr+)))
 
 (defun pop-features ()
-  (let ((prev (pop *feature-stack*))
-        (cur (feature-table)))
-    (loop for k being the hash-keys of prev
-          for v being the hash-values of prev
+  (let ((prev (aref +feature-table-stack+ +feature-table-stack-ptr+))
+        (cur (aref +feature-table-stack+ (1- +feature-table-stack-ptr+))))
+    (loop for k being the hash-keys of prev using (hash-value v)
           do (cond ((and v (not (gethash k cur)))
                     (gl:disable k))
                    ((and (not v) (gethash k cur))
-                    (gl:enable k))))))
+                    (gl:enable k))))
+    (decf +feature-table-stack-ptr+)))
 
 (defmacro with-pushed-features (&body body)
-  `(progn (push-features)
-          (unwind-protect
-               (progn ,@body)
-            (pop-features))))
+  `(progn
+     (push-features)
+     (unwind-protect
+          (progn ,@body)
+       (pop-features))))
