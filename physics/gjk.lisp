@@ -345,7 +345,7 @@
   (declare (type vec3 global-direction next))
   (let ((local (vcopy global-direction)))
     (declare (dynamic-extent local))
-    (trial::ntransform-inverse local (trial:primitive-transform primitive))
+    (trial::n*m4/3inv (trial:primitive-transform primitive) local)
     (support-function primitive local next)
     (n*m (trial:primitive-transform primitive) next)))
 
