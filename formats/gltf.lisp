@@ -307,14 +307,17 @@
   (flet ((make (type &rest initargs)
            (apply #'make-instance type
                   ;; FIXME: intensity is not correctly handled here.
-                  :color (v* (gltf:color light) (gltf:intensity light))
+                  :color (v* (vec (aref (gltf:color light) 0)
+                                  (aref (gltf:color light) 1)
+                                  (aref (gltf:color light) 2))
+                             (gltf:intensity light))
                   initargs)))
-    (ecase (gltf:kind light)
-      (:directional
+    (etypecase light
+      (gltf:directional-light
        (make 'trial:directional-light :direction (vec 0 0 -1)))
-      (:point
+      (gltf:point-light
        (make 'trial:point-light :linear-attenuation (or (gltf:range light) 0.0)))
-      (:spot
+      (gltf:spot-light
        (make 'trial:spot-light :direction (vec 0 0 -1)
                                :linear-attenuation (or (gltf:range light) 0.0)
                                :inner-radius (gltf:inner-angle light)
@@ -442,8 +445,8 @@
                        for child = (construct node)
                        when child
                        do (recurse (gltf:children node) child)
-                          (loop for light across (gltf:lights node)
-                                do (enter (load-light light) child))
+                          (when (gltf:light node)
+                            (enter (load-light (gltf:light node)) child))
                           (when (gltf:camera node)
                             (enter (load-camera (gltf:camera node)) child))
                           ;; FIXME: implement joints
