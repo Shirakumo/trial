@@ -620,7 +620,8 @@
                               (general-mesh-faces primitive))))
                   (loop for hull across hulls
                         for mesh = (make-convex-mesh :vertices (org.shirakumo.fraf.convex-covering:vertices hull)
-                                                     :faces (org.shirakumo.fraf.convex-covering:faces hull))
+                                                     :faces (org.shirakumo.fraf.convex-covering:faces hull)
+                                                     :local-transform (mcopy (primitive-local-transform primitive)))
                         do (vector-push-extend mesh new))))
                (primitive
                 (vector-push-extend primitive new))))
