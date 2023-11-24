@@ -334,6 +334,22 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~d tris" (truncate (length (faces primitive)) 3))))
 
+(defmethod global-location ((primitive general-mesh) &optional (target (vec3)))
+  (let ((vmin (vec3 #1=most-positive-single-float #1# #1#))
+        (tmp (vec3))
+        (vertices (general-mesh-vertices primitive)))
+    (declare (dynamic-extent vmin tmp))
+    (loop for i from 0 below (length vertices) by 3
+          do (vsetf tmp
+                    (aref vertices (+ i 0))
+                    (aref vertices (+ i 1))
+                    (aref vertices (+ i 2)))
+             (n*m (primitive-transform primitive) tmp)
+             (nvmin vmin tmp))
+    (v<- target (v+ (mcol3 (primitive-local-transform primitive) 3)
+                    vmin
+                    (global-bsize primitive)))))
+
 (defmethod global-bsize ((primitive general-mesh) &optional (target (vec3)))
   (let ((vmin (vec3 #1=most-positive-single-float #1# #1#))
         (vmax (vec3 #2=most-negative-single-float #2# #2#))
