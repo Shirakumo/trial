@@ -98,7 +98,11 @@
   (entity NIL :type T)
   (material NIL :type T)
   (local-transform (meye 4) :type mat4)
-  (transform (mat4) :type mat4))
+  (transform (mat4) :type mat4)
+  ;; Cached global location and global bsize, Invalidated by setting
+  ;; the x component of GLOBAL-BSIZE to -1.0.
+  (cached-global-location (vec3) :type vec3)
+  (cached-global-bsize (vec3 -1.0) :type vec3))
 
 (defmethod global-location ((primitive primitive) &optional (target (vec3)))
   (mcol3 (primitive-transform primitive) 3 target))
@@ -130,6 +134,13 @@
         (setf (d 1 0) (s 1 0) (d 1 1) (s 1 1) (d 1 2) (s 1 2))
         (setf (d 2 0) (s 2 0) (d 2 1) (s 2 1) (d 2 2) (s 2 2))))
     quat))
+
+(declaim (inline primitive-update-transform))
+(defun primitive-update-transform (primitive transform-matrix)
+  (!m* (primitive-transform primitive)
+       transform-matrix
+       (primitive-local-transform primitive))
+  (setf (vx (primitive-cached-global-bsize primitive)) -1.0f0))
 
 (defmethod 3ds:location ((primitive primitive))
   (global-location primitive))
@@ -334,37 +345,41 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~d tris" (truncate (length (faces primitive)) 3))))
 
-(defmethod global-location ((primitive general-mesh) &optional (target (vec3)))
-  (let ((vmin (vec3 #1=most-positive-single-float #1# #1#))
-        (tmp (vec3))
-        (vertices (general-mesh-vertices primitive)))
-    (declare (dynamic-extent vmin tmp))
-    (loop for i from 0 below (length vertices) by 3
-          do (vsetf tmp
-                    (aref vertices (+ i 0))
-                    (aref vertices (+ i 1))
-                    (aref vertices (+ i 2)))
-             (n*m (primitive-transform primitive) tmp)
-             (nvmin vmin tmp))
-    (v<- target (v+ (mcol3 (primitive-local-transform primitive) 3)
-                    vmin
-                    (global-bsize primitive)))))
-
-(defmethod global-bsize ((primitive general-mesh) &optional (target (vec3)))
-  (let ((vmin (vec3 #1=most-positive-single-float #1# #1#))
+(declaim (ftype (function (general-mesh) (values vec3 vec3 &optional nil))
+                general-mesh-update-global-location-and-bsize))
+(defun general-mesh-update-global-location-and-bsize (primitive)
+  ;; (declare (optimize speed))
+  (let ((vertices (general-mesh-vertices primitive))
+        (transform (primitive-transform primitive))
+        (local-transform (primitive-local-transform primitive))
+        (global-location (general-mesh-cached-global-location primitive))
+        (global-bsize (general-mesh-cached-global-bsize primitive))
+        (vmin (vec3 #1=most-positive-single-float #1# #1#))
         (vmax (vec3 #2=most-negative-single-float #2# #2#))
-        (tmp (vec3))
-        (vertices (general-mesh-vertices primitive)))
+        (tmp (vec3)))
     (declare (dynamic-extent vmin tmp))
     (loop for i from 0 below (length vertices) by 3
           do (vsetf tmp
                     (aref vertices (+ i 0))
                     (aref vertices (+ i 1))
                     (aref vertices (+ i 2)))
-             (n*m (primitive-transform primitive) tmp)
+             (n*m transform tmp)
              (nvmin vmin tmp)
              (nvmax vmax tmp))
-    (nv* (!v- target vmax vmin) 0.5)))
+    (let ((diff/2 (nv* (!v- tmp vmax vmin) 0.5f0)))
+      (values (!v+ global-location (mcol3 local-transform 3) vmin diff/2)
+              (v<- global-bsize diff/2)))))
+
+(defmethod global-location ((primitive general-mesh) &optional (target (vec3)))
+  (v<- target (if (= -1.0f0 (vx (primitive-cached-global-bsize primitive)))
+                  (nth-value 0 (general-mesh-update-global-location-and-bsize primitive))
+                  (primitive-cached-global-location primitive))))
+
+(defmethod global-bsize ((primitive general-mesh) &optional (target (vec3)))
+  (let ((cached-bsize (primitive-cached-global-bsize primitive)))
+    (v<- target (if (= -1.0f0 (vx cached-bsize))
+                    (nth-value 1 (general-mesh-update-global-location-and-bsize primitive))
+                    (primitive-cached-global-bsize primitive)))))
 
 (defmethod 3ds:radius ((primitive general-mesh))
   ;; NOTE: because we cannot move the location of the fitting sphere to be

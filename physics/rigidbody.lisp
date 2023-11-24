@@ -145,10 +145,9 @@
   (nqunit* (orientation rigidbody))
   (tmat (tf rigidbody) (transform-matrix rigidbody))
   (compute-world-inertia-tensor (world-inverse-inertia-tensor rigidbody) (inverse-inertia-tensor rigidbody) (transform-matrix rigidbody))
-  (loop for primitive across (physics-primitives rigidbody)
-        do (!m* (primitive-transform primitive)
-                (transform-matrix rigidbody)
-                (primitive-local-transform primitive))))
+  (loop with transform-matrix = (transform-matrix rigidbody)
+        for primitive across (physics-primitives rigidbody)
+        do (primitive-update-transform primitive transform-matrix)))
 
 (defmethod impact-local ((entity rigidbody) force point)
   ;; NOTE: The FORCE direction is in world coordinates, and the POINT is in local coordinates
