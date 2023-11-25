@@ -413,7 +413,8 @@
           (loop for clip being the hash-values of clips
                 do (trial::reorder clip map))
           (loop for mesh being the hash-values of meshes
-                do (trial::reorder mesh map))))
+                do (when (typep mesh 'trial:skinned-mesh)
+                     (trial::reorder mesh map)))))
       ;; Construct scene graphs
       (labels ((mesh-name (node)
                  (or (gltf:name (gltf:mesh node)) (gltf:idx (gltf:mesh node))))
