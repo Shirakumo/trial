@@ -1721,6 +1721,8 @@
    #:rad->deg
    #:db
    #:angle-midpoint
+   #:clamp-angle
+   #:lerp-angle
    #:symbol->c-name
    #:c-name->symbol
    #:check-gl-type

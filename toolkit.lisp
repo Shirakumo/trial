@@ -761,6 +761,12 @@
             (T
              max)))))
 
+(defun lerp-angle (a b x)
+  (let ((d (- b a)))
+    (cond ((< (+ F-PI) d) (incf a F-2PI))
+          ((< d (- F-PI)) (decf a F-2PI)))
+    (+ a (* (- b a) x))))
+
 (defparameter *c-chars* "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_[]")
 
 (defun symbol->c-name (symbol &optional out)
