@@ -164,6 +164,7 @@
                :cl-gamepad
                :cl-ppcre
                :pathname-utils
+               :filesystem-utils
                :documentation-utils
                :for
                :flow

@@ -514,6 +514,6 @@
                      (setf (gltf:collider node) NIL)
                      (setf work-done-p T))))
         (when work-done-p
-          (gltf:serialize gltf tmp))))
-    (when work-done-p
-      (rename-file tmp output))))
+          (gltf:serialize gltf tmp)))
+      (when work-done-p
+        (org.shirakumo.filesystem-utils:rename-file* tmp output)))))
