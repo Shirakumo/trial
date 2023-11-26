@@ -209,7 +209,7 @@
     (declare (dynamic-extent region))
     (funcall function region)))
 
-(defun load-mesh (primitive skin name model)
+(defun load-primitive (primitive &key name skin model)
   (let* ((attributes (sort (loop for attribute being the hash-keys of (gltf:attributes primitive)
                                  for native = (gltf-attribute-to-native-attribute attribute)
                                  when native collect native)
@@ -236,19 +236,23 @@
         (setf (faces mesh) (coerce indexes '(simple-array (unsigned-byte 32) 1)))))
     mesh))
 
+(defun load-mesh (mesh model &key skin)
+  (let ((base-name (or (gltf:name mesh) (gltf:idx mesh)))
+        (primitives (gltf:primitives mesh)))
+    (case (length primitives)
+      (0)
+      (1 (list (load-primitive (aref primitives 0) :skin skin :name base-name :model model)))
+      (T (loop for i from 0 below (length primitives)
+               for primitive = (aref primitives i)
+               collect (load-primitive primitive :skin skin :name (cons base-name i) :model model))))))
+
 (defun load-meshes (gltf model)
   (let ((meshes (make-array 0 :adjustable T :fill-pointer T)))
     (loop for node across (gltf:nodes gltf)
           for skin = (gltf:skin node)
           do (when (gltf:mesh node)
-               (let ((base-name (or (gltf:name (gltf:mesh node)) (gltf:idx (gltf:mesh node))))
-                     (primitives (gltf:primitives (gltf:mesh node))))
-                 (case (length primitives)
-                   (0)
-                   (1 (vector-push-extend (load-mesh (aref primitives 0) skin base-name model) meshes))
-                   (T (loop for i from 0 below (length primitives)
-                            for primitive = (aref primitives i)
-                            do (vector-push-extend (load-mesh primitive skin (cons base-name i) model) meshes)))))))
+               (loop for mesh in (load-mesh (gltf:mesh node) model :skin skin)
+                     do (vector-push-extend mesh meshes))))
     meshes))
 
 (defun load-image (asset texinfo)
@@ -334,29 +338,32 @@
                                      :far-plane (gltf:zfar camera)))))
 
 (defun load-shape (shape model)
-  (etypecase shape
-    (gltf:box-shape
-     (trial:make-box :bsize (vec (* 0.5 (aref (gltf:size shape) 0))
-                                 (* 0.5 (aref (gltf:size shape) 1))
-                                 (* 0.5 (aref (gltf:size shape) 2)))))
-    (gltf:capsule-shape
-     (trial:make-pill :height (float (* 0.5 (gltf:height shape)) 0f0)
-                      :radius (max (float (gltf:radius-top shape) 0f0)
-                                   (float (gltf:radius-bottom shape) 0f0))))
-    (gltf:convex-shape
-     (let ((mesh (find-mesh (gltf:name (gltf:mesh shape)) model)))
-       (trial:make-convex-mesh :vertices (trial:reordered-vertex-data mesh '(trial:location))
-                               :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 32)))))
-    (gltf:cylinder-shape
-     (trial:make-cylinder :height (float (* 0.5 (gltf:height shape)) 0f0)
-                          :radius (max (float (gltf:radius-top shape) 0f0)
-                                       (float (gltf:radius-bottom shape) 0f0))))
-    (gltf:sphere-shape
-     (trial:make-sphere :radius (float (gltf:radius shape) 0f0)))
-    (gltf:trimesh-shape
-     (let ((mesh (find-mesh (gltf:name (gltf:mesh shape)) model)))
-       (trial:make-general-mesh :vertices (trial:reordered-vertex-data mesh '(trial:location))
-                                :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 32)))))))
+  (flet ((ensure-mesh (mesh)
+           (or (find-mesh (or (gltf:name mesh) (gltf:idx mesh)) model NIL)
+               (first (load-mesh mesh model)))))
+    (etypecase shape
+      (gltf:box-shape
+       (trial:make-box :bsize (vec (* 0.5 (aref (gltf:size shape) 0))
+                                   (* 0.5 (aref (gltf:size shape) 1))
+                                   (* 0.5 (aref (gltf:size shape) 2)))))
+      (gltf:capsule-shape
+       (trial:make-pill :height (float (* 0.5 (gltf:height shape)) 0f0)
+                        :radius (max (float (gltf:radius-top shape) 0f0)
+                                     (float (gltf:radius-bottom shape) 0f0))))
+      (gltf:convex-shape
+       (let ((mesh (ensure-mesh (gltf:mesh shape))))
+         (trial:make-convex-mesh :vertices (trial:reordered-vertex-data mesh '(trial:location))
+                                 :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 32)))))
+      (gltf:cylinder-shape
+       (trial:make-cylinder :height (float (* 0.5 (gltf:height shape)) 0f0)
+                            :radius (max (float (gltf:radius-top shape) 0f0)
+                                         (float (gltf:radius-bottom shape) 0f0))))
+      (gltf:sphere-shape
+       (trial:make-sphere :radius (float (gltf:radius shape) 0f0)))
+      (gltf:trimesh-shape
+       (let ((mesh (ensure-mesh (gltf:mesh shape))))
+         (trial:make-general-mesh :vertices (trial:reordered-vertex-data mesh '(trial:location))
+                                  :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 32))))))))
 
 (defun find-colliders (node model)
   ;; FIXME: implement triggers
@@ -502,14 +509,14 @@
                             (typep (gltf:shape (gltf:collider node)) 'gltf:trimesh-shape))
                    (let* ((shape (gltf:shape (gltf:collider node)))
                           (primitives (gltf:primitives (gltf:mesh shape)))
-                          (mesh (load-mesh (aref primitives 0) NIL "" NIL))
+                          (mesh (load-primitive (aref primitives 0)))
                           (verts (reordered-vertex-data mesh '(location))))
                      (loop for i from 0
                            for hull across (handler-bind ((warning #'muffle-warning))
                                              (apply #'org.shirakumo.fraf.convex-covering:decompose
                                                     verts (trial::simplify (faces mesh) '(unsigned-byte 32))
                                                     decomposition-args))
-                           do (add-convex-shape node (format NIL "~a-hull-~a" (gltf:name node) i)
+                           do (add-convex-shape node #++(format NIL "~a-hull-~a" (gltf:name node) i) NIL
                                                 (org.shirakumo.fraf.convex-covering:vertices hull)
                                                 (org.shirakumo.fraf.convex-covering:faces hull)))
                      (setf (gltf:collider node) NIL)
