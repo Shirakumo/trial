@@ -507,7 +507,7 @@
   (let ((decomposition-args (remf* args :output))
         (shape-table (make-hash-table :test 'eql))
         (work-done-p NIL))
-    (trial:with-tempfile (tmp :type "glb")
+    (trial:with-tempfile (tmp :type (pathname-type file))
       (gltf:with-gltf (gltf file)
         ;; Rewrite trimesh shapes to multiple new shapes.
         ;; TODO: if original trimesh mesh has no other refs anywhere, remove it
