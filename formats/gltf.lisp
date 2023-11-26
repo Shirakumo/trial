@@ -517,4 +517,5 @@
         (when work-done-p
           (gltf:serialize gltf tmp)))
       (when work-done-p
+        ;; FIXME: this does not work correctly if gltf serialises to multiple files.
         (org.shirakumo.filesystem-utils:rename-file* tmp output)))))
