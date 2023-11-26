@@ -488,43 +488,53 @@
                  (recurse (gltf:nodes node) scene)))
       model)))
 
-(defun add-convex-shape (base-node name vertices faces)
-  (let* ((primitive (gltf:make-mesh-primitive base-node vertices faces '(:position)))
-         (mesh (gltf:make-indexed 'gltf:mesh base-node :name name :primitives (vector primitive)))
-         (shape (gltf:make-indexed 'gltf:convex-shape base-node :mesh mesh :kind "convex"))
-         (collider (make-instance 'gltf:collider :collision-filter (gltf:collision-filter (gltf:collider base-node))
+(defun add-convex-shape (gltf vertices faces)
+  (let* ((primitive (gltf:make-mesh-primitive gltf vertices faces '(:position)))
+         (mesh (gltf:make-indexed 'gltf:mesh gltf :primitives (vector primitive))))
+    (gltf:make-indexed 'gltf:convex-shape gltf :mesh mesh :kind "convex")))
+
+(defun push-convex-shape (base-node shape)
+  (let* ((collider (make-instance 'gltf:collider :collision-filter (gltf:collision-filter (gltf:collider base-node))
                                                  :physics-material (gltf:physics-material (gltf:collider base-node))
                                                  :shape shape
                                                  :gltf (gltf:gltf base-node)))
-         (child (gltf:make-indexed 'gltf:node base-node :collider collider :name name)))
+         (child (gltf:make-indexed 'gltf:node base-node :collider collider)))
     (gltf:push-child child base-node)))
 
 (defun precompile (file &rest args &key (output file) &allow-other-keys)
   (let ((decomposition-args (remf* args :output))
+        (shape-table (make-hash-table :test 'eql))
         (work-done-p NIL))
     (trial:with-tempfile (tmp :type "glb")
       (gltf:with-gltf (gltf file)
-        ;; FIXME: iterate over shapes first and then reconstruct nodes for nodes that use the original
-        ;;        shape so as to not duplicate the decomposition of the same mesh.
+        ;; Rewrite trimesh shapes to multiple new shapes.
+        ;; TODO: if original trimesh mesh has no other refs anywhere, remove it
+        (loop for shape across (gltf:shapes gltf)
+              do (when (typep shape 'gltf:trimesh-shape)
+                   (let* ((primitives (gltf:primitives (gltf:mesh shape)))
+                          (mesh (load-primitive (aref primitives 0)))
+                          (verts (reordered-vertex-data mesh '(location)))
+                          (hulls (handler-bind ((warning #'muffle-warning))
+                                   (apply #'org.shirakumo.fraf.convex-covering:decompose
+                                          verts (trial::simplify (faces mesh) '(unsigned-byte 32))
+                                          decomposition-args))))
+                     (setf (gethash shape shape-table)
+                           (loop for hull across hulls
+                                 collect (add-convex-shape
+                                          gltf
+                                          (org.shirakumo.fraf.convex-covering:vertices hull)
+                                          (org.shirakumo.fraf.convex-covering:faces hull)))))))
+        ;; Rewrite nodes with refs to trimesh colliders to have child nodes for
+        ;; all decomposed hulls.
         (loop for node across (gltf:nodes gltf)
               do (when (and (gltf:collider node)
                             (typep (gltf:shape (gltf:collider node)) 'gltf:trimesh-shape))
-                   (let* ((shape (gltf:shape (gltf:collider node)))
-                          (primitives (gltf:primitives (gltf:mesh shape)))
-                          (mesh (load-primitive (aref primitives 0)))
-                          (verts (reordered-vertex-data mesh '(location))))
-                     (loop for i from 0
-                           for hull across (handler-bind ((warning #'muffle-warning))
-                                             (apply #'org.shirakumo.fraf.convex-covering:decompose
-                                                    verts (trial::simplify (faces mesh) '(unsigned-byte 32))
-                                                    decomposition-args))
-                           do (add-convex-shape node #++(format NIL "~a-hull-~a" (gltf:name node) i) NIL
-                                                (org.shirakumo.fraf.convex-covering:vertices hull)
-                                                (org.shirakumo.fraf.convex-covering:faces hull)))
-                     (setf (gltf:collider node) NIL)
-                     ;; Clear the extension, too
-                     (remhash "collider" (gethash "KHR_rigid_bodies" (gltf:extensions node)))
-                     (setf work-done-p T))))
+                   (loop for shape in (gethash (gltf:shape (gltf:collider node)) shape-table)
+                         do (push-convex-shape node shape))
+                   (setf (gltf:collider node) NIL)
+                   ;; Clear the extension, too. Ideally this would be done by the library already.
+                   (remhash "collider" (gethash "KHR_rigid_bodies" (gltf:extensions node)))
+                   (setf work-done-p T)))
         (when work-done-p
           (gltf:serialize gltf tmp)))
       (when work-done-p
