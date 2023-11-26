@@ -27,6 +27,12 @@
 (%define-model-accessor clip clips)
 (%define-model-accessor scene scenes)
 
+(defmethod find-scene ((first (eql T)) (model model) &optional (errorp T))
+  (let ((keys (sort (alexandria:hash-table-keys (scenes model)) #'string<)))
+    (if keys
+        (find-scene (first keys) model)
+        (when errorp (error "Model contains no scenes.")))))
+
 (defmethod list-clips ((model model))
   (alexandria:hash-table-values (clips model)))
 
