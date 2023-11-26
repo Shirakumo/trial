@@ -504,6 +504,8 @@
         (work-done-p NIL))
     (trial:with-tempfile (tmp :type "glb")
       (gltf:with-gltf (gltf file)
+        ;; FIXME: iterate over shapes first and then reconstruct nodes for nodes that use the original
+        ;;        shape so as to not duplicate the decomposition of the same mesh.
         (loop for node across (gltf:nodes gltf)
               do (when (and (gltf:collider node)
                             (typep (gltf:shape (gltf:collider node)) 'gltf:trimesh-shape))
@@ -520,6 +522,8 @@
                                                 (org.shirakumo.fraf.convex-covering:vertices hull)
                                                 (org.shirakumo.fraf.convex-covering:faces hull)))
                      (setf (gltf:collider node) NIL)
+                     ;; Clear the extension, too
+                     (remhash "collider" (gethash "KHR_rigid_bodies" (gltf:extensions node)))
                      (setf work-done-p T))))
         (when work-done-p
           (gltf:serialize gltf tmp)))
