@@ -4,8 +4,7 @@
   (:local-nicknames
    (#:gltf #:org.shirakumo.fraf.gltf)
    (#:v #:org.shirakumo.verbose))
-  (:export
-   #:precompile))
+  (:export))
 (in-package #:org.shirakumo.fraf.trial.gltf)
 
 (defun gltf-node-transform (node)
@@ -501,7 +500,10 @@
          (child (gltf:make-indexed 'gltf:node base-node :collider collider)))
     (gltf:push-child child base-node)))
 
-(defun precompile (file &rest args &key (output file) &allow-other-keys)
+(defmethod optimize-model (file (type (eql :glb)) &rest args)
+  (apply #'optimize-model file :gltf args))
+
+(defmethod optimize-model (file (type (eql :gltf)) &rest args &key (output file) &allow-other-keys)
   (let ((decomposition-args (remf* args :output))
         (shape-table (make-hash-table :test 'eql))
         (work-done-p NIL))

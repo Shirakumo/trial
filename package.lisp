@@ -159,6 +159,7 @@
   (:export
    #:load-model
    #:save-model
+   #:optimize-model
    #:model-loader
    #:model-file
    #:model)

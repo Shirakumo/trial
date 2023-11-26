@@ -2,6 +2,7 @@
 
 (defgeneric load-model (source type &key generator model &allow-other-keys))
 (defgeneric save-model (source target type &key &allow-other-keys))
+(defgeneric optimize-model (source type &key &allow-other-keys))
 
 (defmethod load-model (source (type string) &rest args &key &allow-other-keys)
   (apply #'load-model source (or (cl-ppcre:register-groups-bind (type) ("^[^/]*/([^+/]+)" type) (kw type)) (kw type)) args))
@@ -31,7 +32,13 @@
         (error "Don't know how to save to ~a~%known types are:~%  ~a~%Did you load the respective format system?"
                type types))))
 
-(defclass model-loader (resource-generator)
+(defmethod optimize-model (source (type string) &rest args &key &allow-other-keys)
+  (apply #'optimize-model source (or (cl-ppcre:register-groups-bind (type) ("^[^/]*/([^+/]+)" type) (kw type)) (kw type)) args))
+
+(defmethod optimize-model (source (type (eql T)) &rest args &key &allow-other-keys)
+  (apply #'optimize-model source (pathname-type source) args))
+
+(defclass model-loader (compiled-generator)
   ())
 
 (defmethod generate-resources ((loader model-loader) input &rest args &key load-scene)
@@ -48,6 +55,9 @@
             ((or string symbol)
              (load-scene (find-scene load-scene model)))))
         model))))
+
+(defmethod compile-resources ((loader model-loader) input &rest args &key)
+  (apply #'optimize-model input T args))
 
 (defclass model-file (file-input-asset multi-resource-asset model-loader model)
   ())
