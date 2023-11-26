@@ -470,6 +470,7 @@
                               (setf (trial:inertia-tensor child) i))
                             (map-into (varr (trial:velocity child)) (lambda (x) (float x 0f0)) (gltf:linear-velocity (gltf:rigidbody node)))
                             (map-into (varr (trial:rotation child)) (lambda (x) (float x 0f0)) (gltf:angular-velocity (gltf:rigidbody node)))
+                            ;; FIXME: this will eagerly decompose colliders and so on even if the node is never used...
                             (setf (trial:physics-primitives child) (find-colliders node model)))
                           (enter child container))))
         (loop for node across (gltf:scenes gltf)
