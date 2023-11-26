@@ -483,7 +483,7 @@
 
 (defun add-convex-shape (base-node name vertices faces)
   (let* ((primitive (gltf:make-mesh-primitive base-node vertices faces '(:position)))
-         (mesh (gltf:make-indexed 'gltf:mesh base-node :primitives (vector primitive)))
+         (mesh (gltf:make-indexed 'gltf:mesh base-node :name name :primitives (vector primitive)))
          (shape (gltf:make-indexed 'gltf:convex-shape base-node :mesh mesh :kind "convex"))
          (collider (make-instance 'gltf:collider :collision-filter (gltf:collision-filter (gltf:collider base-node))
                                                  :physics-material (gltf:physics-material (gltf:collider base-node))
