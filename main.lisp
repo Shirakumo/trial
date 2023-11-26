@@ -67,8 +67,9 @@
       (change-scene main (scene main) :old NIL)
     (abort ()
       :report "Don't set up the scene, leaving it empty."
-      (when (scene main)
-        (clear (scene main))))))
+      (unless (scene main)
+        (setf (scene main) (make-instance 'scene)))
+      (clear (scene main)))))
 
 (defmethod setup-scene :around ((main main) (scene scene))
   (v:info :trial.main "Setting up ~a" scene)
