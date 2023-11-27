@@ -368,19 +368,23 @@
                        (desired-delta-velocity other (contact-velocity other) dt)))))))
 
 (defclass accelerated-rigidbody-system (rigidbody-system)
-  ((acceleration-structure :initform (org.shirakumo.fraf.trial.space.kd-tree:make-kd-tree) :accessor acceleration-structure)))
+  ((acceleration-structure :initform (org.shirakumo.fraf.trial.space.kd-tree:make-kd-tree) :accessor acceleration-structure)
+   (pending-inserts :initform (make-array 128 :fill-pointer 0) :accessor pending-inserts)))
 
 (defmethod enter :before ((body rigidbody) (system accelerated-rigidbody-system))
-  (assert (/= 0 (length (physics-primitives body))))
-  (start-frame body)
-  (loop with structure = (acceleration-structure system)
-        for primitive across (physics-primitives body)
-        do (3ds:enter primitive structure)))
+  (cond ((= 0 (length (physics-primitives body)))
+         (vector-push-extend body (pending-inserts system)))
+        (T
+         (start-frame body)
+         (loop with structure = (acceleration-structure system)
+               for primitive across (physics-primitives body)
+               do (3ds:enter primitive structure)))))
 
 (defmethod leave :after ((body rigidbody) (system accelerated-rigidbody-system))
-  (loop with structure = (acceleration-structure system)
-        for primitive across (physics-primitives body)
-        do (3ds:leave primitive structure)))
+  (unless (array-utils:vector-pop-element* (pending-inserts system) body)
+    (loop with structure = (acceleration-structure system)
+          for primitive across (physics-primitives body)
+          do (3ds:leave primitive structure))))
 
 (defmethod integrate :after ((system accelerated-rigidbody-system) dt)
   (loop with structure = (acceleration-structure system)
@@ -397,6 +401,15 @@
                        (= 0.0 (inverse-mass entity2))))
         (setf start (detect-hits a b contacts start end))
         (when (<= end start) (return start))))))
+
+(defmethod start-frame :before ((system accelerated-rigidbody-system))
+  (let ((pending-inserts (pending-inserts system))
+        (structure (acceleration-structure system)))
+    (loop while (< 0 (length pending-inserts))
+          for body = (vector-pop pending-inserts)
+          do (start-frame body)
+             (loop for primitive across (physics-primitives body)
+                   do (3ds:enter primitive structure)))))
 
 ;;;
 
