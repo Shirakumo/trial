@@ -186,6 +186,71 @@ void main(){
                               :z (if (typep point 'vec2) 0.0 (vz point))
                               :scale scale))
 
+(defmethod debug-draw ((primitive box) &rest args &key &allow-other-keys)
+  (unless (getf args :transform)
+    (setf (getf args :transform) (primitive-transform primitive)))
+  (apply #'debug-box #.(vec 0 0 0) (box-bsize primitive) args))
+
+(define-debug-draw-function (debug-box lines) (location bsize &key (color #.(vec 1 0 0)) (transform (model-matrix)))
+  (allocate (* 12 2 2))
+  (flet ((line (a b)
+           (v (n*m transform (v+ location a))) (v color)
+           (v (n*m transform (v+ location b))) (v color)))
+    (let ((w (vx bsize)) (h (vy bsize)) (d (vz bsize)))
+      (line (vec (- w) (- h) (- d)) (vec (+ w) (- h) (- d)))
+      (line (vec (+ w) (- h) (- d)) (vec (+ w) (+ h) (- d)))
+      (line (vec (+ w) (+ h) (- d)) (vec (- w) (+ h) (- d)))
+      (line (vec (- w) (+ h) (- d)) (vec (- w) (- h) (- d)))
+
+      (line (vec (- w) (- h) (+ d)) (vec (+ w) (- h) (+ d)))
+      (line (vec (+ w) (- h) (+ d)) (vec (+ w) (+ h) (+ d)))
+      (line (vec (+ w) (+ h) (+ d)) (vec (- w) (+ h) (+ d)))
+      (line (vec (- w) (+ h) (+ d)) (vec (- w) (- h) (+ d)))
+
+      (line (vec (- w) (- h) (- d)) (vec (- w) (- h) (+ d)))
+      (line (vec (+ w) (- h) (- d)) (vec (+ w) (- h) (+ d)))
+      (line (vec (+ w) (+ h) (- d)) (vec (+ w) (+ h) (+ d)))
+      (line (vec (- w) (+ h) (- d)) (vec (- w) (+ h) (+ d))))))
+
+(defmethod debug-draw ((primitive sphere) &rest args &key &allow-other-keys)
+  (unless (getf args :transform)
+    (setf (getf args :transform) (primitive-transform primitive)))
+  (apply #'debug-sphere #.(vec 0 0 0) (sphere-radius primitive) args))
+
+(define-debug-draw-function (debug-sphere lines) (location radius &key (color #.(vec 1 0 0)) (transform (model-matrix)))
+  )
+
+(defmethod debug-draw ((primitive cylinder) &rest args &key &allow-other-keys)
+  (unless (getf args :transform)
+    (setf (getf args :transform) (primitive-transform primitive)))
+  (apply #'debug-cylinder #.(vec 0 0 0) (cylinder-radius primitive) (cylinder-height primitive) args))
+
+(define-debug-draw-function (debug-cylinder lines) (location radius height &key (color #.(vec 1 0 0)) (transform (model-matrix)))
+  )
+
+(defmethod debug-draw ((primitive pill) &rest args &key &allow-other-keys)
+  (unless (getf args :transform)
+    (setf (getf args :transform) (primitive-transform primitive)))
+  (apply #'debug-pill #.(vec 0 0 0) (pill-radius primitive) (pill-height primitive) args))
+
+(define-debug-draw-function (debug-pill lines) (location radius height &key (color #.(vec 1 0 0)) (transform (model-matrix)))
+  )
+
+(defmethod debug-draw ((primitive triangle) &rest args &key &allow-other-keys)
+  (let ((verts (make-array 9 :element-type 'single-float))
+        (faces (make-array 3 :element-type '(unsigned-byte 32) :initial-contents '(0 1 2))))
+    (declare (dynamic-extent verts faces))
+    (setf (aref verts 0) (vx (triangle-a primitive)))
+    (setf (aref verts 1) (vy (triangle-a primitive)))
+    (setf (aref verts 2) (vz (triangle-a primitive)))
+    (setf (aref verts 3) (vx (triangle-b primitive)))
+    (setf (aref verts 4) (vy (triangle-b primitive)))
+    (setf (aref verts 5) (vz (triangle-b primitive)))
+    (setf (aref verts 6) (vx (triangle-c primitive)))
+    (setf (aref verts 7) (vy (triangle-c primitive)))
+    (setf (aref verts 8) (vz (triangle-c primitive)))
+    (apply #'debug-triangles verts faces args)))
+
 (defmethod debug-draw ((entity vertex-entity) &rest args &key &allow-other-keys)
   (apply #'debug-vertex-array (vertex-array entity) args))
 
@@ -335,6 +400,10 @@ void main(){
                                  (declare (dynamic-extent vec))
                                  (n*m transform vec)
                                  (funcall vertex vec)))))))))))))
+
+;; TODO: these
+#++(define-debug-draw-function (debug-vector lines) (location direction &key (color #.(vec 1 0 0)))
+  )
 
 (defun debug-clear (&key (debug-draw (node 'debug-draw T)) (update T) instance)
   (when debug-draw
