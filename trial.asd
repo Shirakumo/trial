@@ -193,3 +193,14 @@
                :convex-covering
                :machine-state/opengl
                (:feature :windows :com-on)))
+
+#+sbcl
+(when (< (floor (sb-ext:dynamic-space-size) (* 1024 1024 1024)) 2)
+  (error "Trial requires at least 2GB of dynamic space size.
+SBCL is currently configured for ~dGB
+
+Make sure SBCL is built or run with --dynamic-space-size 2Gb or more."
+         (ceiling (sb-ext:dynamic-space-size) (* 1024 1024 1024))))
+
+#+sbcl
+(sb-ext:assert-version->= 2 2)
