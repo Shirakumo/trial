@@ -352,7 +352,7 @@
       (gltf:convex-shape
        (let ((mesh (ensure-mesh (gltf:mesh shape))))
          (trial:make-convex-mesh :vertices (trial:reordered-vertex-data mesh '(trial:location))
-                                 :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 32)))))
+                                 :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 16)))))
       (gltf:cylinder-shape
        (trial:make-cylinder :height (float (* 0.5 (gltf:height shape)) 0f0)
                             :radius (max (float (gltf:radius-top shape) 0f0)
@@ -362,7 +362,7 @@
       (gltf:trimesh-shape
        (let ((mesh (ensure-mesh (gltf:mesh shape))))
          (trial:make-general-mesh :vertices (trial:reordered-vertex-data mesh '(trial:location))
-                                  :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 32))))))))
+                                  :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 16))))))))
 
 (defun find-colliders (node model)
   ;; FIXME: implement triggers

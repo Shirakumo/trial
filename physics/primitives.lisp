@@ -328,7 +328,7 @@
   (vertices #() :type (simple-array single-float (*)))
   ;; NOTE: Vertex indices pointing into the vertex array / 3
   ;; [ 0 1 2 2 3 0 ... ]
-  (faces #() :type (simple-array (unsigned-byte 32) (*))))
+  (faces #() :type (simple-array (unsigned-byte 16) (*))))
 
 (defmethod print-object ((primitive general-mesh) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
@@ -367,7 +367,7 @@
         (faces (gensym "FACES"))
         (face-table (gensym "FACE-TABLE")))
     `(let ((,vertices (make-array 0 :element-type 'single-float :adjustable T))
-           (,faces (make-array 0 :element-type '(unsigned-byte 32) :adjustable T :fill-pointer T))
+           (,faces (make-array 0 :element-type '(unsigned-byte 16) :adjustable T :fill-pointer T))
            (,face-table (make-hash-table :test 'equal))
            (i 0))
        (flet ((,constructor (x y z)
@@ -387,7 +387,7 @@
                          (incf i)))))
               (,finalizer ()
                 (values (make-array (length ,vertices) :element-type 'single-float :initial-contents ,vertices)
-                        (make-array (length ,faces) :element-type '(unsigned-byte 32) :initial-contents ,faces))))
+                        (make-array (length ,faces) :element-type '(unsigned-byte 16) :initial-contents ,faces))))
          ,@body))))
 
 (defmethod coerce-object ((primitive primitive) (type (eql 'general-mesh)) &rest args &key &allow-other-keys)
@@ -604,7 +604,7 @@
 (defmethod coerce-object ((mesh mesh-data) (type (eql 'primitive)) &rest args &key &allow-other-keys)
   (apply #'make-general-mesh
          :vertices (reordered-vertex-data mesh '(location))
-         :faces (faces mesh)
+         :faces (simplify (faces mesh) '(unsigned-byte 16))
          args))
 
 (defmethod replace-vertex-data (target (primitive primitive) &rest args &key &allow-other-keys)
@@ -620,7 +620,7 @@
                               (general-mesh-faces primitive))))
                   (loop for hull across hulls
                         for mesh = (make-convex-mesh :vertices (org.shirakumo.fraf.convex-covering:vertices hull)
-                                                     :faces (org.shirakumo.fraf.convex-covering:faces hull)
+                                                     :faces (simplify (org.shirakumo.fraf.convex-covering:faces hull) '(unsigned-byte 16))
                                                      :material (primitive-material primitive)
                                                      :local-transform (mcopy (primitive-local-transform primitive)))
                         do (vector-push-extend mesh new))))

@@ -172,7 +172,7 @@ void main(){
           (setf (context scene) context)
           (loop for hull across hulls
                 for vertices = (org.shirakumo.fraf.convex-covering:vertices hull)
-                for faces = (org.shirakumo.fraf.convex-covering:faces hull)
+                for faces = (trial::simplify (org.shirakumo.fraf.convex-covering:faces hull) '(unsigned-byte 16))
                 for (name . color) in (apply #'alexandria:circular-list (colored:list-colors))
                 for color* = (vec (colored:r color) (colored:g color) (colored:b color))
                 for entity = (make-instance 'decomposition-entity
@@ -204,7 +204,8 @@ void main(){
                           :visible-p (show-original scene)
                           :transform (transform (vec -3 0 0))
                           :vertex-array (make-vertex-array
-                                         (make-general-mesh :vertices all-vertices :faces all-faces)
+                                         (make-general-mesh :vertices all-vertices
+                                                            :faces (trial::simplify all-faces '(unsigned-byte 16)))
                                          NIL))
            (node :container scene)))
   (commit (scene +main+) (loader +main+)))
@@ -238,7 +239,7 @@ void main(){
                      vertices)
            (trial::simplify faces '(unsigned-byte 32))
            :threshold .000001)
-        (let* ((mesh (make-convex-mesh :vertices vertices :faces faces))
+        (let* ((mesh (make-convex-mesh :vertices vertices :faces (trial::simplify faces '(unsigned-byte 16))))
                (entity (make-instance 'decomposition-entity :hull patch
                                                             :scene scene
                                                             :original-color color

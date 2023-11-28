@@ -133,7 +133,7 @@
 
 (defmethod (setf physics-primitives) ((mesh mesh-data) (entity rigidbody))
   (setf (physics-primitives entity) (make-general-mesh :vertices (reordered-vertex-data mesh '(location))
-                                                       :faces (faces mesh))))
+                                                       :faces (simplify (faces mesh) '(unsigned-byte 16)))))
 
 (defmethod (setf physics-primitives) ((primitives list) (entity rigidbody))
   (setf (physics-primitives entity) (coerce primitives 'vector)))
