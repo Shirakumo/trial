@@ -150,53 +150,46 @@ void main(){
   (when value
     (clear (node :container scene)) ; TODO(jmoringe): keep original mesh
     (spaces:clear (index scene))
-    ;; TODO(jmoringe): `normalize' has already been done in setf mesh
-    (let ((mesh (mesh scene)))
-      (multiple-value-bind (all-vertices all-faces)
-          (org.shirakumo.fraf.manifolds:normalize
-           (reordered-vertex-data mesh '(location))
-           (trial::simplify (faces mesh) '(unsigned-byte 32))
-           :threshold .000001)
-        (multiple-value-bind (hulls context)
-            (let ((org.shirakumo.fraf.convex-covering::*debug-output* nil)
-                  (org.shirakumo.fraf.convex-covering::*debug-visualizations* nil))
-              (org.shirakumo.fraf.convex-covering:decompose
-               all-vertices all-faces
-               :merge-cost (append '(org.shirakumo.fraf.convex-covering::/compactness)
-                                   (when (prefer-symmetric-p scene)
-                                     '(org.shirakumo.fraf.convex-covering::patch-size-symmetry))
-                                   (when (< (patch-size-limit scene) 1000)
-                                     (list (org.shirakumo.fraf.convex-covering::make-patch-size-limit
-                                            (patch-size-limit scene)))))
-               :tolerance (expt 10 (tolerance scene))))
-          (setf (context scene) context)
-          (loop for hull across hulls
-                for vertices = (org.shirakumo.fraf.convex-covering:vertices hull)
-                for faces = (trial::simplify (org.shirakumo.fraf.convex-covering:faces hull) '(unsigned-byte 16))
-                for (name . color) in (apply #'alexandria:circular-list (colored:list-colors))
-                for color* = (vec (colored:r color) (colored:g color) (colored:b color))
-                for entity = (make-instance 'decomposition-entity
-                                            :hull hull
-                                            :scene scene
-                                            :original-color color*
-                                            :color color*
-                                            :visible-p (show-decomposition scene)
-                                            :vertex-array (make-vertex-array (make-convex-mesh :vertices vertices
-                                                                                               :faces faces)
-                                                                             NIL))
-                do (enter entity (node :container scene))
-                   (enter entity (selection-buffer scene))
-                   (enter entity (index scene))))))
+    (let* ((mesh (mesh scene))
+           (all-vertices (reordered-vertex-data mesh '(location)))
+           (all-faces (faces mesh)))
+      (multiple-value-bind (hulls context)
+          (let ((org.shirakumo.fraf.convex-covering::*debug-output* nil)
+                (org.shirakumo.fraf.convex-covering::*debug-visualizations* nil))
+            (org.shirakumo.fraf.convex-covering:decompose
+             all-vertices all-faces
+             :merge-cost (append '(org.shirakumo.fraf.convex-covering::/compactness)
+                                 (when (prefer-symmetric-p scene)
+                                   '(org.shirakumo.fraf.convex-covering::patch-size-symmetry))
+                                 (when (< (patch-size-limit scene) 1000)
+                                   (list (org.shirakumo.fraf.convex-covering::make-patch-size-limit
+                                          (patch-size-limit scene)))))
+             :tolerance (expt 10 (tolerance scene))))
+        (setf (context scene) context)
+        (loop for hull across hulls
+              for vertices = (org.shirakumo.fraf.convex-covering:vertices hull)
+              for faces = (trial::simplify (org.shirakumo.fraf.convex-covering:faces hull) '(unsigned-byte 16))
+              for (name . color) in (apply #'alexandria:circular-list (colored:list-colors))
+              for color* = (vec (colored:r color) (colored:g color) (colored:b color))
+              for entity = (make-instance 'decomposition-entity
+                                          :hull hull
+                                          :scene scene
+                                          :original-color color*
+                                          :color color*
+                                          :visible-p (show-decomposition scene)
+                                          :vertex-array (make-vertex-array (make-convex-mesh :vertices vertices
+                                                                                             :faces faces)
+                                                                           NIL))
+              do (enter entity (node :container scene))
+                 (enter entity (selection-buffer scene))
+                 (enter entity (index scene)))))
     (commit (scene +main+) (loader +main+))))
 
 (defmethod (setf mesh) :before ((mesh mesh-data) (scene decomposition-scene))
   (clear (node :container scene))
   (spaces:clear (index scene))
-  (multiple-value-bind (all-vertices all-faces)
-      (org.shirakumo.fraf.manifolds:normalize
-       (reordered-vertex-data mesh '(location))
-       (trial::simplify (faces mesh) '(unsigned-byte 32))
-       :threshold .000001)
+  (let ((all-vertices (reordered-vertex-data mesh '(location)))
+        (all-faces (faces mesh)))
     (enter (make-instance 'decomposition-entity
                           :name :original
                           :scene scene
