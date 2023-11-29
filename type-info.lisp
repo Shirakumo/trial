@@ -66,6 +66,14 @@
      #-elide-coercion-size-checks
      (check-integer-size thing 32 T)
      (values (round thing)))
+    ((:short)
+     #-elide-coercion-size-checks
+     (check-integer-size thing 16)
+     (values (round thing)))
+    ((:ushort :unsigned-short)
+     #-elide-coercion-size-checks
+     (check-integer-size thing 16 T)
+     (values (round thing)))
     ((:char :byte)
      #-elide-coercion-size-checks
      (check-integer-size thing 8)
@@ -92,6 +100,16 @@
                     (lambda (thing)
                       #-elide-coercion-size-checks
                       (check-integer-size thing 32 T)
+                      (values (round thing))))
+                   (:short
+                    (lambda (thing)
+                      #-elide-coercion-size-checks
+                      (check-integer-size thing 16)
+                      (values (round thing))))
+                   ((:ushort :unsigned-short)
+                    (lambda (thing)
+                      #-elide-coercion-size-checks
+                      (check-integer-size thing 16 T)
                       (values (round thing))))
                    ((:char :byte)
                     (lambda (thing)
