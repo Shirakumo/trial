@@ -45,7 +45,7 @@
     (invalidate-global-bounds-cache child)))
 
 (defstruct (global-bounds-cache
-            (:constructor (%make-global-bounds-cache (generator radius obb))))
+            (:constructor %make-global-bounds-cache (generator radius obb)))
   (generator NIL :type T)
   (radius 0f0 :type single-float)
   (obb (vec3) :type vec3)
