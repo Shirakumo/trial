@@ -468,7 +468,8 @@ void main(){
                           (2 (lines debug-draw))
                           (3 (text debug-draw)))))
              (array-utils:array-shift data :n size :from start)
-             (array-utils:array-shift (instances debug-draw) :n -3 :from (* 3 (1+ instance)))))
+             (when (< (* 3 (1+ instance)) (length (instances debug-draw)))
+               (array-utils:array-shift (instances debug-draw) :n -3 :from (* 3 (1+ instance))))))
           (T
            (setf (fill-pointer (points debug-draw)) 0)
            (setf (fill-pointer (lines debug-draw)) 0)
