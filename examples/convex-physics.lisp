@@ -20,7 +20,7 @@
 (define-handler ((scene convex-physics-scene) mouse-press :after) (button)
   (when (eq button :left)
     (let ((ball (make-instance 'physics-sphere :location (location (camera scene))))
-          (force (n*m (minv (view-matrix)) (nv- (vec 0 2 -100) (location (camera scene))))))
+          (force (m*4/3 (minv (view-matrix)) (vec 0 2 -100))))
       (nv+ (velocity ball) force)
       (enter-and-load ball scene +main+))))
 
