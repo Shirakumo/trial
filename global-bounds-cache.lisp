@@ -116,10 +116,10 @@
 (defmethod global-radius ((entity global-bounds-cached-entity))
   (global-bounds-cache-radius (global-bounds-cache entity)))
 
-(defmethod (setf location) :after ((entity global-bounds-cached-entity))
+(defmethod (setf location) :after ((new-value t) (entity global-bounds-cached-entity))
   (setf (global-bounds-cache-dirty-p (global-bounds-cache entity)) T))
 
-(defmethod (setf orientation) :after ((entity global-bounds-cached-entity))
+(defmethod (setf orientation) :after ((new-value t) (entity global-bounds-cached-entity))
   (setf (global-bounds-cache-dirty-p (global-bounds-cache entity)) T))
 
 (defmethod invalidate-global-bounds-cache ((cache global-bounds-cache))
