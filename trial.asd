@@ -45,6 +45,7 @@
                (:file "geometry-shapes" :depends-on ("package" "geometry" "asset-pool" ("assets" "mesh")))
                (:file "gl-features" :depends-on ("package"))
                (:file "gl-struct" :depends-on ("package" "type-info"))
+               (:file "global-bounds-cache" :depends-on ("package" "container"))
                (:file "hash-table-container" :depends-on ("package" "container"))
                (:file "helpers" :depends-on ("package" "container" "transforms" "shader-entity" "asset" "asset-pool" "resources" "loader" "geometry" "geometry-shapes" "loader"))
                (:file "input" :depends-on ("package" "event-loop"))

@@ -1148,6 +1148,19 @@
    #:define-gl-struct
    #:gl-vector
    #:element-type)
+  ;; global-bounds-cache.lisp
+  (:export
+   #:global-transform-matrix
+   #:global-location
+   #:global-orientation
+   #:global-bsize
+   #:global-bbox
+   #:global-radius
+   #:invalidate-global-bounds-cache
+   #:global-bounds-cache
+   #:make-global-bounds-cache
+   #:update-global-bounds-cache
+   #:global-bounds-cached-entity)
   ;; hash-table-container.lisp
   (:export
    #:hash-table-container)
