@@ -18,7 +18,7 @@
                                             :data-usage data-usage :element-type :float
                                             :size (* (length buffer) (gl-type-size :float))))
          (ebo (make-instance 'vertex-buffer :buffer-data (simplify (faces mesh)) :buffer-type :element-array-buffer
-                                            :data-usage data-usage :element-type :unsigned-int
+                                            :data-usage data-usage :element-type (cl-type->gl-type (array-element-type (faces mesh)))
                                             :size (* (length (faces mesh)) (gl-type-size :unsigned-int))))
          (specs (loop with stride = (reduce #'+ sizes)
                       for offset = 0 then (+ offset size)

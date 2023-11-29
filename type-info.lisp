@@ -15,6 +15,8 @@
 (define-constant-fold-function cl-type->gl-type (type)
   (cond ((eql type 'fixnum) :int)
         ((subtypep type '(signed-byte 8)) :char)
+        ((subtypep type '(unsigned-byte 16)) :ushort)
+        ((subtypep type '(signed-byte 16)) :short)
         ((subtypep type '(unsigned-byte 32)) :uint)
         ((subtypep type '(signed-byte 32)) :int)
         ((subtypep type '(unsigned-byte 64)) :ulong)

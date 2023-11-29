@@ -611,7 +611,7 @@
          (vbo (make-instance 'vertex-buffer :buffer-data (general-mesh-vertices mesh)))
          (ebo (make-instance 'vertex-buffer :buffer-data (general-mesh-faces mesh)
                                             :buffer-type :element-array-buffer
-                                            :element-type :unsigned-int)))
+                                            :element-type :unsigned-short)))
     (ensure-instance vao 'vertex-array :index-buffer ebo :bindings `((,vbo :size 3)))))
 
 (defmethod coerce-object ((primitive primitive) (type (eql 'mesh-data)) &rest args &key &allow-other-keys)
