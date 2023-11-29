@@ -98,10 +98,16 @@
   (entity NIL :type T)
   (material NIL :type T)
   (local-transform (meye 4) :type mat4)
-  (transform (mat4) :type mat4))
+  (transform (mat4) :type mat4)
+  (global-bounds-cache (%make-global-bounds-cache) :type global-bounds-cache))
+
+(defmethod global-transform-matrix ((primitive primitive) &optional target)
+  (etypecase target
+    (null (primitive-transform primitive))
+    (mat4 (m<- target (primitive-transform primitive)))))
 
 (defmethod global-location ((primitive primitive) &optional (target (vec3)))
-  (mcol3 (primitive-transform primitive) 3 target))
+  (global-location (primitive-global-bounds-cache primitive) target))
 
 (defmethod global-orientation ((primitive primitive) &optional (quat (quat)))
   (!qfrom-mat quat (primitive-transform primitive)))
@@ -132,10 +138,16 @@
     quat))
 
 (defmethod 3ds:location ((primitive primitive))
-  (global-location primitive))
+  (global-location (primitive-global-bounds-cache primitive)))
 
 (defmethod 3ds:bsize ((primitive primitive))
-  (global-bsize primitive))
+  (global-bsize (primitive-global-bounds-cache primitive)))
+
+(defmethod 3ds:radius ((primitive primitive))
+  (global-radius (primitive-global-bounds-cache primitive)))
+
+(defmethod invalidate-global-bounds-cache ((primitive primitive))
+  (setf (global-bounds-cache-dirty-p (primitive-global-bounds-cache primitive)) T))
 
 (define-accessor-delegate-methods entity (primitive-entity primitive))
 (define-accessor-delegate-methods material (primitive-material primitive))
@@ -159,9 +171,13 @@
            ,@slots)
 
          (defun ,constructor (&rest args &key location orientation &allow-other-keys)
-           (let ((primitive (apply #',int-constructor (remf* args :location :orientation))))
+           (let* ((primitive (apply #',int-constructor (remf* args :location :orientation)))
+                  (cache (primitive-global-bounds-cache primitive)))
              (when location (setf (location primitive) location))
              (when orientation (setf (orientation primitive) orientation))
+             (setf (global-bounds-cache-generator cache) primitive)
+             (setf (global-bounds-cache-radius cache) (compute-radius primitive))
+             (v<- (global-bounds-cache-obb cache) (compute-bsize primitive))
              primitive))
 
          ,@(loop for (slot) in slots
@@ -174,10 +190,10 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~f" (radius primitive))))
 
-(defmethod global-bsize ((primitive sphere) &optional (target (vec3)))
-  (v<- target (sphere-radius primitive)))
+(defmethod compute-bsize ((primitive sphere))
+  (vec3 (sphere-radius primitive)))
 
-(defmethod 3ds:radius ((primitive sphere))
+(defmethod compute-radius ((primitive sphere))
   (sphere-radius primitive))
 
 (define-primitive-type plane
@@ -188,23 +204,23 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~a ~f" (normal primitive) (offset primitive))))
 
-(defmethod global-bsize ((primitive plane) &optional (target (vec3)))
+(defmethod compute-bsize ((primitive plane))
   (cond ((v= +vx3+ (vabs (plane-normal primitive)))
-         (vsetf target 1.0 most-positive-single-float most-positive-single-float))
+         (vec3 1.0 most-positive-single-float most-positive-single-float))
         ((v= +vy3+ (vabs (plane-normal primitive)))
-         (vsetf target most-positive-single-float 1.0 most-positive-single-float))
+         (vec3 most-positive-single-float 1.0 most-positive-single-float))
         ((v= +vz3+ (vabs (plane-normal primitive)))
-         (vsetf target most-positive-single-float most-positive-single-float 1.0))
+         (vec3 most-positive-single-float most-positive-single-float 1.0))
         (T ;; The plane is slightly tilted, so its bsize is infinite.
-         (vsetf target most-positive-single-float most-positive-single-float most-positive-single-float))))
+         (vec3 most-positive-single-float most-positive-single-float most-positive-single-float))))
 
-(defmethod 3ds:radius ((primitive plane))
+(defmethod compute-radius ((primitive plane))
   most-positive-single-float)
 
 (define-primitive-type (half-space plane))
 
-(defmethod global-bsize ((primitive half-space) &optional (target (vec3)))
-  (v<- target most-positive-single-float))
+(defmethod compute-bsize ((primitive half-space))
+  (vec3 most-positive-single-float))
 
 ;; NOTE: the box is centred at 0,0,0 and the bsize is the half-size along each axis.
 (define-primitive-type box
@@ -214,13 +230,11 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~a" (bsize primitive))))
 
-(defmethod global-bsize ((primitive box) &optional (target (vec3)))
-  (v<- target (box-bsize primitive))
-  (n*m4/3 (mapply (primitive-transform primitive) #'abs) target))
+(defmethod compute-bsize ((primitive box))
+  (box-bsize primitive))
 
-(defmethod 3ds:radius ((primitive box))
-  (let ((bsize (box-bsize primitive)))
-    (max (vx bsize) (vy bsize) (vz bsize))))
+(defmethod compute-radius ((primitive box))
+  (vlength (box-bsize primitive)))
 
 ;; Frustums are just boxes skewed by a linear transform. We provide these shorthands
 ;; here to allow easier construction of frustum testing primitives.
@@ -246,29 +260,12 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~f ~f" (radius primitive) (height primitive))))
 
-(defmethod global-bsize ((primitive cylinder) &optional (target (vec3)))
-  (let* ((h   (cylinder-height primitive))
-         (r   (cylinder-radius primitive))
-         (dir (n*m4/3 (primitive-transform primitive) (vec 0 (* 2 h) 0)))
-         (dot (v. dir dir))
-         (ex  (* r (sqrt (- 1 (if (plusp dot) (* (vx dir) (vx dir) (/ dot)) 0)))))
-         (ey  (* r (sqrt (- 1 (if (plusp dot) (* (vy dir) (vy dir) (/ dot)) 0)))))
-         (ez  (* r (sqrt (- 1 (if (plusp dot) (* (vz dir) (vz dir) (/ dot)) 0))))))
-    (vsetf target
-           (* .5 (- (max (+ 0           ex)
-                         (+ (vx dir)    ex))
-                    (min (+ 0        (- ex))
-                         (+ (vx dir) (- ex)))))
-           (* .5 (- (max (+ 0           ey)
-                         (+ (vy dir)    ey))
-                    (min (+ 0        (- ey))
-                         (+ (vy dir) (- ey)))))
-           (* .5 (- (max (+ 0           ez)
-                         (+ (vz dir)    ez))
-                    (min (+ 0        (- ez))
-                         (+ (vz dir) (- ez))))))))
+(defmethod compute-bsize ((primitive cylinder))
+  (vec3 (cylinder-radius primitive)
+        (cylinder-height primitive)
+        (cylinder-radius primitive)))
 
-(defmethod 3ds:radius ((primitive cylinder))
+(defmethod compute-radius ((primitive cylinder))
   (sqrt (+ (expt (cylinder-radius primitive) 2)
            (expt (cylinder-height primitive) 2))))
 
@@ -282,18 +279,12 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~f ~f" (radius primitive) (height primitive))))
 
-(defmethod global-bsize ((primitive pill) &optional (target (vec3)))
-  (let* ((h (pill-height primitive))
-         (r (pill-radius primitive))
-         (dir (n*m4/3 (primitive-transform primitive) (vec 0 h 0))))
-    ;; FIXME: this assumes that the primitive transform is length- and
-    ;; angle-preserving (that is, it does not include scaling or
-    ;; worse). Just scaling could be easily taken into account if
-    ;; isotropic.
-    (vsetf target
-           (+ r (abs (vx dir))) (+ r (abs (vy dir))) (+ r (abs (vz dir))))))
+(defmethod compute-bsize ((primitive pill))
+  (vec3 (cylinder-radius primitive)
+        (+ (cylinder-radius primitive) (cylinder-height primitive))
+        (cylinder-radius primitive)))
 
-(defmethod 3ds:radius ((primitive pill))
+(defmethod compute-radius ((primitive pill))
   (+ (pill-height primitive) (pill-radius primitive)))
 
 (define-primitive-type triangle
@@ -305,19 +296,19 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~a ~a ~a" (a primitive) (b primitive) (c primitive))))
 
-(defmethod global-bsize ((primitive triangle) &optional (target (vec3)))
-  (let ((vmin (vec3)) (vmax (vec3)) (tmp (vec3)))
-    (declare (dynamic-extent vmin tmp))
+(defmethod compute-bsize ((primitive triangle))
+  (let ((vmin (vec3 most-positive-single-float))
+        (vmax (vec3 most-negative-single-float)))
+    (declare (dynamic-extent vmin))
     (flet ((test (vec)
-             (!m* tmp (primitive-transform primitive) vec)
-             (vmin vmin tmp)
-             (vmax vmax tmp)))
+             (vmin vmin vec)
+             (vmax vmax vec)))
       (test (triangle-a primitive))
       (test (triangle-b primitive))
       (test (triangle-c primitive))
       (nv* (!v- target vmax vmin) 0.5))))
 
-(defmethod 3ds:radius ((primitive triangle))
+(defmethod compute-radius ((primitive triangle))
   (sqrt (max (vsqrlength (triangle-a primitive))
              (vsqrlength (triangle-b primitive))
              (vsqrlength (triangle-c primitive)))))
@@ -334,25 +325,12 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~d tris" (truncate (length (faces primitive)) 3))))
 
-(defmethod global-location ((primitive general-mesh) &optional (target (vec3)))
-  (let ((vmin (vec3 #1=most-positive-single-float #1# #1#))
-        (tmp (vec3))
-        (vertices (general-mesh-vertices primitive)))
-    (declare (dynamic-extent vmin tmp))
-    (loop for i from 0 below (length vertices) by 3
-          do (vsetf tmp
-                    (aref vertices (+ i 0))
-                    (aref vertices (+ i 1))
-                    (aref vertices (+ i 2)))
-             (n*m (primitive-transform primitive) tmp)
-             (nvmin vmin tmp))
-    (v<- target (v+ (mcol3 (primitive-local-transform primitive) 3)
-                    vmin
-                    (global-bsize primitive)))))
+;; TODO: when the mesh is constructed, fix its local transform to be offset
+;;       such that the vertices are centered correctly to optimise the bsize
 
-(defmethod global-bsize ((primitive general-mesh) &optional (target (vec3)))
-  (let ((vmin (vec3 #1=most-positive-single-float #1# #1#))
-        (vmax (vec3 #2=most-negative-single-float #2# #2#))
+(defmethod compute-bsize ((primitive general-mesh))
+  (let ((vmin (vec3 most-positive-single-float))
+        (vmax (vec3 most-negative-single-float))
         (tmp (vec3))
         (vertices (general-mesh-vertices primitive)))
     (declare (dynamic-extent vmin tmp))
@@ -361,12 +339,11 @@
                     (aref vertices (+ i 0))
                     (aref vertices (+ i 1))
                     (aref vertices (+ i 2)))
-             (n*m (primitive-transform primitive) tmp)
              (nvmin vmin tmp)
              (nvmax vmax tmp))
     (nv* (!v- target vmax vmin) 0.5)))
 
-(defmethod 3ds:radius ((primitive general-mesh))
+(defmethod compute-radius ((primitive general-mesh))
   ;; NOTE: because we cannot move the location of the fitting sphere to be
   ;;       different from the location of the primitive, this radius is not
   ;;       necessarily the ideal radius.

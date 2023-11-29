@@ -9,7 +9,7 @@
 (defgeneric invalidate-global-bounds-cache (object))
 
 (defmethod global-transform-matrix ((entity entity) &optional (matrix (meye 4)))
-  (let ((*model-matrix* matrix))
+  (with-pushed-matrix ((model-matrix matrix))
     (apply-transforms entity)
     matrix))
 
