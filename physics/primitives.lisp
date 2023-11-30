@@ -106,11 +106,14 @@
     (null (primitive-transform primitive))
     (mat4 (m<- target (primitive-transform primitive)))))
 
-(defmethod global-location ((primitive primitive) &optional (target (vec3)))
+(defmethod global-location ((primitive primitive) &optional target)
   (global-location (primitive-global-bounds-cache primitive) target))
 
 (defmethod global-orientation ((primitive primitive) &optional (quat (quat)))
   (!qfrom-mat quat (primitive-transform primitive)))
+
+(defmethod global-bsize ((primitive primitive) &optional target)
+  (global-bsize (primitive-global-bounds-cache primitive) target))
 
 (defmethod location ((primitive primitive))
   (mcol3 (primitive-local-transform primitive) 3))
@@ -160,7 +163,7 @@
                      :transform (primitive-transform primitive)
                      args))
 
-(defmacro define-primitive-type (name &body slots)
+(defmacro define-primitive-type (name slots &body body)
   (destructuring-bind (name &optional (super 'primitive)) (enlist name)
     (let ((int-constructor (mksym *package* '%make- name))
           (constructor (mksym *package* 'make- name)))
@@ -178,13 +181,14 @@
              (setf (global-bounds-cache-generator cache) primitive)
              (setf (global-bounds-cache-radius cache) (compute-radius primitive))
              (v<- (global-bounds-cache-obb cache) (compute-bsize primitive))
+             ,@body
              primitive))
 
          ,@(loop for (slot) in slots
                  collect `(define-accessor-delegate-methods ,slot (,(mksym *package* name '- slot) ,name)))))))
 
 (define-primitive-type sphere
-  (radius 1.0 :type single-float))
+    ((radius 1.0 :type single-float)))
 
 (defmethod print-object ((primitive sphere) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
@@ -197,8 +201,8 @@
   (sphere-radius primitive))
 
 (define-primitive-type plane
-  (normal (vec3 0 1 0) :type vec3)
-  (offset 0.0 :type single-float))
+    ((normal (vec3 0 1 0) :type vec3)
+     (offset 0.0 :type single-float)))
 
 (defmethod print-object ((primitive plane) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
@@ -217,14 +221,15 @@
 (defmethod compute-radius ((primitive plane))
   most-positive-single-float)
 
-(define-primitive-type (half-space plane))
+(define-primitive-type (half-space plane)
+    ())
 
 (defmethod compute-bsize ((primitive half-space))
   (vec3 most-positive-single-float))
 
 ;; NOTE: the box is centred at 0,0,0 and the bsize is the half-size along each axis.
 (define-primitive-type box
-  (bsize (vec3 1 1 1) :type vec3))
+    ((bsize (vec3 1 1 1) :type vec3)))
 
 (defmethod print-object ((primitive box) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
@@ -253,8 +258,8 @@
 
 ;; NOTE: the cylinder is centred at 0,0,0 and points Y-up. the "height" is the half-height.
 (define-primitive-type cylinder
-  (radius 1.0 :type single-float)
-  (height 1.0 :type single-float))
+    ((radius 1.0 :type single-float)
+     (height 1.0 :type single-float)))
 
 (defmethod print-object ((primitive cylinder) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
@@ -272,8 +277,8 @@
 ;; NOTE: the pill is centred at 0,0,0, and points Y-up. the "height" is the half-height
 ;;       and does not include the caps, meaning the total height of the pill is 2r+2h.
 (define-primitive-type pill
-  (radius 1.0 :type single-float)
-  (height 1.0 :type single-float))
+    ((radius 1.0 :type single-float)
+     (height 1.0 :type single-float)))
 
 (defmethod print-object ((primitive pill) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
@@ -288,9 +293,9 @@
   (+ (pill-height primitive) (pill-radius primitive)))
 
 (define-primitive-type triangle
-  (a (vec3 -1 0 -1) :type vec3)
-  (b (vec3 +1 0 -1) :type vec3)
-  (c (vec3 +0 0 +1) :type vec3))
+    ((a (vec3 -1 0 -1) :type vec3)
+     (b (vec3 +1 0 -1) :type vec3)
+     (c (vec3 +0 0 +1) :type vec3)))
 
 (defmethod print-object ((primitive triangle) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
@@ -314,19 +319,25 @@
              (vsqrlength (triangle-c primitive)))))
 
 (define-primitive-type general-mesh
-  ;; NOTE: Packed vertex positions as X Y Z triplets
-  ;; [ X0 Y0 Z0 X1 Y1 Z1 X2 Y2 Z2 X3 Y3 Z3 ... ]
-  (vertices #() :type (simple-array single-float (*)))
-  ;; NOTE: Vertex indices pointing into the vertex array / 3
-  ;; [ 0 1 2 2 3 0 ... ]
-  (faces #() :type (simple-array (unsigned-byte 16) (*))))
+    (;; NOTE: Packed vertex positions as X Y Z triplets
+     ;; [ X0 Y0 Z0 X1 Y1 Z1 X2 Y2 Z2 X3 Y3 Z3 ... ]
+     (vertices #() :type (simple-array single-float (*)))
+     ;; NOTE: Vertex indices pointing into the vertex array / 3
+     ;; [ 0 1 2 2 3 0 ... ]
+     (faces #() :type (simple-array (unsigned-byte 16) (*))))
+  (let ((offset (recenter-vertices (general-mesh-vertices primitive) (general-mesh-faces primitive))))
+    (!m* (primitive-local-transform primitive)
+         offset
+         (primitive-local-transform primitive))))
 
 (defmethod print-object ((primitive general-mesh) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~d tris" (truncate (length (faces primitive)) 3))))
 
-;; TODO: when the mesh is constructed, fix its local transform to be offset
-;;       such that the vertices are centered correctly to optimise the bsize
+(defun recenter-vertices (vertices faces)
+  (let ((centroid (org.shirakumo.fraf.manifolds:centroid vertices faces)))
+    (org.shirakumo.fraf.manifolds:transform-mesh vertices (mtranslation (v- centroid)))
+    (mtranslation centroid)))
 
 (defmethod compute-bsize ((primitive general-mesh))
   (let ((vmin (vec3 most-positive-single-float))
@@ -341,7 +352,7 @@
                     (aref vertices (+ i 2)))
              (nvmin vmin tmp)
              (nvmax vmax tmp))
-    (nv* (!v- target vmax vmin) 0.5)))
+    (nv* (v- vmax vmin) 0.5)))
 
 (defmethod compute-radius ((primitive general-mesh))
   ;; NOTE: because we cannot move the location of the fitting sphere to be
@@ -353,7 +364,12 @@
                           (expt (aref vertices (+ i 1)) 2)
                           (expt (aref vertices (+ i 2)) 2)))))
 
-(define-primitive-type (convex-mesh general-mesh))
+(define-primitive-type (convex-mesh general-mesh)
+    ()
+  (let ((offset (recenter-vertices (general-mesh-vertices primitive) (general-mesh-faces primitive))))
+    (!m* (primitive-local-transform primitive)
+         offset
+         (primitive-local-transform primitive))))
 
 (defmacro with-mesh-construction ((constructor &optional (finalizer 'finalize)) &body body)
   (let ((vertices (gensym "VERTICES"))

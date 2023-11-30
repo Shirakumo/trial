@@ -174,9 +174,9 @@
     (setf (tf-feature cache) edge)))
 
 (trial:define-primitive-type (mesh trial:convex-mesh)
-  (%vertices NIL :type (simple-array vertex (*)))
-  (%faces NIL :type (simple-array face (*)))
-  (%edges NIL :type (simple-array edge (*))))
+    ((%vertices NIL :type (simple-array vertex (*)))
+     (%faces NIL :type (simple-array face (*)))
+     (%edges NIL :type (simple-array edge (*)))))
 
 (defmethod print-object ((mesh mesh) stream)
   (print-unreadable-object (mesh stream :type T)

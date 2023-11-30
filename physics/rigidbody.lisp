@@ -39,6 +39,10 @@
         minimize (loop for bi across (physics-primitives b)
                        minimize (distance ai bi))))
 
+(defmethod invalidate-global-bounds-cache :after ((entity rigidbody))
+  (loop for primitive across (physics-primitives entity)
+        do (invalidate-global-bounds-cache primitive)))
+
 ;; TODO: cache and update when rotating?
 (defmethod global-bsize ((entity rigidbody) &optional (target (vec3)))
   (v<- target 0)
@@ -148,7 +152,8 @@
   (loop for primitive across (physics-primitives rigidbody)
         do (!m* (primitive-transform primitive)
                 (transform-matrix rigidbody)
-                (primitive-local-transform primitive))))
+                (primitive-local-transform primitive))
+           (invalidate-global-bounds-cache primitive)))
 
 (defmethod impact-local ((entity rigidbody) force point)
   ;; NOTE: The FORCE direction is in world coordinates, and the POINT is in local coordinates

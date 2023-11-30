@@ -45,7 +45,7 @@
     (invalidate-global-bounds-cache child)))
 
 (defstruct (global-bounds-cache
-            (:constructor %make-global-bounds-cache (generator radius obb)))
+            (:constructor %make-global-bounds-cache (&optional generator (radius 0f0) (obb (vec3)))))
   (generator NIL :type T)
   (radius 0f0 :type single-float)
   (obb (vec3) :type vec3)
@@ -62,7 +62,7 @@
     (global-transform-matrix (global-bounds-cache-generator cache) matrix)
     (mcol3 matrix 3 (global-bounds-cache-location cache))
     (nmapply matrix #'abs)
-    (!m* (global-bounds-cache-aabb cache) matrix (global-bounds-cache-obb cache)))
+    (!m*4/3 (global-bounds-cache-aabb cache) matrix (global-bounds-cache-obb cache)))
   (setf (global-bounds-cache-dirty-p cache) NIL))
 
 (defmethod global-location ((cache global-bounds-cache) &optional target)
