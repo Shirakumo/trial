@@ -323,8 +323,8 @@
       (gltf:spot-light
        (make 'trial:spot-light :direction (vec 0 0 -1)
                                :linear-attenuation (or (gltf:range light) 0.0)
-                               :inner-radius (gltf:inner-angle light)
-                               :outer-radius (gltf:outer-angle light))))))
+                               :inner-radius (rad->deg (gltf:inner-angle light))
+                               :outer-radius (rad->deg (gltf:outer-angle light)))))))
 
 (defun load-camera (camera)
   (etypecase camera
