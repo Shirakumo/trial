@@ -86,7 +86,6 @@
   (change-state area object NIL))
 
 (defmethod unstage ((object asset) (area staging-area))
-  (unload object)
   (deallocate object)
   (change-state area object NIL))
 
