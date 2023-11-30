@@ -379,6 +379,8 @@
    #:make-contact
    #:rigidbody-system
    #:collides-p
+   #:resolve-collision
+   #:impart-collision-impact
    #:velocity-eps
    #:depth-eps
    #:accelerated-rigidbody-system)

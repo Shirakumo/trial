@@ -280,7 +280,17 @@
   (setf (depth-eps system) (* units 0.01)))
 
 (defgeneric collides-p (a b hit))
-(defmethod collides-p ((a rigidbody) (b rigidbody) hit) T)
+(defgeneric resolve-collision (a b contact))
+(defgeneric impart-collision-impact (a b contact))
+
+(defmethod collides-p ((a rigidbody) (b rigidbody) hit)
+  T)
+
+(defmethod resolve-collision ((a rigidbody) (b rigidbody) contact)
+  (apply-position-change contact))
+
+(defmethod impart-collision-impact ((a rigidbody) (b rigidbody) contact)
+  (apply-velocity-change contact))
 
 (defun prune-hits (hits start new-start)
   (loop for head from start below new-start
@@ -349,7 +359,7 @@
                  (setf worst (contact-depth contact))))
              (unless contact (return))
              (match-awake-state contact)
-             (apply-position-change contact)
+             (resolve-collision (hit-a contact) (hit-b contact) contact)
              ;; We now need to fix up the contact depths.
              (do-update (rotation-change velocity-change loc sign)
                (let ((cross (vec3)))
@@ -369,7 +379,7 @@
                  (setf worst (contact-desired-delta contact))))
              (unless contact (return))
              (match-awake-state contact)
-             (apply-velocity-change contact)
+             (impart-collision-impact (hit-a contact) (hit-b contact) contact)
              (do-update (rotation-change velocity-change loc sign)
                (let ((cross (vec3)))
                  (declare (dynamic-extent cross))
