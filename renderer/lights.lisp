@@ -75,8 +75,10 @@
 
 (defmethod transfer-to progn ((target standard-light) (light directional-light))
   (setf (light-type target) 3)
-  ;; FIXME: rotate direction to global orientation
-  (setf (direction target) (direction light))
+  (let ((q (quat)))
+    (declare (dynamic-extent q))
+    (global-orientation light q)
+    (setf (direction target) (q* q (direction light))))
   (when (shadow-map light) (setf (shadow-map target) (shadow-map light))))
 
 (defmethod 3ds:bsize ((light directional-light))
