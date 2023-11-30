@@ -336,33 +336,39 @@
                                      :near-plane (gltf:znear camera)
                                      :far-plane (gltf:zfar camera)))))
 
-(defun load-shape (shape model)
+(defun load-shape (shape model &rest args)
   (flet ((ensure-mesh (mesh)
            (or (find-mesh (or (gltf:name mesh) (gltf:idx mesh)) model NIL)
                (first (load-mesh mesh model)))))
     (etypecase shape
       (gltf:box-shape
-       (trial:make-box :bsize (vec (* 0.5 (aref (gltf:size shape) 0))
-                                   (* 0.5 (aref (gltf:size shape) 1))
-                                   (* 0.5 (aref (gltf:size shape) 2)))))
+       (apply #'trial:make-box :bsize (vec (* 0.5 (aref (gltf:size shape) 0))
+                                           (* 0.5 (aref (gltf:size shape) 1))
+                                           (* 0.5 (aref (gltf:size shape) 2)))
+              args))
       (gltf:capsule-shape
-       (trial:make-pill :height (float (* 0.5 (gltf:height shape)) 0f0)
-                        :radius (max (float (gltf:radius-top shape) 0f0)
-                                     (float (gltf:radius-bottom shape) 0f0))))
+       (apply #'trial:make-pill :height (float (* 0.5 (gltf:height shape)) 0f0)
+                                :radius (max (float (gltf:radius-top shape) 0f0)
+                                             (float (gltf:radius-bottom shape) 0f0))
+                                args))
       (gltf:convex-shape
        (let ((mesh (ensure-mesh (gltf:mesh shape))))
-         (trial:make-convex-mesh :vertices (trial:reordered-vertex-data mesh '(trial:location))
-                                 :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 16)))))
+         (apply #'trial:make-convex-mesh :vertices (trial:reordered-vertex-data mesh '(trial:location))
+                                         :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 16))
+                                         args)))
       (gltf:cylinder-shape
-       (trial:make-cylinder :height (float (* 0.5 (gltf:height shape)) 0f0)
-                            :radius (max (float (gltf:radius-top shape) 0f0)
-                                         (float (gltf:radius-bottom shape) 0f0))))
+       (apply #'trial:make-cylinder :height (float (* 0.5 (gltf:height shape)) 0f0)
+                                    :radius (max (float (gltf:radius-top shape) 0f0)
+                                                 (float (gltf:radius-bottom shape) 0f0))
+                                    args))
       (gltf:sphere-shape
-       (trial:make-sphere :radius (float (gltf:radius shape) 0f0)))
+       (apply #'trial:make-sphere :radius (float (gltf:radius shape) 0f0)
+              args))
       (gltf:trimesh-shape
        (let ((mesh (ensure-mesh (gltf:mesh shape))))
-         (trial:make-general-mesh :vertices (trial:reordered-vertex-data mesh '(trial:location))
-                                  :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 16))))))))
+         (apply #'trial:make-general-mesh :vertices (trial:reordered-vertex-data mesh '(trial:location))
+                                          :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 16))
+                                          args))))))
 
 (defun find-colliders (node model)
   ;; FIXME: implement triggers
@@ -379,8 +385,8 @@
                                  (gltf:friction-combine (gltf:physics-material collider))
                                  (gltf:restitution-combine (gltf:physics-material collider)))))
                ;; FIXME: implement collision filtering
-               (let ((primitive (load-shape (gltf:shape collider) model)))
-                 (tmat tf (trial:primitive-local-transform primitive))
+               (let ((primitive (load-shape (gltf:shape collider) model
+                                            :local-transform (tmat tf))))
                  (setf (trial:primitive-material primitive) material)
                  (vector-push-extend primitive primitives)))
              (recurse (node tf)
