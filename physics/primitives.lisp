@@ -285,9 +285,9 @@
     (format stream "~f ~f" (radius primitive) (height primitive))))
 
 (defmethod compute-bsize ((primitive pill))
-  (vec3 (cylinder-radius primitive)
-        (+ (cylinder-radius primitive) (cylinder-height primitive))
-        (cylinder-radius primitive)))
+  (vec3 (pill-radius primitive)
+        (+ (pill-radius primitive) (pill-height primitive))
+        (pill-radius primitive)))
 
 (defmethod compute-radius ((primitive pill))
   (+ (pill-height primitive) (pill-radius primitive)))
