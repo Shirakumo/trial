@@ -145,7 +145,7 @@
                        (setf (aref observers i) NIL))))))
       (%string controller))))
 
-(defmethod handle ((ev tick) (controller display-controller))
+(defmethod handle :after ((ev tick) (controller display-controller))
   (when (and (show-overlay controller)
              *context*)
     (setf (text controller) (compose-controller-debug-text controller ev))
