@@ -279,7 +279,18 @@
   (setf (velocity-eps system) (* units 0.01))
   (setf (depth-eps system) (* units 0.01)))
 
-(defmethod generate-hits ((system rigidbody-system) contacts start end)
+(defgeneric collides-p (a b hit))
+(defmethod collides-p ((a rigidbody) (b rigidbody) hit) T)
+
+(defun prune-hits (hits start new-start)
+  (loop for head from start below new-start
+        for hit = (aref hits start)
+        do (when (collides-p (hit-a hit) (hit-b hit) hit)
+             (rotatef (aref hits start) (aref hits head))
+             (incf start)))
+  start)
+
+(defmethod generate-hits ((system rigidbody-system) hits start end)
   ;; If this seems inefficient to you, it is! Use the ACCELERATED-RIGIDBODY-SYSTEM instead.
   (loop with objects = (%objects system)
         for i from 0 below (length objects)
@@ -291,7 +302,8 @@
                       ;; Don't bother detecting hits between immovable objects
                       (loop for a-p across (physics-primitives a)
                             do (loop for b-p across (physics-primitives b)
-                                     do (setf start (org.shirakumo.fraf.trial.gjk:detect-hits a-p b-p contacts start end)))))))
+                                     for new-start = (org.shirakumo.fraf.trial.gjk:detect-hits a-p b-p hits start end)
+                                     do (setf start (prune-hits hits start new-start)))))))
   start)
 
 (defmethod resolve-hits ((system rigidbody-system) contacts start end dt &key (iterations 200))
@@ -392,14 +404,14 @@
         do (loop for primitive across (physics-primitives object)
                  do (3ds:update primitive structure))))
 
-(defmethod generate-hits ((system accelerated-rigidbody-system) contacts start end)
+(defmethod generate-hits ((system accelerated-rigidbody-system) hits start end)
   (3ds:do-pairs (a b (acceleration-structure system) start)
     (let ((entity1 (primitive-entity a))
           (entity2 (primitive-entity b)))
       (unless (or (eq entity1 entity2)
                   (and (= 0.0 (inverse-mass entity1))
                        (= 0.0 (inverse-mass entity2))))
-        (setf start (detect-hits a b contacts start end))
+        (setf start (prune-hits hits start (detect-hits a b hits start end)))
         (when (<= end start) (return start))))))
 
 (defmethod start-frame :before ((system accelerated-rigidbody-system))

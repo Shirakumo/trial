@@ -378,6 +378,7 @@
    #:contact-b-relative
    #:make-contact
    #:rigidbody-system
+   #:collides-p
    #:velocity-eps
    #:depth-eps
    #:accelerated-rigidbody-system)
