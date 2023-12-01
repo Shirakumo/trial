@@ -396,7 +396,8 @@
 
 (defmethod enter :before ((body rigidbody) (system accelerated-rigidbody-system))
   (cond ((= 0 (length (physics-primitives body)))
-         (vector-push-extend body (pending-inserts system)))
+         (unless (find body (pending-inserts system))
+           (vector-push-extend body (pending-inserts system))))
         (T
          (start-frame body)
          (loop with structure = (acceleration-structure system)
