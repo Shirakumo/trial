@@ -380,6 +380,8 @@
    #:rigidbody-system
    #:collides-p
    #:resolve-collision
+   #:impart-collision
+   #:resolve-collision-impact
    #:impart-collision-impact
    #:velocity-eps
    #:depth-eps
