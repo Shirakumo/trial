@@ -523,6 +523,8 @@
       (gltf:with-gltf (gltf file)
         ;; Rewrite trimesh shapes to multiple new shapes.
         ;; TODO: if original trimesh mesh has no other refs anywhere, remove it
+        ;; FIXME: if the mesh already is decomposed, how do we know and avoid doing it again?
+        ;; FIXME: meshes aren't actually loaded back in right? FUCK.
         (loop for shape across (gltf:shapes gltf)
               do (when (typep shape 'gltf:trimesh-shape)
                    (let* ((primitives (gltf:primitives (gltf:mesh shape)))
