@@ -13,8 +13,8 @@
 (defconstant GJK-ITERATIONS 64)
 (defconstant EPA-ITERATIONS 64)
 (defconstant EPA-TOLERANCE 0.0001)
-(defconstant EPA-MAX-FACES 64)
-(defconstant EPA-MAX-LOOSE-EDGES 32)
+(defconstant EPA-MAX-FACES 256)
+(defconstant EPA-MAX-LOOSE-EDGES 128)
 
 ;;;; GJK main algorithm
 ;; TODO: avoid consing from v-
