@@ -127,6 +127,17 @@
     (epa s0 s1 s2 s3 a b hit)
     (trial:hit-depth hit)))
 
+(defun object-color (object1 object2)
+  (let* ((a1 (sb-vm::get-lisp-obj-address object1))
+         (a2 (sb-vm::get-lisp-obj-address object2))
+         (h (let ((*random-state* (sb-ext:seed-random-state
+                                   (logxor a1 a2))))
+              (random (ash 1 24))))
+         (r (float (/ (ldb (byte 8  0) h) (ash 1 8)) 1.0f0))
+         (g (float (/ (ldb (byte 8  8) h) (ash 1 8)) 1.0f0))
+         (b (float (/ (ldb (byte 8 16) h) (ash 1 8)) 1.0f0)))
+    (values (vec3 r g b) h)))
+
 (defun detect-hits (a b hits start end)
   (declare (type trial:primitive a b))
   (declare (type (unsigned-byte 32) start end))
@@ -139,9 +150,24 @@
     (declare (dynamic-extent s0 s1 s2 s3))
     (cond ((and (%gjk a b s0 s1 s2 s3)
                 (epa s0 s1 s2 s3 a b hit))
-           #++(trial:debug-point (trial:hit-location hit))
-           #++(trial:debug-line (trial:hit-location hit) (v+* (trial:hit-location hit) (trial:hit-normal hit) -2)
-                                :color-a #.(vec 0 0 0) :color-b #.(vec 0 1 0))
+           (trial:debug-point (trial:hit-location hit))
+           (trial:debug-line (trial:hit-location hit) (v+* (trial:hit-location hit) (trial:hit-normal hit) -2)
+                             :color-a #.(vec 0 0 0) :color-b #.(vec 0 1 0))
+           (let ((color (object-color a b)))
+             (flet ((debug-primitive (primitive)
+                      (typecase primitive
+                        (trial::convex-mesh
+                         (trial::debug-triangles (trial::general-mesh-vertices primitive)
+                                                 (trial::general-mesh-faces primitive)
+                                                 :transform (trial::primitive-transform primitive)
+                                                 :color color))
+                        (trial::pill
+                         (trial::debug-pill (trial::global-location primitive)
+                                            (trial::pill-radius primitive)
+                                            (trial::pill-height primitive)
+                                            :color color)))))
+               (debug-primitive a)
+               (debug-primitive b)))
            (trial:finish-hit hit a b)
            (1+ start))
           (T
