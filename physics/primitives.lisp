@@ -325,7 +325,7 @@
      ;; NOTE: Vertex indices pointing into the vertex array / 3
      ;; [ 0 1 2 2 3 0 ... ]
      (faces #() :type (simple-array (unsigned-byte 16) (*))))
-  (let ((offset (recenter-vertices (general-mesh-vertices primitive) (general-mesh-faces primitive))))
+  (let ((offset (recenter-vertices (general-mesh-vertices primitive))))
     (!m* (primitive-local-transform primitive)
          offset
          (primitive-local-transform primitive))))
@@ -334,22 +334,10 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~d tris" (truncate (length (faces primitive)) 3))))
 
-(defun recenter-vertices (vertices faces)
-  (let ((vmin (vec3 most-positive-single-float))
-        (vmax (vec3 most-negative-single-float))
-        (tmp (vec3))
-        (vertices vertices))
-    (declare (dynamic-extent vmin tmp))
-    (loop for i from 0 below (length vertices) by 3
-          do (vsetf tmp
-                    (aref vertices (+ i 0))
-                    (aref vertices (+ i 1))
-                    (aref vertices (+ i 2)))
-             (nvmin vmin tmp)
-             (nvmax vmax tmp))
-    (let ((center (nv* (v+ vmax vmin) 0.5)))
-      (org.shirakumo.fraf.manifolds:transform-mesh vertices (mtranslation (v- center)))
-      (mtranslation center))))
+(defun recenter-vertices (vertices)
+  (let ((center (org.shirakumo.fraf.manifolds:bounding-box vertices)))
+    (org.shirakumo.fraf.manifolds:transform-mesh vertices (mtranslation (v- center)))
+    (mtranslation center)))
 
 (defmethod compute-bsize ((primitive general-mesh))
   (let ((vmin (vec3 most-positive-single-float))
@@ -378,7 +366,7 @@
 
 (define-primitive-type (convex-mesh general-mesh)
     ()
-  (let ((offset (recenter-vertices (general-mesh-vertices primitive) (general-mesh-faces primitive))))
+  (let ((offset (recenter-vertices (general-mesh-vertices primitive))))
     (!m* (primitive-local-transform primitive)
          offset
          (primitive-local-transform primitive))))
