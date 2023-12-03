@@ -459,7 +459,7 @@
 
   (defmethod start-frame :after ((system debug-rigidbody-mixin))
     (let ((generation (generation system)))
-      (when (block nil
+      (when T #+no (block NIL
               (maphash (lambda (entity info)
                          (when (/= (cdr info) generation)
                            (return T)))
@@ -467,7 +467,7 @@
         (debug-clear)
         (clrhash (debug-instances system)))
       (setf (generation system) (1+ generation)))
-    (let ((structure (acceleration-structure system)))
+    #+no (let ((structure (acceleration-structure system)))
       (labels ((visit (node depth)
                  (let* ((min (org.shirakumo.fraf.trial.space.kd-tree::node-bb-min node))
                         (max (org.shirakumo.fraf.trial.space.kd-tree::node-bb-max node))
