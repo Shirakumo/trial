@@ -480,7 +480,7 @@
                     (visit (org.shirakumo.fraf.trial.space.kd-tree::node-far node) (1+ depth))))))
         (visit (org.shirakumo.fraf.trial.space.kd-tree::kd-tree-root structure) 0))))
 
-  (defmethod generate-hits :around ((system debug-rigidbody-mixin) contacts start end)
+  (defmethod generate-hits :around ((system debug-rigidbody-mixin) hits start end)
     (labels ((interesting-entity-p (entity)
                (not (= 0.0 (inverse-mass entity))))
              (interesting-entity-pair-p (entity1 entity2)
@@ -503,7 +503,7 @@
                                        (and (= 0.0 (inverse-mass entity1))
                                             (= 0.0 (inverse-mass entity2))))
                              (push (cons a b) broadphase-pairs)
-                             (let ((new-start (detect-hits a b contacts start end)))
+                             (let ((new-start (prune-hits hits start (detect-hits a b hits start end))))
                                (when (> new-start start)
                                  (push (cons a b) collision-pairs))
                                (setf start new-start))
