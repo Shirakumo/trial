@@ -52,7 +52,8 @@ void main(){
     (gl:polygon-mode :front-and-back :fill)))
 
 (defclass mesh-item (alloy:combo-item) ())
-(defmethod alloy:text ((item mesh-item)) (name (alloy:value item)))
+(defmethod alloy:text ((item mesh-item))
+  (princ-to-string (name (alloy:value item))))
 
 (defmethod alloy:combo-item ((item mesh-data) (combo alloy:combo))
   (make-instance 'mesh-item :value item))
