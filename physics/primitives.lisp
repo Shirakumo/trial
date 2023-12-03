@@ -335,9 +335,21 @@
     (format stream "~d tris" (truncate (length (faces primitive)) 3))))
 
 (defun recenter-vertices (vertices faces)
-  (let ((centroid (org.shirakumo.fraf.manifolds:centroid vertices faces)))
-    (org.shirakumo.fraf.manifolds:transform-mesh vertices (mtranslation (v- centroid)))
-    (mtranslation centroid)))
+  (let ((vmin (vec3 most-positive-single-float))
+        (vmax (vec3 most-negative-single-float))
+        (tmp (vec3))
+        (vertices vertices))
+    (declare (dynamic-extent vmin tmp))
+    (loop for i from 0 below (length vertices) by 3
+          do (vsetf tmp
+                    (aref vertices (+ i 0))
+                    (aref vertices (+ i 1))
+                    (aref vertices (+ i 2)))
+             (nvmin vmin tmp)
+             (nvmax vmax tmp))
+    (let ((center (nv* (v+ vmax vmin) 0.5)))
+      (org.shirakumo.fraf.manifolds:transform-mesh vertices (mtranslation (v- center)))
+      (mtranslation center))))
 
 (defmethod compute-bsize ((primitive general-mesh))
   (let ((vmin (vec3 most-positive-single-float))
