@@ -312,7 +312,7 @@
                       ;; Don't bother detecting hits between immovable objects
                       (loop for a-p across (physics-primitives a)
                             do (loop for b-p across (physics-primitives b)
-                                     for new-start = (org.shirakumo.fraf.trial.gjk:detect-hits a-p b-p hits start end)
+                                     for new-start = (detect-hits a-p b-p hits start end)
                                      do (setf start (prune-hits hits start new-start)))))))
   start)
 
