@@ -232,7 +232,7 @@ void main(){
            (map-into (make-array (length vertices) :element-type 'single-float)
                      (lambda (c) (coerce c 'single-float))
                      vertices)
-           (trial::simplify faces '(unsigned-byte 32))
+           faces
            :threshold .000001)
         (let* ((mesh (make-convex-mesh :vertices (copy-seq vertices)
                                        :faces (trial::simplify faces '(unsigned-byte 16))))
