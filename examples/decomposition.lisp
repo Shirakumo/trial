@@ -171,15 +171,17 @@ void main(){
               for faces = (trial::simplify (org.shirakumo.fraf.convex-covering:faces hull) '(unsigned-byte 16))
               for (name . color) in (apply #'alexandria:circular-list (colored:list-colors))
               for color* = (vec (colored:r color) (colored:g color) (colored:b color))
+              ;; Don't destroy the vertex array of the hull since it
+              ;; is needed for debugging.
+              for mesh = (make-convex-mesh :vertices (copy-seq vertices) :faces faces)
               for entity = (make-instance 'decomposition-entity
+                                          :transform (tfrom-mat (primitive-local-transform mesh))
                                           :hull hull
                                           :scene scene
                                           :original-color color*
                                           :color color*
                                           :visible-p (show-decomposition scene)
-                                          :vertex-array (make-vertex-array (make-convex-mesh :vertices vertices
-                                                                                             :faces faces)
-                                                                           NIL))
+                                          :vertex-array (make-vertex-array mesh NIL))
               do (enter entity (node :container scene))
                  (enter entity (selection-buffer scene))
                  (enter entity (index scene)))))
@@ -188,18 +190,18 @@ void main(){
 (defmethod (setf mesh) :before ((mesh mesh-data) (scene decomposition-scene))
   (clear (node :container scene))
   (spaces:clear (index scene))
-  (let ((all-vertices (reordered-vertex-data mesh '(location)))
-        (all-faces (faces mesh)))
+  (let* ((all-vertices (reordered-vertex-data mesh '(location)))
+         (all-faces (faces mesh))
+         (mesh (make-general-mesh :vertices all-vertices
+                                  :faces (trial::simplify all-faces '(unsigned-byte 16)))))
     (enter (make-instance 'decomposition-entity
                           :name :original
                           :scene scene
+                          :transform (t+ (tfrom-mat (primitive-local-transform mesh))
+                                         (transform (vec -3 0 0)))
                           :color (vec 1 1 1 0.5)
                           :visible-p (show-original scene)
-                          :transform (transform (vec -3 0 0))
-                          :vertex-array (make-vertex-array
-                                         (make-general-mesh :vertices all-vertices
-                                                            :faces (trial::simplify all-faces '(unsigned-byte 16)))
-                                         NIL))
+                          :vertex-array (make-vertex-array mesh NIL))
            (node :container scene)))
   (commit (scene +main+) (loader +main+)))
 
@@ -232,9 +234,12 @@ void main(){
                      vertices)
            (trial::simplify faces '(unsigned-byte 32))
            :threshold .000001)
-        (let* ((mesh (make-convex-mesh :vertices vertices :faces (trial::simplify faces '(unsigned-byte 16))))
+        (let* ((mesh (make-convex-mesh :vertices (copy-seq vertices)
+                                       :faces (trial::simplify faces '(unsigned-byte 16))))
+               (transform (tfrom-mat (primitive-local-transform mesh)))
                (entity (make-instance 'decomposition-entity :hull patch
                                                             :scene scene
+                                                            :transform transform
                                                             :original-color color
                                                             :color color
                                                             :visible-p t
@@ -286,9 +291,7 @@ void main(){
 (defun draw-annotations (annotations scene)
   (let ((container (node :container scene)))
     (labels ((draw (function color &rest arguments)
-               (let ((color (etypecase color
-                              (list (apply #'vec color))
-                              (vec color))))
+               (let ((color (apply #'vec color)))
                  (apply function (append arguments (list :color     color
                                                          :container container)))))
              (point (position color)
