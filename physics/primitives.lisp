@@ -626,7 +626,8 @@
                ((and general-mesh (not convex-mesh))
                 (let ((hulls (org.shirakumo.fraf.convex-covering:decompose
                               (general-mesh-vertices primitive)
-                              (simplify (general-mesh-faces primitive) '(unsigned-byte 32)))))
+                              (general-mesh-faces primitive)
+                              :tolerance (expt 10 -2.5))))
                   (loop for hull across hulls
                         for mesh = (make-convex-mesh :vertices (org.shirakumo.fraf.convex-covering:vertices hull)
                                                      :faces (simplify (org.shirakumo.fraf.convex-covering:faces hull) '(unsigned-byte 16))
