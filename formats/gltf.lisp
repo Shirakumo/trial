@@ -532,8 +532,7 @@
                           (verts (reordered-vertex-data mesh '(location)))
                           (hulls (handler-bind ((warning #'muffle-warning))
                                    (apply #'org.shirakumo.fraf.convex-covering:decompose
-                                          verts (trial::simplify (faces mesh) '(unsigned-byte 32))
-                                          decomposition-args))))
+                                          verts (faces mesh) decomposition-args))))
                      (setf (gethash shape shape-table)
                            (loop for hull across hulls
                                  collect (add-convex-shape
