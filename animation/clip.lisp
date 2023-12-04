@@ -103,6 +103,7 @@ TRACKS: ~a~&"
          0.0)))
 
 (%define-sampler-method sequences:sequence (elt thing name))
+(%define-sampler-method vector (aref thing name))
 (%define-sampler-method hash-table (gethash name thing))
 (%define-sampler-method standard-object (slot-value thing name))
 (%define-sampler-method structure-object (slot-value thing name))

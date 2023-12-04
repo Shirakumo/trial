@@ -432,6 +432,7 @@
         (vert (vec3))
         (furthest most-negative-single-float))
     (declare (dynamic-extent vert))
+    (declare (optimize speed (safety 0)))
     ;; FIXME: this is O(n)
     (loop for i from 0 below (length verts) by 3
           do (vsetf vert

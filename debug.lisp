@@ -116,7 +116,8 @@ void main(){
            (values i instance)))
         (T
          (let ((i (length data)))
-           (adjust-array data (+ (length data) (* 3 n)))
+           (when (< (array-total-size data) (+ (length data) (* 3 n)))
+             (adjust-array data (+ (length data) (* 3 n))))
            (incf (fill-pointer data) (* 3 n))
            (setf instance (truncate (length instances) 3))
            (vector-push-extend type instances)
