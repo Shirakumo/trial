@@ -248,6 +248,7 @@
    #:radius
    #:aabb-force
    #:bsize
+   #:bradius
    #:hit
    #:make-hit
    #:hit-a

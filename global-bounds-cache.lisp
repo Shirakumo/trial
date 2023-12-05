@@ -53,7 +53,7 @@
   (aabb (vec3) :type vec3)
   (dirty-p T :type boolean))
 
-(defun make-global-bounds-cache (generator &key (radius (radius generator)) (bsize (bsize generator)))
+(defun make-global-bounds-cache (generator &key (radius (bradius generator)) (bsize (bsize generator)))
   (%make-global-bounds-cache generator radius (vcopy bsize)))
 
 (defun update-global-bounds-cache (cache)
@@ -82,7 +82,10 @@
 (defmethod global-radius ((cache global-bounds-cache))
   (global-bounds-cache-radius cache))
 
-(defmethod radius ((cache global-bounds-cache))
+(defmethod bsize ((cache global-bounds-cache))
+  (global-bounds-cache-aabb cache))
+
+(defmethod bradius ((cache global-bounds-cache))
   (global-bounds-cache-radius cache))
 
 (defmethod invalidate-global-bounds-cache ((cache global-bounds-cache))
