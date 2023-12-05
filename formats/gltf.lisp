@@ -370,20 +370,30 @@
                                           :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 16))
                                           args))))))
 
+(defvar *physics-material-cache* (make-hash-table :test 'equal))
+(defun physics-material-instance (material)
+  (let ((name (list (gltf:static-friction material)
+                    (gltf:dynamic-friction material)
+                    (gltf:restitution material)
+                    (gltf:friction-combine material)
+                    (gltf:restitution-combine material))))
+    (or (gethash name *physics-material-cache*)
+        (setf (gethash name *physics-material-cache*)
+              (trial:make-material-interaction-properties
+               NIL NIL
+               (gltf:static-friction material)
+               (gltf:dynamic-friction material)
+               (gltf:restitution material)
+               (gltf:friction-combine material)
+               (gltf:restitution-combine material))))))
+
 (defun find-colliders (node model)
   ;; FIXME: implement triggers
   (let ((primitives (make-array 0 :adjustable T :fill-pointer T))
         (material :wood))
     (labels ((process (collider tf)
                (when (gltf:physics-material collider)
-                 ;; TODO: cache identical materials
-                 (setf material (trial:make-material-interaction-properties
-                                 NIL NIL
-                                 (gltf:static-friction (gltf:physics-material collider))
-                                 (gltf:dynamic-friction (gltf:physics-material collider))
-                                 (gltf:restitution (gltf:physics-material collider))
-                                 (gltf:friction-combine (gltf:physics-material collider))
-                                 (gltf:restitution-combine (gltf:physics-material collider)))))
+                 (setf material (physics-material-instance (gltf:physics-material collider))))
                ;; FIXME: implement collision filtering
                (let ((primitive (load-shape (gltf:shape collider) model
                                             :local-transform (tmat tf))))
