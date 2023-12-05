@@ -130,6 +130,7 @@
   ;;       But doing so can lead to bi-stable states, as it'll change normalisation
   ;;       from frame to frame without the orientation being changed from outside.
   (nqunit* (orientation rigidbody))
+  (setf (global-bounds-cache-dirty-p (global-bounds-cache rigidbody)) T)
   (tmat (tf rigidbody) (transform-matrix rigidbody))
   (compute-world-inertia-tensor (world-inverse-inertia-tensor rigidbody) (inverse-inertia-tensor rigidbody) (transform-matrix rigidbody))
   (loop for primitive across (physics-primitives rigidbody)
