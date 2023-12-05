@@ -523,10 +523,12 @@
       (gltf:with-gltf (gltf file)
         ;; Rewrite trimesh shapes to multiple new shapes.
         ;; TODO: if original trimesh mesh has no other refs anywhere, remove it
-        ;; FIXME: if the mesh already is decomposed, how do we know and avoid doing it again?
         ;; FIXME: meshes aren't actually loaded back in right? FUCK.
         (loop for shape across (gltf:shapes gltf)
-              do (when (typep shape 'gltf:trimesh-shape)
+              do (when (and (typep shape 'gltf:trimesh-shape)
+                            ;; Only bother decomposing it if it's actually referenced anywhere.
+                            (loop for node across (gltf:nodes gltf)
+                                  thereis (and (gltf:collider node) (eql shape (gltf:shape (gltf:collider node))))))
                    (let* ((primitives (gltf:primitives (gltf:mesh shape)))
                           (mesh (load-primitive (aref primitives 0)))
                           (verts (reordered-vertex-data mesh '(location)))
@@ -538,7 +540,7 @@
                                  collect (add-convex-shape
                                           gltf
                                           (org.shirakumo.fraf.convex-covering:vertices hull)
-                                          (org.shirakumo.fraf.convex-covering:faces hull)))))))
+                                          (trial::simplify (org.shirakumo.fraf.convex-covering:faces hull) '(unsigned-byte 16))))))))
         ;; Rewrite nodes with refs to trimesh colliders to have child nodes for
         ;; all decomposed hulls.
         (loop for node across (gltf:nodes gltf)
