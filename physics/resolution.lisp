@@ -367,7 +367,8 @@
                  (!vc cross rotation-change loc)
                  (incf (contact-depth other)
                        (* sign (v. (nv+ cross velocity-change)
-                                   (contact-normal other)))))))
+                                   (contact-normal other))))))
+          finally (dbg "POS Overflow"))
 
     ;; Adjust Velocities
     (loop repeat iterations
@@ -388,7 +389,8 @@
                    (ntransform-inverse (nv+ cross velocity-change) (contact-to-world other))
                    (nv+* (contact-velocity other) cross (- sign))
                    (setf (contact-desired-delta other)
-                         (desired-delta-velocity other (contact-velocity other) dt))))))))
+                         (desired-delta-velocity other (contact-velocity other) dt)))))
+          finally (dbg "VEL Overflow"))))
 
 (defclass accelerated-rigidbody-system (rigidbody-system)
   ((acceleration-structure :initform (org.shirakumo.fraf.trial.space.kd-tree:make-kd-tree) :accessor acceleration-structure)
@@ -424,7 +426,9 @@
                   (and (= 0.0 (inverse-mass entity1))
                        (= 0.0 (inverse-mass entity2))))
         (setf start (prune-hits hits start (detect-hits a b hits start end)))
-        (when (<= end start) (return start))))))
+        (when (<= end start)
+          (dbg "HIT Overflow")
+          (return start))))))
 
 (defmethod start-frame :before ((system accelerated-rigidbody-system))
   (let ((pending-inserts (pending-inserts system))

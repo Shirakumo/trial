@@ -115,7 +115,8 @@
                      ((null (test-simplex s0 s1 s2 s3 dir))
                       (setf dim 3))
                      (T
-                      (return T)))))))
+                      (return T)))
+            finally (trial::dbg "GJK Overflow")))))
 
 ;; FIXME: this does not work as intended
 #++
@@ -311,6 +312,7 @@
                                     (return)))
                                 (unless edge-found-p
                                   (when (<= EPA-MAX-LOOSE-EDGES num-loose-edges)
+                                    (trial::dbg "EPA Edges Overflow")
                                     (return))
                                   (p<- (e num-loose-edges 0) edge-a)
                                   (p<- (e num-loose-edges 1) edge-b)
@@ -327,6 +329,7 @@
           ;; Expand the polytope with the search point added to the new loose edge faces
           (dotimes (i num-loose-edges)
             (when (<= EPA-MAX-FACES num-faces)
+              (trial::dbg "EPA Faces Overflow")
               (return))
             (p<- (v num-faces 0) (e i 0))
             (p<- (v num-faces 1) (e i 1))
@@ -336,7 +339,9 @@
             (when (< (+ (v. (v num-faces 0) (v num-faces 3)) 0.000001) 0)
               (rotatef (v num-faces 0) (v num-faces 1))
               (nv- (v num-faces 3)))
-            (incf num-faces))))
+            (incf num-faces)))
+        (when (= (1+ i) EPA-ITERATIONS)
+          (trial::dbg "EPA Overflow")))
 
       ;; Compute the actual intersection
       ;; If we did not converge, we just use the closest face we reached
