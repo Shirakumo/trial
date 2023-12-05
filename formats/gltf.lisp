@@ -313,7 +313,7 @@
                   :color (v* (vec (aref (gltf:color light) 0)
                                   (aref (gltf:color light) 1)
                                   (aref (gltf:color light) 2))
-                             (gltf:intensity light))
+                             (/ (gltf:intensity light) 10000))
                   initargs)))
     (etypecase light
       (gltf:directional-light
