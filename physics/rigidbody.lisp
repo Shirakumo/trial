@@ -43,7 +43,8 @@
 
 (defmethod bsize ((entity rigidbody))
   (let ((vmin (vec3)) (vmax (vec3))
-        (bsize (bsize entity)))
+        (bsize (vec3)))
+    (declare (dynamic-extent vmin vmax))
     (loop for primitive across (physics-primitives entity)
           do (let ((bsize (global-bsize primitive))
                    (location (location primitive)))
@@ -97,17 +98,8 @@
     (setf (inertia-tensor entity) primitive)))
 
 (defmethod (setf physics-primitives) :before ((primitives vector) (entity rigidbody))
-  (let ((vmin (vec3)) (vmax (vec3))
-        (bsize (bsize entity)))
-    (loop for primitive across primitives
-          do (setf (primitive-entity primitive) entity)
-             (let ((bsize (global-bsize primitive))
-                   (location (location primitive)))
-               (vmin vmin (v- location bsize))
-               (vmax vmax (v+ location bsize))))
-    (!v- bsize vmax vmin)
-    (nv* bsize 0.5)
-    (setf (bradius entity) (vlength bsize))))
+  (loop for primitive across primitives
+        do (setf (primitive-entity primitive) entity)))
 
 (defmethod (setf physics-primitives) :after ((primitives vector) (entity rigidbody))
   (%update-rigidbody-cache entity))

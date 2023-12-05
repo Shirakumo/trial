@@ -107,8 +107,9 @@
 (defclass global-bounds-cached-entity (entity)
   ((global-bounds-cache :accessor global-bounds-cache)))
 
-(defmethod initialize-instance :after ((entity global-bounds-cached-entity) &key)
-  (setf (global-bounds-cache entity) (make-global-bounds-cache entity)))
+(defmethod shared-initialize :after ((entity global-bounds-cached-entity) slots &key)
+  (unless (slot-boundp entity 'global-bounds-cache)
+    (setf (global-bounds-cache entity) (make-global-bounds-cache entity))))
 
 (defmethod global-location ((entity global-bounds-cached-entity) &optional target)
   (global-location (global-bounds-cache entity) target))
