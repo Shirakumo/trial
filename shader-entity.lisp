@@ -317,6 +317,10 @@
   `(setf (class-shader ,type ',class)
          (list ,priority (combine-shader-sources ,@definitions))))
 
+(defmacro undefine-class-shader ((class type &optional (priority 0)) &body definitions)
+  (declare (ignore priority definitions))
+  `(remove-class-shader ',type ',class))
+
 (defmethod describe-object ((class shader-entity-class) stream)
   (call-next-method)
   (loop for (type parts) on (compute-effective-shaders class) by #'cddr

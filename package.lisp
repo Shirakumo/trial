@@ -1542,6 +1542,7 @@
    #:remove-class-shader
    #:make-shader-program
    #:define-class-shader
+   #:undefine-class-shader
    #:shader-entity
    #:define-shader-entity
    #:effective-shader-class
