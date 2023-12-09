@@ -36,6 +36,17 @@
   (flow:connect source target 'flow:directed-connection)
   pipeline)
 
+(defmacro connect* (pipeline &body parts)
+  (let ((data (loop for data in parts
+                    collect (list* (gensym "PASS") (enlist data))))
+        (pipeg (gensym "PIPELINE")))
+    `(let ((,pipeg ,pipeline)
+           ,@(loop for (gens val) in data collect `(,gens ,val)))
+       ,@(loop for ((a a_ ai_ ao) (b b_ bi bo_)) on data
+               while b
+               collect `(connect (port ,a ',(or ao 'color)) (port ,b ',(or bi 'previous-pass)) ,pipeg))
+       ,pipeg)))
+
 (defmethod check-consistent ((pipeline pipeline))
   (dolist (node (nodes pipeline))
     (check-consistent node)))

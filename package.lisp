@@ -1415,6 +1415,7 @@
    #:textures
    #:clear-pipeline
    #:connect
+   #:connect*
    #:check-consistent
    #:resize
    #:pack-pipeline)
