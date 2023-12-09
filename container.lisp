@@ -38,6 +38,14 @@
   (when (container node)
     (leave node (container node))))
 
+(defmethod ancestor (name (node scene-node))
+  (labels ((recurse (node)
+             (cond ((equal name (name node))
+                    node)
+                   ((container node)
+                    (recurse (container node))))))
+    (recurse (container node))))
+
 (defclass container (scene-node sequences:sequence)
   ())
 

@@ -796,6 +796,7 @@
   ;; container.lisp
   (:export
    #:scene-node
+   #:ancestor
    #:container
    #:scene
    #:clear
