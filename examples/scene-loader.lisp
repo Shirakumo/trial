@@ -37,19 +37,12 @@
           (when file (setf (file scene) file))))
 
       (alloy:enter "Collision Debug" layout :row 1 :col 1)
-      (let ((debug (alloy:represent-with T (make-instance 'alloy:accessor-data :object scene :accessor 'collision-debug-p) :layout-parent layout :focus-parent focus)))
-        (alloy:on alloy:value (value debug)
-          (if value
-              (change-class (physics-system scene) 'debug-rigidbody-system)
-              (change-class (physics-system scene) 'accelerated-rigidbody-system))))
+      (alloy:represent (trial::show-collision-debug (physics-system scene)) 'alloy:switch
+                       :layout-parent layout :focus-parent focus)
 
       (alloy:enter "Include Fixed" layout :row 2 :col 1)
-      (let ((fixed (alloy:represent-with 'alloy:combo-set (make-instance 'alloy:accessor-data :object scene :accessor 'include-fixed-p)
-                                         :value-set '(NIL :mixed T) :layout-parent layout :focus-parent focus)))
-        (alloy:on alloy:value (value fixed)
-          (let ((physics-system (physics-system scene)))
-            (when (typep physics-system 'debug-rigidbody-system)
-              (setf (trial::include-fixed-p physics-system) value))))))
+      (alloy:represent (trial::include-fixed-p (physics-system scene)) 'alloy:combo-set
+                       :value-set '(NIL :mixed T) :layout-parent layout :focus-parent focus))
 
     (alloy:finish-structure panel layout focus)))
 
