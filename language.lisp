@@ -56,9 +56,10 @@
        (pushnew ',name *language-change-hooks*))))
 
 (defun load-language-file (file table &optional (package *package*))
-  (with-trial-io-syntax (package)
-    (with-open-file (stream file)
-      (loop for k = (read stream NIL)
+  (depot:with-open (tx file :input 'character)
+    (with-trial-io-syntax (package)
+      (loop with stream = (depot:to-stream tx)
+            for k = (read stream NIL)
             for v = (read stream NIL)
             while k
             do (setf (gethash k table) v))
@@ -99,21 +100,19 @@
     (with-trial-io-syntax (package)
       (let ((order-table (make-hash-table :test 'eq))
             (i 0))
-        (with-open-file (stream file
-                                :direction :input
-                                :if-does-not-exist NIL)
-          (when stream
-            (loop for k = (read stream NIL)
+        (depot:with-open (tx file :input 'character :if-does-not-exist NIL)
+          (when tx
+            (loop with stream = (depot:to-stream tx)
+                  for k = (read stream NIL)
                   while k
                   do (read stream NIL)
                      (setf (gethash k order-table) (1- (incf i))))))
         (loop for k being the hash-keys of +language-data+
               do (unless (gethash k order-table)
                    (setf (gethash k order-table) (1- (incf i)))))
-        (with-open-file (stream file
-                                :direction :output
-                                :if-exists :supersede)
-          (loop for (k) in (sort (alexandria:hash-table-alist order-table) #'< :key #'cdr)
+        (depot:with-open (tx file :output 'character)
+          (loop with stream = (depot:to-stream tx)
+                for (k) in (sort (alexandria:hash-table-alist order-table) #'< :key #'cdr)
                 for v = (gethash k +language-data+)
                 do (format stream "~s ~s~%" k v)))))))
 

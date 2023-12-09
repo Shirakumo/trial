@@ -58,12 +58,11 @@
 (defmethod load-settings (&optional (path (setting-file-path)))
   (with-error-logging (:trial.settings)
     (v:info :trial.settings "Loading settings from ~a" path)
-    (with-open-file (stream path :direction :input
-                                 :element-type 'character
-                                 :if-does-not-exist NIL)
-      (when stream
+    (depot:with-open (tx (depot:from-pathname path) :input 'character :if-does-not-exist NIL)
+      (when tx
         (with-trial-io-syntax ()
-          (let ((*save-settings* NIL))
+          (let ((*save-settings* NIL)
+                (stream (depot:to-stream tx)))
             (map-leaf-settings
              (lambda (path value)
                (apply #'(setf setting) value path))
@@ -76,29 +75,28 @@
   (ignore-errors
    (with-error-logging (:trial.settings)
      (v:info :trial.settings "Saving settings to ~a" path)
-     (with-open-file (stream path :direction :output
-                                  :element-type 'character
-                                  :if-exists :supersede)
-       (with-trial-io-syntax ()
-         (labels ((plist (indent part)
-                    (loop for (k v) on part by #'cddr
-                          do (format stream "~&~v{ ~}~s " (* indent 2) '(0) k)
-                             (serialise indent v)))
-                  (serialise (indent part)
-                    (typecase part
-                      (cons
-                       (cond ((keywordp (car part))
-                              (format stream "(")
-                              (plist (1+ indent) part)
-                              (format stream ")"))
-                             (T
-                              (prin1 part stream))))
-                      (null
-                       (format stream "NIL"))
-                      (T
-                       (let ((*print-readably* T))
-                         (prin1 part stream))))))
-           (plist 0 +settings+))))))
+     (depot:with-open (tx (depot:from-pathname path) :output 'character)
+       (let ((stream (depot:to-stream tx)))
+         (with-trial-io-syntax ()
+           (labels ((plist (indent part)
+                      (loop for (k v) on part by #'cddr
+                            do (format stream "~&~v{ ~}~s " (* indent 2) '(0) k)
+                               (serialise indent v)))
+                    (serialise (indent part)
+                      (typecase part
+                        (cons
+                         (cond ((keywordp (car part))
+                                (format stream "(")
+                                (plist (1+ indent) part)
+                                (format stream ")"))
+                               (T
+                                (prin1 part stream))))
+                        (null
+                         (format stream "NIL"))
+                        (T
+                         (let ((*print-readably* T))
+                           (prin1 part stream))))))
+             (plist 0 +settings+)))))))
   +settings+)
 
 (defun setting (&rest path)

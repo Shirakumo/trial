@@ -16,6 +16,7 @@
    (#:promise #:org.shirakumo.promise)
    (#:3ds #:org.shirakumo.fraf.trial.space)
    (#:mem #:org.shirakumo.memory-regions)
+   (#:depot #:org.shirakumo.depot)
    #+windows (#:com #:org.shirakumo.com-on))
   ;; animation/asset.lisp
   (:export

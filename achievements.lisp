@@ -118,19 +118,21 @@
                  :defaults (config-directory)))
 
 (defmethod load-achievement-data ((api local-achievement-api))
-  (with-open-file (stream (achievement-file-path) :if-does-not-exist NIL)
-    (when stream
-      (loop for achievement being the hash-values of *achievements*
-            do (setf (slot-value achievement 'active-p) NIL))
-      (loop for name = (read stream NIL NIL)
-            while name
-            do (ignore-errors
-                (with-error-logging (:trial.achievements "Failed to find achievement ~a" name)
-                  (setf (slot-value (achievement name) 'active-p) T)))))))
+  (depot:with-open (tx (achievement-file-path) :input 'character :if-does-not-exist NIL)
+    (when tx
+      (let ((stream (depot:to-stream tx)))
+        (loop for achievement being the hash-values of *achievements*
+              do (setf (slot-value achievement 'active-p) NIL))
+        (loop for name = (read stream NIL NIL)
+              while name
+              do (ignore-errors
+                  (with-error-logging (:trial.achievements "Failed to find achievement ~a" name)
+                    (setf (slot-value (achievement name) 'active-p) T))))))))
 
 (defmethod save-achievement-data ((api local-achievement-api))
-  (with-open-file (stream (achievement-file-path) :direction :output :if-exists :supersede)
-    (loop for achievement being the hash-values of *achievements*
+  (depot:with-open (tx (achievement-file-path) :output 'character)
+    (loop with stream = (depot:to-stream tx)
+          for achievement being the hash-values of *achievements*
           do (when (active-p achievement)
                (prin1 (name achievement) stream)
                (terpri stream)))))

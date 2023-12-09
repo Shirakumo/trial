@@ -476,8 +476,10 @@
 (defun load-mapping (input &key (package *package*))
   (etypecase input
     ((or pathname string)
-     (with-open-file (stream input :direction :input)
-       (load-mapping stream :package package)))
+     (load-mapping (depot:from-pathname input) :package package))
+    (depot:entry
+     (depot:with-open (tx input :input 'character)
+       (load-mapping (depot:to-stream tx) :package package)))
     (stream
      (load-mapping (loop with *package* = package
                          for form = (read input NIL '#1=#:END)
@@ -492,8 +494,10 @@
      (with-output-to-string (stream)
        (save-mapping stream)))
     ((or pathname string)
-     (with-open-file (stream output :direction :output :if-exists :supersede)
-       (save-mapping stream)))
+     (save-mapping (depot:from-pathname output)))
+    (depot:entry
+     (depot:with-open (tx output :output 'character)
+       (save-mapping (depot:to-stream tx))))
     (stream
      (let ((descriptions (mapcar #'to-mapping-description *action-mappings*))
            (cache (make-hash-table :test 'equal))

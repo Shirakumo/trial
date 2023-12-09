@@ -156,6 +156,7 @@
                :3d-spaces
                :verbose
                :deploy
+               :depot
                :closer-mop
                :trivial-garbage
                :trivial-indent
