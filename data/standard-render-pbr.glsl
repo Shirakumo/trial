@@ -7,10 +7,11 @@ uniform int material_id;
 uniform sampler2D albedo_tex;
 uniform sampler2D metal_rough_occlusion_tex;
 uniform sampler2D normal_tex;
+uniform sampler2D emission_tex;
 uniform sampler2D brdf_lut;
 uniform samplerCube irradiance_map;
 uniform samplerCube environment_map;
-vec3 view_dir, F0;
+vec3 view_dir, F0, emission;
 vec4 albedo;
 float metalness, roughness, occlusion;
 
@@ -21,6 +22,7 @@ void standard_init(){
   maybe_call_next_method();
   material = materials[material_id];
   normal = normal_map(normal_tex, world_position-camera_position, uv, normal);
+  emission = texture(emission_tex, uv).xyz * material.emission_factor;
   view_dir = normalize(camera_position - world_position);
   albedo = texture(albedo_tex, uv);
   albedo.xyz = pow(albedo.xyz,vec3(gamma));
@@ -82,6 +84,7 @@ vec4 standard_shade(in StandardLight light){
 }
 
 void standard_finish(){
+  color.rgb += emission;
   color.w = albedo.w;
   if(color.w < material.alpha_cutoff)
     discard;
