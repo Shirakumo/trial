@@ -138,6 +138,14 @@ void main(){
   ((threshold :initarg :threshold :initform 2.0 :uniform T :accessor threshold))
   (:shader-file (trial "low-pass-filter.glsl")))
 
+(define-shader-pass bloom-cutoff-pass (low-pass-filter)
+  ((threshold :initform 10.0)
+   (color :port-type output :texspec (:internal-format :rgb :width (truncate width 4) :height (truncate height 4)))))
+
+(define-shader-pass bloom-merge-pass (simple-post-effect-pass)
+  ((bloom-cutoff :port-type input))
+  (:shader-file (trial "bloom-merge.glsl")))
+
 (define-shader-pass chromatic-aberration-filter (simple-post-effect-pass)
   ((offset :initarg :offset :initform 3.0 :uniform T :accessor offset))
   (:shader-file (trial "aberration.glsl")))
