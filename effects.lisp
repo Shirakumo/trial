@@ -138,9 +138,14 @@ void main(){
   ((threshold :initarg :threshold :initform 2.0 :uniform T :accessor threshold))
   (:shader-file (trial "low-pass-filter.glsl")))
 
-(define-shader-pass bloom-cutoff-pass (low-pass-filter)
-  ((threshold :initform 10.0)
-   (color :port-type output :texspec (:internal-format :rgb :width (truncate width 4) :height (truncate height 4)))))
+(define-shader-pass bloom-cutoff-pass (simple-post-effect-pass)
+  ((threshold :initarg :threshold :initform 0.0 :uniform T :accessor threshold)
+   (color :port-type output :texspec (:internal-format :rgb
+                                      :mag-filter :linear
+                                      :min-filter :linear
+                                      :width (truncate width 4)
+                                      :height (truncate height 4))))
+  (:shader-file (trial "bloom-cutoff.glsl")))
 
 (define-shader-pass bloom-merge-pass (simple-post-effect-pass)
   ((bloom-cutoff :port-type input))
@@ -178,3 +183,13 @@ void main(){
 (defmethod check-consistent ((pass visualizer-pass))
   ;; Skip consistency checks to allow optional inputs
   T)
+
+(defun generate-gaussian-kernel (&optional (size 5) (sigma 1.0))
+  (let ((array (make-array (list size size) :element-type 'single-float))
+        (d2 (expt sigma 2))
+        (s/2 (truncate size 2)))
+    (flet ((gauss (x y)
+             (/ (exp (- (/ (+ (expt x 2) (expt y 2)) (* 2 d2)))) F-2PI d2)))
+      (dotimes (y size array)
+        (dotimes (x size)
+          (setf (aref array y x) (gauss (- x s/2) (- y s/2))))))))

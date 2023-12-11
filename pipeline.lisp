@@ -42,9 +42,11 @@
         (pipeg (gensym "PIPELINE")))
     `(let ((,pipeg ,pipeline)
            ,@(loop for (gens val) in data collect `(,gens ,val)))
-       ,@(loop for ((a a_ ai_ ao) (b b_ bi bo_)) on data
-               while b
-               collect `(connect (port ,a ',(or ao 'color)) (port ,b ',(or bi 'previous-pass)) ,pipeg))
+       ,@(if (rest data)
+             (loop for ((a a_ ai_ ao) (b b_ bi bo_)) on data
+                   while b
+                   collect `(connect (port ,a ',(or ao 'color)) (port ,b ',(or bi 'previous-pass)) ,pipeg))
+             `((enter ,(caar data) ,pipeg)))
        ,pipeg)))
 
 (defmethod check-consistent ((pipeline pipeline))
