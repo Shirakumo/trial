@@ -94,6 +94,9 @@
                              (:file "pose")
                              (:file "skeleton" :depends-on ("pose"))
                              (:file "track")))
+               (:module "formats"
+                :depends-on ("package" "static-vector")
+                :components ((:file "raw")))
                (:module "physics"
                 :depends-on ("package" "conditions" "helpers")
                 :components ((:file "toolkit")
