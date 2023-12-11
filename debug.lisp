@@ -102,7 +102,12 @@ void main(){
   (render-array (points-vao draw) :vertex-count (truncate (length (points draw)) 6))
   (render-array (lines-vao draw) :vertex-count (truncate (length (lines draw)) 6))
   (enable-feature :depth-test)
-  (render (text-render draw) T))
+  (render (text-render draw) T)
+  (let ((scene (scene draw)))
+    (unless (eq draw (elt scene (1- (length scene))))
+      (warn "~S is not the last entity in the scene" draw)
+      (leave draw scene)
+      (enter draw scene))))
 
 (defun debug-draw-allocate (data instances instance type n)
   (cond (instance

@@ -486,12 +486,17 @@
                         (g (float (/ (ldb (byte 8  8) h) (ash 1 8)) 1.0f0))
                         (b (float (/ (ldb (byte 8 16) h) (ash 1 8)) 1.0f0)))
                    (values (vec3 r g b) h)))
-               (debug-draw-hit (hit)
+               (debug-draw-hit (a b hit)
                  (debug-point (hit-location hit))
                  (debug-line (hit-location hit) (v+* (hit-location hit) (hit-normal hit) -2)
                              :color-a #.(vec 0 0 0) :color-b #.(vec 0 1 0))
                  (let ((color (object-color (hit-a hit) (hit-b hit))))
                    (flet ((debug-primitive (primitive)
+                            ;; Oriented bounding box in green.
+                            (debug-box (vec3 0) (compute-bsize primitive)
+                                       :transform (primitive-transform primitive)
+                                       :color (vec3 0 1 0))
+                            ;; Collider geometry in object color.
                             (typecase primitive
                               (convex-mesh
                                (debug-triangles (general-mesh-vertices primitive)
@@ -503,8 +508,8 @@
                                            (pill-radius primitive)
                                            (pill-height primitive)
                                            :color color)))))
-                     (debug-primitive (hit-a hit))
-                     (debug-primitive (hit-b hit))))))
+                     (debug-primitive a)
+                     (debug-primitive b)))))
         (let* ((broadphase-pairs '())
                (collision-pairs '())
                (result (let ((start start))
@@ -519,7 +524,7 @@
                                  (when (> new-start start)
                                    (push (cons a b) collision-pairs))
                                  (loop for i from start below new-start
-                                       do (debug-draw-hit (aref hits i)))
+                                       do (debug-draw-hit a b (aref hits i)))
                                  (setf start new-start))
                                (when (<= end start) (return start)))))))
                (drawn '()))
