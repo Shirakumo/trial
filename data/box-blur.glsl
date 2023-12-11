@@ -5,15 +5,12 @@ uniform sampler2D previous_pass;
 uniform float intensity = 1.0;
 
 void main(){
-  ivec2 size = textureSize(previous_pass, 0);
-  float blurSizeH = intensity / size.x;
-  float blurSizeV = intensity / size.y;
+  vec2 blur_size = intensity / vec2(textureSize(previous_pass, 0));
   vec4 sum = vec4(0.0);
   for (int x=-4; x<=4; x++){
     for (int y=-4; y<=4; y++){
-      sum += texture(previous_pass,
-                     vec2(uv.x + x*blurSizeH, uv.y + y*blurSizeV)) / 81.0;
+      sum += texture(previous_pass, uv + vec2(x,y)*blur_size);
     }
   }
-  color = sum;
+  color = sum * (1/81.0);
 }

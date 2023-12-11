@@ -10,7 +10,7 @@ float color_luminance(vec3 color){
 
 void main(){
   color = texture(previous_pass, uv);
-  float sum = color_luminance(color);
+  float sum = color_luminance(color.xyz);
   if(sum <= threshold){
     color = vec4(0);
   }
