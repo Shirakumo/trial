@@ -139,7 +139,7 @@ void main(){
   (:shader-file (trial "low-pass-filter.glsl")))
 
 (define-shader-pass bloom-cutoff-pass (simple-post-effect-pass)
-  ((threshold :initarg :threshold :initform 0.0 :uniform T :accessor threshold)
+  ((threshold :initarg :threshold :initform 5.0 :uniform T :accessor threshold)
    (color :port-type output :texspec (:internal-format :rgb
                                       :mag-filter :linear
                                       :min-filter :linear
