@@ -238,3 +238,8 @@ image is
                      :anisotropy (anisotropy (first textures))
                      :border-color (border-color (first textures))
                      :storage (storage (first textures))))))
+
+(defmethod finalize ((source texture-source))
+  (deallocate (texture-source-pixel-data source))
+  (setf (texture-source-pixel-data source) NIL)
+  source)

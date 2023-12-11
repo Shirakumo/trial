@@ -25,3 +25,12 @@
   (when (static-vector-p vector)
     (static-vectors:free-static-vector vector)
     (remhash vector *static-vector-map*)))
+
+(defmacro with-static-vector ((name size &rest args) &body body)
+  `(let ((,name (make-static-vector ,size ,@args)))
+     (unwind-protect
+          (progn ,@body)
+       (maybe-free-static-vector ,name))))
+
+(defmethod finalize ((vector vector))
+  (maybe-free-static-vector vector))
