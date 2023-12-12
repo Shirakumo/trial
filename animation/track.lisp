@@ -266,6 +266,7 @@
 (defmethod start-time ((track dummy-track)) 0.0)
 (defmethod end-time ((track dummy-track)) 0.0)
 (defmethod duration ((track dummy-track)) 0.0)
+(defmethod name ((track dummy-track)) 0)
 
 (defmethod sample (target (track dummy-track) time &key loop-p)
   (declare (ignore track time loop-p))

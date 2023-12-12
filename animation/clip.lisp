@@ -173,7 +173,9 @@ TRACKS: ~a~&"
    (forward-track :initform NIL :accessor forward-track)))
 
 (defmethod update-instance-for-different-class :after ((prev clip) (clip forward-kinematic-clip) &key track)
-  (setf (forward-track clip) track))
+  (setf (forward-track clip) track)
+  (setf (velocity clip) (vec3))
+  (setf (rotation clip) (quat)))
 
 (defmethod (setf forward-track) ((track integer) (clip forward-kinematic-clip))
   (setf (forward-track clip) (differentiate (aref (tracks clip) track)))
