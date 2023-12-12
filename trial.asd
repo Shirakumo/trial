@@ -91,7 +91,7 @@
                              (:file "entity" :depends-on ("mesh" "skeleton" "clip" "ik"))
                              (:file "ik" :depends-on ("skeleton"))
                              (:file "mesh" :depends-on ("pose"))
-                             (:file "pose")
+                             (:file "pose" :depends-on ("clip"))
                              (:file "skeleton" :depends-on ("pose"))
                              (:file "track")))
                (:module "formats"
