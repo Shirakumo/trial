@@ -111,7 +111,8 @@ TRACKS: ~a~&"
 (defmethod reorder ((clip clip) map)
   (dotimes (i (length clip) clip)
     (let ((track (elt clip i)))
-      (setf (name track) (gethash (name track) map)))))
+      (setf (name track) (gethash (name track) map))))
+  (setf (tracks clip) (sort (tracks clip) #'< :key #'name)))
 
 (defvar *clips* (make-hash-table :test 'equal))
 
