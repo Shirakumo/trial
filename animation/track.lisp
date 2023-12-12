@@ -9,8 +9,16 @@
   (print-unreadable-object (frame stream :type T)
     (format stream "~a" (animation-frame-time frame))))
 
+(defmethod clock ((frame animation-frame))
+  (animation-frame-time frame))
+
+(defmethod sample (target (frame animation-frame) time &key)
+  (declare (optimize speed))
+  (funcall (animation-frame-curve frame) target time))
+
 (defclass animation-track (sequences:sequence standard-object)
   ((name :initarg :name :initform NIL :accessor name)
+   (value-type :initarg :value-type :accessor value-type)
    (frames :initform #() :accessor frames)
    (interpolation :initarg :interpolation :initform :linear :accessor interpolation)))
 
@@ -36,28 +44,30 @@
   (destructuring-bind (times . values) keyframes
     (let ((frames (make-array (length times)))
           (j 0))
-      (dotimes (i (length times))
-        (setf (aref frames i)
-              (make-frame (elt times i)
-                          (ecase (interpolation track)
-                            (:constant
-                             (incf j)
-                             (constant (elt values (1- j))))
-                            (:linear
-                             (incf j)
-                             (linear (elt values (1- j)) (elt values j)))
-                            (:hermite
-                             (incf j 3)
-                             (hermite (elt values (- j 2)) (elt values (- j 1))
-                                      (elt values (+ j 1)) (elt values (+ j 0))))
-                            (:bezier
-                             ;; DATA is ordered like this: i0 v0 o0 i1 v1 o1
-                             (incf j 3)
-                             (bezier (elt values (- j 2)) (elt values (- j 1))
-                                     (elt values (+ j 1)) (elt values (+ j 0))))
-                            (:custom
-                             (incf j)
-                             (elt values (1- j)))))))
+      (when (< 0 (length frames))
+        (dotimes (i (length times))
+          (setf (aref frames i)
+                (make-frame (elt times i)
+                            (ecase (interpolation track)
+                              (:constant
+                               (incf j)
+                               (constant (elt values (1- j))))
+                              (:linear
+                               (incf j)
+                               (linear (elt values (1- j)) (elt values j)))
+                              (:hermite
+                               (incf j 3)
+                               (hermite (elt values (- j 2)) (elt values (- j 1))
+                                        (elt values (+ j 1)) (elt values (+ j 0))))
+                              (:bezier
+                               ;; DATA is ordered like this: i0 v0 o0 i1 v1 o1
+                               (incf j 3)
+                               (bezier (elt values (- j 2)) (elt values (- j 1))
+                                       (elt values (+ j 1)) (elt values (+ j 0))))
+                              (:custom
+                               (incf j)
+                               (elt values (1- j)))))))
+        (setf (value-type track) (type-of (elt values 0))))
       (setf (frames track) frames))))
 
 (declaim (ftype (function (animation-track single-float boolean) single-float) fit-to-track))
@@ -123,6 +133,37 @@
                (x (/ (- time (animation-frame-time l))
                      (- (animation-frame-time r) (animation-frame-time l)))))
           (funcall (animation-frame-curve l) target x)))))
+
+(defmethod differentiate ((track animation-track))
+  (let ((result (make-instance 'animation-track :name (name track)))
+        (frames (frames track)))
+    (when (< 0 (length frames))
+      (ecase (interpolation track)
+        (:constant
+         (setf (interpolation result) :constant)
+         (setf (frames result) (vector (make-frame (start-time track) (constant 0.0))
+                                       (make-frame (end-time track) (constant 0.0)))))
+        (:linear
+         (setf (interpolation result) :constant)
+         (let ((new-frames (make-array (length frames)))
+               (type (value-type track)))
+           (setf (value-type result) type)
+           (loop for i from 0 below (length frames)
+                 for frame = (aref frames i)
+                 for diff = (ecase type
+                              ((real single-float) (- (sample NIL frame 1.0) (sample NIL frame 0.0)))
+                              (vec2 (v- (sample (vec2) frame 1.0) (sample (vec2) frame 0.0)))
+                              (vec3 (v- (sample (vec3) frame 1.0) (sample (vec3) frame 0.0)))
+                              (vec4 (v- (sample (vec4) frame 1.0) (sample (vec4) frame 0.0)))
+                              ;; FIXME: I think this should turn into a rotation vec3...
+                              (quat (q- (sample (quat) frame 1.0) (sample (quat) frame 0.0))))
+                 do (setf (aref new-frames i) (make-frame (clock frame) (constant diff))))
+           (setf (frames result) new-frames)))
+        (:hermite
+         (implement!))
+        (:bezier
+         (implement!))))
+    result))
 
 (defclass fast-animation-track (animation-track)
   ((sampled-frames :initform (make-array 0 :element-type '(unsigned-byte 32)) :accessor sampled-frames)
@@ -216,11 +257,14 @@
           (declare (ignore time loop-p))
           -1))))
 
+(defmethod differentiate ((track fast-animation-track))
+  (change-class (call-next-method) 'fast-animation-track))
+
 (defclass transform-track ()
   ((name :initarg :name :initform NIL :accessor name)
-   (location :initform (make-instance 'fast-animation-track) :accessor location)
-   (scaling :initform (make-instance 'fast-animation-track) :accessor scaling)
-   (rotation :initform (make-instance 'fast-animation-track) :accessor rotation)))
+   (location :initarg :location :initform (make-instance 'fast-animation-track) :accessor location)
+   (scaling :initarg :scaling :initform (make-instance 'fast-animation-track) :accessor scaling)
+   (rotation :initarg :rotation :initform (make-instance 'fast-animation-track) :accessor rotation)))
 
 (defmethod print-object ((track transform-track) stream)
   (print-unreadable-object (track stream :type T)
@@ -267,3 +311,10 @@
   (or (< 1 (length (location track)))
       (< 1 (length (scaling track)))
       (< 1 (length (rotation track)))))
+
+(defmethod differentiate ((track transform-track))
+  (make-instance 'transform-track
+                 :name (name track)
+                 :location (differentiate (location track))
+                 :scaling (differentiate (scaling track))
+                 :rotation (differentiate (rotation track))))
