@@ -81,6 +81,9 @@
     (declare (dynamic-extent mat))
     (nm* (model-matrix) (tmat (tf obj) mat))))
 
+(defmethod location ((tf transform))
+  (tlocation tf))
+
 (defmethod location ((obj transformed-entity))
   (tlocation (tf obj)))
 
@@ -90,6 +93,9 @@
 (defmethod (setf location) (vec (obj transformed-entity))
   (v<- (tlocation (tf obj)) vec))
 
+(defmethod scaling ((tf transform))
+  (tscaling tf))
+
 (defmethod scaling ((obj transformed-entity))
   (tscaling (tf obj)))
 
@@ -98,6 +104,9 @@
 
 (defmethod (setf scaling) ((value real) (obj transformed-entity))
   (vsetf (tscaling (tf obj)) value value value))
+
+(defmethod orientation ((tf transform))
+  (trotation tf))
 
 (defmethod orientation ((obj transformed-entity))
   (trotation (tf obj)))

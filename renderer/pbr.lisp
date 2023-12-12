@@ -28,7 +28,9 @@
 (defmethod normal-texture ((material pbr-material))
   (aref (textures material) 3))
 
-(defmethod shared-initialize :after ((material pbr-material) slots &key metalness-texture roughness-texture occlusion-texture metal-rough-texture)
+(defmethod shared-initialize :after ((material pbr-material) slots &key metalness-texture roughness-texture occlusion-texture metal-rough-texture emission-texture)
+  (when emission-texture
+    (setf (aref (textures material) 2) emission-texture))
   ;; Reshuffle arguments when the textures are badly specified.
   (when (and metalness-texture (eq metalness-texture roughness-texture))
     (setf metal-rough-texture metalness-texture)
