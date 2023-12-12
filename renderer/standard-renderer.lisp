@@ -304,3 +304,10 @@
 
 (define-shader-entity animated-physics-entity (rigidbody basic-animated-entity)
   ())
+
+(defmethod update :after ((entity animated-physics-entity) tt dt fc)
+  (let ((clip (clip entity)))
+    (when (typep clip 'forward-kinematic-clip)
+      (nv+ (velocity entity) (velocity clip))
+      #++
+      (nv+ (rotation entity) (rotation clip)))))
