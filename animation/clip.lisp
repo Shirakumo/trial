@@ -165,3 +165,30 @@ TRACKS: ~a~&"
   0.0 (vec 3 2 1) (1.0 2.0 0.0)
   1.0 _           (2.0 3.0 0.0)
   2.0 (vec 0 2 1) _)
+
+(defclass forward-kinematic-clip (clip)
+  ((velocity :initform (vec3) :accessor velocity)
+   (rotation :initform (quat) :accessor rotation)
+   (forward-track :initform NIL :accessor forward-track)))
+
+(defmethod update-instance-for-different-class :after ((prev clip) (clip forward-kinematic-clip) &key track)
+  (setf (forward-track clip) track))
+
+(defmethod (setf forward-track) ((track integer) (clip forward-kinematic-clip))
+  (setf (forward-track clip) (differentiate (aref (tracks clip) track)))
+  ;; Stub the track out so it won't actually impart the change, since we now
+  ;; have the change in forward kinematics instead.
+  (setf (aref (tracks clip) track) (make-instance 'dummy-track)))
+
+(defmethod (setf forward-track) ((track symbol) (clip forward-kinematic-clip))
+  (setf (forward-track clip) (position track (tracks clip) :key #'name)))
+
+(defmethod (setf forward-track) ((track string) (clip forward-kinematic-clip))
+  (setf (forward-track clip) (position track (tracks clip) :key #'name :test #'string-equal)))
+
+(defmethod sample :after (target (clip forward-kinematic-clip) time &key loop-p)
+  (let ((track (forward-track clip)))
+    (when (< 1 (length (location track)))
+      (sample (velocity clip) (location track) time :loop-p loop-p))
+    (when (< 1 (length (rotation track)))
+      (sample (rotation clip) (rotation track) time :loop-p loop-p))))
