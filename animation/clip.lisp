@@ -178,10 +178,13 @@ TRACKS: ~a~&"
   (setf (rotation clip) (quat)))
 
 (defmethod (setf forward-track) ((track integer) (clip forward-kinematic-clip))
+  (loop for track across (tracks clip)
+        do (when (typep track 'dummy-track)
+             (change-class track 'transform-track)))
   (setf (forward-track clip) (differentiate (aref (tracks clip) track)))
   ;; Stub the track out so it won't actually impart the change, since we now
   ;; have the change in forward kinematics instead.
-  (setf (aref (tracks clip) track) (make-instance 'dummy-track)))
+  (change-class (aref (tracks clip) track) 'dummy-track))
 
 (defmethod (setf forward-track) ((track symbol) (clip forward-kinematic-clip))
   (setf (forward-track clip) (position track (tracks clip) :key #'name)))

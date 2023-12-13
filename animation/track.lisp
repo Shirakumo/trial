@@ -260,18 +260,6 @@
 (defmethod differentiate ((track fast-animation-track))
   (change-class (call-next-method) 'fast-animation-track))
 
-(defclass dummy-track ()
-  ())
-
-(defmethod start-time ((track dummy-track)) 0.0)
-(defmethod end-time ((track dummy-track)) 0.0)
-(defmethod duration ((track dummy-track)) 0.0)
-(defmethod name ((track dummy-track)) 0)
-
-(defmethod sample (target (track dummy-track) time &key loop-p)
-  (declare (ignore track time loop-p))
-  target)
-
 (defclass transform-track ()
   ((name :initarg :name :initform NIL :accessor name)
    (location :initarg :location :initform (make-instance 'fast-animation-track) :accessor location)
@@ -330,3 +318,13 @@
                  :location (differentiate (location track))
                  :scaling (differentiate (scaling track))
                  :rotation (differentiate (rotation track))))
+
+(defclass dummy-track (transform-track)
+  ())
+
+(defmethod sample ((transform transform) (track dummy-track) time &key loop-p)
+  (declare (ignore track time loop-p))
+  (v<- (tlocation transform) 0)
+  (v<- (tscaling transform) 1)
+  (qsetf (trotation transform) 0 0 0 1)
+  transform)
