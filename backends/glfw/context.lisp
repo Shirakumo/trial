@@ -265,6 +265,17 @@
   (destructuring-bind (w h) (glfw:framebuffer-size context)
     (glfw:framebuffer-resized context w h)))
 
+(defmethod glfw:debug-log ((context context) source type id severity message)
+  (v:log (case type
+           (:error :error)
+           (:deprecated-behavior :debug)
+           (:undefined-behavior :debug)
+           (:portability :debug)
+           (:performance :debug)
+           (T :info))
+         (list :gl source)
+         "~a" message))
+
 (defmacro %handle (context event-type &rest args)
   `(when (handler ,context)
      (handle (make-event ,event-type ,@args) (handler ,context))))
