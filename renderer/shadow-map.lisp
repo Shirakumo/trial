@@ -87,7 +87,6 @@
                                                   :width shadow-map-resolution :height shadow-map-resolution)))
     (setf (slot-value pass 'shadow-map) texture)
     (setf (slot-value pass 'shadow-map-framebuffer) framebuffer))
-  ;; FIXME: animated entities don't cast shadows
   (let* ((*default-pathname-defaults* (pool-path 'trial "standard-shadow-map.glsl"))
          (shaders (loop with buffer = (glsl-toolkit:serialize (gl-source (shadow-map-block pass)))
                         for (type source) on (glsl-toolkit:preprocess *default-pathname-defaults* :include-resolution #'resolve-shader-include) by #'cddr
