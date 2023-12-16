@@ -61,3 +61,9 @@
                            multi-resource-asset
                            environment-map-generator)
   ())
+
+;; KLUDGE: This really sucks, man.
+(defmethod generate-resources ((map environment-map) input &key)
+  (setf (loaded-p map) T)
+  (with-cleanup-on-failure (setf (loaded-p map) NIL)
+    (call-next-method)))

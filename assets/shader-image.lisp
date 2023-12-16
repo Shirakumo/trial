@@ -113,3 +113,9 @@ void main@after(){
 (defmethod generate-resources :around ((image shader-image) input &key)
   (let* ((*default-pathname-defaults* (pool-path (pool image) NIL)))
     (call-next-method)))
+
+;; KLUDGE: This really sucks, man.
+(defmethod generate-resources ((image shader-image) input &key)
+  (setf (loaded-p image) T)
+  (with-cleanup-on-failure (setf (loaded-p image) NIL)
+    (call-next-method)))
