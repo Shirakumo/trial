@@ -184,7 +184,8 @@
     (if (current-area loader)
         (stage object (current-area loader))
         (let ((area (make-instance 'staging-area)))
-          (stage object area)
+          (with-cleanup-on-failure (abort-commit area)
+            (stage object area))
           (apply #'commit area loader args)))))
 
 (defmethod abort-commit ((loader loader))
