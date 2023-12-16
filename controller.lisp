@@ -83,7 +83,8 @@
     (declare (type single-float sum))
     (loop for i of-type (unsigned-byte 16) from 0 below (length fps-buffer)
           do (incf sum (aref fps-buffer i)))
-    (/ sum (length fps-buffer))))
+    (values (/ sum (length fps-buffer))
+            (/ (* 1000 (length fps-buffer)) sum))))
 
 (defmethod observe ((func function) &key title)
   (let ((observers (ignore-errors (observers (node :controller T)))))
@@ -126,14 +127,15 @@
     (multiple-value-bind (cfree ctotal) (org.shirakumo.machine-state:gc-room)
       (setf (fill-pointer (%string controller)) 0)
       (with-output-to-string (stream (%string controller))
-        (format stream "FPS  [Hz]: ~8,2f~%~
-                        RAM  [KB]: ~8d (~2d%)~%~
-                        VRAM [KB]: ~8d (~2d%)~%~
-                        RESOURCES: ~8d"
-                (compute-fps-buffer-fps (fps-buffer controller))
-                (truncate (- ctotal cfree) 1024) (floor (/ (- ctotal cfree) ctotal 0.01))
-                (truncate (- gtotal gfree) 1024) (floor (/ (- gtotal gfree) gtotal 0.01))
-                (hash-table-count (loaded (loader +main+))))
+        (multiple-value-bind (fps dur) (compute-fps-buffer-fps (fps-buffer controller))
+          (format stream "FPS  [Hz]: ~8,2f (~6,2fms)~%~
+                          RAM  [KB]: ~8d (~2d%)~%~
+                          VRAM [KB]: ~8d (~2d%)~%~
+                          RESOURCES: ~8d"
+                  fps dur
+                  (truncate (- ctotal cfree) 1024) (floor (/ (- ctotal cfree) ctotal 0.01))
+                  (truncate (- gtotal gfree) 1024) (floor (/ (- gtotal gfree) gtotal 0.01))
+                  (hash-table-count (loaded (loader +main+)))))
         (let ((*print-pprint-dispatch* *controller-pprint*))
           (loop with observers = (observers controller)
                 for i from 0 below (length observers)
