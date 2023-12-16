@@ -84,9 +84,17 @@
       (pixel-format (first (sources texture)))
       (internal-format-pixel-format (internal-format texture))))
 
-(defmethod (setf pixel-data) (value (texture texture)) (setf (pixel-data (first (sources texture))) value))
-(defmethod (setf pixel-type) (value (texture texture)) (setf (pixel-type (first (sources texture))) value))
-(defmethod (setf pixel-format) (value (texture texture)) (setf (pixel-format (first (sources texture))) value))
+(defmethod (setf pixel-data) (value (texture texture))
+  (when (sources texture)
+    (setf (pixel-data (first (sources texture))) value)))
+
+(defmethod (setf pixel-type) (value (texture texture))
+  (when (sources texture)
+    (setf (pixel-type (first (sources texture))) value)))
+
+(defmethod (setf pixel-format) (value (texture texture)) 
+  (when (sources texture)
+    (setf (pixel-format (first (sources texture))) value)))
 
 (defmethod dependencies ((texture texture))
   (loop for source in (sources texture)
