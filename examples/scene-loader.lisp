@@ -7,12 +7,10 @@
 (define-example scene-loader
   :title "Load Arbitrary Scenes"
   :superclasses (trial:physics-scene)
-  :slots ((physics-system :initform (make-instance 'accelerated-rigidbody-system :units-per-metre 0.1))
+  :slots ((physics-system :initform (make-instance 'debug-rigidbody-system :units-per-metre 0.1))
           (incremental-load :initform NIL :accessor incremental-load)
           (file :initform NIL :accessor file)
-          (paused-p :initform T :accessor paused-p)
-          (collision-debug-p :initform NIL :accessor collision-debug-p)
-          (include-fixed-p :initform NIL :accessor include-fixed-p))
+          (paused-p :initform T :accessor paused-p))
   (enter (make-instance 'display-controller) scene)
   (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)
   (enter (make-instance 'editor-camera :location (VEC3 10.0 20 14) :rotation (vec3 0.75 5.5 0.0) :fov 50 :move-speed 0.1) scene)
