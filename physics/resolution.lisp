@@ -304,18 +304,48 @@
 
 (defmethod generate-hits ((system rigidbody-system) hits start end)
   ;; If this seems inefficient to you, it is! Use the ACCELERATED-RIGIDBODY-SYSTEM instead.
-  (loop with objects = (%objects system)
-        for i from 0 below (length objects)
-        for a = (aref objects i)
-        do (loop for j from (1+ i) below (length objects)
-                 for b = (aref objects j)
-                 do (unless (and (= 0.0 (inverse-mass a))
-                                 (= 0.0 (inverse-mass b)))
-                      ;; Don't bother detecting hits between immovable objects
-                      (loop for a-p across (physics-primitives a)
-                            do (loop for b-p across (physics-primitives b)
-                                     for new-start = (detect-hits a-p b-p hits start end)
-                                     do (setf start (prune-hits hits start new-start)))))))
+  ;;
+  ;; SEEN is a hack to work around the fact that some entities are
+  ;; repeated in the %OBJECTS slots.
+  (let ((seen (make-hash-table :test #'equal)))
+    (loop with objects = (%objects system)
+          for i from 0 below (length objects)
+          for a = (aref objects i)
+          do (loop for j from (1+ i) below (length objects)
+                   for b = (aref objects j)
+                   do (unless (or (gethash (cons a b) seen)
+                                  (and (= 0.0 (inverse-mass a))
+                                       (= 0.0 (inverse-mass b))))
+                        (setf (gethash (cons a b) seen) t
+                              (gethash (cons b a) seen) t)
+                        ;; Don't bother detecting hits between immovable objects
+                        (loop for a-p across (physics-primitives a)
+                              for (a-bb-min . a-bb-max) = (global-bbox a-p)
+                              do (loop for b-p across (physics-primitives b)
+                                       for (b-bb-min . b-bb-max) = (global-bbox b-p)
+                                       ;; Test whether the bounding
+                                       ;; boxes intersect before
+                                       ;; invoke the more expensive
+                                       ;; hit tests since this is too
+                                       ;; slow otherwise
+                                       when (org.shirakumo.fraf.trial.space::box-intersects-box-p
+                                             a-bb-min a-bb-max b-bb-min b-bb-max)
+                                         ;; HACK(jmoringe): This used to be
+                                         ;;   (detect-hits a-p b-p hits start end)
+                                         ;; that is, the order of the
+                                         ;; primitives was
+                                         ;; flipped. The current code
+                                         ;; matches what the
+                                         ;; accelerated system
+                                         ;; produces and that way
+                                         ;; mysteriously avoids a
+                                         ;; problem that affects the
+                                         ;; player entity with the original order.
+                                       do (let ((new-start (detect-hits b-p a-p hits start end)))
+                                            (setf start (prune-hits hits start new-start))
+                                            (when (<= end start)
+                                              (dbg "HIT Overflow")
+                                              (return-from generate-hits start)))))))))
   start)
 
 (defmethod resolve-hits ((system rigidbody-system) contacts start end dt &key (iterations 200))
