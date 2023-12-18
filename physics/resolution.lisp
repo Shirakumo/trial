@@ -386,9 +386,10 @@
           for worst = (the single-float (depth-eps system))
           for contact = NIL
           do (do-contacts (tentative)
-               (when (< worst (contact-depth tentative))
-                 (setf contact tentative)
-                 (setf worst (contact-depth contact))))
+               (let ((depth (contact-depth tentative)))
+                 (when (< worst depth)
+                   (setf contact tentative)
+                   (setf worst depth))))
              (unless contact (return))
              (match-awake-state contact)
              (resolve-collision (hit-a contact) (hit-b contact) contact)
@@ -407,9 +408,10 @@
           for worst = (the single-float (velocity-eps system)) ;; Some kinda epsilon.
           for contact = NIL
           do (do-contacts (tentative)
-               (when (< worst (contact-desired-delta tentative))
-                 (setf contact tentative)
-                 (setf worst (contact-desired-delta contact))))
+               (let ((desired-delta (contact-desired-delta tentative)))
+                 (when (< worst desired-delta)
+                   (setf contact tentative)
+                   (setf worst desired-delta))))
              (unless contact (return))
              (match-awake-state contact)
              (resolve-collision-impact (hit-a contact) (hit-b contact) contact)
