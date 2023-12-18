@@ -1,12 +1,12 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defvar *debug-features* '())
-  (defvar *optimize-features* '(:elide-buffer-access-checks
-                                :elide-coercion-size-checks
-                                :elide-container-checks
-                                :elide-allocation-checks
-                                :elide-handler-restarts))
+  (defparameter *debug-features* '(:check-global-bounds-cache-obb))
+  (defparameter *optimize-features* '(:elide-buffer-access-checks
+                                      :elide-coercion-size-checks
+                                      :elide-container-checks
+                                      :elide-allocation-checks
+                                      :elide-handler-restarts))
 
   #+trial-debug-all
   (setf *features* (union *features* *debug-features*))
@@ -19,6 +19,9 @@
 
   #+trial-optimize-none
   (setf *features* (set-difference *features* *optimize-features*)))
+
+(defun enable-debug-features (&rest features)
+  (setf *features* (union *features* (or features *debug-features*))))
 
 (defun reload-with-features (&rest features)
   (setf *features* (union *features* features))
