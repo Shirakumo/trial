@@ -309,8 +309,9 @@
         for a = (aref objects i)
         do (loop for j from (1+ i) below (length objects)
                  for b = (aref objects j)
-                 do (unless (and (= 0.0 (inverse-mass a))
-                                 (= 0.0 (inverse-mass b)))
+                 do (when (and (or (< 0.0 (inverse-mass a))
+                                   (< 0.0 (inverse-mass b)))
+                               (intersects-p (global-bounds-cache a) (global-bounds-cache b)))
                       ;; Don't bother detecting hits between immovable objects
                       (loop for a-p across (physics-primitives a)
                             do (loop for b-p across (physics-primitives b)
