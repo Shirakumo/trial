@@ -315,8 +315,10 @@
                       ;; Don't bother detecting hits between immovable objects
                       (loop for a-p across (physics-primitives a)
                             do (loop for b-p across (physics-primitives b)
-                                     for new-start = (detect-hits a-p b-p hits start end)
-                                     do (setf start (prune-hits hits start new-start)))))))
+                                     do (when (intersects-p (primitive-global-bounds-cache a-p)
+                                                            (primitive-global-bounds-cache b-p))
+                                          (let ((new-start (detect-hits a-p b-p hits start end)))
+                                            (setf start (prune-hits hits start new-start)))))))))
   start)
 
 (defmethod resolve-hits ((system rigidbody-system) contacts start end dt &key (iterations 200))
