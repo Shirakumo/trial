@@ -174,11 +174,11 @@
 (defgeneric resolve-hits (system hits start end dt &key))
 
 (defmethod enter (thing (system physics-system))
-  (vector-push-extend thing (%objects system))
+  (array-utils:vector-push-extend-new thing (%objects system))
   thing)
 
 (defmethod enter ((thing force) (system physics-system))
-  (vector-push-extend thing (forces system))
+  (array-utils:vector-push-extend-new thing (forces system))
   thing)
 
 (defmethod leave (thing (system physics-system))
