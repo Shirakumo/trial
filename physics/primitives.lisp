@@ -100,7 +100,7 @@
   (entity NIL :type T)
   (material NIL :type T)
   (local-transform (meye 4) :type mat4)
-  (transform (mat4) :type mat4)
+  (transform (meye 4) :type mat4)
   (global-bounds-cache (%make-global-bounds-cache) :type global-bounds-cache))
 
 (defmethod global-transform-matrix ((primitive primitive) &optional target)
