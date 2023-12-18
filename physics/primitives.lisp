@@ -190,7 +190,14 @@
              primitive))
 
          ,@(loop for (slot) in slots
-                 collect `(define-accessor-delegate-methods ,slot (,(mksym *package* name '- slot) ,name)))))))
+                 collect `(defmethod ,slot ((primitive ,name))
+                            (,(mksym *package* name '- slot) primitive))
+                 collect `(defmethod (setf ,slot) (value (primitive ,name))
+                            (setf (,(mksym *package* name '- slot) primitive) value)
+                            (let ((cache (primitive-global-bounds-cache primitive)))
+                              (setf (global-bounds-cache-radius cache) (compute-radius primitive))
+                              (v<- (global-bounds-cache-obb cache) (compute-bsize primitive)))
+                            value))))))
 
 (define-primitive-type sphere
     ((radius 1.0 :type single-float)))
