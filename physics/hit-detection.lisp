@@ -43,6 +43,16 @@
                  (return-from detect-hits start)))
       (incf i))))
 
+(define-intersection-test (global-bounds-cache global-bounds-cache)
+  (let ((al (varr3 (global-location a)))
+        (bl (varr3 (global-location b)))
+        (as (varr3 (global-bsize a)))
+        (bs (varr3 (global-bsize b))))
+    (flet ((test (i)
+             (<= (abs (- (aref al i) (aref bl i)))
+                 (+ (aref as i) (aref bs i)))))
+      (and (test 0) (test 1) (test 2)))))
+
 (define-hit-detector (global-bounds-cache global-bounds-cache)
   (declare (optimize speed))
   (let ((al (varr3 (global-location a)))
@@ -52,10 +62,12 @@
     (flet ((test (i)
              (<= (abs (- (aref al i) (aref bl i)))
                  (+ (aref as i) (aref bs i)))))
-      (let ((a (test 0))
-            (b (test 1))
-            (c (test 2)))
-        (and a b c)))))
+      (when (and (test 0) (test 1) (test 2))
+        (!v- (hit-normal hit) (the vec3 (global-location a)) (the vec3 (global-location b)))
+        ;; FIXME: compute hit-location
+        (setf (hit-a hit) a)
+        (setf (hit-b hit) b)
+        (incf start)))))
 
 (define-hit-detector (half-space vec3)
   (let ((dist (- (v. (plane-normal a) b)
