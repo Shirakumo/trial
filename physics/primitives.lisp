@@ -108,6 +108,9 @@
     (null (primitive-transform primitive))
     (mat4 (m<- target (primitive-transform primitive)))))
 
+(defmethod global-bounds-cache ((primitive primitive))
+  (primitive-global-bounds-cache primitive))
+
 (defmethod global-location ((primitive primitive) &optional target)
   (global-location (primitive-global-bounds-cache primitive) target))
 

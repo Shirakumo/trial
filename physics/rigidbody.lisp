@@ -102,7 +102,9 @@
         do (setf (primitive-entity primitive) entity)))
 
 (defmethod (setf physics-primitives) :after ((primitives vector) (entity rigidbody))
-  (%update-rigidbody-cache entity))
+  (%update-rigidbody-cache entity)
+  (setf (global-bounds-cache-obb (global-bounds-cache entity))
+        (bsize entity)))
 
 (defmethod (setf physics-primitives) :around ((primitives vector) (entity rigidbody))
   (let ((primitives (if (find 'general-mesh primitives :key #'type-of)
