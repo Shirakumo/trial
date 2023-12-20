@@ -165,7 +165,7 @@
   (nxgl:height (pointer context)))
 
 (defun launch-with-context (&optional main &rest initargs)
-  (setf (%gl:*gl-get-proc-address* #'nxgl:proc-address))
+  (setf %gl:*gl-get-proc-address* #'nxgl:proc-address)
   (nxgl:init)
   (let ((main (apply #'make-instance main initargs)))
     (start main)
