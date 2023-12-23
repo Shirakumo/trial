@@ -188,6 +188,16 @@
 (defun rename-thread (name)
   (nxgl:set-thread-name (cffi:null-pointer name)))
 
+(defun logfile ()
+  NIL)
+
+(defun temdir ()
+  #p"tmp:/")
+
+(defun config-directory (&rest app-path)
+  (declare (ignore app-path))
+  (apply #'pathname-utils:subdirectory #p"save:/" app-path))
+
 (defmacro define-callback (name args &body body)
   `(cffi:defcallback ,name :void ((context :pointer) (user :pointer) ,@args)
      (declare (ignore context user))

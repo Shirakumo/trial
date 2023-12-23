@@ -390,19 +390,19 @@
              #+windows
              (or (envvar-directory "AppData")
                  (pathname-utils:subdirectory (user-homedir-pathname) "AppData" "Roaming"))
-             #+nx #p"save:/"
              (or (envvar-directory "XDG_CONFIG_HOME")
                  (pathname-utils:subdirectory (user-homedir-pathname) ".config")))
          (or app-path (list +app-vendor+ +app-system+))))
 
 (defun standalone-logging-handler ()
   (when (deploy:deployed-p)
-    (ignore-errors
-     (when (probe-file (logfile))
-       (delete-file (logfile))))
-    (v:define-pipe ()
-      (v:file-faucet :file (logfile)))
-    (v:info :trial "Running on ~a ~a ~a" (machine-type) (machine-instance) (machine-version))))
+    (when (logfile)
+      (ignore-errors (delete-file (logfile)))
+      (v:define-pipe ()
+          (v:file-faucet :file (logfile))))
+    (v:info :trial "Running on ~a, ~a ~a, ~a ~a"
+            (machine-instance) (machine-type) (machine-version)
+            (software-type) (software-version))))
 
 (defun make-thread (name func)
   (bt:make-thread (lambda ()
