@@ -83,6 +83,10 @@
   (nick :pointer)
   (size :int))
 
+(cffi:defcfun (set-thread-name "nxgl_set_thread_name") :int
+  (thread :pointer)
+  (name :string))
+
 (defun username ()
   (cffi:with-foreign-object (nick :char 33)
     (when (%username nick 33)

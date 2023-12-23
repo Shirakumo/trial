@@ -185,6 +185,9 @@
 (defun system-username ()
   (nxgl:username))
 
+(defun rename-thread (name)
+  (nxgl:set-thread-name (cffi:null-pointer name)))
+
 (defmacro define-callback (name args &body body)
   `(cffi:defcallback ,name :void ((context :pointer) (user :pointer) ,@args)
      (declare (ignore context user))
