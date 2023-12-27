@@ -173,6 +173,11 @@
                                 (:hand :pointing-hand)
                                 (:resize :resize-all)
                                 (:disallowed :not-allowed)
+                                (:ew-resize :resize-ew)
+                                (:ns-resize :resize-ns)
+                                (:nwse-resize :resize-nwse)
+                                (:nesw-resize :resize-nesw)
+                                (:all-resize :resize-all)
                                 (T cursor))))
 
 (defmethod (setf icon) ((icon rgba-icon) (context context))
