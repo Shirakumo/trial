@@ -48,7 +48,6 @@
 
 (defmethod save-image ((region memory-region) target type &rest args)
   (let ((vector (make-array (memory-region-size region) :element-type '(unsigned-byte 8))))
-    (declare (dynamic-extent vector))
     (mem:replace vector region)
     (apply #'save-image vector target type args)))
 
