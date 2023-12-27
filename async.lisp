@@ -46,7 +46,8 @@
   ())
 
 (defmethod update :before ((main task-runner-main) tt dt fc)
-  (promise:tick-all dt))
+  (handler-bind (#+trial-release (error #'abort))
+    (promise:tick-all dt)))
 
 (defmethod simple-tasks:schedule-task (task (default (eql T)))
   (simple-tasks:schedule-task task +main+))
