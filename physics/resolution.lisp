@@ -500,17 +500,7 @@
                                        :transform (primitive-transform primitive)
                                        :color (vec3 0 1 0))
                             ;; Collider geometry in object color.
-                            (typecase primitive
-                              (convex-mesh
-                               (debug-triangles (general-mesh-vertices primitive)
-                                                (general-mesh-faces primitive)
-                                                :transform (primitive-transform primitive)
-                                                :color color))
-                              (pill
-                               (debug-pill (global-location primitive)
-                                           (pill-radius primitive)
-                                           (pill-height primitive)
-                                           :color color)))))
+                            (debug-draw primitive :color color)))
                      (debug-primitive a)
                      (debug-primitive b)))))
         (let* ((broadphase-pairs '())
