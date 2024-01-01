@@ -1,5 +1,5 @@
 ;;; This implementation is based on the original Xenocollide code by Gary Snethen available at 
-;;;   https://github.com/erwincoumans/xenocollide/tree/master
+;;;   https://github.com/erwincoumans/xenocollide
 ;;;
 
 (defpackage #:org.shirakumo.fraf.trial.mpr

@@ -1166,14 +1166,16 @@
         thereis (when dir (probe-file (merge-pathnames program dir)))))
 
 (defun run (program &rest args)
-  (let ((args (loop for arg in args
-                    collect (etypecase arg
-                              (pathname (uiop:native-namestring arg))
-                              (real (princ-to-string arg))
-                              (string arg))))
-        (program (or #+windows (find-program (format NIL "~a.exe" program))
-                     (find-program program)
-                     (error "Can't find external program:~%  ~a"
-                            program))))
-    (uiop:run-program (list* program args)
-                      :output :string :error-output *error-output*)))
+  (flet ((normalize (arg)
+           (etypecase arg
+             (pathname (pathname-utils:native-namestring arg))
+             (real (princ-to-string arg))
+             (string arg))))
+    (let ((args (loop for arg in args
+                      append (mapcar #'normalize (enlist arg))))
+          (program (or #+windows (find-program (format NIL "~a.exe" program))
+                       (find-program program)
+                       (error "Can't find external program:~%  ~a"
+                              program))))
+      (uiop:run-program (list* program args)
+                        :output :string :error-output *error-output*))))
