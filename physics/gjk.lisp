@@ -48,16 +48,6 @@
     (declare (dynamic-extent ba ca))
     (nvunit* (!vc res ba ca))))
 
-(defun plane-point (a b c &optional (res (vec3)))
-  (declare (optimize speed (safety 0)))
-  (declare (type vec3 a b c res))
-  ;; Compute "the" central point of the plane spanned by A B C via its normal
-  ;; This is the same as computing the plane, then projecting the zero point
-  ;; onto that plane.
-  (let* ((normal (plane-normal a b c res))
-         (offset (v. normal a)))
-    (nv* normal offset)))
-
 (declaim (inline point))
 (defstruct (point
             (:constructor point (&optional (varr3 (make-array 3 :element-type 'single-float))))
@@ -267,8 +257,7 @@
           ;; Find triangles facing our current search point
           (loop (when (<= num-faces i) (return))
                 (cond ((< 0 (v. (v i 3) (!v- search-dir p (v i 0))))
-                       ;; ... I'm not sure how this part works, exactly.
-                       ;; It manages the loose edge list to expand the polytope?
+                       ;; This face will be removed, so add the edges back
                        (loop for j from 0 below 3
                              for edge-a = (v i j)
                              for edge-b = (v i (mod (1+ j) 3))
@@ -281,6 +270,8 @@
                                     (p<- (e k 1) (e num-loose-edges 1))
                                     (setf edge-found-p T)
                                     (return)))
+                                ;; The edge isn't already in the loose edge list
+                                ;; so add it back in now.
                                 (unless edge-found-p
                                   (when (<= EPA-MAX-LOOSE-EDGES num-loose-edges)
                                     (trial::dbg "EPA Edges Overflow")
@@ -316,15 +307,15 @@
 
       ;; Compute the actual intersection
       ;; If we did not converge, we just use the closest face we reached
-      (%epa-finish hit (v closest-face 0) (v closest-face 1) (v closest-face 2)))))
+      (%epa-finish hit (v closest-face 0) (v closest-face 1) (v closest-face 2) (v closest-face 3)))))
 
-(defun %epa-finish (hit c0 c1 c2)
-  (declare (type point c0 c1 c2))
+(defun %epa-finish (hit c0 c1 c2 n)
+  (declare (type point c0 c1 c2 n))
   (declare (type trial:hit hit))
   (declare (optimize speed (safety 0)))
   (let ((p (vec3)) (a-point (vec3)) (b-point (vec3)))
     (declare (dynamic-extent p a-point b-point))
-    (when (barycentric c0 c1 c2 (plane-point c0 c1 c2 p) p)
+    (when (barycentric c0 c1 c2 (nv* n (v. n c0)) p)
       (nv+* a-point (point-a c0) (vx p))
       (nv+* a-point (point-a c1) (vy p))
       (nv+* a-point (point-a c2) (vz p))
