@@ -27,3 +27,5 @@
 
 (defmethod save-image (source target (type (eql :jpg)) &rest args)
   (apply #'save-image source target :jpeg args))
+
+(trial::dont-deploy org.shirakumo.fraf.jpeg.cffi:libjpeg)
