@@ -112,7 +112,7 @@
                              (:file "ray" :depends-on ("primitives"))
                              (:file "resolution" :depends-on ("rigidbody"))
                              (:file "v-clip" :depends-on ("hit-detection" "ray"))
-                             (:file "xenocollide" :depends-on ("gjk"))))
+                             (:file "xenocollide" :depends-on ("hit-detection"))))
                (:module "renderer"
                 :depends-on ("package" "shader-pass" "helpers" "gl-struct" "transforms" "animation")
                 :components ((:file "cpu-particle" :depends-on ("particle-common"))

@@ -18,8 +18,8 @@
   (declare (optimize speed (safety 0)))
   (let ((-dir (v- +dir)))
     (declare (dynamic-extent -dir))
-    (org.shirakumo.fraf.trial.gjk::%support-function b +dir pb)
-    (org.shirakumo.fraf.trial.gjk::%support-function a -dir pa)
+    (trial:global-support-function b +dir pb)
+    (trial:global-support-function a -dir pa)
     (!v- p pb pa)))
 
 (defmacro with-vecs (vecs &body body)

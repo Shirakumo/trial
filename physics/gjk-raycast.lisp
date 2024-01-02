@@ -344,7 +344,7 @@
                                 (if (> dim 1) (vsqrlength s1) 0.0)
                                 (if (> dim 2) (vsqrlength s2) 0.0)
                                 (if (> dim 3) (vsqrlength s3) 0.0)))
-             (support-function trial:primitive v p)
+             (trial:support-function trial:primitive v p)
              (!v- w x p)
              (v<- (point-a s0) p)
              (v<- s0 w)

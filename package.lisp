@@ -313,10 +313,13 @@
   (:export
    #:detect-hit
    #:intersects-p
+   #:support-function
+   #:global-support-function
    #:detect-hits
    #:define-distance
    #:define-intersection-test
    #:define-hit-detector
+   #:define-support-function
    #:finish-hit
    #:primitive
    #:primitive-entity

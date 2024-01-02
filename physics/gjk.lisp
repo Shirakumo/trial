@@ -71,8 +71,8 @@
   (declare (type vec3 +dir))
   (let ((-dir (v- +dir)))
     (declare (dynamic-extent -dir))
-    (%support-function b +dir (point-b p))
-    (%support-function a -dir (point-a p))
+    (trial:global-support-function b +dir (point-b p))
+    (trial:global-support-function a -dir (point-a p))
     (!v- p (point-b p) (point-a p))))
 
 (defun %gjk (a b dir s0 s1 s2 s3)
@@ -325,86 +325,3 @@
       (if (= 0.0 (trial:hit-depth hit))
           (v<- (trial:hit-normal hit) +vy3+)
           (nv/ (trial:hit-normal hit) (trial:hit-depth hit))))))
-
-;;;; Support function implementations
-(defun %support-function (primitive global-direction next)
-  (declare (optimize speed (safety 0)))
-  (declare (type trial:primitive primitive))
-  (declare (type vec3 global-direction next))
-  (let ((local (vcopy global-direction)))
-    (declare (dynamic-extent local))
-    (trial::n*m4/3inv (trial:primitive-transform primitive) local)
-    (support-function primitive local next)
-    (n*m (trial:primitive-transform primitive) next)))
-
-(defgeneric support-function (primitive local-direction next))
-
-(defmacro define-support-function (type (dir next) &body body)
-  `(defmethod support-function ((primitive ,type) ,dir ,next)
-     (declare (type vec3 ,dir ,next))
-     (declare (optimize speed (safety 1)))
-     ,@body))
-
-(define-support-function trial:half-space (dir next)
-  ;; TODO: implement
-  (trial:implement!))
-
-(define-support-function trial:plane (dir next)
-  (let ((denom (v. (trial:plane-normal primitive) dir)))
-    (if (<= denom 0.000001)
-        (!v* next dir (trial:plane-offset primitive))
-        (!v* next dir (/ (trial:plane-offset primitive) denom)))))
-
-(define-support-function trial:sphere (dir next)
-  (nv* (!vunit* next dir) (trial:sphere-radius primitive)))
-
-(define-support-function trial:ellipsoid (dir next)
-  (nv* (nvunit (!v* next dir (trial:ellipsoid-radius primitive))) (trial:ellipsoid-radius primitive)))
-
-(define-support-function trial:box (dir next)
-  (let ((bsize (trial:box-bsize primitive)))
-    (vsetf next
-           (if (< 0 (vx3 dir)) (vx3 bsize) (- (vx3 bsize)))
-           (if (< 0 (vy3 dir)) (vy3 bsize) (- (vy3 bsize)))
-           (if (< 0 (vz3 dir)) (vz3 bsize) (- (vz3 bsize))))))
-
-(define-support-function trial:pill (dir next)
-  (nv* (nvunit* (v<- next dir)) (trial:pill-radius primitive))
-  (let ((bias (trial:pill-height primitive)))
-    (if (< 0 (vy dir))
-        (incf (vy next) bias)
-        (decf (vy next) bias))))
-
-(define-support-function trial:cylinder (dir next)
-  (vsetf next (vx dir) 0 (vz dir))
-  (nv* (nvunit* next) (trial:cylinder-radius primitive))
-  (if (< 0 (vy dir))
-      (incf (vy next) (trial:cylinder-height primitive))
-      (decf (vy next) (trial:cylinder-height primitive))))
-
-(define-support-function trial:triangle (dir next)
-  (let ((furthest most-negative-single-float))
-    (flet ((test (vert)
-             (let ((dist (v. vert dir)))
-               (when (< furthest dist)
-                 (setf furthest dist)
-                 (v<- next vert)))))
-      (test (trial:triangle-a primitive))
-      (test (trial:triangle-b primitive))
-      (test (trial:triangle-c primitive)))))
-
-(define-support-function trial:convex-mesh (dir next)
-  (let ((verts (trial:convex-mesh-vertices primitive))
-        (vert (vec3))
-        (furthest most-negative-single-float))
-    (declare (dynamic-extent vert))
-    (declare (optimize (safety 0)))
-    ;; FIXME: this is O(n)
-    (loop for i from 0 below (length verts) by 3
-          do (setf (vx vert) (aref verts (+ i 0)))
-             (setf (vy vert) (aref verts (+ i 1)))
-             (setf (vy vert) (aref verts (+ i 2)))
-             (let ((dist (v. vert dir)))
-               (when (< furthest dist)
-                 (setf furthest dist)
-                 (v<- next vert))))))

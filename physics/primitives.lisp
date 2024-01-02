@@ -3,6 +3,7 @@
 (defgeneric intersects-p (a b))
 (defgeneric distance (a b))
 (defgeneric detect-hits (a b contacts start end))
+(defgeneric support-function (primitive local-direction next))
 
 (defmethod distance ((a vec3) (b vec3))
   (vdistance a b))
@@ -48,6 +49,22 @@
            `((defmethod intersects-p ((b ,b) (a ,a))
                (block ,block
                  ,@body)))))))
+
+(defmacro define-support-function (type (dir next) &body body)
+  `(defmethod support-function ((primitive ,type) ,dir ,next)
+     (declare (type vec3 ,dir ,next))
+     (declare (optimize speed (safety 1)))
+     ,@body))
+
+(defun global-support-function (primitive global-direction next)
+  (declare (optimize speed (safety 1)))
+  (declare (type primitive primitive))
+  (declare (type vec3 global-direction next))
+  (let ((local (vcopy global-direction)))
+    (declare (dynamic-extent local))
+    (n*m4/3inv (primitive-transform primitive) local)
+    (support-function primitive local next)
+    (n*m (primitive-transform primitive) next)))
 
 (defun finish-hit (hit a b)
   (declare (type hit hit))
@@ -212,6 +229,9 @@
 (defmethod compute-radius ((primitive sphere))
   (sphere-radius primitive))
 
+(define-support-function sphere (dir next)
+  (nv* (!vunit* next dir) (sphere-radius primitive)))
+
 (define-primitive-type ellipsoid
     ((radius (vec3 1 1 1) :type vec3)))
 
@@ -225,6 +245,9 @@
 (defmethod compute-radius ((primitive ellipsoid))
   (let ((r (ellipsoid-radius primitive)))
     (max (vx r) (vy r) (vz r))))
+
+(define-support-function ellipsoid (dir next)
+  (nv* (nvunit (!v* next dir (ellipsoid-radius primitive))) (ellipsoid-radius primitive)))
 
 (define-primitive-type plane
     ((normal (vec3 0 1 0) :type vec3)
@@ -247,11 +270,21 @@
 (defmethod compute-radius ((primitive plane))
   most-positive-single-float)
 
+(define-support-function plane (dir next)
+  (let ((denom (v. (plane-normal primitive) dir)))
+    (if (<= denom 0.000001)
+        (!v* next dir (plane-offset primitive))
+        (!v* next dir (/ (plane-offset primitive) denom)))))
+
 (define-primitive-type (half-space plane)
     ())
 
 (defmethod compute-bsize ((primitive half-space))
   (vec3 most-positive-single-float))
+
+(define-support-function half-space (dir next)
+  ;; TODO: implement
+  (implement!))
 
 ;; NOTE: the box is centred at 0,0,0 and the bsize is the half-size along each axis.
 (define-primitive-type box
@@ -266,6 +299,13 @@
 
 (defmethod compute-radius ((primitive box))
   (vlength (box-bsize primitive)))
+
+(define-support-function box (dir next)
+  (let ((bsize (box-bsize primitive)))
+    (vsetf next
+           (if (< 0 (vx3 dir)) (vx3 bsize) (- (vx3 bsize)))
+           (if (< 0 (vy3 dir)) (vy3 bsize) (- (vy3 bsize)))
+           (if (< 0 (vz3 dir)) (vz3 bsize) (- (vz3 bsize))))))
 
 ;; Frustums are just boxes skewed by a linear transform. We provide these shorthands
 ;; here to allow easier construction of frustum testing primitives.
@@ -300,6 +340,13 @@
   (sqrt (+ (expt (cylinder-radius primitive) 2)
            (expt (cylinder-height primitive) 2))))
 
+(define-support-function cylinder (dir next)
+  (vsetf next (vx dir) 0 (vz dir))
+  (nv* (nvunit* next) (cylinder-radius primitive))
+  (if (< 0 (vy dir))
+      (incf (vy next) (cylinder-height primitive))
+      (decf (vy next) (cylinder-height primitive))))
+
 ;; NOTE: the pill is centred at 0,0,0, and points Y-up. the "height" is the half-height
 ;;       and does not include the caps, meaning the total height of the pill is 2r+2h.
 (define-primitive-type pill
@@ -317,6 +364,13 @@
 
 (defmethod compute-radius ((primitive pill))
   (+ (pill-height primitive) (pill-radius primitive)))
+
+(define-support-function pill (dir next)
+  (nv* (nvunit* (v<- next dir)) (pill-radius primitive))
+  (let ((bias (pill-height primitive)))
+    (if (< 0 (vy dir))
+        (incf (vy next) bias)
+        (decf (vy next) bias))))
 
 (define-primitive-type triangle
     ((a (vec3 -1 0 -1) :type vec3)
@@ -343,6 +397,17 @@
   (sqrt (max (vsqrlength (triangle-a primitive))
              (vsqrlength (triangle-b primitive))
              (vsqrlength (triangle-c primitive)))))
+
+(define-support-function triangle (dir next)
+  (let ((furthest most-negative-single-float))
+    (flet ((test (vert)
+             (let ((dist (v. vert dir)))
+               (when (< furthest dist)
+                 (setf furthest dist)
+                 (v<- next vert)))))
+      (test (triangle-a primitive))
+      (test (triangle-b primitive))
+      (test (triangle-c primitive)))))
 
 (define-primitive-type general-mesh
     (;; NOTE: Packed vertex positions as X Y Z triplets
@@ -396,6 +461,22 @@
     (!m* (primitive-local-transform primitive)
          offset
          (primitive-local-transform primitive))))
+
+(define-support-function convex-mesh (dir next)
+  (let ((verts (convex-mesh-vertices primitive))
+        (vert (vec3))
+        (furthest most-negative-single-float))
+    (declare (dynamic-extent vert))
+    (declare (optimize (safety 0)))
+    ;; FIXME: this is O(n)
+    (loop for i from 0 below (length verts) by 3
+          do (setf (vx vert) (aref verts (+ i 0)))
+             (setf (vy vert) (aref verts (+ i 1)))
+             (setf (vy vert) (aref verts (+ i 2)))
+             (let ((dist (v. vert dir)))
+               (when (< furthest dist)
+                 (setf furthest dist)
+                 (v<- next vert))))))
 
 (defmacro with-mesh-construction ((constructor &optional (finalizer 'finalize)) &body body)
   (let ((vertices (gensym "VERTICES"))
