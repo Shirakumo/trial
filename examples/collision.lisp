@@ -115,6 +115,7 @@ void main(){
         (focus (make-instance 'alloy:vertical-focus-list)))
     (flet ((shapes ()
              (list (make-sphere)
+                   (make-ellipsoid :radius (nvunit (vec3 3 2 1)))
                    (make-box)
                    (make-cylinder)
                    (make-pill)
