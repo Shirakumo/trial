@@ -559,7 +559,7 @@
                          do (push-convex-shape node shape))
                    (setf (gltf:collider node) NIL)
                    ;; Clear the extension, too. Ideally this would be done by the library already.
-                   (remhash "collider" (gethash "KHR_rigid_bodies" (gltf:extensions node)))
+                   (remhash "collider" (gethash "KHR_physics_rigid_bodies" (gltf:extensions node)))
                    (setf work-done-p T)))
         (when work-done-p
           (gltf:serialize gltf tmp)))
