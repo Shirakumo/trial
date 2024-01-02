@@ -328,6 +328,9 @@
    #:sphere-radius
    #:make-sphere
    #:radius
+   #:ellipsoid
+   #:ellipsoid-radius
+   #:make-ellipsoid
    #:plane
    #:plane-normal
    #:plane-offset

@@ -238,6 +238,26 @@ void main(){
     (circle #'vx_y)
     (circle #'v_xy)))
 
+(defmethod debug-draw ((primitive ellipsoid) &rest args &key &allow-other-keys)
+  (unless (getf args :transform)
+    (setf (getf args :transform) (primitive-transform primitive)))
+  (apply #'debug-ellipsoid #.(vec 0 0 0) (ellipsoid-radius primitive) args))
+
+(define-debug-draw-function (debug-ellipsoid lines) (location radius &key (color #.(vec 1 0 0)) (segments 16) (transform (model-matrix)))
+  (allocate (* 3 (1+ segments) 2 2))
+  (labels ((line (a b)
+             (v (n*m transform (nv+ a location))) (v color)
+             (v (n*m transform (nv+ b location))) (v color))
+           (circle (coerce)
+             (loop for i from 0 to segments
+                   for rad-1 = (* F-2PI (/ (+ i 0) segments))
+                   for rad-2 = (* F-2PI (/ (+ i 1) segments))
+                   do (line (funcall coerce (cos rad-1) (sin rad-1))
+                            (funcall coerce (cos rad-2) (sin rad-2))))))
+    (circle (lambda (a b) (vec (* (vx radius) a) (* (vy radius) b) 0)))
+    (circle (lambda (a b) (vec (* (vx radius) a) 0 (* (vz radius) b))))
+    (circle (lambda (a b) (vec 0 (* (vy radius) a) (* (vz radius) b))))))
+
 (defmethod debug-draw ((primitive cylinder) &rest args &key &allow-other-keys)
   (unless (getf args :transform)
     (setf (getf args :transform) (primitive-transform primitive)))

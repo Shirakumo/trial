@@ -357,7 +357,10 @@
         (!v* next dir (/ (trial:plane-offset primitive) denom)))))
 
 (define-support-function trial:sphere (dir next)
-  (nv* (nvunit* (v<- next dir)) (trial:sphere-radius primitive)))
+  (nv* (!vunit* next dir) (trial:sphere-radius primitive)))
+
+(define-support-function trial:ellipsoid (dir next)
+  (nv* (nvunit (!v* next dir (trial:ellipsoid-radius primitive))) (trial:ellipsoid-radius primitive)))
 
 (define-support-function trial:box (dir next)
   (let ((bsize (trial:box-bsize primitive)))

@@ -212,6 +212,20 @@
 (defmethod compute-radius ((primitive sphere))
   (sphere-radius primitive))
 
+(define-primitive-type ellipsoid
+    ((radius (vec3 1 1 1) :type vec3)))
+
+(defmethod print-object ((primitive ellipsoid) stream)
+  (print-unreadable-object (primitive stream :type T :identity T)
+    (format stream "~a" (radius primitive))))
+
+(defmethod compute-bsize ((primitive ellipsoid))
+  (ellipsoid-radius primitive))
+
+(defmethod compute-radius ((primitive ellipsoid))
+  (let ((r (ellipsoid-radius primitive)))
+    (max (vx r) (vy r) (vz r))))
+
 (define-primitive-type plane
     ((normal (vec3 0 1 0) :type vec3)
      (offset 0.0 :type single-float)))
@@ -446,6 +460,38 @@
     (multiple-value-bind (vertices faces) (finalize)
       (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces))))
 
+(defmethod coerce-object ((primitive ellipsoid) (type (eql 'convex-mesh)) &key (segments 32))
+  (with-mesh-construction (v)
+    (let ((lat (float segments 0f0))
+          (lng (float segments 0f0))
+          (size (ellipsoid-radius primitive)))
+      (loop for i from lat downto 1
+            for lat0 = (* F-PI (- (/ (1- i) lat) 0.5))
+            for lat1 = (* F-PI (- (/ i lat) 0.5))
+            for z0 = (sin lat0)
+            for zr0 = (cos lat0)
+            for z1 = (sin lat1)
+            for zr1 = (cos lat1)
+            when (< zr0 0.0001)
+            do (setf zr0 0.0)
+            when (< zr1 0.0001)
+            do (setf zr1 0.0)
+            do (loop for j from lng downto 1
+                     for l1 = (* F-2PI (/ (- j 1) lng))
+                     for l2 = (* F-2PI (/ (- j 2) lng))
+                     for x1 = (cos l1) for x2 = (cos l2)
+                     for y1 = (sin l1) for y2 = (sin l2)
+                     unless (= zr0 0)
+                     do (v (* x1 zr0 (vx size)) (* y1 zr0 (vy size)) (* z0 (vz size)))
+                        (v (* x1 zr1 (vx size)) (* y1 zr1 (vy size)) (* z1 (vz size)))
+                        (v (* x2 zr0 (vx size)) (* y2 zr0 (vy size)) (* z0 (vz size)))
+                     unless (= zr1 0)
+                     do (v (* x2 zr0 (vx size)) (* y2 zr0 (vy size)) (* z0 (vz size)))
+                        (v (* x1 zr1 (vx size)) (* y1 zr1 (vy size)) (* z1 (vz size)))
+                        (v (* x2 zr1 (vx size)) (* y2 zr1 (vy size)) (* z1 (vz size))))))
+    (multiple-value-bind (vertices faces) (finalize)
+      (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces))))
+
 (defmethod coerce-object ((primitive plane) (type (eql 'convex-mesh)) &key)
   (with-mesh-construction (v)
     (let* ((n (plane-normal primitive))
@@ -576,6 +622,15 @@
                         (expt (aref vertices (+ i 2)) 2))
           do (setf max (max max dist)))
     (make-primitive-like primitive #'make-sphere :radius (sqrt max))))
+
+(defmethod coerce-object ((primitive general-mesh) (type (eql 'ellipsoid)) &key)
+  (let ((vertices (general-mesh-vertices primitive))
+        (max (vec3)))
+    (loop for i from 0 below (length vertices) by 3
+          do (setf (vx max) (max (vx max) (abs (aref vertices (+ i 0)))))
+             (setf (vy max) (max (vy max) (abs (aref vertices (+ i 1)))))
+             (setf (vz max) (max (vz max) (abs (aref vertices (+ i 2))))))
+    (make-primitive-like primitive #'make-ellipsoid :radius max)))
 
 (defmethod coerce-object ((primitive general-mesh) (type (eql 'box)) &key)
   (let ((vertices (general-mesh-vertices primitive))
