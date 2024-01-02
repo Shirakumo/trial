@@ -135,9 +135,6 @@
           (T
            start))))
 
-(trial:define-hit-detector (trial:primitive trial:primitive)
-  (setf trial:start (detect-hits a b trial:hits trial:start trial:end)))
-
 (defun update-simplex (s0 s1 s2 s3 dir)
   (declare (optimize speed (safety 0)))
   (declare (type point s0 s1 s2 s3))
