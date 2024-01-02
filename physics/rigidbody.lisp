@@ -78,6 +78,9 @@
 (defmethod (setf inertia-tensor) ((primitive sphere) (entity rigidbody))
   (setf (inertia-tensor entity) (sphere-tensor (mass entity) (sphere-radius primitive))))
 
+(defmethod (setf inertia-tensor) ((primitive ellipsoid) (entity rigidbody))
+  (setf (inertia-tensor entity) (ellipsoid-tensor (mass entity) (ellipsoid-radius primitive))))
+
 (defmethod (setf inertia-tensor) ((primitive box) (entity rigidbody))
   (setf (inertia-tensor entity) (box-tensor (mass entity) (box-bsize primitive))))
 

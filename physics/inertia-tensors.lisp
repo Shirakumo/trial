@@ -89,6 +89,12 @@
     (setf (m 1 1) y)
     (setf (m 2 2) x)))
 
+(define-tensor-fun ellipsoid-tensor (mass radius)
+  (let ((x (/ (* 3.0 mass) 5.0)))
+    (setf (m 0 0) (* x (+ (vy radius) (vz radius))))
+    (setf (m 1 1) (* x (+ (vx radius) (vz radius))))
+    (setf (m 2 2) (* x (+ (vx radius) (vy radius))))))
+
 (define-tensor-fun cone-tensor (mass radius height)
   (let* ((x (float (* 3/10 mass radius radius) 0f0))
          (y (float (* 0.5 (+ x (* 3/40 mass (* height height)))) 0f0)))
