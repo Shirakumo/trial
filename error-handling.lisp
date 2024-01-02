@@ -61,6 +61,9 @@
     (T
      (funcall *error-report-hook* error))))
 
+(defmethod report-on-error ((error org.shirakumo.depot:depot-condition))
+  (emessage "A game resource file is corrupted and could not be read. Please verify your installation."))
+
 (defun standalone-error-handler (err &key (category :trial))
   (when (and (deploy:deployed-p) (not *inhibit-standalone-error-handler*))
     (v:error category err)
