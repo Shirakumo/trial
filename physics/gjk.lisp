@@ -342,7 +342,7 @@
 (defmacro define-support-function (type (dir next) &body body)
   `(defmethod support-function ((primitive ,type) ,dir ,next)
      (declare (type vec3 ,dir ,next))
-     (declare (optimize speed))
+     (declare (optimize speed (safety 1)))
      ,@body))
 
 (define-support-function trial:half-space (dir next)
@@ -398,13 +398,12 @@
         (vert (vec3))
         (furthest most-negative-single-float))
     (declare (dynamic-extent vert))
-    (declare (optimize speed (safety 0)))
+    (declare (optimize (safety 0)))
     ;; FIXME: this is O(n)
     (loop for i from 0 below (length verts) by 3
-          do (vsetf vert
-                    (aref verts (+ i 0))
-                    (aref verts (+ i 1))
-                    (aref verts (+ i 2)))
+          do (setf (vx vert) (aref verts (+ i 0)))
+             (setf (vy vert) (aref verts (+ i 1)))
+             (setf (vy vert) (aref verts (+ i 2)))
              (let ((dist (v. vert dir)))
                (when (< furthest dist)
                  (setf furthest dist)
