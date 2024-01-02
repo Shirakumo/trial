@@ -27,12 +27,24 @@ Trial currently offers the following primitives, as well as collision detection 
 
 - ``sphere``
   A sphere with a ``radius``
+- ``ellipsoid``
+  An ellipsoid with a ``radius`` in every dimension.
 - ``plane``
   An infinite plane facing towards the ``normal`` at the ``offset`` along that normal.
 - ``half-space``
   An infinite volume below the ``offset`` along the ``normal``.
 - ``box``
   A box with the half-size ``bsize``.
+- ``cylinder``
+  An upright cylinder with a ``radius`` and a ``height`` along the +Y axis.
+- ``pill``
+  An upright pill with a ``radius`` and a ``height`` along the +Y axis. Like a cylinder, but with spherical caps of ``radius``. A ``height`` of zero is equivalent to a ``sphere``.
+- ``triangle``
+  A triangle with ``A``, ``B``, and ``C`` corners.
+- ``general-mesh``
+  A general triangle mesh with packed ``vertices`` and ``faces`` arrays.
+- ``convex-mesh``
+  A triangle mesh that must be convex, with packed ``vertices`` and ``faces`` arrays.
 
 Note that there is currently no support for complex convex primitives, nor for automated tessellation of concave geometry into sets of convex primitives. Please help us out by adding support for that!
 
