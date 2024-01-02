@@ -314,6 +314,8 @@
    #:detect-hit
    #:intersects-p
    #:detect-hits
+   #:define-distance
+   #:define-intersection-test
    #:define-hit-detector
    #:finish-hit
    #:primitive

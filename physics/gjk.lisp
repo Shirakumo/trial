@@ -75,12 +75,12 @@
     (%support-function a -dir (point-a p))
     (!v- p (point-b p) (point-a p))))
 
-(defun %gjk (a b s0 s1 s2 s3)
+(defun %gjk (a b dir s0 s1 s2 s3)
   (declare (type trial:primitive a b))
-  (declare (type point s0 s1 s2 s3))
+  (declare (type point dir s0 s1 s2 s3))
   (declare (optimize speed))
-  (let ((dir (point)) (s12 (point)))
-    (declare (dynamic-extent dir s12))
+  (let ((s12 (point)))
+    (declare (dynamic-extent s12))
     (trial::global-location a dir)
     (trial::global-location b s0)
     (nv- dir s0)
@@ -108,15 +108,14 @@
                       (return T)))
             finally (trial::dbg "GJK Overflow")))))
 
-;; FIXME: this does not work as intended
-#++
-(trial::define-distance (trial:primitive trial:primitive)
-  (let ((s0 (point)) (s1 (point)) (s2 (point)) (s3 (point))
-        (hit (trial:make-hit)))
-    (declare (dynamic-extent s0 s1 s2 s3 hit))
-    (%gjk a b s0 s1 s2 s3)
-    (epa s0 s1 s2 s3 a b hit)
-    (trial:hit-depth hit)))
+(trial:define-distance (trial:primitive trial:primitive)
+  (let ((dir (point)) (s0 (point)) (s1 (point)) (s2 (point)) (s3 (point)))
+    (declare (dynamic-extent dir s0 s1 s2 s3))
+    ;; TODO: this could be far more efficient with a more optimised routine
+    ;;       See https://dyn4j.org/2010/04/gjk-distance-closest-points/
+    (if (%gjk a b dir s0 s1 s2 s3)
+        0.0
+        (abs (v. (nvunit dir) s0)))))
 
 (defun detect-hits (a b hits start end)
   (declare (type trial:primitive a b))
@@ -126,9 +125,9 @@
   (when (<= end start)
     (return-from detect-hits start))
   (let ((hit (aref hits start))
-        (s0 (point)) (s1 (point)) (s2 (point)) (s3 (point)))
-    (declare (dynamic-extent s0 s1 s2 s3))
-    (cond ((and (%gjk a b s0 s1 s2 s3)
+        (dir (point)) (s0 (point)) (s1 (point)) (s2 (point)) (s3 (point)))
+    (declare (dynamic-extent dir s0 s1 s2 s3))
+    (cond ((and (%gjk a b dir s0 s1 s2 s3)
                 (epa s0 s1 s2 s3 a b hit))
            (trial:finish-hit hit a b)
            (1+ start))
