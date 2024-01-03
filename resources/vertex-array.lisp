@@ -167,3 +167,8 @@
           for (size type instance) in fields
           collect `(,buffer :size ,size :offset ,offset :type ,type :stride ,stride :instancing ,(or instance 0))
           do (incf offset (* size (gl-type-size type))))))
+
+(defun find-vertex-buffer-binding (vao index)
+  (loop for binding in (bindings vao)
+        when (eql index (getf (rest binding) :index))
+        return binding))

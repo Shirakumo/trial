@@ -531,6 +531,7 @@
    #:notice-update
    #:standard-renderable
    #:vertex-array
+   #:vertex-arrays
    #:standard-animated-renderable
    #:single-material-renderable
    #:material
@@ -646,7 +647,8 @@
    #:bindings
    #:index-buffer
    #:indexed-p
-   #:compute-buffer-bindings)
+   #:compute-buffer-bindings
+   #:find-vertex-buffer-binding)
   ;; resources/vertex-buffer.lisp
   (:export
    #:vertex-buffer
