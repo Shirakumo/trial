@@ -4,7 +4,7 @@
 
 (defclass vertex-array (gl-resource)
   ((size :initarg :size :initform NIL :accessor size)
-   (bindings :initarg :bindings :accessor bindings)
+   (bindings :accessor bindings)
    (vertex-form :initarg :vertex-form :accessor vertex-form)
    (index-buffer :initform NIL :accessor index-buffer :reader indexed-p)
    (instanced-p :initform NIL :accessor instanced-p))
@@ -16,7 +16,8 @@
   (print-unreadable-object (array stream :type T :identity T)
     (format stream "~@[~a~]~:[~; ALLOCATED~]" (size array) (allocated-p array))))
 
-(defmethod shared-initialize :after ((array vertex-array) slots &key (index-buffer NIL index-buffer-p))
+(defmethod shared-initialize :after ((array vertex-array) slots &key bindings (index-buffer NIL index-buffer-p))
+  (setf (bindings array) bindings)
   (when index-buffer-p
     (setf (index-buffer array) index-buffer)))
 
@@ -26,7 +27,30 @@
            (if (index-buffer array) (list (index-buffer array)))
            (mapcar #'unlist (bindings array)))))
 
-(defun update-array-bindings (array bindings &optional index)
+(defun normalize-array-bindings (bindings)
+  (let ((new-bindings ()) ebo)
+    (loop for binding in bindings
+          for i from 0
+          do (destructuring-bind (buffer &key (index i)
+                                              (size 3)
+                                              (type (element-type buffer))
+                                              (stride (* size (gl-type-size type)))
+                                              (offset 0)
+                                              (normalize NIL)
+                                              (instancing 0))
+                 (enlist binding)
+               (ecase (buffer-type buffer)
+                 (:element-array-buffer
+                  (setf ebo buffer)
+                  (decf i))
+                 (:array-buffer
+                  (push (list buffer :index index :size size :type type :stride stride
+                                     :offset offset :normalize normalize :instancing instancing)
+                        new-bindings)))))
+    (when ebo (push ebo new-bindings))
+    (nreverse new-bindings)))
+
+(defun update-array-bindings (array &optional (bindings (bindings array)) (index (index-buffer array)))
   (with-unwind-protection (deactivate array)
     (activate array)
     (when index (activate index))
@@ -60,9 +84,10 @@
                     (%gl:vertex-attrib-divisor index instancing)
                     (setf (instanced-p array) T))))))))
 
-(defmethod (setf bindings) :after (bindings (array vertex-array))
+(defmethod (setf bindings) (bindings (array vertex-array))
+  (setf (slot-value array 'bindings) (normalize-array-bindings bindings))
   (when (allocated-p array)
-    (update-array-bindings array bindings)))
+    (update-array-bindings array)))
 
 (defmethod (setf index-buffer) :after ((buffer vertex-buffer) (array vertex-array))
   (setf (size array) (cond ((size buffer)
@@ -85,7 +110,7 @@
     (with-cleanup-on-failure (progn (gl:delete-vertex-arrays (list vao))
                                     (setf (data-pointer array) NIL))
       (setf (data-pointer array) vao)
-      (update-array-bindings array (bindings array) (index-buffer array)))))
+      (update-array-bindings array))))
 
 (defmethod deallocate ((array vertex-array))
   (gl:delete-vertex-arrays (list (gl-name array)))
