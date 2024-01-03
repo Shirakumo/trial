@@ -472,7 +472,7 @@
     (loop for i from 0 below (length verts) by 3
           do (setf (vx vert) (aref verts (+ i 0)))
              (setf (vy vert) (aref verts (+ i 1)))
-             (setf (vy vert) (aref verts (+ i 2)))
+             (setf (vz vert) (aref verts (+ i 2)))
              (let ((dist (v. vert dir)))
                (when (< furthest dist)
                  (setf furthest dist)
