@@ -31,7 +31,7 @@
 (defclass main (trial:main)
   ((analog-actions :initform #() :accessor analog-actions)
    (digital-actions :initform #() :accessor digital-actions)
-   (use-steaminput :initform T :initarg :use-steaminput :accessor use-steaminput)
+   (use-steaminput :initform NIL :initarg :use-steaminput :accessor use-steaminput)
    (steam-required-p :initform NIL :initarg :require-steam :accessor steam-required-p)))
 
 (defmethod initialize-instance ((main main) &key app-id)
