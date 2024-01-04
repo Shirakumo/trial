@@ -21,7 +21,8 @@
                (:file "physics")
                (:file "convex-physics")
                (:file "scene-loader")
-               (:file "decomposition"))
+               (:file "decomposition")
+               (:file "sprite"))
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
                :trial-theora
