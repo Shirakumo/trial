@@ -182,6 +182,9 @@
       (unwind-protect (finalize main)
         (nxgl:shutdown)))))
 
+(defun self ()
+  #p"rom:/sbcl")
+
 (defun system-username ()
   (nxgl:username))
 

@@ -128,7 +128,7 @@
   (standalone-logging-handler)
   (v:output-here)
   (v:info :trial.main "GENESIS")
-  (v:info :trail.main "Launching version ~a" (version :app))
+  (v:info :trail.main "Launching version ~a (~a)" (version :app) (version :binary))
   (when (string= "true" (uiop:getenv "TRIAL_QUIT_AFTER_INIT"))
     (let ((context (getf initargs :context)))
       (setf (getf initargs :context) (list* :visible NIL context))))

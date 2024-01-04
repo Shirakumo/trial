@@ -40,12 +40,23 @@
                        do (when (search path line :start2 40)
                             (return (subseq line 0 (position #\Space line))))))))))))
 
+(defun self ()
+  (first (uiop:raw-command-line-arguments)))
+
 (defmethod version ((_ (eql :app)))
   (let* ((dir (asdf:system-source-directory +app-system+))
          (commit (git-repo-commit dir)))
     (format NIL "~a~@[-~a~]"
             (asdf:component-version (asdf:find-system +app-system+))
             (when commit (subseq commit 0 7)))))
+
+(defmethod version ((_ (eql :binary)))
+  (let ((self (self)))
+    (if self
+        (with-output-to-string (out)
+          (loop for o across (sha3:sha3-digest-file self :output-bit-length 224)
+                do (format out "~2,'0X" o)))
+        "?")))
 
 (let ((cache NIL))
   (defun data-root (&optional (app +app-system+))

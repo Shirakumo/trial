@@ -1697,6 +1697,7 @@
    #:F-PI/2
    #:data-root
    #:git-repo-commit
+   #:self
    #:version
    #:toolkit
    #:transfer-to

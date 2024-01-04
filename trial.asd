@@ -199,6 +199,7 @@
                :quickhull
                :convex-covering
                :machine-state/opengl
+               :sha3
                (:feature :windows :com-on)))
 
 #+sbcl
