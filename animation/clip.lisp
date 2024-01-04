@@ -172,10 +172,15 @@ TRACKS: ~a~&"
    (rotation :initform (quat) :accessor rotation)
    (forward-track :initform NIL :accessor forward-track)))
 
-(defmethod update-instance-for-different-class :after ((prev clip) (clip forward-kinematic-clip) &key track)
+(defmethod update-instance-for-different-class :after ((prev clip) (clip forward-kinematic-clip) &key (track 0))
   (setf (forward-track clip) track)
   (setf (velocity clip) (vec3))
   (setf (rotation clip) (quat)))
+
+(defmethod update-instance-for-different-class :after ((prev forward-kinematic-clip) (clip clip) &key)
+  (loop for track across (tracks clip)
+        do (when (typep track 'dummy-track)
+             (change-class track 'transform-track))))
 
 (defmethod (setf forward-track) ((track integer) (clip forward-kinematic-clip))
   (loop for track across (tracks clip)
