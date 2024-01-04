@@ -83,7 +83,7 @@
    (target :initarg :target :accessor target))
   (:default-initargs
    :zoom 1.0
-   :target NIL))
+   :target (vec 0 0 200)))
 
 (defmethod project-view ((camera sidescroll-camera))
   (let ((z (zoom camera)))
