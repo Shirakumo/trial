@@ -5,12 +5,23 @@
    (tracks :initform #() :accessor tracks)
    (start-time :initform 0f0 :accessor start-time)
    (end-time :initform 0f0 :accessor end-time)
-   (loop-p :initarg :loop-p :initform T :accessor loop-p)
-   (next-clip :initarg :next-clip :initform NIL :accessor next-clip)))
+   (next-clip :initform NIL :accessor next-clip)))
 
-(defmethod shared-initialize :after ((clip clip) slots &key tracks)
+(defmethod shared-initialize :after ((clip clip) slots &key tracks loop-p (next-clip NIL next-clip-p))
   (when tracks
-    (setf (tracks clip) tracks)))
+    (setf (tracks clip) tracks))
+  (cond (next-clip-p
+         (setf (next-clip clip) next-clip))
+        (loop-p
+         (setf (next-clip clip) clip))))
+
+(defmethod loop-p ((clip clip))
+  (eq clip (next-clip clip)))
+
+(defmethod (setf loop-p) (value (clip clip))
+  (if value
+      (setf (next-clip clip) clip)
+      (setf (next-clip clip) NIL)))
 
 (defmethod print-object ((clip clip) stream)
   (print-unreadable-object (clip stream :type T)
@@ -24,11 +35,11 @@ NAME:     ~a
 START:    ~a
 END:      ~a
 DURATION: ~a
-LOOP:     ~a
+NEXT:     ~a
 TRACKS: ~a~&"
           clip (type-of clip)
           (name clip) (start-time clip) (end-time clip) (duration clip)
-          (loop-p clip) (map 'list #'name (tracks clip))))
+          (next-clip clip) (map 'list #'name (tracks clip))))
 
 (defun fit-to-clip (clip time)
   (let ((start (start-time clip))
