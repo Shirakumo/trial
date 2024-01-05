@@ -196,7 +196,7 @@ TRACKS: ~a~&"
   (setf (forward-track clip) (position track (tracks clip) :key #'name)))
 
 (defmethod (setf forward-track) ((track string) (clip forward-kinematic-clip))
-  (setf (forward-track clip) (position track (tracks clip) :key #'name :test #'string-equal)))
+  (setf (forward-track clip) (position track (tracks clip) :key #'name :test #'equal)))
 
 (defmethod sample :after (target (clip forward-kinematic-clip) time &key loop-p)
   (let ((track (forward-track clip)))
