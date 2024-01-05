@@ -37,7 +37,10 @@
    #:duration
    #:find-animation-track
    #:clip
-   #:define-clip)
+   #:define-clip
+   #:forward-kinematic-clip
+   #:forward-track
+   #:velocity-scale)
   ;; animation/entity.lisp
   (:export
    #:animation-layer

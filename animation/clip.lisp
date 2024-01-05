@@ -170,7 +170,8 @@ TRACKS: ~a~&"
 (defclass forward-kinematic-clip (clip)
   ((velocity :initform (vec3) :accessor velocity)
    (rotation :initform (quat) :accessor rotation)
-   (forward-track :initform NIL :accessor forward-track)))
+   (forward-track :initform NIL :accessor forward-track)
+   (velocity-scale :initarg :velocity-scale :initform 1.0 :accessor velocity-scale)))
 
 (defmethod update-instance-for-different-class :after ((prev clip) (clip forward-kinematic-clip) &key (track 0))
   (setf (forward-track clip) track)
@@ -200,6 +201,7 @@ TRACKS: ~a~&"
 (defmethod sample :after (target (clip forward-kinematic-clip) time &key loop-p)
   (let ((track (forward-track clip)))
     (when (< 1 (length (location track)))
-      (sample (velocity clip) (location track) time :loop-p loop-p))
+      (sample (velocity clip) (location track) time :loop-p loop-p)
+      (nv* (velocity clip) (velocity-scale clip)))
     (when (< 1 (length (rotation track)))
       (sample (rotation clip) (rotation track) time :loop-p loop-p))))
