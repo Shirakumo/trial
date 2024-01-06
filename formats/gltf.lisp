@@ -472,6 +472,9 @@
                           (make-instance (etypecase (or (gethash mesh-name meshes)
                                                         (gethash (cons mesh-name 0) meshes))
                                            (static-mesh 'basic-entity)
+                                           ;; FIXME: instead of turning each skin into an animated entity
+                                           ;;        we should share the pose between them and only make one
+                                           ;;        animated entity the controller
                                            (skinned-mesh 'basic-animated-entity))
                                          :lods (loop for i from -1
                                                      for threshold across (gltf:lod-screen-coverage node)
