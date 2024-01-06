@@ -56,7 +56,18 @@
 
 (define-handler ((scene scene-loader-scene) text-entered :after) (text)
   (case (char text 0)
-    (#\p (setf (paused-p scene) (not (paused-p scene))))))
+    (#\p (setf (paused-p scene) (not (paused-p scene))))
+    (#\r (setf (file scene) (file scene)))
+    (#\n (let ((cube (find "Cube.001"
+                           (find "Scene" scene :test 'equal :key 'name)
+                           :test 'equal :key 'name)))
+           (when cube
+             (trotate-by (trial:tf cube) (vec3 1 0 0) 0.1))))
+    (#\m (let ((cube (find "Cube.001"
+                           (find "Scene" scene :test 'equal :key 'name)
+                           :test 'equal :key 'name)))
+           (when cube
+             (trotate-by (trial:tf cube) (vec3 1 0 0) 0.02))))))
 
 (define-handler ((scene scene-loader-scene) (ev tick) :around) ()
   (cond ((paused-p scene)
