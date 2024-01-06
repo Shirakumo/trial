@@ -90,7 +90,10 @@
   (setf (frames track) (cons (gltf:input sampler) (gltf:output sampler))))
 
 (defun load-clip (animation)
-  (let ((clip (make-instance 'clip :name (gltf:name animation))))
+  (let ((clip (make-instance 'clip :name (gltf:name animation)))
+        (fwd (gethash "forward-kinematic" (gltf:extras animation)))
+        (next (gethash "next" (gltf:extras animation)))
+        (loop (gethash "loop" (gltf:extras animation) T)))
     (loop for channel across (gltf:channels animation)
           for sampler = (svref (gltf:samplers animation) (gltf:sampler channel))
           for track = (find-animation-track clip (gltf:idx (gltf:node (gltf:target channel))) :if-does-not-exist :create)
@@ -100,7 +103,17 @@
                (:rotation (load-animation-track (rotation track) sampler))
                (T (v:warn :trial.gltf "Unknown animation channel target path: ~s on ~s, ignoring."
                         (gltf:path (gltf:target channel)) (gltf:name animation)))))
-    (trial::recompute-duration clip)))
+    (trial::recompute-duration clip)
+    (when fwd
+      (change-class clip 'forward-kinematic-clip
+                    :velocity-scale (gethash "velocity-scale" (gltf:extras animation) 1.0)
+                    :track (etypecase fwd
+                             ((or string integer) fwd)
+                             ((eql T) 0))))
+    (if next
+        (setf (next-clip clip) next)
+        (setf (loop-p clip) loop))
+    clip))
 
 (defun load-clips (gltf &optional (table (make-hash-table :test 'equal)))
   (loop for animation across (gltf:animations gltf)
