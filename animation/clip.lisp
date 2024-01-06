@@ -5,7 +5,7 @@
    (tracks :initform #() :accessor tracks)
    (start-time :initform 0f0 :accessor start-time)
    (end-time :initform 0f0 :accessor end-time)
-   (next-clip :initform NIL :accessor next-clip)))
+   (next-clip :accessor next-clip)))
 
 (defmethod shared-initialize :after ((clip clip) slots &key tracks (loop-p NIL loop-pp) (next-clip NIL next-clip-p))
   (when tracks
@@ -13,7 +13,9 @@
   (cond (next-clip-p
          (setf (next-clip clip) next-clip))
         (loop-pp
-         (setf (loop-p clip) loop-p))))
+         (setf (loop-p clip) loop-p))
+        ((not (slot-boundp clip 'next-clip))
+         (setf (loop-p clip) T))))
 
 (defmethod loop-p ((clip clip))
   (eq clip (next-clip clip)))
