@@ -6,6 +6,8 @@
    (torque :initform (vec 0 0 0) :reader torque)
    (angular-damping :initform 0.8 :accessor angular-damping)
    (physics-primitives :initform #() :accessor physics-primitives)
+   ;; 32-bit mask to designate which systems to interact with.
+   (collision-mask :initform 1 :accessor collision-mask)
    ;; Cache
    (transform-matrix :initform (mat4) :reader transform-matrix)
    (world-inverse-inertia-tensor :initform (mat3) :reader world-inverse-inertia-tensor)
@@ -40,6 +42,11 @@
 (defmethod invalidate-global-bounds-cache :after ((entity rigidbody))
   (loop for primitive across (physics-primitives entity)
         do (invalidate-global-bounds-cache primitive)))
+
+;; TODO: add convenient manipulation function to manage the collision-mask
+;;       bit mask in rigidbodies.
+(defmethod (setf collision-mask) ((thing sequence) (rigidbody rigidbody))
+  (implement!))
 
 (defmethod bsize ((entity rigidbody))
   (let ((vmin (vec3)) (vmax (vec3))

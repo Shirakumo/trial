@@ -198,7 +198,7 @@
 (defgeneric impart-collision-impact (entity contact velocity rotation))
 
 (defmethod collides-p ((a rigidbody) (b rigidbody) hit)
-  T)
+  (< 0 (logand (collision-mask a) (collision-mask b))))
 
 (defmethod resolve-collision ((a rigidbody) (b rigidbody) contact)
   (declare (optimize speed (safety 1)))

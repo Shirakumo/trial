@@ -407,6 +407,7 @@
    #:torque
    #:angular-damping
    #:physics-primitives
+   #:collision-mask
    #:transform-matrix
    #:world-inverse-inertia-tensor
    #:last-frame-acceleration
