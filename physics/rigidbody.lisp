@@ -1,54 +1,47 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass rigidbody (physics-entity transformed-entity global-bounds-cached-entity)
-  ((rotation :initform (vec 0 0 0) :reader rotation)
-   (inverse-inertia-tensor :initform (mat3) :reader inverse-inertia-tensor)
-   (torque :initform (vec 0 0 0) :reader torque)
-   (angular-damping :initform 0.8 :accessor angular-damping)
-   (physics-primitives :initform #() :accessor physics-primitives)
+(defclass rigid-shape (physics-entity transformed-entity global-bounds-cached-entity)
+  ((physics-primitives :initform #() :accessor physics-primitives)
    ;; 32-bit mask to designate which systems to interact with.
    (collision-mask :initform 1 :accessor collision-mask)
    ;; Cache
-   (transform-matrix :initform (mat4) :reader transform-matrix)
-   (world-inverse-inertia-tensor :initform (mat3) :reader world-inverse-inertia-tensor)
-   (last-frame-acceleration :initform (vec 0 0 0) :reader last-frame-acceleration)))
+   (transform-matrix :initform (mat4) :reader transform-matrix)))
 
-(defmethod shared-initialize :after ((body rigidbody) slots &key inertia-tensor physics-primitives)
-  (when inertia-tensor (setf (inertia-tensor body) inertia-tensor))
+(defmethod shared-initialize :after ((body rigid-shape) slots &key physics-primitives)
   (when physics-primitives (setf (physics-primitives body) physics-primitives)))
 
-(define-hit-detector (rigidbody primitive)
+(define-hit-detector (rigid-shape primitive)
   (loop for ai across (physics-primitives a)
         do (detect-hits ai b)))
 
-(define-hit-detector (rigidbody ray)
+(define-hit-detector (rigid-shape ray)
   (loop for ai across (physics-primitives a)
         do (detect-hits b ai)))
 
-(define-hit-detector (rigidbody rigidbody)
+(define-hit-detector (rigid-shape rigid-shape)
   (loop for ai across (physics-primitives a)
         do (loop for bi across (physics-primitives b)
                  do (detect-hits ai b))))
 
-(define-distance (rigidbody primitive)
+(define-distance (rigid-shape primitive)
   (loop for ai across (physics-primitives a)
         minimize (distance ai b)))
 
-(define-distance (rigidbody rigidbody)
+(define-distance (rigid-shape rigid-shape)
   (loop for ai across (physics-primitives a)
         minimize (loop for bi across (physics-primitives b)
                        minimize (distance ai bi))))
 
-(defmethod invalidate-global-bounds-cache :after ((entity rigidbody))
+(defmethod invalidate-global-bounds-cache :after ((entity rigid-shape))
   (loop for primitive across (physics-primitives entity)
         do (invalidate-global-bounds-cache primitive)))
 
 ;; TODO: add convenient manipulation function to manage the collision-mask
 ;;       bit mask in rigidbodies.
-(defmethod (setf collision-mask) ((thing sequence) (rigidbody rigidbody))
+(defmethod (setf collision-mask) ((thing sequence) (rigid-shape rigid-shape))
   (implement!))
 
-(defmethod bsize ((entity rigidbody))
+(defmethod bsize ((entity rigid-shape))
   (let ((vmin (vec3)) (vmax (vec3))
         (bsize (vec3)))
     (declare (dynamic-extent vmin vmax))
@@ -62,8 +55,54 @@
       (assert (v/= bsize 0)))
     (nv* bsize 0.5)))
 
-(defmethod bradius ((entity rigidbody))
+(defmethod bradius ((entity rigid-shape))
   (vlength (bsize entity)))
+
+(defmethod (setf physics-primitives) ((primitive primitive) (entity rigid-shape))
+  (setf (physics-primitives entity) (vector primitive)))
+
+(defmethod (setf physics-primitives) :before ((primitives vector) (entity rigid-shape))
+  (loop for primitive across primitives
+        do (setf (primitive-entity primitive) entity)))
+
+(defmethod (setf physics-primitives) :after ((primitives vector) (entity rigid-shape))
+  (%update-rigidbody-cache entity)
+  (setf (global-bounds-cache-obb (global-bounds-cache entity))
+        (bsize entity)))
+
+(defmethod (setf physics-primitives) :around ((primitives vector) (entity rigid-shape))
+  (let ((primitives (if (find 'general-mesh primitives :key #'type-of)
+                        (convexify primitives)
+                        primitives)))
+    (call-next-method primitives entity)))
+
+(defmethod (setf physics-primitives) ((mesh mesh-data) (entity rigid-shape))
+  (setf (physics-primitives entity) (make-general-mesh :vertices (reordered-vertex-data mesh '(location))
+                                                       :faces (simplify (faces mesh) '(unsigned-byte 16)))))
+
+(defmethod (setf physics-primitives) ((primitives list) (entity rigid-shape))
+  (setf (physics-primitives entity) (coerce primitives 'vector)))
+
+(defmethod %update-rigidbody-cache ((rigidbody rigid-shape))
+  (setf (global-bounds-cache-dirty-p (global-bounds-cache rigidbody)) T)
+  (tmat (tf rigidbody) (transform-matrix rigidbody))
+  (loop for primitive across (physics-primitives rigidbody)
+        do (!m* (primitive-transform primitive)
+                (transform-matrix rigidbody)
+                (primitive-local-transform primitive))
+           (invalidate-global-bounds-cache primitive)))
+
+(defclass rigidbody (rigid-shape)
+  ((rotation :initform (vec 0 0 0) :reader rotation)
+   (inverse-inertia-tensor :initform (mat3) :reader inverse-inertia-tensor)
+   (torque :initform (vec 0 0 0) :reader torque)
+   (angular-damping :initform 0.8 :accessor angular-damping)
+   ;; Cache
+   (world-inverse-inertia-tensor :initform (mat3) :reader world-inverse-inertia-tensor)
+   (last-frame-acceleration :initform (vec 0 0 0) :reader last-frame-acceleration)))
+
+(defmethod shared-initialize :after ((body rigidbody) slots &key inertia-tensor)
+  (when inertia-tensor (setf (inertia-tensor body) inertia-tensor)))
 
 (defmethod (setf awake-p) :after ((false null) (entity rigidbody))
   (vsetf (rotation entity) 0 0 0))
@@ -103,47 +142,17 @@
 (defmethod (setf inertia-tensor) ((primitive general-mesh) (entity rigidbody))
   (setf (inertia-tensor entity) (mesh-tensor (mass entity) (general-mesh-vertices primitive) (general-mesh-faces primitive))))
 
-(defmethod (setf physics-primitives) ((primitive primitive) (entity rigidbody))
-  (setf (physics-primitives entity) (vector primitive))
+(defmethod (setf physics-primitives) :after ((primitive primitive) (entity rigidbody))
   (when (and (/= 0 (inverse-mass entity))
              (every #'zerop (marr3 (inverse-inertia-tensor entity))))
     (setf (inertia-tensor entity) primitive)))
 
-(defmethod (setf physics-primitives) :before ((primitives vector) (entity rigidbody))
-  (loop for primitive across primitives
-        do (setf (primitive-entity primitive) entity)))
-
-(defmethod (setf physics-primitives) :after ((primitives vector) (entity rigidbody))
-  (%update-rigidbody-cache entity)
-  (setf (global-bounds-cache-obb (global-bounds-cache entity))
-        (bsize entity)))
-
-(defmethod (setf physics-primitives) :around ((primitives vector) (entity rigidbody))
-  (let ((primitives (if (find 'general-mesh primitives :key #'type-of)
-                        (convexify primitives)
-                        primitives)))
-    (call-next-method primitives entity)))
-
-(defmethod (setf physics-primitives) ((mesh mesh-data) (entity rigidbody))
-  (setf (physics-primitives entity) (make-general-mesh :vertices (reordered-vertex-data mesh '(location))
-                                                       :faces (simplify (faces mesh) '(unsigned-byte 16)))))
-
-(defmethod (setf physics-primitives) ((primitives list) (entity rigidbody))
-  (setf (physics-primitives entity) (coerce primitives 'vector)))
-
-(defun %update-rigidbody-cache (rigidbody)
+(defmethod %update-rigidbody-cache :after ((rigidbody rigidbody))
   ;; NOTE: Re-normalising the orientation here aids in stability by eliminating drift.
   ;;       But doing so can lead to bi-stable states, as it'll change normalisation
   ;;       from frame to frame without the orientation being changed from outside.
   (nqunit* (orientation rigidbody))
-  (setf (global-bounds-cache-dirty-p (global-bounds-cache rigidbody)) T)
-  (tmat (tf rigidbody) (transform-matrix rigidbody))
-  (compute-world-inertia-tensor (world-inverse-inertia-tensor rigidbody) (inverse-inertia-tensor rigidbody) (transform-matrix rigidbody))
-  (loop for primitive across (physics-primitives rigidbody)
-        do (!m* (primitive-transform primitive)
-                (transform-matrix rigidbody)
-                (primitive-local-transform primitive))
-           (invalidate-global-bounds-cache primitive)))
+  (compute-world-inertia-tensor (world-inverse-inertia-tensor rigidbody) (inverse-inertia-tensor rigidbody) (transform-matrix rigidbody)))
 
 (defmethod impact-local ((entity rigidbody) force point)
   ;; NOTE: The FORCE direction is in world coordinates, and the POINT is in local coordinates
