@@ -7,7 +7,7 @@
    (end-time :initform 0f0 :accessor end-time)
    (next-clip :initform NIL :accessor next-clip)))
 
-(defmethod shared-initialize :after ((clip clip) slots &key tracks loop-p (next-clip NIL next-clip-p))
+(defmethod shared-initialize :after ((clip clip) slots &key tracks (loop-p T) (next-clip NIL next-clip-p))
   (when tracks
     (setf (tracks clip) tracks))
   (cond (next-clip-p
