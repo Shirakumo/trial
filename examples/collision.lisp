@@ -55,6 +55,7 @@ void main(){
     (let ((count (ecase method
                    (generic (detect-hits a b array 0 1))
                    (gjk (org.shirakumo.fraf.trial.gjk:detect-hits a b array 0 1))
+                   (sttb (org.shirakumo.fraf.trial.sttb:detect-hits a b array 0 1))
                    (v-clip (org.shirakumo.fraf.trial.v-clip:detect-hits a b array 0 1))
                    (mpr (org.shirakumo.fraf.trial.mpr:detect-hits a b array 0 1)))))
       (when (< 0 count)
@@ -131,5 +132,5 @@ void main(){
                        :value-set (shapes) :layout-parent layout :focus-parent focus)
       (alloy:enter "Method" layout :row 2 :col 1)
       (alloy:represent (test-method (node :b scene)) 'alloy:combo-set
-                       :value-set '(generic gjk #|v-clip|# mpr) :layout-parent layout :focus-parent focus)
+                       :value-set '(generic gjk sttb #|v-clip|# mpr) :layout-parent layout :focus-parent focus)
       (alloy:finish-structure panel layout focus))))
