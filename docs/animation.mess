@@ -32,13 +32,20 @@ In order to use the animation pipeline from model files, the model format system
 Using one should be as simple as this:
 
 :: common lisp
-(define-asset (workbench model) org.shirakumo.fraf.trial.gltf:asset
+(define-asset (workbench model) model-file
     #p"model.gltf")
 
 (make-instance 'animated-entity :animation-asset (asset 'workbench 'model))
 ::
 
 Once loaded the asset must contain a ``skeleton``, a hash table of ``clips``, and a hash table of ``meshes``. The ``animated-entity`` will automatically extract and reference the properties as needed when you ``play``, ``fade-to``, etc.
+
+Trial will also parse out the following extra animation properties from the model, if supported:
+
+- ``next`` [string] The name of the clip to play after this.
+- ``loop`` [boolean] Whether to loop this clip or not. Defaults to true if unset. If ``next`` is set, this will be false.
+- ``forward-kinematic`` [boolean] Whether this clip is forward-kinematic or not. If it is, then the root motion will be turned into physical movement instead.
+- ``velocity-scale`` [float] The scale of the root motion when the clip is set to be forward-kinematic.
 
 ## Defining Clips
 Aside from the fully automated import of animations and skins from model files as used with the ``animated-entity``, you can also programmatically define animation clips to animate other properties and features.
