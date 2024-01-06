@@ -104,6 +104,7 @@
                              (:file "core" :depends-on ("toolkit"))
                              (:file "gjk" :depends-on ("hit-detection" "ray"))
                              (:file "gjk-raycast" :depends-on ("gjk"))
+                             (:file "sttb" :depends-on ("gjk-raycast"))
                              (:file "hit-detection" :depends-on ("primitives"))
                              (:file "inertia-tensors" :depends-on ("core"))
                              (:file "particle" :depends-on ("core"))
