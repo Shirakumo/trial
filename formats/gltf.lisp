@@ -91,9 +91,7 @@
 
 (defun load-clip (animation)
   (let ((clip (make-instance 'clip :name (gltf:name animation)))
-        (fwd (gethash "forward-kinematic" (gltf:extras animation)))
-        (next (gethash "next" (gltf:extras animation)))
-        (loop (gethash "loop" (gltf:extras animation) T)))
+        (extras (gltf:extras animation)))
     (loop for channel across (gltf:channels animation)
           for sampler = (svref (gltf:samplers animation) (gltf:sampler channel))
           for track = (find-animation-track clip (gltf:idx (gltf:node (gltf:target channel))) :if-does-not-exist :create)
@@ -104,15 +102,19 @@
                (T (v:warn :trial.gltf "Unknown animation channel target path: ~s on ~s, ignoring."
                         (gltf:path (gltf:target channel)) (gltf:name animation)))))
     (trial::recompute-duration clip)
-    (when fwd
-      (change-class clip 'forward-kinematic-clip
-                    :velocity-scale (gethash "velocity-scale" (gltf:extras animation) 1.0)
-                    :track (etypecase fwd
-                             ((or string integer) fwd)
-                             ((eql T) 0))))
-    (if next
-        (setf (next-clip clip) next)
-        (setf (loop-p clip) loop))
+    (when extras
+      (let ((fwd (gethash "forward-kinematic" extras))
+            (next (gethash "next" extras))
+            (loop (gethash "loop" extras T)))
+        (when fwd
+          (change-class clip 'forward-kinematic-clip
+                        :velocity-scale (gethash "velocity-scale" (gltf:extras animation) 1.0)
+                        :track (etypecase fwd
+                                 ((or string integer) fwd)
+                                 ((eql T) 0))))
+        (if next
+            (setf (next-clip clip) next)
+            (setf (loop-p clip) loop))))
     clip))
 
 (defun load-clips (gltf &optional (table (make-hash-table :test 'equal)))
@@ -496,7 +498,7 @@
                             (etypecase child
                               (basic-entity (change-class child 'trial:basic-physics-entity))
                               (basic-animated-entity (change-class child 'trial:animated-physics-entity)))
-                            (setf (trial:mass child) (if (gltf:kinematic-p (gltf:rigidbody node)) 0.0 (gltf:mass (gltf:rigidbody node))))
+                            (setf (trial:mass child) (gltf:mass (gltf:rigidbody node)))
                             ;; FIXME: implement center-of-mass
                             ;; FIXME: implement gravity-factor ???
                             (let* ((r (gltf:inertia-orientation (gltf:rigidbody node)))
