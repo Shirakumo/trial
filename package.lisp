@@ -401,14 +401,16 @@
    #:accelerated-rigidbody-system)
   ;; physics/rigidbody.lisp
   (:export
+   #:rigid-shape
+   #:physics-primitives
+   #:collision-mask
+   #:transform-matrix
+   #:trigger-volume
    #:rigidbody
    #:rotation
    #:inverse-inertia-tensor
    #:torque
    #:angular-damping
-   #:physics-primitives
-   #:collision-mask
-   #:transform-matrix
    #:world-inverse-inertia-tensor
    #:last-frame-acceleration
    #:inertia-tensor

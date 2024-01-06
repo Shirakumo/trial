@@ -109,8 +109,7 @@
                  ;; Reverse the information to ensure consistency with hit-a/hit-b
                  (loop for i from start below nstart
                        for hit = (aref hits i)
-                       do (nv- (hit-normal hit))
-                          (rotatef (hit-a hit) (hit-b hit)))
+                       do (reverse-hit hit))
                  nstart)))))))
 
 (defstruct primitive

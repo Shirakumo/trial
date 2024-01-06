@@ -92,6 +92,27 @@
                 (primitive-local-transform primitive))
            (invalidate-global-bounds-cache primitive)))
 
+(defclass trigger-volume (rigid-shape)
+  ())
+
+(defmethod awake-p ((entity trigger-volume))
+  NIL)
+
+(defmethod collides-p ((a trigger-volume) (b trigger-volume) hit)
+  NIL)
+
+(defmethod resolve-collision ((a trigger-volume) (b rigidbody) hit)
+  (resolve-collision b a (reverse-hit hit)))
+
+(defmethod resolve-collision ((a rigidbody) (b trigger-volume) hit)
+  (no-applicable-method #'resolve-collision (list a b hit)))
+
+(defmethod resolve-collision-impact ((a rigidbody) (b trigger-volume) hit))
+
+(defmethod resolve-collision :after ((a rigidbody) (b trigger-volume) (contact contact))
+  (setf (contact-desired-delta contact) 0.0)
+  (setf (contact-depth contact) 0.0))
+
 (defclass rigidbody (rigid-shape)
   ((rotation :initform (vec 0 0 0) :reader rotation)
    (inverse-inertia-tensor :initform (mat3) :reader inverse-inertia-tensor)

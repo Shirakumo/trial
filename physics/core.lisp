@@ -156,6 +156,12 @@
 (define-accessor-delegate-methods dynamic-friction (hit-dynamic-friction hit))
 (define-accessor-delegate-methods depth (hit-depth hit))
 
+(declaim (inline reverse-hit))
+(defun reverse-hit (hit)
+  (nv- (hit-normal hit))
+  (rotatef (hit-a hit) (hit-b hit))
+  hit)
+
 (defclass physics-system (entity listener)
   ((forces :initform (make-array 0 :adjustable T :fill-pointer T) :accessor forces)
    (%objects :initform (make-array 0 :adjustable T :fill-pointer T) :accessor %objects)
