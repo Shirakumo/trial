@@ -83,12 +83,12 @@
 (defmethod (setf physics-primitives) ((primitives list) (entity rigid-shape))
   (setf (physics-primitives entity) (coerce primitives 'vector)))
 
-(defmethod %update-rigidbody-cache ((rigidbody rigid-shape))
-  (setf (global-bounds-cache-dirty-p (global-bounds-cache rigidbody)) T)
-  (tmat (tf rigidbody) (transform-matrix rigidbody))
-  (loop for primitive across (physics-primitives rigidbody)
+(defmethod %update-rigidbody-cache ((entity rigid-shape))
+  (setf (global-bounds-cache-dirty-p (global-bounds-cache entity)) T)
+  (tmat (tf entity) (transform-matrix entity))
+  (loop for primitive across (physics-primitives entity)
         do (!m* (primitive-transform primitive)
-                (transform-matrix rigidbody)
+                (transform-matrix entity)
                 (primitive-local-transform primitive))
            (invalidate-global-bounds-cache primitive)))
 
@@ -97,21 +97,6 @@
 
 (defmethod awake-p ((entity trigger-volume))
   NIL)
-
-(defmethod collides-p ((a trigger-volume) (b trigger-volume) hit)
-  NIL)
-
-(defmethod resolve-collision ((a trigger-volume) (b rigidbody) hit)
-  (resolve-collision b a (reverse-hit hit)))
-
-(defmethod resolve-collision ((a rigidbody) (b trigger-volume) hit)
-  (no-applicable-method #'resolve-collision (list a b hit)))
-
-(defmethod resolve-collision-impact ((a rigidbody) (b trigger-volume) hit))
-
-(defmethod resolve-collision :after ((a rigidbody) (b trigger-volume) (contact contact))
-  (setf (contact-desired-delta contact) 0.0)
-  (setf (contact-depth contact) 0.0))
 
 (defclass rigidbody (rigid-shape)
   ((rotation :initform (vec 0 0 0) :reader rotation)
