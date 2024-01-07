@@ -1,5 +1,9 @@
 (in-package #:org.shirakumo.fraf.trial)
 
+(declaim (type (function (primitive primitive simple-vector (unsigned-byte 32) (unsigned-byte 32)))
+               +generic-hit-detector+))
+(define-global +generic-hit-detector+ (lambda (a b h s e) s))
+
 ;; FIXME: none of these properly take the scaling
 ;;        of the transform into account.
 
@@ -68,6 +72,9 @@
         (setf (hit-a hit) a)
         (setf (hit-b hit) b)
         (incf start)))))
+
+(trial:define-hit-detector (trial:primitive trial:primitive)
+  (setf trial:start (funcall +generic-hit-detector+ a b trial:hits trial:start trial:end)))
 
 (define-hit-detector (half-space vec3)
   (let ((dist (- (v. (plane-normal a) b)

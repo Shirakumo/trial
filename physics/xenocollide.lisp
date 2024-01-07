@@ -131,6 +131,3 @@
            (1+ start))
           (T
            start))))
-
-(trial:define-hit-detector (trial:primitive trial:primitive)
-  (setf trial:start (detect-hits a b trial:hits trial:start trial:end)))

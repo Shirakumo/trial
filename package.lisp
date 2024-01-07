@@ -280,6 +280,9 @@
    #:generate-hits
    #:resolve-hits
    #:physics-scene)
+  ;; physics/hit-detection.lisp
+  (:export
+   #:+generic-hit-detector+)
   ;; physics/inertia-tensors.lisp
   (:export
    #:define-tensor-fun
