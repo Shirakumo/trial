@@ -152,7 +152,8 @@
                      (blend-into (pose controller) (pose controller) (fade-target-pose target) time))))))))
 
 (defclass animation-controller (ik-controller layer-controller fade-controller listener)
-  ((updated-on :initform -1 :accessor updated-on)
+  ((model :initform NIL :accessor model)
+   (updated-on :initform -1 :accessor updated-on)
    (palette :initform #() :accessor palette)
    (palette-texture :initform (make-instance 'texture :target :texture-1d-array :width 3 :height 1 :internal-format :rgba32f :min-filter :nearest :mag-filter :nearest) :accessor palette-texture)
    (palette-data :initform (make-array 0 :element-type 'single-float) :accessor palette-data)))
@@ -168,19 +169,22 @@
   (format stream "Skeleton:~%")
   (describe-skeleton (skeleton entity) stream))
 
-(defmethod (setf mesh-asset) ((asset model-file) (entity animation-controller))
+(defmethod observe-load-state ((entity animation-controller) (asset model) (state (eql :loaded)) (area staging-area))
+  (setf (model entity) asset))
+
+(defmethod (setf model) :after ((asset model-file) (entity animation-controller))
   (when (loaded-p asset)
     (setf (skeleton entity) (skeleton asset)))
   (play (or (clip entity) T) entity))
 
 (defmethod find-clip (name (entity animation-controller) &optional (errorp T))
-  (if (null (mesh-asset entity))
+  (if (null (model entity))
       (when errorp (error "No such clip ~s found on ~a" name entity))
-      (find-clip name (mesh-asset entity) errorp)))
+      (find-clip name (model entity) errorp)))
 
 (defmethod list-clips ((entity animation-controller))
-  (when (mesh-asset entity)
-    (list-clips (mesh-asset entity))))
+  (when (model entity)
+    (list-clips (model entity))))
 
 (defmethod add-layer (clip-name (entity animation-controller) &key (name NIL name-p))
   (let ((clip (find-clip clip-name entity)))
@@ -193,7 +197,7 @@
   (play (find-clip name entity) entity))
 
 (defmethod play ((anything (eql T)) (entity animation-controller))
-  (loop for clip being the hash-values of (clips (mesh-asset entity))
+  (loop for clip being the hash-values of (clips (model entity))
         do (return (play clip entity))))
 
 (defmethod update ((entity animation-controller) tt dt fc)
@@ -220,7 +224,7 @@
   (let* ((palette (matrix-palette (pose entity) (palette entity)))
          (texinput (%adjust-array (palette-data entity) (* 12 (length (pose entity))) (constantly 0f0)))
          (texture (palette-texture entity))
-         (inv (mat-inv-bind-pose (skeleton (mesh-asset entity)))))
+         (inv (mat-inv-bind-pose (skeleton (model entity)))))
     (mem:with-memory-region (texptr texinput)
       (dotimes (i (length palette) (setf (palette entity) palette))
         (let ((mat (nm* (svref palette i) (svref inv i)))
@@ -234,18 +238,19 @@
       (update-buffer-data texture texinput :pixel-type :float :pixel-format :rgba))))
 
 (define-shader-entity base-animated-entity (mesh-entity)
-  ((animation-controller :initform NIL :accessor animation-controller)))
+  ((animation-controller :initform (make-instance 'animation-controller) :accessor animation-controller)))
 
-(define-accessor-delegate-methods pose (animation-controller base-animated-entity))
-(define-accessor-delegate-methods palette (animation-controller base-animated-entity))
-(define-accessor-delegate-methods palette-texture (animation-controller base-animated-entity))
+(define-accessor-wrapper-methods clip (base-animated-entity (animation-controller base-animated-entity)))
+(define-accessor-wrapper-methods skeleton (base-animated-entity (animation-controller base-animated-entity)))
+(define-accessor-wrapper-methods pose (base-animated-entity (animation-controller base-animated-entity)))
+(define-accessor-wrapper-methods palette (base-animated-entity (animation-controller base-animated-entity)))
+(define-accessor-wrapper-methods palette-texture (base-animated-entity (animation-controller base-animated-entity)))
 
-(defmethod (setf mesh-asset) :after ((asset model-file) (entity animation-controller))
-  (unless (animation-controller entity)
-    (setf (animation-controller entity) (make-instance 'animation-controller)))
-  (setf (mesh-asset (animation-controller entity)) asset))
+(defmethod (setf mesh-asset) :after ((asset model-file) (entity base-animated-entity))
+  (setf (model (animation-controller entity)) asset))
 
 (defmethod stage :after ((entity base-animated-entity) (area staging-area))
+  (register-load-observer area (animation-controller entity) (mesh-asset entity))
   (stage (animation-controller entity) area))
 
 (defmethod play (thing (entity base-animated-entity))
