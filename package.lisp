@@ -46,15 +46,22 @@
    #:animation-layer
    #:strength
    #:layer-controller
-   #:layers
-   #:add-layer
-   #:remove-layer
-   #:layer
+   #:animation-layers
+   #:add-animation-layer
+   #:remove-animation-layer
+   #:animation-layer
+   #:fade-target
    #:fade-controller
+   #:fade-targets
+   #:clip
+   #:playback-speed
    #:play
    #:fade-to
    #:animation-controller
    #:model
+   #:palette
+   #:palette-texture
+   #:palette-data
    #:base-animated-entity
    #:armature
    #:animated-entity

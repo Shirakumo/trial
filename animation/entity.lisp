@@ -25,19 +25,19 @@
     (setf (animation-layer-strength layer) strength)))
 
 (defclass layer-controller ()
-  ((layers :initform (make-hash-table :test 'equalp) :accessor layers)
+  ((animation-layers :initform (make-hash-table :test 'equalp) :accessor animation-layers)
    (pose :accessor pose)
    (skeleton :initform NIL :accessor skeleton)))
 
-(defmethod shared-initialize :after ((controller layer-controller) slots &key layers)
-  (loop for layer in layers
+(defmethod shared-initialize :after ((controller layer-controller) slots &key animation-layers)
+  (loop for layer in animation-layers
         for (clip . args) = (enlist layer)
         do (apply #'add-layer clip controller args)))
 
 (defmethod describe-object :after ((controller layer-controller) stream)
   (terpri stream)
   (format stream "Layers:~%")
-  (let ((layers (sort (alexandria:hash-table-keys (layers controller)) #'string<)))
+  (let ((layers (sort (alexandria:hash-table-keys (animation-layers controller)) #'string<)))
     (if layers
         (loop for name in layers
               for layer = (layer name controller)
@@ -46,26 +46,26 @@
 
 (defmethod update ((controller layer-controller) tt dt fc)
   (when (next-method-p) (call-next-method))
-  (loop for layer being the hash-values of (layers controller)
+  (loop for layer being the hash-values of (animation-layers controller)
         do (layer-onto (pose controller) (pose controller) (animation-layer-pose layer) (animation-layer-base layer))))
 
-(defmethod add-layer ((layer animation-layer) (controller layer-controller) &key name)
+(defmethod add-animation-layer ((layer animation-layer) (controller layer-controller) &key name)
   (setf (layer name controller) layer))
 
-(defmethod add-layer ((clip clip) (controller layer-controller) &key (strength 0.0) (name (name clip)))
+(defmethod add-animation-layer ((clip clip) (controller layer-controller) &key (strength 0.0) (name (name clip)))
   (setf (layer name controller) (make-animation-layer clip (skeleton controller) :strength strength)))
 
-(defmethod remove-layer (name (controller layer-controller))
+(defmethod remove-animation-layer (name (controller layer-controller))
   (setf (layer name controller) NIL))
 
-(defmethod layer (name (controller layer-controller))
-  (gethash name (layers controller)))
+(defmethod animation-layer (name (controller layer-controller))
+  (gethash name (animation-layers controller)))
 
-(defmethod (setf layer) ((layer animation-layer) name (controller layer-controller))
-  (setf (gethash name (layers controller)) layer))
+(defmethod (setf animation-layer) ((layer animation-layer) name (controller layer-controller))
+  (setf (gethash name (animation-layers controller)) layer))
 
-(defmethod (setf layer) ((null null) name (controller layer-controller))
-  (remhash name (layers controller))
+(defmethod (setf animation-layer) ((null null) name (controller layer-controller))
+  (remhash name (animation-layers93 controller))
   null)
 
 (defstruct (fade-target
@@ -76,8 +76,14 @@
   (duration 0.0 :type single-float)
   (elapsed 0.0 :type single-float))
 
+(defmethod pose ((target fade-target)) (fade-target-pose target))
+(defmethod clip ((target fade-target)) (fade-target-clip target))
+(defmethod clock ((target fade-target)) (fade-target-clock target))
+(defmethod duration ((target fade-target)) (fade-target-duration target))
+(defmethod elapsed ((target fade-target)) (fade-target-elapsed target))
+
 (defclass fade-controller ()
-  ((targets :initform (make-array 0 :adjustable T :fill-pointer T) :accessor targets)
+  ((fade-targets :initform (make-array 0 :adjustable T :fill-pointer T) :accessor fade-targets)
    (clip :initarg :clip :initform NIL :accessor clip)
    (clock :initform 0.0 :accessor clock)
    (playback-speed :initarg :playback-speed :initform 1.0 :accessor playback-speed)
@@ -100,8 +106,8 @@
       (format stream "  No current clip.~%"))
   (terpri stream)
   (format stream "Fade Targets:~%")
-  (if (< 0 (length (targets controller)))
-      (loop for target across (targets controller)
+  (if (< 0 (length (fade-targets controller)))
+      (loop for target across (fade-targets controller)
             do (format stream "  ~4f / ~4f ~s~%"
                        (fade-target-clock target) (fade-target-duration target)
                        (name (fade-target-clip target))))
@@ -110,14 +116,14 @@
 (defmethod play ((target clip) (controller fade-controller))
   (unless (eq target (clip controller))
     (setf (playback-speed controller) 1.0)
-    (setf (fill-pointer (targets controller)) 0)
+    (setf (fill-pointer (fade-targets controller)) 0)
     (setf (clip controller) target)
     (pose<- (pose controller) (rest-pose (skeleton controller)))
     (setf (clock controller) (start-time target))
     (sample (pose controller) (clip controller) (clock controller))))
 
 (defmethod fade-to ((target clip) (controller fade-controller) &key (duration 0.2))
-  (let ((targets (targets controller)))
+  (let ((targets (fade-targets controller)))
     (cond ((null (clip controller))
            (play target controller))
           ((and (or (= 0 (length targets))
@@ -130,7 +136,7 @@
   (when (next-method-p) (call-next-method))
   (let ((clip (clip controller)))
     (when (and clip (skeleton controller))
-      (let ((targets (targets controller)))
+      (let ((targets (fade-targets controller)))
         (loop for target across targets
               for i from 0
               do (when (<= (fade-target-duration target) (fade-target-elapsed target))
@@ -235,7 +241,7 @@
     (setf (palette-data entity) texinput)
     (setf (height texture) (length palette))
     (when (gl-name texture)
-      (update-buffer-data texture texinput :pixel-type :float :pixel-format :rgba))))
+      (resize-buffer-data texture texinput :pixel-type :float :pixel-format :rgba))))
 
 (define-shader-entity base-animated-entity (mesh-entity)
   ((animation-controller :initform (make-instance 'animation-controller) :accessor animation-controller)))
