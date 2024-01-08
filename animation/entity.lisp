@@ -151,10 +151,13 @@
                    (let ((time (min 1.0 (/ (fade-target-elapsed target) (fade-target-duration target)))))
                      (blend-into (pose controller) (pose controller) (fade-target-pose target) time))))))))
 
-(define-shader-entity base-animated-entity (mesh-entity ik-controller layer-controller fade-controller listener)
-  ())
+(defclass animation-controller (ik-controller layer-controller fade-controller listener)
+  ((updated-on :initform -1 :accessor updated-on)
+   (palette :initform #() :accessor palette)
+   (palette-texture :initform (make-instance 'texture :target :texture-1d-array :width 3 :height 1 :internal-format :rgba32f :min-filter :nearest :mag-filter :nearest) :accessor palette-texture)
+   (palette-data :initform (make-array 0 :element-type 'single-float) :accessor palette-data)))
 
-(defmethod describe-object :after ((entity base-animated-entity) stream)
+(defmethod describe-object :after ((entity animation-controller) stream)
   (terpri stream)
   (format stream "Available Clips:~%")
   (if (list-clips entity)
@@ -165,68 +168,55 @@
   (format stream "Skeleton:~%")
   (describe-skeleton (skeleton entity) stream))
 
-(defmethod (setf mesh-asset) :after ((asset model-file) (entity base-animated-entity))
+(defmethod (setf mesh-asset) ((asset model-file) (entity animation-controller))
   (when (loaded-p asset)
     (setf (skeleton entity) (skeleton asset)))
   (play (or (clip entity) T) entity))
 
-(defmethod find-clip (name (entity base-animated-entity) &optional (errorp T))
+(defmethod find-clip (name (entity animation-controller) &optional (errorp T))
   (if (null (mesh-asset entity))
       (when errorp (error "No such clip ~s found on ~a" name entity))
       (find-clip name (mesh-asset entity) errorp)))
 
-(defmethod list-clips ((entity base-animated-entity))
+(defmethod list-clips ((entity animation-controller))
   (when (mesh-asset entity)
     (list-clips (mesh-asset entity))))
 
-(defmethod add-layer (clip-name (entity base-animated-entity) &key (name NIL name-p))
+(defmethod add-layer (clip-name (entity animation-controller) &key (name NIL name-p))
   (let ((clip (find-clip clip-name entity)))
     (add-layer clip entity :name (if name-p name (name clip)))))
 
-(defmethod fade-to ((name string) (entity base-animated-entity) &rest args)
+(defmethod fade-to ((name string) (entity animation-controller) &rest args)
   (apply #'fade-to (find-clip name entity) entity args))
 
-(defmethod play ((name string) (entity base-animated-entity))
+(defmethod play ((name string) (entity animation-controller))
   (play (find-clip name entity) entity))
 
-(defmethod play ((anything (eql T)) (entity base-animated-entity))
+(defmethod play ((anything (eql T)) (entity animation-controller))
   (loop for clip being the hash-values of (clips (mesh-asset entity))
         do (return (play clip entity))))
 
-(defmethod handle ((ev tick) (entity base-animated-entity))
-  (when (pose entity)
-    (update entity (tt ev) (dt ev) (fc ev))))
+(defmethod update ((entity animation-controller) tt dt fc)
+  (when (/= (updated-on entity) fc)
+    (call-next-method)
+    (update-palette entity)
+    (setf (updated-on entity) fc)))
 
-(define-shader-entity armature (base-animated-entity lines)
-  ((color :initarg :color :initform (vec 0 0 0 1) :accessor color)))
-
-(defmethod handle ((ev tick) (entity armature))
-  (when (pose entity)
-    (update entity (tt ev) (dt ev) (fc ev))
-    (replace-vertex-data entity (pose entity) :default-color (color entity))))
-
-(define-shader-entity animated-entity (base-animated-entity transformed-entity)
-  ((palette :initform #() :accessor palette)
-   (palette-texture :initform (make-instance 'texture :target :texture-1d-array :width 3 :height 1 :internal-format :rgba32f :min-filter :nearest :mag-filter :nearest) :accessor palette-texture)
-   (palette-data :initform (make-array 0 :element-type 'single-float) :accessor palette-data)
-   (mesh :initarg :mesh :initform NIL :accessor mesh)))
-
-(defmethod stage :after ((entity animated-entity) (area staging-area))
+(defmethod stage :after ((entity animation-controller) (area staging-area))
   (stage (palette-texture entity) area))
 
-(defmethod (setf mesh-asset) :after ((asset model-file) (entity animated-entity))
-  (unless (loaded-p asset)
-    (setf (palette entity) #(#.(meye 4)))))
-
-(defmethod (setf pose) :after ((pose pose) (entity animated-entity))
+(defmethod (setf pose) :after ((pose pose) (entity animation-controller))
   (update-palette entity))
 
-(defmethod (setf ik-system) :after ((system ik-system) name (entity animated-entity))
+(defmethod (setf ik-system) :after ((system ik-system) name (entity animation-controller))
   ;; Hook up our local transform to the IK system's. Since the identity never changes
   ;; the properties "transfer".
   (setf (slot-value system 'transform) (tf entity)))
 
-(defmethod update-palette ((entity animated-entity))
+(define-handler ((entity animation-controller) (ev tick)) (tt dt fc)
+  (update entity tt dt fc))
+
+(defmethod update-palette ((entity animation-controller))
   (let* ((palette (matrix-palette (pose entity) (palette entity)))
          (texinput (%adjust-array (palette-data entity) (* 12 (length (pose entity))) (constantly 0f0)))
          (texture (palette-texture entity))
@@ -243,10 +233,51 @@
     (when (gl-name texture)
       (update-buffer-data texture texinput :pixel-type :float :pixel-format :rgba))))
 
-(defmethod handle ((ev tick) (entity animated-entity))
-  (when (pose entity)
-    (update entity (tt ev) (dt ev) (fc ev))
-    (update-palette entity)))
+(define-shader-entity base-animated-entity (mesh-entity)
+  ((animation-controller :initform NIL :accessor animation-controller)))
+
+(define-accessor-delegate-methods pose (animation-controller base-animated-entity))
+(define-accessor-delegate-methods palette (animation-controller base-animated-entity))
+(define-accessor-delegate-methods palette-texture (animation-controller base-animated-entity))
+
+(defmethod (setf mesh-asset) :after ((asset model-file) (entity animation-controller))
+  (unless (animation-controller entity)
+    (setf (animation-controller entity) (make-instance 'animation-controller)))
+  (setf (mesh-asset (animation-controller entity)) asset))
+
+(defmethod stage :after ((entity base-animated-entity) (area staging-area))
+  (stage (animation-controller entity) area))
+
+(defmethod play (thing (entity base-animated-entity))
+  (play thing (animation-controller entity)))
+
+(defmethod fade-to (thing (entity base-animated-entity) &rest args)
+  (apply #'fade-to thing (animation-controller entity) args))
+
+(defmethod add-layer (thing (entity base-animated-entity) &rest args)
+  (apply #'add-layer thing (animation-controller entity) args))
+
+(defmethod find-clip (thing (entity base-animated-entity) &optional (errorp T))
+  (find-clip thing entity errorp))
+
+(defmethod list-clips ((entity base-animated-entity))
+  (list-clips entity))
+
+(define-handler ((entity base-animated-entity) (ev tick) :before) ()
+  (handle ev (animation-controller entity)))
+
+(define-shader-entity armature (base-animated-entity lines)
+  ((color :initarg :color :initform (vec 0 0 0 1) :accessor color)))
+
+(define-handler ((entity armature) (ev tick) :after) ()
+  (replace-vertex-data entity (pose entity) :default-color (color entity)))
+
+(define-shader-entity animated-entity (base-animated-entity transformed-entity)
+  ((mesh :initarg :mesh :initform NIL :accessor mesh)))
+
+(defmethod (setf mesh-asset) :after ((asset model-file) (entity animated-entity))
+  (unless (loaded-p asset)
+    (setf (palette entity) #(#.(meye 4)))))
 
 (defmethod render :before ((entity animated-entity) (program shader-program))
   (declare (optimize speed))
@@ -289,15 +320,25 @@ void main(){
   gl_Position = projection_matrix * view_matrix * world_pos;
 }")
 
-(define-shader-entity quat2-animated-entity (animated-entity)
-  ()
-  (:inhibit-shaders (animated-entity :vertex-shader)))
+(defclass quat2-animation-controller (animation-controller)
+  ())
 
-(defmethod update-palette ((entity quat2-animated-entity))
+(defmethod update-palette ((entity quat2-animation-controller))
+  ;; FIXME: Update for texture data
   (let ((palette (quat2-palette (pose entity) (palette entity)))
         (inv (quat-inv-bind-pose (skeleton (mesh-asset entity)))))
     (dotimes (i (length palette) (setf (palette entity) palette))
       (nq* (svref palette i) (svref inv i)))))
+
+(define-shader-entity quat2-animated-entity (base-animated-entity)
+  ())
+
+(defmethod render :before ((entity quat2-animated-entity) (program shader-program))
+  (declare (optimize speed))
+  ;; KLUDGE: This is Bad
+  (%gl:active-texture :texture5)
+  (gl:bind-texture :texture-1d-array (gl-name (palette-texture entity)))
+  (setf (uniform program "pose") 5))
 
 (define-class-shader (quat2-animated-entity :vertex-shader)
   "
