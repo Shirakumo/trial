@@ -277,7 +277,7 @@
 (define-handler ((entity armature) (ev tick) :after) ()
   (replace-vertex-data entity (pose entity) :default-color (color entity)))
 
-(define-shader-entity animated-entity (base-animated-entity transformed-entity)
+(define-shader-entity animated-entity (base-animated-entity transformed-entity listener)
   ((mesh :initarg :mesh :initform NIL :accessor mesh)))
 
 (defmethod (setf mesh-asset) :after ((asset model-file) (entity animated-entity))

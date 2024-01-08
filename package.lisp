@@ -53,6 +53,8 @@
    #:fade-controller
    #:play
    #:fade-to
+   #:animation-controller
+   #:model
    #:base-animated-entity
    #:armature
    #:animated-entity
