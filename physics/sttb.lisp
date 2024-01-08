@@ -491,5 +491,3 @@
                (1+ start))
               (T
                start)))))
-
-(setf trial:+generic-hit-detector+ #'detect-hits)

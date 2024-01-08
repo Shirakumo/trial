@@ -490,3 +490,17 @@
 #++(define-intersection-test (triangle triangle))
 #++(define-distance (triangle triangle))
 #++(define-hit-detector (triangle triangle))
+
+(progn
+  (defconstant MPR-HIT-DEPTH-LIMIT 0.1)
+  
+  (defun detect-hits-mpr+sttb (a b hits start end)
+    (declare (optimize speed))
+    (declare (type (simple-array hit (*)) hits))
+    (declare (type (unsigned-byte 32) start end))
+    (let ((start2 (the (unsigned-byte 32) (org.shirakumo.fraf.trial.mpr:detect-hits a b hits start end))))
+      (if (and (< start start2) (< MPR-HIT-DEPTH-LIMIT (hit-depth (aref hits start))))
+          (print (org.shirakumo.fraf.trial.sttb:detect-hits a b hits start end))
+          start2)))
+
+  (setf +generic-hit-detector+ #'detect-hits-mpr+sttb))
