@@ -274,16 +274,13 @@
 (defmethod list-clips ((entity base-animated-entity))
   (list-clips entity))
 
-(define-handler ((entity base-animated-entity) (ev tick) :before) ()
-  (handle ev (animation-controller entity)))
-
 (define-shader-entity armature (base-animated-entity lines)
   ((color :initarg :color :initform (vec 0 0 0 1) :accessor color)))
 
 (define-handler ((entity armature) (ev tick) :after) ()
   (replace-vertex-data entity (pose entity) :default-color (color entity)))
 
-(define-shader-entity animated-entity (base-animated-entity transformed-entity listener)
+(define-shader-entity animated-entity (base-animated-entity transformed-entity)
   ((mesh :initarg :mesh :initform NIL :accessor mesh)))
 
 (defmethod (setf mesh-asset) :after ((asset model-file) (entity animated-entity))
