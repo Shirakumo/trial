@@ -258,7 +258,7 @@
   (apply #'add-layer thing (animation-controller entity) args))
 
 (defmethod find-clip (thing (entity base-animated-entity) &optional (errorp T))
-  (find-clip thing entity errorp))
+  (find-clip thing (animation-controller entity) errorp))
 
 (defmethod list-clips ((entity base-animated-entity))
   (list-clips entity))

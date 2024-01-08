@@ -1859,6 +1859,8 @@
 
 (defpackage #:org.shirakumo.fraf.trial.gjk
   (:use #:cl #:org.shirakumo.fraf.math)
+  (:intern #:point #:point-a #:point-b #:p<-
+           #:barycentric #:search-point #:projected-cross)
   (:export
    #:detect-hits
    #:support-function))
