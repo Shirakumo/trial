@@ -30,6 +30,8 @@
 
 (defmethod cast-shadows-p ((light light)) NIL)
 
+(defmethod in-view-p ((target light) camera) T)
+
 (defclass ambient-light (light)
   ())
 
@@ -61,6 +63,8 @@
   (setf (light-type target) 2)
   (when (shadow-map light) (setf (shadow-map target) (shadow-map light))))
 
+;; TODO: Implement IN-VIEW-P for spot-light
+
 (defclass directional-light (light)
   ((direction :initform (vec 0 -1 0) :reader direction)
    (shadow-map :initarg :shadow-map :initform NIL :accessor shadow-map)
@@ -85,6 +89,8 @@
   #.(vec most-positive-single-float
          most-positive-single-float
          most-positive-single-float))
+
+;; TODO: Implement IN-VIEW-P for directional-light
 
 (defclass spot-light (directional-light located-light)
   ((inner-radius :initform 0.976296)
@@ -123,3 +129,5 @@
 (defmethod (setf target) ((entity entity) (light spot-light))
   (setf (target light) (global-location entity))
   entity)
+
+;; TODO: Implement IN-VIEW-P for spot-light

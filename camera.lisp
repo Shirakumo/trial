@@ -54,6 +54,9 @@
 
 (defmethod in-view-p (object (camera camera)) T)
 
+(defmethod in-view-p (object (standard (eql T)))
+  (in-view-p object (camera (scene +main+))))
+
 (defclass 2d-camera (camera)
   ()
   (:default-initargs

@@ -168,12 +168,14 @@
               do (when light (transfer-to struct light)))
         (setf (dirty-p struct) NIL)))
     (dotimes (id (length lights))
-      (when (aref lights id)
+      (when (and (aref lights id) (in-view-p (aref lights id) T))
         (setf (uniform program "shadow_map_id") id)
         (%gl:framebuffer-texture-layer :framebuffer :depth-attachment map 0 id)
         (gl:clear :depth-buffer)
         (loop for (object) across frame
               do (when (typep object 'standard-renderable)
+                   ;; TODO: we can also use in-view-p to eliminate objects
+                   ;;       outside the shadow map purview.
                    (with-pushed-matrix ()
                      (apply-transforms object)
                      (render object program))))))
