@@ -164,15 +164,16 @@
 
 (defmethod resize-buffer-data ((buffer texture) (data vector) &key (level 0) (width (width buffer)) (height (height buffer)) (depth (depth buffer))
                                                                    (pixel-format (pixel-format buffer)) (pixel-type (pixel-type buffer)))
-  (cffi:with-pointer-to-vector-data (ptr data)
-    (gl:bind-texture (target buffer) (gl-name buffer))
-    (ecase (target buffer)
-      (:texture-1d
-       (%gl:tex-image-1d (target buffer) level (internal-format buffer) width 0 pixel-format pixel-type ptr))
-      ((:texture-2d :texture-1d-array)
-       (%gl:tex-image-2d (target buffer) level (internal-format buffer) width height 0 pixel-format pixel-type ptr))
-      ((:texture-3d :texture-2d-array)
-       (%gl:tex-image-3d (target buffer) level (internal-format buffer) width height depth 0 pixel-format pixel-type ptr)))))
+  (let ((internal-format (cffi:foreign-enum-value '%gl:enum (internal-format buffer))))
+    (cffi:with-pointer-to-vector-data (ptr data)
+      (gl:bind-texture (target buffer) (gl-name buffer))
+      (ecase (target buffer)
+        (:texture-1d
+         (%gl:tex-image-1d (target buffer) level internal-format width 0 pixel-format pixel-type ptr))
+        ((:texture-2d :texture-1d-array)
+         (%gl:tex-image-2d (target buffer) level internal-format width height 0 pixel-format pixel-type ptr))
+        ((:texture-3d :texture-2d-array)
+         (%gl:tex-image-3d (target buffer) level internal-format width height depth 0 pixel-format pixel-type ptr))))))
 
 (defmethod print-object ((texture texture) stream)
   (print-unreadable-object (texture stream :type T :identity T)
