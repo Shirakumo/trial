@@ -1166,6 +1166,7 @@
    #:make-vertex-data)
   ;; gl-features.lisp
   (:export
+   #:feature-enabled-p
    #:enable-feature
    #:disable-feature
    #:push-features

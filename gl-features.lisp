@@ -58,6 +58,9 @@
 (defun feature-table ()
   (aref +feature-table-stack+ +feature-table-stack-ptr+))
 
+(defun feature-enabled-p (feature)
+  (gethash feature (feature-table)))
+
 (defun enable-feature (&rest features)
   (let ((table (feature-table)))
     (dolist (feature features)
