@@ -82,7 +82,8 @@
         do (setf (gethash resource (load-state area)) state)))
 
 (defmethod unstage ((object resource) (area staging-area))
-  (deallocate object)
+  (when (allocated-p object)
+    (deallocate object))
   (change-state area object NIL))
 
 (defmethod unstage ((object asset) (area staging-area))
