@@ -1,12 +1,3 @@
-(defpackage #:org.shirakumo.fraf.trial.v-clip
-  (:use #:cl #:org.shirakumo.fraf.math)
-  (:export
-   #:state
-   #:v-clip
-   #:mesh
-   #:make-triangle-mesh
-   #:detect-hits))
-
 (in-package #:org.shirakumo.fraf.trial.v-clip)
 
 (declaim (inline dbg))

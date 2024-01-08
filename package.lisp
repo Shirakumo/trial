@@ -1850,3 +1850,35 @@
 (defpackage #:trial-user
   (:nicknames #:org.shirakumo.fraf.trial.user)
   (:use #:cl+trial))
+
+(defpackage #:org.shirakumo.fraf.trial.mpr
+  (:use #:cl #:org.shirakumo.fraf.math)
+  (:export
+   #:detect-hits
+   #:support-function))
+
+(defpackage #:org.shirakumo.fraf.trial.gjk
+  (:use #:cl #:org.shirakumo.fraf.math)
+  (:export
+   #:detect-hits
+   #:support-function))
+
+(defpackage #:org.shirakumo.fraf.trial.sttb
+  (:use #:cl #:org.shirakumo.fraf.math)
+  (:import-from #:org.shirakumo.fraf.trial.gjk
+                #:point #:point-a #:point-b #:p<-
+                #:barycentric
+                #:search-point
+                ;; from gjk-raycast
+                #:projected-cross)
+  (:export
+   #:detect-hits))
+
+(defpackage #:org.shirakumo.fraf.trial.v-clip
+  (:use #:cl #:org.shirakumo.fraf.math)
+  (:export
+   #:state
+   #:v-clip
+   #:mesh
+   #:make-triangle-mesh
+   #:detect-hits))

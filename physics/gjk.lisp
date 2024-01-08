@@ -2,12 +2,6 @@
 ;;;   https://github.com/Another-Ghost/3D-Collision-Detection-and-Resolution-Using-GJK-and-EPA
 ;;; Though it has been largely modified and extended.
 
-(defpackage #:org.shirakumo.fraf.trial.gjk
-  (:use #:cl #:org.shirakumo.fraf.math)
-  (:export
-   #:detect-hits
-   #:support-function))
-
 (in-package #:org.shirakumo.fraf.trial.gjk)
 
 (defconstant GJK-ITERATIONS 64)

@@ -1,22 +1,10 @@
 ;;; based on
 ;;; https://www.bepuentertainment.com/blog/2022/3/10/seeking-the-tootbird
 
-(defpackage #:org.shirakumo.fraf.trial.sttb
-  (:use #:cl #:org.shirakumo.fraf.math)
-  (:import-from #:org.shirakumo.fraf.trial.gjk
-                #:point #:point-a #:point-b #:p<-
-                #:barycentric
-                #:search-point
-                ;; from gjk-raycast
-                #:projected-cross)
-  (:export
-   #:detect-hits))
-
 (in-package #:org.shirakumo.fraf.trial.sttb)
 
 (defconstant STTB-ITERATIONS 64)
 (defconstant STTB-TOLERANCE 0.0001)
-
 
 (defun update-tootbird (s0 dir tootbird best)
   (declare (type point s0)

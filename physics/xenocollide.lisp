@@ -2,12 +2,6 @@
 ;;;   https://github.com/erwincoumans/xenocollide
 ;;;
 
-(defpackage #:org.shirakumo.fraf.trial.mpr
-  (:use #:cl #:org.shirakumo.fraf.math)
-  (:export
-   #:detect-hits
-   #:support-function))
-
 (in-package #:org.shirakumo.fraf.trial.mpr)
 
 (defconstant COLLIDE-EPS 1f-3)
