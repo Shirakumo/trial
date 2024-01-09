@@ -4,7 +4,8 @@
   (pathname-utils:to-directory (config :output)))
 
 (defun version (&optional (system (config :system)))
-  (asdf:component-version (asdf:find-system system)))
+  (or (asdf:component-version (asdf:find-system system))
+      "release"))
 
 (defun release ()
   (pathname-utils:subdirectory (output) (version)))
