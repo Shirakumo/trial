@@ -113,6 +113,8 @@
 (defgeneric event-to-action-mapping (event action &key))
 (defgeneric stratify-action-mapping (mapping))
 
+(defmethod clear ((mapping action-mapping)))
+
 (defmethod active-p ((mapping action-mapping))
   (active-p (slot-value mapping '%action-prototype)))
 
@@ -164,7 +166,7 @@
                :off)))))
 
 (defmethod event-active-p ((event digital-event) (mapping digital-mapping))
-  (if (typep event '(or key-press mouse-press gamepad-press))
+  (if (typep event 'press-event)
       :on :off))
 
 (defmethod perform-event-mapping (event (mapping digital-mapping) loop)
@@ -293,19 +295,40 @@
 (defclass digital-directional-mapping (action-mapping)
   ((high-value :initarg :high-value :initform 1.0 :accessor high-value)
    (low-value :initarg :low-value :initform 0.0 :accessor low-value)
-   (axis :initarg :axis :initform :x :accessor axis)))
+   (axis :initarg :axis :initform :x :accessor axis)
+   ;; KLUDGE: I kind of hate having to keep this state here.
+   (pressed-p :initform NIL :accessor pressed-p)))
+
+(defmethod clear ((mapping digital-directional-mapping))
+  (setf (pressed-p mapping) NIL))
+
+(defmethod maybe-reactivate-other-mapping ((like digital-directional-mapping))
+  ;; KLUDGE: This kind of blows since we need to scan all mappings explicitly.
+  (dolist (mapping *action-mappings* NIL)
+    (when (and (not (eq mapping like))
+               (typep mapping 'digital-directional-mapping)
+               (eq (action-type mapping) (action-type like))
+               (eq (axis mapping) (axis like))
+               (pressed-p mapping))
+      (setf (aref (varr (directional (action-type mapping)))
+                  (ecase (axis mapping)
+                    (:x 0) (:y 1) (:z 2) (:w 3)))
+            (high-value mapping))
+      (return T))))
 
 (defmethod perform-event-mapping (event (mapping digital-directional-mapping) loop)
-  (let* ((value (if (typep event '(or key-press mouse-press gamepad-press))
-                    (high-value mapping)
-                    (low-value mapping)))
-         (action (action-type mapping))
-         (vec (directional action)))
-    (ecase (axis mapping)
-      (:x (setf (vx vec) value))
-      (:y (setf (vy vec) value))
-      (:z (setf (vz vec) value))
-      (:w (setf (vw vec) value)))
+  (let* ((action (action-type mapping))
+         (vec (directional action))
+         (axis (ecase (axis mapping)
+                 (:x 0) (:y 1) (:z 2) (:w 3))))
+    (cond ((typep event 'press-event)
+           (setf (pressed-p mapping) T)
+           (setf (aref (varr vec) axis) (high-value mapping)))
+          ((maybe-reactivate-other-mapping mapping)
+           (setf (pressed-p mapping) NIL))
+          (T
+           (setf (pressed-p mapping) NIL)
+           (setf (aref (varr vec) axis) (low-value mapping))))
     (let ((event (make-event action)))
       (v<- (direction event) vec)
       (issue loop event))))
@@ -460,10 +483,12 @@
   ;;       very likely not change for a long time (comparatively). We should cache
   ;;       the set of applicable mappings depending on active action-sets whenever
   ;;       those change.
-  (dolist (mapping *action-mappings*)
-    (when (and (active-p mapping)
-               (event-applicable-p event mapping))
-      (perform-event-mapping event mapping loop))))
+  (if (typep event 'lose-focus)
+      (mapc #'clear *action-mappings*)
+      (dolist (mapping *action-mappings*)
+        (when (and (active-p mapping)
+                   (event-applicable-p event mapping))
+          (perform-event-mapping event mapping loop)))))
 
 (defun compile-mapping (input)
   (let ((mappings ()))
@@ -526,6 +551,7 @@
                                        (and (find (action-type mapping) new-mappings :key #'action-type)
                                             (subtypep (event-type mapping) prune-event-type)))
                                      *action-mappings*))))
+    (mapc #'clear mappings)
     (setf *action-mappings* mappings)))
 
 #| Keymap should have the following syntax:
