@@ -1254,6 +1254,9 @@
    #:+input-source+
    #:input-event
    #:keyboard-event
+   #:digital-event
+   #:press-event
+   #:release-event
    #:key-event
    #:key
    #:modifiers

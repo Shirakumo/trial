@@ -5,6 +5,8 @@
 (define-event input-event (event))
 (define-event keyboard-event (input-event))
 (define-event digital-event (input-event))
+(define-event press-event (input-event))
+(define-event release-event (input-event))
 
 (defgeneric button (digital-event))
 
@@ -15,8 +17,8 @@
   (print-unreadable-object (event stream :type T)
     (format stream "~s" (key event))))
 
-(define-event key-press (key-event))
-(define-event key-release (key-event))
+(define-event key-press (key-event press-event))
+(define-event key-release (key-event release-event))
 
 (define-event text-entered (keyboard-event)
   text (replace NIL :reader replace-p))
@@ -35,8 +37,8 @@
   (print-unreadable-object (event stream :type T)
     (format stream "~s" (button event))))
 
-(define-event mouse-press (mouse-button-event))
-(define-event mouse-release (mouse-button-event))
+(define-event mouse-press (mouse-button-event press-event))
+(define-event mouse-release (mouse-button-event release-event))
 (define-event mouse-double-click (mouse-button-event))
 (define-event mouse-scroll (mouse-event)
   delta)
@@ -65,8 +67,8 @@
   (print-unreadable-object (event stream :type T)
     (format stream "~a ~s" (device event) (button event))))
 
-(define-event gamepad-press (gamepad-button-event))
-(define-event gamepad-release (gamepad-button-event))
+(define-event gamepad-press (gamepad-button-event press-event))
+(define-event gamepad-release (gamepad-button-event release-event))
 
 (define-event gamepad-move (gamepad-event)
   axis old-pos pos)
