@@ -85,7 +85,9 @@
 
 (defmethod %update-rigidbody-cache ((entity rigid-shape))
   (setf (global-bounds-cache-dirty-p (global-bounds-cache entity)) T)
-  (tmat (tf entity) (transform-matrix entity))
+  (let ((*model-matrix* (transform-matrix entity)))
+    (!meye *model-matrix*)
+    (apply-transforms entity))
   (loop for primitive across (physics-primitives entity)
         do (!m* (primitive-transform primitive)
                 (transform-matrix entity)
