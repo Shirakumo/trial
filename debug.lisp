@@ -106,7 +106,7 @@ void main(){
   (let ((scene (scene draw)))
     (unless (eq draw (elt scene (1- (length scene))))
       (warn "~S is not the last entity in the scene" draw)
-      (leave draw scene)
+      (leave draw T)
       (enter draw scene))))
 
 (defun debug-draw-allocate (data instances instance type n)
