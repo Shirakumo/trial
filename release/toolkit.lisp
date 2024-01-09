@@ -112,7 +112,7 @@
         ((pathname-utils:directory-p file)
          (uiop:delete-directory-tree file :validate (constantly T) :if-does-not-exist :ignore))
         (T
-         (delete-file file))))
+         (uiop:delete-file-if-exists file))))
 
 (defun copy (file target)
   (cond ((wild-pathname-p file)
