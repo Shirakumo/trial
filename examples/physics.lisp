@@ -49,6 +49,11 @@
     (when (retained :q) (nq* rot (qfrom-angle +vy+ (+ (* dt)))))
     (when (retained :e) (nq* rot (qfrom-angle +vy+ (- (* dt)))))))
 
+(define-handler (physics-player key-press) (key)
+  (case key
+    (:space
+     (enter (make-instance 'physics-sphere) (container physics-player)))))
+
 (defmethod awake-p ((player physics-player)) T)
 
 (define-example physics
