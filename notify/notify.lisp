@@ -58,7 +58,7 @@
   ())
 
 (defmethod files-to-watch append ((asset trial:file-input-asset))
-  (list (trial:input* asset)))
+  (trial:enlist (trial:input* asset)))
 
 (defun process-changes (&key timeout)
   (notify:with-events (file change-type :timeout timeout)
