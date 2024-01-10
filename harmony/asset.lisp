@@ -198,7 +198,8 @@
 (defmethod (setf mixed:volume) (volume (resource trial:placeholder-resource)) volume)
 
 (defmethod harmony:stop ((voice voice))
-  (harmony:stop (voice voice)))
+  (when (voice voice)
+    (harmony:stop (voice voice))))
 
 (defmethod (setf mixed:volume) :after (volume (voice voice))
   (when (voice voice)
