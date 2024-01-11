@@ -52,7 +52,7 @@
 
 (defmethod version ((_ (eql :binary)))
   (let ((self (self)))
-    (if self
+    (if (uiop:file-exists-p self)
         (with-output-to-string (out)
           (loop for o across (sha3:sha3-digest-file self :output-bit-length 224)
                 do (format out "~2,'0X" o)))
