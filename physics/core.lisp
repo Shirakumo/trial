@@ -42,6 +42,14 @@
 (defmethod start-frame ((entity physics-entity))
   (vsetf (force entity) 0 0 0))
 
+(defmethod update-instance-for-different-class :after ((prev physics-entity) (entity entity) &rest initargs)
+  (declare (ignore initargs prev))
+  ;; KLUDGE: remove from physics
+  (let ((scene (unless (typep entity 'physics-entity)
+                 (scene entity))))
+    (when (typep scene 'physics-scene)
+      (leave entity (physics-system scene)))))
+
 (defclass force ()
   ())
 
@@ -196,6 +204,9 @@
   (array-utils:vector-pop-position (forces system)
                                    (position thing (forces system)))
   thing)
+
+(defmethod contains-p (thing (system physics-system))
+  (find thing (%objects system)))
 
 (defmethod clear ((system physics-system))
   (setf (fill-pointer (%objects system)) 0)
