@@ -40,7 +40,8 @@
 (defmethod stage :around (object (area staging-area))
   (case (gethash object (load-state area))
     (:tentative
-     (error "Circular staging on ~a!" object))
+     (unless (typep object 'entity)
+       (error "Circular staging on ~a!" object)))
     ((NIL)
      (setf (gethash object (load-state area)) :tentative)
      (prog1 (call-next-method)

@@ -243,8 +243,10 @@
     (when (gl-name texture)
       (resize-buffer-data texture texinput :pixel-type :float :pixel-format :rgba))))
 
-(defmethod instantiate-prefab :after ((instance animation-controller) (asset model))
-  (setf (model instance) asset)
+(defmethod instantiate-prefab :before ((instance animation-controller) (asset model))
+  (setf (model instance) asset))
+
+(defmethod instantiate-prefab :after ((instance animation-controller) asset)
   (do-scene-graph (child instance)
     (when (typep child 'base-animated-entity)
       (setf (animation-controller child) instance))))
