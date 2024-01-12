@@ -467,6 +467,9 @@
                                             thereis (eq joint node)))
                         ;; Eliminate nodes that are parts of a skin
                         NIL)
+                       ((and (gltf:extras node) (gethash "virtual" (gltf:extras node)))
+                        ;; Eliminate nodes that are marked as virtual
+                        NIL)
                        ((gltf:mesh node)
                         (let ((mesh-name (mesh-name node)))
                           (make-instance (etypecase (or (gethash mesh-name meshes)
