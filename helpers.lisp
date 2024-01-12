@@ -2,6 +2,12 @@
 
 (defclass transformed () ())
 (defclass renderable () ())
+
+(defmethod update-instance-for-different-class :after ((prev renderable) (renderable renderable) &rest args)
+  (declare (ignore args))
+  (when (and +main+ (slot-boundp +main+ 'scene) (scene +main+))
+    (handle (make-event 'instance-class-changed :instance renderable) +main+)))
+
 (defclass dynamic-renderable (renderable) ())
 
 (defgeneric global-location (entity &optional target))
