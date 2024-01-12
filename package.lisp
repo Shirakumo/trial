@@ -1456,6 +1456,13 @@
    #:pipelined-scene
    #:to-preload
    #:preload)
+  ;; prefab.lisp
+  (:export
+   #:define-prefab-translator
+   #:prefab-asset
+   #:instantiate-prefab
+   #:prefab
+   #:define-prefab-instantiation)
   ;; prompt.lisp
   (:export
    #:prompt-string

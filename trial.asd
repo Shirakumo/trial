@@ -64,6 +64,7 @@
                (:file "pipelined-scene" :depends-on ("package" "pipeline" "scene" "loader"))
                (:file "pixel-pipeline" :depends-on ("package" "pipeline"))
                (:file "power" :depends-on ("package"))
+               (:file "prefab" :depends-on ("package" "model"))
                (:file "prompt" :depends-on ("package"))
                (:file "queue" :depends-on ("package"))
                (:file "render-loop" :depends-on ("package" "toolkit"))
