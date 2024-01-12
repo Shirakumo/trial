@@ -111,6 +111,10 @@
   (format stream "~&~%Entity Tree:~%")
   (3ds::describe-tree container #'identity stream))
 
+(defmethod <- progn ((target container) (source container))
+  (sequences:dosequence (entity source target)
+    (enter (clone entity) target)))
+
 (defclass entity (scene-node)
   ((name :initform NIL :initarg :name :accessor name)))
 
@@ -135,14 +139,7 @@
              (call-next-method)
              (register entity scene))))))
 
-(defmethod clone ((entity entity) &rest initargs)
-  (let ((initvalues ()))
-    (loop for initarg in (initargs entity)
-          for slot = (initarg-slot (class-of entity) initarg)
-          do (when slot
-               (push (clone (slot-value entity (c2mop:slot-definition-name slot))) initvalues)
-               (push initarg initvalues)))
-    (apply #'make-instance (class-of entity) (append initargs initvalues (when (name entity) (list :name (generate-name (type-of entity))))))))
+(define-transfer entity name)
 
 (defmethod apply-transforms progn ((entity entity))
   (when (container entity)

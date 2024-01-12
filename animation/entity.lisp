@@ -246,6 +246,8 @@
 (define-shader-entity base-animated-entity (mesh-entity)
   ((animation-controller :initform (make-instance 'animation-controller) :accessor animation-controller)))
 
+(define-transfer base-animated-entity animation-controller)
+
 (define-accessor-wrapper-methods clip (base-animated-entity (animation-controller base-animated-entity)))
 (define-accessor-wrapper-methods skeleton (base-animated-entity (animation-controller base-animated-entity)))
 (define-accessor-wrapper-methods pose (base-animated-entity (animation-controller base-animated-entity)))

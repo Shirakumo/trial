@@ -178,6 +178,8 @@
   (loop for vao across (vertex-arrays renderable)
         do (stage vao area)))
 
+(define-transfer standard-renderable vertex-arrays)
+
 (defmethod render ((renderable standard-renderable) (program shader-program))
   (declare (optimize speed))
   (setf (uniform program "model_matrix") (model-matrix))
@@ -211,6 +213,8 @@
   (when (material renderable)
     (stage (material renderable) area)))
 
+(define-transfer single-material-renderable material)
+
 (defmethod render-with :before ((pass standard-render-pass) (object single-material-renderable) program)
   (prepare-pass-program pass program)
   (when (material object)
@@ -222,6 +226,8 @@
 (defmethod stage :after ((renderable per-array-material-renderable) (area staging-area))
   (loop for material across (materials renderable)
         do (stage material area)))
+
+(define-transfer per-array-material-renderable materials)
 
 (defmethod render-with :before ((pass standard-render-pass) (renderable per-array-material-renderable) program)
   (prepare-pass-program pass program))

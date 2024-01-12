@@ -626,22 +626,31 @@
              ,whole)))))
 
 (defgeneric clone (thing &key &allow-other-keys))
+(defgeneric <- (target source)
+  (:method-combination progn :most-specific-last))
 (defgeneric initargs (thing)
   (:method-combination append :most-specific-last))
 
-(defmethod initargs append (thing)
-  ())
-
-(defmethod clone (thing &key)
-  thing)
+(defmethod initargs append (thing) ())
+(defmethod clone (thing &key) thing)
+(defmethod <- (a b))
 
 (defmethod clone ((vec vec2) &key) (vcopy vec))
+(defmethod <- ((target vec2) (source vec2)) (v<- target source))
 (defmethod clone ((vec vec3) &key) (vcopy vec))
+(defmethod <- ((target vec3) (source vec3)) (v<- target source))
 (defmethod clone ((vec vec4) &key) (vcopy vec))
+(defmethod <- ((target vec4) (source vec4)) (v<- target source))
 (defmethod clone ((mat mat2) &key) (mcopy mat))
+(defmethod <- ((target mat2) (source mat2)) (m<- target source))
 (defmethod clone ((mat mat3) &key) (mcopy mat))
+(defmethod <- ((target mat3) (source mat3)) (m<- target source))
 (defmethod clone ((mat mat4) &key) (mcopy mat))
+(defmethod <- ((target mat4) (source mat4)) (m<- target source))
 (defmethod clone ((mat matn) &key) (mcopy mat))
+(defmethod <- ((target matn) (source matn)) (m<- target source))
+(defmethod clone ((quat quat) &key) (qcopy quat))
+(defmethod <- ((target quat) (source quat)) (q<- target source))
 
 (defmethod clone ((cons cons) &key)
   (cons (clone (car cons)) (clone (cdr cons))))
@@ -657,6 +666,16 @@
                   :element-type (array-element-type array)
                   :adjustable (adjustable-array-p array)
                   :initial-contents array)))
+
+(defmethod clone ((object standard-object) &rest initargs)
+  (<- (apply #'make-instance (class-of object) initargs) object))
+
+(defmacro define-transfer (class &body properties)
+  `(defmethod <- progn ((target ,class) (source ,class))
+     ,@(loop for property in properties
+             collect (destructuring-bind (target-accessor &optional (source-accessor target-accessor) (key 'identity)) (enlist property)
+                       `(setf (,target-accessor target) (,key (,source-accessor source)))))
+     target))
 
 (defmethod location ((vec vec2)) vec)
 

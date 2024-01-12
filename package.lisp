@@ -1769,6 +1769,7 @@
    #:with-all-slots-bound
    #:initargs
    #:clone
+   #:<-
    #:minimize
    #:generate-name
    #:clamp

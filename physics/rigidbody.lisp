@@ -10,6 +10,8 @@
 (defmethod shared-initialize :after ((body rigid-shape) slots &key physics-primitives)
   (when physics-primitives (setf (physics-primitives body) physics-primitives)))
 
+(define-transfer rigid-shape physics-primitives collision-mask)
+
 (define-hit-detector (rigid-shape primitive)
   (loop for ai across (physics-primitives a)
         do (detect-hits ai b)))
@@ -112,6 +114,11 @@
 (defmethod shared-initialize :after ((body rigidbody) slots &key inertia-tensor)
   (when inertia-tensor (setf (inertia-tensor body) inertia-tensor)))
 
+(define-transfer rigidbody rotation inverse-inertia-tensor torque angular-damping)
+
+(defmethod (setf torque) ((torque vec3) (entity rigidbody))
+  (v<- (torque entity) torque))
+
 (defmethod (setf awake-p) :after ((false null) (entity rigidbody))
   (vsetf (rotation entity) 0 0 0))
 
@@ -121,6 +128,9 @@
 
 (defmethod (setf rotation) ((vel vec3) (entity rigidbody))
   (v<- (rotation entity) vel))
+
+(defmethod (setf inverse-inertia-tensor) ((mat mat3) (entity rigidbody))
+  (m<- (inverse-inertia-tensor entity) mat))
 
 (defmethod inertia-tensor ((entity rigidbody))
   (minv (inverse-inertia-tensor entity)))

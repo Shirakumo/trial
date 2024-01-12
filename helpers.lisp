@@ -24,6 +24,8 @@
 (defmethod apply-transforms progn ((obj located-entity))
   (translate (location obj)))
 
+(define-transfer located-entity location)
+
 (defclass sized-entity (entity)
   ((bsize :initarg :bsize :initform (vec 0 0 0) :accessor bsize :reader 3ds:bsize)))
 
@@ -33,6 +35,8 @@
     (v<- target (bsize entity))
     (n*m4/3 (mapply (primitive-transform primitive) #'abs) target)))
 
+(define-transfer located-entity bsize)
+
 (defclass oriented-entity (transformed entity)
   ((orientation :initarg :orientation :initform (vec 1 0 0) :accessor orientation)
    (up :initarg :up :initform (vec 0 1 0) :accessor up)))
@@ -40,6 +44,8 @@
 (defmethod apply-transforms progn ((obj oriented-entity))
   (rotate (vc (up obj) (orientation obj))
           (* 180 (/ (acos (v. (up obj) (orientation obj))) PI))))
+
+(define-transfer oriented-entity orientation)
 
 (defclass rotated-entity (transformed entity)
   ((rotation :initarg :rotation :initform (quat) :accessor rotation)))
@@ -49,6 +55,8 @@
     (declare (dynamic-extent mat))
     (nm* (model-matrix) (qmat4 (rotation obj) mat))))
 
+(define-transfer rotated-entity rotation)
+
 (defclass axis-rotated-entity (transformed entity)
   ((axis :initarg :axis :initform (vec 0 1 0) :accessor axis)
    (angle :initarg :angle :initform 0 :accessor angle)))
@@ -56,17 +64,23 @@
 (defmethod apply-transforms progn ((obj axis-rotated-entity))
   (rotate (axis obj) (angle obj)))
 
+(define-transfer axis-rotated-entity axis angle)
+
 (defclass pivoted-entity (transformed entity)
   ((pivot :initarg :pivot :initform (vec 0 0 0) :accessor pivot)))
 
 (defmethod apply-transforms progn ((obj pivoted-entity))
   (translate (pivot obj)))
 
+(define-transfer pivoted-entity pivot)
+
 (defclass scaled-entity (transformed entity)
   ((scaling :initarg :scaling :initform (vec 1 1 1) :accessor scaling)))
 
 (defmethod apply-transforms progn ((obj scaled-entity))
   (scale (scaling obj)))
+
+(define-transfer scaled-entity scaling)
 
 (defclass transformed-entity (transformed entity)
   ((transform :initarg :transform :initform (transform) :accessor tf)))
@@ -80,6 +94,8 @@
   (let ((mat (mat4)))
     (declare (dynamic-extent mat))
     (nm* (model-matrix) (tmat (tf obj) mat))))
+
+(define-transfer transformed-entity tf)
 
 (defmethod location ((tf transform))
   (tlocation tf))
@@ -176,6 +192,8 @@ void main(){
   v_view_position = view_position.xyz;
 }")
 
+(define-transfer vertex-entity vertex-array)
+
 (define-shader-entity colored-entity ()
   ((color :initform (vec 0 0 1 1) :reader color)))
 
@@ -199,6 +217,8 @@ void main(){
   maybe_call_next_method();
   color *= objectcolor;
 }")
+
+(define-transfer colored-entity color)
 
 (define-shader-entity vertex-colored-entity ()
   ())
@@ -250,6 +270,8 @@ void main(){
   color *= texture(texture_image, uv);
 }")
 
+(define-transfer textured-entity texture)
+
 (defmethod enter (thing (container 3ds:container))
   (3ds:enter thing container))
 
@@ -276,6 +298,8 @@ void main(){
 (defmethod observe-load-state ((entity mesh-entity) (asset asset) (state (eql :loaded)) (area staging-area))
   (setf (mesh-asset entity) asset)
   (restage entity area))
+
+(define-transfer mesh-entity mesh mesh-asset)
 
 (defmethod (setf mesh-asset) :after ((asset asset) (entity mesh-entity))
   (setf (mesh entity) (or (mesh entity) T)))
@@ -311,6 +335,8 @@ void main(){
   (setf (mesh-asset entity) asset)
   (restage entity area))
 
+(define-transfer multi-mesh-entity mesh mesh-asset)
+
 (defmethod (setf mesh-asset) :after ((asset asset) (entity multi-mesh-entity))
   (setf (mesh entity) (or (mesh entity) T)))
 
@@ -343,6 +369,8 @@ void main(){
 
 (defmethod select-lod ((default (eql T)) (entity lod-entity))
   (select-lod (camera (scene +main+)) entity))
+
+(define-transfer lod-entity lods)
 
 (defclass lod ()
   ((mesh :initform () :initarg :mesh :accessor mesh)
