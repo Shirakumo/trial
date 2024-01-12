@@ -366,7 +366,9 @@
           ((gethash object renderable-table)
            ;; Just re-enter the object to facilitate the update.
            (leave object pass)
-           (enter object pass)))))
+           (let ((program (enter object pass)))
+             (unless (allocated-p program)
+               (commit program (loader +main+) :unload NIL)))))))
 
 (defmethod render ((pass per-object-pass) (_ null))
   (render-frame pass (construct-frame pass)))

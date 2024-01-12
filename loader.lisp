@@ -182,7 +182,6 @@
 (defmethod commit (object (loader loader) &rest args)
   (v:info :trial.loader "Incrementally loading ~a" object)
   (with-timing-report (:info :trial.loader)
-    (progress loader 0 100)
     (if (current-area loader)
         (stage object (current-area loader))
         (let ((area (make-instance 'staging-area)))
