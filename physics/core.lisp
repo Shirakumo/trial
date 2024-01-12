@@ -16,6 +16,8 @@
 (defmethod shared-initialize :after ((entity physics-entity) slots &key mass)
   (when mass (setf (mass entity) mass)))
 
+(define-transfer physics-entity velocity inverse-mass force damping awake-p)
+
 (defmethod (setf velocity) ((vel vec3) (entity physics-entity))
   (v<- (velocity entity) vel))
 
