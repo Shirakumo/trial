@@ -356,6 +356,18 @@
              ;; Object changed, recompile it
              (refresh class))))))
 
+(defmethod handle ((ev instance-class-changed) (pass per-object-pass))
+  (call-next-method)
+  (let ((object (instance ev))
+        (renderable-table (renderable-table pass)))
+    (cond ((eq object pass)
+           ;; Pass changed, recompile everything
+           (handle (make-event 'class-changed :changed-class (class-of object)) pass))
+          ((gethash object renderable-table)
+           ;; Just re-enter the object to facilitate the update.
+           (leave object pass)
+           (enter object pass)))))
+
 (defmethod render ((pass per-object-pass) (_ null))
   (render-frame pass (construct-frame pass)))
 

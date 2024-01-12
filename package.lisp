@@ -1051,7 +1051,9 @@
    #:pre-tick
    #:post-tick
    #:class-changed
-   #:changed-class)
+   #:changed-class
+   #:instance-class-changed
+   #:instance)
   ;; features.lisp
   (:export
    #:*debug-features*

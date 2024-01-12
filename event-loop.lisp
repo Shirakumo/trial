@@ -189,3 +189,4 @@
 (define-event tick () tt dt fc)
 (define-event post-tick () tt dt fc)
 (define-event class-changed () changed-class)
+(define-event instance-class-changed () instance)
