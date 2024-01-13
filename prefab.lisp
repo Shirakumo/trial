@@ -32,38 +32,67 @@
 (defmethod instantiate-prefab ((prefab prefab) (asset (eql T)))
   (instantiate-prefab prefab (prefab-asset prefab)))
 
+(defmethod reload ((prefab prefab))
+  (reload (prefab-asset prefab))
+  (clear prefab)
+  (instantiate-prefab prefab T))
+
 (defmacro define-prefab-instantiation (class asset &body changes)
   (let ((assetvar (gensym "ASSET")))
     `(progn
-       (defmethod prefab-asset ((,class ,class))
-         (asset ,@(loop for part in asset collect `',part)))
+       ,@(when asset
+           `((defmethod prefab-asset ((,class ,class))
+                (asset ,@(loop for part in asset collect `',part)))))
        
        (defmethod instantiate-prefab ((,class ,class) (,assetvar model-file))
          ,@(loop for (type . args) in (or changes '((reparent)))
                  collect (expand-prefab-expression type class assetvar args))
          ,class))))
 
-(define-prefab-translator scaling (instance asset scale &optional node)
-  `(setf (scaling ,(if node `(node ,node ,instance) instance)) ,scale))
+(defmacro do-nodes% ((node instance id) &body body)
+  (etypecase id
+    (string
+     `(let ((,node (node ,id ,instance)))
+        ,@body))
+    ((member NIL T)
+     `(let ((,node ,instance))
+        ,@body))
+    (cons
+     `(do-scene-graph (,node ,instance)
+        (when (funcall ,id ,node)
+          ,@body)))))
 
-(define-prefab-translator location (instance asset location &optional node)
-  `(setf (location ,(if node `(node ,node ,instance) instance)) ,location))
-
-(define-prefab-translator orientation (instance asset quat &optional node)
-  `(setf (orientation ,(if node `(node ,node ,instance) instance)) ,quat))
-
-(define-prefab-translator enter (instance asset &optional node)
-  `(sequence:dosequence (child ,(if node
-                                    `(node ,node ,asset)
-                                    `(find-scene T ,asset)))
-     (enter (clone child) ,instance)))
+(define-prefab-translator enter (instance asset &optional node children-only)
+  (let ((nodevar (gensym "NODE")))
+    `(do-nodes% (,nodevar (find-scene T ,asset) ,node)
+       ,(if children-only
+            `(sequences:dosequence (,nodevar ,nodevar)
+               (enter (clone ,nodevar) ,instance))
+            `(enter (clone ,nodevar) ,instance)))))
 
 (define-prefab-translator leave (instance asset &optional node)
-  `(leave (node ,node ,instance) T))
+  (let ((nodevar (gensym "NODE")))
+    `(do-nodes% (,nodevar ,instance ,node)
+       (leave ,nodevar T))))
+
+(define-prefab-translator scaling (instance asset scale &optional node)
+  (let ((nodevar (gensym "NODE")))
+    `(do-nodes% (,nodevar ,instance ,node)
+       (setf (scaling ,nodevar) ,scale))))
+
+(define-prefab-translator location (instance asset location &optional node)
+  (let ((nodevar (gensym "NODE")))
+    `(do-nodes% (,nodevar ,instance ,node)
+      (setf (location ,nodevar) ,location))))
+
+(define-prefab-translator orientation (instance asset quat &optional node)
+  (let ((nodevar (gensym "NODE")))
+    `(do-nodes% (,nodevar ,instance ,node)
+       (setf (orientation ,nodevar) ,quat))))
 
 (define-prefab-translator physics-primitives (instance asset node)
   (let ((nodevar (gensym "NODE")))
-    `(let ((,nodevar (node ,node ,instance)))
+    `(do-nodes% (,nodevar ,instance ,node)
        (setf (physics-primitives ,instance) (physics-primitives ,nodevar))
        (setf (mass ,instance) (mass ,nodevar))
        (typecase ,nodevar
@@ -73,7 +102,9 @@
           (change-class ,nodevar 'basic-entity))))))
 
 (define-prefab-translator change-class (instance asset node class)
-  `(change-class (node ,node ,instance) ',class))
+  (let ((nodevar (gensym "NODE")))
+    `(do-nodes% (,nodevar ,instance ,node)
+       (change-class ,nodevar ',class))))
 
 (define-prefab-translator play (instance asset animation)
   `(play ,animation ,instance))
