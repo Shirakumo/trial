@@ -58,7 +58,9 @@
     (nv* bsize 0.5)))
 
 (defmethod bradius ((entity rigid-shape))
-  (vlength (bsize entity)))
+  (loop for primitive across (physics-primitives entity)
+        for radius = (+ (vlength (location primitive)) (3ds:radius primitive))
+        maximize radius))
 
 (defmethod (setf physics-primitives) ((primitive primitive) (entity rigid-shape))
   (setf (physics-primitives entity) (vector primitive)))
@@ -69,8 +71,8 @@
 
 (defmethod (setf physics-primitives) :after ((primitives vector) (entity rigid-shape))
   (%update-rigidbody-cache entity)
-  (setf (global-bounds-cache-obb (global-bounds-cache entity))
-        (bsize entity)))
+  (setf (global-bounds-cache-radius (global-bounds-cache entity)) (bradius entity))
+  (setf (global-bounds-cache-obb (global-bounds-cache entity)) (bsize entity)))
 
 (defmethod (setf physics-primitives) :around ((primitives vector) (entity rigid-shape))
   (let ((primitives (if (find 'general-mesh primitives :key #'type-of)
