@@ -74,6 +74,10 @@
   (deregister node container)
   (setf (container node) NIL))
 
+(defmethod clear :before ((container container))
+  (sequences:dosequence (child container)
+    (deregister child container)))
+
 (defmethod register :after ((child container) (parent container))
   (sequences:dosequence (node child)
     (register node parent)))
