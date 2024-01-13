@@ -110,7 +110,8 @@
 
 (defmethod trial:finalize :after ((main main))
   (trial:with-thread-exit ((file-watch-thread main))
-    (setf (file-watch-thread main) NIL)))
+    (setf (file-watch-thread main) NIL))
+  (unwatch T))
 
 #+darwin
 (trial::dont-deploy
