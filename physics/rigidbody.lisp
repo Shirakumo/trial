@@ -58,9 +58,10 @@
     (nv* bsize 0.5)))
 
 (defmethod bradius ((entity rigid-shape))
-  (loop for primitive across (physics-primitives entity)
-        for radius = (+ (vlength (location primitive)) (3ds:radius primitive))
-        maximize radius))
+  (float (loop for primitive across (physics-primitives entity)
+               for radius = (+ (vlength (location primitive)) (3ds:radius primitive))
+               maximize radius)
+         0f0))
 
 (defmethod (setf physics-primitives) ((primitive primitive) (entity rigid-shape))
   (setf (physics-primitives entity) (vector primitive)))

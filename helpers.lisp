@@ -41,7 +41,7 @@
     (v<- target (bsize entity))
     (n*m4/3 (mapply (primitive-transform primitive) #'abs) target)))
 
-(define-transfer located-entity bsize)
+(define-transfer sized-entity bsize)
 
 (defclass oriented-entity (transformed entity)
   ((orientation :initarg :orientation :initform (vec 1 0 0) :accessor orientation)
