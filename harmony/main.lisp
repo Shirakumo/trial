@@ -23,6 +23,8 @@
                      (type-of drain) (when (typep drain 'mixed:device-drain) (mixed:device drain))
                      (mixed:channels drain) (mixed:encoding drain) (mixed:samplerate drain)
                      (subseq (mixed:channel-order drain) 0 (mixed:channels drain)))
+             (when (typep drain 'mixed:device-drain)
+               (v:info :trial.harmony "Device list:~{~%  ~a~}" (mixed:list-devices drain)))
              drain)))
     (or (when audio-backend
           (ignore-errors (trial:with-error-logging (:trial.harmony "Failed to set up requested backend, falling back to default output.")
