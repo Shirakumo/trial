@@ -33,9 +33,9 @@
   (instantiate-prefab prefab (prefab-asset prefab)))
 
 (defmethod reload ((prefab prefab))
-  (reload (prefab-asset prefab))
+  (deallocate (prefab-asset prefab))
   (clear prefab)
-  (instantiate-prefab prefab T))
+  (commit prefab (loader +main+) :unload NIL))
 
 (defmacro define-prefab-instantiation (class asset &body changes)
   (let ((assetvar (gensym "ASSET")))

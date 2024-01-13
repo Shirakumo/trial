@@ -372,7 +372,7 @@
     (trial:global-location a dir)
     (trial:global-location b s0)
     (!v- dir dir s0)
-    (nvunit dir)
+    (nvunit* dir)
     (when (v~= dir 0.0)
       ;; no initial guess for best direction, just pick something
       (v<- dir +vx3+))

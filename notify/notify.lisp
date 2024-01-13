@@ -45,7 +45,7 @@
         do (remhash object objects)
            (when (= 0 (hash-table-count objects))
              (remhash file *file-association-table*)
-             (notify:unwatch file))))
+             (ignore-errors (notify:unwatch file)))))
 
 (defmethod watch ((pool trial:pool))
   (dolist (asset (trial:list-assets pool))
@@ -62,7 +62,7 @@
 (defmethod unwatch ((all (eql T)))
   (loop for file being the hash-keys of *file-association-table*
         do (remhash file *file-association-table*)
-           (notify:unwatch file))
+           (ignore-errors (notify:unwatch file)))
   (clrhash *file-association-table*))
 
 (defmethod notify ((asset trial:asset) file)
@@ -111,7 +111,8 @@
 (defmethod trial:finalize :after ((main main))
   (trial:with-thread-exit ((file-watch-thread main))
     (setf (file-watch-thread main) NIL))
-  (unwatch T))
+  (unwatch T)
+  (notify:shutdown))
 
 #+darwin
 (trial::dont-deploy
