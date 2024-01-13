@@ -5,60 +5,91 @@
    (#:notify #:org.shirakumo.file-notify)
    (#:v #:org.shirakumo.verbose))
   (:export
+   #:list-wathers
    #:watch
+   #:unwatch
    #:notify
    #:files-to-watch
    #:process-changes
    #:main))
 (in-package #:org.shirakumo.fraf.trial.notify)
 
+;;; {truename -> {object ~> T}}
 (defvar *file-association-table* (make-hash-table :test 'equal))
 
-(defgeneric watch (asset))
-(defgeneric notify (asset file))
-(defgeneric files-to-watch (asset)
+(defgeneric watch (object))
+(defgeneric unwatch (object))
+(defgeneric notify (object file))
+(defgeneric files-to-watch (object)
   (:method-combination append))
 
-(defmethod watch ((asset trial:asset))
-  ;; First unregister from all
-  (loop for file being the hash-keys of *file-association-table*
-        for assets being the hash-values of *file-association-table*
-        do (let ((assets (remove asset assets)))
-             (if assets
-                 (setf (gethash file *file-association-table*) assets)
-                 (remhash file *file-association-table*))))
-  ;; Then register new
-  (dolist (file (files-to-watch asset))
+(defun list-watchers (file)
+  (loop for key being the hash-keys of (gethash (truename file) *file-association-table*)
+        collect key))
+
+(defmethod watch (object)
+  (dolist (file (files-to-watch object))
     (handler-case
-        (let ((file (truename file)))
-          (notify:watch file :events '(:modify))
-          (pushnew asset (gethash file *file-association-table*)))
+        (let* ((file (truename file))
+               (table (gethash file *file-association-table*)))
+          (unless table
+            (notify:watch file :events '(:modify))
+            (setf table (tg:make-weak-hash-table :weakness :key))
+            (setf (gethash file *file-association-table*) table))
+          (setf (gethash object table) T))
       (error ()
         (v:error :trial.notify "Failed to add watch for ~a" file)))))
 
+(defmethod unwatch (object)
+  (loop for file being the hash-keys of *file-association-table* using (hash-value objects)
+        do (remhash object objects)
+           (when (= 0 (hash-table-count objects))
+             (remhash file *file-association-table*)
+             (notify:unwatch file))))
+
+(defmethod watch ((pool trial:pool))
+  (dolist (asset (trial:list-assets pool))
+    (watch asset)))
+
+(defmethod unwatch ((pool trial:pool))
+  (dolist (asset (trial:list-assets pool))
+    (unwatch asset)))
+
 (defmethod watch ((all (eql T)))
-  (notify:init)
   (dolist (pool (trial:list-pools))
-    (dolist (asset (trial:list-assets pool))
-      (watch asset))))
+    (watch pool)))
+
+(defmethod unwatch ((all (eql T)))
+  (loop for file being the hash-keys of *file-association-table*
+        do (remhash file *file-association-table*)
+           (notify:unwatch file))
+  (clrhash *file-association-table*))
 
 (defmethod notify ((asset trial:asset) file)
-  (v:info :trial.notify "Noticed file change for ~a, issuing reload." file)
-  (when trial:*context*
-    (trial:issue (trial:scene (trial:handler trial:*context*)) 'trial:load-request :thing asset)))
+  (when trial:+main+
+    (trial:handle trial:+main+ (trial:make-event 'trial:load-request :thing asset))))
+
+(defmethod notify ((prefab trial:prefab) file)
+  (when trial:+main+
+    (trial:with-eval-in-render-loop ()
+      (trial:reload prefab))))
 
 (defmethod notify ((applicable (eql T)) file)
   (trial:with-retry-restart (retry "Retry the notification")
     (let ((file (probe-file file)))
       (when file
-        (dolist (asset (gethash file *file-association-table*))
-          (notify asset file))))))
+        (v:info :trial.notify "Noticed file change for ~a, issuing reload." file)
+        (loop for object being the hash-keys of (gethash file *file-association-table*)
+              do (notify object file))))))
 
 (defmethod files-to-watch append ((asset trial:asset))
   ())
 
 (defmethod files-to-watch append ((asset trial:file-input-asset))
   (trial:enlist (trial:input* asset)))
+
+(defmethod files-to-watch append ((prefab trial:prefab))
+  (files-to-watch (trial:prefab-asset prefab)))
 
 (defun process-changes (&key timeout)
   (notify:with-events (file change-type :timeout timeout)
@@ -69,7 +100,7 @@
 
 (defmethod initialize-instance :after ((main main) &key (watch-files (not (deploy:deployed-p))))
   (when watch-files
-    (watch T)
+    (notify:init)
     (setf (file-watch-thread main) T)
     (setf (file-watch-thread main)
           (trial:with-thread ("asset-watcher")
