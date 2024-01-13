@@ -1,0 +1,46 @@
+name: examples
+on: [workflow_dispatch]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore cache
+        id: cache-ql
+        uses: actions/cache@v3
+        with:
+          path: |
+            /home/runner/quicklisp
+            /home/runner/.cache/common-lisp
+          key: ${{ runner.os }}-ql
+      - name: Install env
+        if: steps.cache-ql.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get -qq install sbcl
+          curl -o ~/quicklisp.lisp https://beta.quicklisp.org/quicklisp.lisp
+          sbcl --noinform --load ~/quicklisp.lisp --eval '(quicklisp-quickstart:install)' --non-interactive
+          sbcl --noinform \
+               --eval '(load "/home/runner/quicklisp/setup.lisp")' \
+               --eval '(ql-dist:install-dist "http://dist.shirakumo.org/shirakumo.txt" :prompt NIL)' \
+               --non-interactive
+      - uses: actions/checkout@v1
+      - name: Build the library
+        run: |
+          sbcl --noinform --dynamic-space-size 2Gb \
+               --eval '(load "/home/runner/quicklisp/setup.lisp")' \
+               --eval "(push \"$GITHUB_WORKSPACE\" ql:*local-project-directories*)" \
+               --eval '(ql:quickload :trial-examples)' \
+               --non-interactive
+      - name: Build the binary
+        run: |
+          sbcl --noinform --dynamic-space-size 2Gb \
+               --eval '(load "/home/runner/quicklisp/setup.lisp")' \
+               --eval "(push \"$GITHUB_WORKSPACE\" ql:*local-project-directories*)" \
+               --eval '(asdf:make :trial-examples)' \
+               --non-interactive
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          append_body: true
+          files: trial-examples/bin/
