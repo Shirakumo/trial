@@ -113,6 +113,7 @@
                              (:file "primitives" :depends-on ("core"))
                              (:file "ray" :depends-on ("primitives"))
                              (:file "resolution" :depends-on ("rigidbody"))
+                             (:file "trigger" :depends-on ("resolution"))
                              (:file "v-clip" :depends-on ("hit-detection" "ray"))
                              (:file "xenocollide" :depends-on ("hit-detection"))))
                (:module "renderer"

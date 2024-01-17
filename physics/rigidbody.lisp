@@ -101,12 +101,6 @@
                 (primitive-local-transform primitive))
            (invalidate-global-bounds-cache primitive)))
 
-(defclass trigger-volume (rigid-shape)
-  ())
-
-(defmethod awake-p ((entity trigger-volume))
-  NIL)
-
 (defclass rigidbody (rigid-shape)
   ((rotation :initform (vec 0 0 0) :reader rotation)
    (inverse-inertia-tensor :initform (mat3) :reader inverse-inertia-tensor)
