@@ -523,14 +523,8 @@
                               (v:warn :trial.gltf "Ignoring non-standard gravity factor on ~a" node))
                             (let* ((r (gltf:inertia-orientation (gltf:rigidbody node)))
                                    (r (qmat (quat (aref r 0) (aref r 1) (aref r 2) (aref r 3))))
-                                   (i (mat3)))
-                              (loop for e across (gltf:inertia-diagonal (gltf:rigidbody node))
-                                    for r from 0
-                                    do (setf (mcref i r r) e))
-                              ;; I = R * D * R^-1
-                              (!m* i i (mtranspose r))
-                              (!m* i r i)
-                              (setf (trial:inertia-tensor child) i))
+                                   (d (gltf:inertia-diagonal (gltf:rigidbody node))))
+                              (setf (trial:inertia-tensor child) (trial:diagonal-tensor d r)))
                             (map-into (varr (trial:velocity child)) (lambda (x) (float x 0f0)) (gltf:linear-velocity (gltf:rigidbody node)))
                             (map-into (varr (trial:rotation child)) (lambda (x) (float x 0f0)) (gltf:angular-velocity (gltf:rigidbody node)))
                             ;; Extra support for damping factor

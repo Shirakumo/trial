@@ -1,7 +1,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defmacro define-tensor-fun (name args &body body)
-  `(defun ,name (,@args &optional (tensor (mat3)))
+  `(defun ,name (,@args ,@(unless (find '&optional args) '(&optional)) (tensor (mat3)))
      (declare (type mat3 tensor))
      (fill (marr3 tensor) 0.0)
      (with-fast-matref (m tensor)
@@ -134,3 +134,13 @@
 
 (define-tensor-fun mesh-tensor (mass vertices faces)
   (voxel-tensor mass (org.shirakumo.fraf.manifolds:voxelize vertices faces :grid 0.1) tensor))
+
+(define-tensor-fun diagonal-tensor (diagonal &optional (orientation (quat)))
+  (declare (type quat orientation))
+  (let ((r (qmat orientation)))
+    (loop for e across diagonal
+          for r from 0
+          do (setf (m r r) e))
+    ;; I = R * D * R^-1
+    (!m* tensor tensor (mtranspose r))
+    (!m* tensor r tensor)))

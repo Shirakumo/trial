@@ -302,7 +302,11 @@
    #:shell-tensor
    #:cylinder-tensor
    #:cone-tensor
-   #:tube-tensor)
+   #:tube-tensor
+   #:dome-tensor
+   #:pill-tensor
+   #:mesh-tensor
+   #:diagonal-tensor)
   ;; physics/particle.lisp
   (:export
    #:particle
