@@ -512,7 +512,6 @@
                             (enter (load-light (gltf:light node)) child))
                           (when (gltf:camera node)
                             (enter (load-camera (gltf:camera node)) child))
-                          ;; FIXME: implement triggers
                           ;; FIXME: implement joints
                           (when (gltf:rigidbody node)
                             (etypecase child
@@ -520,7 +519,8 @@
                               (basic-animated-entity (change-class child 'trial:animated-physics-entity)))
                             (setf (trial:mass child) (gltf:mass (gltf:rigidbody node)))
                             ;; FIXME: implement center-of-mass
-                            ;; FIXME: implement gravity-factor ???
+                            (when (/= 1.0 (gltf:gravity-factor (gltf:rigidbody node)))
+                              (v:warn :trial.gltf "Ignoring non-standard gravity factor on ~a" node))
                             (let* ((r (gltf:inertia-orientation (gltf:rigidbody node)))
                                    (r (qmat (quat (aref r 0) (aref r 1) (aref r 2) (aref r 3))))
                                    (i (mat3)))
@@ -533,8 +533,19 @@
                               (setf (trial:inertia-tensor child) i))
                             (map-into (varr (trial:velocity child)) (lambda (x) (float x 0f0)) (gltf:linear-velocity (gltf:rigidbody node)))
                             (map-into (varr (trial:rotation child)) (lambda (x) (float x 0f0)) (gltf:angular-velocity (gltf:rigidbody node)))
+                            ;; Extra support for damping factor
+                            (when (gltf:extras (gltf:rigidbody node))
+                              (setf (trial:damping child) (gethash "damping" (gltf:extras (gltf:rigidbody node)) 0.95)))
                             ;; FIXME: this will eagerly decompose colliders and so on even if the node is never used...
                             (setf (trial:physics-primitives child) (find-colliders node model)))
+                          ;; FIXME: implement triggers
+                          (when (gltf:trigger node)
+                            (etypecase child
+                              ((and basic-node (not multi-mesh-entity))
+                               (change-class child 'trial:trigger-volume)))
+                            (let ((shape (load-shape (gltf:shape (gltf:trigger node)) model)))
+                              (setf (trial:primitive-collision-mask shape) (collision-filter-mask (gltf:collision-filter (gltf:trigger node))))
+                              (setf (trial:physics-primitives child) shape)))
                           (enter child container))))
         (loop for node across (gltf:scenes gltf)
               for scene = (make-instance 'basic-node :name (gltf:name node))
