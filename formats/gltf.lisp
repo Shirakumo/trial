@@ -402,16 +402,29 @@
                (gltf:friction-combine material)
                (gltf:restitution-combine material))))))
 
+(defun collision-filter-mask (filter)
+  (let ((mask (1- (ash 1 32))))
+    (cond ((gltf:collide-with-systems filter)
+           (setf mask 0)
+           (loop for idx in (gltf:collide-with-systems filter)
+                 do (setf (ldb (byte 1 idx) mask) 1)))
+          ((gltf:not-collide-with-systems filter)
+           (loop for idx in (gltf:collide-with-systems filter)
+                 do (setf (ldb (byte 1 idx) mask) 0))))
+    mask))
+
 (defun find-colliders (node model)
-  ;; FIXME: implement triggers
   (let ((primitives (make-array 0 :adjustable T :fill-pointer T))
-        (material :wood))
+        (material :wood)
+        (mask 1))
     (labels ((process (collider tf)
                (when (gltf:physics-material collider)
                  (setf material (physics-material-instance (gltf:physics-material collider))))
-               ;; FIXME: implement collision filtering
+               (when (gltf:collision-filter collider)
+                 (setf mask (collision-filter-mask (gltf:collision-filter collider))))
                (let ((primitive (load-shape (gltf:shape collider) model
                                             :local-transform (tmat tf))))
+                 (setf (trial:primitive-collision-mask primitive) mask)
                  (setf (trial:primitive-material primitive) material)
                  (vector-push-extend primitive primitives)))
              (recurse (node tf)
@@ -499,6 +512,7 @@
                             (enter (load-light (gltf:light node)) child))
                           (when (gltf:camera node)
                             (enter (load-camera (gltf:camera node)) child))
+                          ;; FIXME: implement triggers
                           ;; FIXME: implement joints
                           (when (gltf:rigidbody node)
                             (etypecase child
