@@ -118,7 +118,17 @@
   (material NIL :type T)
   (local-transform (meye 4) :type mat4)
   (transform (meye 4) :type mat4)
-  (global-bounds-cache (%make-global-bounds-cache) :type global-bounds-cache))
+  (global-bounds-cache (%make-global-bounds-cache) :type global-bounds-cache)
+  ;; 32-bit mask to designate which systems to interact with.
+  (collision-mask :initform 1 :accessor collision-mask))
+
+(defmethod collision-mask ((primitive primitive))
+  (primitive-collision-mask primitive))
+
+;; TODO: add convenient manipulation function to manage the collision-mask
+;;       bit mask in rigidbodies.
+(defmethod (setf collision-mask) ((thing sequence) (primitive primitive))
+  (implement!))
 
 (defmethod global-transform-matrix ((primitive primitive) &optional target)
   (etypecase target
@@ -183,6 +193,7 @@
                      :material (primitive-material primitive)
                      :local-transform (primitive-local-transform primitive)
                      :transform (primitive-transform primitive)
+                     :collision-mask (primitive-collision-mask primitive)
                      args))
 
 (defmacro define-primitive-type (name slots &body body)

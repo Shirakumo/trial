@@ -2,15 +2,22 @@
 
 (defclass rigid-shape (physics-entity transformed-entity global-bounds-cached-entity)
   ((physics-primitives :initform #() :accessor physics-primitives)
-   ;; 32-bit mask to designate which systems to interact with.
-   (collision-mask :initform 1 :accessor collision-mask)
    ;; Cache
    (transform-matrix :initform (mat4) :reader transform-matrix)))
 
 (defmethod shared-initialize :after ((body rigid-shape) slots &key physics-primitives)
   (when physics-primitives (setf (physics-primitives body) physics-primitives)))
 
-(define-transfer rigid-shape physics-primitives collision-mask)
+(define-transfer rigid-shape physics-primitives)
+
+(defmethod collision-mask ((shape rigid-shape))
+  (if (= 0 (length (physics-primitives shape)))
+      0
+      (collision-mask (aref (physics-primitives shape) 0))))
+
+(defmethod (setf collision-mask) (mask (shape rigid-shape))
+  (loop for primitive across (physics-primitives shape)
+        do (setf (collision-mask primitive) mask)))
 
 (define-hit-detector (rigid-shape primitive)
   (loop for ai across (physics-primitives a)
@@ -37,11 +44,6 @@
 (defmethod invalidate-global-bounds-cache :after ((entity rigid-shape))
   (loop for primitive across (physics-primitives entity)
         do (invalidate-global-bounds-cache primitive)))
-
-;; TODO: add convenient manipulation function to manage the collision-mask
-;;       bit mask in rigidbodies.
-(defmethod (setf collision-mask) ((thing sequence) (rigid-shape rigid-shape))
-  (implement!))
 
 (defmethod bsize ((entity rigid-shape))
   (let ((vmin (vec3)) (vmax (vec3))

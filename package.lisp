@@ -341,6 +341,7 @@
    #:primitive-material
    #:primitive-local-transform
    #:primitive-transform
+   #:primitive-collision-mask
    #:define-primitive-type
    #:entity
    #:material
