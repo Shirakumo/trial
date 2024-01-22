@@ -87,6 +87,7 @@
 
 (defmethod compile-resources ((pool pool) (source (eql T)) &rest args &key &allow-other-keys)
   (dolist (asset (list-assets pool))
-    (apply #'compile-resources asset source args)))
+    (with-simple-restart (continue "Ignore ~a" asset)
+      (apply #'compile-resources asset source args))))
 
 (define-pool trial)
