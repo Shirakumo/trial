@@ -193,7 +193,7 @@
 
 (define-set-representation monitor
   :represents trial:monitor
-  :item-text (trial:name alloy:value)
+  :item-text (if alloy:value (trial:name alloy:value) "Default")
   (trial:list-monitors trial:*context*))
 
 (defclass video-mode-item (alloy:combo-item)
