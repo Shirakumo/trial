@@ -193,8 +193,8 @@
 
 (define-set-representation monitor
   :represents trial:monitor
-  :item-text (if alloy:value (trial:name alloy:value) "Default")
-  (trial:list-monitors trial:*context*))
+  :item-text (typecase alloy:value (string alloy:value) (T "Default"))
+  (list* T (mapcar #'trial:name (trial:list-monitors trial:*context*))))
 
 (defclass video-mode-item (alloy:combo-item)
   ())
