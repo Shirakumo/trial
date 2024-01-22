@@ -125,6 +125,9 @@
 (defmethod collision-mask ((primitive primitive))
   (primitive-collision-mask primitive))
 
+(defmethod (setf collision-mask) ((mask integer) (primitive primitive))
+  (setf (primitive-collision-mask primitive) mask))
+
 ;; TODO: add convenient manipulation function to manage the collision-mask
 ;;       bit mask in rigidbodies.
 (defmethod (setf collision-mask) ((thing sequence) (primitive primitive))
