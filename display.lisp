@@ -74,6 +74,7 @@
 
 (defmethod render-loop :around ((display display))
   (let ((*context* (context display)))
+    (acquire-context *context*)
     (unwind-protect
          (call-next-method)
       (when (context display)

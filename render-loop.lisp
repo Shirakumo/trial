@@ -41,7 +41,10 @@
                      (dt (coerce (delta-time render-loop) 'double-float))
                      (target-frame-time (coerce (target-frame-time render-loop) 'double-float))
                      (current-time (current-time))
-                     (accumulator 0.0d0)
+                     ;; Accumulator starts big such that we ensure an UPDATE happens
+                     ;; before the first RENDER can happen. Otherwise we get an ugly
+                     ;; first frame display.
+                     (accumulator 1000.0d0)
                      (new-time 0.0d0)
                      (frame-time 0.0d0)
                      (extra-time 0.0d0))
