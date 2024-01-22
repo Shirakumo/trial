@@ -76,15 +76,15 @@
         (loop for (k v) on initargs by #'cddr
               do (setf (getf (initargs context) k) v))
         (setf (initargs context) initargs))
+    ;; Some extra handling for fullscreening
+    (etypecase fullscreen
+      ((eql T) (setf initargs (list* :monitor (glfw:primary-monitor) initargs)))
+      (string (setf initargs (list* :monitor (ensure-monitor fullscreen context) initargs)))
+      ((eql NIL)))
     ;; Do the actual initialization
     (apply #'call-next-method context slots :allow-other-keys T initargs)
     (with-cleanup-on-failure (destroy-context context)
       ;; Some extra handling for internal options
-      (when (glfw:visible-p context)
-        (etypecase fullscreen
-          ((eql T) (show context :fullscreen T))
-          (string (show context :fullscreen T :mode fullscreen))
-          ((eql NIL))))
       (gl:clear :color-buffer)
       (glfw:swap-buffers context)
       (refresh-window-size context)
