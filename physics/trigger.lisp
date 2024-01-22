@@ -1,9 +1,13 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass trigger-volume (rigid-shape)
-  ((active-p :initarg :active-p :initform T :accessor active-p)))
+  ((active-p :initarg :active-p :initform T :accessor active-p)
+   (triggered-p :initform NIL :accessor triggered-p)))
 
 (defgeneric activate-trigger (target trigger))
+
+(defmethod activate-trigger :after (target (trigger trigger-volume))
+  (setf (triggered-p trigger) T))
 
 (defmethod awake-p ((entity trigger-volume))
   NIL)
@@ -50,6 +54,7 @@
 
 (define-handler (rearming-trigger-volume tick) (dt)
   (when (<= (cooldown rearming-trigger-volume) (incf (cooldown-timer rearming-trigger-volume) dt))
+    (setf (triggered-p rearming-trigger-volume) NIL)
     (setf (active-p rearming-trigger-volume) T)))
 
 (defclass thunk-trigger-volume (trigger-volume)
@@ -96,5 +101,40 @@
 (defmethod (setf accessor) (value (trigger accessor-trigger-volume))
   (reinitialize-instance trigger :accessor value))
 
-(defclass spawner-trigger-volume (trigger-volume)
+(defclass kill-trigger-volume (trigger-volume)
   ())
+
+(defmethod activate-trigger ((entity entity) (trigger kill-trigger-volume))
+  (leave entity T))
+
+(defclass despawner-trigger-volume (trigger-volume)
+  ((spawned-objects :initarg :spawned-objects :initform (tg:make-weak-hash-table :weakness :key) :accessor spawned-objects)))
+
+(defmethod activate-trigger ((entity entity) (trigger despawner-trigger-volume))
+  (loop for key being the hash-keys of (spawned-objects trigger)
+        do (leave key T)
+           (remhash key (spawned-objects trigger))))
+
+(defclass spawner-trigger-volume (trigger-volume)
+  ((spawned-objects :initarg :spawned-objects :initform (tg:make-weak-hash-table :weakness :key) :accessor spawned-objects)
+   (spawn-class :initarg :spawn-class :accessor spawn-class)
+   (spawn-count :initarg :spawn-count :initform 1 :accessor spawn-count)
+   (spawn-volume :initarg :spawn-volume :accessor spawn-volume)
+   (auto-deactivate :initarg :auto-deactivate :initform T :accessor auto-deactivate)
+   (respawn-cooldown :initarg :respawn-cooldown :initform NIL :accessor respawn-cooldown)
+   (respawn-timer :initform 0 :accessor respawn-timer)))
+
+(defun %prune-spawned-objects (spawned-objects)
+  (loop for object being the hash-keys of spawned-objects
+        do (unless (container object)
+             (remhash object spawned-objects)))
+  spawned-objects)
+
+(defmethod activate-trigger ((entity entity) (trigger spawner-trigger-volume))
+  (unless (triggered-p trigger)
+    (when (= 0 (hash-table-count (%prune-spawned-objects (spawned-objects trigger))))
+      (dotimes (i (spawn-count trigger))
+        ))))
+
+(define-handler ((trigger spawner-trigger-volume) tick) (dt)
+  )
