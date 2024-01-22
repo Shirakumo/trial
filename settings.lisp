@@ -179,6 +179,10 @@
   (when *context*
     (show *context* :fullscreen value :mode (setting :display :resolution))))
 
+(define-setting-observer monitor :display :monitor (value)
+  (when *context*
+    (show *context* :fullscreen (setting :display :fullscreen) :mode value)))
+
 (define-setting-observer vsync :display :vsync (vsync)
   (when *context*
     (setf (vsync *context*) vsync)))
