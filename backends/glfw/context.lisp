@@ -85,6 +85,8 @@
           ((eql T) (show context :fullscreen T))
           (string (show context :fullscreen T :mode fullscreen))
           ((eql NIL))))
+      (gl:clear :color-buffer)
+      (glfw:swap-buffers context)
       (refresh-window-size context)
       (when vsync-p (setf (vsync context) vsync)))))
 
