@@ -112,6 +112,7 @@
 
 (defun ensure-monitor (monitor context)
   (etypecase monitor
+    ((eql T) (glfw:primary-monitor))
     (null (current-monitor context))
     (monitor monitor)
     (string (find-monitor monitor context))))
@@ -125,6 +126,7 @@
                (monitor (current-video-mode mode))
                (string (current-video-mode (find-monitor mode context)))
                (null (current-video-mode (current-monitor context)))
+               ((eql T) (current-video-mode (glfw:primary-monitor)))
                (cons mode))
            (let ((monitor (ensure-monitor monitor context)))
              (when (eql T w)

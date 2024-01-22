@@ -181,7 +181,7 @@
 
 (define-setting-observer monitor :display :monitor (value)
   (when *context*
-    (show *context* :fullscreen (setting :display :fullscreen) :mode value)))
+    (show *context* :fullscreen (setting :display :fullscreen) :mode (or value T))))
 
 (define-setting-observer vsync :display :vsync (vsync)
   (when *context*
