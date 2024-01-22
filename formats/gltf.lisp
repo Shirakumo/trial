@@ -402,24 +402,29 @@
                (gltf:friction-combine material)
                (gltf:restitution-combine material))))))
 
-(defvar *collision-system-indices* (make-array 32 :fill-pointer 0))
+(defparameter *collision-system-indices*
+  ;; Hack for blender
+  (replace (make-array 32 :fill-pointer 2)
+           '("System_0" "System_1" "System_2")))
+
+(defun collision-system-idx (system)
+  (let ((pos (position system *collision-system-indices* :test #'string-equal)))
+    (unless pos
+      (setf pos (length *collision-system-indices*))
+      (vector-push system *collision-system-indices*))
+    pos))
 
 (defun collision-filter-mask (filter)
-  (flet ((system-idx (system)
-           (let ((pos (position system *collision-system-indices* :test #'string-equal)))
-             (unless pos
-               (setf pos (length *collision-system-indices*))
-               (vector-push system *collision-system-indices*))
-             pos)))
+  (flet ()
     (let ((mask (1- (ash 1 32))))
       (cond ((gltf:collide-with-systems filter)
              (setf mask 0)
              (loop for system across (gltf:collide-with-systems filter)
-                   for idx = (system-idx system)
+                   for idx = (collision-system-idx system)
                    do (setf (ldb (byte 1 idx) mask) 1)))
             ((gltf:not-collide-with-systems filter)
              (loop for system across (gltf:collide-with-systems filter)
-                   for idx = (system-idx system)
+                   for idx = (collision-system-idx system)
                    do (setf (ldb (byte 1 idx) mask) 0))))
       mask)))
 
