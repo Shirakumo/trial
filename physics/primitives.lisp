@@ -120,7 +120,7 @@
   (transform (meye 4) :type mat4)
   (global-bounds-cache (%make-global-bounds-cache) :type global-bounds-cache)
   ;; 32-bit mask to designate which systems to interact with.
-  (collision-mask :initform 1 :accessor collision-mask))
+  (collision-mask 1 :type (unsigned-byte 32)))
 
 (defmethod collision-mask ((primitive primitive))
   (primitive-collision-mask primitive))
