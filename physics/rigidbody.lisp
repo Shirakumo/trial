@@ -90,6 +90,22 @@
 (defmethod (setf physics-primitives) ((primitives list) (entity rigid-shape))
   (setf (physics-primitives entity) (coerce primitives 'vector)))
 
+(defmethod sample-volume ((entity rigid-shape) &optional vec)
+  (let ((primitives (physics-primitives entity)))
+    (case (length primitives)
+      (0 (sampling:map-samples vec (lambda (vec) (global-location entity vec))))
+      (1 (sample-volume (aref primitives 0) vec))
+      (T ;; With multiple volumes we have to fall back to rejection sampling.
+       (let ((loc (global-location entity))
+             (bsize (global-bsize entity)))
+         (flet ((generate (vec)
+                  (!vrand vec loc bsize))
+                (test (vec)
+                  (loop for primitive across primitives
+                        thereis (contains-p vec primitive))))
+           (declare (dynamic-extent #'generate #'test))
+           (sampling:rejection-sample #'generate #'test vec)))))))
+
 (defmethod %update-rigidbody-cache ((entity rigid-shape))
   (setf (global-bounds-cache-dirty-p (global-bounds-cache entity)) T)
   (let ((*model-matrix* (transform-matrix entity)))
