@@ -272,6 +272,15 @@
                               (v<- (global-bounds-cache-obb cache) (compute-bsize primitive)))
                             value))))))
 
+(define-primitive-type allspace
+    ())
+
+(defmethod compute-bsize ((primitive allspace))
+  (vec3 most-positive-single-float))
+
+(defmethod compute-radius ((primitive allspace))
+  most-positive-single-float)
+
 (define-primitive-type sphere
     ((radius 1.0 :type single-float)))
 

@@ -73,8 +73,26 @@
         (setf (hit-b hit) b)
         (incf start)))))
 
-(trial:define-hit-detector (trial:primitive trial:primitive)
+(define-hit-detector (trial:primitive trial:primitive)
   (setf trial:start (funcall +generic-hit-detector+ a b trial:hits trial:start trial:end)))
+
+(define-hit-detector (allspace vec3)
+  (v<- (hit-location hit) b)
+  (setf (hit-depth hit) 0.0)
+  (v<- (hit-normal hit) +vy+)
+  (finish-hit))
+
+(define-distance (allspace primitive)
+  0.0)
+
+(define-intersection-test (allspace primitive)
+  T)
+
+(define-hit-detector (allspace primitive)
+  (global-location b (hit-location hit))
+  (setf (hit-depth hit) 0.0)
+  (v<- (hit-normal hit) +vy+)
+  (finish-hit))
 
 (define-hit-detector (half-space vec3)
   (let ((dist (- (v. (plane-normal a) b)
