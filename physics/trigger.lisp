@@ -61,8 +61,12 @@
   ((thunk :initarg :thunk :accessor thunk)))
 
 (defmethod shared-initialize :after ((trigger thunk-trigger-volume) slots &key form)
-  (when form
-    (setf (thunk trigger) (compile NIL `(lambda (rigid-shape trigger-volume) ,form)))))
+  (etypecase form
+    (null)
+    (function
+     (setf (thunk trigger) form))
+    (cons
+     (setf (thunk trigger) (compile NIL `(lambda (rigid-shape trigger-volume) ,form))))))
 
 (defmethod activate-trigger (a (trigger thunk-trigger-volume))
   (funcall (thunk trigger) a trigger))
@@ -101,7 +105,7 @@
 (defmethod (setf accessor) (value (trigger accessor-trigger-volume))
   (reinitialize-instance trigger :accessor value))
 
-(defclass kill-trigger-volume (trigger-volume)
+(defclass kill-trigger-volume (class-filtered-trigger-volume)
   ())
 
 (defmethod activate-trigger ((entity entity) (trigger kill-trigger-volume))
