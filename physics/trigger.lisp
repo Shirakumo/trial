@@ -141,6 +141,9 @@
 (defmethod draw-instance ((classes sequence) &rest args)
   (apply #'make-instance (alexandria:random-elt classes) args))
 
+(defmethod draw-instance ((entity entity) &rest args)
+  (apply #'clone entity args))
+
 (defmethod draw-instance ((trigger spawner-trigger-volume) &rest args)
   (let ((entity (apply #'draw-instance (spawn-class trigger) (spawn-arguments trigger))))
     (when (spawn-volume trigger)

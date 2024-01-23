@@ -496,12 +496,14 @@
                  (return (funcall function child extras)))))))
 
 (define-trigger-translation spawn trial::spawner-trigger-volume (spawn spawn-count auto-deactivate respawn-cooldown)
-  (destructuring-bind (class &rest args) (enlist (read-from-string spawn))
-    (list :spawn-class class
-          :spawn-arguments args
-          :spawn-count (or spawn-count 1)
-          :auto-deactivate auto-deactivate
-          :respawn-cooldown respawn-cooldown)))
+  (destructuring-bind (&optional class &rest args) (when (string/= "" spawn) (enlist (read-from-string spawn)))
+    (let ((volume (shiftf (aref (physics-primitives trial::spawner-trigger-volume) 0) (trial::make-allspace))))
+      (list :spawn-class class
+            :spawn-arguments args
+            :spawn-count (or spawn-count 1)
+            :spawn-volume volume
+            :auto-deactivate auto-deactivate
+            :respawn-cooldown respawn-cooldown))))
 
 (define-trigger-translation kill trial::kill-trigger-volume (kill)
   (list :class-name (read-from-string kill)))
