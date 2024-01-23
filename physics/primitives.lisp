@@ -113,6 +113,32 @@
                        do (reverse-hit hit))
                  nstart)))))))
 
+(defparameter *collision-system-indices*
+  (replace (make-array 32 :fill-pointer 3)
+           '("system-0" "system-1" "system-2")))
+
+(defun normalize-collision-system-name (name)
+  (with-output-to-string (out)
+    (loop for char across (string name)
+          do (case char
+               ((#\- #\_ #\/ #\. #\Space)
+                (write-char #\- out))
+               ((#\' #\"))
+               (T
+                (write-char (char-downcase char) out))))))
+
+(defun collision-system-idx (system-ish)
+  (etypecase system-ish
+    (integer
+     system-ish)
+    ((or string symbol)
+     (let* ((name (normalize-collision-system-name system-ish))
+            (pos (position name *collision-system-indices* :test #'string=)))
+       (unless pos
+         (setf pos (length *collision-system-indices*))
+         (vector-push name *collision-system-indices*))
+       pos))))
+
 (defstruct primitive
   (entity NIL :type T)
   (material NIL :type T)
@@ -128,10 +154,12 @@
 (defmethod (setf collision-mask) ((mask integer) (primitive primitive))
   (setf (primitive-collision-mask primitive) mask))
 
-;; TODO: add convenient manipulation function to manage the collision-mask
-;;       bit mask in rigidbodies.
-(defmethod (setf collision-mask) ((thing sequence) (primitive primitive))
-  (implement!))
+(defmethod (setf collision-mask) ((systems sequence) (primitive primitive))
+  (let ((mask 0))
+    (sequences:dosequence (system systems)
+      (setf (ldb (byte 1 (collision-system-idx system)) mask) 1))
+    (setf (collision-mask primitive) mask)
+    systems))
 
 (defmethod global-transform-matrix ((primitive primitive) &optional target)
   (etypecase target
