@@ -203,6 +203,8 @@
                :convex-covering
                :machine-state/opengl
                :sha3
+               :random-state
+               :random-sampling
                (:feature :windows :com-on)))
 
 #+sbcl

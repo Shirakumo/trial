@@ -9,6 +9,7 @@
   (:import-from #:flow #:port)
   (:import-from #:org.shirakumo.memory-regions
                 #:memory-region #:memory-region-pointer #:memory-region-size)
+  (:shadowing-import-from #:org.shirakumo.random-state #:random)
   (:local-nicknames
    (#:gamepad #:org.shirakumo.fraf.gamepad)
    (#:sequences #:org.shirakumo.trivial-extensible-sequences)
@@ -17,6 +18,8 @@
    (#:3ds #:org.shirakumo.fraf.trial.space)
    (#:mem #:org.shirakumo.memory-regions)
    (#:depot #:org.shirakumo.depot)
+   (#:random #:org.shirakumo.random-state)
+   (#:sampling #:org.shirakumo.random-sampling)
    #+windows (#:com #:org.shirakumo.com-on))
   ;; animation/asset.lisp
   (:export
@@ -333,6 +336,7 @@
    #:detect-hit
    #:intersects-p
    #:support-function
+   #:sample-volume
    #:global-support-function
    #:detect-hits
    #:define-distance

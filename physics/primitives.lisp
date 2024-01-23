@@ -4,6 +4,7 @@
 (defgeneric distance (a b))
 (defgeneric detect-hits (a b contacts start end))
 (defgeneric support-function (primitive local-direction next))
+(defgeneric sample-volume (primitive &optional vec))
 
 (defmethod distance ((a vec3) (b vec3))
   (vdistance a b))
@@ -219,6 +220,19 @@
 (define-accessor-delegate-methods material (primitive-material primitive))
 (define-accessor-delegate-methods transform-matrix (primitive-transform primitive))
 
+(defmethod sample-volume :around ((primitive primitive) &optional result)
+  (declare (ignore result))
+  (let ((result (call-next-method))
+        (transform (primitive-transform primitive)))
+    (etypecase result
+      (vec3 (n*m transform result))
+      (simple-vector
+       (dotimes (i (length result) result)
+         (n*m transform (the vec3 (aref result i)))))
+      (sequence
+       (sequences:dosequence (el (length result) result)
+         (n*m transform (the vec3 el)))))))
+
 (defun make-primitive-like (primitive constructor &rest args)
   (apply constructor :entity (primitive-entity primitive)
                      :material (primitive-material primitive)
@@ -271,6 +285,9 @@
 (defmethod compute-radius ((primitive sphere))
   (sphere-radius primitive))
 
+(defmethod sample-volume ((primitive sphere) &optional vec)
+  (sampling:sphere (sphere-radius primitive) vec))
+
 (define-support-function sphere (dir next)
   (nv* (!vunit* next dir) (sphere-radius primitive)))
 
@@ -287,6 +304,9 @@
 (defmethod compute-radius ((primitive ellipsoid))
   (let ((r (ellipsoid-radius primitive)))
     (max (vx r) (vy r) (vz r))))
+
+(defmethod sample-volume ((primitive ellipsoid) &optional vec)
+  (sampling:sphere (ellipsoid-radius primitive) vec))
 
 (define-support-function ellipsoid (dir next)
   (nv* (nvunit (!v* next dir (ellipsoid-radius primitive))) (ellipsoid-radius primitive)))
@@ -342,6 +362,9 @@
 (defmethod compute-radius ((primitive box))
   (vlength (box-bsize primitive)))
 
+(defmethod sample-volume ((primitive box) &optional vec)
+  (sampling:box (box-bsize primitive) vec))
+
 (define-support-function box (dir next)
   (let ((bsize (box-bsize primitive)))
     (vsetf next
@@ -382,6 +405,9 @@
   (sqrt (+ (expt (cylinder-radius primitive) 2)
            (expt (cylinder-height primitive) 2))))
 
+(defmethod sample-volume ((primitive cylinder) &optional vec)
+  (sampling:cylinder (cylinder-radius primitive) (cylinder-height primitive) +vy+ vec))
+
 (define-support-function cylinder (dir next)
   (vsetf next (vx dir) 0 (vz dir))
   (nv* (nvunit* next) (cylinder-radius primitive))
@@ -406,6 +432,9 @@
 
 (defmethod compute-radius ((primitive pill))
   (+ (pill-height primitive) (pill-radius primitive)))
+
+(defmethod sample-volume ((primitive pill) &optional vec)
+  (sampling:pill (pill-radius primitive) (pill-height primitive) +vy+ vec))
 
 (define-support-function pill (dir next)
   (nv* (nvunit* (v<- next dir)) (pill-radius primitive))
@@ -439,6 +468,9 @@
   (sqrt (max (vsqrlength (triangle-a primitive))
              (vsqrlength (triangle-b primitive))
              (vsqrlength (triangle-c primitive)))))
+
+(defmethod sample-volume ((primitive triangle) &optional vec)
+  (sampling:triangle (triangle-a primitive) (triangle-b primitive) (triangle-c primitive) vec))
 
 (define-support-function triangle (dir next)
   (let ((furthest most-negative-single-float))
@@ -503,6 +535,9 @@
     (!m* (primitive-local-transform primitive)
          offset
          (primitive-local-transform primitive))))
+
+(defmethod sample-volume ((primitive convex-mesh) &optional vec)
+  (sampling:convex-mesh (convex-mesh-vertices primitive) (convex-mesh-faces primitive) vec))
 
 (define-support-function convex-mesh (dir next)
   (let ((verts (convex-mesh-vertices primitive))
