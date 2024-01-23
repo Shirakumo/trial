@@ -27,7 +27,10 @@
   (stage (prefab-asset prefab) area))
 
 (defmethod instantiate-prefab ((prefab symbol) asset)
-  (apply #'instantiate-prefab (make-instance prefab) asset))
+  (instantiate-prefab (make-instance prefab) asset))
+
+(defmethod instantiate-prefab ((prefab class) asset)
+  (instantiate-prefab (make-instance prefab) asset))
 
 (defmethod instantiate-prefab ((prefab prefab) (asset (eql T)))
   (instantiate-prefab prefab (prefab-asset prefab)))
