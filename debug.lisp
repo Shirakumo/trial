@@ -68,7 +68,8 @@ void main(){
    (points :accessor points)
    (lines-vao :accessor lines-vao)
    (lines :accessor lines)
-   (text-render :accessor text-render)))
+   (text-render :accessor text-render)
+   (dirty :initform 0 :accessor dirty)))
 
 (defmethod initialize-instance :after ((draw debug-draw) &key)
   (setf (instances draw) (make-array 64 :fill-pointer 0 :adjustable T :element-type '(unsigned-byte 32)))
@@ -96,6 +97,13 @@ void main(){
   (stage (text-render draw) area))
 
 (defmethod render ((draw debug-draw) (program shader-program))
+  (when (logbitp 1 (dirty draw))
+    (resize-buffer (caar (bindings (points-vao draw))) T))
+  (when (logbitp 2 (dirty draw))
+    (resize-buffer (caar (bindings (lines-vao draw))) T))
+  (when (logbitp 3 (dirty draw))
+    (resize-buffer (caar (bindings (text-vao draw))) T))
+  (setf (dirty draw) 0)
   (setf (uniform program "view_matrix") (view-matrix))
   (setf (uniform program "projection_matrix") (projection-matrix))
   (disable-feature :depth-test)
@@ -132,7 +140,7 @@ void main(){
 
 (defmacro define-debug-draw-function ((name type) args &body body)
   (let ((type-id (ecase type (points 1) (lines 2) (text 3))))
-    `(defun ,name (,@args (debug-draw (node 'debug-draw T)) (update T) (container (scene +main+)) instance)
+    `(defun ,name (,@args (debug-draw (node 'debug-draw T)) (container (scene +main+)) instance)
        (flet ((,name ()
                 (unless debug-draw
                   (setf debug-draw (enter-and-load (make-instance 'debug-draw) container +main+)))
@@ -152,8 +160,7 @@ void main(){
                              (debug-draw-allocate data instances instance ,type-id n))))
                     (declare (ignorable #'v))
                     ,@body))
-                (when update
-                  (resize-buffer (caar (bindings (,(ecase type (points 'points-vao) (lines 'lines-vao) (text 'text-vao)) debug-draw))) T))
+                (setf (ldb (byte 1 ,type-id) (dirty debug-draw)) 1)
                 instance))
          (if (current-p (context +main+))
              (,name)
