@@ -130,10 +130,19 @@ In the configuration, the following keys are available in the ``:steam`` scope:
 ### Itch
 To upload to itch, you will need to have the ``butler`` program in your PATH. Make sure to run Butler once before to save the login credentials.
 
-In the configuration, the following keys are available in the ``:steam`` scope:
+In the configuration, the following keys are available in the ``:itch`` scope:
 
 - ``:user`` The user under which the project is located.
 - ``:project`` The name of the project. Defaults to the ``:system`` key.
+
+### GOG
+To upload to GOG, you need the ``GOGGalaxyPipelineBuilder`` program in your PATH. You can run it first to cache credentials, or pass them in the Trial configuration.
+
+In the configuration, the following keys are available in the ``:gog`` scope:
+
+- ``:user`` The username to log in with
+- ``:password`` The password to log in with
+- ``:branch`` The branch to push the build to. If the branch is password protected, this should be a list of the branch name and its password.
 
 ### Keygen
 To upload to a "Keygen"(link https://shirakumo.org/projects/keygen) instance, you'll need to generate an oAuth application on your instance and also authorise a token using the standard oAuth flow. If you use pass, you should create a pass entry with your tokens and secrets in it. On the Keygen side, create a project and a file under the project for each of the bundles you want to upload. On the release side you'll of course need the corresponding bundles to upload.

@@ -103,8 +103,18 @@
          "+run_app_build" (uiop:native-namestring build)
          "+quit")))
 
+(defmethod upload ((service (eql :gog)) &key (release (release)) (branch (config :gog :branch)) (user (config :gog :user)) (password (config :gog :password)) &allow-other-keys)
+  (destructuring-bind (branch &optional branch-password) (if (listp branch) branch (list branch))
+    (run "GOGGalaxyPipelineBuilder"
+         "build-game" (make-pathname :name "gog" :type "json" :defaults (output))
+         "--username" user
+         "--password" password
+         "--version" release
+         "--branch" branch
+         "--branch-password" branch-password)))
+
 (defmethod upload ((service (eql :all)) &rest args &key &allow-other-keys)
-  (apply #'upload (remove-if-not #'config '(:itch :steam :http :ssh :ftp :rsync :keygen)) args))
+  (apply #'upload (remove-if-not #'config '(:itch :steam :gog :http :ssh :ftp :rsync :keygen)) args))
 
 (defmethod upload ((service (eql T)) &rest args &key &allow-other-keys)
   (dolist (service (coerce (config :upload :targets) 'list))
