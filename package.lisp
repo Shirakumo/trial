@@ -1480,15 +1480,12 @@
    #:prompt-string
    #:action-strings
    #:action-string)
-  ;; rails.lisp
+  ;; random.lisp
   (:export
-   #:rail
-   #:target
-   #:rail-points
-   #:duration
-   #:rail-location
-   #:linear-rail
-   #:rail-times)
+   #:draw-instance
+   #:sample-volume
+   #:define-weighted-draw
+   #:random)
   ;; render-texture.lisp
   (:export
    #:render-texture
@@ -1871,7 +1868,7 @@
 
 (defpackage #:cl+trial
   (:nicknames #:org.shirakumo.fraf.trial.cl+trial)
-  (:shadowing-import-from #:trial #:// #:load)
+  (:shadowing-import-from #:trial #:// #:load #:random)
   (:use #:cl
         #:trial
         #:org.shirakumo.fraf.math))

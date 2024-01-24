@@ -67,6 +67,7 @@
                (:file "prefab" :depends-on ("package" "model"))
                (:file "prompt" :depends-on ("package"))
                (:file "queue" :depends-on ("package"))
+               (:file "random" :depends-on ("package"))
                (:file "render-loop" :depends-on ("package" "toolkit"))
                (:file "resource" :depends-on ("package" "context"))
                (:file "resource-generator" :depends-on ("package"))

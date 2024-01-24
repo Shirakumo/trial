@@ -33,7 +33,8 @@
 
 (deploy:define-hook (:boot trial) ()
   (v:restart-global-controller)
-  (setf *random-state* (make-random-state T)))
+  (setf *random-state* (make-random-state T))
+  (random:reseed random:*generator* T))
 
 (defmacro dont-deploy (&rest libraries)
   `(progn ,@(loop for lib in libraries

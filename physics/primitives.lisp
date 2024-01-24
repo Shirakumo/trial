@@ -4,7 +4,6 @@
 (defgeneric distance (a b))
 (defgeneric detect-hits (a b contacts start end))
 (defgeneric support-function (primitive local-direction next))
-(defgeneric sample-volume (primitive &optional vec))
 
 (defmethod distance ((a vec3) (b vec3))
   (vdistance a b))
