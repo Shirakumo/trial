@@ -42,10 +42,10 @@
        :ignore (ray-ignore ray)))
 
 (defun %ray-hit-inner (thunk a b hits start end)
-  (declare (type (function () (or null single-float)) thunk))
+  (declare (type (function (T T T) (or null single-float)) thunk))
   (declare (type ray a))
   (declare (type (unsigned-byte 32) start end))
-  (declare (type (simple-vector #.(1- (ash 1 32))) hits))
+  (declare (type (simple-vector) hits))
   (when (<= end start)
     (return-from %ray-hit-inner start))
   (when (or (eql b (ray-ignore a)) (= 0 (logand (ray-collision-mask a) (collision-mask b))))
@@ -65,7 +65,7 @@
     ;; We have to renormalise in case the transform has scaling.
     (let ((transform-scaling (vlength ray-direction)))
       (nv/ ray-direction transform-scaling)
-      (let ((tt (funcall thunk)))
+      (let ((tt (funcall thunk ray-location ray-direction hit)))
         (when tt
           ;; We have to use the world-space ray location and direction here, and thus also
           ;; multiply the time by the transform-scaling to ensure we get the time dilation
@@ -111,7 +111,7 @@
            ,@body))
 
        (defmethod detect-hits ((a ray) (b ,b) hits start end)
-         (flet ((inner ()
+         (flet ((inner (ray-location ray-direction hit)
                   (,implicit-name ray-location ray-direction ,@(if props
                                                                    (loop for prop in props
                                                                          collect `(,(first prop) b))
