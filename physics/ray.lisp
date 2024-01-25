@@ -99,6 +99,14 @@
 (defmethod detect-hits (a (b ray) hits start end)
   (detect-hits b a hits start end))
 
+(defmethod detect-hits ((a ray) (b 3ds:container) hits start end)
+  (declare (type (unsigned-byte 32) start end))
+  (declare (type (simple-vector #.(1- (ash 1 32)))))
+  (3ds:do-intersecting (element b (ray-location a) (ray-direction a) start)
+    (setf start (detect-hits a element hits start end))
+    (when (<= end start)
+      (return-from detect-hits start))))
+
 (define-ray-test sphere ((sphere-radius single-float))
   (let* ((em ray-location)
          (eb (v. em ray-direction))
@@ -110,14 +118,6 @@
             (!v+* ray-normal ray-location ray-direction tt)
             (nvunit ray-normal)
             tt))))))
-
-(defmethod detect-hits ((a ray) (b 3ds:container) hits start end)
-  (declare (type (unsigned-byte 32) start end))
-  (declare (type (simple-vector #.(1- (ash 1 32)))))
-  (3ds:do-intersecting (element b (ray-location a) (ray-direction a))
-    (when (<= end start)
-      (return-from detect-hits start))
-    (setf start (detect-hits a element hits start end))))
 
 (define-ray-test plane ((plane-normal vec3) (plane-offset single-float))
   (let ((denom (v. plane-normal ray-direction)))

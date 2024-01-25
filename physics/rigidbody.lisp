@@ -117,6 +117,12 @@
                 (primitive-local-transform primitive))
            (invalidate-global-bounds-cache primitive)))
 
+(defmethod detect-hits (other (entity rigid-shape) hits start end)
+  (detect-hits other (physics-primitives entity) hits start end))
+
+(defmethod detect-hits ((entity rigid-shape) other hits start end)
+  (detect-hits (physics-primitives entity) other hits start end))
+
 (defclass rigidbody (rigid-shape)
   ((rotation :initform (vec 0 0 0) :reader rotation)
    (inverse-inertia-tensor :initform (mat3) :reader inverse-inertia-tensor)
