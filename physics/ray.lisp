@@ -48,7 +48,8 @@
   (declare (type (simple-vector) hits))
   (when (<= end start)
     (return-from %ray-hit-inner start))
-  (when (or (eql b (ray-ignore a)) (= 0 (logand (ray-collision-mask a) (collision-mask b))))
+  (when (or (eql (ray-ignore a) (primitive-entity b))
+            (= 0 (logand (ray-collision-mask a) (collision-mask b))))
     (return-from %ray-hit-inner start))
   (let ((hit (aref hits start))
         (ray-location (vec3))
@@ -81,11 +82,26 @@
 
 (defun raycast (source direction &key (ignore source) (collision-mask 1) (target (scene +main+)) (hit (make-hit)))
   (let* ((dir (vunit direction))
-         (ray (%ray (location source) dir collision-mask ignore)))
-    (declare (dynamic-extent dir ray))
-    (when (detect-hit ray target hit)
-      (setf (hit-a hit) T)
-      hit)))
+         (ray (%ray (location source) dir collision-mask ignore))
+         (hits (make-array 32))
+         (%hit (make-hit)))
+    ;; FIXME: this kinda sucks.
+    (declare (dynamic-extent dir ray hits %hit))
+    (dotimes (i (length hits))
+      (setf (aref hits i) %hit)
+      (setq %hit (make-hit)))
+    (let ((count (detect-hits ray target hits 0 (length hits))))
+      (when (< 0 count)
+        (when (= count (length hits))
+          (dbg "RAY overflow"))
+        ;; Find the best hit. Ideally we'd feed this back into the broad-phase
+        ;; to tell it to stop trying to find shit that's out of reach anyway,
+        ;; but....
+        (setf (hit-depth hit) most-negative-single-float)
+        (dotimes (i count hit)
+          (when (< (hit-depth hit) (hit-depth (aref hits i)))
+            (<- hit (aref hits i))
+            (setf (hit-a hit) NIL)))))))
 
 (defmacro define-ray-test (b (&rest props) &body body)
   (let ((implicit-name (intern (format NIL "~a-~a-~a" 'ray b 'p)))

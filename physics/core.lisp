@@ -172,6 +172,17 @@
   (rotatef (hit-a hit) (hit-b hit))
   hit)
 
+(defmethod <- progn ((target hit) (source hit))
+  (setf (hit-a target) (hit-a source))
+  (setf (hit-b target) (hit-b source))
+  (v<- (hit-location target) (hit-location source))
+  (v<- (hit-normal target) (hit-normal source))
+  (setf (hit-restitution target) (hit-restitution source))
+  (setf (hit-static-friction target) (hit-static-friction source))
+  (setf (hit-dynamic-friction target) (hit-dynamic-friction source))
+  (setf (hit-depth target) (hit-depth source))
+  target)
+
 (defclass physics-system (entity listener)
   ((forces :initform (make-array 0 :adjustable T :fill-pointer T) :accessor forces)
    (%objects :initform (make-array 0 :adjustable T :fill-pointer T) :accessor %objects)
