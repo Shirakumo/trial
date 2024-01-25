@@ -137,7 +137,11 @@
        (unless pos
          (setf pos (length *collision-system-indices*))
          (vector-push name *collision-system-indices*))
-       pos))))
+       pos))
+    (sequence
+     (let ((mask 0))
+       (sequences:dosequence (system systems mask)
+         (setf (ldb (byte 1 (collision-system-idx system)) mask) 1))))))
 
 (defstruct primitive
   (entity NIL :type T)
@@ -155,11 +159,8 @@
   (setf (primitive-collision-mask primitive) mask))
 
 (defmethod (setf collision-mask) ((systems sequence) (primitive primitive))
-  (let ((mask 0))
-    (sequences:dosequence (system systems)
-      (setf (ldb (byte 1 (collision-system-idx system)) mask) 1))
-    (setf (collision-mask primitive) mask)
-    systems))
+  (setf (collision-mask primitive) (collision-system-idx systems))
+  systems)
 
 (defmethod global-transform-matrix ((primitive primitive) &optional target)
   (etypecase target

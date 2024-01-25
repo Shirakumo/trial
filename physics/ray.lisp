@@ -2,32 +2,86 @@
 
 (declaim (inline %ray))
 (defstruct (ray
-            (:constructor %ray (location direction))
+            (:constructor %ray (location direction collision-mask ignore))
             (:copier NIL)
             (:predicate NIL))
   (location (vec3) :type vec3)
-  (direction (vec3) :type vec3))
+  (direction (vec3) :type vec3)
+  (collision-mask 1 :type (unsigned-byte 32))
+  (ignore NIL :type T))
 
 (define-accessor-delegate-methods location (ray-location ray))
 (define-accessor-delegate-methods direction (ray-direction ray))
 
-(defun ray (&optional (location (vec3)) (direction +vz+))
-  (%ray location (vunit direction)))
+(defmethod collision-mask ((ray ray))
+  (ray-collision-mask ray))
 
-(define-compiler-macro ray (&optional (location '(vec3)) (direction '+vz+) &environment env)
+(defmethod (setf collision-mask) ((mask integer) (ray ray))
+  (setf (ray-collision-mask ray) mask))
+
+(defmethod (setf collision-mask) ((systems sequence) (ray ray))
+  (setf (collision-mask ray) (collision-system-idx systems))
+  systems)
+
+(defun ray (location direction &key (collision-mask 1) ignore)
+  (%ray location (vunit direction) collision-mask ignore))
+
+(define-compiler-macro ray (location direction &key (collision-mask 1) ignore &environment env)
   `(%ray ,(if (constantp location env) `(load-time-value ,location) location)
-         ,(if (constantp direction env) `(load-time-value (vunit ,direction)) `(vunit ,direction))))
+         ,(if (constantp direction env) `(load-time-value (vunit ,direction)) `(vunit ,direction))
+         ,collision-mask
+         ,ignore))
 
 (defmethod print-object ((ray ray) stream)
-  (prin1 `(ray ,(location ray) ,(direction ray)) stream))
+  (prin1 `(ray ,(location ray) ,(direction ray) ,(collision-mask ray)) stream))
 
 (defun copy-ray (ray)
   (ray (vcopy (ray-location ray))
-       (vcopy (ray-direction ray))))
+       (vcopy (ray-direction ray))
+       :collision-mask (ray-collision-mask ray)
+       :ignore (ray-ignore ray)))
 
-(defun raycast (location direction &optional (target (scene +main+)) (hit (make-hit)))
+(defun %ray-hit-inner (thunk a b hits start end)
+  (declare (type (function () (or null single-float)) thunk))
+  (declare (type ray a))
+  (declare (type (unsigned-byte 32) start end))
+  (declare (type (simple-vector #.(1- (ash 1 32))) hits))
+  (when (<= end start)
+    (return-from %ray-hit-inner start))
+  (when (or (eql b (ray-ignore a)) (= 0 (logand (ray-collision-mask a) (collision-mask b))))
+    (return-from %ray-hit-inner start))
+  (let ((hit (aref hits start))
+        (ray-location (vec3))
+        (ray-direction (vec3)))
+    (declare (dynamic-extent ray-location ray-direction))
+    (v<- ray-direction (ray-direction a))
+    (v<- ray-location (ray-location a))
+    ;; Bring the ray into the local transform space of the primitive
+    (let ((local (mat4)))
+      (declare (dynamic-extent local))
+      (!minv local (primitive-transform b))
+      (n*m4/3 local ray-direction)
+      (n*m local ray-location))
+    ;; We have to renormalise in case the transform has scaling.
+    (let ((transform-scaling (vlength ray-direction)))
+      (nv/ ray-direction transform-scaling)
+      (let ((tt (funcall thunk)))
+        (when tt
+          ;; We have to use the world-space ray location and direction here, and thus also
+          ;; multiply the time by the transform-scaling to ensure we get the time dilation
+          ;; induced by the primitive's transform scaling sorted out.
+          (setf (hit-depth hit) (- (* tt transform-scaling)))
+          (!v+* (hit-location hit) (ray-location a) (ray-direction a) (* tt transform-scaling))
+          (setf (hit-a hit) a)
+          (setf (hit-b hit) (primitive-entity b))
+          ;; Bring the normal back into global space
+          (n*m4/3 (primitive-transform b) (hit-normal hit))
+          (incf start))))
+    start))
+
+(defun raycast (source direction &key (ignore source) (collision-mask 1) (target (scene +main+)) (hit (make-hit)))
   (let* ((dir (vunit direction))
-         (ray (%ray location dir)))
+         (ray (%ray (location source) dir collision-mask ignore)))
     (declare (dynamic-extent dir ray))
     (when (detect-hit ray target hit)
       (setf (hit-a hit) T)
@@ -56,45 +110,15 @@
          (block NIL
            ,@body))
 
-       ;; TODO: would be better to have most of this logic factored out into a common function,
-       ;;       the only problem with that is the extraction of the properties...
        (defmethod detect-hits ((a ray) (b ,b) hits start end)
-         (declare (type (unsigned-byte 32) start end))
-         (declare (type (simple-vector ,(1- (ash 1 32)))))
-         (when (<= end start)
-           (return-from detect-hits start))
-         (let ((hit (aref hits start))
-               (ray-location (vec3))
-               (ray-direction (vec3)))
-           (declare (dynamic-extent ray-location ray-direction))
-           (v<- ray-direction (ray-direction a))
-           (v<- ray-location (ray-location a))
-           ;; Bring the ray into the local transform space of the primitive
-           (let ((local (mat4)))
-             (declare (dynamic-extent local))
-             (!minv local (primitive-transform b))
-             (n*m4/3 local ray-direction)
-             (n*m local ray-location))
-           ;; We have to renormalise in case the transform has scaling.
-           (let ((transform-scaling (vlength ray-direction)))
-             (nv/ ray-direction transform-scaling)
-             (let ((tt (,implicit-name ray-location ray-direction ,@ (if props
-                                                                         (loop for prop in props
-                                                                               collect `(,(first prop) b))
-                                                                         (list 'b))
-                                       (hit-normal hit))))
-               (when tt
-                 ;; We have to use the world-space ray location and direction here, and thus also
-                 ;; multiply the time by the transform-scaling to ensure we get the time dilation
-                 ;; induced by the primitive's transform scaling sorted out.
-                 (setf (hit-depth hit) (- (* tt transform-scaling)))
-                 (!v+* (hit-location hit) (ray-location a) (ray-direction a) (* tt transform-scaling))
-                 (setf (hit-a hit) a)
-                 (setf (hit-b hit) ,(if (subtypep b 'primitive) `(primitive-entity b) b))
-                 ;; Bring the normal back into global space
-                 (n*m4/3 (primitive-transform b) (hit-normal hit))
-                 (incf start))))
-           start)))))
+         (flet ((inner ()
+                  (,implicit-name ray-location ray-direction ,@(if props
+                                                                   (loop for prop in props
+                                                                         collect `(,(first prop) b))
+                                                                   (list 'b))
+                                  (hit-normal hit))))
+           (declare (dynamic-extent #'inner))
+           (%ray-hit-inner #'inner a b hits start end))))))
 
 (defmethod detect-hits (a (b ray) hits start end)
   (detect-hits b a hits start end))
