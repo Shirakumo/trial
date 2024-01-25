@@ -402,6 +402,7 @@
    #:ray-location
    #:ray-direction
    #:copy-ray
+   #:raycast
    #:define-ray-test)
   ;; physics/resolution.lisp
   (:export

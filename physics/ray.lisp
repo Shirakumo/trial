@@ -25,6 +25,14 @@
   (ray (vcopy (ray-location ray))
        (vcopy (ray-direction ray))))
 
+(defun raycast (location direction &optional (target (scene +main+)) (hit (make-hit)))
+  (let* ((dir (vunit direction))
+         (ray (%ray location dir)))
+    (declare (dynamic-extent dir ray))
+    (when (detect-hit ray target hit)
+      (setf (hit-a hit) T)
+      hit)))
+
 (defmacro define-ray-test (b (&rest props) &body body)
   (let ((implicit-name (intern (format NIL "~a-~a-~a" 'ray b 'p)))
         (loc (intern (string '#:ray-location)))
