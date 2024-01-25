@@ -449,7 +449,7 @@
                  :irradiance-map (trial:implement!)
                  :environment-map (trial:implement!)))
 
-(defun load-rigidbody (child node)
+(defun load-rigidbody (model child node)
   ;; FIXME: implement joints
   (etypecase child
     (basic-entity (change-class child 'trial:basic-physics-entity))
@@ -575,7 +575,7 @@
                           (when (gltf:camera node)
                             (enter (load-camera (gltf:camera node)) child))
                           (when (gltf:rigidbody node)
-                            (load-rigidbody child node))
+                            (load-rigidbody model child node))
                           (when (gltf:trigger node)
                             (load-trigger child node))
                           (enter child container))))
