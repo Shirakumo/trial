@@ -79,6 +79,7 @@
                  ;; We have to use the world-space ray location and direction here, and thus also
                  ;; multiply the time by the transform-scaling to ensure we get the time dilation
                  ;; induced by the primitive's transform scaling sorted out.
+                 (setf (hit-depth hit) (- (* tt transform-scaling)))
                  (!v+* (hit-location hit) (ray-location a) (ray-direction a) (* tt transform-scaling))
                  (setf (hit-a hit) a)
                  (setf (hit-b hit) ,(if (subtypep b 'primitive) `(primitive-entity b) b))
