@@ -264,6 +264,12 @@
     (when (< 0 end)
       (resolve-hits system hits 0 end dt))))
 
+(defmethod detect-hits ((system physics-system) other hits start end)
+  (detect-hits (%objects system) other hits start end))
+
+(defmethod detect-hits (other (system physics-system) hits start end)
+  (detect-hits other (%objects system) hits start end))
+
 (define-handler (physics-system tick) (tt dt fc)
   (update physics-system tt dt fc))
 
@@ -293,3 +299,9 @@
 
 (define-handler (physics-scene tick :after) (tt dt fc)
   (update (physics-system physics-scene) tt dt fc))
+
+(defmethod detect-hits ((scene physics-scene) other hits start end)
+  (detect-hits (physics-system scene) other hits start end))
+
+(defmethod detect-hits (other (scene physics-scene) hits start end)
+  (detect-hits other (physics-system scene) hits start end))

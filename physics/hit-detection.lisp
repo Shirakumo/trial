@@ -15,6 +15,14 @@
       (return-from detect-hits start))
     (setf start (detect-hits a element hits start end))))
 
+(defmethod detect-hits ((a 3ds:container) (b primitive) hits start end)
+  (declare (type (unsigned-byte 32) start end))
+  (declare (type (simple-vector #.(1- (ash 1 32)))))
+  (3ds:do-overlapping (element a b)
+    (when (<= end start)
+      (return-from detect-hits start))
+    (setf start (detect-hits element b hits start end))))
+
 (defmethod detect-hits ((sequence sequence) other hits start end)
   (sequences:dosequence (a sequence start)
     (unless (eq a other)

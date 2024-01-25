@@ -426,6 +426,12 @@
         do (loop for primitive across (physics-primitives object)
                  do (3ds:update primitive structure))))
 
+(defmethod detect-hits ((system accelerated-rigidbody-system) other hits start end)
+  (detect-hits (acceleration-structure system) other hits start end))
+
+(defmethod detect-hits (other (system accelerated-rigidbody-system) hits start end)
+  (detect-hits other (acceleration-structure system) hits start end))
+
 (defmethod generate-hits ((system accelerated-rigidbody-system) hits start end)
   (3ds:do-pairs (a b (acceleration-structure system) start)
     (when (< 0 (logand (collision-mask a) (collision-mask b)))
