@@ -107,7 +107,12 @@
                         (when (> r 1) (p<- b1 c2))
                         (when (> r 2) (p<- b2 c3)))))
          ;; should always find a solution
-         (assert (/= d MOST-POSITIVE-SINGLE-FLOAT))
+         (assert (/= d MOST-POSITIVE-SINGLE-FLOAT)
+                 nil "Couldn't find best face?~% flat=~s mdet=~s c=~s~% ~s~%"
+                 flat mdet c
+                 (loop for j from 1 to 3
+                       collect (or flat
+                                   (not (sv-compare-signs mdet (vref c j))))))
          ;; copy results to output
          (v<- dir best-dir)
          (p<- s1 b0)
