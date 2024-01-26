@@ -366,9 +366,15 @@
                             ;; tries
                             (incf stuck)
                             (setf stuck 0))
-                        (decf tt dt))
+                        (decf tt dt)
+                        (v<- ray-normal v)
+                        ;; adjust v as well, so we terminate
+                        ;; immediately if we reached the
+                        ;; simplex. Otherwise we run into problems
+                        ;; updating simplex since we don't have enough
+                        ;; precision left.
+                        (nv+* v r (- dt)))
                       (!v+* x s r tt)
-                      (v<- ray-normal v)
                       (setf last-updated i)
                       ;; update s[0-3] for new X
                       (!v- s0 x (point-a s0))
