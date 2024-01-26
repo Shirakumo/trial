@@ -11,31 +11,32 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            /home/runner/quicklisp
+            /home/runner/.roswell
             /home/runner/.cache/common-lisp
           key: ${{ runner.os }}-ql
+      - name: Install Roswell
+        env:
+          LISP: sbcl-bin/2.4.0
+          ROSWELL_INSTALL_DIR: /usr
+        run: |
+          curl -L https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh
+          echo "$HOME/.roswell/bin" >> $GITHUB_PATH
       - name: Install env
         if: steps.cache-ql.outputs.cache-hit != 'true'
         run: |
-          sudo apt-get -qq install sbcl
-          curl -o ~/quicklisp.lisp https://beta.quicklisp.org/quicklisp.lisp
-          sbcl --noinform --load ~/quicklisp.lisp --eval '(quicklisp-quickstart:install)' --non-interactive
-          sbcl --noinform \
-               --eval '(load "/home/runner/quicklisp/setup.lisp")' \
+          ros run -- --noinform \
                --eval '(ql-dist:install-dist "http://dist.shirakumo.org/shirakumo.txt" :prompt NIL)' \
                --non-interactive
       - uses: actions/checkout@v1
       - name: Build the library
         run: |
-          sbcl --noinform --dynamic-space-size 2Gb \
-               --eval '(load "/home/runner/quicklisp/setup.lisp")' \
+          ros run -- --noinform --dynamic-space-size 4Gb \
                --eval "(push \"$GITHUB_WORKSPACE\" ql:*local-project-directories*)" \
                --eval '(ql:quickload :trial-examples)' \
                --non-interactive
       - name: Build the binary
         run: |
-          sbcl --noinform --dynamic-space-size 2Gb \
-               --eval '(load "/home/runner/quicklisp/setup.lisp")' \
+          ros run -- --noinform --dynamic-space-size 4Gb \
                --eval "(push \"$GITHUB_WORKSPACE\" ql:*local-project-directories*)" \
                --eval '(asdf:make :trial-examples)' \
                --non-interactive
