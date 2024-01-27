@@ -275,11 +275,23 @@
 (define-primitive-type allspace
     ())
 
+(defmethod print-object ((primitive allspace) stream)
+  (print-unreadable-object (primitive stream :type T :identity T)))
+
+(defmethod global-bsize ((primitive primitive) &optional (target (vec3)))
+  (v<- target (/ most-positive-single-float 8)))
+
+(defmethod global-radius ((primitive primitive))
+  (/ most-positive-single-float 8))
+
 (defmethod compute-bsize ((primitive allspace))
-  (vec3 most-positive-single-float))
+  (vec3 (/ most-positive-single-float 8)))
 
 (defmethod compute-radius ((primitive allspace))
-  most-positive-single-float)
+  (/ most-positive-single-float 8))
+
+(define-support-function allspace (dir next)
+  (nv* (!vunit* next dir) (/ most-positive-single-float 32)))
 
 (define-primitive-type sphere
     ((radius 1.0 :type single-float)))

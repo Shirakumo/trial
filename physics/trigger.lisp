@@ -1,6 +1,6 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass trigger-volume (rigid-shape)
+(defclass trigger-volume (rigid-shape basic-node)
   ((active-p :initarg :active-p :initform T :accessor active-p)
    (triggered-p :initform NIL :accessor triggered-p)))
 

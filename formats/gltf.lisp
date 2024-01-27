@@ -481,24 +481,28 @@
                (apply #'change-class ,class ',class
                       (progn ,@initargs)))))))
 
-(defun load-trigger (child node)
+(defun load-trigger (model child node)
   (etypecase child
-    ((and basic-node (not multi-mesh-entity))
+    (basic-node
      (change-class child 'trial:trigger-volume)))
   (let ((shape (load-shape (gltf:shape (gltf:trigger node)) model))
         (extras (gltf:extras node)))
     (setf (trial:primitive-collision-mask shape) (collision-filter-mask (gltf:collision-filter (gltf:trigger node))))
     (setf (trial:physics-primitives child) shape)
-    (load-trigger child node)
     (when extras
       (loop for key being the hash-keys of *trigger-translator-functions* using (hash-value function)
             do (when (gethash key extras)
                  (return (funcall function child extras)))))))
 
 (define-trigger-translation spawn trial::spawner-trigger-volume (spawn spawn-count auto-deactivate respawn-cooldown)
-  (destructuring-bind (&optional class &rest args) (when (string/= "" spawn) (enlist (read-from-string spawn)))
+  (destructuring-bind (&optional class-or-count &rest args) (enlist (read-from-string spawn))
     (let ((volume (shiftf (aref (physics-primitives trial::spawner-trigger-volume) 0) (trial::make-allspace))))
-      (list :spawn-class class
+      (etypecase class-or-count
+        (integer
+         (setf spawn-count class-or-count)
+         (setf class-or-count (node "class" trial::spawner-trigger-volume)))
+        (symbol))
+      (list :spawn-class class-or-count
             :spawn-arguments args
             :spawn-count (or spawn-count 1)
             :spawn-volume volume
@@ -574,10 +578,10 @@
                             (enter (load-light (gltf:light node)) child))
                           (when (gltf:camera node)
                             (enter (load-camera (gltf:camera node)) child))
-                          (when (gltf:rigidbody node)
+                          (when (and (not (gltf:trigger node)) (gltf:rigidbody node))
                             (load-rigidbody model child node))
                           (when (gltf:trigger node)
-                            (load-trigger child node))
+                            (load-trigger model child node))
                           (enter child container))))
         (loop for node across (gltf:scenes gltf)
               for scene = (make-instance 'basic-node :name (gltf:name node))
