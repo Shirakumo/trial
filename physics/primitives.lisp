@@ -290,9 +290,6 @@
 (defmethod compute-radius ((primitive allspace))
   (/ most-positive-single-float 8))
 
-(define-support-function allspace (dir next)
-  (nv* (!vunit* next dir) (/ most-positive-single-float 32)))
-
 (define-primitive-type sphere
     ((radius 1.0 :type single-float)))
 

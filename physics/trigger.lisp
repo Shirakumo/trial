@@ -12,26 +12,16 @@
 (defmethod awake-p ((entity trigger-volume))
   NIL)
 
-(defmethod collides-p ((a trigger-volume) (b trigger-volume) hit)
-  NIL)
+(defmethod collides-p ((a rigidbody) (trigger trigger-volume) hit)
+  (active-p trigger))
 
-(defmethod collides-p ((a rigid-shape) (trigger trigger-volume) hit)
-  (and (active-p trigger) (call-next-method)))
-
-(defmethod collides-p ((a trigger-volume) (b rigid-shape) hit)
+(defmethod collides-p ((a trigger-volume) (b rigidbody) hit)
   (collides-p b a (reverse-hit hit)))
 
-(defmethod resolve-collision ((a trigger-volume) (b rigid-shape) hit)
-  (activate-trigger b a))
-
-(defmethod resolve-collision ((a rigid-shape) (b trigger-volume) hit)
-  (activate-trigger a b))
-
-(defmethod resolve-collision-impact ((a rigid-shape) (b trigger-volume) hit))
-
-(defmethod resolve-collision :after ((a rigid-shape) (b trigger-volume) (contact contact))
-  (setf (contact-desired-delta contact) 0.0)
-  (setf (contact-depth contact) 0.0))
+(defmethod collides-p :around ((a rigidbody) (trigger trigger-volume) hit)
+  (when (call-next-method)
+    (activate-trigger a trigger))
+  NIL)
 
 (defclass one-shot-trigger-volume (trigger-volume)
   ())
