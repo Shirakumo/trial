@@ -143,7 +143,10 @@
   (let ((entity (apply #'draw-instance (spawn-class trigger) (spawn-arguments trigger))))
     (when (spawn-volume trigger)
       (sample-volume (spawn-volume trigger) (location entity)))
-    (setf (gethash entity (spawned-objects trigger)) T)))
+    (setf (gethash entity (spawned-objects trigger)) T)
+    ;; TODO: make this less horrendously inefficient
+    (enter-and-load entity (container trigger) +main+)
+    entity))
 
 (defmethod activate-trigger ((entity entity) (trigger spawner-trigger-volume))
   (unless (triggered-p trigger)
