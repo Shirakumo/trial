@@ -3,6 +3,7 @@
   (:shadow #:asset #:load-image)
   (:local-nicknames
    (#:gltf #:org.shirakumo.fraf.gltf)
+   (#:sequences #:org.shirakumo.trivial-extensible-sequences)
    (#:v #:org.shirakumo.verbose))
   (:export))
 (in-package #:org.shirakumo.fraf.trial.gltf)
@@ -507,7 +508,10 @@
       (etypecase class-or-count
         (integer
          (setf spawn-count class-or-count)
-         (setf class-or-count (node "class" trigger)))
+         (sequences:dosequence (child trigger (error "Trigger ~s has no spawn class child!" (name trigger)))
+           (when (and (<= (length "class") (length (name child)))
+                      (string= "class" (name child) :end2 (length "class")))
+             (return (setf class-or-count child)))))
         (symbol))
       (clear trigger)
       (list :spawn-class class-or-count
