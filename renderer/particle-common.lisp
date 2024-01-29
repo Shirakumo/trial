@@ -20,7 +20,8 @@
    (vertex-array :initform (// 'trial 'unit-square) :accessor vertex-array)
    (max-particles :initarg :max-particles :initform 1000 :reader max-particles)
    (motion-blur :initarg :motion-blur :initform 0.0 :uniform T)
-   (particle-force-fields :reader particle-force-fields))
+   (particle-force-fields :reader particle-force-fields)
+   (blend-mode :initarg :blend-mode :initform :add :accessor blend-mode))
   (:buffers (trial standard-environment-information)))
 
 (defmethod initialize-instance :around ((emitter particle-emitter) &key particle-options particle-force-fields vertex-array)

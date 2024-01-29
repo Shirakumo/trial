@@ -288,9 +288,9 @@
   (gl:depth-mask T))
 
 (defmethod render ((emitter gpu-particle-emitter) (program shader-program))
-  (gl:blend-func :src-alpha :one)
+  (set-blend-mode (blend-mode emitter))
   (%gl:draw-arrays-indirect :triangles (slot-offset 'particle-argument-buffer 'draw-args))
-  (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha))
+  (set-blend-mode :normal))
 
 (defmethod emit ((particle-emitter gpu-particle-emitter) count &rest particle-options &key vertex-array location orientation scaling transform)
   ;; We do the emit **right now** so that the particle options are only active for the

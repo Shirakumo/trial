@@ -499,6 +499,7 @@
    #:particle-mode
    #:particle-flip
    #:particle-color
+   #:blend-mode
    #:emit)
   ;; renderer/cpu-particle.lisp
   (:export
@@ -1184,7 +1185,8 @@
    #:disable-feature
    #:push-features
    #:pop-features
-   #:with-pushed-features)
+   #:with-pushed-features
+   #:set-blend-mode)
   ;; gl-struct.lisp
   (:export
    #:gl-struct
@@ -1445,13 +1447,6 @@
    #:parallax
    #:parallax-background
    #:change-background)
-  ;; particle.lisp
-  (:export
-   #:particle-system
-   #:particle-capacity
-   #:active-particles
-   #:lifetime
-   #:clock)
   ;; pipeline.lisp
   (:export
    #:pipeline
