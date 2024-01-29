@@ -614,6 +614,8 @@
                                                  :shape shape
                                                  :gltf (gltf:gltf base-node)))
          (child (gltf:make-indexed 'gltf:node base-node :collider collider)))
+    (unless (gltf:extras child) (setf (gltf:extras child) (make-hash-table :test 'equal)))
+    (setf (gethash "virtual" (gltf:extras child)) T)
     (gltf:push-child child base-node)))
 
 (defmethod optimize-model (file (type (eql :glb)) &rest args)
