@@ -4,6 +4,8 @@
   ((active-p :initarg :active-p :initform T :accessor active-p)
    (triggered-p :initform NIL :accessor triggered-p)))
 
+(define-transfer trigger-volume active-p triggered-p)
+
 (defgeneric activate-trigger (target trigger))
 
 (defmethod activate-trigger :after (target (trigger trigger-volume))
@@ -32,12 +34,16 @@
 (defclass class-filtered-trigger-volume (trigger-volume)
   ((class-name :initarg :class-name :initform 'rigid-shape :accessor class-name)))
 
+(define-transfer class-filtered-trigger-volume class-name)
+
 (defmethod collides-p ((a rigid-shape) (trigger class-filtered-trigger-volume) hit)
   (and (typep a (class-name trigger)) (call-next-method)))
 
 (defclass rearming-trigger-volume (trigger-volume listener)
   ((cooldown :initarg :cooldown :initform 1.0 :accessor cooldown)
    (cooldown-timer :initform 0.0 :accessor cooldown-timer)))
+
+(define-transfer rearming-trigger-volume cooldown)
 
 (defmethod activate-trigger :after (a (trigger rearming-trigger-volume))
   (setf (cooldown-timer trigger) 0.0))
@@ -49,6 +55,8 @@
 
 (defclass thunk-trigger-volume (trigger-volume)
   ((thunk :initarg :thunk :accessor thunk)))
+
+(define-transfer thunk-trigger-volume active-p thunk)
 
 (defmethod shared-initialize :after ((trigger thunk-trigger-volume) slots &key form)
   (etypecase form
@@ -67,6 +75,8 @@
    (value :initarg :value :accessor value)
    (action :initarg :action :initform 'setf :accessor action)))
 
+(define-transfer place-trigger-volume setter getter value action)
+
 (defmethod activate-trigger (a (trigger place-trigger-volume))
   (ecase (mode trigger)
     (setf (funcall (setter trigger) (value trigger)))
@@ -79,6 +89,8 @@
    (accessor :initarg :accessor :reader accessor)
    (value :initarg :value :accessor value)
    (action :initarg :action :initform 'setf :accessor action)))
+
+(define-transfer accessor-trigger-volume object accessor value action)
 
 (defmethod shared-initialize :after ((trigger accessor-trigger-volume) slots &key object accessor)
   (let ((obj (object trigger)))
@@ -119,6 +131,8 @@
    (respawn-cooldown :initarg :respawn-cooldown :initform NIL :accessor respawn-cooldown)
    (respawn-timer :initform 0 :accessor respawn-timer)))
 
+(define-transfer spawner-trigger-volume spawn-class spawn-arguments spawn-count spawn-volume auto-deactivate respawn-cooldown)
+
 (defun %prune-spawned-objects (spawned-objects)
   (loop for object being the hash-keys of spawned-objects
         do (unless (container object)
@@ -134,9 +148,8 @@
 (defmethod activate-trigger ((entity entity) (trigger spawner-trigger-volume))
   (unless (triggered-p trigger)
     (setf (triggered-p trigger) T)
-    (when (= 0 (%prune-spawned-objects (spawned-objects trigger)))
-      (dotimes (i (spawn-count trigger))
-        (draw-instance trigger)))))
+    (dotimes (i (- (spawn-count trigger) (%prune-spawned-objects (spawned-objects trigger))))
+      (draw-instance trigger))))
 
 (define-handler ((trigger spawner-trigger-volume) tick) (dt)
   (when (and (active-p trigger)

@@ -475,10 +475,13 @@
 (defmacro define-trigger-translation (key class fields &body initargs)
   (let ((extra (gensym "EXTRA")))
     `(setf (gethash ,(string-downcase key) *trigger-translator-functions*)
-           (lambda (,class ,extra)
+           (lambda (trigger ,extra)
              (let ,(loop for field in fields
-                         collect `(,field (gethash ,(string-downcase field) ,extra)))
-               (apply #'change-class ,class ',class
+                         for (var default var-p) = (enlist field NIL NIL)
+                         collect `(,var (gethash ,(string-downcase var) ,extra ,default))
+                         when var-p
+                         collect `(,var-p (not (eq (gethash ,(string-downcase var) ,extra #1='#:nothing) #1#))))
+               (apply #'change-class trigger ',class
                       (progn ,@initargs)))))))
 
 (defun load-trigger (model child node)
@@ -492,16 +495,21 @@
     (when extras
       (loop for key being the hash-keys of *trigger-translator-functions* using (hash-value function)
             do (when (gethash key extras)
-                 (return (funcall function child extras)))))))
+                 (return (funcall function child extras)))
+            finally (error "Unknown trigger volume type.")))))
 
-(define-trigger-translation spawn trial::spawner-trigger-volume (spawn spawn-count auto-deactivate respawn-cooldown)
+(define-trigger-translation spawn trial::spawner-trigger-volume (spawn spawn-count (auto-deactivate T) respawn-cooldown)
   (destructuring-bind (&optional class-or-count &rest args) (enlist (read-from-string spawn))
-    (let ((volume (shiftf (aref (physics-primitives trial::spawner-trigger-volume) 0) (trial::make-allspace))))
+    (let ((volume (shiftf (aref (physics-primitives trigger) 0)
+                          (if (node "trigger" trigger)
+                              (aref (physics-primitives (node "trigger" trigger)) 0)
+                              (trial:make-sphere :radius 1000.0)))))
       (etypecase class-or-count
         (integer
          (setf spawn-count class-or-count)
-         (setf class-or-count (node "class" trial::spawner-trigger-volume)))
+         (setf class-or-count (node "class" trigger)))
         (symbol))
+      (clear trigger)
       (list :spawn-class class-or-count
             :spawn-arguments args
             :spawn-count (or spawn-count 1)
