@@ -3,6 +3,9 @@
 (defgeneric draw-instance (thing &rest initargs))
 (defgeneric sample-volume (volume &optional vec))
 
+(defmethod draw-instance ((name symbol) &rest args)
+  (apply #'make-instance (find-class name) args))
+
 (defmethod draw-instance ((class class) &rest args)
   (apply #'make-instance class args))
 
