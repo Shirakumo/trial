@@ -112,5 +112,7 @@
 (define-prefab-translator play (instance asset animation)
   `(play ,animation ,instance))
 
-(define-prefab-translator <- (instance asset node)
-  `(<- ,instance (node ,node ,asset)))
+(define-prefab-translator <- (instance asset &optional node)
+  `(<- ,instance ,(if node
+                      `(node ,node ,asset)
+                      `(elt (find-scene T ,asset) 0))))

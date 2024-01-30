@@ -144,8 +144,9 @@
 
 (defmethod draw-instance ((trigger spawner-trigger-volume) &rest args)
   (let ((entity (apply #'draw-instance (spawn-class trigger) (spawn-arguments trigger))))
-    (when (spawn-volume trigger)
-      (sample-volume (spawn-volume trigger) (location entity)))
+    (if (spawn-volume trigger)
+        (sample-volume (spawn-volume trigger) (location entity))
+        (v<- (location entity) (location trigger)))
     (setf (gethash entity (spawned-objects trigger)) T)
     ;; TODO: make this less horrendously inefficient
     (enter-and-load entity (container trigger) +main+)
@@ -154,7 +155,8 @@
 (defmethod activate-trigger ((entity entity) (trigger spawner-trigger-volume))
   (unless (triggered-p trigger)
     (setf (triggered-p trigger) T)
-    (dotimes (i (- (spawn-count trigger) (%prune-spawned-objects (spawned-objects trigger))))
+    (when (< (%prune-spawned-objects (spawned-objects trigger)) (spawn-count trigger))
+      ;; We only draw one per activation to avoid stacking
       (draw-instance trigger))))
 
 (define-handler ((trigger spawner-trigger-volume) tick) (dt)
