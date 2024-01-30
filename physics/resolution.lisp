@@ -197,6 +197,9 @@
 (defgeneric resolve-collision-impact (a b contact))
 (defgeneric impart-collision-impact (entity contact velocity rotation))
 
+(defmethod collides-p ((a ray) (b rigid-shape) hit)
+  T)
+
 (defmethod collides-p ((a rigid-shape) (b rigid-shape) hit)
   NIL)
 

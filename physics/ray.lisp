@@ -136,9 +136,6 @@
            (declare (dynamic-extent #'inner))
            (%ray-hit-inner #'inner a b hits start end))))))
 
-(defmethod collides-p ((a ray) (b rigid-shape) hit)
-  T)
-
 (defmethod detect-hits (a (b ray) hits start end)
   (detect-hits b a hits start end))
 
