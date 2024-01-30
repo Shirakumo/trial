@@ -353,7 +353,6 @@
    #:define-primitive-type
    #:entity
    #:material
-   #:allspace
    #:sphere
    #:sphere-radius
    #:make-sphere
