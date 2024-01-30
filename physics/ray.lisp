@@ -136,6 +136,9 @@
            (declare (dynamic-extent #'inner))
            (%ray-hit-inner #'inner a b hits start end))))))
 
+(defmethod collides-p ((a ray) (b rigid-shape) hit)
+  T)
+
 (defmethod detect-hits (a (b ray) hits start end)
   (detect-hits b a hits start end))
 
@@ -143,7 +146,8 @@
   (declare (type (unsigned-byte 32) start end))
   (declare (type (simple-vector #.(1- (ash 1 32)))))
   (3ds:do-intersecting (element b (ray-location a) (ray-direction a) start)
-    (setf start (detect-hits a element hits start end))
+    (let ((new (detect-hits a element hits start end)))
+      (setf start (prune-hits hits start new)))
     (when (<= end start)
       (return-from detect-hits start))))
 

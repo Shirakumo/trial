@@ -14,6 +14,9 @@
 (defmethod awake-p ((entity trigger-volume))
   NIL)
 
+(defmethod collides-p ((a ray) (b trigger-volume) hit)
+  NIL)
+
 (defmethod collides-p ((a rigidbody) (trigger trigger-volume) hit)
   (active-p trigger))
 
