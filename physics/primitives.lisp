@@ -271,7 +271,8 @@
              primitive))
 
          (defmethod clone ((,name ,name) &key)
-           (<- (,int-constructor) ,name))
+           (let ((,name (<- (,int-constructor) ,name)))
+             (setf (global-bounds-cache-generator (primitive-global-bounds-cache ,name)) ,name)))
 
          ,@(loop for (slot) in slots
                  collect `(defmethod ,slot ((primitive ,name))
@@ -511,10 +512,10 @@
 (define-primitive-type general-mesh
     (;; NOTE: Packed vertex positions as X Y Z triplets
      ;; [ X0 Y0 Z0 X1 Y1 Z1 X2 Y2 Z2 X3 Y3 Z3 ... ]
-     (vertices #() :type (simple-array single-float (*)))
+     (vertices (make-array 0 :element-type 'single-float) :type (simple-array single-float (*)))
      ;; NOTE: Vertex indices pointing into the vertex array / 3
      ;; [ 0 1 2 2 3 0 ... ]
-     (faces #() :type (simple-array (unsigned-byte 16) (*))))
+     (faces (make-array 0 :element-type '(unsigned-byte 16)) :type (simple-array (unsigned-byte 16) (*))))
   (let ((offset (recenter-vertices (general-mesh-vertices primitive))))
     (!m* (primitive-local-transform primitive)
          offset
