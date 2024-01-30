@@ -514,6 +514,8 @@
              (return (setf class-or-count child)))))
         (symbol))
       (clear trigger)
+      (when respawn-cooldown
+        (setf auto-deactivate NIL))
       (list :spawn-class class-or-count
             :spawn-arguments args
             :spawn-count (or spawn-count 1)

@@ -124,7 +124,7 @@
         do (leave key T)
            (remhash key (spawned-objects trigger))))
 
-(defclass spawner-trigger-volume (trigger-volume)
+(defclass spawner-trigger-volume (trigger-volume listener)
   ((spawned-objects :initarg :spawned-objects :initform (tg:make-weak-hash-table :weakness :key) :accessor spawned-objects)
    (spawn-class :initarg :spawn-class :accessor spawn-class)
    (spawn-arguments :initarg :spawn-arguments :initform () :accessor spawn-arguments)
