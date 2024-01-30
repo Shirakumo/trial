@@ -8,7 +8,8 @@
 (defmethod shared-initialize :after ((body rigid-shape) slots &key physics-primitives)
   (when physics-primitives (setf (physics-primitives body) physics-primitives)))
 
-(define-transfer rigid-shape physics-primitives)
+(define-transfer rigid-shape
+  (physics-primitives physics-primitives (lambda (p) (map-into (make-array (length p)) #'clone p))))
 
 (defmethod collision-mask ((shape rigid-shape))
   (if (= 0 (length (physics-primitives shape)))

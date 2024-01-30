@@ -152,6 +152,14 @@
   ;; 32-bit mask to designate which systems to interact with.
   (collision-mask 1 :type (unsigned-byte 32)))
 
+(define-transfer primitive primitive-material primitive-local-transform primitive-collision-mask
+  (:eval (let ((target (primitive-global-bounds-cache target))
+               (source (primitive-global-bounds-cache source)))
+           (setf (global-bounds-cache-radius target) (global-bounds-cache-radius source))
+           (v<- (global-bounds-cache-location target) (global-bounds-cache-location source))
+           (v<- (global-bounds-cache-obb target) (global-bounds-cache-obb source))
+           (v<- (global-bounds-cache-aabb target) (global-bounds-cache-aabb source)))))
+
 (defmethod collision-mask ((primitive primitive))
   (primitive-collision-mask primitive))
 
@@ -237,7 +245,7 @@
   (apply constructor :entity (primitive-entity primitive)
                      :material (primitive-material primitive)
                      :local-transform (primitive-local-transform primitive)
-                     :transform (primitive-transform primitive)
+                     :transform (mcopy (primitive-transform primitive))
                      :collision-mask (primitive-collision-mask primitive)
                      args))
 
@@ -262,6 +270,9 @@
              ,@body
              primitive))
 
+         (defmethod clone ((,name ,name) &key)
+           (<- (,int-constructor) ,name))
+
          ,@(loop for (slot) in slots
                  collect `(defmethod ,slot ((primitive ,name))
                             (,(mksym *package* name '- slot) primitive))
@@ -274,6 +285,8 @@
 
 (define-primitive-type sphere
     ((radius 1.0 :type single-float)))
+
+(define-transfer sphere sphere-radius)
 
 (defmethod print-object ((primitive sphere) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
@@ -293,6 +306,8 @@
 
 (define-primitive-type ellipsoid
     ((radius (vec3 1 1 1) :type vec3)))
+
+(define-transfer ellipsoid ellipsoid-radius)
 
 (defmethod print-object ((primitive ellipsoid) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
@@ -314,6 +329,8 @@
 (define-primitive-type plane
     ((normal (vec3 0 1 0) :type vec3)
      (offset 0.0 :type single-float)))
+
+(define-transfer plane plane-normal plane-offset)
 
 (defmethod print-object ((primitive plane) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
@@ -351,6 +368,8 @@
 ;; NOTE: the box is centred at 0,0,0 and the bsize is the half-size along each axis.
 (define-primitive-type box
     ((bsize (vec3 1 1 1) :type vec3)))
+
+(define-transfer box box-bsize)
 
 (defmethod print-object ((primitive box) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
@@ -392,6 +411,8 @@
     ((radius 1.0 :type single-float)
      (height 1.0 :type single-float)))
 
+(define-transfer cylinder cylinder-radius cylinder-height)
+
 (defmethod print-object ((primitive cylinder) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~f ~f" (radius primitive) (height primitive))))
@@ -421,6 +442,8 @@
     ((radius 1.0 :type single-float)
      (height 1.0 :type single-float)))
 
+(define-transfer pill pill-radius pill-height)
+
 (defmethod print-object ((primitive pill) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~f ~f" (radius primitive) (height primitive))))
@@ -447,6 +470,8 @@
     ((a (vec3 -1 0 -1) :type vec3)
      (b (vec3 +1 0 -1) :type vec3)
      (c (vec3 +0 0 +1) :type vec3)))
+
+(define-transfer triangle triangle-a triangle-b triangle-c)
 
 (defmethod print-object ((primitive triangle) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
@@ -494,6 +519,8 @@
     (!m* (primitive-local-transform primitive)
          offset
          (primitive-local-transform primitive))))
+
+(define-transfer general-mesh general-mesh-vertices general-mesh-faces)
 
 (defmethod print-object ((primitive general-mesh) stream)
   (print-unreadable-object (primitive stream :type T :identity T)

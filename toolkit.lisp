@@ -673,8 +673,10 @@
 (defmacro define-transfer (class &body properties)
   `(defmethod <- progn ((target ,class) (source ,class))
      ,@(loop for property in properties
-             collect (destructuring-bind (target-accessor &optional (source-accessor target-accessor) (key 'identity)) (enlist property)
-                       `(setf (,target-accessor target) (,key (,source-accessor source)))))
+             collect (if (and (listp property) (eql :eval (first property)))
+                         `(progn ,@(rest property))
+                         (destructuring-bind (target-accessor &optional (source-accessor target-accessor) (key 'identity)) (enlist property)
+                           `(setf (,target-accessor target) (,key (,source-accessor source))))))
      target))
 
 (defmethod location ((vec vec2)) vec)

@@ -53,6 +53,13 @@
   (aabb (vec3) :type vec3)
   (dirty-p T :type boolean))
 
+(define-transfer global-bounds-cache
+  global-bounds-cache-generator
+  global-bounds-cache-radius
+  (:eval (v<- (global-bounds-cache-obb target) (global-bounds-cache-obb source))
+         (v<- (global-bounds-cache-aabb target) (global-bounds-cache-aabb source))
+         (v<- (global-bounds-cache-location target) (global-bounds-cache-location source))))
+
 (defun make-global-bounds-cache (generator &key (radius (bradius generator)) (bsize (bsize generator)))
   (%make-global-bounds-cache generator radius (vcopy bsize)))
 

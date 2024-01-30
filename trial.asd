@@ -112,7 +112,7 @@
                              (:file "particle" :depends-on ("core"))
                              (:file "rigidbody" :depends-on ("primitives" "hit-detection"))
                              (:file "primitives" :depends-on ("core"))
-                             (:file "ray" :depends-on ("primitives"))
+                             (:file "ray" :depends-on ("primitives" "rigidbody"))
                              (:file "resolution" :depends-on ("rigidbody"))
                              (:file "trigger" :depends-on ("resolution"))
                              (:file "v-clip" :depends-on ("hit-detection" "ray"))

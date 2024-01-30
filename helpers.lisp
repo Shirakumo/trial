@@ -89,7 +89,7 @@
 (define-transfer scaled-entity scaling)
 
 (defclass transformed-entity (transformed entity)
-  ((transform :initarg :transform :initform (transform) :accessor tf)))
+  ((transform :initarg :transform :initform (transform) :reader tf)))
 
 (defmethod initialize-instance :after ((entity transformed-entity) &key location scaling orientation)
   (when location (setf (location entity) location))
@@ -102,6 +102,9 @@
     (nm* (model-matrix) (tmat (tf obj) mat))))
 
 (define-transfer transformed-entity tf)
+
+(defmethod (setf tf) ((tf transform) (obj transformed-entity))
+  (t<- (tf obj) tf))
 
 (defmethod location ((tf transform))
   (tlocation tf))

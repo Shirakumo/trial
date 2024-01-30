@@ -111,3 +111,6 @@
 
 (define-prefab-translator play (instance asset animation)
   `(play ,animation ,instance))
+
+(define-prefab-translator <- (instance asset node)
+  `(<- ,instance (node ,node ,asset)))
