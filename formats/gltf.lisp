@@ -434,7 +434,7 @@
              (recurse (node tf)
                (let ((tf (t+ tf (gltf-node-transform node))))
                  (when (and (gltf:collider node)
-                            (or (gltf:extra "virtual" node)
+                            #++(or (gltf:extra "virtual" node)
                                 (not (gltf:rigidbody node))
                                 (not (gltf:mesh node))))
                    (process (gltf:collider node) tf))
@@ -502,19 +502,26 @@
                  (return (funcall function child extras)))
             finally (error "Unknown trigger volume type.")))))
 
+(defun %find-child (name node &optional errorp)
+  (sequences:dosequence (child node (when errorp (error "No child named ~a found!" name)))
+    (when (and (<= (length name) (length (name child)))
+               (string= name (name child) :end2 (length name)))
+      (return child))))
+
 (define-trigger-translation spawn trial::spawner-trigger-volume (spawn spawn-count (auto-deactivate T) respawn-cooldown)
   (destructuring-bind (&optional class-or-count &rest args) (enlist (read-from-string spawn))
-    (let ((volume (shiftf (aref (physics-primitives trigger) 0)
-                          (if (node "trigger" trigger)
-                              (aref (physics-primitives (node "trigger" trigger)) 0)
-                              (trial:make-sphere :radius 1000.0)))))
+    (let ((spawn-volume (aref (physics-primitives trigger) 0))
+          (trig-volume (%find-child "trigger" trigger)))
+      (cond (trig-volume
+             ;; Copy physics primitive //and transform// over
+             (setf (physics-primitives trigger) (physics-primitives trig-volume))
+             (!t+ (tf trigger) (tf trigger) (tf trig-volume)))
+            (T
+             (setf (physics-primitives trigger) (make-sphere :radius 10000f0))))
       (etypecase class-or-count
         (integer
          (setf spawn-count class-or-count)
-         (sequences:dosequence (child trigger (error "Trigger ~s has no spawn class child!" (name trigger)))
-           (when (and (<= (length "class") (length (name child)))
-                      (string= "class" (name child) :end2 (length "class")))
-             (return (setf class-or-count child)))))
+         (setf class-or-count (%find-child "class" trigger T)))
         (symbol))
       (clear trigger)
       (when respawn-cooldown
@@ -522,7 +529,7 @@
       (list :spawn-class class-or-count
             :spawn-arguments args
             :spawn-count (or spawn-count 1)
-            :spawn-volume volume
+            :spawn-volume spawn-volume
             :auto-deactivate auto-deactivate
             :respawn-cooldown respawn-cooldown))))
 
