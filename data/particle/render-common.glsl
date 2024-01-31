@@ -26,8 +26,8 @@ void derive_particle_properties(in Particle particle, in int vertex_id, in mat4 
   vec3 vertex = BILLBOARD[vertex_id];
   uv = vertex.xy * 0.5 + 0.5;
   // High bits mark the mirroring
-  uv.x = (0 < (particle.color & uint(0x80000000))) ? 1.0f - uv.x : uv.x;
-  uv.y = (0 < (particle.color & uint(0x40000000))) ? 1.0f - uv.y : uv.y;
+  uv.x = (uint(0) < (particle.color & uint(0x80000000))) ? 1.0f - uv.x : uv.x;
+  uv.y = (uint(0) < (particle.color & uint(0x40000000))) ? 1.0f - uv.y : uv.y;
   
   // Rotate it
   float rotation = interpolation * particle.rotational_velocity;
@@ -41,7 +41,7 @@ void derive_particle_properties(in Particle particle, in int vertex_id, in mat4 
   vertex += dot(vertex, velocity) * velocity * motion_blur;
 
   // Check if billboard or not
-  if(0 == (particle.color & uint(0x20000000))){
+  if(uint(0) == (particle.color & uint(0x20000000))){
     world_position = particle.position;
     view_position = (view_matrix * vec4(world_position, 1)).xyz;
     gl_Position = projection_matrix * vec4(view_position+vertex, 1);
