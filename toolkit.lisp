@@ -691,6 +691,9 @@
   (with-fast-matref (m mat)
     (vec (m 0 3) (m 1 3) (m 2 3))))
 
+(defmethod orientation ((mat mat4))
+  (qfrom-mat mat))
+
 (defmethod global-location ((vec vec2) &optional (target (vec3)))
   (let ((vec (vec (vx vec) (vy vec) 0 0)))
     (declare (dynamic-extent vec))

@@ -195,6 +195,7 @@
     (setf (m 0 3) (vx3 vec))
     (setf (m 1 3) (vy3 vec))
     (setf (m 2 3) (vz3 vec))
+    (invalidate-global-bounds-cache primitive)
     vec))
 
 (defmethod orientation ((primitive primitive))
@@ -210,6 +211,7 @@
         (setf (d 0 0) (s 0 0) (d 0 1) (s 0 1) (d 0 2) (s 0 2))
         (setf (d 1 0) (s 1 0) (d 1 1) (s 1 1) (d 1 2) (s 1 2))
         (setf (d 2 0) (s 2 0) (d 2 1) (s 2 1) (d 2 2) (s 2 2))))
+    (invalidate-global-bounds-cache primitive)
     quat))
 
 (defmethod 3ds:location ((primitive primitive))

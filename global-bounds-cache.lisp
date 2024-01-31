@@ -135,8 +135,8 @@
 (defmethod (setf orientation) :after ((new-value t) (entity global-bounds-cached-entity))
   (setf (global-bounds-cache-dirty-p (global-bounds-cache entity)) T))
 
-(defmethod invalidate-global-bounds-cache ((cache global-bounds-cache))
-  (setf (global-bounds-cache-dirty-p (global-bounds-cache entity)) T))
+(defmethod invalidate-global-bounds-cache ((cache global-bounds-cached-entity))
+  (setf (global-bounds-cache-dirty-p (global-bounds-cache cache)) T))
 
 (defmethod 3ds:location ((entity global-bounds-cached-entity))
   (global-location (global-bounds-cache entity)))
