@@ -127,11 +127,22 @@
    (spawn-arguments :initarg :spawn-arguments :initform () :accessor spawn-arguments)
    (spawn-count :initarg :spawn-count :initform 1 :accessor spawn-count)
    (spawn-volume :initarg :spawn-volume :initform NIL :accessor spawn-volume)
+   (spawn-orientation :initarg :spawn-orientation :initform (load-time-value (cons (vec 0 0 0) (vec 0 F-2PI 0))) :accessor spawn-orientation)
    (auto-deactivate :initarg :auto-deactivate :initform T :accessor auto-deactivate)
    (respawn-cooldown :initarg :respawn-cooldown :initform NIL :accessor respawn-cooldown)
    (respawn-timer :initform 0 :accessor respawn-timer)))
 
 (define-transfer spawner-trigger-volume spawn-class spawn-arguments spawn-count spawn-volume auto-deactivate respawn-cooldown)
+
+;; min and max euler angles
+(defun evaluate-orientation (min max &optional (q (quat)))
+  (declare (type vec3 min max))
+  (let ((x (+ (vx min) (random (- (vx max) (vx min)))))
+        (y (+ (vy min) (random (- (vy max) (vy min)))))
+        (z (+ (vz min) (random (- (vz max) (vz min))))))
+    (nq* (!qfrom-angle q +vx+ x)
+         (qfrom-angle +vy+ y)
+         (qfrom-angle +vz+ z))))
 
 (defun %prune-spawned-objects (spawned-objects)
   (loop for object being the hash-keys of spawned-objects
@@ -149,6 +160,8 @@
     (if (spawn-volume trigger)
         (sample-volume (spawn-volume trigger) (location entity))
         (v<- (location entity) (location trigger)))
+    (destructuring-bind (min . max) (spawn-orientation trigger)
+      (evaluate-orientation min max (orientation entity)))
     entity))
 
 (defmethod activate-trigger ((entity entity) (trigger spawner-trigger-volume))
