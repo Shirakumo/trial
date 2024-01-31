@@ -183,6 +183,9 @@
   (setf (hit-depth target) (hit-depth source))
   target)
 
+(defun hit-other (hit entity)
+  (if (eq (hit-a hit) entity) (hit-b hit) (hit-a hit)))
+
 (defclass physics-system (entity listener)
   ((forces :initform (make-array 0 :adjustable T :fill-pointer T) :accessor forces)
    (%objects :initform (make-array 0 :adjustable T :fill-pointer T) :accessor %objects)

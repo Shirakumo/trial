@@ -275,6 +275,7 @@
    #:hit-static-friction
    #:hit-dynamic-friction
    #:hit-depth
+   #:hit-other
    #:a
    #:b
    #:location
