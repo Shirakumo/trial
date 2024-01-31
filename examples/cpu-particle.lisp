@@ -34,9 +34,22 @@
       (wheel particle-randomness "Randomness" 0.0 1.0)
       (wheel particle-size "Size" 0.01 10.0)
       (wheel particle-scaling "Scaling" 0.0 10.0)
+      (wheel particle-rotation "Rotation" 0.0 10.0)
+      (wheel particle-motion-blur "Motion Blur" 0.0 1.0)
       (alloy:enter "Texture" layout :row (incf row) :col 1)
       (alloy:represent (texture emitter) T :layout-parent layout :focus-parent focus)
+      (alloy:enter "Display Mode" layout :row (incf row) :col 1)
+      (alloy:represent (particle-mode emitter) 'alloy:combo-set
+                       :value-set '(:quad :billboard) :layout-parent layout :focus-parent focus)
       (alloy:enter "Blend Mode" layout :row (incf row) :col 1)
       (alloy:represent (blend-mode emitter) 'alloy:combo-set
-                       :value-set '(:add :normal :invert :darken :multiply :screen) :layout-parent layout :focus-parent focus))
+                       :value-set '(:add :normal :invert :darken :multiply :screen) :layout-parent layout :focus-parent focus)
+      (alloy:enter "Texture Flip" layout :row (incf row) :col 1)
+      (alloy:represent (particle-flip emitter) 'alloy:combo-set
+                       :value-set '(NIL :x :y T) :layout-parent layout :focus-parent focus)
+      (alloy:enter "Color" layout :row (incf row) :col 1)
+      (let* ((color (particle-color emitter))
+             (c (alloy:represent color T :layout-parent layout :focus-parent focus)))
+        (alloy:on alloy:value (v c)
+          (setf (particle-color emitter) color))))
     (alloy:finish-structure panel layout focus)))

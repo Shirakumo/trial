@@ -291,11 +291,13 @@
 
 (defmethod render ((emitter cpu-particle-emitter) (program shader-program))
   (setf (uniform program "particle_data") 1)
-  (gl:depth-mask NIL)
-  (set-blend-mode (blend-mode emitter))
-  (render-array (draw-vertex-array emitter) :vertex-count 6 :instances (live-particles emitter))
-  (set-blend-mode :normal)
-  (gl:depth-mask T))
+  (with-pushed-features
+    (disable-feature :cull-face)
+    (gl:depth-mask NIL)
+    (set-blend-mode (blend-mode emitter))
+    (render-array (draw-vertex-array emitter) :vertex-count 6 :instances (live-particles emitter))
+    (set-blend-mode :normal)
+    (gl:depth-mask T)))
 
 ;; FIXME: implement sorting?
 
