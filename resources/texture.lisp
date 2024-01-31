@@ -97,6 +97,7 @@
     (setf (pixel-format (first (sources texture))) value)))
 
 (defmethod dependencies ((texture texture))
+  #++
   (loop for source in (sources texture)
         collect (texture-source-pixel-data source)))
 

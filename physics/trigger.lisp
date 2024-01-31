@@ -8,9 +8,6 @@
 
 (defgeneric activate-trigger (target trigger))
 
-(defmethod activate-trigger :after (target (trigger trigger-volume))
-  (setf (triggered-p trigger) T))
-
 (defmethod awake-p ((entity trigger-volume))
   NIL)
 
@@ -144,20 +141,22 @@
 
 (defmethod draw-instance ((trigger spawner-trigger-volume) &rest args)
   (let ((entity (apply #'draw-instance (spawn-class trigger) (spawn-arguments trigger))))
+    (setf (gethash entity (spawned-objects trigger)) T)
+    (setf (name entity) NIL)
+    ;; TODO: make this less horrendously inefficient
+    (enter-and-load entity (container trigger) +main+)
+    ;; ENTER-AND-LOAD can reset the object's transform, so we only change it now.
     (if (spawn-volume trigger)
         (sample-volume (spawn-volume trigger) (location entity))
         (v<- (location entity) (location trigger)))
-    (setf (gethash entity (spawned-objects trigger)) T)
-    ;; TODO: make this less horrendously inefficient
-    (enter-and-load entity (container trigger) +main+)
     entity))
 
 (defmethod activate-trigger ((entity entity) (trigger spawner-trigger-volume))
   (unless (triggered-p trigger)
-    (setf (triggered-p trigger) T)
-    (when (< (%prune-spawned-objects (spawned-objects trigger)) (spawn-count trigger))
-      ;; We only draw one per activation to avoid stacking
-      (draw-instance trigger))))
+    ;; We only draw one per activation to avoid stacking
+    (if (< (%prune-spawned-objects (spawned-objects trigger)) (spawn-count trigger))
+        (draw-instance trigger)
+        (setf (triggered-p trigger) T))))
 
 (define-handler ((trigger spawner-trigger-volume) tick) (dt)
   (when (and (active-p trigger)
