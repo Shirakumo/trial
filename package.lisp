@@ -837,6 +837,7 @@
   (:export
    #:scene-node
    #:ancestor
+   #:ancestor-p
    #:container
    #:scene
    #:clear

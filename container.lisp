@@ -46,6 +46,14 @@
                     (recurse (container node))))))
     (recurse (container node))))
 
+(defun ancestor-p (ancestor node)
+  (labels ((recurse (node)
+             (cond ((eq ancestor node)
+                    ancestor)
+                   ((container node)
+                    (recurse (container node))))))
+    (recurse (container node))))
+
 (defclass container (scene-node sequences:sequence)
   ())
 
