@@ -45,7 +45,9 @@
                          (slide (vc (vc velocity push) (v- push))))
                     (nv+* force (v- slide velocity) (/ dt))))
                  (T
-                  (nv+* force dir (/ strength (* dist dist)))))))))
+                  (nv+* force dir (/ strength (* dist dist)))))))
+        (7 ; Brake
+         (!v* force velocity (- strength)))))
     (nv+* (raw-particle-velocity particle) force dt)))
 
 (defun %simulate-particle (data in out dt force-fields)

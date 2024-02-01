@@ -50,6 +50,10 @@ vec3 evaluate_force_field_planet(in ParticleForceField field, in Particle partic
   }
 }
 
+vec3 evaluate_force_field_brake(in ParticleForceField field, in Particle particle){
+  return particle.velocity * -field.strength;
+}
+
 vec3 evaluate_force_field(in ParticleForceField field, in Particle particle){
   switch(field.type){
   case 1: return evaluate_force_field_point(field, particle);
@@ -58,6 +62,7 @@ vec3 evaluate_force_field(in ParticleForceField field, in Particle particle){
   case 4: return evaluate_force_field_vortex(field, particle);
   case 5: return evaluate_force_field_sphere(field, particle);
   case 6: return evaluate_force_field_planet(field, particle);
+  case 7: return evaluate_force_field_brake(field, particle);
   default: return vec3(0);
   }
 }
