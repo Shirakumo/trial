@@ -51,5 +51,16 @@
       (let* ((color (particle-color emitter))
              (c (alloy:represent color T :layout-parent layout :focus-parent focus)))
         (alloy:on alloy:value (v c)
-          (setf (particle-color emitter) color))))
+          (setf (particle-color emitter) color)))
+      (alloy:enter "Emitter Shape" layout :row (incf row) :col 1)
+      (let* ((shape :square)
+             (c (alloy:represent shape 'alloy:combo-set
+                                 :value-set '(:square :disc :sphere :cube) :layout-parent layout :focus-parent focus)))
+        (alloy:on alloy:value (v c)
+          (setf (vertex-array emitter)
+                (ecase v
+                  (:square (// 'trial 'unit-square))
+                  (:disc (// 'trial 'unit-disc))
+                  (:sphere (// 'trial 'unit-sphere))
+                  (:cube (// 'trial 'unit-cube)))))))
     (alloy:finish-structure panel layout focus)))
