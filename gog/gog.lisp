@@ -47,3 +47,8 @@
 (defmethod trial:poll-input :after ((main main))
   (when (gog:initialized-p)
     (gog:process-data)))
+
+#-(or windows darwin)
+(trial::dont-deploy
+ org.shirakumo.fraf.gog-galaxy.cffi:galaxy
+ org.shirakumo.fraf.gog-galaxy.cffi:galaxy-c)
