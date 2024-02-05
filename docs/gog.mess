@@ -1,0 +1,14 @@
+# GOG (Good Old Games) Galaxy Integration
+The ``trial-gog`` extension system provides a few features to more easily integrate with "cl-gog-galaxy"(https://github.com/shinmera/cl-gog-galaxy) for GOG Galaxy-specific features like achievements and, in the very least, GOG compliance.
+
+Setup from your end should be rather trivial for the basics: just inherit from the ``main`` subclass and set your GOG client ID and secret.
+
+:: common lisp
+(defclass main (org.shirakumo.fraf.trial.gog:main)
+  ()
+  (:default-initargs :gog-client-id "7524" :gog-client-secret "ABC"))
+::
+
+Note that even if you do this, the game will continue to work even if launched outside of Galaxy or if Galaxy isn't even present at all. It will try to connect to Galaxy on startup, but will just disable the extra integration bits if unavailable.
+
+This integration will also automatically integrate with Trial's "achievements"(link achievements.mess) system.
