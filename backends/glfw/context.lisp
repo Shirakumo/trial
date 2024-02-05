@@ -1,11 +1,13 @@
 (in-package #:org.shirakumo.fraf.trial.glfw)
 
 (defclass monitor (trial:monitor glfw:monitor)
-  ())
+  ((name :reader name)))
 
-(defmethod name ((monitor monitor))
-  (handler-case (glfw:name monitor)
-    (error () "<UNKNOWN>")))
+(defmethod shared-initialize :after ((monitor monitor) slots &key)
+  (unless (slot-boundp monitor 'name)
+    (setf (slot-value monitor 'name) (format NIL "~d: ~a" (position monitor (glfw:list-monitors))
+                                             (handler-case (glfw:name monitor)
+                                               (error () "<UNKNOWN>"))))))
 
 (defstruct last-click
   (button NIL :type symbol)
@@ -408,7 +410,10 @@
   (%glfw:get-key-name (key->glfw-key key) 0))
 
 (defmethod current-monitor ((context context))
-  (change-class (glfw:monitor context) 'monitor))
+  (let ((monitor (glfw:monitor context)))
+    (unless (typep monitor 'monitor)
+      (change-class (glfw:monitor context) 'monitor))
+    monitor))
 
 (defmethod current-video-mode ((monitor monitor))
   (let ((mode (glfw:video-mode monitor)))
