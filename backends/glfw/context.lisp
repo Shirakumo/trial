@@ -431,3 +431,9 @@
 (defmethod list-video-modes ((monitor monitor))
   (loop for (w h r) in (glfw:video-modes monitor)
         collect (list w h r (name monitor))))
+
+(defmethod width ((monitor monitor))
+  (glfw:width monitor))
+
+(defmethod height ((monitor monitor))
+  (glfw:height monitor))
