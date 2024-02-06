@@ -54,7 +54,7 @@
 (defmethod setup-scene :after ((main example) (scene example-scene))
   (let ((output (car (last (nodes scene))))
         (ui (make-instance 'ui))
-        (combine (make-instance 'blend-pass)))
+        (combine (make-instance 'blend-pass :name 'blend-pass)))
     (connect (port output 'color) (port combine 'a-pass) scene)
     (connect (port ui 'color) (port combine 'b-pass) scene)
     (show (make-instance 'example-ui :scene scene) :ui ui)))
@@ -63,6 +63,14 @@
   (alloy:finish-structure panel
                           (make-instance 'alloy:fixed-layout)
                           (make-instance 'alloy:focus-list)))
+
+(define-handler (scene key-press :after) (key)
+  (case key
+    (:f12
+     (let ((fbo (flow:node (flow:left (first (flow:connections (port (node 'blend-pass scene) 'a-pass))))))
+           (path (make-pathname :name (format-timestring :as :filename) :type "png" :defaults (user-homedir-pathname))))
+       (save-image fbo path T)
+       (v:info :trial.examples "Saved screenshot to ~a" path)))))
 
 (defclass example-ui (trial-alloy:panel)
   ())
