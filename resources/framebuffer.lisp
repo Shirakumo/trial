@@ -147,7 +147,7 @@
       (apply #'save-image (if attachment
                               (or (second (find attachment (attachments source) :key #'second))
                                   (error "No ~s attachment on ~s" attachment source))
-                              (first (attachments source)))
+                              (second (first (attachments source))))
              target type args)
       (let* ((width (or width (- (width source) x)))
              (height (or height (- (height source) y)))

@@ -248,6 +248,9 @@
     (render object program)
     (deactivate framebuffer)))
 
+(defmethod save-image ((pass shader-pass) target type &rest args)
+  (apply #'save-image (framebuffer pass) target type args))
+
 (define-shader-pass per-object-pass (listener)
   ((program-table :initform (make-hash-table :test 'eq) :accessor program-table)
    (renderable-table :initform (make-hash-table :test 'eq) :accessor renderable-table)

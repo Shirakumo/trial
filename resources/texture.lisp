@@ -302,13 +302,13 @@
        (or (height texture) 1)
        (or (depth texture) 1))))
 
-(defmethod save-image ((source texture) target type &rest args &key (level 0))
+(defmethod save-image ((source texture) target image-type &rest args &key (level 0))
   (mem:with-memory-region (region (size source))
     (gl:bind-texture (target source) (gl-name source))
     (let ((type (internal-format-pixel-type (internal-format source)))
           (format (internal-format-pixel-format (internal-format source))))
       (%gl:get-tex-image (target source) level format type (memory-region-pointer region))
-      (apply #'save-image region target type :width (width source) :height (height source) :pixel-type type :pixel-format format args))))
+      (apply #'save-image region target image-type :width (width source) :height (height source) :pixel-type type :pixel-format format args))))
 
 (defmethod activate ((source texture))
   (gl:bind-texture (target source) (gl-name source)))
