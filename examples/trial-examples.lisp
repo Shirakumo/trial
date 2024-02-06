@@ -66,6 +66,16 @@
 
 (define-handler (scene key-press :after) (key)
   (case key
+    (:f10
+     (cond ((and (= (width *context*) 800) (= (height *context*) 600))
+            (resize *context* 1280 720))
+           (T
+            (resize *context* 800 600))))
+    (:f11
+     (if (and (= (width (current-monitor *context*)) (width *context*))
+              (= (height (current-monitor *context*)) (height *context*)))
+         (show *context* :fullscreen NIL :mode (list 1280 720))
+         (show *context* :fullscreen T)))
     (:f12
      (let ((fbo (flow:node (flow:left (first (flow:connections (port (node 'blend-pass scene) 'a-pass))))))
            (path (make-pathname :name (format-timestring :as :filename) :type "png" :defaults (user-homedir-pathname))))
