@@ -27,6 +27,11 @@
                     (alloy:enter ,title layout :row (incf row) :col 1)
                     (alloy:represent (,place emitter) 'alloy:ranged-wheel
                                      :range '(,start . ,end) ,@args :layout-parent layout :focus-parent focus))))
+      (let* ((burst 10)
+             (button (make-instance 'alloy:button* :value "Burst" :focus-parent focus :on-activate
+                                    (lambda () (emit emitter burst)))))
+        (alloy:enter button layout :row (incf row) :col 1)
+        (alloy:represent burst 'alloy:ranged-wheel :range '(1 . 200) :layout-parent layout :focus-parent focus))
       (wheel particle-rate "Particle Rate" 0 200)
       (wheel particle-lifespan "Lifespan" 0.0 100.0)
       (wheel particle-lifespan-randomness "Lifespan Random" 0.0 1.0)
