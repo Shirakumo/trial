@@ -266,7 +266,7 @@
                           particle-size particle-scaling particle-full-color
                           vertex-data vertex-stride face-data)
           (incf live-particles)))
-      (when (< 0 live-particles)
+      (when (and (< 0 live-particles) (< min-prop most-positive-fixnum))
         (let ((src (first (sources particle-property-buffer))))
           (setf (nth 0 (texture-source-src src)) (truncate min-prop 4))
           (setf (nth 3 (texture-source-dst src)) (truncate (- (+ 24 max-prop) min-prop) 4))
