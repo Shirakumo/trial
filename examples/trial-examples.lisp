@@ -9,6 +9,8 @@
    (#:spaces #:org.shirakumo.fraf.trial.space)
    (#:colored #:org.shirakumo.alloy.colored)
    (#:colors #:org.shirakumo.alloy.colored.colors)
+   (#:simple #:org.shirakumo.alloy.renderers.simple)
+   (#:presentations #:org.shirakumo.alloy.renderers.simple.presentations)
    (#:v #:org.shirakumo.verbose))
   (:export #:launch))
 

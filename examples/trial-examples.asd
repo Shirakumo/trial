@@ -25,6 +25,7 @@
                (:file "sprite"))
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
+               :alloy-constraint
                :trial-theora
                :trial-alloy
                :trial-jpeg-turbo

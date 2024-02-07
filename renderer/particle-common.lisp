@@ -142,6 +142,8 @@
     (setf (particle-force-fields emitter) (make-instance 'particle-force-fields :size 32)))
   (let ((size (length cons))
         (struct (particle-force-fields emitter)))
+    (when (< 32 size)
+      (error "Cannot support more than 32 particle force fields!"))
     ;; FIXME: copy over and resize instead of this nonsense.
     (setf (slot-value struct 'particle-force-field-count) size)
     (loop for info in cons
