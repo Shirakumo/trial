@@ -1,7 +1,8 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (define-shader-entity skybox (fullscreen-entity)
-  ((texture :initarg :texture :accessor texture))
+  ((texture :initarg :texture :accessor texture)
+   (multiplier :initarg :multiplier :initform (vec3 1) :accessor multiplier))
   (:default-initargs :texture (error "TEXTURE required.")))
 
 (defmethod stage :after ((skybox skybox) (area staging-area))
@@ -15,6 +16,7 @@
   (setf (uniform shader "view_matrix") (view-matrix))
   (setf (uniform shader "projection_matrix") (projection-matrix))
   (setf (uniform shader "texture_image") 0)
+  (setf (uniform shader "multiplier") (multiplier skybox))
   (gl:depth-mask NIL)
   (render-array (// 'trial 'fullscreen-square))
   (gl:depth-mask T))
@@ -35,12 +37,13 @@ void main@after() {
 
 (define-class-shader (skybox :fragment-shader)
   "uniform samplerCube texture_image;
+uniform vec3 multiplier;
 smooth in vec3 eye;
 
 out vec4 color;
 
 void main() {
-  color = texture(texture_image, eye);
+  color = vec4(texture(texture_image, eye).rgb * multiplier, 1);
 }")
 
 (define-shader-pass skybox-pass (single-shader-pass skybox)
