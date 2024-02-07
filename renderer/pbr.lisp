@@ -141,3 +141,5 @@
 
 (defmethod disable :after ((light environment-light) (pass standard-render-pass))
   (setf (environment pass) NIL))
+
+(defmethod shadow-map ((light environment-light)) NIL)
