@@ -78,7 +78,7 @@
   (size NIL :initarg :size :initform 64 :reader size)
   (materials (:array (:struct pbr-material) size) :accessor materials))
 
-(defmethod transfer-to progn ((target pbr-material) (material pbr-material))
+(defmethod <- progn ((target pbr-material) (material pbr-material))
   (setf (albedo-factor target) (albedo-factor material))
   (setf (emission-factor target) (emission-factor material))
   (setf (metalness-factor target) (metalness-factor material))
@@ -130,7 +130,7 @@
   (stage (environment-map light) area)
   (stage (// 'trial 'brdf-lut) area))
 
-(defmethod transfer-to progn ((target standard-light) (light environment-light))
+(defmethod <- progn ((target standard-light) (light environment-light))
   (setf (light-type target) 250))
 
 (defmethod enable :after ((light environment-light) (pass standard-render-pass))

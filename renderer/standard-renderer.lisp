@@ -115,7 +115,7 @@
   (let ((id (lru-cache-push light (allocated-lights pass))))
     (when id
       (with-buffer-tx (struct (light-block pass))
-        (transfer-to (aref (slot-value struct 'lights) id) light)
+        (<- (aref (slot-value struct 'lights) id) light)
         (setf (light-count struct) (max (light-count struct) (1+ id)))))))
 
 (defmethod disable ((light light) (pass standard-render-pass))
@@ -136,13 +136,13 @@
   (let ((id (lru-cache-id light (allocated-lights pass))))
     (when id
       (with-buffer-tx (struct (light-block pass))
-        (transfer-to (aref (slot-value struct 'lights) id) light)))))
+        (<- (aref (slot-value struct 'lights) id) light)))))
 
 (defmethod enable ((material material) (pass standard-render-pass))
   (let ((id (lru-cache-push material (allocated-materials pass))))
     (when id
       (with-buffer-tx (struct (material-block pass))
-        (transfer-to (aref (slot-value struct 'materials) id) material)))
+        (<- (aref (slot-value struct 'materials) id) material)))
     (loop for texture across (textures material)
           do (enable texture pass))))
 
@@ -156,7 +156,7 @@
   (let ((id (lru-cache-id material (allocated-materials pass))))
     (when id
       (with-buffer-tx (struct (material-block pass))
-        (transfer-to (aref (slot-value struct 'materials) id) material)))))
+        (<- (aref (slot-value struct 'materials) id) material)))))
 
 (defmethod render-with ((pass standard-render-pass) (material material) program)
   (error "Unsupported material~%  ~s~%for pass~%  ~s"

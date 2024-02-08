@@ -18,11 +18,11 @@
 
 ;; TODO: implement frustum clipping to ensure the view of the light is as tight as possible
 
-(defmethod transfer-to progn ((struct shadow-map-info) (light light))
+(defmethod <- progn ((struct shadow-map-info) (light light))
   (setf (sample-count struct) 4)
   (setf (sample-spread struct) 0.0002))
 
-(defmethod transfer-to progn ((struct shadow-map-info) (light directional-light))
+(defmethod <- progn ((struct shadow-map-info) (light directional-light))
   (let ((point (focal-point (camera (scene +main+))))
         (orientation (quat)))
     (declare (dynamic-extent orientation))
@@ -31,7 +31,7 @@
           (n*m (mortho -50.0 +50.0 -50.0 +50.0 1.0 200.0)
                (mlookat (nv+ (v* (q* orientation (direction light)) -100) point) point +vy3+)))))
 
-(defmethod transfer-to progn ((struct shadow-map-info) (light spot-light))
+(defmethod <- progn ((struct shadow-map-info) (light spot-light))
   (let ((location (vec3))
         (orientation (quat)))
     (declare (dynamic-extent location orientation))
@@ -41,13 +41,13 @@
           (n*m (mperspective (* 2.0 (outer-radius light)) 1.0 1.0 1000.0)
                (mlookat location (v+ location (q* orientation (direction light))) +vy3+)))))
 
-(defmethod transfer-to progn ((struct shadow-map-info) (light point-light))
+(defmethod <- progn ((struct shadow-map-info) (light point-light))
   (setf (far-plane struct) 1000.0))
 
-(defmethod transfer-to progn ((struct shadow-map-block) (light light))
-  (transfer-to (aref (shadow-info struct) (shadow-map light)) light))
+(defmethod <- progn ((struct shadow-map-block) (light light))
+  (<- (aref (shadow-info struct) (shadow-map light)) light))
 
-(defmethod transfer-to progn ((struct shadow-map-block) (light point-light))
+(defmethod <- progn ((struct shadow-map-block) (light point-light))
   (let ((proj (mperspective 90.0 1.0 1.0 1000.0))
         (structs (shadow-info struct)))
     (setf (slot-value (aref structs (+ 0 (shadow-map light))) 'projection-matrix)
@@ -124,7 +124,7 @@
              (setf (shadow-map light) index)
              (if (allocated-p (shadow-map-block pass))
                  (with-buffer-tx (struct (shadow-map-block pass))
-                   (transfer-to (aref (shadow-info struct) (shadow-map light)) light))
+                   (<- (aref (shadow-info struct) (shadow-map light)) light))
                  (setf (dirty-p (buffer-data (shadow-map-block pass))) T)))
             (T
              (v:warn :trial.renderer.shadow-map "Failed to allocate shadow maps for ~s: no more space" light)
@@ -151,7 +151,7 @@
          (when (shadow-map light)
            (if (allocated-p (shadow-map-block pass))
                (with-buffer-tx (struct (shadow-map-block pass))
-                 (transfer-to struct light))
+                 (<- struct light))
                (setf (dirty-p (buffer-data (shadow-map-block pass))) T))))
         (T
          (deallocate-shadow-maps light pass))))
@@ -165,7 +165,7 @@
     (when (dirty-p (buffer-data (shadow-map-block pass)))
       (with-buffer-tx (struct (shadow-map-block pass))
         (loop for light across lights
-              do (when light (transfer-to struct light)))
+              do (when light (<- struct light)))
         (setf (dirty-p struct) NIL)))
     (dotimes (id (length lights))
       (when (and (aref lights id) (in-view-p (aref lights id) T))

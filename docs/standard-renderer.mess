@@ -111,7 +111,7 @@ Any implementation of ``standard-renderable`` must make sure to enable the requi
 
 Any implementation of ``standard-renderer-pass`` must implement ``material-block-type`` to return the class name of a ``gl-struct`` that will accept the ``:size`` construction initarg and hold a GL slot called ``materials`` that is an array of the actual material struct instances, with ``:size`` number of elements.
 
-An implementation must also be provided for ``transfer-to`` between two instances of the material type. This is used to update the material property in the backed buffers from the material representation used by entities.
+An implementation must also be provided for ``<-`` between two instances of the material type. This is used to update the material property in the backed buffers from the material representation used by entities.
 
 You may also want to provide a ``coerce-object`` method for your material type from other material types, as model importers may not directly supply your ideal material type.
 

@@ -21,7 +21,7 @@
   ((color :initarg :color :initform (vec 1 1 1) :accessor color)
    (active-p :initarg :active-p :initform T :accessor active-p)))
 
-(defmethod transfer-to progn ((target standard-light) (light light))
+(defmethod <- progn ((target standard-light) (light light))
   (setf (color target) (color light))
   (setf (shadow-map target) #xFFFF))
 
@@ -35,7 +35,7 @@
 (defclass ambient-light (light)
   ())
 
-(defmethod transfer-to progn ((target standard-light) (light ambient-light))
+(defmethod <- progn ((target standard-light) (light ambient-light))
   (setf (light-type target) 1)
   (setf (color target) (color light)))
 
@@ -48,7 +48,7 @@
   ((linear-attenuation :initarg :linear-attenuation :initform 0.0 :accessor linear-attenuation)
    (quadratic-attenuation :initarg :quadratic-attenuation :initform 1.0 :accessor quadratic-attenuation)))
 
-(defmethod transfer-to progn ((target standard-light) (light located-light))
+(defmethod <- progn ((target standard-light) (light located-light))
   (setf (location target) (global-location light))
   (setf (attenuation target) (vec (linear-attenuation light) (quadratic-attenuation light))))
 
@@ -59,7 +59,7 @@
   ((shadow-map :initform NIL :accessor shadow-map)
    (cast-shadows-p :initform NIL :initarg :cast-shadows-p :accessor cast-shadows-p)))
 
-(defmethod transfer-to progn ((target standard-light) (light point-light))
+(defmethod <- progn ((target standard-light) (light point-light))
   (setf (light-type target) 2)
   (when (shadow-map light) (setf (shadow-map target) (shadow-map light))))
 
@@ -77,7 +77,7 @@
   (nvunit (v<- (direction light) direction))
   direction)
 
-(defmethod transfer-to progn ((target standard-light) (light directional-light))
+(defmethod <- progn ((target standard-light) (light directional-light))
   (setf (light-type target) 3)
   (let ((q (quat)))
     (declare (dynamic-extent q))
@@ -116,7 +116,7 @@
   (setf (slot-value light 'outer-radius) (float (cos (deg->rad (float value 0f0))) 0f0))
   value)
 
-(defmethod transfer-to progn ((target standard-light) (light spot-light))
+(defmethod <- progn ((target standard-light) (light spot-light))
   (setf (light-type target) 4)
   (setf (spot-radius target) (vec (slot-value light 'inner-radius) (slot-value light 'outer-radius))))
 

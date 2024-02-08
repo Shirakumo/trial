@@ -1736,7 +1736,6 @@
    #:self
    #:version
    #:toolkit
-   #:transfer-to
    #:coerce-object
    #:finalize
    #:gl-property
