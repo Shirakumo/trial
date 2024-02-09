@@ -12,6 +12,10 @@
 (defmethod active-p ((light standard-light))
   (< 0 (light-type light)))
 
+(defmethod print-object ((light standard-light) stream)
+  (print-unreadable-object (light stream :type T :identity T)
+    (format stream "~a" (light-type light))))
+
 (define-gl-struct standard-light-block
   (size NIL :initarg :size :initform 128 :reader size)
   (light-count :int :accessor light-count)

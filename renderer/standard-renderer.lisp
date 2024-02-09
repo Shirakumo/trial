@@ -123,7 +123,7 @@
     (when id
       (with-buffer-tx (struct (light-block pass))
         (setf (light-type (aref (lights struct) id)) 0)
-        (loop for i downfrom (light-count struct) above 0
+        (loop for i downfrom (1- (light-count struct)) to 0
               do (when (active-p (aref (lights struct) i))
                    (setf (light-count struct) (1+ i))
                    (return))
@@ -289,12 +289,14 @@
   (when (light-cache-dirty-p pass)
     (let ((location (v<- (light-cache-location pass) (focal-point (camera pass))))
           (size (1- (lru-cache-size (allocated-lights pass)))))
-      (multiple-value-bind (nearest count) (org.shirakumo.fraf.trial.space.kd-tree:kd-tree-k-nearest
-                                            size location (light-cache pass) :test #'active-p)
-        (dotimes (i count)
-          (enable (aref nearest i) pass)))
-      (when (ambient-light pass)
-        (enable (ambient-light pass) pass)))
+      (with-buffer-tx (struct (light-block pass))
+        (multiple-value-bind (nearest count) (org.shirakumo.fraf.trial.space.kd-tree:kd-tree-k-nearest
+                                              size location (light-cache pass) :test #'active-p)
+          (dotimes (i count)
+            (when (active-p (aref nearest i))
+              (enable (aref nearest i) pass))))
+        (when (and (ambient-light pass) (active-p (ambient-light pass)))
+          (enable (ambient-light pass) pass))))
     (setf (light-cache-dirty-p pass) NIL)))
 
 ;; FIXME: how do we know when lights moved or de/activated so we can update?
