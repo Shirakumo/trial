@@ -113,14 +113,14 @@
 
 (defmethod enable ((light light) (pass standard-render-pass))
   (let ((id (lru-cache-push light (allocated-lights pass))))
-    (when id
+    (when (and id (allocated-p (light-block pass)))
       (with-buffer-tx (struct (light-block pass))
         (<- (aref (slot-value struct 'lights) id) light)
         (setf (light-count struct) (max (light-count struct) (1+ id)))))))
 
 (defmethod disable ((light light) (pass standard-render-pass))
   (let ((id (lru-cache-pop light (allocated-lights pass))))
-    (when id
+    (when (and id (allocated-p (light-block pass)))
       (with-buffer-tx (struct (light-block pass))
         (setf (light-type (aref (lights struct) id)) 0)
         (loop for i downfrom (1- (light-count struct)) to 0
@@ -131,6 +131,9 @@
 
 (defmethod local-id ((light light) (pass standard-render-pass))
   (lru-cache-id light (allocated-lights pass)))
+
+(defmethod leave ((light light) (pass standard-render-pass))
+  (disable light pass))
 
 (defmethod notice-update ((light light) (pass shader-pass)))
 
@@ -285,18 +288,27 @@
   (3ds:enter light (light-cache pass))
   (setf (light-cache-dirty-p pass) T))
 
-(defmethod leave ((light light) (pass light-cache-render-pass))
+(defmethod enter ((light ambient-light) (pass light-cache-render-pass))
+  (setf (ambient-light pass) light))
+
+(defmethod enable :after ((light light) (pass light-cache-render-pass))
+  (3ds:enter light (light-cache pass))
+  (setf (light-cache-dirty-p pass) T))
+
+(defmethod disable :after ((light light) (pass light-cache-render-pass))
   (3ds:leave light (light-cache pass))
   (setf (light-cache-dirty-p pass) T))
 
-(defmethod enter ((light ambient-light) (pass light-cache-render-pass))
-  (setf (ambient-light pass) light)
-  (setf (light-cache-dirty-p pass) T))
+(defmethod enable :after ((light ambient-light) (pass light-cache-render-pass))
+  (setf (ambient-light pass) light))
 
-(defmethod leave ((light ambient-light) (pass light-cache-render-pass))
+(defmethod disable :after ((light ambient-light) (pass light-cache-render-pass))
   (when (eq light (ambient-light pass))
     (setf (ambient-light pass) NIL)
     (disable light pass)))
+
+(defmethod notice-update :after ((light light) (pass light-cache-render-pass))
+  (3ds:update light (light-cache pass)))
 
 (define-handler ((pass light-cache-render-pass) tick :before) ()
   (when (<= (light-cache-distance-threshold pass)
