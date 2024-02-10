@@ -30,6 +30,8 @@
     (format stream "~f,~f,~f ~:[INACTIVE~;ACTIVE~]"
             (vx (color light)) (vy (color light)) (vz (color light)) (active-p light))))
 
+(define-transfer light color active-p)
+
 (defmethod <- progn ((target standard-light) (light light))
   (setf (color target) (color light))
   (setf (shadow-map target) #xFFFF))
@@ -57,6 +59,8 @@
   ((linear-attenuation :initarg :linear-attenuation :initform 0.0 :accessor linear-attenuation)
    (quadratic-attenuation :initarg :quadratic-attenuation :initform 1.0 :accessor quadratic-attenuation)))
 
+(define-transfer located-light linear-attenuation quadratic-attenuation)
+
 (defmethod print-object ((light located-light) stream)
   (print-unreadable-object (light stream :type T :identity T)
     (format stream "~a ~f,~f,~f ~:[INACTIVE~;ACTIVE~]"
@@ -73,6 +77,8 @@
   ((shadow-map :initform NIL :accessor shadow-map)
    (cast-shadows-p :initform NIL :initarg :cast-shadows-p :accessor cast-shadows-p)))
 
+(define-transfer point-light cast-shadows-p)
+
 (defmethod <- progn ((target standard-light) (light point-light))
   (setf (light-type target) 2)
   (when (shadow-map light) (setf (shadow-map target) (shadow-map light))))
@@ -83,6 +89,8 @@
   ((direction :initform (vec 0 -1 0) :reader direction)
    (shadow-map :initarg :shadow-map :initform NIL :accessor shadow-map)
    (cast-shadows-p :initform T :initarg :cast-shadows-p :accessor cast-shadows-p)))
+
+(define-transfer directional-light direction shadow-map)
 
 (defmethod shared-initialize :after ((light directional-light) slots &key direction)
   (when direction (setf (direction light) direction)))
@@ -110,6 +118,8 @@
   ((inner-radius :initform 0.976296)
    (outer-radius :initform 0.95371693)
    (quadratic-attenuation :initform 0.0)))
+
+(define-transfer spot-light inner-radius outer-radius)
 
 (defmethod shared-initialize :after ((light spot-light) slots &key inner-radius outer-radius target)
   (when inner-radius (setf (inner-radius light) inner-radius))

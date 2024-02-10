@@ -118,6 +118,8 @@
   ((irradiance-map :initarg :irradiance-map :accessor irradiance-map)
    (environment-map :initarg :environment-map :accessor environment-map)))
 
+(define-transfer environment-light irradiance-map environment-map)
+
 (defmethod shared-initialize :after ((light environment-light) slots &key asset)
   (when asset (setf (environment-asset light) asset)))
 
