@@ -182,7 +182,7 @@
                         (setf (getf args :reader) name))
                       `(,name :initarg ,(kw name) :initform ,(if (eql default 'arg!) `(error "~a required." ',name)) ,@args)))))
 
-(defmacro define-event-pool (class count)
+(defmacro define-event-pool (class &optional (count 32))
   `(setf (gethash ',class +event-pools+) (make-event-pool ',class ,count)))
 
 (define-event pre-tick () tt dt fc)
@@ -190,3 +190,7 @@
 (define-event post-tick () tt dt fc)
 (define-event class-changed () changed-class)
 (define-event instance-class-changed () instance)
+
+(define-event-pool pre-tick)
+(define-event-pool tick)
+(define-event-pool post-tick)
