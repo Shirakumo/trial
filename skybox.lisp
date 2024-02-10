@@ -2,7 +2,7 @@
 
 (define-shader-entity skybox (fullscreen-entity)
   ((texture :initarg :texture :accessor texture)
-   (multiplier :initarg :multiplier :initform (vec3 1) :accessor multiplier))
+   (color :initarg :color :initform (vec3 1) :accessor color))
   (:default-initargs :texture (error "TEXTURE required.")))
 
 (defmethod stage :after ((skybox skybox) (area staging-area))
@@ -16,7 +16,7 @@
   (setf (uniform shader "view_matrix") (view-matrix))
   (setf (uniform shader "projection_matrix") (projection-matrix))
   (setf (uniform shader "texture_image") 0)
-  (setf (uniform shader "multiplier") (multiplier skybox))
+  (setf (uniform shader "multiplier") (color skybox))
   (gl:depth-mask NIL)
   (render-array (// 'trial 'fullscreen-square))
   (gl:depth-mask T))
