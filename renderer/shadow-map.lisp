@@ -137,16 +137,16 @@
           do (setf (aref (shadow-map-lights pass) i) NIL))
     (setf (shadow-map light) NIL)))
 
-(defmethod enter :before ((light light) (pass standard-shadows-pass))
+(defmethod enable :before ((light light) (pass standard-shadows-pass))
   (when (cast-shadows-p light)
     (allocate-shadow-maps light pass)))
 
-(defmethod leave :after ((light light) (pass standard-shadows-pass))
+(defmethod disable :after ((light light) (pass standard-shadows-pass))
   (when (cast-shadows-p light)
     (deallocate-shadow-maps light pass)))
 
 (defmethod notice-update :before ((light light) (pass standard-shadows-pass))
-  (cond ((cast-shadows-p light)
+  (cond ((and (cast-shadows-p light) (active-p light))
          (allocate-shadow-maps light pass)
          (when (shadow-map light)
            (if (allocated-p (shadow-map-block pass))
