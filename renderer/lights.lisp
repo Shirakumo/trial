@@ -25,6 +25,11 @@
   ((color :initarg :color :initform (vec 1 1 1) :accessor color)
    (active-p :initarg :active-p :initform T :accessor active-p)))
 
+(defmethod print-object ((light light) stream)
+  (print-unreadable-object (light stream :type T :identity T)
+    (format stream "~f,~f,~f ~:[INACTIVE~;ACTIVE~]"
+            (vx (color light)) (vy (color light)) (vz (color light)) (active-p light))))
+
 (defmethod <- progn ((target standard-light) (light light))
   (setf (color target) (color light))
   (setf (shadow-map target) #xFFFF))
@@ -51,6 +56,11 @@
 (defclass located-light (light located-entity)
   ((linear-attenuation :initarg :linear-attenuation :initform 0.0 :accessor linear-attenuation)
    (quadratic-attenuation :initarg :quadratic-attenuation :initform 1.0 :accessor quadratic-attenuation)))
+
+(defmethod print-object ((light located-light) stream)
+  (print-unreadable-object (light stream :type T :identity T)
+    (format stream "~a ~f,~f,~f ~:[INACTIVE~;ACTIVE~]"
+            (global-location light) (vx (color light)) (vy (color light)) (vz (color light)) (active-p light))))
 
 (defmethod <- progn ((target standard-light) (light located-light))
   (setf (location target) (global-location light))

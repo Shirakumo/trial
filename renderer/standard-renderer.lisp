@@ -150,6 +150,9 @@
       (with-buffer-tx (struct (light-block pass))
         (<- (aref (slot-value struct 'lights) id) light)))))
 
+(defmethod list-lights ((pass standard-render-pass))
+  (lru-cache-list (allocated-lights pass)))
+
 (defmethod enable ((material material) (pass standard-render-pass))
   (let ((id (lru-cache-push material (allocated-materials pass))))
     (when id
