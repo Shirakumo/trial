@@ -95,6 +95,7 @@
        (multiple-value-prog1
            (let ((*buffers-in-tx* (list* ,bufferg *buffers-in-tx*))
                  (,struct (buffer-data ,bufferg)))
+             (declare (dynamic-extent *buffers-in-tx*))
              ,@body)
          (when (and (or (eql :write ,updateg) (eql T ,updateg)) (not (find ,bufferg *buffers-in-tx*)))
            (update-buffer-data ,bufferg T))))))

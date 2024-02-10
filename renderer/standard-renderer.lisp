@@ -132,6 +132,15 @@
 (defmethod local-id ((light light) (pass standard-render-pass))
   (lru-cache-id light (allocated-lights pass)))
 
+(defmethod notice-update ((light light) (pass shader-pass)))
+
+(defmethod notice-update ((light light) (pipeline pipeline))
+  (loop for pass across (passes pipeline)
+        do (notice-update light pass)))
+
+(defmethod notice-update ((light light) (main (eql T)))
+  (notice-update light (scene +main+)))
+
 (defmethod notice-update ((light light) (pass standard-render-pass))
   (let ((id (lru-cache-id light (allocated-lights pass))))
     (when id
@@ -151,6 +160,15 @@
 
 (defmethod local-id ((material material) (pass standard-render-pass))
   (lru-cache-id material (allocated-materials pass)))
+
+(defmethod notice-update ((material material) (pass shader-pass)))
+
+(defmethod notice-update ((material material) (pipeline pipeline))
+  (loop for pass across (passes pipeline)
+        do (notice-update material pass)))
+
+(defmethod notice-update ((material material) (main (eql T)))
+  (notice-update material (scene +main+)))
 
 (defmethod notice-update ((material material) (pass standard-render-pass))
   (let ((id (lru-cache-id material (allocated-materials pass))))
