@@ -39,6 +39,7 @@
                (:file "error-handling" :depends-on ("package" "toolkit"))
                (:file "event-loop" :depends-on ("package" "container" "queue" "toolkit"))
                (:file "features" :depends-on ("package"))
+               (:file "flicker" :depends-on ("package"))
                (:file "fps" :depends-on ("package" ("assets" "image") ("assets" "mesh") "loader"))
                (:file "gamepad" :depends-on ("package" "event-loop" "toolkit"))
                (:file "geometry" :depends-on ("package" "toolkit" "type-info" "static-vector" ("resources" "vertex-array") ("resources" "vertex-buffer")))

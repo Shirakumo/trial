@@ -1073,6 +1073,24 @@
    #:*debug-features*
    #:*optimize-features*
    #:reload-with-features)
+  ;; flicker.lisp
+  (:export
+   #:flicker-pattern
+   #:define-flicker-pattern
+   #:evaluate-flicker
+   #:normal
+   #:flicker
+   #:strong-pulse
+   #:candle
+   #:fast-strobe
+   #:gentle-pulse
+   #:flicker-2
+   #:candle-2
+   #:candle-3
+   #:slow-strobe
+   #:fluorescent-flicker
+   #:slow-pulse
+   #:lightning)
   ;; fps.lisp
   (:export
    #:fps-counter)
