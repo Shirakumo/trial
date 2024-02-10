@@ -33,6 +33,7 @@ void main@after() {
     vec3 unprojected = (inverseProjection * vec4(position,1)).xyz;
     eye = inverseModelview * unprojected;
     eye.y *= -1;
+    gl_Position.z = +1;
 }")
 
 (define-class-shader (skybox :fragment-shader)
