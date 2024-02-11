@@ -1550,6 +1550,8 @@
    #:render-pass)
   ;; scene.lisp
   (:export
+   #:scene-change
+   #:changed-node
    #:unit
    #:node
    #:scene

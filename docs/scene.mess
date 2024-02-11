@@ -10,6 +10,13 @@ You can also ``clear`` a container fully, though note that this will not recursi
 
 Finally, you can check whether a node is within a container with ``contained-p``, and retrieve the container it is in (if any) with the ``container`` function. To retrieve the root scene, simply use the ``scene`` function.
 
+## Reacting to Scene Changes
+When a node in the scene graph is added or removed, you can react to that change at the immediate child level via methods on ``enter`` and ``leave``. Any ``enter`` and ``leave`` operation will also bubble upwards (to the root) of the tree via ``register`` and ``deregister`` calls correspondingly, so you can react to changes lower down in the tree via methods on those functions.
+
+Note that all of those functions are called synchronously, so performing expensive operations in them will also make scene tree changes expensive as well. However, it also allows you to perform consistency checks and error out, should an insertion or removal be considered invalid.
+
+In order to react to changes elsewhere in the scene graph, you can add an event handler for the ``register`` and ``deregister`` events. Note that these will be asynchronous and will only be handled after the change has already been performed.
+
 ## Entity Mixins
 By themselves nodes don't actually do anything. Often you'd like the nodes to carry some properties such as a location, orientation, etc. To this end, Trial offers a number of mixin classes:
 
@@ -45,6 +52,6 @@ While you can create your own container types when necessary, Trial already prov
 - ``layered-container``
   A container that segregates objects into a multiple ``bag``s depending on their ``layer-index``. The container needs to be initialised with the correct ``layer-count``. Any object with a layer-index beyond [0,layer-count] is clamped to within that range.
 - ``list-container``
-  A container backed by a list. Insertion is O(1) and simple adds to the front, and removal is O(n). Iteration is not memory efficient due to the cons chain.
+  A container backed by a list. Insertion is O(1) and simply adds to the front, and removal is O(n). Iteration is not memory efficient due to the cons chain.
 
 Defining your own container types is simple -- all you need to do is subclass ``container``, and implement ``clear``, ``enter``, ``leave``, and the necessary sequence methods (most notably ``sequences:make-sequence-iterator``).
