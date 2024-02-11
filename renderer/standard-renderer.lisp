@@ -313,6 +313,14 @@
 (defmethod notice-update :after ((light light) (pass light-cache-render-pass))
   (3ds:update light (light-cache pass)))
 
+(define-handler ((pass light-cache-render-pass) register) (changed-node)
+  (when (typep changed-node 'light)
+    (enter changed-node pass)))
+
+(define-handler ((pass light-cache-render-pass) deregister) (changed-node)
+  (when (typep changed-node 'light)
+    (leave changed-node pass)))
+
 (define-handler ((pass light-cache-render-pass) tick :before) ()
   (when (<= (light-cache-distance-threshold pass)
             (vsqrdistance (focal-point (camera pass)) (light-cache-location pass)))
