@@ -6,54 +6,62 @@ jobs:
   build:
     strategy:
       matrix:
-        platform: [ubuntu-latest]
+        platform: [ubuntu-latest, macOS-latest, windows-latest]
       fail-fast: false
     runs-on: ${{ matrix.platform }}
     defaults:
       run:
         shell: bash
+    env:
+      LISP: sbcl-bin
     steps:
       - name: Restore cache
         id: cache-ql
         uses: actions/cache@v3
         with:
           path: |
-            /home/runner/.roswell
-            /home/runner/.cache/common-lisp
+            ~/.roswell
+            ~/.cache/common-lisp
           key: ${{ runner.os }}-ql
-      - name: Install Roswell
-        env:
-          LISP: sbcl-bin/2.4.0
-        run: |
-          curl -L https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh
-          echo "$HOME/.roswell/bin" >> $GITHUB_PATH
+      - name: Install Lisp
+        uses: 40ants/setup-lisp@v2
       - name: Install env
         if: steps.cache-ql.outputs.cache-hit != 'true'
+        shell: lispsh -eo pipefail {0}
         run: |
           ros run -- --noinform \
                --eval '(ql-dist:install-dist "http://dist.shirakumo.org/shirakumo.txt" :prompt NIL)' \
                --non-interactive
       - uses: actions/checkout@v1
       - name: Build the library
+        shell: lispsh -eo pipefail {0}
         run: |
           ros run -- --noinform --dynamic-space-size 4Gb \
                --eval "(push \"$GITHUB_WORKSPACE\" ql:*local-project-directories*)" \
                --eval '(ql:quickload :trial-examples)' \
                --non-interactive
       - name: Build the binary
+        shell: lispsh -eo pipefail {0}
         run: |
           ros run -- --noinform --dynamic-space-size 4Gb \
                --eval "(push \"$GITHUB_WORKSPACE\" ql:*local-project-directories*)" \
                --eval '(asdf:make :trial-examples)' \
                --non-interactive
       - name: Make release ZIP
+        if: runner.os != 'windows'
         run: |
-          cd examples/bin/ && zip -r /tmp/trial-examples-{{ runner.os }}.zip *
+          cd examples/bin/ && zip -r ~/trial-examples-${{ runner.os }}.zip *
+      - name: Make release ZIP
+        if: runner.os == 'windows'
+        shell: powershell
+        run: |
+          cd examples/bin/
+          Compress-Archive -Path * -Destination $HOME/trial-examples-${{ runner.os }}.zip
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: trial-examples-{{ runner.os }}
-          path: /tmp/trial-examples-{{ runner.os }}.zip
+          name: trial-examples-${{ runner.os }}
+          path: ~/trial-examples-${{ runner.os }}.zip
       - name: Create release
         id: create_release
         uses: ncipollo/release-action@v1
@@ -61,4 +69,4 @@ jobs:
         with:
           allowUpdates: true
           name: Release ${{ github.ref_name }}
-          artifacts: /tmp/trial-examples-{{ runner.os }}.zip
+          artifacts: ~/trial-examples-${{ runner.os }}.zip
