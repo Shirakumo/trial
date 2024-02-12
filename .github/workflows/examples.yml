@@ -22,6 +22,7 @@ jobs:
           path: |
             ~/.roswell
             ~/.cache/common-lisp
+            ~/AppData/Local/cache
           key: ${{ runner.os }}-ql
       - name: Install Lisp
         uses: 40ants/setup-lisp@v2
