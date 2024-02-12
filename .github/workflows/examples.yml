@@ -1,5 +1,5 @@
 name: examples
-on: [workflow_dispatch]
+on: [create, workflow_dispatch]
 permissions:
   contents: write
 jobs:
