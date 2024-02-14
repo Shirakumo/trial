@@ -41,4 +41,7 @@ The following examples are currently available:
 - **convex-physics**
   [ image images/example convex-physics.png, width 15em ]
   An illustration of automated convex decomposition of arbitrary models
+- **system-info**
+  [ image images/example system-info.png, width 15em ]
+  Show various statistics and bits of information about the system
 

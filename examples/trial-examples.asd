@@ -22,7 +22,8 @@
                (:file "convex-physics")
                (:file "scene-loader")
                (:file "decomposition")
-               (:file "sprite"))
+               (:file "sprite")
+               (:file "system-info"))
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
                :alloy-constraint
