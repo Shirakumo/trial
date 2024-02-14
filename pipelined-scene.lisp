@@ -6,7 +6,7 @@
 (defmethod preload (object (scene pipelined-scene))
   (pushnew object (to-preload scene)))
 
-(defmethod setup-scene :around (main (scene scene))
+(defmethod setup-scene :around (main (scene pipelined-scene))
   (prog1 (call-next-method)
     (pack-pipeline scene (context main))
     (loop for pass across (passes scene)
