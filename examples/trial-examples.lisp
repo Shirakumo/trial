@@ -59,7 +59,8 @@
         (combine (make-instance 'blend-pass :name 'blend-pass)))
     (connect (port output 'color) (port combine 'a-pass) scene)
     (connect (port ui 'color) (port combine 'b-pass) scene)
-    (show (make-instance 'example-ui :scene scene) :ui ui)))
+    (show (make-instance 'example-ui :scene scene) :ui ui)
+    (setf (title *context*) (format NIL "Trial Examples (~a)" (title scene)))))
 
 (defmethod setup-ui ((scene example-scene) panel)
   (alloy:finish-structure panel
@@ -95,12 +96,15 @@
     (assert (null options))
     `(progn
        (pushnew ',name *examples*)
-
-       (defmethod title ((example (eql ',name)))
-         ,(or title (string-downcase name)))
        
        (defclass ,scene-class (,@superclasses example-scene)
          ,slots)
+
+       (defmethod title ((example (eql ',name)))
+         ,(or title (string-downcase name)))
+
+       (defmethod title ((scene ,scene-class))
+         ,(or title (string-downcase name)))
        
        (defmethod setup-scene ((main example) (scene ,scene-class))
          ,@body
@@ -126,6 +130,7 @@
     (alloy:finish-structure list layout focus)))
 
 (defmethod setup-scene ((main example) (scene scene))
+  (setf (title *context*) "Trial Examples")
   (enter (make-instance 'ui) scene)
   (trial-alloy:show-panel 'example-list))
 
