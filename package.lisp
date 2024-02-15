@@ -1808,6 +1808,7 @@
    #:clamp
    #:deadzone
    #:lerp
+   #:lerp-dt
    #:deg->rad
    #:rad->deg
    #:db
