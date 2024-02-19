@@ -291,11 +291,8 @@
       (vector-push (* i 21) free-list))))
 
 (defmethod bind-textures ((emitter cpu-particle-emitter))
-  (gl:active-texture :texture0)
-  (gl:bind-texture (target (texture emitter)) (gl-name (texture emitter)))
-  (gl:active-texture :texture1)
-  (let ((properties (slot-value emitter 'particle-property-buffer)))
-    (gl:bind-texture (target properties) (gl-name properties))))
+  (bind (texture emitter) :texture0)
+  (bind (slot-value emitter 'particle-property-buffer) :texture1))
 
 (defmethod render :around ((emitter cpu-particle-emitter) (program shader-program))
   (when (< 0 (live-particles emitter))

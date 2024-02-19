@@ -310,6 +310,10 @@
       (%gl:get-tex-image (target source) level format type (memory-region-pointer region))
       (apply #'save-image region target image-type :width (width source) :height (height source) :pixel-type type :pixel-format format args))))
 
+(defmethod bind ((source texture) point)
+  (gl:active-texture point)
+  (gl:bind-texture (target source) (gl-name source)))
+
 (defmethod activate ((source texture))
   (gl:bind-texture (target source) (gl-name source)))
 
