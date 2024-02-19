@@ -95,47 +95,57 @@
   (declare (type (unsigned-byte 32) vertex-stride))
   (declare (type vec3 location normal randoms))
   (declare (optimize speed))
-  (cond ((< (length vertex-data) (* 3 vertex-stride))
-         ;; Special handling for point meshes
-         (setf (vx location) (aref vertex-data 0))
-         (setf (vy location) (aref vertex-data 1))
-         (setf (vz location) (aref vertex-data 2))
-         (setf (vx normal) (aref vertex-data 3))
-         (setf (vy normal) (aref vertex-data 4))
-         (setf (vz normal) (aref vertex-data 5)))
-        (T
-         ;; Pick a random triangle and read out the properties
-         (let* ((tri (* 3 (truncate (* (length faces) (vz randoms)) 3)))
-                (i0 (* vertex-stride (aref faces (+ tri 0))))
-                (i1 (* vertex-stride (aref faces (+ tri 1))))
-                (i2 (* vertex-stride (aref faces (+ tri 2))))
-                (p0 (vec (aref vertex-data (+ i0 0)) (aref vertex-data (+ i0 1)) (aref vertex-data (+ i0 2))))
-                (p1 (vec (aref vertex-data (+ i1 0)) (aref vertex-data (+ i1 1)) (aref vertex-data (+ i1 2))))
-                (p2 (vec (aref vertex-data (+ i2 0)) (aref vertex-data (+ i2 1)) (aref vertex-data (+ i2 2))))
-                (n0 (vec (aref vertex-data (+ i0 3)) (aref vertex-data (+ i0 4)) (aref vertex-data (+ i0 5))))
-                (n1 (vec (aref vertex-data (+ i1 3)) (aref vertex-data (+ i1 4)) (aref vertex-data (+ i1 5))))
-                (n2 (vec (aref vertex-data (+ i2 3)) (aref vertex-data (+ i2 4)) (aref vertex-data (+ i2 5))))
-                (f (vx randoms))
-                (g (vy randoms)))
-           (declare (dynamic-extent p0 p1 p2 n0 n1 n2))
-           (declare (type single-float f g))
-           ;; Pick a random location on the triangle via barycentric interpolation
-           (when (< 1 (+ f g))
-             (setf f (- 1.0 f) g (- 1.0 g)))
-           (flet ((eval-barycentric (target a b c)
-                    (let ((ba (v- b a))
-                          (ca (v- c a)))
-                      (declare (dynamic-extent ba ca))
-                      (v<- target a)
-                      (nv+* target ba f)
-                      (nv+* target ca g))))
-             (eval-barycentric location p0 p1 p2)
-             (eval-barycentric normal n0 n1 n2)
-             (values location (nvunit normal)))))))
+  (case (length vertex-data)
+    (0
+     (v<- location 0)
+     (sampling:normal 1.0 normal))
+    (3
+     ;; Special handling for point meshes
+     (setf (vx location) (aref vertex-data 0))
+     (setf (vy location) (aref vertex-data 1))
+     (setf (vz location) (aref vertex-data 2))
+     (sampling:normal 1.0 normal))
+    (6
+     ;; Special handling for point meshes
+     (setf (vx location) (aref vertex-data 0))
+     (setf (vy location) (aref vertex-data 1))
+     (setf (vz location) (aref vertex-data 2))
+     (setf (vx normal) (aref vertex-data 3))
+     (setf (vy normal) (aref vertex-data 4))
+     (setf (vz normal) (aref vertex-data 5)))
+    (T
+     ;; Pick a random triangle and read out the properties
+     (let* ((tri (* 3 (truncate (* (length faces) (vz randoms)) 3)))
+            (i0 (* vertex-stride (aref faces (+ tri 0))))
+            (i1 (* vertex-stride (aref faces (+ tri 1))))
+            (i2 (* vertex-stride (aref faces (+ tri 2))))
+            (p0 (vec (aref vertex-data (+ i0 0)) (aref vertex-data (+ i0 1)) (aref vertex-data (+ i0 2))))
+            (p1 (vec (aref vertex-data (+ i1 0)) (aref vertex-data (+ i1 1)) (aref vertex-data (+ i1 2))))
+            (p2 (vec (aref vertex-data (+ i2 0)) (aref vertex-data (+ i2 1)) (aref vertex-data (+ i2 2))))
+            (n0 (vec (aref vertex-data (+ i0 3)) (aref vertex-data (+ i0 4)) (aref vertex-data (+ i0 5))))
+            (n1 (vec (aref vertex-data (+ i1 3)) (aref vertex-data (+ i1 4)) (aref vertex-data (+ i1 5))))
+            (n2 (vec (aref vertex-data (+ i2 3)) (aref vertex-data (+ i2 4)) (aref vertex-data (+ i2 5))))
+            (f (vx randoms))
+            (g (vy randoms)))
+       (declare (dynamic-extent p0 p1 p2 n0 n1 n2))
+       (declare (type single-float f g))
+       ;; Pick a random location on the triangle via barycentric interpolation
+       (when (< 1 (+ f g))
+         (setf f (- 1.0 f) g (- 1.0 g)))
+       (flet ((eval-barycentric (target a b c)
+                (let ((ba (v- b a))
+                      (ca (v- c a)))
+                  (declare (dynamic-extent ba ca))
+                  (v<- target a)
+                  (nv+* target ba f)
+                  (nv+* target ca g))))
+         (eval-barycentric location p0 p1 p2)
+         (eval-barycentric normal n0 n1 n2)
+         (values location (nvunit normal)))))))
 
 (defun %emit-particle (particles properties pos prop randoms randomness lifespan-randomness
-                      matrix velocity rotation lifespan size scaling color
-                      vertex-data vertex-stride faces)
+                       matrix velocity rotation lifespan size scaling color
+                       vertex-data vertex-stride faces spawn-point)
   (declare (type (simple-array single-float (*)) particles properties vertex-data))
   (declare (type (simple-array (unsigned-byte 32) (*)) faces))
   (declare (type (unsigned-byte 32) pos prop))
@@ -164,9 +174,9 @@
     (setf (aref properties (+ prop 7)) 0.0)
     (replace properties (marr4 matrix) :start1 (+ prop 8))
     ;; Now set dynamic particle properties
-    (setf (aref particles (+ pos 0)) (vx location))
-    (setf (aref particles (+ pos 1)) (vy location))
-    (setf (aref particles (+ pos 2)) (vz location))
+    (setf (aref particles (+ pos 0)) (+ (vx spawn-point) (vx location)))
+    (setf (aref particles (+ pos 1)) (+ (vy spawn-point) (vy location)))
+    (setf (aref particles (+ pos 2)) (+ (vz spawn-point) (vz location)))
     (setf (aref particles (+ pos 3)) (vx velocity))
     (setf (aref particles (+ pos 4)) (vy velocity))
     (setf (aref particles (+ pos 5)) (vz velocity))
@@ -264,7 +274,7 @@
                           particle-randomness particle-lifespan-randomness mat
                           particle-velocity particle-rotation particle-lifespan
                           particle-size particle-scaling particle-full-color
-                          vertex-data vertex-stride face-data)
+                          vertex-data vertex-stride face-data (location emitter))
           (incf live-particles)))
       (when (and (< 0 live-particles) (< min-prop most-positive-fixnum))
         (let ((src (first (sources particle-property-buffer))))

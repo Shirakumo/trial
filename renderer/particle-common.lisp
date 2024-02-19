@@ -136,8 +136,7 @@
         finally (error "VAO must have a position binding at index 0.")))
 
 (defmethod (setf particle-force-fields) ((cons cons) (emitter particle-emitter))
-  (when (or (not (slot-boundp emitter 'particle-force-fields))
-            (generator (particle-force-fields emitter)))
+  (when (or (not (slot-boundp emitter 'particle-force-fields)))
     ;; We have a hard max of 32 anyway in the shader....
     (setf (particle-force-fields emitter) (make-instance 'particle-force-fields :size 32)))
   (let ((size (length cons))
