@@ -1807,6 +1807,7 @@
    #:generate-name
    #:clamp
    #:deadzone
+   #:lpf
    #:lerp
    #:lerp-dt
    #:deg->rad
