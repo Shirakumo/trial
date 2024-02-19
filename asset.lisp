@@ -258,5 +258,8 @@
   (dolist (pool (list-pools))
     (apply #'compile-resources pool source args)))
 
+(defmethod compile-resources ((pool symbol) (source (eql T)) &rest args &key &allow-other-keys)
+  (apply #'compile-resources (find-pool pool T) source args))
+
 (defclass full-load-asset (asset)
   ())
