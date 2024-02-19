@@ -1814,6 +1814,7 @@
    #:rad->deg
    #:db
    #:angle-midpoint
+   #:angle-distance
    #:clamp-angle
    #:lerp-angle
    #:symbol->c-name

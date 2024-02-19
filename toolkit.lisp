@@ -794,6 +794,10 @@
   (when (< PI (- b a)) (decf b F-2PI))
   (mod (/ (+ b a) 2) F-2PI))
 
+(defun angle-distance (a b)
+  (let ((da (mod (- b a) F-2PI)))
+    (- (mod (* 2 da) F-2PI) da)))
+
 (defun clamp-angle (min a max)
   (flet ((normalize-180 (a)
            (- (mod (+ a F-PI) F-2PI) F-PI)))
