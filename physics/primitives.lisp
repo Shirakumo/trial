@@ -574,7 +574,7 @@
         (vert (vec3))
         (furthest most-negative-single-float))
     (declare (dynamic-extent vert))
-    (declare (optimize (safety 0)))
+    (declare (optimize speed (safety 0)))
     ;; FIXME: this is O(n)
     (loop for i from 0 below (length verts) by 3
           do (setf (vx vert) (aref verts (+ i 0)))
@@ -584,6 +584,56 @@
                (when (< furthest dist)
                  (setf furthest dist)
                  (v<- next vert))))))
+
+(define-primitive-type (optimized-convex-mesh convex-mesh)
+    ((adjacency-list (make-array 0) :type simple-vector))
+  (let ((offset (recenter-vertices (general-mesh-vertices primitive))))
+    (!m* (primitive-local-transform primitive)
+         offset
+         (primitive-local-transform primitive)))
+  ;; Precompute the adjacency list. As a further optimisation we already pre-multiply
+  ;; the adjacents to be vertex array indices rather than vertex numbers, and turn it
+  ;; into a simple-array for more compact storage.
+  (let ((adjacent (org.shirakumo.fraf.manifolds:vertex-adjacency-list (convex-mesh-faces primitive))))
+    (dotimes (i (length adjacent))
+      (setf (aref adjacent i)
+            (map '(simple-array (unsigned-byte 16) (*))
+                 (lambda (x) (* 3 x)) (aref adjacent i))))
+    (setf (optimized-convex-mesh-adjacency-list primitive) adjacent)))
+
+(define-transfer optimized-convex-mesh optimized-convex-mesh-adjacency-list)
+
+(define-support-function optimized-convex-mesh (dir best)
+  (let* ((verts (convex-mesh-vertices primitive))
+         (adjacents (optimized-convex-mesh-adjacency-list primitive))
+         (vert (vec3))
+         (vertex 0)
+         (iterations 0))
+    (declare (optimize speed))
+    (declare (dynamic-extent vert))
+    (declare (type (unsigned-byte 16) vertex iterations))
+    (flet ((try-vertex (i)
+             (setf (vx vert) (aref verts (+ i 0)))
+             (setf (vy vert) (aref verts (+ i 1)))
+             (setf (vz vert) (aref verts (+ i 2)))
+             (when (< 0 (v. (nv- vert best) dir))
+               (setf vertex i)
+               (nv+ best vert))))
+      (tagbody
+       next
+         ;; KLUDGE: Hill climbing can get stuck in a coplanar local minimum. To catch this we
+         ;;         cap the number of iterations and fall back to the O(n) method. It'll be
+         ;;         super slow at that point, but at least we'll terminate with a correct
+         ;;         result
+         (when (= 256 (incf iterations))
+           (dbg "HILL CLIMBING STUCK")
+           (call-next-method)
+           (go done))
+         (loop for i of-type (unsigned-byte 16) across
+               (the (simple-array (unsigned-byte 16) (*)) (aref adjacents (truncate vertex 3)))
+               do (when (try-vertex i)
+                    (go next)))
+       done))))
 
 (defmacro with-mesh-construction ((constructor &optional (finalizer 'finalize)) &body body)
   (let ((vertices (gensym "VERTICES"))
@@ -869,6 +919,12 @@
   (apply #'make-general-mesh
          :vertices (reordered-vertex-data mesh '(location))
          :faces (simplify (faces mesh) '(unsigned-byte 16))
+         args))
+
+(defmethod coerce-object ((primitive convex-mesh) (type (eql 'optimized-convex-mesh)) &rest args &key &allow-other-keys)
+  (apply #'make-optimized-convex-mesh
+         :vertices (convex-mesh-vertices primitive)
+         :faces (convex-mesh-faces primitive)
          args))
 
 (defmethod replace-vertex-data (target (primitive primitive) &rest args &key &allow-other-keys)

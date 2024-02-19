@@ -369,9 +369,11 @@
                                 args))
       (gltf:convex-shape
        (let ((mesh (ensure-mesh (gltf:mesh shape))))
-         (apply #'trial:make-convex-mesh :vertices (trial:reordered-vertex-data mesh '(trial:location))
-                                         :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 16))
-                                         args)))
+         ;; KLUDGE: If we have a mesh with few faces, skip the more elaborate hill climbing.
+         (apply (if (< (length (trial:faces mesh)) 8) #'trial:make-convex-mesh #'trial::make-optimized-convex-mesh)
+                :vertices (trial:reordered-vertex-data mesh '(trial:location))
+                :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 16))
+                args)))
       (gltf:cylinder-shape
        (apply #'trial:make-cylinder :height (float (* 0.5 (gltf:height shape)) 0f0)
                                     :radius (max (float (gltf:radius-top shape) 0f0)
