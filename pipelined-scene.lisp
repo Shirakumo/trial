@@ -6,6 +6,9 @@
 (defmethod preload (object (scene pipelined-scene))
   (pushnew object (to-preload scene)))
 
+(defmethod preload ((name symbol) (scene scene))
+  (preload (make-instance name) scene))
+
 (defmethod setup-scene :around (main (scene pipelined-scene))
   (prog1 (call-next-method)
     (pack-pipeline scene (context main))
