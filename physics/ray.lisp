@@ -90,18 +90,19 @@
     (dotimes (i (length hits))
       (setf (aref hits i) %hit)
       (setq %hit (make-hit)))
-    (let ((count (detect-hits ray target hits 0 (length hits))))
-      (when (< 0 count)
-        (when (= count (length hits))
-          (dbg "RAY overflow"))
-        ;; Find the best hit. Ideally we'd feed this back into the broad-phase
-        ;; to tell it to stop trying to find shit that's out of reach anyway,
-        ;; but....
-        (setf (hit-depth hit) most-negative-single-float)
-        (dotimes (i count hit)
-          (when (< (hit-depth hit) (hit-depth (aref hits i)))
-            (<- hit (aref hits i))
-            (setf (hit-a hit) NIL)))))))
+    (with-ignored-errors-on-release (:trial.physics "Raycast failed, ignoring")
+      (let ((count (detect-hits ray target hits 0 (length hits))))
+        (when (< 0 count)
+          (when (= count (length hits))
+            (dbg "RAY overflow"))
+          ;; Find the best hit. Ideally we'd feed this back into the broad-phase
+          ;; to tell it to stop trying to find shit that's out of reach anyway,
+          ;; but....
+          (setf (hit-depth hit) most-negative-single-float)
+          (dotimes (i count hit)
+            (when (< (hit-depth hit) (hit-depth (aref hits i)))
+              (<- hit (aref hits i))
+              (setf (hit-a hit) NIL))))))))
 
 (defmacro define-ray-test (b (&rest props) &body body)
   (let ((implicit-name (intern (format NIL "~a-~a-~a" 'ray b 'p)))
