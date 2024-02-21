@@ -43,8 +43,8 @@
 (dont-deploy
  cl-opengl-bindings::opengl)
 #+linux
-(dont-deploy
- org.shirakumo.fraf.gamepad.impl::evdev)
+(deploy:define-library org.shirakumo.fraf.gamepad.impl::evdev
+  :path (asdf:system-relative-pathname :cl-gamepad "static/libevdev-lin-amd64.so"))
 #+darwin
 (dont-deploy
  org.shirakumo.fraf.gamepad.impl::corefoundation
