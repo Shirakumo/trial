@@ -616,9 +616,14 @@
              (setf (vx vert) (aref verts (+ i 0)))
              (setf (vy vert) (aref verts (+ i 1)))
              (setf (vz vert) (aref verts (+ i 2)))
-             (when (< 0 (v. (nv- vert best) dir))
-               (setf vertex i)
-               (nv+ best vert))))
+             (let ((diff (v- vert best)))
+               (declare (dynamic-extent diff))
+               (when (< 0 (v. diff dir))
+                 (setf vertex i)
+                 (v<- best vert)))))
+      (setf (vx best) (aref verts 0))
+      (setf (vy best) (aref verts 1))
+      (setf (vz best) (aref verts 2))
       (tagbody
        next
          ;; KLUDGE: Hill climbing can get stuck in a coplanar local minimum. To catch this we
