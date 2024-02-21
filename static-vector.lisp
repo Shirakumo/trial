@@ -34,3 +34,21 @@
 
 (defmethod finalize ((vector vector))
   (maybe-free-static-vector vector))
+
+(defstruct (static-vector-memory-region 
+            (:include mem:memory-region)
+            (:constructor %make-static-vector-memory-region))
+  (vector NIL :type T))
+
+(defmethod finalize ((region static-vector-memory-region))
+  (maybe-free-static-vector (static-vector-memory-region-vector region)))
+
+(defun make-static-vector-memory-region (length/vec)
+  (etypecase length/vec
+    (integer
+     (setf length/vec (make-static-vector length/vec)))
+    (vector))
+  (%make-static-vector-memory-region
+   :pointer (static-vector-pointer length/vec)
+   :size (length length/vec)
+   :vector length/vec))

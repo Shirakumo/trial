@@ -68,9 +68,9 @@
                (maybe-init slot)))))))
     (cond ((not storage-p)
            (unless (slot-boundp struct 'storage)
-             (setf (slot-value struct 'storage) (mem:allocate T (buffer-field-size (layout-standard struct) struct 0)))))
+             (setf (slot-value struct 'storage) (make-static-vector-memory-region (buffer-field-size (layout-standard struct) struct 0)))))
           ((null storage)
-           (setf (slot-value struct 'storage) (mem:memory-region (cffi:null-pointer) (buffer-field-size (layout-standard struct) struct 0))))
+           (setf (slot-value struct 'storage) (make-static-vector-memory-region (buffer-field-size (layout-standard struct) struct 0))))
           (T
            (setf (slot-value struct 'storage) storage)))
     (call-next-method)))
@@ -87,7 +87,7 @@
 
 (defmethod finalize ((struct gl-struct))
   (when (storage struct)
-    (mem:deallocate T (storage struct))
+    (finalize (storage struct))
     (setf (storage struct) NIL)))
 
 (defmethod (setf storage) :after (pointer (struct gl-struct))
