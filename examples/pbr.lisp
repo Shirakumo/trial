@@ -18,13 +18,14 @@
                        (,(vec  10 -10 10) ,(vec 300 300 300)))
         do (enter (make-instance 'point-light :location p :color c) scene))
   (loop for y from 0.5 below 7
-        for m = (/ y 7.0)
+        for m = (/ (- y 0.5) 6.0)
         do (loop for x from 0.5 below 7
-                 for r = (/ x 7.0)
+                 for r = (/ (- x 0.5) 6.0)
                  for p = (vec (* 2.5 (- r 0.5)) (* 2.5 (- m 0.5)) 0.0)
                  for mat = (make-instance 'pbr-material :albedo-texture (// 'trial 'white) :metal-rough-occlusion-texture (// 'trial 'white)
-                                                        :albedo-factor (vec 0.5 0 0 1) :metallic-factor m :roughness-factor r :occlusion-factor 0.0)
-                 do (enter (make-instance 'pbr-globe :location p :material mat) scene)))
+                                                        :albedo-factor (vec 0.5 0 0 1) :metalness-factor m :roughness-factor r :occlusion-factor 0.0)
+                 do (enter (make-instance 'pbr-globe :location p :material mat) scene)
+                 (print (list p m r))))
   
   (let ((render (make-instance 'pbr-render-pass))
         (map (make-instance 'tone-mapping-pass)))

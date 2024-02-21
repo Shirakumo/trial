@@ -315,7 +315,7 @@
                               :emission-texture (load-image asset (gltf:emissive-texture material))
                               :normal-texture (load-image asset (gltf:normal-texture material))
                               :albedo-factor (to-vec (gltf:albedo-factor pbr))
-                              :metallic-factor (float (gltf:metallic-factor pbr) 0f0)
+                              :metalness-factor (float (gltf:metallic-factor pbr) 0f0)
                               :roughness-factor (float (gltf:roughness-factor pbr) 0f0)
                               :emission-factor (to-vec (gltf:emissive-factor material))
                               :occlusion-factor (if (gltf:occlusion-texture material) 1.0 0.0)
