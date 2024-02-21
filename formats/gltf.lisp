@@ -335,7 +335,8 @@
       (gltf:directional-light
        (make 'trial:directional-light :direction (vec 0 0 -1)))
       (gltf:point-light
-       (make 'trial:point-light :linear-attenuation (or (gltf:range light) 0.0)))
+       (make 'trial:point-light :linear-attenuation (or (gltf:range light) 0.0)
+                                :quadratic-attenuation 0.0))
       (gltf:spot-light
        (make 'trial:spot-light :direction (vec 0 0 -1)
                                :linear-attenuation (or (gltf:range light) 0.0)
