@@ -68,9 +68,9 @@
                (maybe-init slot)))))))
     (cond ((not storage-p)
            (unless (slot-boundp struct 'storage)
-             (setf (slot-value struct 'storage) (make-static-vector-memory-region (buffer-field-size (layout-standard struct) struct 0)))))
+             (setf (slot-value struct 'storage) (mem:static-vector-memory-region (buffer-field-size (layout-standard struct) struct 0)))))
           ((null storage)
-           (setf (slot-value struct 'storage) (make-static-vector-memory-region (buffer-field-size (layout-standard struct) struct 0))))
+           (setf (slot-value struct 'storage) (mem:static-vector-memory-region (buffer-field-size (layout-standard struct) struct 0))))
           (T
            (setf (slot-value struct 'storage) storage)))
     (call-next-method)))
