@@ -587,6 +587,13 @@
 
 (define-primitive-type (optimized-convex-mesh convex-mesh)
     ((adjacency-list (make-array 0) :type simple-vector))
+  ;; First normalize the mesh to ensure that we have no duplicated vertices as those
+  ;; would mess up the invariant on the hill climbing adjacency.
+  (multiple-value-bind (verts faces) (org.shirakumo.fraf.manifolds:normalize (convex-mesh-vertices primitive)
+                                                                             (convex-mesh-faces primitive))
+    (setf (convex-mesh-vertices primitive) verts)
+    (setf (convex-mesh-faces primitive) faces))
+  ;; Recenter it like the other mesh types do.
   (let ((offset (recenter-vertices (general-mesh-vertices primitive))))
     (!m* (primitive-local-transform primitive)
          offset
@@ -603,27 +610,25 @@
 
 (define-transfer optimized-convex-mesh optimized-convex-mesh-adjacency-list)
 
-(define-support-function optimized-convex-mesh (dir best)
+(define-support-function optimized-convex-mesh (dir next)
   (let* ((verts (convex-mesh-vertices primitive))
          (adjacents (optimized-convex-mesh-adjacency-list primitive))
+         (furthest most-negative-single-float)
          (vert (vec3))
          (vertex 0)
          (iterations 0))
-    (declare (optimize speed))
     (declare (dynamic-extent vert))
     (declare (type (unsigned-byte 16) vertex iterations))
     (flet ((try-vertex (i)
              (setf (vx vert) (aref verts (+ i 0)))
              (setf (vy vert) (aref verts (+ i 1)))
              (setf (vz vert) (aref verts (+ i 2)))
-             (let ((diff (v- vert best)))
-               (declare (dynamic-extent diff))
-               (when (< 0 (v. diff dir))
+             (let ((dist (v. vert dir)))
+               (when (< furthest dist)
                  (setf vertex i)
-                 (v<- best vert)))))
-      (setf (vx best) (aref verts 0))
-      (setf (vy best) (aref verts 1))
-      (setf (vz best) (aref verts 2))
+                 (setf furthest dist)
+                 (v<- next vert)))))
+      (try-vertex vertex)
       (tagbody
        next
          ;; KLUDGE: Hill climbing can get stuck in a coplanar local minimum. To catch this we
