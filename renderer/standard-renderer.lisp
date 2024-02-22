@@ -239,10 +239,14 @@
 
 (define-transfer single-material-renderable material)
 
-(defmethod render-with :before ((pass standard-render-pass) (object single-material-renderable) program)
+(defmethod render-with :around ((pass standard-render-pass) (object single-material-renderable) program)
   (prepare-pass-program pass program)
   (when (material object)
-    (render-with pass (material object) program)))
+    (with-pushed-features
+      (when (double-sided-p material)
+        (disable-feature :cull-face)))
+    (render-with pass (material object) program)
+    (call-next-method)))
 
 (define-shader-entity per-array-material-renderable (standard-renderable)
   ((materials :initarg :materials :initform #() :accessor materials)))
@@ -267,8 +271,11 @@
     (setf (uniform program "inv_model_matrix") inv))
   (loop for vao across (vertex-arrays renderable)
         for material across (materials renderable)
-        do (render-with pass material program)
-           (render vao program)))
+        do (with-pushed-features
+             (when (double-sided-p material)
+               (disable-feature :cull-face))
+             (render-with pass material program)
+             (render vao program))))
 
 (defmethod (setf mesh) :after ((meshes cons) (renderable per-array-material-renderable))
   (let ((arrays (make-array (length meshes))))
