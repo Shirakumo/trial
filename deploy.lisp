@@ -34,7 +34,10 @@
 (deploy:define-hook (:boot trial) ()
   (v:restart-global-controller)
   (setf *random-state* (make-random-state T))
-  (random:reseed random:*generator* T))
+  (random:reseed random:*generator* T)
+  (dolist (material (list-materials))
+    (setf (memory-region-pointer (storage material))
+          (static-vector-pointer (mem:memory-region-vector (storage material))))))
 
 (defmacro dont-deploy (&rest libraries)
   `(progn ,@(loop for lib in libraries
