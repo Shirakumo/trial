@@ -308,6 +308,7 @@
              (when rmo (setf (trial::swizzle rmo) '(:g :r :b :a)))
              (let ((material (trial:ensure-instance
                               (trial:find-material name model NIL) 'trial:pbr-material
+                              :double-sided-p (gltf:double-sided-p material)
                               :albedo-texture (load-image asset (gltf:albedo pbr))
                               :metal-rough-texture mr
                               :metal-rough-occlusion-texture (or omr rmo)

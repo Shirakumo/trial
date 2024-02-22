@@ -30,6 +30,7 @@
 
 (defclass material ()
   ((name :initform NIL :initarg :name :accessor name)
+   (double-sided-p :initform NIL :initarg :double-sided :accessor double-sided-p)
    (textures :initform #() :accessor textures)))
 
 (defmethod stage ((material material) (area staging-area))
