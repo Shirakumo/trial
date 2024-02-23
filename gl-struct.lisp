@@ -427,10 +427,6 @@
             value)
       (call-next-method)))
 
-(defmethod c2mop:slot-boundp-using-class ((class gl-struct-class) (object gl-struct) (slot gl-struct-immediate-slot))
-  (and (storage object)
-       (call-next-method)))
-
 (defmethod slot-offset ((struct gl-struct) (slot gl-struct-immediate-slot))
   (+ (base-offset struct) (base-offset slot)))
 
