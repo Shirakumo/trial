@@ -14,35 +14,35 @@
   (print-unreadable-object (buffer stream :type T :identity T)
     (format stream "~a ~a~:[~; ALLOCATED~]" (buffer-type buffer) (data-usage buffer) (allocated-p buffer))))
 
-(defun update-buffer-data/ptr (buffer data count &optional (buffer-start 0))
+(defun update-buffer-data/ptr (buffer data octets &optional (buffer-start 0))
   (let ((buffer-type (buffer-type buffer)))
     #-elide-buffer-access-checks
-    (when (< (size buffer) (+ buffer-start count))
+    (when (< (size buffer) (+ buffer-start octets))
       (error "Attempting to store ~d bytes of data at offset ~d in a buffer of size ~d."
-             count buffer-start (size buffer)))
+             octets buffer-start (size buffer)))
     (gl:bind-buffer buffer-type (gl-name buffer))
     (unwind-protect
-         (%gl:buffer-sub-data buffer-type buffer-start count data)
+         (%gl:buffer-sub-data buffer-type buffer-start octets data)
       (gl:bind-buffer buffer-type 0))))
 
-(defun download-buffer-data/ptr (buffer data count &optional (buffer-start 0))
+(defun download-buffer-data/ptr (buffer data octets &optional (buffer-start 0))
   (let ((buffer-type (buffer-type buffer)))
     #-elide-buffer-access-checks
-    (when (< (size buffer) (+ buffer-start count))
+    (when (< (size buffer) (+ buffer-start octets))
       (error "Attempting to read ~d bytes of data at offset ~d from a buffer of size ~d."
-             count buffer-start (size buffer)))
+             octets buffer-start (size buffer)))
     (gl:bind-buffer buffer-type (gl-name buffer))
     (unwind-protect
-         (%gl:get-buffer-sub-data buffer-type buffer-start count data)
+         (%gl:get-buffer-sub-data buffer-type buffer-start octets data)
       (gl:bind-buffer buffer-type 0))))
 
-(defun resize-buffer/ptr (buffer size &optional (data (cffi:null-pointer)))
+(defun resize-buffer-data/ptr (buffer octets &optional (data (cffi:null-pointer)))
   (let ((buffer-type (buffer-type buffer)))
     (gl:bind-buffer buffer-type (gl-name buffer))
     (unwind-protect
-         (%gl:buffer-data buffer-type size data (data-usage buffer))
+         (%gl:buffer-data buffer-type octets data (data-usage buffer))
       (gl:bind-buffer buffer-type 0))
-    (setf (size buffer) size)))
+    (setf (size buffer) octets)))
 
 (defmethod update-buffer-data ((buffer buffer-object) (data (eql T)) &rest args)
   (apply #'update-buffer-data buffer (buffer-data buffer) args))
@@ -55,9 +55,6 @@
              count data (memory-region-size region)))
     (update-buffer-data/ptr buffer (memory-region-pointer region) (or count (memory-region-size region)) buffer-start)))
 
-(defmethod resize-buffer-data ((buffer buffer-object) data &rest args)
-  (apply #'resize-buffer buffer T :data data args))
-
 (defmethod download-buffer-data ((buffer buffer-object) (data (eql T)) &rest args)
   (apply #'download-buffer-data buffer (buffer-data buffer) args))
 
@@ -69,17 +66,17 @@
              count data (memory-region-size region)))
     (download-buffer-data/ptr buffer (memory-region-pointer region) (or count (memory-region-size region)) buffer-start)))
 
-(defmethod resize-buffer ((buffer buffer-object) (size (eql T)) &key (data (buffer-data buffer)) (data-start 0))
+(defmethod resize-buffer-data ((buffer buffer-object) (size (eql T)) &key (data (buffer-data buffer)) (data-start 0))
   (mem:with-memory-region (region data :offset data-start)
-    (resize-buffer/ptr buffer (memory-region-size region) (memory-region-pointer region))))
+    (resize-buffer-data/ptr buffer (memory-region-size region) (memory-region-pointer region))))
 
-(defmethod resize-buffer ((buffer buffer-object) size &key data (data-start 0))
+(defmethod resize-buffer-data ((buffer buffer-object) size &key data (data-start 0))
   (mem:with-memory-region (region (or data (cffi:null-pointer)) :offset data-start)
     #-elide-buffer-access-checks
     (when (and size (not (cffi:null-pointer-p (memory-region-pointer region))) (< (memory-region-size region) size))
       (error "Attempting to update ~d bytes from ~a, when it has only ~d bytes available."
              size data (memory-region-size region)))
-    (resize-buffer/ptr buffer size (memory-region-pointer region))))
+    (resize-buffer-data/ptr buffer size (memory-region-pointer region))))
 
 (defmethod allocate ((buffer buffer-object))
   (assert (not (null (size buffer))))
@@ -88,8 +85,8 @@
     (with-cleanup-on-failure (progn (gl:delete-buffers (list vbo))
                                     (setf (data-pointer buffer) NIL))
       (setf (data-pointer buffer) vbo)
-      (v:debug :trial.resource "Allocating ~d KB buffer." (truncate (size buffer) 1024))
-      (resize-buffer buffer (size buffer) :data buffer-data))))
+      (v:debug :trial.resource "Allocating ~d KB buffer." (ceiling (size buffer) 1024))
+      (resize-buffer-data buffer (size buffer) :data buffer-data))))
 
 (defmethod deallocate ((buffer buffer-object))
   (gl:delete-buffers (list (gl-name buffer))))

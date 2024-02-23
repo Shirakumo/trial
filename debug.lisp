@@ -98,11 +98,11 @@ void main(){
 
 (defmethod render ((draw debug-draw) (program shader-program))
   (when (logbitp 1 (dirty draw))
-    (resize-buffer (caar (bindings (points-vao draw))) T))
+    (resize-buffer-data (caar (bindings (points-vao draw))) T))
   (when (logbitp 2 (dirty draw))
-    (resize-buffer (caar (bindings (lines-vao draw))) T))
+    (resize-buffer-data (caar (bindings (lines-vao draw))) T))
   (when (logbitp 3 (dirty draw))
-    (resize-buffer (caar (bindings (text-vao draw))) T))
+    (resize-buffer-data (caar (bindings (text-vao draw))) T))
   (setf (dirty draw) 0)
   (setf (uniform program "view_matrix") (view-matrix))
   (setf (uniform program "projection_matrix") (projection-matrix))
@@ -509,9 +509,9 @@ void main(){
            (setf (fill-pointer (text debug-draw)) 0)
            (setf (fill-pointer (instances debug-draw)) 0)))
     (when update
-      (resize-buffer (caar (bindings (points-vao debug-draw))) T)
-      (resize-buffer (caar (bindings (lines-vao debug-draw))) T)
-      (resize-buffer (caar (bindings (text-vao debug-draw))) T))))
+      (resize-buffer-data (caar (bindings (points-vao debug-draw))) T)
+      (resize-buffer-data (caar (bindings (lines-vao debug-draw))) T)
+      (resize-buffer-data (caar (bindings (text-vao debug-draw))) T))))
 
 (define-class-shader (debug-draw :vertex-shader)
   "layout (location = 0) in vec3 position;

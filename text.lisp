@@ -66,7 +66,7 @@
       (vsetf (size text) w h)
       (setf (size vao) (truncate i 5)))
     (when (allocated-p vao)
-      (resize-buffer vbo (* 4 (length array)) :data array))))
+      (resize-buffer-data vbo (* 4 (length array)) :data array))))
 
 (defmethod render :before ((text debug-text) (program shader-program))
   (setf (uniform program "foreground") (foreground text))

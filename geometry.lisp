@@ -459,7 +459,7 @@
   (when update
     (let ((size (* (length (buffer-data buffer)) (gl-type-size (element-type buffer)))))
       (if (gl-name buffer)
-          (resize-buffer buffer size :data (buffer-data buffer))
+          (resize-buffer-data buffer size :data (buffer-data buffer))
           (setf (size buffer) size))))
   buffer)
 

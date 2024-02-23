@@ -613,7 +613,8 @@
    #:data-usage
    #:size
    #:update-buffer-data
-   #:resize-buffer)
+   #:download-buffer-data
+   #:resize-buffer-data)
   ;; resources/framebuffer.lisp
   (:export
    #:framebuffer

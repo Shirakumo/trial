@@ -141,7 +141,7 @@
 (defmethod opengl:update-vertex-buffer ((buffer trial:vertex-buffer) contents)
   (let ((length (* (length contents) (trial:gl-type-size :float))))
     (if (< (trial:size buffer) length)
-        (trial:resize-buffer buffer length :data contents)
+        (trial:resize-buffer-data buffer length :data contents)
         (trial:update-buffer-data buffer contents))))
 
 (defmethod alloy:allocate ((buffer trial:vertex-buffer))

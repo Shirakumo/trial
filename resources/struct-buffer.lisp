@@ -55,7 +55,7 @@
         (setf (size buffer) new-size)
         (mem:reallocate T (buffer-data buffer) new-size)
         (when (allocated-p buffer)
-          (resize-buffer buffer new-size :data (buffer-data buffer)))))))
+          (resize-buffer-data buffer new-size :data (buffer-data buffer)))))))
 
 (defmethod gl-type ((buffer struct-buffer))
   (gl-type (buffer-data buffer)))
@@ -77,12 +77,16 @@
   (c2mop:remove-dependent (class-of (buffer-data buffer)) buffer))
 
 (defmethod update-buffer-data ((buffer struct-buffer) (data (eql T)) &key)
-  (mem:with-memory-region (region (buffer-data buffer))
+  (let ((region (storage (buffer-data buffer))))
     (update-buffer-data/ptr buffer (memory-region-pointer region) (min (size buffer) (memory-region-size region)))))
 
 (defmethod download-buffer-data ((buffer struct-buffer) (data (eql T)) &key)
-  (mem:with-memory-region (region (buffer-data buffer))
+  (let ((region (storage (buffer-data buffer))))
     (download-buffer-data/ptr buffer (memory-region-pointer region) (min (size buffer) (memory-region-size region)))))
+
+(defmethod resize-buffer ((buffer buffer-object) (size (eql T)) &key (data (storage (buffer-data buffer))) (data-start 0))
+  (mem:with-memory-region (region data :offset data-start)
+    (resize-buffer-data/ptr buffer (memory-region-size region) (memory-region-pointer region))))
 
 (defvar *buffers-in-tx* ())
 (defmacro with-buffer-tx ((struct buffer &key (update :write)) &body body)
