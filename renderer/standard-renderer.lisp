@@ -243,7 +243,7 @@
   (prepare-pass-program pass program)
   (when (material object)
     (with-pushed-features
-      (when (double-sided-p material)
+      (when (double-sided-p (material object))
         (disable-feature :cull-face)))
     (render-with pass (material object) program)
     (call-next-method)))
@@ -329,8 +329,9 @@
     (leave changed-node pass)))
 
 (define-handler ((pass light-cache-render-pass) tick :before) ()
-  (when (<= (light-cache-distance-threshold pass)
-            (vsqrdistance (focal-point (camera pass)) (light-cache-location pass)))
+  (when (and (camera pass)
+             (<= (light-cache-distance-threshold pass)
+                 (vsqrdistance (focal-point (camera pass)) (light-cache-location pass))))
     (setf (light-cache-dirty-p pass) T)))
 
 (defmethod render :before ((pass light-cache-render-pass) target)
