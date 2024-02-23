@@ -20,6 +20,9 @@
   ;; Bind the buffer to the program's specified binding point.
   (let ((index (gl:get-uniform-block-index (gl-name program) (gl-type buffer))))
     (if (= (1- (ash 1 32)) index)
-        (v:debug :trial.resource "Failed to get uniform block index for ~s in ~a"
-                 (gl-type buffer) program)
-        (%gl:uniform-block-binding (gl-name program) index (binding-point buffer)))))
+        (v:warn :trial.resource "Failed to get uniform block index for ~s in ~a"
+                (gl-type buffer) program)
+        (%gl:uniform-block-binding (gl-name program) index (binding-point buffer)))
+    #-elide-buffer-access-checks
+    (let ((size (gl:get-active-uniform-block (gl-name program) index :uniform-block-data-size)))
+      (assert (= size (size buffer))))))
