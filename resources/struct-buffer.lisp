@@ -8,12 +8,14 @@
     (format stream "~a ~a~:[~; ALLOCATED~]" (type-of (buffer-data buffer)) (data-usage buffer) (allocated-p buffer))))
 
 (defmethod shared-initialize :after ((buffer struct-buffer) slots &key struct-class struct)
-  (when struct-class
-    (setf (buffer-data buffer) (make-instance struct-class)))
-  (when struct
-    (setf (buffer-data buffer) (etypecase struct
-                                 ((or symbol class) (make-instance struct))
-                                 ((or vector memory-region gl-struct) struct)))))
+  (setf (buffer-data buffer) (cond (struct
+                                    (setf (buffer-data buffer) (etypecase struct
+                                                                 ((or symbol class) (make-instance struct))
+                                                                 ((or vector memory-region gl-struct) struct))))
+                                   (struct-class
+                                    (make-instance struct-class))
+                                   (T
+                                    (error "STRUCT or STRUCT-CLASS must be passed.")))))
 
 (defmethod reinitialize-instance :after ((buffer struct-buffer) &key)
   (when (allocated-p buffer)
@@ -27,10 +29,10 @@
   (type-of (buffer-data buffer)))
 
 (defmethod buffer-field-size ((standard symbol) (buffer struct-buffer) base)
-  (buffer-field-size standard (buffer-data buffer) 0))
+  (buffer-field-size standard (buffer-data buffer) base))
 
 (defmethod buffer-field-size ((standard (eql T)) (buffer struct-buffer) base)
-  (buffer-field-size (layout-standard buffer) buffer 0))
+  (buffer-field-size (layout-standard buffer) buffer base))
 
 (defmethod (setf buffer-data) :before ((struct gl-struct) (buffer struct-buffer))
   (when (and (buffer-data buffer) (not (eq (class-of struct) (class-of (buffer-data buffer)))))
@@ -84,9 +86,16 @@
   (let ((region (storage (buffer-data buffer))))
     (download-buffer-data/ptr buffer (memory-region-pointer region) (min (size buffer) (memory-region-size region)))))
 
-(defmethod resize-buffer ((buffer buffer-object) (size (eql T)) &key (data (storage (buffer-data buffer))) (data-start 0))
+(defmethod resize-buffer ((buffer struct-buffer) (size (eql T)) &key (data (storage (buffer-data buffer))) (data-start 0))
   (mem:with-memory-region (region data :offset data-start)
     (resize-buffer-data/ptr buffer (memory-region-size region) (memory-region-pointer region))))
+
+#-elide-buffer-access-checks
+(defmethod resize-buffer :before ((buffer struct-buffer) (octets integer) &key data data-start)
+  (declare (ignore data data-start))
+  (when (< (size buffer) (buffer-field-size T buffer 0))
+    (error "Attempting to resize the struct buffer to ~d bytes, which is too small to hold the ~d bytes for its struct!"
+           octets (buffer-field-size T buffer 0))))
 
 (defvar *buffers-in-tx* ())
 (defmacro with-buffer-tx ((struct buffer &key (update :write)) &body body)

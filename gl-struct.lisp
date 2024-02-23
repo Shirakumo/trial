@@ -7,11 +7,13 @@
    (base-offset :initform 0 :initarg :base-offset :accessor base-offset)))
 
 (defmethod mem:call-with-memory-region ((function function) (struct gl-struct) &key (start 0))
-  (let* ((region (storage struct))
-         (region (memory-region (cffi:inc-pointer (memory-region-pointer region) (+ (base-offset struct) start))
-                                (max 0 (- (memory-region-size region) (base-offset struct) start)))))
-    (declare (dynamic-extent region))
-    (funcall function region)))
+  (if (= 0 start (base-offset struct))
+      (funcall function (storage struct))
+      (let* ((region (storage struct))
+             (region (memory-region (cffi:inc-pointer (memory-region-pointer region) (+ (base-offset struct) start))
+                                    (max 0 (- (memory-region-size region) (base-offset struct) start)))))
+        (declare (dynamic-extent region))
+        (funcall function region))))
 
 (defun compound-struct-slot-initform (struct slot standard storage)
   (case (first (gl-type slot))
