@@ -18,17 +18,20 @@ void derive_particle_properties(in Particle particle, in int vertex_id, in mat4 
   float interpolation = 1.0f - particle.life / particle.max_life;
   size = mix(particle.size_begin, particle.size_end, interpolation);
   float opacity = clamp(mix(1.0f, 0.0f, interpolation), 0.0f, 1.0f);
-  particle_color.r = ((particle.color >> 0)  & uint(0x000000FF)) / 255.0f;
-  particle_color.g = ((particle.color >> 8)  & uint(0x000000FF)) / 255.0f;
-  particle_color.b = ((particle.color >> 16) & uint(0x000000FF)) / 255.0f;
+  // The explicit conversion to float should not be needed but
+  // apparently some versions of the NVidia drivers for Linux choke
+  // without it.
+  particle_color.r = ((float) ((particle.color >> 0)  & uint(0x000000FF))) / 255.0f;
+  particle_color.g = ((float) ((particle.color >> 8)  & uint(0x000000FF))) / 255.0f;
+  particle_color.b = ((float) ((particle.color >> 16) & uint(0x000000FF))) / 255.0f;
   particle_color.a = opacity;
-  
+
   vec3 vertex = BILLBOARD[vertex_id];
   uv = vertex.xy * 0.5 + 0.5;
   // High bits mark the mirroring
   uv.x = (uint(0) < (particle.color & uint(0x80000000))) ? 1.0f - uv.x : uv.x;
   uv.y = (uint(0) < (particle.color & uint(0x40000000))) ? 1.0f - uv.y : uv.y;
-  
+
   // Rotate it
   float rotation = interpolation * particle.rotational_velocity;
   mat2 rot = mat2(+cos(rotation), -sin(rotation),
