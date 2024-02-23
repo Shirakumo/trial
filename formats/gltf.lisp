@@ -320,7 +320,8 @@
                               :roughness-factor (float (gltf:roughness-factor pbr) 0f0)
                               :emission-factor (to-vec (gltf:emissive-factor material))
                               :occlusion-factor (if (gltf:occlusion-texture material) 1.0 0.0)
-                              :alpha-cutoff (float (gltf:alpha-cutoff material) 0f0))))
+                              :alpha-cutoff (float (gltf:alpha-cutoff material) 0f0)
+                              :storage NIL)))
                (setf (trial:find-material name model) material)))))
 
 (defun load-light (light)

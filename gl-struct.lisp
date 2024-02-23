@@ -66,13 +66,18 @@
            (let ((slot (find name (c2mop:class-slots class) :key #'c2mop:slot-definition-name)))
              (unless (typep slot 'gl-struct-slot)
                (maybe-init slot)))))))
-    (cond ((not storage-p)
-           (unless (slot-boundp struct 'storage)
-             (setf (slot-value struct 'storage) (mem:static-vector-memory-region (buffer-field-size (layout-standard struct) struct 0)))))
-          ((eql T storage)
-           (setf (slot-value struct 'storage) (mem:static-vector-memory-region (buffer-field-size (layout-standard struct) struct 0))))
-          (T
-           (setf (slot-value struct 'storage) storage)))
+    (let ((size (buffer-field-size (layout-standard struct) struct 0)))
+      (if (not storage-p)
+          (unless (slot-boundp struct 'storage)
+            (setf (slot-value struct 'storage) (mem:static-vector-memory-region size)))
+          (etypecase storage
+            ((eql T)
+             (setf (slot-value struct 'storage) (mem:static-vector-memory-region size)))
+            (null
+             (setf (slot-value struct 'storage) NIL))
+            (memory-region
+             (assert (<= size (memory-region-size storage)))
+             (setf (slot-value struct 'storage) storage)))))
     (call-next-method)))
 
 (defmethod shared-initialize :after ((struct gl-struct) slots &key)
