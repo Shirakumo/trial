@@ -156,7 +156,7 @@
     (setf dead-particle-buffer (make-instance 'vertex-buffer :data-usage :dynamic-copy :binding-point T :gl-type "DeadParticles" :element-type :unsigned-int :buffer-data
                                               (let ((buffer (make-array max-particles :element-type '(unsigned-byte 32))))
                                                 (dotimes (i max-particles buffer) (setf (aref buffer i) i)))))
-    (setf particle-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-copy :binding NIL :struct (make-instance 'particle-buffer :size max-particles :storage NIL)))
+    (setf particle-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-copy :binding NIL :struct (make-instance 'particle-buffer :size max-particles :storage T)))
     ;; Allocate the compute passes
     (setf kickoff-pass (construct-delegate-object-type 'particle-kickoff-pass emitter :emit-threads local-threads :simulate-threads local-threads :max-particles max-particles :particle-counter-buffer particle-counter-buffer :particle-argument-buffer particle-argument-buffer :particle-emitter-buffer particle-emitter-buffer))
     (setf emit-pass (construct-delegate-object-type 'particle-emit-pass emitter :emit-threads local-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer :particle-emitter-buffer particle-emitter-buffer

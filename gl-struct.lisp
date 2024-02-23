@@ -69,7 +69,7 @@
     (cond ((not storage-p)
            (unless (slot-boundp struct 'storage)
              (setf (slot-value struct 'storage) (mem:static-vector-memory-region (buffer-field-size (layout-standard struct) struct 0)))))
-          ((null storage)
+          ((eql T storage)
            (setf (slot-value struct 'storage) (mem:static-vector-memory-region (buffer-field-size (layout-standard struct) struct 0))))
           (T
            (setf (slot-value struct 'storage) storage)))

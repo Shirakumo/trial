@@ -94,7 +94,7 @@
 (defun update-material (name type &rest initargs)
   (let ((existing (gethash name *materials*)))
     (cond ((null existing)
-           (setf (material name) (apply #'make-instance type :name name initargs)))
+           (setf (material name) (apply #'make-instance type :name name :storage NIL initargs)))
           ((eql type (type-of existing))
            (apply #'reinitialize-instance existing initargs))
           (T
