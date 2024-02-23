@@ -143,6 +143,10 @@
 (defmethod current-p ((context context) &optional (thread (bt:current-thread)))
   (eql thread (current-thread context)))
 
+(defun check-context-current (&optional (context *context*))
+  (unless (current-p context)
+    (error "Context is not current in thread!")))
+
 (defmethod acquire-context ((context context) &key force)
   (let ((current (current-thread context))
         (this (bt:current-thread)))

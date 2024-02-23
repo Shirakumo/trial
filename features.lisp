@@ -6,7 +6,8 @@
                                       :elide-coercion-size-checks
                                       :elide-container-checks
                                       :elide-allocation-checks
-                                      :elide-handler-restarts))
+                                      :elide-handler-restarts
+                                      :elide-context-current-checks))
 
   #+trial-debug-all
   (setf *features* (union *features* *debug-features*))

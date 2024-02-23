@@ -13,6 +13,8 @@
   (unless (binding-point buffer) (setf (binding-point buffer) T)))
 
 (defmethod bind ((buffer uniform-buffer) (program shader-program))
+  #-elide-context-current-checks
+  (check-context-current)
   ;; TODO: Once we can do shared/packed, load offsets here.
   (load buffer)
   ;; Bind the buffer to the program's specified binding point.

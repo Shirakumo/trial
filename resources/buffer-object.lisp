@@ -15,6 +15,7 @@
     (format stream "~a ~a~:[~; ALLOCATED~]" (buffer-type buffer) (data-usage buffer) (allocated-p buffer))))
 
 (defun update-buffer-data/ptr (buffer data octets &optional (buffer-start 0))
+  #-elide-context-current-checks (check-context-current)
   (let ((buffer-type (buffer-type buffer)))
     #-elide-buffer-access-checks
     (when (< (size buffer) (+ buffer-start octets))
@@ -26,6 +27,7 @@
       (gl:bind-buffer buffer-type 0))))
 
 (defun download-buffer-data/ptr (buffer data octets &optional (buffer-start 0))
+  #-elide-context-current-checks (check-context-current)
   (let ((buffer-type (buffer-type buffer)))
     #-elide-buffer-access-checks
     (when (< (size buffer) (+ buffer-start octets))
@@ -37,6 +39,7 @@
       (gl:bind-buffer buffer-type 0))))
 
 (defun resize-buffer-data/ptr (buffer octets &optional (data (cffi:null-pointer)))
+  #-elide-context-current-checks (check-context-current)
   (let ((buffer-type (buffer-type buffer)))
     (gl:bind-buffer buffer-type (gl-name buffer))
     (unwind-protect

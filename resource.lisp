@@ -65,3 +65,19 @@
 
 (defgeneric activate (gl-resource))
 (defgeneric deactivate (gl-resource))
+
+#-elide-context-current-checks
+(defmethod allocate :before ((resource gl-resource))
+  (check-context-current))
+
+#-elide-context-current-checks
+(defmethod deallocate :before ((resource gl-resource))
+  (check-context-current))
+
+#-elide-context-current-checks
+(defmethod activate :before ((resource gl-resource))
+  (check-context-current))
+
+#-elide-context-current-checks
+(defmethod deactivate :before ((resource gl-resource))
+  (check-context-current))

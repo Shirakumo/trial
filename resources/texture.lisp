@@ -57,6 +57,8 @@
 
 (defmethod (setf sources) :after ((sources cons) (texture texture))
   (when (allocated-p texture)
+    #-elide-context-current-checks
+    (check-context-current)
     (gl:bind-texture (target texture) (gl-name texture))
     (destructuring-bind (w h d) (texture-sources->texture-size sources)
       (when (or (and w (/= w (width texture)))
@@ -150,6 +152,8 @@
 
 (defmethod update-buffer-data ((buffer texture) (data vector) &key (x 0) (y 0) (z 0) (level 0) (width (width buffer)) (height (height buffer)) (depth (depth buffer))
                                                                    (pixel-format (pixel-format buffer)) (pixel-type (pixel-type buffer)))
+  #-elide-context-current-checks
+  (check-context-current)
   (cffi:with-pointer-to-vector-data (ptr data)
     (gl:bind-texture (target buffer) (gl-name buffer))
     (ecase (target buffer)
@@ -165,6 +169,8 @@
 
 (defmethod resize-buffer-data ((buffer texture) (data vector) &key (level 0) (width (width buffer)) (height (height buffer)) (depth (depth buffer))
                                                                    (pixel-format (pixel-format buffer)) (pixel-type (pixel-type buffer)))
+  #-elide-context-current-checks
+  (check-context-current)
   (let ((internal-format (cffi:foreign-enum-value '%gl:enum (internal-format buffer))))
     (cffi:with-pointer-to-vector-data (ptr data)
       (gl:bind-texture (target buffer) (gl-name buffer))
@@ -287,6 +293,8 @@
     (setf (height texture) height)
     (when (allocated-p texture)
       (assert (eql :dynamic (storage texture)))
+      #-elide-context-current-checks
+      (check-context-current)
       (gl:bind-texture (target texture) (gl-name texture))
       (allocate-texture-storage texture)
       (when (find (min-filter texture) '(:linear-mipmap-linear :linear-mipmap-nearest
@@ -304,6 +312,8 @@
 
 (defmethod save-image ((source texture) target image-type &rest args &key (level 0))
   (mem:with-memory-region (region (size source))
+    #-elide-context-current-checks
+    (check-context-current)
     (gl:bind-texture (target source) (gl-name source))
     (let ((type (internal-format-pixel-type (internal-format source)))
           (format (internal-format-pixel-format (internal-format source))))
@@ -321,6 +331,8 @@
   (gl:bind-texture (target source) 0))
 
 (defmethod clear ((texture texture))
+  #-elide-context-current-checks
+  (check-context-current)
   (gl-extension-case
     (:gl-arb-clear-texture
      (let ((size (pixel-data-stride (pixel-type texture) (pixel-format texture))))

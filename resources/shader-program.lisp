@@ -32,6 +32,8 @@
           (buffers program)))
 
 (defun link-program (program shaders &optional (program-id (data-pointer program)))
+  #-elide-context-current-checks
+  (check-context-current)
   (dolist (shader shaders)
     (etypecase shader
       (integer (gl:attach-shader program-id shader))
