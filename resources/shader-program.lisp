@@ -192,6 +192,41 @@
                    (,locationg (uniform-location ,asset ,nameg)))
               (%set-uniform ,locationg ,data))))))
 
+(defun uniform (asset name &optional container)
+  (let* ((name (name (etypecase name
+                       (string name)
+                       (symbol (symbol->c-name name)))))
+         (location (uniform-location asset name))
+         (program (gl-name asset)))
+    (let ((uniform-max-length (gl:get-program program :active-uniform-max-length)))
+      (cffi:with-foreign-objects ((characters-written '%gl:sizei)
+                                  (size '%gl:int)
+                                  (type '%gl:uint)
+                                  (name '%gl:char uniform-max-length))
+        (%gl:get-active-uniform program location uniform-max-length
+                                characters-written size type name)
+        (when (= 0 (cffi:mem-ref characters-written '%gl:sizei))
+          (error "No such uniform ~s on ~a" name asset))
+        (let ((type (cffi:foreign-enum-keyword '%gl:enum (cffi:mem-ref type '%gl:uint))))
+          (if (sampler-type-p type)
+              (cffi:with-foreign-objects ((int '%gl:int))
+                (%gl:getn-uniform-uiv program location (gl-type-size :int) int)
+                (cffi:mem-ref int '%gl:int))
+              (cffi:with-foreign-objects ((buf :char (* 4 4 8)))
+                (ecase type
+                  ((:int :int-vec2 :int-vec3 :int-vec4)
+                   (%gl:getn-uniform-iv program location (* 4 4 8) buf))
+                  ((:unsigned-int :unsigned-int-vec2 :unsigned-int-vec3 :unsigned-int-vec4 :bool :bool-vec2
+                    :bool-vec3 :bool-vec4)
+                   (%gl:getn-uniform-uiv program location (* 4 4 8) buf))
+                  ((:float :float-vec2 :float-vec3 :float-vec4 :float-mat2 :float-mat3
+                    :float-mat4 :float-mat2x3 :float-mat2x4 :float-mat3x2 :float-mat3x4 :float-mat4x2 :float-mat4x3)
+                   (%gl:getn-uniform-fv program location (* 4 4 8) buf))
+                  ((:double :double-vec2 :double-vec3 :double-vec4 :double-mat2 :double-mat3 :double-mat4 :double-mat2x3
+                    :double-mat2x4 :double-mat3x2 :double-mat3x4 :double-mat4x2 :double-mat4x3)
+                   (%gl:getn-uniform-dv program location (* 4 4 8) buf)))
+                (gl-memref-std430 buf type container))))))))
+
 (defmethod uniforms ((program shader-program))
   (let ((count (gl:get-program (gl-name program) :active-uniforms)))
     (loop for i from 0 below count
@@ -203,11 +238,15 @@
                           :location (uniform-location program name))))))
 
 (defmethod activate ((program shader-program))
+  #-elide-context-current-checks
+  (check-context-current)
   (unless (eq +current-shader-program+ program)
     (setf +current-shader-program+ program)
     (gl:use-program (gl-name program))))
 
 (defmethod deactivate ((program shader-program))
+  #-elide-context-current-checks
+  (check-context-current)
   (when (eq program +current-shader-program+)
     (setf +current-shader-program+ NIL)
     (gl:use-program 0)))

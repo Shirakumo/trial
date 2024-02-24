@@ -823,9 +823,9 @@
   (defun uvarr2 (a) (ivarr2 a))
   (defun uvarr3 (a) (ivarr3 a))
   (defun uvarr4 (a) (ivarr4 a))
-  (defun uvec2 (&rest args) (apply #'uvec2 args))
-  (defun uvec3 (&rest args) (apply #'uvec3 args))
-  (defun uvec4 (&rest args) (apply #'uvec4 args)))
+  (defun uvec2 (&rest args) (apply #'ivec2 args))
+  (defun uvec3 (&rest args) (apply #'ivec3 args))
+  (defun uvec4 (&rest args) (apply #'ivec4 args)))
 
 (defparameter *c-chars* "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_[]")
 
@@ -869,12 +869,15 @@
 (defmacro define-enum-check (name &body cases)
   (let* ((*print-case* (readtable-case *readtable*))
          (list (mksym *package* "*" name "-" '#:list "*"))
-         (func (mksym *package* '#:check "-" name)))
+         (func (mksym *package* '#:check "-" name))
+         (funcp (mksym *package* name '#:-p)))
     `(progn (defparameter ,list '(,@cases))
             (defun ,func (enum)
-              (unless (find enum ,list)
+              (unless (member enum ,list)
                 (error "~a is not a valid ~a. Needs to be one of the following:~%~a"
-                       enum ',name ,list))))))
+                       enum ',name ,list)))
+            (defun ,funcp (enum)
+              (member enum ,list)))))
 
 (define-enum-check texture-target
   :texture-1d :texture-2d :texture-3d
@@ -964,6 +967,74 @@
   :color-attachment0 :color-attachment1 :color-attachment2 :color-attachment3
   :color-attachment4 :color-attachment5 :color-attachment6 :color-attachment7
   :depth-attachment :stencil-attachment :depth-stencil-attachment)
+
+(define-enum-check sampler-type
+  :sampler-1d
+  :sampler-2d
+  :sampler-3d
+  :sampler-cube
+  :sampler-1d-shadow
+  :sampler-2d-shadow
+  :sampler-1d-array
+  :sampler-2d-array
+  :sampler-1d-array-shadow
+  :sampler-2d-array-shadow
+  :sampler-2d-multisample
+  :sampler-2d-multisample-array
+  :sampler-cube-shadow
+  :sampler-buffer
+  :sampler-2d-rect
+  :sampler-2d-rect-shadow
+  :int-sampler-1d
+  :int-sampler-2d
+  :int-sampler-3d
+  :int-sampler-cube
+  :int-sampler-1d-array
+  :int-sampler-2d-array
+  :int-sampler-2d-multisample
+  :int-sampler-2d-multisample-array
+  :int-sampler-buffer
+  :int-sampler-2d-rect
+  :unsigned-int-sampler-1d
+  :unsigned-int-sampler-2d
+  :unsigned-int-sampler-3d
+  :unsigned-int-sampler-cube
+  :unsigned-int-sampler-1d-array
+  :unsigned-int-sampler-2d-array
+  :unsigned-int-sampler-2d-multisample
+  :unsigned-int-sampler-2d-multisample-array
+  :unsigned-int-sampler-buffer
+  :unsigned-int-sampler-2d-rect
+  :image-1d
+  :image-2d
+  :image-3d
+  :image-2d-rect
+  :image-cube
+  :image-buffer
+  :image-1d-array
+  :image-2d-array
+  :image-2d-multisample
+  :image-2d-multisample-array
+  :int-image-1d
+  :int-image-2d
+  :int-image-3d
+  :int-image-2d-rect
+  :int-image-cube
+  :int-image-buffer
+  :int-image-1d-array
+  :int-image-2d-array
+  :int-image-2d-multisample
+  :int-image-2d-multisample-array
+  :unsigned-int-image-1d
+  :unsigned-int-image-2d
+  :unsigned-int-image-3d
+  :unsigned-int-image-2d-rect
+  :unsigned-int-image-cube
+  :unsigned-int-image-buffer
+  :unsigned-int-image-1d-array
+  :unsigned-int-image-2d-array
+  :unsigned-int-image-2d-multisample
+  :unsigned-int-image-2d-multisample-array)
 
 (defun internal-format-components (format)
   (ecase format

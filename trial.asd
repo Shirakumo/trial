@@ -132,7 +132,7 @@
                              (:file "standard-renderer" :depends-on ("lights" "materials"))
                              (:file "tone-mapping")))
                (:module "resources"
-                :depends-on ("package" "resource" "toolkit" "data-pointer")
+                :depends-on ("package" "resource" "toolkit" "data-pointer" "type-info")
                 :components ((:file "bindable-buffer" :depends-on ("buffer-object"))
                              (:file "buffer-object")
                              (:file "compute-shader" :depends-on ("shader-program"))
