@@ -458,7 +458,7 @@
 
 ;;; Only for primitive types.
 ;;; FIXME: factor out into trivial-* library
-(defclass gl-vector (standard-object #+(or abcl sbcl) sequence)
+(defclass gl-vector (standard-object sequences:sequence)
   ((storage :initarg :storage :accessor storage)
    (base-offset :initform 0 :initarg :base-offset :accessor base-offset)
    (element-count :initarg :element-count :reader sb-sequence:length)
@@ -469,21 +469,18 @@
   (print-unreadable-object (vector stream :type T :identity T)
     (format stream "~s ~s" (element-type vector) (length vector))))
 
-#+sbcl
-(defmethod sb-sequence:elt ((vector gl-vector) index)
+(defmethod sequences:elt ((vector gl-vector) index)
   (gl-memref (cffi:inc-pointer (memory-region-pointer (storage vector)) (+ (base-offset vector) (* index (stride vector))))
              (element-type vector)))
 
-#+sbcl
-(defmethod (setf sb-sequence:elt) (value (vector gl-vector) index)
+(defmethod (setf sequences:elt) (value (vector gl-vector) index)
   (setf (gl-memref (cffi:inc-pointer (memory-region-pointer (storage vector)) (+ (base-offset vector) (* index (stride vector))))
                    (element-type vector))
         value))
 
-#+sbcl
-(defmethod sb-sequence:make-sequence-iterator ((vector gl-vector) &key from-end start end)
+(defmethod sequences:make-sequence-iterator ((vector gl-vector) &key from-end start end)
   (let* ((start (or start 0))
-         (end (or end (sb-sequence:length vector)))
+         (end (or end (sequences:length vector)))
          (state (if from-end (1- end) start))
          (limit (if from-end (1- start) end))
          (ptr (cffi:inc-pointer (memory-region-pointer (storage vector)) (base-offset vector)))
