@@ -587,12 +587,11 @@
 
 (define-primitive-type (optimized-convex-mesh convex-mesh)
     ((adjacency-list (make-array 0) :type simple-vector))
-  ;; First normalize the mesh to ensure that we have no duplicated vertices as those
-  ;; would mess up the invariant on the hill climbing adjacency.
-  (multiple-value-bind (verts faces) (org.shirakumo.fraf.manifolds:normalize (convex-mesh-vertices primitive)
-                                                                             (convex-mesh-faces primitive))
+  ;; First normalize the mesh to ensure that we have no duplicated vertices or separated
+  ;; meshes or anything.
+  (multiple-value-bind (verts faces) (org.shirakumo.fraf.quickhull:convex-hull (convex-mesh-vertices primitive))
     (setf (convex-mesh-vertices primitive) verts)
-    (setf (convex-mesh-faces primitive) faces))
+    (setf (convex-mesh-faces primitive) (simplify faces '(unsigned-byte 16))))
   ;; Recenter it like the other mesh types do.
   (let ((offset (recenter-vertices (general-mesh-vertices primitive))))
     (!m* (primitive-local-transform primitive)
