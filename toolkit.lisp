@@ -817,6 +817,16 @@
           ((< d (- F-PI)) (decf a F-2PI)))
     (+ a (* (- b a) x))))
 
+#-3d-math-u32
+(progn
+  (declaim (inline uvarr2 uvarr3 uvarr4 uvec2 uvec3 uvec4))
+  (defun uvarr2 (a) (ivarr2 a))
+  (defun uvarr3 (a) (ivarr3 a))
+  (defun uvarr4 (a) (ivarr4 a))
+  (defun uvec2 (&rest args) (apply #'uvec2 args))
+  (defun uvec3 (&rest args) (apply #'uvec3 args))
+  (defun uvec4 (&rest args) (apply #'uvec4 args)))
+
 (defparameter *c-chars* "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_[]")
 
 (defun symbol->c-name (symbol &optional out)
