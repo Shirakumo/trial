@@ -6,7 +6,7 @@ As such, Trial's save-data support is relatively minimal. It provides a general 
 In order to actually define what data to save and how, you should first create a new ``save-file`` type. This will also track the version of the save file, ensuring that you can migrate save files over time.
 
 :: common lisp
-(defclass my-save-flie (save-file) ())
+(defclass my-save-file (save-file) ())
 (defmethod version ((file my-save-file)) 1)
 (defmethod save-version-type ((version (eql 1))) 'my-save-file)
 (defmethod save-version-type ((default (eql T))) 'my-save-file)
@@ -36,7 +36,7 @@ As mentioned, often you won't need to store terribly much or complex data. In th
 
 This will simply store the hypothetical ``+score+`` variable and set it to the loaded value. ``:decode`` expects a destructuring-lambda-list, which ``:encode`` should return in the same form, so you can store any Lisp value that is readable. This should suffice for a majority of cases. However, since you still also have access to the ``depot`` you can also store auxiliary entries or do whatever else necessary.
 
-In order to list the available save files, simply use ``list-save-files``. This will perform a "minimal load" of the save file, only reading out its metadata without actually decoding it. You can then call ``load-save-data`` to actually restore its state. Similarly, you can invoke ``store-save-data`` to store the current state. ``store-save-data`` can also be passed a fresh path to construct a new save file entirely, rather than updating the existing one.
+In order to list the available save files, simply use ``list-save-files``. This will perform a "minimal load" of the save file, only reading out its metadata without actually decoding it. You can then call ``load-save-data`` to actually restore its state. Similarly, you can invoke ``store-save-data`` to store the state. The actual save data is stored where suitable depending on the platform Trial is running under. On PCs this is as a file within the ``config-directory``.
 
 Every save file has a unique ``id`` that distinguishes it from every other save file. In the storage, each save file however is only distinguished by its ``slot``. Meaning that a save file with the same ``slot`` as another will replace it when stored, but will have a different ``id``.
 
@@ -45,3 +45,5 @@ Setting the save file's ``image`` to ``T`` or some other parameter suitable for 
 The save file's ``save-time`` is automatically updated when stored, but the ``play-duration`` must be updated by you, in order to accurately track how much time the player has spent on the save file.
 
 Finally each save file also keeps a ``username`` which can be used to let the user identify the save file for themselves in some way. It defaults to the system's ``username``.
+
+ If you want to control the file's metadata precisely, you can simply create an instance of your desired version's respective type. You can also pass a slot name directly to ``load-save-data`` or ``store-save-data``; in the latter case a new save-file instance is created and automatically, relying on the default ``save-version-type``.
