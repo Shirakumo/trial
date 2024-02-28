@@ -23,7 +23,11 @@
                (:file "scene-loader")
                (:file "decomposition")
                (:file "sprite")
-               (:file "system-info"))
+               (:file "system-info")
+               (:file "save-data")
+               ;; audio
+               ;; tilemaps
+               )
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
                :alloy-constraint
