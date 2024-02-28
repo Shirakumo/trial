@@ -84,11 +84,19 @@
   (depot:with-depot (depot (file file))
     (load-save-data file depot)))
 
+(defmethod load-save-data :around ((file save-file) depot)
+  (call-next-method)
+  file)
+
 (defmethod store-save-data (thing depot &rest args &key &allow-other-keys)
   (apply #'store-save-data (save-file-path thing) depot args))
 
 (defmethod store-save-data ((file pathname) depot &rest args &key &allow-other-keys)
   (apply #'store-save-data (make-instance (save-version-type T) :file file) depot args))
+
+(defmethod store-save-data :around ((file save-file) depot &key &allow-other-keys)
+  (call-next-method)
+  file)
 
 (defmethod save-file-manifest ((file save-file))
   (with-trial-io-syntax ()
@@ -98,7 +106,7 @@
             do (format out "~s ~s~%" initarg (initarg-slot-value file initarg))))))
 
 (defmethod store-save-data ((file save-file) (depot (eql T)) &rest args &key &allow-other-keys)
-  (depot:with-depot (depot (file file) :commit T)
+  (depot:with-depot (depot (org.shirakumo.depot.zip:from-pathname (file file)) :commit T)
     (apply #'store-save-data file depot args)))
 
 (defmethod store-save-data :before ((file save-file) (depot depot:depot) &key (preview (image file)) (preview-args '(:width 192 :height 108)) &allow-other-keys)
@@ -132,7 +140,7 @@
 ;;; to handle the encoding/decoding
 
 (defmacro define-simple-save-file (version state &body methods)
-  (destructuring-bind (version &optional (class (mksym *package* 'save-file version))) (enlist version)
+  (destructuring-bind (version &optional (class (mksym *package* 'save-file- version))) (enlist version)
     (let ((decode (cdr (assoc :decode methods)))
           (encode (cdr (assoc :encode methods)))
           (data (gensym "DATA")))
@@ -152,14 +160,14 @@
               (:incompatible
                `(error 'unsupported-save-version :version ',version))))
          
-         ,@(when (eql :latest state)
+         ,@(when (find state '(:latest :current))
              `((defmethod save-version-type ((default (eql T))) ',class)))
 
          ,(when decode
             (destructuring-bind ((depot . args) &rest body) decode
               `(defmethod load-save-data ((file ,class) (,depot depot:depot))
                  (let ((,data (with-trial-io-syntax ()
-                                (parse-sexps (depot:read-from (depot:entry "data" ,depot) 'character)))))
+                                (read-from-string (depot:read-from (depot:entry "data" ,depot) 'character)))))
                    (destructuring-bind ,args ,data
                      ,@body)))))
 
@@ -169,9 +177,7 @@
                  (let ((,data (progn ,@body)))
                    (depot:write-to (depot:ensure-entry "data" ,depot)
                                    (with-trial-io-syntax ()
-                                     (with-output-to-string (out)
-                                       (loop for (k v) on ,data by #'cddr
-                                             do (format out "~s ~s~%" k v)))))))))))))
+                                     (prin1-to-string ,data)))))))))))
 
 (trivial-indent:define-indentation define-simple-save-file
   (4 6 &rest (&whole 2 6 &body)))

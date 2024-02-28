@@ -168,6 +168,7 @@
                :verbose
                :deploy
                :depot
+               :depot-zip
                :closer-mop
                :trivial-garbage
                :trivial-indent
