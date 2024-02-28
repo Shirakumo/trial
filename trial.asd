@@ -72,6 +72,7 @@
                (:file "render-loop" :depends-on ("package" "toolkit"))
                (:file "resource" :depends-on ("package" "context"))
                (:file "resource-generator" :depends-on ("package"))
+               (:file "save-data" :depends-on ("package" "resources"))
                (:file "scene" :depends-on ("package" "event-loop" "container" "camera"))
                (:file "selection" :depends-on ("package" "shader-pass"))
                (:file "serialize" :depends-on ("package"))

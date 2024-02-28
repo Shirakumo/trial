@@ -350,6 +350,21 @@
                (*print-readably* NIL))
            ,@body)))))
 
+(defun parse-sexps (input)
+  (with-trial-io-syntax ()
+    (etypecase input
+      (string
+       (loop with i = 0
+             collect (multiple-value-bind (data next) (read-from-string input NIL #1='#:EOF :start i)
+                       (setf i next)
+                       (if (eql data #1#)
+                           (loop-finish)
+                           data))))
+      (stream
+       (loop for value = (read input NIL #1#)
+             until (eq value #1#)
+             collect value)))))
+
 (defun envvar-directory (var)
   (let ((var (uiop:getenv var)))
     (when (and var (string/= "" var))
@@ -710,6 +725,9 @@
     (find (list initarg) (c2mop:class-slots class)
           :key #'c2mop:slot-definition-initargs
           :test #'subsetp)))
+
+(defun initarg-slot-value (instance initarg)
+  (slot-value instance (c2mop:slot-definition-name (initarg-slot (class-of instance) initarg))))
 
 (defun minimize (sequence test &key (key #'identity))
   (etypecase sequence
