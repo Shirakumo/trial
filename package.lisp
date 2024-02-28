@@ -1545,10 +1545,28 @@
    #:compiled-generator
    #:compile-resources
    #:recompile-needed-p)
-  ;; scene-buffer.lisp
+  ;; save-data.lisp
   (:export
-   #:scene-buffer
-   #:render-pass)
+   #:unsupported-save-version
+   #:save-file-path
+   #:save-file
+   #:username
+   #:slot
+   #:id
+   #:start-time
+   #:save-time
+   #:play-duration
+   #:image
+   #:file
+   #:list-save-files
+   #:delete-save-files
+   #:save-version-type
+   #:version
+   #:minimal-load-save
+   #:load-save-data
+   #:store-save-data
+   #:save-file-manifest
+   #:define-simple-save-file)
   ;; scene.lisp
   (:export
    #:scene-change

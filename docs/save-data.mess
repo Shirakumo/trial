@@ -1,0 +1,47 @@
+# Save Data
+Most games keep some amount of state between play sessions to track the player's progress. This is separate from the ''settings''(link settings.mess). A lot of the time the amount of data to store and the format to best store that in is very heavily dependent on the type of game being made. Sometimes it's a single level number. Sometimes it needs to be complex data structures to store items, placement, story progress etc.
+
+As such, Trial's save-data support is relatively minimal. It provides a general way to preserve and restore data inside a ''depot''(link https://shinmera.github.io/depot), as well as a generic ``save-file`` data structure that tracks the most common information, such as who saved in what slot, when, where, how long they've played, and an optional preview image to display in a menu.
+
+In order to actually define what data to save and how, you should first create a new ``save-file`` type. This will also track the version of the save file, ensuring that you can migrate save files over time.
+
+:: common lisp
+(defclass my-save-flie (save-file) ())
+(defmethod version ((file my-save-file)) 1)
+(defmethod save-version-type ((version (eql 1))) 'my-save-file)
+(defmethod save-version-type ((default (eql T))) 'my-save-file)
+::
+
+With this we have a new save-file type and a way to decode its version. We've also set it as the default version to use when constructing new saves. Now for the decoding.
+
+:: common lisp
+(defmethod load-save-data ((file my-save-file) (depot depot:depot))
+  ...)
+
+(defmethod store-save-data ((file my-save-file) (depot depot:depot) &key)
+  ...)
+::
+
+From here what you do and how you store things is entirely up to you. Please refer to the ''depot API''(link https://shinmera.github.io/depot) for how to access files and data inside a depot. The only restriction is that you do not touch the depot entries called ``manifest`` or ``preview.png``, which are maintained by the save-file system for you.
+
+As mentioned, often you won't need to store terribly much or complex data. In that case, ``define-simple-save-file`` can be used:
+
+:: common lisp
+(define-simple-save-file 1 :latest
+  (:decode (depot score)
+    (setf +score+ score))
+  (:encode (depot)
+    (list +score+)))
+::
+
+This will simply store the hypothetical ``+score+`` variable and set it to the loaded value. ``:decode`` expects a destructuring-lambda-list, which ``:encode`` should return in the same form, so you can store any Lisp value that is readable. This should suffice for a majority of cases. However, since you still also have access to the ``depot`` you can also store auxiliary entries or do whatever else necessary.
+
+In order to list the available save files, simply use ``list-save-files``. This will perform a "minimal load" of the save file, only reading out its metadata without actually decoding it. You can then call ``load-save-data`` to actually restore its state. Similarly, you can invoke ``store-save-data`` to store the current state. ``store-save-data`` can also be passed a fresh path to construct a new save file entirely, rather than updating the existing one.
+
+Every save file has a unique ``id`` that distinguishes it from every other save file. In the storage, each save file however is only distinguished by its ``slot``. Meaning that a save file with the same ``slot`` as another will replace it when stored, but will have a different ``id``.
+
+Setting the save file's ``image`` to ``T`` or some other parameter suitable for ``save-image`` prior to calling ``store-save-data`` will generate and store that as a preview image, with ``T`` simply referring to the current scene.
+
+The save file's ``save-time`` is automatically updated when stored, but the ``play-duration`` must be updated by you, in order to accurately track how much time the player has spent on the save file.
+
+Finally each save file also keeps a ``username`` which can be used to let the user identify the save file for themselves in some way. It defaults to the system's ``username``.

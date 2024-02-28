@@ -2,91 +2,91 @@
 # The Trial Game Engine
 Trial is a modular game engine written in Common Lisp. It offers many tools and systems that manage parts of a game system for you. Many of these parts are optional, composable, and customisable in case as it exists should not suit your needs. This documentation covers both details intended for users, and internals in case you need to modify or extend the engine.
 
-"NOTE:"(bold,red) This engine is a work in progress, and this documentation even more so. API stability is //not// guaranteed. However, any subsystem documented here should be rather stable, and is very unlikely to change significantly without prior discussion.
+''NOTE:''(bold,red) This engine is a work in progress, and this documentation even more so. API stability is //not// guaranteed. However, any subsystem documented here should be rather stable, and is very unlikely to change significantly without prior discussion.
 
 [ image images/pbr-2.png ]
 
 ## Index
 - About
-  - "Style Guide"(link style.mess)
-  - "Licensing & Trademark"(link licensing.mess)
-  - "Contribution Guide"(link contributing.mess)
+  - ''Style Guide''(link style.mess)
+  - ''Licensing & Trademark''(link licensing.mess)
+  - ''Contribution Guide''(link contributing.mess)
 - Projects
-  - "Getting Started"(link start.mess)
-  - "Existing Games"(link games.mess)
-  - "Workbench"(link workbench.mess)
-  - "Examples"(link examples.mess)
+  - ''Getting Started''(link start.mess)
+  - ''Existing Games''(link games.mess)
+  - ''Workbench''(link workbench.mess)
+  - ''Examples''(link examples.mess)
 - Graphics
-  - "Context"(link context.mess)
+  - ''Context''(link context.mess)
     - GLFW
     - SDL2
     - GLOP
     - Qt
-  - "Render Pipeline"(link render-pipeline.mess)
-    - "Shaders"(link shaders.mess)
-    - "Shader Passes"(link shader-passes.mess)
-    - "Standard Renderer"(link standard-renderer.mess)
-      - "Phong"(link phong.mess)
-      - "PBR"(link pbr.mess)
-    - "Post-Processing"(link post-processing.mess)
-  - "Resources & Assets"(link resources.mess)
-    - "Textures"(link textures.mess)
-    - "Images"(link images.mess)
-    - "Meshes"(link meshes.mess)
-    - "Buffer Objects"(link buffers.mess)
-    - "Data Formats"(link formats.mess)
-    - "Shader Images"(link shader-images.mess)
-    - "Environment Maps"(link environment-maps.mess)
-    - "Loading"(link loader.mess)
-  - "Scene Graph"(link scene.mess)
-  - "Animation"(link animation.mess)
-    - "Inverse Kinematics"(link ik.mess)
-  - "Particles"(link particles.mess)
-  - "Transformations"(link transforms.mess)
+  - ''Render Pipeline''(link render-pipeline.mess)
+    - ''Shaders''(link shaders.mess)
+    - ''Shader Passes''(link shader-passes.mess)
+    - ''Standard Renderer''(link standard-renderer.mess)
+      - ''Phong''(link phong.mess)
+      - ''PBR''(link pbr.mess)
+    - ''Post-Processing''(link post-processing.mess)
+  - ''Resources & Assets''(link resources.mess)
+    - ''Textures''(link textures.mess)
+    - ''Images''(link images.mess)
+    - ''Meshes''(link meshes.mess)
+    - ''Buffer Objects''(link buffers.mess)
+    - ''Data Formats''(link formats.mess)
+    - ''Shader Images''(link shader-images.mess)
+    - ''Environment Maps''(link environment-maps.mess)
+    - ''Loading''(link loader.mess)
+  - ''Scene Graph''(link scene.mess)
+  - ''Animation''(link animation.mess)
+    - ''Inverse Kinematics''(link ik.mess)
+  - ''Particles''(link particles.mess)
+  - ''Transformations''(link transforms.mess)
   - 2D
     - Camera
-    - "Sprites"(link sprites.mess)
-    - "Tile Maps"(link tile-layer.mess)
-    - "Parallax Backgrounds"(link parallax.mess)
+    - ''Sprites''(link sprites.mess)
+    - ''Tile Maps''(link tile-layer.mess)
+    - ''Parallax Backgrounds''(link parallax.mess)
   - 3D
-    - "Camera"(link 3d-camera.mess)
+    - ''Camera''(link 3d-camera.mess)
     - Models
-    - "Skyboxes"(link skyboxes.mess)
-  - "Video"(link video.mess)
+    - ''Skyboxes''(link skyboxes.mess)
+  - ''Video''(link video.mess)
 - Physics
-  - "Time"(link time.mess)
-  - "Acceleration Structures"(link acceleration-structures.mess)
-  - "Intersection Tests"(link intersection.mess)
-  - "Physics Systems"(link physics.mess)
-    - "Mass Aggregate Physics"(link mass-aggregate.mess)
-    - "Rigid Body Physics"(link rigid-body.mess)
+  - ''Time''(link time.mess)
+  - ''Acceleration Structures''(link acceleration-structures.mess)
+  - ''Intersection Tests''(link intersection.mess)
+  - ''Physics Systems''(link physics.mess)
+    - ''Mass Aggregate Physics''(link mass-aggregate.mess)
+    - ''Rigid Body Physics''(link rigid-body.mess)
     - Soft Body Physics
 - Input
-  - "Event Loop"(link event-loop.mess)
-  - "Input System"(link input.mess)
-  - "Prompts"(link prompts.mess)
+  - ''Event Loop''(link event-loop.mess)
+  - ''Input System''(link input.mess)
+  - ''Prompts''(link prompts.mess)
 - User Data
-  - "Achievements"(link achievements.mess)
-  - Save Data
-  - "Settings"(link settings.mess)
+  - ''Achievements''(link achievements.mess)
+  - ''Save Data''(link save-data.mess)
+  - ''Settings''(link settings.mess)
 - Misc
-  - "Asynchynchronicity & Threading"(link async.mess)
-  - "Captures / Replays"(link capture.mess)
+  - ''Asynchynchronicity & Threading''(link async.mess)
+  - ''Captures / Replays''(link capture.mess)
   - Data Serialisation
-  - "Debugging"(link debugging.mess)
-  - "Features"(link features.mess)
-  - "Localisation"(link localization.mess)
-  - "OpenGL"(link gl-misc.mess)
-  - "System Interaction"(link system.mess)
+  - ''Debugging''(link debugging.mess)
+  - ''Features''(link features.mess)
+  - ''Localisation''(link localization.mess)
+  - ''OpenGL''(link gl-misc.mess)
+  - ''System Interaction''(link system.mess)
   - Type Information & Reasoning
   - Utilities
 - Extensions
-  - "Audio"(link harmony.mess)
-  - "Crash Reports"(link feedback.mess)
-  - "GOG Galaxy Integration"(link gog.mess)
-  - "Releasing"(link release.mess)
-  - "Steam Integration"(link steam.mess)
-  - "User Interfaces"(link alloy.mess)
+  - ''Audio''(link harmony.mess)
+  - ''Crash Reports''(link feedback.mess)
+  - ''GOG Galaxy Integration''(link gog.mess)
+  - ''Releasing''(link release.mess)
+  - ''Steam Integration''(link steam.mess)
+  - ''User Interfaces''(link alloy.mess)
 
 Consider supporting the Trial project's development on Patreon:
 
