@@ -16,7 +16,7 @@ void main(){
   vec4 topRight    = texture(previous_pass, vec2(uv.x + sobelSizeH, uv.y + sobelSizeV));
   vec4 bottomLeft  = texture(previous_pass, vec2(uv.x - sobelSizeH, uv.y - sobelSizeV));
   vec4 bottomRight = texture(previous_pass, vec2(uv.x + sobelSizeH, uv.y - sobelSizeV));
-  vec4 sx = -topLeft - 2 * left - bottomLeft + topRight   + 2 * right  + bottomRight;
-  vec4 sy = -topLeft - 2 * top  - topRight   + bottomLeft + 2 * bottom + bottomRight;
+  vec4 sx = -topLeft + -2 * left + -bottomLeft + topRight   + 2 * right  + bottomRight;
+  vec4 sy = -topLeft + -2 * top  + -topRight   + bottomLeft + 2 * bottom + bottomRight;
   color = sqrt(sx * sx + sy * sy);
 }
