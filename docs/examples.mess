@@ -62,3 +62,6 @@ The following examples are currently available:
 - **scene-loader**
   [ image images/example scene-loader.png, width 15em ]
   Load arbitrary scenes, including physics simulation aspects
+- **shader**
+  [ image images/example shader.png, width 15em ]
+  Define a custom fragment shader to display a mandelbrot.
