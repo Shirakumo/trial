@@ -15,11 +15,11 @@
   (enter (make-instance 'render-pass) scene))
 
 (defmethod setup-ui ((scene audio-scene) panel)
-  (let* ((layout (make-instance 'alloy:grid-layout :col-sizes '(T 120 200) :row-sizes '(30)))
+  (let* ((layout (make-instance 'alloy:grid-layout :col-sizes '(120 200 T) :row-sizes '(30)))
          (focus (make-instance 'alloy:vertical-focus-list))
          (row 0))
     (macrolet ((row (label repr input &rest args)
-                 `(prog2 (alloy:enter ,label layout :row row :col 1)
+                 `(prog2 (alloy:enter ,label layout :row row :col 0)
                       (alloy:represent ,repr ,input ,@args :focus-parent focus :layout-parent layout)
                     (incf row))))
       (row "Master Volume" (mixed:volume :master) 'alloy:ranged-slider :range '(0.0 . 1.0))
