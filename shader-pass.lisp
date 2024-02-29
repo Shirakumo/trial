@@ -447,6 +447,11 @@
 (define-shader-pass single-shader-pass ()
   ((shader-program :accessor shader-program)))
 
+(defmethod update-instance-for-different-class :after ((previous single-shader-pass) (pass single-shader-pass) &key)
+  (when (allocated-p (shader-program pass))
+    (setf (shaders (shader-program pass))
+          (shaders (make-shader-program pass)))))
+
 (defmethod stage ((pass single-shader-pass) (area staging-area))
   (unless (slot-boundp pass 'shader-program)
     (setf (shader-program pass) (make-shader-program pass)))
