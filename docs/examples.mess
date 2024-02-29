@@ -44,4 +44,21 @@ The following examples are currently available:
 - **system-info**
   [ image images/example system-info.png, width 15em ]
   Show various statistics and bits of information about the system
-
+- **animated-sprite**
+  [ image images/example animated-sprite.png, width 15em ]
+  Render an Aseprite sprite sheet animation
+- **tilemap**
+  [ image images/example tilemap.png, width 15em ]
+  Load a Tiled tile map and display it
+- **audio**
+  [ image images/example audio.png, width 15em ]
+  An illustration of audio effects and music
+- **convex-decomposition**
+  [ image images/example convex-decomposition.png, width 15em ]
+  Perform convex decomposition on arbitrary models
+- **save-data**
+  [ image images/example save-data.png, width 15em ]
+  Show how save state data can be loaded and stored
+- **scene-loader**
+  [ image images/example scene-loader.png, width 15em ]
+  Load arbitrary scenes, including physics simulation aspects
