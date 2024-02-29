@@ -1,120 +1,36 @@
 (in-package #:org.shirakumo.fraf.trial.harmony)
 
-(defclass sound-loader (trial:compiled-generator)
-  ())
-
-(defmethod trial:compile-resources ((generator sound-loader) path &key (samplerate 44100) (sample-type :int16) codec (source-file-type "wav") (quality 3))
-  (cond ((string= "wav" (pathname-type path))
-         (let ((temp (make-pathname :type "temp.wav" :defaults path))
-               source-samplerate source-sample-type)
-           (loop for line in (cl-ppcre:split "\\n+" (run "ffprobe" "-hide_banner" "-loglevel" "error" "-i" path "-of" "flat=s=-" "-show_streams"))
-                 do (when (search "sample_fmt" line)
-                      (setf source-sample-type
-                            (cond ((search "s16" line) :int16)
-                                  ((search "s24" line) :int24)
-                                  ((search "s32" line) :int32)
-                                  ((search "u16" line) :uint16)
-                                  ((search "u24" line) :uint24)
-                                  ((search "u32" line) :uint32))))
-                    (when (search "sample_rate" line)
-                      (setf source-samplerate (parse-integer line :start (+ 2 (position #\= line)) :end (1- (length line))))))
-           (unless (and (equal samplerate source-samplerate)
-                        (equal sample-type source-sample-type))
-             (v:info :trial.harmony "Reencoding sound file from ~a..." path)
-             (trial::run "ffmpeg" "-hide_banner" "-loglevel" "error"
-                  "-i" path
-                  "-c:a" (format NIL "pcm_~ale"
-                                 (case sample-type
-                                   (:int16 "s16")
-                                   (:int24 "s24")
-                                   (:int32 "s32")
-                                   (:uint16 "u16")
-                                   (:uint24 "u24")
-                                   (:uint32 "u32")))
-                  "-ar" samplerate
-                  temp)
-             (rename-file temp path))))
-        (T
-         (let ((source (make-pathname :type source-file-type :defaults path)))
-           (when (and (not (equal path source))
-                      (probe-file source)
-                      (trial:recompile-needed-p path source))
-             (v:info :trial.harmony "Compiling sound from ~a...." path)
-             (trial::run "ffmpeg" "-hide_banner" "-loglevel" "error"
-                  "-i" source
-                  "-c:a" (cond (codec codec)
-                               ((string-equal "oga" (pathname-type path)) "libvorbis")
-                               ((string-equal "ogg" (pathname-type path)) "libvorbis")
-                               ((string-equal "flac" (pathname-type path)) "flac")
-                               ((string-equal "mp3" (pathname-type path)) "libmp3lame")
-                               ((string-equal "opus" (pathname-type path)) "libopus")
-                               (T (error "Unsupported file type ~s" (pathname-type path))))
-                  "-ar" samplerate
-                  "-qscale:a" quality
-                  "-y" path))))))
-
-(defmethod trial:generate-resources ((generator sound-loader) path &key (voice-class 'harmony:voice) (mixer :effect) effects repeat (repeat-start 0) (volume 1.0) (resource (trial:resource generator T)) max-distance min-distance)
+(defmethod load-audio (source type &key generator (voice-class 'harmony:voice) (mixer :effect) effects repeat (repeat-start 0) (volume 1.0) (resource (trial:resource generator T)) max-distance min-distance)
   (trial::ensure-instance resource 'voice
                           :voice-class voice-class
-                          :mixer mixer :source path :effects effects :volume volume
+                          :mixer mixer :source source :effects effects :volume volume
                           :max-distance max-distance :min-distance min-distance
                           :repeat repeat :repeat-start repeat-start))
 
-(defclass sound (trial:single-resource-asset trial:file-input-asset sound-loader)
-  ())
-
-(defmethod trial:reload ((sound sound))
+(defmethod trial:reload ((sound trial:audio-file))
   (let ((resource (trial:resource sound T)))
     (when (and (typep resource 'voice)
                (voice resource))
       (mixed:end (harmony:source (voice resource)))
       (mixed:start (harmony:source (voice resource))))))
 
-(defmethod reinitialize-instance :after ((sound sound) &key)
-  (unless (typep (trial:resource sound T) 'trial:placeholder-resource)
-    (apply #'trial:generate-resources sound (trial:input* sound) (trial::generation-arguments sound))))
-
-(defmethod trial:unload ((sound sound))
+(defclass environment (trial:single-resource-asset trial:compiled-generator)
   ())
 
-(defclass environment-loader (trial:compiled-generator)
-  ())
-
-(defmethod trial:compile-resources ((generator environment-loader) sets &key (source-file-type "wav") codec (samplerate 44100) (quality 3))
+(defmethod trial:compile-resources ((generator environment) sets &rest args)
   (dolist (set sets)
     (dolist (track (cdr set))
-      (let ((target (first track))
-            (source (make-pathname :type source-file-type :defaults (first track))))
-        (when (and (not (equal target source))
-                   (probe-file source)
-                   (trial:recompile-needed-p target source))
-          (v:info :trial.harmony "Compiling music track from ~a...." source)
-          (trial::run "ffmpeg" "-hide_banner" "-loglevel" "error"
-               "-i" source
-               "-c:a" (cond (codec codec)
-                            ((string-equal "oga" (pathname-type target)) "libvorbis")
-                            ((string-equal "ogg" (pathname-type target)) "libvorbis")
-                            ((string-equal "flac" (pathname-type target)) "flac")
-                            ((string-equal "mp3" (pathname-type target)) "libmp3lame")
-                            ((string-equal "opus" (pathname-type target)) "libopus")
-                            (T (error "Unsupported file type ~s" (pathname-type target))))
-               "-ar" samplerate
-               "-qscale:a" quality
-               "-y" target))))))
+      (let ((target (first track)))
+        (apply #'trial:compile-resources generator target args)))))
 
-(defmethod trial:generate-resources ((generator environment-loader) sets &key (resource (trial:resource generator T)))
+(defmethod trial:generate-resources ((generator environment) sets &key (resource (trial:resource generator T)))
   (if (typep resource 'music)
       resource
       (trial::ensure-instance resource 'music :sets sets)))
 
-(defclass environment (trial:single-resource-asset environment-loader)
-  ())
+(defmethod trial:reload ((asset environment)))
 
-(defmethod trial:reload ((asset environment))
-  )
-
-(defmethod trial:unload ((environment environment))
-  ())
+(defmethod trial:unload ((environment environment)))
 
 (defmethod trial:coerce-asset-input ((asset environment) (input string))
   (trial:coerce-asset-input asset (pathname input)))

@@ -76,13 +76,4 @@
                (reencode)))))))
 
 (defclass audio-file (file-input-asset single-resource-asset audio-loader)
-  ((audio :initform NIL :accessor audio)))
-
-(defmethod generate-resources ((asset audio-file) input &key)
-  (let ((audio (call-next-method)))
-    (setf (audio asset) audio)
-    (list-resources asset)))
-
-(defmethod unload :after ((asset audio-file))
-  (when (audio asset)
-    (finalize (audio asset))))
+  ())
