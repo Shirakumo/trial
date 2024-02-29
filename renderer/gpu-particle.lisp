@@ -194,7 +194,7 @@
 
 (defmethod (setf particle-force-fields) ((struct particle-force-fields) (emitter gpu-particle-emitter))
   (cond ((not (slot-boundp emitter 'particle-force-fields-buffer))
-         (setf (particle-force-fields emitter) (make-instance 'shader-storage-buffer :struct NIL :binding NIL)))
+         (setf (particle-force-fields emitter) (make-instance 'shader-storage-buffer :struct struct :binding NIL)))
         ;; FIXME: potentially leaky!!
         ;; IF the buffer wasn't generated then we probably constructed it and thus own the data.
         ;; Free it here since we're replacing it.

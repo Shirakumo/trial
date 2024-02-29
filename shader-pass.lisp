@@ -473,10 +473,10 @@
 
 (defmethod render :around ((pass single-shader-pass) (program shader-program))
   (let ((framebuffer (framebuffer pass)))
-    (activate framebuffer)
+    (when framebuffer (activate framebuffer))
     (prepare-pass-program pass program)
     (call-next-method)
-    (deactivate framebuffer)))
+    (when framebuffer (deactivate framebuffer))))
 
 (define-shader-pass post-effect-pass (single-shader-pass)
   ((vertex-array :initform (// 'trial 'fullscreen-square) :accessor vertex-array)))
