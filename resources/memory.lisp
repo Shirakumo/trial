@@ -12,13 +12,20 @@
                                                                       (error "SIZE required")))))
 
 (defmethod deallocate ((resource memory))
-  (cffi:foreign-free (data-pointer resource)))
+  (cffi:foreign-free (data-pointer resource))
+  (setf (data-pointer resource) NIL))
+
+(defmethod unload ((resource memory))
+  (when (data-pointer resource)
+    (deallocate resource)))
 
 (defmethod mem:to-memory-region ((resource memory))
+  (check-allocated resource)
   (mem:memory-region (data-pointer resource)
                      (size resource)))
 
 (defmethod mem:call-with-memory-region ((function function) (resource memory) &key (start 0))
+  (check-allocated resource)
   (let ((mem (mem:memory-region (cffi:inc-pointer (data-pointer resource) start)
                                 (- (size resource) start))))
     (declare (dynamic-extent mem))

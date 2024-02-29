@@ -99,7 +99,6 @@
     (setf (pixel-format (first (sources texture))) value)))
 
 (defmethod dependencies ((texture texture))
-  #++
   (loop for source in (sources texture)
         collect (texture-source-pixel-data source)))
 
@@ -283,8 +282,8 @@
   (gl:delete-textures (list (gl-name texture))))
 
 (defmethod unload ((texture texture))
-  (deallocate (pixel-data texture))
-  (setf (pixel-data texture) NIL))
+  (loop for source in (sources texture)
+        do (finalize (texture-source-pixel-data source))))
 
 (defmethod resize ((texture texture) width height)
   (when (or (/= width (width texture))

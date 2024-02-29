@@ -43,6 +43,10 @@
 (defmethod loaded-p ((resource resource))
   (allocated-p resource))
 
+(defmethod finalize ((resource resource))
+  (when (allocated-p resource)
+    (deallocate resource)))
+
 (defun check-allocated (resource)
   (unless (allocated-p resource)
     (restart-case
