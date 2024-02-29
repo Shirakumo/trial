@@ -82,5 +82,3 @@
          (handle ev (node :controller scene)))
         (T
          (call-next-method))))
-
-(describe (camera (scene +main+)))
