@@ -131,11 +131,11 @@ void main(){
                             (:multiply 4))))
 
 (define-shader-pass high-pass-filter (simple-post-effect-pass)
-  ((threshold :initarg :threshold :initform 1.0 :uniform T :accessor threshold))
+  ((threshold :initarg :threshold :initform 0.5 :uniform T :accessor threshold))
   (:shader-file (trial "high-pass-filter.glsl")))
 
 (define-shader-pass low-pass-filter (simple-post-effect-pass)
-  ((threshold :initarg :threshold :initform 2.0 :uniform T :accessor threshold))
+  ((threshold :initarg :threshold :initform 0.5 :uniform T :accessor threshold))
   (:shader-file (trial "low-pass-filter.glsl")))
 
 (define-shader-pass bloom-cutoff-pass (simple-post-effect-pass)

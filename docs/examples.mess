@@ -65,3 +65,6 @@ The following examples are currently available:
 - **shader**
   [ image images/example shader.png, width 15em ]
   Define a custom fragment shader to display a mandelbrot.
+- **post-processing**
+  [ image images/example post-processing.png, width 15em ]
+  A playground for various post-processing effects.
