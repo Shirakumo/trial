@@ -348,12 +348,12 @@
 (defun load-camera (camera)
   (etypecase camera
     (gltf:orthographic-camera
-     (make-instance 'trial:2d-camera :near-plane (gltf:znear camera)
-                                     :far-plane (gltf:zfar camera)))
+     (make-instance 'trial:2d-camera :near-plane (float (gltf:znear camera) 0f0)
+                                     :far-plane (float (gltf:zfar camera) 0f0)))
     (gltf:perspective-camera
-     (make-instance 'trial:3d-camera :fov (gltf:fov camera)
-                                     :near-plane (gltf:znear camera)
-                                     :far-plane (gltf:zfar camera)))))
+     (make-instance 'trial:3d-camera :fov (float (gltf:fov camera) 0f0)
+                                     :near-plane (float (gltf:znear camera) 0f0)
+                                     :far-plane (float (gltf:zfar camera) 0f0)))))
 
 (defun load-shape (shape model &rest args)
   (flet ((ensure-mesh (mesh)

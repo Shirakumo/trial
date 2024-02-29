@@ -12,10 +12,6 @@
           (file :initform NIL :accessor file)
           (paused-p :initform T :accessor paused-p))
   (enter (make-instance 'display-controller) scene)
-  (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)
-  (enter (make-instance 'editor-camera :location (VEC3 10.0 20 14) :rotation (vec3 0.75 5.5 0.0) :fov 50 :move-speed 0.1) scene)
-  (enter (make-instance 'directional-light :direction -vy3+) scene)
-  (enter (make-instance 'ambient-light :color (vec3 0.5)) scene)
   (enter (make-instance 'gravity :gravity (vec 0 -10 0)) scene)
   (observe! (paused-p scene) :title "Pause [P]")
   (let ((render (make-instance 'pbr-render-pass))
@@ -47,10 +43,21 @@
 (defmethod (setf file) :after (file (scene scene-loader-scene))
   (unless (incremental-load scene)
     (for:for ((entity over scene))
-      (when (typep entity 'basic-node)
+      (when (typep entity '(and scene-node (not controller)))
         (leave entity T))))
   (setf (paused-p scene) T)
   (generate-resources 'model-file file :load-scene T)
+  (commit scene (loader +main+))
+  (unless (do-scene-graph (node scene)
+            (when (typep node 'light) (return T)))
+    (enter (make-instance 'directional-light :direction -vy3+) scene)
+    (enter (make-instance 'ambient-light :color (vec3 0.5)) scene))
+  (let ((camera (do-scene-graph (node scene)
+                  (when (typep node 'camera) (return node)))))
+    (if camera
+        (setf (camera scene) camera)
+        (enter (make-instance 'editor-camera :name :camera :location (VEC3 10.0 20 14) :rotation (vec3 0.75 5.5 0.0) :fov 50 :move-speed 0.1) scene)))
+  (enter (make-instance 'vertex-entity :name :grid :vertex-array (// 'trial 'grid)) scene)
   ;; FIXME: auto-fit camera to model
   (commit scene (loader +main+)))
 
@@ -75,3 +82,5 @@
          (handle ev (node :controller scene)))
         (T
          (call-next-method))))
+
+(describe (camera (scene +main+)))
