@@ -205,6 +205,9 @@
 (defmethod list-video-modes ((context context))
   (list-video-modes (current-monitor context)))
 
+(defmethod size ((context context))
+  (vec (width context) (height context)))
+
 (define-event resize () width height)
 (define-event gain-focus ())
 (define-event lose-focus ())

@@ -25,7 +25,7 @@
                (:file "sprite")
                (:file "system-info")
                (:file "save-data")
-               ;; audio
+               (:file "audio")
                ;; tilemaps
                )
   :depends-on (#-nx :trial-glfw
@@ -39,6 +39,9 @@
                :trial-obj
                :trial-hdr
                :trial-assets
+               :trial-harmony
+               :cl-mixed-wav
+               :cl-mixed-vorbis
                :file-select))
 
 (asdf:defsystem trial-examples/release

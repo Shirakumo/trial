@@ -11,6 +11,9 @@
    (#:colors #:org.shirakumo.alloy.colored.colors)
    (#:simple #:org.shirakumo.alloy.renderers.simple)
    (#:presentations #:org.shirakumo.alloy.renderers.simple.presentations)
+   (#:harmony #:org.shirakumo.fraf.harmony.user)
+   (#:trial-harmony #:org.shirakumo.fraf.trial.harmony)
+   (#:mixed #:org.shirakumo.fraf.mixed)
    (#:v #:org.shirakumo.verbose))
   (:export #:launch))
 
@@ -20,7 +23,7 @@
 
 (define-pool examples)
 
-(defclass example (main)
+(defclass example (org.shirakumo.fraf.trial.harmony:settings-main)
   ((paused-p :initform NIL :accessor paused-p))
   (:default-initargs :clear-color (vec 0.13 0.15 0.1)
                      :context '(:vsync T :version (4 3))))
