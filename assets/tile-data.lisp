@@ -16,7 +16,7 @@
   (list* (tileset tilemap)
          (call-next-method)))
 
-(defclass tile-data (multi-resource-asset file-input-asset)
+(defclass tile-data (multi-resource-asset file-input-asset compiled-generator)
   ())
 
 (defun decode-tiled-gid (gid tilesets)
@@ -35,11 +35,11 @@
           (list x y (getf tileset :tileset))))))
 
 (defun decode-tiled-layer (data tilesets asset)
-  (let* ((width (gethash "width"  data))
-         (height (gethash "height"  data))
+  (let* ((width (gethash "width" data))
+         (height (gethash "height" data))
          (pixel-data (make-array (* width height 2) :element-type '(unsigned-byte 8) :initial-element 0))
          (tileset NIL))
-    (loop for gid across (gethash "data"  data)
+    (loop for gid across (gethash "data" data)
           for i from 0
           do (destructuring-bind (x y new-tileset) (decode-tiled-gid gid tilesets)
                (when new-tileset
@@ -49,25 +49,68 @@
                  (setf (aref pixel-data (+ 0 (* 2 i))) x)
                  (setf (aref pixel-data (+ 1 (* 2 i))) (- (floor (height tileset) (vy (tile-size tileset))) 1 y)))))
     (flip-image-vertically pixel-data width height 2)
-    (ensure-instance (resource asset (gethash "id"  data)) 'tilemap
+    (ensure-instance (resource asset (gethash "id" data)) 'tilemap
                      :width width
                      :height height
                      :sources (list (make-image-source pixel-data width height :unsigned-byte :rg-integer))
                      :tileset tileset)))
 
 (defun decode-tiled-tileset (data path asset)
-  (list :tileset (generate-resources 'image-loader (merge-pathnames (gethash "image"  data) path)
-                                     :resource (resource asset (gethash "name"  data))
+  (list :tileset (generate-resources 'image-loader (merge-pathnames (gethash "image" data) path)
+                                     :resource (resource asset (gethash "name" data))
                                      :texture-class 'tileset
-                                     :width (gethash "imagewidth"  data)
-                                     :height (gethash "imageheight"  data)
-                                     :tile-size (vec (gethash "tileheight"  data)
-                                                     (gethash "tilewidth"  data)))
-        :first-id (gethash "firstgid"  data)
-        :columns (gethash "columns"  data)))
+                                     :width (gethash "imagewidth" data)
+                                     :height (gethash "imageheight" data)
+                                     :tile-size (vec (gethash "tileheight" data)
+                                                     (gethash "tilewidth" data)))
+        :first-id (gethash "firstgid" data)
+        :columns (gethash "columns" data)))
 
-(defmethod generate-resources ((tile tile-data) (path pathname) &key)
-  (let* ((data (com.inuoe.jzon:parse path))
-         (tilesets (map 'list (lambda (f) (decode-tiled-tileset f path tile)) (gethash "tilesets"  data))))
-    (map NIL (lambda (f) (decode-tiled-layer f tilesets tile)) (gethash "layers"  data))
-    (list-resources tile)))
+(defun load-tiled-data (tile source)
+  (let* ((data (com.inuoe.jzon:parse source))
+         (tilesets (map 'list (lambda (f) (decode-tiled-tileset f source tile)) (gethash "tilesets" data))))
+    (values (map 'list (lambda (f) (decode-tiled-layer f tilesets tile)) (gethash "layers" data))
+            tilesets)))
+
+(defmethod compile-resources ((tile tile-data) target &key (source-file-type "tmj"))
+  (let ((source (make-pathname :type source-file-type :defaults target)))
+    (when (and (not (equal target source))
+               (probe-file source)
+               (trial:recompile-needed-p target source))
+      (multiple-value-bind (layers tilesets) (load-tiled-data tile source)
+        (with-trial-io-syntax ()
+          (with-open-file (stream target :direction :output :if-exists :supersede)
+            (format stream "~s ~s~%" :tilesets
+                    (loop for map in tilesets
+                          for path = (make-pathname :name (name map) :type "png" :defaults target)
+                          do (save-image map path :png)
+                          collect (list (name map) :tile-size (list (vx (tile-size map)) (vy (tile-size map))) :source (enough-namestring path target))))
+            (format stream "~s ~s~%" :layers
+                    (loop for layer in layers
+                          for path = (make-pathname :name (princ-to-string (name layer)) :type "raw" :defaults target)
+                          do (save-image layer path :raw)
+                          collect (list (name layer) :tilemap (name (tilemap layer)) :source (enough-namestring path target))))))))))
+
+(defmethod generate-resources ((asset tile-data) (path pathname) &key)
+  (cond ((or (string= "json" (pathname-type path))
+             (string= "tmj" (pathname-type path)))
+         (load-tiled-data asset path))
+        ((string= "lisp" (pathname-type path))
+         (destructuring-bind (&key tilesets layers)
+             (with-open-file (stream path)
+               (with-trial-io-syntax () (parse-sexps stream)))
+           (dolist (tileset tilesets)
+             (destructuring-bind (name &key tile-size source) tileset
+               (generate-resources 'image-loader (merge-pathnames source path)
+                                   :resource (resource asset name)
+                                   :texture-class 'tileset
+                                   :tile-size (vec (first tile-size) (second tile-size)))))
+           (dolist (layer layers)
+             (destructuring-bind (name &key tileset source) layer
+               (generate-resources 'image-loader (merge-pathnames source path)
+                                   :resource (resource asset name)
+                                   :texture-class 'tilemap
+                                   :tileset (resource asset tileset))))))
+        (T
+         (error "Unsupported file type ~s" (pathname-type path))))
+  (list-resources asset))
