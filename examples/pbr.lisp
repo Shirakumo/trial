@@ -28,5 +28,5 @@
                  (print (list p m r))))
   
   (let ((render (make-instance 'pbr-render-pass))
-        (map (make-instance 'tone-mapping-pass)))
+        (map (make-instance 'ward)))
     (connect (port render 'color) (port map 'previous-pass) scene)))
