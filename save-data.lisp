@@ -13,7 +13,7 @@
 
 (defclass save-file ()
   ((username :initarg :username :initform (username T) :accessor username)
-   (slot :initarg :slot :initform 0 :accessor slot)
+   (slot :initarg :slot :initform (error "SLOT required.") :accessor slot)
    (id :initarg :id :initform (make-uuid) :accessor id)
    (start-time :initarg :start-time :initform (get-universal-time) :accessor start-time)
    (save-time :initarg :save-time :initform (get-universal-time) :accessor save-time)
@@ -46,7 +46,7 @@
                          (v:debug :trial.save-data e)
                          NIL))
          when state collect state)
-   #'string< :key #'slot))
+   #'string< :key (lambda (save) (princ-to-string (slot save)))))
 
 (defun delete-save-files ()
   (dolist (save (directory (save-file-path :wild)))
@@ -89,10 +89,7 @@
   file)
 
 (defmethod store-save-data (thing depot &rest args &key &allow-other-keys)
-  (apply #'store-save-data (save-file-path thing) depot args))
-
-(defmethod store-save-data ((file pathname) depot &rest args &key &allow-other-keys)
-  (apply #'store-save-data (make-instance (save-version-type T) :file file) depot args))
+  (apply #'store-save-data (make-instance (save-version-type T) :slot thing) depot args))
 
 (defmethod store-save-data :around ((file save-file) depot &key &allow-other-keys)
   (call-next-method)
