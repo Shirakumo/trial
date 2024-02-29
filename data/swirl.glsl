@@ -17,5 +17,5 @@ void main(){
     float c = cos(theta);
     tc = vec2(dot(tc, vec2(c, -s)), dot(tc, vec2(s, c)));
   }
-  color = texture2D(previous_pass, (tc+center) / tex_size);
+  color = texture(previous_pass, (tc+center) / tex_size);
 }
