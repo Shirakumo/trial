@@ -73,7 +73,8 @@
 (define-handler (scene key-press :after) (key)
   (case key
     (:f1
-     (change-scene +main+ (make-instance 'pipelined-scene)))
+     (change-scene +main+ (make-instance 'pipelined-scene))
+     (discard-events scene))
     (:f10
      (cond ((and (= (width *context*) 800) (= (height *context*) 600))
             (resize *context* 1280 720))
