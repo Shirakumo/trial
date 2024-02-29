@@ -29,9 +29,11 @@
   (setf (texspecs pipeline) #()))
 
 (defmethod connect ((source flow:port) (target flow:port) (pipeline pipeline))
-  (unless (find (flow:node source) (nodes pipeline))
+  (unless (or (find (flow:node source) (nodes pipeline))
+              (find (flow:node source) (passes pipeline)))
     (enter (flow:node source) pipeline))
-  (unless (find (flow:node target) (nodes pipeline))
+  (unless (or (find (flow:node target) (nodes pipeline))
+              (find (flow:node target) (passes pipeline)))
     (enter (flow:node target) pipeline))
   (flow:connect source target 'flow:directed-connection)
   pipeline)
