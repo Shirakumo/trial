@@ -57,7 +57,7 @@
   ())
 
 (defmethod setup-scene :after ((main example) (scene example-scene))
-  (let ((output (car (last (nodes scene))))
+  (let ((output (car (nodes scene)))
         (ui (make-instance 'ui))
         (combine (make-instance 'blend-pass :name 'blend-pass)))
     (connect (port output 'color) (port combine 'a-pass) scene)
