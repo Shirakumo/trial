@@ -30,7 +30,7 @@ void standard_init(){
   vec3 mro = texture(metal_rough_occlusion_tex, uv).xyz;
   metalness = mro.x * material.metalness_factor;
   roughness = mro.y * material.roughness_factor;
-  occlusion = (1.0 - mro.z) * material.occlusion_factor;
+  occlusion = 1.0 - (mro.z * material.occlusion_factor);
   F0 = mix(vec3(0.04), albedo.xyz, metalness);
 }
 
