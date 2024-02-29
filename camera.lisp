@@ -182,7 +182,14 @@
    :up (vec 0 1 0)))
 
 (defmethod project-view ((camera target-camera))
-  (look-at (location camera) (location (target camera)) (up camera)))
+  (let ((matrix (meye 4))
+        (loc (vec3))
+        (tar (vcopy (target camera))))
+    (declare (dynamic-extent matrix))
+    (global-transform-matrix camera matrix)
+    (mcol3 matrix 3 loc)
+    (n*m matrix tar)
+    (look-at loc tar (up camera))))
 
 (defmethod focal-point ((camera target-camera))
   (global-location (target camera)))
