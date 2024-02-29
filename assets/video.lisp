@@ -24,20 +24,25 @@
     (with-retry-restart (retry "Retry loading the video source.")
       (apply #'load-video input T :generator loader args))))
 
-(defmethod compile-resources ((generator video-loader) source &key (source-file-type "mkv") codec audio-codec (quality 5) (audio-quality quality))
-  (run "ffmpeg" "-hide_banner" "-loglevel" "error"
-       "-i" (make-pathname :type source-file-type :defaults source)
-       "-codec:v" (cond (codec codec)
-                        ((string-equal "ogv" (pathname-type source)) "libtheora")
-                        ((string-equal "mp4" (pathname-type source)) "libx264")
-                        (T (error "Unsupported file type ~s" (pathname-type source))))
-       "-codec:a" (cond (audio-codec audio-codec)
-                        ((string-equal "ogv" (pathname-type source)) "libvorbis")
-                        ((string-equal "mp4" (pathname-type source)) "aac")
-                        (T (error "Unsupported file type ~s" (pathname-type source))))
-       "-qscale:v" quality
-       "-qscale:a" audio-quality
-       source))
+(defmethod compile-resources ((generator video-loader) target &key (source-file-type "mkv") codec audio-codec (quality 5) (audio-quality quality))
+  (let ((source (make-pathname :type source-file-type :defaults target)))
+    (when (and (not (equal target source))
+               (probe-file source)
+               (trial:recompile-needed-p target source))
+      (v:info :trial.asset "Compiling video from ~a...." source)
+      (run "ffmpeg" "-hide_banner" "-loglevel" "error"
+           "-i" 
+           "-codec:v" (cond (codec codec)
+                            ((string-equal "ogv" (pathname-type source)) "libtheora")
+                            ((string-equal "mp4" (pathname-type source)) "libx264")
+                            (T (error "Unsupported file type ~s" (pathname-type source))))
+           "-codec:a" (cond (audio-codec audio-codec)
+                            ((string-equal "ogv" (pathname-type source)) "libvorbis")
+                            ((string-equal "mp4" (pathname-type source)) "aac")
+                            (T (error "Unsupported file type ~s" (pathname-type source))))
+           "-qscale:v" quality
+           "-qscale:a" audio-quality
+           "-y" target))))
 
 (defclass video-file (file-input-asset multi-resource-asset video-loader)
   ((video :initform NIL :accessor video)))
