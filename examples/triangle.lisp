@@ -11,5 +11,7 @@
 
 (define-example triangle
   :title "Basic Triangle"
+  (!meye (view-matrix))
+  (!meye (projection-matrix))
   (enter (make-instance 'basic-triangle) scene)
   (enter (make-instance 'render-pass) scene))
