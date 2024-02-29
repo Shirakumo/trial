@@ -86,7 +86,8 @@ void main(){
   (:shader-file (trial "negative.glsl")))
 
 (define-shader-pass box-blur-pass (iterative-post-effect-pass)
-  ((intensity :initarg :intensity :initform 1.0 :uniform T :accessor intensity))
+  ((intensity :initarg :intensity :initform 1.0 :uniform T :accessor intensity)
+   (kernel-size :initarg :kernel-size :initform 9 :uniform T :accessor kernel-size))
   (:shader-file (trial "box-blur.glsl")))
 
 (define-shader-pass sobel-pass (simple-post-effect-pass)
