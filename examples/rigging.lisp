@@ -1,6 +1,6 @@
 (in-package #:org.shirakumo.fraf.trial.examples)
 
-(define-shader-entity rigging-entity (animated-entity vertex-entity)
+(define-shader-entity rigging-entity (basic-animated-entity listener)
   ())
 
 (define-handler ((entity rigging-entity) tick :after) (dt)
@@ -10,11 +10,14 @@
     (if (v/= vel 0)
         (fade-to "Running" entity)
         (fade-to "Idle" entity))
-    (nv+ (tlocation (tf entity)) (nv* vel dt))))
+    (nv+ (tlocation (tf entity)) (nv* vel dt))
+    (handle tick (animation-controller entity))))
 
 (define-example rigging
   :title "Animated Model"
+  (enter (make-instance 'directional-light) scene)
+  (enter (make-instance 'ambient-light :color (vec 0.5 0.5 0.5)) scene)
   (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)
   (enter (make-instance 'rigging-entity :asset (assets:asset :woman)) scene)
   (enter (make-instance 'target-camera :target (vec 0 2 0) :location (vec 0 3 5)) scene)
-  (enter (make-instance 'render-pass) scene))
+  (enter (make-instance 'phong-render-pass) scene))
