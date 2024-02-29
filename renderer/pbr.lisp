@@ -8,7 +8,7 @@
   :min-filter :linear)
 
 (define-gl-struct (pbr-material :include material)
-  (textures NIL :initform (vector (// 'trial 'white) (// 'trial 'white) (// 'trial 'black) (// 'trial 'neutral-normal)))
+  (textures NIL :initform (vector (// 'trial 'white) (// 'trial 'neutral-mro) (// 'trial 'black) (// 'trial 'neutral-normal)))
   (albedo-factor :vec4 :initform (vec 1 1 1 1) :initarg :albedo-factor :accessor albedo-factor)
   (emission-factor :vec3 :initform (vec 1 1 1) :initarg :emission-factor :accessor emission-factor)
   (metalness-factor :float :initform 1.0 :initarg :metalness-factor :accessor metalness-factor)

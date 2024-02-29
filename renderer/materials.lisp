@@ -23,6 +23,11 @@
   :min-filter :nearest
   :mag-filter :nearest)
 
+(define-asset (trial neutral-mro) image
+    #p "neutral-mro.png"
+  :min-filter :nearest
+  :mag-filter :nearest)
+
 (define-asset (trial neutral-normal) image
     #p "neutral-normal.png"
   :min-filter :nearest
