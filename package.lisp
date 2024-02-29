@@ -150,6 +150,12 @@
    #:location
    #:scaling
    #:rotation)
+  ;; assets/audio.lisp
+  (:export
+   #:load-audio
+   #:audio-loader
+   #:audio-file
+   #:audio)
   ;; assets/environment-map.lisp
   (:export
    #:environment-map-renderer
