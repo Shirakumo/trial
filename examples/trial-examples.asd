@@ -11,6 +11,7 @@
                (:file "triangle")
                (:file "collision")
                (:file "raycast")
+               (:file "particle-common")
                (:file "cpu-particle")
                (:file "gpu-particle")
                (:file "spatial-query")

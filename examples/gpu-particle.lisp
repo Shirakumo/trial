@@ -2,6 +2,7 @@
 
 (define-example gpu-particle
   :title "GPU Particle Simulation"
+  :superclasses (particle-scene)
   (gl:clear-color 0 0 0 0)
   (enter (make-instance 'display-controller) scene)
   (enter (make-instance 'gpu-particle-emitter
