@@ -76,7 +76,7 @@
 
 (defgeneric finalize (object))
 
-(defmethod finalize :before (object)
+(defmethod finalize :before ((object standard-object))
   (v:debug :trial "Finalizing ~a" object))
 
 (defmethod finalize (object)

@@ -81,8 +81,8 @@
       (setf (slot-value buffer 'inv-projection-matrix) (!minv tmp-mat (projection-matrix)))
       (setf (slot-value buffer 'view-size) (vsetf tmp-vec (width (framebuffer pass)) (height (framebuffer pass))))
       (setf (slot-value buffer 'camera-position) (global-location camera))
-      (setf (slot-value buffer 'near-plane) (near-plane camera))
-      (setf (slot-value buffer 'far-plane) (far-plane camera))
+      (setf (slot-value buffer 'near-plane) (float (near-plane camera) 0f0))
+      (setf (slot-value buffer 'far-plane) (float (far-plane camera) 0f0))
       (setf (slot-value buffer 'fdt) (float fdt 0f0))
       (setf (slot-value buffer 'gamma) (setting :display :gamma)))))
 
