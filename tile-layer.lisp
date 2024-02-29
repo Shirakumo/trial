@@ -43,7 +43,7 @@
 
 (defmethod stage ((layer tile-layer) (area staging-area))
   (when (tile-data layer)
-    (register-load-observer op layer (tile-data layer)))
+    (register-load-observer area layer (tile-data layer)))
   (stage (vertex-array layer) area)
   (when (tilemap layer) (stage (tilemap layer) area))
   (when (tileset layer) (stage (tileset layer) area)))

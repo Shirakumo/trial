@@ -26,8 +26,7 @@
                (:file "system-info")
                (:file "save-data")
                (:file "audio")
-               ;; tilemaps
-               )
+               (:file "tilemap"))
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
                :alloy-constraint
