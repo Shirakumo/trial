@@ -77,7 +77,6 @@ void main(){
   standard_init();
   for(int light_idx = 0; light_idx<light_count; ++light_idx){
     StandardLight light = lights[light_idx];
-    vec4 local_color;
     color = standard_mix(standard_shade(light), color);
   }
   standard_finish();

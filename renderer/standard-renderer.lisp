@@ -287,37 +287,47 @@
    (light-cache-dirty-p :initform T :accessor light-cache-dirty-p)
    (light-cache-location :initform (vec 0 0 0) :reader light-cache-location)
    (light-cache-distance-threshold :initform 10.0 :accessor light-cache-distance-threshold)
-   (ambient-light :initform NIL :accessor ambient-light)))
+   (global-lights :initform (make-array 0 :adjustable T :fill-pointer T) :accessor global-lights)))
 
 (defmethod object-renderable-p ((light light) (pass light-cache-render-pass)) T)
 
 (defmethod clear :after ((pass light-cache-render-pass))
-  (3ds:clear (light-cache pass)))
+  (3ds:clear (light-cache pass))
+  (setf (fill-pointer (global-lights pass)) 0))
+
+(defmethod enter ((light located-light) (pass light-cache-render-pass))
+  (3ds:enter light (light-cache pass))
+  (setf (light-cache-dirty-p pass) T))
 
 (defmethod enter ((light light) (pass light-cache-render-pass))
-  (3ds:enter light (light-cache pass))
+  (array-utils:vector-push-extend-new light (global-lights pass))
   (setf (light-cache-dirty-p pass) T))
 
-(defmethod enter ((light ambient-light) (pass light-cache-render-pass))
-  (setf (ambient-light pass) light))
-
-(defmethod enable :after ((light light) (pass light-cache-render-pass))
-  (3ds:enter light (light-cache pass))
-  (setf (light-cache-dirty-p pass) T))
-
-(defmethod disable :after ((light light) (pass light-cache-render-pass))
+(defmethod leave ((light located-light) (pass light-cache-render-pass))
   (3ds:leave light (light-cache pass))
   (setf (light-cache-dirty-p pass) T))
 
-(defmethod enable :after ((light ambient-light) (pass light-cache-render-pass))
-  (setf (ambient-light pass) light))
+(defmethod leave ((light light) (pass light-cache-render-pass))
+  (array-utils:vector-pop-element* (global-lights pass) light)
+  (setf (light-cache-dirty-p pass) T))
 
-(defmethod disable :after ((light ambient-light) (pass light-cache-render-pass))
-  (when (eq light (ambient-light pass))
-    (setf (ambient-light pass) NIL)
-    (disable light pass)))
+(defmethod enable :after ((light located-light) (pass light-cache-render-pass))
+  (3ds:enter light (light-cache pass))
+  (setf (light-cache-dirty-p pass) T))
 
-(defmethod notice-update :after ((light light) (pass light-cache-render-pass))
+(defmethod disable :after ((light located-light) (pass light-cache-render-pass))
+  (3ds:leave light (light-cache pass))
+  (setf (light-cache-dirty-p pass) T))
+
+(defmethod enable :after ((light light) (pass light-cache-render-pass))
+  (unless (typep light 'located-light)
+    (array-utils:vector-push-extend-new light (global-lights pass))))
+
+(defmethod disable :after ((light light) (pass light-cache-render-pass))
+  (unless (typep light 'located-light)
+    (array-utils:vector-pop-element* (global-lights pass) light)))
+
+(defmethod notice-update :after ((light located-light) (pass light-cache-render-pass))
   (3ds:update light (light-cache pass)))
 
 (define-handler ((pass light-cache-render-pass) register) (changed-node)
@@ -344,8 +354,9 @@
           (dotimes (i count)
             (when (active-p (aref nearest i))
               (enable (aref nearest i) pass))))
-        (when (and (ambient-light pass) (active-p (ambient-light pass)))
-          (enable (ambient-light pass) pass))))
+        (loop for light across (global-lights pass)
+              do (when (active-p light)
+                   (enable light pass)))))
     (setf (light-cache-dirty-p pass) NIL)))
 
 ;; FIXME: how do we know when lights moved or de/activated so we can update?

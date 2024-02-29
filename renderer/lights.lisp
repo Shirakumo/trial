@@ -47,8 +47,7 @@
   ())
 
 (defmethod <- progn ((target standard-light) (light ambient-light))
-  (setf (light-type target) 1)
-  (setf (color target) (color light)))
+  (setf (light-type target) 1))
 
 (defmethod 3ds:bsize ((light ambient-light))
   #.(vec most-positive-single-float
