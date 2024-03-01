@@ -356,7 +356,7 @@
                                          :near-plane (float (gltf:znear camera) 0f0)
                                          :far-plane (float (gltf:zfar camera) 0f0)
                                          :location (vec 0 0 0)
-                                         :target (vec 0 0 1)))))
+                                         :target (vec 0 0 -1)))))
 
 (defun load-shape (shape model &rest args)
   (flet ((ensure-mesh (mesh)
