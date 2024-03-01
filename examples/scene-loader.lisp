@@ -30,16 +30,7 @@
                                                                   ("glTF" "glb" "gltf")
                                                                   ("Wavefront OBJ" "obj"))
                                                         :default (file scene))))
-          (when file (setf (file scene) file))))
-
-      (alloy:enter "Collision Debug" layout :row 1 :col 1)
-      (alloy:represent (trial::show-collision-debug (physics-system scene)) 'alloy:switch
-                       :layout-parent layout :focus-parent focus)
-
-      (alloy:enter "Include Fixed" layout :row 2 :col 1)
-      (alloy:represent (trial::include-fixed-p (physics-system scene)) 'alloy:combo-set
-                       :value-set '(NIL :mixed T) :layout-parent layout :focus-parent focus))
-
+          (when file (setf (file scene) file)))))
     (alloy:finish-structure panel layout focus)))
 
 (defmethod (setf file) :after (file (scene scene-loader-scene))
