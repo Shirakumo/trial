@@ -1,5 +1,12 @@
 (in-package #:org.shirakumo.fraf.trial)
 
+(define-shader-pass z-prepass (per-object-pass)
+  ((depth :port-type output :attachment :depth-attachment :texspec (:internal-format :depth-component)))
+  (:buffers (trial standard-environment-information)))
+
+(defmethod compute-shader ((type (eql :fragment-shader)) (pass z-prepass) object)
+  (load-time-value (list (glsl-toolkit:parse "void main(){}"))))
+
 (defun generate-ssao-noise (&optional (samples 16))
   (let ((array (make-array (* samples 3) :element-type 'single-float)))
     (dotimes (i samples array)

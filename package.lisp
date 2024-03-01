@@ -1723,9 +1723,10 @@
   ;; ssao,lisp
   (:export
    #:ssao-pass
-   #:position-map
-   #:normal-map
-   #:occlusion)
+   #:depth-map
+   #:occlusion
+   #:radius
+   #:bias)
   ;; static-vector.lisp
   (:export
    #:make-static-vector
