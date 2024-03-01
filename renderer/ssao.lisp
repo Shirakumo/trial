@@ -7,6 +7,29 @@
 (defmethod compute-shader ((type (eql :fragment-shader)) (pass z-prepass) object)
   (load-time-value (list (glsl-toolkit:parse "void main(){}"))))
 
+(defmethod make-pass-framebuffer ((pass z-prepass))
+  (let ((framebuffer (call-next-method)))
+    (setf (clear-bits framebuffer) '(:depth-buffer))
+    framebuffer))
+
+(define-shader-pass z-prepass-standard-render-pass (standard-render-pass)
+  ((depth-map :port-type input :accessor depth-map)))
+
+(defmethod make-pass-framebuffer ((pass z-prepass-standard-render-pass))
+  (let ((framebuffer (call-next-method)))
+    (let ((depth (or (find :depth-attachment (attachments framebuffer))
+                     (find :depth-stencil-attachment (attachments framebuffer)))))
+      (if depth
+          (setf (second depth) (depth-map pass))
+          (push (list :depth-attachment (depth-map pass)) (attachments framebuffer))))
+    (setf (clear-bits framebuffer) '(:color-buffer))
+    framebuffer))
+
+(defmethod render :around ((pass z-prepass-standard-render-pass) target)
+  (gl:depth-mask NIL)
+  (call-next-method)
+  (gl:depth-mask T))
+
 (defun generate-ssao-noise (&optional (samples 16))
   (let ((array (make-array (* samples 3) :element-type 'single-float)))
     (dotimes (i samples array)
@@ -42,8 +65,8 @@
   :internal-format :rgb32f)
 
 (define-shader-pass ssao-pass (post-effect-pass)
-  ((depth-map :port-type input)
-   (occlusion :port-type output
+  ((depth-map :port-type input :accessor depth-map)
+   (occlusion :port-type output :accessor occlusion
               :attachment :color-attachment0
               :texspec (:internal-format :red
                         :min-filter :nearest
