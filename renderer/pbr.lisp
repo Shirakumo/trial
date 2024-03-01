@@ -102,9 +102,9 @@
 
 (defmethod prepare-pass-program :after ((pass pbr-render-pass) program)
   (cond ((environment pass)
-         (setf (uniform program "irradiance_map") (local-id (irradiance-map (environment pass)) pass))
-         (setf (uniform program "environment_map") (local-id (environment-map (environment pass)) pass))
-         (setf (uniform program "brdf_lut") (local-id (// 'trial 'brdf-lut) pass)))
+         (setf (uniform program "irradiance_map") (enable (irradiance-map (environment pass)) pass))
+         (setf (uniform program "environment_map") (enable (environment-map (environment pass)) pass))
+         (setf (uniform program "brdf_lut") (enable (// 'trial 'brdf-lut) pass)))
         (T
          ;; KLUDGE: Just set them to bogus values to get the AMD driver to shut up.
          (let ((max (1- (gl:get-integer :max-combined-texture-image-units))))
