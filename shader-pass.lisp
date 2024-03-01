@@ -169,6 +169,21 @@
 (defmethod make-pass-shader-program ((pass shader-pass) (entity standalone-shader-entity))
   (shader-program entity))
 
+(defmethod make-pass-framebuffer ((pass shader-pass))
+  (let (width height)
+    (loop for port in (flow:ports pass)
+          do (when (typep port 'output)
+               (setf width (max width (width (texture port))))
+               (setf height (max height (height (texture port))))))
+    (unless width
+      (error "~a has no outputs!" pass))
+    (make-instance 'framebuffer
+                   :width width
+                   :height height
+                   :attachments (loop for port in (flow:ports pass)
+                                      when (typep port 'output)
+                                      collect (list (attachment port) (texture port))))))
+
 (defmethod finalize :after ((pass shader-pass))
   (when (framebuffer pass)
     (finalize (framebuffer pass))))

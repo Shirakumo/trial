@@ -1674,6 +1674,7 @@
    #:object-renderable-p
    #:shader-program-for-pass
    #:make-pass-shader-program
+   #:make-pass-framebuffer
    #:coerce-pass-shader
    #:define-shader-pass
    #:generate-pass-program

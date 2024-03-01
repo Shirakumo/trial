@@ -156,20 +156,7 @@
         (setf (texture port) texture)
         (dolist (connection (flow:connections port))
           (setf (texture (flow:right connection)) texture)))))
-  ;; Allocate the framebuffer
-  (let* ((output (loop for port in (flow:ports pass)
-                       do (when (and (typep port 'output)
-                                     (eql :color-attachment0 (attachment port)))
-                            (return port))))
-         (width (width (texture output)))
-         (height (height (texture output))))
-    (setf (framebuffer pass)
-          (make-instance 'framebuffer
-                         :width width
-                         :height height
-                         :attachments (loop for port in (flow:ports pass)
-                                            when (typep port 'output)
-                                            collect (list (attachment port) (texture port))))))
+  (setf (framebuffer pass) (make-pass-framebuffer pass))
   pass)
 
 (defmethod pack-pipeline ((pipeline pipeline) target)
@@ -210,30 +197,17 @@
       (dolist (pass passes)
         (when (typep pipeline 'event-loop)
           (add-listener pass pipeline))
-        (let ((output (loop for port in (flow:ports pass)
-                            do (when (and (typep port 'output)
-                                          (eql :color-attachment0 (attachment port)))
-                                 (return port)))))
-          (when output
-            (flet ((dimension (func)
-                     (funcall func (texture output))))
-              (setf (framebuffer pass)
-                    (make-instance 'framebuffer
-                                   :width (dimension #'width)
-                                   :height (dimension #'height)
-                                   :attachments (loop for port in (flow:ports pass)
-                                                      when (typep port 'output)
-                                                      collect (list (attachment port) (texture port)))))))))
+        (setf (framebuffer pass) (make-pass-framebuffer pass)))
       ;; Now re-set the activation to short-modify the pipeline as necessary.
       (dolist (pass passes)
         (setf (active-p pass) (active-p pass)))
       ;; All done.
-      (v:info :trial.pipeline "~a pass order: ~a" pipeline passes)
-      (v:info :trial.pipeline "~a texture count: ~a" pipeline (length textures))
-      (v:info :trial.pipeline "~a texture allocation: ~:{~%~a~:{~%    ~a: ~a~}~}" pipeline
-              (loop for pass in passes
-                    collect (list pass (loop for port in (flow:ports pass)
-                                             collect (list (flow:name port) (texture port))))))
+      (v:debug :trial.pipeline "~a pass order: ~a" pipeline passes)
+      (v:debug :trial.pipeline "~a texture count: ~a" pipeline (length textures))
+      (v:debug :trial.pipeline "~a texture allocation: ~:{~%~a~:{~%    ~a: ~a~}~}" pipeline
+               (loop for pass in passes
+                     collect (list pass (loop for port in (flow:ports pass)
+                                              collect (list (flow:name port) (texture port))))))
       ;; FIXME: Replace textures with existing ones if they match to save on re-allocation.
       ;; FIXME: When transitioning between scenes we should try to re-use existing textures
       ;;        and fbos to reduce the amount of unnecessary allocation. This is separate
