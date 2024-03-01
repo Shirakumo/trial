@@ -35,14 +35,15 @@
   :internal-format :rgb32f)
 
 (define-shader-pass ssao-pass (post-effect-pass)
-  ((position-map :port-type input)
-   (normal-map :port-type input)
+  ((depth-map :port-type input)
    (occlusion :port-type output
               :attachment :color-attachment0
               :texspec (:internal-format :red
                         :min-filter :nearest
                         :mag-filter :nearest))
    (ssao-kernel :port-type fixed-input :texture (// 'trial 'ssao-kernel))
-   (ssao-noise :port-type fixed-input :texture (// 'trial 'ssao-noise)))
+   (ssao-noise :port-type fixed-input :texture (// 'trial 'ssao-noise))
+   (radius :initform 8.0 :accessor radius :uniform T)
+   (bias :initform 5.0 :accessor radius :uniform T))
   (:buffers (trial standard-environment-information))
   (:shader-file (trial "ssao.glsl")))
