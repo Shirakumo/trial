@@ -98,19 +98,25 @@
     (setf (uniform program "albedo_tex") (local-id (aref textures 0) pass))
     (setf (uniform program "metal_rough_occlusion_tex") (local-id (aref textures 1) pass))
     (setf (uniform program "emission_tex") (local-id (aref textures 2) pass))
-    (setf (uniform program "normal_tex") (local-id (aref textures 3) pass))))
+    (setf (uniform program "normal_tex") (local-id (aref textures 3) pass)))
+  ;; We have to re-enable them here to ensure they don't get pushed out.
+  ;; KLUDGE: This is obviously inefficient since we keep rebinding the textures
+  ;;         instead of keeping them once. We could possibly fix this by somehow
+  ;;         reserving their IDs and keeping them from being evicted from the LRU
+  ;;         cache.
+  (let ((env (environment pass)))
+    (when env
+      (setf (uniform program "irradiance_map") (enable (irradiance-map env) pass))
+      (setf (uniform program "environment_map") (enable (environment-map env) pass))
+      (setf (uniform program "brdf_lut") (enable (// 'trial 'brdf-lut) pass)))))
 
 (defmethod prepare-pass-program :after ((pass pbr-render-pass) program)
-  (cond ((environment pass)
-         (setf (uniform program "irradiance_map") (enable (irradiance-map (environment pass)) pass))
-         (setf (uniform program "environment_map") (enable (environment-map (environment pass)) pass))
-         (setf (uniform program "brdf_lut") (enable (// 'trial 'brdf-lut) pass)))
-        (T
-         ;; KLUDGE: Just set them to bogus values to get the AMD driver to shut up.
-         (let ((max (1- (gl:get-integer :max-combined-texture-image-units))))
-           (setf (uniform program "irradiance_map") max)
-           (setf (uniform program "environment_map") max))
-         (setf (uniform program "brdf_lut") 0))))
+  (unless (environment pass)
+    ;; KLUDGE: Just set them to bogus values to get the AMD driver to shut up.
+    (let ((max (1- (gl:get-integer :max-combined-texture-image-units))))
+      (setf (uniform program "irradiance_map") max)
+      (setf (uniform program "environment_map") max))
+    (setf (uniform program "brdf_lut") 0)))
 
 (defmethod material-block-type ((pass pbr-render-pass))
   'pbr-material-block)
@@ -137,9 +143,6 @@
   (setf (light-type target) 250))
 
 (defmethod enable :after ((light environment-light) (pass standard-render-pass))
-  (enable (irradiance-map light) pass)
-  (enable (environment-map light) pass)
-  (enable (// 'trial 'brdf-lut) pass)
   (setf (environment pass) light))
 
 (defmethod disable :after ((light environment-light) (pass standard-render-pass))
