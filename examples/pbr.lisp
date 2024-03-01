@@ -10,7 +10,7 @@
   :title "Physically Based Rendering"
   (enter (make-instance 'editor-camera :location (vec 0.0 0.0 3) :fov 50 :move-speed 0.1) scene)
   (enter (make-instance 'skybox :texture (assets:// :sandy-beach :environment-map)) scene)
-  (enter (make-instance 'environment-light :asset (assets:asset :sandy-beach) :color (vec 0.3 0.3 0.3)) scene)
+  (enter (make-instance 'environment-light :asset (assets:asset :sandy-beach)) scene)
 
   (loop for (p c) in `((,(vec -10  10 10) ,(vec 300 300 300))
                        (,(vec  10  10 10) ,(vec 300 300 300))

@@ -17,7 +17,7 @@
   (let ((render (make-instance 'pbr-render-pass :name :render))
         (map (make-instance 'ward :name :map)))
     (connect (port render 'color) (port map 'previous-pass) scene))
-  (setf (file scene) (input* (assets:asset :physics-test))))
+  (setf (file scene) (input* (assets:asset :sponza))))
 
 (defmethod setup-ui ((scene scene-loader-scene) panel)
   (let ((layout (make-instance 'alloy:grid-layout :col-sizes '(T 140 140) :row-sizes '(30)))
@@ -51,8 +51,9 @@
   (generate-resources 'model-file file :load-scene T)
   (unless (do-scene-graph (node scene)
             (when (typep node 'light) (return T)))
-    (enter (make-instance 'directional-light :direction -vy3+ :color (vec3 3)) scene)
-    (enter (make-instance 'ambient-light :color (vec3 0.25)) scene))
+    (enter (make-instance 'skybox :texture (assets:// :sandy-beach :environment-map)) scene)
+    (enter (make-instance 'environment-light :asset (assets:asset :sandy-beach) :color (vec3 0.3)) scene)
+    (enter (make-instance 'directional-light :direction (nvunit (vec -0.2 -1 -0.1)) :color (vec3 10 10 8)) scene))
   (let ((camera (do-scene-graph (node scene)
                   (when (typep node 'camera) (return node)))))
     (if camera
