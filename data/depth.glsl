@@ -22,3 +22,7 @@ vec3 depth_normal(sampler2D depth_tex, in vec2 uv, in mat4 inv_view_projection_m
   
   return normalize(cross(P1 - P0, P2 - P0));
 }
+
+vec3 depth_world_pos(sampler2D depth_tex, in vec2 uv, in mat4 inv_view_projection_matrix){
+  return to_world_position(uv, texture(depth_tex, uv).x, inv_view_projection_matrix);
+}

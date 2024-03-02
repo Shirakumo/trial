@@ -1721,13 +1721,17 @@
    #:reset-animation
    #:switch-animation
    #:play)
-  ;; ssao,lisp
+  ;; ssao.lisp
   (:export
+   #:z-prepass
+   #:z-prepass-standard-render-pass
+   #:ssao-pbr-render-pass
    #:ssao-pass
+   #:depth
    #:depth-map
    #:occlusion
-   #:radius
-   #:bias)
+   #:ssao-radius
+   #:ssao-bias)
   ;; static-vector.lisp
   (:export
    #:make-static-vector

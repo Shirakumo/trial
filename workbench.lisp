@@ -96,7 +96,9 @@
                                               :direction (vec 0 -1 1)
                                               :cast-shadows-p T) scene)
 
-    (let ((render (make-instance 'pbr-render-pass))
-          (map (make-instance 'tone-mapping-pass)))
+    (let ((zpre (make-instance 'trial::z-prepass))
+          (render (make-instance 'trial::ssao-pbr-render-pass :name :render))
+          (map (make-instance 'tone-mapping-pass :name :map)))
+      (connect (port zpre 'depth) (port render 'depth-map) scene)
       (connect (port render 'color) (port map 'previous-pass) scene)))
   (maybe-reload-scene))

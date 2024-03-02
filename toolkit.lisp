@@ -195,6 +195,9 @@
         do (when (funcall test key k) (return v))
         finally (return default)))
 
+(defun remove-all (elements sequence &rest args)
+  (apply #'remove-if (lambda (e) (member e elements)) sequence args))
+
 (defun f32-vec (&rest args)
   (let ((array (make-array (length args) :element-type 'single-float)))
     (map-into array #'float args)))
