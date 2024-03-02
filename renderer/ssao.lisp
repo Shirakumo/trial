@@ -31,8 +31,8 @@
   (gl:depth-mask T))
 
 (define-shader-pass ssao-pbr-render-pass (z-prepass-standard-render-pass pbr-render-pass)
-  ((ssao-radius :initform 8.0 :accessor ssao-radius :uniform T)
-   (ssao-bias :initform 5.0 :accessor ssao-bias :uniform T))
+  ((ssao-radius :initform 8.0 :initarg :ssao-radius :accessor ssao-radius :uniform T)
+   (ssao-bias :initform 5.0 :initarg :ssao-bias :accessor ssao-bias :uniform T))
   (:shader-file (trial "standard-render-pbr-ssao.glsl")))
 
 (define-shader-pass ssao-pass (post-effect-pass)
