@@ -13,7 +13,7 @@
   (dt :float :accessor dt)
   (fdt :float :accessor fdt)
   (gamma :float :initform 2.2 :accessor gamma)
-  (fc NIL :accessor fc :initform 0))
+  (fc NIL :accessor fc :initform -1))
 
 (define-asset (trial standard-environment-information) uniform-block
     'standard-environment-information
