@@ -97,7 +97,7 @@
                                               :cast-shadows-p T) scene)
 
     (let ((zpre (make-instance 'trial::z-prepass))
-          (render (make-instance 'trial::ssao-pbr-render-pass :name :render))
+          (render (make-instance 'trial::ssr-pbr-render-pass :name :render))
           (map (make-instance 'tone-mapping-pass :name :map)))
       (connect (port zpre 'depth) (port render 'depth-map) scene)
       (connect (port render 'color) (port map 'previous-pass) scene)))

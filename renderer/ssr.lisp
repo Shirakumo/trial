@@ -4,6 +4,8 @@
   ((previous-pass :port-type static-input :accessor previous-pass))
   (:shader-file (trial "standard-render-pbr-ssr.glsl")))
 
-(defmethod render :after ((pass ssr-pbr-render-pass) thing)
-  (rotatef (gl-name (previous pass)) (gl-name (color pass)))
-  (%gl:framebuffer-texture :framebuffer :color-attachment0 (gl-name (color pass)) 0))
+(defmethod render :before ((pass ssr-pbr-render-pass) thing)
+  (rotatef (gl-name (previous-pass pass)) (gl-name (color pass)))
+  (let ((framebuffer (framebuffer pass)))
+    (gl:bind-framebuffer :framebuffer (gl-name framebuffer))
+    (%gl:framebuffer-texture :framebuffer :color-attachment0 (gl-name (color pass)) 0)))

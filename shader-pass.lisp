@@ -393,11 +393,10 @@
 
 (defmethod prepare-pass-program ((pass per-object-pass) program)
   (let ((entry (gethash program (program-table pass))))
-    (cond ((cdr entry)
-           (activate program))
-          (T
-           (call-next-method)
-           (setf (cdr entry) T)))))
+    (unless (cdr entry)
+      ;; Only update if we haven't cached yet.
+      (call-next-method)
+      (setf (cdr entry) T))))
 
 (defmethod construct-frame ((pass per-object-pass))
   (let* ((frame (frame pass))
