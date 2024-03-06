@@ -302,11 +302,10 @@
   (setf (uniform program "particle_data") 1)
   (with-pushed-features
     (disable-feature :cull-face)
-    (gl:depth-mask NIL)
-    (set-blend-mode (blend-mode emitter))
-    (render-array (draw-vertex-array emitter) :vertex-count 6 :instances (live-particles emitter))
-    (set-blend-mode :normal)
-    (gl:depth-mask T)))
+    (with-depth-mask NIL
+      (set-blend-mode (blend-mode emitter))
+      (render-array (draw-vertex-array emitter) :vertex-count 6 :instances (live-particles emitter))
+      (set-blend-mode :normal))))
 
 ;; FIXME: implement sorting?
 

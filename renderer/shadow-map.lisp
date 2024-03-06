@@ -167,17 +167,18 @@
         (loop for light across lights
               do (when light (<- struct light)))
         (setf (dirty-p struct) NIL)))
-    (dotimes (id (length lights))
-      (when (and (aref lights id) (in-view-p (aref lights id) T))
-        (setf (uniform program "shadow_map_id") id)
-        (%gl:framebuffer-texture-layer :framebuffer :depth-attachment map 0 id)
-        (gl:clear :depth-buffer)
-        (loop for (object) across frame
-              do (when (typep object 'standard-renderable)
-                   ;; TODO: we can also use in-view-p to eliminate objects
-                   ;;       outside the shadow map purview.
-                   (with-pushed-matrix ()
-                     (apply-transforms object)
-                     (setf (uniform program "pose_map") (if (typep object 'animated-entity) 1 0))
-                     (render object program))))))
+    (with-depth-mask T
+      (dotimes (id (length lights))
+        (when (and (aref lights id) (in-view-p (aref lights id) T))
+          (setf (uniform program "shadow_map_id") id)
+          (%gl:framebuffer-texture-layer :framebuffer :depth-attachment map 0 id)
+          (gl:clear :depth-buffer)
+          (loop for (object) across frame
+                do (when (typep object 'standard-renderable)
+                     ;; TODO: we can also use in-view-p to eliminate objects
+                     ;;       outside the shadow map purview.
+                     (with-pushed-matrix ()
+                       (apply-transforms object)
+                       (setf (uniform program "pose_map") (if (typep object 'animated-entity) 1 0))
+                       (render object program)))))))
     (activate (framebuffer pass))))

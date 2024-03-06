@@ -42,6 +42,7 @@
   (gl:clear-stencil #x00)
   (gl:stencil-op :keep :keep :keep)
   (gl:depth-mask T)
+  (setf *depth-mask* T)
   (gl:depth-func :lequal)
   (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha)
   #-arm64 (gl:clear-depth 1.0)

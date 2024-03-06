@@ -277,20 +277,19 @@
   (gl:bind-texture (target (texture emitter)) (gl-name (texture emitter))))
 
 (defmethod render :before ((emitter gpu-particle-emitter) (program shader-program))
-  (gl:depth-mask NIL)
   (setf (uniform program "model_matrix") (tmat (tf emitter)))
   (%gl:bind-buffer :draw-indirect-buffer (gl-name (slot-value emitter 'particle-argument-buffer)))
   (activate (// 'trial 'empty-vertex-array)))
 
 (defmethod render :after ((emitter gpu-particle-emitter) (program shader-program))
   (deactivate (// 'trial 'empty-vertex-array))
-  (%gl:bind-buffer :draw-indirect-buffer 0)
-  (gl:depth-mask T))
+  (%gl:bind-buffer :draw-indirect-buffer 0))
 
 (defmethod render ((emitter gpu-particle-emitter) (program shader-program))
-  (set-blend-mode (blend-mode emitter))
-  (%gl:draw-arrays-indirect :triangles (slot-offset 'particle-argument-buffer 'draw-args))
-  (set-blend-mode :normal))
+  (with-depth-mask NIL
+    (set-blend-mode (blend-mode emitter))
+    (%gl:draw-arrays-indirect :triangles (slot-offset 'particle-argument-buffer 'draw-args))
+    (set-blend-mode :normal)))
 
 (defmethod emit ((particle-emitter gpu-particle-emitter) count &rest particle-options &key vertex-array location orientation scaling transform)
   ;; We do the emit **right now** so that the particle options are only active for the
@@ -417,7 +416,8 @@
               until (< alive sorted))))))
 
 (defmethod render ((emitter sorted-particle-emitter) (program shader-program))
-  (%gl:draw-arrays-indirect :triangles (slot-offset 'particle-argument-buffer 'draw-args)))
+  (with-depth-mask NIL
+    (%gl:draw-arrays-indirect :triangles (slot-offset 'particle-argument-buffer 'draw-args))))
 
 (define-shader-entity multi-texture-particle-emitter (gpu-particle-emitter)
   ()

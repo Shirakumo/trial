@@ -250,3 +250,13 @@
     (:invert
      (gl:blend-func-separate :one :one :one :one-minus-src-alpha)
      (gl:blend-equation :func-reverse-subtract))))
+
+;; KLUDGE: this sucks.
+(defvar *depth-mask* T)
+(defmacro with-depth-mask (mode &body body)
+  (let ((old-mode (gensym "OLD-MODE")))
+    `(let ((,old-mode *depth-mask*)
+           (*depth-mask* ,mode))
+       (gl:depth-mask *depth-mask*)
+       (multiple-value-prog1 (progn ,@body)
+         (gl:depth-mask ,old-mode)))))

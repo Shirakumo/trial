@@ -17,9 +17,8 @@
   (setf (uniform shader "projection_matrix") (projection-matrix))
   (setf (uniform shader "texture_image") 0)
   (setf (uniform shader "multiplier") (color skybox))
-  (gl:depth-mask NIL)
-  (render-array (// 'trial 'fullscreen-square))
-  (gl:depth-mask T))
+  (with-depth-mask NIL
+    (render-array (// 'trial 'fullscreen-square))))
 
 (define-class-shader (skybox :vertex-shader)
   "uniform mat4 projection_matrix;

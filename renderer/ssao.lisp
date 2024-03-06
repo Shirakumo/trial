@@ -26,9 +26,8 @@
     framebuffer))
 
 (defmethod render :around ((pass z-prepass-standard-render-pass) target)
-  (gl:depth-mask NIL)
-  (call-next-method)
-  (gl:depth-mask T))
+  (with-depth-mask NIL
+    (call-next-method)))
 
 (define-shader-pass ssao-pbr-render-pass (z-prepass-standard-render-pass pbr-render-pass)
   ((ssao-radius :initform 8.0 :initarg :ssao-radius :accessor ssao-radius :uniform T)
