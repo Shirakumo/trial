@@ -49,8 +49,8 @@
 
 (defun show-panel (panel-type &rest initargs)
   (let ((panel (find-panel panel-type)))
-    (unless panel
-      (trial:show (apply #'make-instance panel-type initargs)))))
+    (or panel
+        (trial:show (apply #'make-instance panel-type initargs)))))
 
 (defun hide-panel (panel-type &optional (ui (ui)))
   (let ((panels (panels ui)))
