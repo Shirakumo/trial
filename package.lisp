@@ -1673,6 +1673,7 @@
    #:bind-textures
    #:object-renderable-p
    #:shader-program-for-pass
+   #:compute-shader
    #:make-pass-shader-program
    #:make-pass-framebuffer
    #:coerce-pass-shader
