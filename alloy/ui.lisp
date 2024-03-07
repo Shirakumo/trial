@@ -132,6 +132,7 @@
   (trial:activate (trial:framebuffer pass))
   (trial:with-pushed-features
     (trial:enable-feature :depth-test :stencil-test)
+    (trial:disable-feature :cull-face)
     (call-next-method)))
 
 ;; KLUDGE: No idea why this is necessary, fuck me.
