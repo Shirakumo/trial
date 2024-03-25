@@ -13,10 +13,10 @@
         (v:warn :trial.achievements "Steam achievement ~s not present locally!" (steam:handle achievement))))))
 
 (trial:define-handler (achievement-api trial:achievement-unlocked :after) ((achievement trial:achievement))
-  (setf (steam:achieved-p (string-downcase (trial:name achievement))) T))
+  (setf (steam:achieved-p (string-downcase (trial:name achievement)) :sync T) T))
 
 (trial:define-handler (achievement-api trial:achievement-relocked :after) ((achievement trial:achievement))
-  (setf (steam:achieved-p (string-downcase (trial:name achievement))) NIL))
+  (setf (steam:achieved-p (string-downcase (trial:name achievement)) :sync T) NIL))
 
 (defmethod trial:notifications-display-p ((api achievement-api))
   steam::*steamworks*)
