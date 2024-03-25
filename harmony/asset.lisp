@@ -14,6 +14,9 @@
       (mixed:end (harmony:source (voice resource)))
       (mixed:start (harmony:source (voice resource))))))
 
+(defclass sound (trial:audio-file)
+  ())
+
 (defclass environment (trial:single-resource-asset trial:compiled-generator)
   ())
 
