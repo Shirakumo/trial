@@ -2,7 +2,8 @@
 
 (defclass staging-area ()
   ((load-state :initform (make-hash-table :test 'eq) :reader load-state)
-   (observers :initform (make-hash-table :test 'eq) :reader observers)))
+   (observers :initform (make-hash-table :test 'eq) :reader observers)
+   (loader :initarg :loader :initform NIL :accessor loader)))
 
 (defgeneric dependencies (object))
 (defgeneric stage (object staging-area))
@@ -38,15 +39,19 @@
   (stage object area))
 
 (defmethod stage :around (object (area staging-area))
-  (case (gethash object (load-state area))
-    (:tentative
-     (unless (typep object 'entity)
-       (error "Circular staging on ~a!" object)))
-    ((NIL)
-     (setf (gethash object (load-state area)) :tentative)
-     (prog1 (call-next-method)
-       (when (eql :tentative (gethash object (load-state area)))
-         (setf (gethash object (load-state area)) :done))))))
+  (let ((state (load-state area)))
+    (case (gethash object state)
+      (:tentative
+       (unless (typep object 'entity)
+         (error "Circular staging on ~a!" object)))
+      ((NIL)
+       (setf (gethash object state) :tentative)
+       (when (loader area)
+         (let ((count (hash-table-count state)))
+           (progress (loader area) count (* 1000 (1+ (truncate count 1000))))))
+       (prog1 (call-next-method)
+         (when (eql :tentative (gethash object state))
+           (setf (gethash object state) :done)))))))
 
 (defmethod stage :before (object (area staging-area))
   (dolist (dependency (dependencies object))
@@ -181,10 +186,10 @@
 
 (defmethod commit (object (loader loader) &rest args)
   (v:info :trial.loader "Incrementally loading ~a" object)
-  (with-timing-report (:info :trial.loader)
-    (if (current-area loader)
-        (stage object (current-area loader))
-        (let ((area (make-instance 'staging-area)))
+  (if (current-area loader)
+      (stage object (current-area loader))
+      (with-timing-report (:info :trial.loader)
+        (let ((area (make-instance 'staging-area :loader loader)))
           (with-cleanup-on-failure (abort-commit area)
             (stage object area))
           (apply #'commit area loader args)))))
@@ -198,7 +203,9 @@
 
 (defmethod load-with ((loader loader) (resources vector))
   (loop for resource across resources
-        do (load resource)))
+        for i from 0
+        do (load resource)
+           (progress loader i (length resources))))
 
 (defclass streamed-loader (task-runner loader)
   ((context :initform NIL :accessor context)))
