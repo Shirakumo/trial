@@ -173,18 +173,20 @@
   (glfw:cursor context))
 
 (defmethod (setf cursor) (cursor (context context))
-  (setf (glfw:cursor context) (case cursor
-                                ((:cursor :pointer) :arrow)
-                                (:text :ibeam)
-                                (:hand :pointing-hand)
-                                (:resize :resize-all)
-                                (:disallowed :not-allowed)
-                                (:ew-resize :resize-ew)
-                                (:ns-resize :resize-ns)
-                                (:nwse-resize :resize-nwse)
-                                (:nesw-resize :resize-nesw)
-                                (:all-resize :resize-all)
-                                (T cursor))))
+  (ignore-errors
+   (setf (glfw:cursor context) (case cursor
+                                 ((:cursor :pointer NIL) :arrow)
+                                 (:text :ibeam)
+                                 (:hand :pointing-hand)
+                                 (:resize :resize-all)
+                                 (:disallowed :not-allowed)
+                                 (:ew-resize :resize-ew)
+                                 (:ns-resize :resize-ns)
+                                 (:nwse-resize :resize-nwse)
+                                 (:nesw-resize :resize-nesw)
+                                 (:all-resize :resize-all)
+                                 (T cursor)))
+   cursor))
 
 (defmethod (setf icon) ((icon rgba-icon) (context context))
   (setf (glfw:icon context) (list (list (rgba-icon-data icon)
