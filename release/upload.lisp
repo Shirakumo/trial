@@ -79,12 +79,33 @@
 (defun release-systems (release)
   (let ((systems ()))
     (when (directory (make-pathname :name :wild :type "run" :defaults release))
-      (push "linux" systems))
+      (push :gnu-linux systems))
     (when (directory (make-pathname :name :wild :type "o" :defaults release))
-      (push "mac" systems))
+      (push :mac systems))
     (when (directory (make-pathname :name :wild :type "exe" :defaults release))
-      (push "windows" systems))
+      (push :windows systems))
     systems))
+
+(defun release-executable (release system)
+  (flet ((try (files)
+           (when files
+             (file-namestring (first files)))))
+    (case system
+      ((:linux :gnu-linux)
+       (try (directory (make-pathname :name :wild :type "run" :defaults release))))
+      (:mac 
+       (try (directory (make-pathname :name :wild :type "o" :defaults release))))
+      (:windows 
+       (try (directory (make-pathname :name :wild :type "exe" :defaults release)))))))
+
+(defun template (template output release &key branch preview platform secret)
+  (file-replace template output `(("\\$CONTENT" ,(uiop:native-namestring release))
+                                  ("\\$BRANCH" ,(or branch ""))
+                                  ("\\$PREVIEW" ,(if preview "1" "0"))
+                                  ("\\$VERSION" ,(release-version release))
+                                  ("\\$PLATFORM" ,(if platform (string-downcase platform) ""))
+                                  ("\\$EXECUTABLE" ,(if platform (release-executable release platform) ""))
+                                  ("\\$SECRET" ,(or secret "")))))
 
 (defmethod upload ((service (eql :itch)) &key (release (release)) (bundles (config :itch :bundles)) (user (config :itch :user)) (project (config :itch :project)) &allow-other-keys)
   (let ((version (release-version release)))
@@ -95,9 +116,7 @@
 (defmethod upload ((service (eql :steam)) &key (release (release)) (branch (config :steam :branch)) (preview (config :steam :preview)) (user (config :steam :user)) (password (config :steam :password)) &allow-other-keys)
   (let ((template (make-pathname :name "app-build" :type "vdf" :defaults (output)))
         (build (make-pathname :name "app-build" :type "vdf" :defaults release)))
-    (file-replace template build `(("\\$CONTENT" ,(uiop:native-namestring release))
-                                   ("\\$BRANCH" ,(or branch ""))
-                                   ("\\$PREVIEW" ,(if preview "1" "0"))))
+    (template template build release :branch branch :preview preview)
     (run "steamcmd.sh"
          "+login" user (or password (password user))
          "+run_app_build" (uiop:native-namestring build)
@@ -105,13 +124,17 @@
 
 (defmethod upload ((service (eql :gog)) &key (release (release)) (branch (config :gog :branch)) (user (config :gog :user)) (password (config :gog :password)) &allow-other-keys)
   (destructuring-bind (branch &optional branch-password) (if (listp branch) branch (list branch))
-    (run "GOGGalaxyPipelineBuilder"
-         "build-game" (make-pathname :name "gog" :type "json" :defaults (output))
-         "--username" user
-         "--password" password
-         "--version" release
-         "--branch" branch
-         "--branch-password" branch-password)))
+    (dolist (system (release-systems release))
+      (let ((template (make-pathname :name "gog" :type "json" :defaults (output)))
+            (build (make-pathname :name "gog-tmp" :type "json" :defaults (output))))
+        (template template build release :platform system :secret (password password "client_secret"))
+        (run "GOGGalaxyPipelineBuilder"
+             "build-game" build
+             "--username" user
+             "--password" (password password)
+             "--version" release
+             "--branch" branch
+             "--branch_password" branch-password)))))
 
 (defmethod upload ((service (eql :all)) &rest args &key &allow-other-keys)
   (apply #'upload (remove-if-not #'config '(:itch :steam :gog :http :ssh :ftp :rsync :keygen)) args))
