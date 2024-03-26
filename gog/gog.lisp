@@ -40,8 +40,8 @@
   (gog:shutdown))
 
 (defmethod trial:username ((main main))
-  (if (gog:initialized-p)
-      (gog:persona-name T)
+  (or (when (and (gog:initialized-p) (gog:signed-in-p T))
+        (ignore-errors (gog:persona-name T)))
       (call-next-method)))
 
 (defmethod trial:poll-input :after ((main main))

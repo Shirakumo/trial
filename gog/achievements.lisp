@@ -4,7 +4,7 @@
   ())
 
 (defmethod trial:load-achievement-data ((api achievement-api))
-  (unless (gog:initialized-p)
+  (unless (and (gog:initialized-p) (gog:signed-in-p T))
     (error "Not connected to GOG.")))
 
 (trial:define-handler (achievement-api trial:achievement-unlocked :after) ((achievement trial:achievement))
@@ -14,7 +14,8 @@
   (setf (gog:achieved-p (string-downcase (trial:name achievement))) NIL))
 
 (defmethod trial:notifications-display-p ((api achievement-api))
-  (gog:initialized-p))
+  (and (gog:initialized-p)
+       (gog:signed-in-p T)))
 
 (defmethod (setf trial:notifications-display-p) (value (api achievement-api))
   NIL)
