@@ -5,7 +5,7 @@ float to_linear_depth(in float z_b, in float near_plane, in float far_plane){
   return 2.0 * far_plane * near_plane / (near_plane + far_plane - z_n * (near_plane - far_plane));
 }
 
-vec3 depth_normal(sampler2D depth_tex, in vec2 uv, in mat4 inv_view_projection_matrix){
+vec3 depth_normal(in sampler2D depth_tex, in vec2 uv, in mat4 inv_view_projection_matrix){
   vec2 inv_size = vec2(1.0)/vec2(textureSize(depth_tex, 0).xy);
 
   vec2 uv0 = uv;
@@ -23,6 +23,6 @@ vec3 depth_normal(sampler2D depth_tex, in vec2 uv, in mat4 inv_view_projection_m
   return normalize(cross(P1 - P0, P2 - P0));
 }
 
-vec3 depth_world_pos(sampler2D depth_tex, in vec2 uv, in mat4 inv_view_projection_matrix){
+vec3 depth_world_pos(in sampler2D depth_tex, in vec2 uv, in mat4 inv_view_projection_matrix){
   return to_world_position(uv, texture(depth_tex, uv).x, inv_view_projection_matrix);
 }

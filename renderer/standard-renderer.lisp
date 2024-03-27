@@ -54,7 +54,7 @@
 (define-shader-pass standard-render-pass (per-object-pass standard-environment-pass)
   ((color :port-type output :texspec (:internal-format :rgba32f) :attachment :color-attachment0 :reader color)
    (normal :port-type output :texspec (:internal-format :rgb16f) :attachment :color-attachment1 :reader normal)
-   (depth :port-type output :attachment :depth-stencil-attachment :reader depth)
+   (depth :port-type output :texspec (:internal-format :depth-stencil) :attachment :depth-stencil-attachment :reader depth)
    (material-block :buffer T :reader material-block)
    (light-block :buffer T :reader light-block)
    (allocated-textures :initform (make-lru-cache 16 'eq) :accessor allocated-textures)
