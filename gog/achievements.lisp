@@ -8,10 +8,12 @@
     (error "Not connected to GOG.")))
 
 (trial:define-handler (achievement-api trial:achievement-unlocked :after) ((achievement trial:achievement))
-  (setf (gog:achieved-p (string-downcase (trial:name achievement))) T))
+  (setf (gog:achieved-p (string-downcase (trial:name achievement))) T)
+  (gog:store (gog:interface 'gog:stats)))
 
 (trial:define-handler (achievement-api trial:achievement-relocked :after) ((achievement trial:achievement))
-  (setf (gog:achieved-p (string-downcase (trial:name achievement))) NIL))
+  (setf (gog:achieved-p (string-downcase (trial:name achievement))) NIL)
+  (gog:store (gog:interface 'gog:stats)))
 
 (defmethod trial:notifications-display-p ((api achievement-api))
   (and (gog:initialized-p)

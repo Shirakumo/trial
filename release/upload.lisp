@@ -134,7 +134,8 @@
              "--password" (password password)
              "--version" release
              "--branch" branch
-             "--branch_password" branch-password)))))
+             "--branch_password" branch-password)
+        (delete-file build)))))
 
 (defmethod upload ((service (eql :all)) &rest args &key &allow-other-keys)
   (apply #'upload (remove-if-not #'config '(:itch :steam :gog :http :ssh :ftp :rsync :keygen)) args))
