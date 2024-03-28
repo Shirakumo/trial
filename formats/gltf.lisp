@@ -104,7 +104,8 @@
                         (gltf:path (gltf:target channel)) (gltf:name animation)))))
     (trial::recompute-duration clip)
     (when extras
-      (let ((fwd (gethash "forward-kinematic" extras))
+      (let ((fwd (or (gethash "forward-kinematic" extras)
+                     (gethash "root-motion" extras)))
             (next (gethash "next" extras))
             (loop (gethash "loop" extras T)))
         (when fwd
