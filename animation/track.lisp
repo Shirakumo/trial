@@ -331,3 +331,13 @@
   (when (< 1 (length (rotation track)))
     (sample (trotation transform) (rotation track) 0.0))
   transform)
+
+(defclass slot-value-track (fast-animation-track)
+  ((slot-name :initarg :slot-name :accessor slot-name)))
+
+(defmethod sample (object (track transform-track) time &key loop-p)
+  (declare (type single-float time))
+  (declare (optimize speed))
+  (let ((slot (slot-name track)))
+    (setf (slot-value object slot) (sample (slot-value object slot) (location track) time :loop-p loop-p))
+    object))

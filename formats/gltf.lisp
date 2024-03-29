@@ -90,18 +90,33 @@
                                 (:cubicspline :hermite)))
   (setf (frames track) (cons (gltf:input sampler) (gltf:output sampler))))
 
-(defun load-clip (animation)
+(defgeneric translate-track-pointer (pointer track gltf))
+
+(defmethod translate-track-pointer (pointer (track transform-track) gltf)
+  (translate-track-pointer pointer (change-class track 'trial::slot-value-track) gltf))
+
+;; FIXME: How do we actually translate the pointer to the corresponding lisp-side object slot?
+;;        it's unlikely to be what's pointed to by the json pointer, since objects are transformed
+;;        to more fitting native representations that should be manipulated instead.
+
+(defun load-clip (gltf animation)
   (let ((clip (make-instance 'clip :name (gltf:name animation)))
         (extras (gltf:extras animation)))
     (loop for channel across (gltf:channels animation)
           for sampler = (svref (gltf:samplers animation) (gltf:sampler channel))
           for track = (find-animation-track clip (gltf:idx (gltf:node (gltf:target channel))) :if-does-not-exist :create)
           do (case (gltf:path (gltf:target channel))
-               (:translation (load-animation-track (location track) sampler))
-               (:scale (load-animation-track (scaling track) sampler))
-               (:rotation (load-animation-track (rotation track) sampler))
+               (:translation
+                (load-animation-track (location track) sampler))
+               (:scale
+                (load-animation-track (scaling track) sampler))
+               (:rotation
+                (load-animation-track (rotation track) sampler))
+               (:pointer
+                (translate-track-pointer (gltf:pointer channel) track gltf)
+                (load-animation-track track sampler))
                (T (v:warn :trial.gltf "Unknown animation channel target path: ~s on ~s, ignoring."
-                        (gltf:path (gltf:target channel)) (gltf:name animation)))))
+                          (gltf:path (gltf:target channel)) (gltf:name animation)))))
     (trial::recompute-duration clip)
     (when extras
       (let ((fwd (or (gethash "forward-kinematic" extras)
