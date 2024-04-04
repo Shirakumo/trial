@@ -182,3 +182,6 @@
         (when (<= (decf (respawn-timer trigger) dt) 0.0)
           (setf (respawn-timer trigger) (respawn-cooldown trigger))
           (draw-instance trigger))))))
+
+(defclass simple-trigger-volume (one-shot-trigger-volume thunk-trigger-volume)
+  ())

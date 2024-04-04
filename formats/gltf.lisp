@@ -100,8 +100,7 @@
 ;;        to more fitting native representations that should be manipulated instead.
 
 (defun load-clip (gltf animation)
-  (let ((clip (make-instance 'clip :name (gltf:name animation)))
-        (extras (gltf:extras animation)))
+  (let ((clip (make-instance 'clip :name (gltf:name animation))))
     (loop for channel across (gltf:channels animation)
           for sampler = (svref (gltf:samplers animation) (gltf:sampler channel))
           for track = (find-animation-track clip (gltf:idx (gltf:node (gltf:target channel))) :if-does-not-exist :create)
@@ -118,20 +117,11 @@
                (T (v:warn :trial.gltf "Unknown animation channel target path: ~s on ~s, ignoring."
                           (gltf:path (gltf:target channel)) (gltf:name animation)))))
     (trial::recompute-duration clip)
-    (when extras
-      (let ((fwd (or (gethash "forward-kinematic" extras)
-                     (gethash "root-motion" extras)))
-            (next (gethash "next" extras))
-            (loop (gethash "loop" extras T)))
-        (when fwd
-          (change-class clip 'forward-kinematic-clip
-                        :velocity-scale (gethash "velocity-scale" (gltf:extras animation) 1.0)
-                        :track (etypecase fwd
-                                 ((or string integer) fwd)
-                                 ((eql T) 0))))
-        (if next
-            (setf (next-clip clip) next)
-            (setf (loop-p clip) loop))))
+    (when (gltf:root-motion-p animation)
+      (change-class clip 'forward-kinematic-clip :velocity-scale (gltf:velocity-scale animation)))
+    (if (gltf:next animation)
+        (setf (next-clip clip) (gltf:next animation))
+        (setf (loop-p clip) (gltf:loop-p animation)))
     clip))
 
 (defun load-clips (gltf &optional (table (make-hash-table :test 'equal)))
@@ -503,31 +493,22 @@
 
 (defvar *trigger-translator-functions* (make-hash-table :test 'equal))
 
-(defmacro define-trigger-translation (key class fields &body initargs)
-  (let ((extra (gensym "EXTRA")))
-    `(setf (gethash ,(string-downcase key) *trigger-translator-functions*)
-           (lambda (trigger ,extra)
-             (let ,(loop for field in fields
-                         for (var default var-p) = (enlist field NIL NIL)
-                         collect `(,var (gethash ,(string-downcase var) ,extra ,default))
-                         when var-p
-                         collect `(,var-p (not (eq (gethash ,(string-downcase var) ,extra #1='#:nothing) #1#))))
-               (apply #'change-class trigger ',class
-                      (progn ,@initargs)))))))
+(defmacro define-trigger-translation (gltf-class args &body body)
+  `(setf (gethash ',gltf-class *trigger-translator-functions*)
+         (lambda ,args
+           ,@body)))
 
 (defun load-trigger (model child node)
   (etypecase child
     (basic-node
      (change-class child 'trial:trigger-volume)))
-  (let ((shape (load-shape (gltf:shape (gltf:trigger node)) model))
-        (extras (gltf:extras node)))
+  (let ((shape (load-shape (gltf:shape (gltf:trigger node)) model)))
     (setf (trial:primitive-collision-mask shape) (collision-filter-mask (gltf:collision-filter (gltf:trigger node))))
     (setf (trial:physics-primitives child) shape)
-    (when extras
-      (loop for key being the hash-keys of *trigger-translator-functions* using (hash-value function)
-            do (when (gethash key extras)
-                 (return (funcall function child extras)))
-            finally (error "Unknown trigger volume type.")))))
+    (when (gltf:shirakumo-trigger-data node)
+      (funcall (or (gethash (type-of (gltf:shirakumo-trigger-data node)) *trigger-translator-functions*)
+                   (error "Unknown trigger volume type."))
+               child (gltf:shirakumo-trigger-data node)))))
 
 (defun %find-child (name node &optional errorp)
   (sequences:dosequence (child node (when errorp (error "No child named ~a found!" name)))
@@ -535,10 +516,15 @@
                (string= name (name child) :end2 (length name)))
       (return child))))
 
-(define-trigger-translation spawn trial::spawner-trigger-volume (spawn spawn-count (auto-deactivate T) respawn-cooldown)
-  (destructuring-bind (&optional class-or-count &rest args) (enlist (read-from-string spawn))
+(define-trigger-translation gltf:shirakumo-trigger (trigger trigger-data)
+  (change-class trigger 'trial::simple-trigger-volume
+                :form (gltf:form trigger-data)))
+
+(define-trigger-translation gltf:shirakumo-spawner (trigger trigger-data)
+  (destructuring-bind (&optional class-or-count &rest args) (enlist (read-from-string (gltf:spawn trigger-data)))
     (let ((spawn-volume (aref (physics-primitives trigger) 0))
-          (trig-volume (%find-child "trigger" trigger)))
+          (trig-volume (%find-child "trigger" trigger))
+          (spawn-count (gltf:spawn-count trigger-data)))
       (cond (trig-volume
              ;; Copy physics primitive //and transform// over
              (setf (physics-primitives trigger) (physics-primitives trig-volume))
@@ -551,17 +537,17 @@
          (setf class-or-count (%find-child "class" trigger T)))
         (symbol))
       (clear trigger)
-      (when respawn-cooldown
-        (setf auto-deactivate NIL))
-      (list :spawn-class class-or-count
-            :spawn-arguments args
-            :spawn-count (or spawn-count 1)
-            :spawn-volume spawn-volume
-            :auto-deactivate auto-deactivate
-            :respawn-cooldown respawn-cooldown))))
+      (change-class trigger 'trial::spawner-trigger-volume
+                    :spawn-class class-or-count
+                    :spawn-arguments args
+                    :spawn-count (or spawn-count 1)
+                    :spawn-volume spawn-volume
+                    :auto-deactivate (gltf:auto-deactivate-p trigger-data)
+                    :respawn-cooldown (gltf:respawn-cooldown trigger-data)))))
 
-(define-trigger-translation kill trial::kill-trigger-volume (kill)
-  (list :class-name (read-from-string kill)))
+(define-trigger-translation gltf:shirakumo-killvolume (trigger trigger-data)
+  (change-class trigger 'trial::kill-trigger-volume
+                :class-name (read-from-string (gltf:kill trigger-data))))
 
 (defmethod load-model (input (type (eql :glb)) &rest args)
   (apply #'load-model input :gltf args))
