@@ -185,3 +185,34 @@
 
 (defclass simple-trigger-volume (one-shot-trigger-volume thunk-trigger-volume)
   ())
+
+(defclass checked-trigger-volume (trigger-volume)
+  ((comparator :accessor comparator :initform 'eql :initarg :comparator :accessor comparator)
+   (expected-value :accessor expected-value :initform NIL :initarg :expected-value :accessor expected-value)))
+
+(defmethod trigger-passes-p ((trigger checked-trigger-volume))
+  (let ((expected (expected-value trigger))
+        (value (value trigger)))
+    (etypecase (comparator trigger)
+      ((eql T) T)
+      ((eql NIL) NIL)
+      ((or symbol function)
+       (funcall (comparator trigger) expected value)))))
+
+(defmethod collides-p :around ((a rigidbody) (trigger checked-trigger-volume) hit)
+  (when (trigger-passes-p trigger)
+    (call-next-method)))
+
+(define-global +global-sequences+ (make-hash-table :test 'eql))
+
+(defclass global-sequence-trigger (one-shot-trigger-volume checked-trigger-volume class-filtered-trigger-volume)
+  ((comparator :initform '<=)
+   (expected-value :initform 0)
+   (sequence-id :initform T :initarg :sequence-id :accessor sequence-id)
+   (new-value :initform 1 :initarg :new-value :accessor new-value)))
+
+(defmethod value ((trigger global-sequence-trigger))
+  (gethash (sequence-id trigger) +global-sequences+))
+
+(defmethod activate-trigger (a (trigger global-sequence-trigger))
+  (setf (gethash (sequence-id trigger) +global-sequences+) (new-value trigger)))
