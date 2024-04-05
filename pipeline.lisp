@@ -278,6 +278,9 @@
     ;;        and fbos to reduce the amount of unnecessary allocation. This is separate
     ;;        from the previous issue as the scenes typically have separate pipelines.
     (clear-pipeline pipeline)
+    (loop for pass across (passes pipeline)
+          do (unless (find pass passes)
+               (leave pass pipeline)))
     (setf (passes pipeline) (coerce passes 'vector))
     (setf (textures pipeline) textures)
     (setf (texspecs pipeline) texspecs)))
