@@ -1,5 +1,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
+(define-event scene-changed () scene old-scene)
+
 (defclass main (display gamepad-input-handler)
   ((scene :initform (make-instance 'pipelined-scene) :accessor scene)
    (loader :initform (make-instance 'loader) :accessor loader)))
@@ -92,7 +94,8 @@
     (with-cleanup-on-failure (setf (scene main) old)
       (setup-scene main new)
       (with-timing-report (info :trial.main "Commit took ~fs run time, ~fs clock time.")
-        (commit new (loader main)))))
+        (commit new (loader main)))
+      (handle (make-event 'scene-changed :scene new :old-scene old) new)))
   (values new old))
 
 (defmethod enter-and-load ((object renderable) (container container) (main main))

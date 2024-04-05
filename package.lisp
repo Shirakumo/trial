@@ -1386,6 +1386,8 @@
   ;; main.lisp
   (:export
    #:+main+
+   #:scene-changed
+   #:old-scene
    #:main
    #:username
    #:scene
