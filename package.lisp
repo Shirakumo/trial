@@ -1732,6 +1732,7 @@
   (:export
    #:z-prepass
    #:z-prepass-standard-render-pass
+   #:z-pre-pbr-render-pass
    #:ssao-pbr-render-pass
    #:ssao-pass
    #:depth
