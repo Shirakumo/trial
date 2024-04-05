@@ -11,7 +11,8 @@
 
 (defmethod flow:sever ((pipeline pipeline))
   (loop for pass across (passes pipeline)
-        do (flow:sever pass)))
+        do (flow:sever pass))
+  (setf (nodes pipeline) NIL))
 
 (defmethod enter ((pass shader-pass) (pipeline pipeline))
   (pushnew pass (nodes pipeline)))
@@ -248,12 +249,12 @@
                                             (texture-texspec-matches-p texture texspec target))
                                    (return texture))
                               finally (return (apply #'make-instance 'texture texspec)))))
-          (setf (texture port) texture)
           (multiple-value-bind (width height) (texspec-real-size texspec (width target) (height target))
             (setf (width texture) width)
             (setf (height texture) height))
           (dolist (connection (flow:connections port))
             (setf (texture (flow:right connection)) texture))
+          (setf (texture port) texture)
           (vector-push-extend texture textures)
           (vector-push-extend texspec texspecs))))
     ;; Compute frame buffers
@@ -274,13 +275,15 @@
              (loop for pass in passes
                    collect (list pass (loop for port in (flow:ports pass)
                                             collect (list (flow:name port) (texture port))))))
-    ;; FIXME: When transitioning between scenes we should try to re-use existing textures
-    ;;        and fbos to reduce the amount of unnecessary allocation. This is separate
-    ;;        from the previous issue as the scenes typically have separate pipelines.
-    (clear-pipeline pipeline)
     (loop for pass across (passes pipeline)
           do (unless (find pass passes)
-               (leave pass pipeline)))
+               (leave pass pipeline)
+               (flow:sever pass)
+               (finalize pass)))
+    (loop for texture across (textures pipeline)
+          do (unless (find texture textures)
+               (finalize texture)))
+    (setf (nodes pipeline) NIL)
     (setf (passes pipeline) (coerce passes 'vector))
     (setf (textures pipeline) textures)
     (setf (texspecs pipeline) texspecs)))

@@ -88,6 +88,8 @@
   (unless (node :controller scene)
     (enter (make-instance 'controller) scene)))
 
+;; FIXME: When transitioning between scenes we should try to re-use existing textures
+;;        and fbos to reduce the amount of unnecessary allocation.
 (defmethod change-scene ((main main) (new scene) &key (old (scene main)))
   (unless (eq old new)
     (setf (scene main) new)
