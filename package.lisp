@@ -1021,6 +1021,9 @@
    #:high-pass-filter
    #:threshold
    #:low-pass-filter
+   #:bloom-merge-pass
+   #:bloom-cutoff-pass
+   #:bloom-cutoff
    #:chromatic-aberration-filter
    #:offset
    #:luminance-pass
@@ -1485,6 +1488,7 @@
    #:clear-pipeline
    #:connect
    #:connect*
+   #:construct-pipeline
    #:check-consistent
    #:resize
    #:pack-pipeline)

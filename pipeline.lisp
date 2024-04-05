@@ -51,6 +51,50 @@
              `((enter ,(caar data) ,pipeg)))
        ,pipeg)))
 
+(defmacro construct-pipeline (pipeline passes &body connections)
+  (let ((pipelineg (gensym "PIPELINE")))
+    (labels ((process-connection (connection)
+               (case (car connection)
+                 (:if
+                  (destructuring-bind (test then else) (rest connection)
+                    `(cond (,test
+                            ,@(process-connections then))
+                           (T
+                            ,@(process-connections else)))))
+                 (:case
+                  (destructuring-bind (test . cases) (rest connection)
+                    `(case ,test
+                       ,@(loop for (case . then) in cases
+                               collect `(,case ,@(process-connections then))))))
+                 (:when
+                     (destructuring-bind (test . then) (rest connection)
+                       `(when ,test
+                          ,@(process-connections then))))
+                 (:unless
+                     (destructuring-bind (test . then) (rest connection)
+                       `(unless ,test
+                          ,@(process-connections then))))
+                 (T
+                  (let* ((sequence (loop for a in connection until (keywordp a) collect a))
+                         (kargs (loop for a = (car connection) until (keywordp a) while connection do (pop connection)))
+                         (body (loop for a in sequence
+                                     for b in (rest sequence)
+                                     for (a-pass a_ a-port) = (enlist a NIL 'color)
+                                     for (b-pass b-port b_) = (enlist b 'previous-pass NIL)
+                                     collect `(connect (port ,a-pass ',a-port) (port ,b-pass ',b-port) ,pipelineg))))
+                    (if (getf kargs :when)
+                        `(when ,(getf kargs :when) ,@body)
+                        `(progn ,@body))))))
+             (process-connections (connections)
+               (loop for connection in connections
+                     collect (process-connection connection))))
+      `(let* ((,pipelineg ,pipeline)
+              ,@(loop for pass in passes
+                      for (type . args) = (enlist pass)
+                      for name = (or (unquote (getf args :name)) type)
+                      collect `(,name (or (node ',name ,pipelineg) (make-instance ',type ,@args)))))
+         ,@(process-connections connections)))))
+
 (defmethod check-consistent ((pipeline pipeline))
   (dolist (node (nodes pipeline))
     (check-consistent node)))

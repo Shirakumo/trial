@@ -176,6 +176,9 @@
 (defun unlist (item)
   (if (listp item) (first item) item))
 
+(defun unquote (item)
+  (if (and (listp item) (eql 'quote (first item))) (second item) item))
+
 (defun remf* (list &rest keys)
   (loop for (k v) on list by #'cddr
         for x = (member k keys)
