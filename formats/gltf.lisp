@@ -126,7 +126,7 @@
 
 (defun load-clips (gltf &optional (table (make-hash-table :test 'equal)))
   (loop for animation across (gltf:animations gltf)
-        for clip = (load-clip animation)
+        for clip = (load-clip gltf animation)
         do (setf (gethash (name clip) table) clip))
   table)
 
@@ -309,7 +309,7 @@
     (loop for material across (gltf:materials gltf)
           for pbr = (gltf:pbr material)
           for name = (or (gltf:name material) (gltf:idx material))
-          for mr = (load-image asset (gltf:metallic-roughness pbr))
+          for mr = (when pbr (load-image asset (gltf:metallic-roughness pbr)))
           for omr = (load-image asset (gltf:occlusion-metalness-roughness-texture material))
           for rmo = (load-image asset (gltf:roughness-metallic-occlusion-texture material))
           do (when mr (setf (trial::swizzle mr) '(:b :g :r :a)))
@@ -318,15 +318,15 @@
              (let ((material (trial:ensure-instance
                               (trial:find-material name model NIL) 'trial:pbr-material
                               :double-sided-p (gltf:double-sided-p material)
-                              :albedo-texture (load-image asset (gltf:albedo pbr))
+                              :albedo-texture (when pbr (load-image asset (gltf:albedo pbr)))
                               :metal-rough-texture mr
                               :metal-rough-occlusion-texture (or omr rmo)
                               :occlusion-texture (load-image asset (gltf:occlusion-texture material))
                               :emission-texture (load-image asset (gltf:emissive-texture material))
                               :normal-texture (load-image asset (gltf:normal-texture material))
-                              :albedo-factor (to-vec (gltf:albedo-factor pbr))
-                              :metalness-factor (float (gltf:metallic-factor pbr) 0f0)
-                              :roughness-factor (float (gltf:roughness-factor pbr) 0f0)
+                              :albedo-factor (if pbr (to-vec (gltf:albedo-factor pbr)) (vec 1 1 1 1))
+                              :metalness-factor (if pbr (float (gltf:metallic-factor pbr) 0f0) 0.0)
+                              :roughness-factor (if pbr (float (gltf:roughness-factor pbr) 0f0) 1.0)
                               :emission-factor (to-vec (gltf:emissive-factor material))
                               :occlusion-factor (if (gltf:occlusion-texture material) 1.0 0.0)
                               :alpha-cutoff (float (gltf:alpha-cutoff material) 0f0)
