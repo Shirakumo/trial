@@ -518,6 +518,7 @@
 
 (define-trigger-translation gltf:shirakumo-trigger (trigger trigger-data)
   (change-class trigger 'trial::simple-trigger-volume
+                :filter (read-from-string (gltf:filter trigger-data))
                 :form (gltf:form trigger-data)))
 
 (define-trigger-translation gltf:shirakumo-spawner (trigger trigger-data)
@@ -538,6 +539,7 @@
         (symbol))
       (clear trigger)
       (change-class trigger 'trial::spawner-trigger-volume
+                    :filter (read-from-string (gltf:filter trigger-data))
                     :spawn-class class-or-count
                     :spawn-arguments args
                     :spawn-count (or spawn-count 1)
@@ -547,7 +549,14 @@
 
 (define-trigger-translation gltf:shirakumo-killvolume (trigger trigger-data)
   (change-class trigger 'trial::kill-trigger-volume
+                :filter (read-from-string (gltf:filter trigger-data))
                 :class-name (read-from-string (gltf:kill trigger-data))))
+
+(define-trigger-translation gltf:shirakumo-checkpoint (trigger trigger-data)
+  (let ((array (gltf:spawn-point trigger-data)))
+    (change-class trigger 'trial::checkpoint-trigger
+                  :filter (read-from-string (gltf:filter trigger-data))
+                  :spawn-point (vec (aref array 0) (aref array 1) (aref array 2)))))
 
 (defmethod load-model (input (type (eql :glb)) &rest args)
   (apply #'load-model input :gltf args))

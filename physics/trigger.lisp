@@ -31,13 +31,13 @@
 (defmethod activate-trigger :after (a (trigger one-shot-trigger-volume))
   (setf (active-p trigger) NIL))
 
-(defclass class-filtered-trigger-volume (trigger-volume)
-  ((class-name :initarg :class-name :initform 'rigid-shape :accessor class-name)))
+(defclass type-filtered-trigger-volume (trigger-volume)
+  ((type-expression :initarg :type-expression :initform 'rigid-shape :accessor type-expression)))
 
-(define-transfer class-filtered-trigger-volume class-name)
+(define-transfer type-filtered-trigger-volume type-expression)
 
-(defmethod collides-p ((a rigid-shape) (trigger class-filtered-trigger-volume) hit)
-  (and (typep a (class-name trigger)) (call-next-method)))
+(defmethod collides-p ((a rigid-shape) (trigger type-filtered-trigger-volume) hit)
+  (and (typep a (type-expression trigger)) (call-next-method)))
 
 (defclass rearming-trigger-volume (trigger-volume listener)
   ((cooldown :initarg :cooldown :initform 1.0 :accessor cooldown)
@@ -107,7 +107,7 @@
 (defmethod (setf accessor) (value (trigger accessor-trigger-volume))
   (reinitialize-instance trigger :accessor value))
 
-(defclass kill-trigger-volume (class-filtered-trigger-volume)
+(defclass kill-trigger-volume (type-filtered-trigger-volume)
   ())
 
 (defmethod activate-trigger ((entity entity) (trigger kill-trigger-volume))
@@ -121,7 +121,7 @@
         do (leave key T)
            (remhash key (spawned-objects trigger))))
 
-(defclass spawner-trigger-volume (trigger-volume listener)
+(defclass spawner-trigger-volume (type-filtered-trigger-volume listener)
   ((spawned-objects :initarg :spawned-objects :initform (tg:make-weak-hash-table :weakness :key) :accessor spawned-objects)
    (spawn-class :initarg :spawn-class :accessor spawn-class)
    (spawn-arguments :initarg :spawn-arguments :initform () :accessor spawn-arguments)
@@ -183,12 +183,14 @@
           (setf (respawn-timer trigger) (respawn-cooldown trigger))
           (draw-instance trigger))))))
 
-(defclass simple-trigger-volume (one-shot-trigger-volume thunk-trigger-volume)
+(defclass simple-trigger-volume (one-shot-trigger-volume type-filtered-trigger-volume thunk-trigger-volume)
   ())
 
 (defclass checked-trigger-volume (trigger-volume)
   ((comparator :accessor comparator :initform 'eql :initarg :comparator :accessor comparator)
    (expected-value :accessor expected-value :initform NIL :initarg :expected-value :accessor expected-value)))
+
+(define-transfer checked-trigger-volume comparator expected-value)
 
 (defmethod trigger-passes-p ((trigger checked-trigger-volume))
   (let ((expected (expected-value trigger))
@@ -205,14 +207,19 @@
 
 (define-global +global-sequences+ (make-hash-table :test 'eql))
 
-(defclass global-sequence-trigger (one-shot-trigger-volume checked-trigger-volume class-filtered-trigger-volume)
+(defclass global-sequence-trigger (one-shot-trigger-volume checked-trigger-volume type-filtered-trigger-volume)
   ((comparator :initform '<=)
    (expected-value :initform 0)
    (sequence-id :initform T :initarg :sequence-id :accessor sequence-id)
    (new-value :initform 1 :initarg :new-value :accessor new-value)))
+
+(define-transfer global-sequence-trigger comparator expected-value sequence-id new-value)
 
 (defmethod value ((trigger global-sequence-trigger))
   (gethash (sequence-id trigger) +global-sequences+))
 
 (defmethod activate-trigger (a (trigger global-sequence-trigger))
   (setf (gethash (sequence-id trigger) +global-sequences+) (new-value trigger)))
+
+(defclass checkpoint-trigger (one-shot-trigger-volume type-filtered-trigger-volume)
+  ((spawn-point :initform (vec 0 0 0) :accessor spawn-point)))
