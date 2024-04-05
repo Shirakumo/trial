@@ -116,3 +116,7 @@
   `(<- ,instance ,(if node
                       `(node ,node ,asset)
                       `(elt (find-scene T ,asset) 0))))
+
+(define-prefab-translator eval (instance asset args &rest body)
+  `((lambda ,args ,@body)
+    ,instance ,asset))
