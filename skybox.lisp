@@ -2,8 +2,9 @@
 
 (define-shader-entity skybox (fullscreen-entity)
   ((texture :initarg :texture :accessor texture)
-   (color :initarg :color :initform (vec3 1) :accessor color))
-  (:default-initargs :texture (error "TEXTURE required.")))
+   (color :initarg :color :initform (vec3 1) :accessor color)))
+
+(define-transfer skybox texture color)
 
 (defmethod stage :after ((skybox skybox) (area staging-area))
   (stage (texture skybox) area))
