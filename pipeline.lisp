@@ -9,6 +9,10 @@
 (defmethod finalize ((pipeline pipeline))
   (clear pipeline))
 
+(defmethod flow:sever ((pipeline pipeline))
+  (loop for pass across (passes pipeline)
+        do (flow:sever pass)))
+
 (defmethod enter ((pass shader-pass) (pipeline pipeline))
   (pushnew pass (nodes pipeline)))
 
@@ -22,6 +26,7 @@
         do (when (framebuffer pass)
              (finalize (framebuffer pass))
              (setf (framebuffer pass) NIL))
+           (flow:sever pass)
            (remove-listener pass pipeline))
   (setf (nodes pipeline) ())
   (setf (passes pipeline) #())
@@ -92,7 +97,8 @@
               ,@(loop for pass in passes
                       for (type . args) = (enlist pass)
                       for name = (or (unquote (getf args :name)) type)
-                      collect `(,name (or (node ',name ,pipelineg) (make-instance ',type ,@args)))))
+                      collect `(,name (ensure-instance (node ',name ,pipelineg) ,(if (listp type) type `',type) ,@args))))
+         (flow:sever ,pipelineg)
          ,@(process-connections connections)))))
 
 (defmethod check-consistent ((pipeline pipeline))
@@ -252,8 +258,10 @@
     (dolist (pass passes)
       (when (typep pipeline 'event-loop)
         (add-listener pass pipeline))
-      (unless (framebuffer pass)
-        (setf (framebuffer pass) (make-pass-framebuffer pass))))
+      (let ((fbo (make-pass-framebuffer pass)))
+        (if (framebuffer pass)
+            (setf (bindings (framebuffer pass)) (bindings fbo))
+            (setf (framebuffer pass) fbo))))
     ;; Now re-set the activation to short-modify the pipeline as necessary.
     (dolist (pass passes)
       (setf (active-p pass) (active-p pass)))
