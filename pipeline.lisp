@@ -34,12 +34,13 @@
   (setf (texspecs pipeline) #()))
 
 (defmethod connect ((source flow:port) (target flow:port) (pipeline pipeline))
-  (unless (or (find (flow:node source) (nodes pipeline))
-              (find (flow:node source) (passes pipeline)))
-    (enter (flow:node source) pipeline))
-  (unless (or (find (flow:node target) (nodes pipeline))
-              (find (flow:node target) (passes pipeline)))
-    (enter (flow:node target) pipeline))
+  (flet ((enter-if-new (node)
+           (unless (find node (nodes pipeline))
+             (if (eq pipeline (container node))
+                 (pushnew node (nodes pipeline))
+                 (enter node pipeline)))))
+    (enter-if-new (flow:node source))
+    (enter-if-new (flow:node target)))
   (flow:connect source target 'flow:directed-connection)
   pipeline)
 
@@ -97,7 +98,8 @@
               ,@(loop for pass in passes
                       for (type . args) = (enlist pass)
                       for name = (or (unquote (getf args :name)) type)
-                      collect `(,name (ensure-instance (node ',name ,pipelineg) ,(if (listp type) type `',type) ,@args))))
+                      collect `(,name (ensure-instance (node ',name ,pipelineg) ,(if (listp type) type `',type)
+                                                       :name ',name ,@args))))
          (flow:sever ,pipelineg)
          ,@(process-connections connections)))))
 
@@ -260,7 +262,7 @@
         (add-listener pass pipeline))
       (let ((fbo (make-pass-framebuffer pass)))
         (if (framebuffer pass)
-            (setf (bindings (framebuffer pass)) (bindings fbo))
+            (setf (attachments (framebuffer pass)) (attachments fbo))
             (setf (framebuffer pass) fbo))))
     ;; Now re-set the activation to short-modify the pipeline as necessary.
     (dolist (pass passes)
