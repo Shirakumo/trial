@@ -224,4 +224,6 @@
 (defclass checkpoint-trigger (one-shot-trigger-volume type-filtered-trigger-volume)
   ((spawn-point :initform (vec 0 0 0) :initarg :spawn-point :accessor spawn-point)))
 
+(define-transfer checkpoint-trigger spawn-point)
+
 (defmethod activate-trigger (a (trigger checkpoint-trigger)))
