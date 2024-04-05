@@ -2,7 +2,8 @@
 
 (define-shader-entity skybox (fullscreen-entity)
   ((texture :initarg :texture :accessor texture)
-   (color :initarg :color :initform (vec3 1) :accessor color)))
+   (color :initarg :color :initform (vec3 1) :accessor color)
+   (orientation :initarg :orientation :initform (quat) :accessor orientation)))
 
 (define-transfer skybox texture color)
 
@@ -14,7 +15,11 @@
   (activate (texture skybox)))
 
 (defmethod render ((skybox skybox) (shader shader-program))
-  (setf (uniform shader "view_matrix") (view-matrix))
+  (let ((mat (mat4)))
+    (declare (dynamic-extent mat))
+    (qmat (orientation skybox) mat)
+    (nm* mat (view-matrix))
+    (setf (uniform shader "view_matrix") mat))
   (setf (uniform shader "projection_matrix") (projection-matrix))
   (setf (uniform shader "texture_image") 0)
   (setf (uniform shader "multiplier") (color skybox))
