@@ -638,7 +638,7 @@
                    (dolist (object (load-environment-light (gltf:light node)))
                      (enter object scene)))
                  (when (gltf:envmap node)
-                   (let ((envmap (make-instance 'environment-map :input (gltf:envmap node))))
+                   (let ((envmap (make-instance 'environment-map :input (merge-pathnames (gltf:envmap node) input))))
                      (enter (make-instance 'environment-light :asset envmap :name :envlight) scene)
                      (enter (make-instance 'skybox :texture (resource envmap :environment-map) :name :skybox) scene)))
                  (recurse (gltf:nodes node) scene)))
