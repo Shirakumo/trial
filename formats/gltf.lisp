@@ -465,10 +465,12 @@
       (trial::simplify primitives))))
 
 (defun load-environment-light (light)
-  (make-instance 'trial:environment-light
-                 :color (vec (gltf:intensity light) (gltf:intensity light) (gltf:intensity light))
-                 :irradiance-map (trial:implement!)
-                 :environment-map (trial:implement!)))
+  (let ((envmap (trial:implement!)))
+    (list (make-instance 'trial:environment-light
+                         :color (vec (gltf:intensity light) (gltf:intensity light) (gltf:intensity light))
+                         :irradiance-map (trial:implement!)
+                         :environment-map envmap)
+          (make-instance 'trial:skybox :texture (resource envmap :environment-map)))))
 
 (defun load-rigidbody (model child node)
   ;; FIXME: implement joints
@@ -633,7 +635,12 @@
               for scene = (make-instance 'basic-node :name (gltf:name node))
               do (setf (gethash (gltf:name node) scenes) scene)
                  (when (gltf:light node)
-                   (enter (load-environment-light (gltf:light node)) scene))
+                   (dolist (object (load-environment-light (gltf:light node)))
+                     (enter object scene)))
+                 (when (gltf:envmap node)
+                   (let ((envmap (make-instance 'environment-map :input (gltf:envmap node))))
+                     (enter (make-instance 'environment-light :asset envmap :name :envlight) scene)
+                     (enter (make-instance 'skybox :texture (resource envmap :environment-map) :name :skybox) scene)))
                  (recurse (gltf:nodes node) scene)))
       model)))
 
