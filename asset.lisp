@@ -132,7 +132,9 @@
   thing)
 
 (defmethod coerce-asset-input ((asset asset) (path pathname))
-  (pool-path (pool asset) path))
+  (if (pool asset)
+      (pool-path (pool asset) path)
+      path))
 
 (defmethod coerce-asset-input ((asset asset) (list list))
   (loop for item in list collect (coerce-asset-input asset item)))
