@@ -115,6 +115,15 @@
                     :min-filter :linear
                     :mag-filter :linear))))))
 
+(defun texture-texspec-matches-p (texture texspec target)
+  (and (eq (internal-format texture) (getf texspec :internal-format))
+       (eq (target texture) (getf texspec :target))
+       (multiple-value-bind (w h) (texspec-real-size texspec (width target) (height target))
+         (and (= w (width texture))
+              (= h (height texture))))
+       (eq (min-filter texture) (getf texspec :min-filter))
+       (eq (mag-filter texture) (getf texspec :mag-filter))))
+
 (defun allocate-textures (passes textures texspec)
   (flet ((kind (port)
            ;; FIXME: This is really dumb and inefficient. If we could remember which port belongs
@@ -163,7 +172,9 @@
   (check-consistent pipeline)
   (v:info :trial.pipeline "~a packing for ~a (~ax~a)" pipeline target (width target) (height target))
   (let* ((passes (flow:topological-sort (nodes pipeline)))
-         (textures (make-array 0 :initial-element NIL :fill-pointer 0 :adjustable T)))
+         (existing-textures (textures pipeline))
+         (textures (make-array 0 :initial-element NIL :fill-pointer 0 :adjustable T))
+         (texspecs (make-array 0 :initial-element NIL :fill-pointer 0 :adjustable T)))
     ;; KLUDGE: We need to do the intersection here to ensure that we remove passes
     ;;         that are not part of this pipeline, but still connected to one of the
     ;;         passes that *is* part of the pipeline.
@@ -179,43 +190,43 @@
     ;; Compute full texture set
     (dolist (port (mapcan #'flow:ports passes))
       (when (typep port '(and (or static-input flow:out-port) texture-port))
-        (let ((texture (apply #'make-instance 'texture (normalized-texspec port))))
+        (let* ((texspec (normalized-texspec port))
+               (texture (loop for texture across existing-textures
+                              do (when (and (not (find texture textures))
+                                            (texture-texspec-matches-p texture texspec target))
+                                   (return texture))
+                              finally (return (apply #'make-instance 'texture texspec)))))
           (setf (texture port) texture)
+          (multiple-value-bind (width height) (texspec-real-size texspec (width target) (height target))
+            (setf (width texture) width)
+            (setf (height texture) height))
           (dolist (connection (flow:connections port))
             (setf (texture (flow:right connection)) texture))
-          (vector-push-extend texture textures))))
-    ;; Extract texspecs
-    (let ((texspecs (make-array (length textures))))
-      (loop for i from 0 below (length textures)
-            for texture = (aref textures i)
-            for texspec = (texture-texspec texture)
-            do (setf (aref texspecs i) texspec)
-               (multiple-value-bind (width height) (texspec-real-size texspec (width target) (height target))
-                 (setf (width texture) width)
-                 (setf (height texture) height)))
-      ;; Compute frame buffers
-      (dolist (pass passes)
-        (when (typep pipeline 'event-loop)
-          (add-listener pass pipeline))
-        (setf (framebuffer pass) (make-pass-framebuffer pass)))
-      ;; Now re-set the activation to short-modify the pipeline as necessary.
-      (dolist (pass passes)
-        (setf (active-p pass) (active-p pass)))
-      ;; All done.
-      (v:debug :trial.pipeline "~a pass order: ~a" pipeline passes)
-      (v:debug :trial.pipeline "~a texture count: ~a" pipeline (length textures))
-      (v:debug :trial.pipeline "~a texture allocation: ~:{~%~a~:{~%    ~a: ~a~}~}" pipeline
-               (loop for pass in passes
-                     collect (list pass (loop for port in (flow:ports pass)
-                                              collect (list (flow:name port) (texture port))))))
-      ;; FIXME: Replace textures with existing ones if they match to save on re-allocation.
-      ;; FIXME: When transitioning between scenes we should try to re-use existing textures
-      ;;        and fbos to reduce the amount of unnecessary allocation. This is separate
-      ;;        from the previous issue as the scenes typically have separate pipelines.
-      (clear-pipeline pipeline)
-      (setf (passes pipeline) (coerce passes 'vector))
-      (setf (textures pipeline) textures)
-      (setf (texspecs pipeline) texspecs))))
+          (vector-push-extend texture textures)
+          (vector-push-extend texspec texspecs))))
+    ;; Compute frame buffers
+    (dolist (pass passes)
+      (when (typep pipeline 'event-loop)
+        (add-listener pass pipeline))
+      (unless (framebuffer pass)
+        (setf (framebuffer pass) (make-pass-framebuffer pass))))
+    ;; Now re-set the activation to short-modify the pipeline as necessary.
+    (dolist (pass passes)
+      (setf (active-p pass) (active-p pass)))
+    ;; All done.
+    (v:debug :trial.pipeline "~a pass order: ~a" pipeline passes)
+    (v:debug :trial.pipeline "~a texture count: ~a" pipeline (length textures))
+    (v:debug :trial.pipeline "~a texture allocation: ~:{~%~a~:{~%    ~a: ~a~}~}" pipeline
+             (loop for pass in passes
+                   collect (list pass (loop for port in (flow:ports pass)
+                                            collect (list (flow:name port) (texture port))))))
+    ;; FIXME: When transitioning between scenes we should try to re-use existing textures
+    ;;        and fbos to reduce the amount of unnecessary allocation. This is separate
+    ;;        from the previous issue as the scenes typically have separate pipelines.
+    (clear-pipeline pipeline)
+    (setf (passes pipeline) (coerce passes 'vector))
+    (setf (textures pipeline) textures)
+    (setf (texspecs pipeline) texspecs)))
 
 (defmethod render ((pipeline pipeline) target)
   (loop for pass across (passes pipeline)
