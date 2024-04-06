@@ -1270,6 +1270,11 @@
 
 (define-global +gl-extensions+ ())
 
+(defmacro %cache (value)
+  (let ((cache (gensym "CACHE")))
+    `(let ((,cache (load-time-value (cons NIL NIL))))
+       (or (car ,cache) (setf (car ,cache) ,value)))))
+
 (defun cache-gl-extensions ()
   (let ((*package* (find-package "KEYWORD")))
     (setf +gl-extensions+
@@ -1281,11 +1286,13 @@
 (defun gl-extension-p (extension)
   (find extension +gl-extensions+))
 
+(define-compiler-macro gl-extension-p (extension)
+  `(%cache (find ,extension +gl-extensions+)))
+
 (defmacro when-gl-extension (extension &body body)
   (let ((list (enlist extension)))
-    ;; TODO: Optimise this by caching the test after first runtime.
-    `(when (and ,@(loop for extension in list
-                        collect `(find ,extension +gl-extensions+)))
+    `(when (%cache (and ,@(loop for extension in list
+                                collect `(find ,extension +gl-extensions+))))
        ,@body)))
 
 (defmacro gl-extension-case (&body cases)
@@ -1294,8 +1301,8 @@
                            ((T otherwise)
                             `(T ,@body))
                            (T
-                            `((and ,@(loop for extension in (enlist extensions)
-                                           collect `(find ,extension +gl-extensions+)))
+                            `((%cache (and ,@(loop for extension in (enlist extensions)
+                                                   collect `(find ,extension +gl-extensions+))))
                               ,@body))))))
 
 (declaim (inline dbg))
