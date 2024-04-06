@@ -1,4 +1,5 @@
 #section COMPUTE_SHADER
+#extension GL_ARB_compute_shader : require
 //
 // Copyright (c) 2016 Advanced Micro Devices, Inc. All rights reserved.
 //

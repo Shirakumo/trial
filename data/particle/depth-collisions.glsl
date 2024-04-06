@@ -1,4 +1,5 @@
 #section COMPUTE_SHADER
+#extension GL_ARB_compute_shader : require
 #include (trial::trial "depth.glsl")
 
 uniform sampler2D depth_tex;

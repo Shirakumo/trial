@@ -1,4 +1,6 @@
 #section COMPUTE_SHADER
+#extension GL_ARB_compute_shader : require
+
 layout (local_size_x = SIMULATE_THREADS, local_size_y = 1, local_size_z = 1) in;
 #define FORCEFIELDS 32
 uint field_count = 0;

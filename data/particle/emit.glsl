@@ -1,4 +1,5 @@
 #section COMPUTE_SHADER
+#extension GL_ARB_compute_shader : require
 
 layout (local_size_x = EMIT_THREADS, local_size_y = 1, local_size_z = 1) in;
 uniform sampler2D random_tex;
