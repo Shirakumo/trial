@@ -451,7 +451,7 @@
              (recurse (node tf)
                (let ((tf (t+ tf (gltf-node-transform node))))
                  (when (and (gltf:collider node)
-                            #++(or (gltf:extra "virtual" node)
+                            #++(or (gltf:virtual-p node)
                                 (not (gltf:rigidbody node))
                                 (not (gltf:mesh node))))
                    (process (gltf:collider node) tf))
@@ -594,7 +594,7 @@
                                             thereis (eq joint node)))
                         ;; Eliminate nodes that are parts of a skin
                         NIL)
-                       ((and (gltf:extras node) (gethash "virtual" (gltf:extras node)))
+                       ((gltf:virtual-p node)
                         ;; Eliminate nodes that are marked as virtual
                         NIL)
                        ((gltf:mesh node)
@@ -654,9 +654,7 @@
                                                  :physics-material (gltf:physics-material (gltf:collider base-node))
                                                  :shape shape
                                                  :gltf (gltf:gltf base-node)))
-         (child (gltf:make-indexed 'gltf:node base-node :collider collider)))
-    (unless (gltf:extras child) (setf (gltf:extras child) (make-hash-table :test 'equal)))
-    (setf (gethash "virtual" (gltf:extras child)) T)
+         (child (gltf:make-indexed 'gltf:node base-node :collider collider :virtual-p T)))
     (gltf:push-child child base-node)))
 
 (defmethod optimize-model (file (type (eql :glb)) &rest args)
