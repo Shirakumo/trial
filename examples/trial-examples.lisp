@@ -26,7 +26,7 @@
 (defclass example (org.shirakumo.fraf.trial.harmony:settings-main)
   ((paused-p :initform NIL :accessor paused-p))
   (:default-initargs :clear-color (vec 0.13 0.15 0.1)
-                     :context '(:vsync T :version (4 3))))
+                     :context '(:vsync T :version (3 3))))
 
 (defmethod initialize-instance ((main example) &key example)
   (when example
@@ -98,7 +98,7 @@
   (setup-ui scene panel))
 
 (defmacro define-example (name &body body)
-  (form-fiddle:with-body-options (body options title (scene-class (trial::mksym #.*package* name '-scene)) slots superclasses) body
+  (form-fiddle:with-body-options (body options title (scene-class (trial::mksym #.*package* name '-scene)) slots superclasses (test T)) body
     (assert (null options))
     `(progn
        (pushnew ',name *examples*)
@@ -116,6 +116,9 @@
          ,@body
          scene)
 
+       (defmethod available-p ((example (eql ',name)))
+         ,test)
+
        (defmethod change-scene ((main example) (scene (eql ',name)) &key (old (scene main)))
          (change-scene main (make-instance ',scene-class) :old old))
 
@@ -131,8 +134,10 @@
   (let ((layout (make-instance 'alloy:vertical-linear-layout))
         (focus (make-instance 'alloy:vertical-focus-list)))
     (dolist (example (sort (list-examples) #'string< :key #'title))
-      (make-instance 'alloy:button* :value (title example) :layout-parent layout :focus-parent focus
-                                    :on-activate (lambda () (change-scene +main+ example))))
+      (if (available-p example)
+          (make-instance 'alloy:button* :value (title example) :layout-parent layout :focus-parent focus
+                                        :on-activate (lambda () (change-scene +main+ example)))
+          (v:info :trial.examples "The example ~a is not available on your system." example)))
     (alloy:finish-structure list layout focus)))
 
 (defmethod setup-scene ((main example) (scene scene))

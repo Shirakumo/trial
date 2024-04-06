@@ -1887,7 +1887,9 @@
    #:infer-swizzle-channels
    #:infer-pixel-type
    #:pixel-type->cl-type
-   #:when-gl-extension)
+   #:gl-extension-p
+   #:when-gl-extension
+   #:gl-extension-case)
   ;; transforms.lisp
   (:export
    #:*view-matrix*
