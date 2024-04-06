@@ -254,6 +254,12 @@
             (setf (height texture) height))
           (dolist (connection (flow:connections port))
             (setf (texture (flow:right connection)) texture))
+          ;; If we're dynamically updating then setting the texture now
+          ;; will require it to be allocated to be bound...
+          (when (and (framebuffer (flow:node port))
+                     (allocated-p (framebuffer (flow:node port)))
+                     (not (allocated-p texture)))
+            (allocate texture))
           (setf (texture port) texture)
           (vector-push-extend texture textures)
           (vector-push-extend texspec texspecs))))
@@ -262,9 +268,15 @@
       (when (typep pipeline 'event-loop)
         (add-listener pass pipeline))
       (let ((fbo (make-pass-framebuffer pass)))
-        (if (framebuffer pass)
-            (setf (attachments (framebuffer pass)) (attachments fbo))
-            (setf (framebuffer pass) fbo))))
+        (cond ((not (framebuffer pass))
+               (setf (framebuffer pass) fbo))
+              ((not (allocated-p (framebuffer pass)))
+               (setf (attachments (framebuffer pass)) (attachments fbo)))
+              (T
+               (dolist (attachment (attachments fbo))
+                 (unless (allocated-p (second attachment))
+                   (allocate (second attachment))))
+               (setf (attachments (framebuffer pass)) (attachments fbo))))))
     ;; Now re-set the activation to short-modify the pipeline as necessary.
     (dolist (pass passes)
       (setf (active-p pass) (active-p pass)))
