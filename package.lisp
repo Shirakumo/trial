@@ -830,6 +830,13 @@
    #:replay
    #:start-replay
    #:stop-replay)
+  ;; command-line.lisp
+  (:export
+   #:command-line-toplevel
+   #:command-line-command
+   #:describe-command
+   #:invoke-command
+   #:define-command-line-command)
   ;; conditions.lisp
   (:export
    #:trial-error

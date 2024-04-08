@@ -95,6 +95,10 @@
 
 (setf trial:*error-report-hook* #'error-handler)
 
+(trial:define-command-line-command report (&rest report)
+  (submit-report :files NIL :description (format NIL "~{~a~^ ~}" report))
+  (format *query-io* "~&Report sent. Thank you!~%"))
+
 #+linux
 (trial::dont-deploy
  cl+ssl::libssl
