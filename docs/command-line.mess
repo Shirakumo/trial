@@ -1,0 +1,75 @@
+# Command Line Argument Processing
+While from Lisp you will usually use a thin wrapper around ``launch`` to start your game, when running in deployed executable mode it can frequently be useful to expose a variety of additional commands besides simply launching the game.
+
+To handle this case, Trial includes a command line argument parsing facility that you can hook into your system by defining a new main function like this:
+
+:: common lisp
+(defun main ()
+  (command-line-toplevel)
+  (launch ...))
+::
+
+The ``command-line-toplevel`` function will take care of parsing and dispatching commands and quitting once processing is done. If no commands are passed, the function simply returns and it'll proceed to launching the game as usual.
+
+By setting your new ``main`` function as the entry-point in your ASD you'll now have command line processing enabled. Trial includes a bunch of commands by default:
+
+- ``help``
+  Shows help information and all commands.
+- ``copyright``
+  Shows the copyright information. You should override this command if you want to include a more detailed statement.
+- ``configure-controller``
+  A shortcut to cl-gamepad's configuration utility to let users fix gamepad button mappings.
+- ``system``
+  Shows various system attributes.
+- ``paths``
+  Shows all relevant paths and optionally opens one in the user's file browser.
+  A useful shorthand is ``game paths config`` to open the config directory.
+- ``version``
+  Shows the game version and binary hash
+- ``eval``
+  Evaluates arbitrary lisp expressions.
+
+You can remove commands you don't like by setting the corresponding ``command-line-command`` place to ``NIL``. You can also override them or provide new commands with ``define-command-line-command``:
+
+:: common lisp
+(define-command-line-command frob ()
+  :help "Does something"
+  ...)
+::
+
+The ``help`` string is used to provide additional detail in the ``help`` menu on what the command does and how to use it.
+
+The argument list of a command is structured like an ordinary lambda-list, but with the following differences:
+
+:: BNF
+required ::= name | (name [type [help]])
+optional ::= name | (name [default [type [help]]])
+keyword  ::= name | (name [default [type [help]]])
+                  | ((variable alias*) [default [type [help]]])
+rest     ::= name | (name [type [help]])
+
+name     --- The variable name and command argument name
+variable --- The variable name to bind the value to
+alias    --- A command argument name that can be used for this value
+default  --- The default value to use if the argument is not provided
+type     --- The parse-type of the value, if any
+help     --- A help string to be displayed in the help menu for this argument
+::
+
+The ``type`` is passed on to ``parse-command-line-type`` which can be extended with additional methods for more parsing options. The following types are recognised by default:
+
+- ``NIL`` Same as ``string``
+- ``STRING`` Just passes the argument through verbatim
+- ``BOOLEAN`` A true or false value, though with special flag-style parsing behaviour. If the argument is provided without a value, it simply toggles the default value.
+- ``PATHNAME`` Parses the value via parse-native-namestring
+- ``INTEGER`` Parses the value via parse-integer
+- ``KEYWORD`` Parses the value by interning it into a keyword after upcasing
+
+On the command-line side, keyword arguments can be provided at any point interleaved with other requried, optional, and rest arguments. They can also be provided in multiple styles:
+
+- ``--foo`` long-name style with the value as the following argument (unless boolean)
+- ``--foo=bar`` long-name style with the value in the argument
+- ``-f`` short-name style with the value in the following argument (unless boolean)
+- ``-fbz`` multiple short-name boolean flags at once
+
+Note that regardless of the symbol used for ``define-command-line-command``, the names are tested for equality via ``string-equal``, as are all arguments. As such, you cannot distinguish between upper and lower case flags either.
