@@ -26,6 +26,7 @@
                (:file "bag" :depends-on ("package" "container"))
                (:file "camera" :depends-on ("package" "container" "input" "transforms" "helpers"))
                (:file "capture" :depends-on ("package" "toolkit" "serialize" "event-loop" "input"))
+               (:file "command-line" :depends-on ("package" "toolkit"))
                (:file "conditions" :depends-on ("package"))
                (:file "container" :depends-on ("package" "toolkit" "transforms"))
                (:file "context" :depends-on ("package"))

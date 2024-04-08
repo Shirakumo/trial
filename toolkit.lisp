@@ -50,6 +50,13 @@
             (asdf:component-version (asdf:find-system +app-system+))
             (when commit (subseq commit 0 7)))))
 
+(defmethod version ((_ (eql :trial)))
+  (let* ((dir (asdf:system-source-directory :trial))
+         (commit (git-repo-commit dir)))
+    (format NIL "~a~@[-~a~]"
+            (asdf:component-version (asdf:find-system :trial))
+            (when commit (subseq commit 0 7)))))
+
 (defmethod version ((_ (eql :binary)))
   (let ((self (self)))
     (if (and self (uiop:file-exists-p self))

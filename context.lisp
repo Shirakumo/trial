@@ -219,17 +219,18 @@
   (context-info context stream))
 
 (defun context-info (context &key (stream *standard-output*) (show-extensions T))
-  (format stream "~&~%Running GL~a.~a ~a~%~
-                    Sample buffers:     ~a (~a sample~:p)~%~
-                    Max texture size:   ~a~%~
-                    Max texture units:  ~a ~a ~a ~a ~a ~a~%~
+  (format stream "~
+                ~&~%OpenGL Version: ~a.~a ~a~%~
+                    Sample buffers: ~a (~a sample~:p)~%~
+                    Max texture size: ~a~%~
+                    Max texture units: ~a ~a ~a ~a ~a ~a~%~
                ~@[~{Max compute groups: ~a ~a ~a~%~
-                    Max work groups:    ~a ~a ~a (~a)~%~}~]~
-                    GL Vendor:          ~a~%~
-                    GL Renderer:        ~a~%~
-                    GL Version:         ~a~%~
+                    Max work groups: ~a ~a ~a (~a)~%~}~]~
+                    GL Vendor: ~a~%~
+                    GL Renderer: ~a~%~
+                    GL Version: ~a~%~
                     GL Shader Language: ~a~%~
-                    ~@[GL Extensions:      ~{~a~^ ~}~%~]"
+                    ~@[GL Extensions: ~{~a~^ ~}~%~]"
           (gl-property :major-version)
           (gl-property :minor-version)
           (profile context)
