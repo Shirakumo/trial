@@ -303,5 +303,39 @@
       (loop for form = (read stream NIL #1='#:EOF)
             until (eq form #1#)
             do (when verbose (format *query-io* "~&; Evaluating ~a~%" load))
-               (let ((result (multiple-value-list (eval form))))
-                 (when print (format *query-io* "~{~&~a~%~}" result)))))))
+               (let ((values (multiple-value-list (eval form))))
+                 (when print (format *query-io* "~{~&~a~%~}" values)))))))
+
+(defun package-abbreviation (package)
+  (let ((shortest (package-name package)))
+    (dolist (name (package-nicknames package))
+      (when (< (length name) (length shortest))
+        (setf shortest name)))
+    (let ((dot (position #\. shortest :from-end T)))
+      (if dot
+          (subseq shortest (1+ dot))
+          shortest))))
+
+(defun handle-repl-error (error)
+  (dissect:present error *query-io*)
+  )
+
+(define-command-line-command repl (&key ((package :package :p) NIL NIL "The package to start with"))
+  :help "Run a read-eval-print-loop"
+  (loop with *package* = (or (find-package package)
+                             (find-package (string-upcase package))
+                             (error "No such package ~s" package))
+        with *** = NIL and ** = NIL and * = nil
+        with /// = NIL and // = NIL and / = nil
+        with +++ = NIL and ++ = NIL and + = nil
+        do (format *query-io* "~&~a> " (package-abbreviation *package*))
+           (finish-output *query-io*)
+           (with-simple-restart (abort "Return to the REPL")
+             (handler-bind ((error #'handle-repl-error))
+               (let* ((form (read *query-io* NIL #1='#:EOF))
+                      (- (if (eq form #1#) (return) form))
+                      (values (multiple-value-list (eval form))))
+                 (shiftf *** ** * (first values))
+                 (shiftf /// // / values)
+                 (shiftf +++ ++ + form)
+                 (format *query-io* "~{~&~a~%~}" values))))))
