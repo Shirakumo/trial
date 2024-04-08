@@ -148,6 +148,10 @@
 (defun launch (&optional example &rest args)
   (apply #'trial:launch 'example :example example args))
 
+(defun main ()
+  (command-line-toplevel)
+  (launch))
+
 #+linux
 (trial::dont-deploy
  org.shirakumo.file-select.gtk::gmodule

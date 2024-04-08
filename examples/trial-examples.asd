@@ -6,7 +6,7 @@
   #+win32 "trial-examples"
   #+(and bsd (not darwin)) "trial-examples-bsd.run"
   #-(or linux bsd win32) "trial-examples"
-  :entry-point "trial-examples::launch"
+  :entry-point "trial-examples::main"
   :components ((:file "trial-examples")
                (:file "triangle")
                (:file "collision")
