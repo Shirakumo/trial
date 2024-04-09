@@ -140,6 +140,9 @@
 (defmethod parse-command-line-type (value (type (eql 'keyword)))
   (intern (string-upcase value) "KEYWORD"))
 
+(defmethod parse-command-line-type (value (type (eql 'symbol)))
+  (intern (string-upcase value)))
+
 (defmethod invoke-command ((command command-line-command) &rest args)
   (destructuring-bind (&key required optional key rest) (args command)
     (let ((origargs args)
