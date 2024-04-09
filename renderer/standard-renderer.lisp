@@ -169,6 +169,8 @@
           do (enable texture pass))))
 
 (defmethod disable ((material material) (pass standard-render-pass))
+  ;; NOTE: we canont disable the texture here because it may still be
+  ;;       in use by another material. This is leaky...
   (lru-cache-pop material (allocated-materials pass)))
 
 (defmethod local-id ((material material) (pass standard-render-pass))
