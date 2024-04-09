@@ -107,7 +107,8 @@
             (when (probe-file file)
               (notify:watch file :events '(:modify :delete :move))
               (remhash file *pending-files*)
-              (v:info :trial.notify "File appeared: ~a" file)))))
+              (v:info :trial.notify "File appeared: ~a" file)
+              (notify T file)))))
 
 (defclass main (trial:main)
   ((file-watch-thread :initform NIL :accessor file-watch-thread)))
