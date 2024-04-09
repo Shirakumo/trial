@@ -306,6 +306,8 @@
                (let ((values (multiple-value-list (eval form))))
                  (when print (format *query-io* "~{~&~a~%~}" values)))))))
 
+;;; Let's build a repl real quick lol
+
 (defun package-abbreviation (package)
   (let ((shortest (package-name package)))
     (dolist (name (package-nicknames package))
@@ -316,26 +318,70 @@
           (subseq shortest (1+ dot))
           shortest))))
 
-(defun handle-repl-error (error)
-  (dissect:present error *query-io*)
-  )
+(defun handle-repl-error (error &optional (stream *query-io*))
+  (let ((env (dissect:capture-environment error)))
+    (format stream "~a~&   [Condition of type ~s]~&~%" error (type-of error))
+    (dissect:present-object (dissect:environment-restarts env) stream)
+    (loop (format *query-io* "~&~a (DEBUGGER)> " (package-abbreviation *package*))
+          (finish-output stream)
+          (catch 'read-exit
+            (let ((form (repl-read stream)))
+              (typecase form
+                ((integer 0)
+                 (dissect:invoke (nth form (dissect:environment-restarts env))))
+                (symbol
+                 (loop for restart in (dissect:environment-restarts env)
+                       do (when (string-equal form (dissect:name restart))
+                            (dissect:invoke restart)))
+                 (cond ((find form '("b" "bt" "backtrace") :test #'string-equal)
+                        (dissect:present (dissect:environment-stack env) stream))
+                       ((find form '("a" "abort") :test #'string-equal)
+                        (abort error))
+                       ((find form '("c" "continue") :test #'string-equal)
+                        (continue error))
+                       ((find form '("q" "quit" "e" "exit") :test #'string-equal)
+                        (throw 'repl-exit NIL))
+                       (T
+                        (repl-print (repl-eval form stream) stream))))
+                (T
+                 (repl-print (repl-eval form stream) stream))))))))
+
+(defun repl-read (&optional (stream *query-io*))
+  (restart-case
+      (handler-bind ((error (lambda (e) (handle-repl-error e stream))))
+        (let ((form (read stream NIL #1='#:EOF)))
+          (if (eq form #1#)
+              (throw 'repl-exit NIL)
+              form)))
+    (abort ()
+      :report "Abort reading"
+      (throw 'read-exit NIL))))
+
+(defun repl-eval (form &optional (stream *query-io*))
+  (with-simple-restart (abort "Abort evaluation")
+    (handler-bind ((error (lambda (e) (handle-repl-error e stream))))
+      (let* ((- form)
+             (values (multiple-value-list (eval form))))
+        (shiftf *** ** * (first values))
+        (shiftf /// cl:// / values)
+        (shiftf +++ ++ + form)
+        values))))
+
+(defun repl-print (values &optional (stream *query-io*))
+  (format stream "~{~&~a~%~}" values))
 
 (define-command-line-command repl (&key ((package :package :p) NIL NIL "The package to start with"))
   :help "Run a read-eval-print-loop"
-  (loop with *package* = (or (find-package package)
-                             (find-package (string-upcase package))
-                             (error "No such package ~s" package))
-        with *** = NIL and ** = NIL and * = nil
-        with /// = NIL and // = NIL and / = nil
-        with +++ = NIL and ++ = NIL and + = nil
-        do (format *query-io* "~&~a> " (package-abbreviation *package*))
-           (finish-output *query-io*)
-           (with-simple-restart (abort "Return to the REPL")
-             (handler-bind ((error #'handle-repl-error))
-               (let* ((form (read *query-io* NIL #1='#:EOF))
-                      (- (if (eq form #1#) (return) form))
-                      (values (multiple-value-list (eval form))))
-                 (shiftf *** ** * (first values))
-                 (shiftf /// // / values)
-                 (shiftf +++ ++ + form)
-                 (format *query-io* "~{~&~a~%~}" values))))))
+  (catch 'repl-exit
+    (loop with *package* = (if package
+                               (or (find-package package)
+                                   (find-package (string-upcase package))
+                                   (error "No such package ~s" package))
+                               *package*)
+          with *** = NIL and ** = NIL and * = nil
+          with /// = NIL and // = NIL and / = nil
+          with +++ = NIL and ++ = NIL and + = nil
+          do (format *query-io* "~&~a> " (package-abbreviation *package*))
+             (finish-output *query-io*)
+             (catch 'read-exit
+               (repl-print (repl-eval (repl-read)))))))
