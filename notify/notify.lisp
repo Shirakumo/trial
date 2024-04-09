@@ -16,6 +16,7 @@
 
 ;;; {truename -> {object ~> T}}
 (defvar *file-association-table* (make-hash-table :test 'equal))
+(defvar *pending-files* (make-hash-table :test 'equal))
 
 (defgeneric watch (object))
 (defgeneric unwatch (object))
@@ -29,23 +30,24 @@
 
 (defmethod watch (object)
   (dolist (file (files-to-watch object))
-    (handler-case
-        (let* ((file (truename file))
-               (table (gethash file *file-association-table*)))
-          (unless table
-            (notify:watch file :events '(:modify))
-            (setf table (tg:make-weak-hash-table :weakness :key))
-            (setf (gethash file *file-association-table*) table))
-          (setf (gethash object table) T))
-      (error ()
-        (v:error :trial.notify "Failed to add watch for ~a" file)))))
+    (let ((table (gethash file *file-association-table*)))
+      (unless table
+        (setf table (tg:make-weak-hash-table :weakness :key))
+        (setf (gethash file *file-association-table*) table))
+      (setf (gethash object table) T)
+      (handler-case (notify:watch file :events '(:modify :delete :move))
+        (error () (setf (gethash file *pending-files*) T))))))
 
 (defmethod unwatch (object)
   (loop for file being the hash-keys of *file-association-table* using (hash-value objects)
         do (remhash object objects)
            (when (= 0 (hash-table-count objects))
-             (remhash file *file-association-table*)
-             (ignore-errors (notify:unwatch file)))))
+             (unwatch file))))
+
+(defmethod unwatch ((file pathname))
+  (remhash file *file-association-table*)
+  (remhash file *pending-files*)
+  (ignore-errors (notify:unwatch file)))
 
 (defmethod watch ((pool trial:pool))
   (dolist (asset (trial:list-assets pool))
@@ -93,7 +95,19 @@
 
 (defun process-changes (&key timeout)
   (notify:with-events (file change-type :timeout timeout)
-    (notify T file)))
+    (case change-type
+      (:modify
+       (notify T file))
+      ((:delete :move)
+       (ignore-errors (notify:unwatch file))
+       (setf (gethash file *pending-files*) T)
+       (v:info :trial.notify "File disappeared: ~a" file))))
+  (loop for file being the hash-keys of *pending-files*
+        do (ignore-errors
+            (when (probe-file file)
+              (notify:watch file :events '(:modify :delete :move))
+              (remhash file *pending-files*)
+              (v:info :trial.notify "File appeared: ~a" file)))))
 
 (defclass main (trial:main)
   ((file-watch-thread :initform NIL :accessor file-watch-thread)))
@@ -104,6 +118,7 @@
     (setf (file-watch-thread main) T)
     (setf (file-watch-thread main)
           (trial:with-thread ("asset-watcher")
+            (v:info :trial.notify "Watching for file changes...")
             (loop while (file-watch-thread main)
                   do (with-simple-restart (abort "Ignore the error.")
                        (process-changes :timeout 0.5)))))))
