@@ -169,9 +169,12 @@
           do (enable texture pass))))
 
 (defmethod disable ((material material) (pass standard-render-pass))
-  ;; NOTE: we canont disable the texture here because it may still be
-  ;;       in use by another material. This is leaky...
-  (lru-cache-pop material (allocated-materials pass)))
+  (lru-cache-pop material (allocated-materials pass))
+  ;; We can eagerly disable textures here even if they are used by another
+  ;; material, as the next ENABLE call for that material will re-enable the
+  ;; required textures again.
+  (loop for texture across (textures material)
+        do (disable texture pass)))
 
 (defmethod local-id ((material material) (pass standard-render-pass))
   (lru-cache-id material (allocated-materials pass)))
@@ -257,12 +260,20 @@
       (render-with pass (material object) program)
       (call-next-method))))
 
+(defmethod deregister :after ((renderable single-material-renderable) (pass standard-render-pass))
+  (when (material renderable)
+    (disable (material renderable) pass)))
+
 (define-shader-entity per-array-material-renderable (standard-renderable)
   ((materials :initarg :materials :initform #() :accessor materials)))
 
 (defmethod stage :after ((renderable per-array-material-renderable) (area staging-area))
   (loop for material across (materials renderable)
         do (stage material area)))
+
+(defmethod deregister :after ((renderable per-array-material-renderable) (pass standard-render-pass))
+  (loop for material across (materials renderable)
+        do (disable material pass)))
 
 (define-transfer per-array-material-renderable materials)
 
