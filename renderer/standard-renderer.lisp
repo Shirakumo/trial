@@ -253,9 +253,9 @@
   (when (material object)
     (with-pushed-features
       (when (double-sided-p (material object))
-        (disable-feature :cull-face)))
-    (render-with pass (material object) program)
-    (call-next-method)))
+        (disable-feature :cull-face))
+      (render-with pass (material object) program)
+      (call-next-method))))
 
 (define-shader-entity per-array-material-renderable (standard-renderable)
   ((materials :initarg :materials :initform #() :accessor materials)))
