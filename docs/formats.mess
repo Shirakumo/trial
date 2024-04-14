@@ -12,6 +12,7 @@ The following formats are supported:
 - ktx (``trial-ktx``)
 - png (``trial-png``)
 - qoi (``trial-qoi``)
+- svg (``trial-svg``)
 - ter / Terragen (``trial-terragen``)
 - tga (``trial-tga``)
 - tiff (``trial-tiff``)
