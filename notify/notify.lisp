@@ -93,26 +93,30 @@
 (defmethod files-to-watch append ((prefab trial:prefab))
   (files-to-watch (trial:prefab-asset prefab)))
 
-(defun process-changes (&key timeout)
-  (let ((queue (make-hash-table :test 'equal)))
-    (notify:with-events (file change-type :timeout timeout)
-      (case change-type
-        (:modify
-         (setf (gethash file queue) file))
-        ((:delete :move)
-         (ignore-errors (notify:unwatch file))
-         (setf (gethash file *pending-files*) T)
-         (v:info :trial.notify "File disappeared: ~a" file))))
-    (loop for file being the hash-keys of *pending-files*
-          do (ignore-errors
-              (when (probe-file file)
-                (notify:watch file :events '(:modify :delete :move))
-                (remhash file *pending-files*)
-                (v:info :trial.notify "File appeared: ~a" file)
-                (setf (gethash file queue) file))))
-    ;; Now process the deduplicated queue
-    (loop for file being the hash-keys of queue
-          do (notify T file))))
+
+(let ((queue (make-hash-table :test 'equal)))
+  (defun process-changes (&key timeout)
+    (let ((found NIL))
+      (notify:with-events (file change-type :timeout timeout)
+        (setf found T)
+        (case change-type
+          (:modify
+           (setf (gethash file queue) file))
+          ((:delete :move)
+           (ignore-errors (notify:unwatch file))
+           (setf (gethash file *pending-files*) T)
+           (v:info :trial.notify "File disappeared: ~a" file))))
+      (loop for file being the hash-keys of *pending-files*
+            do (ignore-errors
+                (when (probe-file file)
+                  (notify:watch file :events '(:modify :delete :move))
+                  (remhash file *pending-files*)
+                  (v:info :trial.notify "File appeared: ~a" file)
+                  (setf (gethash file queue) file))))
+      (unless found ;; Now process the (hopefully) deduplicated queue
+        (loop for file being the hash-keys of queue
+              do (notify T file))
+        (clrhash queue)))))
 
 (defclass main (trial:main)
   ((file-watch-thread :initform NIL :accessor file-watch-thread)))
