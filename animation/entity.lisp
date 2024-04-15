@@ -196,7 +196,7 @@
   (let ((clip (find-clip clip-name entity)))
     (add-layer clip entity :name (if name-p name (name clip)))))
 
-(defmethod fade-to ((name string) (entity animation-controller) &rest args)
+(defmethod fade-to ((name string) (entity animation-controller) &rest args &key &allow-other-keys)
   (apply #'fade-to (find-clip name entity) entity args))
 
 (defmethod play ((name string) (entity animation-controller))
@@ -272,7 +272,7 @@
 (defmethod play (thing (entity base-animated-entity))
   (play thing (animation-controller entity)))
 
-(defmethod fade-to (thing (entity base-animated-entity) &rest args)
+(defmethod fade-to (thing (entity base-animated-entity) &rest args &key &allow-other-keys)
   (apply #'fade-to thing (animation-controller entity) args))
 
 (defmethod add-layer (thing (entity base-animated-entity) &rest args)

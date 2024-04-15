@@ -212,13 +212,11 @@
   thing)
 
 (defmethod leave (thing (system physics-system))
-  (array-utils:vector-pop-position (%objects system)
-                                   (position thing (%objects system)))
+  (array-utils:vector-pop-element* (%objects system) thing)
   thing)
 
 (defmethod leave ((thing force) (system physics-system))
-  (array-utils:vector-pop-position (forces system)
-                                   (position thing (forces system)))
+  (array-utils:vector-pop-element* (forces system) thing)
   thing)
 
 (defmethod contains-p (thing (system physics-system))

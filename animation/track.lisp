@@ -141,8 +141,16 @@
       (ecase (interpolation track)
         (:constant
          (setf (interpolation result) :constant)
-         (setf (frames result) (vector (make-frame (start-time track) (constant 0.0))
-                                       (make-frame (end-time track) (constant 0.0)))))
+         (let* ((type (value-type track))
+                (value (ecase type
+                         ((real single-float) 0.0)
+                         (vec2 (vec2))
+                         (vec3 (vec3))
+                         (vec4 (vec4))
+                         (quat (quat)))))
+           (setf (value-type result) type)
+           (setf (frames result) (vector (make-frame (start-time track) (constant value))
+                                         (make-frame (end-time track) (constant value))))))
         (:linear
          (setf (interpolation result) :constant)
          (let ((new-frames (make-array (length frames)))
