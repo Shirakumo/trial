@@ -123,7 +123,7 @@
     (when (gltf:root-motion-p animation)
       (change-class clip 'forward-kinematic-clip :velocity-scale (gltf:velocity-scale animation)))
     (if (gltf:next animation)
-        (setf (next-clip clip) (gltf:next animation))
+        (setf (next-clip clip) (trial:lispify-name (gltf:next animation)))
         (setf (loop-p clip) (gltf:loop-p animation)))
     clip))
 
