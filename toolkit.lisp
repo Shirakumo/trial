@@ -195,7 +195,7 @@
   (etypecase name
     (integer name)
     (symbol name)
-    (string (intern (%translate-name name) package))))
+    (string (intern (%lispify-name name) package))))
 
 (defun enlist (item &rest items)
   (if (listp item) item (list* item items)))

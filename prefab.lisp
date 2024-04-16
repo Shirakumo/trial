@@ -54,11 +54,11 @@
 
 (defmacro do-nodes% ((node instance id) &body body)
   (etypecase id
-    (string
-     `(let ((,node (node ,id ,instance)))
-        ,@body))
     ((member NIL T)
      `(let ((,node ,instance))
+        ,@body))
+    ((or string symbol real)
+     `(let ((,node (node ,id ,instance)))
         ,@body))
     (cons
      `(do-scene-graph (,node ,instance)
