@@ -195,6 +195,8 @@
   (etypecase name
     (integer name)
     (symbol name)
+    (cons (cons (lispify-name (car name) package)
+                (lispify-name (cdr name) package)))
     (string (intern (%lispify-name name) package))))
 
 (defun enlist (item &rest items)
