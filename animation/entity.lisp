@@ -199,7 +199,13 @@
 (defmethod fade-to ((name string) (entity animation-controller) &rest args &key &allow-other-keys)
   (apply #'fade-to (find-clip name entity) entity args))
 
+(defmethod fade-to ((name symbol) (entity animation-controller) &rest args &key &allow-other-keys)
+  (apply #'fade-to (find-clip name entity) entity args))
+
 (defmethod play ((name string) (entity animation-controller))
+  (play (find-clip name entity) entity))
+
+(defmethod play ((name symbol) (entity animation-controller))
   (play (find-clip name entity) entity))
 
 (defmethod play ((anything (eql T)) (entity animation-controller))
