@@ -313,10 +313,10 @@ void main(){
 (defmethod (setf mesh-asset) :after ((asset asset) (entity mesh-entity))
   (setf (mesh entity) (or (mesh entity) T)))
 
-(defmethod (setf mesh) :after ((mesh mesh-data) (entity mesh-entity))
+(defmethod (setf mesh) ((mesh mesh-data) (entity mesh-entity))
   (setf (vertex-array entity) (resource (mesh-asset entity) (name mesh))))
 
-(defmethod (setf mesh) ((name string) (entity mesh-entity))
+(defmethod (setf mesh) (name (entity mesh-entity))
   (let ((mesh (gethash name (meshes (mesh-asset entity)))))
     (if mesh
         (setf (mesh entity) mesh)
@@ -349,12 +349,12 @@ void main(){
 (defmethod (setf mesh-asset) :after ((asset asset) (entity multi-mesh-entity))
   (setf (mesh entity) (or (mesh entity) T)))
 
-(defmethod (setf mesh) :after ((meshes cons) (entity multi-mesh-entity))
+(defmethod (setf mesh) ((meshes cons) (entity multi-mesh-entity))
   (let ((arrays (make-array (length meshes))))
     (map-into arrays (lambda (mesh) (resource (mesh-asset entity) (name mesh))) meshes)
     (setf (vertex-arrays entity) arrays)))
 
-(defmethod (setf mesh) ((name string) (entity multi-mesh-entity))
+(defmethod (setf mesh) (name (entity multi-mesh-entity))
   (if (mesh-asset entity)
       (let ((mesh (gethash name (meshes (mesh-asset entity)))))
         (setf (mesh entity) (if mesh
