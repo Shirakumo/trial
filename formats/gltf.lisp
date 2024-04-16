@@ -127,7 +127,7 @@
 (defun load-clips (gltf &optional (table (make-hash-table :test 'equal)))
   (loop for animation across (gltf:animations gltf)
         for clip = (load-clip gltf animation)
-        do (setf (gethash (name clip) table) clip))
+        do (setf (gethash (trial:lispify-name (name clip)) table) clip))
   table)
 
 (defun load-bind-pose (gltf)
@@ -284,10 +284,11 @@
     (let* ((texture (gltf:texture texinfo))
            (sampler (gltf:sampler texture))
            (image (gltf:source texture))
-           (name (or (gltf:name image)
-                     (gltf:uri image)
-                     (gltf:name (gltf:buffer-view image))
-                     (format NIL "image-~d" (gltf:idx image)))))
+           (name (trial:lispify-name
+                  (or (gltf:name image)
+                      (gltf:uri image)
+                      (gltf:name (gltf:buffer-view image))
+                      (format NIL "image-~d" (gltf:idx image))))))
       (generate-resources 'image-loader (if (gltf:uri image)
                                             (gltf:path image)
                                             (memory-region (gltf:start (gltf:buffer-view image))
@@ -308,7 +309,7 @@
              (4 (vec (aref array 0) (aref array 1) (aref array 2) (aref array 3))))))
     (loop for material across (gltf:materials gltf)
           for pbr = (gltf:pbr material)
-          for name = (or (gltf:name material) (gltf:idx material))
+          for name = (trial:lispify-name (or (gltf:name material) (gltf:idx material)))
           for mr = (when pbr (load-image asset (gltf:metallic-roughness pbr)))
           for omr = (load-image asset (gltf:occlusion-metalness-roughness-texture material))
           for rmo = (load-image asset (gltf:roughness-metallic-occlusion-texture material))
@@ -369,7 +370,7 @@
 
 (defun load-shape (shape model &rest args)
   (flet ((ensure-mesh (mesh)
-           (or (find-mesh (or (gltf:name mesh) (gltf:idx mesh)) model NIL)
+           (or (find-mesh (trial:lispify-name (or (gltf:name mesh) (gltf:idx mesh))) model NIL)
                (first (load-mesh mesh model)))))
     (etypecase shape
       (gltf:box-shape
@@ -571,8 +572,8 @@
           (scenes (scenes model)))
       (load-materials gltf model generator)
       (loop for mesh across (load-meshes gltf model)
-            do (setf (gethash (name mesh) meshes) mesh)
-               (trial::make-vertex-array mesh (resource generator (name mesh))))
+            do (setf (gethash (trial:lispify-name (name mesh)) meshes) mesh)
+               (trial::make-vertex-array mesh (resource generator (trial:lispify-name (name mesh)))))
       ;; Patch up
       (when (loop for mesh being the hash-values of meshes
                   thereis (skinned-p mesh))
@@ -587,7 +588,7 @@
                      (trial::reorder mesh map)))))
       ;; Construct scene graphs
       (labels ((mesh-name (node)
-                 (or (gltf:name (gltf:mesh node)) (gltf:idx (gltf:mesh node))))
+                 (trial:lispify-name (or (gltf:name (gltf:mesh node)) (gltf:idx (gltf:mesh node)))))
                (construct (node)
                  (cond ((loop for skin across (gltf:skins gltf)
                               thereis (loop for joint across (gltf:joints skin)
@@ -611,12 +612,12 @@
                                                      for lod = mesh-name then (mesh-name (aref (gltf:lods node) i))
                                                      collect (make-instance 'lod :threshold threshold :mesh lod))
                                          :transform (gltf-node-transform node)
-                                         :name (gltf:name node)
+                                         :name mesh-name
                                          :asset generator
                                          :mesh mesh-name)))
                        (T
                         (make-instance 'basic-node :transform (gltf-node-transform node)
-                                                   :name (gltf:name node)))))
+                                                   :name (trial:lispify-name (gltf:name node))))))
                (recurse (children container)
                  (loop for node across children
                        for child = (construct node)
@@ -632,8 +633,8 @@
                             (load-trigger model child node))
                           (enter child container))))
         (loop for node across (gltf:scenes gltf)
-              for scene = (make-instance 'basic-node :name (gltf:name node))
-              do (setf (gethash (gltf:name node) scenes) scene)
+              for scene = (make-instance 'basic-node :name (trial:lispify-name (gltf:name node)))
+              do (setf (gethash (trial:lispify-name (gltf:name node)) scenes) scene)
                  (when (gltf:light node)
                    (dolist (object (load-environment-light (gltf:light node)))
                      (enter object scene)))

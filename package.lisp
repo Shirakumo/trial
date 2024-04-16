@@ -1807,6 +1807,7 @@
    #:gl-property
    #:current-time
    #:kw
+   #:lispify-name
    #:enlist
    #:unlist
    #:remf*
