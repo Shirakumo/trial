@@ -154,9 +154,6 @@
     (setf (vy (location controller)) (- (vy (size controller)) (font-size controller)))
     (setf (vx (location controller)) 5)))
 
-(defmethod apply-transforms progn ((controller display-controller))
-  )
-
 (defmethod render :around ((controller display-controller) (program shader-program))
   (when (show-overlay controller)
     (with-pushed-matrix ((view-matrix :identity)
@@ -171,4 +168,5 @@
           (setf idx 0))
         (setf (aref fps-buffer idx)  (if (= 0 (frame-time +main+)) 1f0 (/ (float (frame-time +main+) 0f0))))
         (setf (fps-buffer-idx controller) (1+ idx)))
-      (call-next-method))))
+      (with-depth-mask T
+        (call-next-method)))))
