@@ -206,10 +206,12 @@ TRACKS: ~a~&"
   (change-class (aref (tracks clip) track) 'dummy-track))
 
 (defmethod (setf forward-track) ((track symbol) (clip forward-kinematic-clip))
-  (setf (forward-track clip) (position track (tracks clip) :key #'name)))
+  (setf (forward-track clip) (or (position track (tracks clip) :key #'name)
+                                 (error "No track with name ~s" track))))
 
 (defmethod (setf forward-track) ((track string) (clip forward-kinematic-clip))
-  (setf (forward-track clip) (position track (tracks clip) :key #'name :test #'equal)))
+  (setf (forward-track clip) (or (position track (tracks clip) :key #'name :test #'equal)
+                                 (error "No track with name ~s" track))))
 
 (defmethod sample :after (target (clip forward-kinematic-clip) time &key loop-p)
   (let ((track (forward-track clip)))
