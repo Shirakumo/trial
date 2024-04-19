@@ -124,7 +124,7 @@
 
 (defmethod fade-to ((target clip) (controller fade-controller) &key (duration (blend-duration target)))
   (let ((targets (fade-targets controller)))
-    (cond ((null (clip controller))
+    (cond ((or (null (clip controller)) (<= duration 0))
            (play target controller))
           ((and (or (= 0 (length targets))
                     (not (eq target (fade-target-clip (aref targets (1- (length targets)))))))
