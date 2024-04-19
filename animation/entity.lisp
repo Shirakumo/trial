@@ -122,7 +122,7 @@
     (setf (clock controller) (start-time target))
     (sample (pose controller) (clip controller) (clock controller))))
 
-(defmethod fade-to ((target clip) (controller fade-controller) &key (duration 0.2))
+(defmethod fade-to ((target clip) (controller fade-controller) &key (duration (blend-duration target)))
   (let ((targets (fade-targets controller)))
     (cond ((null (clip controller))
            (play target controller))

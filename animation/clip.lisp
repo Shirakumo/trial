@@ -5,7 +5,8 @@
    (tracks :initform #() :accessor tracks)
    (start-time :initform 0f0 :accessor start-time)
    (end-time :initform 0f0 :accessor end-time)
-   (next-clip :accessor next-clip)))
+   (next-clip :accessor next-clip)
+   (blend-duration :initarg :blend-duration :initform 0.2f0 :accessor blend-duration)))
 
 (defmethod shared-initialize :after ((clip clip) slots &key tracks (loop-p NIL loop-pp) (next-clip NIL next-clip-p))
   (when tracks

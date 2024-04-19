@@ -37,6 +37,7 @@
    #:end-time
    #:loop-p
    #:next-clip
+   #:blend-duration
    #:duration
    #:find-animation-track
    #:clip

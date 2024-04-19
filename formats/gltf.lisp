@@ -125,6 +125,7 @@
     (if (gltf:next animation)
         (setf (next-clip clip) (trial:lispify-name (gltf:next animation)))
         (setf (loop-p clip) (gltf:loop-p animation)))
+    (setf (blend-duration clip) (gltf:blend-duration animation))
     clip))
 
 (defun load-clips (gltf &optional (table (make-hash-table :test 'equal)))
