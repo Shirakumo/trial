@@ -130,7 +130,7 @@
                     (not (eq target (fade-target-clip (aref targets (1- (length targets)))))))
                 (not (eq target (clip controller))))
            (setf (playback-speed controller) 1.0)
-           (vector-push-extend (make-fade-target target (rest-pose (skeleton controller)) duration) targets)))))
+           (vector-push-extend (make-fade-target target (rest-pose (skeleton controller)) (float duration 0f0)) targets)))))
 
 (defmethod update ((controller fade-controller) tt dt fc)
   (when (next-method-p) (call-next-method))
