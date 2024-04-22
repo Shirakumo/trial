@@ -256,9 +256,15 @@
              (unwind-protect
                   (let ((context (trial:context main)))
                     (flet ((handler (request arg)
-                             (ecase request
-                               (:get-clipboard (glfw:clipboard-string context))
-                               (:set-clipboard (setf (glfw:clipboard-string context) arg)))))
+                             (handler-case
+                                 (ecase request
+                                   (:get-clipboard (glfw:clipboard-string context))
+                                   (:set-clipboard (setf (glfw:clipboard-string context) arg)))
+                               #+trial-release 
+                               (error (e)
+                                 (v:debug :trial.backend.glfw e)
+                                 (v:error :trial.backend.glfw "Failed to execute ~a: ~a" request e)
+                                 ""))))
                       (declare (dynamic-extent #'handler))
                       (loop until (glfw:should-close-p context)
                             do (glfw:poll-events :timeout 0.005d0)
