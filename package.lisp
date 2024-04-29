@@ -552,7 +552,7 @@
    #:phong-render-pass)
   ;; renderer/standard-renderer.lisp
   (:export
-   #:standard-environment-environment
+   #:standard-environment-information
    #:view-size
    #:location
    #:tt
