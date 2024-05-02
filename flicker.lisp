@@ -37,6 +37,7 @@
            (declare (type single-float tt))
            (declare (optimize speed))
            (multiple-value-bind (i rest) (truncate tt ,dt)
+             (declare (type (unsigned-byte 16) i))
              (let* ((a ,(map '(simple-array (single-float) (*)) #'flicker-char-to-intensity pattern))
                     (l (aref a (mod i ,(length pattern))))
                     (r (aref a (mod (1+ i) ,(length pattern)))))
