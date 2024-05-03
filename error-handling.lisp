@@ -64,6 +64,10 @@
 (defmethod report-on-error ((error org.shirakumo.depot:depot-condition))
   (emessage "A game resource file is corrupted and could not be read. Please verify your installation."))
 
+(defmethod report-on-error ((error cffi:load-foreign-library-error))
+  (emessage "Failed to load a shared library (~a). Your system is either not capable of running ~a, or the shared library is corrupted."
+            #+windows "DLL" #+darwin "DYLIB" #-(or windows darwin) "SO" +app-system+))
+
 (defun standalone-error-handler (err &key (category :trial))
   (when (and (deploy:deployed-p) (not *inhibit-standalone-error-handler*))
     (v:error category err)
