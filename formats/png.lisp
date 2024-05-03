@@ -1,5 +1,9 @@
 (in-package #:org.shirakumo.fraf.trial)
 
+(defmethod report-on-error ((error pngload::png-error))
+  (emessage "Failed to access the file ~a. The file does not exist, cannot be accessed, or is corrupted."
+            (pngload::path (pngload:png error))))
+
 (defun %png-source (png)
   (make-image-source (pngload:data png) (pngload:width png) (pngload:height png)
                      (infer-pixel-type (max 8 (pngload:bit-depth png)) :unsigned)
