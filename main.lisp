@@ -39,7 +39,8 @@
   (scene +main+))
 
 (defmethod handle (event (main main))
-  (issue (scene main) event))
+  (when (scene main)
+    (issue (scene main) event)))
 
 (defmethod handle :before (event (main main))
   (typecase event
