@@ -422,9 +422,10 @@
 
 (defmethod current-monitor ((context context))
   (let ((monitor (glfw:monitor context)))
-    (unless (typep monitor 'monitor)
-      (change-class (glfw:monitor context) 'monitor))
-    monitor))
+    (when monitor
+      (unless (typep monitor 'monitor)
+        (change-class (glfw:monitor context) 'monitor))
+      monitor)))
 
 (defmethod current-video-mode ((monitor monitor))
   (let ((mode (glfw:video-mode monitor)))
@@ -437,7 +438,8 @@
         collect monitor))
 
 (defmethod list-video-modes ((context context))
-  (list-video-modes (current-monitor context)))
+  (let ((monitor (current-monitor context)))
+    (when monitor (list-video-modes monitor))))
 
 (defmethod list-video-modes ((monitor monitor))
   (loop for (w h r) in (glfw:video-modes monitor)
