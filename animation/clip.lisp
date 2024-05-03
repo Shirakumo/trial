@@ -6,6 +6,7 @@
    (start-time :initform 0f0 :accessor start-time)
    (end-time :initform 0f0 :accessor end-time)
    (next-clip :accessor next-clip)
+   (blocking-p :initform NIL :accessor blocking-p)
    (blend-duration :initarg :blend-duration :initform 0.2f0 :accessor blend-duration)))
 
 (defmethod shared-initialize :after ((clip clip) slots &key tracks (loop-p NIL loop-pp) (next-clip NIL next-clip-p))

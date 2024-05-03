@@ -120,8 +120,12 @@
                (T (v:warn :trial.gltf "Unknown animation channel target path: ~s on ~s, ignoring."
                           (gltf:path (gltf:target channel)) (gltf-name animation)))))
     (trial::recompute-duration clip)
-    (when (gltf:root-motion-p animation)
-      (change-class clip 'forward-kinematic-clip :velocity-scale (gltf:velocity-scale animation)))
+    (case (gltf:kind animation)
+      (:blocking
+       (setf (trial:blocking-p clip) T))
+      (:physical
+       (setf (trial:blocking-p clip) T)
+       (change-class clip 'forward-kinematic-clip :velocity-scale (gltf:velocity-scale animation))))
     (if (gltf:next animation)
         (setf (next-clip clip) (trial:lispify-name (gltf:next animation)))
         (setf (loop-p clip) (gltf:loop-p animation)))

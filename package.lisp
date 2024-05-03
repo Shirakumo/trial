@@ -38,6 +38,7 @@
    #:loop-p
    #:next-clip
    #:blend-duration
+   #:blocking-p
    #:duration
    #:find-animation-track
    #:clip
