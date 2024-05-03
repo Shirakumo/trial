@@ -169,6 +169,12 @@
       (v:info :trial.context "~a acquiring ~a." this context)
       (setf (current-thread context) this)
       (setf *context* context)
+      #+trial-release
+      (loop repeat 10
+            do (handler-case (progn (make-current context) (return))
+                 (error ()))
+               (sleep 0.1))
+      #-trial-release
       (make-current context))))
 
 (defmethod release-context ((context context) &key reentrant)
