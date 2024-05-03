@@ -156,11 +156,12 @@
   (check-type pool symbol)
   (check-type name symbol)
   (check-type type symbol)
-  `(ensure-instance (asset ',pool ',name NIL) ',type
-                    :input ,input
-                    :name ',name
-                    :pool ',pool
-                    :generation-arguments (list ,@options)))
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (ensure-instance (asset ',pool ',name NIL) ',type
+                      :input ,input
+                      :name ',name
+                      :pool ',pool
+                      :generation-arguments (list ,@options))))
 
 (trivial-indent:define-indentation define-asset (4 6 4 &body))
 

@@ -216,7 +216,7 @@
 (define-event window-close ())
 
 (defmethod describe-object :after ((context context) stream)
-  (context-info context stream))
+  (context-info context :stream stream))
 
 (defun context-info (context &key (stream *standard-output*) (show-extensions T))
   (format stream "~
