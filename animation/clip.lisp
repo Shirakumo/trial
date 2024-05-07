@@ -53,11 +53,12 @@ TRACKS: ~a~&"
         (clamp start time end))))
 
 (defun recompute-duration (clip)
-  (loop for track across (tracks clip)
-        when (valid-p track) minimize (start-time track) into start
-        when (valid-p track) maximize (end-time track) into end
-        finally (setf (start-time clip) (float start 0f0)
-                      (end-time clip) (float end 0f0)))
+  (declare (optimize speed))
+  (loop for track across (the simple-vector (tracks clip))
+        when (valid-p track) minimize (start-time track) into start of-type single-float
+        when (valid-p track) maximize (end-time track) into end of-type single-float
+        finally (setf (start-time clip) start
+                      (end-time clip) end))
   clip)
 
 (defmethod duration ((clip clip))
