@@ -39,11 +39,14 @@ NAME:     ~a
 START:    ~a
 END:      ~a
 DURATION: ~a
+BLOCKING: ~a
 NEXT:     ~a
+BLEND:    ~f
 TRACKS: ~a~&"
           clip (type-of clip)
           (name clip) (start-time clip) (end-time clip) (duration clip)
-          (next-clip clip) (map 'list #'name (tracks clip))))
+          (blocking-p clip) (next-clip clip) (blend-duration clip)
+          (map 'list #'name (tracks clip))))
 
 (defun fit-to-clip (clip time)
   (let ((start (start-time clip))
