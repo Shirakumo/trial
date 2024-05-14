@@ -190,6 +190,7 @@ TRACKS: ~a~&"
   ((velocity :initform (vec3) :accessor velocity)
    (rotation :initform (quat) :accessor rotation)
    (forward-track :initform NIL :accessor forward-track)
+   (blocking-p :initform T)
    (velocity-scale :initarg :velocity-scale :initform 1.0 :accessor velocity-scale)))
 
 (defmethod update-instance-for-different-class :after ((prev clip) (clip forward-kinematic-clip) &key (track 0))

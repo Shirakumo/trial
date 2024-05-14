@@ -164,54 +164,54 @@
                              (:file "uniform-block")
                              (:file "video" :depends-on ((:.. "video"))))))
   :defsystem-depends-on (:trivial-features)
-  :depends-on (:alexandria
-               :atomics
-               :3d-math
+  :depends-on (:3d-math
                :3d-spaces
-               :verbose
+               :alexandria
+               :atomics
+               :bordeaux-threads
+               :cl-gamepad
+               :cl-opengl
+               :cl-ppcre
+               :closer-mop
+               :com.inuoe.jzon
+               :convex-covering
                :deploy
                :depot
                :depot-zip
-               :closer-mop
+               :documentation-utils
+               :fast-io
+               :filesystem-utils
+               :float-features
+               :flow
+               :for
+               :form-fiddle
+               :glsl-toolkit
+               :ieee-floats
+               :lambda-fiddle
+               :language-codes
+               :lquery
+               :lru-cache
+               :machine-state/opengl
+               :manifolds
+               :memory-regions
+               :messagebox
+               :mmap
+               :nibbles
+               :pathname-utils
+               :promise
+               :quickhull
+               :random-sampling
+               :random-state
+               :sha3
+               :simple-tasks
+               :static-vectors
+               :system-locale
+               :trivial-deprecate
+               :trivial-extensible-sequences
                :trivial-garbage
                :trivial-indent
-               :trivial-extensible-sequences
-               :bordeaux-threads
-               :cl-opengl
-               :cl-gamepad
-               :cl-ppcre
-               :pathname-utils
-               :filesystem-utils
-               :documentation-utils
-               :for
-               :flow
-               :glsl-toolkit
-               :fast-io
-               :ieee-floats
-               :float-features
-               :lquery
-               :static-vectors
-               :mmap
-               :messagebox
-               :nibbles
-               :form-fiddle
-               :lambda-fiddle
-               :com.inuoe.jzon
+               :verbose
                :zpng
-               :system-locale
-               :language-codes
-               :promise
-               :simple-tasks
-               :lru-cache
-               :memory-regions
-               :trivial-deprecate
-               :manifolds
-               :quickhull
-               :convex-covering
-               :machine-state/opengl
-               :sha3
-               :random-state
-               :random-sampling
                (:feature :windows :com-on)))
 
 #+sbcl
