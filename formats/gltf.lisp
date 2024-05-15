@@ -340,25 +340,31 @@
                (setf (trial:find-material name model) material)))))
 
 (defun load-light (light)
-  (flet ((make (type &rest initargs)
-           (apply #'make-instance type
-                  ;; FIXME: intensity is not correctly handled here.
-                  :color (v* (vec (aref (gltf:color light) 0)
-                                  (aref (gltf:color light) 1)
-                                  (aref (gltf:color light) 2))
-                             (/ (gltf:intensity light) 10000))
-                  initargs)))
+  (flet ((make (type intensity &rest initargs)
+           (print (apply #'make-instance type
+                         :color (nv* (vec (aref (gltf:color light) 0)
+                                          (aref (gltf:color light) 1)
+                                          (aref (gltf:color light) 2))
+                                     intensity)
+                         initargs))))
     (etypecase light
       (gltf:directional-light
-       (make 'trial:directional-light :direction (vec 0 0 -1)))
+       (make 'trial:directional-light
+             (/ (sqrt (gltf:intensity light)) 100.0)
+             :direction (vec 0 0 -1)))
       (gltf:point-light
-       (make 'trial:point-light :linear-attenuation (or (gltf:range light) 0.0)
-                                :quadratic-attenuation 0.0))
+       (make 'trial:point-light
+             (/ (sqrt (gltf:intensity light)) 500.0)
+             :linear-attenuation (or (gltf:range light) 0.0)
+             :quadratic-attenuation 0.0))
       (gltf:spot-light
-       (make 'trial:spot-light :direction (vec 0 0 -1)
-                               :linear-attenuation (or (gltf:range light) 0.0)
-                               :inner-radius (rad->deg (gltf:inner-angle light))
-                               :outer-radius (rad->deg (gltf:outer-angle light)))))))
+       (make 'trial:spot-light
+             ;; FIXME: I have no funcking clue what I'm doing here
+             (/ (sqrt (gltf:intensity light)) 500.0)
+             :direction (vec 0 0 -1)
+             :linear-attenuation (or (gltf:range light) 0.0)
+             :inner-radius (rad->deg (gltf:inner-angle light))
+             :outer-radius (rad->deg (gltf:outer-angle light)))))))
 
 (defun load-camera (camera)
   (etypecase camera
