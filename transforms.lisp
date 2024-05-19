@@ -115,12 +115,11 @@
          (w (vw clip-pos)))
     (if (= 0.0f0 w)
         (vec -1 -1 0)
-        (let* ((norm-pos (nv+ (nv* (vxyz clip-pos) (/ 0.5f0 w)) 0.5f0))
+        (let* ((norm-pos (nv+ (nv* (vxy clip-pos) (/ 0.5f0 w)) 0.5f0))
                (context *context*))
           (vsetf norm-pos
                  (* (width context) (vx norm-pos))
-                 (* (height context) (- 1 (vy norm-pos)))
-                 0.0f0)))))
+                 (* (height context) (- 1 (vy norm-pos))))))))
 
 (defun screen->vec (vec &optional (z 0))
   (let* ((context *context*)
