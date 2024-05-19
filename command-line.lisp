@@ -289,6 +289,15 @@
       ((:temp :temp-directory) (open* (tempdir)))
       ((:home :home-directory) (open* (user-homedir-pathname))))))
 
+(define-command-line-command clear-config (&key ((quiet :quiet :q) NIL boolean "Whether to delete all files quietly"))
+  :help "Clear all configuration and setting files."
+  (flet ((prompt ()
+           (format *query-io* "This will delete all configuration, setting, and save files for ~a.~%Are you sure? [y/N]~%")
+           (string-equal "y" (read-line *query-io*))))
+    (if (or quiet (prompt))
+        (org.shirakumo.filesystem-utils:delete-directory (config-directory))
+        (format *query-io* "Aborting."))))
+
 (define-command-line-command version ()
   :help "Show the application version"
   (format *query-io* "~a ~a" (version :app) (version :binary)))
