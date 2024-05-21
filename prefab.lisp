@@ -17,7 +17,8 @@
 (defgeneric prefab-asset (prefab))
 (defgeneric instantiate-prefab (prefab asset))
 
-(defclass prefab () ())
+(defclass prefab ()
+  ((instantiated :initform NIL)))
 
 (defmethod observe-load-state :before ((prefab prefab) (asset model-file) (state (eql :loaded)) (area staging-area))
   (instantiate-prefab prefab asset))
@@ -34,6 +35,11 @@
 
 (defmethod instantiate-prefab ((prefab prefab) (asset (eql T)))
   (instantiate-prefab prefab (prefab-asset prefab)))
+
+(defmethod instantiate-prefab :around ((prefab prefab) (asset asset))
+  (unless (slot-value prefab 'instantiated)
+    (call-next-method)
+    (setf (slot-value prefab 'instantiated) T)))
 
 (defmethod reload ((prefab prefab))
   (deallocate (prefab-asset prefab))
