@@ -1542,7 +1542,8 @@
    #:start
    #:stop
    #:render
-   #:update)
+   #:update
+   #:reset-render-loop)
   ;; resource.lisp
   (:export
    #:resource
