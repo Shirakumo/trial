@@ -341,12 +341,12 @@
 
 (defun load-light (light)
   (flet ((make (type intensity &rest initargs)
-           (print (apply #'make-instance type
-                         :color (nv* (vec (aref (gltf:color light) 0)
-                                          (aref (gltf:color light) 1)
-                                          (aref (gltf:color light) 2))
-                                     intensity)
-                         initargs))))
+           (apply #'make-instance type
+                  :color (nv* (vec (aref (gltf:color light) 0)
+                                   (aref (gltf:color light) 1)
+                                   (aref (gltf:color light) 2))
+                              intensity)
+                  initargs)))
     (etypecase light
       (gltf:directional-light
        (make 'trial:directional-light
