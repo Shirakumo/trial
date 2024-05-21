@@ -111,7 +111,10 @@
   (!meye matrix))
 
 (defun vec->screen (vec)
-  (let* ((clip-pos (m* (projection-matrix) (view-matrix) (model-matrix) (vxyz_ vec)))
+  (let* ((clip-pos (n*m (projection-matrix) (n*m (view-matrix) (vec (vx vec)
+                                                                    (vy vec)
+                                                                    (vz vec)
+                                                                    1))))
          (w (vw clip-pos)))
     (if (= 0.0f0 w)
         (vec -1 -1 0)
@@ -119,7 +122,7 @@
                (context *context*))
           (vsetf norm-pos
                  (* (width context) (vx norm-pos))
-                 (* (height context) (- 1 (vy norm-pos))))))))
+                 (* (height context) (vy norm-pos)))))))
 
 (defun screen->vec (vec &optional (z 0))
   (let* ((context *context*)
