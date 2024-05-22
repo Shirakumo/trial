@@ -292,7 +292,7 @@
 (define-command-line-command clear-config (&key ((quiet :quiet :q) NIL boolean "Whether to delete all files quietly"))
   :help "Clear all configuration and setting files."
   (flet ((prompt ()
-           (format *query-io* "This will delete all configuration, setting, and save files for ~a.~%Are you sure? [y/N]~%")
+           (format *query-io* "This will delete all configuration, setting, and save files for ~a.~%Are you sure? [y/N]~%" +app-system+)
            (string-equal "y" (read-line *query-io*))))
     (if (or quiet (prompt))
         (org.shirakumo.filesystem-utils:delete-directory (config-directory))
