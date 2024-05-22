@@ -42,3 +42,8 @@
   (loop for pass across (passes scene)
         do (when (object-renderable-p entity pass)
              (leave entity pass))))
+
+(defmethod describe-object :after ((scene pipelined-scene) stream)
+  (format stream "~&~%Shader Passes:~%")
+  (loop for pass across (passes scene)
+        do (format stream " ~a~%" pass)))
