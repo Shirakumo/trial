@@ -234,19 +234,19 @@
     (:hue
      (gl-extension-case
        (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :hue-khr))))
+        (gl:blend-equation :hsl-hue-khr))))
     (:saturation
      (gl-extension-case
        (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :saturation-khr))))
+        (gl:blend-equation :hsl-saturation-khr))))
     (:color
      (gl-extension-case
        (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :color-khr))))
+        (gl:blend-equation :hsl-color-khr))))
     (:luminosity
      (gl-extension-case
        (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :luminosity-khr))))
+        (gl:blend-equation :hsl-luminosity-khr))))
     (:invert
      (gl:blend-func-separate :one :one :one :one-minus-src-alpha)
      (gl:blend-equation :func-reverse-subtract))))
