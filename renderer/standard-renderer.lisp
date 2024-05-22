@@ -78,6 +78,14 @@
          (setf max-textures (min max-textures (unit-id port))))))
     (lru-cache-resize (allocated-textures pass) max-textures)))
 
+(defmethod describe-object :after ((pass standard-render-pass) stream)
+  (format stream "~&~%Lights:~%")
+  (do-lru-cache (material id (allocated-lights pass))
+    (format stream " ~a~%" material))
+  (format stream "~&~%Materials:~%")
+  (do-lru-cache (material id (allocated-materials pass))
+    (format stream " ~a~%" material)))
+
 (defmethod make-pass-shader-program ((pass standard-render-pass) (object renderable))
   (if (typep object 'standard-renderable)
       (call-next-method)

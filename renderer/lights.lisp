@@ -18,7 +18,7 @@
 
 (define-gl-struct standard-light-block
   (size NIL :initarg :size :initform 128 :reader size)
-  (light-count :int :accessor light-count)
+  (light-count :int :accessor light-count :reader sequence:length)
   (lights (:array (:struct standard-light) size) :reader lights))
 
 (defclass light (entity)

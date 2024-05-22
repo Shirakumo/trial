@@ -76,7 +76,7 @@
   :albedo-texture (// 'trial 'white))
 
 (define-gl-struct pbr-material-block
-  (size NIL :initarg :size :initform 64 :reader size)
+  (size NIL :initarg :size :initform 64 :reader size :reader sequences:length)
   (materials (:array (:struct pbr-material) size) :accessor materials))
 
 (defmethod <- progn ((target pbr-material) (material pbr-material))
