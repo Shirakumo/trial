@@ -98,10 +98,6 @@
   (when (sources texture)
     (setf (pixel-format (first (sources texture))) value)))
 
-(defmethod dependencies ((texture texture))
-  (loop for source in (sources texture)
-        collect (texture-source-pixel-data source)))
-
 (defun texture-texspec (texture)
   (loop for slot in '(width height depth target levels samples internal-format
                       mag-filter min-filter mipmap-levels mipmap-lod
