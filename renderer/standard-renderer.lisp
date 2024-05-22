@@ -341,10 +341,12 @@
 
 (defmethod leave ((light located-light) (pass light-cache-render-pass))
   (3ds:leave light (light-cache pass))
+  (lru-cache-pop light (allocated-lights pass))
   (setf (light-cache-dirty-p pass) T))
 
 (defmethod leave ((light light) (pass light-cache-render-pass))
   (array-utils:vector-pop-element* (global-lights pass) light)
+  (lru-cache-pop light (allocated-lights pass))
   (setf (light-cache-dirty-p pass) T))
 
 (defmethod enable :after ((light located-light) (pass light-cache-render-pass))
