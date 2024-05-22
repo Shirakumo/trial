@@ -98,8 +98,14 @@
 (defmethod bind-textures ((pass standard-render-pass))
   (call-next-method)
   (do-lru-cache (texture id (allocated-textures pass))
-    (gl:active-texture id)
-    (gl:bind-texture (target texture) (gl-name texture))))
+    ;; KLUDGE: textures might get deallocated but still be "stuck" in
+    ;;         our cache here. If they aren't allocated, we simply remove
+    ;;         them from the cache with the hope it won't be referenced.
+    (cond ((gl-name texture)
+           (gl:active-texture id)
+           (gl:bind-texture (target texture) (gl-name texture)))
+          (T
+           (lru-cache-pop texture (allocated-textures pass))))))
 
 (defmethod enable ((texture texture) (pass standard-render-pass))
   ;; KLUDGE: We effectively disable the cache here BECAUSE the texture binds are
