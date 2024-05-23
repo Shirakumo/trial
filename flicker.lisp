@@ -36,12 +36,12 @@
          (lambda (tt)
            (declare (type single-float tt))
            (declare (optimize speed))
-           (multiple-value-bind (i rest) (truncate tt ,dt)
+           (multiple-value-bind (i rest) (truncate (mod tt ,(float (* dt (length pattern)) 0f0)) ,dt)
              (declare (type (unsigned-byte 16) i))
              (let* ((a ,(map '(simple-array (single-float) (*)) #'flicker-char-to-intensity pattern))
-                    (l (aref a (mod i ,(length pattern))))
+                    (l (aref a i))
                     (r (aref a (mod (1+ i) ,(length pattern)))))
-               (lerp l r (/ rest ,dt)))))))
+               (lerp l r (* rest ,(/ dt))))))))
 
 ;; Original Quake flicker patterns
 (define-flicker-pattern normal "m")
