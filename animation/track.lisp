@@ -29,7 +29,7 @@
          (setf (frames track) frames))))
 
 (defmethod print-object ((track animation-track) stream)
-  (print-unreadable-object (track stream :type T)
+  (print-unreadable-object (track stream :type T :identity T)
     (if (valid-p track)
         (format stream "~a ~a" (start-time track) (end-time track))
         (format stream "INVALID"))))
@@ -212,7 +212,7 @@
 (defmethod (setf sequences:elt) :after (value (track fast-animation-track) index)
   (setf (sampled-frames track) (generate-index-lookup-table track)))
 
-(defmethod (setf frames) :after (value (track fast-animation-track))
+(defmethod (setf frames) :after ((value vector) (track fast-animation-track))
   (setf (sampled-frames track) (generate-index-lookup-table track)))
 
 (defmethod (setf sampled-frames) :after (frames (track fast-animation-track))
