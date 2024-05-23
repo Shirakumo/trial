@@ -311,8 +311,21 @@
 (defmethod clear :after ((scene physics-scene))
   (clear (physics-system scene)))
 
-(define-handler (physics-scene tick :after) (tt dt fc)
-  (update (physics-system physics-scene) tt dt fc))
+(define-handler (physics-scene pre-tick :after) (dt)
+  (let ((system (physics-system physics-scene)))
+    (start-frame system)
+    (loop for entity across (%objects system)
+          when (awake-p entity)
+          do (loop for force across (forces system)
+                   do (apply-force force entity dt)))))
+
+(define-handler (physics-scene tick :after) (dt)
+  (let ((system (physics-system physics-scene)))
+    (integrate system dt)
+    (let* ((hits (hits system))
+           (end (generate-hits system hits 0 (length hits))))
+      (when (< 0 end)
+        (resolve-hits system hits 0 end dt)))))
 
 (defmethod detect-hits ((scene physics-scene) other hits start end)
   (detect-hits (physics-system scene) other hits start end))
