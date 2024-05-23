@@ -300,6 +300,7 @@
   (nv+ (the vec3 (velocity entity)) (the vec3 velocity))
   (nv+ (the vec3 (rotation entity)) (the vec3 rotation)))
 
+(declaim (ftype (function (simple-vector (unsigned-byte 32) (unsigned-byte 32)) (unsigned-byte 32)) prune-hits))
 (defun prune-hits (hits start new-start)
   (loop for head from start below new-start
         for hit = (aref hits start)
@@ -439,6 +440,9 @@
   (detect-hits other (acceleration-structure system) hits start end))
 
 (defmethod generate-hits ((system accelerated-rigidbody-system) hits start end)
+  (declare (optimize speed))
+  (declare (type simple-vector hits))
+  (declare (type (unsigned-byte 32) start end))
   (3ds:do-pairs (a b (acceleration-structure system) start)
     (when (< 0 (logand (collision-mask a) (collision-mask b)))
       (let ((entity1 (primitive-entity a))

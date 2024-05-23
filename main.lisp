@@ -10,9 +10,11 @@
   (clear-retained)
   (setf +main+ main))
 
-(defmethod initialize-instance :after ((main main) &key)
-  (when (string= "true" (uiop:getenv "TRIAL_QUIT_AFTER_INIT"))
-    (quit (context main))))
+(defmethod start ((main main))
+  (cond ((uiop:getenvp "TRIAL_QUIT_AFTER_INIT")
+         (quit (context main)))
+        (T
+         (call-next-method))))
 
 (defmethod finalize ((main main))
   (v:info :trial.main "RAPTURE")
@@ -135,7 +137,7 @@
   (v:output-here)
   (v:info :trial.main "GENESIS")
   (v:info :trail.main "Launching version ~a (~a)" (version :app) (version :binary))
-  (when (string= "true" (uiop:getenv "TRIAL_QUIT_AFTER_INIT"))
+  (when (uiop:getenvp "TRIAL_QUIT_AFTER_INIT")
     (let ((context (getf initargs :context)))
       (setf (getf initargs :context) (list* :visible NIL context))))
   (handler-bind ((error #'standalone-error-handler)

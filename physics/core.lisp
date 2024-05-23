@@ -1,5 +1,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
+(declaim (ftype (function (T) single-float) mass inverse-mass))
+
 (defgeneric integrate (object dt))
 (defgeneric mass (object))
 (defgeneric (setf mass) (mass object))
