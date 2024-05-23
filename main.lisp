@@ -127,9 +127,9 @@
     object))
 
 (defmethod render ((source main) (target main))
-  (render (scene source) NIL)
-  ;; KLUDGE: This assumes a pipelined scene
   (when (visible-p (context target))
+    (render (scene source) NIL)
+    ;; KLUDGE: This assumes a pipelined scene
     (blit-to-screen (scene source))))
 
 (defmethod launch ((main symbol) &rest initargs)
