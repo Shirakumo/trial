@@ -208,6 +208,21 @@
 
 (define-global +global-sequences+ (make-hash-table :test 'eql))
 
+(define-event global-sequence-changed () sequence-id old-value value)
+
+(defun global-sequence-value (sequence)
+  (gethash sequence +global-sequences+))
+
+(defun (setf global-sequence-value) (value sequence &key (trigger :on-change))
+  (let ((old-value (gethash sequence +global-sequences+)))
+    (when (ecase trigger
+            ((T) T)
+            ((NIL) NIL)
+            (:on-change (eql value old-value)))
+      (issue T 'global-sequence-changed :sequence-id sequence :old-value old-value :value value)))
+  (setf (gethash sequence +global-sequences+) value)
+  value)
+
 (defclass global-sequence-trigger (one-shot-trigger-volume checked-trigger-volume type-filtered-trigger-volume)
   ((sequence-id :initform T :initarg :sequence-id :accessor sequence-id)
    (modulation :initform #'+ :initarg :modulation :accessor modulation)
@@ -216,10 +231,10 @@
 (define-transfer global-sequence-trigger sequence-id modulation new-value)
 
 (defmethod value ((trigger global-sequence-trigger))
-  (gethash (sequence-id trigger) +global-sequences+))
+  (global-sequence-value (sequence-id trigger)))
 
 (defmethod activate-trigger (a (trigger global-sequence-trigger))
-  (setf (gethash (sequence-id trigger) +global-sequences+)
+  (setf (global-sequence-value (sequence-id trigger))
         (funcall (modulation trigger) (value trigger) (new-value trigger))))
 
 (defclass checkpoint-trigger (one-shot-trigger-volume type-filtered-trigger-volume)
