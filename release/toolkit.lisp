@@ -72,6 +72,9 @@
   (with-output-to-string (out)
     (assert (= 0 (sb-ext:process-exit-code (sb-ext:run-program program (mapcar #'coerce-program-arg args) :search T :output out))))))
 
+(defun envvar-password (name &optional field)
+  (uiop:getenv (format NIL "TRIAL_RELEASE_~:@(~a~@[_~a~]~)" name field)))
+
 (defun get-password (name &optional field)
   (let ((candidates (cl-ppcre:split "\\n+" (run* "pass" "find" name))))
     (when (cdr candidates)
@@ -90,7 +93,8 @@
   (read-line *query-io*))
 
 (defun password (name &optional field)
-  (or (get-password name field)
+  (or (envvar-password name field)
+      (get-password name field)
       (query-password name field)))
 
 (defun list-paths (base &rest paths)
