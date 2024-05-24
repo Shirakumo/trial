@@ -31,7 +31,7 @@
 (defmethod upload ((service (eql :rsync)) &key (release (release)) (bundles (config :rsync :bundles)) (user (config :rsync :user)) (port (config :rsync :port)) (hostname (config :rsync :hostname)) (path (config :rsync :path)))
   (dolist (bundle bundles)
     (let ((bundle (bundle-path bundle :version (release-version release))))
-      (uiop:run-program (list "rsync" "-avz" (format NIL "--rsh=ssh -p~a" (or port 22)) (uiop:native-namestring bundle)
+      (uiop:run-program (list "rsync" "-avz" (format NIL "--rsh=ssh -p~a" (or port 22)) bundle
                               (format NIL "~@[~a@~]~a:~@[~a~]" user hostname path))
                         :output *standard-output* :error-output *error-output*)
       (deploy:status 2 "Uploaded to ~a~@[~a~]" hostname path))))
@@ -107,19 +107,24 @@
                                   ("\\$EXECUTABLE" ,(if platform (release-executable release platform) ""))
                                   ("\\$SECRET" ,(or secret "")))))
 
-(defmethod upload ((service (eql :itch)) &key (release (release)) (bundles (config :itch :bundles)) (user (config :itch :user)) (project (config :itch :project)) &allow-other-keys)
-  (let ((version (release-version release)))
+(defmethod upload ((service (eql :itch)) &key (release (release)) (bundles (config :itch :bundles)) (user (config :itch :user)) (password (config :itch :password)) (project (config :itch :project)) &allow-other-keys)
+  (let ((version (release-version release))
+        (config (merge-pathnames "itch/butler_creds" (uiop:xdg-config-pathname))))
+    (when (and password (not (probe-file config)))
+      (alexandria:write-string-into-file (password password) config))
     (loop for (bundle file) on bundles by #'cddr
           for filename = (or file (format NIL "~a:~{~a~^-~}" (or project (string (config :system))) bundle))
-          do (run "butler" "push" (uiop:native-namestring (bundle-path bundle :version version)) (format NIL "~a/~a" user filename) "--userversion" version))))
+          do (run "butler" "-i" config
+                  "push" (bundle-path bundle :version version) (format NIL "~a/~a" user filename)
+                  "--userversion" version))))
 
 (defmethod upload ((service (eql :steam)) &key (release (release)) (branch (config :steam :branch)) (preview (config :steam :preview)) (user (config :steam :user)) (password (config :steam :password)) &allow-other-keys)
   (let ((template (make-pathname :name "app-build" :type "vdf" :defaults (output)))
         (build (make-pathname :name "app-build" :type "vdf" :defaults release)))
     (template template build release :branch branch :preview preview)
     (run "steamcmd.sh"
-         "+login" user (or password (password user))
-         "+run_app_build" (uiop:native-namestring build)
+         "+login" user (password (or password user))
+         "+run_app_build" build
          "+quit")))
 
 (defmethod upload ((service (eql :gog)) &key (release (release)) (branch (config :gog :branch)) (user (config :gog :user)) (password (config :gog :password)) &allow-other-keys)
@@ -131,7 +136,7 @@
         (run "GOGGalaxyPipelineBuilder"
              "build-game" build
              "--username" user
-             "--password" (password password)
+             "--password" (password (or password user))
              "--version" release
              "--branch" branch
              "--branch_password" branch-password)
