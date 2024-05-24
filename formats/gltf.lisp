@@ -572,6 +572,18 @@
                   :type-expression (read-from-string (gltf:filter trigger-data))
                   :spawn-point (vec (aref array 0) (aref array 1) (aref array 2)))))
 
+(define-trigger-translation gltf:shirakumo-progression (trigger trigger-data)
+  (change-class trigger 'trial::global-sequence-trigger
+                :condition (gltf:condition trigger-data)
+                :sequence-id (gltf:state trigger-data)
+                :new-value (gltf:value trigger-data)
+                :modulation (ecase (gltf:mode trigger-data)
+                              (:inc #'+)
+                              (:dec #'-)
+                              (:set (lambda (prev new)
+                                      (declare (ignore prev))
+                                      new)))))
+
 (defmethod load-model (input (type (eql :glb)) &rest args)
   (apply #'load-model input :gltf args))
 

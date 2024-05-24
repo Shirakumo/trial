@@ -187,19 +187,20 @@
   ())
 
 (defclass checked-trigger-volume (trigger-volume)
-  ((comparator :accessor comparator :initform 'eql :initarg :comparator :accessor comparator)
-   (expected-value :accessor expected-value :initform NIL :initarg :expected-value :accessor expected-value)))
+  ((condition :accessor condition-fun :initform (constantly NIL) :initarg :condition)))
 
-(define-transfer checked-trigger-volume comparator expected-value)
+(define-transfer checked-trigger-volume condition-fun)
+
+(defmethod shared-initialize :after ((trigger checked-trigger-volume) slots &key condition)
+  (etypecase condition
+    (null)
+    (function
+     (setf (condition-fun trigger) condition))
+    (cons
+     (setf (condition-fun trigger) (compile NIL `(lambda () ,condition))))))
 
 (defmethod trigger-passes-p ((trigger checked-trigger-volume))
-  (let ((expected (expected-value trigger))
-        (value (value trigger)))
-    (etypecase (comparator trigger)
-      ((eql T) T)
-      ((eql NIL) NIL)
-      ((or symbol function)
-       (funcall (comparator trigger) expected value)))))
+  (funcall (condition-fun trigger)))
 
 (defmethod collides-p :around ((a rigidbody) (trigger checked-trigger-volume) hit)
   (when (trigger-passes-p trigger)
@@ -208,18 +209,18 @@
 (define-global +global-sequences+ (make-hash-table :test 'eql))
 
 (defclass global-sequence-trigger (one-shot-trigger-volume checked-trigger-volume type-filtered-trigger-volume)
-  ((comparator :initform '<=)
-   (expected-value :initform 0)
-   (sequence-id :initform T :initarg :sequence-id :accessor sequence-id)
+  ((sequence-id :initform T :initarg :sequence-id :accessor sequence-id)
+   (modulation :initform #'+ :initarg :modulation :accessor modulation)
    (new-value :initform 1 :initarg :new-value :accessor new-value)))
 
-(define-transfer global-sequence-trigger comparator expected-value sequence-id new-value)
+(define-transfer global-sequence-trigger sequence-id modulation new-value)
 
 (defmethod value ((trigger global-sequence-trigger))
   (gethash (sequence-id trigger) +global-sequences+))
 
 (defmethod activate-trigger (a (trigger global-sequence-trigger))
-  (setf (gethash (sequence-id trigger) +global-sequences+) (new-value trigger)))
+  (setf (gethash (sequence-id trigger) +global-sequences+)
+        (funcall (modulation trigger) (value trigger) (new-value trigger))))
 
 (defclass checkpoint-trigger (one-shot-trigger-volume type-filtered-trigger-volume)
   ((spawn-point :initform (vec 0 0 0) :initarg :spawn-point :accessor spawn-point)))
