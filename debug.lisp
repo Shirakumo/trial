@@ -69,7 +69,8 @@ void main(){
    (lines-vao :accessor lines-vao)
    (lines :accessor lines)
    (text-render :accessor text-render)
-   (dirty :initform 0 :accessor dirty)))
+   (dirty :initform 0 :accessor dirty)
+   (clear-after-render :initform T :accessor clear-after-render)))
 
 (defmethod initialize-instance :after ((draw debug-draw) &key)
   (setf (instances draw) (make-array 64 :fill-pointer 0 :adjustable T :element-type '(unsigned-byte 32)))
@@ -115,7 +116,9 @@ void main(){
     (unless (eq draw (elt scene (1- (length scene))))
       (warn "~S is not the last entity in the scene" draw)
       (leave draw T)
-      (enter draw scene))))
+      (enter draw scene)))
+  (when (clear-after-render draw)
+    (debug-clear :debug-draw draw)))
 
 (defun debug-draw-allocate (data instances instance type n)
   (cond (instance
