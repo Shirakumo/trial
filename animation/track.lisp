@@ -194,7 +194,7 @@
              (samples (truncate (+ rate (* rate duration))))
              (sampled (make-array samples :element-type '(unsigned-byte 32)))
              (dt (/ duration (float (1- samples) 0f0)))
-             (time (start-time track)))
+             (time 0.0))
         (declare (type single-float rate duration dt time))
         (setf (duration track) duration)
         (dotimes (i samples sampled)
