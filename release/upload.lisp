@@ -122,7 +122,7 @@
   (let ((template (make-pathname :name "app-build" :type "vdf" :defaults (output)))
         (build (make-pathname :name "app-build" :type "vdf" :defaults release)))
     (template template build release :branch branch :preview preview)
-    (run "steamcmd.sh"
+    (run "steamcmd"
          "+login" user (password (or password user))
          "+run_app_build" build
          "+quit")))
