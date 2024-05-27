@@ -121,6 +121,8 @@ void main(){
     (debug-clear :debug-draw draw)))
 
 (defun debug-draw-allocate (data instances instance type n)
+  (declare (type (vector (unsigned-byte 32)) instances))
+  (declare (type (vector single-float) data))
   (cond (instance
          (let ((diff (- (* 3 n) (aref instances (+ 2 (* 3 instance)))))
                (i (aref instances (+ 1 (* 3 instance)))))
@@ -136,9 +138,9 @@ void main(){
              (adjust-array data (+ (length data) (* 3 n))))
            (incf (fill-pointer data) (* 3 n))
            (setf instance (truncate (length instances) 3))
-           (vector-push-extend type instances)
-           (vector-push-extend i instances)
-           (vector-push-extend (* 3 n) instances)
+           (vector-push-extend type instances 3)
+           (vector-push i instances)
+           (vector-push (* 3 n) instances)
            (values i instance)))))
 
 (defmacro define-debug-draw-function ((name type) args &body body)
@@ -208,7 +210,7 @@ void main(){
   (apply #'debug-box #.(vec 0 0 0) (box-bsize primitive) args))
 
 (define-debug-draw-function (debug-box lines) (location bsize &key (color #.(vec 1 0 0)) (transform (model-matrix)))
-  (allocate (* 12 2 2))
+  (allocate (* 3 4 2 2))
   (flet ((line (a b)
            (v (n*m transform (v+ location a))) (v color)
            (v (n*m transform (v+ location b))) (v color)))
@@ -493,7 +495,7 @@ void main(){
 #++(define-debug-draw-function (debug-vector lines) (location direction &key (color #.(vec 1 0 0)))
   )
 
-(defun debug-clear (&key (debug-draw (node 'debug-draw T)) (update T) instance)
+(defun debug-clear (&key (debug-draw (node 'debug-draw T)) instance)
   (when debug-draw
     (cond (instance
            (let* ((type (aref (instances debug-draw) (+ 0 (* 3 instance))))
@@ -503,6 +505,7 @@ void main(){
                           (1 (points debug-draw))
                           (2 (lines debug-draw))
                           (3 (text debug-draw)))))
+             (setf (ldb (byte 1 type) (dirty debug-draw)) 1)
              (array-utils:array-shift data :n size :from start)
              (when (< (* 3 (1+ instance)) (length (instances debug-draw)))
                (array-utils:array-shift (instances debug-draw) :n -3 :from (* 3 (1+ instance))))))
@@ -510,11 +513,8 @@ void main(){
            (setf (fill-pointer (points debug-draw)) 0)
            (setf (fill-pointer (lines debug-draw)) 0)
            (setf (fill-pointer (text debug-draw)) 0)
-           (setf (fill-pointer (instances debug-draw)) 0)))
-    (when update
-      (resize-buffer-data (caar (bindings (points-vao debug-draw))) T)
-      (resize-buffer-data (caar (bindings (lines-vao debug-draw))) T)
-      (resize-buffer-data (caar (bindings (text-vao debug-draw))) T))))
+           (setf (fill-pointer (instances debug-draw)) 0)
+           (setf (dirty debug-draw) #b11111)))))
 
 (define-class-shader (debug-draw :vertex-shader)
   "layout (location = 0) in vec3 position;
