@@ -55,6 +55,12 @@
         :report "Allocate the resource now and continue."
         (allocate resource)))))
 
+(defun ensure-allocated (resource)
+  (unless (allocated-p resource)
+    (mapc #'ensure-allocated (dependencies resource))
+    (allocate resource))
+  resource)
+
 (defclass foreign-resource (resource)
   ((data-pointer :initform NIL :initarg :data-pointer :accessor data-pointer)))
 
