@@ -138,6 +138,10 @@
 
 (define-transfer rigidbody rotation inverse-inertia-tensor torque angular-damping)
 
+(defmethod energy ((entity physics-entity))
+  (* 0.5 (+ (* (mass entity) (vsqrlength (velocity entity)))
+            (vsqrlength (m* (minv (inverse-inertia-tensor entity)) (rotation entity))))))
+
 (defmethod (setf torque) ((torque vec3) (entity rigidbody))
   (v<- (torque entity) torque))
 

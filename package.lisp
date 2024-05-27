@@ -239,6 +239,7 @@
   (:export
    #:integrate
    #:mass
+   #:energy
    #:start-frame
    #:physics-entity
    #:velocity

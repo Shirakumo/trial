@@ -32,6 +32,9 @@
         0.0
         (/ (inverse-mass entity)))))
 
+(defmethod energy ((entity physics-entity))
+  (* 0.5 (mass entity) (vsqrlength (velocity entity))))
+
 (defmethod (setf mass) (mass (entity physics-entity))
   (setf (inverse-mass entity) (if (= 0.0 mass) 0.0 (abs (float (/ mass) 0.0)))))
 
