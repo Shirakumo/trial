@@ -380,7 +380,7 @@
     (format stream "~a" (bsize primitive))))
 
 (defmethod compute-bsize ((primitive box))
-  (box-bsize primitive))
+  (vcopy (box-bsize primitive)))
 
 (defmethod compute-radius ((primitive box))
   (vlength (box-bsize primitive)))
