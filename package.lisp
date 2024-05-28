@@ -422,6 +422,7 @@
    #:contact-a-relative
    #:contact-b-relative
    #:make-contact
+   #:cancel-contact
    #:rigidbody-system
    #:collides-p
    #:resolve-collision

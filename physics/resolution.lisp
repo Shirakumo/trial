@@ -11,6 +11,14 @@
   (a-velocity-change (vec3 0 0 0) :type vec3)
   (b-velocity-change (vec3 0 0 0) :type vec3))
 
+(defun cancel-contact (contact)
+  (setf (contact-depth contact) 0.0)
+  (setf (contact-desired-delta contact) 0.0)
+  (v<- (contact-a-rotation-change contact) 0)
+  (v<- (contact-a-velocity-change contact) 0)
+  (v<- (contact-b-rotation-change contact) 0)
+  (v<- (contact-b-velocity-change contact) 0))
+
 (defun hit-basis (hit &optional (basis (mat3)))
   (declare (optimize speed (safety 1)))
   (declare (type hit hit))
@@ -369,7 +377,8 @@
           for worst = (the single-float (depth-eps system))
           for contact = NIL
           do (do-contacts (tentative)
-               (when (< worst (contact-depth tentative))
+               (when (and (< worst (contact-depth tentative))
+                          (< 0.0 (contact-depth tentative)))
                  (setf contact tentative)
                  (setf worst (contact-depth contact))))
              (unless contact (return))
@@ -390,7 +399,8 @@
           for worst = (the single-float (velocity-eps system)) ;; Some kinda epsilon.
           for contact = NIL
           do (do-contacts (tentative)
-               (when (< worst (contact-desired-delta tentative))
+               (when (and (< worst (contact-desired-delta tentative))
+                          (< 0.0 (contact-desired-delta tentative)))
                  (setf contact tentative)
                  (setf worst (contact-desired-delta contact))))
              (unless contact (return))
