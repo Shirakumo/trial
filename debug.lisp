@@ -143,6 +143,10 @@ void main(){
            (vector-push (* 3 n) instances)
            (values i instance)))))
 
+(defun %debug-draw ()
+  (or (node 'debug-draw T)
+      (enter-and-load (make-instance 'debug-draw) container +main+)))
+
 (defmacro define-debug-draw-function ((name type) args &body body)
   (let ((type-id (ecase type (points 1) (lines 2) (text 3))))
     `(defun ,name (,@args (debug-draw (node 'debug-draw T)) (container (scene +main+)) instance)
