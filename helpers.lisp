@@ -106,6 +106,9 @@
 (defmethod (setf tf) ((tf transform) (obj transformed-entity))
   (t<- (tf obj) tf))
 
+(defmethod (setf tf) ((mat mat4) (obj transformed-entity))
+  (!tfrom-mat (tf obj) mat))
+
 (defmethod location ((tf transform))
   (tlocation tf))
 
@@ -115,7 +118,7 @@
 (defmethod 3ds:location ((obj transformed-entity))
   (tlocation (tf obj)))
 
-(defmethod (setf location) (vec (obj transformed-entity))
+(defmethod (setf location) ((vec vec3) (obj transformed-entity))
   (v<- (tlocation (tf obj)) vec))
 
 (defmethod scaling ((tf transform))
@@ -124,7 +127,7 @@
 (defmethod scaling ((obj transformed-entity))
   (tscaling (tf obj)))
 
-(defmethod (setf scaling) (vec (obj transformed-entity))
+(defmethod (setf scaling) ((vec vec3) (obj transformed-entity))
   (v<- (tscaling (tf obj)) vec))
 
 (defmethod (setf scaling) ((value real) (obj transformed-entity))
@@ -136,13 +139,13 @@
 (defmethod orientation ((obj transformed-entity))
   (trotation (tf obj)))
 
-(defmethod (setf orientation) (quat (obj transformed-entity))
+(defmethod (setf orientation) ((quat quat) (obj transformed-entity))
   (q<- (trotation (tf obj)) quat))
 
 (defmethod axis ((obj transformed-entity))
   (qaxis (trotation (tf obj))))
 
-(defmethod (setf axis) (axis (obj transformed-entity))
+(defmethod (setf axis) ((axis vec3) (obj transformed-entity))
   (setf (trotation (tf obj)) (qfrom-angle axis (angle obj))))
 
 (defmethod angle ((obj transformed-entity))

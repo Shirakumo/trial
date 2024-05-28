@@ -114,7 +114,7 @@ void main(){
   (render (text-render draw) T)
   (let ((scene (scene draw)))
     (unless (eq draw (elt scene (1- (length scene))))
-      (warn "~S is not the last entity in the scene" draw)
+      #++(warn "~S is not the last entity in the scene" draw)
       (leave draw T)
       (enter draw scene)))
   (when (clear-after-render draw)
