@@ -90,8 +90,12 @@
     (with-retry-restart (retry "Retry loading the image source.")
       (load-image source type))))
 
-(defclass image-loader (compiled-generator)
-  ())
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defclass image-loader (compiled-generator)
+    ())
+
+  (defclass image (single-resource-asset file-input-asset image-loader)
+    ()))
 
 (defmethod generate-resources ((generator image-loader) sources &rest texture-args &key (type T) target swizzle internal-format (resource (resource generator T)) (texture-class 'texture) &allow-other-keys)
   (multiple-value-bind (sources source-swizzle) (normalize-texture-sources (enlist (%load-image sources type)) target)
@@ -110,10 +114,10 @@
            (when (string-equal "png" (pathname-type out))
              (run "optipng" "-o" "5" "-clobber" "-out" out in))))
 
-(defclass image (single-resource-asset file-input-asset image-loader)
-  ())
-
 ;; FIXME: Once texture loaded, unload sources to free static memory!
 #++
 (defmethod load :after ((image image))
   (deallocate (sources (resource image T))))
+
+(define-asset (trial cat) image
+    #p"cat.png")
