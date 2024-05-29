@@ -112,7 +112,7 @@
     (handle (make-event 'instance-class-changed :instance pass) +main+)))
 
 (defmethod shared-initialize :after ((pass shader-pass) slots &key)
-  (loop with texture-index = (max 16 (gl:get-integer :max-texture-image-units))
+  (loop with texture-index = (max 16 (if *context* (gl:get-integer :max-texture-image-units) 0))
         for port in (flow:ports pass)
         do (typecase port
              (texture-port

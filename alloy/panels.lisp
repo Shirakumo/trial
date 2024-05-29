@@ -74,7 +74,8 @@
   (alloy:layout-tree (alloy:layout-element panel)))
 
 (defmethod trial:show ((panel panel) &key (ui (ui)))
-  (trial:commit panel (trial:loader trial:+main+) :unload NIL)
+  (when trial:+main+
+    (trial:commit panel (trial:loader trial:+main+) :unload NIL))
   ;; Then attach to the UI
   (when (alloy:focus-element panel)
     (dolist (panel (panels ui))
