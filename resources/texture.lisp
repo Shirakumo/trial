@@ -325,14 +325,14 @@
 (defmethod deactivate ((source texture))
   (gl:bind-texture (target source) 0))
 
-(defmethod clear ((texture texture))
+(defun clear-texture (texture &optional (pixel 0))
   #-elide-context-current-checks
   (check-context-current)
   (gl-extension-case
     (:gl-arb-clear-texture
      (let ((size (pixel-data-stride (pixel-type texture) (pixel-format texture))))
        (cffi:with-foreign-object (fill :uint8 size)
-         (static-vectors:fill-foreign-memory fill size 0)
+         (static-vectors:fill-foreign-memory fill size pixel)
          (%gl:clear-tex-image (gl-name texture) 0
                               (pixel-format texture)
                               (pixel-type texture)
@@ -341,7 +341,7 @@
      (let ((size (* (width texture) (or (height texture) 1) (or (depth texture) 1)
                     (pixel-data-stride (pixel-type texture) (pixel-format texture)))))
        (cffi:with-foreign-object (fill :uint8 size)
-         (static-vectors:fill-foreign-memory fill size 0)
+         (static-vectors:fill-foreign-memory fill size pixel)
          (gl:bind-texture (target texture) (gl-name texture))
          (ecase (target texture)
            (:texture-1d
@@ -350,6 +350,9 @@
             (%gl:tex-sub-image-2d (target texture) 0 0 0 (width texture) (height texture) (pixel-format texture) (pixel-type texture) fill))
            ((:texture-3d :texture-2d-array)
             (%gl:tex-sub-image-3d (target texture) 0 0 0 0 (width texture) (height texture) (depth texture) (pixel-format texture) (pixel-type texture) fill))))))))
+
+(defmethod clear ((texture texture))
+  (clear-texture texture))
 
 ;;;; Texture spec wrangling
 ;; The idea of this is that, in order to maximise sharing of texture resources
