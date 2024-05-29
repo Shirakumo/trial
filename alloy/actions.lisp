@@ -39,6 +39,6 @@
                         (cdr hold) 0.0))
     ;; 0.5 is the initial repeat delay
     (when (< 0.5 (cdr hold))
-      (trial:handle trial:+main+ (trial:make-event (car hold)))
+      (trial:handle (trial:make-event (car hold)) trial:+main+)
       ;; 0.1 is the delay between repeats
       (setf (cdr hold) (- 0.5 0.1)))))
