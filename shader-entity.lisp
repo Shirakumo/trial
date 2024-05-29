@@ -374,6 +374,14 @@
   (dolist (buffer (buffers object))
     (stage buffer area)))
 
+(defmethod compute-preprocessor-directives ((class shader-entity-class))
+  (loop for slot in (c2mop:class-slots class)
+        for name = (c2mop:slot-definition-name slot)
+        when (typep slot 'constant-slot-definition)
+        collect `(glsl-toolkit:preprocessor-directive
+                  ,(format NIL "#define ~a"
+                           (constant-name slot)))))
+
 (defmethod compute-preprocessor-directives ((entity shader-entity))
   (loop for slot in (c2mop:class-slots (class-of entity))
         for name = (c2mop:slot-definition-name slot)
@@ -384,16 +392,30 @@
                            (when (slot-boundp entity name)
                              (slot-value entity name))))))
 
+(defmethod shader-source ((class shader-entity-class))
+  (loop with constants = `(glsl-toolkit:shader ,@(compute-preprocessor-directives class))
+        with sources = (buffer-sources class)
+        for (type source) on (effective-shaders class) by #'cddr
+        for processed = (glsl-toolkit:merge-shader-sources
+                         (append (list* constants sources)
+                                 (list (glsl-toolkit:combine-methods source)))
+                         :min-version (glsl-target-version T))
+        collect (list type processed)))
+
+(defmethod shader-source ((entity shader-entity))
+  (loop with constants = `(glsl-toolkit:shader ,@(compute-preprocessor-directives entity))
+        with sources = (buffer-sources entity)
+        for (type source) on (effective-shaders entity) by #'cddr
+        for processed = (glsl-toolkit:merge-shader-sources
+                         (append (list* constants sources)
+                                 (list (glsl-toolkit:combine-methods source)))
+                         :min-version (glsl-target-version T))
+        collect (list type processed)))
+
 (defmethod make-shader-program ((entity shader-entity))
   (make-instance 'shader-program
-                 :shaders (loop with constants = `(glsl-toolkit:shader ,@(compute-preprocessor-directives entity))
-                                with sources = (buffer-sources entity)
-                                for (type source) on (effective-shaders entity) by #'cddr
-                                for processed = (glsl-toolkit:merge-shader-sources
-                                                 (append (list* constants sources)
-                                                         (list (glsl-toolkit:combine-methods source)))
-                                                 :min-version (glsl-target-version T))
-                                collect (make-instance 'shader :source processed :type type))
+                 :shaders (loop for (type source) in (shader-source entity)
+                                collect (make-instance 'shader :type type :source source))
                  :buffers (buffers entity)))
 
 ;; This is hacky and I hate it.
