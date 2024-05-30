@@ -4,8 +4,10 @@
   #+asdf (asdf:clear-source-registry)
   #+asdf (defun asdf:upgrade-asdf () NIL)
   (deploy:copy-directory-tree (pathname-utils:subdirectory (data-root) "lang") directory)
-  (when (probe-file (merge-pathnames "keymap.lisp" (data-root)))
-    (uiop:copy-file (merge-pathnames "keymap.lisp" (data-root)) (merge-pathnames "keymap.lisp" directory)))
+  (let ((default-keymap (merge-pathnames "keymap.lisp" (data-root))))
+    (when (probe-file default-keymap)
+      (load-mapping default-keymap)
+      (uiop:copy-file default-keymap (merge-pathnames "keymap.lisp" directory))))
   ;; FIXME: This is bad. We always deploy a bunch of shit that's not really needed.
   (dolist (pool (list-pools))
     (let ((source (base pool)))
