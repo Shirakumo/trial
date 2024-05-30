@@ -128,7 +128,6 @@
   (trial:stage (trial:framebuffer pass) area))
 
 (defmethod trial:render :around ((pass ui-pass) target)
-  (gl:clear-color 0 0 0 0)
   (trial:activate (trial:framebuffer pass))
   (trial:with-pushed-features
     (trial:enable-feature :depth-test :stencil-test)

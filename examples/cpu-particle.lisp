@@ -3,7 +3,6 @@
 (define-example cpu-particle
   :title "CPU Particle Simulation"
   :superclasses (particle-scene)
-  (gl:clear-color 0 0 0 0)
   (enter (make-instance 'display-controller) scene)
   (enter (make-instance 'cpu-particle-emitter
                         :name :emitter :max-particles 200 :particle-rate 60

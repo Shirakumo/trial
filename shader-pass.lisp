@@ -102,7 +102,8 @@
 
 (define-shader-entity shader-pass (flow:static-node)
   ((framebuffer :initform NIL :accessor framebuffer)
-   (active-p :initform T :accessor active-p))
+   (active-p :initform T :accessor active-p)
+   (clear-color :initform (vec4) :initarg :clear-color :accessor clear-color))
   (:metaclass shader-pass-class)
   (:inhibit-shaders (shader-entity :fragment-shader)))
 
@@ -185,6 +186,7 @@
     (make-instance 'framebuffer
                    :width width
                    :height height
+                   :clear-color (clear-color pass)
                    :attachments (loop for port in (flow:ports pass)
                                       when (typep port 'output)
                                       collect (list (attachment port) (texture port))))))

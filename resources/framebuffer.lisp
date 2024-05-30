@@ -3,11 +3,13 @@
 (defclass framebuffer (gl-resource)
   ((attachments :initform () :initarg :attachments :accessor attachments)
    (clear-bits :initform 17664 :accessor clear-bits)
+   (clear-color :initform (vec4 0) :accessor clear-color)
    (width :initarg :width :initform NIL :accessor width)
    (height :initarg :height :initform NIL :accessor height)))
 
-(defmethod shared-initialize :after ((framebuffer framebuffer) slots &key clear-bits)
-  (when clear-bits (setf (clear-bits framebuffer) clear-bits)))
+(defmethod shared-initialize :after ((framebuffer framebuffer) slots &key clear-bits clear-color)
+  (when clear-bits (setf (clear-bits framebuffer) clear-bits))
+  (when clear-color (setf (clear-color framebuffer) clear-color)))
 
 (defmethod print-object ((framebuffer framebuffer) stream)
   (print-unreadable-object (framebuffer stream :type T :identity T)
@@ -17,7 +19,17 @@
   (cffi:foreign-bitfield-symbols '%gl::ClearBufferMask (slot-value framebuffer 'clear-bits)))
 
 (defmethod (setf clear-bits) ((bits list) (framebuffer framebuffer))
-  (setf (clear-bits framebuffer) (cffi:foreign-bitfield-value '%gl::ClearBufferMask bits)))
+  (setf (clear-bits framebuffer) (cffi:foreign-bitfield-value '%gl::ClearBufferMask bits))
+  bits)
+
+(defmethod (setf clear-color) ((vec vec3) (framebuffer framebuffer))
+  (vsetf (clear-color framebuffer)
+         (vx vec) (vy vec) (vz vec) 0.0)
+  vec)
+
+(defmethod (setf clear-color) ((null null) (framebuffer framebuffer))
+  (v<- (clear-color framebuffer) 0)
+  null)
 
 (defmethod dependencies ((framebuffer framebuffer))
   (append (call-next-method)
@@ -93,7 +105,10 @@
   (gl:bind-framebuffer :framebuffer (gl-name framebuffer))
   (gl:viewport 0 0 (width framebuffer) (height framebuffer))
   (let ((bits (slot-value framebuffer 'clear-bits)))
-    (when (< 0 bits) (%gl:clear bits))))
+    (when (< 0 bits)
+      (let ((c (clear-color framebuffer)))
+        (%gl:clear-color (vx c) (vy c) (vz c) (vw c)))
+      (%gl:clear bits))))
 
 (defmethod deactivate ((framebuffer framebuffer))
   (gl:bind-framebuffer :framebuffer 0))

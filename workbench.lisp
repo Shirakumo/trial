@@ -10,8 +10,7 @@
 
 (defclass workbench (main)
   ((paused-p :initform NIL :accessor paused-p))
-  (:default-initargs :clear-color (vec 0.1 0.1 0.1)
-                     :context '(:vsync T)))
+  (:default-initargs :context '(:vsync T)))
 
 (defmethod update ((main workbench) tt dt fc)
   (if (paused-p main)

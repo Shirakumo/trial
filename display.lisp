@@ -1,10 +1,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass display (render-loop)
-  ((context :initform NIL :accessor context)
-   (clear-color :initarg :clear-color :accessor clear-color))
-  (:default-initargs
-   :clear-color (vec 0.2 0.3 0.3)))
+  ((context :initform NIL :accessor context)))
 
 (defmethod initialize-instance :around ((display display) &key)
   (with-cleanup-on-failure (finalize display)
@@ -50,8 +47,6 @@
   (gl:cull-face :back)
   (gl:pixel-store :unpack-alignment 1)
   (gl:pixel-store :pack-alignment 1)
-  (with-vec (r g b a) (clear-color display)
-    (gl:clear-color r g b a))
   (enable-feature :blend :multisample :cull-face :stencil-test :depth-test :texture-cube-map-seamless)
   (gl:point-size 3.0)
   (when-gl-extension :gl-arb-depth-clamp

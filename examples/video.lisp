@@ -17,7 +17,6 @@
 
 (define-example video
   :title "Video Playback"
-  (gl:clear-color 0 0 0 0)
   (enter (make-instance 'display-controller) scene)
   (enter (make-instance 'simple-video-player :asset (assets:asset :hello) :location (vec 0 2 0) :scaling (vec 5 5 5)) scene)
   (observe! (clock (node :video T)) :title "Time [r]")
