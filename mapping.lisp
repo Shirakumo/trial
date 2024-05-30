@@ -513,20 +513,21 @@
     (list
      (compile-mapping input))))
 
-(defun save-mapping (output)
+(defun save-mapping (output &key (package *package*))
   (etypecase output
     (null
      (with-output-to-string (stream)
-       (save-mapping stream)))
+       (save-mapping stream :package package)))
     ((or pathname string)
-     (save-mapping (depot:from-pathname output)))
+     (save-mapping (depot:from-pathname output) :package package))
     (depot:entry
      (depot:with-open (tx output :output 'character)
-       (save-mapping (depot:to-stream tx))))
+       (save-mapping (depot:to-stream tx) :package package)))
     (stream
      (let ((descriptions (mapcar #'to-mapping-description *action-mappings*))
            (cache (make-hash-table :test 'equal))
-           (*print-case* :downcase))
+           (*print-case* :downcase)
+           (*package* package))
        (dolist (description descriptions)
          (push (cddr description) (gethash (list (first description) (second description)) cache)))
        ;; FIXME: collect based on matching :one-of.

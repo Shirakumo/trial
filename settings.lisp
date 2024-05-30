@@ -38,23 +38,23 @@
                           (funcall function (reverse (list* k rpath)) v)))))
     (recurse settings ())))
 
-(defun load-keymap (&key (path (keymap-path)) reset)
+(defun load-keymap (&key (path (keymap-path)) reset (package *package*))
   (ensure-directories-exist path)
   (let ((default (merge-pathnames "keymap.lisp" (data-root))))
     (cond ((or reset
                (not (probe-file path))
                (and (probe-file default) (< (file-write-date path) (file-write-date default))))
            (when (probe-file default)
-             (load-mapping default))
+             (load-mapping default :package package))
            (when (and (probe-file path) (null reset))
-             (load-mapping path))
-           (save-keymap :path path))
+             (load-mapping path :package package))
+           (save-keymap :path path :package package))
           (T
-           (load-mapping path)))))
+           (load-mapping path :package package)))))
 
-(defun save-keymap (&key (path (keymap-path)))
+(defun save-keymap (&key (path (keymap-path)) (package *package*))
   (ensure-directories-exist path)
-  (save-mapping path))
+  (save-mapping path :package package))
 
 (defmethod load-settings (&optional (path (setting-file-path)))
   (with-error-logging (:trial.settings)
