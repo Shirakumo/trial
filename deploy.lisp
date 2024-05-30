@@ -6,7 +6,6 @@
   (deploy:copy-directory-tree (pathname-utils:subdirectory (data-root) "lang") directory)
   (let ((default-keymap (merge-pathnames "keymap.lisp" (data-root))))
     (when (probe-file default-keymap)
-      (load-mapping default-keymap)
       (uiop:copy-file default-keymap (merge-pathnames "keymap.lisp" directory))))
   ;; FIXME: This is bad. We always deploy a bunch of shit that's not really needed.
   (dolist (pool (list-pools))
