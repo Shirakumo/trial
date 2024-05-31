@@ -14,7 +14,9 @@
       (flet ((unused-file-p (src dst)
                (declare (ignore dst))
                (loop for pattern in unused
-                     thereis (pathname-utils:pathname-matches-p src pattern))))
+                     thereis (if (pathname-utils:directory-p pattern)
+                                 (pathname-utils:subpath-p src pattern)
+                                 (pathname-utils:pathname-matches-p src pattern)))))
         ;; FIXME: We're potentially introducing conflicts here by eagerly coercing names.
         (setf (base pool) (make-pathname :directory (list :relative "pool" (string-downcase (name pool)))))
         (deploy:status 1 "Copying pool ~a from ~a" pool source)
