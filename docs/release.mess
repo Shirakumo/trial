@@ -1,10 +1,46 @@
-# Releasing Games
-While you can simply use "Deploy"(https://github.com/shinmera/deploy) or some other system to create a bundle of your game, it is often useful to automate the build for multiple operating systems and also automate the submission. For this purpose, the ``trial-release`` extension exists This is a system offering automation for pushing releases of your game to a zip, Steam, Itch.io, or other services.
+# Basic Deployment
+By using ''Deploy''(https://github.com/shinmera/deploy) you can create a deliverable of your game for your current architecture pretty easily. Simply adjust the system definition of your game to include the following fields:
+
+:: common lisp
+:build-operation "deploy-op"
+:build-pathname #+linux "my-game-linux.run"
+                #+darwin "my-game-macos.o"
+                #+win32 "my-game-windows"
+                #+(and bsd (not darwin)) "my-game-bsd.run"
+                #-(or linux bsd win32) "my-game"
+:entry-point "my-game::main"
+:defsystem-depends-on (:deploy)
+::
+
+You can adapt the build pathnames as you wish, as long as the pathname types stay consistent: ``.run`` for Linux, ``.o`` for MacOS, and none for Windows (``.exe`` is added by default). You can also adapt the entry point as you choose. Usually it'll be a function similar to this:
+
+:: common lisp
+(defun main ()
+  (command-line-toplevel)
+  (load-keymap :package #.*package*)
+  (load-settings)
+  (save-settings)
+  (launch 'my-game))
+::
+
+You can now invoke ``(asdf:make :my-game)`` to build a release of your game. It'll be put into the ``bin/`` subdirectory of your system source directory. You should be able to just ZIP that directory up and give it to people to play.
+
+## Pruning Asset Files
+By default Trial copies all files in all asset pools it knows of. This may be over-eager, especially if you make use of asset bundles like trial-assets. To clean up some of the mess, you can use ``define-as-unused``. It accepts asset names or wildcard pathnames so you can easily exclude entire directories or file types.
+
+:: common lisp
+(define-as-unused trial
+  "*.glsl"
+  cat)
+::
+
+# Using the Release Mechanism
+It is often useful to automate the build for multiple operating systems and also automate the submission. For this purpose, the ``trial-release`` extension exists This is a system offering automation for pushing releases of your game to a zip, Steam, Itch.io, or other services.
 
 ## Getting Set Up
 First you'll want to create a new ASDF system for your game's release. The ASD file should be in a directory where your releases will be put, so ideally not in the game's source root. The ASD should be something like this:
 
-::
+:: common lisp
 (asdf:defsystem my-game-release
   :components ((:file "release"))
   :depends-on (:trial-release)
@@ -13,7 +49,7 @@ First you'll want to create a new ASDF system for your game's release. The ASD f
 
 The ``release`` file can be something like this:
 
-::
+:: common lisp
 (org.shirakumo.fraf.trial.release:configure
  :itch (:user "my-itch-username")
  :steam (:user "my-steam-username")
@@ -31,21 +67,6 @@ The ``release`` file can be something like this:
 ::
 
 There are other configuration parameters you can set if necessary to customise the build and release process.
-
-Finally, you'll also want to configure your game's ASD system to include the following options:
-
-::
-  :build-operation "deploy-op"
-  :build-pathname #+linux "my-game-linux.run"
-                  #+darwin "my-game-macos.o"
-                  #+win32 "my-game-windows"
-                  #+(and bsd (not darwin)) "my-game-bsd.run"
-                  #-(or linux bsd win32) "my-game"
-  :entry-point "my-game::main"
-  :defsystem-depends-on (:deploy)
-::
-
-You can adapt the build pathnames as you wish, as long as the pathname types stay consistent: ``.run`` for Linux, ``.o`` for MacOS, and none for Windows (``.exe`` is added by default). You can also adapt the entry point as you choose.
 
 Outside of this, you'll have to have the following binaries set up in your PATH:
 
@@ -118,7 +139,7 @@ Steam will require some VDF files to configure your build in addition. Please co
 
 The Trial release build will automatically take this file and replace the ``$`` variables, then copy it to a subdirectory where the upload happens, hence the ``../`` backrefs in the paths. The depot VDF files do not need any special configuration.
 
-The ``steamcmd.sh`` also needs to be available in your PATH.
+The ``steamcmd`` also needs to be available in your PATH.
 
 In the configuration, the following keys are available in the ``:steam`` scope:
 
@@ -133,6 +154,7 @@ To upload to itch, you will need to have the ``butler`` program in your PATH. Ma
 In the configuration, the following keys are available in the ``:itch`` scope:
 
 - ``:user`` The user under which the project is located.
+- ``:password`` If given, should be the cached token that Butler stores in a file when you log in. This lets you automate login without your user password.
 - ``:project`` The name of the project. Defaults to the ``:system`` key.
 
 ### GOG
@@ -145,7 +167,7 @@ In the configuration, the following keys are available in the ``:gog`` scope:
 - ``:branch`` The branch to push the build to. If the branch is password protected, this should be a list of the branch name and its password.
 
 ### Keygen
-To upload to a "Keygen"(link https://shirakumo.org/projects/keygen) instance, you'll need to generate an oAuth application on your instance and also authorise a token using the standard oAuth flow. If you use pass, you should create a pass entry with your tokens and secrets in it. On the Keygen side, create a project and a file under the project for each of the bundles you want to upload. On the release side you'll of course need the corresponding bundles to upload.
+To upload to a ''Keygen''(link https://shirakumo.org/projects/keygen) instance, you'll need to generate an oAuth application on your instance and also authorise a token using the standard oAuth flow. If you use pass, you should create a pass entry with your tokens and secrets in it. On the Keygen side, create a project and a file under the project for each of the bundles you want to upload. On the release side you'll of course need the corresponding bundles to upload.
 
 In the configuration, the following keys are available in the ``:keygen`` scope:
 
