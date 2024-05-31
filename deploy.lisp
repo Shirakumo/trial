@@ -33,10 +33,9 @@
              (dolist (sub (c2mop:class-direct-subclasses class))
                (recurse sub))))
     (recurse (find-class 'shader-entity)))
-  ;; Fix version
-  (let ((version (version :app)))
-    (defmethod version ((_ (eql :app)))
-      version)))
+  ;; Fix versions to eliminate source dependency
+  (let ((version (version :app))) (defmethod version ((_ (eql :app))) version))
+  (let ((version (version :trial))) (defmethod version ((_ (eql :trial))) version)))
 
 (deploy:define-hook (:boot trial) ()
   (v:restart-global-controller)

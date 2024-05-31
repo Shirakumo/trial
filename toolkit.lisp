@@ -44,17 +44,17 @@
   (first (uiop:raw-command-line-arguments)))
 
 (defmethod version ((_ (eql :app)))
-  (let* ((dir (asdf:system-source-directory +app-system+))
-         (commit (git-repo-commit dir)))
+  (let ((commit #+asdf (git-repo-commit (asdf:system-source-directory +app-system+))))
     (format NIL "~a~@[-~a~]"
-            (asdf:component-version (asdf:find-system +app-system+))
+            #+asdf (asdf:component-version (asdf:find-system +app-system+))
+            #-asdf "?"
             (when commit (subseq commit 0 7)))))
 
 (defmethod version ((_ (eql :trial)))
-  (let* ((dir (asdf:system-source-directory :trial))
-         (commit (git-repo-commit dir)))
+  (let ((commit #+asdf (git-repo-commit (asdf:system-source-directory :trial))))
     (format NIL "~a~@[-~a~]"
-            (asdf:component-version (asdf:find-system :trial))
+            #+asdf (asdf:component-version (asdf:find-system :trial))
+            #-asdf "?"
             (when commit (subseq commit 0 7)))))
 
 (defmethod version ((_ (eql :binary)))
@@ -69,7 +69,7 @@
   (defun data-root (&optional (app +app-system+))
     (if (deploy:deployed-p)
         (deploy:runtime-directory)
-        (or cache (setf cache (asdf:system-source-directory app))))))
+        (or cache #+asdf (setf cache (asdf:system-source-directory app))))))
 
 (defgeneric coerce-object (object type &key))
 
