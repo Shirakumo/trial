@@ -754,8 +754,10 @@
    #:pool
    #:name
    #:base
+   #:unused-file-patterns
    #:assets
    #:define-pool
+   #:define-as-unused
    #:asset
    #:list-assets
    #:pool-path

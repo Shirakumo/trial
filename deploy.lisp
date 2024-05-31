@@ -7,16 +7,22 @@
   (let ((default-keymap (merge-pathnames "keymap.lisp" (data-root))))
     (when (probe-file default-keymap)
       (uiop:copy-file default-keymap (merge-pathnames "keymap.lisp" directory))))
-  ;; FIXME: This is bad. We always deploy a bunch of shit that's not really needed.
   (dolist (pool (list-pools))
-    (let ((source (base pool)))
-      ;; FIXME: We're potentially introducing conflicts here by eagerly coercing names.
-      (setf (base pool) (make-pathname :directory (list :relative "pool" (string-downcase (name pool)))))
-      (deploy:status 1 "Copying pool ~a from ~a" pool source)
-      (deploy:copy-directory-tree
-       source
-       (merge-pathnames (base pool) directory)
-       :copy-root NIL))))
+    (let* ((source (base pool))
+           (unused (loop for path in (unused-file-patterns pool)
+                         collect (merge-pathnames path source))))
+      (flet ((unused-file-p (src dst)
+               (declare (ignore dst))
+               (loop for pattern in unused
+                     thereis (pathname-utils:pathname-matches-p src pattern))))
+        ;; FIXME: We're potentially introducing conflicts here by eagerly coercing names.
+        (setf (base pool) (make-pathname :directory (list :relative "pool" (string-downcase (name pool)))))
+        (deploy:status 1 "Copying pool ~a from ~a" pool source)
+        (deploy:copy-directory-tree
+         source
+         (merge-pathnames (base pool) directory)
+         :copy-root NIL
+         :exclude #'unused-file-p)))))
 
 (deploy:define-hook (:build trial) ()
   (v:remove-global-controller)

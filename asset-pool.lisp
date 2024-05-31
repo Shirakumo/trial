@@ -19,13 +19,39 @@
   (defclass pool ()
     ((name :initarg :name :accessor name)
      (base :initarg :base :accessor base)
-     (assets :initform (make-hash-table :test 'eq) :accessor assets))
+     (assets :initform (make-hash-table :test 'eq) :accessor assets)
+     (unused-file-patterns :initform () :accessor unused-file-patterns))
     (:default-initargs
      :name (error "NAME required.")))
 
   (defmethod print-object ((pool pool) stream)
     (print-unreadable-object (pool stream :type T)
       (format stream "~a ~s" (name pool) (base pool)))))
+
+(defmethod shared-initialize :after ((pool pool) slots &key (unused-file-patterns NIL patterns-p))
+  (when patterns-p (setf (unused-file-patterns pool) unused-file-patterns)))
+
+(defun normalize-asset-file-pattern (pool pattern)
+  (etypecase pattern
+    (pathname
+     (when (pathname-utils:absolute-p pattern)
+       (error "File pattern cannot be absolute:~%  ~a" pattern))
+     (when (pathname-utils:logical-p pattern)
+       (error "File pattern cannot be logical:~%  ~a" pattern))
+     pattern)
+    (string
+     (normalize-asset-file-pattern pool (pathname pattern)))
+    (file-input-asset
+     (normalize-asset-file-pattern pool (input pattern)))
+    (symbol
+     (normalize-asset-file-pattern pool (asset pool pattern T)))))
+
+(defmethod (setf unused-file-patterns) ((patterns cons) (pool pool))
+  (call-next-method (delete-duplicates
+                     (loop for pat in patterns
+                           collect (normalize-asset-file-pattern pool pat))
+                     :test #'equal)
+                    pool))
 
 (defmacro define-pool (name &body initargs)
   (check-type name symbol)
@@ -40,6 +66,12 @@
              (T
               (setf (find-pool ',name) (make-instance 'pool :name ',name ,@initargs :base ,path))))
        ',name)))
+
+(defmacro define-as-unused (pool &body defs)
+  `(let ((pool (find-pool ',pool T)))
+     (setf (unused-file-patterns pool)
+           (list* ,@(loop for def in defs collect `',def)
+                  (unused-file-patterns pool)))))
 
 (defmethod asset ((pool pool) name &optional (errorp T))
   (or (gethash name (assets pool))
