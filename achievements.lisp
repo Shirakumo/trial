@@ -118,6 +118,8 @@
                  :defaults (config-directory)))
 
 (defmethod load-achievement-data ((api local-achievement-api))
+  (unless (probe-file (achievement-file-path))
+    (error "No local achievement data file present."))
   (depot:with-open (tx (achievement-file-path) :input 'character :if-does-not-exist NIL)
     (when tx
       (let ((stream (depot:to-stream tx)))
