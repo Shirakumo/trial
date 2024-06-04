@@ -198,6 +198,7 @@
                :mmap
                :nibbles
                :pathname-utils
+               :precise-time
                :promise
                :quickhull
                :random-sampling
