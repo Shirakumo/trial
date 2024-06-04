@@ -341,11 +341,19 @@
   transform)
 
 (defclass slot-value-track (fast-animation-track)
-  ((slot-name :initarg :slot-name :accessor slot-name)))
+  ((name :initarg :name :initform NIL :accessor name)
+   (slot-name :initarg :slot-name :accessor slot-name)))
 
-(defmethod sample (object (track transform-track) time &key loop-p)
+(defmethod sample (object (track slot-value-track) time &key loop-p)
   (declare (type single-float time))
   (declare (optimize speed))
   (let ((slot (slot-name track)))
-    (setf (slot-value object slot) (sample (slot-value object slot) (location track) time :loop-p loop-p))
+    (setf (slot-value object slot) (sample (slot-value object slot) track time :loop-p loop-p))
+    object))
+
+(defmethod sample ((object hash-table) (track slot-value-track) time &key loop-p)
+  (declare (type single-float time))
+  (declare (optimize speed))
+  (let ((slot (slot-name track)))
+    (setf (gethash slot object) (sample (gethash slot object) track time :loop-p loop-p))
     object))

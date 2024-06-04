@@ -2,7 +2,8 @@
 
 (defclass pose (sequences:sequence standard-object)
   ((joints :initform #() :accessor joints)
-   (parents :initform (make-array 0 :element-type '(signed-byte 16)) :accessor parents)))
+   (parents :initform (make-array 0 :element-type '(signed-byte 16)) :accessor parents)
+   (data :initform (make-hash-table :test 'eql) :accessor data)))
 
 (defmethod shared-initialize :after ((pose pose) slots &key size source)
   (cond (source
@@ -197,6 +198,6 @@
               for name = (name track)
               do (etypecase name
                    ((unsigned-byte 32) (sample (aref joints name) track time :loop-p loop-p))
-                   (T (sample pose track time :loop-p loop-p))))
+                   (T (sample (data pose) track time :loop-p loop-p))))
         time)
       0.0))
