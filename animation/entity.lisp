@@ -7,10 +7,10 @@
   (base NIL :type pose)
   (strength 0.0 :type single-float))
 
-(defun make-animation-layer (clip skeleton &key (strength 0.0))
+(defun make-animation-layer (clip skeleton &key (strength 0.0) (data skeleton))
   (let ((layer (%make-animation-layer
                 clip
-                (rest-pose* skeleton)
+                (rest-pose* skeleton data)
                 (instantiate-clip skeleton clip))))
     (setf (strength layer) strength)
     layer))
@@ -53,7 +53,8 @@
   (setf (layer name controller) layer))
 
 (defmethod add-animation-layer ((clip clip) (controller layer-controller) &key (strength 0.0) (name (name clip)))
-  (setf (layer name controller) (make-animation-layer clip (skeleton controller) :strength strength)))
+  (setf (layer name controller) (make-animation-layer clip (skeleton controller)
+                                                      :data controller :strength strength)))
 
 (defmethod remove-animation-layer (name (controller layer-controller))
   (setf (layer name controller) NIL))
@@ -95,7 +96,7 @@
     (setf (skeleton controller) skeleton)))
 
 (defmethod (setf skeleton) :after ((skeleton skeleton) (controller fade-controller))
-  (setf (pose controller) (rest-pose* skeleton)))
+  (setf (pose controller) (rest-pose* skeleton :data controller)))
 
 (defmethod describe-object :after ((controller fade-controller) stream)
   (terpri stream)

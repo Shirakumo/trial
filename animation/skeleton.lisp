@@ -101,5 +101,5 @@
   (sample pose clip time)
   pose)
 
-(defmethod rest-pose* ((skeleton skeleton))
-  (make-instance 'pose :source (rest-pose skeleton)))
+(defmethod rest-pose* ((skeleton skeleton) &rest initargs)
+  (apply #'make-instance 'pose :source (rest-pose skeleton) initargs))

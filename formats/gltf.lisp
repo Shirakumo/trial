@@ -95,8 +95,10 @@
 
 (defgeneric translate-track-pointer (pointer track gltf))
 
-(defmethod translate-track-pointer (pointer (track transform-track) gltf)
-  (translate-track-pointer pointer (change-class track 'trial::slot-value-track) gltf))
+(defmethod translate-track-pointer ((pointer string) (track animation-track) gltf)
+  (change-class track 'trial::slot-value-track
+                :slot-name (lispify-name pointer "KEYWORD")
+                :name (name track)))
 
 ;; FIXME: How do we actually translate the pointer to the corresponding lisp-side object slot?
 ;;        it's unlikely to be what's pointed to by the json pointer, since objects are transformed
@@ -119,6 +121,17 @@
                 (load-animation-track track sampler))
                (T (v:warn :trial.gltf "Unknown animation channel target path: ~s on ~s, ignoring."
                           (gltf:path (gltf:target channel)) (gltf-name animation)))))
+    ;; KLUDGE: extra handling for custom properties
+    (let* ((extras (gltf:extensions animation))
+           (trial (when extras (gethash "SHIRAKUMO_trial" extras)))
+           (tracks (when trial (gethash "extraTracks" trial))))
+      (when tracks
+        (loop for field being the hash-keys of tracks using (hash-value data)
+              for track = (find-animation-track clip field :if-does-not-exist :create)
+              do (translate-track-pointer field track gltf)
+                 (setf (interpolation track) :constant)
+                 (setf (frames track) (cons (map 'vector (lambda (f) (float f 0f0)) (gethash "times" data))
+                                            (map 'vector (lambda (f) (float f 0f0)) (gethash "values" data)))))))
     (trial::recompute-duration clip)
     (case (gltf:kind animation)
       (:blocking
