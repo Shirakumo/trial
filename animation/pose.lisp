@@ -194,7 +194,9 @@
         (declare (type simple-vector tracks joints))
         (loop for i from 0 below (length tracks)
               for track = (svref tracks i)
-              for name = (the (unsigned-byte 16) (name track))
-              do (sample (aref joints name) track time :loop-p loop-p))
+              for name = (name track)
+              do (etypecase name
+                   ((unsigned-byte 32) (sample (aref joints name) track time :loop-p loop-p))
+                   (T (sample pose track time :loop-p loop-p))))
         time)
       0.0))
