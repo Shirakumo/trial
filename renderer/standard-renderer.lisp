@@ -256,6 +256,13 @@
 (defmethod render-with :before ((pass standard-render-pass) (renderable standard-animated-renderable) (program shader-program))
   (setf (uniform program "pose") (enable (palette-texture renderable) pass)))
 
+(defmethod render-with :before ((program shader-program) (vao vertex-array) (entity standard-animated-renderable))
+  (let ((morph (find-morph vao entity)))
+    (when morph
+      ;; FIXME: This is WROOOOOONG. We need access to the pass to get a texture ID, but can't, FUUUCK.
+      (bind (tetxure morph) :texture6)
+      (setf (uniform program "morph_targets") 6))))
+
 (define-shader-entity single-material-renderable (standard-renderable)
   ((material :initarg :material :accessor material)))
 
@@ -265,14 +272,17 @@
 
 (define-transfer single-material-renderable material)
 
-(defmethod render-with :around ((pass standard-render-pass) (object single-material-renderable) program)
+(defmethod render-with ((program shader-program) (vao vertex-array) renerable)
+  (render vao program))
+
+(defmethod render-with ((pass standard-render-pass) (object single-material-renderable) program)
   (prepare-pass-program pass program)
   (when (material object)
     (with-pushed-features
       (when (double-sided-p (material object))
         (disable-feature :cull-face))
       (render-with pass (material object) program)
-      (call-next-method))))
+      (render-with program (vertex-array object) object))))
 
 (defmethod deregister :after ((renderable single-material-renderable) (pass standard-render-pass))
   (when (material renderable)
@@ -309,7 +319,7 @@
              (when (double-sided-p material)
                (disable-feature :cull-face))
              (render-with pass material program)
-             (render vao program))))
+             (render-with program vao renderable))))
 
 (defmethod (setf mesh) :after ((meshes cons) (renderable per-array-material-renderable))
   (let ((arrays (make-array (length meshes))))
