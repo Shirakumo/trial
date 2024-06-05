@@ -69,17 +69,17 @@
   (unless (loaded-p asset)
     (setf (palette entity) #(#.(meye 4)))))
 
-(defmethod render :before ((entity skinned-enity) (program shader-program))
+(defmethod render :before ((entity skinned-entity) (program shader-program))
   (declare (optimize speed))
   (when (palette-texture entity)
     (bind (palette-texture entity) :texture5)
     (setf (uniform program "pose") 5)))
 
-(define-shader-entity quat2-skinned-enity (base-animated-enity)
+(define-shader-entity quat2-skinned-entity (base-animated-entity)
   ()
   (:shader-file (trial "skin-dquat.glsl")))
 
-(defmethod render :before ((entity quat2-skinned-enity) (program shader-program))
+(defmethod render :before ((entity quat2-skinned-entity) (program shader-program))
   (declare (optimize speed))
   (when (palette-texture entity)
     (bind (palette-texture entity) :texture5)

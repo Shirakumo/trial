@@ -3,7 +3,7 @@ uniform sampler1DArray pose;
 mat2x4 pose_matrix(in int i){
   return transpose(mat4x2(
     texelFetch(pose, ivec2(0, i), 0),
-    texelFetch(pose, ivec2(1, i), 0));
+    texelFetch(pose, ivec2(1, i), 0)));
 }
 
 vec4 quat_mul(vec4 q1, vec4 q2){
