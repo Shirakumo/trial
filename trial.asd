@@ -93,7 +93,8 @@
                (:module "animation"
                 :depends-on ("package" "shader-entity" "helpers" "model")
                 :components ((:file "clip" :depends-on ("track"))
-                             (:file "entity" :depends-on ("mesh" "skeleton" "clip" "ik"))
+                             (:file "controller" :depends-on ("mesh" "skeleton" "clip" "ik"))
+                             (:file "entity" :depends-on ("controller"))
                              (:file "ik" :depends-on ("skeleton"))
                              (:file "mesh" :depends-on ("pose"))
                              (:file "pose" :depends-on ("clip" (:.. "lines")))
