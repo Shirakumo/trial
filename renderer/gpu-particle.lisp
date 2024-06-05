@@ -273,8 +273,7 @@
     (setf (slot-value struct 'dead-count) (max-particles emitter))))
 
 (defmethod bind-textures ((emitter gpu-particle-emitter))
-  (gl:active-texture :texture0)
-  (gl:bind-texture (target (texture emitter)) (gl-name (texture emitter))))
+  (bind (texture emitter) :texture0))
 
 (defmethod render :before ((emitter gpu-particle-emitter) (program shader-program))
   (setf (uniform program "model_matrix") (tmat (tf emitter)))

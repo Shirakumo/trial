@@ -40,12 +40,9 @@
 
 (defmethod bind-textures :after ((entity video-display))
   (destructuring-bind (y u v) (textures entity)
-    (gl:active-texture :texture0)
-    (gl:bind-texture :texture-2d (gl-name y))
-    (gl:active-texture :texture1)
-    (gl:bind-texture :texture-2d (gl-name u))
-    (gl:active-texture :texture2)
-    (gl:bind-texture :texture-2d (gl-name v))))
+    (bind y :texture0)
+    (bind u :texture1)
+    (bind v :texture2)))
 
 (defmethod render :before ((entity video-display) (program shader-program))
   (setf (uniform program "Y_plane") 0)

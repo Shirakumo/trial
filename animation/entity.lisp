@@ -307,8 +307,7 @@
 (defmethod render :before ((entity animated-entity) (program shader-program))
   (declare (optimize speed))
   ;; KLUDGE: This is Bad
-  (%gl:active-texture :texture5)
-  (gl:bind-texture :texture-1d-array (gl-name (palette-texture entity)))
+  (bind (palette-texture entity) :texture5)
   (setf (uniform program "pose") 5))
 
 (define-class-shader (animated-entity :vertex-shader)
@@ -361,8 +360,7 @@ void main(){
 (defmethod render :before ((entity quat2-animated-entity) (program shader-program))
   (declare (optimize speed))
   ;; KLUDGE: This is Bad
-  (%gl:active-texture :texture5)
-  (gl:bind-texture :texture-1d-array (gl-name (palette-texture entity)))
+  (bind (palette-texture entity) :texture5)
   (setf (uniform program "pose") 5))
 
 (define-class-shader (quat2-animated-entity :vertex-shader)

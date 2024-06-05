@@ -108,11 +108,7 @@
         (setf (aref dat (+ 1 idx)) (cdr value))))
     (%update-tile-layer layer)
     #++ ;; TODO: Optimize
-    (sb-sys:with-pinned-objects (dat)
-      (gl:bind-texture :texture-2d (gl-name texture))
-      (%gl:tex-sub-image-2d :texture-2d 0 x y 1 1 (pixel-format texture) (pixel-type texture)
-                            (cffi:inc-pointer (sb-sys:vector-sap dat) pos))
-      (gl:bind-texture :texture-2d 0)))
+    (update-buffer-data texture dat :data-start pos :x x :y y :width 1 :height 1))
   value)
 
 (defmethod tile ((location vec3) (layer tile-layer))
@@ -122,16 +118,9 @@
   (setf (tile (vxy location) layer) value))
 
 (defun %update-tile-layer (layer)
-  (let ((dat (pixel-data layer)))
-    (sb-sys:with-pinned-objects (dat)
-      (let ((texture (tilemap layer))
-            (width (truncate (vx (size layer))))
-            (height (truncate (vy (size layer)))))
-        (gl:bind-texture :texture-2d (gl-name texture))
-        (%gl:tex-sub-image-2d :texture-2d 0 0 0 width height
-                              (pixel-format texture) (pixel-type texture)
-                              (sb-sys:vector-sap dat))
-        (gl:bind-texture :texture-2d 0)))))
+  (let ((width (truncate (vx (size layer))))
+        (height (truncate (vy (size layer)))))
+    (update-buffer-data (tilemap layer) (pixel-data layer) :width width :height height)))
 
 (defmethod clear ((layer tile-layer))
   (let ((dat (pixel-data layer)))
@@ -149,10 +138,8 @@
     (setf (uniform program "model_matrix") *model-matrix*)
     (setf (uniform program "tilemap") 0)
     (setf (uniform program "tileset") 1)
-    (gl:active-texture :texture0)
-    (gl:bind-texture :texture-2d (gl-name (tilemap layer)))
-    (gl:active-texture :texture1)
-    (gl:bind-texture :texture-2d (gl-name (tileset layer)))
+    (bind (tilemap layer) :texture0)
+    (bind (tileset layer) :texture1)
     (render (vertex-array layer) program)))
 
 (define-class-shader (tile-layer :vertex-shader)

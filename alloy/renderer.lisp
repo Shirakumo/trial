@@ -260,8 +260,7 @@
   (trial:deallocate texture))
 
 (defmethod opengl:bind ((texture trial:texture))
-  (gl:active-texture :texture0)
-  (gl:bind-texture :texture-2D (trial:gl-name texture)))
+  (trial:bind texture :texture0))
 
 (defmethod simple:size ((image trial:image))
   (alloy:size (trial:width image) (trial:height image)))

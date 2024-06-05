@@ -110,8 +110,7 @@
     ;;         our cache here. If they aren't allocated, we simply remove
     ;;         them from the cache with the hope it won't be referenced.
     (cond ((gl-name texture)
-           (gl:active-texture id)
-           (gl:bind-texture (target texture) (gl-name texture)))
+           (bind texture id))
           (T
            (lru-cache-pop texture (allocated-textures pass))))))
 
@@ -124,8 +123,7 @@
   (let ((id (or (lru-cache-push texture (allocated-textures pass))
                 (lru-cache-id texture (allocated-textures pass)))))
     (when id
-      (gl:active-texture id)
-      (gl:bind-texture (target texture) (gl-name texture)))
+      (bind texture id))
     id))
 
 (defmethod disable ((texture texture) (pass standard-render-pass))

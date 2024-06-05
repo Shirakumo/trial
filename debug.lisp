@@ -19,8 +19,7 @@
   (setf (uniform program "view_matrix") (view-matrix))
   (setf (uniform program "projection_matrix") (projection-matrix))
   (setf (uniform program "texture_image") 0)
-  (gl:active-texture :texture0)
-  (gl:bind-texture :texture-2d (gl-name (// 'trial 'ascii)))
+  (bind (// 'trial 'ascii) :texture0)
   (render-array (text-vao draw) :vertex-count (truncate (length (text draw)) 5)))
 
 (define-class-shader (debug-draw-text :vertex-shader)
