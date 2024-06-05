@@ -45,13 +45,31 @@
   (weights (:array :float size))
   (indices (:array :int size)))
 
-(define-shader-entity morphed-entity (base-animated-entity)
-  ((morph-texture :initform NIL :accessor morph-texture)
-   (morph-data :buffer T :initform (make-instance 'uniform-buffer :data-usage :dynamic-draw :binding NIL :struct (make-instance 'morph-data)) :accessor morph-data))
+(defclass morph ()
+  ((texture :initform NIL :accessor texture)
+   (morph-data :initform NIL :accessor morph-data)))
+
+(defmethod initialize-instance :after ((morph morph) &key (simultaneous-targets 8) targets)
+  (setf (morph-data morph) (make-instance 'uniform-buffer :data-usage :dynamic-draw :binding NIL :struct (make-instance 'morph-data :size simultaneous-targets)))
+  (let* ((stride (* 3 (length (aref targets 0))))
+         (data (make-array (* (length targets) stride) :element-type 'single-float))
+         (texture (make-instance 'texture :target :texture-1d-array
+                                          :internal-format :rgb32f
+                                          :width (length targets)
+                                          :height stride
+                                          :pixel-data data
+                                          :pixel-type :float
+                                          :pixel-format :rgb)))
+    (loop for target across targets
+          for start from 0 by stride
+          do (replace data target :start1 start))
+    (setf (texture morph) texture)))
+
+(define-shader-entity morphed-entity (base-animated-entity listener)
+  ()
   (:shader-file (trial "morph.glsl")))
 
 (defmethod render :before ((entity morphed-entity) (program shader-program))
-  (declare (optimize speed))
   ;; KLUDGE: This is Bad
   (when (morph-texture entity)
     (bind (morph-texture entity) :texture6)
@@ -70,7 +88,6 @@
     (setf (palette entity) #(#.(meye 4)))))
 
 (defmethod render :before ((entity skinned-entity) (program shader-program))
-  (declare (optimize speed))
   (when (palette-texture entity)
     (bind (palette-texture entity) :texture5)
     (setf (uniform program "pose") 5)))
@@ -80,7 +97,6 @@
   (:shader-file (trial "skin-dquat.glsl")))
 
 (defmethod render :before ((entity quat2-skinned-entity) (program shader-program))
-  (declare (optimize speed))
   (when (palette-texture entity)
     (bind (palette-texture entity) :texture5)
     (setf (uniform program "pose") 5)))
