@@ -23,8 +23,6 @@
 (defmethod render ((ubox ubox*) (program shader-program))
   (with-pushed-features
     (disable-feature :cull-face)
-    (gl:enable :blend)
-    (gl:blend-func :src-alpha :one-minus-src-alpha)
     (gl:polygon-mode :front-and-back :line)
     (call-next-method)
     (gl:polygon-mode :front-and-back :fill)))
