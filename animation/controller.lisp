@@ -1,11 +1,5 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-gl-struct morph-data
-  (size NIL :initarg :size :initform 8 :reader size)
-  (morph-count :int :initform 0 :accessor morph-count :reader sequence:length)
-  (weights (:array :float size))
-  (indices (:array :int size)))
-
 (defstruct (animation-layer
             (:constructor %make-animation-layer (clip pose base)))
   (clip NIL :type clip)
@@ -169,9 +163,7 @@
    (updated-on :initform -1 :accessor updated-on)
    (palette :initform #() :accessor palette)
    (palette-texture :initform (make-instance 'texture :target :texture-1d-array :width 3 :height 1 :internal-format :rgba32f :min-filter :nearest :mag-filter :nearest) :accessor palette-texture)
-   (palette-data :initform (make-array 0 :element-type 'single-float) :accessor palette-data)
-   (morph-texture :initform (make-instance 'texture :target :texture-1d-array :internal-format :rgba32f :min-filter :nearest :mag-filter :nearest) :accessor morph-texture)
-   (morph-data :initform (make-instance 'uniform-buffer :data-usage :dynamic-draw :binding NIL :struct (make-instance 'morph-data)) :accessor morph-data)))
+   (palette-data :initform (make-array 0 :element-type 'single-float) :accessor palette-data)))
 
 (defmethod describe-object :after ((entity animation-controller) stream)
   (terpri stream)
