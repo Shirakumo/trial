@@ -39,8 +39,15 @@
 (define-handler ((entity armature) (ev tick) :after) ()
   (replace-vertex-data entity (pose entity) :default-color (color entity)))
 
+(define-gl-struct morph-data
+  (size NIL :initarg :size :initform 8 :reader size)
+  (morph-count :int :initform 0 :accessor morph-count :reader sequence:length)
+  (weights (:array :float size))
+  (indices (:array :int size)))
+
 (define-shader-entity morphed-entity (base-animated-entity)
-  ()
+  ((morph-texture :initform (make-instance 'texture :target :texture-1d-array :internal-format :rgba32f :min-filter :nearest :mag-filter :nearest) :accessor morph-texture)
+   (morph-data :initform (make-instance 'uniform-buffer :data-usage :dynamic-draw :binding NIL :struct (make-instance 'morph-data)) :accessor morph-data))
   (:shader-file (trial "morph.glsl")))
 
 (defmethod render :before ((entity morphed-entity) (program shader-program))
@@ -63,50 +70,6 @@
   ;; KLUDGE: This is Bad
   (bind (palette-texture entity) :texture5)
   (setf (uniform program "pose") 5))
-
-(define-class-shader (animated-entity :vertex-shader)
-  "
-layout (location = 0) in vec3 position;
-layout (location = 1) in vec3 in_normal;
-layout (location = 2) in vec2 in_uv;
-layout (location = 5) in vec4 joints;
-layout (location = 6) in vec4 weights;
-
-uniform sampler1DArray pose;
-
-out vec3 normal;
-out vec4 world_pos;
-out vec2 uv;
-
-mat4 pose_matrix(in int i){
-  return transpose(mat4(
-    texelFetch(pose, ivec2(0, i), 0),
-    texelFetch(pose, ivec2(1, i), 0),
-    texelFetch(pose, ivec2(2, i), 0),
-    vec4(0,0,0,1)));
-}
-
-void main(){
-  ivec4 j = ivec4(joints);
-  mat4 skin_matrix = (pose_matrix(j.x) * weights.x)
-                   + (pose_matrix(j.y) * weights.y)
-                   + (pose_matrix(j.z) * weights.z)
-                   + (pose_matrix(j.w) * weights.w);
-  world_pos = model_matrix * skin_matrix * vec4(position, 1.0f);
-  normal = vec3(model_matrix * skin_matrix * vec4(in_normal, 0.0f));
-  uv = in_uv;
-  gl_Position = projection_matrix * view_matrix * world_pos;
-}")
-
-(defclass quat2-animation-controller (animation-controller)
-  ())
-
-(defmethod update-palette ((entity quat2-animation-controller))
-  ;; FIXME: Update for texture data
-  (let ((palette (quat2-palette (pose entity) (palette entity)))
-        (inv (quat-inv-bind-pose (skeleton (mesh-asset entity)))))
-    (dotimes (i (length palette) (setf (palette entity) palette))
-      (nq* (svref palette i) (svref inv i)))))
 
 (define-shader-entity quat2-skinned-enity (base-animated-enity)
   ()
