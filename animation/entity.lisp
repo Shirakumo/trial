@@ -47,15 +47,18 @@
 
 (define-shader-entity morphed-entity (base-animated-entity)
   ((morph-texture :initform (make-instance 'texture :target :texture-1d-array :internal-format :rgba32f :min-filter :nearest :mag-filter :nearest) :accessor morph-texture)
-   (morph-data :initform (make-instance 'uniform-buffer :data-usage :dynamic-draw :binding NIL :struct (make-instance 'morph-data)) :accessor morph-data))
+   (morph-data :buffer T :initform (make-instance 'uniform-buffer :data-usage :dynamic-draw :binding NIL :struct (make-instance 'morph-data)) :accessor morph-data))
   (:shader-file (trial "morph.glsl")))
 
 (defmethod render :before ((entity morphed-entity) (program shader-program))
   (declare (optimize speed))
   ;; KLUDGE: This is Bad
-  (%gl:active-texture :texture6)
-  (gl:bind-texture :texture-1d-array (gl-name (morph-texture entity)))
+  (bind (morph-texture entity) :texture6)
   (setf (uniform program "morph_targets") 6))
+
+(defmethod stage :after ((entity morphed-entity) (area staging-area))
+  (stage (morph-texture entity) area)
+  (stage (morph-data entity) area))
 
 (define-shader-entity skinned-entity (base-animated-entity)
   ((mesh :initarg :mesh :initform NIL :accessor mesh))
