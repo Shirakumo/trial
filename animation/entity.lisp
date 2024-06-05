@@ -46,15 +46,16 @@
   (indices (:array :int size)))
 
 (define-shader-entity morphed-entity (base-animated-entity)
-  ((morph-texture :initform (make-instance 'texture :target :texture-1d-array :internal-format :rgba32f :min-filter :nearest :mag-filter :nearest) :accessor morph-texture)
+  ((morph-texture :initform NIL :accessor morph-texture)
    (morph-data :buffer T :initform (make-instance 'uniform-buffer :data-usage :dynamic-draw :binding NIL :struct (make-instance 'morph-data)) :accessor morph-data))
   (:shader-file (trial "morph.glsl")))
 
 (defmethod render :before ((entity morphed-entity) (program shader-program))
   (declare (optimize speed))
   ;; KLUDGE: This is Bad
-  (bind (morph-texture entity) :texture6)
-  (setf (uniform program "morph_targets") 6))
+  (when (morph-texture entity)
+    (bind (morph-texture entity) :texture6)
+    (setf (uniform program "morph_targets") 6)))
 
 (defmethod stage :after ((entity morphed-entity) (area staging-area))
   (stage (morph-texture entity) area)
@@ -62,7 +63,7 @@
 
 (define-shader-entity skinned-entity (base-animated-entity)
   ((mesh :initarg :mesh :initform NIL :accessor mesh))
-  (:shader-file (trial "skin_matrix.glsl")))
+  (:shader-file (trial "skin-matrix.glsl")))
 
 (defmethod (setf mesh-asset) :after ((asset asset) (entity skinned-enity))
   (unless (loaded-p asset)
@@ -70,19 +71,19 @@
 
 (defmethod render :before ((entity skinned-enity) (program shader-program))
   (declare (optimize speed))
-  ;; KLUDGE: This is Bad
-  (bind (palette-texture entity) :texture5)
-  (setf (uniform program "pose") 5))
+  (when (palette-texture entity)
+    (bind (palette-texture entity) :texture5)
+    (setf (uniform program "pose") 5)))
 
 (define-shader-entity quat2-skinned-enity (base-animated-enity)
   ()
-  (:shader-file (trial "skin_dquat.glsl")))
+  (:shader-file (trial "skin-dquat.glsl")))
 
 (defmethod render :before ((entity quat2-skinned-enity) (program shader-program))
   (declare (optimize speed))
-  ;; KLUDGE: This is Bad
-  (bind (palette-texture entity) :texture5)
-  (setf (uniform program "pose") 5))
+  (when (palette-texture entity)
+    (bind (palette-texture entity) :texture5)
+    (setf (uniform program "pose") 5)))
 
 (define-shader-entity animated-entity (skinned-entity morphed-entity)
   ())
