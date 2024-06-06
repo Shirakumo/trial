@@ -43,7 +43,7 @@
 
 (defmethod save-image (source target (type string) &rest args)
   (apply #'save-image source target
-         (or (cl-ppcre:register-groups-bind (type) ("^[^/]*/([^+/]+)" mime-type) (kw type)) (kw type))
+         (or (cl-ppcre:register-groups-bind (type) ("^[^/]*/([^+/]+)" type) (kw type)) (kw type))
          args))
 
 (defmethod save-image ((region memory-region) target type &rest args)

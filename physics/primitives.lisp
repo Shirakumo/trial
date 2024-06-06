@@ -140,7 +140,7 @@
        pos))
     (sequence
      (let ((mask 0))
-       (sequences:dosequence (system systems mask)
+       (sequences:dosequence (system system-ish mask)
          (setf (ldb (byte 1 (collision-system-idx system)) mask) 1))))))
 
 (defstruct primitive

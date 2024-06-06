@@ -59,7 +59,7 @@
 (defmethod apply-transforms progn ((obj rotated-entity))
   (let ((mat (mat4)))
     (declare (dynamic-extent mat))
-    (nm* (model-matrix) (qmat4 (rotation obj) mat))))
+    (nm* (model-matrix) (qmat (rotation obj) mat))))
 
 (define-transfer rotated-entity rotation)
 
