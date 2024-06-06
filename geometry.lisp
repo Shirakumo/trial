@@ -142,7 +142,8 @@
                                      for attribute in (vertex-attributes mesh)
                                      for offset = 0 then (+ offset size)
                                      for size = (vertex-attribute-size attribute)
-                                     collect `(,vertex-data :size ,size :offset ,(* 4 offset) :stride ,(* 4 stride)))
+                                     for index = (vertex-attribute-order attribute)
+                                     collect `(,vertex-data :index ,index :size ,size :offset ,(* 4 offset) :stride ,(* 4 stride)))
                      :size (if faces
                                (length faces)
                                (truncate (length (vertex-data mesh)) (+ 3 3 2))))))
