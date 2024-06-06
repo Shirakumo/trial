@@ -1164,7 +1164,6 @@
    #:triangulate
    #:check-mesh-valid
    #:pack
-   #:with-vertex-filling
    #:vertex
    #:location
    #:fill-vector-data

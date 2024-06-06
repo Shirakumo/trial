@@ -27,15 +27,16 @@
    (frames :initarg :frames :initform #() :accessor frames)
    (vertex-array :initform NIL)))
 
-(defun make-sprite-frame-mesh (frames &key mesh)
-  (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'textured-vertex)))
+(defun make-sprite-frame-mesh (frames)
+  (with-mesh-construction (v finalize (location uv))
     (loop for frame across frames
           for xy = (xy frame)
           for uv = (uv frame)
-          do (vertex :position (vec (- (vx xy) (vz xy)) (- (vy xy) (vw xy)) 0) :uv (vxy uv))
-             (vertex :position (vec (+ (vx xy) (vz xy)) (- (vy xy) (vw xy)) 0) :uv (vzy uv))
-             (vertex :position (vec (- (vx xy) (vz xy)) (+ (vy xy) (vw xy)) 0) :uv (vxw uv))
-             (vertex :position (vec (+ (vx xy) (vz xy)) (+ (vy xy) (vw xy)) 0) :uv (vzw uv)))))
+          do (v (- (vx xy) (vz xy)) (- (vy xy) (vw xy)) 0 (vx uv) (vy uv))
+             (v (+ (vx xy) (vz xy)) (- (vy xy) (vw xy)) 0 (vz uv) (vy uv))
+             (v (- (vx xy) (vz xy)) (+ (vy xy) (vw xy)) 0 (vx uv) (vy uv))
+             (v (+ (vx xy) (vz xy)) (+ (vy xy) (vw xy)) 0 (vz uv) (vy uv)))
+    (finalize-data)))
 
 (defmethod frame ((entity sprite-entity))
   (aref (frames entity) (frame-idx entity)))

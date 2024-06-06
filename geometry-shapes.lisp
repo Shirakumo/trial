@@ -11,7 +11,7 @@
 ;; NOTE: UV convention is U is pointing RIGHT, V is pointing UP
 ;; NOTE: Should generate triangle vertices in CCW order
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun make-rectangle-mesh (w h &key (align :center) mesh pack (x 0) (y 0) (z 0) (u- 0) (v- 0) (u+ 1) (v+ 1))
+  (defun make-rectangle-mesh (w h &key (align :center) (x 0) (y 0) (z 0) (u- 0) (v- 0) (u+ 1) (v+ 1))
     (let (l r u b)
       (ecase align
         (:center (setf l (- (/ w 2)) r (+ (/ w 2))
@@ -23,106 +23,111 @@
         (:bottomleft (setf l 0 r w
                            b 0 u h)))
       (incf l x) (incf r x) (incf u y) (incf b y)
-      (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'basic-vertex)) :pack pack)
-        (vertex :position (vec l b z) :normal +vz3+ :uv (vec u- v-))
-        (vertex :position (vec r b z) :normal +vz3+ :uv (vec u+ v-))
-        (vertex :position (vec r u z) :normal +vz3+ :uv (vec u+ v+))
-        (vertex :position (vec r u z) :normal +vz3+ :uv (vec u+ v+))
-        (vertex :position (vec l u z) :normal +vz3+ :uv (vec u- v+))
-        (vertex :position (vec l b z) :normal +vz3+ :uv (vec u- v-)))))
+      (with-mesh-construction (v finalize (location normal uv))
+        (v l b z 0 0 1 u- v-)
+        (v r b z 0 0 1 u+ v-)
+        (v r u z 0 0 1 u+ v+)
+        (v r u z 0 0 1 u+ v+)
+        (v l u z 0 0 1 u- v+)
+        (v l b z 0 0 1 u- v-)
+        (finalize-data))))
 
-  (defun make-triangle-mesh (w h &key (orientation :right) mesh pack (x 0) (y 0) (z 0))
-    (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'basic-vertex)) :pack pack)
+  (defun make-triangle-mesh (w h &key (orientation :right) (x 0) (y 0) (z 0))
+    (with-mesh-construction (v finalize (location normal uv))
       (let ((l (- x (/ w 2)))
             (r (+ x (/ w 2)))
             (u (+ y (/ h 2)))
             (b (- y (/ h 2))))
         (ecase orientation
           (:up
-           (vertex :position (vec l b z) :normal +vz3+ :uv (vec 0 0))
-           (vertex :position (vec r b z) :normal +vz3+ :uv (vec 1 0))
-           (vertex :position (vec x u z) :normal +vz3+ :uv (vec 0.5 1)))
+           (v l b z 0 0 1 0 0)
+           (v r b z 0 0 1 1 0)
+           (v x u z 0 0 1 0.5 1))
           (:right
-           (vertex :position (vec l u z) :normal +vz3+ :uv (vec 0 1))
-           (vertex :position (vec l b z) :normal +vz3+ :uv (vec 0 0))
-           (vertex :position (vec r y z) :normal +vz3+ :uv (vec 1 0.5)))))))
+           (v l u z 0 0 1 0 1)
+           (v l b z 0 0 1 0 0)
+           (v r y z 0 0 1 1 0.5))))
+      (finalize-data)))
 
-  (defun make-cube-mesh (size &key mesh pack (x 0) (y 0) (z 0))
+  (defun make-cube-mesh (size &key (x 0) (y 0) (z 0))
     (destructuring-bind (w h d) (enlist size size size)
       (let ((w (/ w 2)) (d (/ d 2)) (h (/ h 2)))
-        (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'basic-vertex)) :pack pack)
-          (vertex :position (vec (+ x w) (+ y h) (- z d)) :uv (vec 1.0 0.0) :normal (vec 0 1 0))
-          (vertex :position (vec (- x w) (+ y h) (- z d)) :uv (vec 0.0 0.0) :normal (vec 0 1 0))
-          (vertex :position (vec (- x w) (+ y h) (+ z d)) :uv (vec 0.0 1.0) :normal (vec 0 1 0))
-          (vertex :position (vec (- x w) (+ y h) (+ z d)) :uv (vec 0.0 1.0) :normal (vec 0 1 0))
-          (vertex :position (vec (+ x w) (+ y h) (+ z d)) :uv (vec 1.0 1.0) :normal (vec 0 1 0))
-          (vertex :position (vec (+ x w) (+ y h) (- z d)) :uv (vec 1.0 0.0) :normal (vec 0 1 0))
-
-          (vertex :position (vec (+ x w) (- y h) (+ z d)) :uv (vec 1.0 0.0) :normal (vec 0 -1 0))
-          (vertex :position (vec (- x w) (- y h) (+ z d)) :uv (vec 0.0 0.0) :normal (vec 0 -1 0))
-          (vertex :position (vec (- x w) (- y h) (- z d)) :uv (vec 0.0 1.0) :normal (vec 0 -1 0))
-          (vertex :position (vec (- x w) (- y h) (- z d)) :uv (vec 0.0 1.0) :normal (vec 0 -1 0))
-          (vertex :position (vec (+ x w) (- y h) (- z d)) :uv (vec 1.0 1.0) :normal (vec 0 -1 0))
-          (vertex :position (vec (+ x w) (- y h) (+ z d)) :uv (vec 1.0 0.0) :normal (vec 0 -1 0))
-
-          (vertex :position (vec (+ x w) (+ y h) (+ z d)) :uv (vec 1.0 0.0) :normal (vec 0 0 1))
-          (vertex :position (vec (- x w) (+ y h) (+ z d)) :uv (vec 0.0 0.0) :normal (vec 0 0 1))
-          (vertex :position (vec (- x w) (- y h) (+ z d)) :uv (vec 0.0 1.0) :normal (vec 0 0 1))
-          (vertex :position (vec (- x w) (- y h) (+ z d)) :uv (vec 0.0 1.0) :normal (vec 0 0 1))
-          (vertex :position (vec (+ x w) (- y h) (+ z d)) :uv (vec 1.0 1.0) :normal (vec 0 0 1))
-          (vertex :position (vec (+ x w) (+ y h) (+ z d)) :uv (vec 1.0 0.0) :normal (vec 0 0 1))
-
-          (vertex :position (vec (+ x w) (- y h) (- z d)) :uv (vec 1.0 0.0) :normal (vec 0 0 -1))
-          (vertex :position (vec (- x w) (- y h) (- z d)) :uv (vec 0.0 0.0) :normal (vec 0 0 -1))
-          (vertex :position (vec (- x w) (+ y h) (- z d)) :uv (vec 0.0 1.0) :normal (vec 0 0 -1))
-          (vertex :position (vec (- x w) (+ y h) (- z d)) :uv (vec 0.0 1.0) :normal (vec 0 0 -1))
-          (vertex :position (vec (+ x w) (+ y h) (- z d)) :uv (vec 1.0 1.0) :normal (vec 0 0 -1))
-          (vertex :position (vec (+ x w) (- y h) (- z d)) :uv (vec 1.0 0.0) :normal (vec 0 0 -1))
-
-          (vertex :position (vec (- x w) (+ y h) (+ z d)) :uv (vec 1.0 0.0) :normal (vec -1 0 0))
-          (vertex :position (vec (- x w) (+ y h) (- z d)) :uv (vec 0.0 0.0) :normal (vec -1 0 0))
-          (vertex :position (vec (- x w) (- y h) (- z d)) :uv (vec 0.0 1.0) :normal (vec -1 0 0))
-          (vertex :position (vec (- x w) (- y h) (- z d)) :uv (vec 0.0 1.0) :normal (vec -1 0 0))
-          (vertex :position (vec (- x w) (- y h) (+ z d)) :uv (vec 1.0 1.0) :normal (vec -1 0 0))
-          (vertex :position (vec (- x w) (+ y h) (+ z d)) :uv (vec 1.0 0.0) :normal (vec -1 0 0))
-
-          (vertex :position (vec (+ x w) (+ y h) (- z d)) :uv (vec 1.0 0.0) :normal (vec 1 0 0))
-          (vertex :position (vec (+ x w) (+ y h) (+ z d)) :uv (vec 0.0 0.0) :normal (vec 1 0 0))
-          (vertex :position (vec (+ x w) (- y h) (+ z d)) :uv (vec 0.0 1.0) :normal (vec 1 0 0))
-          (vertex :position (vec (+ x w) (- y h) (+ z d)) :uv (vec 0.0 1.0) :normal (vec 1 0 0))
-          (vertex :position (vec (+ x w) (- y h) (- z d)) :uv (vec 1.0 1.0) :normal (vec 1 0 0))
-          (vertex :position (vec (+ x w) (+ y h) (- z d)) :uv (vec 1.0 0.0) :normal (vec 1 0 0))))))
-
-  (defun make-quad-grid-mesh (size x-count z-count &key mesh pack (x 0) (y 0) (z 0))
-    (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'basic-vertex)) :pack pack)
+        (with-mesh-construction (v finalize (location normal uv))
+          (v (+ x w) (+ y h) (- z d) 0 1 0 1.0 0.0)
+          (v (- x w) (+ y h) (- z d) 0 1 0 0.0 0.0)
+          (v (- x w) (+ y h) (+ z d) 0 1 0 0.0 1.0)
+          (v (- x w) (+ y h) (+ z d) 0 1 0 0.0 1.0)
+          (v (+ x w) (+ y h) (+ z d) 0 1 0 1.0 1.0)
+          (v (+ x w) (+ y h) (- z d) 0 1 0 1.0 0.0)
+          
+          (v (+ x w) (- y h) (+ z d) 0 -1 0 1.0 0.0)
+          (v (- x w) (- y h) (+ z d) 0 -1 0 0.0 0.0)
+          (v (- x w) (- y h) (- z d) 0 -1 0 0.0 1.0)
+          (v (- x w) (- y h) (- z d) 0 -1 0 0.0 1.0)
+          (v (+ x w) (- y h) (- z d) 0 -1 0 1.0 1.0)
+          (v (+ x w) (- y h) (+ z d) 0 -1 0 1.0 0.0)
+          
+          (v (+ x w) (+ y h) (+ z d) 0 0 1 1.0 0.0)
+          (v (- x w) (+ y h) (+ z d) 0 0 1 0.0 0.0)
+          (v (- x w) (- y h) (+ z d) 0 0 1 0.0 1.0)
+          (v (- x w) (- y h) (+ z d) 0 0 1 0.0 1.0)
+          (v (+ x w) (- y h) (+ z d) 0 0 1 1.0 1.0)
+          (v (+ x w) (+ y h) (+ z d) 0 0 1 1.0 0.0)
+          
+          (v (+ x w) (- y h) (- z d) 0 0 -1 1.0 0.0)
+          (v (- x w) (- y h) (- z d) 0 0 -1 0.0 0.0)
+          (v (- x w) (+ y h) (- z d) 0 0 -1 0.0 1.0)
+          (v (- x w) (+ y h) (- z d) 0 0 -1 0.0 1.0)
+          (v (+ x w) (+ y h) (- z d) 0 0 -1 1.0 1.0)
+          (v (+ x w) (- y h) (- z d) 0 0 -1 1.0 0.0)
+          
+          (v (- x w) (+ y h) (+ z d) -1 0 0 1.0 0.0)
+          (v (- x w) (+ y h) (- z d) -1 0 0 0.0 0.0)
+          (v (- x w) (- y h) (- z d) -1 0 0 0.0 1.0)
+          (v (- x w) (- y h) (- z d) -1 0 0 0.0 1.0)
+          (v (- x w) (- y h) (+ z d) -1 0 0 1.0 1.0)
+          (v (- x w) (+ y h) (+ z d) -1 0 0 1.0 0.0)
+          
+          (v (+ x w) (+ y h) (- z d) 1 0 0 1.0 0.0)
+          (v (+ x w) (+ y h) (+ z d) 1 0 0 0.0 0.0)
+          (v (+ x w) (- y h) (+ z d) 1 0 0 0.0 1.0)
+          (v (+ x w) (- y h) (+ z d) 1 0 0 0.0 1.0)
+          (v (+ x w) (- y h) (- z d) 1 0 0 1.0 1.0)
+          (v (+ x w) (+ y h) (- z d) 1 0 0 1.0 0.0)
+          (finalize-data)))))
+  
+  (defun make-quad-grid-mesh (size x-count z-count &key (x 0) (y 0) (z 0))
+    (with-mesh-construction (v finalize (location normal uv))
       (loop for xi from 0 below x-count
             for xc from (* x-count size -0.5) by size
             do (loop for zi from 0 below z-count
                      for zc from (* z-count size -0.5) by size
                      do (let ((l (+ x xc)) (r (+ x xc size))
                               (u (+ z zc)) (b (+ z zc size)))
-                          (vertex :position (vec l y b) :uv (vec (/ (+ 0 xi) x-count) (/ (+ 0 zi) z-count)) :normal (vec 0 1 0))
-                          (vertex :position (vec r y b) :uv (vec (/ (+ 1 xi) x-count) (/ (+ 0 zi) z-count)) :normal (vec 0 1 0))
-                          (vertex :position (vec r y u) :uv (vec (/ (+ 1 xi) x-count) (/ (+ 1 zi) z-count)) :normal (vec 0 1 0))
-                          (vertex :position (vec r y u) :uv (vec (/ (+ 1 xi) x-count) (/ (+ 1 zi) z-count)) :normal (vec 0 1 0))
-                          (vertex :position (vec l y u) :uv (vec (/ (+ 0 xi) x-count) (/ (+ 1 zi) z-count)) :normal (vec 0 1 0))
-                          (vertex :position (vec l y b) :uv (vec (/ (+ 0 xi) x-count) (/ (+ 0 zi) z-count)) :normal (vec 0 1 0)))))))
+                          (v l y b 0 1 0 (/ (+ 0 xi) x-count) (/ (+ 0 zi) z-count))
+                          (v r y b 0 1 0 (/ (+ 1 xi) x-count) (/ (+ 0 zi) z-count))
+                          (v r y u 0 1 0 (/ (+ 1 xi) x-count) (/ (+ 1 zi) z-count))
+                          (v r y u 0 1 0 (/ (+ 1 xi) x-count) (/ (+ 1 zi) z-count))
+                          (v l y u 0 1 0 (/ (+ 0 xi) x-count) (/ (+ 1 zi) z-count))
+                          (v l y b 0 1 0 (/ (+ 0 xi) x-count) (/ (+ 0 zi) z-count)))))
+      (finalize-data)))
 
-  (defun make-line-grid-mesh (size w h &key mesh pack (x 0) (y 0) (z 0))
-    (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex :face-length 2)) :pack pack)
+  (defun make-line-grid-mesh (size w h &key (x 0) (y 0) (z 0))
+    (with-mesh-construction (v finalize (location))
       (let ((w (/ w 2)) (h (/ h 2))
             (ws (/ w size)) (hs (/ h size)))
         (loop for _x from (- w) to w by ws
-              do (vertex :position (vec (+ x _x) y (- z h)))
-                 (vertex :position (vec (+ x _x) y (+ z h))))
+              do (v (+ x _x) y (- z h))
+                 (v (+ x _x) y (+ z h)))
         (loop for _z from (- h) to h by hs
-              do (vertex :position (vec (- x w) y (+ z _z)))
-                 (vertex :position (vec (+ x w) y (+ z _z)))))))
+              do (v (- x w) y (+ z _z))
+                 (v (+ x w) y (+ z _z))))
+      (finalize-data :vertex-form :lines)))
 
-  (defun make-sphere-mesh (size &key (segments 24) mesh pack (x 0) (y 0) (z 0))
+  (defun make-sphere-mesh (size &key (segments 24) (x 0) (y 0) (z 0))
     (let ((lat segments) (lng segments)
           (off (vec x y z)))
-      (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'basic-vertex)) :pack pack)
+      (with-mesh-construction (v finalize (location normal uv))
         (loop for i from lat downto 1
               for lat0 = (* PI (- (/ (1- i) lat) 0.5))
               for lat1 = (* PI (- (/ i lat) 0.5))
@@ -135,26 +140,31 @@
                        for x1 = (cos l1) for x2 = (cos l2)
                        for y1 = (sin l1) for y2 = (sin l2)
                        do (flet ((vertex (position uv)
-                                   (vertex :position (v+ position off) :normal (vunit position) :uv (nv* (nv+ uv 1.0) 0.5))))
+                                   (let ((p (v+ position off))
+                                         (n (vunit position))
+                                         (u (nv* (nv+ uv 1.0) 0.5)))
+                                     (v (vx p) (vy p) (vz p) (vx n) (vy n) (vz n) (vx u) (vy u)))))
                             (vertex (vec (* x1 zr0 size) (* y1 zr0 size) (* z0 size)) (vec x1 y1))
                             (vertex (vec (* x1 zr1 size) (* y1 zr1 size) (* z1 size)) (vec x1 y1))
                             (vertex (vec (* x2 zr0 size) (* y2 zr0 size) (* z0 size)) (vec x2 y2))
                             
                             (vertex (vec (* x2 zr0 size) (* y2 zr0 size) (* z0 size)) (vec x2 y2))
                             (vertex (vec (* x1 zr1 size) (* y1 zr1 size) (* z1 size)) (vec x1 y1))
-                            (vertex (vec (* x2 zr1 size) (* y2 zr1 size) (* z1 size)) (vec x2 y2))))))))
+                            (vertex (vec (* x2 zr1 size) (* y2 zr1 size) (* z1 size)) (vec x2 y2)))))
+        (finalize-data))))
 
-  (defun make-disc-mesh (size &key (segments 32) mesh pack (x 0) (y 0) (z 0))
-    (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'basic-vertex)) :pack pack)
+  (defun make-disc-mesh (size &key (segments 32) (x 0) (y 0) (z 0))
+    (with-mesh-construction (v finalize (location normal uv))
       (loop with step = (/ (* 2 PI) segments)
             for i1 = (- step) then i2
             for i2 from 0 to (* 2 PI) by step
-            do (vertex :position (vec x y z) :normal +vz3+ :uv (vec 0.5 0.5))
-               (vertex :position (vec (+ x (* size (cos i1))) (+ y (* size (sin i1))) z) :normal +vz3+ :uv (vec (+ 0.5 (* 0.5 (cos i1))) (+ 0.5 (* 0.5 (sin i1)))))
-               (vertex :position (vec (+ x (* size (cos i2))) (+ y (* size (sin i2))) z) :normal +vz3+ :uv (vec (+ 0.5 (* 0.5 (cos i2))) (+ 0.5 (* 0.5 (sin i2))))))))
+            do (v x y z 0 0 1 0.5 0.5)
+               (v (+ x (* size (cos i1))) (+ y (* size (sin i1))) z 0 0 1 (+ 0.5 (* 0.5 (cos i1))) (+ 0.5 (* 0.5 (sin i1))))
+               (v (+ x (* size (cos i2))) (+ y (* size (sin i2))) z 0 0 1 (+ 0.5 (* 0.5 (cos i2))) (+ 0.5 (* 0.5 (sin i2)))))
+      (finalize-data)))
 
-  (defun make-cylinder-mesh (size height &key (segments 32) mesh pack (x 0) (y 0) (z 0))
-    (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
+  (defun make-cylinder-mesh (size height &key (segments 32) (x 0) (y 0) (z 0))
+    (with-mesh-construction (v finalize (location))
       (loop with step = (/ (* 2 PI) segments)
             for i1 = (- step) then i2
             for i2 from 0 to (* 2 PI) by step
@@ -163,37 +173,39 @@
             for e1t = (nv+ (vec 0 height 0) e1b)
             for e2t = (nv+ (vec 0 height 0) e2b)
             do ;; Bottom disc
-            (vertex :position (vec x y z))
-            (vertex :position e2b)
-            (vertex :position e1b)
+            (v x y z)
+            (v (vx e2b) (vy e2b) (vz e2b))
+            (v (vx e1b) (vy e1b) (vz e1b))
             ;; Top Disc
-            (vertex :position (vec x (+ height y) z))
-            (vertex :position e1t)
-            (vertex :position e2t)
+            (v x (+ height y) z)
+            (v (vx e1t) (vy e1t) (vz e1t))
+            (v (vx e2t) (vy e2t) (vz e2t))
             ;; Wall
-            (vertex :position e2b)
-            (vertex :position e1t)
-            (vertex :position e1b)
-            (vertex :position e1t)
-            (vertex :position e2b)
-            (vertex :position e2t))))
+            (v (vx e2b) (vy e2b) (vz e2b))
+            (v (vx e1t) (vy e1t) (vz e1t))
+            (v (vx e1b) (vy e1b) (vz e1b))
+            (v (vx e1t) (vy e1t) (vz e1t))
+            (v (vx e2b) (vy e2b) (vz e2b))
+            (v (vx e2t) (vy e2t) (vz e2t)))
+      (finalize-data)))
 
-  (defun make-cone-mesh (size height &key (segments 32) mesh pack (x 0) (y 0) (z 0))
-    (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
+  (defun make-cone-mesh (size height &key (segments 32) (x 0) (y 0) (z 0))
+    (with-mesh-construction (v finalize (location))
       (loop with step = (/ (* 2 PI) segments)
             for i1 = (- step) then i2
             for i2 from 0 to (* 2 PI) by step
             do ;; Cone top
-            (vertex :position (vec x (+ y height) z))
-            (vertex :position (vec (+ x (* size (cos i1))) y (+ z (* size (sin i1)))))
-            (vertex :position (vec (+ x (* size (cos i2))) y (+ z (* size (sin i2)))))
+            (v x (+ y height) z)
+            (v (+ x (* size (cos i1))) y (+ z (* size (sin i1))))
+            (v (+ x (* size (cos i2))) y (+ z (* size (sin i2))))
             ;; Bottom disc
-            (vertex :position (vec x y z))
-            (vertex :position (vec (+ x (* size (cos i2))) y (+ z (* size (sin i2)))))
-            (vertex :position (vec (+ x (* size (cos i1))) y (+ z (* size (sin i1))))))))
+            (v x y z)
+            (v (+ x (* size (cos i2))) y (+ z (* size (sin i2))))
+            (v (+ x (* size (cos i1))) y (+ z (* size (sin i1)))))
+      (finalize-data)))
 
-  (defun make-tube-mesh (size height inner-size &key (segments 32) mesh pack (x 0) (y 0) (z 0))
-    (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'vertex)) :pack pack)
+  (defun make-tube-mesh (size height inner-size &key (segments 32) (x 0) (y 0) (z 0))
+    (with-mesh-construction (v finalize (location))
       (loop with step = (/ (* 2 PI) segments)
             for i1 = (- step) then i2
             for i2 from 0 to (* 2 PI) by step
@@ -207,79 +219,80 @@
             for f1t = (nv+ (vec 0 height 0) f1b)
             for f2t = (nv+ (vec 0 height 0) f2b)
             do ;; Bottom ring
-            (vertex :position f1b)
-            (vertex :position e1b)
-            (vertex :position e2b)
-            (vertex :position e2b)
-            (vertex :position f2b)
-            (vertex :position f1b)
+            (v (vx f1b) (vy f1b) (vz f1b))
+            (v (vx e1b) (vy e1b) (vz e1b))
+            (v (vx e2b) (vy e2b) (vz e2b))
+            (v (vx e2b) (vy e2b) (vz e2b))
+            (v (vx f2b) (vy f2b) (vz f2b))
+            (v (vx f1b) (vy f1b) (vz f1b))
             ;; Top ring
-            (vertex :position f2t)
-            (vertex :position e2t)
-            (vertex :position e1t)
-            (vertex :position e1t)
-            (vertex :position f1t)
-            (vertex :position f2t)
-            ;; ;; Outer wall
-            (vertex :position e2b)
-            (vertex :position e1b)
-            (vertex :position e1t)
-            (vertex :position e1t)
-            (vertex :position e2t)
-            (vertex :position e2b)
-            ;; ;; Inner wall
-            (vertex :position f2b)
-            (vertex :position f1t)
-            (vertex :position f1b)
-            (vertex :position f1t)
-            (vertex :position f2b)
-            (vertex :position f2t))))
+            (v (vx f2t) (vy f2t) (vz f2t))
+            (v (vx e2t) (vy e2t) (vz e2t))
+            (v (vx e1t) (vy e1t) (vz e1t))
+            (v (vx e1t) (vy e1t) (vz e1t))
+            (v (vx f1t) (vy f1t) (vz f1t))
+            (v (vx f2t) (vy f2t) (vz f2t))
+            ;; Outer wall
+            (v (vx e2b) (vy e2b) (vz e2b))
+            (v (vx e1b) (vy e1b) (vz e1b))
+            (v (vx e1t) (vy e1t) (vz e1t))
+            (v (vx e1t) (vy e1t) (vz e1t))
+            (v (vx e2t) (vy e2t) (vz e2t))
+            (v (vx e2b) (vy e2b) (vz e2b))
+            ;; Inner wall
+            (v (vx f2b) (vy f2b) (vz f2b))
+            (v (vx f1t) (vy f1t) (vz f1t))
+            (v (vx f1b) (vy f1b) (vz f1b))
+            (v (vx f1t) (vy f1t) (vz f1t))
+            (v (vx f2b) (vy f2b) (vz f2b))
+            (v (vx f2t) (vy f2t) (vz f2t)))
+      (finalize-data)))
 
-  (defclass line-vertex (colored-vertex normal-vertex)
-    ())
-
-  (defun make-lines (points &key mesh (default-color (vec 0 0 0 1)))
-    (with-vertex-filling ((or mesh (make-instance 'vertex-mesh :vertex-type 'line-vertex)))
+  (defun make-lines (points &key (default-color (vec 0 0 0 1)))
+    (with-mesh-construction (v finalize (location normal color))
       (loop for (a b) on points by #'cddr
             while b
             do (destructuring-bind (a ac) (enlist a default-color)
                  (destructuring-bind (b bc) (enlist b default-color)
-                   (vertex :location a :normal (v- a b) :color ac)
-                   (vertex :location b :normal (v- a b) :color bc)
-                   (vertex :location a :normal (v- b a) :color ac)
-                   (vertex :location b :normal (v- a b) :color bc)
-                   (vertex :location b :normal (v- b a) :color bc)
-                   (vertex :location a :normal (v- b a) :color ac)))))))
+                   (let ((a-b (v- a b))
+                         (b-a (v- b a)))
+                     (v (vx a) (vy a) (vz a) (vx a-b) (vy a-b) (vz a-b) (vx ac) (vy ac) (vz ac))
+                     (v (vx b) (vy b) (vz b) (vx a-b) (vy a-b) (vz a-b) (vx bc) (vy bc) (vz bc))
+                     (v (vx a) (vy a) (vz a) (vx b-a) (vy b-a) (vz b-a) (vx ac) (vy ac) (vz ac))
+                     (v (vx b) (vy b) (vz b) (vx a-b) (vy a-b) (vz a-b) (vx bc) (vy bc) (vz bc))
+                     (v (vx b) (vy b) (vz b) (vx b-a) (vy b-a) (vz b-a) (vx bc) (vy bc) (vz bc))
+                     (v (vx a) (vy a) (vz a) (vx b-a) (vy b-a) (vz b-a) (vx ac) (vy ac) (vz ac))))))
+      (finalize-data :vertex-form :lines))))
 
 (define-asset (trial fullscreen-square) mesh
-    (make-rectangle-mesh 2 2 :pack T))
+    (make-rectangle-mesh 2 2))
 
 (define-asset (trial empty-vertex-array) mesh
-    (make-instance 'vertex-mesh))
+    (make-instance 'mesh-data))
 
 (define-asset (trial unit-cube) mesh
-    (make-cube-mesh 1.0 :pack T))
+    (make-cube-mesh 1.0))
 
 (define-asset (trial unit-sphere) mesh
-    (make-sphere-mesh 1.0 :pack T))
+    (make-sphere-mesh 1.0))
 
 (define-asset (trial unit-square) mesh
-    (make-rectangle-mesh 1 1 :pack T))
+    (make-rectangle-mesh 1 1))
 
 (define-asset (trial unit-disc) mesh
-    (make-disc-mesh 1.0 :pack T))
+    (make-disc-mesh 1.0))
 
 (define-asset (trial unit-cylinder) mesh
-    (make-cylinder-mesh 1.0 1.0 :pack T))
+    (make-cylinder-mesh 1.0 1.0))
 
 (define-asset (trial unit-cone) mesh
-    (make-cone-mesh 1.0 1.0 :pack T))
+    (make-cone-mesh 1.0 1.0))
 
 (define-asset (trial unit-tube) mesh
-    (make-tube-mesh 1.0 1.0 0.5 :pack T))
+    (make-tube-mesh 1.0 1.0 0.5))
 
 (define-asset (trial unit-point) mesh
-    (make-triangle-mesh 0.0 0.0 :pack T))
+    (make-triangle-mesh 0.0 0.0))
 
 (define-asset (trial grid) mesh
     (make-line-grid-mesh 10 10 10))
@@ -290,9 +303,10 @@
                       (list (vec 0 0 0) (vec 0 0 1 1)) (list (vec 0 0 10) (vec 0 0 1 1)))))
 
 (define-asset (trial 2d-axes) mesh
-    (with-vertex-filling ((make-instance 'vertex-mesh :face-length 2))
+    (with-mesh-construction (v finalize (location))
       ;; KLUDGE: for whatever reason using most-positive/negative-single-float does not work.
-      (vertex :location (vec 0 -1000000 0))
-      (vertex :location (vec 0 +1000000 0))
-      (vertex :location (vec -1000000 0 0))
-      (vertex :location (vec +1000000 0 0))))
+      (v 0 -1000000 0)
+      (v 0 +1000000 0)
+      (v -1000000 0 0)
+      (v +1000000 0 0)
+      (finalize-data :vertex-form :lines)))

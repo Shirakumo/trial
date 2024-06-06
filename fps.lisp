@@ -3,19 +3,16 @@
 ;;;; Very fast FPS display. Focus is on reducing GPU load.
 
 (define-asset (trial fps-counter) mesh
-    (let ((mesh (make-instance 'vertex-mesh :vertex-type 'textured-vertex)))
-      (with-vertex-filling (mesh)
-        (flet ((rect (x)
-                 (vertex :location (vec (+ x 16) 16 0) :uv (vec 0.1 1))
-                 (vertex :location (vec (+ x 0)  16 0) :uv (vec   0 1))
-                 (vertex :location (vec (+ x 0)   0 0) :uv (vec   0 0))
-                 (vertex :location (vec (+ x 0)   0 0) :uv (vec   0 0))
-                 (vertex :location (vec (+ x 16)  0 0) :uv (vec 0.1 0))
-                 (vertex :location (vec (+ x 16) 16 0) :uv (vec 0.1 1))))
-          (loop for i from 0 by 16
-                repeat 6
-                do (rect i))
-          mesh)))
+    (with-mesh-construction (v finalize (location uv))
+      (loop for x from 0 by 16
+            repeat 6
+            do (v (+ x 16) 16 0 0.1 1)
+               (v (+ x 0)  16 0 0   1)
+               (v (+ x 0)   0 0 0   0)
+               (v (+ x 0)   0 0 0   0)
+               (v (+ x 16)  0 0 0.1 0)
+               (v (+ x 16) 16 0 0.1 1))
+      (finalize-data))
   :data-usage :stream-draw)
 
 (define-asset (trial fps-texture) image

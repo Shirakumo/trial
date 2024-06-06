@@ -3,40 +3,6 @@
 (defclass mesh-loader (resource-generator)
   ())
 
-(defmethod generate-resources ((generator mesh-loader) (mesh vertex-mesh) &key (data-usage :static-draw) (vertex-attributes T) vertex-form (resource (resource generator T)))
-  (let* ((primer (if (= 0 (length (vertices mesh)))
-                     (allocate-instance (find-class (vertex-type mesh)))
-                     (aref (vertices mesh) 0)))
-         (attributes (etypecase vertex-attributes
-                       ((eql T) (vertex-attributes primer))
-                       (list vertex-attributes)))
-         (sizes (loop for attr in attributes collect (vertex-attribute-size attr)))
-         (buffer (make-vertex-data mesh :attributes attributes))
-         ;; FIXME: The assumption of float-only packing here is too primitive.
-         ;;        The same problem exists in geometry.lisp, though.
-         (vbo (make-instance 'vertex-buffer :buffer-data buffer :buffer-type :array-buffer
-                                            :data-usage data-usage :element-type :float
-                                            :size (* (length buffer) (gl-type-size :float))))
-         (ebo (make-instance 'vertex-buffer :buffer-data (simplify (faces mesh)) :buffer-type :element-array-buffer
-                                            :data-usage data-usage :element-type (cl-type->gl-type (array-element-type (faces mesh)))
-                                            :size (* (length (faces mesh)) (gl-type-size :unsigned-int))))
-         (specs (loop with stride = (reduce #'+ sizes)
-                      for offset = 0 then (+ offset size)
-                      for size in sizes
-                      for attribute in attributes
-                      collect (list vbo :stride (* stride (gl-type-size :float))
-                                        :offset (* offset (gl-type-size :float))
-                                        :size size
-                                        :index (vertex-attribute-order attribute)))))
-    (ensure-instance resource 'vertex-array
-                     :bindings specs
-                     :index-buffer ebo
-                     :vertex-form (or vertex-form
-                                      (ecase (face-length mesh)
-                                        (1 :points)
-                                        (2 :lines)
-                                        (3 :triangles))))))
-
 (defmethod generate-resources ((generator mesh-loader) (data mesh-data) &key (resource (resource generator T)))
   (make-vertex-array data resource))
 
