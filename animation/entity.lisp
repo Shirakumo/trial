@@ -51,8 +51,17 @@
 
 (defmethod initialize-instance :after ((morph morph) &key (simultaneous-targets 8) targets)
   (setf (morph-data morph) (make-instance 'uniform-buffer :data-usage :dynamic-draw :binding NIL :struct (make-instance 'morph-data :size simultaneous-targets)))
-  (let* ((stride (* 3 (length (aref targets 0))))
-         (data (make-array (* (length targets) stride) :element-type 'single-float))
+  (let* ((attributes
+           ;; TODO: compute reduced or expanded set of attributes from targets.
+           #++
+           (loop for target across targets
+                 for attributes = (vertex-attributes target) then (union attributes (vertex-attributes target))
+                 finally (return attributes))
+           '(location normal uv))
+         (vertex-count (vertex-count (aref targets 0)))
+         ;; The stride is 9, 3 for every color. This wastes space for the UV, since it only needs RG.
+         (stride 9)
+         (data (make-array (* (length targets) stride vertex-count) :element-type 'single-float))
          (texture (make-instance 'texture :target :texture-1d-array
                                           :internal-format :rgb32f
                                           :width (length targets)
@@ -60,9 +69,22 @@
                                           :pixel-data data
                                           :pixel-type :float
                                           :pixel-format :rgb)))
+    ;; Compact the targets into a slice per target
     (loop for target across targets
-          for start from 0 by stride
-          do (replace data target :start1 start))
+          for src-data = (vertex-data target)
+          for src-stride = (vertex-attribute-stride target)
+          for slice from 0 by (* vertex-count stride)
+          do (unless (= (vertex-count target) vertex-count)
+               (error "Not all morph targets have the same number of vertices!"))
+             (loop for attribute in attributes
+                   for src-offset = (vertex-attribute-offset attribute target)
+                   for dst-offset = (vertex-attribute-offset attribute attributes)
+                   do (loop for src from src-offset below (length src-data) by src-stride
+                            for dst from dst-offset by stride
+                            do (setf (aref data (+ slice dst 0)) (aref src-data (+ src 0)))
+                               (setf (aref data (+ slice dst 1)) (aref src-data (+ src 1)))
+                               (unless (eq attribute 'uv)
+                                 (setf (aref data (+ dst 2)) (aref src-data (+ src 2)))))))
     (setf (texture morph) texture)))
 
 (define-shader-entity morphed-entity (base-animated-entity listener)
