@@ -100,6 +100,11 @@
                 :slot-name (lispify-name pointer "KEYWORD")
                 :name (name track)))
 
+(defmethod translate-track-pointer ((pointer symbol) (track animation-track) gltf)
+  (change-class track 'trial::slot-value-track
+                :slot-name pointer
+                :name (name track)))
+
 ;; FIXME: How do we actually translate the pointer to the corresponding lisp-side object slot?
 ;;        it's unlikely to be what's pointed to by the json pointer, since objects are transformed
 ;;        to more fitting native representations that should be manipulated instead.

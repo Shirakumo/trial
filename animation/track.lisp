@@ -344,7 +344,7 @@
   ((name :initarg :name :initform NIL :accessor name)
    (slot-name :initarg :slot-name :accessor slot-name)))
 
-(defmethod sample (object (track slot-value-track) time &key loop-p)
+(defmethod sample ((object standard-object) (track slot-value-track) time &key loop-p)
   (declare (type single-float time))
   (declare (optimize speed))
   (let ((slot (slot-name track)))
