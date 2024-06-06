@@ -1,5 +1,11 @@
 (in-package #:org.shirakumo.fraf.trial)
 
+(defvar *known-vertex-attributes*
+  '(location normal uv tangent color joints weights
+    uv-0 uv-1 uv-2 uv-3
+    joints-0 joints-1 joints-2 joints-3
+    weights-0 weights-1 weights-2 weights-3))
+
 (defgeneric vertex-attribute-size (attribute))
 (defgeneric vertex-attribute-offset (attribute container))
 (defgeneric vertex-attribute-category (attribute))
@@ -33,6 +39,11 @@
 (defmethod vertex-attribute-category ((_ (eql 'weights-2))) 'weights)
 (defmethod vertex-attribute-category ((_ (eql 'weights-3))) 'weights)
 
+(defmethod vertex-index-attribute ((index integer))
+  (dolist (attr *known-vertex-attributes*)
+    (when (= index (vertex-attribute-order attr))
+      (return attr))))
+
 (macrolet ((distribute-vertex-indices (&rest attributes)
              `(progn ,@(loop for group in attributes
                              for i from 0
@@ -42,7 +53,7 @@
    location
    normal
    (uv uv-0)
-   targent
+   tangent
    color
    (joints joints-0)
    (weights weights-0)
@@ -61,14 +72,8 @@
         sum (vertex-attribute-size attribute)))
 
 (defun vertex-attribute< (a b)
-  (let ((a-cat (vertex-attribute-category a))
-        (b-cat (vertex-attribute-category b)))
-    (cond ((eql a b) NIL)
-          ((eql a-cat b-cat)
-           (string< a b))
-          (T
-           (< (vertex-attribute-order a-cat)
-              (vertex-attribute-order b-cat))))))
+  (< (vertex-attribute-order a)
+     (vertex-attribute-order b)))
 
 (defmethod vertex-attribute-offset (attribute (attributes list))
   (let ((offset 0))
@@ -189,22 +194,12 @@
     (setf (size vao) (length (faces mesh)))
     vao))
 
-(defmethod coerce-object ((vao vertex-array) (type (eql 'mesh-data)) &rest args &key index-attribute &allow-other-keys)
+(defmethod coerce-object ((vao vertex-array) (type (eql 'mesh-data)) &rest args &key (index-attribute #'vertex-index-attribute) &allow-other-keys)
   (let ((primary (caar (bindings vao)))
         (attributes (loop for index from 0
                           for (buffer . attrs) in (bindings vao)
                           collect (let ((index (or (getf attrs :index) index)))
-                                    (if index-attribute
-                                        (funcall index-attribute index)
-                                        (case index
-                                          (0 'location)
-                                          (1 'normal)
-                                          (2 'uv)
-                                          (3 'tangent)
-                                          (4 'color)
-                                          (5 'joints)
-                                          (6 'weights)
-                                          (7 'unknown)))))))
+                                    (funcall index-attribute index)))))
     (remf args :index-attribute)
     (if (loop for (binding) in (cdr (bindings vao))
               always (eq binding primary))
