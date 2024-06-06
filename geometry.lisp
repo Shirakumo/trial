@@ -91,6 +91,9 @@
 (defmethod (setf material) ((name null) (data mesh-data))
   (setf (slot-value data 'material) NIL))
 
+(defmethod vertex-count ((data mesh-data))
+  (truncate (length (vertex-data data)) (vertex-attribute-stride data)))
+
 (defmethod reordered-vertex-data ((mesh mesh-data) new-attributes)
   (if (equal new-attributes (vertex-attributes mesh))
       (vertex-data mesh)
@@ -266,18 +269,42 @@
   (assert (eq (vertex-form a) (vertex-form b)))
   (let ((data (make-array (+ (length (vertex-data a)) (length (vertex-data b)))
                           :element-type 'single-float))
-        (faces (when (and (faces a) (faces b))
-                 (make-array (+ (length (faces a)) (length (faces b)))
-                             :element-type '(unsigned-byte 16)))))
-    (replace data (vertex-data a))
-    (replace data (vertex-data b) :start1 (length (vertex-data a)))
+        (faces (if (or (faces a) (faces b))
+                   (make-array (+ (length (faces a)) (length (faces b)))
+                               :element-type '(unsigned-byte 16))))
+        (attributes (if (equal (vertex-attributes a) (vertex-attributes b))
+                        (vertex-attributes a)
+                        (union (vertex-attributes a) (vertex-attributes b)))))
+    (cond ((eq attributes (vertex-attributes a))
+           (replace data (vertex-data a))
+           (replace data (vertex-data b) :start1 (length (vertex-data a))))
+          (T
+           (let ((data-a (reordered-vertex-data a attributes))
+                 (data-b (reordered-vertex-data b attributes)))
+             (replace data data-a)
+             (replace data data-b :start1 (length data-a)))))
     (when faces
-      (replace faces (faces a))
-      (replace faces (faces b) :start1 (length (faces a))))
+      (if (faces a)
+          (replace faces (faces a))
+          ;; Missing, just use every vertex in sequence
+          (loop for v from 0 below (vertex-count a)
+                do (setf (aref faces v) v)))
+      ;; Since the vertex data got appended, we have to offset B's
+      ;; faces by the vertex-count of A.
+      (if (faces b)
+          (loop with src = (faces b)
+                with off = (vertex-count a)
+                for i from (length (faces a))
+                for j from 0 below (length src)
+                do (setf (aref faces i) (+ (aref src j) off)))
+          ;; Missing, just use every vertex in sequence
+          (loop for v from (vertex-count a)
+                for i from (length (faces a)) below (length faces)
+                do (setf (aref faces i) v))))
     (make-instance 'mesh-data :vertex-data data :faces faces
                               :material (material a)
                               :vertex-form (vertex-form a)
-                              :vertex-attributes (vertex-attributes a))))
+                              :vertex-attributes attributes)))
 
 (defmethod combine-vertex-data ((a mesh-data) (b mesh-data))
   (assert (eq (vertex-form a) (vertex-form b)))
