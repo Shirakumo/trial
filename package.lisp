@@ -1155,12 +1155,6 @@
    #:2d-axes)
   ;; geometry.lisp
   (:export
-   #:geometry
-   #:meshes
-   #:read-geometry
-   #:write-geometry
-   #:sphere-mesh
-   #:size
    #:vertex-mesh
    #:face-length
    #:vertex-type

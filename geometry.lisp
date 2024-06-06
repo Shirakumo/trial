@@ -1,21 +1,5 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass geometry ()
-  ((meshes :initform (make-hash-table :test 'equal) :accessor meshes)))
-
-(defgeneric read-geometry (file format &key &allow-other-keys))
-
-(defmethod read-geometry (file (format (eql T)) &rest args)
-  (apply #'read-geometry file (kw (pathname-type file)) args))
-
-(defgeneric write-geometry (geometry file format &key &allow-other-keys))
-
-(defmethod write-geometry (geometry file (format (eql T)) &rest args)
-  (apply #'write-geometry geometry file (kw (pathname-type file)) args))
-
-(defclass sphere-mesh ()
-  ((size :initarg :size :accessor size)))
-
 (defclass vertex-mesh ()
   ((face-length :initarg :face-length :initform 3 :accessor face-length)
    (vertex-type :initform 'vertex :initarg :vertex-type :reader vertex-type)

@@ -40,12 +40,6 @@
 (defmethod generate-resources ((generator mesh-loader) (data mesh-data) &key (resource (resource generator T)))
   (make-vertex-array data resource))
 
-(defmethod generate-resources ((generator mesh-loader) (path pathname) &key (format T))
-  (let ((meshes (meshes (read-geometry path format))))
-    (loop for name being the hash-keys of meshes
-          for mesh being the hash-values of meshes
-          collect (generate-resources generator mesh :resource (resource generator name)))))
-
 ;; FIXME: dependency cycle issues. Where the fuck do I put this?
 ;; (defmethod generate-resources ((generator mesh-loader) (primitive primitive) &rest args)
 ;;   (apply #'generate-resources generator (coerce-object primitive 'convex-mesh) args))
