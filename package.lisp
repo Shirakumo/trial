@@ -1155,18 +1155,6 @@
    #:2d-axes)
   ;; geometry.lisp
   (:export
-   #:vertex-mesh
-   #:face-length
-   #:vertex-type
-   #:faces
-   #:vertices
-   #:add-vertex
-   #:triangulate
-   #:check-mesh-valid
-   #:pack
-   #:vertex
-   #:location
-   #:fill-vector-data
    #:vertex-attribute-size
    #:vertex-attribute-stride
    #:vertex-attribute-offset
@@ -1203,19 +1191,7 @@
    #:weights-0
    #:weights-1
    #:weights-2
-   #:weights-3
-   #:fill-vertex-attribute
-   #:vertex-attributes
-   #:vertex=
-   #:textured-vertex
-   #:uv
-   #:normal-vertex
-   #:normal
-   #:colored-vertex
-   #:color
-   #:basic-vertex
-   #:replace-vertex-data
-   #:make-vertex-data)
+   #:weights-3)
   ;; gl-features.lisp
   (:export
    #:feature-enabled-p
