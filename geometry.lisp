@@ -124,6 +124,10 @@
 (defmethod vertex-attribute-order ((_ (eql 'weights))) 6)
 (defmethod vertex-attribute-order (attr) (vertex-attribute-order (vertex-attribute-category attr)))
 
+(defmethod vertex-attribute-stride ((attributes list))
+  (loop for attribute in attributes
+        sum (vertex-attribute-size attribute)))
+
 (defun vertex-attribute< (a b)
   (let ((a-cat (vertex-attribute-category a))
         (b-cat (vertex-attribute-category b)))
@@ -331,6 +335,47 @@
                  (setf (aref vertices (+ (* stride (aref faces (+ face j))) toff 0)) (vx tt))
                  (setf (aref vertices (+ (* stride (aref faces (+ face j))) toff 1)) (vy tt))
                  (setf (aref vertices (+ (* stride (aref faces (+ face j))) toff 2)) (vz tt)))))))
+
+(defmethod append-vertex-data ((a mesh-data) (b mesh-data))
+  (assert (eq (vertex-form a) (vertex-form b)))
+  (let ((data (make-array (+ (length (vertex-data a)) (length (vertex-data b)))
+                          :element-type 'single-float))
+        (faces (when (and (faces a) (faces b))
+                 (make-array (+ (length (faces a)) (length (faces b)))
+                             :element-type '(unsigned-byte 16)))))
+    (replace data (vertex-data a))
+    (replace data (vertex-data b) :start1 (length (vertex-data a)))
+    (when faces
+      (replace faces (faces a))
+      (replace faces (faces b) :start1 (length (faces a))))
+    (make-instance 'mesh-data :vertex-data data :faces faces
+                              :material (material a)
+                              :vertex-form (vertex-form a)
+                              :vertex-attributes (vertex-attributes a))))
+
+(defmethod combine-vertex-data ((a mesh-data) (b mesh-data))
+  (assert (eq (vertex-form a) (vertex-form b)))
+  (let* ((attributes (union (vertex-attributes a) (vertex-attributes b)))
+         (stride (vertex-attribute-stride attributes))
+         (vertex-count (/ (length (vertex-data a)) (vertex-attribute-stride a))))
+    (unless (= vertex-count (/ (length (vertex-data b)) (vertex-attribute-stride b)))
+      (error "The meshes contain different numbers of vertices. Can't combine their attributes!"))
+    (let ((data (make-array (* vertex-count stride) :element-type 'single-float)))
+      (dolist (attribute attributes)
+        (let* ((source (if (find attribute (vertex-attributes a)) b a))
+               (src-data (vertex-data source))
+               (src-stride (vertex-attribute-stride source))
+               (dst-offset (vertex-attribute-offset attribute attributes))
+               (src-offset (vertex-attribute-offset attribute source)))
+          (loop for src from src-offset by src-stride
+                for dst from dst-offset below (length data) by stride
+                do (dotimes (i (vertex-attribute-size attribute))
+                     (setf (aref data (+ dst i)) (aref src-data (+ src i)))))))
+      (make-instance 'mesh-data :vertex-data data
+                                :faces (faces a)
+                                :material (material a)
+                                :vertex-form (vertex-form a)
+                                :vertex-attributes attributes))))
 
 (defclass vertex ()
   ((location :initform (vec 0 0 0) :initarg :position :initarg :location :accessor location :type vec3)))

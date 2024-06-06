@@ -1190,6 +1190,8 @@
    #:reordered-vertex-data
    #:compute-vertex-attribute
    #:make-vertex-array
+   #:append-vertex-data
+   #:combine-vertex-data
    #:location
    #:uv
    #:normal
