@@ -4,8 +4,7 @@
 (defgeneric vertex-attribute-offset (attribute container))
 (defgeneric vertex-attribute-category (attribute))
 (defgeneric vertex-attribute-order (attribute))
-
-;; KLUDGE: this kinda sucks, doesn't it?
+(defgeneric vertex-attribute-stride (attributes))
 
 (defmethod vertex-attribute-size ((_ (eql 'location))) 3)
 (defmethod vertex-attribute-size ((_ (eql 'uv))) 2)
@@ -14,20 +13,13 @@
 (defmethod vertex-attribute-size ((_ (eql 'tangent))) 3)
 (defmethod vertex-attribute-size ((_ (eql 'joints))) 4)
 (defmethod vertex-attribute-size ((_ (eql 'weights))) 4)
-(defmethod vertex-attribute-size ((_ (eql 'uv-0))) 2)
-(defmethod vertex-attribute-size ((_ (eql 'uv-1))) 2)
-(defmethod vertex-attribute-size ((_ (eql 'uv-2))) 2)
-(defmethod vertex-attribute-size ((_ (eql 'uv-3))) 2)
-(defmethod vertex-attribute-size ((_ (eql 'joints-0))) 4)
-(defmethod vertex-attribute-size ((_ (eql 'joints-1))) 4)
-(defmethod vertex-attribute-size ((_ (eql 'joints-2))) 4)
-(defmethod vertex-attribute-size ((_ (eql 'joints-3))) 4)
-(defmethod vertex-attribute-size ((_ (eql 'weights-0))) 4)
-(defmethod vertex-attribute-size ((_ (eql 'weights-1))) 4)
-(defmethod vertex-attribute-size ((_ (eql 'weights-2))) 4)
-(defmethod vertex-attribute-size ((_ (eql 'weights-3))) 4)
+(defmethod vertex-attribute-size ((attr symbol))
+  (let ((cat (vertex-attribute-category attr)))
+    (if (eq cat attr)
+        (error "Vertex attribute ~s has no defined size!" attr)
+        (vertex-attribute-size cat))))
 
-(defmethod vertex-attribute-category (attr) attr)
+(defmethod vertex-attribute-category ((attr symbol)) attr)
 (defmethod vertex-attribute-category ((_ (eql 'uv-0))) 'uv)
 (defmethod vertex-attribute-category ((_ (eql 'uv-1))) 'uv)
 (defmethod vertex-attribute-category ((_ (eql 'uv-2))) 'uv)
@@ -41,14 +33,28 @@
 (defmethod vertex-attribute-category ((_ (eql 'weights-2))) 'weights)
 (defmethod vertex-attribute-category ((_ (eql 'weights-3))) 'weights)
 
-(defmethod vertex-attribute-order ((_ (eql 'location))) 0)
-(defmethod vertex-attribute-order ((_ (eql 'normal))) 1)
-(defmethod vertex-attribute-order ((_ (eql 'uv))) 2)
-(defmethod vertex-attribute-order ((_ (eql 'tangent))) 3)
-(defmethod vertex-attribute-order ((_ (eql 'color))) 4)
-(defmethod vertex-attribute-order ((_ (eql 'joints))) 5)
-(defmethod vertex-attribute-order ((_ (eql 'weights))) 6)
-(defmethod vertex-attribute-order (attr) (vertex-attribute-order (vertex-attribute-category attr)))
+(macrolet ((distribute-vertex-indices (&rest attributes)
+             `(progn ,@(loop for group in attributes
+                             for i from 0
+                             append (loop for attribute in (enlist group)
+                                          collect `(defmethod vertex-attribute-order ((_ (eql ',attribute))) ,i))))))
+  (distribute-vertex-indices
+   location
+   normal
+   (uv uv-0)
+   targent
+   color
+   (joints joints-0)
+   (weights weights-0)
+   uv-1
+   joints-1
+   weights-1
+   uv-2
+   joints-2
+   weights-2
+   uv-3
+   joints-3
+   weights-3))
 
 (defmethod vertex-attribute-stride ((attributes list))
   (loop for attribute in attributes
@@ -64,9 +70,9 @@
            (< (vertex-attribute-order a-cat)
               (vertex-attribute-order b-cat))))))
 
-(defmethod vertex-attribute-offset (attribute (container list))
+(defmethod vertex-attribute-offset (attribute (attributes list))
   (let ((offset 0))
-    (dolist (attr container NIL)
+    (dolist (attr attributes NIL)
       (when (eq attr attribute)
         (return offset))
       (incf offset (vertex-attribute-size attr)))))
