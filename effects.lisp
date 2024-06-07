@@ -83,44 +83,44 @@ void main(){
 
 (define-shader-pass negative-pass (simple-post-effect-pass)
   ()
-  (:shader-file (trial "negative.glsl")))
+  (:shader-file (trial "post/negative.glsl")))
 
 (define-shader-pass box-blur-pass (iterative-post-effect-pass)
   ((intensity :initarg :intensity :initform 1.0 :uniform T :accessor intensity)
    (kernel-size :initarg :kernel-size :initform 9 :uniform T :accessor kernel-size))
-  (:shader-file (trial "box-blur.glsl")))
+  (:shader-file (trial "post/box-blur.glsl")))
 
 (define-shader-pass sobel-pass (simple-post-effect-pass)
   ((intensity :initarg :intensity :initform 1.0 :uniform T :accessor intensity))
-  (:shader-file (trial "sobel.glsl")))
+  (:shader-file (trial "post/sobel.glsl")))
 
 (define-shader-pass gaussian-blur-pass (iterative-post-effect-pass)
   ((intensity :initarg :intensity :initform 1.0 :uniform T :accessor intensity)
    (direction :initarg :direction :initform (vec 1 0) :uniform T :accessor direction))
-  (:shader-file (trial "gaussian.glsl")))
+  (:shader-file (trial "post/gaussian.glsl")))
 
 (define-shader-pass radial-blur-pass (iterative-post-effect-pass)
   ((intensity :initarg :intensity :initform 0.2 :uniform T :accessor intensity)
    (exposure :initarg :exposure :initform 0.8 :uniform T :accessor exposure)
    (samples :initarg :samples :initform 12 :uniform T :accessor samples)
    (origin :initarg :origin :initform (vec 0.5 0.5) :uniform T :accessor origin))
-  (:shader-file (trial "radial-blur.glsl")))
+  (:shader-file (trial "post/radial-blur.glsl")))
 
 (define-shader-pass swirl-pass (simple-post-effect-pass)
   ((radius :initarg :radius :initform 1000.0 :uniform T :accessor radius)
    (angle :initarg :angle :initform 0.8 :uniform T :accessor angle))
-  (:shader-file (trial "swirl.glsl")))
+  (:shader-file (trial "post/swirl.glsl")))
 
 (define-shader-pass fxaa-pass (simple-post-effect-pass)
   ()
-  (:shader-file (trial "fxaa.glsl")))
+  (:shader-file (trial "post/fxaa.glsl")))
 
 (define-shader-pass blend-pass (post-effect-pass)
   ((a-pass :port-type input)
    (b-pass :port-type input)
    (color :port-type output :reader color)
    (blend-type :initarg :blend-type :initform 0 :uniform T :accessor blend-type))
-  (:shader-file (trial "blend.glsl")))
+  (:shader-file (trial "post/blend.glsl")))
 
 (defmethod (setf blend-type) ((value symbol) (pass blend-pass))
   ;; TODO: add more
@@ -133,11 +133,11 @@ void main(){
 
 (define-shader-pass high-pass-filter (simple-post-effect-pass)
   ((threshold :initarg :threshold :initform 0.5 :uniform T :accessor threshold))
-  (:shader-file (trial "high-pass-filter.glsl")))
+  (:shader-file (trial "post/high-pass-filter.glsl")))
 
 (define-shader-pass low-pass-filter (simple-post-effect-pass)
   ((threshold :initarg :threshold :initform 0.5 :uniform T :accessor threshold))
-  (:shader-file (trial "low-pass-filter.glsl")))
+  (:shader-file (trial "post/low-pass-filter.glsl")))
 
 (define-shader-pass bloom-cutoff-pass (simple-post-effect-pass)
   ((threshold :initarg :threshold :initform 5.0 :uniform T :accessor threshold)
@@ -146,19 +146,19 @@ void main(){
                                       :min-filter :linear
                                       :width (truncate width 4)
                                       :height (truncate height 4))))
-  (:shader-file (trial "bloom-cutoff.glsl")))
+  (:shader-file (trial "post/bloom-cutoff.glsl")))
 
 (define-shader-pass bloom-merge-pass (simple-post-effect-pass)
   ((bloom-cutoff :port-type input))
-  (:shader-file (trial "bloom-merge.glsl")))
+  (:shader-file (trial "post/bloom-merge.glsl")))
 
 (define-shader-pass chromatic-aberration-filter (simple-post-effect-pass)
   ((offset :initarg :offset :initform 3.0 :uniform T :accessor offset))
-  (:shader-file (trial "aberration.glsl")))
+  (:shader-file (trial "post/aberration.glsl")))
 
 (define-shader-pass luminance-pass (simple-post-effect-pass)
   ((color :texspec (:internal-format :r16f)))
-  (:shader-file (trial "luminance.glsl")))
+  (:shader-file (trial "post/luminance.glsl")))
 
 (define-shader-pass light-scatter-pass (post-effect-pass)
   ((previous-pass :port-type input)
@@ -170,7 +170,7 @@ void main(){
    (exposure :initarg :exposure :initform 1.2 :uniform T :accessor exposure)
    (samples :initarg :samples :initform 100 :uniform T :accessor samples)
    (origin :initarg :origin :initform (vec 0.5 0.5) :uniform T :accessor origin))
-  (:shader-file (trial "light-scatter.glsl")))
+  (:shader-file (trial "post/light-scatter.glsl")))
 
 (define-shader-pass visualizer-pass (post-effect-pass)
   ((t[0] :port-type input)
@@ -179,7 +179,7 @@ void main(){
    (t[3] :port-type input)
    (color :port-type output :texspec (:internal-format :rgba))
    (textures-per-line :initarg :textures-per-line :initform 1 :uniform T :accessor textures-per-line))
-  (:shader-file (trial "visualizer.glsl")))
+  (:shader-file (trial "post/visualizer.glsl")))
 
 (defmethod check-consistent ((pass visualizer-pass))
   ;; Skip consistency checks to allow optional inputs
