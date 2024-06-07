@@ -1,24 +1,21 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass static (asset)
+(defclass static (single-resource-asset)
   ())
 
+(defmethod shared-initialize :after ((static static) slots &key)
+  (when (typep (input static) 'resource)
+    (setf (slot-value static 'resource) (input static))))
+
 (defmethod coerce-asset-input ((static static) input)
-  (check-type input resource)
   input)
 
 (defmethod generate-resources ((generator static) (input resource) &key)
   input)
 
 (defmethod generate-resources ((generator static) (input symbol) &rest args &key &allow-other-keys)
-  (apply #'make-instance input args))
-
-(defmethod list-resources ((generator static))
-  (list (input generator)))
-
-(defmethod resource ((generator static) (name (eql T)))
-  (input generator))
+  (apply #'ensure-instance (slot-value generator 'resource) input args))
 
 (defmethod unload ((generator static))
-  (when (allocated-p (input generator))
-    (deallocate (input generator))))
+  (when (allocated-p (slot-value generator 'resource))
+    (deallocate (slot-value generator 'resource))))

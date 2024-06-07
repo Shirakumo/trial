@@ -2,14 +2,15 @@
 
 (defvar *materials* (make-hash-table :test 'equal))
 
-(defun gen-image (w h c fun)
-  (let ((array (make-array (* w h c) :element-type '(unsigned-byte 8)))
-        (i 0))
-    (dotimes (y h array)
-      (dotimes (x w)
-        (dotimes (z c)
-          (setf (aref array i) (funcall fun x y z))
-          (incf i))))))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun gen-image (w h c fun)
+    (let ((array (make-array (* w h c) :element-type '(unsigned-byte 8)))
+          (i 0))
+      (dotimes (y h array)
+        (dotimes (x w)
+          (dotimes (z c)
+            (setf (aref array i) (funcall fun x y z))
+            (incf i)))))))
 
 (defmacro with-image ((w h c &optional (x 'x) (y 'y) (z 'z)) &body body)
   `(gen-image ,w ,h ,c (lambda (,x ,y ,z)
