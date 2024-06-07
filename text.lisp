@@ -1,7 +1,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (define-asset (trial ascii) image
-    #p"ascii.png"
+    #p"ascii.raw"
   :min-filter :nearest
   :mag-filter :nearest)
 
