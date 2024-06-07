@@ -10,6 +10,9 @@
 (defmethod generate-resources ((generator static) (input resource) &key)
   input)
 
+(defmethod generate-resources ((generator static) (input symbol) &rest args &key &allow-other-keys)
+  (apply #'make-instance input args))
+
 (defmethod list-resources ((generator static))
   (list (input generator)))
 

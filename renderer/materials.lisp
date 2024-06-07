@@ -2,36 +2,55 @@
 
 (defvar *materials* (make-hash-table :test 'equal))
 
-(define-asset (trial random) image
-    #p "random.png"
-  :min-filter :linear
-  :mag-filter :linear
+(defun gen-image (w h c fun)
+  (let ((array (make-array (* w h c) :element-type '(unsigned-byte 8)))
+        (i 0))
+    (dotimes (y h array)
+      (dotimes (x w)
+        (dotimes (z c)
+          (setf (aref array i) (funcall fun x y z))
+          (incf i))))))
+
+(defmacro with-image ((w h c &optional (x 'x) (y 'y) (z 'z)) &body body)
+  `(gen-image ,w ,h ,c (lambda (,x ,y ,z)
+                         (declare (ignorable ,x ,y ,z))
+                         ,@body)))
+
+(define-asset (trial random) static 'texture
+  :pixel-data (with-image (512 512 3) (random 256))
+  :width 512 :height 512 :internal-format :rgb
+  :min-filter :linear :mag-filter :linear
   :wrapping '(:repeat :repeat :repeat))
 
-(define-asset (trial missing) image
-    #p "missing.png"
+(define-asset (trial missing) static 'texture
+  :pixel-data (with-image (16 16 3)
+                (if (< (mod (+ x y) 16) 8)
+                    (case z (0 83) (1 0) (2 83))
+                    (case z (0 255) (1 0) (2 255))))
+  :width 16 :height 16 :internal-format :rgb
   :min-filter :nearest
-  :mag-filter :nearest)
+  :mag-filter :nearest
+  :wrapping '(:repeat :repeat :repeat))
 
-(define-asset (trial black) image
-    #p "black.png"
-  :min-filter :nearest
-  :mag-filter :nearest)
+(define-asset (trial black) static 'texture
+  :pixel-data (with-image (1 1 3) 0)
+  :width 1 :height 1 :internal-format :rgb
+  :min-filter :nearest  :mag-filter :nearest)
 
-(define-asset (trial white) image
-    #p "white.png"
-  :min-filter :nearest
-  :mag-filter :nearest)
+(define-asset (trial white) static 'texture
+  :pixel-data (with-image (1 1 3) 255)
+  :width 1 :height 1 :internal-format :rgb
+  :min-filter :nearest :mag-filter :nearest)
 
-(define-asset (trial neutral-mro) image
-    #p "neutral-mro.png"
-  :min-filter :nearest
-  :mag-filter :nearest)
+(define-asset (trial neutral-mro) static 'texture
+  :pixel-data (with-image (1 1 3) (case z ((0 1) 255) (2 0)))
+  :width 1 :height 1 :internal-format :rgb
+  :min-filter :nearest :mag-filter :nearest)
 
-(define-asset (trial neutral-normal) image
-    #p "neutral-normal.png"
-  :min-filter :nearest
-  :mag-filter :nearest)
+(define-asset (trial neutral-normal) static 'texture
+  :pixel-data (with-image (1 1 3) (case z ((0 1) 128) (2 255)))
+  :width 1 :height 1 :internal-format :rgb
+  :min-filter :nearest :mag-filter :nearest)
 
 (defclass material ()
   ((name :initform NIL :initarg :name :accessor name)
