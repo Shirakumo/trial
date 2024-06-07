@@ -35,7 +35,7 @@
 (define-shader-pass ssao-pbr-render-pass (z-pre-pbr-render-pass)
   ((ssao-radius :initform 8.0 :initarg :ssao-radius :accessor ssao-radius :uniform T)
    (ssao-bias :initform 5.0 :initarg :ssao-bias :accessor ssao-bias :uniform T))
-  (:shader-file (trial "standard-render-pbr-ssao.glsl")))
+  (:shader-file (trial "renderer/standard-render-pbr-ssao.glsl")))
 
 (define-shader-pass ssao-pass (post-effect-pass)
   ((depth-map :port-type input :accessor depth-map)

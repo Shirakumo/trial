@@ -62,7 +62,7 @@
    (allocated-textures :initform (make-lru-cache 16 'eq) :accessor allocated-textures)
    (allocated-materials :accessor allocated-materials)
    (allocated-lights :accessor allocated-lights))
-  (:shader-file (trial "standard-render-pass.glsl")))
+  (:shader-file (trial "renderer/standard-render-pass.glsl")))
 
 (defmethod initialize-instance :after ((pass standard-render-pass) &key (max-lights 128) (max-materials 64))
   (setf (allocated-materials pass) (make-lru-cache max-materials))
@@ -215,7 +215,7 @@
 (define-shader-entity standard-renderable (renderable)
   (vertex-array ;; Backwards compatibility stub
    (vertex-arrays :initarg :vertex-arrays :initform #() :accessor vertex-arrays))
-  (:shader-file (trial "standard-renderable.glsl"))
+  (:shader-file (trial "renderer/standard-renderable.glsl"))
   (:inhibit-shaders (shader-entity :fragment-shader)))
 
 (defmethod shared-initialize :after ((renderable standard-renderable) slots &key vertex-array)
@@ -249,7 +249,7 @@
 
 (define-shader-entity standard-animated-renderable (standard-renderable animated-entity)
   ()
-  (:shader-file (trial "standard-animated-renderable.glsl"))
+  (:shader-file (trial "renderer/standard-animated-renderable.glsl"))
   (:inhibit-shaders (animated-entity :vertex-shader)
                     (standard-renderable :vertex-shader)))
 

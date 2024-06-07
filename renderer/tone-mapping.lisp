@@ -4,7 +4,7 @@
   ((previous-pass :port-type input :texspec (:internal-format :rgba16f))
    (color :port-type output :attachment :color-attachment0)
    (inv-gamma :initarg :inv-gamma :initform (/ 2.2) :accessor inv-gamma :uniform T))
-  (:shader-file (trial "hdr-tone-mapping.glsl")))
+  (:shader-file (trial "tone-map/hdr-tone-mapping.glsl")))
 
 (defmethod (setf gamma) (gamma (pass tone-mapping-pass))
   (setf (inv-gamma pass) (/ gamma)))

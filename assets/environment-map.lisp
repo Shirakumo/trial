@@ -2,15 +2,15 @@
 
 (define-shader-entity environment-map-renderer (cubemap-renderer)
   ()
-  (:shader-file (trial "environment-map-renderer.glsl")))
+  (:shader-file (trial "renderer/environment-map-renderer.glsl")))
 
 (define-shader-entity irradiance-map-renderer (cubemap-renderer)
   ()
-  (:shader-file (trial "irradiance-map-renderer.glsl")))
+  (:shader-file (trial "renderer/irradiance-map-renderer.glsl")))
 
 (define-shader-entity prefiltered-environment-map-renderer (cubemap-renderer)
   ()
-  (:shader-file (trial "prefiltered-environment-map-renderer.glsl")))
+  (:shader-file (trial "renderer/prefiltered-environment-map-renderer.glsl")))
 
 (defclass environment-map-generator (resource-generator)
   ())

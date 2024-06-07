@@ -1,5 +1,5 @@
 #section FRAGMENT_SHADER
-#include "normal-map.glsl"
+#include (trial::trial "normal-map.glsl")
 
 PhongMaterial material;
 uniform int material_id;

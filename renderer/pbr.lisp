@@ -1,7 +1,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (define-asset (trial brdf-lut) shader-image
-    #p"brdf-lut-renderer.glsl"
+    #p"renderer/brdf-lut-renderer.glsl"
   :width 512
   :height 512
   :internal-format :rg16
@@ -89,7 +89,7 @@
 
 (define-shader-pass pbr-render-pass (standard-shadows-pass light-cache-render-pass)
   ((environment :initform NIL :accessor environment))
-  (:shader-file (trial "standard-render-pbr.glsl")))
+  (:shader-file (trial "renderer/standard-render-pbr.glsl")))
 
 (defmethod render-with ((pass pbr-render-pass) (material pbr-material) program)
   (enable material pass)

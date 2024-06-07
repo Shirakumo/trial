@@ -69,7 +69,7 @@
    (shadow-map-block :buffer T :reader shadow-map-block)
    (shadow-map-program :reader shadow-map-program)
    (shadow-map-framebuffer :reader shadow-map-framebuffer))
-  (:shader-file (trial "standard-shadows-pass.glsl")))
+  (:shader-file (trial "renderer/standard-shadows-pass.glsl")))
 
 (defmethod initialize-instance :after ((pass standard-shadows-pass) &key (max-shadow-casters 18) (shadow-map-resolution (or (setting :display :shadow-map-resolution) 2048)))
   (setf (shadow-map-lights pass) (make-array max-shadow-casters :initial-element NIL))
@@ -87,7 +87,7 @@
                                                   :width shadow-map-resolution :height shadow-map-resolution)))
     (setf (slot-value pass 'shadow-map) texture)
     (setf (slot-value pass 'shadow-map-framebuffer) framebuffer))
-  (let* ((*default-pathname-defaults* (pool-path 'trial "standard-shadow-map.glsl"))
+  (let* ((*default-pathname-defaults* (pool-path 'trial "renderer/standard-shadow-map.glsl"))
          (shaders (loop with buffer = (glsl-toolkit:serialize (gl-source (shadow-map-block pass)))
                         for (type source) on (glsl-toolkit:preprocess *default-pathname-defaults* :include-resolution #'resolve-shader-include) by #'cddr
                         collect (make-instance 'shader :type type :source (format NIL "~a~%~a" buffer (glsl-toolkit:serialize source)))))

@@ -1,4 +1,4 @@
-#include "depth.glsl"
+#include (trial::trial "depth.glsl")
 
 uniform float ssr_max_distance = 15.0;
 uniform float ssr_distance_falloff = 0.2;

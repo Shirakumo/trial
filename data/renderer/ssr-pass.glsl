@@ -1,5 +1,5 @@
 #section FRAGMENT_SHADER
-#include (trial::trial "ssr.glsl")
+#include "ssr.glsl"
 
 out vec4 color;
 in vec2 uv;

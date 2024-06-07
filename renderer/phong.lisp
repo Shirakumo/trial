@@ -34,7 +34,7 @@
 
 (define-shader-pass phong-render-pass (standard-shadows-pass light-cache-render-pass)
   ()
-  (:shader-file (trial "standard-render-phong.glsl")))
+  (:shader-file (trial "renderer/standard-render-phong.glsl")))
 
 (defmethod render-with ((pass phong-render-pass) (material phong-material) program)
   (enable material pass)

@@ -1,5 +1,5 @@
 #section FRAGMENT_SHADER
-#include "cube-maps.glsl"
+#include (trial::trial "cube-maps.glsl")
 uniform sampler2DArray shadow_map;
 
 vec2 shadow_texel_size;

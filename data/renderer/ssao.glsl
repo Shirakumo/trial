@@ -1,4 +1,4 @@
-#include "depth.glsl"
+#include (trial::trial "depth.glsl")
 
 uniform sampler2D depth_map;
 uniform float ssao_radius = 8.0;
