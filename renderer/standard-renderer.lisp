@@ -256,13 +256,6 @@
 (defmethod render-with :before ((pass standard-render-pass) (renderable standard-animated-renderable) (program shader-program))
   (setf (uniform program "pose") (enable (palette-texture renderable) pass)))
 
-(defmethod render-with :before ((program shader-program) (vao vertex-array) (entity standard-animated-renderable))
-  (let ((morph (find-morph vao entity)))
-    (when morph
-      ;; FIXME: This is WROOOOOONG. We need access to the pass to get a texture ID, but can't, FUUUCK.
-      (bind (tetxure morph) :texture6)
-      (setf (uniform program "morph_targets") 6))))
-
 (define-shader-entity single-material-renderable (standard-renderable)
   ((material :initarg :material :accessor material)))
 
@@ -319,7 +312,13 @@
              (when (double-sided-p material)
                (disable-feature :cull-face))
              (render-with pass material program)
-             (render-with program vao renderable))))
+             ;; KLUDGE: This should really be factored out into a modular way.
+             ;;         However, it requires access to the renderable, the program, and the vao
+             ;;         to get the correct morph data for that specific vao, and we have no
+             ;;         existing function to transmit all four of the involved objects.
+             (when (typep renderable 'morphed-entity)
+               (setf (uniform program "morph_targets") (enable (morph-texture renderable) pass)))
+             (render vao program))))
 
 (defmethod (setf mesh) :after ((meshes cons) (renderable per-array-material-renderable))
   (let ((arrays (make-array (length meshes))))

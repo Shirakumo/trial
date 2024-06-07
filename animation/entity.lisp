@@ -79,27 +79,27 @@
              (loop for attribute in attributes
                    for src-offset = (vertex-attribute-offset attribute target)
                    for dst-offset = (vertex-attribute-offset attribute attributes)
-                   do (loop for src from src-offset below (length src-data) by src-stride
-                            for dst from dst-offset by stride
-                            do (setf (aref data (+ slice dst 0)) (aref src-data (+ src 0)))
-                               (setf (aref data (+ slice dst 1)) (aref src-data (+ src 1)))
-                               (unless (eq attribute 'uv)
-                                 (setf (aref data (+ dst 2)) (aref src-data (+ src 2)))))))
+                   do (when src-offset
+                        (loop for src from src-offset below (length src-data) by src-stride
+                              for dst from dst-offset by stride
+                              do (setf (aref data (+ slice dst 0)) (aref src-data (+ src 0)))
+                                 (setf (aref data (+ slice dst 1)) (aref src-data (+ src 1)))
+                                 (unless (eq attribute 'uv)
+                                   (setf (aref data (+ dst 2)) (aref src-data (+ src 2))))))))
     (setf (texture morph) texture)))
 
+(defmethod enable-morph ((morph morph) texture-id program)
+  (bind (texture morph) texture-id)
+  (setf (uniform program "morph_targets") texture-id)
+  (bind (morph-data morph) program))
+
 (define-shader-entity morphed-entity (base-animated-entity listener)
-  ()
+  ((morphs :initform (make-hash-table :test 'eq) :accessor morphs))
   (:shader-file (trial "morph.glsl")))
 
-(defmethod render :before ((entity morphed-entity) (program shader-program))
-  ;; KLUDGE: This is Bad
-  (when (morph-texture entity)
-    (bind (morph-texture entity) :texture6)
-    (setf (uniform program "morph_targets") 6)))
-
-(defmethod stage :after ((entity morphed-entity) (area staging-area))
-  (stage (morph-texture entity) area)
-  (stage (morph-data entity) area))
+(defmethod find-morph ((vao vertex-array) (entity morphed-entity) &optional (errorp NIL))
+  (or (gethash vao (morphs entity))
+      (when errorp (error "No morph for ~a on ~a" vao entity))))
 
 (define-shader-entity skinned-entity (base-animated-entity)
   ((mesh :initarg :mesh :initform NIL :accessor mesh))
@@ -132,8 +132,7 @@ layout (location = 1) in vec3 in_normal;
 layout (location = 2) in vec2 in_uv;
 layout (location = 5) in vec4 in_joints;
 layout (location = 6) in vec4 in_weights;
-
-uniform mat2x4 pose[120];
+uniform int animation = 0;
 
 out vec3 normal;
 out vec4 world_pos;
@@ -144,8 +143,8 @@ void main(){
   normal = in_normal;
   uv = in_uv;
 
-  morph_vertex(position, normal, uv);
-  skin_vertex(position, normal, in_joints, in_weights);
+  if(animation | 1) morph_vertex(position, normal, uv);
+  if(animation | 2) skin_vertex(position, normal, in_joints, in_weights);
 
   world_pos = model_matrix * vec4(position, 1.0f);
   normal = vec3(model_matrix * vec4(normal, 0.0f));
