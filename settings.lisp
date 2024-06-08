@@ -14,6 +14,7 @@
                                       :target-framerate :none
                                       :gamma 2.2
                                       :ui-scale 1.0
+                                      :frame-scale 1.0
                                       :texture (:filter :trilinear :anisotropy 2))
                             :gameplay (:rumble 1.0
                                        :screen-shake 1.0
@@ -125,6 +126,12 @@
                  (values NIL NIL)
                  (values ,inner T)))))
       whole))
+
+(defun setting* (default &rest path)
+  (or (apply #'setting path) default))
+
+(define-compiler-macro setting* (default &rest path)
+  `(or (setting ,@path) ,default))
 
 (defun %call-setting-observers (sub)
   (loop for (k v) on (gethash sub +settings-observers+) by #'cddr

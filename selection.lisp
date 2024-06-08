@@ -12,7 +12,7 @@
 
 (defmethod stage :before ((buffer selection-buffer) (area staging-area))
   (unless (framebuffer buffer)
-    (pack-pipeline buffer *context*)))
+    (pack-pipeline buffer (width *context*) (height *context*))))
 
 (defmethod enter :before ((thing renderable) (buffer selection-buffer))
   (unless (gethash thing (object-table buffer))

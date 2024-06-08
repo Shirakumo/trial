@@ -89,13 +89,13 @@
    (dirty-p :initform NIL :accessor dirty-p)))
 
 (defmethod shared-initialize :after ((pipeline pixel-pipeline) slots &key)
-  (pack-pipeline pipeline T))
+  (pack-pipeline pipeline (width pipeline) (height pipeline)))
 
 (defgeneric setup-pipeline (pixel-pipeline))
 
-(defmethod pack-pipeline ((pipeline pixel-pipeline) (self (eql T)))
+(defmethod pack-pipeline ((pipeline pixel-pipeline) width height)
   (setup-pipeline pipeline)
-  (pack-pipeline pipeline pipeline)
+  (pack-pipeline pipeline width height)
   (loop for pass across (passes pipeline)
         do (setf (clear-bits (framebuffer pass)) 0)))
 

@@ -11,7 +11,11 @@
 
 (defmethod setup-scene :around (main (scene pipelined-scene))
   (prog1 (call-next-method)
-    (pack-pipeline scene (context main))
+    (let ((context (context main))
+          (scale (setting* 1.0 :display :frame-scale)))
+      (pack-pipeline scene
+                     (max 1 (ceiling (* scale (width context))))
+                     (max 1 (ceiling (* scale (height context))))))
     (loop for pass across (passes scene)
           do (enter scene pass)
              (dolist (thing (to-preload scene))
@@ -31,7 +35,9 @@
         do (stage pass area)))
 
 (defmethod handle :after ((event resize) (scene pipelined-scene))
-  (resize scene (width event) (height event)))
+  (resize scene
+          (max 1 (ceiling (* (setting* 1.0 :display :frame-scale) (width event))))
+          (max 1 (ceiling (* (setting* 1.0 :display :frame-scale) (height event))))))
 
 (defmethod register :after ((entity renderable) (scene pipelined-scene))
   (loop for pass across (passes scene)

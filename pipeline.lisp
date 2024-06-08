@@ -110,12 +110,12 @@
 
 (defun texspec-real-size (texspec width height)
   (flet ((eval-size (size)
-           (eval `(let ((width ,width)
-                        (height ,height))
+           (eval `(let ((width (* ,width))
+                        (height (* ,height)))
                     (declare (ignorable width height))
                     ,size))))
-    (values (eval-size (getf texspec :width))
-            (eval-size (getf texspec :height)))))
+    (values (ceiling (eval-size (getf texspec :width)))
+            (ceiling (eval-size (getf texspec :height))))))
 
 (defmethod resize ((pipeline pipeline) width height)
   (let ((width (max 1 width))
@@ -168,10 +168,10 @@
                     :min-filter :linear
                     :mag-filter :linear))))))
 
-(defun texture-texspec-matches-p (texture texspec target)
+(defun texture-texspec-matches-p (texture texspec width height)
   (and (eq (internal-format texture) (getf texspec :internal-format))
        (eq (target texture) (getf texspec :target))
-       (multiple-value-bind (w h) (texspec-real-size texspec (width target) (height target))
+       (multiple-value-bind (w h) (texspec-real-size texspec width height)
          (and (= w (width texture))
               (= h (height texture))))
        (eq (min-filter texture) (getf texspec :min-filter))
@@ -207,12 +207,12 @@
               (dolist (connection (flow:connections port))
                 (setf (texture (flow:right connection)) texture)))))))))
 
-(defmethod pack-pipeline ((pass shader-pass) target)
+(defmethod pack-pipeline ((pass shader-pass) width height)
   ;; Allocate port textures
   (dolist (port (flow:ports pass))
     (when (typep port '(and (or static-input flow:out-port) texture-port))
       (let ((texture (apply #'make-instance 'texture (normalized-texspec port))))
-        (multiple-value-bind (width height) (texspec-real-size (texture-texspec texture) (width target) (height target))
+        (multiple-value-bind (width height) (texspec-real-size (texture-texspec texture) width height)
           (setf (width texture) width)
           (setf (height texture) height))
         (setf (texture port) texture)
@@ -221,9 +221,9 @@
   (setf (framebuffer pass) (make-pass-framebuffer pass))
   pass)
 
-(defmethod pack-pipeline ((pipeline pipeline) target)
+(defmethod pack-pipeline ((pipeline pipeline) width height)
   (check-consistent pipeline)
-  (v:info :trial.pipeline "~a packing for ~a (~ax~a)" pipeline target (width target) (height target))
+  (v:info :trial.pipeline "~a packing for ~ax~a" pipeline width height)
   (let* ((passes (flow:topological-sort (nodes pipeline)))
          (existing-textures (textures pipeline))
          (textures (make-array 0 :initial-element NIL :fill-pointer 0 :adjustable T))
@@ -246,10 +246,10 @@
         (let* ((texspec (normalized-texspec port))
                (texture (loop for texture across existing-textures
                               do (when (and (not (find texture textures))
-                                            (texture-texspec-matches-p texture texspec target))
+                                            (texture-texspec-matches-p texture texspec width height))
                                    (return texture))
                               finally (return (apply #'make-instance 'texture texspec)))))
-          (multiple-value-bind (width height) (texspec-real-size texspec (width target) (height target))
+          (multiple-value-bind (width height) (texspec-real-size texspec width height)
             (setf (width texture) width)
             (setf (height texture) height))
           (dolist (connection (flow:connections port))
@@ -283,7 +283,7 @@
     ;; All done.
     (v:debug :trial.pipeline "~a pass order: ~a" pipeline passes)
     (v:debug :trial.pipeline "~a texture count: ~a" pipeline (length textures))
-    (v:debug :trial.pipeline "~a texture allocation: ~:{~%~a~:{~%    ~a: ~a~}~}" pipeline
+    (v:info :trial.pipeline "~a texture allocation: ~:{~%~a~:{~%    ~a: ~a~}~}" pipeline
              (loop for pass in passes
                    collect (list pass (loop for port in (flow:ports pass)
                                             collect (list (flow:name port) (texture port))))))

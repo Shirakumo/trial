@@ -25,7 +25,7 @@ A usual pipeline building setup will thus look something like this:
       (pipeline (make-instance 'pipeline)))
  (connect (port shadows 'shadow-map) (port render 'shadow-map) pipeline)
  (connect (port render 'color) (port mapping 'previous-pass) pipeline)
- (pack-pipeline pipeline *context*))
+ (pack-pipeline pipeline (width *context*) (height *context*)))
 ::
 
 After the pipeline has been packed, the ports of each of the passes will contain ``texture`` instances that have been created according to the ``:texspec`` specification on the slot. A texspec is a plist that can contain most of the usual ``texture`` initargs, though with some special handling. The pipeline may try to merge compatible textures together to save on texture space. The following initargs are of special note:
