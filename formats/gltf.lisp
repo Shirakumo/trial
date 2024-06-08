@@ -95,12 +95,12 @@
 
 (defgeneric translate-track-pointer (pointer track gltf))
 
-(defmethod translate-track-pointer ((pointer string) (track animation-track) gltf)
+(defmethod translate-track-pointer ((pointer string) track gltf)
   (change-class track 'trial::slot-value-track
                 :slot-name (lispify-name pointer "KEYWORD")
                 :name (name track)))
 
-(defmethod translate-track-pointer ((pointer symbol) (track animation-track) gltf)
+(defmethod translate-track-pointer ((pointer symbol) track gltf)
   (change-class track 'trial::slot-value-track
                 :slot-name pointer
                 :name (name track)))
