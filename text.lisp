@@ -2,6 +2,8 @@
 
 (define-asset (trial ascii) image
     #p"ascii.raw"
+  :internal-format :red
+  :swizzle '(:r :r :r 1)
   :min-filter :nearest
   :mag-filter :nearest)
 

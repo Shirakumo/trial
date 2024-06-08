@@ -15,36 +15,6 @@
       (finalize-data))
   :data-usage :stream-draw)
 
-(define-asset (trial fps-texture) static 'texture
-  :pixel-data (simplify #(255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255
-                          255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255
-                          255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255
-                          255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 0 0 255 255 255
-                          255 255 255 0 255 255 255 255 0 0 0 0 255 255 255 0 0 0 255 255 255 255 255
-                          255 0 255 255 255 255 0 0 0 255 255 255 255 255 0 0 255 255 255 255 255 0 255
-                          255 255 255 255 255 0 0 255 255 255 255 255 0 0 255 255 255 255 0 255 255 0
-                          255 255 255 255 255 0 255 255 255 255 255 0 255 255 255 255 255 255 255 255 0
-                          255 255 255 0 0 0 0 255 255 255 255 255 255 0 255 255 255 0 255 255 0 255 255
-                          255 255 0 255 255 255 255 255 0 255 255 0 255 255 255 255 255 255 0 255 255
-                          255 0 255 255 0 255 255 255 0 255 0 255 255 255 255 255 255 0 255 255 255 255
-                          255 0 0 255 255 255 255 0 255 0 255 255 255 255 0 0 0 255 255 255 255 0 0 0
-                          255 255 255 255 255 255 0 255 255 255 255 255 0 0 255 255 255 255 255 0 0 0
-                          255 255 255 0 255 255 0 255 255 255 255 0 0 255 255 255 255 0 255 255 0 255
-                          255 255 255 255 255 0 255 255 255 255 0 0 255 255 255 255 0 255 255 255 255
-                          255 255 0 255 255 255 255 255 255 255 255 255 0 255 255 255 0 255 255 0 255
-                          255 255 0 255 255 0 255 255 255 255 0 0 255 255 255 255 255 255 0 255 255 255
-                          255 255 0 0 255 255 255 255 0 0 0 255 255 255 255 255 255 0 255 255 255 255 0
-                          0 0 0 255 255 255 255 0 0 255 255 255 255 0 0 0 0 255 255 255 255 0 0 255 255
-                          255 255 255 0 0 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255
-                          255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255
-                          255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255
-                          255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255
-                          255)
-                        '(unsigned-byte 8))
-  :width 70 :height 7 :internal-format :red
-  :swizzle '(:r :r :r 1)
-  :min-filter :nearest :mag-filter :nearest)
-
 (declaim (type (unsigned-byte 60) +frame-count+ +start-time+))
 (define-global +frame-count+ 0)
 (define-global +start-time+ 0)
@@ -54,7 +24,7 @@
 
 (defmethod stage :after ((counter fps-counter) (area staging-area))
   (stage (// 'trial 'fps-counter) area)
-  (stage (// 'trial 'fps-texture) area))
+  (stage (// 'trial 'ascii) area))
 
 (defmethod render ((counter fps-counter) (program shader-program))
   (declare (optimize speed (safety 1)))
@@ -71,9 +41,10 @@
         (setf +start-time+ now)
         (setf +frame-count+ 0)
         (flet ((set-rect (i d)
-                 (let* ((b (* 5 (* 6 i)))
-                        (d0 (/ d 10.0))
-                        (d1 (+ d0 0.1)))
+                 (let* ((glyphs #.(truncate (fourth (texture-source-src (load-image (input* (asset 'trial 'ascii)) T))) 9))
+                        (b (* 5 (* 6 i)))
+                        (d0 (* (+ d 16) (/ 1.0 glyphs)))
+                        (d1 (+ d0 (/ 1.0 glyphs))))
                    (setf (aref dat (+ b  3)) d1)
                    (setf (aref dat (+ b  8)) d0)
                    (setf (aref dat (+ b 13)) d0)
@@ -84,7 +55,7 @@
                 for div = 1 then (* 10 div)
                 do (set-rect i (mod (floor fps div) 10))))
         (update-buffer-data buf T)))
-    (bind (// 'trial 'fps-texture) :texture0)
+    (bind (// 'trial 'ascii) :texture0)
     (with-depth-mask T
       (render vao program))))
 
