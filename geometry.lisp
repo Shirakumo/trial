@@ -140,9 +140,10 @@
     (ensure-instance vao 'vertex-array
                      :dependencies (list (material mesh))
                      :vertex-form (vertex-form mesh)
-                     :index-buffer (make-instance 'vertex-buffer :buffer-data faces
-                                                                 :buffer-type :element-array-buffer
-                                                                 :element-type (cl-type->pixel-type (array-element-type faces)))
+                     :index-buffer (when faces
+                                     (make-instance 'vertex-buffer :buffer-data faces
+                                                                   :buffer-type :element-array-buffer
+                                                                   :element-type (cl-type->pixel-type (array-element-type faces))))
                      :bindings (loop with stride = (vertex-attribute-stride mesh)
                                      for attribute in (vertex-attributes mesh)
                                      for offset = 0 then (+ offset size)
