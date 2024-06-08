@@ -47,8 +47,9 @@
                   (push (list buffer :index index :size size :type type :stride stride
                                      :offset offset :normalize normalize :instancing instancing)
                         new-bindings)))))
+    (setf new-bindings (sort new-bindings #'< :key (lambda (e) (getf (rest e) :index))))
     (when ebo (push ebo new-bindings))
-    (nreverse new-bindings)))
+    new-bindings))
 
 (defun update-array-bindings (array &optional (bindings (bindings array)) (index (index-buffer array)))
   (with-unwind-protection (deactivate array)
@@ -56,8 +57,7 @@
     (when index (activate index))
     (setf (instanced-p array) NIL)
     (loop for binding in bindings
-          for i from 0
-          do (destructuring-bind (buffer &key (index i)
+          do (destructuring-bind (buffer &key index
                                               (size 3)
                                               (type (element-type buffer))
                                               (stride (* size (gl-type-size type)))
@@ -69,8 +69,7 @@
                (activate buffer)
                (ecase (buffer-type buffer)
                  (:element-array-buffer
-                  (setf (index-buffer array) buffer)
-                  (decf i))
+                  (setf (index-buffer array) buffer))
                  (:array-buffer
                   (ecase type
                     ((:half-float :float :fixed)
@@ -165,7 +164,8 @@
                        sum (* size (gl-type-size type)))))
     (loop with offset = 0
           for (size type instance) in fields
-          collect `(,buffer :size ,size :offset ,offset :type ,type :stride ,stride :instancing ,(or instance 0))
+          for i from 0
+          collect `(,buffer :index ,i :size ,size :offset ,offset :type ,type :stride ,stride :instancing ,(or instance 0))
           do (incf offset (* size (gl-type-size type))))))
 
 (defun find-vertex-buffer-binding (vao index)

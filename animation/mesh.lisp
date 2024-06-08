@@ -52,8 +52,8 @@
              (setf (aref (position-normals mesh) (+ j 4)) (aref (vertex-data mesh) (+ i 4)))
              (setf (aref (position-normals mesh) (+ j 5)) (aref (vertex-data mesh) (+ i 5))))
     (let ((vao (call-next-method)))
-      (setf (elt (bindings vao) 0) `(,position-normals :size 3 :offset 0 :stride 24))
-      (setf (elt (bindings vao) 1) `(,position-normals :size 3 :offset 12 :stride 24))
+      (setf (elt (bindings vao) 0) `(,position-normals :index 0 :size 3 :offset 0 :stride 24))
+      (setf (elt (bindings vao) 1) `(,position-normals :index 1 :size 3 :offset 12 :stride 24))
       vao)))
 
 (defmethod update-buffer-data ((vao vertex-array) (mesh skinned-mesh) &key)
