@@ -28,7 +28,8 @@
            (mapcar #'unlist (bindings array)))))
 
 (defun normalize-array-bindings (bindings)
-  (let ((new-bindings ()) ebo)
+  (let ((new-bindings ()) ebo
+        (indices ()))
     (loop for binding in bindings
           for i from 0
           do (destructuring-bind (buffer &key (index i)
@@ -44,6 +45,9 @@
                   (setf ebo buffer)
                   (decf i))
                  (:array-buffer
+                  (if (member index indices)
+                      (error "Duplicated binding to index ~d!~%  ~a" index bindings)
+                      (push index indices))
                   (push (list buffer :index index :size size :type type :stride stride
                                      :offset offset :normalize normalize :instancing instancing)
                         new-bindings)))))
