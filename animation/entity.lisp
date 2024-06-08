@@ -315,8 +315,8 @@
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 in_normal;
 layout (location = 2) in vec2 in_uv;
-layout (location = 3) in vec4 joints;
-layout (location = 4) in vec4 weights;
+layout (location = 5) in vec4 joints;
+layout (location = 6) in vec4 weights;
 
 uniform sampler1DArray pose;
 
@@ -368,8 +368,8 @@ void main(){
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 in_normal;
 layout (location = 2) in vec2 in_uv;
-layout (location = 3) in vec4 joints;
-layout (location = 4) in vec4 weights;
+layout (location = 5) in vec4 joints;
+layout (location = 6) in vec4 weights;
 
 uniform mat2x4 pose[120];
 
