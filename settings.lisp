@@ -200,7 +200,7 @@
     (let ((scene (scene +main+)))
       (when (scene +main+)
         (if value
-            (unless (unit 'fps-counter scene)
+            (unless (node 'fps-counter scene)
               (enter-and-load (make-instance 'fps-counter) scene +main+))
-            (when (unit 'fps-counter scene)
-              (leave (unit 'fps-counter scene) T)))))))
+            (when (node 'fps-counter scene)
+              (leave (node 'fps-counter scene) T)))))))

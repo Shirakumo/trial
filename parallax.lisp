@@ -39,7 +39,7 @@
 
 (defun change-background (&key texture scaling parallax offset unit)
   (when texture
-    (setf (texture (or unit (unit 'parallax-background (scene +main+)))) texture))
+    (setf (texture (or unit (node 'parallax-background (scene +main+)))) texture))
   (when (or parallax scaling offset)
     (with-buffer-tx (bg (// 'trial 'parallax))
       (when parallax
