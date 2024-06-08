@@ -268,7 +268,7 @@
     (make-rectangle-mesh 2 2))
 
 (define-asset (trial empty-vertex-array) mesh
-    (make-instance 'mesh-data))
+    (make-instance 'mesh-data :faces (make-array 0 :element-type '(unsigned-byte 16))))
 
 (define-asset (trial unit-cube) mesh
     (make-cube-mesh 1.0))
