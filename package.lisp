@@ -624,7 +624,8 @@
    #:size
    #:update-buffer-data
    #:download-buffer-data
-   #:resize-buffer-data)
+   #:resize-buffer-data
+   #:bind)
   ;; resources/framebuffer.lisp
   (:export
    #:framebuffer
@@ -673,7 +674,8 @@
    #:wrapping
    #:storage
    #:allocate-texture-storage
-   #:resize)
+   #:resize
+   #:bind)
   ;; resources/uniform-buffer.lisp
   (:export
    #:uniform-buffer
