@@ -137,7 +137,8 @@
 
 (defmethod shared-initialize :after ((texture texture) slots &key pixel-format pixel-type pixel-data)
   (when (and (null (sources texture)) (or pixel-data pixel-type pixel-format))
-    (setf (sources texture) (list (make-texture-source))))
+    (setf (sources texture) (list (make-texture-source :pixel-format (internal-format-pixel-format (internal-format texture))
+                                                       :pixel-type (internal-format-pixel-type (internal-format texture))))))
   (when pixel-data (setf (pixel-data texture) pixel-data))
   (when pixel-type (setf (pixel-type texture) pixel-type))
   (when pixel-format (setf (pixel-format texture) pixel-format)))
