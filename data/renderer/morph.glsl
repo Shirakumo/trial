@@ -1,3 +1,5 @@
+#include trial::morph-data
+
 uniform sampler1DArray morph_targets;
 
 void morph_vertex(inout vec3 position, inout vec3 normal, inout vec2 uv){

@@ -308,6 +308,7 @@
     (setf (uniform program "inv_model_matrix") inv))
   (loop for vao across (vertex-arrays renderable)
         for material across (materials renderable)
+        for morph across (morphs renderable)
         do (with-pushed-features
              (when (double-sided-p material)
                (disable-feature :cull-face))
@@ -316,8 +317,9 @@
              ;;         However, it requires access to the renderable, the program, and the vao
              ;;         to get the correct morph data for that specific vao, and we have no
              ;;         existing function to transmit all four of the involved objects.
-             (when (typep renderable 'morphed-entity)
-               (setf (uniform program "morph_targets") (enable (morph-texture renderable) pass)))
+             (when morph
+               (setf (uniform program "morph_targets") (enable (morph-texture morph) pass))
+               (bind (morph-data morph) program))
              (render vao program))))
 
 (defmethod (setf mesh) :after ((meshes cons) (renderable per-array-material-renderable))
