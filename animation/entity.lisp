@@ -40,10 +40,9 @@
   (replace-vertex-data entity (pose entity) :default-color (color entity)))
 
 (define-gl-struct morph-data
-  (size NIL :initarg :size :initform 8 :reader size)
   (morph-count :int :initform 0 :accessor morph-count :reader sequence:length)
-  (weights (:array :float size))
-  (indices (:array :int size)))
+  (weights (:array :float 8))
+  (indices (:array :int 8)))
 
 (defclass morph ()
   ((texture :initform NIL :accessor texture)
@@ -94,16 +93,12 @@
   (bind (morph-data morph) program))
 
 (define-shader-entity morphed-entity (base-animated-entity listener)
-  ((morphs :initform (make-hash-table :test 'eq) :accessor morphs))
-  (:shader-file (trial "morph.glsl")))
-
-(defmethod find-morph ((vao vertex-array) (entity morphed-entity) &optional (errorp NIL))
-  (or (gethash vao (morphs entity))
-      (when errorp (error "No morph for ~a on ~a" vao entity))))
+  ((morphs :initform #() :accessor morphs))
+  (:shader-file (trial "renderer/morph.glsl")))
 
 (define-shader-entity skinned-entity (base-animated-entity)
   ((mesh :initarg :mesh :initform NIL :accessor mesh))
-  (:shader-file (trial "skin-matrix.glsl")))
+  (:shader-file (trial "renderer/skin-matrix.glsl")))
 
 (defmethod (setf mesh-asset) :after ((asset asset) (entity skinned-enity))
   (unless (loaded-p asset)
@@ -116,7 +111,7 @@
 
 (define-shader-entity quat2-skinned-entity (base-animated-entity)
   ()
-  (:shader-file (trial "skin-dquat.glsl")))
+  (:shader-file (trial "renderer/skin-dquat.glsl")))
 
 (defmethod render :before ((entity quat2-skinned-entity) (program shader-program))
   (when (palette-texture entity)
@@ -125,6 +120,11 @@
 
 (define-shader-entity animated-entity (skinned-entity morphed-entity)
   ())
+
+(defmethod render :before ((entity animated-entity) (program shader-program))
+  (setf (uniform program "animation")
+        (+ (if (palette-texture entity) 2 0)
+           (if (< 0 (length (morphs entity))) 1 0))))
 
 (define-class-shader (animated-entity :vertex-shader)
   "layout (location = 0) in vec3 in_position;
