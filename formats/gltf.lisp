@@ -121,6 +121,9 @@
                 (load-animation-track (scaling track) sampler))
                (:rotation
                 (load-animation-track (rotation track) sampler))
+               (:weights
+                (change-class track 'trial::weights-track :name (name track))
+                (load-animation-track track sampler))
                (:pointer
                 (translate-track-pointer (gltf:pointer channel) track gltf)
                 (load-animation-track track sampler))
@@ -271,7 +274,7 @@
                (load-vertex-attribute mesh native accessor skin)))
     mesh))
 
-(defun load-primitive (primitive &key name skin model)
+(defun load-primitive (primitive &key name skin model weights)
   (let* ((mesh (if (or skin (< 0 (length (gltf:targets primitive))))
                    (make-instance 'animated-mesh
                                   :name name
@@ -293,7 +296,8 @@
         (setf (faces mesh) (coerce indexes '(simple-array (unsigned-byte 32) 1)))))
     (when (< 0 (length (gltf:targets primitive)))
       (setf (trial::morphs mesh) (map 'vector (lambda (spec) (load-mesh-attributes (make-instance 'mesh-data) spec))
-                                      (gltf:targets primitive))))
+                                      (gltf:targets primitive)))
+      (setf (trial::initial-weights mesh) (or weights #())))
     mesh))
 
 (defun load-mesh (mesh model &key skin)
@@ -301,10 +305,10 @@
         (primitives (gltf:primitives mesh)))
     (case (length primitives)
       (0)
-      (1 (list (load-primitive (aref primitives 0) :skin skin :name base-name :model model)))
+      (1 (list (load-primitive (aref primitives 0) :skin skin :name base-name :model model :weights (gltf:weights mesh))))
       (T (loop for i from 0 below (length primitives)
                for primitive = (aref primitives i)
-               collect (load-primitive primitive :skin skin :name (cons base-name i) :model model))))))
+               collect (load-primitive primitive :skin skin :name (cons base-name i) :model model :weights (gltf:weights mesh)))))))
 
 (defun load-meshes (gltf model)
   (let ((meshes (make-array 0 :adjustable T :fill-pointer T)))

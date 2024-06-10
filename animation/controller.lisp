@@ -163,8 +163,7 @@
    (updated-on :initform -1 :accessor updated-on)
    (palette :initform #() :accessor palette)
    (palette-texture :initform (make-instance 'texture :target :texture-1d-array :width 3 :height 1 :internal-format :rgba32f :min-filter :nearest :mag-filter :nearest) :accessor palette-texture)
-   (palette-data :initform (make-array 0 :element-type 'single-float) :accessor palette-data)
-   (morphs :initform (make-hash-table :test 'eq) :accessor morphs)))
+   (palette-data :initform (make-array 0 :element-type 'single-float) :accessor palette-data)))
 
 (defmethod describe-object :after ((entity animation-controller) stream)
   (terpri stream)
@@ -183,6 +182,8 @@
 (defmethod (setf model) :after ((asset model-file) (entity animation-controller))
   (when (loaded-p asset)
     (setf (skeleton entity) (skeleton asset))
+    ;; FIXME: this isn't right.
+    #++
     (loop for vao being the hash-keys of (morphs asset) using (hash-value targets)
           do (setf (gethash vao (morphs entity)) (make-instance 'morph :targets targets))))
   (play (or (clip entity) T) entity))
