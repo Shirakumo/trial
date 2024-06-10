@@ -163,7 +163,8 @@
    (updated-on :initform -1 :accessor updated-on)
    (palette :initform #() :accessor palette)
    (palette-texture :initform (make-instance 'texture :target :texture-1d-array :width 3 :height 1 :internal-format :rgba32f :min-filter :nearest :mag-filter :nearest) :accessor palette-texture)
-   (palette-data :initform (make-array 0 :element-type 'single-float) :accessor palette-data)))
+   (palette-data :initform (make-array 0 :element-type 'single-float) :accessor palette-data)
+   (morphs :initform (make-hash-table :test 'eq) :accessor morphs)))
 
 (defmethod describe-object :after ((entity animation-controller) stream)
   (terpri stream)
@@ -181,8 +182,14 @@
 
 (defmethod (setf model) :after ((asset model-file) (entity animation-controller))
   (when (loaded-p asset)
-    (setf (skeleton entity) (skeleton asset)))
+    (setf (skeleton entity) (skeleton asset))
+    (loop for vao being the hash-keys of (morphs asset) using (hash-value targets)
+          do (setf (gethash vao (morphs entity)) (make-instance 'morph :targets targets))))
   (play (or (clip entity) T) entity))
+
+(defmethod find-morph (vao (entity animation-controller) &optional (errorp T))
+  (or (gethash vao (morphs entity))
+      (when errorp (error "No morph for ~a found on ~a" vao entity))))
 
 (defmethod find-clip (name (entity animation-controller) &optional (errorp T))
   (if (null (model entity))
@@ -220,7 +227,9 @@
     (setf (updated-on entity) fc)))
 
 (defmethod stage :after ((entity animation-controller) (area staging-area))
-  (stage (palette-texture entity) area))
+  (stage (palette-texture entity) area)
+  (loop for morph being the hash-values of (morphs entity)
+        do (stage morph area)))
 
 (defmethod (setf pose) :after ((pose pose) (entity animation-controller))
   (update-palette entity))
@@ -249,6 +258,10 @@
     (setf (height texture) (length palette))
     (when (gl-name texture)
       (resize-buffer-data texture texinput :pixel-type :float :pixel-format :rgba))))
+
+(defmethod update-palette :after ((entity animation-controller))
+  (loop for morph being the hash-values of (morphs entity)
+        do (update-morph-data morph)))
 
 (defmethod instantiate-prefab :before ((instance animation-controller) (asset model))
   (setf (model instance) asset))
