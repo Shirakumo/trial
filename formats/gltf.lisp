@@ -291,6 +291,9 @@
                                                                     (:uint32 '(unsigned-byte 32))))))
         (org.shirakumo.memory-regions:replace indexes accessor)
         (setf (faces mesh) (coerce indexes '(simple-array (unsigned-byte 32) 1)))))
+    (when (< 0 (length (gltf:targets primitive)))
+      (setf (trial::morphs mesh) (map 'vector (lambda (spec) (load-mesh-attributes (make-instance 'mesh-data) spec))
+                                      (gltf:targets primitive))))
     mesh))
 
 (defun load-mesh (mesh model &key skin)
