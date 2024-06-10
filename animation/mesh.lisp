@@ -5,17 +5,18 @@
 
 (defmethod skinned-p ((mesh static-mesh)) NIL)
 
-(defclass skinned-mesh (mesh-data)
+(defclass animated-mesh (mesh-data)
   ((vertex-attributes :initform '(location normal uv joints weights))
    (position-normals :initform (make-array 0 :element-type 'single-float) :accessor position-normals)
+   (morphs :initform (make-array 0) :accessor morphs)
    (skinned-p :initarg :skinned-p :initform T :accessor skinned-p)))
 
-(defmethod (setf vertex-data) :after (data (mesh skinned-mesh))
+(defmethod (setf vertex-data) :after (data (mesh animated-mesh))
   (let ((vertices (truncate (length data) (vertex-attribute-stride mesh))))
     (setf (position-normals mesh) (adjust-array (position-normals mesh) (* vertices (+ 3 3))
                                                 :initial-element 0f0))))
 
-(defmethod cpu-skin ((mesh skinned-mesh) pose)
+(defmethod cpu-skin ((mesh animated-mesh) pose)
   (let ((pos-normal (position-normals mesh))
         (vertex-data (vertex-data mesh)))
     (flet ((transform (mat out-i in-i w)
@@ -37,7 +38,7 @@
                (transform mat (+ i 0) (+ j 0) 1.0)
                (transform mat (+ i 3) (+ j 3) 0.0)))))
 
-(defmethod make-vertex-array ((mesh skinned-mesh) vao)
+(defmethod make-vertex-array ((mesh animated-mesh) vao)
   (let ((position-normals (make-instance 'vertex-buffer :buffer-data (position-normals mesh)))
         (stride (vertex-attribute-stride mesh)))
     (loop for i from 0 below (length (vertex-data mesh)) by stride
@@ -53,11 +54,11 @@
       (setf (elt (bindings vao) 1) `(,position-normals :index 1 :size 3 :offset 12 :stride 24))
       vao)))
 
-(defmethod update-buffer-data ((vao vertex-array) (mesh skinned-mesh) &key)
+(defmethod update-buffer-data ((vao vertex-array) (mesh animated-mesh) &key)
   (let ((buffer (caar (bindings vao))))
     (update-buffer-data buffer (position-normals mesh))))
 
-(defmethod reorder ((mesh skinned-mesh) map)
+(defmethod reorder ((mesh animated-mesh) map)
   (let ((data (vertex-data mesh)))
     (loop for i from (+ 3 3 2) below (length data) by (vertex-attribute-stride mesh)
           do (setf (aref data (+ i 0)) (float (gethash (truncate (aref data (+ i 0))) map) 0f0))

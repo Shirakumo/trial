@@ -259,20 +259,30 @@
     (declare (dynamic-extent region))
     (funcall function region)))
 
-(defun load-primitive (primitive &key name skin model)
-  (let* ((attributes (sort (loop for attribute being the hash-keys of (gltf:attributes primitive)
-                                 for native = (gltf-attribute-to-native-attribute attribute)
-                                 when native collect native)
-                           #'vertex-attribute<))
-         (mesh (make-instance (if skin 'skinned-mesh 'static-mesh)
-                              :name name :vertex-form (gltf:mode primitive)
-                              :vertex-attributes attributes)))
-    (when (and model (gltf:material primitive))
-      (setf (material mesh) (find-material (gltf-name (gltf:material primitive)) model)))
-    (loop for attribute being the hash-keys of (gltf:attributes primitive) using (hash-value accessor)
+(defun load-mesh-attributes (mesh attribute-map &optional skin)
+  (let* ((attributes (loop for attribute being the hash-keys of attribute-map
+                           for native = (gltf-attribute-to-native-attribute attribute)
+                           when (member native '(location normal uv))
+                           collect native)))
+    (setf (vertex-attributes mesh) attributes)
+    (loop for attribute being the hash-keys of attribute-map using (hash-value accessor)
           for native = (gltf-attribute-to-native-attribute attribute)
           do (when (member native attributes)
                (load-vertex-attribute mesh native accessor skin)))
+    mesh))
+
+(defun load-primitive (primitive &key name skin model)
+  (let* ((mesh (if (or skin (< 0 (length (gltf:targets primitive))))
+                   (make-instance 'animated-mesh
+                                  :name name
+                                  :vertex-form (gltf:mode primitive)
+                                  :skinned-p (not (null skin)))
+                   (make-instance 'static-mesh
+                                  :name name
+                                  :vertex-form (gltf:mode primitive)))))
+    (load-mesh-attributes mesh (gltf:attributes primitive) skin)
+    (when (and model (gltf:material primitive))
+      (setf (material mesh) (find-material (gltf-name (gltf:material primitive)) model)))
     (when (gltf:indices primitive)
       (let* ((accessor (gltf:indices primitive))
              (indexes (make-array (length accessor) :element-type (ecase (gltf:component-type accessor)
@@ -625,7 +635,7 @@
           (loop for clip being the hash-values of clips
                 do (trial::reorder clip map))
           (loop for mesh being the hash-values of meshes
-                do (when (typep mesh 'trial:skinned-mesh)
+                do (when (skinned-p mesh)
                      (trial::reorder mesh map)))))
       ;; Construct scene graphs
       (labels ((construct (node)
@@ -645,7 +655,7 @@
                                            ;; FIXME: instead of turning each skin into an animated entity
                                            ;;        we should share the pose between them and only make one
                                            ;;        animated entity the controller
-                                           (skinned-mesh 'basic-animated-entity))
+                                           (animated-mesh 'basic-animated-entity))
                                          :lods (loop for i from -1
                                                      for threshold across (gltf:lod-screen-coverage node)
                                                      for lod = mesh-name then (gltf-name (gltf:mesh (aref (gltf:lods node) i)))
