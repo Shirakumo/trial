@@ -12,7 +12,7 @@ The relevant concepts for animation are as follows:
   A pose is a collection of ``transform``s for a skeleton. It represents a particular state for certain bones in the skeleton to be in. It also allows convenient access to the ``global-transform`` of a particular joint, and computing the ``matrix-palette`` used to perform the skinning.
 - ``skeleton``
   A skeleton contains all the information necessary for the skinning process, namely a ``bind-pose`` and ``inv-bind-pose``, a ``rest-pose``, and a table for the ``joint-names``.
-- ``skinned-mesh``
+- ``animated-mesh``
   This is a helper class that contains the mesh data such as the extracted ``position-normals`` and packed ``vertex-data``. It can be used to perform ``cpu-skin``ning if needed over the standard gpu-driven skinning method.
 - ``layer-controller``
   This mixin class implements the ``update`` method in such a way that extra animation poses can be layered onto the base pose. Layers can be added and removed via ``add-layer`` and ``remove-layer``.

@@ -111,7 +111,7 @@
   (:export
    #:skinned-p
    #:static-mesh
-   #:skinned-mesh
+   #:animated-mesh
    #:position-normals
    #:cpu-skin)
   ;; animation/pose.lisp
