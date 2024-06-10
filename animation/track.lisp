@@ -361,8 +361,8 @@
 (defclass weights-track (fast-animation-track)
   ((name :initarg :name :initform NIL :accessor name)))
 
-(defmethod sample ((pose pose) (track weights-track) time &key loop-p)
+(defmethod sample (thing (track weights-track) time &key loop-p)
   (declare (type single-float time))
   (declare (optimize speed))
-  (sample (aref (weights pose) (name track)) track time :loop-p loop-p)
-  pose)
+  (sample (aref (weights thing) (name track)) track time :loop-p loop-p)
+  thing)

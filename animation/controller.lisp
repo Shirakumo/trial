@@ -163,7 +163,8 @@
    (updated-on :initform -1 :accessor updated-on)
    (palette :initform #() :accessor palette)
    (palette-texture :initform (make-instance 'texture :target :texture-1d-array :width 3 :height 1 :internal-format :rgba32f :min-filter :nearest :mag-filter :nearest) :accessor palette-texture)
-   (palette-data :initform (make-array 0 :element-type 'single-float) :accessor palette-data)))
+   (palette-data :initform (make-array 0 :element-type 'single-float) :accessor palette-data)
+   (morphs :initform #() :accessor morphs)))
 
 (defmethod describe-object :after ((entity animation-controller) stream)
   (terpri stream)
@@ -229,7 +230,7 @@
 
 (defmethod stage :after ((entity animation-controller) (area staging-area))
   (stage (palette-texture entity) area)
-  (loop for morph being the hash-values of (morphs entity)
+  (loop for morph across (morphs entity)
         do (stage morph area)))
 
 (defmethod (setf pose) :after ((pose pose) (entity animation-controller))
@@ -261,7 +262,7 @@
       (resize-buffer-data texture texinput :pixel-type :float :pixel-format :rgba))))
 
 (defmethod update-palette :after ((entity animation-controller))
-  (loop for morph being the hash-values of (morphs entity)
+  (loop for morph across (morphs entity)
         do (update-morph-data morph)))
 
 (defmethod instantiate-prefab :before ((instance animation-controller) (asset model))
@@ -278,6 +279,6 @@
 (defmethod update-palette ((entity quat2-animation-controller))
   ;; FIXME: Update for texture data
   (let ((palette (quat2-palette (pose entity) (palette entity)))
-        (inv (quat-inv-bind-pose (skeleton (mesh-asset entity)))))
+        (inv (quat-inv-bind-pose (skeleton (model entity)))))
     (dotimes (i (length palette) (setf (palette entity) palette))
       (nq* (svref palette i) (svref inv i)))))
