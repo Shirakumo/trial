@@ -39,72 +39,104 @@
 (define-handler ((entity armature) (ev tick) :after) ()
   (replace-vertex-data entity (pose entity) :default-color (color entity)))
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defconstant SIMULTANEOUS-MORPHS 8))
+
 (define-gl-struct morph-data
-  (count :int :initform 0 :reader sequence:length)
-  (weights (:array :float 8))
-  (indices (:array :int 8)))
+  (count :int :initform 0 :accessor morph-count :reader sequence:length)
+  (weights (:array :float #.SIMULTANEOUS-MORPHS) :reader weights)
+  (indices (:array :int #.SIMULTANEOUS-MORPHS) :reader indices))
 
 (defclass morph ()
   ((texture :initform NIL :accessor texture)
+   (weights :initform NIL :accessor weights)
    (morph-data :initform NIL :accessor morph-data)))
 
-(defmethod initialize-instance :after ((morph morph) &key (simultaneous-targets 8) targets)
-  (setf (morph-data morph) (make-instance 'uniform-buffer :data-usage :dynamic-draw :binding NIL :struct (make-instance 'morph-data :size simultaneous-targets)))
-  (let* ((attributes
-           ;; TODO: compute reduced or expanded set of attributes from targets.
-           #++
-           (loop for target across targets
-                 for attributes = (vertex-attributes target) then (union attributes (vertex-attributes target))
-                 finally (return attributes))
-           '(location normal uv))
-         (vertex-count (vertex-count (aref targets 0)))
-         ;; The stride is 9, 3 for every color. This wastes space for the UV, since it only needs RG.
-         (stride 9)
-         (data (make-array (* (length targets) stride vertex-count) :element-type 'single-float))
-         (texture (make-instance 'texture :target :texture-1d-array
-                                          :internal-format :rgb32f
-                                          :width (length targets)
-                                          :height stride
-                                          :pixel-data data
-                                          :pixel-type :float
-                                          :pixel-format :rgb)))
-    ;; Compact the targets into a slice per target
-    (loop for target across targets
-          for src-data = (vertex-data target)
-          for src-stride = (vertex-attribute-stride target)
-          for slice from 0 by (* vertex-count stride)
-          do (unless (= (vertex-count target) vertex-count)
-               (error "Not all morph targets have the same number of vertices!"))
-             (loop for attribute in attributes
-                   for src-offset = (vertex-attribute-offset attribute target)
-                   for dst-offset = (vertex-attribute-offset attribute attributes)
-                   do (when src-offset
-                        (loop for src from src-offset below (length src-data) by src-stride
-                              for dst from dst-offset by stride
-                              do (setf (aref data (+ slice dst 0)) (aref src-data (+ src 0)))
-                                 (setf (aref data (+ slice dst 1)) (aref src-data (+ src 1)))
-                                 (unless (eq attribute 'uv)
-                                   (setf (aref data (+ dst 2)) (aref src-data (+ src 2))))))))
-    (setf (texture morph) texture)))
+(defmethod stage ((morph morph) (area staging-area))
+  (stage (texture morph) area)
+  (stage (morph-data morph) area))
 
-(defmethod enable-morph ((morph morph) texture-id program)
-  (bind (texture morph) texture-id)
-  (setf (uniform program "morph_targets") texture-id)
-  (bind (morph-data morph) program))
+(defmethod shared-initialize :after ((morph morph) slots &key targets)
+  (unless (morph-data morph)
+    (setf (morph-data morph) (make-instance 'uniform-buffer :data-usage :dynamic-draw :binding NIL :struct 'morph-data)))
+  (when targets
+    (let* ((attributes
+             ;; TODO: compute reduced or expanded set of attributes from targets.
+             #++
+             (loop for target across targets
+                   for attributes = (vertex-attributes target) then (union attributes (vertex-attributes target))
+                   finally (return attributes))
+             '(location normal uv))
+           (vertex-count (vertex-count (aref targets 0)))
+           ;; The stride is 9, 3 for every color. This wastes space for the UV, since it only needs RG.
+           (stride 9)
+           (data (make-array (* (length targets) stride vertex-count) :element-type 'single-float))
+           (texture (make-instance 'texture :target :texture-1d-array
+                                            :internal-format :rgb32f
+                                            :width (length targets)
+                                            :height stride
+                                            :pixel-data data
+                                            :pixel-type :float
+                                            :pixel-format :rgb)))
+      ;; Compact the targets into a slice per target
+      (loop for target across targets
+            for src-data = (vertex-data target)
+            for src-stride = (vertex-attribute-stride target)
+            for slice from 0 by (* vertex-count stride)
+            do (unless (= (vertex-count target) vertex-count)
+                 (error "Not all morph targets have the same number of vertices!"))
+               (loop for attribute in attributes
+                     for src-offset = (vertex-attribute-offset attribute target)
+                     for dst-offset = (vertex-attribute-offset attribute attributes)
+                     do (when src-offset
+                          (loop for src from src-offset below (length src-data) by src-stride
+                                for dst from dst-offset by stride
+                                do (setf (aref data (+ slice dst 0)) (aref src-data (+ src 0)))
+                                   (setf (aref data (+ slice dst 1)) (aref src-data (+ src 1)))
+                                   (unless (eq attribute 'uv)
+                                     (setf (aref data (+ dst 2)) (aref src-data (+ src 2))))))))
+      (setf (texture morph) texture)
+      (setf (weights morph) (make-array (length targets) :element-type 'single-float :initial-element 0f0)))))
+
+(defmethod update-morph-data ((morph morph))
+  (with-buffer-tx (struct (morph-data morph))
+    (let ((all-weights (weights morph))
+          (weights (weights struct))
+          (indices (indices struct))
+          (count 0))
+      ;; Fill the first 8 directly
+      (loop for i from 0 below (min SIMULTANEOUS-MORPHS (length all-weights))
+            for weight = (aref all-weights i)
+            do (setf (elt indices i) i)
+               (setf (elt weights i) weight)
+               (when (< 0 weight)
+                 (incf count)))
+      ;; Now search for bigger ones
+      (flet ((find-smallest-index ()
+               (let ((small 0))
+                 (loop for i from 1 below SIMULTANEOUS-MORPHS
+                       do (when (< (elt weights i) (elt weights small))
+                            (setf small i)))
+                 small)))
+        ;; This is basically N^2 but we don't expect to have *that* many
+        ;; simultaneous targets anyhow, so it shouldn't be bad in practise
+        (loop with smallest = (find-smallest-index)
+              for i from SIMULTANEOUS-MORPHS below (length all-weights)
+              for weight = (aref all-weights i)
+              do (when (< (elt weights smallest) weight)
+                   (incf count)
+                   (setf (elt weights smallest) weight)
+                   (setf (elt indices smallest) i)
+                   (setf smallest (find-smallest-index))))
+        (setf (morph-count struct) (min SIMULTANEOUS-MORPHS count))))))
 
 (define-shader-entity morphed-entity (base-animated-entity listener)
-  ((morphs :initform NIL :accessor morphs))
+  ()
   (:shader-file (trial "renderer/morph.glsl")))
 
-(defmethod (setf vertex-array) :after (array (entity morphed-entity))
-  (when (and (morphs entity) (= 0 (length (morphs entity))))
-    (setf (morphs entity) (make-array 1 :initial-element NIL))))
-
-(defmethod (setf vertex-arrays) :after ((arrays vector) (entity morphed-entity))
-  (when (and (morphs entity) (/= (length arrays) (length (morphs entity))))
-    (let ((new (make-array (length arrays) :initial-element NIL)))
-      (replace new (morphs entity))
-      (setf (morphs entity) new))))
+(defmethod find-morph (vao (entity morphed-entity) &optional (errorp T))
+  (or (gethash vao (morphs (animation-controller entity)))
+      (when errorp (error "No morph for ~a found on ~a" vao entity))))
 
 (define-shader-entity skinned-entity (base-animated-entity)
   ((mesh :initarg :mesh :initform NIL :accessor mesh))
