@@ -2,6 +2,7 @@
 
 (defclass pose (sequences:sequence standard-object)
   ((joints :initform #() :accessor joints)
+   (weights :initform #() :accessor weights)
    (parents :initform (make-array 0 :element-type '(signed-byte 16)) :accessor parents)
    (data :initform (make-hash-table :test 'eql) :initarg :data :accessor data)))
 
@@ -32,6 +33,7 @@
     (loop for i from 0 below size
           do (setf (aref parents i) (aref orig-parents i))
              (t<- (aref joints i) (aref orig-joints i)))
+    (setf (weights target) (copy-seq (weights source)))
     target))
 
 (defun pose= (a b)

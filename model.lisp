@@ -5,7 +5,6 @@
    (meshes :initform (make-hash-table :test 'equal) :accessor meshes)
    (clips :initform (make-hash-table :test 'equal) :accessor clips)
    (scenes :initform (make-hash-table :test 'equal) :accessor scenes)
-   (morphs :initform (make-hash-table :test 'eq) :accessor morphs)
    (skeleton :initform NIL :accessor skeleton)))
 
 (defmacro %define-model-accessor (type accessor)
@@ -27,7 +26,6 @@
 (%define-model-accessor mesh meshes)
 (%define-model-accessor clip clips)
 (%define-model-accessor scene scenes)
-(%define-model-accessor morph morphs)
 
 (defmethod find-scene ((first (eql T)) (model model) &optional (errorp T))
   (let ((keys (sort (alexandria:hash-table-keys (scenes model)) #'string<)))
@@ -53,7 +51,6 @@
   (clrhash (meshes model))
   (clrhash (clips model))
   (clrhash (scenes model))
-  (clrhash (morphs model))
   (setf (skeleton model) NIL))
 
 ;; TODO: coerce-object multi-mesh-entity mesh-entity etc to model

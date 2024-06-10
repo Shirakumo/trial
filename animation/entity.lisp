@@ -50,16 +50,14 @@
 (defclass morph ()
   ((texture :initform NIL :accessor texture)
    (weights :initform NIL :accessor weights)
-   (morph-data :initform NIL :accessor morph-data)))
+   (morph-data :initform (make-instance 'uniform-buffer :data-usage :dynamic-draw :binding NIL :struct 'morph-data) :accessor morph-data)))
 
 (defmethod stage ((morph morph) (area staging-area))
   (stage (texture morph) area)
   (stage (morph-data morph) area))
 
-(defmethod shared-initialize :after ((morph morph) slots &key targets)
-  (unless (morph-data morph)
-    (setf (morph-data morph) (make-instance 'uniform-buffer :data-usage :dynamic-draw :binding NIL :struct 'morph-data)))
-  (when targets
+(defmethod shared-initialize :after ((morph morph) slots &key animation-data)
+  (when animation-data
     (let* ((attributes
              ;; TODO: compute reduced or expanded set of attributes from targets.
              #++
@@ -67,19 +65,20 @@
                    for attributes = (vertex-attributes target) then (union attributes (vertex-attributes target))
                    finally (return attributes))
              '(location normal uv))
-           (vertex-count (vertex-count (aref targets 0)))
+           (vertex-count (vertex-count animation-data))
+           (morph-count (length (morphs animation-data)))
            ;; The stride is 9, 3 for every color. This wastes space for the UV, since it only needs RG.
            (stride 9)
-           (data (make-array (* (length targets) stride vertex-count) :element-type 'single-float))
+           (data (make-array (* vertex-count morph-count stride) :element-type 'single-float))
            (texture (make-instance 'texture :target :texture-1d-array
                                             :internal-format :rgb32f
-                                            :width (length targets)
+                                            :width morph-count
                                             :height stride
                                             :pixel-data data
                                             :pixel-type :float
                                             :pixel-format :rgb)))
       ;; Compact the targets into a slice per target
-      (loop for target across targets
+      (loop for target across (morphs animation-data)
             for src-data = (vertex-data target)
             for src-stride = (vertex-attribute-stride target)
             for slice from 0 by (* vertex-count stride)
@@ -96,7 +95,8 @@
                                    (unless (eq attribute 'uv)
                                      (setf (aref data (+ dst 2)) (aref src-data (+ src 2))))))))
       (setf (texture morph) texture)
-      (setf (weights morph) (make-array (length targets) :element-type 'single-float :initial-element 0f0)))))
+      (setf (weights morph) (let ((weights (make-array morph-count :element-type 'single-float :initial-element 0f0)))
+                              (replace weights (initial-weights animation-data)))))))
 
 (defmethod update-morph-data ((morph morph))
   (with-buffer-tx (struct (morph-data morph))
