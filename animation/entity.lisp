@@ -40,7 +40,7 @@
   (replace-vertex-data entity (pose entity) :default-color (color entity)))
 
 (define-gl-struct morph-data
-  (morph-count :int :initform 0 :accessor morph-count :reader sequence:length)
+  (count :int :initform 0 :reader sequence:length)
   (weights (:array :float 8))
   (indices (:array :int 8)))
 
@@ -93,8 +93,18 @@
   (bind (morph-data morph) program))
 
 (define-shader-entity morphed-entity (base-animated-entity listener)
-  ((morphs :initform #() :accessor morphs))
+  ((morphs :initform NIL :accessor morphs))
   (:shader-file (trial "renderer/morph.glsl")))
+
+(defmethod (setf vertex-array) :after (array (entity morphed-entity))
+  (when (and (morphs entity) (= 0 (length (morphs entity))))
+    (setf (morphs entity) (make-array 1 :initial-element NIL))))
+
+(defmethod (setf vertex-arrays) :after ((arrays vector) (entity morphed-entity))
+  (when (and (morphs entity) (/= (length arrays) (length (morphs entity))))
+    (let ((new (make-array (length arrays) :initial-element NIL)))
+      (replace new (morphs entity))
+      (setf (morphs entity) new))))
 
 (define-shader-entity skinned-entity (base-animated-entity)
   ((mesh :initarg :mesh :initform NIL :accessor mesh))
@@ -124,7 +134,7 @@
 (defmethod render :before ((entity animated-entity) (program shader-program))
   (setf (uniform program "animation")
         (+ (if (palette-texture entity) 2 0)
-           (if (< 0 (length (morphs entity))) 1 0))))
+           (if (morphs entity) 1 0))))
 
 (define-class-shader (animated-entity :vertex-shader)
   "layout (location = 0) in vec3 in_position;
@@ -143,8 +153,8 @@ void main(){
   normal = in_normal;
   uv = in_uv;
 
-  if(animation | 1) morph_vertex(position, normal, uv);
-  if(animation | 2) skin_vertex(position, normal, in_joints, in_weights);
+  if(0 < (animation & 1)) morph_vertex(position, normal, uv);
+  if(0 < (animation & 2)) skin_vertex(position, normal, in_joints, in_weights);
 
   world_pos = model_matrix * vec4(position, 1.0f);
   normal = vec3(model_matrix * vec4(normal, 0.0f));

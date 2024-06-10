@@ -19,7 +19,7 @@
         (loop for (k v) on parts by #'cddr thereis v))))
 
 (defmethod resolve-shader-include ((source symbol))
-  (gl-source (find-class source)))
+  (resolve-shader-include (find-class source)))
 
 (defmethod resolve-shader-include ((source cons))
   (destructuring-bind (pool name) source
