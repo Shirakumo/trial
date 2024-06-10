@@ -180,7 +180,9 @@
       (with-buffer-tx (struct (material-block pass))
         (<- (aref (slot-value struct 'materials) id) material)))
     (loop for texture across (textures material)
-          do (enable texture pass))))
+          do (enable texture pass))
+    (when (double-sided-p (material object))
+      (disable-feature :cull-face))))
 
 (defmethod disable ((material material) (pass standard-render-pass))
   (lru-cache-pop material (allocated-materials pass))
@@ -269,17 +271,18 @@
 
 (define-transfer single-material-renderable material)
 
-(defmethod render-with ((program shader-program) (vao vertex-array) renerable)
-  (render vao program))
+(defmethod render-with :before ((pass standard-render-pass) (renderable single-material-renderable) program)
+  (prepare-pass-program pass program))
 
 (defmethod render-with ((pass standard-render-pass) (object single-material-renderable) program)
-  (prepare-pass-program pass program)
+  (setf (uniform program "model_matrix") (model-matrix))
+  (let ((inv (mat4)))
+    (declare (dynamic-extent inv))
+    (setf (uniform program "inv_model_matrix") (!minv inv (model-matrix))))
   (when (material object)
     (with-pushed-features
-      (when (double-sided-p (material object))
-        (disable-feature :cull-face))
       (render-with pass (material object) program)
-      (render-with program (vertex-array object) object))))
+      (render (vertex-array object) program))))
 
 (defmethod deregister :after ((renderable single-material-renderable) (pass standard-render-pass))
   (when (material renderable)
@@ -302,19 +305,16 @@
   (prepare-pass-program pass program))
 
 (defmethod render-with ((pass standard-render-pass) (renderable per-array-material-renderable) program)
-  ;; KLUDGE: we can't do this in RENDER as we don't have access to the PASS variable, which we
-  ;;         need to set the per-vao material. This will break user expectations, as the RENDER
-  ;;         primary on the renderable is not invoked. Not sure how to fix this issue.
   (setf (uniform program "model_matrix") (model-matrix))
   (let ((inv (mat4)))
     (declare (dynamic-extent inv))
-    (!minv inv (model-matrix))
-    (setf (uniform program "inv_model_matrix") inv))
+    (setf (uniform program "inv_model_matrix") (!minv inv (model-matrix))))
+  ;; KLUDGE: we can't do this in RENDER as we don't have access to the PASS variable, which we
+  ;;         need to set the per-vao material. This will break user expectations, as the RENDER
+  ;;         primary on the renderable is not invoked. Not sure how to fix this issue.
   (loop for vao across (vertex-arrays renderable)
         for material across (materials renderable)
         do (with-pushed-features
-             (when (double-sided-p material)
-               (disable-feature :cull-face))
              (render-with pass material program)
              (render vao program))))
 
