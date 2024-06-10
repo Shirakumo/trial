@@ -179,6 +179,10 @@
                      ;;       outside the shadow map purview.
                      (with-pushed-matrix ()
                        (apply-transforms object)
-                       (setf (uniform program "animated") (if (typep object 'animated-entity) 1 0))
+                       (setf (uniform program "animation")
+                             (if (typep object 'animated-entity)
+                                 (+ (if (palette-texture object) 2 0)
+                                    (if (morphs object) 1 0))
+                                 0))
                        (render object program)))))))
     (activate (framebuffer pass))))

@@ -254,7 +254,11 @@
                     (standard-renderable :vertex-shader)))
 
 (defmethod render-with :before ((pass standard-render-pass) (renderable standard-animated-renderable) (program shader-program))
-  (setf (uniform program "pose") (enable (palette-texture renderable) pass)))
+  (when (palette-texture renderable)
+    (setf (uniform program "pose") (enable (palette-texture renderable) pass)))
+  (setf (uniform program "animation")
+        (+ (if (palette-texture renderable) 2 0)
+           (if (morphs renderable) 1 0))))
 
 (define-shader-entity single-material-renderable (standard-renderable)
   ((material :initarg :material :accessor material)))
@@ -308,18 +312,10 @@
     (setf (uniform program "inv_model_matrix") inv))
   (loop for vao across (vertex-arrays renderable)
         for material across (materials renderable)
-        for morph across (morphs renderable)
         do (with-pushed-features
              (when (double-sided-p material)
                (disable-feature :cull-face))
              (render-with pass material program)
-             ;; KLUDGE: This should really be factored out into a modular way.
-             ;;         However, it requires access to the renderable, the program, and the vao
-             ;;         to get the correct morph data for that specific vao, and we have no
-             ;;         existing function to transmit all four of the involved objects.
-             (when morph
-               (setf (uniform program "morph_targets") (enable (morph-texture morph) pass))
-               (bind (morph-data morph) program))
              (render vao program))))
 
 (defmethod (setf mesh) :after ((meshes cons) (renderable per-array-material-renderable))

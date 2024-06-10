@@ -186,6 +186,9 @@
     NIL
     ,@(mapcar #'gl-source (struct-fields class))))
 
+(defmethod resolve-shader-include ((source gl-struct-class))
+  (list 'glsl-toolkit:shader (gl-source source)))
+
 (defmethod vertex-layout ((class gl-struct-class))
   (let ((stride (buffer-field-stride 'vertex-buffer class)))
     (values (loop for offset = 0 then (+ offset size)
