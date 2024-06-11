@@ -11,11 +11,15 @@
 
 (defmethod setup-scene :around (main (scene pipelined-scene))
   (prog1 (call-next-method)
-    (let ((context (context main))
-          (scale (setting* 1.0 :display :frame-scale)))
-      (pack-pipeline scene
-                     (max 1 (ceiling (* scale (width context))))
-                     (max 1 (ceiling (* scale (height context))))))
+    ;; We only bother packing the pipeline if it's been set up in any way.
+    ;; Doing it always will actually clear the pipeline even if it's already
+    ;; been set up.
+    (when (nodes scene)
+      (let ((context (context main))
+            (scale (setting* 1.0 :display :frame-scale)))
+        (pack-pipeline scene
+                       (max 1 (ceiling (* scale (width context))))
+                       (max 1 (ceiling (* scale (height context)))))))
     (loop for pass across (passes scene)
           do (enter scene pass)
              (dolist (thing (to-preload scene))
