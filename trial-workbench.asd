@@ -12,6 +12,7 @@
                #+nx :trial-nxgl
                :trial-jpeg-turbo
                :trial-assets
+               :trial-alloy
                :trial-png
                :trial-gltf
                :trial-hdr))

@@ -7,7 +7,7 @@
   (with-cleanup-on-failure (finalize display)
     (call-next-method)))
 
-(defmethod initialize-instance :after ((display display) &rest initargs &key context)
+(defmethod initialize-instance :after ((display display) &key context)
   (etypecase context
     (list
      (setf context (apply #'make-context NIL context)))
@@ -15,10 +15,10 @@
      context))
   (setf (context display) context)
   (setf (handler context) display)
-  (setf +matrix-index+ 0)
-  (cache-gl-extensions)
-  #-arm64 (prevent-powersave)
   (with-context ((context display))
+    (setf +matrix-index+ 0)
+    (cache-gl-extensions)
+    #-arm64 (prevent-powersave)
     (setup-rendering display)))
 
 (defmethod finalize :around ((display display))
