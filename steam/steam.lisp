@@ -28,6 +28,8 @@
             (cl-ppcre:regex-replace-all "[ -]" (package-name (symbol-package action)) "")
             (cffi:translate-camelcase-name action))))
 
+(defmethod use-steaminput ((main trial:main)) NIL)
+
 (defclass main (trial:main)
   ((analog-actions :initform #() :accessor analog-actions)
    (digital-actions :initform #() :accessor digital-actions)
