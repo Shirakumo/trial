@@ -67,3 +67,47 @@
              (setf (aref data (+ i 2)) (float (gethash (truncate (aref data (+ i 2))) map) 0f0))
              (setf (aref data (+ i 3)) (float (gethash (truncate (aref data (+ i 3))) map) 0f0)))
     mesh))
+
+(defmethod make-morph-texture ((mesh animated-mesh))
+  (let* ((attributes
+           ;; TODO: compute reduced or expanded set of attributes from targets.
+           #++
+           (loop for target across targets
+                 for attributes = (vertex-attributes target) then (union attributes (vertex-attributes target))
+                 finally (return attributes))
+           '(location normal uv))
+         (vertex-count (vertex-count mesh))
+         (morph-count (length (morphs mesh)))
+         ;; The stride is 9, 3 for every color. This wastes space for the UV, since it only needs RG.
+         (stride 9)
+         (data (make-array (* vertex-count morph-count stride) :element-type 'single-float))
+         (texture (make-instance 'texture :target :texture-1d-array
+                                          :internal-format :rgb32f
+                                          :width stride
+                                          :height morph-count
+                                          :pixel-data data
+                                          :pixel-type :float
+                                          :pixel-format :rgb)))
+    ;; Compact the targets into a slice per target
+    (loop for target across (morphs mesh)
+          for src-data = (vertex-data target)
+          for src-stride = (vertex-attribute-stride target)
+          for slice from 0 by (* vertex-count stride)
+          do (unless (= (vertex-count target) vertex-count)
+               (error "Not all morph targets have the same number of vertices!"))
+             (loop for attribute in attributes
+                   for src-offset = (vertex-attribute-offset attribute target)
+                   for dst-offset = (vertex-attribute-offset attribute attributes)
+                   do (when src-offset
+                        (loop for src from src-offset below (length src-data) by src-stride
+                              for dst from dst-offset by stride
+                              do (setf (aref data (+ slice dst 0)) (aref src-data (+ src 0)))
+                                 (setf (aref data (+ slice dst 1)) (aref src-data (+ src 1)))
+                                 (unless (eq attribute 'uv)
+                                   (setf (aref data (+ dst 2)) (aref src-data (+ src 2))))))))
+    texture))
+
+(defmethod make-morph-weights ((mesh animated-mesh))
+  (let ((weights (make-array (length (morphs mesh)) :element-type 'single-float :initial-element 0f0)))
+    (replace weights (initial-weights mesh))
+    weights))

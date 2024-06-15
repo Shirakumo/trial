@@ -259,8 +259,8 @@
   (when (palette-texture renderable)
     (setf (uniform program "pose") (enable (palette-texture renderable) pass)))
   (setf (uniform program "animation")
-        (+ (if (palette-texture renderable) 2 0)
-           (if (morphs renderable) 1 0))))
+        (+ (if (morphed-p renderable) 1 0)
+           (if (skinned-p renderable) 2 0))))
 
 (define-shader-entity single-material-renderable (standard-renderable)
   ((material :initarg :material :accessor material)))
