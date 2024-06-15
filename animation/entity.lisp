@@ -56,47 +56,10 @@
   (stage (texture morph) area)
   (stage (morph-data morph) area))
 
-(defmethod shared-initialize :after ((morph morph) slots &key animation-data)
-  (when animation-data
-    (let* ((attributes
-             ;; TODO: compute reduced or expanded set of attributes from targets.
-             #++
-             (loop for target across targets
-                   for attributes = (vertex-attributes target) then (union attributes (vertex-attributes target))
-                   finally (return attributes))
-             '(location normal uv))
-           (vertex-count (vertex-count animation-data))
-           (morph-count (length (morphs animation-data)))
-           ;; The stride is 9, 3 for every color. This wastes space for the UV, since it only needs RG.
-           (stride 9)
-           (data (make-array (* vertex-count morph-count stride) :element-type 'single-float))
-           (texture (make-instance 'texture :target :texture-1d-array
-                                            :internal-format :rgb32f
-                                            :width morph-count
-                                            :height stride
-                                            :pixel-data data
-                                            :pixel-type :float
-                                            :pixel-format :rgb)))
-      ;; Compact the targets into a slice per target
-      (loop for target across (morphs animation-data)
-            for src-data = (vertex-data target)
-            for src-stride = (vertex-attribute-stride target)
-            for slice from 0 by (* vertex-count stride)
-            do (unless (= (vertex-count target) vertex-count)
-                 (error "Not all morph targets have the same number of vertices!"))
-               (loop for attribute in attributes
-                     for src-offset = (vertex-attribute-offset attribute target)
-                     for dst-offset = (vertex-attribute-offset attribute attributes)
-                     do (when src-offset
-                          (loop for src from src-offset below (length src-data) by src-stride
-                                for dst from dst-offset by stride
-                                do (setf (aref data (+ slice dst 0)) (aref src-data (+ src 0)))
-                                   (setf (aref data (+ slice dst 1)) (aref src-data (+ src 1)))
-                                   (unless (eq attribute 'uv)
-                                     (setf (aref data (+ dst 2)) (aref src-data (+ src 2))))))))
-      (setf (texture morph) texture)
-      (setf (weights morph) (let ((weights (make-array morph-count :element-type 'single-float :initial-element 0f0)))
-                              (replace weights (initial-weights animation-data)))))))
+(defmethod shared-initialize :after ((morph morph) slots &key mesh)
+  (when mesh
+    (setf (texture morph) (make-morph-texture mesh))
+    (setf (weights morph) (make-morph-weights mesh))))
 
 (defmethod update-morph-data ((morph morph))
   (with-buffer-tx (struct (morph-data morph))
@@ -131,18 +94,31 @@
         (setf (morph-count struct) (min SIMULTANEOUS-MORPHS count))))))
 
 (define-shader-entity morphed-entity (base-animated-entity listener)
-  ()
+  ((morphs :initform #() :accessor morphs))
   (:shader-file (trial "renderer/morph.glsl")))
 
-(defmethod find-morph (vao (entity morphed-entity) &optional (errorp T))
-  (or (gethash vao (morphs (animation-controller entity)))
-      (when errorp (error "No morph for ~a found on ~a" vao entity))))
+(defmethod (setf mesh) :after ((meshes cons) (entity morphed-entity))
+  (let ((morphs ()))
+    (dolist (mesh meshes)
+      (let ((morph (find-morph mesh (animation-controller entity) NIL)))
+        (when morph (push morph morphs))))
+    (setf (morphs entity) (coerce 'vector (nreverse morphs)))))
+
+(defmethod (setf mesh) :after ((mesh animated-mesh) (entity morphed-entity))
+  (let ((morph (find-morph mesh (animation-controller entity) NIL)))
+    (setf (morphs entity) (if morph (vector morph) #()))))
+
+(defmethod stage :after ((entity morphed-entity) (area staging-area))
+  (loop for morph across (morphs entity) do (stage morph area)))
+
+(defmethod morphed-p ((entity morphed-entity))
+  (< 0 (length (morphs entity))))
 
 (define-shader-entity skinned-entity (base-animated-entity)
   ((mesh :initarg :mesh :initform NIL :accessor mesh))
   (:shader-file (trial "renderer/skin-matrix.glsl")))
 
-(defmethod (setf mesh-asset) :after ((asset asset) (entity skinned-enity))
+(defmethod (setf mesh-asset) :after ((asset asset) (entity skinned-entity))
   (unless (loaded-p asset)
     (setf (palette entity) #(#.(meye 4)))))
 
@@ -150,6 +126,9 @@
   (when (palette-texture entity)
     (bind (palette-texture entity) :texture5)
     (setf (uniform program "pose") 5)))
+
+(defmethod skinned-p ((entity skinned-entity))
+  (palette-texture entity))
 
 (define-shader-entity quat2-skinned-entity (base-animated-entity)
   ()
@@ -165,8 +144,8 @@
 
 (defmethod render :before ((entity animated-entity) (program shader-program))
   (setf (uniform program "animation")
-        (+ (if (palette-texture entity) 2 0)
-           (if (morphs entity) 1 0))))
+        (+ (if (morphed-p entity) 1 0)
+           (if (skinned-p entity) 2 0))))
 
 (define-class-shader (animated-entity :vertex-shader)
   "layout (location = 0) in vec3 in_position;
