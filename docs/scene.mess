@@ -4,7 +4,7 @@ Like many engines, Trial includes a "scene graph" -- a tree of nodes in which th
 ## Graph Operations
 Operating on the graph is rather simple: ``enter`` is used to introduce a node into a container, and ``leave`` is used to remove it again. When a node is ``enter``ed, it is also ``register``ed on the graph's root ``scene``. Similarly, when it is left, the node and any children it might have are first ``deregister``ed. When the name of an ``entity`` is changed via ``setf``, the object is also first ``deregister``ed and then re-``register``ed after the name change.
 
-Each ``container`` must be a ``sequence`` and as such can be iterated over as one, using either ``for:for`` or ``sequences:dosequence``. All other standard sequence operations are naturally required to be supported as well.
+Each ``container`` must be a ``sequence`` and as such can be iterated over as one, using either ``for:for`` or ``sequence:dosequence``. All other standard sequence operations are naturally required to be supported as well.
 
 You can also ``clear`` a container fully, though note that this will not recursively clear if the container contained other containers. When a container is ``finalize``d, all of its children are also finalized and the container is ``clear``ed, though as with all finalization you should not rely on any particular state after finalization.
 
@@ -54,4 +54,4 @@ While you can create your own container types when necessary, Trial already prov
 - ``list-container``
   A container backed by a list. Insertion is O(1) and simply adds to the front, and removal is O(n). Iteration is not memory efficient due to the cons chain.
 
-Defining your own container types is simple -- all you need to do is subclass ``container``, and implement ``clear``, ``enter``, ``leave``, and the necessary sequence methods (most notably ``sequences:make-sequence-iterator``).
+Defining your own container types is simple -- all you need to do is subclass ``container``, and implement ``clear``, ``enter``, ``leave``, and the necessary sequence methods (most notably ``sequence:make-sequence-iterator``).
