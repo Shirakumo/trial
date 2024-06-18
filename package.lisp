@@ -1175,6 +1175,7 @@
    #:make-vertex-array
    #:append-vertex-data
    #:combine-vertex-data
+   #:with-mesh-construction
    #:location
    #:uv
    #:normal
