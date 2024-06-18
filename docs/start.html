@@ -7,7 +7,8 @@
   (:use #:cl+trial)
   (:shadow #:main #:launch)
   (:local-nicknames
-   (#:v #:org.shirakumo.verbose))
+   (#:v #:org.shirakumo.verbose)
+   (#:sequences #:org.shirakumo.trivial-extensible-sequences))
   (:export #:main #:launch))</pre></code><p>The <code>cl+trial</code> package includes everything from CL and Trial with the needed shadowing in place. We also make sure to shadow <code>main</code> and <code>launch</code> as we'll define our own for convenience. Finally, the <code>v</code> local nickname is useful for logging using the <a class="external-link" href="https://shinmera.github.io/verbose">Verbose</a> framework that Trial already depends on.</p></li><li><p><code>main.lisp</code></p><code style="display:block" class="code-block" data-language="common lisp"><pre>(in-package #:org.my.project)
 
 (defclass main (trial:main)

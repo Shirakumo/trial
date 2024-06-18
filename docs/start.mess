@@ -33,7 +33,8 @@ We recommend setting up a basic project scaffold as you would for anything else,
     (:use #:cl+trial)
     (:shadow #:main #:launch)
     (:local-nicknames
-     (#:v #:org.shirakumo.verbose))
+     (#:v #:org.shirakumo.verbose)
+     (#:sequences #:org.shirakumo.trivial-extensible-sequences))
     (:export #:main #:launch))
   ::
   The ``cl+trial`` package includes everything from CL and Trial with the needed shadowing in place. We also make sure to shadow ``main`` and ``launch`` as we'll define our own for convenience. Finally, the ``v`` local nickname is useful for logging using the "Verbose"(https://shinmera.github.io/verbose) framework that Trial already depends on.
