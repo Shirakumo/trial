@@ -20,6 +20,44 @@ This is useful if the vertices are fully computed in the vertex shader
 instead of being driven by static data. You must however make sure to
 pass the correct number of vertices when initiating the draw.")
 
+  (pool trial
+    "Asset pool for base engine things.
+
+These assets can be loaded without any format extensions being
+necessary, and are used by the core engine modules. You can also make
+use of them yourself.")
+
+  (asset (trial ascii)
+    "A texture atlas for ASCII characters.
+
+Each glyph is 9 pixels wide and 17 pixels tall.
+The first set of ASCII characters are skipped, as thei are all
+non-graphical. The first represented character is Space (#32).")
+
+  (asset (trial brdf-lut)
+    "The BRDF LUT texture for use during PBR IBL rendering.")
+
+  (asset (trial cat)
+    "The infamous Trial cat texture.")
+
+  (asset (trial missing)
+    "A pink-black checkerboard texture useful as a placeholder.")
+
+  (asset (trial neutral-mro)
+    "A one-pixel texture of a neutral PBR MRO map.")
+
+  (asset (trial neutral-normal)
+    "A one-pixel texture of a netural normal map.")
+
+  (asset (trial random)
+    "A white-noise texture.")
+
+  (asset (trial black)
+    "A one-pixel texture of pure black.")
+
+  (asset (trial white)
+    "A one-pixel texture of pure white.")
+
   (asset (trial unit-cube)
     "A UV-mapped zero-centred 1x1 cube.")
 
