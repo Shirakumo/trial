@@ -324,7 +324,7 @@
 (defmethod describe-object ((class shader-entity-class) stream)
   (call-next-method)
   (loop for (type parts) on (compute-effective-shaders class) by #'cddr
-        do (format stream "~&~%[~a]~%" type)
+        do (format stream "~&~%~a:~%" type)
            (format-with-line-numbers
             (glsl-toolkit:merge-shader-sources
              (list (glsl-toolkit:combine-methods parts)))
