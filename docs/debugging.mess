@@ -1,6 +1,27 @@
 # Debugging
 Trial includes a variety of tools to aid in the inevitable debugging process.
 
+## Inspection
+Many of Trial's objects can be inspected using the standard ``print`` and ``describe`` functions. In particular the following object types will offer extra presentations to make their contents easier to read:
+
+- ``animation-controller`` Lists available and active clips
+- ``asset`` Describes its documentation and available resources
+- ``container`` Prints a tree graph of its nodes
+- ``context`` Gives an overview of the OpenGL context capabilities
+- ``fade-controller`` Lists any active fade targets
+- ``gl-struct-class`` Prints the exact memory layout of all members
+- ``ik-controller`` Describes the active IK systems and their states
+- ``ik-solver`` Shows the IK chain and constraints along the chain
+- ``layer-controller`` Lists any active animation layers
+- ``pipelined-scene`` Shows the passes in the pipeline
+- ``pool`` Describes its documentation and available assets
+- ``shader-entity-class`` Prints the effective shaders attached to this class
+- ``shader-program`` Shows the attached buffers and shaders
+- ``skeleton`` Prints a tree graph of its bone hierarchy
+- ``standard-render-pass`` Lists the active lights and materials
+
+For instance, it can frequently be useful to describe the current ``scene`` to get an idea of the scene graph, via ``(describe (scene +main))``.
+
 ## Logging
 Trial relies on the "Verbose"(https://shinmera.github.io/verbose) logger framework to print various status messages to its log. You can, of course, make use of all of Verbose's features yourself as well. You should add a local nickname for ``org.shirakumo.verbose`` (as ``v``) to your package definitions for that.
 
