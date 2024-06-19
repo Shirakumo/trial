@@ -179,7 +179,7 @@
 (defmethod observe-load-state ((entity animation-controller) (asset model) (state (eql :loaded)) (area staging-area))
   (setf (model entity) asset))
 
-(defmethod (setf model) :after ((asset model-file) (entity animation-controller))
+(defmethod (setf model) :after ((asset asset) (entity animation-controller))
   (when (loaded-p asset)
     (setf (skeleton entity) (skeleton asset)))
   (play (or (clip entity) T) entity))
@@ -269,7 +269,7 @@
 (define-accessor-wrapper-methods palette (base-animated-entity (animation-controller base-animated-entity)))
 (define-accessor-wrapper-methods palette-texture (base-animated-entity (animation-controller base-animated-entity)))
 
-(defmethod (setf mesh-asset) :after ((asset model-file) (entity base-animated-entity))
+(defmethod (setf mesh-asset) :after ((asset asset) (entity base-animated-entity))
   (setf (model (animation-controller entity)) asset))
 
 (defmethod stage :after ((entity base-animated-entity) (area staging-area))
@@ -300,7 +300,7 @@
 (define-shader-entity animated-entity (base-animated-entity transformed-entity)
   ((mesh :initarg :mesh :initform NIL :accessor mesh)))
 
-(defmethod (setf mesh-asset) :after ((asset model-file) (entity animated-entity))
+(defmethod (setf mesh-asset) :after ((asset asset) (entity animated-entity))
   (unless (loaded-p asset)
     (setf (palette entity) #(#.(meye 4)))))
 
