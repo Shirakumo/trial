@@ -19,6 +19,7 @@
   (defclass pool ()
     ((name :initarg :name :accessor name)
      (base :initarg :base :accessor base)
+     (documentation :initarg :documentation :initform NIL)
      (assets :initform (make-hash-table :test 'eq) :accessor assets)
      (unused-file-patterns :initform () :accessor unused-file-patterns))
     (:default-initargs
@@ -28,8 +29,28 @@
     (print-unreadable-object (pool stream :type T)
       (format stream "~a ~s" (name pool) (base pool)))))
 
+(defmethod describe-object ((pool pool) stream)
+  (call-next-method)
+  (format stream "~&~%Documentation:~%~@<  ~@;~a~;~:>~&" (documentation pool T))
+  (format stream "~&~%Assets:~%")
+  (dolist (asset (sort (alexandria:hash-table-values (assets pool))
+                       #'string< :key #'name))
+    (format stream "  ~s~40t~40<[~a]~>~%" (name asset) (type-of asset))))
+
 (defmethod shared-initialize :after ((pool pool) slots &key (unused-file-patterns NIL patterns-p))
   (when patterns-p (setf (unused-file-patterns pool) unused-file-patterns)))
+
+(defmethod documentation ((pool pool) (doc-type (eql T)))
+  (slot-value pool 'documentation))
+
+(defmethod (setf documentation) (value (pool pool) (doc-type (eql T)))
+  (setf (slot-value pool 'documentation) value))
+
+(defmethod documentation ((name symbol) (doc-type (eql 'pool)))
+  (documentation (find-pool name T) T))
+
+(defmethod (setf documentation) (value (name symbol) (doc-type (eql 'pool)))
+  (setf (documentation (find-pool name T) T) value))
 
 (defun normalize-asset-file-pattern (pool pattern)
   (etypecase pattern

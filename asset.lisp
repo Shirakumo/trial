@@ -37,6 +37,7 @@
 (defclass asset (resource-generator loadable)
   ((pool :initform NIL :accessor pool)
    (name :initform NIL :accessor name)
+   (documentation :initarg :documentation :initform NIL)
    (input :initarg :input :initform NIL :accessor input)
    (loaded-p :initform NIL :accessor loaded-p)
    (generation-arguments :initform () :initarg :generation-arguments :accessor generation-arguments)))
@@ -85,6 +86,25 @@
 (defmethod print-object ((asset asset) stream)
   (print-unreadable-object (asset stream :type T)
     (format stream "~a/~a" (when (pool asset) (name (pool asset))) (name asset))))
+
+(defmethod describe-object ((asset asset) stream)
+  (call-next-method)
+  (format stream "~&~%Documentation:~%~@<  ~@;~a~;~:>~&" (documentation asset T))
+  (format stream "~&~%Resources:~%")
+  (dolist (resource (sort (list-resources asset) #'string< :key #'name))
+    (format stream "  ~s~40t~40<[~a]~>~%" (name resource) (type-of resource))))
+
+(defmethod documentation ((asset asset) (doc-type (eql T)))
+  (slot-value asset 'documentation))
+
+(defmethod (setf documentation) (value (asset asset) (doc-type (eql T)))
+  (setf (slot-value asset 'documentation) value))
+
+(defmethod documentation ((name cons) (doc-type (eql 'asset)))
+  (documentation (asset (first name) (second name) T) T))
+
+(defmethod (setf documentation) (value (name cons) (doc-type (eql 'asset)))
+  (setf (documentation (asset (first name) (second name) T) T) value))
 
 (defmethod resource ((asset asset) id)
   (error "The asset~%  ~a~%does not hold a resource named~%  ~a"
@@ -156,12 +176,15 @@
   (check-type pool symbol)
   (check-type name symbol)
   (check-type type symbol)
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
-     (ensure-instance (asset ',pool ',name NIL) ',type
-                      :input ,input
-                      :name ',name
-                      :pool ',pool
-                      :generation-arguments (list ,@options))))
+  (form-fiddle:with-body-options (body options documentation) options
+    (assert (null body))
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
+       (ensure-instance (asset ',pool ',name NIL) ',type
+                        :documentation ,documentation
+                        :input ,input
+                        :name ',name
+                        :pool ',pool
+                        :generation-arguments (list ,@options)))))
 
 (trivial-indent:define-indentation define-asset (4 6 4 &body))
 
