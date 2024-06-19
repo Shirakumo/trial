@@ -27,9 +27,14 @@
       (setf (next-clip clip) clip)
       (setf (next-clip clip) NIL)))
 
+(defmethod valid-p ((clip clip))
+  (< (start-time clip) (end-time clip)))
+
 (defmethod print-object ((clip clip) stream)
   (print-unreadable-object (clip stream :type T)
-    (format stream "~s ~a ~a" (name clip) (start-time clip) (end-time clip))))
+    (if (valid-p clip)
+        (format stream "~s ~a ~a" (name clip) (start-time clip) (end-time clip))
+        (format stream "~s INVALID" (name clip)))))
 
 (defmethod describe-object ((clip clip) stream)
   (format stream "~a
