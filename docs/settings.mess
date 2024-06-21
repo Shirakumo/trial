@@ -51,8 +51,9 @@ Settings related to audio playback. See "audio.mess"(link audio.mess)
 ### Display
 Settings related to graphics and context. See "context.mess"(link context.mess)
 
-- ``:display :resolution`` A video mode description: ``(width height [refresh rate [monitor identifier string]])``. Should default to ``(T T)``
+- ``:display :resolution`` A video mode description: ``(width height [refresh-rate [monitor-identifier-string]])``. Should default to ``(T T)``
 - ``:display :fullscreen`` Whether the game should be in fullscreen mode. Should default to ``T``
+- ``:display :monitor`` A separate monitor identifier string independent of the resolution.
 - ``:display :vsync`` Whether vertical sync should be active. Should default to ``T``
 - ``:display :target-framerate`` What framerate should be targeted (frame throttle). Should default to ``NIL``
 - ``:display :gamma`` The gamma value by which to map from HDR to SDR. Should default to ``2.2``
@@ -75,8 +76,10 @@ The language to use. See "localization.mess"(link localization.mess)
 ### Debugging
 Debugging options for diagnostics.
 
-- ``:debugging :swank`` Whether to start a swank server, and if so, on what port
+- ``:debugging :remote-debug :active`` Whether to start a swank/slynk server. Defaults to NIL
+- ``:debugging :remote-debug :port`` The port to start the server on. Defaults to 4005
 - ``:debugging :fps-counter`` Whether to show an ``fps-counter``
+- ``:debugging :send-diagnostics`` Whether to send diagnostics reports on crashes
 
 ## Keymaps
 See "input.mess"(link input.mess)

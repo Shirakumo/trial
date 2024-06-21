@@ -20,7 +20,7 @@
                                        :screen-shake 1.0
                                        :fov 75)
                             :language :system
-                            :debugging (:swank NIL
+                            :debugging (:remote-debug (:active NIL :port 4005)
                                         :fps-counter NIL)))
 
 (defun setting-file-path ()
@@ -211,3 +211,21 @@
               (enter-and-load (make-instance 'fps-counter) scene +main+))
             (when (node 'fps-counter scene)
               (leave (node 'fps-counter scene) T)))))))
+
+(define-setting-observer remote-debug :debugging :remote-debug (value)
+  (let ((pkg (or (find-package "SWANK") (find-package "SLYNK")))
+        (active (getf value :active))
+        (port (getf value :port 4005)))
+    (macrolet ((f (func &rest args)
+                 `(funcall (find-symbol ,(string func) pkg) ,@args)))
+      (when pkg
+        (handler-case
+            (cond (active
+                   (f create-server :port port :dont-close T)
+                   (setf *inhibit-standalone-handler* T))
+                  (T
+                   (ignore-errors (f stop-server port))
+                   (setf *inhibit-standalone-handler* NIL)))
+          (error (e)
+            (v:error :trial "Failed to start swank: ~a" e)
+            (v:debug :trial e)))))))
