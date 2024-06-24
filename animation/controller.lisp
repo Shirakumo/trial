@@ -260,7 +260,7 @@
              (cffi:inc-pointer texptr (* i 12 4)) arrptr (* 12 4))))))
     (setf (palette-data entity) texinput)
     (setf (height texture) (length palette))
-    (when (gl-name texture)
+    (when (allocated-p texture)
       (resize-buffer-data texture texinput :pixel-type :float :pixel-format :rgba))))
 
 (defmethod update-palette :after ((entity animation-controller))

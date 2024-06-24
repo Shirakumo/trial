@@ -62,7 +62,7 @@
     (setf (weights morph) (make-morph-weights mesh))))
 
 (defmethod update-morph-data ((morph morph))
-  (with-buffer-tx (struct (morph-data morph))
+  (with-buffer-tx (struct (morph-data morph) :update (if (allocated-p (morph-data morph)) :write))
     (let ((all-weights (weights morph))
           (weights (weights struct))
           (indices (indices struct))
