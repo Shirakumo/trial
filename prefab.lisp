@@ -17,7 +17,7 @@
 (defgeneric prefab-asset (prefab))
 (defgeneric instantiate-prefab (prefab asset))
 
-(defclass prefab ()
+(defclass prefab (scene-node)
   ((instantiated :initform NIL)))
 
 (defmethod observe-load-state :before ((prefab prefab) (asset model-file) (state (eql :loaded)) (area staging-area))
@@ -38,8 +38,16 @@
 
 (defmethod instantiate-prefab :around ((prefab prefab) (asset asset))
   (unless (slot-value prefab 'instantiated)
-    (call-next-method)
-    (setf (slot-value prefab 'instantiated) T)))
+    ;; We do this rigamarole here to avoid REGISTER being called prematurely
+    ;; on child nodes during the prefab process, and instead call REGISTER
+    ;; manually at the end.
+    (let ((container (container prefab)))
+      (setf (container prefab) NIL)
+      (prog1 (call-next-method)
+        (when container
+          (setf (container prefab) container)
+          (register prefab container))
+        (setf (slot-value prefab 'instantiated) T)))))
 
 (defmethod reload ((prefab prefab))
   (deallocate (prefab-asset prefab))
