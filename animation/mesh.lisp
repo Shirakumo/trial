@@ -14,7 +14,7 @@
    (skinned-p :initarg :skinned-p :initform T :accessor skinned-p)))
 
 (defmethod (setf vertex-data) :after (data (mesh animated-mesh))
-  (let ((vertices (truncate (length data) (vertex-attribute-stride mesh))))
+  (let ((vertices (vertex-count mesh)))
     (setf (position-normals mesh) (adjust-array (position-normals mesh) (* vertices (+ 3 3))
                                                 :initial-element 0f0))))
 
@@ -65,7 +65,7 @@
 
 (defmethod reorder ((mesh animated-mesh) map)
   (let ((data (vertex-data mesh)))
-    (loop for i from (+ 3 3 2) below (length data) by (vertex-attribute-stride mesh)
+    (loop for i from (vertex-attribute-offset 'joints mesh) below (length data) by (vertex-attribute-stride mesh)
           do (setf (aref data (+ i 0)) (float (gethash (truncate (aref data (+ i 0))) map) 0f0))
              (setf (aref data (+ i 1)) (float (gethash (truncate (aref data (+ i 1))) map) 0f0))
              (setf (aref data (+ i 2)) (float (gethash (truncate (aref data (+ i 2))) map) 0f0))
