@@ -102,7 +102,7 @@
     (dolist (mesh meshes)
       (let ((morph (find-morph mesh (animation-controller entity) NIL)))
         (when morph (push morph morphs))))
-    (setf (morphs entity) (coerce 'vector (nreverse morphs)))))
+    (setf (morphs entity) (coerce (nreverse morphs) 'vector))))
 
 (defmethod (setf mesh) :after ((mesh animated-mesh) (entity morphed-entity))
   (let ((morph (find-morph mesh (animation-controller entity) NIL)))
@@ -113,6 +113,8 @@
 
 (defmethod morphed-p ((entity morphed-entity))
   (< 0 (length (morphs entity))))
+
+(defmethod morphed-p ((entity entity)) NIL)
 
 (define-shader-entity skinned-entity (base-animated-entity)
   ((mesh :initarg :mesh :initform NIL :accessor mesh))
@@ -129,6 +131,8 @@
 
 (defmethod skinned-p ((entity skinned-entity))
   (palette-texture entity))
+
+(defmethod skinned-p ((entity entity)) NIL)
 
 (define-shader-entity quat2-skinned-entity (base-animated-entity)
   ()
