@@ -4,6 +4,7 @@
   ())
 
 (defmethod skinned-p ((mesh static-mesh)) NIL)
+(defmethod morphed-p ((mesh static-mesh)) NIL)
 
 (defclass animated-mesh (mesh-data)
   ((vertex-attributes :initform '(location normal uv joints weights))
@@ -16,6 +17,9 @@
   (let ((vertices (truncate (length data) (vertex-attribute-stride mesh))))
     (setf (position-normals mesh) (adjust-array (position-normals mesh) (* vertices (+ 3 3))
                                                 :initial-element 0f0))))
+
+(defmethod morphed-p ((mesh animated-mesh))
+  (< 0 (length (morphs mesh))))
 
 (defmethod cpu-skin ((mesh animated-mesh) pose)
   (let ((pos-normal (position-normals mesh))

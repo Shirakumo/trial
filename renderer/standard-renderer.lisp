@@ -181,7 +181,7 @@
         (<- (aref (slot-value struct 'materials) id) material)))
     (loop for texture across (textures material)
           do (enable texture pass))
-    (when (double-sided-p (material object))
+    (when (double-sided-p material)
       (disable-feature :cull-face))))
 
 (defmethod disable ((material material) (pass standard-render-pass))

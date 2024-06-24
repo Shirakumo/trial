@@ -184,7 +184,7 @@
   (when (loaded-p asset)
     (setf (skeleton entity) (skeleton asset))
     (loop for mesh being the hash-values of (meshes asset)
-          when (< 0 (length (morphs mesh)))
+          when (morphed-p mesh)
           do (setf (gethash mesh (morphs entity)) (make-instance 'morph :mesh mesh))))
   (play (or (clip entity) T) entity))
 
