@@ -259,7 +259,7 @@
   (setf (uniform program "pose") (if (skinned-p renderable)
                                      (enable (palette-texture renderable) pass)
                                      99))
-  (setf (uniform program "morph_targets") (if (morphed-p renderable)
+  (setf (uniform program "morph_targets") (if NIL #++(morphed-p renderable)
                                               (enable (morph-texture renderable) pass)
                                               99))
   (setf (uniform program "animation")

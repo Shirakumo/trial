@@ -198,8 +198,9 @@
         (loop for i from 0 below (length tracks)
               for track = (svref tracks i)
               for name = (name track)
-              do (etypecase name
-                   ((unsigned-byte 32) (sample (aref joints name) track time :loop-p loop-p))
+              do (etypecase track
+                   (transform-track (sample (aref joints name) track time :loop-p loop-p))
+                   (weights-track #++(sample pose track time :loop-p loop-p))
                    (T (sample (data pose) track time :loop-p loop-p))))
         time)
       0.0))

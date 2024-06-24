@@ -113,5 +113,5 @@
 
 (defmethod make-morph-weights ((mesh animated-mesh))
   (let ((weights (make-array (length (morphs mesh)) :element-type 'single-float :initial-element 0f0)))
-    (replace weights (initial-weights mesh))
+    (map-into weights (lambda (x) (float x 0f0)) (initial-weights mesh))
     weights))
