@@ -39,10 +39,12 @@
   (loop with frames = (frames track)
         for i from 0 below (length frames)
         for frame = (aref frames i)
-        do (format stream "  ~3d: ~6,2fs  ~15,2@f ~15,2@f~%" i
+        do (format stream "  ~3d: ~6,2fs  ~30,2@f ~30,2@f~%" i
                    (animation-frame-time frame)
-                   (sample NIL frame 0.0)
-                   (sample NIL frame 1.0))))
+                   (sample (default-sample-target track) frame 0.0)
+                   (sample (default-sample-target track) frame 1.0))))
+
+(defmethod default-sample-target ((track animation-track)) 0.0)
 
 (defgeneric start-time (track))
 (defgeneric end-time (track))
@@ -53,6 +55,8 @@
 (defmethod (setf frames) ((keyframes cons) (track animation-track))
   (destructuring-bind (times . values) keyframes
     (let ((frames (make-array (length times)))
+          (value-stride (ecase (interpolation track)
+                          ((:constant :linear :custom) 1) ((:hermite :bezier) 3)))
           (j 0))
       (when (< 0 (length frames))
         (dotimes (i (length times))
@@ -60,23 +64,19 @@
                 (make-frame (elt times i)
                             (ecase (interpolation track)
                               (:constant
-                               (incf j)
-                               (constant (elt values (1- j))))
+                               (constant (elt values j)))
                               (:linear
-                               (incf j)
-                               (linear (elt values (1- j)) (elt values j)))
+                               (linear (elt values j) (elt values (+ j 1))))
                               (:hermite
-                               (incf j 3)
-                               (hermite (elt values (- j 2)) (elt values (- j 1))
-                                        (elt values (+ j 1)) (elt values (+ j 0))))
+                               (hermite (elt values (+ j 1)) (elt values (+ j 2))
+                                        (elt values (+ j 4)) (elt values (+ j 3))))
                               (:bezier
                                ;; DATA is ordered like this: i0 v0 o0 i1 v1 o1
-                               (incf j 3)
-                               (bezier (elt values (- j 2)) (elt values (- j 1))
-                                       (elt values (+ j 1)) (elt values (+ j 0))))
+                               (bezier (elt values (+ j 1)) (elt values (+ j 2))
+                                       (elt values (+ j 4)) (elt values (+ j 3))))
                               (:custom
-                               (incf j)
-                               (elt values (1- j)))))))
+                               (elt values j)))))
+          (incf j value-stride))
         (setf (value-type track) (type-of (elt values 0))))
       (setf (frames track) frames))))
 
@@ -392,10 +392,49 @@
     object))
 
 (defclass weights-track (fast-animation-track)
-  ((name :initarg :name :initform NIL :accessor name)))
+  ((name :initarg :name :initform NIL :accessor name)
+   (weights :accessor weights)))
 
+#++
 (defmethod sample ((pose pose) (track weights-track) time &key loop-p)
   (declare (type single-float time))
   (declare (optimize speed))
   (sample (aref (weights pose) (name track)) track time :loop-p loop-p)
   pose)
+
+(defmethod default-sample-target ((track weights-track))
+  (make-array (weights track) :element-type 'single-float))
+
+(defmethod (setf frames) ((keyframes cons) (track weights-track))
+  (destructuring-bind (times . values) keyframes
+    (let* ((frames (make-array (length times)))
+           (value-stride (ecase (interpolation track)
+                           ((:constant :linear :custom) 1) ((:hermite :bezier) 3)))
+           (weights (/ (length values) value-stride (length times)))
+           (j 0))
+      (assert (integerp weights) () "Unbalanced number of values for weights frames!")
+      (setf (weights track) weights)
+      (when (< 0 (length frames))
+        (flet ((gather (offset)
+                 (let ((array (make-array weights :element-type 'single-float)))
+                   (multiple-value-bind (shift offset) (floor offset value-stride)
+                     (dotimes (i weights array)
+                       (setf (aref array i) (elt values (+ j offset
+                                                           ;; Wrap to next index after all the weights
+                                                           (* shift weights value-stride)
+                                                           (* i value-stride)))))))))
+          (dotimes (i (length times))
+            (setf (aref frames i)
+                  (make-frame (elt times i)
+                              (ecase (interpolation track)
+                                (:constant
+                                 (constant (gather 0)))
+                                (:linear
+                                 (linear (gather 0) (gather 1)))
+                                (:hermite
+                                 (hermite (gather 1) (gather 2) (gather 4) (gather 3)))
+                                (:bezier
+                                 (bezier (gather 1) (gather 2) (gather 4) (gather 3))))))
+            (incf j (* weights value-stride))))
+        (setf (value-type track) (type-of (elt values 0))))
+      (setf (frames track) frames))))
