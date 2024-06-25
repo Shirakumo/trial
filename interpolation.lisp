@@ -28,6 +28,20 @@
          (real (let ,(loop for arg in args
                            collect `(,arg (float ,arg 0f0)))
                  ,(expand-real)))
+         ((simple-array single-float (*))
+          (let ((len (length p1)))
+            (declare (type (simple-array single-float (*)) ,@args))
+            (lambda (target x)
+              (declare (optimize speed (safety 0)))
+              (declare (type single-float x))
+              (declare (type (simple-array single-float (*)) target))
+              (loop with 1-x = (- 1.0 x)
+                    for i from 0 below len
+                    do (setf (aref target i)
+                             (let ,(loop for arg in args
+                                         collect `(,arg (aref ,arg i)))
+                               ,@body)))
+              target)))
          (quat
           ,(if (rest args)
                `(let ((p2 (if (< (q. p1 p2) 0) (q- p2) p2)))
