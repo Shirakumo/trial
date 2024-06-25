@@ -395,13 +395,6 @@
   ((name :initarg :name :initform NIL :accessor name)
    (weights :accessor weights)))
 
-#++
-(defmethod sample ((pose pose) (track weights-track) time &key loop-p)
-  (declare (type single-float time))
-  (declare (optimize speed))
-  (sample (aref (weights pose) (name track)) track time :loop-p loop-p)
-  pose)
-
 (defmethod default-sample-target ((track weights-track))
   (make-array (weights track) :element-type 'single-float))
 
