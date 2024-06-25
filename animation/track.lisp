@@ -31,8 +31,16 @@
 (defmethod print-object ((track animation-track) stream)
   (print-unreadable-object (track stream :type T :identity T)
     (if (valid-p track)
-        (format stream "~a ~a" (start-time track) (end-time track))
+        (format stream "~a ~a ~d keyframes" (start-time track) (end-time track) (length (frames track)))
         (format stream "INVALID"))))
+
+(defmethod describe-object :after ((track animation-track) stream)
+  (format stream "~&~%Keyframes:~%")
+  (loop for i from 0
+        for frame across (frames track)
+        do (format stream "  ~3d: ~6,2fs  ~a~%" i
+                   (animation-frame-time frame)
+                   (animation-frame-curve frame))))
 
 (defgeneric start-time (track))
 (defgeneric end-time (track))
@@ -141,6 +149,7 @@
       (ecase (interpolation track)
         (:constant
          (setf (interpolation result) :constant)
+         (v:warn :trial.animation "Can't differentiate constant interpolation movement of ~a" track)
          (let* ((type (value-type track))
                 (value (ecase type
                          ((real single-float) 0.0)
@@ -281,6 +290,22 @@
                 (start-time track)
                 (end-time track))
         (format stream "~s INVALID" (name track)))))
+
+(defmethod describe-object :after ((track transform-track) stream)
+  (flet ((desc (track)
+           (format stream "  Interpolation: ~a~%"
+                   (interpolation track))
+           (loop for i from 0
+                 for frame across (frames track)
+                 do (format stream "  ~3d: ~6,2fs  ~a~%" i
+                            (animation-frame-time frame)
+                            (animation-frame-curve frame)))))
+    (format stream "~&~%Location:~%")
+    (desc (location track))
+    (format stream "~&~%Scaling:~%")
+    (desc (scaling track))
+    (format stream "~&~%Rotation:~%")
+    (desc (rotation track))))
 
 (defmethod start-time ((track transform-track))
   (let ((min most-positive-single-float))

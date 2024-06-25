@@ -40,13 +40,13 @@
   (format stream "~a
   [~a]
 
-NAME:     ~a
-START:    ~a
-END:      ~a
-DURATION: ~a
-BLOCKING: ~a
-NEXT:     ~a
-BLEND:    ~f
+NAME:~18t~a
+START:~18t~a
+END:~18t~a
+DURATION:~18t~a
+BLOCKING:~18t~a
+NEXT:~18t~a
+BLEND:~18t~f
 TRACKS: ~a~&"
           clip (type-of clip)
           (name clip) (start-time clip) (end-time clip) (duration clip)
@@ -211,6 +211,19 @@ TRACKS: ~a~&"
   (loop for track across (tracks clip)
         do (when (typep track 'dummy-track)
              (change-class track 'transform-track))))
+
+(defmethod describe-object ((clip forward-kinematic-clip) stream)
+  (call-next-method)
+  (format stream "~
+VELOCITY-SCALE:~18t~a
+FORWARD:
+  ~a
+  ~a
+  ~a~&"
+          (velocity-scale clip)
+          (location (forward-track clip))
+          (rotation (forward-track clip))
+          (scaling (forward-track clip))))
 
 (defmethod (setf forward-track) ((track integer) (clip forward-kinematic-clip))
   (loop for track across (tracks clip)
