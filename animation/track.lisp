@@ -121,8 +121,10 @@
   (setf (svref (frames track) index) value))
 
 (defmethod find-frame-idx ((track animation-track) x loop-p)
+  (declare (optimize speed))
   (let ((x (fit-to-track track x loop-p))
         (frames (frames track)))
+    (declare (type simple-vector frames))
     (loop for i from 0 below (length frames)
           do (when (<= x (animation-frame-time (svref frames i)))
                (return (1- i)))
@@ -133,6 +135,7 @@
   (let ((frames (frames track))
         (i (find-frame-idx track time loop-p)))
     (declare (type (signed-byte 31) i))
+    (declare (type simple-vector frames))
     (declare (type single-float time))
     (if (< i 0)
         (funcall (animation-frame-curve (svref frames 0)) target 0.0)
@@ -183,9 +186,9 @@
     result))
 
 (defclass fast-animation-track (animation-track)
-  ((sampled-frames :initform (make-array 0 :element-type '(unsigned-byte 32)) :accessor sampled-frames)
+  ((sampled-frames :initform NIL :accessor sampled-frames)
    (sample-rate :initform 60.0 :initarg :sample-rate :accessor sample-rate)
-   (find-fun :accessor find-fun)
+   (find-fun :initform NIL :accessor find-fun)
    (duration :initform 0f0 :accessor duration)))
 
 (defmethod update-instance-for-different-class :after ((current animation-track) (new fast-animation-track) &key)
@@ -196,7 +199,7 @@
   (let* ((frames (frames track))
          (frame-count (length frames)))
     (declare (type simple-vector frames))
-    (when (< 1 frame-count)
+    (when (< 4 frame-count)
       (let* ((rate (sample-rate track))
              (duration (- (animation-frame-time (svref frames (1- frame-count)))
                           (animation-frame-time (svref frames 0))))
@@ -230,7 +233,10 @@
 
 (defmethod find-frame-idx ((track fast-animation-track) time loop-p)
   (declare (optimize speed (safety 0)))
-  (funcall (the function (find-fun track)) time loop-p))
+  (let ((fun (find-fun track)))
+    (etypecase fun
+      (function (funcall fun time loop-p))
+      (null (call-next-method)))))
 
 (defmethod find-frame-idx-fun ((track fast-animation-track))
   (let* ((frames (frames track))
