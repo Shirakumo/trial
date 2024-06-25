@@ -37,21 +37,13 @@
         (format stream "~s INVALID" (name clip)))))
 
 (defmethod describe-object ((clip clip) stream)
-  (format stream "~a
-  [~a]
-
-NAME:~18t~a
-START:~18t~a
-END:~18t~a
-DURATION:~18t~a
-BLOCKING:~18t~a
-NEXT:~18t~a
-BLEND:~18t~f
-TRACKS: ~a~&"
-          clip (type-of clip)
-          (name clip) (start-time clip) (end-time clip) (duration clip)
-          (blocking-p clip) (next-clip clip) (blend-duration clip)
-          (map 'list #'name (tracks clip))))
+  (call-next-method)
+  (format stream "~&  DURATION~32t = ~a" (duration clip))
+  (format stream "~&~%Tracks:")
+  (loop for i from 0
+        for track across (tracks clip)
+        do (format stream "~&  ~3d: ~10a ~3d frames ~a~%" i
+                   (name track) (length (frames track)) (interpolation track))))
 
 (defun fit-to-clip (clip time)
   (let ((start (start-time clip))
@@ -215,12 +207,10 @@ TRACKS: ~a~&"
 (defmethod describe-object ((clip forward-kinematic-clip) stream)
   (call-next-method)
   (format stream "~
-VELOCITY-SCALE:~18t~a
-FORWARD:
+Forward clip:
   ~a
   ~a
   ~a~&"
-          (velocity-scale clip)
           (location (forward-track clip))
           (rotation (forward-track clip))
           (scaling (forward-track clip))))

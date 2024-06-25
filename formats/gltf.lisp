@@ -634,10 +634,10 @@
             do (setf (gethash (name mesh) meshes) mesh)
                (trial::make-vertex-array mesh (resource generator (name mesh))))
       ;; Patch up
+      (load-clips gltf clips)
       (when (loop for mesh being the hash-values of meshes
                   thereis (skinned-p mesh))
         (setf (skeleton model) (load-skeleton gltf))
-        (load-clips gltf clips)
         (let ((map (make-hash-table :test 'eql)))
           (trial::reorder (skeleton model) map)
           (loop for clip being the hash-values of clips

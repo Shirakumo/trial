@@ -110,6 +110,7 @@
   ;; animation/mesh.lisp
   (:export
    #:skinned-p
+   #:morphed-p
    #:static-mesh
    #:animated-mesh
    #:position-normals
