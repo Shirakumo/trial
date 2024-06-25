@@ -36,11 +36,13 @@
 
 (defmethod describe-object :after ((track animation-track) stream)
   (format stream "~&~%Keyframes:~%")
-  (loop for i from 0
-        for frame across (frames track)
-        do (format stream "  ~3d: ~6,2fs  ~a~%" i
+  (loop with frames = (frames track)
+        for i from 0 below (length frames)
+        for frame = (aref frames i)
+        do (format stream "  ~3d: ~6,2fs  ~15,2@f ~15,2@f~%" i
                    (animation-frame-time frame)
-                   (animation-frame-curve frame))))
+                   (sample NIL frame 0.0)
+                   (sample NIL frame 1.0))))
 
 (defgeneric start-time (track))
 (defgeneric end-time (track))
@@ -392,8 +394,8 @@
 (defclass weights-track (fast-animation-track)
   ((name :initarg :name :initform NIL :accessor name)))
 
-(defmethod sample (thing (track weights-track) time &key loop-p)
+(defmethod sample ((pose pose) (track weights-track) time &key loop-p)
   (declare (type single-float time))
   (declare (optimize speed))
-  (sample (aref (weights thing) (name track)) track time :loop-p loop-p)
-  thing)
+  (sample (aref (weights pose) (name track)) track time :loop-p loop-p)
+  pose)
