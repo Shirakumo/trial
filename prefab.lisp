@@ -110,6 +110,8 @@
 (define-prefab-translator physics-primitives (instance asset node)
   (let ((nodevar (gensym "NODE")))
     `(do-nodes% (,nodevar ,instance ,node)
+       (when (= 0 (length (physics-primitives ,nodevar)))
+         (error "No physics primitives stored on ~a" ,nodevar))
        (setf (physics-primitives ,instance) (physics-primitives ,nodevar))
        (setf (mass ,instance) (mass ,nodevar))
        (typecase ,nodevar
