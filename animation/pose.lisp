@@ -204,3 +204,9 @@
                    (T (sample (data pose) track time :loop-p loop-p))))
         time)
       0.0))
+
+(defmethod sample ((pose pose) (track weights-track) time &key loop-p)
+  (declare (type single-float time))
+  (declare (optimize speed))
+  (sample (aref (weights pose) (name track)) track time :loop-p loop-p)
+  pose)
