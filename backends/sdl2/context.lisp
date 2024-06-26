@@ -181,6 +181,19 @@
 (defmethod unlock-cursor ((context context))
   (sdl2-ffi.functions:sdl-set-window-grab (window context) NIL))
 
+(defmethod cursor ((context context))
+  :default)
+
+;; TODO: implement cursor setting
+(defmethod (setf cursor) ((null null) (context context))
+  )
+
+(defmethod (setf cursor) ((name symbol) (context context))
+  )
+
+(defmethod (setf cursor) (icon (context context))
+  )
+
 (defmethod (setf title) :before (value (context context))
   (sdl2:set-window-title (window context) value))
 
