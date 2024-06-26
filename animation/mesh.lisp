@@ -10,6 +10,7 @@
   ((vertex-attributes :initform '(location normal uv joints weights))
    (position-normals :initform (make-array 0 :element-type 'single-float) :accessor position-normals)
    (morphs :initform (make-array 0) :accessor morphs)
+   (model-name :initarg :model-name :initform NIL :accessor model-name)
    (initial-weights :initform #() :accessor initial-weights)
    (skinned-p :initarg :skinned-p :initform T :accessor skinned-p)))
 

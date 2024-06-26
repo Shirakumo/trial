@@ -183,6 +183,7 @@
 (defmethod (setf model) :after ((asset asset) (entity animation-controller))
   (when (loaded-p asset)
     (setf (skeleton entity) (skeleton asset))
+    #++
     (loop for mesh being the hash-values of (meshes asset)
           when (morphed-p mesh)
           do (setf (gethash mesh (morphs entity)) (make-instance 'morph :mesh mesh))))
@@ -236,6 +237,8 @@
         do (stage morph area)))
 
 (defmethod (setf pose) :after ((pose pose) (entity animation-controller))
+  (loop for morph being the hash-values of (morphs entity)
+        do (setf (gethash (name morph) (weights pose)) (weights morph)))
   (update-palette entity))
 
 (defmethod (setf ik-system) :after ((system ik-system) name (entity animation-controller))

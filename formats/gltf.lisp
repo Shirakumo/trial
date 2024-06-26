@@ -112,9 +112,10 @@
 (defun load-clip (gltf animation)
   (let ((clip (make-instance 'clip :name (gltf-name animation))))
     (loop for channel across (gltf:channels animation)
+          for target = (gltf:target channel)
           for sampler = (svref (gltf:samplers animation) (gltf:sampler channel))
-          for track = (find-animation-track clip (gltf:idx (gltf:node (gltf:target channel))) :if-does-not-exist :create)
-          do (case (gltf:path (gltf:target channel))
+          for track = (find-animation-track clip (gltf:idx (gltf:node target)) :if-does-not-exist :create)
+          do (case (gltf:path target)
                (:translation
                 (load-animation-track (location track) sampler))
                (:scale
@@ -122,7 +123,7 @@
                (:rotation
                 (load-animation-track (rotation track) sampler))
                (:weights
-                (change-class track 'trial::weights-track :name (name track))
+                (change-class track 'trial::weights-track :name (gltf-name (gltf:node target)))
                 (load-animation-track track sampler))
                (:pointer
                 (translate-track-pointer (gltf:pointer channel) track gltf)
@@ -298,6 +299,7 @@
     (when (< 0 (length (gltf:targets primitive)))
       (setf (trial::morphs mesh) (map 'vector (lambda (spec) (load-mesh-attributes (make-instance 'mesh-data) spec))
                                       (gltf:targets primitive)))
+      (setf (trial::model-name mesh) (when model (gltf-name model)))
       (setf (trial::initial-weights mesh) (or weights #())))
     mesh))
 
@@ -305,7 +307,7 @@
   (let ((base-name (gltf-name mesh))
         (primitives (gltf:primitives mesh)))
     (case (length primitives)
-      (0)
+      (0 ())
       (1 (list (load-primitive (aref primitives 0) :skin skin :name base-name :model model :weights (gltf:weights mesh))))
       (T (loop for i from 0 below (length primitives)
                for primitive = (aref primitives i)

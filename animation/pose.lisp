@@ -2,7 +2,7 @@
 
 (defclass pose (sequences:sequence standard-object)
   ((joints :initform #() :accessor joints)
-   (weights :initform #() :accessor weights)
+   (weights :initform (make-hash-table :test 'eql) :accessor weights)
    (parents :initform (make-array 0 :element-type '(signed-byte 16)) :accessor parents)
    (data :initform (make-hash-table :test 'eql) :initarg :data :accessor data)))
 
@@ -33,7 +33,8 @@
     (loop for i from 0 below size
           do (setf (aref parents i) (aref orig-parents i))
              (t<- (aref joints i) (aref orig-joints i)))
-    (setf (weights target) (copy-seq (weights source)))
+    (loop for k being the hash-keys of (weights source) using (hash-value v)
+          do (setf (gethash k (weights target)) v))
     target))
 
 (defun pose= (a b)
@@ -200,7 +201,7 @@
               for name = (name track)
               do (etypecase track
                    (transform-track (sample (aref joints name) track time :loop-p loop-p))
-                   (weights-track #++(sample pose track time :loop-p loop-p))
+                   (weights-track (sample pose track time :loop-p loop-p))
                    (T (sample (data pose) track time :loop-p loop-p))))
         time)
       0.0))
@@ -208,5 +209,15 @@
 (defmethod sample ((pose pose) (track weights-track) time &key loop-p)
   (declare (type single-float time))
   (declare (optimize speed))
-  (sample (aref (weights pose) (name track)) track time :loop-p loop-p)
+  (let* ((all-weights (weights pose))
+         (weights (gethash (name track) all-weights #.(make-array 0 :element-type 'single-float))))
+    (declare (type (simple-array single-float (*)) weights))
+    (declare (type hash-table all-weights))
+    #-trial-release
+    (unless (= (length weights) (weights track))
+      (cerror "Adjust the array" "Weights do not match track! (have ~d, need ~d for ~a)"
+              (length weights) (weights track) (name track))
+      (setf weights (setf (gethash (name track) all-weights)
+                          (make-array (weights track) :element-type 'single-float))))
+    (sample weights track time :loop-p loop-p))
   pose)

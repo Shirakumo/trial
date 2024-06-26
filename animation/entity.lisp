@@ -47,21 +47,23 @@
   (weights (:array :float #.SIMULTANEOUS-MORPHS) :reader weights)
   (indices (:array :int #.SIMULTANEOUS-MORPHS) :reader indices))
 
-(defclass morph ()
-  ((texture :initform NIL :accessor texture)
+(defclass morph-group ()
+  ((name :initarg :name :accessor name)
    (weights :initform NIL :accessor weights)
+   (textures :initform #() :accessor textures)
    (morph-data :initform (make-instance 'uniform-buffer :data-usage :dynamic-draw :binding NIL :struct 'morph-data) :accessor morph-data)))
 
-(defmethod stage ((morph morph) (area staging-area))
-  (stage (texture morph) area)
+(defmethod stage ((morph morph-group) (area staging-area))
+  (stage (textures morph) area)
   (stage (morph-data morph) area))
 
-(defmethod shared-initialize :after ((morph morph) slots &key mesh)
-  (when mesh
-    (setf (texture morph) (make-morph-texture mesh))
-    (setf (weights morph) (make-morph-weights mesh))))
+(defmethod shared-initialize :after ((morph morph-group) slots &key meshes)
+  (when meshes
+    (setf (name morph) (model-name (first meshes)))
+    (setf (texture morph) (map 'vector #'make-morph-texture meshes))
+    (setf (weights morph) (make-morph-weights (first meshes)))))
 
-(defmethod update-morph-data ((morph morph))
+(defmethod update-morph-data ((morph morph-group))
   (with-buffer-tx (struct (morph-data morph) :update (if (allocated-p (morph-data morph)) :write))
     (let ((all-weights (weights morph))
           (weights (weights struct))

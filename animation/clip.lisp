@@ -40,10 +40,20 @@
   (call-next-method)
   (format stream "~&  DURATION~32t = ~a" (duration clip))
   (format stream "~&~%Tracks:")
-  (loop for i from 0
-        for track across (tracks clip)
-        do (format stream "~&  ~3d: ~10a ~3d frames ~a~%" i
-                   (name track) (length (frames track)) (interpolation track))))
+  (flet ((print-track (track)
+           (format stream "~3d frames ~a~%"
+                   (length (frames track)) (interpolation track))))
+    (loop for i from 0
+          for track across (tracks clip)
+          do (format stream "~&  ~3d: ~30a " i (name track))
+             (etypecase track
+               (animation-track
+                (print-track track))
+               (transform-track
+                (format stream "~%")
+                (format stream "      LOCATION: ") (print-track (location track))
+                (format stream "      ROTATION: ") (print-track (rotation track))
+                (format stream "      SCALING:  ") (print-track (scaling track)))))))
 
 (defun fit-to-clip (clip time)
   (let ((start (start-time clip))
