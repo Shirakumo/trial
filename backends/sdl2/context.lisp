@@ -129,6 +129,9 @@
 (defmethod done-current ((context context))
   (sdl2:gl-make-current (window context) (cffi:null-pointer)))
 
+(defmethod visible-p ((context context))
+  (member :shown (sdl2:get-window-flags (window context))))
+
 (defmethod hide ((context context))
   (sdl2:hide-window (window context)))
 
@@ -232,6 +235,13 @@
   (sdl2:warp-mouse-in-window (window context) (round (vx pos)) (- (height context) (round (vy pos))))
   (v<- (mouse-pos context) pos)
   pos)
+
+(defmethod local-key-string ((context context) (name symbol))
+  (sdl2:get-key-name (key->sdl2-key name)))
+
+(defmethod local-key-string ((context context) (code integer))
+  (let ((name (sdl2:get-key-from-scancode code)))
+    (when name (sdl2:get-key-name name))))
 
 (defun make-context (&optional handler &rest initargs)
   (apply #'make-instance 'context :handler handler initargs))
@@ -352,6 +362,13 @@
 
 (defun sdl2-key->key (key)
   (aref *sdl2-scancode-map* key))
+
+(defun key->sdl2-code (key)
+  (gethash key *sdl2-keycode-map*))
+
+(defun key->sdl2-key (key)
+  (let ((code (gethash key *sdl2-keycode-map*)))
+    (when code (sdl2:get-key-from-scancode code))))
 
 (defun sdl2-mod->mod (mod)
   (case mod
