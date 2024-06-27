@@ -168,9 +168,15 @@
   ((name :initform NIL :initarg :name :accessor name)
    (weights :initform #() :initarg :weights :accessor weights)
    (textures :initform #() :accessor textures)
-   (morph-data :initform (make-instance 'uniform-buffer :data-usage :dynamic-draw :binding NIL :struct 'morph-data) :accessor morph-data)))
+   (morph-data :initform NIL :accessor morph-data)))
+
+(defmethod print-object ((morph morph-group) stream)
+  (print-unreadable-object (morph stream :type T :identity T)
+    (format stream "~s" (name morph))))
 
 (defmethod shared-initialize :after ((morph morph-group) slots &key meshes)
+  (unless (morph-data morph)
+    (setf (morph-data morph) (make-instance 'uniform-buffer :data-usage :dynamic-draw :binding "morph_data" :struct 'morph-data)))
   (when meshes
     (unless (name morph)
       (setf (name morph) (model-name (first meshes))))
@@ -188,7 +194,7 @@
       (when errorp (error "No morph data texture for ~a on ~a" mesh morph))))
 
 (defmethod update-morph-data ((morph morph-group))
-  (with-buffer-tx (struct (morph-data morph) :update (if (allocated-p (morph-data morph)) :write))
+  (with-buffer-tx (struct (morph-data morph) :update :write)
     (let ((all-weights (weights morph))
           (weights (weights struct))
           (indices (indices struct))
@@ -230,7 +236,9 @@
       (format stream "  None~%")))
 
 (defmethod (setf model) :after ((asset asset) (entity morph-group-controller))
-  (when (loaded-p asset)
+  (when (and (loaded-p asset) (= 0 (hash-table-count (morph-groups entity))))
+    ;; KLUDGE: this will not reset the morph groups correctly if the
+    ;;         asset is actually changed.
     (let ((groups (make-hash-table :test 'eql)))
       (loop for mesh being the hash-values of (meshes asset)
             do (when (morphed-p mesh)

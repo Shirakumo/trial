@@ -1,6 +1,13 @@
-#include trial::morph-data
+// We need to include it as a uniform, but the struct include
+// would not create the correct uniform block.
+// #include trial::morph-data
 
-uniform MorphData morph_data;
+layout(std140) uniform MorphData {
+  int count;
+  float weights[8];
+  int indices[8];
+} morph_data;
+
 uniform sampler1DArray morph_targets;
 
 void morph_vertex(inout vec3 position, inout vec3 normal, inout vec2 uv){
