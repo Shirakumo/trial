@@ -19,10 +19,14 @@
   (load buffer)
   ;; Bind the buffer to the program's specified binding point.
   (let ((index (gl:get-uniform-block-index (gl-name program) (gl-type buffer))))
-    (if (= (1- (ash 1 32)) index)
-        (v:warn :trial.resource "Failed to get uniform block index for ~s in ~a"
-                (gl-type buffer) program)
-        (%gl:uniform-block-binding (gl-name program) index (binding-point buffer)))
-    #-(or elide-buffer-access-checks trial-release)
-    (let ((size (gl:get-active-uniform-block (gl-name program) index :uniform-block-data-size)))
-      (assert (= size (size buffer))))))
+    (cond ((= (1- (ash 1 32)) index)
+           #-trial-release
+           (error "Failed to get uniform block index for ~s in ~a" (gl-type buffer) program)
+           #+trial-release
+           (v:warn :trial.resource "Failed to get uniform block index for ~s in ~a"
+                   (gl-type buffer) program))
+          (T
+           (%gl:uniform-block-binding (gl-name program) index (binding-point buffer))
+           #-(or elide-buffer-access-checks trial-release)
+           (let ((size (gl:get-active-uniform-block (gl-name program) index :uniform-block-data-size)))
+             (assert (= size (size buffer))))))))
