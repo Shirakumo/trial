@@ -242,6 +242,10 @@
   (or (gethash name (morph-groups entity))
       (when errorp (error "No morph for ~s found on ~a" name entity))))
 
+(defmethod (setf skeleton) :before ((skeleton skeleton) (entity morph-group-controller))
+  (loop for morph being the hash-values of (morph-groups entity)
+        do (setf (gethash (name morph) (weights (rest-pose skeleton))) (weights morph))))
+
 (defmethod stage :after ((entity morph-group-controller) (area staging-area))
   (loop for morph being the hash-values of (morph-groups entity)
         do (stage morph area)))
