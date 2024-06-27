@@ -276,13 +276,13 @@
 (define-transfer single-material-renderable material)
 
 (defmethod render-with :before ((pass standard-render-pass) (renderable single-material-renderable) program)
-  (prepare-pass-program pass program))
-
-(defmethod render-with ((pass standard-render-pass) (object single-material-renderable) program)
+  (prepare-pass-program pass program)
   (setf (uniform program "model_matrix") (model-matrix))
   (let ((inv (mat4)))
     (declare (dynamic-extent inv))
-    (setf (uniform program "inv_model_matrix") (!minv inv (model-matrix))))
+    (setf (uniform program "inv_model_matrix") (!minv inv (model-matrix)))))
+
+(defmethod render-with ((pass standard-render-pass) (object single-material-renderable) program)
   (when (material object)
     (with-pushed-features
       (render-with pass (material object) program)
@@ -306,13 +306,13 @@
 (define-transfer per-array-material-renderable materials)
 
 (defmethod render-with :before ((pass standard-render-pass) (renderable per-array-material-renderable) program)
-  (prepare-pass-program pass program))
-
-(defmethod render-with ((pass standard-render-pass) (renderable per-array-material-renderable) program)
+  (prepare-pass-program pass program)
   (setf (uniform program "model_matrix") (model-matrix))
   (let ((inv (mat4)))
     (declare (dynamic-extent inv))
-    (setf (uniform program "inv_model_matrix") (!minv inv (model-matrix))))
+    (setf (uniform program "inv_model_matrix") (!minv inv (model-matrix)))))
+
+(defmethod render-with ((pass standard-render-pass) (renderable per-array-material-renderable) program)
   ;; KLUDGE: we can't do this in RENDER as we don't have access to the PASS variable, which we
   ;;         need to set the per-vao material. This will break user expectations, as the RENDER
   ;;         primary on the renderable is not invoked. Not sure how to fix this issue.
@@ -416,6 +416,19 @@
 
 (define-shader-entity basic-animated-entity (multi-mesh-entity standard-animated-renderable per-array-material-renderable distance-lod-entity basic-node)
   ())
+
+(defmethod render-with ((pass standard-render-pass) (renderable basic-animated-entity) program)
+  ;; KLUDGE: In order to access the morphs we once again duplicate functionality encoded
+  ;;         in the multi-mesh-entity method for render-with.
+  (loop for vao across (vertex-arrays renderable)
+        for material across (materials renderable)
+        for (morph . morphtex) across (morphs renderable)
+        do (with-pushed-features
+             (render-with pass material program)
+             (when morph
+               (bind (morph-data morph) program)
+               (enable morphtex pass))
+             (render vao program))))
 
 (define-shader-entity animated-physics-entity (rigidbody basic-animated-entity)
   ())
