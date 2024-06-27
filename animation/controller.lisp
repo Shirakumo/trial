@@ -35,14 +35,13 @@
         do (apply #'add-layer clip controller args)))
 
 (defmethod describe-object :after ((controller layer-controller) stream)
-  (terpri stream)
-  (format stream "Layers:~%")
+  (format stream "~&~%Layers:~%")
   (let ((layers (sort (alexandria:hash-table-keys (animation-layers controller)) #'string<)))
     (if layers
         (loop for name in layers
               for layer = (layer name controller)
               do (format stream "  ~3d% ~s~%" (round (* 100 (animation-layer-strength layer))) name))
-        (format stream "  No layers.~%"))))
+        (format stream "  None~%"))))
 
 (defmethod update ((controller layer-controller) tt dt fc)
   (when (next-method-p) (call-next-method))
@@ -99,20 +98,18 @@
   (setf (pose controller) (rest-pose* skeleton :data controller)))
 
 (defmethod describe-object :after ((controller fade-controller) stream)
-  (terpri stream)
-  (format stream "Current Clip:~%")
+  (format stream "~&~%Current Clip:~%")
   (if (clip controller)
       (format stream "  ~4f / ~4f ~s~%"
               (clock controller) (duration (clip controller)) (name (clip controller)))
-      (format stream "  No current clip.~%"))
-  (terpri stream)
-  (format stream "Fade Targets:~%")
+      (format stream "  None~%"))
+  (format stream "~&~%Fade Targets:~%")
   (if (< 0 (length (fade-targets controller)))
       (loop for target across (fade-targets controller)
             do (format stream "  ~4f / ~4f ~s~%"
                        (fade-target-clock target) (fade-target-duration target)
                        (name (fade-target-clip target))))
-      (format stream "  No current fade targets.~%")))
+      (format stream "  None~%")))
 
 (defmethod play ((target clip) (controller fade-controller))
   (unless (eq target (clip controller))
@@ -158,23 +155,115 @@
                    (let ((time (min 1.0 (/ (fade-target-elapsed target) (fade-target-duration target)))))
                      (blend-into (pose controller) (pose controller) (fade-target-pose target) time))))))))
 
-(defclass animation-controller (ik-controller layer-controller fade-controller listener)
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defconstant SIMULTANEOUS-MORPHS 8))
+
+(define-gl-struct morph-data
+  (count :int :initform 0 :accessor morph-count :reader sequence:length)
+  (weights (:array :float #.SIMULTANEOUS-MORPHS) :reader weights)
+  (indices (:array :int #.SIMULTANEOUS-MORPHS) :reader indices))
+
+(defclass morph-group ()
+  ((name :initform NIL :initarg :name :accessor name)
+   (weights :initform #() :initarg :weights :accessor weights)
+   (textures :initform #() :accessor textures)
+   (morph-data :initform (make-instance 'uniform-buffer :data-usage :dynamic-draw :binding NIL :struct 'morph-data) :accessor morph-data)))
+
+(defmethod shared-initialize :after ((morph morph-group) slots &key meshes)
+  (when meshes
+    (unless (name morph)
+      (setf (name morph) (model-name (first meshes))))
+    (when (= 0 (length (weights morph)))
+      (setf (weights morph) (make-morph-weights (first meshes))))
+    (setf (texture morph) (map 'vector #'make-morph-texture meshes))))
+
+(defmethod stage :after ((morph morph-group) (area staging-area))
+  (stage (textures morph) area)
+  (stage (morph-data morph) area))
+
+(defmethod update-morph-data ((morph morph-group))
+  (with-buffer-tx (struct (morph-data morph) :update (if (allocated-p (morph-data morph)) :write))
+    (let ((all-weights (weights morph))
+          (weights (weights struct))
+          (indices (indices struct))
+          (count 0))
+      ;; Fill the first 8 directly
+      (loop for i from 0 below (min SIMULTANEOUS-MORPHS (length all-weights))
+            for weight = (aref all-weights i)
+            do (setf (elt indices i) i)
+               (setf (elt weights i) weight)
+               (when (< 0 weight)
+                 (incf count)))
+      ;; Now search for bigger ones
+      (flet ((find-smallest-index ()
+               (let ((small 0))
+                 (loop for i from 1 below SIMULTANEOUS-MORPHS
+                       do (when (< (elt weights i) (elt weights small))
+                            (setf small i)))
+                 small)))
+        ;; This is basically N^2 but we don't expect to have *that* many
+        ;; simultaneous targets anyhow, so it shouldn't be bad in practise
+        (loop with smallest = (find-smallest-index)
+              for i from SIMULTANEOUS-MORPHS below (length all-weights)
+              for weight = (aref all-weights i)
+              do (when (< (elt weights smallest) weight)
+                   (incf count)
+                   (setf (elt weights smallest) weight)
+                   (setf (elt indices smallest) i)
+                   (setf smallest (find-smallest-index))))
+        (setf (morph-count struct) (min SIMULTANEOUS-MORPHS count))))))
+
+(defclass morph-group-controller ()
+  ((morph-groups :initform (make-hash-table :test 'eql) :accessor morph-groups)))
+
+(defmethod describe-object :after ((entity morph-group-controller) stream)
+  (format stream "~&~%Morph Groups:~%")
+  (if (< 0 (hash-table-count (morph-groups entity)))
+      (loop for group being the hash-values of (morph-groups entity)
+            do (format stream "  ~20a ~a~%" (name group) (weights group)))
+      (format stream "  None~%")))
+
+(defmethod (setf model) :after ((asset asset) (entity morph-group-controller))
+  (when (loaded-p asset)
+    (let ((groups (make-hash-table :test 'eql)))
+      (loop for mesh being the hash-values of (meshes asset)
+            do (when (morphed-p mesh)
+                 (push mesh (gethash (or (model-name mesh) mesh) groups))))
+      (loop for name being the hash-keys of groups using (hash-value meshes)
+            do (setf (gethash name groups) (make-instance 'morph-group :name name :meshes meshes)))
+      (setf (morph-groups entity) groups))))
+
+(defmethod find-morph (mesh (entity animation-controller) &optional (errorp T))
+  (or (gethash mesh (morph-groups entity))
+      (when errorp (error "No morph for ~a found on ~a" mesh entity))))
+
+(defmethod stage :after ((entity morph-group-controller) (area staging-area))
+  (loop for morph being the hash-values of (morph-groups entity)
+        do (stage morph area)))
+
+(defmethod (setf pose) :after ((pose pose) (entity morph-group-controller))
+  (loop for morph being the hash-values of (morph-groups entity)
+        do (setf (gethash (name morph) (weights pose)) (weights morph))))
+
+(defmethod update-morph-data ((entity morph-group-controller))
+  (loop for morph-group being the hash-values of (morph-groups entity)
+        do (update-morph-data morph-group)))
+
+(defclass animation-controller (morph-group-controller ik-controller layer-controller fade-controller listener)
   ((model :initform NIL :accessor model)
    (updated-on :initform -1 :accessor updated-on)
    (palette :initform #() :accessor palette)
    (palette-texture :initform (make-instance 'texture :target :texture-1d-array :width 3 :height 1 :internal-format :rgba32f :min-filter :nearest :mag-filter :nearest) :accessor palette-texture)
-   (palette-data :initform (make-array 0 :element-type 'single-float) :accessor palette-data)
-   (morphs :initform (make-hash-table :test 'eq) :accessor morphs)))
+   (palette-data :initform (make-array 0 :element-type 'single-float) :accessor palette-data)))
 
 (defmethod describe-object :after ((entity animation-controller) stream)
-  (terpri stream)
-  (format stream "Available Clips:~%")
+  (format stream "~&~%Clips:~%")
   (if (list-clips entity)
       (loop for clip in (list-clips entity)
             do (format stream "  ~s~%" clip))
-      (format stream "  No currently available clips.~%"))
-  (terpri stream)
-  (format stream "Skeleton:~%")
+      (format stream "  None~%"))
+  (format stream "~&~%Skeleton:~%")
   (describe-skeleton (skeleton entity) stream))
 
 (defmethod observe-load-state ((entity animation-controller) (asset model) (state (eql :loaded)) (area staging-area))
@@ -182,19 +271,8 @@
 
 (defmethod (setf model) :after ((asset asset) (entity animation-controller))
   (when (loaded-p asset)
-    (setf (skeleton entity) (skeleton asset))
-    #++
-    (loop for mesh being the hash-values of (meshes asset)
-          when (morphed-p mesh)
-          do (setf (gethash mesh (morphs entity)) (make-instance 'morph :mesh mesh))))
+    (setf (skeleton entity) (skeleton asset)))
   (play (or (clip entity) T) entity))
-
-(defmethod find-morph (mesh (entity animation-controller) &optional (errorp T))
-  (or (gethash mesh (morphs entity))
-      (when errorp (error "No morph for ~a found on ~a" vao entity))))
-
-(defmethod list-morphs ((entity animation-controller))
-  (loop for morph being the hash-keys of (morphs entity) collect morph))
 
 (defmethod find-clip (name (entity animation-controller) &optional (errorp T))
   (if (null (model entity))
@@ -229,16 +307,13 @@
   (when (/= (updated-on entity) fc)
     (call-next-method)
     (update-palette entity)
+    (update-morph-data entity)
     (setf (updated-on entity) fc)))
 
 (defmethod stage :after ((entity animation-controller) (area staging-area))
-  (stage (palette-texture entity) area)
-  (loop for morph being the hash-values of (morphs entity)
-        do (stage morph area)))
+  (stage (palette-texture entity) area))
 
 (defmethod (setf pose) :after ((pose pose) (entity animation-controller))
-  (loop for morph being the hash-values of (morphs entity)
-        do (setf (gethash (name morph) (weights pose)) (weights morph)))
   (update-palette entity))
 
 (defmethod (setf ik-system) :after ((system ik-system) name (entity animation-controller))
@@ -265,10 +340,6 @@
     (setf (height texture) (length palette))
     (when (allocated-p texture)
       (resize-buffer-data texture texinput :pixel-type :float :pixel-format :rgba))))
-
-(defmethod update-palette :after ((entity animation-controller))
-  (loop for morph being the hash-values of (morphs entity)
-        do (update-morph-data morph)))
 
 (defmethod instantiate-prefab :before ((instance animation-controller) (asset model))
   (setf (model instance) asset))
