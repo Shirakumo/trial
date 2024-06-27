@@ -258,10 +258,7 @@
 (defmethod render-with :before ((pass standard-render-pass) (renderable standard-animated-renderable) (program shader-program))
   (setf (uniform program "pose") (if (skinned-p renderable)
                                      (enable (palette-texture renderable) pass)
-                                     99))
-  (setf (uniform program "animation")
-        (+ (if (morphed-p renderable) 1 0)
-           (if (skinned-p renderable) 2 0))))
+                                     99)))
 
 (define-shader-entity single-material-renderable (standard-renderable)
   ((material :initarg :material :accessor material)))
@@ -417,17 +414,19 @@
 (defmethod render-with ((pass standard-render-pass) (renderable basic-animated-entity) program)
   ;; KLUDGE: In order to access the morphs we once again duplicate functionality encoded
   ;;         in the multi-mesh-entity method for render-with.
-  (loop for vao across (vertex-arrays renderable)
+  (loop with skinning = (if (skinned-p renderable) 2 0)
+        for vao across (vertex-arrays renderable)
         for material across (materials renderable)
         for (morph . morphtex) across (morphs renderable)
         do (with-pushed-features
              (render-with pass material program)
              (cond (morph
                     (bind (morph-data morph) program)
-                    (enable morphtex pass)
-                    (setf (uniform program "morph_targets") (enable morphtex pass)))
+                    (setf (uniform program "morph_targets") (enable morphtex pass))
+                    (setf (uniform program "animation") (+ skinning 1)))
                    (T
-                    (setf (uniform program "morph_targets") 99)))
+                    (setf (uniform program "morph_targets") 99)
+                    (setf (uniform program "animation") (+ skinning 0))))
              (render vao program))))
 
 (define-shader-entity animated-physics-entity (rigidbody basic-animated-entity)

@@ -59,6 +59,11 @@
   (loop for (morph) across (morphs entity)
         do (when morph (stage morph area))))
 
+(defmethod render :before ((entity morphed-entity) (program shader-program))
+  (when (morphed-p entity)
+    (bind (palette-texture entity) :texture6)
+    (setf (uniform program "morph_targets") 6)))
+
 (defmethod morphed-p ((entity morphed-entity))
   (< 0 (length (morphs entity))))
 

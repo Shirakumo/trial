@@ -237,8 +237,8 @@
 
 (defmethod (setf model) :after ((asset asset) (entity morph-group-controller))
   (when (and (loaded-p asset) (= 0 (hash-table-count (morph-groups entity))))
-    ;; KLUDGE: this will not reset the morph groups correctly if the
-    ;;         asset is actually changed.
+    ;; FIXME: this will not reset the morph groups correctly if the
+    ;;        asset is actually changed.
     (let ((groups (make-hash-table :test 'eql)))
       (loop for mesh being the hash-values of (meshes asset)
             do (when (morphed-p mesh)
