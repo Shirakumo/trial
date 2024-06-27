@@ -9,9 +9,9 @@
 
 (defmethod shared-initialize :after ((buffer struct-buffer) slots &key struct-class struct)
   (setf (buffer-data buffer) (cond (struct
-                                    (setf (buffer-data buffer) (etypecase struct
-                                                                 ((or symbol class) (make-instance struct))
-                                                                 ((or vector memory-region gl-struct) struct))))
+                                    (etypecase struct
+                                      ((or symbol class) (make-instance struct))
+                                      ((or vector memory-region gl-struct) struct)))
                                    (struct-class
                                     (make-instance struct-class))
                                    (T
@@ -86,12 +86,12 @@
   (let ((region (storage (buffer-data buffer))))
     (download-buffer-data/ptr buffer (memory-region-pointer region) (min (size buffer) (memory-region-size region)))))
 
-(defmethod resize-buffer ((buffer struct-buffer) (size (eql T)) &key (data (storage (buffer-data buffer))) (data-start 0))
+(defmethod resize-buffer-data ((buffer struct-buffer) (size (eql T)) &key (data (storage (buffer-data buffer))) (data-start 0))
   (mem:with-memory-region (region data :offset data-start)
     (resize-buffer-data/ptr buffer (memory-region-size region) (memory-region-pointer region))))
 
 #-elide-buffer-access-checks
-(defmethod resize-buffer :before ((buffer struct-buffer) (octets integer) &key data data-start)
+(defmethod resize-buffer-data :before ((buffer struct-buffer) (octets integer) &key data data-start)
   (declare (ignore data data-start))
   (when (< (size buffer) (buffer-field-size T buffer 0))
     (error "Attempting to resize the struct buffer to ~d bytes, which is too small to hold the ~d bytes for its struct!"
