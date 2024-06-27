@@ -176,7 +176,7 @@
       (setf (name morph) (model-name (first meshes))))
     (when (= 0 (length (weights morph)))
       (setf (weights morph) (make-morph-weights (first meshes))))
-    (setf (texture morph) (map 'vector #'make-morph-texture meshes))))
+    (setf (textures morph) (map 'vector #'make-morph-texture meshes))))
 
 (defmethod stage :after ((morph morph-group) (area staging-area))
   (stage (textures morph) area)
@@ -234,9 +234,13 @@
             do (setf (gethash name groups) (make-instance 'morph-group :name name :meshes meshes)))
       (setf (morph-groups entity) groups))))
 
-(defmethod find-morph (mesh (entity animation-controller) &optional (errorp T))
-  (or (gethash mesh (morph-groups entity))
+(defmethod find-morph ((mesh animated-mesh) (entity morph-group-controller) &optional (errorp T))
+  (or (gethash (or (model-name mesh) mesh) (morph-groups entity))
       (when errorp (error "No morph for ~a found on ~a" mesh entity))))
+
+(defmethod find-morph ((name symbol) (entity morph-group-controller) &optional (errorp T))
+  (or (gethash name (morph-groups entity))
+      (when errorp (error "No morph for ~s found on ~a" name entity))))
 
 (defmethod stage :after ((entity morph-group-controller) (area staging-area))
   (loop for morph being the hash-values of (morph-groups entity)
