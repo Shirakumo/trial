@@ -176,11 +176,16 @@
       (setf (name morph) (model-name (first meshes))))
     (when (= 0 (length (weights morph)))
       (setf (weights morph) (make-morph-weights (first meshes))))
-    (setf (textures morph) (map 'vector #'make-morph-texture meshes))))
+    (setf (textures morph) (map 'vector (lambda (m) (cons (name m) (make-morph-texture m))) meshes))))
 
 (defmethod stage :after ((morph morph-group) (area staging-area))
-  (stage (textures morph) area)
+  (loop for (name . texture) across (textures morph)
+        do (stage texture area))
   (stage (morph-data morph) area))
+
+(defmethod find-morph ((mesh mesh-data) (morph morph-group) &optional (errorp T))
+  (or (cdr (find (name mesh) (textures morph) :key #'car))
+      (when errorp (error "No morph data texture for ~a on ~a" mesh morph))))
 
 (defmethod update-morph-data ((morph morph-group))
   (with-buffer-tx (struct (morph-data morph) :update (if (allocated-p (morph-data morph)) :write))

@@ -47,15 +47,17 @@
   (let ((morphs ()))
     (dolist (mesh meshes)
       (let ((morph (find-morph mesh (animation-controller entity) NIL)))
-        (when morph (push morph morphs))))
-    (setf (morphs entity) (coerce (nreverse morphs) 'vector))))
+        (push (when morph (cons morph (find-morph mesh morph)))
+              morphs)))
+    (setf (morphs entity) (if morphs (coerce (nreverse morphs) 'vector) #()))))
 
 (defmethod (setf mesh) :after ((mesh animated-mesh) (entity morphed-entity))
   (let ((morph (find-morph mesh (animation-controller entity) NIL)))
-    (setf (morphs entity) (if morph (vector morph) #()))))
+    (setf (morphs entity) (if morph (vector (cons morph (find-morph mesh morph))) #()))))
 
 (defmethod stage :after ((entity morphed-entity) (area staging-area))
-  (loop for morph across (morphs entity) do (stage morph area)))
+  (loop for (morph) across (morphs entity)
+        do (when morph (stage morph area))))
 
 (defmethod morphed-p ((entity morphed-entity))
   (< 0 (length (morphs entity))))
