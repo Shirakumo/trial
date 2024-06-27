@@ -39,62 +39,6 @@
 (define-handler ((entity armature) (ev tick) :after) ()
   (replace-vertex-data entity (pose entity) :default-color (color entity)))
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defconstant SIMULTANEOUS-MORPHS 8))
-
-(define-gl-struct morph-data
-  (count :int :initform 0 :accessor morph-count :reader sequence:length)
-  (weights (:array :float #.SIMULTANEOUS-MORPHS) :reader weights)
-  (indices (:array :int #.SIMULTANEOUS-MORPHS) :reader indices))
-
-(defclass morph-group ()
-  ((name :initarg :name :accessor name)
-   (weights :initform NIL :accessor weights)
-   (textures :initform #() :accessor textures)
-   (morph-data :initform (make-instance 'uniform-buffer :data-usage :dynamic-draw :binding NIL :struct 'morph-data) :accessor morph-data)))
-
-(defmethod stage ((morph morph-group) (area staging-area))
-  (stage (textures morph) area)
-  (stage (morph-data morph) area))
-
-(defmethod shared-initialize :after ((morph morph-group) slots &key meshes)
-  (when meshes
-    (setf (name morph) (model-name (first meshes)))
-    (setf (texture morph) (map 'vector #'make-morph-texture meshes))
-    (setf (weights morph) (make-morph-weights (first meshes)))))
-
-(defmethod update-morph-data ((morph morph-group))
-  (with-buffer-tx (struct (morph-data morph) :update (if (allocated-p (morph-data morph)) :write))
-    (let ((all-weights (weights morph))
-          (weights (weights struct))
-          (indices (indices struct))
-          (count 0))
-      ;; Fill the first 8 directly
-      (loop for i from 0 below (min SIMULTANEOUS-MORPHS (length all-weights))
-            for weight = (aref all-weights i)
-            do (setf (elt indices i) i)
-               (setf (elt weights i) weight)
-               (when (< 0 weight)
-                 (incf count)))
-      ;; Now search for bigger ones
-      (flet ((find-smallest-index ()
-               (let ((small 0))
-                 (loop for i from 1 below SIMULTANEOUS-MORPHS
-                       do (when (< (elt weights i) (elt weights small))
-                            (setf small i)))
-                 small)))
-        ;; This is basically N^2 but we don't expect to have *that* many
-        ;; simultaneous targets anyhow, so it shouldn't be bad in practise
-        (loop with smallest = (find-smallest-index)
-              for i from SIMULTANEOUS-MORPHS below (length all-weights)
-              for weight = (aref all-weights i)
-              do (when (< (elt weights smallest) weight)
-                   (incf count)
-                   (setf (elt weights smallest) weight)
-                   (setf (elt indices smallest) i)
-                   (setf smallest (find-smallest-index))))
-        (setf (morph-count struct) (min SIMULTANEOUS-MORPHS count))))))
-
 (define-shader-entity morphed-entity (base-animated-entity listener)
   ((morphs :initform #() :accessor morphs))
   (:shader-file (trial "renderer/morph.glsl")))
