@@ -259,9 +259,6 @@
   (setf (uniform program "pose") (if (skinned-p renderable)
                                      (enable (palette-texture renderable) pass)
                                      99))
-  (setf (uniform program "morph_targets") (if NIL #++(morphed-p renderable)
-                                              (enable (morph-texture renderable) pass)
-                                              99))
   (setf (uniform program "animation")
         (+ (if (morphed-p renderable) 1 0)
            (if (skinned-p renderable) 2 0))))
@@ -425,9 +422,12 @@
         for (morph . morphtex) across (morphs renderable)
         do (with-pushed-features
              (render-with pass material program)
-             (when morph
-               (bind (morph-data morph) program)
-               (enable morphtex pass))
+             (cond (morph
+                    (bind (morph-data morph) program)
+                    (enable morphtex pass)
+                    (setf (uniform program "morph_targets") (enable morphtex pass)))
+                   (T
+                    (setf (uniform program "morph_targets") 99)))
              (render vao program))))
 
 (define-shader-entity animated-physics-entity (rigidbody basic-animated-entity)
