@@ -85,10 +85,12 @@
          (morph-count (length (morphs mesh)))
          ;; The stride is 9, 3 for every color. This wastes space for the UV, since it only needs RG.
          (stride 9)
-         (data (make-array (* vertex-count morph-count stride) :element-type 'single-float))
+         (data (make-array (* vertex-count morph-count stride 3) :element-type 'single-float))
          (texture (make-instance 'texture :target :texture-1d-array
                                           :internal-format :rgb32f
-                                          :width stride
+                                          :min-filter :nearest
+                                          :mag-filter :nearest
+                                          :width (* stride vertex-count)
                                           :height morph-count
                                           :pixel-data data
                                           :pixel-type :float
