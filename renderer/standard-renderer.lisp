@@ -239,7 +239,7 @@
     (declare (dynamic-extent inv))
     (!minv inv (model-matrix))
     (setf (uniform program "inv_model_matrix") inv))
-  (loop for vao across (vertex-arrays renderable)
+  (loop for vao across (the simple-vector (vertex-arrays renderable))
         do (render vao program)))
 
 (defmethod vertex-array ((renderable standard-renderable))
@@ -259,6 +259,26 @@
   (setf (uniform program "pose") (if (skinned-p renderable)
                                      (enable (palette-texture renderable) pass)
                                      99)))
+
+(defmethod render ((renderable standard-animated-renderable) (program shader-program))
+  (declare (optimize speed))
+  (setf (uniform program "model_matrix") (model-matrix))
+  (let ((inv (mat4)))
+    (declare (dynamic-extent inv))
+    (!minv inv (model-matrix))
+    (setf (uniform program "inv_model_matrix") inv))
+  (loop with skinning = (if (skinned-p renderable) 2 0)
+        for vao across (the simple-vector (vertex-arrays renderable))
+        for (morph . morphtex) across (the simple-vector (morphs renderable))
+        do (cond (morph
+                  (bind (morph-data morph) program)
+                  (bind morphtex :texture6)
+                  (setf (uniform program "morph_targets") 6)
+                  (setf (uniform program "animation") (+ skinning 1)))
+                 (T
+                  (setf (uniform program "morph_targets") 99)
+                  (setf (uniform program "animation") (+ skinning 0))))
+           (render vao program)))
 
 (define-shader-entity single-material-renderable (standard-renderable)
   ((material :initarg :material :accessor material)))
@@ -415,9 +435,9 @@
   ;; KLUDGE: In order to access the morphs we once again duplicate functionality encoded
   ;;         in the multi-mesh-entity method for render-with.
   (loop with skinning = (if (skinned-p renderable) 2 0)
-        for vao across (vertex-arrays renderable)
-        for material across (materials renderable)
-        for (morph . morphtex) across (morphs renderable)
+        for vao across (the simple-vector (vertex-arrays renderable))
+        for material across (the simple-vector (materials renderable))
+        for (morph . morphtex) across (the simple-vector (morphs renderable))
         do (with-pushed-features
              (render-with pass material program)
              (cond (morph
