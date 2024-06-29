@@ -46,7 +46,7 @@
    #:forward-kinematic-clip
    #:forward-track
    #:velocity-scale)
-  ;; animation/entity.lisp
+  ;; animation/controller.lisp
   (:export
    #:animation-layer
    #:strength
@@ -62,13 +62,26 @@
    #:playback-speed
    #:play
    #:fade-to
+   #:morph-group
+   #:weights
+   #:textures
+   #:morph-data
+   #:update-morph-data
+   #:morph-group-controller
+   #:morph-groups
+   #:find-morph
    #:animation-controller
    #:model
    #:palette
    #:palette-texture
-   #:palette-data
+   #:palette-data)
+  ;; animation/entity.lisp
+  (:export
    #:base-animated-entity
    #:armature
+   #:morphed-entity
+   #:morphs
+   #:skinned-entity
    #:animated-entity
    #:mesh)
   ;; animation/ik.lisp
@@ -114,11 +127,17 @@
    #:static-mesh
    #:animated-mesh
    #:position-normals
-   #:cpu-skin)
+   #:morphs
+   #:model-name
+   #:initial-weights
+   #:cpu-skin
+   #:make-morph-texture
+   #:make-morph-weights)
   ;; animation/pose.lisp
   (:export
    #:pose
    #:joints
+   #:weights
    #:parents
    #:pose<-
    #:pose=
@@ -152,7 +171,11 @@
    #:transform-track
    #:location
    #:scaling
-   #:rotation)
+   #:rotation
+   #:dummy-track
+   #:slot-value-track
+   #:slot-name
+   #:weights-track)
   ;; assets/audio.lisp
   (:export
    #:load-audio
