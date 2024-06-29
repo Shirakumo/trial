@@ -393,7 +393,7 @@
 
 (defclass weights-track (fast-animation-track)
   ((name :initarg :name :initform NIL :accessor name)
-   (weights :accessor weights)))
+   (weights :initarg :weights :accessor weights)))
 
 (defmethod default-sample-target ((track weights-track))
   (make-array (weights track) :element-type 'single-float))
