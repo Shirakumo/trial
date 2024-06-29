@@ -1,5 +1,5 @@
 # Animation
-Trial includes support for describing animations -- meaning how properties aught to evolve over time. These systems can be used to animate individual properties of objects or full skeleton rigs. The constructs on offer for this are fairly standard, allowing import from model files, including skinning.
+Trial includes support for describing animations -- meaning how properties aught to evolve over time. These systems can be used to animate individual properties of objects or full skeleton rigs. The constructs on offer for this are fairly standard, allowing import from model files, including skinning and shape keys/morphs.
 
 The relevant concepts for animation are as follows:
 
@@ -12,17 +12,21 @@ The relevant concepts for animation are as follows:
   A pose is a collection of ``transform``s for a skeleton. It represents a particular state for certain bones in the skeleton to be in. It also allows convenient access to the ``global-transform`` of a particular joint, and computing the ``matrix-palette`` used to perform the skinning.
 - ``skeleton``
   A skeleton contains all the information necessary for the skinning process, namely a ``bind-pose`` and ``inv-bind-pose``, a ``rest-pose``, and a table for the ``joint-names``.
+- ``morph-group``
+  Encapsulates a set of morph targets and their weights for a mesh. This is exposed as a ``weights`` array, a set of ``textures`` that encode the vertex deformations for each mesh, and a ``morph-data`` buffer that holds the effective weights and indices of the morph targets to apply. When constructing a ``morph-group``, you should pass the set of meshes that share the group as an initarg.
 - ``animated-mesh``
-  This is a helper class that contains the mesh data such as the extracted ``position-normals`` and packed ``vertex-data``. It can be used to perform ``cpu-skin``ning if needed over the standard gpu-driven skinning method.
+  This is a helper class that contains the mesh data such as the extracted ``position-normals`` and packed ``vertex-data``. It can be used to perform ``cpu-skin``ning if needed over the standard gpu-driven skinning method. It also holds a set of meshes that encode the morph targets of the mesh in ``morphs``, along with the ``model-name`` that designates the larger morph group that the mesh is a part of. Finally it may hold an ``initial-weights`` array.
 - ``layer-controller``
   This mixin class implements the ``update`` method in such a way that extra animation poses can be layered onto the base pose. Layers can be added and removed via ``add-layer`` and ``remove-layer``.
 - ``fade-controller``
   This mixin class implements smooth playback of animation clips and the transitioning between them. As such implements a base ``update`` method to animate the ``pose``, and keeps track of possibly multiple fade targets, which can be added via ``fade-to``. A base clip can also be immediately started via ``play``.
+- ``morph-group-controller``
+  Handles the creation of the appropriate ``morph-groups`` for all of the meshes in the model. Also provides the ``update-morph-data`` function to sync the data after animation updates the weights. To fetch the morph group for a mesh, use ``find-morph``.
 - ``armature``
   A debug display to show poses and animation clips.
 - ``animated-entity``
-  A base class for skinned 3d models. Requires an ``animation-asset`` to be passed, but will take care of setting up everything else based on that asset. Is also a ``fade-controller`` and ``layer-controller`` so that animation clips can be easily used with the entity.
-  Note that it does not handle rendering of the mesh, only the vertex deformation needed to perform the skinning.
+  A base class for animated 3d models. Requires an ``animation-asset`` to be passed, but will take care of setting up everything else based on that asset. Is also a ``fade-controller``, ``layer-controller``, and ``morph-controller`` so that animation clips can be easily used with the entity.
+  Note that it does not handle rendering of the mesh, only the vertex deformation needed to perform the animation.
 
 When loading stuff from a model file you will not have to worry about any of the underlying stuff. All you need is an ``animated-entity`` and an asset to load the model with. From there you can just ``play``, ``fade-to``, and ``add-layer``/``remove-layer`` to manage your animations on the entities.
 
@@ -46,6 +50,8 @@ Trial will also parse out the following extra animation properties from the mode
 - ``loop`` [boolean] Whether to loop this clip or not. Defaults to true if unset. If ``next`` is set, this will be false.
 - ``forward-kinematic`` [boolean] Whether this clip is forward-kinematic or not. If it is, then the root motion will be turned into physical movement instead.
 - ``velocity-scale`` [float] The scale of the root motion when the clip is set to be forward-kinematic.
+- ``blocking-p`` [boolean] Whether the animation should block from being switched away from.
+- ``blend-duration`` [float] The default duration to use when ``fade-to`` on this clip is called.
 
 ## Defining Clips
 Aside from the fully automated import of animations and skins from model files as used with the ``animated-entity``, you can also programmatically define animation clips to animate other properties and features.
@@ -69,3 +75,17 @@ Note that in general ``sample`` is modifying, meaning it updates the values in p
 
 Animation clips are only meant for tweening properties. There is no support for evaluating functions at certain times or running other more complex code. If you need a system to put together sequences of actions and other such changes, please have a look at "action-lists"(https://shinmera.github.io/action-list). They are trivial to integrate with Trial and are geared for that use.
 
+## Morphs / Shape Keys
+In addition to rigged animation, Trial also allows animation or deformation based on shape keys. In order to make use of morphs, you should use the ``morphed-entity``. This entity holds a vector that adds the respective ``morph-group`` and data texture to each of the ``vertex-arrays`` of the entity.
+
+When rendering a vertex-array, you must use the same index of the vertex-array to retrieve the respective morph data cell in the ``morphs`` vector. The car holds the ``morph-group`` of which you should ``bind`` the ``morph-data`` buffer to the ``shader-program``, and the cdr holds the texture that you should ``bind`` to the ``morph_targets`` uniform. The ``basic-animated-entity`` takes care of all of this logic for you.
+
+In order to control the weights, you can setf the respective entry in the ``morph-group``s ``weights`` array. All weights should be single-floats in the range [0,1]. After setting them, you should ``update-morph-data`` to refresh the buffer.
+
+Weights can also be animated via a ``weights-track``. When setting its ``frames``, it expects a values array that is longer than the times array. Frame values for the different morph targets are stored interleaved, meaning for instance for a linear interpolation track with two morph targets, the values should be
+
+::
+frame0_morph0 frame0_morph1 frame1_morph0 frame1_morph1 ...
+::
+
+When ``sampling`` from the track you should either pass an array of weights to animate, or a ``pose`` in which case the weights array corresponding to the track's ``weights`` in the pose is updated. In either case the array must be present and must match in length to the number of morph targets that the track expects. Usually you'll want to use the ``weights`` array of the corresponding ``morph-group`` instance.
