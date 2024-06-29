@@ -269,6 +269,7 @@
     (setf (uniform program "inv_model_matrix") inv))
   (loop with skinning = (if (skinned-p renderable) 2 0)
         for vao across (the simple-vector (vertex-arrays renderable))
+        for material across (the simple-vector (materials renderable))
         for (morph . morphtex) across (the simple-vector (morphs renderable))
         do (cond (morph
                   (bind (morph-data morph) program)
@@ -278,7 +279,10 @@
                  (T
                   (setf (uniform program "morph_targets") 99)
                   (setf (uniform program "animation") (+ skinning 0))))
-           (render vao program)))
+           (with-pushed-features
+             (when (double-sided-p material)
+               (disable-feature :cull-face))
+             (render vao program))))
 
 (define-shader-entity single-material-renderable (standard-renderable)
   ((material :initarg :material :accessor material)))
@@ -301,6 +305,12 @@
     (with-pushed-features
       (render-with pass (material object) program)
       (render (vertex-array object) program))))
+
+(defmethod render :around ((renderable single-material-renderable) (program shader-program))
+  (with-pushed-features
+    (when (double-sided-p renderable)
+      (disable-feature :cull-face))
+    (call-next-method)))
 
 (defmethod deregister :after ((renderable single-material-renderable) (pass standard-render-pass))
   (when (material renderable)
