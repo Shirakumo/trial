@@ -222,11 +222,10 @@
           (* 0.5 (+ f1 f2 f3 f4 f5 f6)))))))
 
 (defmethod in-view-p ((entity global-bounds-cached-entity) (camera 3d-camera))
-  (let ((box (make-box :bsize (global-bsize entity))))
+  (let ((box (make-box :bsize (global-bsize entity) :location (global-location entity))))
     (declare (dynamic-extent box))
-    (let* ((matrix (nmtranslation (primitive-local-transform box) (global-location entity))))
-      (n*m *view-matrix* matrix)
-      (intersects-p box (frustum camera)))))
+    (!m* (primitive-transform box) *view-matrix* (primitive-local-transform box))
+    (intersects-p box (frustum camera))))
 
 (defclass target-camera (3d-camera)
   ((target :initarg :target :accessor target)
