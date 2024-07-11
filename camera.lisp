@@ -2,7 +2,8 @@
 
 (defclass camera (located-entity listener)
   ((near-plane :initarg :near-plane :accessor near-plane)
-   (far-plane :initarg :far-plane :accessor far-plane))
+   (far-plane :initarg :far-plane :accessor far-plane)
+   (bsize :initform (vec2 0 0) :accessor bsize))
   (:default-initargs
    :name :camera
    :location (vec 0 30 200)
@@ -16,10 +17,17 @@
 (defgeneric focal-point (camera))
 (defgeneric screen-area (thing camera))
 
+(defmethod width ((camera camera))
+  (* 2 (vx (bsize camera))))
+
+(defmethod height ((camera camera))
+  (* 2 (vy (bsize camera))))
+
 (defmethod handle ((ev tick) (camera camera))
   (project-view camera))
 
 (defmethod handle ((ev resize) (camera camera))
+  (vsetf (bsize camera) (* 0.5 (width ev)) (* 0.5 (height ev)))
   (setup-perspective camera (width ev) (height ev)))
 
 (defmethod (setf near-plane) :after (val (camera camera))
@@ -78,8 +86,20 @@
   (* (vx (bsize entity)) (vy (bsize entity))))
 
 (defmethod in-view-p ((entity sized-entity) (camera 2d-camera))
-  (and (<= (abs (- (vx (location entity)) (vx (location camera)))) (+ (vx (bsize entity)) (width *context*)))
-       (<= (abs (- (vy (location entity)) (vy (location camera)))) (+ (vy (bsize entity)) (height *context*)))))
+  (let ((eloc (global-location entity))
+        (esiz (global-bsize entity))
+        (cloc (location camera))
+        (csiz (bsize camera)))
+    (and (<= (abs (- (vx eloc) (vx cloc))) (+ (vx esiz) (vx csiz)))
+         (<= (abs (- (vy eloc) (vy cloc))) (+ (vy esiz) (vy csiz))))))
+
+(defmethod in-view-p ((entity global-bounds-cached-entity) (camera 2d-camera))
+  (let ((eloc (global-location entity))
+        (esiz (global-bsize entity))
+        (cloc (location camera))
+        (csiz (bsize camera)))
+    (and (<= (abs (- (vx eloc) (vx cloc))) (+ (vx esiz) (vx csiz)))
+         (<= (abs (- (vy eloc) (vy cloc))) (+ (vy esiz) (vy csiz))))))
 
 (defclass sidescroll-camera (2d-camera)
   ((zoom :initarg :zoom :accessor zoom)
@@ -111,6 +131,8 @@
            (ease (clamp 0 (+ 0.2 (/ (expt len 1.4) 100)) 20)))
       (nv* dir (/ ease len))
       (nv+ loc dir))))
+
+;; TODO: implement in-view-p respective to zoom
 
 (defclass 3d-camera (camera)
   ((fov :initarg :fov :accessor fov)
@@ -172,6 +194,38 @@
       (apply-transforms entity)
       (n*m *view-matrix* matrix)
       (!m* (primitive-transform box) matrix (primitive-local-transform box))
+      (intersects-p box (frustum camera)))))
+
+(defmethod screen-area ((entity global-bounds-cached-entity) (camera 3d-camera))
+  (with-vec (x y z) (the *vec3 (global-bsize entity))
+    (let ((p1 (vec (- x) (- y) (- z)))
+          (p2 (vec (+ x) (- y) (- z))) ;   p7 -- p8
+          (p3 (vec (- x) (+ y) (- z))) ;  /|    / |
+          (p4 (vec (+ x) (+ y) (- z))) ; p3 -- p4 |
+          (p5 (vec (- x) (- y) (+ z))) ; | p5 --|p6
+          (p6 (vec (+ x) (- y) (+ z))) ; |/     |/
+          (p7 (vec (- x) (+ y) (+ z))) ; p1 -- p2
+          (p8 (vec (+ x) (+ y) (+ z))))
+      (declare (dynamic-extent p1 p2 p3 p4 p5 p6 p7 p8))
+      (let* ((matrix (mtranslation (global-location entity))))
+        (declare (dynamic-extent matrix))
+        (n*m *view-matrix* matrix)
+        (n*m *projection-matrix* matrix)
+        (n*m matrix p1) (n*m matrix p2) (n*m matrix p3) (n*m matrix p4)
+        (n*m matrix p5) (n*m matrix p6) (n*m matrix p7) (n*m matrix p8)
+        (let ((f1 (vlength (vc (v- p2 p1) (v- p3 p1))))
+              (f2 (vlength (vc (v- p7 p3) (v- p4 p3))))
+              (f3 (vlength (vc (v- p7 p5) (v- p6 p5))))
+              (f4 (vlength (vc (v- p5 p1) (v- p2 p1))))
+              (f5 (vlength (vc (v- p4 p2) (v- p6 p2))))
+              (f6 (vlength (vc (v- p3 p1) (v- p5 p1)))))
+          (* 0.5 (+ f1 f2 f3 f4 f5 f6)))))))
+
+(defmethod in-view-p ((entity global-bounds-cached-entity) (camera 3d-camera))
+  (let ((box (make-box :bsize (global-bsize entity))))
+    (declare (dynamic-extent box))
+    (let* ((matrix (nmtranslation (primitive-local-transform box) (global-location entity))))
+      (n*m *view-matrix* matrix)
       (intersects-p box (frustum camera)))))
 
 (defclass target-camera (3d-camera)
