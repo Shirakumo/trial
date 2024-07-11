@@ -29,7 +29,8 @@
                (:file "audio")
                (:file "tilemap")
                (:file "shader")
-               (:file "post-processing"))
+               (:file "post-processing")
+               (:file "culling"))
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
                :alloy-constraint

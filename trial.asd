@@ -24,7 +24,7 @@
                (:file "asset-pool" :depends-on ("package" "asset"))
                (:file "async" :depends-on ("package"))
                (:file "bag" :depends-on ("package" "container"))
-               (:file "camera" :depends-on ("package" "container" "input" "transforms" "helpers"))
+               (:file "camera" :depends-on ("package" "container" "input" "transforms" "helpers" "global-bounds-cache"))
                (:file "capture" :depends-on ("package" "toolkit" "serialize" "event-loop" "input"))
                (:file "command-line" :depends-on ("package" "toolkit"))
                (:file "conditions" :depends-on ("package"))
