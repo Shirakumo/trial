@@ -53,15 +53,16 @@
 (defgeneric setup-ui (scene panel))
 
 (defclass example-scene (pipelined-scene)
-  ())
+  ((disable-ui :initform NIL :accessor disable-ui)))
 
 (defmethod setup-scene :after ((main example) (scene example-scene))
   (let ((output (car (nodes scene)))
         (ui (make-instance 'ui))
         (combine (make-instance 'blend-pass :name 'blend-pass)))
-    (connect (port output 'color) (port combine 'a-pass) scene)
-    (connect (port ui 'color) (port combine 'b-pass) scene)
-    (show (make-instance 'example-ui :scene scene) :ui ui)
+    (unless (disable-ui scene)
+      (connect (port output 'color) (port combine 'a-pass) scene)
+      (connect (port ui 'color) (port combine 'b-pass) scene)
+      (show (make-instance 'example-ui :scene scene) :ui ui))
     (setf (title *context*) (format NIL "Trial Examples (~a)" (title scene)))))
 
 (defmethod setup-ui ((scene example-scene) panel)
