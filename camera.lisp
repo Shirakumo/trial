@@ -80,7 +80,8 @@
   (translate (v- (location camera)) *view-matrix*))
 
 (defmethod screen-area ((null null) (camera 2d-camera))
-  (* (width *context*) (height *context*)))
+  (let ((bsize (bsize camera)))
+    (* (vx bsize) (vy bsize) 4)))
 
 (defmethod screen-area ((entity sized-entity) (camera 2d-camera))
   (* (vx (bsize entity)) (vy (bsize entity))))
@@ -110,7 +111,7 @@
 
 (defmethod project-view ((camera sidescroll-camera))
   (let* ((z (zoom camera))
-         (v (vec (width *context*) (height *context*) 0)))
+         (v (vxy_ (bsize camera))))
     (declare (dynamic-extent v))
     (reset-matrix *view-matrix*)
     (scale-by z z z *view-matrix*)
@@ -141,7 +142,8 @@
    :fov 75))
 
 (defmethod (setf fov) :after (val (camera 3d-camera))
-  (setup-perspective camera (max 1 (width *context*)) (max 1 (height *context*))))
+  (let ((bsize (bsize camera)))
+    (setup-perspective camera (max 1 (vx bsize)) (max 1 (vy bsize)))))
 
 (defmethod setup-perspective ((camera 3d-camera) width height)
   (perspective-projection (fov camera) (/ (max 1 width) (max 1 height)) (near-plane camera) (far-plane camera))
@@ -154,8 +156,9 @@
   (look-at (location camera) (vec 0 0 0) +vy3+))
 
 (defmethod screen-area ((null null) (camera 3d-camera))
-  (let ((x (* 2 (near-plane camera) (tan (* 0.5 (fov camera))))))
-    (/ (* x x) (/ (width *context*) (height *context*)))))
+  (let ((x (* 2 (near-plane camera) (tan (* 0.5 (fov camera)))))
+        (bsize (bsize camera)))
+    (/ (* x x) (/ (vx bsize) (vy bsize)))))
 
 ;; FIXME: Test this stuff
 (defmethod screen-area ((entity sized-entity) (camera 3d-camera))
