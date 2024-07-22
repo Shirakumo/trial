@@ -39,7 +39,7 @@
   (with-pushed-matrix ()
     (apply-transforms entity)
     (v<- target (bsize entity))
-    (n*m4/3 (mapply (primitive-transform primitive) #'abs) target)))
+    (n*m4/3 *model-matrix* target)))
 
 (define-transfer sized-entity bsize)
 

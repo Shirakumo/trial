@@ -22,7 +22,7 @@
                         ((vector (unsigned-byte 8)) tilemap)
                         (pathname (alexandria:read-file-into-byte-vector tilemap))
                         (stream (alexandria:read-stream-content-into-byte-vector tilemap)))))
-           (setf (bsize layer) (v* size (tile-size layer) .5))
+           (setf (bsize layer) (nv* (vxy_ (v* (size layer) (tile-size layer))) 0.5))
            (setf (tilemap layer) (make-instance 'texture :target :texture-2d
                                                          :width (floor (vx size))
                                                          :height (floor (vy size))
@@ -39,7 +39,7 @@
     (setf (tile-size layer) (tile-size tileset))
     (setf (vx (size layer)) (width (tilemap layer)))
     (setf (vy (size layer)) (height (tilemap layer)))
-    (setf (bsize layer) (v* (size layer) (tile-size tileset) 0.5))))
+    (setf (bsize layer) (nv* (vxy_ (v* (size layer) (tile-size tileset))) 0.5))))
 
 (defmethod stage ((layer tile-layer) (area staging-area))
   (when (tile-data layer)
@@ -85,7 +85,7 @@
       (resize (tilemap layer) nw nh))))
 
 (defmethod (setf size) :after (value (layer tile-layer))
-  (setf (bsize layer) (v* value (* (tile-size layer) 0.5))))
+  (setf (bsize layer) (nv* (vxy_ (v* value (tile-size layer))) 0.5)))
 
 (defmacro %with-layer-xy ((layer location) &body body)
   `(let ((x (floor (+ (- (vx ,location) (vx (location ,layer))) (vx (bsize ,layer))) (vx (tile-size layer))))
