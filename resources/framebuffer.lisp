@@ -118,9 +118,28 @@
 (defmethod blit-to-screen ((framebuffer framebuffer))
   (gl:bind-framebuffer :read-framebuffer (gl-name framebuffer))
   (gl:bind-framebuffer :draw-framebuffer 0)
-  (%gl:blit-framebuffer 0 0 (width framebuffer) (height framebuffer) 0 0 (width *context*) (height *context*)
-                        (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
-                        (cffi:foreign-enum-value '%gl:enum :nearest)))
+  ;; Compute offsets so that the blit always happens to the center of the screen.
+  (let* ((x- 0) (x+ (width *context*))
+         (y- 0) (y+ (height *context*))
+         (src-aspect (/ (width framebuffer) (height framebuffer)))
+         (dst-aspect (/ (width *context*) (height *context*))))
+    (cond ((< src-aspect dst-aspect) ;; Capped by height
+           (gl:clear :color-buffer)
+           (let ((width (* (width framebuffer) (/ (height *context*) (height framebuffer)))))
+             (setf x- (truncate (- (width *context*) width) 2))
+             (setf x+ (+ x- width))))
+          ((< dst-aspect src-aspect) ;; Capped by width
+           (gl:clear :color-buffer)
+           (let ((height (* (height framebuffer) (/ (width *context*) (width framebuffer)))))
+             (setf y- (truncate (- (height *context*) height) 2))
+             (setf y+ (+ y- height)))))
+    ;; TODO: cache this somehow.
+    (let ((tex (second (find :color-attachment0 (attachments framebuffer) :key #'first))))
+      (%gl:blit-framebuffer 0 0 (width framebuffer) (height framebuffer) x- y- x+ y+
+                            (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
+                            (case (mag-filter tex)
+                              (:nearest (cffi:foreign-enum-value '%gl:enum :nearest))
+                              (T (cffi:foreign-enum-value '%gl:enum :linear)))))))
 
 (defgeneric capture (thing &key &allow-other-keys))
 (defmethod capture ((framebuffer framebuffer) &key (x 0) (y 0) (width (width framebuffer)) (height (height framebuffer))
