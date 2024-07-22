@@ -146,37 +146,37 @@
 (defmethod update-buffer-data ((buffer texture) (data (eql T)) &rest args)
   (apply #'update-buffer-data buffer (pixel-data buffer) args))
 
-(defmethod update-buffer-data ((buffer texture) (data vector) &key (x 0) (y 0) (z 0) (level 0) (width (width buffer)) (height (height buffer)) (depth (depth buffer))
+(defmethod update-buffer-data ((buffer texture) data &key (x 0) (y 0) (z 0) (level 0) (width (width buffer)) (height (height buffer)) (depth (depth buffer))
                                                                    (pixel-format (pixel-format buffer)) (pixel-type (pixel-type buffer)))
   #-elide-context-current-checks
   (check-context-current)
-  (cffi:with-pointer-to-vector-data (ptr data)
+  (mem:with-memory-region (region data)
     (gl:bind-texture (target buffer) (gl-name buffer))
     (ecase (target buffer)
       (:texture-1d
-       (%gl:tex-sub-image-1d :texture-1d level x width pixel-format pixel-type ptr))
+       (%gl:tex-sub-image-1d :texture-1d level x width pixel-format pixel-type (mem:memory-region-pointer region)))
       ((:texture-2d :texture-1d-array)
-       (%gl:tex-sub-image-2d (target buffer) level x y width height pixel-format pixel-type ptr))
+       (%gl:tex-sub-image-2d (target buffer) level x y width height pixel-format pixel-type (mem:memory-region-pointer region)))
       ((:texture-3d :texture-2d-array)
-       (%gl:tex-sub-image-3d (target buffer) level x y z width height depth pixel-format pixel-type ptr)))))
+       (%gl:tex-sub-image-3d (target buffer) level x y z width height depth pixel-format pixel-type (mem:memory-region-pointer region))))))
 
 (defmethod resize-buffer-data ((buffer texture) (data (eql T)) &rest args)
   (apply #'resize-buffer-data buffer (pixel-data buffer) args))
 
-(defmethod resize-buffer-data ((buffer texture) (data vector) &key (level 0) (width (width buffer)) (height (height buffer)) (depth (depth buffer))
+(defmethod resize-buffer-data ((buffer texture) data &key (level 0) (width (width buffer)) (height (height buffer)) (depth (depth buffer))
                                                                    (pixel-format (pixel-format buffer)) (pixel-type (pixel-type buffer)))
   #-elide-context-current-checks
   (check-context-current)
   (let ((internal-format (cffi:foreign-enum-value '%gl:enum (internal-format buffer))))
-    (cffi:with-pointer-to-vector-data (ptr data)
+    (mem:with-memory-region (region data)
       (gl:bind-texture (target buffer) (gl-name buffer))
       (ecase (target buffer)
         (:texture-1d
-         (%gl:tex-image-1d (target buffer) level internal-format width 0 pixel-format pixel-type ptr))
+         (%gl:tex-image-1d (target buffer) level internal-format width 0 pixel-format pixel-type (mem:memory-region-pointer region)))
         ((:texture-2d :texture-1d-array)
-         (%gl:tex-image-2d (target buffer) level internal-format width height 0 pixel-format pixel-type ptr))
+         (%gl:tex-image-2d (target buffer) level internal-format width height 0 pixel-format pixel-type (mem:memory-region-pointer region)))
         ((:texture-3d :texture-2d-array)
-         (%gl:tex-image-3d (target buffer) level internal-format width height depth 0 pixel-format pixel-type ptr))))))
+         (%gl:tex-image-3d (target buffer) level internal-format width height depth 0 pixel-format pixel-type (mem:memory-region-pointer region)))))))
 
 (defmethod print-object ((texture texture) stream)
   (print-unreadable-object (texture stream :type T :identity T)
