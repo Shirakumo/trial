@@ -30,7 +30,8 @@
                (:file "tilemap")
                (:file "shader")
                (:file "post-processing")
-               (:file "culling"))
+               (:file "culling")
+               (:file "letterbox"))
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
                :alloy-constraint
