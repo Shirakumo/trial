@@ -276,7 +276,7 @@
                (unwind-protect (finalize main)
                  (glfw:shutdown))))))
     #+darwin
-    (tmt:with-body-in-main-thread ()
+    (trivial-main-thread:with-body-in-main-thread (:blocking T)
       (handler-bind ((error #'trial:standalone-error-handler))
         (body)))
     #-darwin
