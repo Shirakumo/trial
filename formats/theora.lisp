@@ -34,19 +34,22 @@
                      :height height
                      :min-filter :linear
                      :mag-filter :linear
-                     :internal-format :r8)
+                     :internal-format :r8
+                     :dependencies (list (resource generator :yuv-data)))
     (ensure-instance (resource generator :u) 'texture
                      :width uv-width
                      :height uv-height
                      :min-filter :linear
                      :mag-filter :linear
-                     :internal-format :r8)
+                     :internal-format :r8
+                     :dependencies (list (resource generator :yuv-data)))
     (ensure-instance (resource generator :v) 'texture
                      :width uv-width
                      :height uv-height
                      :min-filter :linear
                      :mag-filter :linear
-                     :internal-format :r8)
+                     :internal-format :r8
+                     :dependencies (list (resource generator :yuv-data)))
     (generate-resources 'mesh-loader (make-rectangle-mesh 1.0 (/ height width))
                         :resource (resource generator :mesh))
     file))
