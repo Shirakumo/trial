@@ -47,6 +47,9 @@
 (defmethod transcode (source source-type target (target-type string) &rest args &key &allow-other-keys)
   (apply #'transcode source source-type target (normalize-file-type target-type) args))
 
+(defmethod transcode :before (source (source-type symbol) target (target-type symbol) &key &allow-other-keys)
+  (v:info :trial.resource "Transcoding ~a to ~a" source target-type))
+
 (defmethod transcode (source (source-type symbol) target (target-type symbol) &key &allow-other-keys)
   (let ((types (list-eql-specializers #'transcode 1 3)))
     (error "Don't know how to transcode from ~a to ~a~%known transcoder types are:~%~{  ~a~%~}Did you load the respective format system?"
