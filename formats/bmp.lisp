@@ -26,4 +26,6 @@
                                          (:rgba 4)))
       (org.shirakumo.bmp:write-bmp bmp path))))
 
+(define-native-image-transcoder :bmp)
+
 ;; TODO: ICO to decode to mips? maybe?

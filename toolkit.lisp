@@ -590,12 +590,15 @@
            (c2mop:finalize-inheritance class))
          (c2mop:class-prototype class)))))
 
-(defun list-eql-specializers (function arg)
+(defun list-eql-specializers (function &rest args)
   (delete-duplicates
    (loop for method in (c2mop:generic-function-methods function)
-         for spec = (nth arg (c2mop:method-specializers method))
-         when (typep spec 'c2mop:eql-specializer)
-         collect (c2mop:eql-specializer-object spec))))
+         for spec = (loop for arg in args
+                          collect (nth arg (c2mop:method-specializers method)))
+         when (loop for arg in spec
+                    thereis (typep arg 'c2mop:eql-specializer))
+         collect (loop for arg in spec
+                       collect (if (typep arg 'c2mop:eql-specializer) (c2mop:eql-specializer-object arg) arg)))))
 
 (defun maybe-finalize-inheritance (class)
   (let ((class (etypecase class

@@ -31,3 +31,5 @@
     (declare (ignore x y z d))
     (let ((canvas (skippy:make-canvas :width w :height h :image-data (pixel-data source))))
       (skippy:save-canvas canvas path))))
+
+(define-native-image-transcoder :gif)

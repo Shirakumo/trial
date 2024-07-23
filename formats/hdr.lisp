@@ -18,3 +18,5 @@
                                                 :data (pixel-data source)
                                                 :exposure exposure)))
       (3b-hdr:write-hdr-file path file :if-exists :supersede))))
+
+(define-native-image-transcoder :hdr)

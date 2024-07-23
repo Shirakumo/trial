@@ -63,3 +63,5 @@
              (length data)))
           (depot:write-to tx data)
           path)))))
+
+(define-native-image-transcoder :raw)

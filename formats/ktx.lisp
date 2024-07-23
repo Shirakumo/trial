@@ -21,4 +21,6 @@
                 :width w :height (or h 0) :depth (or d 0))))
       (org.shirakumo.ktx:write-file ktx target))))
 
+(define-native-image-transcoder :ktx)
+
 ;; TODO: ICO to decode to mips? maybe?

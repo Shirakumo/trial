@@ -25,3 +25,5 @@
                  (3 :rgb)
                  (4 :rgba))))
         (qoi:encode stream (flip-image-vertically (pixel-data source) w h c) w h c 1)))))
+
+(define-native-image-transcoder :qoi)

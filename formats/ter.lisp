@@ -14,3 +14,5 @@
     (declare (ignore x y z d))
     (let ((terrain (apply #'make-instance 'terrable:terrain :width w :height h :data (pixel-data source) args)))
       (terrable:write-terrain terrain path))))
+
+(define-native-image-transcoder :ter)

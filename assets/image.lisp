@@ -42,9 +42,7 @@
   (apply #'save-image source path (kw (pathname-type path)) args))
 
 (defmethod save-image (source target (type string) &rest args)
-  (apply #'save-image source target
-         (or (cl-ppcre:register-groups-bind (type) ("^[^/]*/([^+/]+)" type) (kw type)) (kw type))
-         args))
+  (apply #'save-image source target (normalize-file-type type) args))
 
 (defmethod save-image ((region memory-region) target type &rest args)
   (let ((vector (make-array (memory-region-size region) :element-type '(unsigned-byte 8))))
@@ -106,13 +104,16 @@
              :swizzle (or swizzle source-swizzle (infer-swizzle-format (pixel-format (first sources))))
              (remf* texture-args :type :target :swizzle :internal-format :resource :texture-class)))))
 
-(defmethod compile-resources ((generator image-loader) sources &key (source-file-type "png"))
-  (loop for out in (enlist sources)
-        for in = (make-pathname :type source-file-type :defaults out)
-        do (unless (string-equal source-file-type (pathname-type out))
-             (run "convert" in out))
-           (when (string-equal "png" (pathname-type out))
-             (run "optipng" "-o" "5" "-clobber" "-out" out in))))
+(defmethod compile-resources ((generator image-loader) sources &rest args &key (source-file-type "png"))
+  (loop for target in (enlist sources)
+        for source = (make-pathname :type source-file-type :defaults target)
+        do (when (and (probe-file source)
+                      (trial:recompile-needed-p target source))
+             (apply #'transcode source T target T args))))
+
+(defmacro define-native-image-transcoder (type)
+  `(defmethod transcode (source (source-type symbol) target (target-type (eql ,type)) &rest args &key &allow-other-keys)
+     (apply #'save-image (load-image source source-type) target target-type args)))
 
 ;; FIXME: Once texture loaded, unload sources to free static memory!
 #++

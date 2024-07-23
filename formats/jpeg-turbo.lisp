@@ -28,4 +28,7 @@
 (defmethod save-image (source target (type (eql :jpg)) &rest args)
   (apply #'save-image source target :jpeg args))
 
+(define-native-image-transcoder :jpeg)
+(define-native-image-transcoder :jpg)
+
 (trial::dont-deploy org.shirakumo.fraf.jpeg.cffi:libjpeg)

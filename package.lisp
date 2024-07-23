@@ -1568,7 +1568,8 @@
    #:resource
    #:compiled-generator
    #:compile-resources
-   #:recompile-needed-p)
+   #:recompile-needed-p
+   #:transcode)
   ;; save-data.lisp
   (:export
    #:unsupported-save-version

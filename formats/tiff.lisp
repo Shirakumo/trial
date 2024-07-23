@@ -30,3 +30,5 @@
                                                                                (:rgba 4))
                                                           :data (pixel-data source))))
       (retrospectiff:write-tiff-file path image :if-exists :supersede))))
+
+(define-native-image-transcoder :tiff)

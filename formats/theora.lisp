@@ -93,3 +93,12 @@
          (implement!)))
   (setf (clock video) (float to 0f0))
   (setf (frame video) 0))
+
+(defmethod trial:transcode (source (source-type symbol) target (target-type (eql :ogv)) &key (quality 5) (audio-quality quality))
+  (run "ffmpeg" "-hide_banner" "-loglevel" "error"
+       "-i" source
+       "-codec:v" "libtheora"
+       "-codec:a" "libvorbis"
+       "-qscale:v" quality
+       "-qscale:a" audio-quality
+       "-y" target))
