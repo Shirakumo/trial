@@ -61,3 +61,7 @@
                                      :width w :height h
                                      :image-data (flip-image-vertically (pixel-data source) w h channels))
                       path))))
+
+(defmethod transcode (source (source-type symbol) target (target-type (eql :png)) &rest args &key &allow-other-keys)
+  (apply #'save-image (load-image source source-type) target target-type args)
+  (ignore-errors (run "optipng" "-o" "5" "-clobber" "-out" target target)))
