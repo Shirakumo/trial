@@ -21,6 +21,10 @@
         ((not (slot-boundp clip 'next-clip))
          (setf (loop-p clip) T))))
 
+(defmethod stage :after ((clip clip) (area staging-area))
+  (loop for (_ . trigger) across (triggers clip)
+        do (stage trigger area)))
+
 (defmethod loop-p ((clip clip))
   (eq clip (next-clip clip)))
 

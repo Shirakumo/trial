@@ -287,8 +287,10 @@
   (format stream "~&~%Skeleton:~%")
   (describe-skeleton (skeleton entity) stream))
 
-(defmethod observe-load-state ((entity animation-controller) (asset model) (state (eql :loaded)) (area staging-area))
-  (setf (model entity) asset))
+(defmethod observe-load-state :before ((entity animation-controller) (asset model) (state (eql :loaded)) (area staging-area))
+  (setf (model entity) asset)
+  (dolist (clip (list-clips asset))
+    (stage clip area)))
 
 (defmethod (setf model) :after ((asset asset) (entity animation-controller))
   (when (loaded-p asset)
