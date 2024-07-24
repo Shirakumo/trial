@@ -7,7 +7,9 @@
    (end-time :initform 0f0 :accessor end-time)
    (next-clip :accessor next-clip)
    (blocking-p :initform NIL :accessor blocking-p)
-   (blend-duration :initarg :blend-duration :initform 0.2f0 :accessor blend-duration)))
+   (blend-duration :initarg :blend-duration :initform 0.2f0 :accessor blend-duration)
+   (triggers :initform #() :accessor triggers)
+   (next-trigger :initform 0 :accessor next-trigger)))
 
 (defmethod shared-initialize :after ((clip clip) slots &key tracks (loop-p NIL loop-pp) (next-clip NIL next-clip-p))
   (when tracks
@@ -127,6 +129,26 @@
                  do (setf ,accessor (sample ,accessor track time :loop-p loop-p)))
            time)
          0.0)))
+
+(defmethod sample :after (target (clip clip) time &key)
+  (let* ((time (fit-to-clip clip time))
+         (triggers (triggers clip))
+         (next-idx (the (unsigned-byte 16) (next-trigger clip)))
+         (next (if (<= (length triggers) next-idx)
+                   most-positive-single-float
+                   (car (aref triggers next-idx)))))
+    (declare (type single-float time next))
+    (declare (type simple-vector triggers))
+    (when (< next time)
+      (loop for i of-type (unsigned-byte 16) from next-idx below (length triggers)
+            for (trigger-time . trigger) = (aref triggers i)
+            do (cond ((< trigger-time time)
+                      (activate-trigger target trigger))
+                     (T
+                      (setf (next-trigger clip) i)
+                      (return)))
+            finally (setf (next-trigger clip)
+                          (if (loop-p clip) 0 (length triggers)))))))
 
 (%define-sampler-method sequences:sequence (elt thing name))
 (%define-sampler-method vector (aref thing name))

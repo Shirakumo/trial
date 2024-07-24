@@ -5,7 +5,10 @@
    (#:gltf #:org.shirakumo.fraf.gltf)
    (#:sequences #:org.shirakumo.trivial-extensible-sequences)
    (#:v #:org.shirakumo.verbose))
-  (:export))
+  (:export
+   #:translate-track-pointer
+   #:translate-effect
+   #:define-trigger-translation))
 (in-package #:org.shirakumo.fraf.trial.gltf)
 
 (defun gltf-name (thing)
@@ -105,6 +108,15 @@
                 :slot-name pointer
                 :name (name track)))
 
+(defgeneric translate-effect (name effect gltf))
+
+(defmethod translate-effect ((name string) effect gltf)
+  (translate-effect (lispify-name name) effect gltf))
+
+(defmethod translate-effect (name effect gltf)
+  (v:warn :trial.gltf "Unknown effect name: ~s, ignoring." name)
+  NIL)
+
 ;; FIXME: How do we actually translate the pointer to the corresponding lisp-side object slot?
 ;;        it's unlikely to be what's pointed to by the json pointer, since objects are transformed
 ;;        to more fitting native representations that should be manipulated instead.
@@ -130,7 +142,7 @@
                 (load-animation-track track sampler))
                (T (v:warn :trial.gltf "Unknown animation channel target path: ~s on ~s, ignoring."
                           (gltf:path (gltf:target channel)) (gltf-name animation)))))
-    ;; KLUDGE: extra handling for custom properties
+    ;; Extra handling for custom properties
     (let* ((extras (gltf:extensions animation))
            (trial (when extras (gethash "SHIRAKUMO_trial" extras)))
            (tracks (when trial (gethash "extraTracks" trial))))
@@ -152,6 +164,11 @@
         (setf (next-clip clip) (trial:lispify-name (gltf:next animation)))
         (setf (loop-p clip) (gltf:loop-p animation)))
     (setf (blend-duration clip) (gltf:blend-duration animation))
+    (setf (trial::triggers clip)
+          (coerce (loop for effect across (gltf:effects animation)
+                        for trigger = (translate-effect (gltf:name effect) effect gltf)
+                        when trigger collect trigger)
+                  'simple-vector))
     clip))
 
 (defun load-clips (gltf &optional (table (make-hash-table :test 'equal)))

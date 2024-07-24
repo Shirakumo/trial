@@ -243,3 +243,14 @@
 (define-transfer checkpoint-trigger spawn-point)
 
 (defmethod activate-trigger (a (trigger checkpoint-trigger)))
+
+(defclass audio-trigger (type-filtered-trigger-volume)
+  ((audio :initarg :audio :accessor audio)))
+
+(define-transfer audio-trigger audio)
+
+(defmethod stage :after ((trigger audio-trigger) (area staging-area))
+  (stage (audio trigger) area))
+
+(defmethod activate-trigger (thing (trigger audio-trigger))
+  (play (audio trigger) thing))
