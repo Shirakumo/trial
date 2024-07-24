@@ -211,7 +211,7 @@
 (defmethod trial:play ((voice voice) target)
   (harmony:play voice :location target))
 
-(defmethod trial:play ((voice voice) (target entity))
+(defmethod trial:play ((voice voice) (target trial:entity))
   (let ((vec (vec3)))
     (declare (dynamic-extent vec))
     (trial:global-location target vec)
@@ -230,7 +230,7 @@
   (mixed:seek (voice voice) to :by :second))
 
 (defmethod trial:fade-to (volume (voice voice) &rest args &key &allow-other-keys)
-  (apply #'harony:transition (voice voice) volume args))
+  (apply #'harmony:transition (voice voice) volume args))
 
 (defmethod trial:clone ((voice voice) &key)
   (error "FIXME: implement this."))

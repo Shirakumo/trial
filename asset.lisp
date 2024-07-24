@@ -199,6 +199,8 @@
   (let ((base (pool-path pool #p""))
         (default-options (rest (find T attributes :key #'first)))
         (exclude (enlist exclude)))
+    (when debug
+      (print (pool-path pool pathname)))
     (loop for path in (directory (pool-path pool pathname) :resolve-symlinks NIL)
           unless (loop for exclusion in exclude
                        thereis (pathname-match-p path exclusion))

@@ -167,7 +167,7 @@
     (setf (trial::triggers clip)
           (coerce (loop for effect across (gltf:effects animation)
                         for trigger = (translate-effect (gltf:name effect) effect gltf)
-                        when trigger collect trigger)
+                        when trigger collect (cons (float (gltf:start effect) 0f0) trigger))
                   'simple-vector))
     clip))
 
