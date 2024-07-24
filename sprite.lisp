@@ -28,7 +28,7 @@
    (vertex-array :initform NIL)))
 
 (defun make-sprite-frame-mesh (frames)
-  (with-mesh-construction (v finalize (location uv))
+  (with-mesh-construction (v finalize (location uv) NIL)
     (loop for frame across frames
           for xy = (xy frame)
           for uv = (uv frame)
