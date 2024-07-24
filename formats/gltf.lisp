@@ -164,10 +164,13 @@
         (setf (next-clip clip) (trial:lispify-name (gltf:next animation)))
         (setf (loop-p clip) (gltf:loop-p animation)))
     (setf (blend-duration clip) (gltf:blend-duration animation))
-    (setf (trial::triggers clip)
+    (setf (trial::effects clip)
           (coerce (loop for effect across (gltf:effects animation)
-                        for trigger = (translate-effect (gltf:name effect) effect gltf)
-                        when trigger collect (cons (float (gltf:start effect) 0f0) trigger))
+                        for object = (translate-effect (gltf:name effect) effect gltf)
+                        when object collect (trial::make-animation-effect
+                                             (float (gltf:start effect) 0f0)
+                                             (float (or (gltf:end effect) (gltf:start effect)) 0f0)
+                                             object))
                   'simple-vector))
     clip))
 

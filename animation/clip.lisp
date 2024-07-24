@@ -1,5 +1,13 @@
 (in-package #:org.shirakumo.fraf.trial)
 
+(defstruct (animation-effect
+            (:constructor make-animation-effect (start end object))
+            (:copier NIL)
+            (:predicate NIl))
+  (start 0f0 :type single-float)
+  (end 0f0 :type single-float)
+  (object T :type T))
+
 (defclass clip (sequences:sequence standard-object)
   ((name :initarg :name :initform NIL :accessor name)
    (tracks :initform #() :accessor tracks)
@@ -8,8 +16,8 @@
    (next-clip :accessor next-clip)
    (blocking-p :initform NIL :accessor blocking-p)
    (blend-duration :initarg :blend-duration :initform 0.2f0 :accessor blend-duration)
-   (triggers :initform #() :accessor triggers)
-   (next-trigger :initform 0 :accessor next-trigger)))
+   (effects :initform #() :accessor effects)
+   (last-sample :initform 0f0 :accessor last-sample)))
 
 (defmethod shared-initialize :after ((clip clip) slots &key tracks (loop-p NIL loop-pp) (next-clip NIL next-clip-p))
   (when tracks
@@ -22,8 +30,8 @@
          (setf (loop-p clip) T))))
 
 (defmethod stage :after ((clip clip) (area staging-area))
-  (loop for (_ . trigger) across (triggers clip)
-        do (stage trigger area)))
+  (loop for effect across (effects clip)
+        do (stage (animation-effect-object effect) area)))
 
 (defmethod loop-p ((clip clip))
   (eq clip (next-clip clip)))
@@ -136,23 +144,20 @@
 
 (defmethod sample :after (target (clip clip) time &key)
   (let* ((time (fit-to-clip clip time))
-         (triggers (triggers clip))
-         (next-idx (the (unsigned-byte 16) (next-trigger clip)))
-         (next (if (<= (length triggers) next-idx)
-                   most-positive-single-float
-                   (car (aref triggers next-idx)))))
-    (declare (type single-float time next))
-    (declare (type simple-vector triggers))
-    (when (< next time)
-      (loop for i of-type (unsigned-byte 16) from next-idx below (length triggers)
-            for (trigger-time . trigger) = (aref triggers i)
-            do (cond ((< trigger-time time)
-                      (activate-trigger target trigger))
-                     (T
-                      (setf (next-trigger clip) i)
-                      (return)))
-            finally (setf (next-trigger clip)
-                          (if (loop-p clip) 0 (length triggers)))))))
+         (last (last-sample clip)))
+    (flet ((in-range-p (effect start end)
+             (and (<= start (animation-effect-end effect))
+                  (<= (animation-effect-start effect) end))))
+      (if (< last time)
+          (loop for effect across (effects clip)
+                do (when (in-range-p effect last time)
+                     (activate-trigger time (animation-effect-object effect))))
+          ;; We wrapped around, so process all effects between [last, end] and [0, time]
+          (loop for effect across (effects clip)
+                do (when (or (in-range-p effect last most-positive-single-float)
+                             (in-range-p effect most-negative-single-float time))
+                     (activate-trigger time (animation-effect-object effect))))))
+    (setf (last-sample clip) time)))
 
 (%define-sampler-method sequences:sequence (elt thing name))
 (%define-sampler-method vector (aref thing name))
