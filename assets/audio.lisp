@@ -16,6 +16,9 @@
         (error "Don't know how to load from ~a~%known types are:~%  ~a~%Did you load the respective format system?"
                type types))))
 
+;;;; Protocol functions for audio:
+;; location velocity play stop fade-to done-p duration seek
+
 (defclass audio-loader (compiled-generator)
   ())
 

@@ -146,19 +146,10 @@
     location))
 
 (defmethod (setf mixed:location) ((location math:vec2) (voice harmony:voice))
-  (let ((list (make-array 2 :element-type 'single-float)))
-    (declare (dynamic-extent list))
-    (setf (aref list 0) (math:vx2 location))
-    (setf (aref list 1) (math:vy2 location))
-    (setf (mixed:location voice) list)))
+  (setf (mixed:location voice) (math:varr2 location)))
 
 (defmethod (setf mixed:location) ((location math:vec3) (voice harmony:voice))
-  (let ((list (make-array 3 :element-type 'single-float)))
-    (declare (dynamic-extent list))
-    (setf (aref list 0) (math:vx3 location))
-    (setf (aref list 1) (math:vy3 location))
-    (setf (aref list 2) (math:vy3 location))
-    (setf (mixed:location voice) list)))
+  (setf (mixed:location voice) (math:varr3 location)))
 
 (defmethod mixed:velocity ((voice voice))
   (mixed:velocity (voice voice)))
@@ -170,19 +161,10 @@
     velocity))
 
 (defmethod (setf mixed:velocity) ((velocity math:vec2) (voice harmony:voice))
-  (let ((list (make-array 2 :element-type 'single-float)))
-    (declare (dynamic-extent list))
-    (setf (aref list 0) (math:vx2 velocity))
-    (setf (aref list 1) (math:vy2 velocity))
-    (setf (mixed:velocity voice) list)))
+  (setf (mixed:velocity voice) (math:varr2 velocity)))
 
 (defmethod (setf mixed:velocity) ((velocity math:vec3) (voice harmony:voice))
-  (let ((list (make-array 3 :element-type 'single-float)))
-    (declare (dynamic-extent list))
-    (setf (aref list 0) (math:vx3 velocity))
-    (setf (aref list 1) (math:vy3 velocity))
-    (setf (aref list 2) (math:vy3 velocity))
-    (setf (mixed:velocity voice) list)))
+  (setf (mixed:velocity voice) (math:varr3 velocity)))
 
 (defmethod mixed:done-p ((voice voice))
   (mixed:done-p (voice voice)))
@@ -213,6 +195,42 @@
 
 (defmethod harmony:transition ((voice voice) to &rest args &key &allow-other-keys)
   (apply #'harmony:transition (voice voice) to args))
+
+(defmethod trial:location ((voice voice))
+  (math:vec3 (mixed:location (voice voice))))
+
+(defmethod (setf trial:location) ((location math:vec3) (voice voice))
+  (setf (mixed:location voice) (math:varr3 location)))
+
+(defmethod trial:velocity ((voice voice))
+  (math:vec3 (mixed:velocity (voice voice))))
+
+(defmethod (setf trial:velocity) ((velocity math:vec3) (voice voice))
+  (setf (mixed:velocity voice) (math:varr3 velocity)))
+
+(defmethod trial:play ((voice voice) target)
+  (harmony:play voice :location target))
+
+(defmethod trial:play ((voice voice) (target entity))
+  (let ((vec (vec3)))
+    (declare (dynamic-extent vec))
+    (trial:global-location target vec)
+    (harmony:play voice :location (math:varr3 vec))))
+
+(defmethod trial:duration ((voice voice))
+  (mixed:duration (voice voice)))
+
+(defmethod trial:stop ((voice voice))
+  (harmony:stop (voice voice)))
+
+(defmethod trial:done-p ((voice voice))
+  (mixed:done-p (voice voice)))
+
+(defmethod trial:seek ((voice voice) to)
+  (mixed:seek (voice voice) to :by :second))
+
+(defmethod trial:fade-to (volume (voice voice) &rest args &key &allow-other-keys)
+  (apply #'harony:transition (voice voice) volume args))
 
 (defmethod trial:clone ((voice voice) &key)
   (error "FIXME: implement this."))

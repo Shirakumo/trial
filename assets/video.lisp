@@ -16,6 +16,9 @@
         (error "Don't know how to load from ~a~%known types are:~%  ~a~%Did you load the respective format system?"
                type types))))
 
+;;;; Protocol functions for video:
+;; update done-p duration seek
+
 (defclass video-loader (compiled-generator)
   ())
 
