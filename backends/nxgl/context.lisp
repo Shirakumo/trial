@@ -164,9 +164,11 @@
 (defmethod height ((context context))
   (nxgl:height (pointer context)))
 
-(defun launch-with-context (&optional main &rest initargs)
+(deploy:define-hook (:boot nxgl) ()
   (setf %gl:*gl-get-proc-address* #'nxgl:proc-address)
-  (nxgl:init)
+  (nxgl:init))
+
+(defun launch-with-context (&optional main &rest initargs)
   (let ((main (apply #'make-instance main initargs)))
     (start main)
     (trial:rename-thread "input-loop")
@@ -189,10 +191,10 @@
   (nxgl:username))
 
 (defun rename-thread (name)
-  (nxgl:set-thread-name (cffi:null-pointer name)))
+  (nxgl:set-thread-name (cffi:null-pointer) name))
 
 (defun logfile ()
-  NIL)
+  #p"tmp:/trial.log")
 
 (defun temdir ()
   #p"tmp:/")

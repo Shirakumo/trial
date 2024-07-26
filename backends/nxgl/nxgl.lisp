@@ -15,7 +15,8 @@
    #:poll
    #:proc-address
    #:open-url
-   #:username))
+   #:username
+   #:set-thread-name))
 
 (in-package #:org.shirakumo.fraf.nxgl)
 
@@ -67,7 +68,7 @@
 (cffi:defcfun (width "nxgl_width") :int
   (context :pointer))
 
-(cffi:defcfun (width "nxgl_height") :int
+(cffi:defcfun (height "nxgl_height") :int
   (context :pointer))
 
 (cffi:defcfun (poll "nxgl_poll") :int
