@@ -1,5 +1,8 @@
 (in-package #:org.shirakumo.fraf.trial)
 
+(defgeneric apply-transforms (object)
+  (:method-combination progn :most-specific-last))
+
 (defgeneric clear (container))
 (defgeneric enter (thing container))
 (defgeneric leave (thing container))

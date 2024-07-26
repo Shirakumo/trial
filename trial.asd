@@ -41,7 +41,7 @@
                (:file "event-loop" :depends-on ("package" "container" "queue" "toolkit"))
                (:file "features" :depends-on ("package"))
                (:file "flicker" :depends-on ("package"))
-               (:file "fps" :depends-on ("package" ("assets" "mesh") "text" "loader" ("formats" "raw")))
+               (:file "fps" :depends-on ("package" ("assets" "mesh") "text" "loader" "texture-source" ("formats" "raw")))
                (:file "gamepad" :depends-on ("package" "event-loop" "toolkit"))
                (:file "geometry" :depends-on ("package" "toolkit" "type-info" "static-vector" ("resources" "vertex-array") ("resources" "vertex-buffer")))
                (:file "geometry-shapes" :depends-on ("package" "geometry" "asset-pool" ("assets" "mesh")))

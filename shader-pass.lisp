@@ -119,8 +119,6 @@
              (texture-port
               (setf (unit-id port) (decf texture-index))))))
 
-(defgeneric apply-transforms (object)
-  (:method-combination progn :most-specific-last))
 (defgeneric bind-textures (object))
 (defgeneric object-renderable-p (object pass))
 (defgeneric compute-shader (shader-type pass object))
