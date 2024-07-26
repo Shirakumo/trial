@@ -109,6 +109,8 @@
   (dolist (sub (c2mop:class-direct-subclasses class))
     (apply-class-changes sub)))
 
+(define-global +current-time-units-per-second+ NIL)
+
 (declaim (inline current-time))
 (defun current-time ()
   (declare (optimize speed (safety 0)))
@@ -116,7 +118,11 @@
     (let* ((s (logand s (1- (expt 2 62))))
            (ms (logand ms (1- (expt 2 62)))))
       (declare (type (unsigned-byte 62) s ms))
-      (+ s (* ms (load-time-value (coerce (/ org.shirakumo.precise-time:MONOTONIC-TIME-UNITS-PER-SECOND) 'double-float)))))))
+      (let ((inv (or +current-time-units-per-second+
+                     (setf +current-time-units-per-second+
+                           (coerce (/ org.shirakumo.precise-time:MONOTONIC-TIME-UNITS-PER-SECOND) 'double-float)))))
+        (declare (type double-float inv))
+        (+ s (* ms inv))))))
 
 (defmacro undefmethod (name &rest args)
   (flet ((lambda-keyword-p (symbol)
