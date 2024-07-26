@@ -144,7 +144,7 @@ void main(){
 
 (defun %debug-draw ()
   (or (node 'debug-draw T)
-      (enter-and-load (make-instance 'debug-draw) container +main+)))
+      (enter-and-load (make-instance 'debug-draw) (scene +main+) +main+)))
 
 (defmacro define-debug-draw-function ((name type) args &body body)
   (let ((type-id (ecase type (points 1) (lines 2) (text 3))))

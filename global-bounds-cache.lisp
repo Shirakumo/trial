@@ -35,7 +35,7 @@
 (defmethod global-radius (object)
   (let ((vec (vec3)))
     (declare (dynamic-extent vec))
-    (vlength (global-bsize entity vec))))
+    (vlength (global-bsize object vec))))
 
 ;; Default empty method to allow for a simple traversal of containers
 (defmethod invalidate-global-bounds-cache (object))
