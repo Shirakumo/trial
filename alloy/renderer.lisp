@@ -168,8 +168,10 @@
   ((target :initform NIL :accessor target)))
 
 (defmethod opengl:make-framebuffer ((renderer renderer))
-  (let* ((color (make-instance 'trial:texture :width (width *context*) :height (height *context*) :internal-format :rgba))
-         (depth (make-instance 'trial:texture :width (width *context*) :height (height *context*) :internal-format :depth-stencil))
+  (let* ((w (width trial:*context*))
+         (h (height trial:*context*))
+         (color (make-instance 'trial:texture :width w :height h :internal-format :rgba))
+         (depth (make-instance 'trial:texture :width w :height h :internal-format :depth-stencil))
          (framebuffer (make-instance 'framebuffer :bindings `((:color-attachment0 ,color)
                                                               (:depth-stencil-attachment ,depth)))))
     (vector-push-extend framebuffer (framebuffers renderer))
@@ -190,7 +192,7 @@
 
 (defmethod opengl:bind ((framebuffer trial:framebuffer))
   (setf (target framebuffer) (gl:get-integer :draw-framebuffer-binding))
-  (gl:bind-framebuffer :draw-framebuffer (gl-resource-name framebuffer))
+  (gl:bind-framebuffer :draw-framebuffer (trial:gl-name framebuffer))
   (gl:clear :color-buffer :depth-buffer :stencil-buffer))
 
 (defmethod opengl:blit-framebuffer ((framebuffer trial:framebuffer))
