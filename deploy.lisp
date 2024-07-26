@@ -1,8 +1,6 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (deploy:define-hook (:deploy trial) (directory)
-  #+asdf (asdf:clear-source-registry)
-  #+asdf (defun asdf:upgrade-asdf () NIL)
   (deploy:copy-directory-tree (pathname-utils:subdirectory (data-root) "lang") directory)
   (let ((default-keymap (merge-pathnames "keymap.lisp" (data-root))))
     (when (probe-file default-keymap)
@@ -38,6 +36,14 @@
   ;; Fix versions to eliminate source dependency
   (let ((version (version :app))) (defmethod version ((_ (eql :app))) version))
   (let ((version (version :trial))) (defmethod version ((_ (eql :trial))) version)))
+
+#+asdf
+(deploy:define-hook (:build neuter-asdf #.MOST-NEGATIVE-FIXNUM) ()
+  (asdf:clear-configuration)
+  (setf (fdefinition 'asdf:upgrade-asdf) (lambda ()))
+  (dolist (system (asdf:already-loaded-systems))
+    (asdf:register-immutable-system system)
+    (asdf:clear-system system)))
 
 (deploy:define-hook (:boot trial) ()
   (v:restart-global-controller)
