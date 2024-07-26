@@ -222,7 +222,7 @@
         (handler-case
             (cond (active
                    (f create-server :port port :dont-close T)
-                   (setf *inhibit-standalone-handler* T))
+                   (setf *inhibit-standalone-error-handler* T))
                   (T
                    (ignore-errors (f stop-server port))
                    (setf *inhibit-standalone-handler* NIL)))
