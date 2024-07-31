@@ -95,3 +95,39 @@
 
 (defclass audio-file (file-input-asset single-resource-asset audio-loader)
   ())
+
+(define-accessor-wrapper-methods location (audio-file (resource audio-file T)))
+(define-accessor-wrapper-methods velocity (audio-file (resource audio-file T)))
+(define-accessor-wrapper-methods stop (audio-file (resource audio-file T)))
+(define-accessor-wrapper-methods done-p (audio-file (resource audio-file T)))
+(define-accessor-wrapper-methods duration (audio-file (resource audio-file T)))
+
+(defmethod play ((file audio-file) target)
+  (play (resource file T) target))
+
+(defmethod fade-to (target (file audio-file) &rest args)
+  (apply #'fade-to target (resource file T) args))
+
+(defmethod seek ((file audio-file) target)
+  (seek (resource file T) target))
+
+(defclass sound-bank (file-input-asset multi-resource-asset audio-loader)
+  ())
+
+(defmethod generate-resources ((loader sound-bank) input &rest args)
+  (dolist (file input)
+    (with-new-value-restart (file) (use-value "Specify a new audio file.")
+      (with-retry-restart (retry "Retry loading the audio source.")
+        (apply #'load-audio file T :generator loader :resource (resource loader (pathname-name file))
+               args)))))
+
+(defmethod play ((file sound-bank) target)
+  (let ((chance 8f0))
+    (loop (loop for resource being the hash-values of (slot-value file 'resources)
+                do (when (and (done-p resource) (< (random chance) 1))
+                     (return-from play (play resource target))))
+          (setf chance (* 0.5f0 chance)))))
+
+(defmethod stop ((file sound-bank))
+  (loop for resource being the hash-values of (slot-value file 'resources)
+        do (stop resource)))

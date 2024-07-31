@@ -181,7 +181,8 @@
    #:load-audio
    #:audio-loader
    #:audio-file
-   #:audio)
+   #:audio
+   #:sound-bank)
   ;; assets/environment-map.lisp
   (:export
    #:environment-map-renderer
