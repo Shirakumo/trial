@@ -115,7 +115,7 @@
     (declare (dynamic-extent v))
     (reset-matrix *view-matrix*)
     (scale-by z z z *view-matrix*)
-    (translate (nv- (nv/ v (* 2 z)) (location camera)) *view-matrix*)))
+    (translate (nv- (nv/ v z) (location camera)) *view-matrix*)))
 
 (defmethod focal-point ((camera sidescroll-camera))
   (global-location (target camera)))
