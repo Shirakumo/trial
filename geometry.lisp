@@ -4,7 +4,8 @@
   '(location normal uv tangent color joints weights
     uv-0 uv-1 uv-2 uv-3
     joints-0 joints-1 joints-2 joints-3
-    weights-0 weights-1 weights-2 weights-3))
+    weights-0 weights-1 weights-2 weights-3
+    index))
 
 (defgeneric vertex-attribute-size (attribute))
 (defgeneric vertex-attribute-offset (attribute container))
@@ -19,6 +20,7 @@
 (defmethod vertex-attribute-size ((_ (eql 'tangent))) 3)
 (defmethod vertex-attribute-size ((_ (eql 'joints))) 4)
 (defmethod vertex-attribute-size ((_ (eql 'weights))) 4)
+(defmethod vertex-attribute-size ((_ (eql 'index))) 1)
 (defmethod vertex-attribute-size ((attr symbol))
   (let ((cat (vertex-attribute-category attr)))
     (if (eq cat attr)
@@ -65,7 +67,8 @@
    weights-2
    uv-3
    joints-3
-   weights-3))
+   weights-3
+   index))
 
 (defmethod vertex-attribute-stride ((attributes list))
   (loop for attribute in attributes
