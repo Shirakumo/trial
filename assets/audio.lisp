@@ -114,7 +114,7 @@
 (defclass sound-bank (file-input-asset multi-resource-asset audio-loader)
   ())
 
-(defmethod generate-resources ((loader sound-bank) input &rest args)
+(defmethod generate-resources ((loader sound-bank) (input list) &rest args)
   (dolist (file input)
     (with-new-value-restart (file) (use-value "Specify a new audio file.")
       (with-retry-restart (retry "Retry loading the audio source.")
