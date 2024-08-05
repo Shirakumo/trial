@@ -279,7 +279,6 @@
                   for (type resolution) in wrappers
                   collect `(defmethod ,name ((,type ,type))
                              (,name ,resolution))
-                  when (fboundp `(setf ,name))
                   collect `(defmethod (setf ,name) (,value (,type ,type))
                              (setf (,name ,resolution) ,value)))))
 
@@ -288,7 +287,6 @@
                   for (resolution type) in wrappers
                   collect `(defmethod ,name ((,type ,type))
                              (,resolution ,type))
-                  when (fboundp `(setf ,name))
                   collect `(defmethod (setf ,name) (,value (,type ,type))
                              (setf (,resolution ,type) ,value)))))
 
