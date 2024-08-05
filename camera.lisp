@@ -189,6 +189,8 @@
           (* 0.5 (+ f1 f2 f3 f4 f5 f6)))))))
 
 (defmethod in-view-p ((entity sized-entity) (camera 3d-camera))
+  T
+  #++
   (let ((box (make-box :bsize (bsize entity))))
     (declare (dynamic-extent box))
     (let* ((matrix (meye 4))
@@ -225,6 +227,8 @@
           (* 0.5 (+ f1 f2 f3 f4 f5 f6)))))))
 
 (defmethod in-view-p ((entity global-bounds-cached-entity) (camera 3d-camera))
+  T
+  #++
   (let ((box (make-box :bsize (global-bsize entity) :location (global-location entity))))
     (declare (dynamic-extent box))
     (!m* (primitive-transform box) *view-matrix* (primitive-local-transform box))
