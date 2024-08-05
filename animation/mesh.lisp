@@ -90,11 +90,17 @@
                                           :internal-format :rgb32f
                                           :min-filter :nearest
                                           :mag-filter :nearest
-                                          :width (* stride vertex-count)
-                                          :height morph-count
+                                          :width vertex-count
+                                          :height (* stride morph-count)
                                           :pixel-data data
                                           :pixel-type :float
                                           :pixel-format :rgb)))
+    ;; The layout is:
+    ;;   M1_LX1 M1_LY1 M1_LZ1 M1_LX2 M1_LY2 M1_LZ2 ...
+    ;;   M1_NX1 M1_NY1 M1_NZ1 ...
+    ;;   M1_U1  M1_V1  _      ...
+    ;;   M2_LX1 M2_LY1 M2_LZ1 ...
+    ;;   ...
     ;; Compact the targets into a slice per target
     (loop for target across (morphs mesh)
           for src-data = (vertex-data target)
@@ -104,10 +110,10 @@
                (error "Not all morph targets have the same number of vertices!"))
              (loop for attribute in attributes
                    for src-offset = (vertex-attribute-offset attribute target)
-                   for dst-offset = (vertex-attribute-offset attribute attributes)
+                   for dst-offset from 0 by (* 3 vertex-count)
                    do (when src-offset
                         (loop for src from src-offset below (length src-data) by src-stride
-                              for dst from dst-offset by stride
+                              for dst from dst-offset by 3
                               do (setf (aref data (+ slice dst 0)) (aref src-data (+ src 0)))
                                  (setf (aref data (+ slice dst 1)) (aref src-data (+ src 1)))
                                  (unless (eq attribute 'uv)
