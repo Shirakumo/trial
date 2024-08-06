@@ -145,11 +145,11 @@
       (setf (mixed:location voice) location))
     location))
 
-(defmethod (setf mixed:location) ((location math:vec2) (voice harmony:voice))
-  (setf (mixed:location voice) (math:varr2 location)))
+(defmethod (setf mixed:location) ((location math:vec2) thing)
+  (setf (mixed:location thing) (math:varr2 location)))
 
-(defmethod (setf mixed:location) ((location math:vec3) (voice harmony:voice))
-  (setf (mixed:location voice) (math:varr3 location)))
+(defmethod (setf mixed:location) ((location math:vec3) thing)
+  (setf (mixed:location thing) (math:varr3 location)))
 
 (defmethod mixed:velocity ((voice voice))
   (mixed:velocity (voice voice)))
@@ -160,11 +160,11 @@
       (setf (mixed:velocity voice) velocity))
     velocity))
 
-(defmethod (setf mixed:velocity) ((velocity math:vec2) (voice harmony:voice))
-  (setf (mixed:velocity voice) (math:varr2 velocity)))
+(defmethod (setf mixed:velocity) ((velocity math:vec2) thing)
+  (setf (mixed:velocity thing) (math:varr2 velocity)))
 
-(defmethod (setf mixed:velocity) ((velocity math:vec3) (voice harmony:voice))
-  (setf (mixed:velocity voice) (math:varr3 velocity)))
+(defmethod (setf mixed:velocity) ((velocity math:vec3) thing)
+  (setf (mixed:velocity thing) (math:varr3 velocity)))
 
 (defmethod mixed:done-p ((voice voice))
   (mixed:done-p (voice voice)))
@@ -212,8 +212,7 @@
   (harmony:play voice :location target))
 
 (defmethod trial:play ((voice voice) (target trial:entity))
-  (let ((vec (vec3)))
-    (declare (dynamic-extent vec))
+  (let ((vec (math:vec3)))
     (trial:global-location target vec)
     (harmony:play voice :location (math:varr3 vec))))
 

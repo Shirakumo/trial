@@ -121,10 +121,19 @@
         (apply #'load-audio file T :generator loader :resource (resource loader (pathname-name file))
                args)))))
 
+(defmethod load :after ((loader sound-bank))
+  (loop for resource being the hash-values of (slot-value loader 'resources)
+        do (load resource)))
+
 (defmethod play ((file sound-bank) target)
-  (let ((chance 8f0))
-    (loop (loop for resource being the hash-values of (slot-value file 'resources)
-                do (when (and (done-p resource) (< (random chance) 1))
+  (check-loaded file)
+  (let ((chance 8f0)
+        (resources (slot-value file 'resources)))
+    (when (= 0 (hash-table-count resources))
+      (error "Sound bank has no resources."))
+    (loop (loop for resource being the hash-values of resources
+                do (when (or (< chance 1)
+                             (and (done-p resource) (< (random chance) 1)))
                      (return-from play (play resource target))))
           (setf chance (* 0.5f0 chance)))))
 
