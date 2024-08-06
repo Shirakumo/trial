@@ -295,7 +295,7 @@
 (defmethod (setf model) :after ((asset asset) (entity animation-controller))
   (when (loaded-p asset)
     (setf (skeleton entity) (skeleton asset)))
-  (play (or (clip entity) T) entity))
+  #++(play (or (clip entity) T) entity))
 
 (defmethod find-clip (name (entity animation-controller) &optional (errorp T))
   (if (null (model entity))
