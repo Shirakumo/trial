@@ -54,7 +54,7 @@
            :report "Rebuild and retry"
            (build target)
            (test target)))
-    (setf (uiop:getenv "TRIAL_QUIT_AFTER_INIT") "false")))
+    (setf (uiop:getenv "TRIAL_QUIT_AFTER_INIT") NIL)))
 
 (defmethod test ((target (eql :linux)))
   (dolist (file (directory (merge-pathnames "bin/*.run" (asdf:system-source-directory (config :system)))))
