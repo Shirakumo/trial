@@ -165,6 +165,7 @@
   (nxgl:height (pointer context)))
 
 (deploy:define-hook (:boot nxgl) ()
+  (cffi:load-foreign-library 'nxgl:nxgl)
   (setf %gl:*gl-get-proc-address* #'nxgl:proc-address)
   (nxgl:init))
 
