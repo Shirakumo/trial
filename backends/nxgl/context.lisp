@@ -186,7 +186,7 @@
         (nxgl:shutdown)))))
 
 (defun self ()
-  #p"rom:/sbcl")
+  (make-pathname :device "rom" :name "sbcl"))
 
 (defun system-username ()
   (nxgl:username))
@@ -195,14 +195,14 @@
   (nxgl:set-thread-name (cffi:null-pointer) name))
 
 (defun logfile ()
-  #p"tmp:/trial.log")
+  (make-pathname :device "tmp" :name "trial" :type "log"))
 
 (defun temdir ()
-  #p"tmp:/")
+  (make-pathname :device "tmp" :directory '(:absolute)))
 
 (defun config-directory (&rest app-path)
   (declare (ignore app-path))
-  (apply #'pathname-utils:subdirectory #p"save:/" app-path))
+  (apply #'pathname-utils:subdirectory (make-pathname :device "save" :directory '(:absolute)) app-path))
 
 (defmacro define-callback (name args &body body)
   `(cffi:defcallback ,name :void ((context :pointer) (user :pointer) ,@args)
