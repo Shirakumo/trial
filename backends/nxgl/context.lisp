@@ -169,7 +169,7 @@
   (setf %gl:*gl-get-proc-address* #'nxgl:proc-address)
   (nxgl:init))
 
-(defun launch-with-context (&optional main &rest initargs)
+(defun trial:launch-with-context (&optional main &rest initargs)
   (let ((main (apply #'make-instance main initargs)))
     (start main)
     (trial:rename-thread "input-loop")
@@ -184,6 +184,9 @@
       (v:debug :trial.backend.nxgl "Cleaning up")
       (unwind-protect (finalize main)
         (nxgl:shutdown)))))
+
+(defun trial:make-context (&optional handler &rest initargs)
+  (apply #'make-instance 'context :handler handler initargs))
 
 (defun self ()
   (make-pathname :device "rom" :name "sbcl"))
