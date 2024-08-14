@@ -23,8 +23,8 @@
 (cffi:define-foreign-library nxgl
     (T (:or "libnxgl.nro" "libnxgl")))
 
-(cffi:defcstruct (event-handlers :conc-name NIL)
-    (user-data :pointer)
+(cffi:defcstruct (event-handlers :conc-name eh-)
+  (user-data :pointer)
   (focus-gain :pointer)
   (focus-lose :pointer)
   (resize :pointer)
@@ -126,9 +126,19 @@
                               (handlers '(:struct event-handlers)))
     (macrolet ((%set (&rest names)
                  `(setf ,@(loop for name in names
-                                collect `(cffi:foreign-slot-value handlers '(:struct event-handlers) ,name)
+                                collect `(,(intern (format NIL "~a-~a" 'eh name)) handlers)
                                 collect `(or ,name (cffi:null-pointer))))))
-      (%set user-data focus-gain focus-lose resize quit mouse-move mouse-press mouse-release mouse-wheel key-press key-release))
+      (%set user-data
+            focus-gain
+            focus-lose
+            resize
+            quit
+            mouse-move
+            mouse-press
+            mouse-release
+            mouse-wheel
+            key-press
+            key-release))
     (flet ((%set (list &rest args)
              (let ((i 0))
                (loop for (k v) on args by #'cddr
