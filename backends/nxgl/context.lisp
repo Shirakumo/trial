@@ -5,12 +5,12 @@
 (setf trial:*open-in-browser-hook* #'nxgl:open-url)
 
 (defclass context (trial:context)
-  ((pointer :accessor pointer)
+  ((pointer :initform NIL :accessor pointer)
    (thread :initform NIL :accessor thread)
-   (profile :initarg :profile :accessor profile)
-   (version :initarg :version :accessor version)
-   (vsync :accessor vsync)
-   (initargs :accessor initargs)
+   (profile :initarg :profile :initform NIL :accessor profile)
+   (version :initarg :version :initform NIL :accessor version)
+   (vsync :initform NIL :accessor vsync)
+   (initargs :initform () :accessor initargs)
    (mouse-pos :initform (vec 0 0) :accessor mouse-pos)
    (close-pending-p :initform NIL :accessor close-pending-p)))
 
@@ -40,6 +40,10 @@
       (when version-p
         (setf (g :context-version-major) (first version))
         (setf (g :context-version-minor) (second version))))))
+
+(defmethod initialize-instance ((context context) &key)
+  (call-next-method)
+  (create-context context))
 
 (defmethod create-context ((context context))
   (let ((pointer (apply #'nxgl:create-context (arg :width) (arg :height)
