@@ -188,22 +188,22 @@
 (defun trial:make-context (&optional handler &rest initargs)
   (apply #'make-instance 'context :handler handler initargs))
 
-(defun self ()
+(defun trial:self ()
   (make-pathname :device "rom" :name "sbcl"))
 
-(defun system-username ()
+(defun trial:system-username ()
   (nxgl:username))
 
-(defun rename-thread (name)
+(defun trial:rename-thread (name)
   (nxgl:set-thread-name (cffi:null-pointer) name))
 
-(defun logfile ()
+(defun trial:logfile ()
   (make-pathname :device "tmp" :name "trial" :type "log"))
 
-(defun temdir ()
+(defun trial:tempdir ()
   (make-pathname :device "tmp" :directory '(:absolute)))
 
-(defun config-directory (&rest app-path)
+(defun trial:config-directory (&rest app-path)
   (declare (ignore app-path))
   (apply #'pathname-utils:subdirectory (make-pathname :device "save" :directory '(:absolute)) app-path))
 
