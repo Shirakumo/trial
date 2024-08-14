@@ -119,7 +119,8 @@
                        &key user-data focus-gain focus-lose resize quit mouse-move mouse-press mouse-release mouse-wheel key-press key-release
                             (alpha-size 8) (red-size 8) (green-size 8) (blue-size 8)
                             (context-version-major 3) (context-version-minor 3)
-                            (opengl-profile :any) robustness forward-compat debug-context)
+                            (opengl-profile :any) robustness forward-compat debug-context
+                            &allow-other-keys)
   (cffi:with-foreign-objects ((config-attributes :int 64)
                               (context-attributes :int 64)
                               (handlers '(:struct event-handlers)))
