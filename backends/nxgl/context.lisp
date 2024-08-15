@@ -60,7 +60,7 @@
                           :key-release (cffi:callback key-release)
                           (initargs context))))
       (when (cffi:null-pointer-p pointer)
-        (error "Failed to create context"))
+        (error "Failed to create context: ~a" nxgl:error))
       (setf (pointer context) pointer)
       (setf (vsync context) (arg :vsync)))))
 
@@ -169,10 +169,14 @@
 (defmethod height ((context context))
   (nxgl:height (pointer context)))
 
+(cffi:define-foreign-library %gl::opengl
+  (t "opengl.nso"))
+
 (deploy:define-hook (:boot nxgl) ()
   (cffi:load-foreign-library 'nxgl:nxgl)
+  (nxgl:init)
   (setf %gl:*gl-get-proc-address* #'nxgl:proc-address)
-  (nxgl:init))
+  (%gl::reset-gl-pointers))
 
 (defun trial:launch-with-context (&optional main &rest initargs)
   (let ((main (apply #'make-instance main initargs)))
