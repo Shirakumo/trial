@@ -75,16 +75,9 @@
   (not (null (pointer context))))
 
 (defmethod make-current ((context context))
-  (if (nxgl:make-current (pointer context))
-      (setf (thread context) (bt:current-thread))
-      (error "Failed to make context current"))
-  context)
-
-(defmethod current-p ((context context) &optional thread)
-  (eq (thread context) (or thread (bt:current-thread))))
+  (nxgl:make-current (pointer context)))
 
 (defmethod done-current ((context context))
-  (setf (thread context) NIL)
   context)
 
 (defmethod hide ((context context))

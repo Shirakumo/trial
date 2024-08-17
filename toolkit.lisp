@@ -454,7 +454,6 @@
   (when (deploy:deployed-p)
     (handler-case
         (when (logfile)
-          #++
           (ignore-errors (delete-file (logfile)))
           (v:define-pipe ()
             (v:file-faucet :file (logfile))))
