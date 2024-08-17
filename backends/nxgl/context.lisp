@@ -42,8 +42,8 @@
         (setf (g :context-version-minor) (second version))))))
 
 (defmethod initialize-instance ((context context) &key)
-  (call-next-method)
-  (create-context context))
+  (prog1 (call-next-method)
+    (create-context context)))
 
 (defmethod create-context ((context context))
   (flet ((arg (arg) (getf (initargs context) arg)))
@@ -62,12 +62,14 @@
       (when (cffi:null-pointer-p pointer)
         (error "Failed to create context: ~a" nxgl:error))
       (setf (pointer context) pointer)
-      (setf (vsync context) (arg :vsync)))))
+      (setf (vsync context) (arg :vsync))
+      context)))
 
 (defmethod destroy-context ((context context))
   (when (pointer context)
     (nxgl:destroy-context (pointer context))
-    (setf (pointer context) NIL)))
+    (setf (pointer context) NIL))
+  context)
 
 (defmethod valid-p ((context context))
   (not (null (pointer context))))
@@ -75,19 +77,23 @@
 (defmethod make-current ((context context))
   (if (nxgl:make-current (pointer context))
       (setf (thread context) (bt:current-thread))
-      (error "Failed to make context current")))
+      (error "Failed to make context current"))
+  context)
 
 (defmethod current-p ((context context) &optional thread)
   (eq (thread context) (or thread (bt:current-thread))))
 
 (defmethod done-current ((context context))
-  (setf (thread context) NIL))
+  (setf (thread context) NIL)
+  context)
 
-(defmethod hide ((context context)))
+(defmethod hide ((context context))
+  context)
 
 (defmethod show ((context context) &key mode &allow-other-keys)
   (when mode
-    (resize context (first mode) (second mode))))
+    (resize context (first mode) (second mode)))
+  context)
 
 (defmethod visible-p ((context context))
   T)
@@ -95,22 +101,29 @@
 (defmethod resize ((context context) width height)
   (unless (nxgl:resize (pointer context) width height)
     (error "Failed to resize"))
-  (handle (make-event 'resize :width width :height height) (handler context)))
+  (handle (make-event 'resize :width width :height height) (handler context))
+  context)
 
 (defmethod quit ((context context))
-  (setf (close-pending-p context) T))
+  (setf (close-pending-p context) T)
+  context)
 
 (defmethod swap-buffers ((context context))
   (unless (nxgl:swap-buffers (pointer context))
-    (error "Failed to swap buffers")))
+    (error "Failed to swap buffers"))
+  context)
 
-(defmethod show-cursor ((context context)))
+(defmethod show-cursor ((context context))
+  context)
 
-(defmethod hide-cursor ((context context)))
+(defmethod hide-cursor ((context context))
+  context)
 
-(defmethod lock-cursor ((context context)))
+(defmethod lock-cursor ((context context))
+  context)
 
-(defmethod unlock-cursor ((context context)))
+(defmethod unlock-cursor ((context context))
+  context)
 
 (defmethod cursor ((context context))
   NIL)
