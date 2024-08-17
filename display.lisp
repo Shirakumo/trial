@@ -10,7 +10,8 @@
 (defmethod initialize-instance :after ((display display) &key context)
   (etypecase context
     (list
-     (setf context (apply #'make-context NIL context)))
+     (setf context (apply #'make-context NIL context))
+     (check-type context context))
     (context
      context))
   (setf (context display) context)
@@ -18,7 +19,7 @@
   (with-context ((context display))
     (setf +matrix-index+ 0)
     (cache-gl-extensions)
-    #-arm64 (prevent-powersave)
+    (prevent-powersave)
     (setup-rendering display)))
 
 (defmethod finalize :around ((display display))
@@ -26,7 +27,7 @@
     (when (context display)
       (finalize (context display))
       (setf (context display) NIL)))
-  #-arm64 (restore-powersave))
+  (restore-powersave))
 
 (defmethod handle (event (display display)))
 
@@ -42,7 +43,7 @@
   (setf *depth-mask* T)
   (gl:depth-func :lequal)
   (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha)
-  #-arm64 (gl:clear-depth 1.0)
+  (gl:clear-depth 1.0)
   (gl:front-face :ccw)
   (gl:cull-face :back)
   (gl:pixel-store :unpack-alignment 1)

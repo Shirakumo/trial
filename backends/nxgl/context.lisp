@@ -186,6 +186,7 @@
   (t "opengl.nso"))
 
 (deploy:define-hook (:boot nxgl) ()
+  (deploy:status 1 "Initialising NXGL")
   (cffi:load-foreign-library 'nxgl:nxgl)
   (nxgl:init)
   (setf %gl:*gl-get-proc-address* #'nxgl:proc-address)
