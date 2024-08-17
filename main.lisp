@@ -147,5 +147,6 @@
           (float-features:with-float-traps-masked T
             (thunk))
           (thunk))))
+  (v:info :trial.main "We're done")
   (setf *context* NIL)
   (tg:gc :full T))

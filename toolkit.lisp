@@ -456,13 +456,13 @@
         (when (logfile)
           (ignore-errors (delete-file (logfile)))
           (v:define-pipe ()
-            (v:file-faucet :file (logfile)))
-          (v:info :trial "Running on ~a, ~a ~a, ~a ~a"
-                  (machine-instance) (machine-type) (machine-version)
-                  (software-type) (software-version)))
+            (v:file-faucet :file (logfile))))
       (error (e)
         (v:error :trial "Failed to set up standalone logging handler: ~a" e)
-        (setf (v:repl-level) :trace)))))
+        (setf (v:repl-level) :trace)))
+    (v:info :trial "Running on ~a, ~a ~a, ~a ~a"
+            (machine-instance) (machine-type) (machine-version)
+            (software-type) (software-version))))
 
 (defun make-thread (name func)
   (bt:make-thread (lambda ()
