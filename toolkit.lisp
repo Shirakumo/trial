@@ -451,17 +451,18 @@
          (or app-path (list +app-vendor+ +app-system+))))
 
 (defun standalone-logging-handler ()
-  (handler-case
-      (when (deploy:deployed-p)
+  (when (deploy:deployed-p)
+    (handler-case
         (when (logfile)
           (ignore-errors (delete-file (logfile)))
           (v:define-pipe ()
-            (v:file-faucet :file (logfile))))
-        (v:info :trial "Running on ~a, ~a ~a, ~a ~a"
-                (machine-instance) (machine-type) (machine-version)
-                (software-type) (software-version)))
-    (error (e)
-      (v:error :trial "Failed to set up standalone logging handler: ~a" e))))
+            (v:file-faucet :file (logfile)))
+          (v:info :trial "Running on ~a, ~a ~a, ~a ~a"
+                  (machine-instance) (machine-type) (machine-version)
+                  (software-type) (software-version)))
+      (error (e)
+        (v:error :trial "Failed to set up standalone logging handler: ~a" e)
+        (setf (v:repl-level) :trace)))))
 
 (defun make-thread (name func)
   (bt:make-thread (lambda ()
