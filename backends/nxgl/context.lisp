@@ -197,23 +197,24 @@
 (defun trial:make-context (&optional handler &rest initargs)
   (apply #'make-instance 'context :handler handler initargs))
 
-(defun trial:self ()
-  (make-pathname :device "rom" :name "sbcl" :type NIL :directory '(:absolute)))
-
 (defun trial:system-username ()
   (nxgl:username))
 
 (defun trial:rename-thread (name)
   (nxgl:set-thread-name (cffi:null-pointer) name))
 
+(defun trial:self ()
+  "rom:/sbcl")
+
 (defun trial:logfile ()
-  (make-pathname :device "tmp" :name "trial" :type "log" :directory '(:absolute)))
+  "tmp:/trial.log")
 
 (defun trial:tempdir ()
-  (make-pathname :device "tmp" :directory '(:absolute)))
+  "tmp:/")
 
 (defun trial:config-directory (&rest app-path)
-  (apply #'pathname-utils:subdirectory (make-pathname :device "save" :directory '(:absolute)) app-path))
+  (declare (ignore app-path))
+  "save:/")
 
 (defmacro define-callback (name args &body body)
   `(cffi:defcallback ,name :void ((context :pointer) (user :pointer) ,@args)
