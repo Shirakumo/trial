@@ -144,7 +144,7 @@
   (eql thread (current-thread context)))
 
 (defun check-context-current (&optional (context *context*))
-  (unless (current-p context)
+  (when (or (null context) (not (current-p context)))
     (error "Context is not current in thread!")))
 
 (defmethod acquire-context ((context context) &key force)
