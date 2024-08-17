@@ -131,14 +131,16 @@
       (v:info :trial.context "Destroying context.")
       (hide context)
       (call-next-method)
-      (setf *context* NIL))))
+      (setf *context* NIL)))
+  context)
 
 (defmethod create-context :around ((context context))
   (unless (valid-p context)
     (call-next-method)
     (v:info :trial.context "Recreated context successfully.")
     (make-current context)
-    (context-note-debug-info context)))
+    (context-note-debug-info context))
+  context)
 
 (defmethod current-p ((context context) &optional (thread (bt:current-thread)))
   (eql thread (current-thread context)))
