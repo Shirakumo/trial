@@ -43,6 +43,11 @@
 (defun self ()
   (first (uiop:raw-command-line-arguments)))
 
+(defun checksum (file)
+  (with-output-to-string (out)
+    (loop for o across (sha3:sha3-digest-file file :output-bit-length 224)
+          do (format out "~2,'0X" o))))
+
 (defmethod version ((_ (eql :app)))
   (let ((commit #+asdf (git-repo-commit (asdf:system-source-directory +app-system+))))
     (format NIL "~a~@[-~a~]"
@@ -60,9 +65,7 @@
 (defmethod version ((_ (eql :binary)))
   (let ((self (self)))
     (if (and self (uiop:file-exists-p self))
-        (with-output-to-string (out)
-          (loop for o across (sha3:sha3-digest-file self :output-bit-length 224)
-                do (format out "~2,'0X" o)))
+        (checksum self)
         "?")))
 
 (let ((cache NIL))
