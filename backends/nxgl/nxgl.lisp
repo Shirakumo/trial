@@ -43,7 +43,9 @@
   :create-surface-failed
   :bind-failed
   :create-context-failed
-  :make-current-failed)
+  :make-current-failed
+  :bad-access
+  :context-lost)
 
 (cffi:defcvar (error "nxgl_error") error)
 

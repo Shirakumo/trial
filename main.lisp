@@ -132,7 +132,7 @@
     (blit-to-screen (scene source))))
 
 (defmethod launch ((main symbol) &rest initargs)
-  (standalone-logging-handler)
+  #-nx (standalone-logging-handler)
   (v:output-here)
   (v:info :trial.main "GENESIS")
   (v:info :trail.main "Launching version ~a (~a)" (version :app) (version :binary))
@@ -149,4 +149,4 @@
           (thunk))))
   (v:info :trial.main "We're done")
   (setf *context* NIL)
-  (tg:gc :full T))
+  #-nx (tg:gc :full T))

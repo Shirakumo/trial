@@ -75,7 +75,8 @@
   (not (null (pointer context))))
 
 (defmethod make-current ((context context))
-  (nxgl:make-current (pointer context)))
+  (unless (nxgl:make-current (pointer context))
+    (nxgl:check-error)))
 
 (defmethod done-current ((context context))
   context)
@@ -103,7 +104,7 @@
 
 (defmethod swap-buffers ((context context))
   (unless (nxgl:swap-buffers (pointer context))
-    (error "Failed to swap buffers"))
+    (nxgl:check-error))
   context)
 
 (defmethod show-cursor ((context context))
@@ -131,9 +132,8 @@
   value)
 
 (defmethod (setf vsync) :before (mode (context context))
-  (unless (nxgl:swap-interval (pointer context)
-                              (ecase mode ((NIL :off) 0) ((:on T) 1) (:adaptive -1)))
-    (error "Failed to change Vsync mode")))
+  (unless (nxgl:swap-interval (pointer context) (ecase mode ((NIL :off) 0) ((:on T) 1) (:adaptive -1)))
+    (nxgl:check-error)))
 
 (defmethod current-monitor ((context context))
   *monitor*)
