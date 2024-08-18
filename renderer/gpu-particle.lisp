@@ -420,6 +420,5 @@
 
 (define-shader-entity multi-texture-particle-emitter (gpu-particle-emitter)
   ()
-  (:inhibit-shaders (particle-emitter :fragment-shader))
   (:shader-file (trial "particle/multi-render.glsl")))
 
