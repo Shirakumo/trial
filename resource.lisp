@@ -58,7 +58,8 @@
 (defun ensure-allocated (resource)
   (unless (allocated-p resource)
     (mapc #'ensure-allocated (dependencies resource))
-    (allocate resource))
+    (handler-bind ((resource-not-allocated #'continue))
+      (allocate resource)))
   resource)
 
 (defclass foreign-resource (resource)

@@ -17,9 +17,9 @@
     (format stream "~@[~a~]~:[~; ALLOCATED~]" (size array) (allocated-p array))))
 
 (defmethod shared-initialize :after ((array vertex-array) slots &key bindings (index-buffer NIL index-buffer-p))
-  (setf (bindings array) bindings)
   (when index-buffer-p
-    (setf (index-buffer array) index-buffer)))
+    (setf (index-buffer array) index-buffer))
+  (setf (bindings array) bindings))
 
 (defmethod dependencies ((array vertex-array))
   (delete-duplicates
@@ -58,7 +58,9 @@
 (defun update-array-bindings (array &optional (bindings (bindings array)) (index (index-buffer array)))
   (with-unwind-protection (deactivate array)
     (activate array)
-    (when index (activate index))
+    (when index
+      (check-allocated index)
+      (activate index))
     (setf (instanced-p array) NIL)
     (loop for binding in bindings
           do (destructuring-bind (buffer &key index
