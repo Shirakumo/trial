@@ -94,6 +94,7 @@
 (test "Data root" (data-root))
 (test "Version" (version :trial))
 (test "Precise time" (current-time))
+(test "User home dir" (user-homedir-pathname))
 (test "Tempdir" (tempdir))
 (test "Create tempfile" (with-tempfile (path) (alexandria:write-string-into-file "test" path)))
 (test "Logfile" (logfile))

@@ -2,8 +2,6 @@
 
 (defvar *monitor* (make-instance 'monitor))
 
-(setf trial:*open-in-browser-hook* #'nxgl:open-url)
-
 (defclass context (trial:context)
   ((pointer :initform NIL :accessor pointer)
    (thread :initform NIL :accessor thread)
@@ -203,25 +201,6 @@
 
 (defun trial:make-context (&optional handler &rest initargs)
   (apply #'make-instance 'context :handler handler initargs))
-
-(defun trial:system-username ()
-  (nxgl:username))
-
-(defun trial:rename-thread (name)
-  (nxgl:set-thread-name (cffi:null-pointer) name))
-
-(defun trial:self ()
-  "rom:/sbcl")
-
-(defun trial:logfile ()
-  "tmp:/trial.log")
-
-(defun trial:tempdir ()
-  "tmp:/")
-
-(defun trial:config-directory (&rest app-path)
-  (declare (ignore app-path))
-  "save:/")
 
 (defmacro define-callback (name args &body body)
   `(cffi:defcallback ,name :void ((context :pointer) (user :pointer) ,@args)

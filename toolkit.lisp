@@ -41,7 +41,8 @@
                             (return (subseq line 0 (position #\Space line))))))))))))
 
 (defun self ()
-  (first (uiop:raw-command-line-arguments)))
+  #-nx (first (uiop:raw-command-line-arguments))
+  #+nx "rom:/sbcl")
 
 (defun checksum (file)
   (with-output-to-string (out)
@@ -410,6 +411,7 @@
   (or #+windows (or (envvar-directory "TEMP") #p"~/AppData/Local/Temp/")
       #+darwin (envvar-directory "TMPDIR")
       #+linux (envvar-directory "XDG_RUNTIME_DIR")
+      #+nx (make-pathname :device "tmp" :directory '(:absolute))
       #p"/tmp/"))
 
 (defun tempfile (&key (id (format NIL "trial-~a-~a" (get-universal-time) (random 1000)))
@@ -448,7 +450,7 @@
     (merge-pathnames (if (string= "" log)
                          "trial.log"
                          (pathname-utils:parse-native-namestring log))
-                     (or (uiop:argv0) (user-homedir-pathname)))))
+                     (or #+nx (tempdir) (uiop:argv0) (user-homedir-pathname)))))
 
 (defun config-directory (&rest app-path)
   (apply #'pathname-utils:subdirectory
@@ -456,6 +458,8 @@
              #+windows
              (or (envvar-directory "AppData")
                  (pathname-utils:subdirectory (user-homedir-pathname) "AppData" "Roaming"))
+             #+nx
+             (make-pathname :device "save" :directory '(:absolute))
              (or (envvar-directory "XDG_CONFIG_HOME")
                  (pathname-utils:subdirectory (user-homedir-pathname) ".config")))
          (or app-path (list +app-vendor+ +app-system+))))

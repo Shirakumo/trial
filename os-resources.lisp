@@ -18,6 +18,10 @@
                (setf (cffi:mem-ref size :ulong) 128)
                (when (< 0 (cffi:foreign-funcall "GetUserNameW" :pointer name :pointer size :int))
                  (org.shirakumo.com-on:wstring->string name (cffi:mem-ref size :ulong))))))
+      #+nx
+      (cffi:with-foreign-object (nick :char 33)
+        (when (cffi:foreign-funcall "nxgl_username" :pointer nick :int 33 :bool)
+          (cffi:foreign-string-to-lisp nick :max-chars 33)))
       #+unix
       (cffi:foreign-funcall "getlogin" :string)
       (pathname-utils:directory-name (user-homedir-pathname))))
@@ -29,6 +33,8 @@
       (uiop:launch-program (list "rundll32" "url.dll,FileProtocolHandler" url))
       #+linux
       (uiop:launch-program (list "xdg-open" url))
+      #+nx
+      (cffi:foreign-funcall "nxgl_open_url" :string url :bool)
       #+darwin
       (uiop:launch-program (list "open" url))))
 
@@ -37,19 +43,25 @@
   (uiop:launch-program (list "explorer.exe" (uiop:native-namestring path)))
   #+linux
   (uiop:launch-program (list "xdg-open" (uiop:native-namestring path)))
+  #+nx
+  (error "There's no file manager on the NX")
   #+darwin
   (uiop:launch-program (list "open" (uiop:native-namestring path))))
 
 (defun rename-thread (name)
-  #+windows
-  (com:with-wstring (name name)
-    (ignore-errors
+  (ignore-errors
+   #+windows
+   (com:with-wstring (name name)
      (cffi:foreign-funcall "SetThreadDescription"
                            :size (cffi:foreign-funcall "GetCurrentThread" :size)
                            :string name
-                           :size)))
-  #+unix
-  (ignore-errors
+                           :size))
+   #+nx
+   (cffi:foreign-funcall "nxgl_set_thread_name"
+                         :pointer (cffi:null-pointer)
+                         :string name
+                         :int)
+   #+unix
    (cffi:foreign-funcall "pthread_setname_np"
                          :size (cffi:foreign-funcall "pthread_self" :size)
                          :string name
