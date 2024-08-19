@@ -141,7 +141,7 @@
   (let ((vertex-data (make-instance 'vertex-buffer :buffer-data (vertex-data mesh)))
         (faces (faces mesh)))
     (ensure-instance vao 'vertex-array
-                     :dependencies (list (material mesh))
+                     :dependencies (when (material mesh) (list (material mesh)))
                      :vertex-form (vertex-form mesh)
                      :index-buffer (when faces
                                      (make-instance 'vertex-buffer :buffer-data faces
