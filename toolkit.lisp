@@ -42,7 +42,7 @@
 
 (defun self ()
   #-nx (first (uiop:raw-command-line-arguments))
-  #+nx "rom:/sbcl")
+  #+nx (make-pathname :device "rom" :name "sbcl" :directory '(:absolute)))
 
 (defun checksum (file)
   (with-output-to-string (out)

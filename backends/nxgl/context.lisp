@@ -21,8 +21,8 @@
                                           (robustness NIL robustness-p)
                                           (forward-compat NIL forward-compat-p)
                                           (debug-context NIL debug-context-p)
-                                          double-buffering stereo-buffer title)
-  (declare (ignore double-buffering stereo-buffer title))
+                                          double-buffering stereo-buffer title visible)
+  (declare (ignore double-buffering stereo-buffer title visible))
   (flet (((setf g) (value name) (setf (getf (initargs context) name) value)))
     (macrolet ((maybe-set (var &optional (name (intern (string var) :keyword)))
                  `(when ,(let ((*print-case* (readtable-case *readtable*)))
@@ -183,6 +183,9 @@
   (setf %gl:*gl-get-proc-address* #'nxgl:proc-address)
   (%gl::reset-gl-pointers))
 
+(deploy:define-hook (:quit nxgl) ()
+  (nxgl:shutdown))
+
 (defun trial:launch-with-context (&optional main &rest initargs)
   (let ((main (apply #'make-instance main initargs)))
     (start main)
@@ -196,8 +199,7 @@
                     (nxgl:poll (pointer context))
                     (sleep 0.0001)))
       (v:debug :trial.backend.nxgl "Cleaning up")
-      (unwind-protect (finalize main)
-        (nxgl:shutdown)))))
+      (finalize main))))
 
 (defun trial:make-context (&optional handler &rest initargs)
   (apply #'make-instance 'context :handler handler initargs))
