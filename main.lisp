@@ -132,8 +132,8 @@
     (blit-to-screen (scene source))))
 
 (defmethod launch ((main symbol) &rest initargs)
-  #-nx (standalone-logging-handler)
   #+nx (setf (v:repl-level) :trace)
+  (standalone-logging-handler)
   (v:output-here)
   (v:info :trial.main "GENESIS")
   (v:info :trail.main "Launching version ~a (~a)" (version :app) (version :binary))

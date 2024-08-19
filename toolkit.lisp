@@ -479,6 +479,7 @@
             (software-type) (software-version))))
 
 (defun make-thread (name func)
+  (v:debug :trial "Spinning up thread: ~a" name)
   (bt:make-thread (lambda ()
                     (handler-bind ((error #'standalone-error-handler))
                       (funcall func)))
