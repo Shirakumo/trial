@@ -227,8 +227,7 @@
   (context-info context :stream stream))
 
 (defun context-info (context &key (stream *standard-output*) (show-extensions T))
-  (format stream "~
-                ~&~%OpenGL Version: ~a.~a ~a~%~
+  (format stream "OpenGL Version: ~a.~a ~a~%~
                     Sample buffers: ~a (~a sample~:p)~%~
                     Max texture size: ~a~%~
                     Max texture units: ~a ~a ~a ~a ~a ~a~%~
@@ -266,7 +265,7 @@
                    collect (gl:get-string-i :extensions i))))))
 
 (defun context-note-debug-info (context)
-  (v:debug :trial.context "Context information: ~a"
+  (v:debug :trial.context "Context information: ~%~@<  ~@;~a~;~:>"
            (let ((*print-right-margin* 1000)) ; SBCL fails otherwise. Huh?
              (with-output-to-string (out)
                (context-info context :stream out)))))

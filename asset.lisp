@@ -39,7 +39,7 @@
    (name :initform NIL :accessor name)
    (documentation :initarg :documentation :initform NIL)
    (input :initarg :input :initform NIL :accessor input)
-   (loaded-p :initform NIL :accessor loaded-p)
+   (loaded-p :initform NIL :accessor loaded-p :reader allocated-p)
    (generation-arguments :initform () :initarg :generation-arguments :accessor generation-arguments)))
 
 (defgeneric load (asset))
@@ -144,6 +144,9 @@
 
 (defmethod deallocate :after ((asset asset))
   (setf (loaded-p asset) NIL))
+
+(defmethod allocate ((asset asset))
+  (load asset))
 
 (defmethod coerce-asset-input ((asset asset) (input (eql T)))
   (coerce-asset-input asset (input asset)))
