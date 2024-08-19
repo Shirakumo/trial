@@ -1,24 +1,30 @@
 (defpackage #:org.shirakumo.fraf.trial.selftest
   (:use #:cl+trial)
-  (:export #:run))
+  (:export
+   #:*test-output*
+   #:run
+   #:run-test))
 (in-package #:org.shirakumo.fraf.trial.selftest)
 
-(defparameter *tests* (make-array 0 :adjustable T :fill-pointer T))
+(defvar *test-output* *standard-output*)
+(defvar *tests* (make-array 0 :adjustable T :fill-pointer T))
 (defvar *failures*)
 
 (defun start-test (i name)
-  (format *standard-output* "~&[~3d/~3d] ~a ~32t"
-          i (length *tests*) name))
+  (format *test-output* "~&[~3d/~3d] ~a ~32t"
+          i (length *tests*) name)
+  (finish-output *test-output*))
 
 (defun finish-test (name result)
   (typecase result
     (condition
      (push name *failures*)
-     (format *standard-output* "FAILED (~a)~%" (type-of result)))
+     (format *test-output* "FAILED (~a)~%" (type-of result)))
     (T
-     (format *standard-output* "~a~%" result))))
+     (format *test-output* "~@<~@;~a~;~:>~%" result)))
+  (finish-output *test-output*))
 
-(defun run-test-fn (fn)
+(defun funcall-muffled (fn)
   (let* ((*standard-output* (make-broadcast-stream))
          (*error-output* *standard-output*)
          (*query-io* *standard-output*))
@@ -27,16 +33,26 @@
           (funcall fn))
       (error (e) e))))
 
-(defun run ()
+(defun run-test (name &key muffle)
+  (let ((fn (second (or (find name *tests* :key #'first :test #'string-equal)
+                        (error "No such test ~a" name)))))
+    (if muffle
+        (funcall-muffled fn)
+        (funcall fn))))
+
+(defun run (&key skip)
   (let ((*failures* ()))
     (org.shirakumo.verbose:with-muffled-logging ()
       (loop for (test fn) across *tests*
             for i from 1
-            do (cond (fn
+            do (cond ((null fn)
+                      (format *standard-output* "~&~% == ~a ==~%" test))
+                     ((find test skip :test #'string-equal)
                       (start-test i test)
-                      (finish-test test (run-test-fn fn)))
+                      (finish-test test :SKIPPED))
                      (T
-                      (format *standard-output* "~&~% == ~a ==~%" test)))))
+                      (start-test i test)
+                      (finish-test test (run-test-muffled fn))))))
     (format *standard-output* "~&~%~:[All OK!~;~:*Some failures occurred:~{~%  ~a~}~]~%" *failures*)))
 
 (defmacro test (name &body body)
@@ -53,9 +69,31 @@
                    (vector-push-extend (list name NIL) *tests*))))
      (setf (second (aref *tests* idx)) NIL)))
 
+(defun remove-test (name)
+  (array-utils:vector-pop-position
+   *tests* (or (position name *tests* :key #'first :test #'string-equal)
+               (error "No such test ~s" name))))
+
 (define-simple-save-file v0 :latest
   (:decode (depot))
   (:encode (depot)))
+
+(defclass dummy ()
+  ((context :initform (make-context NIL :visible NIL) :accessor context)
+   (thunk :initarg :thunk :initform (constantly NIL) :accessor thunk)))
+
+(defmethod start ((dummy dummy))
+  (with-context ((context dummy))
+    (funcall (thunk dummy)))
+  (quit (context dummy)))
+
+(defmacro context-test (name &body body)
+  `(test ,name
+     (let ((context (make-context NIL :visible NIL)))
+       (with-unwind-protection (finalize context)
+         (create-context context)
+         (with-context (context)
+           ,@body)))))
 
 (group "Basic Lisp information")
 (test "Machine type" (machine-type))
@@ -136,11 +174,48 @@
 (group "Asset loading")
 (test "Trial pool path" (base (find-pool 'trial)))
 (test "Allocate memory" (deallocate (allocate (make-instance 'memory :size 64))))
-(test "Load cat" (load-image (input* (asset 'trial 'cat)) T))
+(test "Load cat" (load-image (input* (asset 'trial 'trial::cat)) T))
 
 (group "Context")
-(test "Create context" (finalize (create-context (make-context))))
-(test "Make current" (let ((context (create-context (make-context))))
+(test "Create context" (finalize (create-context (make-context NIL :visible NIL))))
+(test "Make current" (let ((context (create-context (make-context NIL :visible NIL))))
                        (make-current context)
                        (finalize context)))
 (test "Launch with context" (launch-with-context 'dummy))
+(context-test "GL Info"
+  (context-info *context* :stream NIL))
+(context-test "Swap buffers"
+  (show *context*)
+  (gl:clear-color 0 1 0 1)
+  (gl:clear :color-buffer-bit)
+  (swap-buffers *context*)
+  (sleep 0.2))
+(context-test "List monitors"
+  (mapcar #'list-video-modes (list-monitors *context*)))
+(context-test "Fullscreen"
+  (show *context* :fullscreen T))
+(context-test "Allocate shader"
+  (allocate (make-instance 'shader :type :fragment-shader :source "void main(){}")))
+(context-test "Allocate texture"
+  (allocate (make-instance 'texture :width 1024 :height 1024)))
+(context-test "Allocate framebuffer"
+  (let ((tex (make-instance 'texture :width 1 :height 1)))
+    (allocate tex)
+    (allocate (make-instance 'framebuffer :attachments `((:color-attachment0 ,tex))))))
+(context-test "Allocate buffer"
+  (allocate (make-instance 'vertex-buffer :buffer-data (trial::f32-vec 0 0 0))))
+(context-test "Primitive render"
+  (let* ((vao (// 'trial 'fullscreen-square))
+         (vs (make-instance 'shader :type :vertex-shader :source "
+layout (location = 0) in vec3 position;
+void main(){ gl_Position = vec4(position, 1.0f); }"))
+         (fs (make-instance 'shader :type :fragment-shader :source "
+out vec4 color;
+void main(){ color = vec4(0,1,0,1); }"))
+         (prog (make-instance 'shader-program :shaders (list vs fs))))
+    (with-unwind-protection (deallocate (asset 'trial 'fullscreen-square))
+      (show *context*)
+      (activate (trial::ensure-allocated prog))
+      (render (trial::ensure-allocated vao) T)
+      (swap-buffers *context*)
+      (sleep 0.2))))
