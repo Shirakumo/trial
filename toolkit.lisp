@@ -436,6 +436,13 @@
             (ldb (byte 16 64) val)
             (ldb (byte 48 80) val))))
 
+(defun file-out-of-date-p (path default)
+  (let ((path (probe-file path))
+        (default (probe-file default)))
+    (when default
+      (or (null path)
+          (< (file-write-date path) (file-write-date default))))))
+
 (defun logfile ()
   (let ((log (or (uiop:getenv "TRIAL_LOGFILE") "")))
     (merge-pathnames (if (string= "" log)

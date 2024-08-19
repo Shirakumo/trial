@@ -31,6 +31,27 @@
   (make-pathname :name "keymap" :type "lisp"
                  :defaults (config-directory)))
 
+(defun default-keymap-path ()
+  (make-pathname :name "keymap" :type "lisp"
+                 :defaults (data-root)))
+
+(defun load-keymap (&key (path (keymap-path)) reset (package *package*) (default (default-keymap-path)))
+  (ensure-directories-exist path)
+  (cond ((or reset (keymap-out-of-date-p path default))
+         (when (probe-file default)
+           (load-mapping default :package package))
+         (when (and (probe-file path) (null reset))
+           (load-mapping path :package package))
+         (save-keymap :path path :package package))
+        ((probe-file path)
+         (load-mapping path :package package))
+        (T
+         (warn "Keymap and default keymap do not exist. Can't load!"))))
+
+(defun save-keymap (&key (path (keymap-path)) (package *package*))
+  (ensure-directories-exist path)
+  (save-mapping path :package package))
+
 (defun map-leaf-settings (function &optional (settings +settings+))
   (labels ((recurse (node rpath)
              (loop for (k v) on node by #'cddr
@@ -38,24 +59,6 @@
                           (recurse v (list* k rpath))
                           (funcall function (reverse (list* k rpath)) v)))))
     (recurse settings ())))
-
-(defun load-keymap (&key (path (keymap-path)) reset (package *package*))
-  (ensure-directories-exist path)
-  (let ((default (merge-pathnames "keymap.lisp" (data-root))))
-    (cond ((or reset
-               (not (probe-file path))
-               (and (probe-file default) (< (file-write-date path) (file-write-date default))))
-           (when (probe-file default)
-             (load-mapping default :package package))
-           (when (and (probe-file path) (null reset))
-             (load-mapping path :package package))
-           (save-keymap :path path :package package))
-          (T
-           (load-mapping path :package package)))))
-
-(defun save-keymap (&key (path (keymap-path)) (package *package*))
-  (ensure-directories-exist path)
-  (save-mapping path :package package))
 
 (defmethod load-settings (&optional (path (setting-file-path)))
   (with-error-logging (:trial.settings)
