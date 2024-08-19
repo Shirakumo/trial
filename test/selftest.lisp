@@ -52,7 +52,7 @@
                       (finish-test test :SKIPPED))
                      (T
                       (start-test i test)
-                      (finish-test test (run-test-muffled fn))))))
+                      (finish-test test (funcall-muffled fn))))))
     (format *standard-output* "~&~%~:[All OK!~;~:*Some failures occurred:~{~%  ~a~}~]~%" *failures*)))
 
 (defmacro test (name &body body)
