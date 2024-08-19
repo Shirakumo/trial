@@ -7,7 +7,7 @@
 (defvar *failures*)
 
 (defun start-test (i name)
-  (format *standard-output* "~&[~3d/~3d] ~a ~30t"
+  (format *standard-output* "~&[~3d/~3d] ~a ~32t"
           i (length *tests*) name))
 
 (defun finish-test (name result)
@@ -133,5 +133,13 @@
                                (org.shirakumo.fraf.mixed:free server)))
 
 (group "Asset loading")
+(test "Trial pool path" (base (find-pool 'trial)))
+(test "Allocate memory" (deallocate (allocate (make-instance 'memory :size 64))))
+(test "Load cat" (load-image (input* (asset 'trial 'cat)) T))
 
 (group "Context")
+(test "Create context" (finalize (create-context (make-context))))
+(test "Make current" (let ((context (create-context (make-context))))
+                       (make-current context)
+                       (finalize context)))
+(test "Launch with context" (launch-with-context 'dummy))

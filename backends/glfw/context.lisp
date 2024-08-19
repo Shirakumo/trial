@@ -244,6 +244,8 @@
   pos)
 
 (defun make-context (&optional handler &rest initargs)
+  (handler-case (glfw:init)
+    #+trial-release (error () (error 'trial:context-creation-error :message "Failed to initialize GLFW.")))
   (apply #'make-instance 'context :handler handler initargs))
 
 (defun launch-with-context (&optional main &rest initargs)
