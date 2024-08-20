@@ -161,6 +161,9 @@
 (defmethod height ((context context))
   (glop:window-height context))
 
+(defmethod poll-input ((context context))
+  (glop:dispatch-events context :blocking T :on-foo NIL))
+
 (defun launch-with-context (&optional (main 'main) &rest initargs)
   #+linux (cffi:foreign-funcall "XInitThreads" :int)
   (let* ((main (apply #'make-instance main initargs))

@@ -256,6 +256,10 @@
   (let ((name (sdl2:get-key-from-scancode code)))
     (when name (sdl2:get-key-name name))))
 
+(defmethod poll-input ((context context))
+  ;; TODO: implement
+  )
+
 (defun make-context (&optional handler &rest initargs)
   (apply #'make-instance 'context :handler handler initargs))
 

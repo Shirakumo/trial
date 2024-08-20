@@ -236,4 +236,6 @@ void main(){ color = vec4(0,1,0,1); }"))
         (activate (trial::ensure-allocated prog))
         (render (trial::ensure-allocated vao) T)
         (swap-buffers *context*)
-        (sleep 0.2)))))
+        (sleep 0.2))))
+  (context-test "Poll input"
+    (poll-input *context*)))

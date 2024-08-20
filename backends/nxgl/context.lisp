@@ -173,6 +173,9 @@
 (defmethod height ((context context))
   (nxgl:height (pointer context)))
 
+(defmethod poll-input ((context context))
+  (nxgl:poll (pointer context)))
+
 (cffi:define-foreign-library %gl::opengl
   (t "opengl.nso"))
 

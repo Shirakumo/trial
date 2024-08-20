@@ -199,6 +199,10 @@
 
 (define-override (context paint-event) (ev))
 
+(defmethod poll-input ((context context))
+  ;; TODO: implement
+  )
+
 (defun launch-with-context (&optional (main 'main) &rest initargs)
   #+linux (q+:qcoreapplication-set-attribute (q+:qt.aa_x11-init-threads))
   (flet ((thunk ()

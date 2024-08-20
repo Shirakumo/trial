@@ -243,6 +243,9 @@
                                                (* y-scale (- (glfw:height context) (vy pos))))))
   pos)
 
+(defmethod poll-input ((context context))
+  (glfw:poll-events :timeout NIL))
+
 (defun make-context (&optional handler &rest initargs)
   (handler-case (glfw:init)
     #+trial-release (error () (error 'trial:context-creation-error :message "Failed to initialize GLFW.")))
