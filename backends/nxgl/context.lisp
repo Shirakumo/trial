@@ -245,3 +245,6 @@
 
 (define-callback key-release ((code :int))
   (fire 'key-release :key (scan-code->keyword code)))
+
+(defmethod org.shirakumo.depot:commit :after ((depot org.shirakumo.depot.zip::zip-file-archive) &key)
+  (nxgl:commit-save))

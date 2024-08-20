@@ -19,7 +19,10 @@
    #:proc-address
    #:open-url
    #:username
-   #:set-thread-name))
+   #:set-thread-name
+   #:set-save-size
+   #:get-save-size
+   #:commit-save))
 
 (in-package #:org.shirakumo.fraf.nxgl)
 
@@ -118,6 +121,15 @@
 (cffi:defcfun (set-thread-name "nxgl_set_thread_name") :int
   (thread :pointer)
   (name :string))
+
+(cffi:defcfun (get-save-size "nxgl_get_save_size") :int
+  (size :pointer))
+
+(cffi:defcfun (set-save-size "nxgl_set_save_size") :int
+  (size :uint64)
+  (max :uint64))
+
+(cffi:defcfun (commit-save "nxgl_commit_save") :int)
 
 (defun username ()
   (cffi:with-foreign-object (nick :char 33)
