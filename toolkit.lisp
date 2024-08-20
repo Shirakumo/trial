@@ -65,7 +65,7 @@
 
 (defmethod version ((_ (eql :binary)))
   (let ((self (self)))
-    (if (and self (uiop:file-exists-p self))
+    (if (and self (uiop:file-exists-p self) (not (uiop:featurep :nx)))
         (checksum self)
         "?")))
 
