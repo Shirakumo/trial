@@ -140,7 +140,7 @@
 
 (group "Launch external programs"
   (test "Open browser" (open-in-browser "https://shirakumo.org"))
-  (test "File manager" (open-in-file-manager (self)))
+  #-nx (test "File manager" (open-in-file-manager (self)))
   (test "Error message" (emessage "Test")))
 
 (group "Runtime environment tests"
