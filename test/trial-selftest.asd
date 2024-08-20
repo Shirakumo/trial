@@ -10,5 +10,5 @@
   :components ((:file "selftest"))
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
-               :trial-harmony
+               #-nx :trial-harmony
                :trial-png))
