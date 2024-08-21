@@ -5,6 +5,10 @@
    #:nxgl
    #:error
    #:check-error
+   #:event
+   #:event-type
+   #:event-a
+   #:event-b
    #:init
    #:shutdown
    #:create-context
@@ -48,7 +52,20 @@
   :create-context-failed
   :make-current-failed
   :bad-access
-  :context-lost)
+  :context-lost
+  :event-overflow)
+
+(cffi:defcenum event-type
+  :focus-gain
+  :focus-lose
+  :resize
+  :quit
+  :mouse-move
+  :mouse-press
+  :mouse-release
+  :mouse-wheel
+  :key-press
+  :key-release)
 
 (cffi:defcvar (error "nxgl_error") error)
 
@@ -57,18 +74,10 @@
     (unless (eql :ok err)
       (cl:error "NXGL error: ~a" err))))
 
-(cffi:defcstruct (event-handlers :conc-name eh-)
-  (user-data :pointer)
-  (focus-gain :pointer)
-  (focus-lose :pointer)
-  (resize :pointer)
-  (quit :pointer)
-  (mouse-move :pointer)
-  (mouse-press :pointer)
-  (mouse-release :pointer)
-  (mouse-wheel :pointer)
-  (key-press :pointer)
-  (key-release :pointer))
+(cffi:defcstruct (event :conc-name event-)
+  (type event-type)
+  (a :int)
+  (b :int))
 
 (cffi:defcfun (init "nxgl_init") :void)
 
@@ -78,8 +87,7 @@
   (width :int)
   (height :int)
   (config-attributes :pointer)
-  (context-attributes :pointer)
-  (handlers :pointer))
+  (context-attributes :pointer))
 
 (cffi:defcfun (destroy-context "nxgl_destroy_context") :void
   (context :pointer))
@@ -106,7 +114,9 @@
   (context :pointer))
 
 (cffi:defcfun (poll "nxgl_poll") :int
-  (context :pointer))
+  (context :pointer)
+  (count :pointer)
+  (events :pointer))
 
 (cffi:defcfun (proc-address "nxgl_get_proc_address") :pointer
   (name :string))
@@ -161,29 +171,12 @@
 (defconstant EGL-OPENGL-ES3-BIT                #x0040)
 
 (defun create-context (width height
-                       &key user-data focus-gain focus-lose resize quit mouse-move mouse-press mouse-release mouse-wheel key-press key-release
-                            (alpha-size 8) (red-size 8) (green-size 8) (blue-size 8)
+                       &key (alpha-size 8) (red-size 8) (green-size 8) (blue-size 8)
                             (context-version-major 3) (context-version-minor 3)
                             (opengl-profile :any) robustness forward-compat debug-context
                             &allow-other-keys)
   (cffi:with-foreign-objects ((config-attributes :int 64)
-                              (context-attributes :int 64)
-                              (handlers '(:struct event-handlers)))
-    (macrolet ((%set (&rest names)
-                 `(setf ,@(loop for name in names
-                                collect `(,(intern (format NIL "~a-~a" 'eh name)) handlers)
-                                collect `(or ,name (cffi:null-pointer))))))
-      (%set user-data
-            focus-gain
-            focus-lose
-            resize
-            quit
-            mouse-move
-            mouse-press
-            mouse-release
-            mouse-wheel
-            key-press
-            key-release))
+                              (context-attributes :int 64))
     (flet ((%set (list &rest args)
              (loop for i from 0 
                    for k in args
@@ -211,4 +204,4 @@
             ;; EGL-CONTEXT-OPENGL-FORWARD-COMPATIBLE (if forward-compat EGL-TRUE EGL-FALSE)
             ;; EGL-CONTEXT-OPENGL-ROBUST-ACCESS (if robustness EGL-TRUE EGL-FALSE)
             EGL-NONE))
-    (%create-context width height config-attributes context-attributes handlers)))
+    (%create-context width height config-attributes context-attributes)))

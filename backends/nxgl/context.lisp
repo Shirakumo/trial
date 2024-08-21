@@ -174,7 +174,13 @@
   (nxgl:height (pointer context)))
 
 (defmethod poll-input ((context context))
-  (nxgl:poll (pointer context)))
+  (cffi:with-foreign-objects ((count :size)
+                              (events '(:struct nxgl:event) 32))
+    (setf (cffi:mem-ref count :size) 32)
+    (nxgl:poll (pointer context) count events)
+    (loop for i from 0 below (cffi:mem-ref count :size)
+          for event = (cffi:mem-aptr events '(:struct nxgl:event) i)
+          do (process-event context event))))
 
 (cffi:define-foreign-library %gl::opengl
   (t "opengl.nso"))
@@ -199,7 +205,7 @@
                 (*context* context))
            (loop until (close-pending-p context)
                  do (poll-input main)
-                    (nxgl:poll (pointer context))
+                    (poll-input context)
                     (sleep 0.0001)))
       (v:debug :trial.backend.nxgl "Cleaning up")
       (finalize main))))
@@ -207,47 +213,51 @@
 (defun trial:make-context (&optional handler &rest initargs)
   (apply #'make-instance 'context :handler handler initargs))
 
-(defmacro define-callback (name args &body body)
-  `(cffi:defcallback ,name :void ((context :pointer) (user :pointer) ,@args)
-     (declare (ignore context user))
-     (let ((context *context*))
-       (flet ((fire (event-type &rest args)
-                (handle (apply #'make-event event-type args) (handler context))))
-         (declare (ignorable #'fire))
-         ,@body))))
+(defun process-event (context event)
+  (let ((rack (cffi:foreign-slot-pointer event '(:struct nxgl:event) 'nxgl::a)))
+    (flet ((fire (event-type &rest args)
+             (handle (apply #'make-event event-type args) (handler context))))
+      (macrolet ((event-case (&body cases)
+                   `(case (nxgl:event-type event)
+                      ,@(loop for (type args . body) in cases
+                              collect `(,type
+                                        (let ,(loop for name in args
+                                                    for i from 0
+                                                    collect `(,name (cffi:mem-aref rack :int ,i)))
+                                          ,@body))))))
+        (event-case
+          (:focus-gain ()
+           (fire 'gain-focus))
 
-(define-callback focus-gain ()
-  (fire 'gain-focus))
+          (:focus-lose ()
+           (fire 'lose-focus))
 
-(define-callback focus-lose ()
-  (fire 'lose-focus))
+          (:resize (width height)
+           (fire 'resize :width width :height height))
 
-(define-callback resize ((width :int) (height :int))
-  (fire 'resize :width width :height height))
+          (:quit ()
+           (fire 'window-close))
 
-(define-callback quit ()
-  (fire 'window-close))
+          (:mouse-move (x y)
+           (let ((current (vec x y)))
+              (fire 'mouse-move :old-pos (mouse-pos context)
+                                :pos current)
+              (setf (mouse-pos context) current)))
 
-(define-callback mouse-move ((x :int) (y :int))
-  (let ((current (vec x y)))
-    (fire 'mouse-move :old-pos (mouse-pos context)
-                      :pos current)
-    (setf (mouse-pos context) current)))
+          (:mouse-press (button)
+           (fire 'mouse-press :pos (mouse-pos context) :button (button->keyword button)))
 
-(define-callback mouse-press ((button :int))
-  (fire 'mouse-press :pos (mouse-pos context) :button (button->keyword button)))
+          (:mouse-release (button)
+           (fire 'mouse-release :pos (mouse-pos context) :button (button->keyword button)))
 
-(define-callback mouse-release ((button :int))
-  (fire 'mouse-release :pos (mouse-pos context) :button (button->keyword button)))
+          (:mouse-wheel (delta)
+           (fire 'mouse-scroll :pos (mouse-pos context) :delta delta))
 
-(define-callback mouse-wheel ((delta :int))
-  (fire 'mouse-scroll :pos (mouse-pos context) :delta delta))
+          (:key-press (code)
+           (fire 'key-press :key (scan-code->keyword code)))
 
-(define-callback key-press ((code :int))
-  (fire 'key-press :key (scan-code->keyword code)))
-
-(define-callback key-release ((code :int))
-  (fire 'key-release :key (scan-code->keyword code)))
+          (:key-release (code)
+           (fire 'key-release :key (scan-code->keyword code))))))))
 
 (defmethod org.shirakumo.depot:commit :after ((depot org.shirakumo.depot.zip::zip-file-archive) &key)
   (nxgl:commit-save))
