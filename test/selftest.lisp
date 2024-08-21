@@ -112,6 +112,9 @@
          (with-context (context)
            ,@body)))))
 
+(cffi:defcallback selftest :int ((in :int))
+  (1+ in))
+
 (group "Basic Lisp information"
   (test "Machine type" (machine-type))
   (test "Machine version" (machine-version))
@@ -119,6 +122,14 @@
   (test "Software version" (software-version))
   (test "Lisp implementation type" (lisp-implementation-type))
   (test "Lisp implementation version" (lisp-implementation-version)))
+
+(group "FFI"
+  (test "Call sin()" (cffi:foreign-funcall "sin" :double 1.0d0 :double))
+  (test "Lisp callback" (cffi:foreign-funcall-pointer (cffi:callback selftest) () :int 10 :int)))
+
+(group "Internet"
+  (test "TCP connect" (usocket:socket-close (usocket:socket-connect "example.com" 80)))
+  (test "DNS query" (org.shirakumo.dns-client:resolve "example.com")))
 
 (group "Threading"
   (test "Create thread" (wait-for-thread-exit (with-thread ("Test"))))
@@ -199,7 +210,8 @@
   (test "Make current" (let ((context (create-context (make-context NIL :visible NIL))))
                          (make-current context)
                          (finalize context)))
-  (test "Launch with context" (launch-with-context 'dummy))
+  (context-test "Poll input"
+    (poll-input *context*))
   (context-test "GL Info"
     (context-info *context* :stream NIL))
   (context-test "Swap buffers"
@@ -237,5 +249,5 @@ void main(){ color = vec4(0,1,0,1); }"))
         (render (trial::ensure-allocated vao) T)
         (swap-buffers *context*)
         (sleep 0.2))))
-  (context-test "Poll input"
-    (poll-input *context*)))
+  (test "Launch with context" (launch-with-context 'dummy))
+  (test "Launch main" (launch-with-context 'main)))

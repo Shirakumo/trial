@@ -11,4 +11,7 @@
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
                #-nx :trial-harmony
-               :trial-png))
+               :trial-png
+               :usocket
+               :dns-client)
+  :perform (asdf:test-op (op c) (uiop:symbol-call :org.shirakumo.fraf.trial.selftest :run)))
