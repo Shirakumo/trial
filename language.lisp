@@ -7,7 +7,7 @@
 
 (defun languages ()
   (mapcar #'pathname-utils:directory-name
-          (directory (merge-pathnames "lang/*/" (data-root)))))
+          (directory (pathname-utils:merge-pathnames* #p"lang/*/" (data-root)))))
 
 (defun language ()
   (or +loaded-language+
@@ -38,8 +38,9 @@
        (try (first (languages)))))))
 
 (defun language-dir (&optional (language (language)))
-  (merge-pathnames (make-pathname :directory `(:relative "lang" ,(string-downcase language)))
-                   (data-root)))
+  (pathname-utils:merge-pathnames*
+   (make-pathname :directory `(:relative "lang" ,(string-downcase language)))
+   (data-root)))
 
 (defun language-files (&optional (language (language)))
   (directory (make-pathname :name :wild :type "sexp" :defaults (language-dir language))))

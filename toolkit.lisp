@@ -25,7 +25,7 @@
 
 (defun git-repo-commit (dir)
   (flet ((file (path)
-           (merge-pathnames path dir))
+           (pathname-utils:merge-pathnames* path dir))
          (trim (string)
            (string-trim '(#\Return #\Linefeed #\Space) string)))
     (when (probe-file (file ".git/HEAD"))
@@ -447,10 +447,11 @@
 
 (defun logfile ()
   (let ((log (or (uiop:getenv "TRIAL_LOGFILE") "")))
-    (merge-pathnames (if (string= "" log)
-                         "trial.log"
-                         (pathname-utils:parse-native-namestring log))
-                     (or #+nx (tempdir) (uiop:argv0) (user-homedir-pathname)))))
+    (pathname-utils:merge-pathnames*
+     (if (string= "" log)
+         "trial.log"
+         (pathname-utils:parse-native-namestring log))
+     (or #+nx (tempdir) (uiop:argv0) (user-homedir-pathname)))))
 
 (defun config-directory (&rest app-path)
   (apply #'pathname-utils:subdirectory
@@ -1374,7 +1375,7 @@
 
 (defun find-program (program)
   (loop for dir in (uiop:getenv-absolute-directories "PATH")
-        thereis (when dir (probe-file (merge-pathnames program dir)))))
+        thereis (when dir (probe-file (pathname-utils:merge-pathnames* program dir)))))
 
 (defun run (program &rest args)
   (flet ((normalize (arg)

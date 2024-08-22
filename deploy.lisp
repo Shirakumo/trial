@@ -2,13 +2,13 @@
 
 (deploy:define-hook (:deploy trial) (directory)
   (deploy:copy-directory-tree (pathname-utils:subdirectory (data-root) "lang") directory)
-  (let ((default-keymap (merge-pathnames "keymap.lisp" (data-root))))
+  (let ((default-keymap (pathname-utils:merge-pathnames* "keymap.lisp" (data-root))))
     (when (probe-file default-keymap)
-      (uiop:copy-file default-keymap (merge-pathnames "keymap.lisp" directory))))
+      (uiop:copy-file default-keymap (pathname-utils:merge-pathnames* "keymap.lisp" directory))))
   (dolist (pool (list-pools))
     (let* ((source (base pool))
            (unused (loop for path in (unused-file-patterns pool)
-                         collect (merge-pathnames path source))))
+                         collect (pathname-utils:merge-pathnames* path source))))
       (flet ((unused-file-p (src dst)
                (declare (ignore dst))
                (loop for pattern in unused
@@ -20,7 +20,7 @@
         (deploy:status 1 "Copying pool ~a from ~a" pool source)
         (deploy:copy-directory-tree
          source
-         (merge-pathnames (base pool) directory)
+         (pathname-utils:merge-pathnames* (base pool) directory)
          :copy-root NIL
          :exclude #'unused-file-p)))))
 

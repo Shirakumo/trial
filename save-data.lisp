@@ -24,7 +24,7 @@
 (defmethod initialize-instance :after ((save-file save-file) &key file)
   (unless (slot-boundp save-file 'file)
     (let ((path (save-file-path (slot save-file))))
-      (setf (file save-file) (if file (merge-pathnames file path) path)))))
+      (setf (file save-file) (if file (pathname-utils:merge-pathnames* file path) path)))))
 
 (defmethod print-object ((save-file save-file) stream)
   (print-unreadable-object (save-file stream :type T)

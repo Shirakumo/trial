@@ -78,8 +78,9 @@
   (check-type name symbol)
   (let ((path (or *compile-file-pathname* *load-pathname*
                   (error "This needs to be compile-filed!"))))
-    (setf path (merge-pathnames (getf initargs :base #p"")
-                                (pathname-utils:subdirectory path "data")))
+    (setf path (pathname-utils:merge-pathnames*
+                (getf initargs :base #p"")
+                (pathname-utils:subdirectory path "data")))
     (remf initargs :base)
     `(eval-when (:compile-toplevel :load-toplevel :execute)
        (cond ((find-pool ',name)
@@ -130,10 +131,10 @@
   (mapc #'finalize (list-assets pool)))
 
 (defmethod pool-path ((pool pool) (null null))
-  (merge-pathnames (base pool) (deploy:data-directory)))
+  (pathname-utils:merge-pathnames* (base pool) (deploy:data-directory)))
 
 (defmethod pool-path ((pool pool) pathname)
-  (merge-pathnames pathname (pool-path pool NIL)))
+  (pathname-utils:merge-pathnames* pathname (pool-path pool NIL)))
 
 (defmethod pool-path ((name symbol) pathname)
   (pool-path (find-pool name T) pathname))
