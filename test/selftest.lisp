@@ -10,6 +10,17 @@
 #+nx (define-symbol-macro *test-output* *standard-output*)
 (defvar *tests* (make-array 0 :adjustable T :fill-pointer T))
 (defvar *failures*)
+(defvar *default-skip* #-nx '()
+        #+nx '("Run full GC"
+               "Lisp callback"
+               ;; Not available
+               "File manager"
+               "TCP connect"
+               "DNS query"
+               ;; Working but annoying
+               "Open browser"
+               "Error message"
+               "Checksum"))
 
 (defun start-test (name)
   (format *test-output* "~&[~3d/~3d] ~a ~32t"
@@ -42,7 +53,7 @@
           (funcall-muffled fn)
           (funcall fn)))))
 
-(defun run (&key skip)
+(defun run (&key (skip *default-skip*))
   (let ((*failures* ()))
     (org.shirakumo.verbose:with-muffled-logging ()
       (loop for (test fn) across *tests*
@@ -137,7 +148,7 @@
 
 (group "GC"
   (test "Run GC" (trivial-garbage:gc))
-  #-nx (test "Run full GC" (trivial-garbage:gc :full T)))
+  (test "Run full GC" (trivial-garbage:gc :full T)))
 
 (group "Query machine information"
   (test "CPU time" (cpu-time))
@@ -151,7 +162,7 @@
 
 (group "Launch external programs"
   (test "Open browser" (open-in-browser "https://shirakumo.org"))
-  #-nx (test "File manager" (open-in-file-manager (self)))
+  (test "File manager" (open-in-file-manager (self)))
   (test "Error message" (emessage "Test")))
 
 (group "Runtime environment tests"
