@@ -115,9 +115,12 @@
 (defmethod finalize ((dummy dummy))
   (finalize (context dummy)))
 
+(defmethod handle ((ev event) (handler (eql :dummy)))
+  (org.shirakumo.verbose:info :trial.selftest "~a" ev))
+
 (defmacro context-test (name &body body)
   `(test ,name
-     (let ((context (make-context NIL :visible NIL)))
+     (let ((context (make-context :dummy :visible NIL)))
        (with-unwind-protection (finalize context)
          (create-context context)
          (with-context (context)
@@ -212,7 +215,8 @@
                                  (org.shirakumo.fraf.mixed:free server))))
 
 (group "Asset loading"
-  (test "Trial pool path" (base (find-pool 'trial)))
+  (test "Trial pool path" (pool-path (find-pool 'trial) NIL))
+  (test "Cat asset path" (input* (asset 'trial 'trial::cat)))
   (test "Allocate memory" (deallocate (allocate (make-instance 'memory :size 64))))
   (test "Load cat" (load-image (input* (asset 'trial 'trial::cat)) T)))
 
