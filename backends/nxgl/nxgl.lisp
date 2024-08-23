@@ -14,6 +14,7 @@
    #:create-context
    #:destroy-context
    #:make-current
+   #:done-current
    #:swap-buffers
    #:swap-interval
    #:resize
@@ -93,6 +94,9 @@
   (context :pointer))
 
 (cffi:defcfun (make-current "nxgl_make_current") :bool
+  (context :pointer))
+
+(cffi:defcfun (done-current "nxgl_done_current") :bool
   (context :pointer))
 
 (cffi:defcfun (swap-buffers "nxgl_swap_buffers") :bool

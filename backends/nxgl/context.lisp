@@ -66,7 +66,8 @@
     (nxgl:check-error)))
 
 (defmethod done-current ((context context))
-  context)
+  (unless (nxgl:done-current (pointer context))
+    (nxgl:check-error)))
 
 (defmethod hide ((context context))
   context)
