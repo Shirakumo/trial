@@ -491,6 +491,7 @@
                                       (*standard-input* . ,*standard-input*)
                                       (*query-io* . ,*query-io*)
                                       (*debug-io* . ,*debug-io*)
+                                      (*context* . ,*context*)
                                       (*package* . ,*package*))))
 
 (defmacro with-thread ((name) &body body)
