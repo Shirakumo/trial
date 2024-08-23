@@ -180,7 +180,10 @@
   (cffi:load-foreign-library 'nxgl:nxgl)
   (nxgl:init)
   (setf %gl:*gl-get-proc-address* #'nxgl:proc-address)
-  (%gl::reset-gl-pointers))
+  (%gl::reset-gl-pointers)
+  (setf sb-sys::*software-version* (nxgl:software-version))
+  (setf sb-sys::*machine-instance* (nxgl:machine-instance))
+  (setf sb-sys::*machine-version* "ARM Cortex-A57"))
 
 (deploy:define-hook (:quit nxgl) ()
   (nxgl:shutdown))

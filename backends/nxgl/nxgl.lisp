@@ -1,6 +1,9 @@
 (defpackage #:org.shirakumo.fraf.nxgl
   (:use #:cl)
-  (:shadow #:error)
+  (:shadow
+   #:error
+   #:machine-instance
+   #:software-version)
   (:export
    #:nxgl
    #:error
@@ -27,7 +30,9 @@
    #:set-thread-name
    #:set-save-size
    #:get-save-size
-   #:commit-save))
+   #:commit-save
+   #:machine-instance
+   #:software-version))
 
 (in-package #:org.shirakumo.fraf.nxgl)
 
@@ -144,6 +149,10 @@
   (max :uint64))
 
 (cffi:defcfun (commit-save "nxgl_commit_save") :int)
+
+(cffi:defcfun (machine-instance "nxgl_machine_instance") :string)
+
+(cffi:defcfun (software-version "nxgl_software_version") :string)
 
 (defun username ()
   (cffi:with-foreign-object (nick :char 33)
