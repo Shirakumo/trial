@@ -235,6 +235,17 @@
     (gl:clear :color-buffer-bit)
     (swap-buffers *context*)
     (sleep 0.2))
+  (context-test "Swap buffers threaded"
+    (trial::release-context *context*)
+    (let ((thread (with-thread ("render-thread")
+                    (with-context (*context*)
+                      (show *context*)
+                      (gl:clear-color 0 1 0 1)
+                      (gl:clear :color-buffer-bit)
+                      (swap-buffers *context*)
+                      (sleep 0.2)))))
+      (wait-for-thread-exit thread)
+      (trial::acquire-context *context*)))
   (context-test "List monitors"
     (mapcar #'list-video-modes (list-monitors *context*)))
   (context-test "Fullscreen"
