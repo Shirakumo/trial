@@ -155,6 +155,7 @@
     (when (or force (not (eql this current)))
       (cond ((and force current)
              (v:warn :trial.context "~a stealing ~a from ~a." this context current))
+            ((eql this current))
             (current
              ;; FIXME: deadlocks somewhere
              (bt:with-lock-held ((context-wait-lock context))
