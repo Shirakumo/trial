@@ -31,7 +31,8 @@
                (:file "shader")
                (:file "post-processing")
                (:file "culling")
-               (:file "letterbox"))
+               (:file "letterbox")
+               (:file "repl"))
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
                :alloy-constraint
