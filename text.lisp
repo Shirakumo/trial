@@ -93,3 +93,65 @@ void main(){
   float fg_bg = texture(texture_image, uv, 0).r;
   color = mix(foreground, background, fg_bg);
 }")
+
+(define-shader-entity repl (debug-text listener)
+  ((text :initform (make-array 4096 :adjustable T :fill-pointer T :element-type 'character))
+   (line-count :initform 40 :initarg :line-count :accessor line-count)
+   (input-start :initform 0 :accessor input-start)))
+
+(defmethod initialize-instance :after ((repl repl) &key)
+  (format (text repl) "~%This is ~a ~a, an implementation of ANSI Common Lisp.
+as ~a @ ~a
+on ~a ~a,
+a ~a ~a machine
+with ~a ~a~%"
+          (lisp-implementation-type) (lisp-implementation-version)
+          (username T) (machine-instance)
+          (software-type) (software-version)
+          (machine-type) (machine-version)
+          +app-system+ (version :app))
+  (setf (text repl) (text repl))
+  (output-result () repl))
+
+(define-handler (repl text-entered) (text)
+  (loop for char across text do (vector-push-extend char (text repl)))
+  (setf (text repl) (text repl)))
+
+(define-handler (repl key-press) (key)
+  (let ((text (text repl)))
+    (case key
+      (:backspace
+       (when (< (input-start repl) (length text))
+         (decf (fill-pointer text))
+         (setf (text repl) text)))
+      ((:enter :return)
+       (if (= (input-start repl) (length text))
+           (output-result () repl)
+           (handler-case
+               (let* ((- (read-from-string text T NIL :start (input-start repl)))
+                      (values (multiple-value-list (eval -))))
+                 (shiftf *** ** * (first values))
+                 (shiftf /// cl:// / values)
+                 (shiftf +++ ++ + -)
+                 (output-result values repl))
+             (error (e)
+               (format (text repl) "~%ERROR: ~a~%" e)
+               (output-result () repl))))))))
+
+(defmethod output-result (values (repl repl))
+  (let ((text (text repl)))
+    (format text "~{~%~s~}" values)
+    (format text "~%~a> " (package-name *package*))
+    ;; Scroll lines
+    (let ((to-remove (- (loop for char across text
+                              count (char= char #\Linefeed))
+                        (line-count repl))))
+      (print to-remove)
+      (loop for i from 0 below (length text)
+            do (when (<= to-remove 0)
+                 (array-utils:array-shift text :n (- i))
+                 (return))
+               (when (char= (char text i) #\Linefeed)
+                 (decf to-remove))))
+    (setf (input-start repl) (length text))
+    (setf (text repl) text)))

@@ -30,17 +30,9 @@
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
     (!meye (view-matrix))
-    (nmortho (projection-matrix) -10 +600 -400 20 0 1)
-    ;(enter (make-instance 'basic-triangle) scene)
-    (enter (make-instance 'debug-text :text (format NIL "This is ~a ~a, an implementation of ANSI Common Lisp.
-Running on ~a ~a
-~a ~a
-~a"
-                                                    (lisp-implementation-type) (lisp-implementation-version)
-                                                    (software-type) (software-version)
-                                                    (machine-type) (machine-version)
-                                                    (machine-instance))
-                                      :foreground (vec 1 1 1 1))
+    (nmortho (projection-matrix) -10 +1270 -700 20 0 1)
+    ;;(enter (make-instance 'basic-triangle) scene)
+    (enter (make-instance 'trial::repl :foreground (vec 1 1 1 1))
            scene)
     (enter (make-instance 'render-pass) scene))
   (maybe-reload-scene))
