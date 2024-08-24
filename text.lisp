@@ -96,6 +96,8 @@ void main(){
 
 (define-shader-entity repl (debug-text listener)
   ((text :initform (make-array 4096 :adjustable T :fill-pointer T :element-type 'character))
+   (history :initform (make-array 32 :adjustable T :fill-pointer 0) :accessor history)
+   (history-index :initform 0 :accessor history-index)
    (line-count :initform 40 :initarg :line-count :accessor line-count)
    (input-start :initform 0 :accessor input-start)))
 
@@ -120,6 +122,10 @@ with ~a ~a~%"
 (define-handler (repl key-press) (key)
   (let ((text (text repl)))
     (case key
+      (:up
+       (decf (history-index repl)))
+      (:down
+       (incf (history-index repl)))
       (:backspace
        (when (< (input-start repl) (length text))
          (decf (fill-pointer text))
@@ -128,25 +134,37 @@ with ~a ~a~%"
        (if (= (input-start repl) (length text))
            (output-result () repl)
            (handler-case
-               (let* ((- (read-from-string text T NIL :start (input-start repl)))
-                      (values (multiple-value-list (eval -))))
-                 (shiftf *** ** * (first values))
-                 (shiftf /// cl:// / values)
-                 (shiftf +++ ++ + -)
-                 (output-result values repl))
+               (let ((start (shiftf (input-start repl) (length text))))
+                 (vector-push-extend (subseq text start) (history repl))
+                 (setf (history-index repl) (length (history repl)))
+                 (let* ((- (read-from-string text T NIL :start start))
+                        (values (multiple-value-list (eval -))))
+                   (shiftf *** ** * (first values))
+                   (shiftf /// cl:// / values)
+                   (shiftf +++ ++ + -)
+                   (output-result values repl)))
              (error (e)
                (format (text repl) "~%ERROR: ~a~%" e)
                (output-result () repl))))))))
 
+(defmethod (setf history-index) :around (index (repl repl))
+  (call-next-method (clamp 0 index (length (history repl))) repl))
+
+(defmethod (setf history-index) :after (index (repl repl))
+  (let ((history-item (if (< index (length (history repl)))
+                          (aref (history repl) index))))
+    (setf (fill-pointer (text repl)) (+ (input-start repl) (length history-item)))
+    (replace (text repl) history-item :start1 (input-start repl))
+    (setf (text repl) (text repl))))
+
 (defmethod output-result (values (repl repl))
   (let ((text (text repl)))
     (format text "~{~%~s~}" values)
-    (format text "~%~a> " (package-name *package*))
+    (format text "~%~a> " (package-abbreviation *package*))
     ;; Scroll lines
     (let ((to-remove (- (loop for char across text
                               count (char= char #\Linefeed))
                         (line-count repl))))
-      (print to-remove)
       (loop for i from 0 below (length text)
             do (when (<= to-remove 0)
                  (array-utils:array-shift text :n (- i))
