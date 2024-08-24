@@ -7,10 +7,11 @@
   (define-global +mac-power-id+ 0))
 
 (defun prevent-powersave ()
-  #-nx
   (ignore-errors
    (v:info :trial.power "Preventing powersaving.")
    (setf +powersave-timer+ -100.0)
+   #+nx
+   (cffi:foreign-funcall "nxgl_prevent_powersave")
    #+darwin
    (progn
      (unless +mac-sleep-reason-name+
@@ -20,9 +21,10 @@
    (uiop:run-program (list "xset" "s" "off" "-dpms") :ignore-error-status T)))
 
 (defun ping-powersave (tt)
-  #-nx
   (when (< (+ 10 +powersave-timer+) tt)
     (setf +powersave-timer+ tt)
+    #+nx
+    (cffi:foreign-funcall "nxgl_ping_powersave")
     #+windows
     (cffi:foreign-funcall "SetThreadExecutionState"
                           :uint #x80000003 :int)
@@ -38,9 +40,10 @@
         (setf +mac-power-id+ (cffi:mem-ref id :uint32))))))
 
 (defun restore-powersave ()
-  #-nx
   (ignore-errors
    (v:info :trial.power "Restoring powersaving.")
+   #+nx
+   (cffi:foreign-funcall "nxgl_restore_powersave")
    #+windows
    (cffi:foreign-funcall "SetThreadExecutionState"
                          :uint #x80000000 :int)

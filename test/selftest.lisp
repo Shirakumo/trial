@@ -184,6 +184,7 @@
 
 (group "Powersaving"
   (test "Prevent powersaving" (trial::prevent-powersave))
+  (test "Prevent powersaving" (trial::ping-powersave))
   (test "Restore powersaving" (trial::restore-powersave)))
 
 (group "Save files"
