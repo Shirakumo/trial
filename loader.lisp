@@ -168,7 +168,7 @@
                                   (when (allocated-p resource)
                                     (deallocate resource))))
                                (remhash resource (loaded loader))))))
-                 #-nx (tg:gc :full T))
+                 (tg:gc :full #-nx T #+nx NIL))
                ;; Persist load state into loader
                (loop for loadable being the hash-keys of (load-state area) using (hash-value status)
                      do (case status
