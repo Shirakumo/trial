@@ -1766,7 +1766,9 @@
    #:debug-text
    #:text
    #:foreground
-   #:background)
+   #:background
+   #:repl
+   #:line-count)
   ;; texture-source.lisp
   (:export
    #:texture-source

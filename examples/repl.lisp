@@ -4,5 +4,5 @@
   :title "Simple REPL"
   (!meye (view-matrix))
   (nmortho (projection-matrix) -10 +1270 -700 20 0 1)
-  (enter (make-instance 'trial::repl :foreground (vec 1 1 1 1)) scene)
+  (enter (make-instance 'repl :foreground (vec 1 1 1 1)) scene)
   (enter (make-instance 'render-pass) scene))
