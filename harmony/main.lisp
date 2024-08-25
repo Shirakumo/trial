@@ -79,3 +79,7 @@
       (let ((new (setf (mixed:device harmony:*server*) value)))
         (unless (equal value new)
           (setf (trial:setting :audio :device) new))))))
+
+#+nx
+(defmethod harmony:run :before ((server harmony:server))
+  (setf (org.shirakumo.machine-state:thread-core-mask T) #b0100))

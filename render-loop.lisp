@@ -13,9 +13,11 @@
                                         0d0)))
 
 (defmethod start ((render-loop render-loop))
+  #+nx (setf (org.shirakumo.machine-state:thread-core-mask T) #b0001)
   (setf (thread render-loop) T)
   (setf (thread render-loop)
         (with-thread ("render-loop")
+          #+nx (setf (org.shirakumo.machine-state:thread-core-mask T) #b0010)
           (render-loop render-loop))))
 
 (defmethod stop ((render-loop render-loop))
