@@ -55,20 +55,34 @@
                      :sources (list (make-image-source pixel-data width height :unsigned-byte :rg-integer))
                      :tileset tileset)))
 
-(defun decode-tiled-tileset (data path asset)
-  (list :tileset (generate-resources 'image-loader (merge-pathnames (gethash "image" data) path)
-                                     :resource (resource asset (gethash "name" data))
-                                     :texture-class 'tileset
-                                     :width (gethash "imagewidth" data)
-                                     :height (gethash "imageheight" data)
-                                     :tile-size (vec (gethash "tileheight" data)
-                                                     (gethash "tilewidth" data)))
-        :first-id (gethash "firstgid" data)
-        :columns (gethash "columns" data)))
+(defun tileset-source (tileset)
+  (let ((source (gethash "source" tileset)))
+    (when source
+      (let* ((as-path (pathname-utils:pathname* source))
+             (ext (pathname-type as-path)))
+        (if (or (string-equal "tsj" ext)
+                (string-equal "json" ext))
+            as-path
+            (error "Embedded tileset found, but not JSON format: ~a" as-path))))))
+
+(defun decode-tiled-tileset (raw-tileset path asset)
+  (let ((tileset (let ((unembedded-ts-path (tileset-source raw-tileset)))
+                   (if unembedded-ts-path
+                       (com.inuoe.jzon:parse (merge-pathnames unembedded-ts-path path))
+                       raw-tileset))))
+    (list :tileset (generate-resources 'image-loader (merge-pathnames (gethash "image" tileset) path)
+                                       :resource (resource asset (gethash "name" tileset))
+                                       :texture-class 'tileset
+                                       :width (gethash "imagewidth" tileset)
+                                       :height (gethash "imageheight" tileset)
+                                       :tile-size (vec (gethash "tileheight" tileset)
+                                                       (gethash "tilewidth" tileset)))
+          :first-id (gethash "firstgid" raw-tileset)
+          :columns (gethash "columns" tileset))))
 
 (defun load-tiled-data (tile source)
   (let* ((data (com.inuoe.jzon:parse source))
-         (tilesets (map 'list (lambda (f) (decode-tiled-tileset f source tile)) (gethash "tilesets" data))))
+         (tilesets (map 'list (lambda (tileset) (decode-tiled-tileset tileset source tile)) (gethash "tilesets" data))))
     (values (map 'list (lambda (f) (decode-tiled-layer f tilesets tile)) (gethash "layers" data))
             tilesets)))
 
