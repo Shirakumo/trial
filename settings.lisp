@@ -37,7 +37,7 @@
 
 (defun load-keymap (&key (path (keymap-path)) reset (package *package*) (default (default-keymap-path)))
   (ensure-directories-exist path)
-  (cond ((or reset (keymap-out-of-date-p path default))
+  (cond ((or reset (file-out-of-date-p path default))
          (when (probe-file default)
            (load-mapping default :package package))
          (when (and (probe-file path) (null reset))
