@@ -183,9 +183,9 @@
   (test "Save settings" (progn (save-settings) T)))
 
 (group "Powersaving"
-  (test "Prevent powersaving" (trial::prevent-powersave))
-  (test "Prevent powersaving" (trial::ping-powersave))
-  (test "Restore powersaving" (trial::restore-powersave)))
+  (test "Prevent powersaving" (prevent-powersave))
+  (test "Ping powersaving" (ping-powersave 1.0))
+  (test "Restore powersaving" (restore-powersave)))
 
 (group "Save files"
   (test "Create save file" (store-save-data 1 T))

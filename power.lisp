@@ -21,23 +21,24 @@
    (uiop:run-program (list "xset" "s" "off" "-dpms") :ignore-error-status T)))
 
 (defun ping-powersave (tt)
-  (when (< (+ 10 +powersave-timer+) tt)
-    (setf +powersave-timer+ tt)
-    #+nx
-    (cffi:foreign-funcall "nxgl_ping_powersave")
-    #+windows
-    (cffi:foreign-funcall "SetThreadExecutionState"
-                          :uint #x80000003 :int)
-    #+darwin
-    (when +mac-sleep-reason-name+
-      (cffi:with-foreign-object (id :uint32)
-        (setf (cffi:mem-ref id :uint32) +mac-power-id+)
-        (cffi:foreign-funcall "IOPMAssertionDeclareUserActivity"
-                              :pointer +mac-sleep-reason-name+
-                              :uint 0
-                              :pointer id
-                              :int)
-        (setf +mac-power-id+ (cffi:mem-ref id :uint32))))))
+  (let ((tt (float tt 0d0)))
+    (when (< (+ 10 +powersave-timer+) tt)
+      (setf +powersave-timer+ tt)
+      #+nx
+      (cffi:foreign-funcall "nxgl_ping_powersave")
+      #+windows
+      (cffi:foreign-funcall "SetThreadExecutionState"
+                            :uint #x80000003 :int)
+      #+darwin
+      (when +mac-sleep-reason-name+
+        (cffi:with-foreign-object (id :uint32)
+          (setf (cffi:mem-ref id :uint32) +mac-power-id+)
+          (cffi:foreign-funcall "IOPMAssertionDeclareUserActivity"
+                                :pointer +mac-sleep-reason-name+
+                                :uint 0
+                                :pointer id
+                                :int)
+          (setf +mac-power-id+ (cffi:mem-ref id :uint32)))))))
 
 (defun restore-powersave ()
   (ignore-errors

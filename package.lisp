@@ -1509,6 +1509,11 @@
    #:pipelined-scene
    #:to-preload
    #:preload)
+  ;; power.lisp
+  (:export
+   #:prevent-powersave
+   #:ping-powersave
+   #:restore-powersave)
   ;; prefab.lisp
   (:export
    #:define-prefab-translator
@@ -1629,8 +1634,6 @@
    #:vsync
    #:framerate
    #:fps-counter)
-  ;; sdl2-gamepad-map.lisp
-  (:export)
   ;; selection-buffer.lisp
   (:export
    #:ensure-selection-color
