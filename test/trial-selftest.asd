@@ -10,7 +10,7 @@
   :components ((:file "selftest"))
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
-               #-nx :trial-harmony
+               :trial-harmony
                :trial-png
                :usocket
                :dns-client)

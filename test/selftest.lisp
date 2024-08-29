@@ -202,7 +202,6 @@
                      (sleep 0.5)
                      (org.shirakumo.fraf.gamepad:rumble dev 0.0)))))
 
-#-nx
 (group "Audio"
   (test "Platform drain" (org.shirakumo.fraf.harmony:detect-platform-drain))
   (test "Initialize output" (let* ((packer (org.shirakumo.fraf.mixed:make-packer))
