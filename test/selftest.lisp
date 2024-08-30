@@ -15,8 +15,6 @@
                "Lisp callback"
                ;; Not available
                "File manager"
-               "TCP connect"
-               "DNS query"
                ;; Working but annoying
                "Open browser"
                "Error message"
