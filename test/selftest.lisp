@@ -141,7 +141,7 @@
 
 (group "Internet"
   (test "TCP connect" (usocket:socket-close (usocket:socket-connect "example.com" 80)))
-  (test "DNS query" (org.shirakumo.dns-client:resolve "example.com")))
+  (test "DNS query" (org.shirakumo.dns-client:query-data "example.com" :type :A)))
 
 (group "Threading"
   (test "Create thread" (wait-for-thread-exit (with-thread ("Test"))))
