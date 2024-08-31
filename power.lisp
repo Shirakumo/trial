@@ -9,7 +9,7 @@
 (defun prevent-powersave ()
   (ignore-errors
    (v:info :trial.power "Preventing powersaving.")
-   (setf +powersave-timer+ -100.0)
+   (setf +powersave-timer+ -100d0)
    #+nx
    (cffi:foreign-funcall "nxgl_prevent_powersave")
    #+darwin
@@ -22,7 +22,7 @@
 
 (defun ping-powersave (tt)
   (let ((tt (float tt 0d0)))
-    (when (< (+ 10 +powersave-timer+) tt)
+    (when (< (+ 10d0 +powersave-timer+) tt)
       (setf +powersave-timer+ tt)
       #+nx
       (cffi:foreign-funcall "nxgl_ping_powersave")
