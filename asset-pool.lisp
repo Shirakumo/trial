@@ -76,17 +76,23 @@
 
 (defmacro define-pool (name &body initargs)
   (check-type name symbol)
-  (let ((path (or *compile-file-pathname* *load-pathname*
-                  (error "This needs to be compile-filed!"))))
-    (setf path (pathname-utils:merge-pathnames*
-                (getf initargs :base #p"")
-                (pathname-utils:subdirectory path "data")))
+  (let* ((path (or *compile-file-pathname* *load-pathname*
+                   (error "This needs to be compile-filed!")))
+         (base (getf initargs :base #p"")))
+    (setf path (if (getf initargs :root)
+                   (pathname-utils:subdirectory
+                    (asdf:system-source-directory +app-system+) base "data")
+                   (pathname-utils:merge-pathnames*
+                    base
+                    (pathname-utils:subdirectory path "data"))))
     (remf initargs :base)
+    (remf initargs :root)
     `(eval-when (:compile-toplevel :load-toplevel :execute)
-       (cond ((find-pool ',name)
-              (reinitialize-instance (find-pool ',name) ,@initargs))
-             (T
-              (setf (find-pool ',name) (make-instance 'pool :name ',name ,@initargs :base ,path))))
+       (let ((pool (find-pool ',name)))
+         (cond ((and pool (equal ,path (base pool)))
+                (reinitialize-instance pool ,@initargs))
+               (T
+                (setf (find-pool ',name) (make-instance 'pool :name ',name ,@initargs :base ,path)))))
        ',name)))
 
 (defmacro define-as-unused (pool &body defs)
