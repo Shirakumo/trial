@@ -170,7 +170,9 @@
     (nxgl:poll (pointer context) count events)
     (loop for i from 0 below (cffi:mem-ref count :size)
           for event = (cffi:mem-aptr events '(:struct nxgl:event) i)
-          do (process-event context event))))
+          do (process-event context event)))
+  (when (close-pending-p context)
+    (exit-render-loop)))
 
 (cffi:define-foreign-library %gl::opengl
   (t "opengl.nso"))

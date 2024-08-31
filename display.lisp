@@ -83,3 +83,9 @@
 
 (defmethod height ((display display))
   (height (context display)))
+
+(defclass single-threaded-display (single-threaded-render-loop display)
+  ())
+
+(defmethod poll-input :after ((display single-threaded-display))
+  (poll-input (context display)))

@@ -244,7 +244,9 @@
   pos)
 
 (defmethod poll-input ((context context))
-  (glfw:poll-events :timeout NIL))
+  (glfw:poll-events :timeout NIL)
+  (when (glfw:should-close-p context)
+    (exit-render-loop)))
 
 (defun make-context (&optional handler &rest initargs)
   (handler-case (glfw:init)
@@ -258,25 +260,26 @@
                #+trial-release (error () (error 'trial:context-creation-error :message "Failed to initialize GLFW.")))
              (let ((main (apply #'make-instance main initargs)))
                (start main)
-               (trial:rename-thread "input-loop")
-               (v:debug :trial.backend.glfw "Entering input loop")
                (unwind-protect
-                    (let ((context (trial:context main)))
-                      (flet ((handler (request arg)
-                               (handler-case
-                                   (ecase request
-                                     (:get-clipboard (glfw:clipboard-string context))
-                                     (:set-clipboard (setf (glfw:clipboard-string context) arg)))
-                                 #+trial-release
-                                 (error (e)
-                                   (v:debug :trial.backend.glfw e)
-                                   (v:error :trial.backend.glfw "Failed to execute ~a: ~a" request e)
-                                   ""))))
-                        (declare (dynamic-extent #'handler))
-                        (loop until (glfw:should-close-p context)
-                              do (glfw:poll-events :timeout 0.005d0)
-                                 (poll-input main)
-                                 (handle-event-queue (event-queue context) #'handler))))
+                    (unless (typep main 'trial::single-threaded-display)
+                      (let ((context (trial:context main)))
+                        (trial:rename-thread "input-loop")
+                        (v:debug :trial.backend.glfw "Entering input loop")
+                        (flet ((handler (request arg)
+                                 (handler-case
+                                     (ecase request
+                                       (:get-clipboard (glfw:clipboard-string context))
+                                       (:set-clipboard (setf (glfw:clipboard-string context) arg)))
+                                   #+trial-release
+                                   (error (e)
+                                     (v:debug :trial.backend.glfw e)
+                                     (v:error :trial.backend.glfw "Failed to execute ~a: ~a" request e)
+                                     ""))))
+                          (declare (dynamic-extent #'handler))
+                          (loop until (glfw:should-close-p context)
+                                do (glfw:poll-events :timeout 0.005d0)
+                                   (poll-input main)
+                                   (handle-event-queue (event-queue context) #'handler)))))
                  (v:debug :trial.backend.glfw "Cleaning up")
                  (unwind-protect (finalize main)
                    (glfw:shutdown)))))

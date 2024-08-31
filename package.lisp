@@ -1547,11 +1547,11 @@
    #:frame-time
    #:target-frame-time
    #:reset-render-loop
+   #:exit-render-loop
    #:start
    #:stop
    #:render
-   #:update
-   #:reset-render-loop)
+   #:update)
   ;; resource.lisp
   (:export
    #:resource

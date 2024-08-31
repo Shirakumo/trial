@@ -19,12 +19,12 @@
           (gamepad:vendor dev) (gamepad:product dev) (gamepad:version dev)
           (gamepad:driver dev) (gamepad:name dev)))
 
-(defmethod start :after ((handler gamepad-input-handler))
+(defmethod start :before ((handler gamepad-input-handler))
   (with-gamepad-failure-handling (:ignore-error #-trial-release NIL #+trial-release T)
     (v:info :trial.input "~:[No controllers detected.~;Detected the following controllers:~:*~{~%  ~a~}~]"
             (mapcar #'describe-gamepad (gamepad:init)))))
 
-(defmethod stop :after ((handler gamepad-input-handler))
+(defmethod stop :before ((handler gamepad-input-handler))
   (with-gamepad-failure-handling ()
     (gamepad:shutdown)))
 

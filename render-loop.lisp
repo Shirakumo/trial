@@ -77,4 +77,24 @@
                          (render render-loop render-loop))))))))))
 
 (defun reset-render-loop ()
-  (invoke-restart 'reset-render-loop))
+  (when (find-restart 'reset-render-loop)
+    (invoke-restart 'reset-render-loop)))
+
+(defun exit-render-loop ()
+  (when (find-restart 'exit-render-loop)
+    (invoke-restart 'exit-render-loop)))
+
+(defclass single-threaded-render-loop (render-loop)
+  ())
+
+(defmethod start ((render-loop single-threaded-render-loop))
+  (setf (thread render-loop) (bt:current-thread))
+  (render-loop render-loop))
+
+(defmethod stop ((render-loop single-threaded-render-loop))
+  (setf (thread render-loop) NIL)
+  (when (find-restart 'exit-render-loop)
+    (invoke-restart 'exit-render-loop)))
+
+(defmethod update :after ((render-loop single-threaded-render-loop) tt dt fc)
+  (poll-input render-loop))
