@@ -8,7 +8,10 @@
         (when errorp (error "No pool with name ~s." name))))
 
   (defun (setf find-pool) (pool name)
-    (setf (gethash name *pools*) pool))
+    (if pool
+        (setf (gethash name *pools*) pool)
+        (remhash name *pools*))
+    pool)
 
   (defun remove-pool (name)
     (remhash name *pools*))
