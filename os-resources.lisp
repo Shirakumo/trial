@@ -30,23 +30,23 @@
 (defun open-in-browser (url)
   (or (funcall *open-in-browser-hook* url)
       #+windows
-      (uiop:launch-program (list "rundll32" "url.dll,FileProtocolHandler" url))
+      (run* "rundll32" (list "url.dll,FileProtocolHandler" url) :background T)
       #+linux
-      (uiop:launch-program (list "xdg-open" url))
+      (run* '("xdg-open" "firefox" "chromium" "chrome" "vivaldi") (list url) :background T)
       #+nx
       (cffi:foreign-funcall "nxgl_open_url" :string url :bool)
       #+darwin
-      (uiop:launch-program (list "open" url))))
+      (run* "open" (list url) :background T)))
 
 (defun open-in-file-manager (path)
   #+windows
-  (uiop:launch-program (list "explorer.exe" (uiop:native-namestring path)))
+  (run* "explorer.exe" (list (uiop:native-namestring path)) :background T)
   #+linux
-  (uiop:launch-program (list "xdg-open" (uiop:native-namestring path)))
+  (run* '("xdg-open" "dolphin" "nemo" "nautilus") (list (uiop:native-namestring path)) :background T)
   #+nx
   (error "There's no file manager on the NX")
   #+darwin
-  (uiop:launch-program (list "open" (uiop:native-namestring path))))
+  (run* "open" (list (uiop:native-namestring path)) :background T))
 
 (defun rename-thread (name)
   (ignore-errors
