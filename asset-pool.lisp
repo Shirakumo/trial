@@ -81,9 +81,11 @@
   (check-type name symbol)
   (let ((path (or *compile-file-pathname* *load-pathname*
                   (error "This needs to be compile-filed!"))))
-    (setf path (pathname-utils:merge-pathnames*
-                (getf initargs :base #p"")
-                (pathname-utils:subdirectory path "data")))
+    (setf path (pathname-utils:normalize-pathname
+                (pathname-utils:merge-pathnames*
+                 (getf initargs :base #p"")
+                 (pathname-utils:subdirectory path "data"))
+                :up-as-back T))
     (remf initargs :base)
     `(eval-when (:compile-toplevel :load-toplevel :execute)
        (cond ((find-pool ',name)
