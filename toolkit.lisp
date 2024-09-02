@@ -1375,10 +1375,15 @@
     array))
 
 (defun find-program (program)
-  (loop for dir in (uiop:getenv-absolute-directories "PATH")
-        thereis (when dir (probe-file (pathname-utils:merge-pathnames* program dir)))))
+  (let ((programs (enlist program)))
+    (loop for dir in (uiop:getenv-absolute-directories "PATH")
+          thereis (when dir (loop for program in programs
+                                  thereis (probe-file (pathname-utils:merge-pathnames* program dir)))))))
 
 (defun run (program &rest args)
+  (run* program args))
+
+(defun run* (program args &key background input)
   (flet ((normalize (arg)
            (etypecase arg
              (pathname (pathname-utils:native-namestring arg))
@@ -1386,9 +1391,10 @@
              (string arg))))
     (let ((args (loop for arg in args
                       append (mapcar #'normalize (enlist arg))))
-          (program (or #+windows (find-program (format NIL "~a.exe" program))
-                       (find-program program)
+          (program (or (find-program program)
+                       #+windows (find-program (format NIL "~a.exe" program))
                        (error "Can't find external program:~%  ~a"
                               program))))
-      (uiop:run-program (list* program args)
-                        :output :string :error-output *error-output*))))
+      (if background
+          (uiop:launch-program (list* program args) :input input :error-output *error-output*)
+          (uiop:run-program (list* program args) :input input :output :string :error-output *error-output*)))))
