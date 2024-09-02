@@ -28,14 +28,14 @@
    (vertex-array :initform NIL)))
 
 (defun make-sprite-frame-mesh (frames)
-  (with-mesh-construction (v finalize (location uv) NIL)
+  (with-mesh-construction (v finalize (location uv))
     (loop for frame across frames
           for xy = (xy frame)
           for uv = (uv frame)
           do (v (- (vx xy) (vz xy)) (- (vy xy) (vw xy)) 0 (vx uv) (vy uv))
              (v (+ (vx xy) (vz xy)) (- (vy xy) (vw xy)) 0 (vz uv) (vy uv))
-             (v (- (vx xy) (vz xy)) (+ (vy xy) (vw xy)) 0 (vx uv) (vy uv))
-             (v (+ (vx xy) (vz xy)) (+ (vy xy) (vw xy)) 0 (vz uv) (vy uv)))
+             (v (- (vx xy) (vz xy)) (+ (vy xy) (vw xy)) 0 (vx uv) (vw uv))
+             (v (+ (vx xy) (vz xy)) (+ (vy xy) (vw xy)) 0 (vz uv) (vw uv)))
     (finalize-data)))
 
 (defmethod frame ((entity sprite-entity))
