@@ -198,6 +198,7 @@
                :messagebox
                :mmap
                :nibbles
+               :open-with
                :pathname-utils
                :precise-time
                :promise

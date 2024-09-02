@@ -29,24 +29,10 @@
 (defvar *open-in-browser-hook* (constantly NIL))
 (defun open-in-browser (url)
   (or (funcall *open-in-browser-hook* url)
-      #+windows
-      (run* "rundll32" (list "url.dll,FileProtocolHandler" url) :background T)
-      #+linux
-      (run* '("xdg-open" "firefox" "chromium" "chrome" "vivaldi") (list url) :background T)
-      #+nx
-      (cffi:foreign-funcall "nxgl_open_url" :string url :bool)
-      #+darwin
-      (run* "open" (list url) :background T)))
+      (org.shirakumo.open-with:open url)))
 
 (defun open-in-file-manager (path)
-  #+windows
-  (run* "explorer.exe" (list (uiop:native-namestring path)) :background T)
-  #+linux
-  (run* '("xdg-open" "dolphin" "nemo" "nautilus") (list (uiop:native-namestring path)) :background T)
-  #+nx
-  (error "There's no file manager on the NX")
-  #+darwin
-  (run* "open" (list (uiop:native-namestring path)) :background T))
+  (org.shirakumo.open-with:open (pathname path)))
 
 (defun rename-thread (name)
   (ignore-errors
