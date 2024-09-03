@@ -267,6 +267,7 @@
                   (cache (primitive-global-bounds-cache primitive)))
              (when location (setf (location primitive) location))
              (when orientation (setf (orientation primitive) orientation))
+             (m<- (primitive-transform primitive) (primitive-local-transform primitive))
              (setf (global-bounds-cache-generator cache) primitive)
              (setf (global-bounds-cache-radius cache) (compute-radius primitive))
              (v<- (global-bounds-cache-obb cache) (compute-bsize primitive))
