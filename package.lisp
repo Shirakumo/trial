@@ -992,6 +992,7 @@
    #:debug-draw
    #:debug-point
    #:debug-line
+   #:debug-orientation
    #:debug-clear)
   ;; deferred.lisp
   (:export
