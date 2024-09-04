@@ -1520,6 +1520,7 @@
    #:define-prefab-translator
    #:prefab-asset
    #:instantiate-prefab
+   #:make-prefab
    #:prefab
    #:define-prefab-instantiation)
   ;; prompt.lisp
