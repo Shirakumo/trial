@@ -91,7 +91,7 @@
 (defclass transformed-entity (transformed entity)
   ((transform :initarg :transform :initform (transform) :reader tf)))
 
-(defmethod initialize-instance :after ((entity transformed-entity) &key location scaling orientation)
+(defmethod shared-initialize :after ((entity transformed-entity) slots &key location scaling orientation)
   (when location (setf (location entity) location))
   (when scaling (setf (scaling entity) scaling))
   (when orientation (setf (orientation entity) orientation)))

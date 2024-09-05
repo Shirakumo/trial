@@ -28,7 +28,7 @@
   (stage (prefab-asset prefab) area))
 
 (defun make-prefab (thing &rest initargs)
-  (instantiate-prefab (apply #'make-instance thing initargs) T))
+  (apply #'reinitialize-instance (instantiate-prefab thing T) initargs))
 
 (defmethod instantiate-prefab ((prefab symbol) asset)
   (instantiate-prefab (make-instance prefab) asset))

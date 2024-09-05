@@ -33,7 +33,7 @@
 (define-unbound-reader texture min-filter
   (case (setting :display :texture :filter)
     (:nearest :nearest)
-    (:linear :linear)
+    ((:linear :bilinear) :linear)
     (T :linear-mipmap-linear)))
 (define-unbound-reader texture mipmap-levels (list 0 10))
 (define-unbound-reader texture mipmap-lod (list -1000 1000 0.0))
