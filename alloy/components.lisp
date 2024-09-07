@@ -222,3 +222,24 @@
 
 (defmethod alloy:combo-item (item (video-mode video-mode))
   (make-instance 'video-mode-item :value item))
+
+(defclass localized-combo-set (alloy:combo-set)
+  ((localization :initarg :localization :initform (alloy:arg! :localization) :accessor localization)))
+
+(defmethod alloy:text ((combo localized-combo-set))
+  (loop with key = (alloy:value combo)
+        for (k v) on (trial:language-string (localization combo)) by #'cddr
+        do (when (equal k key) (return v))
+        finally (return (princ-to-string key))))
+
+(defclass localized-combo-item (alloy:combo-item)
+  ((localization :initarg :localization :initform (alloy:arg! :localization) :accessor localization)))
+
+(defmethod alloy:text ((item localized-combo-item))
+  (loop with key = (alloy:value item)
+        for (k v) on (trial:language-string (localization item)) by #'cddr
+        do (when (equal k key) (return v))
+        finally (return (princ-to-string key))))
+
+(defmethod alloy:combo-item (item (combo localized-combo-set))
+  (make-instance 'localized-combo-item :value item :localization (localization combo)))

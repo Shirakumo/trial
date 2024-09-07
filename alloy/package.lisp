@@ -45,4 +45,5 @@
    #:asset
    #:resource
    #:monitor
-   #:video-mode))
+   #:video-mode
+   #:localized-combo-set))
