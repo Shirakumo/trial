@@ -1,6 +1,8 @@
 # Getting started with Trial
 This brief guide illustrates the basic steps to get started with a new Trial project. If you instead would like to just have a look at what it can do instead, please have a look at the "workbench"(link workbench.mess).
 
+| ''NOTE:''(bold,red) If you are new to Common Lisp, beware. Trial is //not// the right avenue to start learning the language. This tutorial and all documentation assumes you have a solid grasp of the language and its ecosystem, including how to use packages, CLOS, systems, and libraries.
+
 ## Prerequisites
 You'll need a capable Lisp implementation. We heavily recommend using SBCL. While other implementations may work, we currently don't have the capacity to properly support them directly (patches welcome). We also currently only directly support Windows and Linux. Other systems like Mac or BSD are in a similar support state as other implementations.
 
