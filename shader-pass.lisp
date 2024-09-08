@@ -69,9 +69,9 @@
 (defmethod check-consistent ((output output))
   ())
 
-(defmethod (setf texture) :after ((new-texture texture) (port output))
+(defmethod (setf texture) :before ((new-texture texture) (port output))
   (let ((fb (framebuffer (flow:node port))))
-    (when fb
+    (when (and fb (not (eq new-texture (texture port))))
       (setf (attachments fb)
             (loop for (attachment texture . args) in (attachments fb)
                   collect (list* attachment
