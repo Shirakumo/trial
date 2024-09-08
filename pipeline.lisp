@@ -260,7 +260,7 @@
                      (allocated-p (framebuffer (flow:node port)))
                      (not (allocated-p texture)))
             (allocate texture))
-          (setf (texture port) texture)
+          (setf (slot-value port 'texture) texture)
           (vector-push-extend texture textures)
           (vector-push-extend texspec texspecs))))
     ;; Compute frame buffers
@@ -276,6 +276,8 @@
                (dolist (attachment (attachments fbo))
                  (unless (allocated-p (second attachment))
                    (allocate (second attachment))))
+               (setf (width (framebuffer pass)) NIL)
+               (setf (height (framebuffer pass)) NIL)
                (setf (attachments (framebuffer pass)) (attachments fbo))))))
     ;; Now re-set the activation to short-modify the pipeline as necessary.
     (dolist (pass passes)
