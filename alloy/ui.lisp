@@ -154,3 +154,12 @@
      (setf trial:+map-key-events+ T))
     (:strong
      (setf trial:+map-key-events+ NIL))))
+
+(trial:define-setting-observer font :display :font ()
+  (when (ui) (alloy:refresh (ui))))
+
+(trial:define-setting-observer ui-scale :display :ui-scale ()
+  (when (ui) (alloy:refresh (ui))))
+
+(trial:define-language-change-hook ui ()
+  (when (ui) (alloy:refresh (ui))))
