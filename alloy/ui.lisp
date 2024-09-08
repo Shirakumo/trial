@@ -144,8 +144,9 @@
 
 (defmethod trial:object-renderable-p ((renderable trial:renderable) (pass ui-pass)) NIL)
 
-(defun ui (&optional (scene (trial:scene trial:+main+)))
-  (trial:node 'ui scene))
+(defun ui (&optional (scene T))
+  (when trial:+main+
+    (trial:node 'ui scene)))
 
 (defmethod (setf alloy:focus) :after (value (text alloy:text-input-component))
   (case value
