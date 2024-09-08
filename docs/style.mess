@@ -4,6 +4,7 @@ This style guide is for Trial, but applies for all Shirakumo projects in general
 - No Tabs
 - No CRLF. Always use LF/Unix-style line endings
 - All names must be written in American English
+- Do **NOT** fuck with the readtable case. It has to be ``:upcase``.
 - Always use ``cond`` whenever you would have to use ``progn`` in an ``if`` branch
 - All constants, including ``T``, ``NIL``, ``PI``, etc, must be in scream-case
 - All global special variables must have ``*earmuffs*``
