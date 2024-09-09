@@ -4,7 +4,7 @@
 First, you will want to inherit from ``org.shirakumo.fraf.trial.harmony:settings-main``. This ``main`` subclass will take care of initializing and finalizing the audio server when the game is started up, and will also automatically interpret the audio-related "settings"(link settings.mess). If you would like to customise how the server builds its pipeline or provide other customisations outside the settings, you can do so with ``server-initargs``:
 
 :: common lisp
-(defmethod org.shirakumo.fraf.trial.harmony:serveri-initargs append ((main main))
+(defmethod org.shirakumo.fraf.trial.harmony:server-initargs append ((main main))
   '(:effects ((mixed:biquad-filter :filter :lowpass :name :lowpass))))
 ::
 
