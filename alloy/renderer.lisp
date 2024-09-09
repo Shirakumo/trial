@@ -37,7 +37,8 @@
            (remhash path (image-cache renderer))))
 
 (defmethod alloy:deallocate :after ((renderer renderer))
-  (deallocate-cache renderer))
+  (deallocate-cache renderer)
+  (trial:deallocate (trial:staging-area renderer)))
 
 (defmethod alloy:register ((resource trial:resource) (renderer renderer))
   (trial:stage resource (trial:staging-area renderer)))
