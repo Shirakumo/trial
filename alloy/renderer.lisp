@@ -2,7 +2,8 @@
 
 (defclass renderer (org.shirakumo.alloy.renderers.opengl.msdf:renderer trial:renderable trial:resource)
   ((image-cache :initform (make-hash-table :test 'equal) :reader image-cache)
-   (framebuffers :initform (make-array 0 :adjustable T :fill-pointer T) :reader framebuffers)))
+   (framebuffers :initform (make-array 0 :adjustable T :fill-pointer T) :reader framebuffers)
+   (trial:staging-area :initform (make-instance 'trial:staging-area) :accessor trial:staging-area)))
 
 (defmethod org.shirakumo.alloy.renderers.opengl.msdf:fontcache-directory ((renderer renderer))
   (if (deploy:deployed-p)
@@ -38,9 +39,13 @@
 (defmethod alloy:deallocate :after ((renderer renderer))
   (deallocate-cache renderer))
 
+(defmethod alloy:register ((resource trial:resource) (renderer renderer))
+  (trial:stage resource (trial:staging-area renderer)))
+
 (defmethod trial:stage :before ((renderer renderer) (area trial:staging-area))
   ;; FIXME: This is BAD, but Alloy gives us no way of generating the resource stubs.
-  (alloy:allocate renderer))
+  (alloy:allocate renderer)
+  (trial:stage (trial:staging-area renderer) area))
 
 (defmethod trial:stage ((tree alloy:layout-tree) (area trial:staging-area))
   (trial:stage (alloy:root tree) area)
