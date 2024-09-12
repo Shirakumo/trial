@@ -11,8 +11,7 @@
 (defvar *tests* (make-array 0 :adjustable T :fill-pointer T))
 (defvar *failures*)
 (defvar *default-skip* #-nx '()
-        #+nx '("Run full GC"
-               "Lisp callback"
+        #+nx '("Lisp callback"
                ;; Not available
                "File manager"
                ;; Working but annoying
