@@ -165,6 +165,17 @@
   (test "File manager" (open-in-file-manager (self)))
   (test "Error message" (emessage "Test")))
 
+(group "Timing"
+  (test "Time units/sec" INTERNAL-TIME-UNITS-PER-SECOND)
+  (test "Internal real time" (get-internal-real-time))
+  (test "Internal run time" (get-internal-run-time))
+  (test "Universal time" (get-universal-time))
+  (test "Date" (format-timestring))
+  (test "Current time" (current-time))
+  (test "Sleep 1s" (let ((start (current-time)))
+                     (sleep 1)
+                     (- (current-time) start))))
+
 (group "Runtime environment tests"
   (test "Self" (self))
   (test "Checksum" (trial::checksum (self)))
@@ -177,7 +188,7 @@
   (test "Logfile" (logfile))
   (test "Create logfile" (alexandria:write-string-into-file "test" (logfile) :if-exists :supersede))
   (test "Config directory" (config-directory))
-  (test "Save settings" (progn (save-settings) T)))
+  (test "Save settings" (save-settings) T))
 
 (group "Powersaving"
   (test "Prevent powersaving" (prevent-powersave))
