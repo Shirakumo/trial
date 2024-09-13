@@ -74,6 +74,6 @@
  org.shirakumo.fraf.gamepad.impl::user32
  org.shirakumo.fraf.gamepad.impl::xinput
  org.shirakumo.fraf.gamepad.impl::dinput
- org.shirakumo.messagebox::user32
+ org.shirakumo.messagebox.win32::user32
  org.shirakumo.machine-state::psapi
  org.shirakumo.machine-state::ntdll)
