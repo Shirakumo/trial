@@ -10,7 +10,7 @@ First, you will want to inherit from ``org.shirakumo.fraf.trial.harmony:settings
 
 See ``harmony:make-simple-server`` for more information on accepted initargs.
 
-Second, you will want to pre-load sound files. The ``trial-harmony`` system provides assets and resources to encapsulate the Harmony objects you need to manage. To import sounds and simple music tracks, use the ``org.shirakumo.fraf.trial.harmony:sound`` to define your assets:
+Second, you will want to pre-load sound files. The ``trial-harmony`` system provides assets and resources to encapsulate the Harmony objects you need to manage. To import sounds and simple music tracks, use ``audio-file`` to define your assets:
 
 :: common lisp
 (define-asset (my-pool my-sound) audio-file
