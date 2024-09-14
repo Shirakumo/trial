@@ -54,7 +54,7 @@ Trial is a modular game engine written in Common Lisp. It offers many tools and 
     - ''Skyboxes''(link skyboxes.mess)
   - ''Video''(link video.mess)
 - Physics
-  - ''Time''(link time.mess)
+  - ''Time and Physics Steps''(link time.mess)
   - ''Acceleration Structures''(link acceleration-structures.mess)
   - ''Intersection Tests''(link intersection.mess)
   - ''Physics Systems''(link physics.mess)

@@ -20,7 +20,7 @@ Many of Trial's objects can be inspected using the standard ``print`` and ``desc
 - ``skeleton`` Prints a tree graph of its bone hierarchy
 - ``standard-render-pass`` Lists the active lights and materials
 
-For instance, it can frequently be useful to describe the current ``scene`` to get an idea of the scene graph, via ``(describe (scene +main))``.
+For instance, it can frequently be useful to describe the current ``scene`` to get an idea of the scene graph, via ``(describe (scene +main+))``.
 
 ## Logging
 Trial relies on the "Verbose"(https://shinmera.github.io/verbose) logger framework to print various status messages to its log. You can, of course, make use of all of Verbose's features yourself as well. You should add a local nickname for ``org.shirakumo.verbose`` (as ``v``) to your package definitions for that.
