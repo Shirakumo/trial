@@ -21,7 +21,7 @@ Other non-primitive objects may also support the ``intersects-p`` and ``detect-h
 Trial implements a variety of collision testing methods. They are:
 
 - "Bespoke"
-  These are precise collision mehods for a specific pair of primitives. They should provide the most accurate and efficient response.
+  These are precise collision methods for a specific pair of primitives. They should provide the most accurate and efficient response.
 - ''GJK''(https://en.wikipedia.org/wiki/Gilbert%E2%80%93Johnson%E2%80%93Keerthi_distance_algorithm)+''EPA''(https://graphics.stanford.edu/courses/cs468-01-fall/Papers/van-den-bergen.pdf)
   The Gilbert-Johnson-Keerthi and Expanding-Polytope-Algorithm methods for collision detection, which are very commonly used in physics engines. This is used for generic raycasts and distance estimation.
 - ''MPR/Xenocollide''(https://en.wikipedia.org/wiki/Minkowski_Portal_Refinement)

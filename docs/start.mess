@@ -6,7 +6,7 @@ This brief guide illustrates the basic steps to get started with a new Trial pro
 ## Prerequisites
 You'll need a capable Lisp implementation. We heavily recommend using SBCL. While other implementations may work, we currently don't have the capacity to properly support them directly (patches welcome). We also currently only directly support Windows and Linux. Other systems like Mac or BSD are in a similar support state as other implementations.
 
-Since the basic Quicklisp dist is often out of date and Trial or its dependencies can move fast, we also urge you to use your custom dist to fetch Trial and the required dependencies. To install the "shirakumo dist"(https://dist.shirakumo.org), simple evaluate the following:
+Since the basic Quicklisp dist is often out of date and Trial or its dependencies can move fast, we also urge you to use our custom dist to fetch Trial and the required dependencies. To install the "shirakumo dist"(https://dist.shirakumo.org), simply evaluate the following:
 
 :: common lisp
 (ql-dist:install-dist "http://dist.shirakumo.org/shirakumo.txt")
@@ -17,7 +17,7 @@ After that you should be able to ``(ql:quickload :trial)``.
 ## Project scaffolding
 We recommend setting up a basic project scaffold as you would for anything else, with the following basic files in a fresh folder[1]:
 
-[1] Please understand that this, along with the actual bits of trial we'll use here are just our suggestion. Trial is very flexible, and a lot of bits can be discarded or overridden completely should you need to.
+[1] Please understand that this, along with the actual bits of Trial we'll use here are just our suggestion. Trial is very flexible, and a lot of bits can be discarded or overridden completely should you need to.
 
 - ``my-project.asd``
   :: common lisp
