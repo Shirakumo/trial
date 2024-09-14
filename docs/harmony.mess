@@ -10,9 +10,23 @@ First, you will want to inherit from ``org.shirakumo.fraf.trial.harmony:settings
 
 See ``harmony:make-simple-server`` for more information on accepted initargs.
 
-Second, you will want to pre-load sound files. The ``trial-harmony`` system provides assets and resources to encapsulate the Harmony objects you need to manage. To import sounds and simple music tracks, use the ``org.shirakumo.fraf.trial.harmony:sound`` to define your assets. If you want to use Harmony's environments system to do horizontal mixing, define the environment using the ``org.shirakumo.fraf.trial.harmony:environment`` asset.
+Second, you will want to pre-load sound files. The ``trial-harmony`` system provides assets and resources to encapsulate the Harmony objects you need to manage. To import sounds and simple music tracks, use the ``org.shirakumo.fraf.trial.harmony:sound`` to define your assets:
 
-In order to play back a sound, just access its resource and play it back:
+:: common lisp
+(define-asset (my-pool my-sound) audio-file
+  #p"sound.mp3")
+::
+
+You can also use ``sound-bank`` and input a number of effect files. When playing the sound, Trial will then randomly pick between one of the sounds, which helps avoid repetition. If you want to use Harmony's environments system to do horizontal mixing, define the environment using the ``org.shirakumo.fraf.trial.harmony:environment`` asset.
+
+Before a sound can be played, it must be "staged". It is sufficient to associate ``stage`` with any entity present in the associated scene:
+
+:: common lisp
+(defmethod stage :after ((my-entity my-entity) (area staging-area))
+  (stage (// 'my-pool 'my-sound) area))
+::
+
+Finally, in order to play back the sound, just access its resource and call ``play``:
 
 :: common lisp
 (org.shirakumo.fraf.harmony:play (// 'my-project 'sound))

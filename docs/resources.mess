@@ -51,9 +51,29 @@ Sometimes assets also contain extraneous information not contained in resources,
 ; TODO: describe how to write new assets
 
 ## Pools
-Assets reside in ``pool``s. A pool is a logical grouping of assets, and usually also a physical one, occupying a directory on disk. You typically define at least one pool for your project, and possibly more to avoid name collisions. A pool is defined with ``define-pool``.
+Assets reside in ``pool``s. A pool is a logical grouping of assets, and usually also a physical one, occupying a directory on disk. You typically define at least one pool for your project, and possibly more to avoid name collisions. A pool is defined with ``define-pool``:
 
-The ``define-pool`` should be in a file in the same directory as the ``data`` directory in which the pool's files reside. If you have a different structure, you must pass the ``:base`` initarg explicitly.
+:: common lisp
+(define-pool my-pool)
+::
+
+The ``define-pool`` should be in a file in the same directory as the ``data`` directory in which the pool's files reside. If you have a different structure, you must pass the ``:base`` initarg explicitly. For example, given the following directory structure:
+
+::
+.
+├── data
+│   ├── sprite.json
+│   └── sprite.png
+├── game.asd
+└── src
+    └── game.lisp
+::
+
+You would adjust the pool's path like so:
+
+:: common lisp
+(define-pool my-pool :base #p"../../data/")
+::
 
 Retrieving assets within a pool happens with ``asset`` or ``list-assets``. You can also retrieve a subpath in the pool via ``pool-path``.
 

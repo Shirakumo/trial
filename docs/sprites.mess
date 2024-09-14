@@ -66,3 +66,5 @@ Thus, getting sprites working should be as simple as:
 ::
 
 And then just using ``play`` to play whatever animation you like. By default it should start out with whatever animation is first in the asset's animation list.
+
+Note also that the ``sprite`` asset is referred to here with ``asset`` and not ``//``. This is because sprites need additional metadata to function properly which is not otherwise present on a general resource provided by ``//``.
