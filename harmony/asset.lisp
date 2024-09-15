@@ -151,6 +151,12 @@
 (defmethod (setf mixed:location) ((location math:vec3) thing)
   (setf (mixed:location thing) (math:varr3 location)))
 
+(defmethod (setf mixed:direction) ((direction math:vec3) thing)
+  (setf (mixed:direction thing) (math:varr3 direction)))
+
+(defmethod (setf mixed:up) ((up math:vec3) thing)
+  (setf (mixed:up thing) (math:varr3 up)))
+
 (defmethod mixed:velocity ((voice voice))
   (mixed:velocity (voice voice)))
 
