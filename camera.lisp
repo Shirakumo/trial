@@ -1,14 +1,11 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass camera (located-entity listener)
-  ((near-plane :initarg :near-plane :accessor near-plane)
-   (far-plane :initarg :far-plane :accessor far-plane)
-   (bsize :initform (vec2 0 0) :accessor bsize))
-  (:default-initargs
-   :name :camera
-   :location (vec 0 30 200)
-   :near-plane 0.1f0
-   :far-plane 10000.0f0))
+  ((name :initform :camera)
+   (location :initform (vec 0 30 200))
+   (near-plane :initarg :near-plane :initform 0.1f0 :accessor near-plane)
+   (far-plane :initarg :far-plane :initform 10000.0f0 :accessor far-plane)
+   (bsize :initform (vec2 0 0) :accessor bsize)))
 
 (defgeneric project-view (camera))
 (defgeneric setup-perspective (camera width height))
@@ -66,11 +63,9 @@
   (in-view-p object (camera (scene +main+))))
 
 (defclass 2d-camera (camera)
-  ()
-  (:default-initargs
-   :near-plane 0.0
-   :far-plane 100.0
-   :location (vec 0 0 200)))
+  ((near-plane :initform 0.0)
+   (far-plane :initform 100.0)
+   (location :initform (vec 0 0 200))))
 
 (defmethod setup-perspective ((camera 2d-camera) width height)
   (orthographic-projection 0 (max 1 width) 0 (max 1 height) (near-plane camera) (far-plane camera)))
@@ -103,11 +98,8 @@
          (<= (abs (- (vy eloc) (vy cloc))) (+ (vy esiz) (vy csiz))))))
 
 (defclass sidescroll-camera (2d-camera)
-  ((zoom :initarg :zoom :accessor zoom)
-   (target :initarg :target :accessor target))
-  (:default-initargs
-   :zoom 1.0
-   :target (vec 0 0 200)))
+  ((zoom :initarg :zoom :initform 1.0 :accessor zoom)
+   (target :initarg :target :initform (vec 0 0 200) :accessor target)))
 
 (defmethod project-view ((camera sidescroll-camera))
   (let* ((z (zoom camera))
@@ -136,10 +128,8 @@
 ;; TODO: implement in-view-p respective to zoom
 
 (defclass 3d-camera (camera)
-  ((fov :initarg :fov :accessor fov)
-   (frustum :initform (make-perspective-box 1.0 1.0 0.1 1.0) :accessor frustum))
-  (:default-initargs
-   :fov 75))
+  ((fov :initarg :fov :initform 75.0 :accessor fov)
+   (frustum :initform (make-perspective-box 1.0 1.0 0.1 1.0) :accessor frustum)))
 
 (defmethod (setf fov) :after (val (camera 3d-camera))
   (let ((bsize (bsize camera)))
@@ -235,11 +225,8 @@
     (intersects-p box (frustum camera))))
 
 (defclass target-camera (3d-camera)
-  ((target :initarg :target :accessor target)
-   (up :initarg :up :accessor up))
-  (:default-initargs
-   :target (vec 0 0 0)
-   :up (vec 0 1 0)))
+  ((target :initarg :target :initform (vec3 0) :accessor target)
+   (up :initarg :up :initform +vy3+ :accessor up)))
 
 (defmethod project-view ((camera target-camera))
   (let ((matrix (meye 4))
@@ -276,9 +263,7 @@
       (setf (rotation pivot-camera) rot))))
 
 (defclass following-camera (target-camera)
-  ()
-  (:default-initargs
-   :target NIL))
+  ((target :initform NIL)))
 
 (defmethod project-view ((camera following-camera))
   (when (target camera)
@@ -288,13 +273,9 @@
              (up camera))))
 
 (defclass fps-camera (3d-camera)
-  ((rotation :initarg :rotation :accessor rotation)
-   (x-acceleration :initarg :x-acceleration :accessor x-acceleration)
-   (y-acceleration :initarg :y-acceleration :accessor y-acceleration))
-  (:default-initargs
-   :rotation (vec 0 0 0)
-   :x-acceleration 0.01
-   :y-acceleration 0.01))
+  ((rotation :initarg :rotation :initform (vec 0 0 0) :accessor rotation)
+   (x-acceleration :initarg :x-acceleration :initform 0.01 :accessor x-acceleration)
+   (y-acceleration :initarg :y-acceleration :initform 0.01 :accessor y-acceleration)))
 
 (defmethod project-view ((camera fps-camera))
   (reset-matrix (view-matrix))
@@ -317,9 +298,7 @@
   (location camera))
 
 (defclass freeroam-camera (fps-camera)
-  ((move-speed :initarg :move-speed :accessor move-speed))
-  (:default-initargs
-   :move-speed 1))
+  ((move-speed :initarg :move-speed :initform 1.0 :accessor move-speed)))
 
 (define-handler (freeroam-camera tick :after) ()
   (let* ((loc (location freeroam-camera))
