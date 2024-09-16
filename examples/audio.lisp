@@ -1,18 +1,24 @@
 (in-package #:org.shirakumo.fraf.trial.examples)
 
-(defmethod trial-harmony:server-initargs append ((main main))
-  (list :mixers '((:music mixed:basic-mixer)
-                  (:effect mixed:plane-mixer))
-        :effects '((mixed:biquad-filter :filter :lowpass :name :lowpass)
-                   (mixed:speed-change :name :speed))))
-
 (define-example audio
   :title "Audio"
+  ;; NOTE: For audio setup in a regular game you'll probably want to use the
+  ;;       trial-harmony:settings-main and a method on trial-harmony:server-initargs
+  ;;       instead.
+  (trial-harmony:initialize-audio-backend
+   NIL :mixers '((:music mixed:basic-mixer)
+                 (:effect mixed:plane-mixer))
+   :effects '((mixed:biquad-filter :filter :lowpass :name :lowpass)
+              (mixed:speed-change :name :speed)))
   (setf (mixed:min-distance harmony:*server*) 10)
   (setf (mixed:max-distance harmony:*server*) (min (width *context*) (height *context*)))
   (preload (assets:// :cave-ambience) scene)
   (preload (assets:// :step-rocks) scene)
   (enter (make-instance 'render-pass) scene))
+
+(defmethod finalize :before ((scene audio-scene))
+  (when harmony:*server*
+    (trial:finalize harmony:*server*)))
 
 (defmethod setup-ui ((scene audio-scene) panel)
   (let* ((layout (make-instance 'alloy:grid-layout :col-sizes '(120 200 T) :row-sizes '(30)))

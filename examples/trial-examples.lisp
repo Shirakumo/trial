@@ -23,7 +23,7 @@
 
 (define-pool examples)
 
-(defclass example (org.shirakumo.fraf.trial.harmony:settings-main)
+(defclass example (trial:main)
   ((paused-p :initform NIL :accessor paused-p))
   (:default-initargs :context '(:vsync T :version (3 3))))
 

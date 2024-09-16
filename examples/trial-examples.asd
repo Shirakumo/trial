@@ -32,7 +32,8 @@
                (:file "post-processing")
                (:file "culling")
                (:file "letterbox")
-               (:file "repl"))
+               (:file "repl")
+               (:file "3d-audio"))
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
                :alloy-constraint
