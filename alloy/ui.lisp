@@ -72,9 +72,10 @@
   (animation:update ui (float (trial:dt ev) 0f0)))
 
 (defmethod trial:handle ((ev trial:resize) (ui ui))
-  (alloy:suggest-size (alloy:px-size (trial:width ev) (trial:height ev)) ui)
-  (loop for framebuffer across (framebuffers ui)
-        do (trial:resize framebuffer (trial:width ev) (trial:height ev))))
+  (multiple-value-bind (w h) (trial::frame-size ev)
+    (alloy:suggest-size (alloy:px-size w h) ui)
+    (loop for framebuffer across (framebuffers ui)
+          do (trial:resize framebuffer w h))))
 
 (defmethod trial:stage :after ((ui ui) (area trial:staging-area))
   (trial:stage (alloy:layout-tree ui) area))
@@ -161,6 +162,11 @@
 
 (trial:define-setting-observer ui-scale :display :ui-scale ()
   (when (ui) (alloy:refresh (ui))))
+
+(trial:define-setting-observer frame-scale :display :frame-scale ()
+  (when (ui) (trial:handle (trial:make-event 'trial:resize :width (trial:width trial:*context*)
+                                                           :height (trial:height trial:*context*))
+                           (ui))))
 
 (trial:define-language-change-hook ui ()
   (when (ui) (alloy:refresh (ui))))

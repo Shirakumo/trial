@@ -182,6 +182,10 @@
                               (declare (ignore ,v))
                               ,@body)))))
 
+(defun frame-size (&optional (context *context*))
+  (values (max 1 (ceiling (* (setting* 1.0 :display :frame-scale) (width context))))
+          (max 1 (ceiling (* (setting* 1.0 :display :frame-scale) (height context))))))
+
 (define-setting-observer video-mode :display :resolution (value)
   (when *context*
     (show *context* :fullscreen (setting :display :fullscreen) :mode value)))

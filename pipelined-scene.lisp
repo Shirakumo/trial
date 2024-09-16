@@ -15,11 +15,8 @@
     ;; Doing it always will actually clear the pipeline even if it's already
     ;; been set up.
     (when (nodes scene)
-      (let ((context (context main))
-            (scale (setting* 1.0 :display :frame-scale)))
-        (pack-pipeline scene
-                       (max 1 (ceiling (* scale (width context))))
-                       (max 1 (ceiling (* scale (height context)))))))
+      (multiple-value-bind (w h) (frame-size (context main))
+        (pack-pipeline scene w h)))
     (loop for pass across (passes scene)
           do (enter scene pass)
              (dolist (thing (to-preload scene))
@@ -39,9 +36,8 @@
         do (stage pass area)))
 
 (defmethod handle :after ((event resize) (scene pipelined-scene))
-  (resize scene
-          (max 1 (ceiling (* (setting* 1.0 :display :frame-scale) (width event))))
-          (max 1 (ceiling (* (setting* 1.0 :display :frame-scale) (height event))))))
+  (multiple-value-bind (w h) (frame-size event)
+    (resize scene w h)))
 
 (defmethod register :after ((entity renderable) (scene pipelined-scene))
   (loop for pass across (passes scene)
