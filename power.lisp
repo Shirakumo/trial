@@ -17,8 +17,8 @@
      (unless +mac-sleep-reason-name+
        (setf +mac-sleep-reason-name+ (org.shirakumo.fraf.gamepad.impl::cfstr "TrialGameRunning")))
      (setf +mac-power-id+ 0))
-   #+linux
-   (uiop:run-program (list "xset" "s" "off" "-dpms") :ignore-error-status T)))
+   ;; FIXME: Implement this for Linux via DBUS messaging.
+   ))
 
 (defun ping-powersave (tt)
   (let ((tt (float tt 0d0)))
