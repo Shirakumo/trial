@@ -44,23 +44,39 @@
   #-nx (first (uiop:raw-command-line-arguments))
   #+nx (make-pathname :device "rom" :name "sbcl" :directory '(:absolute)))
 
+(let ((asdf-cache (make-hash-table :test 'equal)))
+  (defun system-cache (system)
+    (or (gethash (string-downcase system) asdf-cache)
+        (setf (gethash (string-downcase system) asdf-cache)
+              #+asdf
+              (cons (asdf:component-version (asdf:find-system system))
+                    (asdf:system-source-directory system))
+              #-asdf
+              (cons NIL NIL))))
+  (defun system-source-directory (system)
+    (cdr (system-cache system)))
+  (defun (setf system-source-directory) (dir system)
+    (setf (cdr (system-cache system)) dir))
+  (defun system-version (system)
+    (car (system-cache system)))
+  (defun (setf system-version) (version system)
+    (setf (car (system-cache system)) version)))
+
 (defun checksum (file)
   (with-output-to-string (out)
     (loop for o across (sha3:sha3-digest-file file :output-bit-length 224)
           do (format out "~2,'0X" o))))
 
 (defmethod version ((_ (eql :app)))
-  (let ((commit #+asdf (git-repo-commit (asdf:system-source-directory +app-system+))))
+  (let ((commit (git-repo-commit (system-source-directory +app-system+))))
     (format NIL "~a~@[-~a~]"
-            #+asdf (asdf:component-version (asdf:find-system +app-system+))
-            #-asdf "?"
+            (system-version +app-system+)
             (when commit (subseq commit 0 7)))))
 
 (defmethod version ((_ (eql :trial)))
-  (let ((commit #+asdf (git-repo-commit (asdf:system-source-directory :trial))))
+  (let ((commit (git-repo-commit (system-source-directory :trial))))
     (format NIL "~a~@[-~a~]"
-            #+asdf (asdf:component-version (asdf:find-system :trial))
-            #-asdf "?"
+            (system-version :trial)
             (when commit (subseq commit 0 7)))))
 
 (defmethod version ((_ (eql :binary)))
@@ -69,11 +85,10 @@
         (checksum self)
         "?")))
 
-(let ((cache NIL))
-  (defun data-root (&optional (app +app-system+))
-    (if (deploy:deployed-p)
-        (deploy:runtime-directory)
-        (or cache #+asdf (setf cache (asdf:system-source-directory app))))))
+(defun data-root (&optional (app +app-system+))
+  (if (deploy:deployed-p)
+      (deploy:runtime-directory)
+      (%asdf-source-directory app)))
 
 (defgeneric coerce-object (object type &key))
 
