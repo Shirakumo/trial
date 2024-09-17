@@ -308,7 +308,7 @@
 
 (defmethod render :around ((renderable single-material-renderable) (program shader-program))
   (with-pushed-features
-    (when (double-sided-p renderable)
+    (when (double-sided-p (material renderable))
       (disable-feature :cull-face))
     (call-next-method)))
 
