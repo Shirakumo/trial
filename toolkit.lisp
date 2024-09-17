@@ -88,7 +88,7 @@
 (defun data-root (&optional (app +app-system+))
   (if (deploy:deployed-p)
       (deploy:runtime-directory)
-      (%asdf-source-directory app)))
+      (system-source-directory app)))
 
 (defgeneric coerce-object (object type &key))
 
