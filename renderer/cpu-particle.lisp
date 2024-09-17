@@ -91,7 +91,7 @@
 
 (defun random-point-on-mesh-surface (vertex-data vertex-stride faces randoms &optional (location (vec3)) (normal (vec3)))
   (declare (type (simple-array single-float (*)) vertex-data))
-  (declare (type (simple-array (unsigned-byte 32) (*)) faces))
+  (declare (type (simple-array (unsigned-byte 16) (*)) faces))
   (declare (type (unsigned-byte 32) vertex-stride))
   (declare (type vec3 location normal randoms))
   (declare (optimize speed))
@@ -147,7 +147,7 @@
                        matrix velocity rotation lifespan size scaling color
                        vertex-data vertex-stride faces spawn-point)
   (declare (type (simple-array single-float (*)) particles properties vertex-data))
-  (declare (type (simple-array (unsigned-byte 32) (*)) faces))
+  (declare (type (simple-array (unsigned-byte 16) (*)) faces))
   (declare (type (unsigned-byte 32) pos prop))
   (declare (type single-float lifespan lifespan-randomness randomness size scaling rotation velocity))
   (declare (type vec3 randoms))
