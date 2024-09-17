@@ -16,7 +16,7 @@ void main(){
 }")
 ::
 
-The above defines a class that has a fragment shader attached, which sets the output colour to green. We inherit from ``shader-entity`` which handles the loading and drawing of the mesh, and also provides the required vertex shader to process the vertices of the mesh and position them in space.
+The above defines a class that has a fragment shader attached, which sets the output colour to green. We inherit from ``vertex-entity`` which handles the loading and drawing of the mesh, and also provides the required vertex shader to process the vertices of the mesh and position them in space.
 
 You can see the fully compiled shader with ``compute-effective-shaders``:
 

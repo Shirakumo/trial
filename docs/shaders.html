@@ -6,7 +6,7 @@
 
 void main(){
   color = vec4(0, 1, 0, 1);
-}&quot;)</pre></code><p>The above defines a class that has a fragment shader attached, which sets the output colour to green. We inherit from <code>shader-entity</code> which handles the loading and drawing of the mesh, and also provides the required vertex shader to process the vertices of the mesh and position them in space.</p><p>You can see the fully compiled shader with <code>compute-effective-shaders</code>:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(compute-effective-shaders (find-class 'my-object))
+}&quot;)</pre></code><p>The above defines a class that has a fragment shader attached, which sets the output colour to green. We inherit from <code>vertex-entity</code> which handles the loading and drawing of the mesh, and also provides the required vertex shader to process the vertices of the mesh and position them in space.</p><p>You can see the fully compiled shader with <code>compute-effective-shaders</code>:</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(compute-effective-shaders (find-class 'my-object))
 
 ; ==&gt;
 (:VERTEX-SHADER &quot;layout(location = 0) in vec3 position;
