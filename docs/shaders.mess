@@ -129,6 +129,6 @@ You can also more conveniently declare uniforms as slots, by adding the ``:unifo
 ## Constants
 Similar to uniforms you can define shader constants as shader entity slots, by adding the ``:constant`` initarg to your slot definitions. If you specify ``T``, the constant name will be inferred via the upcased ``symbol->c-name`` of the slot's name. Otherwise you can also directly specify the constant name as a string.
 
-The constant is added to the relevant shaders via ``compute-preprocessor-directives``, which is called by ``make-class-shader-program`` for a ``shader-entity`` instance, and by ``make-pass-shader-program``. The definitions are added at the top, right after the ``#version`` directive.
+The constant is added to the relevant shaders via ``compute-preprocessor-directives``, which is called by ``make-class-shader-program`` for a ``shader-entity`` instance, and by ``make-pass-shader-program``. The definitions are added at the top, right after the ``#version`` directive. 
 
 Please note that by default a ``per-object-pass`` groups shader programs together by the ``effective-shader-class`` of the object, and uses that class to compute the shader program. Thus, slot constants defined on the object will **not** be visible in the resulting shader program.
