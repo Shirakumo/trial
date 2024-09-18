@@ -1,19 +1,20 @@
 #section COMPUTE_SHADER
 #extension GL_ARB_compute_shader : require
+#extension GL_ARB_shader_storage_buffer_object : require
 
 layout (local_size_x = EMIT_THREADS, local_size_y = 1, local_size_z = 1) in;
 uniform sampler2D random_tex;
 
 vec3 read_vertex(uint i){
-  return vec3(vertex_data[i*mesh_vertex_stride + 0],
-              vertex_data[i*mesh_vertex_stride + 1],
-              vertex_data[i*mesh_vertex_stride + 2]);
+  return vec3(vertex_data[i*mesh_vertex_stride + 0u],
+              vertex_data[i*mesh_vertex_stride + 1u],
+              vertex_data[i*mesh_vertex_stride + 2u]);
 }
 
 vec3 read_normal(uint i){
-  return vec3(vertex_data[i*mesh_vertex_stride + 3],
-              vertex_data[i*mesh_vertex_stride + 4],
-              vertex_data[i*mesh_vertex_stride + 5]);
+  return vec3(vertex_data[i*mesh_vertex_stride + 3u],
+              vertex_data[i*mesh_vertex_stride + 4u],
+              vertex_data[i*mesh_vertex_stride + 5u]);
 }
 
 void main(){
@@ -22,10 +23,10 @@ void main(){
     vec3 randoms = texture(random_tex, vec2(float(gl_GlobalInvocationID.x)/float(EMIT_THREADS), randomness)).xyz;
 
     // Evaluate the surface to emit on
-    uint tri = uint((mesh_index_count/3)*randoms.z);
-    uint i0 = index_data[tri*3+0];
-    uint i1 = index_data[tri*3+1];
-    uint i2 = index_data[tri*3+2];
+    uint tri = uint((mesh_index_count/3u)*randoms.z)*3u;
+    uint i0 = index_data[tri+0u];
+    uint i1 = index_data[tri+1u];
+    uint i2 = index_data[tri+2u];
     vec3 p0 = read_vertex(i0);
     vec3 p1 = read_vertex(i1);
     vec3 p2 = read_vertex(i2);
@@ -57,17 +58,17 @@ void main(){
     particle.size_end = particle.size_begin * particle_scaling;
 
     // Bit masking bullshit
-    uint bitmask = particle_color & 0xFF000000;
-    particle.color = particle_color & 0x3FFFFFFF;
-    particle.color |= ((randoms.x > 0.5f ? 1 : 0) << 31) & bitmask;
-    particle.color |= ((randoms.y < 0.5f ? 1 : 0) << 30) & bitmask;
+    uint bitmask = particle_color & 0xFF000000u;
+    particle.color = particle_color & 0x3FFFFFFFu;
+    particle.color |= ((randoms.x > 0.5f ? 1u : 0u) << 31) & bitmask;
+    particle.color |= ((randoms.y < 0.5f ? 1u : 0u) << 30) & bitmask;
 
     // Update the lists
-    uint dead = atomicAdd(dead_count, -1)-1;
+    uint dead = atomicAdd(dead_count, -1u)-1u;
     uint new_index = dead_particles[dead];
     particles[new_index] = particle;
 
-    uint alive = atomicAdd(alive_count, +1);
+    uint alive = atomicAdd(alive_count, +1u);
     alive_particles_0[alive] = new_index;
   }
 }

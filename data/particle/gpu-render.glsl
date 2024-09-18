@@ -1,4 +1,5 @@
 #section VERTEX_SHADER
+#extension GL_ARB_shader_storage_buffer_object : require
 uniform mat4 model_matrix;
 
 #include (trial:trial "particle/render-common.glsl")
@@ -11,6 +12,7 @@ void main(){
 }
 
 #section FRAGMENT_SHADER
+#extension GL_ARB_shader_storage_buffer_object : require
 uniform sampler2D particle_tex;
 in vec3 world_position;
 in vec2 uv;

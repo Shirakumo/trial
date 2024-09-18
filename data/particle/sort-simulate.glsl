@@ -1,5 +1,6 @@
 #section COMPUTE_SHADER
 #extension GL_ARB_compute_shader : require
+#extension GL_ARB_shader_storage_buffer_object : require
 
 void particle_tick(uint id, inout Particle particle){
   simulate_particle(particle);

@@ -67,9 +67,9 @@
 
 (define-gl-struct (particle-emitter-buffer :layout-standard std430)
   (model-matrix :mat4 :accessor transform-matrix)
-  (emit-count :int :initform 0 :accessor emit-count)
-  (mesh-index-count :int :initform 0 :accessor mesh-index-count)
-  (mesh-vertex-stride :int :initform 0 :accessor mesh-vertex-stride)
+  (emit-count :uint :initform 0 :accessor emit-count)
+  (mesh-index-count :uint :initform 0 :accessor mesh-index-count)
+  (mesh-vertex-stride :uint :initform 0 :accessor mesh-vertex-stride)
   (randomness :float :initform 0.0 :accessor randomness)
   (particle-color :uint :initform #xFFFFFF :accessor particle-color)
   (particle-size :float :initform 1.0 :accessor particle-size)
@@ -213,6 +213,11 @@
   (buffer-data (particle-force-fields-buffer emitter)))
 
 (defmethod (setf mesh-index-buffer) (buffer (emitter gpu-particle-emitter))
+  (unless (member (element-type buffer) '(:int :unsigned-int))
+    (setf (element-type buffer) :unsigned-int)
+    (setf (buffer-data buffer) (make-array (length (buffer-data buffer))
+                                           :element-type '(unsigned-byte 32)
+                                           :initial-contents (buffer-data buffer))))
   (setf (mesh-index-buffer (slot-value emitter 'emit-pass)) buffer))
 
 (defmethod (setf mesh-vertex-buffer) (buffer (emitter gpu-particle-emitter))
@@ -301,7 +306,7 @@
   (when orientation (setf (orientation particle-emitter) orientation))
   (when vertex-array (setf (vertex-array particle-emitter) vertex-array))
   (with-all-slots-bound (particle-emitter gpu-particle-emitter)
-    (with-buffer-tx (struct particle-emitter)
+    (with-buffer-tx (struct particle-emitter-buffer)
       (setf (emit-count struct) count)
       (setf (randomness struct) (random 1.0)))
     (%gl:bind-buffer :dispatch-indirect-buffer (gl-name particle-argument-buffer))
