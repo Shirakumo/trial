@@ -469,6 +469,10 @@ void main(){
   (unless (slot-boundp entity 'shader-program)
     (setf (shader-program entity) (make-shader-program entity))))
 
+(defmethod (setf c2mop:slot-value-using-class) :after (value (class shader-entity-class) (entity standalone-shader-entity) (slotd buffer-slot-definition))
+  (when (and (slot-boundp entity 'shader-program) (allocated-p (shader-program entity)))
+    (bind value (shader-program entity))))
+
 (defmethod stage :after ((entity standalone-shader-entity) (area staging-area))
   (stage (shader-program entity) area))
 

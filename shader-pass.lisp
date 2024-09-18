@@ -470,6 +470,10 @@
     (setf (shaders (shader-program pass))
           (shaders (make-shader-program pass)))))
 
+(defmethod (setf c2mop:slot-value-using-class) :after (value (class shader-pass-class) (entity single-shader-pass) (slotd buffer-slot-definition))
+  (when (and (slot-boundp entity 'shader-program) (allocated-p (shader-program entity)))
+    (bind value (shader-program entity))))
+
 (defmethod stage ((pass single-shader-pass) (area staging-area))
   (unless (slot-boundp pass 'shader-program)
     (setf (shader-program pass) (make-shader-program pass)))
