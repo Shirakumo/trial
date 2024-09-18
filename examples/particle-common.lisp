@@ -14,36 +14,40 @@
 (defclass force-field-widget (alloy:structure)
   ())
 
-(defmethod initialize-instance :after ((widget force-field-widget) &key field i layout-parent focus-parent)
+(defmethod initialize-instance :after ((widget force-field-widget) &key field i layout-parent focus-parent emitter)
   (let ((layout (make-instance 'alloy:grid-layout :col-sizes '(120 T) :row-sizes '(30) :layout-parent layout-parent))
         (focus (make-instance 'alloy:vertical-focus-list :focus-parent focus-parent))
         (row -1))
     (alloy:enter (format NIL "Field #~a" i) layout :row (incf row) :col 0)
-    (alloy:enter "Type" layout :row (incf row) :col 0)
-    (alloy:represent (slot-value field 'type) 'alloy:combo-set
-                     :value-set '((0 . "None")
-                                  (1 . "Point")
-                                  (2 . "Direction")
-                                  (3 . "Plane")
-                                  (4 . "Vortex")
-                                  (5 . "Sphere")
-                                  (6 . "Planet")
-                                  (7 . "Brake"))
-                     :layout-parent layout :focus-parent focus)
-    (alloy:enter "Position" layout :row (incf row) :col 0)
-    (alloy:represent (slot-value field 'position) T
-                     :layout-parent layout :focus-parent focus)
-    (alloy:enter "Normal" layout :row (incf row) :col 0)
-    (alloy:represent (slot-value field 'normal) T
-                     :layout-parent layout :focus-parent focus)
-    (alloy:enter "Strength" layout :row (incf row) :col 0)
-    (alloy:represent (slot-value field 'strength) 'alloy:ranged-wheel
-                     :range '(-100.0 . 100.0) :layout-parent layout :focus-parent focus)
-    (alloy:enter "Range" layout :row (incf row) :col 0)
-    (let ((range (alloy:represent (slot-value field 'trial::range) 'alloy:ranged-wheel
-                                  :range '(0.0 . 1000.0) :layout-parent layout :focus-parent focus)))
-      (alloy:on alloy:value (v range)
-        (setf (slot-value field 'trial::inv-range) (if (= 0.0 v) 0.0 (/ v)))))
+    (macrolet ((field (label &rest represent)
+                 `(let ((label (alloy:enter ,label layout :row (incf row) :col 0))
+                        (field (alloy:represent ,@represent
+                                                :layout-parent layout :focus-parent focus)))
+                    (declare (ignore label))
+                    (alloy:on alloy:value (value field)
+                      (declare (ignore value))
+                      (setf (particle-force-fields emitter) (particle-force-fields emitter))))))
+      (field "Type" (slot-value field 'type) 'alloy:combo-set
+             :value-set '((0 . "None")
+                          (1 . "Point")
+                          (2 . "Direction")
+                          (3 . "Plane")
+                          (4 . "Vortex")
+                          (5 . "Sphere")
+                          (6 . "Planet")
+                          (7 . "Brake")))
+      (field "Position" (slot-value field 'position) T
+             :layout-parent layout :focus-parent focus)
+      (field "Normal" (slot-value field 'normal) T
+             :layout-parent layout :focus-parent focus)
+      (field "Strength" (slot-value field 'strength) 'alloy:ranged-wheel
+             :range '(-100.0 . 100.0) :layout-parent layout :focus-parent focus)
+      (alloy:enter "Range" layout :row (incf row) :col 0)
+      (let ((range (alloy:represent (slot-value field 'trial::range) 'alloy:ranged-wheel
+                                    :range '(0.0 . 1000.0) :layout-parent layout :focus-parent focus)))
+        (alloy:on alloy:value (v range)
+          (setf (slot-value field 'trial::inv-range) (if (= 0.0 v) 0.0 (/ v)))
+          (setf (particle-force-fields emitter) (particle-force-fields emitter)))))
     (alloy:finish-structure widget layout focus)))
 
 (defmethod setup-ui ((scene particle-scene) panel)
@@ -108,5 +112,5 @@
       (alloy:enter layout constraint :constraints `((:top 0) (:right 300) (:width 300) (:height 400)))
       (loop for i from 0 below (trial::particle-force-field-count fields)
             for field = (aref (trial::particle-force-fields fields) i)
-            do (make-instance 'force-field-widget :field field :i (1+ i) :layout-parent layout :focus-parent focus)))
+            do (make-instance 'force-field-widget :field field :i (1+ i) :layout-parent layout :focus-parent focus :emitter emitter)))
     (alloy:finish-structure panel constraint focus)))
