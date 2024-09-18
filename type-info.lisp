@@ -37,7 +37,7 @@
     ((:byte :char) '(signed-byte 8))
     ((:ushort :unsigned-short) '(unsigned-byte 16))
     (:short '(signed-byte 16))
-    ((:uint :unsigend-int) '(unsigned-byte 32))
+    ((:uint :unsigned-int) '(unsigned-byte 32))
     ((:int :fixed :sizei :enum :bitfield) '(signed-byte 32))
     ((:uint64 :ulong :unsigned-long) '(unsigned-byte 64))
     ((:int64 :long) '(signed-byte 64))
@@ -83,45 +83,46 @@
      (check-integer-size thing 8 T)
      (values (round thing)))))
 
+(defun gl-coercion-fun (type)
+  (ecase type
+    ((:double :double-float)
+     (lambda (thing) (float thing 0.0d0)))
+    ((:float :single-float)
+     (lambda (thing) (float thing 0.0f0)))
+    ((:int)
+     (lambda (thing)
+       #-elide-coercion-size-checks
+       (check-integer-size thing 32)
+       (values (round thing))))
+    ((:uint :unsigned-int)
+     (lambda (thing)
+       #-elide-coercion-size-checks
+       (check-integer-size thing 32 T)
+       (values (round thing))))
+    (:short
+     (lambda (thing)
+       #-elide-coercion-size-checks
+       (check-integer-size thing 16)
+       (values (round thing))))
+    ((:ushort :unsigned-short)
+     (lambda (thing)
+       #-elide-coercion-size-checks
+       (check-integer-size thing 16 T)
+       (values (round thing))))
+    ((:char :byte)
+     (lambda (thing)
+       #-elide-coercion-size-checks
+       (check-integer-size thing 8)
+       (values (round thing))))
+    ((:uchar :unsigned-char :unsigned-byte)
+     (lambda (thing)
+       #-elide-coercion-size-checks
+       (check-integer-size thing 8 T)
+       (values (round thing))))))
+
 (define-compiler-macro gl-coerce (&whole whole &environment env thing type)
   (if (constantp type env)
-      `(funcall (load-time-value
-                 (ecase ,type
-                   ((:double :double-float)
-                    (lambda (thing) (float thing 0.0d0)))
-                   ((:float :single-float)
-                    (lambda (thing) (float thing 0.0f0)))
-                   ((:int)
-                    (lambda (thing)
-                      #-elide-coercion-size-checks
-                      (check-integer-size thing 32)
-                      (values (round thing))))
-                   ((:uint :unsigned-int)
-                    (lambda (thing)
-                      #-elide-coercion-size-checks
-                      (check-integer-size thing 32 T)
-                      (values (round thing))))
-                   (:short
-                    (lambda (thing)
-                      #-elide-coercion-size-checks
-                      (check-integer-size thing 16)
-                      (values (round thing))))
-                   ((:ushort :unsigned-short)
-                    (lambda (thing)
-                      #-elide-coercion-size-checks
-                      (check-integer-size thing 16 T)
-                      (values (round thing))))
-                   ((:char :byte)
-                    (lambda (thing)
-                      #-elide-coercion-size-checks
-                      (check-integer-size thing 8)
-                      (values (round thing))))
-                   ((:uchar :unsigned-char :unsigned-byte)
-                    (lambda (thing)
-                      #-elide-coercion-size-checks
-                      (check-integer-size thing 8 T)
-                      (values (round thing))))))
-                ,thing)
+      `(funcall (load-time-value (gl-coercion-fun ,type)) ,thing)
       whole))
 
 (declaim (ftype (function (keyword) (unsigned-byte 8)) gl-type-size))

@@ -91,8 +91,7 @@
     (resize-buffer-data/ptr buffer (memory-region-size region) (memory-region-pointer region))))
 
 #-elide-buffer-access-checks
-(defmethod resize-buffer-data :before ((buffer struct-buffer) (octets integer) &key data data-start)
-  (declare (ignore data data-start))
+(defmethod resize-buffer-data :before ((buffer struct-buffer) (octets integer) &key &allow-other-keys)
   (when (< (size buffer) (buffer-field-size T buffer 0))
     (error "Attempting to resize the struct buffer to ~d bytes, which is too small to hold the ~d bytes for its struct!"
            octets (buffer-field-size T buffer 0))))

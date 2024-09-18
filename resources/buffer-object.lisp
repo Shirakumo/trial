@@ -6,6 +6,10 @@
    (data-usage :initarg :data-usage :initform :static-draw :accessor data-usage)
    (size :initarg :size :initform NIL :accessor size)))
 
+(defgeneric resize-buffer-data (buffer size/data &key))
+(defgeneric download-buffer-data (buffer size/data &key))
+(defgeneric update-buffer-data (buffer data &key))
+
 (defmethod initialize-instance :before ((buffer buffer-object) &key buffer-type data-usage)
   (when buffer-type (check-buffer-object-type buffer-type))
   (when data-usage (check-buffer-object-data-usage data-usage)))
@@ -47,7 +51,7 @@
       (gl:bind-buffer buffer-type 0))
     (setf (size buffer) octets)))
 
-(defmethod update-buffer-data ((buffer buffer-object) (data (eql T)) &rest args)
+(defmethod update-buffer-data ((buffer buffer-object) (data (eql T)) &rest args &key &allow-other-keys)
   (apply #'update-buffer-data buffer (buffer-data buffer) args))
 
 (defmethod update-buffer-data ((buffer buffer-object) data &key (buffer-start 0) (data-start 0) count)
@@ -58,7 +62,7 @@
              count data (memory-region-size region)))
     (update-buffer-data/ptr buffer (memory-region-pointer region) (or count (memory-region-size region)) buffer-start)))
 
-(defmethod download-buffer-data ((buffer buffer-object) (data (eql T)) &rest args)
+(defmethod download-buffer-data ((buffer buffer-object) (data (eql T)) &rest args &key &allow-other-keys)
   (apply #'download-buffer-data buffer (buffer-data buffer) args))
 
 (defmethod download-buffer-data ((buffer buffer-object) data &key (buffer-start 0) (data-start 0) count)
@@ -69,16 +73,24 @@
              count data (memory-region-size region)))
     (download-buffer-data/ptr buffer (memory-region-pointer region) (or count (memory-region-size region)) buffer-start)))
 
-(defmethod resize-buffer-data ((buffer buffer-object) (size (eql T)) &key (data (buffer-data buffer)) (data-start 0))
-  (mem:with-memory-region (region data :offset data-start)
-    (resize-buffer-data/ptr buffer (memory-region-size region) (memory-region-pointer region))))
+(defmethod resize-buffer-data ((buffer buffer-object) (size (eql T)) &rest args &key data &allow-other-keys)
+  (apply #'resize-buffer-data buffer (or data (buffer-data buffer)) args))
 
-(defmethod resize-buffer-data ((buffer buffer-object) size &key data (data-start 0))
-  (mem:with-memory-region (region (or data (cffi:null-pointer)) :offset data-start)
-    #-elide-buffer-access-checks
-    (when (and size (not (cffi:null-pointer-p (memory-region-pointer region))) (< (memory-region-size region) size))
-      (error "Attempting to update ~d bytes from ~a, when it has only ~d bytes available."
-             size data (memory-region-size region)))
+(defmethod resize-buffer-data ((buffer buffer-object) (size integer) &rest args &key data &allow-other-keys)
+  (if data
+      (apply #'resize-buffer-data buffer data :size size args)
+      (resize-buffer-data/ptr buffer size)))
+
+(defmethod resize-buffer-data ((buffer buffer-object) data &key (data-start 0) (size (size buffer)) ((:data _)))
+  (declare (ignore _))
+  (mem:with-memory-region (region data :offset data-start)
+    (if size
+        #-elide-buffer-access-checks
+        (when (and (not (cffi:null-pointer-p (memory-region-pointer region))) (< (memory-region-size region) size))
+          (error "Attempting to update ~d bytes from ~a, when it has only ~d bytes available."
+                 size data (memory-region-size region)))
+        #+elide-buffer-access-checks NIL
+        (setf size (memory-region-size region)))
     (resize-buffer-data/ptr buffer size (memory-region-pointer region))))
 
 (defmethod allocate ((buffer buffer-object))

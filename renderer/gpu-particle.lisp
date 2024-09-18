@@ -213,11 +213,11 @@
   (buffer-data (particle-force-fields-buffer emitter)))
 
 (defmethod (setf mesh-index-buffer) (buffer (emitter gpu-particle-emitter))
+  ;; KLUDGE: We have to coerce here since the buffer is used directly as a GLSL buffer
+  ;;         which cannot do data type conversions, so we have to coerce it.
   (unless (member (element-type buffer) '(:int :unsigned-int))
     (setf (element-type buffer) :unsigned-int)
-    (setf (buffer-data buffer) (make-array (length (buffer-data buffer))
-                                           :element-type '(unsigned-byte 32)
-                                           :initial-contents (buffer-data buffer))))
+    (setf (buffer-data buffer) (ensure-element-type :unsigned-int (buffer-data buffer))))
   (setf (mesh-index-buffer (slot-value emitter 'emit-pass)) buffer))
 
 (defmethod (setf mesh-vertex-buffer) (buffer (emitter gpu-particle-emitter))
