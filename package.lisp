@@ -1202,6 +1202,7 @@
    #:append-vertex-data
    #:combine-vertex-data
    #:with-mesh-construction
+   #:replace-vertex-data
    #:location
    #:uv
    #:normal
