@@ -18,8 +18,8 @@
                          ,@body)))
 
 (define-asset (trial random) static 'texture
-  :pixel-data (with-image (512 512 3) (random 256))
-  :width 512 :height 512 :internal-format :rgb
+  :pixel-data (with-image (512 512 4) (random 256))
+  :width 512 :height 512 :internal-format :rgba
   :min-filter :linear :mag-filter :linear
   :wrapping '(:repeat :repeat :repeat))
 
@@ -29,8 +29,7 @@
                     (case z (0 83) (1 0) (2 83))
                     (case z (0 255) (1 0) (2 255))))
   :width 16 :height 16 :internal-format :rgb
-  :min-filter :nearest
-  :mag-filter :nearest
+  :min-filter :nearest :mag-filter :nearest
   :wrapping '(:repeat :repeat :repeat))
 
 (define-asset (trial black) static 'texture
