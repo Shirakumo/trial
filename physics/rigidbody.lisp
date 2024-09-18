@@ -56,9 +56,14 @@
                      (location (location primitive)))
                  (nvmin vmin (v- location bsize))
                  (nvmax vmax (v+ location bsize))))
-      (!v- bsize vmax vmin)
-      (assert (v/= bsize 0)))
-    (nv* bsize 0.5)))
+      (cond ((or (<= most-positive-single-float (vx vmax))
+                 (<= most-positive-single-float (vy vmax))
+                 (<= most-positive-single-float (vz vmax)))
+             (v<- bsize most-positive-single-float))
+            (T
+             (nv* (!v- bsize vmax vmin) 0.5)
+             (assert (v/= bsize 0)))))
+    bsize))
 
 (defmethod bradius ((entity rigid-shape))
   (float (loop for primitive across (physics-primitives entity)
