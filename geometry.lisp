@@ -187,9 +187,9 @@
     (apply #'update-buffer-data buffer (vertex-data mesh) args)))
 
 (defmethod replace-vertex-data ((vao vertex-array) (mesh mesh-data) &key)
-  (resize-buffer-data (index-buffer vao) (faces mesh))
+  (resize-buffer-data (index-buffer vao) T :data (faces mesh))
   (let ((vertex-data (caar (bindings vao))))
-    (resize-buffer-data vertex-data (vertex-data mesh))
+    (resize-buffer-data vertex-data T :data (vertex-data mesh))
     (setf (bindings vao) (loop with stride = (vertex-attribute-stride mesh)
                                for attribute in (vertex-attributes mesh)
                                for offset = 0 then (+ offset size)
