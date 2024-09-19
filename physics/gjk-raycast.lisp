@@ -109,7 +109,7 @@
          ;; should always find a solution
          (assert (/= d MOST-POSITIVE-SINGLE-FLOAT)
                  nil "Couldn't find best face?~% flat=~s mdet=~s c=~s~% ~s~%"
-                 flat mdet c
+                 flat mdet (vcopy c)
                  (loop for j from 1 to 3
                        collect (or flat
                                    (not (sv-compare-signs mdet (vref c j))))))
