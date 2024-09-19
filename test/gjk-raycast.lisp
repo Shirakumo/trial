@@ -3,13 +3,17 @@
 (in-package #:org.shirakumo.fraf.trial.gjk)
 #++(ql:quickload '(trial random-state))
 
+(defvar *stats* (make-hash-table))
+(defvar *err-stats* (make-hash-table))
 (defun test-raycast (count &key seed
                              ;; radius within which rays start
                              (start-scale 4.0)
                              ;; scale multiplier of target object (assumes
                              ;; objects are within ±1 to start with)
                              (target-scale 1.0)
-                             (normalize-dir T))
+                             (normalize-dir T)
+                             ;; pills are very slow :/
+                             (test-pills nil))
   ;;
   (assert (> start-scale (* 2 target-scale)))
   (let* ((seed (or seed (+ (get-internal-real-time)
@@ -22,17 +26,20 @@
                    (gethash type mesh-cache)
                  (cond
                    (verts
-                    (replace (trial:vertices mesh) verts)
+                    (replace (trial::vertices mesh) verts)
                     mesh)
                    (T
                     (let ((m (trial:coerce-object
                               (ecase type
                                 (:box (trial:make-box))
                                 (:cylinder (trial:make-cylinder))
-                                (:sphere (trial:make-sphere)))
+                                (:sphere (trial:make-sphere))
+                                (:pill (trial:make-pill))
+                                (:ellipsoid (trial:make-ellipsoid))
+                                #++(:cone (trial:make- cone-mesh 1 1)))
                               'trial:convex-mesh)))
                       (setf (gethash type mesh-cache)
-                            (list m (copy-seq (trial:vertices m))))
+                            (list m (copy-seq (trial::vertices m))))
                       m)))))
 
              (random-xy<1 ()
@@ -97,23 +104,30 @@
                    (T
                     (random-point-on-sphere 1)))))
              (random-obj (type orientation)
-               (let* ((mat (qmat orientation))
+               (let* ((mat (m* (qmat orientation)
+                               (mblock (mscaling (vec3 target-scale))
+                                       0 0 3 3)))
                       (mesh (get-mesh type))
                       (obj (make-instance 'trial:rigidbody
                                           :physics-primitives (vector mesh))))
                  (org.shirakumo.fraf.manifolds:transform-mesh
-                  (trial:vertices mesh) mat)
+                  (trial::vertices mesh) mat)
+                 ;; assign to update bounds etc
+                 (setf (trial::vertices mesh) (trial::vertices mesh))
                  obj))
              (save-case (start dir type orientation &rest keys)
-               (declare (ignore start dir type orientation keys))
                ;; todo: do something with these
-               ))
+               (declare (ignorable start dir type orientation keys))
+               (incf (gethash type *err-stats* 0))))
       (loop with hits = 0
             with ref-hits = 0
             with miss = 0
             with steps = 0
             with steps-hist = (make-hash-table)
             with stuck = 0
+            with error-count = 0
+            with mismatch- = 0
+            with mismatch+ = 0
             with ins = 0
             with ins-no-hit = 0
             with distances = (make-array count :fill-pointer 0
@@ -126,10 +140,19 @@
                           (random-dir start))
             for ray = (trial:ray start dir)
             for orientation = (random-orientation)
-            for otype = (ecase (random-state:random-int rnd 0 2)
+            for otype = (ecase (random-state:random-int
+                                rnd 0
+                                (if test-pills 3 2))
                           (0 :box)
                           (1 :cylinder)
-                          (2 :sphere))
+                          (2 :sphere)
+                          (3 :pill)
+                          ;; todo: random shape ellipsoids?
+                          ;; or just add random non-uniform scaling to all
+                          ;; since they are converted to meshes anyway?
+                          #++(4 :ellipsoid)
+                          ;; todo: add cones? other shapes?
+                          #++(5 :cone))
             for obj = (random-obj otype orientation)
             for (ref NIL in) = (multiple-value-list
                                 (ref start dir (aref (trial:physics-primitives obj) 0)))
@@ -140,6 +163,7 @@
                         (trial:hit-location .hit))
             for dist = (when (and ref hit)
                          (vdistance hit ref))
+            do (incf (gethash otype *stats* 0))
             when (and (not err)
                       (or (alexandria:xor hit ref)
                           (and dist (> dist 0.001) (not in))))
@@ -163,6 +187,7 @@
                          seed i err hit ref)
                  (format T "--start=~s~%  dir=~s~%  obj=~s @ ~s~%"
                          start dir otype orientation)
+                 (incf error-count)
                  (save-case start dir otype orientation
                             :hit hit :ref ref :in in)
             else when (alexandria:xor hit ref)
@@ -170,13 +195,37 @@
                               seed i hit ref)
                       (format T "--start=~s~%  dir=~s~%  obj=~s @ ~s~%"
                               start dir otype orientation)
+                      (if hit
+                          (incf mismatch+)
+                          (incf mismatch-))
                       (save-case start dir otype orientation
                                  :hit hit :ref ref :in in)
-            when (and dist (> dist 0.01) (not in))
-              do (format T "~&dist ~s > 0.01? #x~x @ ~s~%  hit ~s~%  ref ~s~%"
-                         dist seed i hit ref)
+            when (and dist (> dist (* 0.01 target-scale)) (not in))
+              do (format T "~&dist ~s > ~a? #x~x @ ~s~%  hit ~s~%  ref ~s~%"
+                         dist (* 0.01 target-scale) seed i hit ref)
                  (format T "--start=~s~%  dir=~s~%  obj=~s @ ~s~%"
                          start dir otype orientation)
+                 (flet ((dv- (a b)
+                          (map '(simple-array double-float (3))
+                               (lambda (a b)
+                                 (- (coerce a 'double-float)
+                                    (coerce b 'double-float)))
+                               (varr a) (varr b)))
+                        (|| (a)
+                          (sqrt (loop for i across a
+                                      sum (expt i 2))))
+                        (dot (a b)
+                          (reduce '+ (map 'vector '* a b))))
+                   (let* ((d1 (dv- hit start))
+                          (d2 (dv- ref start))
+                          (l (* (|| d1) (|| d2)))
+                          (cos (unless (zerop l) (/ (dot d1 d2) l)))
+                          (a (when cos (acos (alexandria:clamp cos -1 1)))))
+                     (format T "  ~aangle = ~10,8f° (~10,9f)~%"
+                             (if (and a (> a 0.00002d0)) ;; 0.001°
+                                 "!!!!"
+                                 "")
+                             (when a (* a (/ 180 PI))) a)))
                  (save-case start dir otype orientation
                             :dist dist :hit hit :ref ref :in in)
             when (zerop (mod i 1000))
@@ -196,20 +245,23 @@
                  (format T "~&step=~s: #x~x @ ~s~%"
                          (gethash :steps *debug-state* 0) seed i)))
             finally
-               (format T "~&~s hits (~s ref) / ~s miss @ :seed #x~x~%"
-                       hits ref-hits miss seed)
+               (format T "~&~s hits (~s ref +~s -~s) / ~s miss @ :seed #x~x~%"
+                       hits ref-hits mismatch+ mismatch- miss seed)
+               (when error-count
+                 (format t "~s errors~%" error-count))
                (when ins
                  (format T "~s start in object (~s not detected)~%"
                          ins ins-no-hit))
                (unless (zerop steps)
                  (format T "~s steps total (avg ~s) | ~s stuck~%"
                          steps (float (/ steps count)) stuck))
-               (format T "max dist ~s~%" (reduce 'max distances))
-               (format T "mean ~s, median ~s, dev ~s, variance ~s~%"
-                       (alexandria:mean distances)
-                       (alexandria:median distances)
-                       (alexandria:standard-deviation distances)
-                       (alexandria:variance distances))
+               (unless (alexandria:emptyp distances)
+                 (format T "max dist ~s~%" (reduce 'max distances))
+                 (format T "mean ~s, median ~s, dev ~s, variance ~s~%"
+                         (alexandria:mean distances)
+                         (alexandria:median distances)
+                         (alexandria:standard-deviation distances)
+                         (alexandria:variance distances)))
                (unless (zerop (hash-table-count steps-hist))
                  (format T "steps:~%~{  ~s ~s~%~}"
                          (alexandria:alist-plist
@@ -309,6 +361,62 @@ Evaluation took:
   81.89% CPU
   173,669,026,003 processor cycles
   37,895,086,720 bytes consed"
+
+;; large dynamic range test
+#++
+(time (test-raycast 30000 :start-scale 1024 :target-scale 510 :seed #x123456))
+"
+17701 hits (17690 ref +11 -0) / 12299 miss @ :seed #x123456
+0 errors
+4391 start in object (0 not detected)
+max dist 2.4737363
+mean 0.0064291866, median 2.8300838e-4, dev 0.04605692, variance 0.0021212397
+Evaluation took:
+  99.593 seconds of real time
+  99.718750 seconds of total run time (93.296875 user, 6.421875 system)
+  [ Real times consist of 0.237 seconds GC time, and 99.356 seconds non-GC time. ]
+  [ Run times consist of 0.250 seconds GC time, and 99.469 seconds non-GC time. ]
+  100.13% CPU
+  399,170,634,802 processor cycles
+  49,713,068,672 bytes consed
+  "
+
+;; large dynamic range test with pills
+#++
+(time (test-raycast 10000 :start-scale 1024 :target-scale 510 :seed #x123456
+                    :test-pills t))
+"6113 hits (6109 ref +4 -0) / 3887 miss @ :seed #x123456
+0 errors
+1847 start in object (0 not detected)
+max dist 99.870094
+mean 0.54339653, median 4.792437e-4, dev 2.5036151, variance 6.268089
+Evaluation took:
+  191.441 seconds of real time
+  190.562500 seconds of total run time (179.609375 user, 10.953125 system)
+  [ Real times consist of 0.394 seconds GC time, and 191.047 seconds non-GC time. ]
+  [ Run times consist of 0.406 seconds GC time, and 190.157 seconds non-GC time. ]
+  99.54% CPU
+  767,297,452,271 processor cycles
+  88,014,335,168 bytes consed
+  "
+
+;; very large dynamic range test
+#++
+(time (test-raycast 10000 :start-scale 4096 :target-scale 2040 :seed #x54321))
+"5930 hits (5927 ref +3 -0) / 4070 miss @ :seed #x54321
+0 errors
+1456 start in object (0 not detected)
+max dist 38.043087
+mean 0.03409025, median 0.0010589204, dev 0.5979002, variance 0.3574847
+Evaluation took:
+  82.366 seconds of real time
+  82.234375 seconds of total run time (77.625000 user, 4.609375 system)
+  [ Real times consist of 0.182 seconds GC time, and 82.184 seconds non-GC time. ]
+  [ Run times consist of 0.187 seconds GC time, and 82.048 seconds non-GC time. ]
+  99.84% CPU
+  330,123,127,850 processor cycles
+  38,206,471,904 bytes consed"
+
 
 ;; consing test
 #++
@@ -495,7 +603,6 @@ Evaluation took:
            (r (when d
                 (map 'vector '+ l0 (map 'vector (alexandria:curry '* d) l)))))
       (values (map 'vector 'float r) r))))
-
 
 (defun rat-point-line (rs rd p0)
   ;; line p=rs+t*rd, point p0
