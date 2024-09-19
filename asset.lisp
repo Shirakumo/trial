@@ -211,24 +211,39 @@
           (dirs (unless ignore-directory (rest (pathname-directory path)))))
       (format NIL "~:@(~{~a/~}~a~)" dirs name))))
 
+(defun coalesce-asset-inputs (files &key (base *default-pathname-defaults*))
+  (let ((table (make-hash-table :test 'equal)))
+    (flet ((reduce-filename (file)
+             (or (cl-ppcre:register-groups-bind (name) ("^(.*?)(?:-\\d+)?\\..*$" (namestring file))
+                   name)
+                 (namestring file))))
+      (loop for file in files
+            for path = (pathname-utils:enough-pathname file base)
+            do (push path (gethash (reduce-filename path) table)))
+      (loop for k being the hash-keys of table using (hash-value inputs)
+            do (setf (gethash k table) (sort inputs #'string< :key #'namestring))))
+    table))
+
 (defun generate-assets-from-path (pool type pathname &key (package *package*) attributes ignore-directory debug exclude)
-  (let ((base (pool-path pool #p""))
-        (default-options (rest (find T attributes :key #'first)))
-        (exclude (enlist exclude)))
+  (let* ((default-options (rest (find T attributes :key #'first)))
+         (exclude (enlist exclude))
+         (paths (coalesce-asset-inputs
+                 (loop for path in (directory (pool-path pool pathname) :resolve-symlinks NIL)
+                       unless (loop for exclusion in exclude
+                                    thereis (pathname-match-p path exclusion))
+                       collect path)
+                 :base (pool-path pool #p""))))
     (when debug
       (print (pool-path pool pathname)))
-    (loop for path in (directory (pool-path pool pathname) :resolve-symlinks NIL)
-          unless (loop for exclusion in exclude
-                       thereis (pathname-match-p path exclusion))
-          collect (let* ((path (enough-namestring path base))
-                         (name (intern (pathname-asset-name path :ignore-directory ignore-directory) package))
+    (loop for name being the hash-keys of paths using (hash-value inputs)
+          collect (let* ((name (intern (pathname-asset-name name :ignore-directory ignore-directory) package))
                          (options (append (rest (find name attributes :key #'first)) default-options)))
                     (if debug
                         (print `(define-asset (,pool ,name) ,type
-                                    ,(pathname path)
+                                    ,(if (rest inputs) inputs (first inputs))
                                   ,@options))
                         (ensure-instance (asset pool name NIL) type
-                                         :input (pathname path)
+                                         :input (if (rest inputs) inputs (first inputs))
                                          :name name
                                          :pool pool
                                          :generation-arguments options))))))
