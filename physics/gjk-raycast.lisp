@@ -53,18 +53,35 @@
          (c (vec4))
          (mdet 0f0)
          (flat NIL)
-         (epsilon 0.00001))
+         (epsilon 0.00001)
+         (signs 0))
     (declare (dynamic-extent m c)
+             (type (unsigned-byte 8) signs)
              (type single-float mdet))
     (loop for j below 4
           for cj = (mcofactor m 3 j)
           do (setf (vref c j) cj)
              (incf mdet cj))
     (setf flat (< (abs mdet) epsilon))
+    (loop for i below 4
+          do (setf (ldb (byte 1 i) signs)
+                   (if (sv-compare-signs mdet (aref (varr c) i))
+                       1 0)))
     (cond
       ;; contained in simplex
-      ((and (not flat)
-            (loop for cj across (varr c) always (sv-compare-signs mdet cj)))
+      ((and (not flat) (= signs #b1111))
+       (!v* dir s0 (/ (vx c) mdet))
+       (!v+* dir dir s1 (/ (vy c) mdet))
+       (!v+* dir dir s2 (/ (vz c) mdet))
+       (!v+* dir dir s3 (/ (vw c) mdet))
+       4)
+      ;; best face is previous simplex?
+      ((= signs #b1110)
+       ;; not sure exactly what is happening in this case, but pretty
+       ;; sure it means we are not making progress and terminating
+       ;; seems to work fairly well, so doing that for now. Possibly
+       ;; should return DIR unmodified, or calculated only from face 0
+       ;; instead?
        (!v* dir s0 (/ (vx c) mdet))
        (!v+* dir dir s1 (/ (vy c) mdet))
        (!v+* dir dir s2 (/ (vz c) mdet))
@@ -90,8 +107,7 @@
                                   b0 b1 b2
                                   cdir c0 c1 c2 c3))
          (loop for j from 1 to 3
-               when (or flat
-                        (not (sv-compare-signs mdet (vref c j))))
+               when (or flat (not (logbitp j signs)))
                  do (p<- c0 s0)
                     (p<- c1 (if (< j 2) s2 s1))
                     (p<- c2 (if (< j 3) s3 s2))
@@ -412,6 +428,12 @@
                      (<= stuck 3))
           do ;; update the simplex and find new direction
              (setf dim (signed-volumes dim s0 s1 s2 s3 v))
+          while (< dim 4) ;; current point is inside simplex (or on
+                          ;; wrong side of simplex), so can't make any
+                          ;; more progress.
+                          ;; TODO: make sure this returns useful
+                          ;; result, and/or see if it can be improved?
+
           finally (progn
                     (nvunit* ray-normal)
                     (return tt)))))
