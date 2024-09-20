@@ -38,6 +38,7 @@
    (waiting :initform 0 :accessor context-waiting)
    (lock :initform (bt:make-lock "Context lock") :reader context-lock)
    (wait-lock :initform (bt:make-lock "Context wait lock") :reader context-wait-lock)
+   (resources :initform (make-hash-table :test 'eq) :accessor resources)
    (handler :initarg :handler :accessor handler)
    (shared-with :initarg :share-with :reader shared-with)
    (glsl-target-version :initarg :glsl-version :initform NIL :accessor glsl-target-version)
@@ -114,6 +115,11 @@
 
 (defmethod finalize ((context context))
   (destroy-context context)
+  (loop for resource being the hash-keys of (resources context)
+        do (when (allocated-p resource)
+             (v:warn :trial.context "Context-bound resource ~a still allocated, but the context was freed!"
+                     resource)
+             (setf (gl-name resource) NIL)))
   (call-next-method))
 
 (defmethod create-child-context ((context context))

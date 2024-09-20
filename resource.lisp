@@ -72,7 +72,17 @@
   (setf (data-pointer resource) NIL))
 
 (defclass gl-resource (foreign-resource)
-  ((data-pointer :accessor gl-name)))
+  ((data-pointer :accessor gl-name)
+   (context :initform NIL :accessor context)))
+
+(defmethod allocate :after ((resource gl-resource))
+  (setf (context resource) *context*)
+  (setf (gethash resource (resources *context*)) T))
+
+(defmethod deallocate :after ((resource gl-resource))
+  (when (context resource)
+    (remhash resource (resources (context resource)))
+    (setf (context resource) NIL)))
 
 (defgeneric activate (gl-resource))
 (defgeneric deactivate (gl-resource))
