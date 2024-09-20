@@ -14,6 +14,16 @@
       (mixed:end (harmony:source (voice resource)))
       (mixed:start (harmony:source (voice resource))))))
 
+(defmethod harmony:play ((file trial:sound-bank) &rest args)
+  (let ((chance 8f0)
+        (resources (slot-value file 'trial::resources)))
+    (when (= 0 (hash-table-count resources))
+      (error "Sound bank has no resources."))
+    (loop (loop for resource being the hash-values of resources
+                do (when (or (< chance 1) (and (< (random chance) 1) (trial:done-p resource)))
+                     (return-from harmony:play (apply #'harmony:play resource args))))
+          (setf chance (* 0.5f0 chance)))))
+
 (defclass sound (trial:audio-file)
   ())
 
@@ -229,7 +239,8 @@
   (harmony:stop (voice voice)))
 
 (defmethod trial:done-p ((voice voice))
-  (mixed:done-p (voice voice)))
+  ;; This means something slightly different to mixed:done-p
+  (not (harmony:active-p (voice voice))))
 
 (defmethod trial:seek ((voice voice) to)
   (mixed:seek (voice voice) to :by :second))
