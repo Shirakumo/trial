@@ -45,3 +45,7 @@
 (defmethod scene ((scene scene)) scene)
 
 (defmethod apply-transforms progn ((scene scene)))
+
+(defun ensure-entity (name container &optional (class name) &rest initargs)
+  (or (node name container)
+      (enter (apply #'make-instance class :name name initargs) container)))

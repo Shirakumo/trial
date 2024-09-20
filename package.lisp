@@ -1608,7 +1608,8 @@
    #:unit
    #:node
    #:scene
-   #:name-map)
+   #:name-map
+   #:ensure-entity)
   ;; selection-buffer.lisp
   (:export
    #:selection-buffer
