@@ -165,3 +165,6 @@
                (setf (slot-value target 'range) range)
                (setf (slot-value target 'inv-range) (if (= 0.0 range) 0.0 (/ range)))
                (setf (slot-value target 'normal) normal)))))
+
+(defmethod emit ((name symbol) count &rest particle-options &key &allow-other-keys)
+  (apply #'emit (node name T) count particle-options))

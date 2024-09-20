@@ -270,6 +270,11 @@
 (define-asset (trial empty-vertex-array) mesh
     (make-instance 'mesh-data :faces (make-array 0 :element-type '(unsigned-byte 16))))
 
+(define-asset (trial point) mesh
+    (with-mesh-construction (v finalize (location normal))
+      (v 0 0 0 0 1 0)
+      (finalize-data :vertex-form :points)))
+
 (define-asset (trial unit-cube) mesh
     (make-cube-mesh 1.0))
 
