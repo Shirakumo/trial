@@ -478,17 +478,39 @@
 
 ;;;
 
+(defun non-zero-mass ()
+  (lambda (entity)
+    (not (= 0.0 (inverse-mass entity)))))
+
+(defun at-least-one (entity-predicate)
+  (lambda (entity1 entity2)
+    (or (funcall entity-predicate entity1)
+        (funcall entity-predicate entity2))))
+
+(defun both (entity-predicate)
+  (lambda (entity1 entity2)
+    (and (funcall entity-predicate entity1)
+         (funcall entity-predicate entity2))))
+
+(defun consider-entities (entity-pair-predicate)
+  (lambda (primitive1 primitive2)
+    (funcall entity-pair-predicate
+             (primitive-entity primitive1)
+             (primitive-entity primitive2))))
+
 (defclass debug-rigidbody-mixin ()
-  ((include-fixed-p :initarg :include-fixed-p
-                    :accessor include-fixed-p
-                    :initform NIL)
+  ((show-collision-debug :initarg :show-collision-debug
+                         :initform NIL
+                         :accessor show-collision-debug)
+   (show-collision-predicate :initarg :show-collision-predicate
+                             :accessor show-collision-predicate
+                             :initform NIL)
    (debug-instances :reader debug-instances
                     :initform (make-hash-table :test #'eq))
    (generation      :accessor generation
-                    :initform 0)
-   (show-collision-debug :initarg :show-collision-debug
-                         :initform NIL
-                         :accessor show-collision-debug)))
+                    :initform 0))
+  (:default-initargs
+   :show-collision-predicate (consider-entities (at-least-one (non-zero-mass)))))
 
 (defmethod start-frame :after ((system debug-rigidbody-mixin))
   (when (show-collision-debug system)
@@ -499,19 +521,7 @@
 
 (defmethod generate-hits :around ((system debug-rigidbody-mixin) hits start end)
   (if (show-collision-debug system)
-      (labels ((interesting-entity-p (entity)
-                 (not (= 0.0 (inverse-mass entity))))
-               (interesting-entity-pair-p (entity1 entity2)
-                 (case (include-fixed-p system)
-                   ((T)
-                    T)
-                   (:mixed
-                    (or (interesting-entity-p entity1)
-                        (interesting-entity-p entity2)))
-                   ((NIL)
-                    (and (interesting-entity-p entity1)
-                         (interesting-entity-p entity2)))))
-               (object-color (object1 object2)
+      (labels ((object-color (object1 object2)
                  (let* ((a1 (sb-vm::get-lisp-obj-address object1))
                         (a2 (sb-vm::get-lisp-obj-address object2))
                         (h (let ((*random-state* (sb-ext:seed-random-state
@@ -549,8 +559,9 @@
                                  (let ((new-start (prune-hits hits start (detect-hits a b hits start end))))
                                    (when (> new-start start)
                                      (push (cons a b) collision-pairs))
-                                   (loop for i from start below new-start
-                                         do (debug-draw-hit a b (aref hits i)))
+                                   (when (funcall (show-collision-predicate system) a b)
+                                     (loop for i from start below new-start
+                                           do (debug-draw-hit a b (aref hits i))))
                                    (setf start new-start))
                                  (when (<= end start) (return start))))))))
                (drawn '()))
@@ -572,8 +583,7 @@
                          (debug-bbox system primitive location bsize color))))
                    (draw-phase (pairs color)
                      (loop for (a . b) in pairs
-                           when (interesting-entity-pair-p (primitive-entity a)
-                                                           (primitive-entity b))
+                           when (funcall (show-collision-predicate system) a b)
                            do (draw-primitive a color)
                               (draw-primitive b color))))
             (draw-phase collision-pairs (vec3 1 0 0))

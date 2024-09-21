@@ -6,7 +6,7 @@
   :slots ((model :initform NIL :accessor model)
           (mesh :initform NIL :accessor mesh)
           (file :initform NIL :accessor file)
-          (physics-system :initform (make-instance 'debug-rigidbody-system :units-per-metre 0.1 :include-fixed-p :mixed)))
+          (physics-system :initform (make-instance 'debug-rigidbody-system :units-per-metre 0.1)))
   (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)
   (enter (make-instance 'editor-camera :location (VEC3 0.0 2.3 10) :fov 50 :move-speed 0.1) scene)
   (enter (make-instance 'physics-wall :name :wall) scene)
