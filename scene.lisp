@@ -23,7 +23,8 @@
   (gethash name (name-map scene)))
 
 (defmethod node (name (scene (eql T)))
-  (gethash name (name-map (scene +main+))))
+  (when (and +main+ (slot-boundp +main+ 'scene))
+    (gethash name (name-map (scene +main+)))))
 
 (defmethod register ((entity entity) (scene scene))
   (when (name entity)
