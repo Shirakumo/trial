@@ -47,7 +47,7 @@
   ((texture :initarg :font :initform (// 'trial 'ascii) :accessor font)
    (text :initarg :text :initform "" :accessor text)
    (size :initform (vec 0 0) :accessor size)
-   (font-size :initform 17.0 :accessor font-size)
+   (font-size :initarg :font-size :initform 17.0 :accessor font-size)
    (foreground :initarg :foreground :initform (vec4 0 0 0 1) :accessor foreground)
    (background :initarg :background :initform (vec4 0 0 0 0) :accessor background))
   (:inhibit-shaders (textured-entity :fragment-shader)))
