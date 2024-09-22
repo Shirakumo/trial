@@ -299,6 +299,13 @@
 (define-asset (trial unit-point) mesh
     (make-triangle-mesh 0.0 0.0))
 
+(define-asset (trial triangle) mesh
+    (with-mesh-construction (v finalize (location normal uv color))
+      (v -0.5 -0.5 0.0 0 0 -1 0.0 0.0 1 0 0 1)
+      (v +0.5 -0.5 0.0 0 0 -1 0.1 0.0 0 1 0 1)
+      (v +0.0 +0.5 0.0 0 0 -1 0.5 0.1 0 0 1 1)
+      (finalize-data)))
+
 (define-asset (trial grid) mesh
     (make-line-grid-mesh 10 10 10))
 
