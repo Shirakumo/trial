@@ -123,6 +123,32 @@
          (with-context (context)
            ,@body)))))
 
+(defclass thunk-main (main)
+  ((setup-thunk :initarg :setup-thunk :accessor setup-thunk)
+   (duration :initarg :duration :initform 1.0 :accessor duration)))
+
+(defmethod update :after ((main main) tt dt fc)
+  (when (<= (duration main) tt)
+    (quit (context main))))
+
+(defmethod setup-scene ((main thunk-main) (scene scene))
+  (funcall (setup-thunk main) scene))
+
+(defmacro main-test (name (scene &rest initargs) &body body)
+  `(test ,name
+     (flet ((thunk (,scene) ,@body))
+       (launch-with-context 'thunk-main :setup-thunk #'thunk ,@initargs))))
+
+(define-shader-entity basic-triangle (listener vertex-entity transformed-entity vertex-colored-entity)
+  ((vertex-array :initform (// 'trial 'triangle))))
+
+(define-handler (basic-triangle tick) (dt)
+  (vsetf (location basic-triangle) (* 0.5 (width *context*)) (* -0.5 (height *context*)) 0)
+  (vsetf (scaling basic-triangle) (* 0.5 (width *context*)) (* 0.5 (height *context*)) 1)
+  (trotate (tf basic-triangle) (qfrom-angle +vx+ (* 0.8 dt)))
+  (trotate (tf basic-triangle) (qfrom-angle +vy+ (* 1 dt)))
+  (trotate (tf basic-triangle) (qfrom-angle +vz+ (* 1.3 dt))))
+
 (cffi:defcallback selftest :int ((in :int))
   (1+ in))
 
@@ -284,4 +310,15 @@ void main(){ color = vec4(0,1,0,1); }"))
         (swap-buffers *context*)
         (sleep 0.2))))
   (test "Launch with context" (launch-with-context 'dummy))
-  #++(test "Launch main" (launch-with-context 'main)))
+  (main-test "Launch main" (scene :duration 0)
+    (declare (ignore scene)))
+  (main-test "Triangle" (scene)
+    (!meye (view-matrix))
+    (nmortho (projection-matrix) -10 +1270 -700 20 0.1 1)
+    (enter (make-instance 'basic-triangle) scene)
+    (enter (make-instance 'render-pass) scene))
+  (main-test "REPL" (scene)
+    (!meye (view-matrix))
+    (nmortho (projection-matrix) -10 +1270 -700 20 0.1 1)
+    (enter (make-instance 'repl) scene)
+    (enter (make-instance 'render-pass :clear-color (vec4 1)) scene)))
