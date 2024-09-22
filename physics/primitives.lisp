@@ -67,13 +67,15 @@
     (support-function primitive local next)
     (n*m (primitive-transform primitive) next)))
 
-(defun finish-hit (hit a b)
+(defun finish-hit (hit a b &optional (a-detail a) (b-detail b))
   (declare (type hit hit))
   (declare (type primitive a))
   (declare (optimize speed))
   #-trial-release (when (v= 0 (hit-normal hit)) (error "Hit normal not set correctly."))
   (setf (hit-a hit) (primitive-entity a))
   (setf (hit-b hit) (if (typep b 'primitive) (primitive-entity b) b))
+  (setf (hit-a-detail hit) a-detail)
+  (setf (hit-b-detail hit) b-detail)
   (multiple-value-bind (static-friction dynamic-friction restitution)
       (material-interaction-properties
        (primitive-material a) (if (typep b 'primitive) (primitive-material b) NIL))
@@ -93,8 +95,8 @@
            (return-from detect-hits start))
          (let ((hit (aref hits start)))
            (block ,block
-             (flet ((finish-hit ()
-                      (finish-hit hit ,av ,bv)
+             (flet ((finish-hit (&optional a-detail b-detail)
+                      (finish-hit hit ,av ,bv a-detail b-detail)
                       (incf start)
                       (if (< start end)
                           (setf hit (aref hits start))

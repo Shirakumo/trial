@@ -303,6 +303,8 @@
    #:make-hit
    #:hit-a
    #:hit-b
+   #:hit-a-detail
+   #:hit-b-detail
    #:hit-location
    #:hit-normal
    #:hit-restitution
@@ -310,6 +312,7 @@
    #:hit-dynamic-friction
    #:hit-depth
    #:hit-other
+   #:hit-detail
    #:a
    #:b
    #:location

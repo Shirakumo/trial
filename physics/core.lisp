@@ -155,6 +155,8 @@
 (defstruct hit
   (a NIL :type T)
   (b NIL :type T)
+  (a-detail NIL :type T)
+  (b-detail NIL :type T)
   (location (vec 0 0 0) :type vec3)
   (normal (vec 0 0 0) :type vec3)
   (restitution 0.0 :type single-float)
@@ -190,6 +192,9 @@
 
 (defun hit-other (hit entity)
   (if (eq (hit-a hit) entity) (hit-b hit) (hit-a hit)))
+
+(defun hit-detail (hit entity)
+  (if (eq (hit-a hit) entity) (hit-a-detail hit) (hit-b-detail hit)))
 
 (defclass physics-system (entity listener)
   ((forces :initform (make-array 0 :adjustable T :fill-pointer T) :accessor forces)
