@@ -149,6 +149,17 @@
   (trotate (tf basic-triangle) (qfrom-angle +vy+ (* 1 dt)))
   (trotate (tf basic-triangle) (qfrom-angle +vz+ (* 1.3 dt))))
 
+(define-shader-entity basic-quad (vertex-entity transformed-entity colored-entity)
+  ((vertex-array :initform (// 'trial 'unit-square))))
+
+(defclass spawner (listener entity) ())
+
+(define-handler (spawner tick) ()
+  (dotimes (i 100)
+    (enter (make-instance 'basic-quad :color (vec4 (random 1.0) (random 1.0) (random 1.0) 1.0)
+                                      :location (vec3 (random 1280) (random 720) 1))
+           (container spawner))))
+
 (cffi:defcallback selftest :int ((in :int))
   (1+ in))
 
@@ -321,6 +332,10 @@ void main(){ color = vec4(0,1,0,1); }"))
     (enter (make-instance 'debug-text :text "HELLO" :foreground (vec4 1) :font-size 500) scene)
     (enter (make-instance 'render-pass) scene))
   (main-test "FPS counter" (scene)
-    (nmortho (projection-matrix) 0 640 0 360 0 1)
     (enter (make-instance 'fps-counter) scene)
+    (enter (make-instance 'render-pass) scene))
+  (main-test "Spawn" (scene)
+    (nmortho (projection-matrix) 0 1280 0 720 0 1)
+    (enter (make-instance 'spawner) scene)
+    (preload 'basic-quad scene)
     (enter (make-instance 'render-pass) scene)))
