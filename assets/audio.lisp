@@ -132,9 +132,10 @@
     (when (= 0 (hash-table-count resources))
       (error "Sound bank has no resources."))
     (loop (loop for resource being the hash-values of resources
-                do (when (or (< chance 1) (and (done-p resource) (< (random chance) 1)))
+                do (when (and (done-p resource) (< (random chance) 1))
                      (return-from play (play resource target))))
-          (setf chance (* 0.5f0 chance)))))
+          (when (< (setf chance (* 0.5f0 chance)) 1.0)
+            (return NIL)))))
 
 (defmethod stop ((file sound-bank))
   (loop for resource being the hash-values of (slot-value file 'resources)
