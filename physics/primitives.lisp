@@ -590,7 +590,8 @@
                  (v<- next vert))))))
 
 (define-primitive-type (optimized-convex-mesh convex-mesh)
-    ((adjacency-list (make-array 0) :type simple-vector))
+    ((adjacency-list (make-array 0) :type simple-vector)
+     (last-vertex 0 :type (unsigned-byte 16)))
   ;; First normalize the mesh to ensure that we have no duplicated vertices or separated
   ;; meshes or anything.
   (multiple-value-bind (verts faces) (org.shirakumo.fraf.quickhull:convex-hull (convex-mesh-vertices primitive))
@@ -618,7 +619,7 @@
          (adjacents (optimized-convex-mesh-adjacency-list primitive))
          (furthest most-negative-single-float)
          (vert (vec3))
-         (vertex 0)
+         (vertex (optimized-convex-mesh-last-vertex primitive))
          (iterations 0))
     (declare (dynamic-extent vert))
     (declare (type (unsigned-byte 16) vertex iterations))
@@ -646,7 +647,8 @@
                (the (simple-array (unsigned-byte 16) (*)) (aref adjacents (truncate vertex 3)))
                do (when (try-vertex i)
                     (go next)))
-       done))))
+       done
+         (setf (optimized-convex-mesh-last-vertex primitive) vertex)))))
 
 (defmethod coerce-object ((primitive primitive) (type (eql 'general-mesh)) &rest args &key &allow-other-keys)
   (apply #'coerce-object primitive 'convex-mesh args))
