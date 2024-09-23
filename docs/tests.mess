@@ -1,0 +1,11 @@
+# Tests
+Trial offers some amount of automated testing to verify its behaviour.
+
+## Selftest
+The selftest suite exists primarily to verify whether the platform performs as Trial expects it to. This is useful when porting to new architectures or operating systems.
+
+:: common lisp
+(asdf:test-system :trial-selftest)
+::
+
+The selftest suite will go through a variety of features and print a summary of failed tests at the end. While performing tests, it will spawn external processes and show a bunch of windows to test various features. The tests will automatically close all windows, so you can simply let it run its course.
