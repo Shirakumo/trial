@@ -10,7 +10,7 @@
 (defun make-animation-layer (clip skeleton &key (strength 0.0) (data skeleton))
   (let ((layer (%make-animation-layer
                 clip
-                (rest-pose* skeleton data)
+                (rest-pose* skeleton :data data)
                 (instantiate-clip skeleton clip))))
     (setf (strength layer) strength)
     layer))
@@ -49,14 +49,14 @@
         do (layer-onto (pose controller) (pose controller) (animation-layer-pose layer) (animation-layer-base layer))))
 
 (defmethod add-animation-layer ((layer animation-layer) (controller layer-controller) &key name)
-  (setf (layer name controller) layer))
+  (setf (animation-layer name controller) layer))
 
 (defmethod add-animation-layer ((clip clip) (controller layer-controller) &key (strength 0.0) (name (name clip)))
-  (setf (layer name controller) (make-animation-layer clip (skeleton controller)
-                                                      :data controller :strength strength)))
+  (setf (animation-layer name controller) (make-animation-layer clip (skeleton controller)
+                                                                :data controller :strength strength)))
 
 (defmethod remove-animation-layer (name (controller layer-controller))
-  (setf (layer name controller) NIL))
+  (setf (animation-layer name controller) NIL))
 
 (defmethod animation-layer (name (controller layer-controller))
   (gethash name (animation-layers controller)))
@@ -65,7 +65,7 @@
   (setf (gethash name (animation-layers controller)) layer))
 
 (defmethod (setf animation-layer) ((null null) name (controller layer-controller))
-  (remhash name (animation-layers93 controller))
+  (remhash name (animation-layers controller))
   null)
 
 (defstruct (fade-target
@@ -306,9 +306,8 @@
   (when (model entity)
     (list-clips (model entity))))
 
-(defmethod add-layer (clip-name (entity animation-controller) &key (name NIL name-p))
-  (let ((clip (find-clip clip-name entity)))
-    (add-layer clip entity :name (if name-p name (name clip)))))
+(defmethod add-animation-layer (clip-name (entity animation-controller) &rest args &key &allow-other-keys)
+  (apply #'add-animation-layer (find-clip clip-name entity) entity args))
 
 (defmethod fade-to ((name string) (entity animation-controller) &rest args &key &allow-other-keys)
   (apply #'fade-to (find-clip name entity) entity args))
