@@ -281,7 +281,8 @@
   (reset-matrix (view-matrix))
   (rotate +vx+ (vx (rotation camera)) (view-matrix))
   (rotate +vy+ (vy (rotation camera)) (view-matrix))
-  (translate (v- (the vec3 (location camera))) (view-matrix)))
+  (with-vec (x y z) (the vec3 (location camera))
+    (translate-by (- x) (- y) (- z) (view-matrix))))
 
 (defun do-fps-movement (camera old-pos pos)
   (let ((delta (v- pos old-pos)))
