@@ -51,8 +51,9 @@
                   (when (typep node 'camera) (return node)))))
     (if camera
         (setf (camera scene) camera)
-        (enter (make-instance 'editor-camera :name :camera :location (VEC3 10.0 20 14) :rotation (vec3 0.75 5.5 0.0) :fov 50 :move-speed 0.1) scene)))
-  (enter (make-instance 'vertex-entity :name :grid :vertex-array (// 'trial 'grid)) scene)
+        (ensure-entity :camera scene 'editor-camera
+                       :location (vec3 10.0 20 14) :rotation (vec3 0.75 5.5 0.0) :fov 50 :move-speed 0.1)))
+  (ensure-entity :grid scene 'vertex-entity :vertex-array (// 'trial 'grid))
   (commit scene (loader +main+)))
 
 (define-handler ((scene scene-loader-scene) text-entered :after) (text)
@@ -60,9 +61,11 @@
     (#\p (setf (paused-p scene) (not (paused-p scene))))
     (#\r (setf (file scene) (file scene)))))
 
-(define-handler ((scene scene-loader-scene) (ev tick) :around) ()
+(define-handler ((scene scene-loader-scene) (ev trial::tick-event) :around) ()
   (cond ((paused-p scene)
          (handle ev (camera scene))
-         (handle ev (node :controller scene)))
+         (handle ev (node :controller scene))
+         (loop for pass across (passes scene)
+               do (handle ev pass)))
         (T
          (call-next-method))))
