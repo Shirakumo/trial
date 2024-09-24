@@ -462,10 +462,14 @@
                 :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 16))
                 args)))
       (gltf:cylinder-shape
-       (apply #'trial:make-cylinder :height (float (* 0.5 (gltf:height shape)) 0f0)
-                                    :radius (max (float (gltf:radius-top shape) 0f0)
-                                                 (float (gltf:radius-bottom shape) 0f0))
-                                    args))
+       (if (= 0 (gltf:radius-top shape))
+           (apply #'trial:make-cone :height (float (* 0.5 (gltf:height shape)) 0f0)
+                                    :radius (float (gltf:radius-bottom shape) 0f0)
+                                    args)
+           (apply #'trial:make-cylinder :height (float (* 0.5 (gltf:height shape)) 0f0)
+                                        :radius (max (float (gltf:radius-top shape) 0f0)
+                                                     (float (gltf:radius-bottom shape) 0f0))
+                                        args)))
       (gltf:sphere-shape
        (apply #'trial:make-sphere :radius (float (gltf:radius shape) 0f0)
               args))

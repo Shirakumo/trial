@@ -37,6 +37,8 @@ Trial currently offers the following primitives, as well as collision detection 
   A box with the half-size ``bsize``.
 - ``cylinder``
   An upright cylinder with a ``radius`` and a ``height`` along the +Y axis.
+- ``cone``
+  An upright cone with a ``radius`` and a ``height`` along the +Y axis. The tip is in Y+.
 - ``pill``
   An upright pill with a ``radius`` and a ``height`` along the +Y axis. Like a cylinder, but with spherical caps of ``radius``. A ``height`` of zero is equivalent to a ``sphere``.
 - ``triangle``

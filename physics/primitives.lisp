@@ -443,6 +443,23 @@
       (incf (vy next) (cylinder-height primitive))
       (decf (vy next) (cylinder-height primitive))))
 
+;; NOTE: the cone is centred at 0,0,0 and points Y-up. the "height" is the half-height
+;;       and the tip is in Y-up.
+(define-primitive-type (cone cylinder) ())
+
+;; TODO: implement this
+(defmethod sample-volume ((primitive cone) &optional vec)
+  (implement!))
+
+(define-support-function cone (dir next)
+  (vsetf next (vx dir) 0 (vz dir))
+  (nv* (nvunit* next) (cylinder-radius primitive))
+  (decf (vy next) (cylinder-height primitive))
+  (let ((b (vec 0 (cylinder-height primitive) 0)))
+    (declare (dynamic-extent b))
+    (when (< (v. next dir) (v. b dir))
+      (v<- next b))))
+
 ;; NOTE: the pill is centred at 0,0,0, and points Y-up. the "height" is the half-height
 ;;       and does not include the caps, meaning the total height of the pill is 2r+2h.
 (define-primitive-type pill
@@ -785,6 +802,27 @@
     (multiple-value-bind (vertices faces) (finalize)
       (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces))))
 
+(defmethod coerce-object ((primitive cone) (type (eql 'convex-mesh)) &key (segments 32))
+  (with-mesh-construction (v)
+    (let ((s (cone-radius primitive))
+          (h (cone-height primitive)))
+      (loop with step = (/ F-2PI segments)
+            for i1 = (- step) then i2
+            for i2 from 0 to F-2PI by step
+            do ;; Bottom disc
+            (v (* s (cos i2)) (- h) (* s (sin i2)))
+            (v 0.0            (- h) 0.0)
+            (v (* s (cos i1)) (- h) (* s (sin i1)))
+            ;; Wall
+            (v (* s (cos i2)) (- h) (* s (sin i2)))
+            (v (* s (cos i1)) (- h) (* s (sin i1)))
+            (v 0 (+ h) 0)
+            (v 0 (+ h) 0)
+            (v 0 (+ h) 0)
+            (v (* s (cos i1)) (- h) (* s (sin i1)))))
+    (multiple-value-bind (vertices faces) (finalize)
+      (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces))))
+
 (defmethod coerce-object ((primitive pill) (type (eql 'convex-mesh)) &key (segments 32))
   (with-mesh-construction (v)
     (let ((s (pill-radius primitive))
@@ -884,6 +922,9 @@
              (setf radius (max radius (abs (aref vertices (+ i 0)))))
              (setf radius (max radius (abs (aref vertices (+ i 2))))))
     (make-primitive-like primitive #'make-cylinder :radius radius :height height)))
+
+(defmethod coerce-object ((primitive general-mesh) (type (eql 'cone)) &key)
+  (implement!))
 
 (defmethod coerce-object ((primitive general-mesh) (type (eql 'pill)) &key)
   (implement!))

@@ -314,6 +314,28 @@ void main(){
     (line (vec 0.0 (- height) (- radius)) (vec 0.0 (+ height) (- radius)))
     (line (vec 0.0 (- height) (+ radius)) (vec 0.0 (+ height) (+ radius)))))
 
+(defmethod debug-draw ((primitive cone) &rest args &key &allow-other-keys)
+  (unless (getf args :transform)
+    (setf (getf args :transform) (primitive-transform primitive)))
+  (apply #'debug-cone #.(vec 0 0 0) (cone-radius primitive) (cone-height primitive) args))
+
+(define-debug-draw-function (debug-cone lines) (location radius height &key (color #.(vec 1 0 0)) (segments 16) (transform (model-matrix)))
+  (allocate (+ (* (1+ segments) 2 2) (* 4 2 2 2)))
+  (labels ((line (a b)
+             (v (n*m transform (nv+ a location))) (v color)
+             (v (n*m transform (nv+ b location))) (v color))
+           (circle (y)
+             (loop for i from 0 below segments
+                   for rad-1 = (* F-2PI (/ (+ i 0) segments))
+                   for rad-2 = (* F-2PI (/ (+ i 1) segments))
+                   do (line (vec (* radius (cos rad-1)) y (* radius (sin rad-1)))
+                            (vec (* radius (cos rad-2)) y (* radius (sin rad-2)))))))
+    (circle (- height))
+    (line (vec (- radius) (- height) 0.0) (vec 0.0 (+ height) 0.0))
+    (line (vec (+ radius) (- height) 0.0) (vec 0.0 (+ height) 0.0))
+    (line (vec 0.0 (- height) (- radius)) (vec 0.0 (+ height) 0.0))
+    (line (vec 0.0 (- height) (+ radius)) (vec 0.0 (+ height) 0.0))))
+
 (defmethod debug-draw ((primitive pill) &rest args &key &allow-other-keys)
   (unless (getf args :transform)
     (setf (getf args :transform) (primitive-transform primitive)))

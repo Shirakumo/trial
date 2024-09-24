@@ -119,6 +119,7 @@ void main(){
                    (make-ellipsoid :radius (nvunit (vec3 3 2 1)))
                    (make-box)
                    (make-cylinder)
+                   (make-cone)
                    (make-pill)
                    (make-plane)
                    (make-half-space)

@@ -416,6 +416,10 @@
    #:make-cylinder
    #:radius
    #:height
+   #:cone
+   #:cone-radius
+   #:cone-height
+   #:make-cone
    #:pill
    #:make-pill
    #:pill-radius

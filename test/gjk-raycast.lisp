@@ -33,10 +33,10 @@
                               (ecase type
                                 (:box (trial:make-box))
                                 (:cylinder (trial:make-cylinder))
+                                (:cone (trial:make-cone))
                                 (:sphere (trial:make-sphere))
                                 (:pill (trial:make-pill))
-                                (:ellipsoid (trial:make-ellipsoid))
-                                #++(:cone (trial:make- cone-mesh 1 1)))
+                                (:ellipsoid (trial:make-ellipsoid)))
                               'trial:convex-mesh)))
                       (setf (gethash type mesh-cache)
                             (list m (copy-seq (trial::vertices m))))

@@ -65,6 +65,7 @@
              (list (make-sphere)
                    (make-box)
                    (make-cylinder)
+                   (make-cone)
                    (make-pill)
                    (make-plane)
                    (make-half-space)
