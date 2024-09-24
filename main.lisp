@@ -2,7 +2,9 @@
 
 (define-event scene-changed () scene old-scene)
 
-(defclass main (display gamepad-input-handler)
+(defclass main (#+thread-support display
+                #-thread-support single-threaded-display
+                gamepad-input-handler)
   ((scene :initform (make-instance 'pipelined-scene) :accessor scene)
    (loader :initform (make-instance 'loader) :accessor loader)))
 
