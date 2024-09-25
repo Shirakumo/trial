@@ -208,6 +208,7 @@
               (%gl:tex-image-2d target 0 internal-format width height 0 pixel-format pixel-type (cffi:null-pointer))))
            ((:texture-3d :texture-2d-array)
             (%gl:tex-image-3d target 0 internal-format width height depth 0 pixel-format pixel-type (cffi:null-pointer)))))
+        ;; TODO: make this only use gl-tex-storage-* if the feature is available, fall back to tex-image instead otherwise.
         (:static
          (ecase target
            ((:texture-1d)
