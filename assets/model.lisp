@@ -56,7 +56,7 @@
              (load-scene (find-scene load-scene model)))))
         model))))
 
-(defmethod compile-resources ((loader model-loader) input &rest args &key)
+(defmethod compile-resources ((loader model-loader) input &rest args &key &allow-other-keys)
   (apply #'optimize-model input T args))
 
 (defclass model-file (file-input-asset multi-resource-asset model-loader model)
