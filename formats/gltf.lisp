@@ -445,6 +445,9 @@
            (or (find-mesh (gltf-name mesh) model NIL)
                (first (load-mesh mesh model)))))
     (etypecase shape
+      (gltf:sphere-shape
+       (apply #'trial:make-sphere :radius (float (gltf:radius shape) 0f0)
+              args))
       (gltf:box-shape
        (apply #'trial:make-box :bsize (vec (* 0.5 (aref (gltf:size shape) 0))
                                            (* 0.5 (aref (gltf:size shape) 1))
@@ -455,30 +458,27 @@
                                 :radius (max (float (gltf:radius-top shape) 0f0)
                                              (float (gltf:radius-bottom shape) 0f0))
                                 args))
-      (gltf:convex-shape
+      (gltf:cylinder-shape
+       (apply (cond ((= 0 (gltf:radius-top shape))
+                     #'trial:make-cone)
+                    (T
+                     #'trial:make-cylinder))
+              :height (float (* 0.5 (gltf:height shape)) 0f0)
+              :radius (max (float (gltf:radius-top shape) 0f0)
+                           (float (gltf:radius-bottom shape) 0f0))
+              args))
+      (gltf:mesh-shape
        (let ((mesh (ensure-mesh (gltf:mesh shape))))
-         ;; KLUDGE: If we have a mesh with few faces, skip the more elaborate hill climbing.
-         (apply (if (< (length (trial:faces mesh)) 8) #'trial:make-convex-mesh #'trial::make-optimized-convex-mesh)
+         (apply (cond ((not (gltf:convex-p shape))
+                       #'trial:make-general-mesh)
+                      ;; NOTE: If we have a mesh with few faces, skip the more elaborate hill climbing.
+                      ((< (length (trial:faces mesh)) 8)
+                       #'trial:make-convex-mesh)
+                      (T
+                       #'trial::make-optimized-convex-mesh))
                 :vertices (trial:reordered-vertex-data mesh '(trial:location))
                 :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 16))
-                args)))
-      (gltf:cylinder-shape
-       (if (= 0 (gltf:radius-top shape))
-           (apply #'trial:make-cone :height (float (* 0.5 (gltf:height shape)) 0f0)
-                                    :radius (float (gltf:radius-bottom shape) 0f0)
-                                    args)
-           (apply #'trial:make-cylinder :height (float (* 0.5 (gltf:height shape)) 0f0)
-                                        :radius (max (float (gltf:radius-top shape) 0f0)
-                                                     (float (gltf:radius-bottom shape) 0f0))
-                                        args)))
-      (gltf:sphere-shape
-       (apply #'trial:make-sphere :radius (float (gltf:radius shape) 0f0)
-              args))
-      (gltf:trimesh-shape
-       (let ((mesh (ensure-mesh (gltf:mesh shape))))
-         (apply #'trial:make-general-mesh :vertices (trial:reordered-vertex-data mesh '(trial:location))
-                                          :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 16))
-                                          args))))))
+                args))))))
 
 (defvar *physics-material-cache* (make-hash-table :test 'equal))
 (defun physics-material-instance (material)
@@ -736,7 +736,7 @@
 (defun add-convex-shape (gltf vertices faces)
   (let* ((primitive (gltf:make-mesh-primitive gltf vertices faces '(:position)))
          (mesh (gltf:make-indexed 'gltf:mesh gltf :primitives (vector primitive))))
-    (gltf:make-indexed 'gltf:convex-shape gltf :mesh mesh :kind "convex")))
+    (gltf:make-indexed 'gltf:mesh-shape gltf :mesh mesh :kind "mesh" :convex-p T)))
 
 (defun push-convex-shape (base-node shape)
   (let* ((collider (make-instance 'gltf:collider :collision-filter (gltf:collision-filter (gltf:collider base-node))
@@ -749,16 +749,20 @@
 (defmethod optimize-model (file (type (eql :glb)) &rest args)
   (apply #'optimize-model file :gltf args))
 
+(defun shape-optimizable-p (shape)
+  (and (typep shape 'gltf:mesh-shape)
+       (not (gltf:convex-p shape))))
+
 (defmethod optimize-model (file (type (eql :gltf)) &rest args &key (output file) &allow-other-keys)
   (let ((decomposition-args (remf* args :output))
         (shape-table (make-hash-table :test 'eql))
         (work-done-p NIL))
     (trial:with-tempfile (tmp :type (pathname-type file))
       (gltf:with-gltf (gltf file)
-        ;; Rewrite trimesh shapes to multiple new shapes.
-        ;; TODO: if original trimesh mesh has no other refs anywhere, remove it
+        ;; Rewrite mesh shapes to multiple new shapes.
+        ;; TODO: if original mesh has no other refs anywhere, remove it
         (loop for shape across (gltf:shapes gltf)
-              do (when (and (typep shape 'gltf:trimesh-shape)
+              do (when (and (shape-optimizable-p shape)
                             ;; Only bother decomposing it if it's actually referenced anywhere.
                             (loop for node across (gltf:nodes gltf)
                                   thereis (and (gltf:collider node) (eql shape (gltf:shape (gltf:collider node))))))
@@ -774,11 +778,10 @@
                                           gltf
                                           (org.shirakumo.fraf.convex-covering:vertices hull)
                                           (trial::simplify (org.shirakumo.fraf.convex-covering:faces hull) '(unsigned-byte 16))))))))
-        ;; Rewrite nodes with refs to trimesh colliders to have child nodes for
+        ;; Rewrite nodes with refs to mesh colliders to have child nodes for
         ;; all decomposed hulls.
         (loop for node across (gltf:nodes gltf)
-              do (when (and (gltf:collider node)
-                            (typep (gltf:shape (gltf:collider node)) 'gltf:trimesh-shape))
+              do (when (and (gltf:collider node) (shape-optimizable-p (gltf:shape (gltf:collider node))))
                    (loop for shape in (gethash (gltf:shape (gltf:collider node)) shape-table)
                          do (push-convex-shape node shape))
                    (setf (gltf:collider node) NIL)
