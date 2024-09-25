@@ -586,9 +586,10 @@
     (setf (trial:physics-primitives child) shape)
     (unless (gltf:shirakumo-trigger-data node)
       (error "Trigger has no extra data."))
-    (funcall (or (gethash (type-of (gltf:shirakumo-trigger-data node)) *trigger-translator-functions*)
-                 (error "Unknown trigger volume type."))
-             child (gltf:shirakumo-trigger-data node))))
+    (with-simple-restart (continue "Ignore the trigger translation")
+      (funcall (or (gethash (type-of (gltf:shirakumo-trigger-data node)) *trigger-translator-functions*)
+                   (error "Unknown trigger volume type."))
+               child (gltf:shirakumo-trigger-data node)))))
 
 (defun %find-child (name node &optional errorp)
   (sequences:dosequence (child node (when errorp (error "No child named ~a found!" name)))
