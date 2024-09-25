@@ -350,10 +350,11 @@
            (sampler (gltf:sampler texture))
            (image (gltf:source texture))
            (name (trial:lispify-name
-                  (or (gltf:name image)
-                      (gltf:uri image)
-                      (gltf:name (gltf:buffer-view image))
-                      (format NIL "image-~d" (gltf:idx image))))))
+                  (or ;; NOTE: we cannot use the image's name since it can
+                   ;; alias with other, distinct images
+                   (gltf:uri image)
+                   (gltf:name (gltf:buffer-view image))
+                   (format NIL "image-~d" (gltf:idx image))))))
       (generate-resources 'image-loader (if (gltf:uri image)
                                             (gltf:path image)
                                             (memory-region (gltf:start (gltf:buffer-view image))
