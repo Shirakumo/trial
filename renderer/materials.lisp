@@ -57,6 +57,10 @@
    (double-sided-p :initform NIL :initarg :double-sided :accessor double-sided-p)
    (textures :initform #() :accessor textures)))
 
+(defmethod print-object ((material material) stream)
+  (print-unreadable-object (material stream :type T :identity (null (name material)))
+    (format stream "~@[~s~]" (name material))))
+
 (defmethod stage ((material material) (area staging-area))
   (loop for texture across (textures material)
         do (stage texture area)))
