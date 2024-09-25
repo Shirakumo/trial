@@ -73,7 +73,7 @@
 
 (defmethod trial:handle ((ev trial:resize) (ui ui))
   (multiple-value-bind (w h) (trial::frame-size ev)
-    (alloy:suggest-size (alloy:px-size w h) ui)
+    (alloy:suggest-size (alloy:px-size (trial:width ev) (trial:height ev)) ui)
     (loop for framebuffer across (framebuffers ui)
           do (trial:resize framebuffer w h))))
 
