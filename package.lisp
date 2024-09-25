@@ -1874,6 +1874,7 @@
    #:initargs
    #:clone
    #:<-
+   #:define-transfer
    #:minimize
    #:generate-name
    #:clamp
