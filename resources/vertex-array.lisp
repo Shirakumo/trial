@@ -140,9 +140,10 @@
 
 (declaim (inline render-array))
 (defun render-array (array &key (vertex-start 0) (vertex-count (size array)) (instances 1)
-                                (vertex-form (vertex-form array)))
+                                (vertex-form (vertex-form array)) patch-size)
   (declare (type (unsigned-byte 32) vertex-start vertex-count instances))
   (activate array)
+  (when patch-size (gl:patch-parameter :patch-vertices patch-size))
   (if (instanced-p array)
       (if (indexed-p array)
           (%gl:draw-elements-instanced vertex-form vertex-count (element-type (indexed-p array)) vertex-start instances)
