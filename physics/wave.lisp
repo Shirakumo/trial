@@ -1,14 +1,19 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (define-shader-pass wave-propagate-pass (temporal-post-effect-pass)
-  ((energy-compensation :initform 0.128 :uniform T :accessor energy-compensation)
-   (propagation-speed :initform 0.25 :uniform T :accessor propagation-speed)
-   (oscillator-speed :initform 0.001 :uniform T :accessor oscillator-speed)))
+  ((energy-compensation :initarg :energy-compensation :initform 0.128 :uniform T :accessor energy-compensation)
+   (propagation-speed :initarg :propagation-speed :initform 0.25 :uniform T :accessor propagation-speed)
+   (oscillator-speed :initarg :oscillator-speed :initform 0.001 :uniform T :accessor oscillator-speed)))
 
-(defmethod initialize-instance :after ((pass wave-propagate-pass) &key (resolution 64))
-  (setf (previous pass) (make-instance 'texture :target :texture-2d :internal-format :rg32f :width resolution :height resolution))
-  (setf (color pass) (make-instance 'texture :target :texture-2d :internal-format :rg32f :width resolution :height resolution))
+(defmethod initialize-instance :after ((pass wave-propagate-pass) &key (resolution 64) (width resolution) (height resolution))
+  (setf (previous pass) (make-instance 'texture :target :texture-2d :internal-format :rg32f :width width :height height))
+  (setf (color pass) (make-instance 'texture :target :texture-2d :internal-format :rg32f :width width :height height))
   (setf (framebuffer pass) (make-instance 'framebuffer :attachments `((:color-attachment0 ,(color pass))) :clear-bits ())))
+
+(defmethod resize ((pass wave-propagate-pass) width height)
+  (resize (previous pass) width height)
+  (resize (color pass) width height)
+  (resize (framebuffer pass) width height))
 
 (defmethod update ((pass wave-propagate-pass) dt tt fc)
   (render pass NIL))
@@ -18,24 +23,20 @@
 uniform float energy_compensation = 0.128;
 uniform float propagation_speed = 0.25;
 uniform float oscillator_speed = 0.001;
+in vec2 uv;
 out vec4 color;
 
-ivec2 tex_coord(int xoff, int yoff){
-  return clamp(ivec2(gl_FragCoord.xy) + ivec2(xoff, yoff), ivec2(0,0), ivec2(63,63));
-}
-
 void main(){
-  ivec2 local = ivec2(gl_FragCoord.xy);
-  vec2 current = texelFetch(previous, local, 0).rg;
+  vec2 current = texture(previous, uv).rg;
   float previous_height = current.r;
   current.r += (current.r-current.g);
   current.g = previous_height;
   current.r *= 1.0-oscillator_speed;
   current.r += (current.r-current.g)*energy_compensation;
-  float local_sum = texelFetch(previous, tex_coord(-1, 0), 0).r
-                  + texelFetch(previous, tex_coord(+1, 0), 0).r
-                  + texelFetch(previous, tex_coord(0, -1), 0).r
-                  + texelFetch(previous, tex_coord(0, +1), 0).r;
+  float local_sum = textureOffset(previous, uv, ivec2(-1, 0)).r
+                  + textureOffset(previous, uv, ivec2(+1, 0)).r
+                  + textureOffset(previous, uv, ivec2(0, -1)).r
+                  + textureOffset(previous, uv, ivec2(0, +1)).r;
   current.r += (local_sum*0.25-current.r)*propagation_speed*0.5;
   color = vec4(current.rg,0,1);
 }")
@@ -43,10 +44,11 @@ void main(){
 (defmethod enter ((pos vec4) (pass wave-propagate-pass))
   ;; The POS is: (U V RADIUS AMPLITUDE)
   (let* ((w (width pass))
+         (h (height pass))
          (r (vz pos))
-         (s (* r w))
+         (s (* r (max w h)))
          (x (* w (vx pos)))
-         (y (* w (vy pos)))
+         (y (* h (vy pos)))
          (a (vw pos))
          (i -1)
          (x- (max (floor (- x s)) 0)) (x+ (min (ceiling (+ x s)) (- w 1)))
@@ -61,7 +63,7 @@ void main(){
                        for d = (max 0.0 (- 1 (/ (sqrt (+ (expt (- x ix) 2) (expt (- y iy) 2))) 2 s)))
                        do (setf (aref array (incf i)) (* d a))
                           (setf (aref array (incf i)) 0.0)))
-        (update-buffer-data (previous pass) array :x x- :y y- :width w :height h)
+        (ignore-errors (update-buffer-data (previous pass) array :x x- :y y- :width w :height h))
         (gl:generate-mipmap :texture-2d)))))
 
 (defmethod enter ((pos vec3) (pass wave-propagate-pass))
