@@ -62,9 +62,10 @@ void main(){
 
 (define-shader-pass temporal-post-effect-pass (post-effect-pass)
   ((previous :port-type static-input :accessor previous)
-   (color :port-type output :reader color)))
+   (color :port-type output :accessor color)))
 
-(defmethod render :after ((pass temporal-post-effect-pass) thing)
+(defmethod render :after ((pass temporal-post-effect-pass) (program shader-program))
+  (activate (framebuffer pass))
   (rotatef (gl-name (previous pass)) (gl-name (color pass)))
   (%gl:framebuffer-texture :framebuffer :color-attachment0 (gl-name (color pass)) 0))
 

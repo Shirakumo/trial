@@ -22,6 +22,9 @@
   (:default-initargs
    :texspec ()))
 
+(defmethod stage ((port texture-port) (area staging-area))
+  (stage (texture port) area))
+
 (flow:define-port-value-slot texture-port texture texture)
 
 ;; FIXME: What about binding multiple levels and layers of the same texture?
@@ -86,9 +89,6 @@
 (defmethod shared-initialize :after ((input fixed-input) slots &key texture)
   (when texture
     (setf (texture input) (eval texture))))
-
-(defmethod stage ((input fixed-input) (area staging-area))
-  (stage (texture input) area))
 
 (defmethod check-consistent ((input fixed-input))
   (unless (texture input)
