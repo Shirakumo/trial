@@ -552,8 +552,8 @@
 (defun load-rigidbody (model child node)
   ;; FIXME: implement joints
   (etypecase child
-    (basic-entity (change-class child 'trial:basic-physics-entity))
-    (basic-animated-entity (change-class child 'trial:animated-physics-entity)))
+    (basic-entity (change-class child 'basic-physics-entity))
+    (basic-animated-entity (change-class child 'animated-physics-entity)))
   (setf (trial:mass child) (gltf:mass (gltf:rigidbody node)))
   ;; FIXME: implement center-of-mass
   (when (/= 1.0 (gltf:gravity-factor (gltf:rigidbody node)))
@@ -578,24 +578,30 @@
            ,@body)))
 
 (defun load-trigger (model child node)
-  (etypecase child
-    (basic-node
-     (change-class child 'trial:trigger-volume)))
+  (unless (typep child 'rigid-shape)
+    (change-class child (typecase child
+                          (basic-entity 'basic-physics-entity)
+                          (animated-entity 'animated-physics-entity)
+                          (T 'trigger-volume))))
   (let ((shape (load-shape (gltf:shape (gltf:trigger node)) model)))
     (setf (trial:primitive-collision-mask shape) (collision-filter-mask (gltf:collision-filter (gltf:trigger node))))
     (setf (trial:physics-primitives child) shape)
-    (unless (gltf:shirakumo-trigger-data node)
-      (error "Trigger has no extra data."))
     (with-simple-restart (continue "Ignore the trigger translation")
-      (funcall (or (gethash (type-of (gltf:shirakumo-trigger-data node)) *trigger-translator-functions*)
-                   (error "Unknown trigger volume type."))
-               child (gltf:shirakumo-trigger-data node)))))
+      (if (gltf:shirakumo-trigger-data node)
+          (funcall (or (gethash (type-of (gltf:shirakumo-trigger-data node)) *trigger-translator-functions*)
+                       (error "Unknown trigger volume type."))
+                   child (gltf:shirakumo-trigger-data node))
+          (funcall (gethash T *trigger-translator-functions*) child node)))))
 
 (defun %find-child (name node &optional errorp)
   (sequences:dosequence (child node (when errorp (error "No child named ~a found!" name)))
     (when (and (<= (length name) (length (name child)))
                (string= name (name child) :end2 (length name)))
       (return child))))
+
+(define-trigger-translation T (trigger node)
+  (declare (ignore node))
+  (change-class trigger 'trial:trigger-volume))
 
 (define-trigger-translation gltf:shirakumo-trigger (trigger trigger-data)
   (change-class trigger 'trial::simple-trigger-volume
