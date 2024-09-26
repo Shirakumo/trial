@@ -724,7 +724,8 @@
    #:index-buffer
    #:indexed-p
    #:compute-buffer-bindings
-   #:find-vertex-buffer-binding)
+   #:find-vertex-buffer-binding
+   #:render-array)
   ;; resources/vertex-buffer.lisp
   (:export
    #:vertex-buffer
