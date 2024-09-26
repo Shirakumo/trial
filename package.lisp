@@ -470,7 +470,6 @@
    #:physics-primitives
    #:collision-mask
    #:transform-matrix
-   #:trigger-volume
    #:rigidbody
    #:rotation
    #:inverse-inertia-tensor
@@ -483,6 +482,53 @@
    #:impact)
   ;; physics/toolkit.lisp
   (:export)
+  ;; physics/trigger.lisp
+  (:export
+   #:trigger-volume
+   #:active-p
+   #:triggered-p
+   #:trigger-passes-p
+   #:activate-trigger
+   #:one-shot-trigger-volume
+   #:type-filtered-trigger-volume
+   #:type-expression
+   #:rearming-trigger-volume
+   #:cooldown
+   #:cooldown-timer
+   #:thunk-trigger-volume
+   #:thunk
+   #:place-trigger-volume
+   #:setter
+   #:getter
+   #:value
+   #:action
+   #:accessor-triggger-volume
+   #:object
+   #:accessor
+   #:value
+   #:action
+   #:kill-trigger-volume
+   #:despawner-trigger-volume
+   #:spawner-trigger-volume
+   #:spawned-objects
+   #:spawn-class
+   #:spawn-arguments
+   #:spawn-count
+   #:spawn-volume
+   #:spawn-orientation
+   #:auto-deactivate
+   #:respawn-cooldown
+   #:respawn-timer
+   #:simple-trigger-volume
+   #:checked-trigger-volume
+   #:condition
+   #:global-sequence-value
+   #:global-sequence-trigger
+   #:sequence-id
+   #:modulation
+   #:new-value
+   #:checkpoint-trigger
+   #:audio-trigger)
   ;; physics/wave.lisp
   (:export
    #:wave-propagate-pass
