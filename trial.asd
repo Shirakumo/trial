@@ -120,6 +120,7 @@
                              (:file "resolution" :depends-on ("rigidbody" "ray"))
                              (:file "trigger" :depends-on ("resolution"))
                              (:file "v-clip" :depends-on ("hit-detection" "ray"))
+                             (:file "wave" :depends-on ((:.. "shader-pass") (:.. "effects")))
                              (:file "xenocollide" :depends-on ("hit-detection"))))
                (:module "renderer"
                 :depends-on ("package" "shader-pass" "helpers" "gl-struct" "transforms" "animation")

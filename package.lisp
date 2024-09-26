@@ -483,6 +483,12 @@
    #:impact)
   ;; physics/toolkit.lisp
   (:export)
+  ;; physics/wave.lisp
+  (:export
+   #:wave-propagate-pass
+   #:energy-compensation
+   #:propagation-speed
+   #:oscillator-speed)
   ;; renderer/lights.lisp
   (:export
    #:standard-light
