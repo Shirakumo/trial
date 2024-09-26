@@ -125,6 +125,8 @@
                  (* (height context) (vy norm-pos)))))))
 
 (defun screen->vec (vec &optional (z 0))
+  ;; FIXME: this is completely useless lmao.
+  ;;        we need to be able to pass a plane to project onto.
   (let* ((context *context*)
          (x (- (* 2 (/ (vx vec) (width context))) 1))
          (y (+ (* -2 (/ (vy vec) (height context))) 1))

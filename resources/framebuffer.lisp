@@ -7,8 +7,8 @@
    (width :initarg :width :initform NIL :accessor width)
    (height :initarg :height :initform NIL :accessor height)))
 
-(defmethod shared-initialize :after ((framebuffer framebuffer) slots &key clear-bits clear-color)
-  (when clear-bits (setf (clear-bits framebuffer) clear-bits))
+(defmethod shared-initialize :after ((framebuffer framebuffer) slots &key (clear-bits NIL clear-bits-p) clear-color)
+  (when clear-bits-p (setf (clear-bits framebuffer) clear-bits))
   (when clear-color (setf (clear-color framebuffer) clear-color)))
 
 (defmethod print-object ((framebuffer framebuffer) stream)
