@@ -106,6 +106,14 @@
     (setf (particle-full-color emitter) int)
     color))
 
+(defmethod (setf particle-color) ((color vec4) (emitter particle-emitter))
+  (let ((int (particle-full-color emitter)))
+    (setf (ldb (byte 8 16) int) (clamp 0 (truncate (* (vz color) 255)) 255))
+    (setf (ldb (byte 8  8) int) (clamp 0 (truncate (* (vy color) 255)) 255))
+    (setf (ldb (byte 8  0) int) (clamp 0 (truncate (* (vx color) 255)) 255))
+    (setf (particle-full-color emitter) int)
+    color))
+
 (defmethod particle-sprite ((emitter particle-emitter))
   (let* ((int (particle-full-color emitter))
          (sprite (ldb (byte 3 24) int)))
