@@ -445,9 +445,12 @@
 (defmethod integrate :after ((system accelerated-rigidbody-system) dt)
   (loop with structure = (dynamic-acceleration-structure system)
         for object across (%objects system)
-        do (when (< 0 (inverse-mass object))
-             (loop for primitive across (physics-primitives object)
-                   do (3ds:update primitive structure)))))
+        do (if (< 0 (inverse-mass object))
+               (loop for primitive across (physics-primitives object)
+                     do (3ds:update primitive structure))
+               ;; KLUDGE: This should not be necessary. Why?
+               (loop for primitive across (physics-primitives object)
+                     do (3ds:update primitive (static-acceleration-structure system))))))
 
 (defmethod detect-hits ((system accelerated-rigidbody-system) other hits start end)
   (setf start (detect-hits (static-acceleration-structure system) other hits start end))
