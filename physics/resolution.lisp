@@ -487,15 +487,19 @@
             (update-start (detect-hits a b hits start end))))))))
 
 (defmethod start-frame :before ((system accelerated-rigidbody-system))
-  (let ((pending-inserts (pending-inserts system)))
+  (let ((pending-inserts (pending-inserts system))
+        (static (static-acceleration-structure system))
+        (dynamic (dynamic-acceleration-structure system))
+        (static-changed-p NIL))
     (loop while (< 0 (length pending-inserts))
           for body = (vector-pop pending-inserts)
-          for structure = (if (= 0 (inverse-mass body))
-                              (static-acceleration-structure system)
-                              (dynamic-acceleration-structure system))
+          for structure = (if (= 0 (inverse-mass body)) static dynamic)
           do (start-frame body)
+             (when (eq structure static) (setf static-changed-p T))
              (loop for primitive across (physics-primitives body)
-                   do (3ds:enter primitive structure)))))
+                   do (3ds:enter primitive structure)))
+    (when static-changed-p
+      (3ds:reoptimize static))))
 
 ;;;
 
