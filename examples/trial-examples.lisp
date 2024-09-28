@@ -53,7 +53,35 @@
 (defgeneric setup-ui (scene panel))
 
 (defclass example-scene (pipelined-scene)
-  ((disable-ui :initform NIL :accessor disable-ui)))
+  ((disable-ui :initform NIL :accessor disable-ui)
+   (title :initform NIL :accessor title)
+   (description :initform NIL :accessor description)))
+
+(defgeneric make-scene (name))
+
+(defmethod title ((name symbol))
+  (if name (title (make-scene name)) ""))
+
+(defmethod description ((name symbol))
+  (if name (description (make-scene name)) "Please select an example from the list on the left and press [Launch] below to start it. During all examples, the following key bindings can be used:
+
+F1 - Return to this main menu
+F10 - Switch between 4:3 and 16:9
+F11 - Switch between fullscreen and not
+F12 - Save a screenshot
+
+In scenes with a camera, the following controls are available:
+
+Ctrl - Hold and move the mouse to view
+WASD - Move around
+C - Ascend
+Space - Descend"))
+
+(defmethod available-p ((name symbol))
+  (if name (available-p (make-scene name)) NIL))
+
+(defmethod change-scene ((main example) (scene symbol) &key (old (scene main)))
+  (change-scene main (make-scene scene) :old old))
 
 (defmethod setup-scene :after ((main example) (scene example-scene))
   (let ((output (car (nodes scene)))
@@ -98,29 +126,25 @@
   (setup-ui scene panel))
 
 (defmacro define-example (name &body body)
-  (form-fiddle:with-body-options (body options title (scene-class (trial::mksym #.*package* name '-scene)) slots superclasses (test T)) body
+  (form-fiddle:with-body-options (body options title description (scene-class (trial::mksym #.*package* name '-scene)) slots superclasses (test T)) body
     (assert (null options))
     `(progn
        (pushnew ',name *examples*)
        
        (defclass ,scene-class (,@superclasses example-scene)
-         ,slots)
+         (,@slots
+          (title :initform ,(or title (string-downcase name)))
+          (description :initform ,description)))
 
-       (defmethod title ((example (eql ',name)))
-         ,(or title (string-downcase name)))
+       (defmethod make-scene ((name (eql ',name)))
+         (make-instance ',scene-class))
 
-       (defmethod title ((scene ,scene-class))
-         ,(or title (string-downcase name)))
+       (defmethod available-p ((scene ,scene-class))
+         ,test)
        
        (defmethod setup-scene ((main example) (scene ,scene-class))
          ,@body
          scene)
-
-       (defmethod available-p ((example (eql ',name)))
-         ,test)
-
-       (defmethod change-scene ((main example) (scene (eql ',name)) &key (old (scene main)))
-         (change-scene main (make-instance ',scene-class) :old old))
 
        (when (and +main+ (slot-boundp +main+ 'scene) (typep (scene +main+) ',scene-class))
          (issue T 'reload-scene)))))
@@ -130,14 +154,32 @@
 
 (defclass example-list (trial-alloy:menuing-panel) ())
 
+(defmethod title ((place alloy:value-data)) (title (alloy:value place)))
+(defmethod description ((place alloy:value-data)) (description (alloy:value place)))
+(defmethod (setf title) (value (place alloy:value-data)))
+(defmethod (setf description) (value (place alloy:value-data)))
+
 (defmethod initialize-instance :after ((list example-list) &key)
-  (let ((layout (make-instance 'alloy:vertical-linear-layout))
-        (focus (make-instance 'alloy:vertical-focus-list)))
-    (dolist (example (sort (list-examples) #'string< :key #'title))
-      (if (available-p example)
-          (make-instance 'alloy:button* :value (title example) :layout-parent layout :focus-parent focus
-                                        :on-activate (lambda () (change-scene +main+ example)))
-          (v:info :trial.examples "The example ~a is not available on your system." example)))
+  (let ((layout (make-instance 'alloy:grid-layout :row-sizes '(T) :col-sizes '(300 20 T)))
+        (focus (make-instance 'alloy:horizontal-focus-list))
+        (data (make-instance 'alloy:value-data :value NIL)))
+    (let* ((clip (make-instance 'alloy:clip-view :limit :x))
+           (list (make-instance 'alloy:vertical-linear-layout :layout-parent clip))
+           (listf (make-instance 'alloy:vertical-focus-list :focus-parent focus))
+           (scroll (alloy:represent-with 'alloy:y-scrollbar clip :focus-parent focus)))
+      (alloy:enter clip layout :col 0 :row 0)
+      (alloy:enter scroll layout :col 1 :row 0)
+      (dolist (example (sort (list-examples) #'string< :key #'title))
+        (make-instance 'alloy:button* :value (title example) :layout-parent list :focus-parent listf
+                                      :on-activate (lambda () (setf (alloy:value data) example)
+                                                     (alloy:refresh layout)))))
+    (let ((side (make-instance 'alloy:grid-layout :col-sizes '(T) :row-sizes '(50 T 50))))
+      (alloy:enter side layout :col 2 :row 0)
+      (alloy:represent (title data) 'alloy:label :layout-parent side :style `((:label :size ,(alloy:un 30))))
+      (alloy:represent (description data) 'alloy:label :layout-parent side :style `((:label :valign :top :wrap T)))
+      (make-instance 'alloy:button* :value "Launch" :layout-parent side :focus-parent focus
+                                    :on-activate (lambda () (when (available-p (alloy:value data))
+                                                              (change-scene +main+ (alloy:value data))))))
     (alloy:finish-structure list layout focus)))
 
 (defmethod setup-scene ((main example) (scene scene))

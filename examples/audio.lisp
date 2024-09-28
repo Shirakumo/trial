@@ -2,6 +2,7 @@
 
 (define-example audio
   :title "Audio"
+  :description "Showcases audio and music playback as well as some simple dynamic audio processing effects."
   ;; NOTE: For audio setup in a regular game you'll probably want to use the
   ;;       trial-harmony:settings-main and a method on trial-harmony:server-initargs
   ;;       instead.

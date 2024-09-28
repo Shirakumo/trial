@@ -2,6 +2,7 @@
 
 (define-example cpu-particle
   :title "CPU Particle Simulation"
+  :description "Playground for the CPU-simulated particle system engine."
   :superclasses (particle-scene)
   (enter (make-instance 'display-controller) scene)
   (enter (make-instance 'cpu-particle-emitter

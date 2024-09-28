@@ -2,6 +2,7 @@
 
 (define-example convex-physics
   :title "Convex Physics Scenes"
+  :description "Allows you to load arbitrary scenes and shoot balls around to showcase the automated convex decomposition and collision detection."
   :superclasses (trial:physics-scene alloy:observable)
   :slots ((model :initform NIL :accessor model)
           (mesh :initform NIL :accessor mesh)

@@ -2,6 +2,7 @@
 
 (define-example gpu-particle
   :title "GPU Particle Simulation"
+  :description "Playground for the GPU-simulated particle system engine. Requires support for compute shaders (OpenGL 4.3+)."
   :superclasses (particle-scene)
   :test (gl-extension-p :gl-arb-compute-shader)
   (enter (make-instance 'display-controller) scene)

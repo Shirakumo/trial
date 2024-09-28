@@ -193,6 +193,7 @@
 
 (define-example spatial-query
   :title "Spatial Query Tests"
+  :description "Testing workbench for spatial query acceleration structures offered by the 3D-spaces library."
   (enter (make-instance 'render-pass) scene)
   (enter (make-instance 'pivot-camera :radius 7) scene)
   (let ((structure (setf *structure* (make-instance 'spatial-structure

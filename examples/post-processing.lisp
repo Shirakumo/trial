@@ -2,6 +2,7 @@
 
 (define-example post-processing
   :title "Post Processing Effects"
+  :description "Showcasing of various built-in post-processing shaders."
   (enter (make-instance 'basic-entity :asset (assets:asset :marble-bust)) scene)
   (enter (make-instance 'directional-light :color (vec3 3)) scene)
   (enter (make-instance 'ambient-light :color (vec3 0.5)) scene)

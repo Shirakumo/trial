@@ -13,6 +13,7 @@
 
 (define-example letterbox
   :title "Letterboxing"
+  :description "Showcases automated letterboxing and scaling of a scene with a fixed render size."
   :slots ((disable-ui :initform T))
   (enter (make-instance 'tile-layer :tile-data (assets:asset :tilemap)) scene)
   (enter (make-instance 'fixed-view-camera :zoom 0.2) scene)

@@ -58,6 +58,7 @@
 
 (define-example physics
   :title "3D Physics System"
+  :description "Playground showcasing the 3D physics simulation features."
   :superclasses (trial:physics-scene)
   :slots ((physics-system :initform (make-instance 'accelerated-rigidbody-system :units-per-metre 0.1)))
   (enter (make-instance 'display-controller) scene)

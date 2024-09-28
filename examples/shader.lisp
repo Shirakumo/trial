@@ -55,6 +55,7 @@ void main(){
 
 (define-example shader
   :title "Custom Shaders"
+  :description "An illustration of custom shaders in Trial by way of a Mandelbrot simulation."
   (enter (make-instance 'display-controller) scene)
   (observe! "WASD to move, QE to zoom" :title "Controls")
   (enter (make-instance 'mandelbrot :name :mandelbrot) scene)

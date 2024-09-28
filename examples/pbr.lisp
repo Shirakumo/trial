@@ -8,6 +8,7 @@
 
 (define-example pbr
   :title "Physically Based Rendering"
+  :description "Showcase of the Physically Based Rendering pipeline."
   (enter (make-instance 'editor-camera :location (vec 0.0 0.0 3) :fov 50 :move-speed 0.1) scene)
   (enter (make-instance 'skybox :texture (assets:// :sandy-beach :environment-map)) scene)
   (enter (make-instance 'environment-light :asset (assets:asset :sandy-beach)) scene)

@@ -2,6 +2,7 @@
 
 (define-example 3d-audio
   :title "3D-Audio"
+  :description "A simple playground showcasing 3D spatial audio effects."
   ;; NOTE: For audio setup in a regular game you'll probably want to use the
   ;;       trial-harmony:settings-main and a method on trial-harmony:server-initargs
   ;;       instead.

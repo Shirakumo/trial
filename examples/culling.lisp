@@ -22,6 +22,7 @@
 
 (define-example culling
   :title "Frustum Culling"
+  :description "Test workbench for camera frustum culling."
   (enter (make-instance 'display-controller) scene)
   (enter (make-instance 'culling-camera) scene)
   (enter (make-instance 'render-pass) scene)

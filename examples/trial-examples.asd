@@ -7,6 +7,7 @@
   #+(and bsd (not darwin)) "trial-examples-bsd.run"
   #-(or linux bsd win32) "trial-examples"
   :entry-point "trial-examples::main"
+  :serial T
   :components ((:file "trial-examples")
                (:file "triangle")
                (:file "collision")

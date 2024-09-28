@@ -12,6 +12,7 @@
 
 (define-example triangle
   :title "Basic Triangle"
+  :description "The famed rainbow triangle demo."
   (!meye (view-matrix))
   (!meye (projection-matrix))
   (enter (make-instance 'basic-triangle) scene)

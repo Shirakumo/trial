@@ -6,6 +6,7 @@
 
 (define-example scene-loader
   :title "Load Arbitrary Scenes"
+  :description "Allows you to load arbitrary scenes from 3D files, including ones with physics simulations. By default shows the Sponza scene using a PBR renderer."
   :superclasses (trial:physics-scene)
   :slots ((physics-system :initform (make-instance 'debug-rigidbody-system :units-per-metre 0.1))
           (incremental-load :initform NIL :accessor incremental-load)

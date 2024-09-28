@@ -15,6 +15,7 @@
 
 (define-example rigging
   :title "Animated Model"
+  :description "An example showing a rigged 3D model."
   (enter (make-instance 'directional-light) scene)
   (enter (make-instance 'ambient-light :color (vec 0.5 0.5 0.5)) scene)
   (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)

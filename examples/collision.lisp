@@ -100,6 +100,7 @@ void main(){
 
 (define-example collision
   :title "Collision Detection"
+  :description "Testing workbench for collision detection routines between different physics primitives."
   (enter (make-instance 'display-controller) scene)
   (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)
   (enter (make-instance 'collision-body :name :a :primitive (make-triangle)) scene)

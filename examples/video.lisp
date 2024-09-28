@@ -17,6 +17,7 @@
 
 (define-example video
   :title "Video Playback"
+  :description "Showcases video playback of a simple animation."
   (enter (make-instance 'display-controller) scene)
   (enter (make-instance 'simple-video-player :asset (assets:asset :hello) :location (vec 0 2 0) :scaling (vec 5 5 5)) scene)
   (observe! (clock (node :video T)) :title "Time [r]")

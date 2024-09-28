@@ -3,6 +3,7 @@
 (define-example save-data
   :superclasses (alloy:observable-object)
   :title "Save Data"
+  :description "Showcase of Trial's built-in save data system."
   :slots ((data :initform :hello :accessor data))
   (enter (make-instance 'render-pass) scene))
 

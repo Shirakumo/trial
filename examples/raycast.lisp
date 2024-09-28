@@ -49,6 +49,7 @@
 
 (define-example raycast
   :title "Raycasting"
+  :description "Testing workbench for Trial's raycast collision system."
   (enter (make-instance 'display-controller) scene)
   (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)
   (enter (make-instance 'collision-body :name :a :primitive (make-sphere)) scene)

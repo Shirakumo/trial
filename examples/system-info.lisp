@@ -2,6 +2,7 @@
 
 (define-example system-info
   :title "System Information"
+  :description "Displays a variety of system information that Trial can expose to the user."
   :superclasses (alloy:observable-object)
   :slots ((cpu :initform (make-array 600 :initial-element 0.0 :element-type 'single-float))
           (ram :initform (make-array 600 :initial-element 0.0 :element-type 'single-float))

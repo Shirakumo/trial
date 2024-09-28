@@ -2,6 +2,7 @@
 
 (define-example selection
   :title "Object Selection by Mouse"
+  :description "Showcases the selection buffer feature, which allows efficient object selection by mouse."
   :slots ((selection-buffer :initform (make-instance 'selection-buffer) :accessor selection-buffer))
   (enter (make-instance 'render-pass) scene)
   (enter (make-instance 'editor-camera :location (vec3 0.0 1.0 15) :fov 50 :move-speed 0.1) scene)

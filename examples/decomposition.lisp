@@ -60,6 +60,7 @@ void main(){
 
 (define-example decomposition
   :title "Convex Hull Decomposition"
+  :description "Test workbench for the automated convex decomposition feature."
   :superclasses (alloy:observable)
   :slots ((model :initform NIL :accessor model)
           (mesh :initform NIL :accessor mesh)
