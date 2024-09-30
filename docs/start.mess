@@ -66,7 +66,7 @@ Let's make this a bit more interesting, by actually creating a scene with stuff 
   (enter (make-instance 'render-pass) scene))
 ::
 
-Then either relaunch the game, or run evaluate ``(maybe-reload-scene)`` while the game is running.
+Then either relaunch the game, or run evaluate ``(trial:maybe-reload-scene)`` while the game is running.
 
 [ image images/start-cube.png ]
 
@@ -100,7 +100,7 @@ After another scene reload the cube should now spin, though because it's still c
    (texture :initform (// 'trial 'cat))))
 ::
 
-Redefining this will lead to an error if your game is still running, as it'll try to access a resource that wasn't loaded. No worries, though, just evaluate ``(maybe-reload-scene)`` while the debugger is up, and then continue the debugger.
+Redefining this will lead to an error if your game is still running, as it'll try to access a resource that wasn't loaded. No worries, though, just evaluate ``(trial:maybe-reload-scene)`` while the debugger is up, and then continue the debugger.
 
 [ image images/start-cat-cube.png ]
 
