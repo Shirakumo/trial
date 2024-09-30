@@ -34,7 +34,8 @@
                (:file "culling")
                (:file "letterbox")
                (:file "repl")
-               (:file "3d-audio"))
+               (:file "3d-audio")
+               (:file "wave"))
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
                :alloy-constraint
