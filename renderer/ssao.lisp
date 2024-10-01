@@ -5,6 +5,7 @@
 
 (defmethod object-renderable-p ((renderable renderable) (pass z-prepass)) NIL)
 (defmethod object-renderable-p ((renderable standard-renderable) (pass z-prepass)) T)
+(defmethod object-renderable-p ((material material) (pass z-prepass)) (not (transparent-p material)))
 
 (defmethod compute-shader ((type (eql :fragment-shader)) (pass z-prepass) object)
   (load-time-value (list (glsl-toolkit:parse "void main(){}"))))
