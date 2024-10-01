@@ -101,6 +101,8 @@
   (lru-cache-clear (allocated-materials pass))
   (lru-cache-clear (allocated-lights pass)))
 
+(defmethod object-renderable-p ((material material) (pass standard-render-pass)) NIL)
+
 (defgeneric material-block-type (standard-render-pass))
 
 (defmethod bind-textures ((pass standard-render-pass))
@@ -301,7 +303,7 @@
     (setf (uniform program "inv_model_matrix") (!minv inv (model-matrix)))))
 
 (defmethod render-with ((pass standard-render-pass) (object single-material-renderable) program)
-  (when (material object)
+  (when (and (material object) (object-renderable-p (material object) pass))
     (with-pushed-features
       (render-with pass (material object) program)
       (render (vertex-array object) program))))
@@ -342,9 +344,10 @@
   ;;         primary on the renderable is not invoked. Not sure how to fix this issue.
   (loop for vao across (vertex-arrays renderable)
         for material across (materials renderable)
-        do (with-pushed-features
-             (render-with pass material program)
-             (render vao program))))
+        do (when (object-renderable-p material pass)
+             (with-pushed-features
+               (render-with pass material program)
+               (render vao program)))))
 
 (defmethod (setf mesh) :after ((meshes cons) (renderable per-array-material-renderable))
   (let ((arrays (make-array (length meshes))))
@@ -448,16 +451,17 @@
         for vao across (the simple-vector (vertex-arrays renderable))
         for material across (the simple-vector (materials renderable))
         for (morph . morphtex) across (the simple-vector (morphs renderable))
-        do (with-pushed-features
-             (render-with pass material program)
-             (cond (morph
-                    (bind (morph-data morph) program)
-                    (setf (uniform program "morph_targets") (enable morphtex pass))
-                    (setf (uniform program "animation") (+ skinning 1)))
-                   (T
-                    (setf (uniform program "morph_targets") 99)
-                    (setf (uniform program "animation") (+ skinning 0))))
-             (render vao program))))
+        do (when (object-renderable-p material pass)
+             (with-pushed-features
+               (render-with pass material program)
+               (cond (morph
+                      (bind (morph-data morph) program)
+                      (setf (uniform program "morph_targets") (enable morphtex pass))
+                      (setf (uniform program "animation") (+ skinning 1)))
+                     (T
+                      (setf (uniform program "morph_targets") 99)
+                      (setf (uniform program "animation") (+ skinning 0))))
+               (render vao program)))))
 
 (define-shader-entity animated-physics-entity (rigidbody basic-animated-entity)
   ())

@@ -118,6 +118,8 @@
       (setf (uniform program "environment_map") max))
     (setf (uniform program "brdf_lut") 0)))
 
+(defmethod object-renderable-p ((material pbr-material) (pass pbr-render-pass)) T)
+
 (defmethod material-block-type ((pass pbr-render-pass))
   'pbr-material-block)
 

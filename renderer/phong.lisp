@@ -52,6 +52,8 @@
     (setf (uniform program "specular_tex") (local-id (aref textures 1) pass))
     (setf (uniform program "normal_tex") (local-id (aref textures 3) pass))))
 
+(defmethod object-renderable-p ((material phong-material) (pass phong-render-pass)) T)
+
 (defmethod material-block-type ((pass phong-render-pass))
   'phong-material-block)
 
