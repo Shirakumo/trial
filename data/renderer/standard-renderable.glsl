@@ -1,7 +1,7 @@
 #section VERTEX_SHADER
-layout (location = 0) in vec3 in_position;
-layout (location = 1) in vec3 in_normal;
-layout (location = 2) in vec2 in_uv;
+layout (location = TRIAL_V_LOCATION) in vec3 in_position;
+layout (location = TRIAL_V_NORMAL) in vec3 in_normal;
+layout (location = TRIAL_V_UV) in vec2 in_uv;
 uniform mat4 model_matrix;
 uniform mat4 inv_model_matrix;
 out vec3 v_world_position;

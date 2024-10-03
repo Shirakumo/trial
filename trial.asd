@@ -78,7 +78,7 @@
                (:file "selection" :depends-on ("package" "shader-pass"))
                (:file "serialize" :depends-on ("package"))
                (:file "settings" :depends-on ("package" "toolkit" "error-handling"))
-               (:file "shader-entity" :depends-on ("package" "container" "event-loop" "loader"))
+               (:file "shader-entity" :depends-on ("package" "container" "event-loop" "loader" "geometry"))
                (:file "shader-pass" :depends-on ("package" "shader-entity" "helpers" "resource" ("resources" "framebuffer") ("resources" "shader-program") "scene" "loader" "context" "geometry-shapes" "camera"))
                (:file "skybox" :depends-on ("package" "shader-entity" "transforms"))
                (:file "sprite" :depends-on ("package" "shader-entity" "helpers" ("assets" "sprite-data")))
@@ -150,7 +150,7 @@
                              (:file "texture" :depends-on ((:.. "texture-source")))
                              (:file "uniform-buffer" :depends-on ("bindable-buffer" "struct-buffer"))
                              (:file "vertex-array")
-                             (:file "vertex-buffer" :depends-on ("bindable-buffer"))
+                             (:file "vertex-buffer" :depends-on ("bindable-buffer" "shader-program"))
                              (:file "vertex-struct-buffer" :depends-on ("struct-buffer"))))
                (:module "assets"
                 :depends-on ("package" "asset" "resources" "data-pointer")

@@ -24,8 +24,8 @@
 
 (define-class-shader (image-renderer :vertex-shader)
   "
-layout (location = 0) in vec3 in_position;
-layout (location = 2) in vec2 in_uv;
+layout (location = TRIAL_V_LOCATION) in vec3 in_position;
+layout (location = TRIAL_V_UV) in vec2 in_uv;
 out vec2 uv;
 out vec3 world_position;
 

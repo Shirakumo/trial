@@ -1,10 +1,9 @@
 #section VERTEX_SHADER
 #include "skin-matrix.glsl"
 #include "morph.glsl"
-
-layout (location = 0) in vec3 in_position;
-layout (location = 5) in vec4 in_joints;
-layout (location = 6) in vec4 in_weights;
+layout (location = TRIAL_V_LOCATION) in vec3 in_position;
+layout (location = TRIAL_V_JOINTS) in vec4 in_joints;
+layout (location = TRIAL_V_WEIGHTS) in vec4 in_weights;
 uniform mat4 model_matrix;
 uniform int shadow_map_id;
 uniform int animation = 0;

@@ -165,7 +165,7 @@
   (render-array (// 'trial 'fullscreen-square)))
 
 (define-class-shader (fullscreen-entity :vertex-shader)
-  "layout (location = 0) in vec3 position;
+  "layout (location = TRIAL_V_LOCATION) in vec3 position;
 
 void main(){
   maybe_call_next_method();
@@ -187,7 +187,7 @@ void main(){
   (render (vertex-array entity) program))
 
 (define-class-shader (vertex-entity :vertex-shader)
-  "layout (location = 0) in vec3 position;
+  "layout (location = TRIAL_V_LOCATION) in vec3 position;
 
 uniform mat4 model_matrix;
 uniform mat4 view_matrix;
@@ -236,7 +236,7 @@ void main(){
   ())
 
 (define-class-shader (vertex-colored-entity :vertex-shader)
-  "layout (location = 4) in vec4 in_vertexcolor;
+  "layout (location = TRIAL_V_COLOR) in vec4 in_vertexcolor;
 out vec4 vertexcolor;
 
 void main(){
@@ -263,7 +263,7 @@ void main(){
   (bind (texture obj) :texture0))
 
 (define-class-shader (textured-entity :vertex-shader)
-  "layout (location = 2) in vec2 in_uv;
+  "layout (location = TRIAL_V_UV) in vec2 in_uv;
 out vec2 uv;
 
 void main(){

@@ -521,8 +521,8 @@
 
 (define-class-shader (post-effect-pass :vertex-shader)
   "
-layout (location = 0) in vec3 position;
-layout (location = 2) in vec2 in_uv;
+layout (location = TRIAL_V_LOCATION) in vec3 position;
+layout (location = TRIAL_V_UV) in vec2 in_uv;
 out vec2 uv;
 
 void main(){

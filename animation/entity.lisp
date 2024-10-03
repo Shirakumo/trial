@@ -100,11 +100,11 @@
            (if (skinned-p entity) 2 0))))
 
 (define-class-shader (animated-entity :vertex-shader)
-  "layout (location = 0) in vec3 in_position;
-layout (location = 1) in vec3 in_normal;
-layout (location = 2) in vec2 in_uv;
-layout (location = 5) in vec4 in_joints;
-layout (location = 6) in vec4 in_weights;
+  "layout (location = TRIAL_V_LOCATION) in vec3 in_position;
+layout (location = TRIAL_V_NORMAL) in vec3 in_normal;
+layout (location = TRIAL_V_UV) in vec2 in_uv;
+layout (location = TRIAL_V_JOINTS) in vec4 in_joints;
+layout (location = TRIAL_V_WEIGHTS) in vec4 in_weights;
 uniform int animation = 0;
 
 out vec3 normal;

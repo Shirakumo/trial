@@ -70,6 +70,14 @@
    weights-3
    index))
 
+(defun vertex-attribute-code ()
+  `(glsl-toolkit:shader
+    ,@(loop for attribute in *known-vertex-attributes*
+            collect `(glsl-toolkit:preprocessor-directive
+                      ,(format NIL "#define TRIAL_V_~:@(~a~) ~a"
+                               (symbol->c-name attribute)
+                               (vertex-attribute-order attribute))))))
+
 (defmethod vertex-attribute-stride ((attributes list))
   (loop for attribute in attributes
         sum (vertex-attribute-size attribute)))

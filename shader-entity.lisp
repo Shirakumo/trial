@@ -452,6 +452,9 @@
      ,direct-slots
      ,@options))
 
+(define-class-shader (shader-entity :vertex-shader)
+  (vertex-attribute-code))
+
 (define-class-shader (shader-entity :fragment-shader)
   "
 out vec4 color;

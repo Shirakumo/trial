@@ -62,7 +62,7 @@
   (done-p (video entity)))
 
 (define-class-shader (video-display :vertex-shader)
-  "layout (location = 2) in vec2 in_uv;
+  "layout (location = TRIAL_V_UV) in vec2 in_uv;
 out vec2 uv;
 
 void main(){

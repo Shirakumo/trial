@@ -90,7 +90,8 @@
   (let* ((*default-pathname-defaults* (pool-path 'trial "renderer/standard-shadow-map.glsl"))
          (shaders (loop with buffer = (glsl-toolkit:serialize (gl-source (shadow-map-block pass)))
                         for (type source) on (glsl-toolkit:preprocess *default-pathname-defaults* :include-resolution #'resolve-shader-include) by #'cddr
-                        collect (make-instance 'shader :type type :source (format NIL "~a~%~a" buffer (glsl-toolkit:serialize source)))))
+                        for appended-source = (append (vertex-attribute-code) (rest source))
+                        collect (make-instance 'shader :type type :source (format NIL "~a~%~a" buffer (glsl-toolkit:serialize appended-source)))))
          (program (make-instance 'shader-program :shaders shaders :buffers (list (shadow-map-block pass)))))
     (setf (slot-value pass 'shadow-map-program) program)))
 
