@@ -55,7 +55,7 @@
 (defclass material ()
   ((name :initform NIL :initarg :name :accessor name)
    (double-sided-p :initform NIL :initarg :double-sided :accessor double-sided-p)
-   (transparent-p :initform NIL :initarg :transparent-p :accessor transparent-p)
+   (transparent-p :initform NIL :initarg :transparent :accessor transparent-p)
    (textures :initform #() :accessor textures)))
 
 (defmethod print-object ((material material) stream)
