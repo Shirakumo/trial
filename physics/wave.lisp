@@ -54,7 +54,7 @@ void main(){
          (x- (max (floor (- x s)) 0)) (x+ (min (ceiling (+ x s)) (- w 1)))
          (y- (max (floor (- y s)) 0)) (y+ (min (ceiling (+ y s)) (- w 1)))
          (w (- x+ x-)) (h (- y+ y-)))
-    (when (< 0 (* w h))
+    (when (and (< 0 w) (< 0 h))
       (let ((array (make-array (* 2 w h) :element-type 'single-float)))
         (declare (dynamic-extent array))
         (loop for ix from x- below x+
