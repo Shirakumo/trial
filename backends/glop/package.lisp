@@ -7,3 +7,5 @@
   (:local-nicknames (#:v #:org.shirakumo.verbose))
   (:export
    #:context))
+
+(pushnew :trial-glob *features*)

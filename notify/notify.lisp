@@ -12,6 +12,9 @@
    #:files-to-watch
    #:process-changes
    #:main))
+
+(pushnew :trial-notify *features*)
+
 (in-package #:org.shirakumo.fraf.trial.notify)
 
 ;;; {truename -> {object ~> T}}

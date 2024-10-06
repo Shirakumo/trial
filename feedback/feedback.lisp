@@ -8,6 +8,8 @@
    #:find-user-id
    #:submit-report
    #:submit-snapshot))
+(pushnew :trial-feedback *features*)
+
 (in-package #:org.shirakumo.fraf.trial.feedback)
 
 (defvar *report-hooks* ())

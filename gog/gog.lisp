@@ -8,6 +8,9 @@
    (#:gog #:org.shirakumo.fraf.gog-galaxy)
    (#:gog* #:org.shirakumo.fraf.gog-galaxy.cffi)
    (#:v #:org.shirakumo.verbose)))
+
+(pushnew :trial-gog *features*)
+
 (in-package #:org.shirakumo.fraf.trial.gog)
 
 (setf trial::*open-in-browser-hook*

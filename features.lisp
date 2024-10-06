@@ -45,3 +45,5 @@ GIT and made it default in the fucking throat."))
 
 #-3d-math-f32
 (error "Trial does not work without single-float math.")
+
+(pushnew :trial *features*)

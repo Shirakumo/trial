@@ -9,3 +9,5 @@
    (#:%glfw #:org.shirakumo.fraf.glfw.cffi))
   (:export
    #:context))
+
+(pushnew :trial-glfw *features*)

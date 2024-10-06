@@ -47,3 +47,5 @@
    #:monitor
    #:video-mode
    #:localized-combo-set))
+
+(pushnew :trial-alloy *features*)

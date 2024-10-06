@@ -16,3 +16,5 @@
    #:main
    #:server-initargs
    #:settings-main))
+
+(pushnew :trial-harmony *features*)

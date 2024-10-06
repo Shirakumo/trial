@@ -7,3 +7,5 @@
    (#:nxgl #:org.shirakumo.fraf.nxgl))
   (:export
    #:context))
+
+(pushnew :trial-nxgl *features*)
