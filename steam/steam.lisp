@@ -39,32 +39,33 @@
    (use-steaminput :initform NIL :initarg :use-steaminput :accessor use-steaminput)
    (steam-required-p :initform NIL :initarg :require-steam :accessor steam-required-p)))
 
-(defmethod initialize-instance ((main main) &key app-id)
+(defmethod initialize-instance ((main main) &key steam)
   (call-next-method)
-  (handler-bind ((error
-                   (lambda (e)
-                     (v:severe :trial.steam "Failed to initialise steamworks: ~a" e)
-                     (v:debug :trial.steam e)
-                     (when (deploy:deployed-p)
-                       (cond ((steam-required-p main)
-                              (invoke-restart 'steam:restart))
-                             (T
-                              (invoke-restart 'ignore)))))))
-    (when (or (steam-required-p main)
-              (deploy:deployed-p))
-      (with-simple-restart (ignore "Ignore the steamworks failure.")
-        (v:info :trial.steam "Initialising steamworks~@[ for app id ~a~]" app-id)
-        (make-instance 'steam:steamworks-client :app-id app-id)
-        ;; Populate action sets
-        (when (use-steaminput main)
-          (multiple-value-bind (analog digital) (compute-action-sets)
-            (setf (analog-actions main) analog)
-            (setf (digital-actions main) digital)))
-        (steam:list-achievements (steam:interface 'steam:steamuserstats T))))
-    (handler-case (steam:steamworks)
-      (steam:steamworks-not-initialized ()
-        (v:info :trial.steam "Steamworks not initialised, disabling steam input.")
-        (setf (use-steaminput main) NIL)))))
+  (destructuring-bind (&key app-id) steam
+    (handler-bind ((error
+                     (lambda (e)
+                       (v:severe :trial.steam "Failed to initialise steamworks: ~a" e)
+                       (v:debug :trial.steam e)
+                       (when (deploy:deployed-p)
+                         (cond ((steam-required-p main)
+                                (invoke-restart 'steam:restart))
+                               (T
+                                (invoke-restart 'ignore)))))))
+      (when (or (steam-required-p main)
+                (deploy:deployed-p))
+        (with-simple-restart (ignore "Ignore the steamworks failure.")
+          (v:info :trial.steam "Initialising steamworks~@[ for app id ~a~]" app-id)
+          (make-instance 'steam:steamworks-client :app-id app-id)
+          ;; Populate action sets
+          (when (use-steaminput main)
+            (multiple-value-bind (analog digital) (compute-action-sets)
+              (setf (analog-actions main) analog)
+              (setf (digital-actions main) digital)))
+          (steam:list-achievements (steam:interface 'steam:steamuserstats T))))
+      (handler-case (steam:steamworks)
+        (steam:steamworks-not-initialized ()
+          (v:info :trial.steam "Steamworks not initialised, disabling steam input.")
+          (setf (use-steaminput main) NIL))))))
 
 #+windows
 (defmethod initialize-instance :around ((main main) &rest initargs &key require-steam)

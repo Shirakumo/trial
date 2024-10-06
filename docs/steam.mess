@@ -6,7 +6,7 @@ Setup from your end should be rather trivial for the basics: just inherit from t
 :: common lisp
 (defclass main (org.shirakumo.fraf.trial.steam:main)
   ()
-  (:default-initargs :app-id 170))
+  (:default-initargs :steam '(:app-id 170)))
 ::
 
 Note that even if you do this, the game will continue to work even if launched outside of Steam or if Steam isn't even present at all. It will try to connect to Steam on startup, but will just disable the extra integration bits if unavailable.
