@@ -42,7 +42,7 @@
   (gl:depth-mask T)
   (setf *depth-mask* T)
   (gl:depth-func :lequal)
-  (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha)
+  (set-blend-mode :normal)
   (gl:clear-depth 1.0)
   (gl:front-face :ccw)
   (gl:cull-face :back)

@@ -140,7 +140,7 @@
 (defun set-blend-mode (mode)
   (ecase mode
     ((:source-over :normal)
-     (gl:blend-func-separate :one :one-minus-src-alpha :one :one-minus-src-alpha)
+     (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha)
      (gl:blend-equation :func-add))
     (:destination-over
      (gl:blend-func-separate :one-minus-dst-alpha :one :one :one-minus-src-alpha)
