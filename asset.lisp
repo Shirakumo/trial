@@ -211,7 +211,7 @@
           (dirs (unless ignore-directory (rest (pathname-directory path)))))
       (format NIL "~:@(~{~a/~}~a~)" dirs name))))
 
-(defun coalesce-asset-inputs (files &key (base *default-pathname-defaults*))
+(defun process-asset-inputs (files &key (base *default-pathname-defaults*) (coalesce T))
   (let ((table (make-hash-table :test 'equal)))
     (flet ((reduce-filename (file)
              (or (cl-ppcre:register-groups-bind (name) ("^(.*?)(?:-\\d+)?\\..*$" (namestring file))
@@ -219,19 +219,20 @@
                  (namestring file))))
       (loop for file in files
             for path = (pathname-utils:enough-pathname file base)
-            do (push path (gethash (reduce-filename path) table)))
+            do (push path (gethash (if coalesce (reduce-filename path) (namestring path)) table)))
       (loop for k being the hash-keys of table using (hash-value inputs)
             do (setf (gethash k table) (sort inputs #'string< :key #'namestring))))
     table))
 
-(defun generate-assets-from-path (pool type pathname &key (package *package*) attributes ignore-directory debug exclude)
+(defun generate-assets-from-path (pool type pathname &key (package *package*) attributes ignore-directory debug exclude (coalesce T))
   (let* ((default-options (rest (find T attributes :key #'first)))
          (exclude (enlist exclude))
-         (paths (coalesce-asset-inputs
+         (paths (process-asset-inputs
                  (loop for path in (directory (pool-path pool pathname) :resolve-symlinks NIL)
                        unless (loop for exclusion in exclude
                                     thereis (pathname-match-p path exclusion))
                        collect path)
+                 :coalesce coalesce
                  :base (pool-path pool #p""))))
     (when debug
       (print (pool-path pool pathname)))
