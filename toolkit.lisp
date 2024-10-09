@@ -790,6 +790,24 @@
     (n*m (model-matrix) vec)
     (vsetf target (vx vec) (vy vec) (vz vec))))
 
+(defmethod global-location ((tf transform) &optional (target (vec3)))
+  (let ((vec (vec (location tf) 0)))
+    (declare (dynamic-extent vec))
+    (n*m (model-matrix) vec)
+    (vsetf target (vx vec) (vy vec) (vz vec))))
+
+(defmethod global-orientation ((quat quat) &optional (target (quat)))
+  (q<- target quat)
+  (let ((q (qfrom-mat (model-matrix))))
+    (declare (dynamic-extent q))
+    (!q* target q target)))
+
+(defmethod global-orientation ((tf transform) &optional (target (quat)))
+  (q<- target (orientation tf))
+  (let ((q (qfrom-mat (model-matrix))))
+    (declare (dynamic-extent q))
+    (!q* target q target)))
+
 (defun initarg-slot (class initarg)
   (let ((class (etypecase class
                  (class class)
