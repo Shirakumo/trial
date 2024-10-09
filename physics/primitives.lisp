@@ -162,16 +162,24 @@
            (v<- (global-bounds-cache-obb target) (global-bounds-cache-obb source))
            (v<- (global-bounds-cache-aabb target) (global-bounds-cache-aabb source)))))
 
-(declaim (ftype (function (T) (unsigned-byte 32)) collision-mask))
+(declaim (ftype (function (T) (values (unsigned-byte 32) &optional)) collision-mask))
 (defmethod collision-mask ((primitive primitive))
   (primitive-collision-mask primitive))
 
 (defmethod (setf collision-mask) ((mask integer) (primitive primitive))
   (setf (primitive-collision-mask primitive) mask))
 
-(defmethod (setf collision-mask) ((systems sequence) (primitive primitive))
-  (setf (collision-mask primitive) (collision-system-idx systems))
+(defmethod (setf collision-mask) ((systems sequence) thing)
+  (setf (collision-mask thing) (collision-system-idx systems))
   systems)
+
+(defmethod (setf collision-mask) ((all (eql T)) thing)
+  (setf (collision-mask thing) (1- (ash 1 32)))
+  T)
+
+(defmethod (setf collision-mask) ((none null) thing)
+  (setf (collision-mask thing) 0)
+  NIL)
 
 (defmethod global-transform-matrix ((primitive primitive) &optional target)
   (etypecase target

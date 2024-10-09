@@ -3,22 +3,14 @@
 (defclass rigid-shape (physics-entity transformed-entity global-bounds-cached-entity)
   ((physics-primitives :initform #() :accessor physics-primitives)
    ;; Cache
-   (transform-matrix :initform (mat4) :reader transform-matrix)))
+   (transform-matrix :initform (mat4) :reader transform-matrix)
+   (collision-mask :initform (1- (ash 1 32)) :accessor collision-mask)))
 
 (defmethod shared-initialize :after ((body rigid-shape) slots &key physics-primitives)
   (when physics-primitives (setf (physics-primitives body) physics-primitives)))
 
 (define-transfer rigid-shape
   (physics-primitives physics-primitives (lambda (p) (map-into (make-array (length p)) #'clone p))))
-
-(defmethod collision-mask ((shape rigid-shape))
-  (if (= 0 (length (physics-primitives shape)))
-      0
-      (collision-mask (aref (physics-primitives shape) 0))))
-
-(defmethod (setf collision-mask) (mask (shape rigid-shape))
-  (loop for primitive across (physics-primitives shape)
-        do (setf (collision-mask primitive) mask)))
 
 (define-hit-detector (rigid-shape primitive)
   (loop for ai across (physics-primitives a)
