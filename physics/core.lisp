@@ -245,7 +245,7 @@
           for i from 0
           while (< i (length objects))
           do (let ((entity (aref objects i)))
-               (when (awake-p entity)
+               (when (and (awake-p entity) (< 0 (collision-mask entity)))
                  (integrate entity dt)
                  (let* ((bias (expt 0.5 dt))
                         (current (current-motion entity))
