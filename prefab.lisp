@@ -136,6 +136,13 @@
                       `(node ,node ,asset)
                       `(elt (find-scene T ,asset) 0))))
 
+(define-prefab-translator update-material (instance asset type &rest initargs)
+  ;; KLUDGE: This will also change materials on other instances that might share it.
+  ;;         However, allocating a new material entirely will wreck sharing between
+  ;;         multiple instances of the same prefab.
+  `(loop for material across (materials ,instance)
+         do (ensure-instance material ',type ,@initargs)))
+
 (define-prefab-translator eval (instance asset args &rest body)
   `((lambda ,args ,@body)
     ,instance ,asset))

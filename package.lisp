@@ -626,6 +626,7 @@
    #:textures
    #:texture-names
    #:list-materials
+   #:update-material
    #:define-material)
   ;; renderer/pbr.lisp
   (:export
