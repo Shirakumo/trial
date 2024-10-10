@@ -536,7 +536,8 @@
                                  collect (append preamble bindings))))
          (loop for (type event . bindings) in descriptions
                do (format output "(~s ~s~{~%  ~s~})~%~%"
-                          type event bindings)))))))
+                          type event bindings))
+         *action-mappings*)))))
 
 (defun find-action-mappings (action &optional (input-event-type 'input-event))
   (let ((triggers ()))

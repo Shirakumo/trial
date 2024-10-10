@@ -41,6 +41,7 @@
          (when (probe-file default)
            (load-mapping default :package package))
          (when (and (probe-file path) (null reset))
+           ;; FIXME: ideally we'd merge the mappings here, but it's not clear how.
            (load-mapping path :package package))
          (save-keymap :path path :package package))
         ((probe-file path)
