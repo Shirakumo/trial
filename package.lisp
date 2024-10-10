@@ -1786,6 +1786,7 @@
    #:define-shader-pass
    #:generate-pass-program
    #:prepare-pass-program
+   #:define-pass-shader
    #:scene-pass
    #:per-object-pass
    #:construct-frame

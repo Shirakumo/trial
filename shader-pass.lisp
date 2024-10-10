@@ -270,6 +270,12 @@
 (defmethod save-image ((pass shader-pass) target type &rest args)
   (apply #'save-image (framebuffer pass) target type args))
 
+(defmacro define-pass-shader ((class pass-class shader-type) &body body)
+  `(progn (defmethod compute-shader ((type (eql ,shader-type)) (pass ,pass-class) (class (eql (find-class ',class))))
+            (load-time-value (list (glsl-toolkit:parse (progn ,@body)))))
+          (when (and +main+ (slot-boundp +main+ 'scene) (scene +main+))
+            (handle (make-event 'class-changed :changed-class (find-class ',class)) +main+))))
+
 (define-shader-pass per-object-pass (listener)
   ((program-table :initform (make-hash-table :test 'eq) :accessor program-table)
    (renderable-table :initform (make-hash-table :test 'eq) :accessor renderable-table)
