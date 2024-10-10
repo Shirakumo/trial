@@ -611,6 +611,22 @@
    #:sorted-particle-emitter
    #:multi-texture-particle-emitter
    #:particle-sprite)
+  ;; renderer/materials.lisp
+  (:export
+   #:material
+   #:random
+   #:missing
+   #:black
+   #:white
+   #:neutral-mro
+   #:neutral-normal
+   #:material
+   #:double-sided-p
+   #:transparent-p
+   #:textures
+   #:texture-names
+   #:list-materials
+   #:define-material)
   ;; renderer/pbr.lisp
   (:export
    #:pbr-material
