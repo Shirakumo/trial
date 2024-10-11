@@ -25,6 +25,13 @@
 (defmethod stage ((port texture-port) (area staging-area))
   (stage (texture port) area))
 
+(defmethod (setf texture) :after ((texture texture) (port texture-port))
+  (dolist (connection (flow:connections port))
+    (let ((other (if (eq port (flow:left connection)) (flow:right connection) (flow:left connection))))
+      (setf (slot-value other 'texture) texture)
+      ;; KLUDGE: this is ugly
+      (when (typep other 'output) (update-output-fb other texture)))))
+
 (flow:define-port-value-slot texture-port texture texture)
 
 ;; FIXME: What about binding multiple levels and layers of the same texture?
@@ -72,7 +79,7 @@
 (defmethod check-consistent ((output output))
   ())
 
-(defmethod (setf texture) :before ((new-texture texture) (port output))
+(defun update-output-fb (port new-texture)
   (let ((fb (framebuffer (flow:node port))))
     (when (and fb (not (eq new-texture (texture port))))
       (setf (attachments fb)
@@ -82,6 +89,9 @@
                                      new-texture
                                      texture)
                                  args))))))
+
+(defmethod (setf texture) :before ((new-texture texture) (port output))
+  (update-output-fb port new-texture))
 
 (defclass fixed-input (input)
   ())
