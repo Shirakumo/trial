@@ -17,8 +17,8 @@ void main(){
 }")
 
 (define-shader-pass simple-post-effect-pass (post-effect-pass)
-  ((previous-pass :port-type input :reader previous-pass)
-   (color :port-type output :reader color)))
+  ((previous-pass :port-type input :accessor previous-pass)
+   (color :port-type output :accessor color)))
 
 (defmethod (setf active-p) :before (value (pass simple-post-effect-pass))
   ;; KLUDGE: This is terrible. How do we do this cleanly?
@@ -99,6 +99,30 @@ void main(){
   ((intensity :initarg :intensity :initform 1.0 :uniform T :accessor intensity)
    (direction :initarg :direction :initform (vec 1 0) :uniform T :accessor direction))
   (:shader-file (trial "post/gaussian.glsl")))
+
+(define-shader-pass kawase-blur-pass (simple-post-effect-pass)
+  ((intensity :initarg :intensity :initform 3.0 :uniform T :accessor intensity))
+  (:shader-file (trial "post/kawase.glsl")))
+
+(defmethod render ((pass kawase-blur-pass) (program shader-program))
+  (let ((resolution (vec (width pass) (height pass))))
+    (declare (dynamic-extent resolution))
+    (flet ((swap-buffers ()
+             (rotatef (color pass) (previous-pass pass)))
+           (update-res (factor)
+             (setf (uniform program "resolution") resolution)
+             (nv* resolution factor)
+             (gl:viewport 0 0 (ceiling (vx resolution)) (ceiling (vy resolution)))
+             (call-next-method)))
+      (setf (uniform program "down") 1)
+      (update-res 0.5)
+      (swap-buffers)
+      (update-res 0.5)
+      (swap-buffers)
+      (setf (uniform program "down") 0)
+      (update-res 2.0)
+      (swap-buffers)
+      (update-res 2.0))))
 
 (define-shader-pass radial-blur-pass (iterative-post-effect-pass)
   ((intensity :initarg :intensity :initform 0.2 :uniform T :accessor intensity)

@@ -1125,6 +1125,7 @@
    #:sobel-pass
    #:gaussian-blur-pass
    #:direction
+   #:kawase-blur-pass
    #:radial-blur-pass
    #:exposure
    #:samples
