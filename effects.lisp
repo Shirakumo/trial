@@ -169,12 +169,13 @@ void main(){
    (color :port-type output :texspec (:internal-format :rgb
                                       :mag-filter :linear
                                       :min-filter :linear
-                                      :width (truncate width 4)
-                                      :height (truncate height 4))))
+                                      :width (ceiling width 2)
+                                      :height (ceiling height 2))))
   (:shader-file (trial "post/bloom-cutoff.glsl")))
 
 (define-shader-pass bloom-merge-pass (simple-post-effect-pass)
-  ((bloom-cutoff :port-type input))
+  ((bloom-cutoff :port-type input)
+   (intensity :uniform T :initform 2.0 :accessor intensity))
   (:shader-file (trial "post/bloom-merge.glsl")))
 
 (define-shader-pass chromatic-aberration-filter (simple-post-effect-pass)
