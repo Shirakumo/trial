@@ -407,6 +407,8 @@
    #:offset
    #:half-space
    #:make-half-space
+   #:all-space
+   #:make-all-space
    #:box
    #:box-bsize
    #:make-box

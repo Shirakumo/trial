@@ -181,6 +181,10 @@
           (v<- ray-normal plane-normal)
           tt)))))
 
+(define-ray-test all-space ()
+  (vsetf ray-normal 0 1 0)
+  0.0)
+
 (define-ray-test box ((box-bsize vec3))
   ;; Since the ray variables are within local space of the box, the box is
   ;; axis-aligned relative to the ray, so we can simplify the test to an AABB case.

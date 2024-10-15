@@ -154,6 +154,9 @@
   ;; 32-bit mask to designate which systems to interact with.
   (collision-mask 1 :type (unsigned-byte 32)))
 
+(defmethod print-object ((primitive primitive) stream)
+  (print-unreadable-object (primitive stream :type T :identity T)))
+
 (define-transfer primitive primitive-material primitive-local-transform primitive-collision-mask
   (:eval (let ((target (primitive-global-bounds-cache target))
                (source (primitive-global-bounds-cache source)))
@@ -379,6 +382,14 @@
 (define-support-function half-space (dir next)
   ;; TODO: implement
   (implement!))
+
+(define-primitive-type all-space ())
+
+(defmethod compute-radius ((primitive all-space))
+  most-positive-single-float)
+
+(defmethod compute-bsize ((primitive all-space))
+  (vec3 most-positive-single-float))
 
 ;; NOTE: the box is centred at 0,0,0 and the bsize is the half-size along each axis.
 (define-primitive-type box

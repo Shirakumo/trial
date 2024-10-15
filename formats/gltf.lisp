@@ -618,7 +618,7 @@
              (setf (physics-primitives trigger) (physics-primitives trig-volume))
              (!t+ (tf trigger) (tf trigger) (tf trig-volume)))
             (T
-             (setf (physics-primitives trigger) (make-sphere :radius 10000f0))))
+             (setf (physics-primitives trigger) (make-all-space))))
       (etypecase class-or-count
         (integer
          (setf spawn-count class-or-count)

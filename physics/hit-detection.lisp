@@ -84,6 +84,12 @@
 (define-hit-detector (trial:primitive trial:primitive)
   (setf trial:start (funcall +generic-hit-detector+ a b trial:hits trial:start trial:end)))
 
+(define-hit-detector (all-space trial:primitive)
+  (global-location b (hit-location hit))
+  (setf (hit-depth hit) 0.0)
+  (vsetf (hit-normal hit) 0 1 0)
+  (finish-hit))
+
 (define-hit-detector (half-space vec3)
   (let ((dist (- (v. (plane-normal a) b)
                  (plane-offset a))))
