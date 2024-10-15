@@ -124,7 +124,7 @@
 
 (defmethod describe-object :after ((container container) stream)
   (format stream "~&~%Entity Tree:~%")
-  (3ds::describe-tree container #'identity stream))
+  (org.shirakumo.text-draw:tree container #'identity :stream stream))
 
 (defmethod <- progn ((target container) (source container))
   (sequences:dosequence (entity source target)

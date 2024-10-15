@@ -210,6 +210,7 @@
                :simple-tasks
                :static-vectors
                :system-locale
+               :text-draw
                :trivial-deprecate
                :trivial-extensible-sequences
                :trivial-garbage
