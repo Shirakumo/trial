@@ -186,6 +186,18 @@ void main(){
   ((color :texspec (:internal-format :r16f)))
   (:shader-file (trial "post/luminance.glsl")))
 
+(define-shader-pass displacement-pass (simple-post-effect-pass)
+  ((displacement-map :initarg :displacement-map :port-type static-input :accessor displacement-map)
+   (intensity :uniform T :initform 1.0 :accessor intensity))
+  (:shader-file (trial "post/displacement.glsl")))
+
+(defmethod initialize-instance :after ((pass displacement-pass) &key)
+  (unless (slot-boundp pass 'displacement-map)
+    (setf (displacement-map pass) (make-instance 'texture :target :texture-2d :internal-format :rg16f :width 1 :height 1))))
+
+(defmethod resize :after ((pass displacement-pass) width height)
+  (resize (displacement-map pass) width height))
+
 (define-shader-pass light-scatter-pass (post-effect-pass)
   ((previous-pass :port-type input)
    (black-render-pass :port-type input)

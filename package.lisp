@@ -1147,6 +1147,8 @@
    #:chromatic-aberration-filter
    #:offset
    #:luminance-pass
+   #:displacement-pass
+   #:displacement-map
    #:light-scatter-pass
    #:black-render-pass
    #:density
