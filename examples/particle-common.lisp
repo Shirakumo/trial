@@ -97,14 +97,15 @@
         (alloy:enter "Emitter Shape" layout :row (incf row) :col 0)
         (let* ((shape :square)
                (c (alloy:represent shape 'alloy:combo-set
-                                   :value-set '(:square :disc :sphere :cube) :layout-parent layout :focus-parent focus)))
+                                   :value-set '(:square :disc :sphere :cube :point) :layout-parent layout :focus-parent focus)))
           (alloy:on alloy:value (v c)
             (setf (vertex-array emitter)
                   (ecase v
                     (:square (// 'trial 'unit-square))
                     (:disc (// 'trial 'unit-disc))
                     (:sphere (// 'trial 'unit-sphere))
-                    (:cube (// 'trial 'unit-cube))))))))
+                    (:cube (// 'trial 'unit-cube))
+                    (:point (// 'trial 'point))))))))
     ;; Force fields panel
     (let ((layout (make-instance 'grid-layout* :col-sizes '(T) :row-sizes '(200)))
           (focus (make-instance 'alloy:vertical-focus-list :focus-parent focus))
