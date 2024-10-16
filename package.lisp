@@ -597,6 +597,7 @@
    #:particle-flip
    #:particle-color
    #:particle-motion-blur
+   #:particle-offset
    #:blend-mode
    #:emit)
   ;; renderer/cpu-particle.lisp

@@ -8,6 +8,7 @@ const vec3 BILLBOARD[6] = vec3[6](
 );
 
 uniform float motion_blur = 0.0;
+uniform vec3 offset = vec3(0.0);
 out vec3 world_position;
 out vec3 view_position;
 out vec2 uv;
@@ -41,6 +42,7 @@ void derive_particle_properties(in Particle particle, in int vertex_id, in mat4 
   vertex *= size;
   // Scale along the motion vector in view space
   vec3 velocity = mat3(view_matrix) * particle.velocity;
+  vertex += offset;
   vertex += dot(vertex, velocity) * velocity * motion_blur;
 
   // Check if billboard or not
