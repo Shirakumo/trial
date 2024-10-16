@@ -161,10 +161,11 @@
   (destructuring-bind (instance class) (enlist class class)
     (destructuring-bind (variable event) (enlist event event)
       `(defmethod handle ,@qualifiers ((,variable ,event) (,instance ,class))
-         (let ,(loop for slot in slots
-                     for (var name) = (enlist slot slot)
-                     collect `(,var (slot-value ,variable ',name)))
-           ,@body)))))
+         (block NIL
+           (let ,(loop for slot in slots
+                       for (var name) = (enlist slot slot)
+                       collect `(,var (slot-value ,variable ',name)))
+             ,@body))))))
 
 (defmacro undefine-handler ((class event &rest qualifiers) slots &body body)
   (declare (ignore slots body))
