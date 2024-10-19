@@ -144,5 +144,7 @@
          do (ensure-instance material ',type ,@initargs)))
 
 (define-prefab-translator eval (instance asset args &rest body)
-  `((lambda ,args ,@body)
+  `((lambda ,args
+      (declare (ignorable ,@args))
+      ,@body)
     ,instance ,asset))
