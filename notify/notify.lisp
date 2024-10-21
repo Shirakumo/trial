@@ -72,7 +72,7 @@
 
 (defmethod notify ((asset trial:asset) file)
   (when trial:+main+
-    (trial:handle trial:+main+ (trial:make-event 'trial:load-request :thing asset))))
+    (trial:handle (trial:make-event 'trial:load-request :thing asset) trial:+main+)))
 
 (defmethod notify ((prefab trial:prefab) file)
   (when trial:+main+
