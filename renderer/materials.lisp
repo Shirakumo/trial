@@ -131,3 +131,6 @@
 
 (defmacro define-material ((name type) &body args)
   `(update-material ',name ',type ,@args))
+
+(defmethod allocate ((material material))
+  (map NIL #'ensure-allocated (textures material)))
