@@ -283,6 +283,9 @@
 (defmacro define-pass-shader ((class pass-class shader-type) &body body)
   `(progn (defmethod compute-shader ((type (eql ,shader-type)) (pass ,pass-class) (class (eql (find-class ',class))))
             (load-time-value (list (glsl-toolkit:parse (progn ,@body)))))
+
+          (defmethod effective-shader-class ((class (eql (find-class ',class)))) class)
+          
           (when (and +main+ (slot-boundp +main+ 'scene) (scene +main+))
             (handle (make-event 'class-changed :changed-class (find-class ',class)) +main+))))
 
