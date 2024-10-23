@@ -205,3 +205,12 @@
 (define-event-pool pre-tick)
 (define-event-pool tick)
 (define-event-pool post-tick)
+
+(defun maybe-handle-main-event (event-type &rest initargs)
+  (let ((main +main+))
+    (when (and (typep main 'main) (slot-boundp main 'scene) (scene main))
+      (handle (apply #'make-event event-type initargs) main))))
+
+(define-compiler-macro maybe-handle-main-event (event-type &rest initargs)
+  `(when (and (typep +main+ 'main) (slot-boundp +main+ 'scene) (scene +main+))
+     (handle (make-event ,event-type ,@initargs) +main+)))

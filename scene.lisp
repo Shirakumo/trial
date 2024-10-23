@@ -50,12 +50,3 @@
 (defun ensure-entity (name container &optional (class name) &rest initargs)
   (or (node name container)
       (enter (apply #'make-instance class :name name initargs) container)))
-
-(defun maybe-handle-main-event (event-type &rest initargs)
-  (let ((main +main+))
-    (when (and (typep main 'main) (slot-boundp main 'scene) (scene main))
-      (handle (apply #'make-event event-type initargs) main))))
-
-(define-compiler-macro maybe-handle-main-event (event-type &rest initargs)
-  `(when (and (typep +main+ 'main) (slot-boundp +main+ 'scene) (scene +main+))
-     (handle (make-event ,event-type ,@initargs) +main+)))
