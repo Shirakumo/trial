@@ -216,6 +216,9 @@
   (error "Unsupported material~%  ~s~%for pass~%  ~s"
          material pass))
 
+(define-handler (standard-render-pass material-changed) (changed-material)
+  (notice-update changed-material standard-render-pass))
+
 (define-shader-entity standard-renderable (renderable)
   (vertex-array ;; Backwards compatibility stub
    (vertex-arrays :initarg :vertex-arrays :initform #() :accessor vertex-arrays))

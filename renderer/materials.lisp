@@ -95,6 +95,9 @@
                 (setf (aref (textures material) i)
                       (first (apply #'generate-resources 'image-loader texture))))))))
 
+(defmethod reinitialize-instance :after ((material material) &key)
+  (maybe-handle-main-event 'material-changed :changed-material material))
+
 (defmethod material ((name string))
   (or (gethash name *materials*)
       (error "No material named ~s" name)))

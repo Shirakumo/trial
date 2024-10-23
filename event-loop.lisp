@@ -200,6 +200,7 @@
 (define-event class-changed () changed-class)
 (define-event instance-class-changed () instance)
 (define-event asset-changed () changed-asset)
+(define-event material-changed () changed-material)
 
 (define-event-pool pre-tick)
 (define-event-pool tick)
