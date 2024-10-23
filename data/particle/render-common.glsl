@@ -47,7 +47,7 @@ void derive_particle_properties(in Particle particle, in int vertex_id, in mat4 
 
   // Check if billboard or not
   if(uint(0) == (particle.color & uint(0x20000000))){
-    world_position = particle.position;
+    world_position = (model_matrix * vec4(particle.position, 1)).xyz;
     view_position = (view_matrix * vec4(world_position, 1)).xyz;
     gl_Position = projection_matrix * vec4(view_position+vertex, 1);
   }else{
