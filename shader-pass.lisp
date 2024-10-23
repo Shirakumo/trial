@@ -119,8 +119,7 @@
 
 (defmethod update-instance-for-different-class :after ((prev shader-pass) (pass shader-pass) &rest args)
   (declare (ignore args))
-  (when (and +main+ (slot-boundp +main+ 'scene) (scene +main+))
-    (handle (make-event 'instance-class-changed :instance pass) +main+)))
+  (maybe-handle-main-event 'instance-class-changed :instance pass))
 
 (defmethod shared-initialize :after ((pass shader-pass) slots &key)
   (loop with texture-index = (max 16 (if *context* (gl:get-integer :max-texture-image-units) 0))
@@ -286,8 +285,7 @@
 
           (defmethod effective-shader-class ((class (eql (find-class ',class)))) class)
           
-          (when (and +main+ (slot-boundp +main+ 'scene) (scene +main+))
-            (handle (make-event 'class-changed :changed-class (find-class ',class)) +main+))))
+          (maybe-handle-main-event 'class-changed :changed-class (find-class ',class))))
 
 (define-shader-pass per-object-pass (listener)
   ((program-table :initform (make-hash-table :test 'eq) :accessor program-table)

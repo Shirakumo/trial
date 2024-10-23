@@ -25,6 +25,10 @@
   (let ((old (scene +main+)))
     (change-scene +main+ (make-instance (type-of old)))))
 
+(defmethod handle ((ev asset-changed) (controller controller))
+  (when (loaded-p (changed-asset ev))
+    (reload (changed-asset ev))))
+
 (defclass load-request (event)
   ((thing :initarg :thing)))
 

@@ -1202,7 +1202,9 @@
    #:class-changed
    #:changed-class
    #:instance-class-changed
-   #:instance)
+   #:instance
+   #:asset-changed
+   #:changed-asset)
   ;; features.lisp
   (:export
    #:*debug-features*

@@ -130,7 +130,20 @@
       (loop for resource in (enlist (apply #'generate-resources asset (input* asset) (generation-arguments asset)))
             do (dolist (dependency (dependencies resource))
                  (allocate dependency))
-               (allocate resource)))))
+               (allocate resource))
+      ;; KLUDGE: This kind of tight binding here really sucks.
+      ;;         But I don't want to introduce a watch mechanism or something
+      ;;         like that right now, so....
+      (when (typep +main+ 'main)
+        (let ((area (make-instance 'staging-area :loader (loader +main+))))
+          (with-cleanup-on-failure (abort-commit area)
+            (flet ((try (thing)
+                     (when (and (typep thing 'prefab) (eq asset (prefab-asset thing)))
+                       (clear thing)
+                       (stage thing area))))
+              (do-scene-graph (node (scene +main+)) (try node))
+              (dolist (thing (to-preload (scene +main+))) (try thing))))
+          (commit area T :unload NIL))))))
 
 (defmethod load ((asset asset))
   (apply #'generate-resources asset (input* asset) (generation-arguments asset)))
@@ -194,13 +207,16 @@
   (check-type type symbol)
   (form-fiddle:with-body-options (body options documentation) options
     (assert (null body))
-    `(eval-when (:compile-toplevel :load-toplevel :execute)
-       (ensure-instance (asset ',pool ',name NIL) ',type
-                        :documentation ,documentation
-                        :input ,input
-                        :name ',name
-                        :pool ',pool
-                        :generation-arguments (list ,@options)))))
+    `(progn
+       (eval-when (:compile-toplevel :load-toplevel :execute)
+         (ensure-instance (asset ',pool ',name NIL) ',type
+                          :documentation ,documentation
+                          :input ,input
+                          :name ',name
+                          :pool ',pool
+                          :generation-arguments (list ,@options)))
+
+       (maybe-handle-main-event 'asset-changed :changed-asset (asset ',pool ',name)))))
 
 (trivial-indent:define-indentation define-asset (4 6 4 &body))
 

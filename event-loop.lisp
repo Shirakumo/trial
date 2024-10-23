@@ -199,6 +199,7 @@
 (define-event post-tick (tick-event))
 (define-event class-changed () changed-class)
 (define-event instance-class-changed () instance)
+(define-event asset-changed () changed-asset)
 
 (define-event-pool pre-tick)
 (define-event-pool tick)
