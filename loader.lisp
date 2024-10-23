@@ -207,6 +207,9 @@
         do (load resource)
            (progress loader i (length resources))))
 
+(defmethod commit ((area staging-area) (loader (eql T)) &rest args)
+  (apply #'commit area (loader area) args))
+
 (defclass streamed-loader (task-runner loader)
   ((context :initform NIL :accessor context)))
 
