@@ -10,6 +10,7 @@
 
 (defmethod global-transform-matrix ((entity entity) &optional (matrix (meye 4)))
   (with-pushed-matrix ((model-matrix matrix))
+    (!meye matrix)
     (apply-transforms entity)
     matrix))
 
