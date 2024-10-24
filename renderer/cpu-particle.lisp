@@ -162,7 +162,7 @@
 
 (defun %emit-particle (particles properties pos prop randoms randomness lifespan-randomness
                        matrix velocity rotation lifespan size scaling color
-                       vertex-data vertex-stride faces spawn-point)
+                       vertex-data vertex-stride faces)
   (declare (type (simple-array single-float (*)) particles properties vertex-data))
   (declare (type (unsigned-byte 32) pos prop))
   (declare (type single-float lifespan lifespan-randomness randomness size scaling rotation velocity))
@@ -190,9 +190,9 @@
     (setf (aref properties (+ prop 7)) 0.0)
     (replace properties (marr4 matrix) :start1 (+ prop 8))
     ;; Now set dynamic particle properties
-    (setf (aref particles (+ pos 0)) (- (vx location) (vx spawn-point)))
-    (setf (aref particles (+ pos 1)) (- (vy location) (vy spawn-point)))
-    (setf (aref particles (+ pos 2)) (- (vz location) (vz spawn-point)))
+    (setf (aref particles (+ pos 0)) (vx location))
+    (setf (aref particles (+ pos 1)) (vy location))
+    (setf (aref particles (+ pos 2)) (vz location))
     (setf (aref particles (+ pos 3)) (vx velocity))
     (setf (aref particles (+ pos 4)) (vy velocity))
     (setf (aref particles (+ pos 5)) (vz velocity))
@@ -277,7 +277,7 @@
   (when transform (setf (tf emitter) transform))
   (when vertex-array (setf (vertex-array emitter) vertex-array))
   (with-all-slots-bound (emitter cpu-particle-emitter)
-    (let ((mat (tmat (tf emitter)))
+    (let ((mat (mat4))
           (min-prop most-positive-fixnum)
           (max-prop 0))
       (declare (dynamic-extent mat))
@@ -291,7 +291,7 @@
                           particle-randomness particle-lifespan-randomness mat
                           particle-velocity particle-rotation particle-lifespan
                           particle-size particle-scaling particle-full-color
-                          vertex-data vertex-stride face-data (location emitter))
+                          vertex-data vertex-stride face-data)
           (incf live-particles)))
       (when (and (< 0 live-particles) (< min-prop most-positive-fixnum))
         (let ((src (first (sources particle-property-buffer))))
