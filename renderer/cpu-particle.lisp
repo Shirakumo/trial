@@ -271,6 +271,7 @@
 
 (defmethod emit ((emitter cpu-particle-emitter) count &rest particle-options &key vertex-array location orientation scaling transform)
   (setf (particle-options emitter) (remf* particle-options :vertex-array :location :orientation :scaling :transform))
+  ;; FIXME: don't permanently change emitter transform or VAO.
   (when location (setf (location emitter) location))
   (when scaling (setf (scaling emitter) scaling))
   (when orientation (setf (orientation emitter) orientation))

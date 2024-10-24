@@ -31,6 +31,9 @@ void standard_init(){
   metalness = mro.x * material.metalness_factor;
   roughness = mro.y * material.roughness_factor;
   occlusion = 1.0 - (mro.z * material.occlusion_factor);
+}
+
+void standard_init@after(){
   F0 = mix(vec3(0.04), albedo.xyz, metalness);
 }
 
