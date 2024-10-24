@@ -11,7 +11,7 @@
 ;; NOTE: UV convention is U is pointing RIGHT, V is pointing UP
 ;; NOTE: Should generate triangle vertices in CCW order
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun make-rectangle-mesh (w h &key (align :center) (x 0) (y 0) (z 0) (u- 0) (v- 0) (u+ 1) (v+ 1))
+  (defun make-rectangle-mesh (w h &key (align :center) (normal +vz+) (x 0) (y 0) (z 0) (u- 0) (v- 0) (u+ 1) (v+ 1))
     (let (l r u b)
       (ecase align
         (:center (setf l (- (/ w 2)) r (+ (/ w 2))
@@ -22,15 +22,25 @@
                           b (- h) u 0))
         (:bottomleft (setf l 0 r w
                            b 0 u h)))
-      (incf l x) (incf r x) (incf u y) (incf b y)
-      (with-mesh-construction (v finalize (location normal uv))
-        (v l b z 0 0 1 u- v-)
-        (v r b z 0 0 1 u+ v-)
-        (v r u z 0 0 1 u+ v+)
-        (v r u z 0 0 1 u+ v+)
-        (v l u z 0 0 1 u- v+)
-        (v l b z 0 0 1 u- v-)
-        (finalize-data))))
+      (check-type normal vec3)
+      (let ((quat (qtowards +vz+ normal))
+            (x (float x 0f0))
+            (y (float y 0f0))
+            (z (float z 0f0))
+            (vec (vec3)))
+        (with-mesh-construction (v finalize (location normal uv))
+          (macrolet ((vv (x y u v)
+                       `(progn
+                          (vsetf vec ,x ,y 0f0)
+                          (!q* vec quat vec)
+                          (v (+ x (vx vec)) (+ y (vy vec)) (+ z (vz vec)) (vx normal) (vy normal) (vz normal) ,u ,v))))
+            (vv l b u- v-)
+            (vv r b u+ v-)
+            (vv r u u+ v+)
+            (vv r u u+ v+)
+            (vv l u u- v+)
+            (vv l b u- v-))
+          (finalize-data)))))
 
   (defun make-triangle-mesh (w h &key (orientation :right) (x 0) (y 0) (z 0))
     (with-mesh-construction (v finalize (location normal uv))
