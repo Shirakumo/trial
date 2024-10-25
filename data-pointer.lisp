@@ -7,9 +7,6 @@
     (T
      (no-applicable-method #'deallocate data))))
 
-(defmethod deallocate ((vector vector))
-  (maybe-free-static-vector vector))
-
 (defmethod deallocate ((mem memory-region))
   (mem:deallocate T mem))
 

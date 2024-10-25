@@ -23,7 +23,7 @@
 
 (defmethod load-image ((source vector) (type (eql :png)))
   (handler-bind ((pngload::png-warning #'muffle-warning))
-    (%png-source (pngload:load-vector source :flatten T :flip-y T :static-vector (static-vector-p source)))))
+    (%png-source (pngload:load-vector source :flatten T :flip-y T))))
 
 (defmethod load-image ((source pathname) (type (eql :png))) 
   (handler-bind ((pngload::png-warning #'muffle-warning))

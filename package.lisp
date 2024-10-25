@@ -6,7 +6,6 @@
         #:org.shirakumo.fraf.math
         #:org.shirakumo.lru-cache)
   (:shadow #:// #:load)
-  (:import-from #:static-vectors #:static-vector-pointer)
   (:import-from #:flow #:port)
   (:import-from #:org.shirakumo.memory-regions
                 #:memory-region #:memory-region-pointer #:memory-region-size)
@@ -1851,12 +1850,6 @@
    #:occlusion
    #:ssao-radius
    #:ssao-bias)
-  ;; static-vector.lisp
-  (:export
-   #:make-static-vector
-   #:static-vector-p
-   #:static-vector
-   #:maybe-free-static-vector)
   ;; text.lisp
   (:export
    #:debug-text

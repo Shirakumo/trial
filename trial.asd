@@ -31,7 +31,7 @@
                (:file "container" :depends-on ("package" "toolkit" "transforms"))
                (:file "context" :depends-on ("package" "event-loop"))
                (:file "controller" :depends-on ("package" "mapping" "input" "container" "asset" "text"))
-               (:file "data-pointer" :depends-on ("package" "static-vector" "texture-source"))
+               (:file "data-pointer" :depends-on ("package" "texture-source"))
                (:file "debug" :depends-on ("package" "shader-entity" "text" ("physics" "primitives")))
                (:file "deploy" :depends-on ("package" "gamepad" "os-resources"))
                (:file "display" :depends-on ("package" "context" "render-loop" "power" "transforms" "gl-features"))
@@ -43,7 +43,7 @@
                (:file "flicker" :depends-on ("package"))
                (:file "fps" :depends-on ("package" ("assets" "mesh") "text" "loader" "texture-source" ("formats" "raw")))
                (:file "gamepad" :depends-on ("package" "event-loop" "toolkit"))
-               (:file "geometry" :depends-on ("package" "toolkit" "type-info" "static-vector" ("resources" "vertex-array") ("resources" "vertex-buffer")))
+               (:file "geometry" :depends-on ("package" "toolkit" "type-info" ("resources" "vertex-array") ("resources" "vertex-buffer")))
                (:file "geometry-shapes" :depends-on ("package" "geometry" "asset-pool" ("assets" "mesh")))
                (:file "gl-features" :depends-on ("package"))
                (:file "gl-struct" :depends-on ("package" "type-info"))
@@ -82,7 +82,6 @@
                (:file "shader-pass" :depends-on ("package" "shader-entity" "helpers" "resource" ("resources" "framebuffer") ("resources" "shader-program") "scene" "loader" "context" "geometry-shapes" "camera"))
                (:file "skybox" :depends-on ("package" "shader-entity" "transforms"))
                (:file "sprite" :depends-on ("package" "shader-entity" "helpers" ("assets" "sprite-data")))
-               (:file "static-vector" :depends-on ("package"))
                (:file "text" :depends-on ("package" "helpers" ("assets" "image")))
                (:file "texture-source" :depends-on ("package" "toolkit"))
                (:file "tile-layer" :depends-on ("package" "helpers" ("assets" "tile-data")))
@@ -101,7 +100,7 @@
                              (:file "skeleton" :depends-on ("pose"))
                              (:file "track")))
                (:module "formats"
-                :depends-on ("package" "static-vector")
+                :depends-on ("package")
                 :components ((:file "raw")))
                (:module "physics"
                 :depends-on ("package" "conditions" "helpers" "global-bounds-cache")
@@ -207,7 +206,6 @@
                :random-state
                :sha3
                :simple-tasks
-               :static-vectors
                :system-locale
                :text-draw
                :trivial-deprecate
