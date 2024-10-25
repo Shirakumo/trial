@@ -180,7 +180,6 @@
                :depot
                :depot-zip
                :documentation-utils
-               :fast-io
                :filesystem-utils
                :float-features
                :flow
