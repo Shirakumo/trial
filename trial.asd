@@ -197,7 +197,6 @@
                :manifolds
                :memory-regions
                :messagebox
-               :mmap
                :nibbles
                :open-with
                :pathname-utils
