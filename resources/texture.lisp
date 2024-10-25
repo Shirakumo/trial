@@ -333,25 +333,26 @@
   (gl-extension-case
     (:gl-arb-clear-texture
      (let ((size (pixel-data-stride (pixel-type texture) (pixel-format texture))))
-       (cffi:with-foreign-object (fill :uint8 size)
-         (static-vectors:fill-foreign-memory fill size pixel)
+       (mem:with-memory-region (fill size)
+         (mem:fill fill pixel)
          (%gl:clear-tex-image (gl-name texture) 0
                               (pixel-format texture)
                               (pixel-type texture)
-                              fill))))
+                              (mem:memory-region-pointer fill)))))
     (T
      (let ((size (* (width texture) (or (height texture) 1) (or (depth texture) 1)
                     (pixel-data-stride (pixel-type texture) (pixel-format texture)))))
-       (cffi:with-foreign-object (fill :uint8 size)
-         (static-vectors:fill-foreign-memory fill size pixel)
+       (mem:with-memory-region (fill size)
+         (mem:fill fill pixel)
          (gl:bind-texture (target texture) (gl-name texture))
-         (ecase (target texture)
-           (:texture-1d
-            (%gl:tex-sub-image-1d :texture-1d 0 0 (width texture) (pixel-format texture) (pixel-type texture) fill))
-           ((:texture-2d :texture-1d-array)
-            (%gl:tex-sub-image-2d (target texture) 0 0 0 (width texture) (height texture) (pixel-format texture) (pixel-type texture) fill))
-           ((:texture-3d :texture-2d-array)
-            (%gl:tex-sub-image-3d (target texture) 0 0 0 0 (width texture) (height texture) (depth texture) (pixel-format texture) (pixel-type texture) fill))))))))
+         (let ((fill (mem:memory-region-pointer fill)))
+           (ecase (target texture)
+             (:texture-1d
+              (%gl:tex-sub-image-1d :texture-1d 0 0 (width texture) (pixel-format texture) (pixel-type texture) fill))
+             ((:texture-2d :texture-1d-array)
+              (%gl:tex-sub-image-2d (target texture) 0 0 0 (width texture) (height texture) (pixel-format texture) (pixel-type texture) fill))
+             ((:texture-3d :texture-2d-array)
+              (%gl:tex-sub-image-3d (target texture) 0 0 0 0 (width texture) (height texture) (depth texture) (pixel-format texture) (pixel-type texture) fill)))))))))
 
 (defmethod clear ((texture texture))
   (clear-texture texture))

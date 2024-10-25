@@ -356,8 +356,7 @@
         (let ((mat (nm* (svref palette i) (svref inv i)))
               (texptr (mem:memory-region-pointer texptr)))
           (cffi:with-pointer-to-vector-data (arrptr (marr4 mat))
-            (static-vectors:replace-foreign-memory
-             (cffi:inc-pointer texptr (* i 12 4)) arrptr (* 12 4))))))
+            (mem:replace texptr arrptr :start1 (* i 12 4) :end2 (* 12 4))))))
     (setf (palette-data entity) texinput)
     (setf (height texture) (length palette))
     (when (allocated-p texture)

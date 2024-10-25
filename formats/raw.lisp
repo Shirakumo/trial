@@ -24,7 +24,7 @@
              (w (nibbles:ub16ref/le header 4))
              (h (nibbles:ub16ref/le header 6))
              (d (nibbles:ub16ref/le header 8))
-             (data (make-static-vector (* f c w (max 1 h) (max 1 d)))))
+             (data (make-array (* f c w (max 1 h) (max 1 d)) :element-type '(unsigned-byte 8))))
         (depot:read-from tx data)
         (make-texture-source :src (list NIL NIL NIL w h d)
                              :dst (list NIL NIL NIL NIL NIL NIL)
@@ -55,12 +55,9 @@
         (setf (nibbles:ub16ref/le header 6) h)
         (setf (nibbles:ub16ref/le header 8) d)
         (depot:write-to tx header)
-        (with-static-vector (data (* f c w (max 1 h) (max 1 d)))
+        (let ((data (make-array (* f c w (max 1 h) (max 1 d)) :element-type '(unsigned-byte 8))))
           (mem:with-memory-region (region (texture-source-pixel-data source))
-            (static-vectors:replace-foreign-memory
-             (static-vectors:static-vector-pointer data)
-             (mem:memory-region-pointer region)
-             (length data)))
+            (mem:replace data region))
           (depot:write-to tx data)
           path)))))
 
