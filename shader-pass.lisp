@@ -566,7 +566,8 @@ void main(){
 
 (define-shader-pass compute-pass (single-shader-pass)
   ((work-groups :initform (vec 1 1 1) :initarg :work-groups :accessor work-groups)
-   (barrier :initform 4294967295)))
+   (barrier :initform 4294967295))
+  (:inhibit-shaders (shader-entity :vertex-shader)))
 
 (defmethod initialize-instance :after ((pass compute-pass) &key)
   (unless (integerp (slot-value pass 'barrier))
@@ -585,6 +586,13 @@ void main(){
 
 (defmethod (setf barrier) ((bits symbol) (pass compute-pass))
   (setf (slot-value pass 'barrier) (cffi:foreign-bitfield-value '%gl::MemoryBarrierMask (list bits))))
+
+(defmethod make-shader-program :around ((pass compute-pass))
+  (let ((program (call-next-method)))
+    (loop for shader in (shaders program)
+          do (unless (eql :compute-shader (shader-type shader))
+               (error "Bad shader type for compute-pass: ~a" shader)))
+    program))
 
 (defmethod render ((pass compute-pass) (_ null))
   (bind-textures pass)
