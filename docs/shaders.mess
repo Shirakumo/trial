@@ -21,7 +21,7 @@ The above defines a class that has a fragment shader attached, which sets the ou
 You can see the fully compiled shader with ``compute-effective-shaders``:
 
 :: common lisp
-(compute-effective-shaders (find-class 'my-object))
+(shader-source (find-class 'my-object))
 
 ; ==>
 (:VERTEX-SHADER "layout(location = 0) in vec3 position;
