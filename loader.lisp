@@ -102,7 +102,7 @@
              ((:loaded :allocated)
               (unstage resource area)))))
 
-(defmethod deallocate ((area staging-area))
+(defmethod finalize ((area staging-area))
   (abort-commit area))
 
 (defclass loader ()

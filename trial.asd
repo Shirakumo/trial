@@ -31,7 +31,6 @@
                (:file "container" :depends-on ("package" "toolkit" "transforms"))
                (:file "context" :depends-on ("package" "event-loop"))
                (:file "controller" :depends-on ("package" "mapping" "input" "container" "asset" "text"))
-               (:file "data-pointer" :depends-on ("package" "texture-source"))
                (:file "debug" :depends-on ("package" "shader-entity" "text" ("physics" "primitives")))
                (:file "deploy" :depends-on ("package" "gamepad" "os-resources"))
                (:file "display" :depends-on ("package" "context" "render-loop" "power" "transforms" "gl-features"))
@@ -87,7 +86,7 @@
                (:file "tile-layer" :depends-on ("package" "helpers" ("assets" "tile-data")))
                (:file "toolkit" :depends-on ("package" "conditions"))
                (:file "transforms" :depends-on ("package" "context"))
-               (:file "type-info" :depends-on ("package" "toolkit" "data-pointer"))
+               (:file "type-info" :depends-on ("package" "toolkit"))
                (:file "video" :depends-on ("package" "helpers"))
                (:module "animation"
                 :depends-on ("package" "shader-entity" "helpers" "model")
@@ -136,7 +135,7 @@
                              (:file "standard-renderer" :depends-on ("lights" "materials"))
                              (:file "tone-mapping")))
                (:module "resources"
-                :depends-on ("package" "resource" "toolkit" "data-pointer" "type-info")
+                :depends-on ("package" "resource" "toolkit" "texture-source" "type-info")
                 :components ((:file "bindable-buffer" :depends-on ("buffer-object"))
                              (:file "buffer-object")
                              (:file "compute-shader" :depends-on ("shader-program"))
@@ -152,7 +151,7 @@
                              (:file "vertex-buffer" :depends-on ("bindable-buffer" "shader-program"))
                              (:file "vertex-struct-buffer" :depends-on ("struct-buffer"))))
                (:module "assets"
-                :depends-on ("package" "asset" "resources" "data-pointer")
+                :depends-on ("package" "asset" "resources" "texture-source")
                 :components ((:file "audio")
                              (:file "environment-map" :depends-on ("image" "shader-image"))
                              (:file "image" :depends-on ((:.. "texture-source")))

@@ -110,7 +110,23 @@
   (v:debug :trial "Finalizing ~a" object))
 
 (defmethod finalize (object)
-  object)
+  (typecase object
+    (cffi:foreign-pointer
+     (cffi:foreign-free object))))
+
+(defmethod finalize ((mem memory-region))
+  (mem:deallocate T mem))
+
+(defmethod finalize ((list list))
+  (mapc #'finalize list))
+
+(macrolet ((emit (type)
+             (dolist (type (org.shirakumo.type-templates:instances type))
+               `(defmethod mem:call-with-memory-region (function (data ,(org.shirakumo.type-templates:lisp-type type)) &rest args)
+                  (apply #'mem:call-with-memory-region function ,(org.shirakumo.type-templates:place-form type :arr 'data) args)))))
+  (emit org.shirakumo.fraf.math.internal:vec-type)
+  (emit org.shirakumo.fraf.math.internal:mat-type)
+  (emit org.shirakumo.fraf.math.internal:quat-type))
 
 (defun round-to (base number)
   (* base (ceiling number base)))

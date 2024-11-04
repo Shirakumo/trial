@@ -240,6 +240,7 @@ image is
                      :storage (storage (first textures))))))
 
 (defmethod finalize ((source texture-source))
-  (finalize (texture-source-pixel-data source))
-  (setf (texture-source-pixel-data source) NIL)
+  (when (texture-source-pixel-data source)
+    (finalize (texture-source-pixel-data source))
+    (setf (texture-source-pixel-data source) NIL))
   source)

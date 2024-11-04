@@ -62,6 +62,9 @@
       (allocate resource)))
   resource)
 
+(defmethod deallocate ((list list))
+  (mapc #'deallocate list))
+
 (defclass foreign-resource (resource)
   ((data-pointer :initform NIL :initarg :data-pointer :accessor data-pointer)))
 

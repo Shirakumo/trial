@@ -107,7 +107,7 @@
   (gl:delete-buffers (list (gl-name buffer))))
 
 (defmethod unload ((buffer buffer-object))
-  (deallocate (buffer-data buffer))
+  (finalize (buffer-data buffer))
   (setf (buffer-data buffer) NIL))
 
 (defmethod activate ((buffer buffer-object))

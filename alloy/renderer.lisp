@@ -38,7 +38,7 @@
 
 (defmethod alloy:deallocate :after ((renderer renderer))
   (deallocate-cache renderer)
-  (trial:deallocate (trial:staging-area renderer)))
+  (trial:finalize (trial:staging-area renderer)))
 
 (defmethod alloy:register ((resource trial:resource) (renderer renderer))
   (trial:stage resource (trial:staging-area renderer)))
