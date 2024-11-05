@@ -8,10 +8,14 @@ An asset on the other hand //generates// one or more resources, either dynamical
 ## Resources
 Trial in its core offers the following ``resource``s:
 
+- ``bindable-buffer``
 - ``buffer-object``
+- ``compute-shader``
 - ``framebuffer``
+- ``memory``
 - ``shader``
 - ``shader-program``
+- ``shader-storage-buffer``
 - ``struct-buffer``
 - ``texture``
 - ``uniform-buffer``
@@ -21,7 +25,24 @@ Trial in its core offers the following ``resource``s:
 
 Core extensions, such as trial-harmony, will offer further resources to encompass other state they might need to manage.
 
-The resources interface is very slim: all you can do is ``allocate``, ``deallocate`` and check ``allocated-p``. All of the above resources are ``gl-resources`` of which you can access the OpenGL handle with ``gl-name``.
+The resources protocol is rather slim:
+
+- ``generator``
+  If the resource was produced by an asset or similar, this will return that generator.
+- ``name``
+  The name of the resource, if any. Resources may also be nameless.
+- ``dependencies``
+  The list of resources this depends on before it can be allocated.
+- ``allocate``
+  Allocate the resource. Note that this will fail if the ``dependencies`` aren't already allocated, or the resource has already been allocated.
+- ``deallocate``
+  Deallocate the resource. Note that this will fail if the resource isn't already allocated.
+- ``allocated-p``
+  Returns true if the resource is currently allocated.
+- ``check-allocated``
+  Signals a correctable error if the resource is not allocated.
+- ``ensure-allocated``
+  Allocates the resource and all of its dependencies if it isn't already.
 
 The individual classes may have additional functions to dynamically resize, update, or otherwise change their contents without explicit reallocation.
 
@@ -30,11 +51,17 @@ All of them will also have different initargs on construction. However, you will
 ## Assets
 ``asset``s on the other hand are what you'll typically use directly. Trial defines the following core assets:
 
+- ``audio``
+- ``environment-map``
 - ``image``
 - ``mesh``
+- ``model``
+- ``shader-image``
 - ``sprite-data``
 - ``static``
+- ``tile-data``
 - ``uniform-block``
+- ``video``
 
 Again, extensions to Trial are likely to define their own asset types.
 
@@ -91,3 +118,5 @@ Where the ``T`` option applies by default to all assets defined like this, and o
 
 ## Compiled Assets
 Some assets require source files that are derived from others. In that case, Trial may automate the compiling and optimizing of these source files. Assets that can be compiled like this will derive from ``compiled-generator`` and you may call ``compile-resources`` on them. You can also call ``compile-resources`` on a pool, which will invoke it for every asset that can.
+
+Trial also presents a standardised way to transcode different formats via ``transcode``. By default only methods to convert audio files are provided, by relying on the external ``ffmpeg`` application on your system. Some image format systems will also provide ways to transcode image files.an
