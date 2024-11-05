@@ -1896,6 +1896,10 @@
    #:F-PI
    #:F-2PI
    #:F-PI/2
+   #:F-PI/4
+   #:2PI
+   #:PI/2
+   #:PI/4
    #:data-root
    #:git-repo-commit
    #:self
