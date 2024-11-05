@@ -269,7 +269,7 @@
         (setf live-particles (%simulate-particles particles live-particles free-list dt particle-force-fields))
         (update-buffer-data particle-buffer T :count (* live-particles 8 4))))))
 
-(defmethod emit ((emitter cpu-particle-emitter) count &rest particle-options &key vertex-array location orientation scaling transform)
+(defmethod emit ((emitter cpu-particle-emitter) count &rest particle-options &key vertex-array location orientation scaling transform &allow-other-keys)
   (setf (particle-options emitter) (remf* particle-options :vertex-array :location :orientation :scaling :transform))
   ;; FIXME: don't permanently change emitter transform or VAO.
   (when location (setf (location emitter) location))
