@@ -306,3 +306,23 @@
            (data (convert-image-data bits width height :pixel-type-in pixel-type :pixel-format-in pixel-format :swizzle swizzle
                                                        :pixel-type-out :unsigned-byte :pixel-format-out :rgba)))
       (setf (cursor context) (rgba-icon width height data)))))
+
+(defun dump-render-state (&key (stream *standard-output*)
+                               (context *context*)
+                               (state '(shader-program vertex-array framebuffer)))
+  (with-context (context)
+    (labels ((resolve (type bind)
+               (loop with name = (gl:get* bind)
+                     for object being the hash-keys of (resources context)
+                     do (when (and (typep object type) (= (gl-name object) name))
+                          (return object))))
+             (try (type bind)
+               (when (member type state)
+                 (let ((thing (resolve type bind)))
+                   (if thing
+                       (describe thing stream)
+                       (format stream "~&~%No ~s bound.~%" type))))))
+      ;; TODO: also print depth mode, blend mode, etc.
+      (try 'shader-program :current-program)
+      (try 'vertex-array :vertex-array-binding)
+      (try 'framebuffer :framebuffer-binding))))
