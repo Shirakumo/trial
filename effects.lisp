@@ -181,8 +181,8 @@ void main(){
    (intensity :uniform T :initform 2.0 :accessor intensity))
   (:shader-file (trial "post/bloom-merge.glsl")))
 
-(define-shader-pass chromatic-aberration-filter (simple-post-effect-pass)
-  ((offset :initarg :offset :initform 3.0 :uniform T :accessor offset))
+(define-shader-pass chromatic-aberration-pass (simple-post-effect-pass)
+  ((offset :initarg :offset :initform 50.0 :uniform T :accessor offset))
   (:shader-file (trial "post/aberration.glsl")))
 
 (define-shader-pass luminance-pass (simple-post-effect-pass)

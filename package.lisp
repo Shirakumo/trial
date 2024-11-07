@@ -1146,7 +1146,7 @@
    #:bloom-merge-pass
    #:bloom-cutoff-pass
    #:bloom-cutoff
-   #:chromatic-aberration-filter
+   #:chromatic-aberration-pass
    #:offset
    #:luminance-pass
    #:displacement-pass
