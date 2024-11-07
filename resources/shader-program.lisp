@@ -187,9 +187,9 @@
               (%set-uniform ,locationg ,data))))))
 
 (defun uniform (asset name &optional container)
-  (let* ((name (name (etypecase name
-                       (string name)
-                       (symbol (symbol->c-name name)))))
+  (let* ((name (etypecase name
+                 (string name)
+                 (symbol (symbol->c-name name))))
          (location (uniform-location asset name))
          (program (gl-name asset)))
     (let ((uniform-max-length (gl:get-program program :active-uniform-max-length)))
