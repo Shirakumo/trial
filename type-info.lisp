@@ -390,7 +390,8 @@
      (cffi:mem-ref ptr :double))
     ((:vec2 :float-vec2)
      (unless container (setf container (vec2)))
-     (mem:replace (varr2 container) ptr))
+     (mem:replace (varr2 container) ptr)
+     container)
     ((:vec3 :float-vec3)
      (unless container (setf container (vec3)))
      (mem:replace (varr3 container) ptr)
@@ -402,7 +403,6 @@
     ((:dvec2 :double-vec2)
      (unless container (setf container (dvec2)))
      (mem:replace (dvarr2 container) ptr)
-     container
      container)
     ((:dvec3 :double-vec3)
      (unless container (setf container (dvec3)))
