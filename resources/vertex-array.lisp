@@ -56,8 +56,7 @@
     new-bindings))
 
 (defun update-array-bindings (array &optional (bindings (bindings array)) (index (index-buffer array)))
-  (with-unwind-protection (deactivate array)
-    (activate array)
+  (with-gl-binding (:vertex-array (gl-name array))
     (when index
       (check-allocated index)
       (activate index))

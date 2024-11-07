@@ -41,8 +41,7 @@
                                  collect (first attachment))))
     (unless (equal color-attachments (remove-duplicates color-attachments))
       (error "Duplicate color attachments:~%  ~a" color-attachments))
-    (gl:bind-framebuffer :framebuffer (gl-name framebuffer))
-    (with-unwind-protection (gl:bind-framebuffer :framebuffer 0)
+    (with-gl-binding (:framebuffer (gl-name framebuffer))
       (dolist (attachment attachments)
         (destructuring-bind (attachment texture &key (level 0) layer &allow-other-keys) attachment
           (check-framebuffer-attachment attachment)

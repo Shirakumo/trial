@@ -1372,6 +1372,28 @@
        (single-float :float)
        (double-flot :double)))))
 
+(defmacro with-gl-binding ((binding value) &body body)
+  (flet ((bind-form (value-form)
+           (cond ((member binding '(:framebuffer :draw-framebuffer :read-framebuffer))
+                  `(gl:bind-framebuffer ,binding ,value-form))
+                 ((member binding *buffer-object-type-list*)
+                  `(gl:bind-buffer ,binding ,value-form))
+                 ((eql binding :vertex-array)
+                  `(gl:bind-vertex-array ,value-form))
+                 ((eql binding :shader-program)
+                  `(gl:use-program ,value-form))
+                 ((member binding *texture-target-list*)
+                  `(gl:bind-texture ,binding ,value-form))
+                 (T
+                  (error "Unknown binding type ~s" binding)))))
+    (let ((old-value (gensym "OLD-VALUE")))
+      `(let ((,old-value (gl:get* ,(case binding 
+                                     (:shader-program :current-program)
+                                     (T (intern (format NIL "~a-BINDING" (string binding)) "KEYWORD"))))))
+         (with-unwind-protection ,(bind-form old-value)
+           ,(bind-form value)
+           ,@body)))))
+
 (define-global +gl-extensions+ ())
 
 (defmacro %cache (value)
