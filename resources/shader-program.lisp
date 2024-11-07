@@ -14,7 +14,11 @@
           (or (buffers program) (list "None")))
   (dolist (shader (shaders program))
     (format stream "~&  ~s~%" (shader-type shader))
-    (format-with-line-numbers (shader-source shader) stream)))
+    (format-with-line-numbers (shader-source shader) stream))
+  (format stream "~%~%Uniforms:~%")
+  (dolist (uniform (uniforms program))
+    (format stream "  ~30a ~a~%" (getf uniform :name)
+            (uniform program (getf uniform :name)))))
 
 (defun check-shader-compatibility (shaders)
   (loop with table = (make-hash-table :test 'eql)

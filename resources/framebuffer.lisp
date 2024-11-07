@@ -15,6 +15,16 @@
   (print-unreadable-object (framebuffer stream :type T :identity T)
     (format stream "~:{~a ~}~:[~; ALLOCATED~]" (attachments framebuffer) (allocated-p framebuffer))))
 
+(defmethod describe-object :after ((framebuffer framebuffer) stream)
+  (format stream "~&~%Attachments:~%")
+  (with-gl-binding (:framebuffer (gl-name framebuffer))
+    (cffi:with-foreign-objects ((param :int))
+      (dolist (attachment *framebuffer-attachment-list*)
+        (%gl:get-framebuffer-attachment-parameter-iv :draw-framebuffer attachment :framebuffer-attachment-object-name param)
+        (let ((name (cffi:mem-ref param :int)))
+          (when (< 0 name)
+            (format stream "  ~a~30t~3d~%" attachment name)))))))
+
 (defmethod clear-bits ((framebuffer framebuffer))
   (cffi:foreign-bitfield-symbols '%gl::ClearBufferMask (slot-value framebuffer 'clear-bits)))
 
