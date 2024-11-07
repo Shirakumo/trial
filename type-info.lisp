@@ -591,3 +591,16 @@
   (etypecase layout
     ((or std430 (eql std430)) (setf (gl-memref-std430 ptr type) value))
     ((or std140 (eql std140)) (setf (gl-memref-std140 ptr type) value))))
+
+(defun normalize-gl-type (type)
+  (case type
+    (:sampler-1d-arb :sampler-1d)
+    (:sampler-2d-arb :sampler-2d)
+    (:sampler-3d-arb :sampler-3d)
+    (:float-vec2-arb :float-vec2)
+    (:float-vec3-arb :float-vec3)
+    (:float-vec4-arb :float-vec4)
+    (:float-mat2-arb :float-mat2)
+    (:float-mat3-arb :float-mat3)
+    (:float-mat4-arb :float-mat4)
+    (T type)))

@@ -201,10 +201,10 @@
                                 characters-written size type name)
         (when (= 0 (cffi:mem-ref characters-written '%gl:sizei))
           (error "No such uniform ~s on ~a" name asset))
-        (let ((type (cffi:foreign-enum-keyword '%gl:enum (cffi:mem-ref type '%gl:uint))))
+        (let ((type (normalize-gl-type (cffi:foreign-enum-keyword '%gl:enum (cffi:mem-ref type '%gl:uint)))))
           (if (sampler-type-p type)
               (cffi:with-foreign-objects ((int '%gl:int))
-                (%gl:getn-uniform-uiv program location (gl-type-size :int) int)
+                (%gl:getn-uniform-uiv program location 4 int)
                 (cffi:mem-ref int '%gl:int))
               (cffi:with-foreign-objects ((buf :char (* 4 4 8)))
                 (ecase type
@@ -227,7 +227,7 @@
           collect (multiple-value-bind (size type name) (gl:get-active-uniform (gl-name program) i)
                     (list :index i
                           :size size
-                          :type type
+                          :type (normalize-gl-type type)
                           :name name
                           :location (uniform-location program name))))))
 
