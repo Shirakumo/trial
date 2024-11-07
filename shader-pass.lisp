@@ -28,9 +28,10 @@
 (defmethod (setf texture) :after ((texture texture) (port texture-port))
   (dolist (connection (flow:connections port))
     (let ((other (if (eq port (flow:left connection)) (flow:right connection) (flow:left connection))))
-      (setf (slot-value other 'texture) texture)
       ;; KLUDGE: this is ugly
-      (when (typep other 'output) (update-output-fb other texture)))))
+      (when (typep other 'output)
+        (update-output-fb other texture))
+      (setf (slot-value other 'texture) texture))))
 
 (flow:define-port-value-slot texture-port texture texture)
 
