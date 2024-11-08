@@ -35,7 +35,8 @@
                (:file "letterbox")
                (:file "repl")
                (:file "3d-audio")
-               (:file "wave"))
+               (:file "wave")
+               (:file "tone-mapping"))
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
                :alloy-constraint
