@@ -12,8 +12,8 @@ vec3 tone_map(vec3 color){
   vec3 w2 = step(vec3(m+l0), color);
   vec3 w1 = vec3(1) - w0 - w2;
 
-  vec3 t = m * pow(color / m, c) + b;
-  vec3 l = m + a * (col - m);
+  vec3 t = m * pow(color / m, vec3(c)) + b;
+  vec3 l = m + a * (color - m);
   vec3 s = m_m - (m_m - s1) * exp(cp * (color - s0));
   return t*w0 + l*w1 + s*w2;
 }
