@@ -177,8 +177,7 @@
   (unless (find 'event superclasses)
     (setf superclasses (append superclasses '(event))))
   (let ((slots (loop for slot in slots
-                     for (name maybe-default . args) = (enlist slot)
-                     for default = (or maybe-default 'arg!)
+                     for (name default . args) = (enlist slot 'arg!)
                      collect (if (getf args :reader)
                                  (list* name default args)
                                  (list* name default :reader name args)))))
