@@ -1122,6 +1122,7 @@
    #:previous
    #:copy-pass
    #:negative-pass
+   #:pixellate-pass
    #:box-blur-pass
    #:intensity
    #:sobel-pass

@@ -71,6 +71,10 @@ void main(){
   ()
   (:shader-file (trial "post/negative.glsl")))
 
+(define-shader-pass pixellate-pass (simple-post-effect-pass)
+  ((intensity :initarg :intensity :initform 8.0 :uniform T :accessor intensity))
+  (:shader-file (trial "post/pixellate.glsl")))
+
 (define-shader-pass box-blur-pass (iterative-post-effect-pass)
   ((intensity :initarg :intensity :initform 1.0 :uniform T :accessor intensity)
    (kernel-size :initarg :kernel-size :initform 9 :uniform T :accessor kernel-size))
