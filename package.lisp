@@ -1123,6 +1123,7 @@
    #:copy-pass
    #:negative-pass
    #:pixellate-pass
+   #:color-band-pass
    #:box-blur-pass
    #:intensity
    #:sobel-pass

@@ -75,6 +75,10 @@ void main(){
   ((intensity :initarg :intensity :initform 8.0 :uniform T :accessor intensity))
   (:shader-file (trial "post/pixellate.glsl")))
 
+(define-shader-pass color-band-pass (simple-post-effect-pass)
+  ((bands :initarg :bands :initform 8.0 :uniform T :accessor bands))
+  (:shader-file (trial "post/color-band.glsl")))
+
 (define-shader-pass box-blur-pass (iterative-post-effect-pass)
   ((intensity :initarg :intensity :initform 1.0 :uniform T :accessor intensity)
    (kernel-size :initarg :kernel-size :initform 9 :uniform T :accessor kernel-size))
