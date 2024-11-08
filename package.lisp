@@ -2040,12 +2040,13 @@
    #:state
    #:loop-p))
 
-(defpackage #:cl+trial
-  (:nicknames #:org.shirakumo.fraf.trial.cl+trial)
-  (:shadowing-import-from #:trial #:// #:load #:random)
-  (:use #:cl
-        #:trial
-        #:org.shirakumo.fraf.math))
+(unless (find-package '#:cl+trial)
+  (defpackage #:cl+trial
+    (:nicknames #:org.shirakumo.fraf.trial.cl+trial)
+    (:shadowing-import-from #:trial #:// #:load #:random)
+    (:use #:cl
+          #:trial
+          #:org.shirakumo.fraf.math)))
 
 (let ((symbols ()))
   (do-symbols (symb '#:cl+trial) (push symb symbols))
