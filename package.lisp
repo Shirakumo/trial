@@ -2050,15 +2050,15 @@
     (:shadowing-import-from #:trial #:// #:load #:random)
     (:use #:cl
           #:trial
-          #:org.shirakumo.fraf.math)))
+          #:org.shirakumo.fraf.math))
 
-(let ((symbols ()))
-  (do-symbols (symb '#:cl+trial) (push symb symbols))
-  (export symbols '#:cl+trial))
+  (let ((symbols ()))
+    (do-symbols (symb '#:cl+trial) (push symb symbols))
+    (export symbols '#:cl+trial))
 
-(defpackage #:trial-user
-  (:nicknames #:org.shirakumo.fraf.trial.user)
-  (:use #:cl+trial))
+  (defpackage #:trial-user
+    (:nicknames #:org.shirakumo.fraf.trial.user)
+    (:use #:cl+trial)))
 
 (defpackage #:org.shirakumo.fraf.trial.mpr
   (:use #:cl #:org.shirakumo.fraf.math)
