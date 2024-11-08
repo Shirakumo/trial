@@ -176,19 +176,23 @@
 (defmacro define-event (name superclasses &body slots)
   (unless (find 'event superclasses)
     (setf superclasses (append superclasses '(event))))
-  `(progn
-     (defclass ,name ,superclasses
-       ,(loop for slot in slots
-              collect (destructuring-bind (name &optional (default 'arg!) &rest args) (enlist slot)
-                        (unless (getf args :reader)
-                          (setf (getf args :reader) name))
-                        `(,name :initarg ,(kw name) :initform ,(if (eql default 'arg!) `(error "~a required." ',name)) ,@args))))
+  (let ((slots (loop for slot in slots
+                     for (name maybe-default . args) = (enlist slot)
+                     for default = (or maybe-default 'arg!)
+                     collect (if (getf args :reader)
+                                 (list* name default args)
+                                 (list* name default :reader name args)))))
+    `(progn
+       (defclass ,name ,superclasses
+         ,(loop for (name default . args) in slots
+                collect `(,name :initarg ,(kw name) :initform ,(if (eql default 'arg!) `(error "~a required." ',name)) ,@args)))
 
-     (defmethod print-object ((event ,name) stream)
-       (print-unreadable-object (event stream :type T :identity T)
-         (format stream "~@{~a~^ ~}"
-                 ,@(loop for slot in slots
-                         collect `(,(first (enlist slot)) event)))))))
+       (defmethod print-object ((event ,name) stream)
+         (print-unreadable-object (event stream :type T :identity T)
+           (format stream "~@{~a~^ ~}"
+                   ,@(loop for slot in slots
+                           for reader = (getf (cddr slot) :reader)
+                           collect `(,reader event))))))))
 
 (defmacro define-event-pool (class &optional (count 32))
   `(setf (gethash ',class +event-pools+) (make-event-pool ',class ,count)))
