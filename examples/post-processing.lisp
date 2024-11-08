@@ -4,8 +4,8 @@
   :title "Post Processing Effects"
   :description "Showcasing of various built-in post-processing shaders."
   (enter (make-instance 'basic-entity :asset (assets:asset :marble-bust)) scene)
-  (enter (make-instance 'directional-light :color (vec3 3)) scene)
-  (enter (make-instance 'ambient-light :color (vec3 0.5)) scene)
+  (enter (make-instance 'skybox :texture (assets:// :sandy-beach :environment-map)) scene)
+  (enter (make-instance 'environment-light :asset (assets:asset :sandy-beach)) scene)
   (enter (make-instance 'target-camera :location (vec 0.0 0.2 0.7) :target (vec 0 0.2 0) :fov 50) scene)
   (let ((render (make-instance 'pbr-render-pass))
         (map (make-instance 'ward :name :map))
