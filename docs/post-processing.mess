@@ -12,26 +12,47 @@ Trial also ships a number of useful preset post processing passes:
   Just copies the texture.
 - ``negative-pass``
   Negates the colours. Only works on low dynamic range.
+- ``pixellate-pass``
+  Simply downsamples the image with nearest-neighbour.
+- ``color-band-pass``
+  Reduce the colour pallette by banding the colours and optionally dithering it.
+- ``color-adjustment-pass``
+  Perform various colour adjustments like brightness, contrast, etc.
+- ``fisheye-pass``
+  Distort the image by a fisheye lens.
+- ``halftone-pass``
+  Give the image a halftone print rendering appearance.
+- ``bokeh-blur-pass``
+  Applies a circular Bokeh blur to the image.
 - ``box-blur-pass``
   Applies a box blur to the image. 
 - ``sobel-pass``
   Applies a sobel edge detection filter.
 - ``gaussian-blur-pass``
   Applies a gaussian blur in a single direction.
+- ``kawase-blur-pass``
+  Applies a dual-Kawase blur.
 - ``radial-blur-pass``
   Applies a radial blur with a specific origin.
 - ``swirl-pass``
   Swirl the pixel around the center of a circle.
-- ``fxaa``
+- ``fxaa-pass``
   A very easy-to-use and cheap anti-aliasing pass.
 - ``blend-pass``
-  Blends two images (``a-pass``, ``b-pass``) together using one of many blending methods.
+  Blends two images (``a-pass``, ``b-pass``) together using one of many blending methods:
+  - ``:b-over``
+  - ``:a-over``
+  - ``:add``
+  - ``:subtract``
+  - ``:multiply``
 - ``high-pass-filter``
   Only keeps pixels with a luminance above the threshold. Others are set to transparent.
 - ``low-pass-filter``
   Only keeps pixels with a luminance below the threshold. Others are set to transparent.
 - ``chromatic-aberration-filter``
   Applies a chromatic aberration effect, shifting the three colour channels separately.
+- ``displacement-pass``
+  Displace the pixels locally based on the shift amount stored in a ``displacement-map``.
 - ``luminance-pass``
   Outputs a grayscale version based on the color luminance.
 - ``light-scatter-pass``
