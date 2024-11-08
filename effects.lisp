@@ -84,6 +84,10 @@ void main(){
    (origin :initarg :origin :initform (vec 0.5 0.5) :uniform T :accessor origin))
   (:shader-file (trial "post/fisheye.glsl")))
 
+(define-shader-pass bokeh-blur-pass (simple-post-effect-pass)
+  ((intensity :initarg :intensity :initform 1.0 :uniform T :accessor intensity))
+  (:shader-file (trial "post/bokeh.glsl")))
+
 (define-shader-pass box-blur-pass (iterative-post-effect-pass)
   ((intensity :initarg :intensity :initform 1.0 :uniform T :accessor intensity)
    (kernel-size :initarg :kernel-size :initform 9 :uniform T :accessor kernel-size))
