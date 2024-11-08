@@ -27,7 +27,7 @@
                  (setf row 0)
                  (alloy:clear layout)
                  (alloy:clear focus)
-                 (let ((combo (row "Effect" class 'alloy:combo-set :value-set '(copy-pass negative-pass pixellate-pass color-band-pass fisheye-pass bokeh-blur-pass box-blur-pass sobel-pass gaussian-blur-pass kawase-blur-pass radial-blur-pass swirl-pass fxaa-pass high-pass-filter low-pass-filter chromatic-aberration-pass))))
+                 (let ((combo (row "Effect" class 'alloy:combo-set :value-set '(copy-pass negative-pass pixellate-pass color-band-pass fisheye-pass halftone-pass bokeh-blur-pass box-blur-pass sobel-pass gaussian-blur-pass kawase-blur-pass radial-blur-pass swirl-pass fxaa-pass high-pass-filter low-pass-filter chromatic-aberration-pass))))
                    (alloy:on alloy:value (class combo)
                      (change-class effect class)
                      (repopulate)))

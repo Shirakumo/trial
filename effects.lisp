@@ -84,6 +84,10 @@ void main(){
    (origin :initarg :origin :initform (vec 0.5 0.5) :uniform T :accessor origin))
   (:shader-file (trial "post/fisheye.glsl")))
 
+(define-shader-pass halftone-pass (simple-post-effect-pass)
+  ((dotsize :initarg :dotsize :initform 4.0 :uniform T :accessor dotsize))
+  (:shader-file (trial "post/halftone.glsl")))
+
 (define-shader-pass bokeh-blur-pass (simple-post-effect-pass)
   ((intensity :initarg :intensity :initform 1.0 :uniform T :accessor intensity))
   (:shader-file (trial "post/bokeh.glsl")))

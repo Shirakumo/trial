@@ -1125,6 +1125,7 @@
    #:pixellate-pass
    #:color-band-pass
    #:fisheye-pass
+   #:halftone-pass
    #:bokeh-blur-pass
    #:box-blur-pass
    #:intensity
