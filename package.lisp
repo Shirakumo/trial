@@ -1124,6 +1124,7 @@
    #:negative-pass
    #:pixellate-pass
    #:color-band-pass
+   #:fisheye-pass
    #:box-blur-pass
    #:intensity
    #:sobel-pass
