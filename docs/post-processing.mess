@@ -45,6 +45,18 @@ Trial also ships a number of useful preset post processing passes:
   - ``:add``
   - ``:subtract``
   - ``:multiply``
+  - ``:screen``
+  - ``:overlay``
+  - ``:hard-light``
+  - ``:soft-light``
+  - ``:color-dodge``
+  - ``:color-burn``
+  - ``:darken-only``
+  - ``:lighten-only``
+  - ``:divide``
+  - ``:difference``
+  - ``:linear-burn``
+  - ``:erase``
 - ``high-pass-filter``
   Only keeps pixels with a luminance above the threshold. Others are set to transparent.
 - ``low-pass-filter``
