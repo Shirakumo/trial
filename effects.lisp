@@ -76,7 +76,9 @@ void main(){
   (:shader-file (trial "post/pixellate.glsl")))
 
 (define-shader-pass color-band-pass (simple-post-effect-pass)
-  ((bands :initarg :bands :initform 8.0 :uniform T :accessor bands))
+  ((bands :initarg :bands :initform 8.0 :uniform T :accessor bands)
+   (dither-level :initarg :dither-level :initform 4 :constant T :accessor dither-level)
+   (pixel-size :initarg :pixel-size :initform 4.0 :uniform T :accessor pixel-size))
   (:shader-file (trial "post/color-band.glsl")))
 
 (define-shader-pass color-adjustment-pass (simple-post-effect-pass)
