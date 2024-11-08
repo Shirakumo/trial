@@ -79,6 +79,18 @@ void main(){
   ((bands :initarg :bands :initform 8.0 :uniform T :accessor bands))
   (:shader-file (trial "post/color-band.glsl")))
 
+(define-shader-pass color-adjustment-pass (simple-post-effect-pass)
+  ((midpoint :initarg :midpoint :initform (vec3 0.5) :uniform T :accessor midpoint)
+   (color-filter :initarg :color-filter :initform (vec3 1) :uniform T :accessor color-filter)
+   (exposure :initarg :exposure :initform (vec3 1) :uniform T :accessor exposure)
+   (contrast :initarg :contrast :initform (vec3 1) :uniform T :accessor contrast)
+   (brightness :initarg :brightness :initform (vec3 0) :uniform T :accessor brightness)
+   (saturation :initarg :saturation :initform (vec3 1) :uniform T :accessor saturation)
+   (temperature :initarg :temperature :initform 0.0 :uniform T :accessor temperature)
+   (tint :initarg :tint :initform 0.0 :uniform T :accessor tint)
+   (hue :initarg :hue :initform 0.0 :uniform T :accessor hue))
+  (:shader-file (trial "post/color-adjustment.glsl")))
+
 (define-shader-pass fisheye-pass (simple-post-effect-pass)
   ((intensity :initarg :intensity :initform 0.75 :uniform T :accessor intensity)
    (origin :initarg :origin :initform (vec 0.5 0.5) :uniform T :accessor origin))

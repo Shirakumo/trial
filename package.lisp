@@ -1124,6 +1124,7 @@
    #:negative-pass
    #:pixellate-pass
    #:color-band-pass
+   #:color-adjustment-pass
    #:fisheye-pass
    #:halftone-pass
    #:bokeh-blur-pass
