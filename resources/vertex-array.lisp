@@ -37,7 +37,7 @@
                       (query (%gl:get-vertex-attrib-iv i :vertex-attrib-array-size param))
                       (cffi:foreign-enum-keyword '%gl:enum (query (%gl:get-vertex-attrib-iv i :vertex-attrib-array-type param)))
                       (query (%gl:get-vertex-attrib-iv i :vertex-attrib-array-stride param))
-                      (query (%gl:get-vertex-attrib-iv i :vertex-attrib-array-offset param))
+                      (query (%gl:get-vertex-attrib-iv i :vertex-attrib-relative-offset param))
                       (< 0 (query (%gl:get-vertex-attrib-iv i :vertex-attrib-array-normalized param)))
                       (query (%gl:get-vertex-attrib-iv i :vertex-attrib-array-divisor param))))))))))
 
