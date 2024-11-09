@@ -115,6 +115,10 @@ void main(){
   ((intensity :initarg :intensity :initform 1.0 :uniform T :accessor intensity))
   (:shader-file (trial "post/sobel.glsl")))
 
+(define-shader-pass sharpen-pass (simple-post-effect-pass)
+  ((intensity :initarg :intensity :initform 1.0 :uniform T :accessor intensity))
+  (:shader-file (trial "post/sharpen.glsl")))
+
 (define-shader-pass gaussian-blur-pass (iterative-post-effect-pass)
   ((intensity :initarg :intensity :initform 1.0 :uniform T :accessor intensity)
    (direction :initarg :direction :initform (vec 1 0) :uniform T :accessor direction))
@@ -171,7 +175,6 @@ void main(){
   (:shader-file (trial "post/blend.glsl")))
 
 (defmethod (setf blend-type) ((value symbol) (pass blend-pass))
-  ;; TODO: add more
   (setf (blend-type pass) (ecase value
                             (:b-over 0)
                             (:a-over 1)

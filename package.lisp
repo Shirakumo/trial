@@ -1131,6 +1131,7 @@
    #:box-blur-pass
    #:intensity
    #:sobel-pass
+   #:sharpen-pass
    #:gaussian-blur-pass
    #:direction
    #:kawase-blur-pass

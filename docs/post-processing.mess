@@ -28,6 +28,8 @@ Trial also ships a number of useful preset post processing passes:
   Applies a box blur to the image. 
 - ``sobel-pass``
   Applies a sobel edge detection filter.
+- ``shapren-pass``
+  Sharpens edges.
 - ``gaussian-blur-pass``
   Applies a gaussian blur in a single direction.
 - ``kawase-blur-pass``
