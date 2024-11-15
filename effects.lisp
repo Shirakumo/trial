@@ -213,7 +213,7 @@ void main(){
 
 (define-shader-pass bloom-merge-pass (simple-post-effect-pass)
   ((bloom-cutoff :port-type input)
-   (intensity :uniform T :initform 2.0 :accessor intensity))
+   (intensity :uniform T :initarg :intensity :initform 2.0 :accessor intensity))
   (:shader-file (trial "post/bloom-merge.glsl")))
 
 (define-shader-pass chromatic-aberration-pass (simple-post-effect-pass)
