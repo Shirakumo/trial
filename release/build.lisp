@@ -16,9 +16,11 @@
 (defun build-args ()
   (let ((features (append *default-build-features* (config :build :features))))
     (append (list "--dynamic-space-size" (princ-to-string (config :build :dynamic-space-size))
+                  "--eval" "(setf asdf:*user-cache* (asdf::xdg-cache-home \"common-lisp\" \"trial-release\":implementation))"
+                  "--eval" "(asdf:initialize-output-translations)"
                   "--eval" (format NIL "(setf *features* (append *features* '~s))" features))
             (config :build :build-arguments)
-            (list "--eval" (format NIL "(asdf:make :~a :force T)" (config :system))
+            (list "--eval" (format NIL "(asdf:make ~s :force T)" (config :system))
                   "--disable-debugger" "--quit"))))
 
 (defmethod build ((target (eql :linux)))
