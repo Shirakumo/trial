@@ -1724,6 +1724,7 @@
    #:load-settings
    #:save-settings
    #:setting
+   #:setting*
    #:observe-setting
    #:remove-setting-observer
    #:define-setting-observer
