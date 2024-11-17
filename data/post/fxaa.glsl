@@ -1,8 +1,4 @@
 #section FRAGMENT_SHADER
-uniform sampler2D previous_pass;
-in vec2 uv;
-out vec4 color;
-
 /**
 Basic FXAA implementation based on the code on geeks3d.com with the
 modification that the textureLod stuff was removed since it's
@@ -101,8 +97,7 @@ vec4 fxaa(sampler2D tex, vec2 fragCoord, vec2 resolution) {
     return color;
 }
 
-void main(){
+vec4 post_process(sampler2D previous_pass, vec2 uv){
   vec2 size = textureSize(previous_pass, 0);
-  vec2 fragCoord = uv * size;
-  color = fxaa(previous_pass, fragCoord, size);
+  return fxaa(previous_pass, uv * size, size);
 }

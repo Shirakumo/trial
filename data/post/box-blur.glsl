@@ -1,11 +1,8 @@
 #section FRAGMENT_SHADER
-in vec2 uv;
-out vec4 color;
-uniform sampler2D previous_pass;
 uniform float intensity = 1.0;
 uniform int kernel_size = 9;
 
-void main(){
+vec4 post_process(sampler2D previous_pass, vec2 uv){
   vec2 blur_size = intensity / vec2(textureSize(previous_pass, 0));
   vec4 sum = vec4(0.0);
   int kern = kernel_size / 2;
@@ -14,5 +11,5 @@ void main(){
       sum += texture(previous_pass, uv + vec2(x,y)*blur_size);
     }
   }
-  color = sum * (1.0/(kernel_size*kernel_size));
+  return sum * (1.0/(kernel_size*kernel_size));
 }

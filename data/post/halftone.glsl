@@ -1,7 +1,4 @@
 #section FRAGMENT_SHADER
-in vec2 uv;
-out vec4 color;
-uniform sampler2D previous_pass;
 uniform float dotsize = 2.5;
 
 vec4 halftone(in vec2 fc, in mat2 m, in vec2 resolution){
@@ -25,7 +22,7 @@ const mat2 mm = mat2(cos(R2),-sin(R2),sin(R2),cos(R2));
 const mat2 my = mat2(cos(R3),-sin(R3),sin(R3),cos(R3));
 const mat2 mk = mat2(cos(R4),-sin(R4),sin(R4),cos(R4));
 
-void main(){
+vec4 post_process(sampler2D previous_pass, vec2 uv){
   vec2 resolution = textureSize(previous_pass, 0);
   vec2 fc = (uv.xy-0.5)*resolution;
   float k = halftone(fc, mk, resolution).a;
@@ -34,5 +31,5 @@ void main(){
                 halftone(fc, my, resolution).b,
                 halftone(fc, mk, resolution).a);
   c = smoothstep(SST-SSQ, SST+SSQ, c);
-  color = vec4(c.rgb*c.a, 1.0);
+  return vec4(c.rgb*c.a, 1.0);
 }

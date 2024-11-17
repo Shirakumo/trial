@@ -2,12 +2,9 @@
 #define ITERATIONS 150
 const float GOLDEN_ANGLE = (3.-sqrt(5.0))*acos(-1.0);
 const mat2 rot = mat2(cos(GOLDEN_ANGLE), sin(GOLDEN_ANGLE), -sin(GOLDEN_ANGLE), cos(GOLDEN_ANGLE));
-in vec2 uv;
-out vec4 color;
-uniform sampler2D previous_pass;
 uniform float intensity = 1.0;
 
-void main(){
+vec4 post_process(sampler2D previous_pass, vec2 uv){
   vec2 res = textureSize(previous_pass, 0).xy;
   vec2 prop = vec2(1.0, res.x/res.y);
   vec3 acc = vec3(0);
@@ -23,5 +20,5 @@ void main(){
     acc += col * bokeh;
     div += bokeh;
   }
-  color = vec4(acc / div, 1.0);
+  return vec4(acc / div, 1.0);
 }

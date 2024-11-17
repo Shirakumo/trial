@@ -1,9 +1,6 @@
 // Simplified from https://www.shadertoy.com/view/XssGz8
 #section FRAGMENT_SHADER
 uniform float offset = 3.0;
-uniform sampler2D previous_pass;
-in vec2 uv;
-out vec4 color;
 
 vec3 spectrum_offset(float t){
   float t0 = 3.0 * t - 1.5;
@@ -24,7 +21,7 @@ vec2 remap(vec2 t, vec2 a, vec2 b){
   return clamp((t - a) / (b - a), 0.0, 1.0);
 }
 
-void main(){
+vec4 post_process(sampler2D previous_pass, vec2 uv){
   vec2 max_distort = vec2(offset*100) / textureSize(previous_pass, 0).xy;
   vec2 min_distort = 0.5 * max_distort;
   vec2 oversiz = brown_conrady_distortion(vec2(1.0), min_distort.x);
@@ -44,5 +41,5 @@ void main(){
     t += stepsiz;
   }
   sumcol.rgb /= sumw;
-  color = vec4(sumcol.rgb, 1.0);
+  return vec4(sumcol.rgb, 1.0);
 }

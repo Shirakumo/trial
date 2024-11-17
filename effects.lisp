@@ -18,7 +18,8 @@ void main(){
 
 (define-shader-pass simple-post-effect-pass (post-effect-pass)
   ((previous-pass :port-type input :accessor previous-pass)
-   (color :port-type output :accessor color)))
+   (color :port-type output :accessor color))
+  (:shader-file (trial "post/post-processing.glsl")))
 
 (defmethod (setf active-p) :before (value (pass simple-post-effect-pass))
   ;; KLUDGE: This is terrible. How do we do this cleanly?
@@ -58,13 +59,8 @@ void main(){
   ())
 
 (define-class-shader (copy-pass :fragment-shader)
-  "
-uniform sampler2D previous_pass;
-in vec2 uv;
-out vec4 color;
-
-void main(){
-  color = texture(previous_pass, uv);
+  "vec4 post_process(sampler2D previous_pass, vec2 uv){
+  return texture(previous_pass, uv);
 }")
 
 (define-shader-pass negative-pass (simple-post-effect-pass)

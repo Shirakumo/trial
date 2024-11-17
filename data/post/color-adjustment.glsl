@@ -1,7 +1,4 @@
 #section FRAGMENT_SHADER
-in vec2 uv;
-out vec4 color;
-uniform sampler2D previous_pass;
 uniform vec3 midpoint = vec3(0.5);
 uniform vec3 color_filter = vec3(1);
 uniform vec3 exposure = vec3(1);
@@ -12,7 +9,7 @@ uniform float temperature = 0.0;
 uniform float tint = 0.0;
 uniform float hue = 0.0;
 
-float luminance(vec3 color) {
+float color_luminance(vec3 color) {
   return dot(color, vec3(0.299f, 0.587f, 0.114f));
 }
 
@@ -55,16 +52,16 @@ vec3 hue_shift(vec3 col, float shift){
     return U*cos(shift*6.2832) + V*sin(shift*6.2832) + P;
 }
 
-void main(){
-  color = texture(previous_pass, uv);
+vec4 post_process(sampler2D previous_pass, vec2 uv){
+  vec4 color = texture(previous_pass, uv);
   vec3 col = color.rgb;
   
   col = max(vec3(0), col * exposure);
   col = max(vec3(0), white_balance(col, temperature, tint));
   col = max(vec3(0), contrast * (col - midpoint) + midpoint + brightness);
   col = max(vec3(0), col * color_filter);
-  col = max(vec3(0), mix(vec3(luminance(col)), col, saturation));
+  col = max(vec3(0), mix(vec3(color_luminance(col)), col, saturation));
   col = hue_shift(col, hue);
 
-  color.rgb = col;
+  return vec4(col, color.a);
 }
