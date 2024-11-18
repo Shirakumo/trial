@@ -233,8 +233,8 @@ void main(){
   (resize (displacement-map pass) width height))
 
 (define-shader-pass light-scatter-pass (post-effect-pass)
-  ((previous-pass :port-type input)
-   (black-render-pass :port-type input)
+  ((color-map :port-type input :accessor color-map)
+   (depth-map :port-type input :accessor depth-map)
    (color :port-type output)
    (density :initarg :density :initform 1.0 :uniform T :accessor density)
    (weight :initarg :weight :initform 0.01 :uniform T :accessor weight)
