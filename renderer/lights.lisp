@@ -43,6 +43,11 @@
 
 (defmethod in-view-p ((target light) camera) T)
 
+(defmethod (setf intensity) (intensity (light light))
+  (v<- (color light) intensity)
+  (notice-update light T)
+  intensity)
+
 (defclass ambient-light (light)
   ())
 
