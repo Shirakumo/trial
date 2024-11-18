@@ -44,19 +44,18 @@ vec4 standard_shade(in StandardLight light){
     vec3 N = normal;
     vec3 V = view_dir;
     vec3 R = reflect(-V, N);
-    // Invert Y as our maps are mirrored.
-    R.y *= -1;
 
     vec3 F = F_s_r(max(dot(N, V), 0.0), F0, roughness);
     vec3 kS = F;
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metalness;
 
-    vec3 irradiance = texture(irradiance_map, N).rgb;
+    vec3 irradiance = texture(irradiance_map, vec3(N.x, -N.y, N.z)).rgb;
     vec3 diffuse = irradiance * albedo.xyz;
 
-    vec2 envBRDF = texture(brdf_lut, vec2(max(dot(N, V), 0.0), roughness)).rg;
-    vec3 prefiltered_color = textureLod(environment_map, R,  roughness * MAX_REFLECTION_LOD).rgb;
+    vec2 BRDFuv = vec2(max(dot(N, V), 0.0), roughness);
+    vec2 envBRDF = texture(brdf_lut, vec2(BRDFuv.x, -BRDFuv.y)).rg;
+    vec3 prefiltered_color = textureLod(environment_map, vec3(R.x, -R.y, R.z),  roughness * MAX_REFLECTION_LOD).rgb;
     vec3 specular = prefiltered_color * (F * envBRDF.x + envBRDF.y);
 
     return vec4((kD * diffuse + specular) * occlusion * light.color, 1);
