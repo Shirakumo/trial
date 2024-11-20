@@ -73,6 +73,9 @@
 (defmethod shown-p ((panel panel))
   (alloy:layout-tree (alloy:layout-element panel)))
 
+(defmethod trial:visible-p ((panel panel))
+  (alloy:layout-tree (alloy:layout-element panel)))
+
 (defmethod trial:show ((panel panel) &key (ui (ui)))
   (when trial:+main+
     (trial:commit panel (trial:loader trial:+main+) :unload NIL))
