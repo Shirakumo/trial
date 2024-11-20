@@ -178,6 +178,25 @@
         ((:texture-3d :texture-2d-array)
          (%gl:tex-image-3d (target buffer) level internal-format width height depth 0 pixel-format pixel-type (mem:memory-region-pointer region)))))))
 
+(defmethod download-buffer-data ((buffer texture) (data (eql T)) &rest args &key &allow-other-keys)
+  (apply #'download-buffer-data buffer
+         (or (first (sources buffer))
+             (make-texture-source :pixel-data (make-array (* (width buffer) (height buffer) (depth buffer)
+                                                             (pixel-data-stride (pixel-type buffer) (pixel-format buffer))))
+                                  :pixel-type (pixel-type buffer)
+                                  :pixel-format (pixel-format buffer)))
+         args))
+
+(defmethod download-buffer-data ((buffer texture) (data texture-source) &key)
+  (mem:with-memory-region (region data)
+    #-elide-context-current-checks
+    (check-context-current)
+    (gl:bind-texture (target buffer) (gl-name buffer))
+    (let ((type (texture-source-pixel-type data))
+          (format (texture-source-pixel-format data)))
+      (%gl:get-tex-image (target buffer) (texture-source-level data) format type (memory-region-pointer region))))
+  data)
+
 (defmethod print-object ((texture texture) stream)
   (print-unreadable-object (texture stream :type T :identity T)
     (case (target texture)
