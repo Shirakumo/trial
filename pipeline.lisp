@@ -253,7 +253,7 @@
             (setf (width texture) width)
             (setf (height texture) height))
           (dolist (connection (flow:connections port))
-            (setf (texture (flow:right connection)) texture))
+            (setf (slot-value (flow:right connection) 'texture) texture))
           ;; If we're dynamically updating then setting the texture now
           ;; will require it to be allocated to be bound...
           (when (and (framebuffer (flow:node port))
