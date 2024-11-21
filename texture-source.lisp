@@ -245,5 +245,5 @@ image is
     (setf (texture-source-pixel-data source) NIL))
   source)
 
-(defmethod mem:call-with-memory-region (function (source texture-source) &rest args)
+(defmethod mem:call-with-memory-region ((function function) (source texture-source) &rest args)
   (apply #'mem:call-with-memory-region function (texture-source-pixel-data source) args))

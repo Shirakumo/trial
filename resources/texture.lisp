@@ -181,20 +181,22 @@
 (defmethod download-buffer-data ((buffer texture) (data (eql T)) &rest args &key &allow-other-keys)
   (apply #'download-buffer-data buffer
          (or (first (sources buffer))
-             (make-texture-source :pixel-data (make-array (* (width buffer) (height buffer) (depth buffer)
-                                                             (pixel-data-stride (pixel-type buffer) (pixel-format buffer))))
+             (make-texture-source :pixel-data (make-array (* (width buffer) (or (height buffer) 1) (or (depth buffer) 1)
+                                                             (pixel-data-stride (pixel-type buffer) (pixel-format buffer)))
+                                                          :element-type '(unsigned-byte 8))
                                   :pixel-type (pixel-type buffer)
                                   :pixel-format (pixel-format buffer)))
          args))
 
-(defmethod download-buffer-data ((buffer texture) (data texture-source) &key)
+(defmethod download-buffer-data ((buffer texture) (data texture-source) &key (target (target buffer)) level)
   (mem:with-memory-region (region data)
     #-elide-context-current-checks
     (check-context-current)
-    (gl:bind-texture (target buffer) (gl-name buffer))
     (let ((type (texture-source-pixel-type data))
           (format (texture-source-pixel-format data)))
-      (%gl:get-tex-image (target buffer) (texture-source-level data) format type (memory-region-pointer region))))
+      (gl:bind-texture (target buffer) (gl-name buffer))
+      (%gl:getn-tex-image target (or level (texture-source-level data) 0) format type
+                          (memory-region-size region) (memory-region-pointer region))))
   data)
 
 (defmethod print-object ((texture texture) stream)

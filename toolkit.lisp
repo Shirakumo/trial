@@ -1272,7 +1272,7 @@
         1)
        ((:unsigned-byte-3-3-2 :unsigned-byte-2-3-3-rev)
         1/3)
-       ((:short :unsigned-short :short-float)
+       ((:short :unsigned-short :short-float :half-float)
         2)
        ((:unsigned-short-5-6-5 :unsigned-short-5-6-5-rev
          :unsigned-short-5-5-5-1 :unsigned-short-1-5-5-5-rev)
@@ -1285,7 +1285,9 @@
        ((:unsigned-int-5-9-9-9-rev :unsigned-int-10-10-10-2 :unsigned-int-2-10-10-10-rev)
         4/3)
        ((:unsigned-int-8-8-8-8 :unsigned-int-8-8-8-8-rev)
-        4/4))))
+        4/4)
+       ((:double :double-float)
+        8))))
 
 (defun infer-internal-format (pixel-type pixel-format)
   (mksym
