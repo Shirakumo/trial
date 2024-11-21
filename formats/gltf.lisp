@@ -660,6 +660,52 @@
 (defmethod load-model (input (type (eql :glb)) &rest args)
   (apply #'load-model input :gltf args))
 
+(defun %construct-node (node gltf meshes generator)
+  (cond ((loop for skin across (gltf:skins gltf)
+               thereis (loop for joint across (gltf:joints skin)
+                             thereis (eq joint node)))
+         ;; Eliminate nodes that are parts of a skin
+         NIL)
+        ((gltf:virtual-p node)
+         ;; Eliminate nodes that are marked as virtual
+         NIL)
+        ((gltf:mesh node)
+         (let ((mesh-name (gltf-name (gltf:mesh node))))
+           (make-instance (etypecase (or (gethash mesh-name meshes)
+                                         (gethash (cons mesh-name 0) meshes))
+                            (static-mesh 'basic-entity)
+                            ;; FIXME: instead of turning each skin into an animated entity
+                            ;;        we should share the pose between them and only make one
+                            ;;        animated entity the controller
+                            (animated-mesh 'basic-animated-entity))
+                          :lods (loop for i from -1
+                                      for threshold across (gltf:lod-screen-coverage node)
+                                      for lod = mesh-name then (gltf-name (gltf:mesh (aref (gltf:lods node) i)))
+                                      collect (make-instance 'lod :threshold threshold :mesh lod))
+                          :transform (gltf-node-transform node)
+                          :name (gltf-name node)
+                          :asset generator
+                          :mesh mesh-name)))
+        (T
+         (make-instance 'basic-node :transform (gltf-node-transform node)
+                                    :name (gltf-name node)))))
+
+(defun construct-node (node gltf model generator)
+  (let ((entity (%construct-node node (meshes model) generator gltf)))
+    (when entity
+      (loop for child across (gltf:children node)
+            for child-entity = (construct-node child gltf model generator)
+            do (when child-entity (enter child-entity entity)))
+      (when (gltf:light node)
+        (enter (load-light (gltf:light node)) entity))
+      (when (gltf:camera node)
+        (enter (load-camera (gltf:camera node)) entity))
+      (when (and (not (gltf:trigger node)) (gltf:rigidbody node))
+        (load-rigidbody model entity node))
+      (when (gltf:trigger node)
+        (load-trigger model entity node))
+      entity)))
+
 (defmethod load-model (input (type (eql :gltf)) &key (generator (make-instance 'resource-generator))
                                                      (model (make-instance 'model)))
   (gltf:with-gltf (gltf input)
@@ -683,60 +729,19 @@
                 do (when (skinned-p mesh)
                      (trial::reorder mesh map)))))
       ;; Construct scene graphs
-      (labels ((construct (node)
-                 (cond ((loop for skin across (gltf:skins gltf)
-                              thereis (loop for joint across (gltf:joints skin)
-                                            thereis (eq joint node)))
-                        ;; Eliminate nodes that are parts of a skin
-                        NIL)
-                       ((gltf:virtual-p node)
-                        ;; Eliminate nodes that are marked as virtual
-                        NIL)
-                       ((gltf:mesh node)
-                        (let ((mesh-name (gltf-name (gltf:mesh node))))
-                          (make-instance (etypecase (or (gethash mesh-name meshes)
-                                                        (gethash (cons mesh-name 0) meshes))
-                                           (static-mesh 'basic-entity)
-                                           ;; FIXME: instead of turning each skin into an animated entity
-                                           ;;        we should share the pose between them and only make one
-                                           ;;        animated entity the controller
-                                           (animated-mesh 'basic-animated-entity))
-                                         :lods (loop for i from -1
-                                                     for threshold across (gltf:lod-screen-coverage node)
-                                                     for lod = mesh-name then (gltf-name (gltf:mesh (aref (gltf:lods node) i)))
-                                                     collect (make-instance 'lod :threshold threshold :mesh lod))
-                                         :transform (gltf-node-transform node)
-                                         :name (gltf-name node)
-                                         :asset generator
-                                         :mesh mesh-name)))
-                       (T
-                        (make-instance 'basic-node :transform (gltf-node-transform node)
-                                                   :name (gltf-name node)))))
-               (recurse (children container)
-                 (loop for node across children
-                       for child = (construct node)
-                       when child
-                       do (recurse (gltf:children node) child)
-                          (when (gltf:light node)
-                            (enter (load-light (gltf:light node)) child))
-                          (when (gltf:camera node)
-                            (enter (load-camera (gltf:camera node)) child))
-                          (when (and (not (gltf:trigger node)) (gltf:rigidbody node))
-                            (load-rigidbody model child node))
-                          (when (gltf:trigger node)
-                            (load-trigger model child node))
-                          (enter child container))))
-        (loop for node across (gltf:scenes gltf)
-              for scene = (make-instance 'basic-node :name (gltf-name node))
-              do (setf (gethash (name scene) scenes) scene)
-                 (when (gltf:light node)
-                   (dolist (object (load-environment-light (gltf:light node)))
-                     (enter object scene)))
-                 (when (gltf:envmap node)
-                   (let ((envmap (make-instance 'environment-map :input (merge-pathnames (gltf:envmap node) input))))
-                     (enter (make-instance 'environment-light :asset envmap :name :envlight) scene)
-                     (enter (make-instance 'skybox :texture (resource envmap :environment-map) :name :skybox) scene)))
-                 (recurse (gltf:nodes node) scene)))
+      (loop for node across (gltf:scenes gltf)
+            for scene = (make-instance 'basic-node :name (gltf-name node))
+            do (setf (gethash (name scene) scenes) scene)
+               (when (gltf:light node)
+                 (dolist (object (load-environment-light (gltf:light node)))
+                   (enter object scene)))
+               (when (gltf:envmap node)
+                 (let ((envmap (make-instance 'environment-map :input (merge-pathnames (gltf:envmap node) input))))
+                   (enter (make-instance 'environment-light :asset envmap :name :envlight) scene)
+                   (enter (make-instance 'skybox :texture (resource envmap :environment-map) :name :skybox) scene)))
+               (loop for child across (gltf:nodes node)
+                     for entity = (construct-node child gltf model generator)
+                     do (when entity (enter entity scene))))
       model)))
 
 (defun add-convex-shape (gltf vertices faces)
