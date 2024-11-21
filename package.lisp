@@ -683,6 +683,7 @@
    #:single-material-renderable
    #:material
    #:light-cache-render-pass
+   #:global-lights
    #:basic-entity
    #:basic-physics-entity
    #:basic-animated-entity
