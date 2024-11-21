@@ -179,23 +179,28 @@
          (%gl:tex-image-3d (target buffer) level internal-format width height depth 0 pixel-format pixel-type (mem:memory-region-pointer region)))))))
 
 (defmethod download-buffer-data ((buffer texture) (data (eql T)) &rest args &key &allow-other-keys)
-  (apply #'download-buffer-data buffer
-         (or (first (sources buffer))
-             (make-texture-source :pixel-data (make-array (* (width buffer) (or (height buffer) 1) (or (depth buffer) 1)
-                                                             (pixel-data-stride (pixel-type buffer) (pixel-format buffer)))
-                                                          :element-type '(unsigned-byte 8))
-                                  :pixel-type (pixel-type buffer)
-                                  :pixel-format (pixel-format buffer)))
-         args))
+  (apply #'download-buffer-data buffer (first (sources buffer)) args))
 
-(defmethod download-buffer-data ((buffer texture) (data texture-source) &key (target (target buffer)) level)
+(defmethod download-buffer-data ((buffer texture) (data null) &rest args &key (pixel-type (pixel-type buffer)) (pixel-format (pixel-format buffer)) (target (target buffer)) (level 0) &allow-other-keys)
+  (apply #'download-buffer-data buffer
+         (make-texture-source :pixel-data (make-array (* (width buffer) (or (height buffer) 1) (or (depth buffer) 1)
+                                                         (pixel-data-stride pixel-type pixel-format))
+                                                      :element-type '(unsigned-byte 8))
+                              :pixel-type pixel-type
+                              :pixel-format pixel-format
+                              :target target
+                              :level level
+                              :dst (list 0 0 0 (width buffer) (height buffer) (depth buffer)))
+         (remf* args :pixel-type :pixel-format :target :level)))
+
+(defmethod download-buffer-data ((buffer texture) (data texture-source) &key)
   (mem:with-memory-region (region data)
     #-elide-context-current-checks
     (check-context-current)
     (let ((type (texture-source-pixel-type data))
           (format (texture-source-pixel-format data)))
       (gl:bind-texture (target buffer) (gl-name buffer))
-      (%gl:getn-tex-image target (or level (texture-source-level data) 0) format type
+      (%gl:getn-tex-image (or (texture-source-target data) (target buffer)) (or (texture-source-level data) 0) format type
                           (memory-region-size region) (memory-region-pointer region))))
   data)
 
