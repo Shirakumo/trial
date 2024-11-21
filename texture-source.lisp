@@ -32,6 +32,18 @@
 (define-accessor-delegate-methods level (texture-source-level texture-source))
 (define-accessor-delegate-methods target (texture-source-target texture-source))
 
+(defmethod width ((source texture-source))
+  (or (nth 3 (texture-source-src source))
+      (nth 3 (texture-source-dst source))))
+
+(defmethod height ((source texture-source))
+  (or (nth 4 (texture-source-src source))
+      (nth 4 (texture-source-dst source))))
+
+(defmethod depth ((source texture-source))
+  (or (nth 5 (texture-source-src source))
+      (nth 5 (texture-source-dst source))))
+
 (defun texture-sources->texture-size (sources)
   (let ((max-x 0)
         (max-y 0)
