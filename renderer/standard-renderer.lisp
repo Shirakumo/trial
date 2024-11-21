@@ -431,20 +431,23 @@
                  (vsqrdistance (focal-point (camera pass)) (light-cache-location pass))))
     (setf (light-cache-dirty-p pass) T)))
 
+(defmethod revalidate-light-cache ((pass light-cache-render-pass))
+  (let ((location (v<- (light-cache-location pass) (focal-point (camera pass))))
+        (size (1- (lru-cache-size (allocated-lights pass)))))
+    (with-buffer-tx (struct (light-block pass))
+      (multiple-value-bind (nearest count) (org.shirakumo.fraf.trial.space.kd-tree:kd-tree-k-nearest
+                                            size location (light-cache pass) :test #'active-p)
+        (dotimes (i count)
+          (when (active-p (aref nearest i))
+            (enable (aref nearest i) pass))))
+      (loop for light across (global-lights pass)
+            do (when (active-p light)
+                 (enable light pass)))))
+  (setf (light-cache-dirty-p pass) NIL))
+
 (defmethod render :before ((pass light-cache-render-pass) target)
   (when (light-cache-dirty-p pass)
-    (let ((location (v<- (light-cache-location pass) (focal-point (camera pass))))
-          (size (1- (lru-cache-size (allocated-lights pass)))))
-      (with-buffer-tx (struct (light-block pass))
-        (multiple-value-bind (nearest count) (org.shirakumo.fraf.trial.space.kd-tree:kd-tree-k-nearest
-                                              size location (light-cache pass) :test #'active-p)
-          (dotimes (i count)
-            (when (active-p (aref nearest i))
-              (enable (aref nearest i) pass))))
-        (loop for light across (global-lights pass)
-              do (when (active-p light)
-                   (enable light pass)))))
-    (setf (light-cache-dirty-p pass) NIL)))
+    (revalidate-light-cache pass)))
 
 ;; FIXME: how do we know when lights moved or de/activated so we can update?
 
