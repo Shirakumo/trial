@@ -2005,6 +2005,7 @@
    #:internal-format-pixel-format
    #:internal-format-pixel-type
    #:pixel-data-stride
+   #:make-pixel-data
    #:infer-internal-format
    #:infer-swizzle-format
    #:infer-swizzle-channels

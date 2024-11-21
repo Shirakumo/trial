@@ -183,9 +183,7 @@
 
 (defmethod download-buffer-data ((buffer texture) (data null) &rest args &key (pixel-type (pixel-type buffer)) (pixel-format (pixel-format buffer)) (target (target buffer)) (level 0) &allow-other-keys)
   (flet ((make-source (target)
-           (make-texture-source :pixel-data (make-array (* (width buffer) (or (height buffer) 1) (or (depth buffer) 1)
-                                                           (pixel-data-stride pixel-type pixel-format))
-                                                        :element-type '(unsigned-byte 8))
+           (make-texture-source :pixel-data (make-pixel-data pixel-type pixel-format (width buffer) (height buffer) (depth buffer))
                                 :pixel-type pixel-type
                                 :pixel-format pixel-format
                                 :target target
