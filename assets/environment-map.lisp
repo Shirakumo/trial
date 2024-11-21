@@ -67,3 +67,51 @@
   (setf (loaded-p map) T)
   (with-cleanup-on-failure (setf (loaded-p map) NIL)
     (call-next-method)))
+
+(defun luminance (r g b)
+  (+ (* r 0.299)
+     (* g 0.587)
+     (* b 0.114)))
+
+(defun pixel-luminance (source ptr x y)
+  (cffi:incf-pointer ptr (* (pixel-data-stride (pixel-type source) (pixel-format source))
+                            (+ (* y (width source)) x)))
+  (flet ((ref (o)
+           (cffi:mem-aref ptr (pixel-type source) o)))
+    (ecase (pixel-format source)
+      ((:r :red) (ref 0))
+      ((:rg) (* (ref 0) (ref 1)))
+      ((:rgb) (luminance (ref 0) (ref 1) (ref 2)))
+      ((:rgba) (* (luminance (ref 0) (ref 1) (ref 2)) (ref 3))))))
+
+(defun maximize-pixel-luminance (sources)
+  (let ((map (first sources))
+        (xm 0) (ym 0) (luminance 0.0))
+    (dolist (source sources (values map xm ym luminance))
+      (mem:with-pointer-to-array-data (ptr (pixel-data source))
+        (dotimes (y (height source))
+          (dotimes (x (width source))
+            (let ((i (pixel-luminance source ptr x y)))
+              (when (< luminance i)
+                (setf map source xm x ym y luminance i)))))))))
+
+(defun cubemap-direction (target u v)
+  (nvunit
+   (ecase target
+     ;; FIXME: uh, this isn't right, is it.
+     ((:+x :texture-cube-map-positive-x) (vec +1 v u))
+     ((:-x :texture-cube-map-negative-x) (vec -1 v u))
+     ((:+y :texture-cube-map-positive-y) (vec u +1 v))
+     ((:-y :texture-cube-map-negative-y) (vec u -1 v))
+     ((:+z :texture-cube-map-positive-z) (vec u v +1))
+     ((:-z :texture-cube-map-negative-z) (vec u v -1)))))
+
+(defun envmap-brightest-direction (envmap)
+  (multiple-value-bind (map x y intensity)
+      (maximize-pixel-intensity (download-buffer-data (etypecase envmap
+                                                        (environment-map (resource envmap 'irrmap))
+                                                        (texture envmap))
+                                                      NIL))
+    (let ((u (* 2 (- (/ x (width map)) 0.5)))
+          (v (* 2 (- (/ y (height map)) 0.5))))
+      (values (cubemap-direction (target map) u v) intensity))))
