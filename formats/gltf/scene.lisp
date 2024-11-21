@@ -81,6 +81,9 @@
          (make-instance 'basic-node :transform (gltf-node-transform node)
                                     :name (gltf-name node)))))
 
+(defmethod translate-node (node entity gltf)
+  entity)
+
 (defun construct-node (node gltf model generator)
   (let ((entity (%construct-node node (meshes model) generator gltf)))
     (when entity
@@ -95,7 +98,7 @@
         (load-rigidbody model entity node))
       (when (gltf:trigger node)
         (load-trigger model entity node))
-      entity)))
+      (translate-node node entity gltf))))
 
 (defmethod load-model (input (type (eql :gltf)) &key (generator (make-instance 'resource-generator))
                                                      (model (make-instance 'model)))

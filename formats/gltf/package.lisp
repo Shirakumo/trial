@@ -9,4 +9,5 @@
   (:export
    #:translate-track-pointer
    #:translate-effect
-   #:define-trigger-translation))
+   #:define-trigger-translation
+   #:translate-node))
