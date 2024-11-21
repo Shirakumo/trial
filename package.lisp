@@ -674,6 +674,8 @@
    #:disable
    #:local-id
    #:notice-update
+   #:lights
+   #:materials
    #:standard-renderable
    #:vertex-array
    #:vertex-arrays

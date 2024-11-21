@@ -86,6 +86,16 @@
   (do-lru-cache (material id (allocated-materials pass))
     (format stream " ~a~%" material)))
 
+(defmethod lights ((pass standard-render-pass))
+  (let ((lights ()))
+    (do-lru-cache (light id (allocated-lights pass) lights)
+      (push light lights))))
+
+(defmethod materials ((pass standard-render-pass))
+  (let ((materials ()))
+    (do-lru-cache (material id (allocated-materials pass) materials)
+      (push material materials))))
+
 (defmethod make-pass-shader-program ((pass standard-render-pass) (object renderable))
   (if (typep object 'standard-renderable)
       (call-next-method)
