@@ -96,22 +96,24 @@
                 (setf map source xm x ym y luminance i)))))))))
 
 (defun cubemap-direction (target u v)
-  (nvunit
-   (ecase target
-     ;; FIXME: uh, this isn't right, is it.
-     ((:+x :texture-cube-map-positive-x) (vec +1 v u))
-     ((:-x :texture-cube-map-negative-x) (vec -1 v u))
-     ((:+y :texture-cube-map-positive-y) (vec u +1 v))
-     ((:-y :texture-cube-map-negative-y) (vec u -1 v))
-     ((:+z :texture-cube-map-positive-z) (vec u v +1))
-     ((:-z :texture-cube-map-negative-z) (vec u v -1)))))
+  (let ((u (* 2 (- u 0.5)))
+        (v (* 2 (- v 0.5))))
+    (nvunit
+     (ecase target
+       ;; FIXME: uh, this isn't right, is it.
+       ((:+x :texture-cube-map-positive-x) (vec +1 v u))
+       ((:-x :texture-cube-map-negative-x) (vec -1 v u))
+       ((:+y :texture-cube-map-positive-y) (vec u +1 v))
+       ((:-y :texture-cube-map-negative-y) (vec u -1 v))
+       ((:+z :texture-cube-map-positive-z) (vec u v +1))
+       ((:-z :texture-cube-map-negative-z) (vec u v -1))))))
 
 (defun envmap-brightest-direction (envmap)
   (multiple-value-bind (map x y intensity)
-      (maximize-pixel-intensity (download-buffer-data (etypecase envmap
+      (maximize-pixel-luminance (download-buffer-data (etypecase envmap
                                                         (environment-map (resource envmap 'irrmap))
                                                         (texture envmap))
-                                                      NIL))
-    (let ((u (* 2 (- (/ x (width map)) 0.5)))
-          (v (* 2 (- (/ y (height map)) 0.5))))
+                                                      NIL :pixel-type :float))
+    (let ((u (/ x (width map)))
+          (v (/ y (height map))))
       (values (cubemap-direction (target map) u v) intensity))))
