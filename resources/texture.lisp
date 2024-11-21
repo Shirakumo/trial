@@ -182,16 +182,22 @@
   (apply #'download-buffer-data buffer (first (sources buffer)) args))
 
 (defmethod download-buffer-data ((buffer texture) (data null) &rest args &key (pixel-type (pixel-type buffer)) (pixel-format (pixel-format buffer)) (target (target buffer)) (level 0) &allow-other-keys)
-  (apply #'download-buffer-data buffer
-         (make-texture-source :pixel-data (make-array (* (width buffer) (or (height buffer) 1) (or (depth buffer) 1)
-                                                         (pixel-data-stride pixel-type pixel-format))
-                                                      :element-type '(unsigned-byte 8))
-                              :pixel-type pixel-type
-                              :pixel-format pixel-format
-                              :target target
-                              :level level
-                              :dst (list 0 0 0 (width buffer) (height buffer) (depth buffer)))
-         (remf* args :pixel-type :pixel-format :target :level)))
+  (flet ((make-source (target)
+           (make-texture-source :pixel-data (make-array (* (width buffer) (or (height buffer) 1) (or (depth buffer) 1)
+                                                           (pixel-data-stride pixel-type pixel-format))
+                                                        :element-type '(unsigned-byte 8))
+                                :pixel-type pixel-type
+                                :pixel-format pixel-format
+                                :target target
+                                :level level
+                                :dst (list 0 0 0 (width buffer) (height buffer) (depth buffer)))))
+    (let ((args (remf* args :pixel-type :pixel-format :target :level)))
+      (if (eql target :texture-cube-map)
+          (loop for target in '(:texture-cube-map-positive-x :texture-cube-map-negative-x
+                                :texture-cube-map-positive-y :texture-cube-map-negative-y
+                                :texture-cube-map-positive-z :texture-cube-map-negative-z)
+                collect (apply #'download-buffer-data buffer (make-source target) args))
+          (apply #'download-buffer-data buffer (make-source target) args)))))
 
 (defmethod download-buffer-data ((buffer texture) (data texture-source) &key)
   (mem:with-memory-region (region data)
