@@ -85,7 +85,7 @@
   entity)
 
 (defun construct-node (node gltf model generator)
-  (let ((entity (%construct-node node (meshes model) generator gltf)))
+  (let ((entity (%construct-node node gltf (meshes model) generator)))
     (when entity
       (loop for child across (gltf:children node)
             for child-entity = (construct-node child gltf model generator)
