@@ -110,7 +110,13 @@
 (defun reset-matrix (&optional (matrix (model-matrix)))
   (!meye matrix))
 
-(defun vec->screen (vec)
+(defun vec->screen (vec &optional (context *context*))
+  (let ((norm-pos (vec->clip vec)))
+    (vsetf norm-pos
+           (* (width context) (vx norm-pos))
+           (* (height context) (vy norm-pos)))))
+
+(defun vec->clip (vec)
   (let* ((clip-pos (n*m (projection-matrix) (n*m (view-matrix) (vec (vx vec)
                                                                     (vy vec)
                                                                     (vz vec)
@@ -118,11 +124,7 @@
          (w (vw clip-pos)))
     (if (= 0.0f0 w)
         (vec -1 -1 0)
-        (let* ((norm-pos (nv+ (nv* (vxy clip-pos) (/ 0.5f0 w)) 0.5f0))
-               (context *context*))
-          (vsetf norm-pos
-                 (* (width context) (vx norm-pos))
-                 (* (height context) (vy norm-pos)))))))
+        (nv+ (nv* (vxy clip-pos) (/ 0.5f0 w)) 0.5f0))))
 
 (defun screen->vec (vec &optional (z 0))
   ;; FIXME: this is completely useless lmao.

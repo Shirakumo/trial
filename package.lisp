@@ -2032,6 +2032,7 @@
    #:scale
    #:scale-by
    #:reset-matrix
+   #:vec->clip
    #:vec->screen
    #:screen->vec)
   ;; video.lisp
