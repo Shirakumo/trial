@@ -383,6 +383,7 @@
    #:define-support-function
    #:finish-hit
    #:collision-system-idx
+   #:collision-mask-p
    #:primitive
    #:primitive-entity
    #:primitive-material

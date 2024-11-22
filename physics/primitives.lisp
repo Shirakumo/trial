@@ -118,7 +118,7 @@
 (defparameter *collision-system-indices*
   (let ((arr (make-array 32 :initial-element ())))
     (dotimes (i 16 arr)
-      (setf (aref arr i) (format NIL "system-~d" i)))))
+      (setf (aref arr i) (list (format NIL "system-~d" i))))))
 
 (defun normalize-collision-system-name (name)
   (with-output-to-string (out)
@@ -130,7 +130,7 @@
                (T
                 (write-char (char-downcase char) out))))))
 
-(defun collision-system-idx (system-ish)
+(defun %collision-system-idx (system-ish)
   (etypecase system-ish
     (integer
      system-ish)
@@ -149,6 +149,14 @@
        (sequences:dosequence (system system-ish mask)
          (setf (ldb (byte 1 (collision-system-idx system)) mask) 1))))))
 
+(defun collision-system-idx (system-ish)
+  (%collision-system-idx system-ish))
+
+(define-compiler-macro collision-system-idx (&whole whole system-ish &environment env)
+  (if (constantp system-ish env)
+      `(load-time-value (%collision-system-idx ,system-ish))
+      whole))
+
 (defun (setf collision-system-idx) (index system-ish)
   (etypecase system-ish
     (integer
@@ -166,6 +174,10 @@
     (sequence
      (sequences:dosequence (system system-ish system-ish)
        (setf (collision-system-idx system) index)))))
+
+(declaim (inline collision-mask-p))
+(defun collision-mask-p (mask entity)
+  (logbitp (collision-system-idx mask) (collision-mask entity)))
 
 (defstruct primitive
   (entity NIL :type T)
@@ -193,6 +205,10 @@
 
 (defmethod (setf collision-mask) ((mask integer) (primitive primitive))
   (setf (primitive-collision-mask primitive) mask))
+
+(defmethod (setf collision-mask) ((system symbol) thing)
+  (setf (collision-mask thing) (collision-system-idx system))
+  system)
 
 (defmethod (setf collision-mask) ((systems sequence) thing)
   (setf (collision-mask thing) (collision-system-idx systems))
@@ -297,11 +313,12 @@
                            (:include ,super))
            ,@slots)
 
-         (defun ,constructor (&rest args &key location orientation &allow-other-keys)
-           (let* ((primitive (apply #',int-constructor (remf* args :location :orientation)))
+         (defun ,constructor (&rest args &key location orientation collision-mask &allow-other-keys)
+           (let* ((primitive (apply #',int-constructor (remf* args :location :orientation :collision-mask)))
                   (cache (primitive-global-bounds-cache primitive)))
              (when location (setf (location primitive) location))
              (when orientation (setf (orientation primitive) orientation))
+             (when collision-mask (setf (collision-mask primitive) collision-mask))
              (m<- (primitive-transform primitive) (primitive-local-transform primitive))
              (setf (global-bounds-cache-generator cache) primitive)
              (setf (global-bounds-cache-radius cache) (compute-radius primitive))
