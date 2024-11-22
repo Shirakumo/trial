@@ -204,8 +204,8 @@
     (let ((type (texture-source-pixel-type data))
           (format (texture-source-pixel-format data)))
       (gl:bind-texture (target buffer) (gl-name buffer))
-      (%gl:getn-tex-image (or (texture-source-target data) (target buffer)) (or (texture-source-level data) 0) format type
-                          (memory-region-size region) (memory-region-pointer region))))
+      (%gl:get-tex-image (or (texture-source-target data) (target buffer)) (or (texture-source-level data) 0) format type
+                         (memory-region-pointer region))))
   data)
 
 (defmethod print-object ((texture texture) stream)
