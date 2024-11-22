@@ -100,13 +100,12 @@
         (v (* 2 (- v 0.5))))
     (nvunit
      (ecase target
-       ;; FIXME: uh, this isn't right, is it.
-       ((:+x :texture-cube-map-positive-x) (vec +1 v u))
+       ((:+x :texture-cube-map-positive-x) (vec +1 v (- u)))
        ((:-x :texture-cube-map-negative-x) (vec -1 v u))
-       ((:+y :texture-cube-map-positive-y) (vec u +1 v))
+       ((:+y :texture-cube-map-positive-y) (vec u +1 (- v)))
        ((:-y :texture-cube-map-negative-y) (vec u -1 v))
        ((:+z :texture-cube-map-positive-z) (vec u v +1))
-       ((:-z :texture-cube-map-negative-z) (vec u v -1))))))
+       ((:-z :texture-cube-map-negative-z) (vec (- u) v -1))))))
 
 (defun envmap-brightest-direction (envmap)
   (multiple-value-bind (map x y intensity)
