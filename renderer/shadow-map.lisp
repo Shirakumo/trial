@@ -147,7 +147,8 @@
     (deallocate-shadow-maps light pass)))
 
 (defmethod notice-update :before ((light light) (pass standard-shadows-pass))
-  (cond ((and (cast-shadows-p light) (active-p light))
+  (cond ((and (cast-shadows-p light) (active-p light)
+              (setting :display :shadows))
          (allocate-shadow-maps light pass)
          (when (shadow-map light)
            (if (allocated-p (shadow-map-block pass))
@@ -161,27 +162,28 @@
 (defmethod cast-shadows-p ((entity standard-renderable)) T)
 
 (defmethod render-frame :before ((pass standard-shadows-pass) frame)
-  (let ((program (shadow-map-program pass))
-        (map (gl-name (shadow-map pass)))
-        (lights (shadow-map-lights pass)))
-    (activate (shadow-map-framebuffer pass))
-    (activate program)
-    (when (dirty-p (buffer-data (shadow-map-block pass)))
-      (with-buffer-tx (struct (shadow-map-block pass))
-        (loop for light across lights
-              do (when light (<- struct light)))
-        (setf (dirty-p struct) NIL)))
-    (with-depth-mask T
-      (dotimes (id (length lights))
-        (when (and (aref lights id) (in-view-p (aref lights id) T))
-          (setf (uniform program "shadow_map_id") id)
-          (%gl:framebuffer-texture-layer :framebuffer :depth-attachment map 0 id)
-          (gl:clear :depth-buffer)
-          (loop for (object) across frame
-                do (when (cast-shadows-p object)
-                     ;; TODO: we can also use in-view-p to eliminate objects
-                     ;;       outside the shadow map purview.
-                     (with-pushed-matrix ()
-                       (apply-transforms object)
-                       (render object program)))))))
-    (activate (framebuffer pass))))
+  (when (setting :display :shadows)
+    (let ((program (shadow-map-program pass))
+          (map (gl-name (shadow-map pass)))
+          (lights (shadow-map-lights pass)))
+      (activate (shadow-map-framebuffer pass))
+      (activate program)
+      (when (dirty-p (buffer-data (shadow-map-block pass)))
+        (with-buffer-tx (struct (shadow-map-block pass))
+          (loop for light across lights
+                do (when light (<- struct light)))
+          (setf (dirty-p struct) NIL)))
+      (with-depth-mask T
+        (dotimes (id (length lights))
+          (when (and (aref lights id) (in-view-p (aref lights id) T))
+            (setf (uniform program "shadow_map_id") id)
+            (%gl:framebuffer-texture-layer :framebuffer :depth-attachment map 0 id)
+            (gl:clear :depth-buffer)
+            (loop for (object) across frame
+                  do (when (cast-shadows-p object)
+                       ;; TODO: we can also use in-view-p to eliminate objects
+                       ;;       outside the shadow map purview.
+                       (with-pushed-matrix ()
+                         (apply-transforms object)
+                         (render object program)))))))
+      (activate (framebuffer pass)))))
