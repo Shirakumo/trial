@@ -116,8 +116,9 @@
                  nstart)))))))
 
 (defparameter *collision-system-indices*
-  (replace (make-array 32 :fill-pointer 3 :initial-element ())
-           '(("system-0") ("system-1") ("system-2"))))
+  (let ((arr (make-array 32 :initial-element ())))
+    (dotimes (i 16 arr)
+      (setf (aref arr i) (format NIL "system-~d" i)))))
 
 (defun normalize-collision-system-name (name)
   (with-output-to-string (out)
@@ -138,8 +139,10 @@
             (pos (position-if (lambda (names) (find name names :test #'string=))
                               *collision-system-indices*)))
        (unless pos
-         (setf pos (length *collision-system-indices*))
-         (vector-push (list name) *collision-system-indices*))
+         (setf pos (or (position NIL *collision-system-indices*)
+                       (error "No more free system indices to allocate ~s!~%  ~s"
+                              name *collision-system-indices*)))
+         (push name (aref *collision-system-indices* pos)))
        pos))
     (sequence
      (let ((mask 0))
@@ -159,7 +162,6 @@
        (when (and pos (/= pos index))
          (error "The collision system ~s is already assigned to index ~d!" system-ish pos))
        (push name (aref *collision-system-indices* index))
-       (setf (fill-pointer *collision-system-indices*) (1+ index))
        index))
     (sequence
      (sequences:dosequence (system system-ish system-ish)
