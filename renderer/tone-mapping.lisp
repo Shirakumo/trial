@@ -48,11 +48,11 @@
   (:shader-file (trial "tone-map/tumblin-rushmeier.glsl")))
 
 (define-shader-pass uchimura (tone-mapping-pass)
-  ((max-brightness :initarg :max-brightness :initform 1.0 :accessor max-brightness :uniform "m")
-   (contrast :initarg :contrast :initform 0.0 :accessor contrast :uniform "a")
-   (linear-start :initarg :linear-start :initform 0.0 :accessor linear-start :uniform "m")
-   (linear-length :initarg :linear-length :initform 0.01 :accessor linear-length :uniform "l")
-   (black-tightness-shape :initarg :black-tightness-shape :initform 1.0 :accessor black-tightness-shape :uniform "c")
+  ((max-brightness :initarg :max-brightness :initform 1.0 :accessor max-brightness :uniform "P")
+   (contrast :initarg :contrast :initform 1.0 :accessor contrast :uniform "a")
+   (linear-start :initarg :linear-start :initform 0.22 :accessor linear-start :uniform "m")
+   (linear-length :initarg :linear-length :initform 0.4 :accessor linear-length :uniform "l")
+   (black-tightness-shape :initarg :black-tightness-shape :initform 1.33 :accessor black-tightness-shape :uniform "c")
    (black-tightness-offset :initarg :black-tightness-offset :initform 0.0 :accessor black-tightness-offset :uniform "b"))
   (:shader-file (trial "tone-map/uchimura.glsl")))
 

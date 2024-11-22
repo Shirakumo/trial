@@ -714,7 +714,7 @@
    #:ld-max
    #:c-max
    #:uchimura
-   #:max-rightness
+   #:max-brightness
    #:contrast
    #:linear-start
    #:linear-length
