@@ -130,7 +130,7 @@
                (T
                 (write-char (char-downcase char) out))))))
 
-(defun %collision-system-idx (system-ish)
+(defun %collision-system-mask (system-ish)
   (etypecase system-ish
     (integer
      system-ish)
@@ -143,41 +143,42 @@
                        (error "No more free system indices to allocate ~s!~%  ~s"
                               name *collision-system-indices*)))
          (push name (aref *collision-system-indices* pos)))
-       pos))
+       (ash 1 pos)))
     (sequence
      (let ((mask 0))
        (sequences:dosequence (system system-ish mask)
-         (setf (ldb (byte 1 (collision-system-idx system)) mask) 1))))))
+         (setf mask (logior mask (%collision-system-mask system))))))))
 
-(defun collision-system-idx (system-ish)
-  (%collision-system-idx system-ish))
+(defun collision-system-mask (system-ish)
+  (%collision-system-mask system-ish))
 
-(define-compiler-macro collision-system-idx (&whole whole system-ish &environment env)
+(define-compiler-macro collision-system-mask (&whole whole system-ish &environment env)
   (if (constantp system-ish env)
-      `(load-time-value (%collision-system-idx ,system-ish))
+      `(load-time-value (%collision-system-mask ,system-ish))
       whole))
 
-(defun (setf collision-system-idx) (index system-ish)
+(defun (setf collision-system-mask) (mask system-ish)
   (etypecase system-ish
     (integer
-     (if (= index system-ish)
-         index
+     (if (< 0 (logand mask system-ish))
+         mask
          (error "Can't assign system index to another index!")))
     ((or string symbol)
      (let* ((name (normalize-collision-system-name system-ish))
             (pos (position-if (lambda (names) (find name names :test #'string=))
                               *collision-system-indices*)))
-       (when (and pos (/= pos index))
-         (error "The collision system ~s is already assigned to index ~d!" system-ish pos))
-       (push name (aref *collision-system-indices* index))
-       index))
+       (if pos
+           (unless (logbitp pos mask)
+             (error "The collision system ~s is already assigned to index ~d!" system-ish pos))
+           (push name (aref *collision-system-indices* (floor mask))))
+       mask))
     (sequence
      (sequences:dosequence (system system-ish system-ish)
-       (setf (collision-system-idx system) index)))))
+       (setf (collision-system-mask system) mask)))))
 
 (declaim (inline collision-mask-p))
 (defun collision-mask-p (mask entity)
-  (logbitp (collision-system-idx mask) (collision-mask entity)))
+  (logbitp (collision-system-mask mask) (collision-mask entity)))
 
 (defstruct primitive
   (entity NIL :type T)
@@ -207,11 +208,11 @@
   (setf (primitive-collision-mask primitive) mask))
 
 (defmethod (setf collision-mask) ((system symbol) thing)
-  (setf (collision-mask thing) (collision-system-idx system))
+  (setf (collision-mask thing) (collision-system-mask system))
   system)
 
 (defmethod (setf collision-mask) ((systems sequence) thing)
-  (setf (collision-mask thing) (collision-system-idx systems))
+  (setf (collision-mask thing) (collision-system-mask systems))
   systems)
 
 (defmethod (setf collision-mask) ((all (eql T)) thing)

@@ -382,7 +382,7 @@
    #:define-hit-detector
    #:define-support-function
    #:finish-hit
-   #:collision-system-idx
+   #:collision-system-mask
    #:collision-mask-p
    #:primitive
    #:primitive-entity

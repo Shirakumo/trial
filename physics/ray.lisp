@@ -19,10 +19,6 @@
 (defmethod (setf collision-mask) ((mask integer) (ray ray))
   (setf (ray-collision-mask ray) mask))
 
-(defmethod (setf collision-mask) ((systems sequence) (ray ray))
-  (setf (collision-mask ray) (collision-system-idx systems))
-  systems)
-
 (defun ray (location direction &key (collision-mask 1) ignore)
   (%ray location (vunit direction) collision-mask ignore))
 
