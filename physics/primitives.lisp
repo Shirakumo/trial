@@ -169,8 +169,8 @@
                               *collision-system-indices*)))
        (if pos
            (unless (logbitp pos mask)
-             (error "The collision system ~s is already assigned to index ~d!" system-ish pos))
-           (push name (aref *collision-system-indices* (floor mask))))
+             (error "The collision system ~s is already assigned to mask~%  ~32,'0b!" system-ish (ash 1 pos)))
+           (push name (aref *collision-system-indices* (floor (log mask 2)))))
        mask))
     (sequence
      (sequences:dosequence (system system-ish system-ish)
@@ -178,7 +178,7 @@
 
 (declaim (inline collision-mask-p))
 (defun collision-mask-p (mask entity)
-  (logbitp (collision-system-mask mask) (collision-mask entity)))
+  (< 0 (logand (collision-system-mask mask) (collision-mask entity))))
 
 (defstruct primitive
   (entity NIL :type T)
