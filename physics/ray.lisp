@@ -71,6 +71,7 @@
           (setf (hit-depth hit) (- (* tt transform-scaling)))
           (!v+* (hit-location hit) (ray-location a) (ray-direction a) (* tt transform-scaling))
           (setf (hit-a hit) a)
+          (setf (hit-b-detail hit) b)
           (setf (hit-b hit) (primitive-entity b))
           ;; Bring the normal back into global space
           (n*m4/3 (primitive-transform b) (hit-normal hit))
