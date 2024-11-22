@@ -382,6 +382,7 @@
    #:define-hit-detector
    #:define-support-function
    #:finish-hit
+   #:collision-system-idx
    #:primitive
    #:primitive-entity
    #:primitive-material
@@ -391,6 +392,7 @@
    #:define-primitive-type
    #:entity
    #:material
+   #:collision-mask
    #:sphere
    #:sphere-radius
    #:make-sphere

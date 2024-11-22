@@ -116,8 +116,8 @@
                  nstart)))))))
 
 (defparameter *collision-system-indices*
-  (replace (make-array 32 :fill-pointer 3)
-           '("system-0" "system-1" "system-2")))
+  (replace (make-array 32 :fill-pointer 3 :initial-element ())
+           '(("system-0") ("system-1") ("system-2"))))
 
 (defun normalize-collision-system-name (name)
   (with-output-to-string (out)
@@ -135,15 +135,35 @@
      system-ish)
     ((or string symbol)
      (let* ((name (normalize-collision-system-name system-ish))
-            (pos (position name *collision-system-indices* :test #'string=)))
+            (pos (position-if (lambda (names) (find name names :test #'string=))
+                              *collision-system-indices*)))
        (unless pos
          (setf pos (length *collision-system-indices*))
-         (vector-push name *collision-system-indices*))
+         (vector-push (list name) *collision-system-indices*))
        pos))
     (sequence
      (let ((mask 0))
        (sequences:dosequence (system system-ish mask)
          (setf (ldb (byte 1 (collision-system-idx system)) mask) 1))))))
+
+(defun (setf collision-system-idx) (index system-ish)
+  (etypecase system-ish
+    (integer
+     (if (= index system-ish)
+         index
+         (error "Can't assign system index to another index!")))
+    ((or string symbol)
+     (let* ((name (normalize-collision-system-name system-ish))
+            (pos (position-if (lambda (names) (find name names :test #'string=))
+                              *collision-system-indices*)))
+       (when (and pos (/= pos index))
+         (error "The collision system ~s is already assigned to index ~d!" system-ish pos))
+       (push name (aref *collision-system-indices* index))
+       (setf (fill-pointer *collision-system-indices*) (1+ index))
+       index))
+    (sequence
+     (sequences:dosequence (system system-ish system-ish)
+       (setf (collision-system-idx system) index)))))
 
 (defstruct primitive
   (entity NIL :type T)
