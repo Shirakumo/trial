@@ -37,7 +37,9 @@
 (defmethod initialize-instance ((context context) &key)
   (v:info :trial.backend.glfw "Creating context ~a" context)
   (handler-case
-      (call-next-method)
+      (progn (call-next-method)
+             (make-current context)
+             (trial::context-note-debug-info context))
     (glfw:glfw-error (e)
       (error 'trial:context-creation-error :message (glfw:message e) :context context))))
 
