@@ -200,7 +200,9 @@
            (v<- (global-bounds-cache-obb target) (global-bounds-cache-obb source))
            (v<- (global-bounds-cache-aabb target) (global-bounds-cache-aabb source)))))
 
+(defgeneric collision-mask (thing))
 (declaim (ftype (function (T) (values (unsigned-byte 32) &optional)) collision-mask))
+
 (defmethod collision-mask ((primitive primitive))
   (primitive-collision-mask primitive))
 
