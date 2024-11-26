@@ -31,30 +31,26 @@
   (emessage "Failed to access the file ~a. The file does not exist, cannot be accessed, or is corrupted." (file-error-pathname error)))
 
 (defmethod report-on-error ((error storage-condition))
-  (emessage "The application ran out of memory and cannot continue, sorry."))
+  (emessage "~a ran out of memory and cannot continue, sorry." +app-system+))
 
 #+sbcl
 (defmethod report-on-error ((error sb-sys:memory-fault-error))
-  (emessage "The application encountered a memory corruption and cannot continue, sorry."))
-
-#++
-(defmethod report-on-error ((error cffi:load-foreign-library-error))
-  (emessage "Failed to load a foreign library: ~a" error))
+  (emessage "~a encountered a memory corruption and cannot continue, sorry." +app-system+))
 
 (defmethod report-on-error ((error trial:thread-did-not-exit))
   :exit)
 
 (defmethod report-on-error ((error trial:context-creation-error))
-  (emessage "Failed to initialise OpenGL. This either means your system is not capable of running this game, or your driver is currently bugged.~@[The following error was generated:~% ~a~]"
-            (slot-value error 'message)))
+  (emessage "Failed to initialise OpenGL. This either means your system is not capable of running ~a, or your driver is currently bugged.~@[The following error was generated:~% ~a~]"
+            +app-system+ (slot-value error 'message)))
 
 (defmethod report-on-error ((error trial:shader-compilation-error))
-  (emessage "Failed to compile shaders. Please ensure your graphics card and drivers are up-to-date enough to run ~a" +app-system+))
+  (emessage "Failed to compile shaders. Please ensure your graphics card and drivers are up-to-date enough to run ~a." +app-system+))
 
 (defmethod report-on-error ((error gl:opengl-error))
   (case (cdr (%gl::opengl-error.error-code error))
     (:out-of-memory
-     (emessage "OpenGL ran out of memory. Your graphics card's or your computer's memory may be too small to run this game, sorry."))
+     (emessage "Ran out of graphics memory. Your graphics card's or your computer's memory may be too small to run ~a, sorry." +app-system+))
     (:invalid-operation
      ;; Ignoring this in the hopes it's a temporary issue that can just be ignored.
      :ignore)
@@ -62,7 +58,7 @@
      (funcall *error-report-hook* error))))
 
 (defmethod report-on-error ((error org.shirakumo.depot:depot-condition))
-  (emessage "A game resource file is corrupted and could not be read. Please verify your installation."))
+  (emessage "A ~a resource file is corrupted and could not be read. Please verify your installation." +app-system+))
 
 (defmethod report-on-error ((error cffi:load-foreign-library-error))
   (emessage "Failed to load a shared library (~a). Your system is either not capable of running ~a, or the shared library is corrupted."
