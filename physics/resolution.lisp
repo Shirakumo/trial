@@ -423,7 +423,7 @@
    (static-acceleration-structure :initform (org.shirakumo.fraf.trial.space.kd-tree:make-kd-tree) :accessor static-acceleration-structure)
    (pending-inserts :initform (make-array 128 :fill-pointer 0) :accessor pending-inserts)))
 
-(defmethod enter :before ((body rigidbody) (system accelerated-rigidbody-system))
+(defmethod enter :before ((body rigid-shape) (system accelerated-rigidbody-system))
   (cond ((= 0 (length (physics-primitives body)))
          (unless (find body (pending-inserts system))
            (vector-push-extend body (pending-inserts system))))
@@ -435,7 +435,7 @@
                for primitive across (physics-primitives body)
                do (3ds:enter primitive structure)))))
 
-(defmethod leave :after ((body rigidbody) (system accelerated-rigidbody-system))
+(defmethod leave :after ((body rigid-shape) (system accelerated-rigidbody-system))
   (unless (array-utils:vector-pop-element* (pending-inserts system) body)
     (loop with structure = (if (= 0 (inverse-mass body))
                                (static-acceleration-structure system)
@@ -454,12 +454,18 @@
                      do (3ds:update primitive (static-acceleration-structure system))))))
 
 (defmethod detect-hits ((system accelerated-rigidbody-system) other hits start end)
-  (setf start (detect-hits (static-acceleration-structure system) other hits start end))
-  (setf start (detect-hits (dynamic-acceleration-structure system) other hits start end)))
+  (flet ((try (thing)
+           (setf start (prune-hits hits start (detect-hits thing other hits start end)))))
+    (try (static-acceleration-structure system))
+    (try (dynamic-acceleration-structure system))
+    (try (global-primitives system))))
 
 (defmethod detect-hits (other (system accelerated-rigidbody-system) hits start end)
-  (setf start (detect-hits other (static-acceleration-structure system) hits start end))
-  (setf start (detect-hits other (dynamic-acceleration-structure system) hits start end)))
+  (flet ((try (thing)
+           (setf start (prune-hits hits start (detect-hits other thing hits start end)))))
+    (try (static-acceleration-structure system))
+    (try (dynamic-acceleration-structure system))
+    (try (global-primitives system))))
 
 (defmethod generate-hits ((system accelerated-rigidbody-system) hits start end)
   (declare (optimize speed))
