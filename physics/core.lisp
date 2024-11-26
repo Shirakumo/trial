@@ -327,7 +327,7 @@
           do (loop for force across (forces system)
                    do (apply-force force entity dt)))))
 
-(define-handler (physics-scene tick :after) (dt)
+(define-handler (physics-scene tick :before) (dt)
   (let ((system (physics-system physics-scene)))
     (integrate system dt)
     (let* ((hits (hits system))
