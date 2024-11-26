@@ -95,9 +95,13 @@
   (call-next-method (- value) renderer))
 
 (defmethod opengl:make-shader ((renderer renderer) &key vertex-shader fragment-shader)
-  (let ((vert (make-instance 'trial:shader :source vertex-shader
+  (let ((vert (make-instance 'trial:shader :source (format NIL "~a~%~a"
+                                                           (trial::glsl-version-header trial:*context*)
+                                                           vertex-shader)
                                            :type :vertex-shader))
-        (frag (make-instance 'trial:shader :source fragment-shader
+        (frag (make-instance 'trial:shader :source (format NIL "~a~%~a"
+                                                           (trial::glsl-version-header trial:*context*)
+                                                           fragment-shader)
                                            :type :fragment-shader)))
     (make-instance 'trial:shader-program :shaders (list vert frag))))
 
