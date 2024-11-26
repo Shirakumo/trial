@@ -148,3 +148,7 @@
       (declare (ignorable ,@args))
       ,@body)
     ,instance ,asset))
+
+(define-prefab-translator make-instance (instance asset class &rest args)
+  `(enter (make-instance ,class ,@args)
+          ,instance))
