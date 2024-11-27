@@ -469,7 +469,8 @@
    #:impart-collision-impact
    #:velocity-eps
    #:depth-eps
-   #:accelerated-rigidbody-system)
+   #:accelerated-rigidbody-system
+   #:dynamic-entity-p)
   ;; physics/rigidbody.lisp
   (:export
    #:rigid-shape
