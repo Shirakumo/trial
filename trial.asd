@@ -128,7 +128,7 @@
                              (:file "materials" :depends-on ((:.. "assets")))
                              (:file "particle-common" :depends-on ("standard-renderer"))
                              (:file "pbr" :depends-on ("standard-renderer" "shadow-map" "materials"))
-                             (:file "phong" :depends-on ("standard-renderer" "shadow-map"))
+                             (:file "phong" :depends-on ("standard-renderer" "shadow-map" "pbr"))
                              (:file "shadow-map" :depends-on ("standard-renderer"))
                              (:file "ssao" :depends-on ("standard-renderer"))
                              (:file "ssr" :depends-on ("standard-renderer" (:.. "effects")))
