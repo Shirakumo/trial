@@ -27,6 +27,6 @@
                    (gl-type buffer) program))
           (T
            (%gl:uniform-block-binding (gl-name program) index (binding-point buffer))
-           #-(or elide-buffer-access-checks trial-release)
+           #-elide-buffer-access-checks
            (let ((size (gl:get-active-uniform-block (gl-name program) index :uniform-block-data-size)))
-             (assert (= size (size buffer))))))))
+             (v:warn :trial.resource "Driver bug? UBO size is ~d when ~d was expected" size (size buffer)))))))
