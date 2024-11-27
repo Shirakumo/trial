@@ -115,7 +115,7 @@
                        do (reverse-hit hit))
                  nstart)))))))
 
-(defparameter *collision-system-indices*
+(define-global +collision-system-indices+
   (let ((arr (make-array 32 :initial-element ())))
     (dotimes (i 16 arr)
       (setf (aref arr i) (list (format NIL "system-~d" i))))))
@@ -137,12 +137,12 @@
     ((or string symbol)
      (let* ((name (normalize-collision-system-name system-ish))
             (pos (position-if (lambda (names) (find name names :test #'string=))
-                              *collision-system-indices*)))
+                              +collision-system-indices+)))
        (unless pos
-         (setf pos (or (position NIL *collision-system-indices*)
+         (setf pos (or (position NIL +collision-system-indices+)
                        (error "No more free system indices to allocate ~s!~%  ~s"
-                              name *collision-system-indices*)))
-         (push name (aref *collision-system-indices* pos)))
+                              name +collision-system-indices+)))
+         (push name (aref +collision-system-indices+ pos)))
        (ash 1 pos)))
     (sequence
      (let ((mask 0))
@@ -166,15 +166,20 @@
     ((or string symbol)
      (let* ((name (normalize-collision-system-name system-ish))
             (pos (position-if (lambda (names) (find name names :test #'string=))
-                              *collision-system-indices*)))
+                              +collision-system-indices+)))
        (if pos
            (unless (logbitp pos mask)
              (error "The collision system ~s is already assigned to mask~%  ~32,'0b!" system-ish (ash 1 pos)))
-           (push name (aref *collision-system-indices* (floor (log mask 2)))))
+           (push name (aref +collision-system-indices+ (floor (log mask 2)))))
        mask))
     (sequence
      (sequences:dosequence (system system-ish system-ish)
        (setf (collision-system-mask system) mask)))))
+
+(defun collision-mask-systems (mask)
+  (loop for i from 0 below (length +collision-system-indices+)
+        for systems = (aref +collision-system-indices+ i)
+        when (logbitp i mask) append systems))
 
 (declaim (inline collision-mask-p))
 (defun collision-mask-p (mask entity)
@@ -191,6 +196,14 @@
 
 (defmethod print-object ((primitive primitive) stream)
   (print-unreadable-object (primitive stream :type T :identity T)))
+
+(defmethod describe-object :after ((primitive primitive) stream)
+  (format stream "~&~%Collision Systems:~{~%  ~a~}"
+          (collision-mask-systems (primitive-collision-mask primitive)))
+  (format stream "~&~%Local Transform:~%")
+  (write-transform (primitive-local-transform primitive) stream)
+  (format stream "~&~%Global Transform:~%")
+  (write-transform (primitive-transform primitive) stream))
 
 (define-transfer primitive primitive-material primitive-local-transform primitive-collision-mask
   (:eval (let ((target (primitive-global-bounds-cache target))

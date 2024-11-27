@@ -9,6 +9,17 @@
 (defmethod shared-initialize :after ((body rigid-shape) slots &key physics-primitives)
   (when physics-primitives (setf (physics-primitives body) physics-primitives)))
 
+(defmethod describe-object :after ((shape rigid-shape) stream)
+  (format stream "~&~%Collision Systems:~{~%  ~a~}"
+          (collision-mask-systems (collision-mask shape)))
+  (format stream "~&~%Local Transform:~%")
+  (write-transform (tf shape) stream)
+  (format stream "~&~%Global Transform:~%")
+  (write-transform (global-transform-matrix shape) stream)
+  (format stream "~&~%Physics Primitives:")
+  (loop for primitive across (physics-primitives shape)
+        do (format stream "~%  ~a~{ ~a~}" primitive (collision-mask-systems (collision-mask primitive)))))
+
 (define-transfer rigid-shape
   (physics-primitives physics-primitives (lambda (p) (map-into (make-array (length p)) #'clone p))))
 

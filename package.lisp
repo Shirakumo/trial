@@ -383,6 +383,7 @@
    #:define-support-function
    #:finish-hit
    #:collision-system-mask
+   #:collision-mask-systems
    #:collision-mask-p
    #:primitive
    #:primitive-entity
