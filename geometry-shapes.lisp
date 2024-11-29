@@ -28,7 +28,7 @@
             (y (float y 0f0))
             (z (float z 0f0))
             (vec (vec3)))
-        (with-mesh-construction (v :attributes (location normal uv) :deduplicate NIL)
+        (with-mesh-construction (v :attributes (location normal uv))
           (macrolet ((vv (x y u v)
                        `(progn
                           (vsetf vec ,x ,y 0f0)
@@ -43,7 +43,7 @@
           (finalize-data)))))
 
   (defun make-triangle-mesh (w h &key (orientation :right) (x 0) (y 0) (z 0))
-    (with-mesh-construction (v :attributes (location normal uv) :deduplicate NIL)
+    (with-mesh-construction (v :attributes (location normal uv))
       (let ((l (- x (/ w 2)))
             (r (+ x (/ w 2)))
             (u (+ y (/ h 2)))
@@ -62,7 +62,7 @@
   (defun make-cube-mesh (size &key (x 0) (y 0) (z 0))
     (destructuring-bind (w h d) (enlist size size size)
       (let ((w (/ w 2)) (d (/ d 2)) (h (/ h 2)))
-        (with-mesh-construction (v :attributes (location normal uv) :deduplicate NIL)
+        (with-mesh-construction (v :attributes (location normal uv))
           (v (+ x w) (+ y h) (- z d) 0 1 0 1.0 0.0)
           (v (- x w) (+ y h) (- z d) 0 1 0 0.0 0.0)
           (v (- x w) (+ y h) (+ z d) 0 1 0 0.0 1.0)
@@ -137,7 +137,7 @@
   (defun make-sphere-mesh (size &key (segments 24) (x 0) (y 0) (z 0))
     (let ((lat segments) (lng segments)
           (off (vec x y z)))
-      (with-mesh-construction (v :attributes (location normal uv) :deduplicate NIL)
+      (with-mesh-construction (v :attributes (location normal uv))
         (loop for i from lat downto 1
               for lat0 = (* PI (- (/ (1- i) lat) 0.5))
               for lat1 = (* PI (- (/ i lat) 0.5))
@@ -164,7 +164,7 @@
         (finalize-data))))
 
   (defun make-disc-mesh (size &key (segments 32) (x 0) (y 0) (z 0))
-    (with-mesh-construction (v :attributes (location normal uv) :deduplicate NIL)
+    (with-mesh-construction (v :attributes (location normal uv))
       (loop with step = (/ (* 2 PI) segments)
             for i1 = (- step) then i2
             for i2 from 0 to (* 2 PI) by step
