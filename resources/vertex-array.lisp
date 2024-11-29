@@ -16,9 +16,11 @@
   (print-unreadable-object (array stream :type T :identity T)
     (format stream "~@[~a~]~:[~; ALLOCATED~]" (size array) (allocated-p array))))
 
-(defmethod shared-initialize :after ((array vertex-array) slots &key bindings (index-buffer NIL index-buffer-p))
+(defmethod shared-initialize :after ((array vertex-array) slots &key bindings (index-buffer NIL index-buffer-p) size)
   (when index-buffer-p
     (setf (index-buffer array) index-buffer))
+  ;; Set the size again explicitly since setting the index buffer can reset it
+  (when size (setf (size array) size))
   (setf (bindings array) bindings))
 
 (defmethod describe-object :after ((array vertex-array) stream)

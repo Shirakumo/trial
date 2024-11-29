@@ -163,7 +163,7 @@
                                      collect `(,vertex-data :index ,index :size ,size :offset ,(* 4 offset) :stride ,(* 4 stride)))
                      :size (if faces
                                (length faces)
-                               (truncate (length (vertex-data mesh)) (+ 3 3 2))))))
+                               (vertex-count mesh)))))
 
 (defmethod gl-source ((mesh mesh-data))
   `(glsl-toolkit:shader
