@@ -46,7 +46,8 @@
       (shader (gl:attach-shader program-id (gl-name shader)))))
   (gl:link-program program-id)
   (dolist (shader shaders)
-    (gl:detach-shader program-id (gl-name shader)))
+    (gl:detach-shader program-id (gl-name shader))
+    (deallocate shader))
   (unless (gl:get-program program-id :link-status)
     (error "Failed to link ~a: ~%~a"
            program (gl:get-program-info-log program-id)))
