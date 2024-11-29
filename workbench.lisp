@@ -18,7 +18,7 @@
 (define-pool workbench)
 
 (define-asset (workbench triangle) mesh
-    (with-mesh-construction (v finalize (location color))
+    (with-mesh-construction (v :attributes (location color))
       (v -0.5 -0.5 0.0 1 0 0 1)
       (v +0.5 -0.5 0.0 0 1 0 1)
       (v +0.0 +0.5 0.0 0 0 1 1)

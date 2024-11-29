@@ -3,7 +3,7 @@
 ;;;; Very fast FPS display. Focus is on reducing GPU load.
 
 (define-asset (trial fps-counter) mesh
-    (with-mesh-construction (v finalize (location uv) NIL)
+    (with-mesh-construction (v :attributes (location uv) :deduplicate NIL)
       (loop for x from 0 by 16
             repeat 6
             do (v (+ x 16) 16 0 0.1 1)

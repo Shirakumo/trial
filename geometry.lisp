@@ -344,7 +344,7 @@
                                 :vertex-form (vertex-form a)
                                 :vertex-attributes attributes))))
 
-(defmacro with-mesh-construction ((constructor &optional (finalizer 'finalize) (attributes '(location)) (deduplicate T)) &body body)
+(defmacro with-mesh-construction ((constructor &key (finalizer 'finalize) (attributes '(location)) (deduplicate T)) &body body)
   (let ((vertices (gensym "VERTICES"))
         (faces (gensym "FACES"))
         (face-table (gensym "FACE-TABLE"))

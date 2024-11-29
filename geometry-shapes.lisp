@@ -28,7 +28,7 @@
             (y (float y 0f0))
             (z (float z 0f0))
             (vec (vec3)))
-        (with-mesh-construction (v finalize (location normal uv))
+        (with-mesh-construction (v :attributes (location normal uv))
           (macrolet ((vv (x y u v)
                        `(progn
                           (vsetf vec ,x ,y 0f0)
@@ -43,7 +43,7 @@
           (finalize-data)))))
 
   (defun make-triangle-mesh (w h &key (orientation :right) (x 0) (y 0) (z 0))
-    (with-mesh-construction (v finalize (location normal uv))
+    (with-mesh-construction (v :attributes (location normal uv))
       (let ((l (- x (/ w 2)))
             (r (+ x (/ w 2)))
             (u (+ y (/ h 2)))
@@ -62,7 +62,7 @@
   (defun make-cube-mesh (size &key (x 0) (y 0) (z 0))
     (destructuring-bind (w h d) (enlist size size size)
       (let ((w (/ w 2)) (d (/ d 2)) (h (/ h 2)))
-        (with-mesh-construction (v finalize (location normal uv))
+        (with-mesh-construction (v :attributes (location normal uv))
           (v (+ x w) (+ y h) (- z d) 0 1 0 1.0 0.0)
           (v (- x w) (+ y h) (- z d) 0 1 0 0.0 0.0)
           (v (- x w) (+ y h) (+ z d) 0 1 0 0.0 1.0)
@@ -107,7 +107,7 @@
           (finalize-data)))))
   
   (defun make-quad-grid-mesh (size x-count z-count &key (x 0) (y 0) (z 0))
-    (with-mesh-construction (v finalize (location normal uv))
+    (with-mesh-construction (v :attributes (location normal uv))
       (loop for xi from 0 below x-count
             for xc from (* x-count size -0.5) by size
             do (loop for zi from 0 below z-count
@@ -123,7 +123,7 @@
       (finalize-data)))
 
   (defun make-line-grid-mesh (size w h &key (x 0) (y 0) (z 0))
-    (with-mesh-construction (v finalize (location))
+    (with-mesh-construction (v :attributes (location))
       (let ((w (/ w 2)) (h (/ h 2))
             (ws (/ w size)) (hs (/ h size)))
         (loop for _x from (- w) to w by ws
@@ -137,7 +137,7 @@
   (defun make-sphere-mesh (size &key (segments 24) (x 0) (y 0) (z 0))
     (let ((lat segments) (lng segments)
           (off (vec x y z)))
-      (with-mesh-construction (v finalize (location normal uv))
+      (with-mesh-construction (v :attributes (location normal uv))
         (loop for i from lat downto 1
               for lat0 = (* PI (- (/ (1- i) lat) 0.5))
               for lat1 = (* PI (- (/ i lat) 0.5))
@@ -164,7 +164,7 @@
         (finalize-data))))
 
   (defun make-disc-mesh (size &key (segments 32) (x 0) (y 0) (z 0))
-    (with-mesh-construction (v finalize (location normal uv))
+    (with-mesh-construction (v :attributes (location normal uv))
       (loop with step = (/ (* 2 PI) segments)
             for i1 = (- step) then i2
             for i2 from 0 to (* 2 PI) by step
@@ -174,7 +174,7 @@
       (finalize-data)))
 
   (defun make-cylinder-mesh (size height &key (segments 32) (x 0) (y 0) (z 0))
-    (with-mesh-construction (v finalize (location))
+    (with-mesh-construction (v :attributes (location))
       (loop with step = (/ (* 2 PI) segments)
             for i1 = (- step) then i2
             for i2 from 0 to (* 2 PI) by step
@@ -200,7 +200,7 @@
       (finalize-data)))
 
   (defun make-cone-mesh (size height &key (segments 32) (x 0) (y 0) (z 0))
-    (with-mesh-construction (v finalize (location))
+    (with-mesh-construction (v :attributes (location))
       (loop with step = (/ (* 2 PI) segments)
             for i1 = (- step) then i2
             for i2 from 0 to (* 2 PI) by step
@@ -215,7 +215,7 @@
       (finalize-data)))
 
   (defun make-tube-mesh (size height inner-size &key (segments 32) (x 0) (y 0) (z 0))
-    (with-mesh-construction (v finalize (location))
+    (with-mesh-construction (v :attributes (location))
       (loop with step = (/ (* 2 PI) segments)
             for i1 = (- step) then i2
             for i2 from 0 to (* 2 PI) by step
@@ -259,7 +259,7 @@
       (finalize-data)))
 
   (defun make-lines (points &key (default-color (vec 0 0 0 1)))
-    (with-mesh-construction (v finalize (location normal color))
+    (with-mesh-construction (v :attributes (location normal color))
       (loop for (a b) on points by #'cddr
             while b
             do (destructuring-bind (a ac) (enlist a default-color)
@@ -281,7 +281,7 @@
     (make-instance 'mesh-data :faces (make-array 0 :element-type '(unsigned-byte 16))))
 
 (define-asset (trial point) mesh
-    (with-mesh-construction (v finalize (location normal))
+    (with-mesh-construction (v :attributes (location normal))
       (v 0 0 0 0 1 0)
       (finalize-data :vertex-form :points)))
 
@@ -310,7 +310,7 @@
     (make-triangle-mesh 0.0 0.0))
 
 (define-asset (trial triangle) mesh
-    (with-mesh-construction (v finalize (location normal uv color))
+    (with-mesh-construction (v :attributes (location normal uv color))
       (v -0.5 -0.5 0.0 0 0 -1 0.0 0.0 1 0 0 1)
       (v +0.5 -0.5 0.0 0 0 -1 0.1 0.0 0 1 0 1)
       (v +0.0 +0.5 0.0 0 0 -1 0.5 0.1 0 0 1 1)
@@ -325,7 +325,7 @@
                       (list (vec 0 0 0) (vec 0 0 1 1)) (list (vec 0 0 10) (vec 0 0 1 1)))))
 
 (define-asset (trial 2d-axes) mesh
-    (with-mesh-construction (v finalize (location))
+    (with-mesh-construction (v :attributes (location))
       ;; KLUDGE: for whatever reason using most-positive/negative-single-float does not work.
       (v 0 -1000000 0)
       (v 0 +1000000 0)
