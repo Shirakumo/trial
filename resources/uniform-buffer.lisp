@@ -29,4 +29,5 @@
            (%gl:uniform-block-binding (gl-name program) index (binding-point buffer))
            #-elide-buffer-access-checks
            (let ((size (gl:get-active-uniform-block (gl-name program) index :uniform-block-data-size)))
-             (v:warn :trial.resource "Driver bug? UBO size is ~d when ~d was expected" size (size buffer)))))))
+             (when (/= size (size buffer))
+               (v:warn :trial.resource "Driver bug? UBO size is ~d when ~d was expected" size (size buffer))))))))
