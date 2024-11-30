@@ -104,11 +104,10 @@
              :swizzle (or swizzle source-swizzle (infer-swizzle-format (pixel-format (first sources))))
              (remf* texture-args :type :target :swizzle :internal-format :resource :texture-class)))))
 
-(defmethod compile-resources ((generator image-loader) sources &rest args &key (source-file-type "png"))
+(defmethod compile-resources ((generator image-loader) sources &rest args &key (source-file-type "png") force)
   (loop for target in (enlist sources)
         for source = (make-pathname :type source-file-type :defaults target)
-        do (when (and (probe-file source)
-                      (trial:recompile-needed-p target source))
+        do (when (or force (and (probe-file source) (trial:recompile-needed-p target source)))
              (apply #'transcode source T target T args))))
 
 (defmacro define-native-image-transcoder (type)
