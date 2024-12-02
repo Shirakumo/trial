@@ -2018,7 +2018,9 @@
    #:pixel-type->cl-type
    #:gl-extension-p
    #:when-gl-extension
-   #:gl-extension-case)
+   #:gl-extension-case
+   #:random*
+   #:random-normal)
   ;; transforms.lisp
   (:export
    #:*view-matrix*
@@ -2065,13 +2067,13 @@
           #:trial
           #:org.shirakumo.fraf.math))
 
-  (let ((symbols ()))
-    (do-symbols (symb '#:cl+trial) (push symb symbols))
-    (export symbols '#:cl+trial))
-
   (defpackage #:trial-user
     (:nicknames #:org.shirakumo.fraf.trial.user)
     (:use #:cl+trial)))
+
+(let ((symbols ()))
+  (do-symbols (symb '#:cl+trial) (push symb symbols))
+  (export symbols '#:cl+trial))
 
 (defpackage #:org.shirakumo.fraf.trial.mpr
   (:use #:cl #:org.shirakumo.fraf.math)

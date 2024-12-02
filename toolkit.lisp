@@ -1510,3 +1510,11 @@ Rotation: ~7,2@f, ~7,2@f, ~7,2@f, ~7,2@f"
            (write-transform tf stream))
        (error ()
          (write-matrix transform stream))))))
+
+(declaim (inline random*))
+(defun random* (min max)
+  (+ min (random (- max min))))
+
+(declaim (inline random*))
+(defun random-normal (&optional (normal (vec3)) (direction +vy+) (theta F-PI))
+  (sampling:surface-normal direction theta normal))
