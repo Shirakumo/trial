@@ -21,8 +21,9 @@
 (defmethod (setf strength) (strength (layer animation-layer))
   (let ((clip (animation-layer-clip layer))
         (strength (clamp 0.0 (float strength 0f0) 1.0)))
-    (sample (animation-layer-pose layer) clip (+ (start-time clip) (* strength (duration clip))))
-    (setf (animation-layer-strength layer) strength)))
+    (when (/= strength (animation-layer-strength layer))
+      (sample (animation-layer-pose layer) clip (+ (start-time clip) (* strength (duration clip))))
+      (setf (animation-layer-strength layer) strength))))
 
 (defclass layer-controller ()
   ((animation-layers :initform (make-hash-table :test 'equalp) :accessor animation-layers)
