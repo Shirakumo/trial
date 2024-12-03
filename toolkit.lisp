@@ -279,6 +279,10 @@
   (let ((array (make-array (length args) :element-type '(signed-byte 32))))
     (map-into array #'truncate args)))
 
+(defun u16-vec (&rest args)
+  (let ((array (make-array (length args) :element-type '(unsigned-byte 16))))
+    (map-into array #'truncate args)))
+
 (defmacro xor (a &rest options)
   (cond ((null options) a)
         (T
