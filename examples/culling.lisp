@@ -24,7 +24,7 @@
   :title "Frustum Culling"
   :description "Test workbench for camera frustum culling."
   (enter (make-instance 'display-controller) scene)
-  (enter (make-instance 'culling-camera) scene)
+  (enter (make-instance 'culling-camera :near-plane 1 :far-plane 100) scene)
   (enter (make-instance 'render-pass) scene)
   (observe! (visible-count (camera scene)) :title "Visible")
   (observe! (culled-count (camera scene)) :title "Culled")
