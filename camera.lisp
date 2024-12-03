@@ -145,6 +145,13 @@
 (defmethod project-view ((camera 3d-camera))
   (look-at (location camera) (vec 0 0 0) +vy3+))
 
+(defmethod project-view :after ((camera 3d-camera))
+  (let ((inv (minv *view-matrix*))
+        (frustum (frustum camera)))
+    (declare (dynamic-extent inv))
+    (!m* (primitive-transform frustum) inv (primitive-local-transform frustum))
+    (invalidate-global-bounds-cache frustum)))
+
 (defmethod screen-area ((null null) (camera 3d-camera))
   (let ((x (* 2 (near-plane camera) (tan (* 0.5 (fov camera)))))
         (bsize (bsize camera)))
@@ -217,12 +224,11 @@
           (* 0.5 (+ f1 f2 f3 f4 f5 f6)))))))
 
 (defmethod in-view-p ((entity global-bounds-cached-entity) (camera 3d-camera))
-  T
-  #++
-  (let ((box (make-box :bsize (global-bsize entity) :location (global-location entity))))
-    (declare (dynamic-extent box))
-    (!m* (primitive-transform box) *view-matrix* (primitive-local-transform box))
-    (intersects-p box (frustum camera))))
+  (let* ((box (make-box :bsize (global-bsize entity) :location (global-location entity)))
+         (hit (make-hit)) (hits (make-array 1 :initial-element hit)))
+    (declare (dynamic-extent box hits hit))
+    (< 0 (org.shirakumo.fraf.trial.gjk:detect-hits box (frustum camera) hits 0 1))
+    T))
 
 (defclass target-camera (3d-camera)
   ((target :initarg :target :initform (vec3 0) :accessor target)

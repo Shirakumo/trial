@@ -475,17 +475,16 @@
 ;; Frustums are just boxes skewed by a linear transform. We provide these shorthands
 ;; here to allow easier construction of frustum testing primitives.
 (defun make-frustum-box (left right bottom top near far)
-  (let ((transform (mfrustum left right bottom top near far)))
+  (let ((transform (nminv (mfrustum left right bottom top near far))))
     (make-box :local-transform transform
               :transform (mcopy transform)
-              :bsize (vec (* 0.5 (abs (- right left)))
-                          (* 0.5 (abs (- top bottom)))
-                          (* 0.5 (abs (- far near)))))))
+              :bsize (vec3 1))))
 
 (defun make-perspective-box (fovy aspect near far)
-  (let* ((fh (* (the single-float (tan (* (/ fovy 360.0) F-PI))) near))
-         (fw (* fh aspect)))
-    (make-frustum-box (- fw) fw (- fh) fh near far)))
+  (let ((transform (nminv (mperspective fovy aspect near far))))
+    (make-box :local-transform transform
+              :transform (mcopy transform)
+              :bsize (vec3 1))))
 
 ;; NOTE: the cylinder is centred at 0,0,0 and points Y-up. the "height" is the half-height.
 (define-primitive-type cylinder
