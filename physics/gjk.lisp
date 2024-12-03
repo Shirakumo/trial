@@ -114,7 +114,7 @@
         0.0
         (abs (v. (nvunit dir) s0)))))
 
-(defun detect-hits (a b hits start end)
+(defun detect-hits (a b hits start end &optional (epa T))
   (declare (type trial:primitive a b))
   (declare (type (unsigned-byte 32) start end))
   (declare (type simple-vector hits))
@@ -125,7 +125,9 @@
         (dir (point)) (s0 (point)) (s1 (point)) (s2 (point)) (s3 (point)))
     (declare (dynamic-extent dir s0 s1 s2 s3))
     (cond ((and (%gjk a b dir s0 s1 s2 s3)
-                (epa s0 s1 s2 s3 a b hit))
+                (if epa (epa s0 s1 s2 s3 a b hit) T))
+           (unless epa
+             (vsetf (trial:hit-normal hit) 0 1 0))
            (trial:finish-hit hit a b)
            (1+ start))
           (T
