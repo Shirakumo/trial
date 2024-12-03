@@ -131,7 +131,10 @@
 
 (defclass 3d-camera (camera)
   ((fov :initarg :fov :initform 75.0 :accessor fov)
-   (frustum :initform (make-perspective-box 1.0 1.0 0.1 1.0) :accessor frustum)))
+   (frustum :initform (make-convex-mesh :vertices (f32-vec -1 -1 -1  +1 -1 -1  +1 +1 -1  -1 +1 -1
+                                                           -1 -1 +1  +1 -1 +1  +1 +1 +1  -1 +1 +1)
+                                        :faces (u16-vec 0 1 2  2 3 0  4 5 6  6 7 4))
+            :accessor frustum)))
 
 (defmethod (setf fov) :after (val (camera 3d-camera))
   (let ((bsize (bsize camera)))
@@ -139,7 +142,21 @@
 
 (defmethod setup-perspective ((camera 3d-camera) width height)
   (perspective-projection (fov camera) (/ (max 1 width) (max 1 height)) (near-plane camera) (far-plane camera))
-  (setf (frustum camera) (make-perspective-box (fov camera) (/ (max 1 width) (max height)) (near-plane camera) (far-plane camera))))
+  (let ((inv (minv *projection-matrix*))
+        (tmp (vec4))
+        (verts (convex-mesh-vertices (frustum camera))))
+    (declare (dynamic-extent inv tmp))
+    (with-fast-matref (m inv)
+      (flet ((invert (v)
+               (let ((w (/ (+ (* (vx v) (m 3 0)) (* (vy v) (m 3 1)) (* (vz v) (m 3 2)) (m 3 3)))))
+                 (n*m inv (vsetf tmp (* (vx v) w) (* (vy v) w) (* (vz v) w) w)))))
+        (loop for v in (list #.(vec -1 -1 -1) #.(vec +1 -1 -1) #.(vec +1 +1 -1) #.(vec -1 +1 -1)
+                             #.(vec -1 -1 +1) #.(vec +1 -1 +1) #.(vec +1 +1 +1) #.(vec -1 +1 +1))
+              for i from 0 by 3
+              do (invert v)
+                 (setf (aref verts (+ i 0)) (vx tmp))
+                 (setf (aref verts (+ i 1)) (vy tmp))
+                 (setf (aref verts (+ i 2)) (vz tmp)))))))
 
 (defmethod focal-point ((camera 3d-camera))
   #.(vec 0 0 0))
@@ -188,17 +205,10 @@
           (* 0.5 (+ f1 f2 f3 f4 f5 f6)))))))
 
 (defmethod in-view-p ((entity sized-entity) (camera 3d-camera))
-  T
-  #++
-  (let ((box (make-box :bsize (bsize entity))))
-    (declare (dynamic-extent box))
-    (let* ((matrix (meye 4))
-           (*model-matrix* matrix))
-      (declare (dynamic-extent matrix))
-      (apply-transforms entity)
-      (n*m *view-matrix* matrix)
-      (!m* (primitive-transform box) matrix (primitive-local-transform box))
-      (intersects-p box (frustum camera)))))
+  (let* ((box (make-box :bsize (global-bsize entity) :location (global-location entity)))
+         (hit (make-hit)) (hits (make-array 1 :initial-element hit)))
+    (declare (dynamic-extent box hits hit))
+    (< 0 (org.shirakumo.fraf.trial.gjk:detect-hits box (frustum camera) hits 0 1 NIL))))
 
 (defmethod screen-area ((entity global-bounds-cached-entity) (camera 3d-camera))
   (with-vec (x y z) (the *vec3 (global-bsize entity))
@@ -229,8 +239,7 @@
   (let* ((box (make-box :bsize (global-bsize entity) :location (global-location entity)))
          (hit (make-hit)) (hits (make-array 1 :initial-element hit)))
     (declare (dynamic-extent box hits hit))
-    (< 0 (org.shirakumo.fraf.trial.gjk:detect-hits box (frustum camera) hits 0 1))
-    T))
+    (< 0 (org.shirakumo.fraf.trial.gjk:detect-hits box (frustum camera) hits 0 1 NIL))))
 
 (defclass target-camera (3d-camera)
   ((target :initarg :target :initform (vec3 0) :accessor target)
