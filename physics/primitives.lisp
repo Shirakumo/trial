@@ -472,20 +472,6 @@
            (if (< 0 (vy3 dir)) (vy3 bsize) (- (vy3 bsize)))
            (if (< 0 (vz3 dir)) (vz3 bsize) (- (vz3 bsize))))))
 
-;; Frustums are just boxes skewed by a linear transform. We provide these shorthands
-;; here to allow easier construction of frustum testing primitives.
-(defun make-frustum-box (left right bottom top near far)
-  (let ((transform (nminv (mfrustum left right bottom top near far))))
-    (make-box :local-transform transform
-              :transform (mcopy transform)
-              :bsize (vec3 1))))
-
-(defun make-perspective-box (fovy aspect near far)
-  (let ((transform (nminv (mperspective fovy aspect near far))))
-    (make-box :local-transform transform
-              :transform (mcopy transform)
-              :bsize (vec3 1))))
-
 ;; NOTE: the cylinder is centred at 0,0,0 and points Y-up. the "height" is the half-height.
 (define-primitive-type cylinder
     ((radius 1.0 :type single-float)
