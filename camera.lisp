@@ -28,10 +28,12 @@
   (setup-perspective camera (width ev) (height ev)))
 
 (defmethod (setf near-plane) :after (val (camera camera))
-  (setup-perspective camera))
+  (let ((bsize (bsize camera)))
+    (setup-perspective camera (max 1 (vx bsize)) (max 1 (vy bsize)))))
 
 (defmethod (setf far-plane) :after (val (camera camera))
-  (setup-perspective camera))
+  (let ((bsize (bsize camera)))
+    (setup-perspective camera (max 1 (vx bsize)) (max 1 (vy bsize)))))
 
 (defmethod setup-perspective :before ((camera camera) w h)
   (reset-matrix *projection-matrix*))
