@@ -6,8 +6,6 @@
 
 (define-transfer trigger-volume active-p triggered-p)
 
-(defmethod in-view-p ((entity trigger-volume) camera) NIL)
-
 (defgeneric activate-trigger (target trigger))
 
 (defmethod awake-p ((entity trigger-volume))

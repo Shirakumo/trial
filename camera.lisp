@@ -209,13 +209,6 @@
               (f6 (vlength (vc (v- p3 p1) (v- p5 p1)))))
           (* 0.5 (+ f1 f2 f3 f4 f5 f6)))))))
 
-(defmethod in-view-p ((entity sized-entity) (camera 3d-camera))
-  T #++
-  (let* ((box (make-box :bsize (global-bsize entity) :location (global-location entity)))
-         (hit (make-hit)) (hits (make-array 1 :initial-element hit)))
-    (declare (dynamic-extent box hits hit))
-    (< 0 (org.shirakumo.fraf.trial.gjk:detect-hits box (frustum camera) hits 0 1 NIL))))
-
 (defmethod screen-area ((entity global-bounds-cached-entity) (camera 3d-camera))
   (with-vec (x y z) (the *vec3 (global-bsize entity))
     (let ((p1 (vec (- x) (- y) (- z)))
@@ -241,12 +234,25 @@
               (f6 (vlength (vc (v- p3 p1) (v- p5 p1)))))
           (* 0.5 (+ f1 f2 f3 f4 f5 f6)))))))
 
+(defmethod in-view-p ((entity sized-entity) (camera 3d-camera))
+  (let ((box (make-box :bsize (global-bsize entity) :location (global-location entity))))
+    (in-view-p box camera)))
+
 (defmethod in-view-p ((entity global-bounds-cached-entity) (camera 3d-camera))
-  T #++
-  (let* ((box (make-box :bsize (global-bsize entity) :location (global-location entity)))
-         (hit (make-hit)) (hits (make-array 1 :initial-element hit)))
-    (declare (dynamic-extent box hits hit))
-    (< 0 (org.shirakumo.fraf.trial.gjk:detect-hits box (frustum camera) hits 0 1 NIL))))
+  (let ((box (make-box :bsize (global-bsize entity) :location (global-location entity))))
+    (declare (dynamic-extent box))
+    (in-view-p box camera)))
+
+(defmethod in-view-p ((entity rigid-shape) camera)
+  (loop for primitive across (physics-primitives entity)
+        thereis (in-view-p primitive camera)))
+
+(defmethod in-view-p ((primitive primitive) (camera 3d-camera))
+  (let* ((hit (make-hit)) (hits (make-array 1 :initial-element hit)))
+    (declare (dynamic-extent hits hit))
+    (< 0 (org.shirakumo.fraf.trial.gjk:detect-hits primitive (frustum camera) hits 0 1 NIL))))
+
+(defmethod in-view-p ((primitive all-space) (camera camera)) T)
 
 (defclass target-camera (3d-camera)
   ((target :initarg :target :initform (vec3 0) :accessor target)
