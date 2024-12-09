@@ -139,7 +139,7 @@
     ;; Second body needs to invert the direction.
     (let ((entity (contact-b contact))
           (velocity-change (contact-b-velocity-change contact))
-          (rotation-change (contact-a-rotation-change contact))
+          (rotation-change (contact-b-rotation-change contact))
           (orig-inv-mass (shiftf (contact-a-inverse-mass contact) 0f0)))
       (unless (= 0.0 (contact-b-inverse-mass contact))
         ;; Compute contained impulse here
