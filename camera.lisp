@@ -27,13 +27,17 @@
   (vsetf (bsize camera) (* 0.5 (width ev)) (* 0.5 (height ev)))
   (setup-perspective camera (width ev) (height ev)))
 
-(defmethod (setf near-plane) :after (val (camera camera))
-  (let ((bsize (bsize camera)))
-    (setup-perspective camera (max 1 (vx bsize)) (max 1 (vy bsize)))))
+(defmethod (setf near-plane) :around (val (camera camera))
+  (when (/= val (near-plane camera))
+    (call-next-method)
+    (let ((bsize (bsize camera)))
+      (setup-perspective camera (max 1 (vx bsize)) (max 1 (vy bsize))))))
 
-(defmethod (setf far-plane) :after (val (camera camera))
-  (let ((bsize (bsize camera)))
-    (setup-perspective camera (max 1 (vx bsize)) (max 1 (vy bsize)))))
+(defmethod (setf far-plane) :around (val (camera camera))
+  (when (/= val (far-plane camera))
+    (call-next-method)
+    (let ((bsize (bsize camera)))
+      (setup-perspective camera (max 1 (vx bsize)) (max 1 (vy bsize))))))
 
 (defmethod setup-perspective :before ((camera camera) w h)
   (reset-matrix *projection-matrix*))
@@ -136,12 +140,15 @@
                                         :faces (u16-vec 0 1 2  2 3 0  4 5 6  6 7 4))
             :accessor frustum)))
 
-(defmethod (setf fov) :after (val (camera 3d-camera))
-  (let ((bsize (bsize camera)))
-    (setup-perspective camera (max 1 (vx bsize)) (max 1 (vy bsize)))))
+(defmethod (setf fov) :around (val (camera 3d-camera))
+  (when (/= (fov camera) val)
+    (call-next-method)
+    (let ((bsize (bsize camera)))
+      (setup-perspective camera (max 1 (vx bsize)) (max 1 (vy bsize))))))
 
 (defmethod setup-perspective ((camera 3d-camera) width height)
   (perspective-projection (fov camera) (/ (max 1 width) (max 1 height)) (near-plane camera) (far-plane camera))
+  ;; Compute the view frustum edge points
   (let ((inv (minv *projection-matrix*))
         (tmp (vec4))
         (verts (convex-mesh-vertices (frustum camera))))
@@ -154,9 +161,7 @@
                              #.(vec -1 -1 +1) #.(vec +1 -1 +1) #.(vec +1 +1 +1) #.(vec -1 +1 +1))
               for i from 0 by 3
               do (invert v)
-                 (setf (aref verts (+ i 0)) (vx tmp))
-                 (setf (aref verts (+ i 1)) (vy tmp))
-                 (setf (aref verts (+ i 2)) (vz tmp)))))))
+                 (replace verts (varr tmp) :start1 i))))))
 
 (defmethod focal-point ((camera 3d-camera))
   #.(vec 0 0 0))
