@@ -329,11 +329,13 @@
 
 (define-handler (physics-scene tick :before) (dt)
   (let ((system (physics-system physics-scene)))
-    (integrate system dt)
     (let* ((hits (hits system))
            (end (generate-hits system hits 0 (length hits))))
       (when (< 0 end)
         (resolve-hits system hits 0 end dt)))))
+
+(define-handler (physics-scene post-tick :before) (dt)
+  (integrate (physics-system physics-scene) dt))
 
 (defmethod detect-hits ((scene physics-scene) other hits start end)
   (detect-hits (physics-system scene) other hits start end))
