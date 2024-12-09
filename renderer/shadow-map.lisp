@@ -71,7 +71,7 @@
    (shadow-map-framebuffer :reader shadow-map-framebuffer))
   (:shader-file (trial "renderer/standard-shadows-pass.glsl")))
 
-(defmethod initialize-instance :after ((pass standard-shadows-pass) &key (max-shadow-casters 18) (shadow-map-resolution (or (setting :display :shadow-map-resolution) 2048)))
+(defmethod initialize-instance :after ((pass standard-shadows-pass) &key (max-shadow-casters 18) (shadow-map-resolution (setting* 2048 :display :shadow-map-resolution)))
   (setf (shadow-map-lights pass) (make-array max-shadow-casters :initial-element NIL))
   (setf (slot-value pass 'shadow-map-block) (make-instance 'uniform-buffer :binding NIL :struct (make-instance 'shadow-map-block :size max-shadow-casters)))
   (let* ((texture (make-instance 'texture :width shadow-map-resolution :height shadow-map-resolution
@@ -148,7 +148,7 @@
 
 (defmethod notice-update :before ((light light) (pass standard-shadows-pass))
   (cond ((and (cast-shadows-p light) (active-p light)
-              (setting :display :shadows))
+              (setting* T :display :shadows))
          (allocate-shadow-maps light pass)
          (when (shadow-map light)
            (if (allocated-p (shadow-map-block pass))
@@ -162,7 +162,7 @@
 (defmethod cast-shadows-p ((entity standard-renderable)) T)
 
 (defmethod render-frame :before ((pass standard-shadows-pass) frame)
-  (when (setting :display :shadows)
+  (when (setting* T :display :shadows)
     (let ((program (shadow-map-program pass))
           (map (gl-name (shadow-map pass)))
           (lights (shadow-map-lights pass)))
