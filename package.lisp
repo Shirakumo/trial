@@ -1081,6 +1081,16 @@
    #:debug-point
    #:debug-line
    #:debug-orientation
+   #:debug-text
+   #:debug-box
+   #:debug-sphere
+   #:debug-ellipsoid
+   #:debug-cylinder
+   #:debug-cone
+   #:debug-pill
+   #:debug-triangles
+   #:debug-matrix
+   #:debug-vertex-array
    #:debug-clear)
   ;; deferred.lisp
   (:export
