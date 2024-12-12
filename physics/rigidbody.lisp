@@ -50,8 +50,12 @@
         do (invalidate-global-bounds-cache primitive)))
 
 (defmethod bsize ((entity rigid-shape))
+  (multiple-value-bind (bsize center) (aabb entity)
+    (nv+ (nvabs center) bsize)))
+
+(defmethod aabb ((entity rigid-shape))
   (let ((vmin (vec3)) (vmax (vec3))
-        (bsize (vec3)))
+        (bsize (vec3)) (center (vec3)))
     (declare (dynamic-extent vmin vmax))
     (when (< 0 (length (physics-primitives entity)))
       (loop for primitive across (physics-primitives entity)
@@ -65,8 +69,8 @@
              (v<- bsize most-positive-single-float))
             (T
              (nv* (!v- bsize vmax vmin) 0.5)
-             (assert (v/= bsize 0)))))
-    bsize))
+             (!v+ center vmin bsize))))
+    (values bsize center)))
 
 (defmethod bradius ((entity rigid-shape))
   (float (loop for primitive across (physics-primitives entity)

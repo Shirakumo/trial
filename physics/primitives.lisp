@@ -255,6 +255,9 @@
 (defmethod global-bsize ((primitive primitive) &optional target)
   (global-bsize (primitive-global-bounds-cache primitive) target))
 
+(defmethod aabb ((primitive primitive))
+  (values (global-bsize primitive) (global-location primitive)))
+
 (defmethod location ((primitive primitive))
   (mcol3 (primitive-local-transform primitive) 3))
 
