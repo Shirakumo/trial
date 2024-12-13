@@ -205,6 +205,9 @@
   (format stream "~&~%Global Transform:~%")
   (write-transform (primitive-transform primitive) stream))
 
+(defmethod 3ds:group ((object primitive))
+  (primitive-entity object))
+
 (define-transfer primitive primitive-material primitive-local-transform primitive-collision-mask
   (:eval (let ((target (primitive-global-bounds-cache target))
                (source (primitive-global-bounds-cache source)))
