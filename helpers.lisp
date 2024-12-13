@@ -9,17 +9,6 @@
 
 (defclass dynamic-renderable (renderable) ())
 
-(defgeneric global-location (entity &optional target))
-(defgeneric global-bsize (entity &optional target))
-;; Returns (MIN . MAX)
-(defgeneric global-bbox (entity))
-
-(defmethod global-bbox (object)
-  (let ((location (global-location object))
-        (bsize (global-bsize object)))
-    (cons (v- location bsize)
-          (v+ location bsize))))
-
 (defclass located-entity (transformed entity)
   ((location :initarg :location :initform (vec 0 0 0) :reader location :reader 3ds:location)))
 
@@ -430,13 +419,3 @@ void main(){
 
 (defclass basic-node (transformed-entity array-container)
   ())
-
-(defmethod global-bbox ((node basic-node))
-  (if (= 0 (length node))
-      (cons (global-location node) (global-location node))
-      (let ((min (vec3 most-positive-single-float))
-            (max (vec3 most-negative-single-float)))
-        (sequences:dosequence (child node (cons min max))
-          (destructuring-bind (child-min . child-max) (global-bbox child)
-            (nvmin min child-min)
-            (nvmax max child-max))))))

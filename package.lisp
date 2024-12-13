@@ -1358,12 +1358,18 @@
    #:element-type)
   ;; global-bounds-cache.lisp
   (:export
+   #:location
+   #:orientation
+   #:bsize
+   #:bradius
+   #:compute-bounding-box
+   #:compute-bounding-sphere
    #:global-transform-matrix
    #:global-location
    #:global-orientation
    #:global-bsize
-   #:global-bbox
-   #:global-radius
+   #:global-bounding-box
+   #:global-bounding-sphere
    #:invalidate-global-bounds-cache
    #:global-bounds-cache
    #:make-global-bounds-cache
@@ -1374,9 +1380,6 @@
    #:hash-table-container)
   ;; helpers.lisp
   (:export
-   #:global-location
-   #:global-bsize
-   #:global-bbox
    #:located-entity
    #:location
    #:sized-entity

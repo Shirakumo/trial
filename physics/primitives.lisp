@@ -252,11 +252,11 @@
 (defmethod global-orientation ((primitive primitive) &optional (quat (quat)))
   (!qfrom-mat quat (primitive-transform primitive)))
 
-(defmethod global-bsize ((primitive primitive) &optional target)
-  (global-bsize (primitive-global-bounds-cache primitive) target))
+(defmethod global-bounding-box ((primitive primitive) &optional (location (vec3)) bsize)
+  (global-bounding-box (primitive-global-bounds-cache primitive) location bsize))
 
-(defmethod aabb ((primitive primitive))
-  (values (global-bsize primitive) (global-location primitive)))
+(defmethod global-bounding-sphere ((primitive primitive) &optional (location (vec3)))
+  (global-bounding-sphere (primitive-global-bounds-cache primitive) location))
 
 (defmethod location ((primitive primitive))
   (mcol3 (primitive-local-transform primitive) 3))
@@ -289,10 +289,16 @@
   (global-location (primitive-global-bounds-cache primitive)))
 
 (defmethod 3ds:bsize ((primitive primitive))
-  (global-bsize (primitive-global-bounds-cache primitive)))
+  (global-bounds-cache-aabb (primitive-global-bounds-cache primitive)))
 
 (defmethod 3ds:radius ((primitive primitive))
-  (global-radius (primitive-global-bounds-cache primitive)))
+  (global-bounds-cache-radius (primitive-global-bounds-cache primitive)))
+
+(defmethod 3ds:bounding-box ((primitive primitive))
+  (global-bounding-box (primitive-global-bounds-cache primitive)))
+
+(defmethod 3ds:bounding-sphere ((primitive primitive))
+  (global-bounding-sphere (primitive-global-bounds-cache primitive)))
 
 (defmethod 3ds:group ((primitive primitive))
   (primitive-entity primitive))
@@ -343,8 +349,12 @@
              (when collision-mask (setf (collision-mask primitive) collision-mask))
              (m<- (primitive-transform primitive) (primitive-local-transform primitive))
              (setf (global-bounds-cache-generator cache) primitive)
-             (setf (global-bounds-cache-radius cache) (compute-radius primitive))
-             (v<- (global-bounds-cache-obb cache) (compute-bsize primitive))
+             (multiple-value-bind (center bsize) (compute-bounding-box primitive)
+               (setf (global-bounds-cache-box-offset cache) center)
+               (v<- (global-bounds-cache-obb cache) bsize))
+             (multiple-value-bind (center radius) (compute-bounding-sphere primitive)
+               (setf (global-bounds-cache-sphere-offset cache) center)
+               (setf (global-bounds-cache-radius cache) radius))
              ,@body
              primitive))
 
@@ -358,7 +368,7 @@
                  collect `(defmethod (setf ,slot) (value (primitive ,name))
                             (setf (,(mksym *package* name '- slot) primitive) value)
                             (let ((cache (primitive-global-bounds-cache primitive)))
-                              (setf (global-bounds-cache-radius cache) (compute-radius primitive))
+                              (setf (global-bounds-cache-radius cache) (compute-bradius primitive))
                               (v<- (global-bounds-cache-obb cache) (compute-bsize primitive)))
                             value))))))
 
@@ -371,11 +381,11 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~f" (radius primitive))))
 
-(defmethod compute-bsize ((primitive sphere))
-  (vec3 (sphere-radius primitive)))
+(defmethod compute-bounding-box ((primitive sphere))
+  (values (vec3 0) (vec3 (sphere-radius primitive))))
 
-(defmethod compute-radius ((primitive sphere))
-  (sphere-radius primitive))
+(defmethod compute-bounding-sphere ((primitive sphere))
+  (values (vec3 0) (sphere-radius primitive)))
 
 (defmethod sample-volume ((primitive sphere) &optional vec)
   (sampling:sphere (sphere-radius primitive) vec))
@@ -392,12 +402,12 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~a" (radius primitive))))
 
-(defmethod compute-bsize ((primitive ellipsoid))
-  (ellipsoid-radius primitive))
+(defmethod compute-bounding-box ((primitive ellipsoid))
+  (values (vec3 0) (ellipsoid-radius primitive)))
 
-(defmethod compute-radius ((primitive ellipsoid))
+(defmethod compute-bounding-sphere ((primitive ellipsoid))
   (let ((r (ellipsoid-radius primitive)))
-    (max (vx r) (vy r) (vz r))))
+    (values (vec3 0) (max (vx r) (vy r) (vz r)))))
 
 (defmethod sample-volume ((primitive ellipsoid) &optional vec)
   (sampling:sphere (ellipsoid-radius primitive) vec))
@@ -415,18 +425,19 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~a ~f" (normal primitive) (offset primitive))))
 
-(defmethod compute-bsize ((primitive plane))
-  (cond ((v= +vx3+ (vabs (plane-normal primitive)))
-         (vec3 1.0 most-positive-single-float most-positive-single-float))
-        ((v= +vy3+ (vabs (plane-normal primitive)))
-         (vec3 most-positive-single-float 1.0 most-positive-single-float))
-        ((v= +vz3+ (vabs (plane-normal primitive)))
-         (vec3 most-positive-single-float most-positive-single-float 1.0))
-        (T ;; The plane is slightly tilted, so its bsize is infinite.
-         (vec3 most-positive-single-float most-positive-single-float most-positive-single-float))))
+(defmethod compute-bounding-box ((primitive plane))
+  (values (vec3 0)
+          (cond ((v= +vx3+ (vabs (plane-normal primitive)))
+                 (vec3 1.0 most-positive-single-float most-positive-single-float))
+                ((v= +vy3+ (vabs (plane-normal primitive)))
+                 (vec3 most-positive-single-float 1.0 most-positive-single-float))
+                ((v= +vz3+ (vabs (plane-normal primitive)))
+                 (vec3 most-positive-single-float most-positive-single-float 1.0))
+                (T ;; The plane is slightly tilted, so its bsize is infinite.
+                 (vec3 most-positive-single-float)))))
 
-(defmethod compute-radius ((primitive plane))
-  most-positive-single-float)
+(defmethod compute-bounding-sphere ((primitive plane))
+  (values (vec3 0) most-positive-single-float))
 
 (define-support-function plane (dir next)
   (let ((denom (v. (plane-normal primitive) dir)))
@@ -437,8 +448,8 @@
 (define-primitive-type (half-space plane)
     ())
 
-(defmethod compute-bsize ((primitive half-space))
-  (vec3 most-positive-single-float))
+(defmethod compute-bounding-box ((primitive half-space))
+  (values (vec3 0) (vec3 most-positive-single-float)))
 
 (define-support-function half-space (dir next)
   ;; TODO: implement
@@ -446,11 +457,11 @@
 
 (define-primitive-type all-space ())
 
-(defmethod compute-radius ((primitive all-space))
-  most-positive-single-float)
+(defmethod compute-bounding-sphere ((primitive all-space))
+  (values (vec3 0) most-positive-single-float))
 
-(defmethod compute-bsize ((primitive all-space))
-  (vec3 most-positive-single-float))
+(defmethod compute-bounding-box ((primitive all-space))
+  (values (vec3 0) (vec3 most-positive-single-float)))
 
 ;; NOTE: the box is centred at 0,0,0 and the bsize is the half-size along each axis.
 (define-primitive-type box
@@ -462,11 +473,11 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~a" (bsize primitive))))
 
-(defmethod compute-bsize ((primitive box))
-  (vcopy (box-bsize primitive)))
+(defmethod compute-bounding-box ((primitive box))
+  (values (vec3 0) (box-bsize primitive)))
 
-(defmethod compute-radius ((primitive box))
-  (vlength (box-bsize primitive)))
+(defmethod compute-bounding-sphere ((primitive box))
+  (values (vec3 0) (vlength (box-bsize primitive))))
 
 (defmethod sample-volume ((primitive box) &optional vec)
   (sampling:box (box-bsize primitive) vec))
@@ -489,14 +500,14 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~f ~f" (radius primitive) (height primitive))))
 
-(defmethod compute-bsize ((primitive cylinder))
-  (vec3 (cylinder-radius primitive)
-        (cylinder-height primitive)
-        (cylinder-radius primitive)))
+(defmethod compute-bounding-box ((primitive cylinder))
+  (values (vec3 0) (vec3 (cylinder-radius primitive)
+                         (cylinder-height primitive)
+                         (cylinder-radius primitive))))
 
-(defmethod compute-radius ((primitive cylinder))
-  (sqrt (+ (expt (cylinder-radius primitive) 2)
-           (expt (cylinder-height primitive) 2))))
+(defmethod compute-bounding-sphere ((primitive cylinder))
+  (values (vec3 0) (sqrt (+ (expt (cylinder-radius primitive) 2)
+                            (expt (cylinder-height primitive) 2)))))
 
 (defmethod sample-volume ((primitive cylinder) &optional vec)
   (sampling:cylinder (cylinder-radius primitive) (cylinder-height primitive) +vy+ vec))
@@ -537,13 +548,13 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~f ~f" (radius primitive) (height primitive))))
 
-(defmethod compute-bsize ((primitive pill))
-  (vec3 (pill-radius primitive)
-        (+ (pill-radius primitive) (pill-height primitive))
-        (pill-radius primitive)))
+(defmethod compute-bounding-box ((primitive pill))
+  (values (vec3 0) (vec3 (pill-radius primitive)
+                         (+ (pill-radius primitive) (pill-height primitive))
+                         (pill-radius primitive))))
 
-(defmethod compute-radius ((primitive pill))
-  (+ (pill-height primitive) (pill-radius primitive)))
+(defmethod compute-bounding-sphere ((primitive pill))
+  (values (vec3 0) (+ (pill-height primitive) (pill-radius primitive))))
 
 (defmethod sample-volume ((primitive pill) &optional vec)
   (sampling:pill (pill-radius primitive) (pill-height primitive) +vy+ vec))
@@ -566,7 +577,7 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~a ~a ~a" (a primitive) (b primitive) (c primitive))))
 
-(defmethod compute-bsize ((primitive triangle))
+(defmethod compute-bounding-box ((primitive triangle))
   (let ((vmin (vec3 most-positive-single-float))
         (vmax (vec3 most-negative-single-float)))
     (declare (dynamic-extent vmin))
@@ -576,12 +587,19 @@
       (test (triangle-a primitive))
       (test (triangle-b primitive))
       (test (triangle-c primitive))
-      (nv* (nv- vmax vmin) 0.5))))
+      (let* ((bsize (nv* (nv- vmax vmin)))
+             (center (nv+ vmin bsize)))
+        (values center bsize)))))
 
-(defmethod compute-radius ((primitive triangle))
-  (sqrt (max (vsqrlength (triangle-a primitive))
-             (vsqrlength (triangle-b primitive))
-             (vsqrlength (triangle-c primitive)))))
+(defmethod compute-bounding-sphere ((primitive triangle))
+  (let ((center (nv* (v+ (triangle-a primitive)
+                         (triangle-b primitive)
+                         (triangle-c primitive))
+                     1/3)))
+    (values center
+            (max (distance center (triangle-a primitive))
+                 (distance center (triangle-b primitive))
+                 (distance center (triangle-c primitive))))))
 
 (defmethod sample-volume ((primitive triangle) &optional vec)
   (sampling:triangle (triangle-a primitive) (triangle-b primitive) (triangle-c primitive) vec))
@@ -620,30 +638,11 @@
     (org.shirakumo.fraf.manifolds:transform-mesh vertices (mtranslation (v- center)))
     (mtranslation center)))
 
-(defmethod compute-bsize ((primitive general-mesh))
-  (let ((vmin (vec3 most-positive-single-float))
-        (vmax (vec3 most-negative-single-float))
-        (tmp (vec3))
-        (vertices (general-mesh-vertices primitive)))
-    (declare (dynamic-extent vmin tmp))
-    (loop for i from 0 below (length vertices) by 3
-          do (vsetf tmp
-                    (aref vertices (+ i 0))
-                    (aref vertices (+ i 1))
-                    (aref vertices (+ i 2)))
-             (nvmin vmin tmp)
-             (nvmax vmax tmp))
-    (nv* (v- vmax vmin) 0.5)))
+(defmethod compute-bounding-box ((primitive general-mesh))
+  (org.shirakumo.fraf.manifolds:bounding-box (general-mesh-vertices primitive)))
 
-(defmethod compute-radius ((primitive general-mesh))
-  ;; NOTE: because we cannot move the location of the fitting sphere to be
-  ;;       different from the location of the primitive, this radius is not
-  ;;       necessarily the ideal radius.
-  (sqrt (loop with vertices = (general-mesh-vertices primitive)
-              for i from 0 below (length vertices) by 3
-              maximize (+ (expt (aref vertices (+ i 0)) 2)
-                          (expt (aref vertices (+ i 1)) 2)
-                          (expt (aref vertices (+ i 2)) 2)))))
+(defmethod compute-bounding-sphere ((primitive general-mesh))
+  (org.shirakumo.fraf.manifolds:bounding-sphere (general-mesh-vertices primitive)))
 
 (define-primitive-type (convex-mesh general-mesh)
     ()

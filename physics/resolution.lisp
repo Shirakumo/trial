@@ -468,9 +468,10 @@
                  (let ((color (object-color (hit-a hit) (hit-b hit))))
                    (flet ((debug-primitive (primitive)
                             ;; Oriented bounding box in green.
-                            (debug-box (vec3 0) (compute-bsize primitive)
-                                       :transform (primitive-transform primitive)
-                                       :color (vec3 0 1 0))
+                            (multiple-value-bind (c b) (compute-bounding-box primitive)
+                              (debug-box c b
+                                         :transform (primitive-transform primitive)
+                                         :color (vec3 0 1 0)))
                             ;; Collider geometry in object color.
                             (debug-draw primitive :color color)))
                      (debug-primitive a)

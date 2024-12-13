@@ -49,34 +49,11 @@
   (loop for primitive across (physics-primitives entity)
         do (invalidate-global-bounds-cache primitive)))
 
-(defmethod bsize ((entity rigid-shape))
-  (multiple-value-bind (bsize center) (aabb entity)
-    (nv+ (nvabs center) bsize)))
+(defmethod compute-bounding-box ((entity rigid-shape))
+  (compute-bounding-box (physics-primitives entity)))
 
-(defmethod aabb ((entity rigid-shape))
-  (let ((vmin (vec3)) (vmax (vec3))
-        (bsize (vec3)) (center (vec3)))
-    (declare (dynamic-extent vmin vmax))
-    (when (< 0 (length (physics-primitives entity)))
-      (loop for primitive across (physics-primitives entity)
-            do (let ((bsize (global-bsize primitive bsize))
-                     (location (location primitive)))
-                 (nvmin vmin (v- location bsize))
-                 (nvmax vmax (v+ location bsize))))
-      (cond ((or (<= most-positive-single-float (vx vmax))
-                 (<= most-positive-single-float (vy vmax))
-                 (<= most-positive-single-float (vz vmax)))
-             (v<- bsize most-positive-single-float))
-            (T
-             (nv* (!v- bsize vmax vmin) 0.5)
-             (!v+ center vmin bsize))))
-    (values bsize center)))
-
-(defmethod bradius ((entity rigid-shape))
-  (float (loop for primitive across (physics-primitives entity)
-               for radius = (+ (vlength (location primitive)) (3ds:radius primitive))
-               maximize radius)
-         0f0))
+(defmethod compute-bounding-sphere ((entity rigid-shape))
+  (compute-bounding-sphere (physics-primitives entity)))
 
 (defmethod (setf physics-primitives) ((primitive primitive) (entity rigid-shape))
   (setf (physics-primitives entity) (vector primitive)))
@@ -87,8 +64,12 @@
 
 (defmethod (setf physics-primitives) :after ((primitives vector) (entity rigid-shape))
   (%update-rigidbody-cache entity)
-  (setf (global-bounds-cache-radius (global-bounds-cache entity)) (bradius entity))
-  (setf (global-bounds-cache-obb (global-bounds-cache entity)) (bsize entity)))
+  (multiple-value-bind (center radius) (compute-bounding-sphere primitives)
+    (setf (global-bounds-cache-sphere-offset (global-bounds-cache entity)) center)
+    (setf (global-bounds-cache-radius (global-bounds-cache entity)) radius))
+  (multiple-value-bind (center bsize) (compute-bounding-box primitives)
+    (setf (global-bounds-cache-box-offset (global-bounds-cache entity)) center)
+    (setf (global-bounds-cache-obb (global-bounds-cache entity)) bsize)))
 
 (defmethod (setf physics-primitives) :around ((primitives vector) (entity rigid-shape))
   (let ((primitives (if (find 'general-mesh primitives :key #'type-of)
@@ -109,8 +90,7 @@
       (0 (sampling:map-samples vec (lambda (vec) (global-location entity vec))))
       (1 (sample-volume (aref primitives 0) vec))
       (T ;; With multiple volumes we have to fall back to rejection sampling.
-       (let ((loc (global-location entity))
-             (bsize (global-bsize entity)))
+       (multiple-value-bind (loc bsize) (global-bounding-box)
          (flet ((generate (vec)
                   (!vrand vec loc bsize))
                 (test (vec)
@@ -120,10 +100,10 @@
            (sampling:rejection-sample #'generate #'test vec)))))))
 
 (defmethod %update-rigidbody-cache ((entity rigid-shape))
-  (setf (global-bounds-cache-dirty-p (global-bounds-cache entity)) T)
   (let ((*model-matrix* (transform-matrix entity)))
     (!meye *model-matrix*)
     (apply-transforms entity))
+  (setf (global-bounds-cache-dirty-p (global-bounds-cache entity)) T)
   (loop for primitive across (physics-primitives entity)
         do (!m* (primitive-transform primitive)
                 (transform-matrix entity)
@@ -135,6 +115,11 @@
 
 (defmethod detect-hits ((entity rigid-shape) other hits start end)
   (detect-hits (physics-primitives entity) other hits start end))
+
+(defmethod global-transform-matrix ((entity rigid-shape) &optional target)
+  (if target
+      (m<- target (transform-matrix entity))
+      (transform-matrix entity)))
 
 (defclass rigidbody (rigid-shape)
   ((rotation :initform (vec 0 0 0) :reader rotation)

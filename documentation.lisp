@@ -90,3 +90,140 @@ non-graphical. The first represented character is Space (#32).")
 
   (asset (trial 2d-axes)
     "A line in each axis direction, each infinitely long from the origin."))
+
+(docs:define-docs
+  (function location
+    "Accesses the local relative location of the entity.
+
+Note that the global location may be impacted by inherited transforms.
+
+See GLOBAL-LOCATION")
+
+  (function orientation
+    "Accesses the local relative orientation of the entity.
+
+Note that the global orientation may be impacted by inherited
+transforms.
+
+See GLOBAL-ORIENTATION")
+
+  (function bsize
+    "Accesses the local bounding box size of the entity.
+
+Each dimension is axis-aligned and designates the distance from the
+center along that dimension to the face of the box.
+
+Note that the global bounding box may be impacted by inherited
+transforms.
+
+See GLOBAL-BSIZE")
+
+  (function bradius
+    "Accesses the local bounding sphere radius of the entity.
+
+Note that the global radius may be impacted by inherited transforms.
+
+See GLOBAL-BRADIUS")
+
+  (function compute-bounding-box
+    "Compute a bounding box for the entity relative to its location as a center,bsize tuple.
+
+Falls back on (vec3 0),BSIZE
+
+See LOCATION
+See BSIZE")
+
+  (function compute-bounding-sphere
+    "Compute a bounding sphere for the entity relative to its location as a center,radius tuple.
+
+Falls back on (vec3 0),BRADIUS
+
+See LOCATION
+See BRADIUS")
+
+  (function global-transform-matrix
+    "Return the global transform matrix of the entity.
+
+Stores the result in the optional argument and returns it.
+
+Defaults to using APPLY-TRANSFORMS on the entity to compute the
+matrix.
+
+See APPLY-TRANSFORMS")
+
+  (function global-location
+    "Return the global location of the entity.
+
+Stores the result in the optional argument and returns it.
+
+Defaults to using the GLOBAL-TRANSFORM-MATRIX.
+
+See LOCATION
+See GLOBAL-TRANSFORM-MATRIX")
+
+  (function global-orientation
+    "Return the global orientation of the entity.
+
+Stores the result in the optional argument and returns it.
+
+Defaults to using the GLOBAL-TRANSFORM-MATRIX.
+
+See ORIENTATION
+See GLOBAL-TRANSFORM-MATRIX")
+  
+  (function global-bsize
+    "ReturnCompute the global bounding box size of the entity relative to its global location.
+
+Stores the result in the optional argument and returns it.
+
+Defaults to using the local BSIZE and transforming it by the
+GLOBAL-TRANSFORM-MATRIX.
+
+See BSIZE
+See GLOBAL-LOCATION
+See GLOBAL-TRANSFORM-MATRIX
+See GLOBAL-BOUNDING-BOX")
+  
+  (function global-bradius
+    "Return the global bounding sphere radius of the entity relative to its global location.
+
+Stores the result in the optional argument and returns it.
+
+Defaults to using the local BRADIUS and transforming it by the
+GLOBAL-TRANSFORM-MATRIX.
+
+See BRADIUS
+See GLOBAL-LOCATION
+See GLOBAL-TRANSFORM-MATRIX
+See GLOBAL-BOUNDING-SPHERE")
+  
+  (function global-bounding-box
+    "Return the global bounding box of the entity.
+
+This may give a tighter bound than using GLOBAL-LOCATION and
+GLOBAL-BSIZE, as the center of the bounding box may be offset
+from the entity's location.
+
+Stores the result in the optional arguments and returns them.
+
+Defaults to using GLOBAL-LOCATION and GLOBAL-BSIZE.
+Also works for sequences, using each element's global bounding box.
+
+See GLOBAL-LOCATION
+See GLOBAL-BSIZE")
+  
+  (function global-bounding-sphere
+    "Return the global bounding sphere of the entity.
+
+This may give a tighter bound than using GLOBAL-LOCATION and
+GLOBAL-RADIUS, as the center of the bounding sphere may be offset
+from the entity's location.
+
+Stores the location in the optional argument and returns it and the
+radius.
+
+Defaults to using GLOBAL-LOCATION and GLOBAL-BRADIUS.
+Also works for sequences, using each element's global bounding sphere.
+
+See GLOBAL-LOCATION
+See GLOBAL-BRADIUS"))
