@@ -1,5 +1,9 @@
 name: examples
-on: [create, workflow_dispatch]
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'examples-*'
 permissions:
   contents: write
 jobs:
