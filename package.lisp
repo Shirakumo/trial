@@ -909,6 +909,25 @@
   ;; bag.lisp
   (:export
    #:bag)
+  ;; bounds.lisp
+  (:export
+   #:location
+   #:orientation
+   #:bsize
+   #:bradius
+   #:compute-bounding-box
+   #:compute-bounding-sphere
+   #:global-transform-matrix
+   #:global-location
+   #:global-orientation
+   #:global-bsize
+   #:global-bounding-box
+   #:global-bounding-sphere
+   #:invalidate-global-bounds-cache
+   #:global-bounds-cache
+   #:make-global-bounds-cache
+   #:update-global-bounds-cache
+   #:global-bounds-cached-entity)
   ;; camera.lisp
   (:export
    #:camera
@@ -1356,25 +1375,6 @@
    #:define-gl-struct
    #:gl-vector
    #:element-type)
-  ;; global-bounds-cache.lisp
-  (:export
-   #:location
-   #:orientation
-   #:bsize
-   #:bradius
-   #:compute-bounding-box
-   #:compute-bounding-sphere
-   #:global-transform-matrix
-   #:global-location
-   #:global-orientation
-   #:global-bsize
-   #:global-bounding-box
-   #:global-bounding-sphere
-   #:invalidate-global-bounds-cache
-   #:global-bounds-cache
-   #:make-global-bounds-cache
-   #:update-global-bounds-cache
-   #:global-bounds-cached-entity)
   ;; hash-table-container.lisp
   (:export
    #:hash-table-container)
