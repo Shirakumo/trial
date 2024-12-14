@@ -228,7 +228,9 @@ void main(){
 (defmethod debug-draw ((cache global-bounds-cache) &key (color #.(vec 1 0 0)))
   (when (global-bounds-cache-dirty-p cache)
     (update-global-bounds-cache cache))
-  (debug-box (global-bounds-cache-location cache) (global-bounds-cache-aabb cache)
+  (debug-box (v+ (global-bounds-cache-location cache)
+                 (global-bounds-cache-box-offset cache))
+             (global-bounds-cache-aabb cache)
              :color color :transform #.(meye 4)))
 
 (defmethod debug-draw ((primitive box) &rest args &key &allow-other-keys)
