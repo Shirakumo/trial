@@ -225,9 +225,18 @@ void main(){
                               :z (if (typep point 'vec2) 0.0 (vz point))
                               :scale scale))
 
-(defmethod debug-draw ((cache global-bounds-cache) &key (color #.(vec 1 0 0)))
+(defmethod debug-draw ((cache global-bounds-cache) &key (color #.(vec 1 0 0)) draw-obb draw-sphere)
   (when (global-bounds-cache-dirty-p cache)
     (update-global-bounds-cache cache))
+  (when draw-obb
+    (debug-box (global-bounds-cache-box-offset cache)
+               (global-bounds-cache-obb cache)
+               :color #.(vec 0 0 1) :transform (global-transform-matrix cache)))
+  (when draw-sphere
+    (debug-sphere (v+ (global-bounds-cache-location cache)
+                      (global-bounds-cache-sphere-offset cache))
+                  (global-bounds-cache-radius cache)
+                  :color #.(vec 0 1 0) :transform #.(meye 4)))
   (debug-box (v+ (global-bounds-cache-location cache)
                  (global-bounds-cache-box-offset cache))
              (global-bounds-cache-aabb cache)

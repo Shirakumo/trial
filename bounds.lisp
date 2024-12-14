@@ -200,6 +200,9 @@
     (!m*4/3 (global-bounds-cache-aabb cache) matrix (global-bounds-cache-obb cache)))
   (setf (global-bounds-cache-dirty-p cache) NIL))
 
+(defmethod global-transform-matrix ((cache global-bounds-cache) &optional target)
+  (global-transform-matrix (global-bounds-cache-generator cache) target))
+
 (defmethod global-location ((cache global-bounds-cache) &optional target)
   (when (global-bounds-cache-dirty-p cache)
     (update-global-bounds-cache cache))
