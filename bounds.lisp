@@ -28,9 +28,14 @@
   (values (vec3 0) (bradius entity)))
 
 (defmethod compute-bounding-box ((sequence sequences:sequence))
+  ;; Note: have to offset by location since the bbox is local to the child transform.
   (case (length sequence)
-    (0 (values (vec3) (vec3)))
-    (1 (compute-bounding-box (elt sequence 0)))
+    (0
+     (values (vec3) (vec3)))
+    (1
+     (let ((entity (elt sequence 0)))
+       (multiple-value-bind (center bsize) (compute-bounding-box entity)
+         (values (nv+ center (location entity)) bsize))))
     (T
      (let ((min (vec3 most-positive-single-float))
            (max (vec3 most-negative-single-float))
@@ -40,16 +45,21 @@
        (declare (dynamic-extent min max tmp))
        (sequences:dosequence (child sequence)
          (multiple-value-bind (center bsize) (compute-bounding-box child)
-           (nvmin min (!v- tmp center bsize))
-           (nvmax max (!v+ tmp center bsize))))
+           (nvmin min (!v- tmp (!v+ tmp center (location child)) bsize))
+           (nvmax max (!v+ tmp (!v+ tmp center (location child)) bsize))))
        (nv* (!v- bsize max min) 0.5)
        (!v+ center min bsize)
        (values center bsize)))))
 
 (defmethod compute-bounding-sphere ((sequence sequences:sequence))
+  ;; Note: have to offset by location since the bbox is local to the child transform.
   (case (length sequence)
-    (0 (values (vec3) 0.0))
-    (1 (compute-bounding-sphere (elt sequence 0)))
+    (0
+     (values (vec3) 0.0))
+    (1
+     (let ((entity (elt sequence 0)))
+       (multiple-value-bind (center radius) (compute-bounding-sphere entity)
+         (values (nv+ center (location entity)) radius))))
     (T
      (let ((scalar (/ (length sequence)))
            (center (vec3))
@@ -61,8 +71,9 @@
        (sequences:dosequence (child sequence)
          (nv+* center (global-bounding-sphere child tmp) scalar))
        (sequences:dosequence (child sequence)
-         (multiple-value-bind (child child-radius) (compute-bounding-sphere child)
-           (setf radius (max radius (+ child-radius (vdistance child center))))))
+         (multiple-value-bind (child-center child-radius) (compute-bounding-sphere child)
+           (!v+ tmp child-center (location child))
+           (setf radius (max radius (+ child-radius (vdistance tmp center))))))
        (values center radius)))))
 
 (defmethod global-transform-matrix ((entity entity) &optional (matrix (meye 4)))
