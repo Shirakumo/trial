@@ -157,7 +157,7 @@
       (flet ((invert (v)
                (let ((w (/ (+ (* (vx v) (m 3 0)) (* (vy v) (m 3 1)) (* (vz v) (m 3 2)) (m 3 3)))))
                  (n*m inv (vsetf tmp (* (vx v) w) (* (vy v) w) (* (vz v) w) w)))))
-        (loop for v in (list #.(vec -1 -1 -1) #.(vec +1 -1 -1) #.(vec +1 +1 -1) #.(vec -1 +1 -1)
+        (loop for v across #(#.(vec -1 -1 -1) #.(vec +1 -1 -1) #.(vec +1 +1 -1) #.(vec -1 +1 -1)
                              #.(vec -1 -1 +1) #.(vec +1 -1 +1) #.(vec +1 +1 +1) #.(vec -1 +1 +1))
               for i from 0 by 3
               do (invert v)
