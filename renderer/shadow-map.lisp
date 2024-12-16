@@ -40,7 +40,7 @@
     (global-orientation light orientation)
     (setf (slot-value struct 'projection-matrix)
           (n*m (nmperspective a (* 2.0 (outer-radius light)) 1.0 1.0 1000.0)
-               (nmlookat b location (nv+ location (q* orientation (direction light))) +vy3+)))))
+               (nmlookat b location (v+ location (q* orientation (direction light))) +vy3+)))))
 
 (defmethod <- progn ((struct shadow-map-info) (light point-light))
   (setf (far-plane struct) 1000.0))
