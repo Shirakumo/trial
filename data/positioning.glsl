@@ -12,3 +12,15 @@ vec2 to_clip_uv(in vec3 pos, in mat4 projection_matrix){
   offset.xy /= offset.w;
   return offset.xy * 0.5 + 0.5;
 }
+
+vec2 to_clip_uv_clamped(in vec3 pos, in mat4 projection_matrix){
+  vec4 offset = vec4(pos, 1.0);
+  offset = projection_matrix * offset;
+  offset.xy /= offset.w;
+  // Clamp by projecting from center.
+  if(offset.z < 0.0){
+    offset.xy /= -max(abs(offset.x), abs(offset.y));
+  }
+  offset.xy = offset.xy * 0.5 + 0.5;
+  return offset.xy;
+}
