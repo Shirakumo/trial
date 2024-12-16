@@ -162,6 +162,9 @@
 (defmethod cast-shadows-p ((entity renderable)) NIL)
 (defmethod cast-shadows-p ((entity standard-renderable)) T)
 
+(defmethod revalidate-light-cache :after ((pass standard-shadows-pass))
+  (setf (dirty-p (buffer-data (shadow-map-block pass))) T))
+
 (defmethod render-frame :before ((pass standard-shadows-pass) frame)
   (when (setting* T :display :shadows)
     (let ((program (shadow-map-program pass))
