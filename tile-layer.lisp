@@ -7,7 +7,8 @@
    (tile-data :initform NIL :initarg :tile-data :accessor tile-data)
    (visibility :initform 1.0 :accessor visibility)
    (tile-size :initform (vec 16 16) :accessor tile-size)
-   (size :initarg :size :initform (vec 1 1) :accessor size))
+   (size :initarg :size :initform (vec 1 1) :accessor size)
+   (isometric-p :initform NIL :initarg :isometric-p :accessor isometric-p))
   (:inhibit-shaders (shader-entity :fragment-shader)))
 
 (defmethod initialize-instance :after ((layer tile-layer) &key tilemap (map-name 1) tile-data tile-size)
@@ -128,6 +129,10 @@
       (setf (aref dat i) 0))
     (%update-tile-layer layer)))
 
+(defmethod bind-textures :after ((layer tile-layer))
+  (bind (tilemap layer) :texture0)
+  (bind (tileset layer) :texture1))
+
 (defmethod render ((layer tile-layer) (program shader-program))
   (when (< 0.0 (visibility layer))
     (setf (uniform program "visibility") (visibility layer))
@@ -138,8 +143,6 @@
     (setf (uniform program "model_matrix") *model-matrix*)
     (setf (uniform program "tilemap") 0)
     (setf (uniform program "tileset") 1)
-    (bind (tilemap layer) :texture0)
-    (bind (tileset layer) :texture1)
     (render (vertex-array layer) program)))
 
 (define-class-shader (tile-layer :vertex-shader)
@@ -168,6 +171,7 @@ uniform usampler2D tilemap;
 uniform sampler2D tileset;
 uniform float visibility = 1.0;
 uniform vec2 tile_size = vec2(16);
+uniform int isometric = 0;
 in vec2 pix_uv;
 in vec2 world_pos;
 out vec4 color;
@@ -175,7 +179,9 @@ out vec4 color;
 void main(){
   // Calculate tilemap index and pixel offset within tile.
   ivec2 pixel_xy = ivec2((pix_uv-floor(pix_uv)) * tile_size);
-  ivec2 map_xy = ivec2(pix_uv);
+  ivec2 map_xy = (isometric == 0)
+               ? ivec2(pix_uv)
+               : ivec2(pix_uv.x + pix_uv.y, pix_uv.y - pix_uv.x);
 
   // Look up tileset index from tilemap and pixel from tileset.
   uvec2 tile = texelFetch(tilemap, map_xy, 0).rg;
