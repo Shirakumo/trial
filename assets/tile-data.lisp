@@ -75,8 +75,8 @@
                                        :texture-class 'tileset
                                        :width (gethash "imagewidth" tileset)
                                        :height (gethash "imageheight" tileset)
-                                       :tile-size (vec (gethash "tileheight" tileset)
-                                                       (gethash "tilewidth" tileset)))
+                                       :tile-size (vec (gethash "tilewidth" tileset)
+                                                       (gethash "tileheight" tileset)))
           :first-id (gethash "firstgid" raw-tileset)
           :columns (gethash "columns" tileset))))
 
