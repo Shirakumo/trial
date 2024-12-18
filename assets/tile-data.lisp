@@ -82,9 +82,11 @@
 
 (defun load-tiled-data (tile source)
   (let* ((data (com.inuoe.jzon:parse source))
-         (tilesets (map 'list (lambda (tileset) (decode-tiled-tileset tileset source tile)) (gethash "tilesets" data))))
-    (values (map 'list (lambda (f) (decode-tiled-layer f tilesets tile)) (gethash "layers" data))
-            tilesets)))
+         (tilesets (map 'list (lambda (tileset) (decode-tiled-tileset tileset source tile)) (gethash "tilesets" data)))
+         (layers (map 'list (lambda (f) (decode-tiled-layer f tilesets tile)) (gethash "layers" data))))
+    (when (string= "isometric" (gethash "orientation" data))
+      (dolist (layer layers) (setf (isometric-p layer) T)))
+    (values layers tilesets)))
 
 (defmethod compile-resources ((tile tile-data) target &key (source-file-type "tmj"))
   (let ((source (make-pathname :type source-file-type :defaults target)))
