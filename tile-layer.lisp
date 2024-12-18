@@ -13,7 +13,9 @@
 
 (defmethod initialize-instance :after ((layer tile-layer) &key tilemap (map-name 1) tile-data tile-size)
   (when tile-size (setf (tile-size layer) tile-size))
-  (cond (tile-data
+  (cond ((typep tilemap 'tilemap)
+         (setf (tilemap layer) tilemap))
+        (tile-data
          (setf (tilemap layer) (resource tile-data map-name)))
         (T
          (let* ((size (size layer))
@@ -38,6 +40,7 @@
   (let ((tileset (tileset (tilemap layer))))
     (setf (tileset layer) tileset)
     (setf (tile-size layer) (tile-size tileset))
+    (setf (isometric-p layer) (isometric-p (tilemap layer)))
     (setf (vx (size layer)) (width (tilemap layer)))
     (setf (vy (size layer)) (height (tilemap layer)))
     (setf (bsize layer) (nv* (vxy_ (v* (size layer) (tile-size tileset))) 0.5))))

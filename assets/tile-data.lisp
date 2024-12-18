@@ -10,6 +10,7 @@
    (internal-format :initform :rg8ui)
    (min-filter :initform :nearest)
    (mag-filter :initform :nearest)
+   (isometric-p :initform NIL :initarg :isometric-p :accessor isometric-p)
    (tileset :initarg :tileset :accessor tileset)))
 
 (defmethod dependencies ((tilemap tilemap))
@@ -107,7 +108,7 @@
                           do (save-image layer path :raw)
                           collect (list (name layer) :tilemap (name (tilemap layer)) :source (enough-namestring path target))))))))))
 
-(defmethod generate-resources ((asset tile-data) (path pathname) &key)
+(defmethod generate-resources ((asset tile-data) (path pathname) &key load-scene)
   (cond ((or (string= "json" (pathname-type path))
              (string= "tmj" (pathname-type path)))
          (load-tiled-data asset path))
@@ -129,4 +130,8 @@
                                    :tileset (resource asset tileset))))))
         (T
          (error "Unsupported file type ~s" (pathname-type path))))
+  (when load-scene
+    (loop for resource being the hash-values of (resources asset)
+          do (when (typep resource 'tilemap)
+               (enter (make-instance 'tile-layer :tile-data asset :tilemap resource) (scene +main+)))))
   (list-resources asset))
