@@ -140,14 +140,16 @@
                  (setf w cw h ch r cr)))
              (setf (glfw:monitor context) (list (when fullscreen monitor) :width w :height h :refresh-rate r))))
          (unless fullscreen
-           (glfw:center context)))
+           ;; Can fail on Wayland
+           (ignore-errors (glfw:center context))))
         (mode
          (resize context (first mode) (second mode)))))
 
 (defmethod resize ((context context) width height)
   (v:info :trial.backend.glfw "Resizing window to ~ax~a" width height)
   (setf (glfw:size context) (list width height))
-  (glfw:center context))
+  ;; Can fail on Wayland
+  (ignore-errors (glfw:center context)))
 
 (defmethod quit ((context context))
   (setf (glfw:should-close-p context) T))
