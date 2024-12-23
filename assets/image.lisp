@@ -121,3 +121,6 @@
 
 (define-asset (trial cat) image
     #p"cat.png")
+
+(define-asset (trial logo) image
+    #p"logo.png")
