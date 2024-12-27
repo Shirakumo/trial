@@ -139,7 +139,7 @@ void main(){
   "uniform sampler2D texture_image;
 in vec2 uv;
 out vec4 color;
-const float line_thickness = 0.005;
+const float line_thickness = 0.01;
 
 void draw_line(float y, vec3 line_color){
   float sdf = abs(y - uv.y) - line_thickness;
