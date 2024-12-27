@@ -68,5 +68,6 @@
     (enter (make-instance 'basic-triangle) scene)
     (enter (make-instance 'bouncer) scene)
     (enter (make-instance 'trial::repl :foreground (vec 1 1 1 1)) scene)
+    (enter (make-instance 'trial::system-stats) scene)
     (enter (make-instance 'render-pass) scene))
   (maybe-reload-scene))

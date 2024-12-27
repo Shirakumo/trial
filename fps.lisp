@@ -79,3 +79,90 @@ out vec4 color;
 void main(){
   color = texture(texture_image, uv);
 }")
+
+(declaim (type (double-float 0d0) +last-process-time+ +last-gpu-time+))
+(define-global +last-process-time+ 0d0)
+(define-global +last-gpu-time+ 0d0)
+(define-asset (trial system-stats) static 'texture
+  :pixel-data (make-array (* 4 100) :element-type '(unsigned-byte 8))
+  :width 100 :height 1 :internal-format :rgba
+  :min-filter :linear :mag-filter :linear
+  :wrapping '(:repeat :clamp-to-border :clamp-to-border))
+
+(define-shader-entity system-stats (renderable)
+  ((name :initform 'system-stats)))
+
+(defmethod stage :after ((stats system-stats) (area staging-area))
+  (stage (// 'trial 'system-stats) area)
+  (stage (// 'trial 'unit-square) area))
+
+(defmethod render ((stats system-stats) (program shader-program))
+  (declare (optimize speed (safety 1)))
+  (let* ((data (pixel-data (// 'trial 'system-stats)))
+         (length (length data)))
+    (declare (type (simple-array (unsigned-byte 8) (400)) data))
+    (loop for i from 0 below (- length 4)
+          do (setf (aref data i) (aref data (+ i 4))))
+    (flet ((update-frac (i free total)
+             (setf (aref data (- length i)) (- 255 (the (unsigned-byte 8) (round (the (unsigned-byte 64) (* 255 free)) total)))))
+           (update-time (i dt)
+             ;; Rationale: if we take 1/60th of a second of time, that should count as "max".
+             (setf (aref data (- length i)) (clamp 0 (round (the (double-float 0d0) (* dt 60 255))) 255))))
+      (declare (inline update-time update-frac))
+      (let ((time (org.shirakumo.machine-state:process-time)))
+        (update-time 4 (- time +last-process-time+))
+        (setf +last-process-time+ time))
+      (multiple-value-bind (free total) (org.shirakumo.machine-state:gc-room)
+        (update-frac 3 free total))
+      (let ((time (org.shirakumo.machine-state:gpu-time)))
+        (update-time 2 (- time +last-gpu-time+))
+        (setf +last-gpu-time+ time))
+      (multiple-value-bind (free total) (org.shirakumo.machine-state:gpu-room)
+        (update-frac 1 free total)))
+    (update-buffer-data (// 'trial 'system-stats) data))
+  (bind (// 'trial 'system-stats) :texture0)
+  (with-depth-mask T
+    (render (// 'trial 'unit-square) program)))
+
+(define-class-shader (system-stats :vertex-shader)
+  "
+layout (location = TRIAL_V_LOCATION) in vec3 position;
+layout (location = TRIAL_V_UV) in vec2 in_uv;
+out vec2 uv;
+
+void main(){
+  gl_Position = vec4(position.xy*0.5+0.75, -1.0, 1.0);
+  uv = in_uv;
+}")
+
+(define-class-shader (system-stats :fragment-shader)
+  "uniform sampler2D texture_image;
+in vec2 uv;
+out vec4 color;
+const float line_thickness = 0.005;
+
+void draw_line(float y, vec3 line_color){
+  float sdf = abs(y - uv.y) - line_thickness;
+  float dsdf = fwidth(sdf)*0.5;
+  sdf = smoothstep(dsdf, -dsdf, sdf);
+  color = mix(color, vec4(line_color, sdf), sdf);
+}
+
+void draw_fill(float y, vec3 fill_color){
+  float sdf = (uv.y < y) ? 0.5: 0.0;
+  color = mix(color, vec4(fill_color, sdf), sdf);
+}
+
+void main(){
+  color = vec4(0);
+  vec4 stats = texture(texture_image, uv);
+  draw_fill(stats.r, vec3(1.0, 0.0, 0.0));
+  draw_fill(stats.g, vec3(1.0, 0.5, 0.0));
+  draw_fill(stats.b, vec3(0.0, 0.0, 1.0));
+  draw_fill(stats.a, vec3(0.0, 0.5, 1.0));
+
+  draw_line(stats.r, vec3(1.0, 0.0, 0.0));
+  draw_line(stats.g, vec3(1.0, 0.5, 0.0));
+  draw_line(stats.b, vec3(0.0, 0.0, 1.0));
+  draw_line(stats.a, vec3(0.0, 0.5, 1.0));
+}")

@@ -1275,7 +1275,8 @@
    #:lightning)
   ;; fps.lisp
   (:export
-   #:fps-counter)
+   #:fps-counter
+   #:system-stats)
   ;; fullscreenable.lisp
   (:export
    #:fullscreenable
