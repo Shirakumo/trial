@@ -80,14 +80,17 @@ void main(){
   color = texture(texture_image, uv);
 }")
 
-(declaim (type (double-float 0d0) +last-process-time+ +last-gpu-time+))
+(declaim (type (double-float 0d0) +last-process-time+ +last-gpu-time+ +last-gc-time+))
+(declaim (type fixnum +last-io-bytes+))
 (define-global +last-process-time+ 0d0)
 (define-global +last-gpu-time+ 0d0)
+(define-global +last-gc-time+ 0d0)
+(define-global +last-io-bytes+ 0)
 (define-asset (trial system-stats) static 'texture
-  :pixel-data (make-array (* 4 100) :element-type '(unsigned-byte 8))
-  :width 100 :height 1 :internal-format :rgba
+  :pixel-data (make-array (* 6 100) :element-type '(unsigned-byte 8))
+  :width 100 :height 6 :internal-format :red
   :min-filter :linear :mag-filter :linear
-  :wrapping '(:repeat :clamp-to-border :clamp-to-border))
+  :wrapping '(:repeat :repeat :repeat))
 
 (define-shader-entity system-stats (renderable)
   ((name :initform 'system-stats)))
@@ -98,27 +101,43 @@ void main(){
 
 (defmethod render ((stats system-stats) (program shader-program))
   (declare (optimize speed (safety 1)))
-  (let* ((data (pixel-data (// 'trial 'system-stats)))
-         (length (length data)))
-    (declare (type (simple-array (unsigned-byte 8) (400)) data))
-    (loop for i from 0 below (- length 4)
-          do (setf (aref data i) (aref data (+ i 4))))
-    (flet ((update-frac (i free total)
-             (setf (aref data (- length i)) (- 255 (the (unsigned-byte 8) (round (the (unsigned-byte 64) (* 255 free)) total)))))
-           (update-time (i dt)
-             ;; Rationale: if we take 1/60th of a second of time, that should count as "max".
-             (setf (aref data (- length i)) (clamp 0 (round (the (double-float 0d0) (* dt 60 255))) 255))))
+  (let* ((data (pixel-data (// 'trial 'system-stats))))
+    (declare (type (simple-array (unsigned-byte 8) (*)) data))
+    (loop for i from 0 below (1- (length data))
+          do (setf (aref data i) (aref data (1+ i))))
+    (labels ((update (i val)
+               (setf (aref data (1- (* 100 i))) val))
+             (compute-frac (free total)
+               (- 255 (the (unsigned-byte 8) (round (the (unsigned-byte 64) (* 255 free)) total))))
+             (compute-bytes (db)
+               ;; Rationale: one kilobyte should count as "max".
+               (clamp 0 (round (the (unsigned-byte 64) (* 255 db)) 255) 255))
+             (compute-time (dt)
+               ;; Rationale: if we take 1/60th of a second of time, that should count as "max".
+               (clamp 0 (round (the (double-float 0d0) (* dt 60 255))) 255)))
       (declare (inline update-time update-frac))
+      ;; 1: CPU Time
       (let ((time (org.shirakumo.machine-state:process-time)))
-        (update-time 4 (- time +last-process-time+))
+        (update 1 (compute-time (- time +last-process-time+)))
         (setf +last-process-time+ time))
+      ;; 2: RAM (GC Space)
       (multiple-value-bind (free total) (org.shirakumo.machine-state:gc-room)
-        (update-frac 3 free total))
+        (update 2 (compute-frac free total)))
+      ;; 3: GPU Time
       (let ((time (org.shirakumo.machine-state:gpu-time)))
-        (update-time 2 (- time +last-gpu-time+))
+        (update 3 (compute-time (- time +last-gpu-time+)))
         (setf +last-gpu-time+ time))
+      ;; 4: VRAM
       (multiple-value-bind (free total) (org.shirakumo.machine-state:gpu-room)
-        (update-frac 1 free total)))
+        (update 4 (compute-frac free total)))
+      ;; 5: GC Time
+      (let ((time (org.shirakumo.machine-state:gc-time)))
+        (update 5 (compute-time (- time +last-gc-time+)))
+        (setf +last-gc-time+ time))
+      ;; 6: IO Bytes
+      (let ((bytes (org.shirakumo.machine-state:process-io-bytes)))
+        (update 6 (compute-bytes (- bytes +last-io-bytes+)))
+        (setf +last-io-bytes+ bytes)))
     (update-buffer-data (// 'trial 'system-stats) data))
   (bind (// 'trial 'system-stats) :texture0)
   (with-depth-mask T
@@ -139,30 +158,45 @@ void main(){
   "uniform sampler2D texture_image;
 in vec2 uv;
 out vec4 color;
+const int stats = 6;
 const float line_thickness = 0.01;
 
-void draw_line(float y, vec3 line_color){
+const vec3 colors[] = vec3[](
+  vec3(1.0, 0.0, 0.0), // CPU Time
+  vec3(0.8, 0.5, 0.2), // RAM
+  vec3(0.0, 1.0, 0.0), // GPU Time
+  vec3(0.2, 0.8, 0.5), // VRAM
+  vec3(1.0, 1.0, 1.0), // GC Pause
+  vec3(0.2, 0.8, 0.1), // IO Bytes
+);
+
+void draw_line(int s){
+  float y = texture(texture_image, vec2(uv.x, float(s+0.5)/stats)).r;
   float sdf = abs(y - uv.y) - line_thickness;
   float dsdf = fwidth(sdf)*0.5;
   sdf = smoothstep(dsdf, -dsdf, sdf);
-  color = mix(color, vec4(line_color, sdf), sdf);
+  color = mix(color, vec4(colors[s], sdf), sdf);
 }
 
-void draw_fill(float y, vec3 fill_color){
-  float sdf = (uv.y < y) ? 0.5: 0.0;
-  color = mix(color, vec4(fill_color, sdf), sdf);
+void draw_fill(int s){
+  float y = texture(texture_image, vec2(uv.x, float(s+0.5)/stats)).r;
+  float sdf = (uv.y < y) ? 0.2: 0.0;
+  color = mix(color, vec4(colors[s], 1.0), sdf);
 }
 
 void main(){
   color = vec4(0);
-  vec4 stats = texture(texture_image, uv);
-  draw_fill(stats.r, vec3(1.0, 0.0, 0.0));
-  draw_fill(stats.g, vec3(1.0, 0.5, 0.0));
-  draw_fill(stats.b, vec3(0.0, 0.0, 1.0));
-  draw_fill(stats.a, vec3(0.0, 0.5, 1.0));
+  draw_fill(5);
+  draw_fill(4);
+  draw_fill(3);
+  draw_fill(2);
+  draw_fill(1);
+  draw_fill(0);
 
-  draw_line(stats.r, vec3(1.0, 0.0, 0.0));
-  draw_line(stats.g, vec3(1.0, 0.5, 0.0));
-  draw_line(stats.b, vec3(0.0, 0.0, 1.0));
-  draw_line(stats.a, vec3(0.0, 0.5, 1.0));
+  draw_line(5);
+  draw_line(4);
+  draw_line(3);
+  draw_line(2);
+  draw_line(1);
+  draw_line(0);
 }")
