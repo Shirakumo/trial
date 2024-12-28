@@ -288,7 +288,7 @@
               (prop (vector-pop free-list)))
           (when (< prop min-prop) (setf min-prop prop))
           (when (< max-prop prop) (setf max-prop prop))
-          (%emit-particle particles properties pos prop (vrand (vec 0.5 0.5 0.5))
+          (%emit-particle particles properties pos prop (vrand (vec 0.5 0.5 0.5) (vec3 1))
                           particle-randomness particle-lifespan-randomness mat
                           particle-velocity particle-rotation particle-lifespan
                           particle-size particle-scaling particle-full-color
