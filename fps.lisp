@@ -19,7 +19,7 @@
 (define-global +frame-count+ 0)
 (define-global +start-time+ 0)
 
-(define-shader-entity fps-counter (renderable)
+(define-shader-entity fps-counter (renderable standalone-shader-entity)
   ((name :initform 'fps-counter)))
 
 (defmethod stage :after ((counter fps-counter) (area staging-area))
@@ -100,7 +100,7 @@ void main(){
      (make-rectangle-mesh 1 1)
      (make-rectangle-mesh 1 1)))
 
-(define-shader-entity system-stats (renderable)
+(define-shader-entity system-stats (renderable standalone-shader-entity)
   ((name :initform 'system-stats)))
 
 (defmethod stage :after ((stats system-stats) (area staging-area))

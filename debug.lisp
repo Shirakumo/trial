@@ -60,7 +60,7 @@ void main(){
 
 (defgeneric debug-draw (thing &key))
 
-(define-shader-entity debug-draw (renderable)
+(define-shader-entity debug-draw (renderable standalone-shader-entity)
   ((name :initform 'debug-draw)
    (instances :accessor instances)
    (points-vao :accessor points-vao)
