@@ -121,6 +121,10 @@
         (%gl:clear-color (vx c) (vy c) (vz c) (vw c)))
       (%gl:clear bits))))
 
+(defmethod bind ((framebuffer framebuffer) target)
+  (gl:bind-framebuffer target (gl-name framebuffer))
+  (gl:viewport 0 0 (width framebuffer) (height framebuffer)))
+
 (defmethod deactivate ((framebuffer framebuffer))
   (gl:bind-framebuffer :framebuffer 0))
 
