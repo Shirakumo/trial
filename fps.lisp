@@ -91,13 +91,25 @@ void main(){
   :width 100 :height 6 :internal-format :red
   :min-filter :linear :mag-filter :linear
   :wrapping '(:repeat :repeat :repeat))
+(define-asset (trial system-stats-mesh) mesh
+    (append-vertex-data*
+     (make-rectangle-mesh 1 1)
+     (make-rectangle-mesh 1 1)
+     (make-rectangle-mesh 1 1)
+     (make-rectangle-mesh 1 1)
+     (make-rectangle-mesh 1 1)
+     (make-rectangle-mesh 1 1)))
 
 (define-shader-entity system-stats (renderable)
   ((name :initform 'system-stats)))
 
 (defmethod stage :after ((stats system-stats) (area staging-area))
+  (setf +last-process-time+ 0d0)
+  (setf +last-gpu-time+ 0d0)
+  (setf +last-gc-time+ 0d0)
+  (setf +last-io-bytes+ 0)
   (stage (// 'trial 'system-stats) area)
-  (stage (// 'trial 'unit-square) area))
+  (stage (// 'trial 'system-stats-mesh) area))
 
 (defmethod render ((stats system-stats) (program shader-program))
   (declare (optimize speed (safety 1)))
@@ -111,7 +123,7 @@ void main(){
                (- 255 (the (unsigned-byte 8) (round (the (unsigned-byte 64) (* 255 free)) total))))
              (compute-bytes (db)
                ;; Rationale: one kilobyte should count as "max".
-               (clamp 0 (round (the (unsigned-byte 64) (* 255 db)) 255) 255))
+               (clamp 0 (round (the (unsigned-byte 64) (* 255 db)) 1024) 255))
              (compute-time (dt)
                ;; Rationale: if we take 1/60th of a second of time, that should count as "max".
                (clamp 0 (round (the (double-float 0d0) (* dt 60 255))) 255)))
@@ -140,26 +152,17 @@ void main(){
         (setf +last-io-bytes+ bytes)))
     (update-buffer-data (// 'trial 'system-stats) data))
   (bind (// 'trial 'system-stats) :texture0)
+  (setf (uniform program "pixel_scale") (/ 3.0 (min (height *context*) (width *context*))))
   (with-depth-mask T
-    (render (// 'trial 'unit-square) program)))
+    (render (// 'trial 'system-stats-mesh) program)))
 
 (define-class-shader (system-stats :vertex-shader)
   "
 layout (location = TRIAL_V_LOCATION) in vec3 position;
 layout (location = TRIAL_V_UV) in vec2 in_uv;
 out vec2 uv;
-
-void main(){
-  gl_Position = vec4(position.xy*0.5+0.75, -1.0, 1.0);
-  uv = in_uv;
-}")
-
-(define-class-shader (system-stats :fragment-shader)
-  "uniform sampler2D texture_image;
-in vec2 uv;
-out vec4 color;
-const int stats = 6;
-const float line_thickness = 0.01;
+out vec3 graph_color;
+out float stat;
 
 const vec3 colors[] = vec3[](
   vec3(1.0, 0.0, 0.0), // CPU Time
@@ -167,36 +170,47 @@ const vec3 colors[] = vec3[](
   vec3(0.0, 1.0, 0.0), // GPU Time
   vec3(0.2, 0.8, 0.5), // VRAM
   vec3(1.0, 1.0, 1.0), // GC Pause
-  vec3(0.2, 0.8, 0.1), // IO Bytes
+  vec3(0.0, 0.0, 1.0), // IO Bytes
 );
 
-void draw_line(int s){
-  float y = texture(texture_image, vec2(uv.x, float(s+0.5)/stats)).r;
-  float sdf = abs(y - uv.y) - line_thickness;
-  float dsdf = fwidth(sdf)*0.5;
-  sdf = smoothstep(dsdf, -dsdf, sdf);
-  color = mix(color, vec4(colors[s], sdf), sdf);
-}
+void main(){
+  int s = gl_VertexID / 4;
+  vec2 pos = vec2((position.x+s/2-1.5)*1.5/3, position.y);
+  gl_Position = vec4(pos*0.5+0.75, -1.0, 1.0);
+  stat = float(s+0.5)/6;
+  graph_color = colors[s];
+  uv = in_uv;
+}")
 
-void draw_fill(int s){
-  float y = texture(texture_image, vec2(uv.x, float(s+0.5)/stats)).r;
-  float sdf = (uv.y < y) ? 0.2: 0.0;
-  color = mix(color, vec4(colors[s], 1.0), sdf);
+(define-class-shader (system-stats :fragment-shader)
+  "uniform sampler2D texture_image;
+in vec2 uv;
+in vec3 graph_color;
+in float stat;
+out vec4 color;
+const int stats = 6;
+uniform float pixel_scale = 0.01;
+
+float line_sdf(in vec2 p, in vec2 a, in vec2 b){
+  vec2 pa = p-a, ba = b-a;
+  float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
+  return length( pa - ba*h );
 }
 
 void main(){
-  color = vec4(0);
-  draw_fill(5);
-  draw_fill(4);
-  draw_fill(3);
-  draw_fill(2);
-  draw_fill(1);
-  draw_fill(0);
+  color = vec4(0.2);
+  if(uv.x < pixel_scale || uv.y < pixel_scale ||
+     1-pixel_scale < uv.x || 1-pixel_scale < uv.y)
+    color = vec4(1,1,1,0.3);
 
-  draw_line(5);
-  draw_line(4);
-  draw_line(3);
-  draw_line(2);
-  draw_line(1);
-  draw_line(0);
+  float y = texture(texture_image, vec2(uv.x, stat)).r;
+  y = uv.y - y;
+  // Draw the line
+  float sdf = abs(y) - pixel_scale;
+  float dsdf = fwidth(sdf)*0.5;
+  sdf = smoothstep(dsdf, -dsdf, sdf);
+  color = mix(color, vec4(graph_color, sdf), sdf);
+  // Draw the fill
+  sdf = (y < 0) ? max(0,y+0.5) : 0.0;
+  color = mix(color, vec4(graph_color, 1), sdf);
 }")

@@ -320,6 +320,9 @@
                               :vertex-form (vertex-form a)
                               :vertex-attributes attributes)))
 
+(defun append-vertex-data* (&rest data)
+  (reduce #'append-vertex-data (rest data) :initial-value (first data)))
+
 (defmethod combine-vertex-data ((a mesh-data) (b mesh-data))
   (assert (eq (vertex-form a) (vertex-form b)))
   (let* ((attributes (union (vertex-attributes a) (vertex-attributes b)))
