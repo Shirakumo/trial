@@ -93,12 +93,12 @@ void main(){
   :wrapping '(:repeat :repeat :repeat))
 (define-asset (trial system-stats-mesh) mesh
     (append-vertex-data*
-     (make-rectangle-mesh 1 1)
-     (make-rectangle-mesh 1 1)
-     (make-rectangle-mesh 1 1)
-     (make-rectangle-mesh 1 1)
-     (make-rectangle-mesh 1 1)
-     (make-rectangle-mesh 1 1)))
+     (make-rectangle-mesh 0.22 0.5 :align :bottomleft :x 0.31 :y 0.49)
+     (make-rectangle-mesh 0.22 0.5 :align :bottomleft :x 0.31 :y 0.49)
+     (make-rectangle-mesh 0.22 0.5 :align :bottomleft :x 0.54 :y 0.49)
+     (make-rectangle-mesh 0.22 0.5 :align :bottomleft :x 0.54 :y 0.49)
+     (make-rectangle-mesh 0.22 0.5 :align :bottomleft :x 0.77 :y 0.49)
+     (make-rectangle-mesh 0.22 0.5 :align :bottomleft :x 0.77 :y 0.49)))
 
 (define-shader-entity system-stats (renderable standalone-shader-entity)
   ((name :initform 'system-stats)))
@@ -152,7 +152,7 @@ void main(){
         (setf +last-io-bytes+ bytes)))
     (update-buffer-data (// 'trial 'system-stats) data))
   (bind (// 'trial 'system-stats) :texture0)
-  (setf (uniform program "pixel_scale") (/ 3.0 (min (height *context*) (width *context*))))
+  (setf (uniform program "pixel_scale") (/ 6.0 (min (height *context*) (width *context*))))
   (with-depth-mask T
     (render (// 'trial 'system-stats-mesh) program)))
 
@@ -175,8 +175,8 @@ const vec3 colors[] = vec3[](
 
 void main(){
   int s = gl_VertexID / 4;
-  vec2 pos = vec2((position.x+s/2-1.5)*1.5/3, position.y);
-  gl_Position = vec4(pos*0.5+0.75, -1.0, 1.0);
+  vec2 pos = vec2(position.x, position.y);
+  gl_Position = vec4(pos, -1.0, 1.0);
   stat = float(s+0.5)/6;
   graph_color = colors[s];
   uv = in_uv;
