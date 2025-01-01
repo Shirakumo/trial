@@ -1029,6 +1029,7 @@
     (loop for primitive across primitives
           do (etypecase primitive
                ((and general-mesh (not convex-mesh))
+                (v:warn :trial.physics "Decomposing general mesh into convex primitives.")
                 (let ((hulls (org.shirakumo.fraf.convex-covering:decompose
                               (general-mesh-vertices primitive)
                               (general-mesh-faces primitive)
