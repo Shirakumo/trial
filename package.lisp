@@ -987,6 +987,7 @@
    #:shader-compilation-error
    #:initarg-not-supplied
    #:arg!
+   #:asset-input-file-missing
    #:not-implemented
    #:implement!)
   ;; container.lisp

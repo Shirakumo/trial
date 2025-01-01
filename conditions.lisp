@@ -13,6 +13,7 @@
                                                                         arg)))))))))
 
 (define-simple-condition trial-error (error) ())
+(define-simple-condition trial-warning (warning) ())
 
 (define-simple-condition thread-did-not-exit (trial-error)
   (thread timeout) "Thread~%  ~a~%did not exit after ~ds." thread timeout)
@@ -34,6 +35,10 @@
 
 (defun arg! (argument)
   (error 'initarg-not-supplied :initarg argument))
+
+(define-simple-condition asset-input-file-missing (trial-warning)
+  (asset file) "Input file~%  ~a~%for asset~%  ~s~%does not exist."
+  (pathname-utils:native-namestring (pathname-utils:normalize-pathname (slot-value c 'file) :up-as-back T)) asset)
 
 (define-simple-condition not-implemented (trial-error)
   (file index) "This function has not been implemented yet.

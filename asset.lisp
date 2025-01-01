@@ -46,7 +46,7 @@
 (defgeneric reload (asset))
 (defgeneric unload (asset))
 (defgeneric list-resources (asset))
-(defgeneric coerce-asset-input* (asset input))
+(defgeneric coerce-asset-input (asset input))
 
 (defun // (pool asset &optional (resource T))
   (resource (asset pool asset) resource))
@@ -321,10 +321,18 @@
   ())
 
 (defmethod shared-initialize :after ((asset file-input-asset) slots &key &allow-other-keys)
-  (let ((input (input* asset)))
-    (loop for file in (enlist input)
+  (let ((input (enlist (input asset)))
+        (modified NIL))
+    (loop for file in (coerce-asset-input asset input)
+          for cons on input
           do (unless (probe-file file)
-               (alexandria:simple-style-warning "Input file~% ~s~%for asset~%  ~s~%does not exist." file asset)))))
+               (restart-case (warn 'asset-input-file-missing :file file :asset asset)
+                 (use-value (value)
+                   :interactive input-value
+                   :report "Supply another input file"
+                   (setf modified T)
+                   (setf (car cons) value)))))
+    (when modified (setf (input asset) input))))
 
 (defmethod compile-resources ((asset asset) (source (eql T)) &rest args &key &allow-other-keys)
   (when (typep asset 'compiled-generator)
