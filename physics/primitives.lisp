@@ -1030,16 +1030,17 @@
           do (etypecase primitive
                ((and general-mesh (not convex-mesh))
                 (v:warn :trial.physics "Decomposing general mesh into convex primitives.")
-                (let ((hulls (org.shirakumo.fraf.convex-covering:decompose
-                              (general-mesh-vertices primitive)
-                              (general-mesh-faces primitive)
-                              :tolerance (expt 10 -2.5))))
-                  (loop for hull across hulls
-                        for mesh = (make-convex-mesh :vertices (org.shirakumo.fraf.convex-covering:vertices hull)
-                                                     :faces (simplify (org.shirakumo.fraf.convex-covering:faces hull) '(unsigned-byte 16))
-                                                     :material (primitive-material primitive)
-                                                     :local-transform (mcopy (primitive-local-transform primitive)))
-                        do (vector-push-extend mesh new))))
+                (with-timing-report (:info :trial.physics)
+                  (let ((hulls (org.shirakumo.fraf.convex-covering:decompose
+                                (general-mesh-vertices primitive)
+                                (general-mesh-faces primitive)
+                                :tolerance (expt 10 -2.5))))
+                    (loop for hull across hulls
+                          for mesh = (make-convex-mesh :vertices (org.shirakumo.fraf.convex-covering:vertices hull)
+                                                       :faces (simplify (org.shirakumo.fraf.convex-covering:faces hull) '(unsigned-byte 16))
+                                                       :material (primitive-material primitive)
+                                                       :local-transform (mcopy (primitive-local-transform primitive)))
+                          do (vector-push-extend mesh new)))))
                (primitive
                 (vector-push-extend primitive new))))
     (simplify new)))
