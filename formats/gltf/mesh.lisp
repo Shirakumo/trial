@@ -47,6 +47,19 @@
              for el of-type vec2 = (elt accessor i)
              do (setf (aref data (+ (* i stride) offset 0)) (vx2 el))
                 (setf (aref data (+ (* i stride) offset 1)) (- 1.0 (vy2 el)))))
+      (color
+       (macrolet ((convert-from-array (size)
+                    (let ((divider (float (1- (ash 1 size)) 0f0)))
+                      `(loop for i of-type (unsigned-byte 32) from 0 below (length accessor)
+                             for el of-type (simple-array (unsigned-byte ,size) (4)) = (elt accessor i)
+                             do (setf (aref data (+ (* i stride) offset 0)) (/ (aref el 0) ,divider))
+                                (setf (aref data (+ (* i stride) offset 1)) (/ (aref el 1) ,divider))
+                                (setf (aref data (+ (* i stride) offset 2)) (/ (aref el 2) ,divider))
+                                (setf (aref data (+ (* i stride) offset 3)) (/ (aref el 3) ,divider))))))
+         (ecase (gltf:component-type accessor)
+           (:uint8 (convert-from-array 8))
+           (:uint16 (convert-from-array 16))
+           (:uint32 (convert-from-array 32)))))
       (T
        (ecase (vertex-attribute-size attribute)
          (1
