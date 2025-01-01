@@ -1353,7 +1353,11 @@
    #:weights-0
    #:weights-1
    #:weights-2
-   #:weights-3)
+   #:weights-3
+   #:color-0
+   #:color-1
+   #:color-2
+   #:color-3)
   ;; gl-features.lisp
   (:export
    #:feature-enabled-p

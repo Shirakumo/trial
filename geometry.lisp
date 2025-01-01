@@ -5,6 +5,7 @@
     uv-0 uv-1 uv-2 uv-3
     joints-0 joints-1 joints-2 joints-3
     weights-0 weights-1 weights-2 weights-3
+    color-0 color-1 color-2 color-3
     index))
 
 (defgeneric vertex-attribute-size (attribute))
@@ -40,6 +41,10 @@
 (defmethod vertex-attribute-category ((_ (eql 'weights-1))) 'weights)
 (defmethod vertex-attribute-category ((_ (eql 'weights-2))) 'weights)
 (defmethod vertex-attribute-category ((_ (eql 'weights-3))) 'weights)
+(defmethod vertex-attribute-category ((_ (eql 'color-0))) 'color)
+(defmethod vertex-attribute-category ((_ (eql 'color-1))) 'color)
+(defmethod vertex-attribute-category ((_ (eql 'color-2))) 'color)
+(defmethod vertex-attribute-category ((_ (eql 'color-3))) 'color)
 
 (defmethod vertex-index-attribute ((index integer))
   (dolist (attr *known-vertex-attributes*)
@@ -56,18 +61,21 @@
    normal
    (uv uv-0)
    tangent
-   color
+   (color color-0)
    (joints joints-0)
    (weights weights-0)
    uv-1
    joints-1
    weights-1
+   color-1
    uv-2
    joints-2
    weights-2
+   color-2
    uv-3
    joints-3
    weights-3
+   color-3
    index))
 
 (defun vertex-attribute-code ()

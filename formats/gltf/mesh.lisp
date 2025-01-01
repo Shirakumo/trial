@@ -16,7 +16,11 @@
     (:weights_0 'weights)
     (:weights_1 'weights-1)
     (:weights_2 'weights-2)
-    (:weights_3 'weights-3)))
+    (:weights_3 'weights-3)
+    (:color_0 'color)
+    (:color_1 'color-1)
+    (:color_2 'color-2)
+    (:color_3 'color-3)))
 
 (defun load-vertex-attribute (mesh attribute accessor skin)
   (declare (optimize speed))
