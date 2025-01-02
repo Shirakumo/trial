@@ -8,12 +8,22 @@
   ((camera :initarg :camera :initform NIL :accessor camera)
    (name-map :initform (make-hash-table :test 'equal) :accessor name-map)))
 
-(defmethod enter :after ((camera camera) (scene scene))
+(defmethod enter ((camera camera) (scene scene))
+  (register camera scene)
   (unless (camera scene)
     (setf (camera scene) camera)))
 
+(defmethod leave ((camera camera) (scene scene))
+  (deregister camera scene)
+  (when (eq camera (camera scene))
+    (setf (camera scene) NIL)))
+
 (defmethod (setf camera) :after ((camera camera) (scene scene))
   (setup-perspective camera T T))
+
+(defmethod handle :after ((event event) (loop event-loop))
+  (when (camera loop)
+    (handle event (camera loop))))
 
 (defmethod unit (name (scene scene))
   (gethash name (name-map scene)))
