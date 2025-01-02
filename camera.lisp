@@ -14,6 +14,9 @@
 (defgeneric focal-point (camera))
 (defgeneric screen-area (thing camera))
 
+(defmethod activate ((camera camera))
+  (setf (camera (scene +main+)) camera))
+
 (defmethod width ((camera camera))
   (* 2 (vx (bsize camera))))
 
@@ -30,16 +33,18 @@
 (defmethod (setf near-plane) :around (val (camera camera))
   (when (/= val (near-plane camera))
     (call-next-method)
-    (let ((bsize (bsize camera)))
-      (setup-perspective camera (max 1 (vx bsize)) (max 1 (vy bsize))))))
+    (setup-perspective camera T T)))
 
 (defmethod (setf far-plane) :around (val (camera camera))
   (when (/= val (far-plane camera))
     (call-next-method)
-    (let ((bsize (bsize camera)))
-      (setup-perspective camera (max 1 (vx bsize)) (max 1 (vy bsize))))))
+    (setup-perspective camera T T)))
 
-(defmethod setup-perspective :before ((camera camera) w h)
+(defmethod setup-perspective ((camera camera) (w (eql T)) (h (eql T)))
+  (let ((bsize (bsize camera)))
+    (setup-perspective camera (max 1 (* 2 (vx bsize))) (max 1 (* 2 (vy bsize))))))
+
+(defmethod setup-perspective :before ((camera camera) (w real) (h real))
   (reset-matrix *projection-matrix*))
 
 (defmethod project-view :before ((camera camera))
@@ -73,7 +78,7 @@
    (far-plane :initform 100.0)
    (location :initform (vec 0 0 200))))
 
-(defmethod setup-perspective ((camera 2d-camera) width height)
+(defmethod setup-perspective ((camera 2d-camera) (width real) (height real))
   (orthographic-projection 0 (max 1 width) 0 (max 1 height) (near-plane camera) (far-plane camera)))
 
 (defmethod project-view ((camera 2d-camera))
@@ -143,10 +148,9 @@
 (defmethod (setf fov) :around (val (camera 3d-camera))
   (when (/= (fov camera) val)
     (call-next-method)
-    (let ((bsize (bsize camera)))
-      (setup-perspective camera (max 1 (vx bsize)) (max 1 (vy bsize))))))
+    (setup-perspective camera T T)))
 
-(defmethod setup-perspective ((camera 3d-camera) width height)
+(defmethod setup-perspective ((camera 3d-camera) (width real) (height real))
   (perspective-projection (fov camera) (/ (max 1 width) (max 1 height)) (near-plane camera) (far-plane camera))
   ;; Compute the view frustum edge points
   (let ((inv (minv *projection-matrix*))

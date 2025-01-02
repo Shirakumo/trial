@@ -12,6 +12,9 @@
   (unless (camera scene)
     (setf (camera scene) camera)))
 
+(defmethod (setf camera) :after ((camera camera) (scene scene))
+  (setup-perspective camera T T))
+
 (defmethod unit (name (scene scene))
   (gethash name (name-map scene)))
 
