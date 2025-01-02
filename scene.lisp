@@ -18,7 +18,10 @@
   (when (eq camera (camera scene))
     (setf (camera scene) NIL)))
 
-(defmethod (setf camera) :after ((camera camera) (scene scene))
+(defmethod (setf camera) :around ((camera camera) (scene scene))
+  (let ((old (camera scene)))
+    (when old (v<- (bsize camera) (bsize old))))
+  (call-next-method)
   (setup-perspective camera T T))
 
 (defmethod handle :after ((event event) (loop event-loop))
