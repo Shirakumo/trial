@@ -40,7 +40,7 @@
   (let ((layers (sort (alexandria:hash-table-keys (animation-layers controller)) #'string<)))
     (if layers
         (loop for name in layers
-              for layer = (layer name controller)
+              for layer = (animation-layer name controller)
               do (format stream "  ~3d% ~s~%" (round (* 100 (animation-layer-strength layer))) name))
         (format stream "  None~%"))))
 
