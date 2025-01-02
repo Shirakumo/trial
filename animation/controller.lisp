@@ -53,6 +53,9 @@
   (setf (animation-layer name controller) layer))
 
 (defmethod add-animation-layer ((clip clip) (controller layer-controller) &key (strength 0.0) (name (name clip)))
+  (when (animation-layer name controller)
+    (cerror "Replace the layer" "An animation layer with the name ~s already exists:~%  ~a"
+            name (animation-layer name controller)))
   (setf (animation-layer name controller) (make-animation-layer clip (skeleton controller)
                                                                 :data controller :strength strength)))
 
