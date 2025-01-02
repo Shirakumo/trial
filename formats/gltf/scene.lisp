@@ -3,10 +3,7 @@
 (defun load-light (light)
   (flet ((make (type intensity &rest initargs)
            (apply #'make-instance type
-                  :color (nv* (vec (aref (gltf:color light) 0)
-                                   (aref (gltf:color light) 1)
-                                   (aref (gltf:color light) 2))
-                              intensity)
+                  :color (nv* (to-vec (gltf:color light)) intensity)
                   initargs)))
     (etypecase light
       (gltf:directional-light
@@ -30,7 +27,7 @@
 (defun load-environment-light (light)
   (let ((envmap (trial:implement!)))
     (list (make-instance 'trial:environment-light
-                         :color (vec (gltf:intensity light) (gltf:intensity light) (gltf:intensity light))
+                         :color (vec3 (gltf:intensity light))
                          :irradiance-map (trial:implement!)
                          :environment-map envmap)
           (make-instance 'trial:skybox :texture (resource envmap :environment-map)))))
@@ -40,12 +37,12 @@
     (gltf:orthographic-camera
      (make-instance 'trial:2d-camera :near-plane (float (gltf:znear camera) 0f0)
                                      :far-plane (float (gltf:zfar camera) 0f0)
-                                     :location (vec 0 0 0)))
+                                     :location (vec3 0)))
     (gltf:perspective-camera
      (make-instance 'trial:target-camera :fov (float (rad->deg (gltf:fov camera)) 0f0)
                                          :near-plane (float (gltf:znear camera) 0f0)
                                          :far-plane (float (gltf:zfar camera) 0f0)
-                                         :location (vec 0 0 0)
+                                         :location (vec3 0)
                                          :target (vec 0 0 -1)))))
 
 (defmethod load-model (input (type (eql :glb)) &rest args)
@@ -143,9 +140,12 @@
                  (dolist (object (load-environment-light (gltf:light node)))
                    (enter object scene)))
                (when (gltf:envmap node)
-                 (let ((envmap (make-instance 'environment-map :input (merge-pathnames (gltf:envmap node) input))))
-                   (enter (make-instance 'environment-light :asset envmap :name :envlight) scene)
-                   (enter (make-instance 'skybox :texture (resource envmap :environment-map) :name :skybox) scene)))
+                 (let* ((envmap (gltf:envmap node))
+                        (color (to-vec (gltf:color envmap)))
+                        (orientation (to-vec (gltf:orientation envmap)))
+                        (envmap (make-instance 'environment-map :input (merge-pathnames (gltf:file envmap) input))))
+                   (enter (make-instance 'environment-light :color color :asset envmap :name :envlight) scene)
+                   (enter (make-instance 'skybox :color color :texture (resource envmap :environment-map) :name :skybox) scene)))
                (loop for child across (gltf:nodes node)
                      for entity = (construct-node child gltf model generator)
                      do (when entity (enter entity scene))))

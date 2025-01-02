@@ -9,9 +9,7 @@
        (apply #'trial:make-sphere :radius (float (gltf:radius shape) 0f0)
               args))
       (gltf:box-shape
-       (apply #'trial:make-box :bsize (vec (* 0.5 (aref (gltf:size shape) 0))
-                                           (* 0.5 (aref (gltf:size shape) 1))
-                                           (* 0.5 (aref (gltf:size shape) 2)))
+       (apply #'trial:make-box :bsize (nv* (to-vec (gltf:size shape)) 0.5)
               args))
       (gltf:capsule-shape
        (apply #'trial:make-pill :height (float (* 0.5 (gltf:height shape)) 0f0)

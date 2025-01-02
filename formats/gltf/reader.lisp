@@ -1,5 +1,10 @@
 (in-package #:org.shirakumo.fraf.trial.gltf)
 
+(defun to-vec (thing)
+  (let ((vec (ecase (length thing) (2 (vec2)) (3 (vec3)) (4 (vec4)))))
+    (map-into (varr vec) (lambda (x) (float x 0f0)) thing)
+    vec))
+
 (defun gltf-name (thing)
   (trial:lispify-name (or (gltf:name thing) (gltf:idx thing))))
 
