@@ -9,7 +9,8 @@
    (name-map :initform (make-hash-table :test 'equal) :accessor name-map)))
 
 (defmethod enter :after ((camera camera) (scene scene))
-  (setf (camera scene) camera))
+  (unless (camera scene)
+    (setf (camera scene) camera)))
 
 (defmethod unit (name (scene scene))
   (gethash name (name-map scene)))
