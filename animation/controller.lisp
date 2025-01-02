@@ -380,3 +380,6 @@
         (inv (quat-inv-bind-pose (skeleton (model entity)))))
     (dotimes (i (length palette) (setf (palette entity) palette))
       (nq* (svref palette i) (svref inv i)))))
+
+(defclass basic-animation-controller (basic-node animation-controller)
+  ())

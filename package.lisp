@@ -74,7 +74,8 @@
    #:model
    #:palette
    #:palette-texture
-   #:palette-data)
+   #:palette-data
+   #:basic-animation-controller)
   ;; animation/entity.lisp
   (:export
    #:base-animated-entity

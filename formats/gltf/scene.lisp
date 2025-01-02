@@ -82,6 +82,14 @@
                                     :name (gltf-name node)))))
 
 (defmethod translate-node (node entity gltf)
+  (let ((found NIL))
+    (do-scene-graph (child entity)
+      (unless (eq child entity)
+        (when (typep child 'animated-entity)
+          (setf found T)
+          (setf (animation-controller child) entity))))
+    (when found
+      (change-class entity 'basic-animation-controller)))
   entity)
 
 (defun construct-node (node gltf model generator)
