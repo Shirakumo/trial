@@ -189,9 +189,3 @@
                          (apply-transforms object)
                          (render-with render object program)))))))
       (activate (framebuffer pass)))))
-
-
-(untrace render render-with)
-
-(print (compute-applicable-methods #'render (list (type-prototype 'basic-animated-entity)
-                                                  (type-prototype 'shader-program))))

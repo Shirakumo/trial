@@ -35,7 +35,7 @@
                     (terpri stream)
                     (setf li 0))
                    (T
-                    (write-string string stream :start ci :end (print (+ ci (- line-length li))))
+                    (write-string string stream :start ci :end (+ ci (- line-length li)))
                     (terpri stream)
                     (setf li 0)
                     (incf ci (- line-length li)))))
