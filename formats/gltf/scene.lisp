@@ -1,5 +1,9 @@
 (in-package #:org.shirakumo.fraf.trial.gltf)
 
+(defun convert-light-intensity (i)
+  (let ((watts (float (/ i 54.35141306588226d0) 0f0)))
+    (/ watts 80.0)))
+
 (defun load-light (light)
   (flet ((make (type intensity &rest initargs)
            (apply #'make-instance type
@@ -8,19 +12,19 @@
     (etypecase light
       (gltf:directional-light
        (make 'trial:directional-light
-             (/ (sqrt (gltf:intensity light)) 100.0)
+             (convert-light-intensity (gltf:intensity light))
              :direction (vec 0 0 -1)))
       (gltf:point-light
        (make 'trial:point-light
-             (/ (sqrt (gltf:intensity light)) 500.0)
-             :linear-attenuation (or (gltf:range light) 0.0)
+             (convert-light-intensity (gltf:intensity light))
+             :linear-attenuation (or (gltf:range light) 1.0)
              :quadratic-attenuation 0.0))
       (gltf:spot-light
        (make 'trial:spot-light
-             ;; FIXME: I have no funcking clue what I'm doing here
-             (/ (sqrt (gltf:intensity light)) 500.0)
+             (convert-light-intensity (gltf:intensity light))
              :direction (vec 0 0 -1)
-             :linear-attenuation (or (gltf:range light) 0.0)
+             :linear-attenuation (or (gltf:range light) 1.0)
+             :quadratic-attenuation 0.0
              :inner-radius (rad->deg (gltf:inner-angle light))
              :outer-radius (rad->deg (gltf:outer-angle light)))))))
 
