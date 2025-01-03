@@ -64,43 +64,40 @@
     (setf (slot-value (aref structs (+ 5 (shadow-map light))) 'projection-matrix)
           (n*m proj (mlookat (location light) (nv+ (vec 0 0 -1) (location light)) (vec 0 -1 0))))))
 
+(define-shader-pass shadow-render-pass (single-shader-pass standard-environment-pass)
+  ((shadow-map-block :buffer T :initarg :shadow-map-block :reader shadow-map-block)
+   (shadow-map :port-type output :texspec (:target :texture-2d-array
+                                           :internal-format :depth-component
+                                           :min-filter :nearest :mag-filter :nearest
+                                           :wrapping :clamp-to-border
+                                           :border-color #.(vec4 1))
+               :attachment :depth-attachment :accessor shadow-map))
+  (:shader-file (trial "renderer/standard-shadow-map.glsl")))
+
+(defmethod object-renderable-p ((material material) (pass shadow-render-pass))
+  (not (transparent-p material)))
+
 (define-shader-pass standard-shadows-pass (standard-render-pass)
   ((shadow-map :port-type fixed-input :reader shadow-map)
    (shadow-map-lights :accessor shadow-map-lights)
    (shadow-map-block :buffer T :reader shadow-map-block)
-   (shadow-map-program :reader shadow-map-program)
-   (shadow-map-framebuffer :reader shadow-map-framebuffer))
+   (shadow-render-pass :reader shadow-render-pass))
   (:shader-file (trial "renderer/standard-shadows-pass.glsl")))
 
 (defmethod initialize-instance :after ((pass standard-shadows-pass) &key (max-shadow-casters 18) (shadow-map-resolution (setting* 2048 :display :shadow-map-resolution)))
   (setf (shadow-map-lights pass) (make-array max-shadow-casters :initial-element NIL))
   (setf (slot-value pass 'shadow-map-block) (make-instance 'uniform-buffer :binding NIL :struct (make-instance 'shadow-map-block :size max-shadow-casters)))
-  (let* ((texture (make-instance 'texture :width shadow-map-resolution :height shadow-map-resolution
-                                          :depth max-shadow-casters
-                                          :target :texture-2d-array
-                                          :internal-format :depth-component
-                                          :min-filter :nearest
-                                          :mag-filter :nearest
-                                          :wrapping :clamp-to-border
-                                          :border-color #.(vec 1 1 1 1)))
-         (framebuffer (make-instance 'framebuffer :attachments `((:depth-attachment ,texture :layer 0))
-                                                  :clear-bits '(:depth-buffer)
-                                                  :width shadow-map-resolution :height shadow-map-resolution)))
+  (let* ((render (make-instance 'shadow-render-pass :shadow-map-block (shadow-map-block pass)))
+         (texture (make-port-texture (port render 'shadow-map) shadow-map-resolution shadow-map-resolution max-shadow-casters)))
+    (setf (slot-value render 'shadow-map) texture)
     (setf (slot-value pass 'shadow-map) texture)
-    (setf (slot-value pass 'shadow-map-framebuffer) framebuffer))
-  (let* ((*default-pathname-defaults* (pool-path 'trial "renderer/standard-shadow-map.glsl"))
-         (shaders (loop with buffer = (glsl-toolkit:serialize (gl-source (shadow-map-block pass)))
-                        for (type source) on (glsl-toolkit:preprocess *default-pathname-defaults* :include-resolution #'resolve-shader-include) by #'cddr
-                        for appended-source = (append (vertex-attribute-code) (rest source))
-                        collect (make-instance 'shader :type type :source (format NIL "~a~%~a" buffer (glsl-toolkit:serialize appended-source)))))
-         (program (make-instance 'shader-program :shaders shaders :buffers (list (shadow-map-block pass)))))
-    (setf (slot-value pass 'shadow-map-program) program)))
+    (setf (framebuffer render) (make-pass-framebuffer render))
+    (setf (slot-value pass 'shadow-render-pass) render)))
 
 (defmethod stage :after ((pass standard-shadows-pass) (area staging-area))
   (stage (shadow-map pass) area)
   (stage (shadow-map-block pass) area)
-  (stage (shadow-map-program pass) area)
-  (stage (shadow-map-framebuffer pass) area))
+  (stage (shadow-render-pass pass) area))
 
 (defmethod clear :after ((pass standard-shadows-pass))
   (loop for i from 0 below (length (shadow-map-lights pass))
@@ -167,10 +164,11 @@
 
 (defmethod render-frame :before ((pass standard-shadows-pass) frame)
   (when (setting* T :display :shadows)
-    (let ((program (shadow-map-program pass))
-          (map (gl-name (shadow-map pass)))
-          (lights (shadow-map-lights pass)))
-      (activate (shadow-map-framebuffer pass))
+    (let* ((render (shadow-render-pass pass))
+           (program (shader-program render))
+           (map (gl-name (shadow-map pass)))
+           (lights (shadow-map-lights pass)))
+      (activate (framebuffer render))
       (activate program)
       (when (dirty-p (buffer-data (shadow-map-block pass)))
         (with-buffer-tx (struct (shadow-map-block pass))
@@ -189,5 +187,11 @@
                        ;;       outside the shadow map purview.
                        (with-pushed-matrix ()
                          (apply-transforms object)
-                         (render object program)))))))
+                         (render-with render object program)))))))
       (activate (framebuffer pass)))))
+
+
+(untrace render render-with)
+
+(print (compute-applicable-methods #'render (list (type-prototype 'basic-animated-entity)
+                                                  (type-prototype 'shader-program))))
