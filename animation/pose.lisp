@@ -176,13 +176,12 @@
     (apply #'replace-vertex-data lines (nreverse points) args)))
 
 ;;; Minor optimisation to avoid sequence accessor overhead
-(defmethod sample ((pose pose) (clip clip) time &key)
+(defmethod sample ((pose pose) (clip clip) time &key (loop-p (loop-p clip)))
   (declare (type single-float time))
   (declare (optimize speed))
   (if (< 0.0 (the single-float (end-time clip)))
       (let ((time (fit-to-clip clip time))
             (tracks (tracks clip))
-            (loop-p (loop-p clip))
             (joints (joints pose)))
         (declare (type single-float time))
         (declare (type simple-vector tracks joints))
