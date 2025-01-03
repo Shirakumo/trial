@@ -108,14 +108,18 @@
   (dolist (node (nodes pipeline))
     (check-consistent node)))
 
-(defun texspec-real-size (texspec width height)
+(defun texspec-real-size (texspec width height &optional depth)
   (flet ((eval-size (size)
-           (eval `(let ((width (* ,width))
-                        (height (* ,height)))
-                    (declare (ignorable width height))
-                    ,size))))
-    (values (ceiling (eval-size (getf texspec :width)))
-            (ceiling (eval-size (getf texspec :height))))))
+           (when size
+             (let ((res (eval `(let ((width ,width)
+                                     (height ,height)
+                                     (depth ,depth))
+                                 (declare (ignorable width height depth))
+                                 ,size))))
+               (when res (ceiling res))))))
+    (values (eval-size (getf texspec :width))
+            (eval-size (getf texspec :height))
+            (eval-size (getf texspec :depth)))))
 
 (defmethod resize ((pipeline pipeline) width height)
   (let ((width (max 1 width))
@@ -177,6 +181,19 @@
        (eq (min-filter texture) (getf texspec :min-filter))
        (eq (mag-filter texture) (getf texspec :mag-filter))))
 
+(defun make-port-texture (port width height &optional depth texture)
+  (let* ((texspec (normalized-texspec port))
+         (texture (if texture
+                      (apply #'reinitialize-instance texture texspec)
+                      (apply #'make-instance 'texture texspec))))
+    (multiple-value-bind (width height depth) (texspec-real-size texspec width height depth)
+      (setf (width texture) width)
+      (setf (height texture) height)
+      (setf (depth texture) depth))
+    (dolist (connection (flow:connections port))
+      (setf (slot-value (flow:right connection) 'texture) texture))
+    (setf (slot-value port 'texture) texture)))
+
 (defun allocate-textures (passes textures texspec)
   (flet ((kind (port)
            ;; FIXME: This is really dumb and inefficient. If we could remember which port belongs
@@ -211,13 +228,7 @@
   ;; Allocate port textures
   (dolist (port (flow:ports pass))
     (when (typep port '(and (or static-input flow:out-port) texture-port))
-      (let ((texture (apply #'make-instance 'texture (normalized-texspec port))))
-        (multiple-value-bind (width height) (texspec-real-size (texture-texspec texture) width height)
-          (setf (width texture) width)
-          (setf (height texture) height))
-        (setf (texture port) texture)
-        (dolist (connection (flow:connections port))
-          (setf (texture (flow:right connection)) texture)))))
+      (make-port-texture port width height)))
   (setf (framebuffer pass) (make-pass-framebuffer pass))
   pass)
 
@@ -248,12 +259,7 @@
                               do (when (and (not (find texture textures))
                                             (texture-texspec-matches-p texture texspec width height))
                                    (return texture))
-                              finally (return (apply #'make-instance 'texture texspec)))))
-          (multiple-value-bind (width height) (texspec-real-size texspec width height)
-            (setf (width texture) width)
-            (setf (height texture) height))
-          (dolist (connection (flow:connections port))
-            (setf (slot-value (flow:right connection) 'texture) texture))
+                              finally (return (make-port-texture port width height)))))
           ;; If we're dynamically updating then setting the texture now
           ;; will require it to be allocated to be bound...
           (when (and (framebuffer (flow:node port))
