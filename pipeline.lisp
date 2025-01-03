@@ -143,6 +143,8 @@
       (setf (getf texspec :width) 'width))
     (unless (getf texspec :height)
       (setf (getf texspec :height) 'height))
+    (unless (getf texspec :depth)
+      (setf (getf texspec :depth) 'depth))
     (unless (getf texspec :target)
       (setf (getf texspec :target) :texture-2d))
     texspec))
@@ -181,7 +183,7 @@
        (eq (min-filter texture) (getf texspec :min-filter))
        (eq (mag-filter texture) (getf texspec :mag-filter))))
 
-(defun make-port-texture (port width height &optional depth texture)
+(defmethod make-port-texture ((port port) width height &optional depth texture)
   (let* ((texspec (normalized-texspec port))
          (texture (if texture
                       (apply #'reinitialize-instance texture texspec)
@@ -190,9 +192,7 @@
       (setf (width texture) width)
       (setf (height texture) height)
       (setf (depth texture) depth))
-    (dolist (connection (flow:connections port))
-      (setf (slot-value (flow:right connection) 'texture) texture))
-    (setf (slot-value port 'texture) texture)))
+    texture))
 
 (defun allocate-textures (passes textures texspec)
   (flet ((kind (port)
@@ -228,7 +228,7 @@
   ;; Allocate port textures
   (dolist (port (flow:ports pass))
     (when (typep port '(and (or static-input flow:out-port) texture-port))
-      (make-port-texture port width height)))
+      (setf (texture port) (make-port-texture port width height))))
   (setf (framebuffer pass) (make-pass-framebuffer pass))
   pass)
 
@@ -262,6 +262,8 @@
                               finally (return (make-port-texture port width height)))))
           ;; If we're dynamically updating then setting the texture now
           ;; will require it to be allocated to be bound...
+          (dolist (connection (flow:connections port))
+            (setf (slot-value (flow:right connection) 'texture) texture))
           (when (and (framebuffer (flow:node port))
                      (allocated-p (framebuffer (flow:node port)))
                      (not (allocated-p texture)))
