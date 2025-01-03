@@ -404,6 +404,9 @@ void main(){
 (defmethod debug-draw ((entity vertex-entity) &rest args &key &allow-other-keys)
   (apply #'debug-vertex-array (vertex-array entity) args))
 
+(defmethod debug-draw ((array vertex-array) &rest args &key &allow-other-keys)
+  (apply #'debug-vertex-array array args))
+
 (defmethod debug-draw :around ((entity transformed-entity) &rest args &key &allow-other-keys)
   (unless (getf args :transform)
     (setf (getf args :transform) (tmat (tf entity))))
@@ -422,6 +425,10 @@ void main(){
     (setf (getf args :transform) (primitive-transform primitive)))
   (let ((primitive (coerce-object primitive 'convex-mesh)))
     (apply #'debug-triangles (general-mesh-vertices primitive) (general-mesh-faces primitive) args)))
+
+(defmethod debug-draw ((entity multi-mesh-entity) &rest args &key &allow-other-keys)
+  (loop for vao across (vertex-arrays entity)
+        do (apply #'debug-draw vao args)))
 
 (define-debug-draw-function (debug-triangles lines) (vertices faces &key (color #.(vec 1 0 0)) (transform (model-matrix)))
   (allocate (* (length faces) 2 2))

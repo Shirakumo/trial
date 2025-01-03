@@ -386,4 +386,5 @@
   (let ((old (camera scene)))
     (prog1 (call-next-method)
       (when (typep old 'camera)
-        (<- camera old)))))
+        (<- camera old)
+        (global-location old (location camera))))))
