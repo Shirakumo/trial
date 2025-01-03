@@ -16,5 +16,7 @@ vec4 post_process(sampler2D previous_pass, vec2 uv){
       sum += texture(bloom_cutoff, uv + vec2(x,y)*blur_size).xyz * weight[(y+2)*5+x+2];
     }
   }
-  return texture(previous_pass, uv) + vec4(sum, 1);
+  vec4 color = texture(previous_pass, uv);
+  color.rgb += sum;
+  return color;
 }

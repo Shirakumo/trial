@@ -11,6 +11,7 @@ float color_luminance(vec3 color){
 vec3 tone_map(vec3 color);
 
 void main(){
-  vec3 mapped = clamp(tone_map(texture(previous_pass, uv).xyz), vec3(0), vec3(1));
-  color = vec4(pow(mapped, vec3(inv_gamma)), 1.0);
+  color = texture(previous_pass, uv);
+  vec3 mapped = clamp(pow(tone_map(color.rgb), vec3(inv_gamma)), vec3(0), vec3(1));
+  color = vec4(mapped, color.a);
 }
