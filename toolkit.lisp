@@ -1036,7 +1036,7 @@
   :rg32f :rg32i :rg32ui
   :rgb :rgb8 :rgb8-snorm :rgb8i :rgb8ui
   :r3-g3-b2 :rgb4 :rgb5 :rgb9-e5 :rgb10 :r11f-g11f-b10f :rgb12
-  :rgb16-snorm :rgb16f :rgb16i :rgb16ui
+  :rgb16 :rgb16-snorm :rgb16f :rgb16i :rgb16ui
   :rgb32f :rgb32i :rgb32ui
   :rgba :rgba2 :rgba4 :rgb5-a1 :rgb10-a2 :rgb10-a2ui :rgba12
   :rgba8 :rgba8-snorm :rgba8i :rgba8ui
