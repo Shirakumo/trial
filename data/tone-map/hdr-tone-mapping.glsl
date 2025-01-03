@@ -12,6 +12,5 @@ vec3 tone_map(vec3 color);
 
 void main(){
   color = texture(previous_pass, uv);
-  vec3 mapped = clamp(pow(tone_map(color.rgb), vec3(inv_gamma)), vec3(0), vec3(1));
-  color = vec4(mapped, color.a);
+  color.rgb = clamp(pow(tone_map(color.rgb), vec3(inv_gamma)), vec3(0), vec3(1));
 }
