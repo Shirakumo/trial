@@ -7,6 +7,8 @@
    (far-plane :initarg :far-plane :initform 10000.0f0 :accessor far-plane)
    (bsize :initform (vec2 0 0) :accessor bsize)))
 
+(define-transfer camera location near-plane far-plane bsize)
+
 (defgeneric project-view (camera))
 (defgeneric setup-perspective (camera width height))
 (defgeneric map-visible (function camera container))
@@ -112,6 +114,8 @@
   ((zoom :initarg :zoom :initform 1.0 :accessor zoom)
    (target :initarg :target :initform (vec 0 0 200) :accessor target)))
 
+(define-transfer sidescroll-camera zoom target)
+
 (defmethod project-view ((camera sidescroll-camera))
   (let* ((z (zoom camera))
          (v (vxy_ (bsize camera))))
@@ -144,6 +148,8 @@
                                                            -1 -1 +1  +1 -1 +1  +1 +1 +1  -1 +1 +1)
                                         :faces (u16-vec 0 1 2  2 3 0  4 5 6  6 7 4))
             :accessor frustum)))
+
+(define-transfer 3d-camera fov frustum)
 
 (defmethod (setf fov) :around (val (camera 3d-camera))
   (when (/= (fov camera) val)
@@ -262,6 +268,8 @@
   ((target :initarg :target :initform (vec3 0) :accessor target)
    (up :initarg :up :initform +vy3+ :accessor up)))
 
+(define-transfer target-camera target up)
+
 (defmethod project-view ((camera target-camera))
   (let ((matrix (meye 4))
         (loc (vec3))
@@ -278,6 +286,8 @@
 (defclass pivot-camera (target-camera)
   ((rotation :initform (quat) :accessor rotation)
    (radius :initform 1.0 :initarg :radius :accessor radius)))
+
+(define-transfer pivot-camera rotation radius)
 
 (defmethod initialize-instance :after ((camera pivot-camera) &key)
   (setf (rotation camera) (rotation camera)))
@@ -311,6 +321,8 @@
    (x-acceleration :initarg :x-acceleration :initform 0.01 :accessor x-acceleration)
    (y-acceleration :initarg :y-acceleration :initform 0.01 :accessor y-acceleration)))
 
+(define-transfer fps-camera rotation x-acceleration y-acceleration)
+
 (defmethod project-view ((camera fps-camera))
   (reset-matrix (view-matrix))
   (rotate +vx+ (vx (rotation camera)) (view-matrix))
@@ -334,6 +346,8 @@
 
 (defclass freeroam-camera (fps-camera)
   ((move-speed :initarg :move-speed :initform 1.0 :accessor move-speed)))
+
+(define-transfer freeroam-camera move-speed)
 
 (define-handler (freeroam-camera tick :after) ()
   (let* ((loc (location freeroam-camera))
@@ -367,3 +381,9 @@
   (when (or (retained :middle)
             (retained :left-control))
     (do-fps-movement editor-camera old-pos pos)))
+
+(defmethod (setf camera) :around ((camera editor-camera) scene)
+  (let ((old (camera scene)))
+    (prog1 (call-next-method)
+      (when (typep old 'camera)
+        (<- camera old)))))
