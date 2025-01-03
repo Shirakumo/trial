@@ -1885,7 +1885,8 @@
    #:depth-map
    #:occlusion
    #:ssao-radius
-   #:ssao-bias)
+   #:ssao-bias
+   #:ssao-kernel-size)
   ;; text.lisp
   (:export
    #:debug-text

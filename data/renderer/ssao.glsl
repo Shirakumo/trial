@@ -23,7 +23,7 @@ const vec3[16] ssao_noise = vec3[16]
    vec3(-0.8573853, 0.44876075, 0.0),
    vec3(0.17841947, 0.655126, 0.0));
 
-const int ssao_kernel_size = 64;
+uniform int ssao_kernel_size = 64;
 const vec3[64] ssao_kernel = vec3[64]
   (vec3(0.05251223, 0.06853916, 0.050446518),
    vec3(-0.046207886, 0.0068898234, 0.08866429),
