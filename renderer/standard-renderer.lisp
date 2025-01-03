@@ -275,7 +275,7 @@
                                      (enable (palette-texture renderable) pass)
                                      99)))
 
-(defmethod render ((renderable standard-animated-renderable) (program shader-program))
+(defmethod render-with ((pass shader-pass) (renderable standard-animated-renderable) (program shader-program))
   (declare (optimize speed))
   (setf (uniform program "model_matrix") (model-matrix))
   (let ((inv (mat4)))
@@ -286,18 +286,19 @@
         for vao across (the simple-vector (vertex-arrays renderable))
         for material across (the simple-vector (materials renderable))
         for (morph . morphtex) across (the simple-vector (morphs renderable))
-        do (cond (morph
-                  (bind (morph-data morph) program)
-                  (bind morphtex :texture6)
-                  (setf (uniform program "morph_targets") 6)
-                  (setf (uniform program "animation") (+ skinning 1)))
-                 (T
-                  (setf (uniform program "morph_targets") 99)
-                  (setf (uniform program "animation") (+ skinning 0))))
-           (with-pushed-features
-             (when (double-sided-p material)
-               (disable-feature :cull-face))
-             (render vao program))))
+        do (when (object-renderable-p material pass)
+             (cond (morph
+                    (bind (morph-data morph) program)
+                    (bind morphtex :texture6)
+                    (setf (uniform program "morph_targets") 6)
+                    (setf (uniform program "animation") (+ skinning 1)))
+                   (T
+                    (setf (uniform program "morph_targets") 99)
+                    (setf (uniform program "animation") (+ skinning 0))))
+             (with-pushed-features
+               (when (double-sided-p material)
+                 (disable-feature :cull-face))
+               (render vao program)))))
 
 (define-shader-entity single-material-renderable (standard-renderable)
   ((material :initarg :material :accessor material)))
