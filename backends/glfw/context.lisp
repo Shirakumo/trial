@@ -67,6 +67,9 @@
       (maybe-set debug-context :context-debug)
       (setf (g :client-api) api)
       (setf (g :vsync) vsync)
+      (setf (g :x11-class-name) "trial")
+      (setf (g :x11-instance-name) (or +app-system+ "trial"))
+      (setf (g :wayland-app-id) (or +app-system+ "trial"))
       (when version-p
         (setf (g :context-version-major) (first version))
         (setf (g :context-version-minor) (second version)))
