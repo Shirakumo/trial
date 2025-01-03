@@ -40,6 +40,7 @@
   #.(vec 0 0 0))
 
 (defmethod cast-shadows-p ((light light)) NIL)
+(defmethod shadow-map ((light light)) NIL)
 
 (defmethod in-view-p ((target light) camera) T)
 
