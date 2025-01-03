@@ -80,15 +80,17 @@
                  (setf (frames track) (cons (map 'vector (lambda (f) (float f 0f0)) (gethash "times" data))
                                             (map 'vector (lambda (f) (float f 0f0)) (gethash "values" data)))))))
     (trial::recompute-duration clip)
+    (if (gltf:next animation)
+        (setf (next-clip clip) (trial:lispify-name (gltf:next animation)))
+        (setf (loop-p clip) (gltf:loop-p animation)))
     (case (gltf:kind animation)
       (:blocking
        (setf (trial:blocking-p clip) T))
       (:physical
        (setf (trial:blocking-p clip) T)
-       (change-class clip 'forward-kinematic-clip :velocity-scale (gltf:velocity-scale animation))))
-    (if (gltf:next animation)
-        (setf (next-clip clip) (trial:lispify-name (gltf:next animation)))
-        (setf (loop-p clip) (gltf:loop-p animation)))
+       (change-class clip 'forward-kinematic-clip :velocity-scale (gltf:velocity-scale animation)))
+      (:additive
+       (setf (trial:loop-p clip) NIL)))
     (setf (blend-duration clip) (gltf:blend-duration animation))
     (setf (trial::effects clip)
           (coerce (loop for effect across (gltf:effects animation)
