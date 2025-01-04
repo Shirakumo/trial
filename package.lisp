@@ -70,6 +70,8 @@
    #:morph-group-controller
    #:morph-groups
    #:find-morph
+   #:fk-controller
+   #:fk-update
    #:animation-controller
    #:model
    #:palette

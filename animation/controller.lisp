@@ -275,7 +275,19 @@
   (loop for morph-group being the hash-values of (morph-groups entity)
         do (update-morph-data morph-group)))
 
-(defclass animation-controller (morph-group-controller ik-controller layer-controller fade-controller listener)
+(defclass fk-controller ()
+  ((pose :accessor pose)
+   (skeleton :initform NIL :accessor skeleton)))
+
+(defgeneric fk-update (fk-controller pose tt dt fc))
+
+(defmethod fk-update ((controller fk-controller) pose tt dt fc))
+
+(defmethod update ((controller fk-controller) tt dt fc)
+  (when (next-method-p) (call-next-method))
+  (fk-update controller (pose controller) tt dt fc))
+
+(defclass animation-controller (morph-group-controller fk-controller ik-controller layer-controller fade-controller listener)
   ((model :initform NIL :accessor model)
    (updated-on :initform -1 :accessor updated-on)
    (palette :initform #() :accessor palette)
@@ -347,8 +359,8 @@
   ;; the properties "transfer".
   (setf (slot-value system 'transform) (tf entity)))
 
-(define-handler ((entity animation-controller) (ev tick)) (tt dt fc)
-  (update entity tt dt fc))
+(define-handler ((entity animation-controller) (ev tick)) (dt fc)
+  (update entity (clock entity) dt fc))
 
 (defmethod update-palette ((entity animation-controller))
   (let* ((palette (matrix-palette (pose entity) (palette entity)))
