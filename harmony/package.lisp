@@ -11,6 +11,7 @@
    #:voice
    #:environment
    #:music
+   #:setup-server
    #:try-audio-backend
    #:initialize-audio-backend
    #:main

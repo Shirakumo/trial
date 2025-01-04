@@ -1,11 +1,18 @@
 (in-package #:org.shirakumo.fraf.trial.harmony)
 
-(defun try-audio-backend (backend &rest initargs)
+(defgeneric setup-server (main server)
+  (:method-combination progn :most-specific-last))
+
+(defmethod setup-server progn (main server))
+
+(defun try-audio-backend (main backend &rest initargs)
   (handler-bind ((mixed:device-not-found
                    (lambda (e)
                      (v:error :trial.harmony "~a" e)
                      (continue e))))
-    (mixed:start (apply #'harmony:make-simple-server :name trial:+app-system+ :drain backend initargs)))
+    (let ((server (apply #'harmony:make-simple-server :name trial:+app-system+ :drain backend initargs)))
+      (setup-server main server)
+      (mixed:start server)))
   (let ((drain (harmony:segment :drain (harmony:segment :output T))))
     (v:info :trial.harmony "Configured output for ~s~@[ on ~a~]: ~d ~a channels ~aHz.~%  Channel layout is ~a"
             (type-of drain) (when (typep drain 'mixed:device-drain) (mixed:device drain))
@@ -15,13 +22,13 @@
       (v:info :trial.harmony "Device list:~{~%  ~a~}" (mixed:list-devices drain)))
     drain))
 
-(defun initialize-audio-backend (&optional preferred-backend &rest initargs)
+(defun initialize-audio-backend (main &optional preferred-backend &rest initargs)
   (or (when preferred-backend
         (ignore-errors (trial:with-error-logging (:trial.harmony "Failed to set up requested backend, falling back to default output.")
-                         (apply #'try-audio-backend preferred-backend initargs))))
+                         (apply #'try-audio-backend main preferred-backend initargs))))
       (ignore-errors (trial:with-error-logging (:trial.harmony "Failed to set up sound, falling back to dummy output.")
-                       (apply #'try-audio-backend :default initargs)))
-      (apply #'try-audio-backend :dummy initargs)))
+                       (apply #'try-audio-backend main :default initargs)))
+      (apply #'try-audio-backend main :dummy initargs)))
 
 (defmethod trial:finalize ((server harmony:server))
   (trial:with-ignored-errors-on-release (:trial.harmony)
@@ -60,7 +67,7 @@
 
 (defmethod initialize-instance ((main main) &key audio-backend)
   (call-next-method)
-  (apply #'initialize-audio-backend audio-backend (server-initargs main)))
+  (apply #'initialize-audio-backend main audio-backend (server-initargs main)))
 
 (defmethod trial:finalize :after ((main main))
   (when harmony:*server*
