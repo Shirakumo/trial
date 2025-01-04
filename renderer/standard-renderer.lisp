@@ -247,13 +247,15 @@
 
 (define-transfer standard-renderable vertex-arrays)
 
-(defmethod render ((renderable standard-renderable) (program shader-program))
-  (declare (optimize speed))
+(defmethod render-with :before ((pass shader-pass) (renderable standard-renderable) program)
+  (prepare-pass-program pass program)
   (setf (uniform program "model_matrix") (model-matrix))
   (let ((inv (mat4)))
     (declare (dynamic-extent inv))
-    (!minv inv (model-matrix))
-    (setf (uniform program "inv_model_matrix") inv))
+    (setf (uniform program "inv_model_matrix") (!minv inv (model-matrix)))))
+
+(defmethod render ((renderable standard-renderable) (program shader-program))
+  (declare (optimize speed))
   (loop for vao across (the simple-vector (vertex-arrays renderable))
         do (render vao program)))
 
@@ -270,18 +272,11 @@
   (:inhibit-shaders (animated-entity :vertex-shader)
                     (standard-renderable :vertex-shader)))
 
-(defmethod render-with :before ((pass standard-render-pass) (renderable standard-animated-renderable) (program shader-program))
-  (setf (uniform program "pose") (if (skinned-p renderable)
-                                     (enable (palette-texture renderable) pass)
-                                     99)))
+(defmethod bind-palette ((pass standard-render-pass) (renderable standard-animated-renderable))
+  (enable (palette-texture renderable) pass))
 
 (defmethod render-with ((pass shader-pass) (renderable standard-animated-renderable) (program shader-program))
   (declare (optimize speed))
-  (setf (uniform program "model_matrix") (model-matrix))
-  (let ((inv (mat4)))
-    (declare (dynamic-extent inv))
-    (!minv inv (model-matrix))
-    (setf (uniform program "inv_model_matrix") inv))
   (loop with skinning = (if (skinned-p renderable) 2 0)
         for vao across (the simple-vector (vertex-arrays renderable))
         for material across (the simple-vector (materials renderable))
@@ -308,13 +303,6 @@
     (stage (material renderable) area)))
 
 (define-transfer single-material-renderable material)
-
-(defmethod render-with :before ((pass standard-render-pass) (renderable single-material-renderable) program)
-  (prepare-pass-program pass program)
-  (setf (uniform program "model_matrix") (model-matrix))
-  (let ((inv (mat4)))
-    (declare (dynamic-extent inv))
-    (setf (uniform program "inv_model_matrix") (!minv inv (model-matrix)))))
 
 (defmethod render-with ((pass standard-render-pass) (object single-material-renderable) program)
   (when (and (material object) (object-renderable-p (material object) pass))
@@ -344,13 +332,6 @@
         do (disable material pass)))
 
 (define-transfer per-array-material-renderable materials)
-
-(defmethod render-with :before ((pass standard-render-pass) (renderable per-array-material-renderable) program)
-  (prepare-pass-program pass program)
-  (setf (uniform program "model_matrix") (model-matrix))
-  (let ((inv (mat4)))
-    (declare (dynamic-extent inv))
-    (setf (uniform program "inv_model_matrix") (!minv inv (model-matrix)))))
 
 (defmethod render-with ((pass standard-render-pass) (renderable per-array-material-renderable) program)
   ;; KLUDGE: we can't do this in RENDER as we don't have access to the PASS variable, which we

@@ -33,6 +33,9 @@
 (defmethod list-clips ((entity base-animated-entity))
   (list-clips entity))
 
+(defmethod bind-palette ((pass shader-pass) (entity base-animated-entity))
+  (bind (palette-texture entity) :texture5))
+
 (define-shader-entity armature (base-animated-entity lines)
   ((color :initarg :color :initform (vec 0 0 0 1) :accessor color)))
 
@@ -72,10 +75,8 @@
   (unless (loaded-p asset)
     (setf (palette entity) #(#.(meye 4)))))
 
-(defmethod render :before ((entity skinned-entity) (program shader-program))
-  (when (palette-texture entity)
-    (bind (palette-texture entity) :texture5)
-    (setf (uniform program "pose") 5)))
+(defmethod render-with :before ((pass shader-pass) (entity skinned-entity) (program shader-program))
+  (setf (uniform program "pose") (if (palette-texture entity) (bind-palette pass entity) 99)))
 
 (defmethod skinned-p ((entity skinned-entity))
   (palette-texture entity))
@@ -86,15 +87,13 @@
   ()
   (:shader-file (trial "renderer/skin-dquat.glsl")))
 
-(defmethod render :before ((entity quat2-skinned-entity) (program shader-program))
-  (when (palette-texture entity)
-    (bind (palette-texture entity) :texture5)
-    (setf (uniform program "pose") 5)))
+(defmethod render-with :before ((pass shader-pass) (entity quat2-skinned-entity) (program shader-program))
+  (setf (uniform program "pose") (if (palette-texture entity) (bind-palette pass entity) 99)))
 
 (define-shader-entity animated-entity (skinned-entity morphed-entity)
   ())
 
-(defmethod render :before ((entity animated-entity) (program shader-program))
+(defmethod render-with :before ((pass shader-pass) (entity animated-entity) (program shader-program))
   (setf (uniform program "animation")
         (+ (if (morphed-p entity) 1 0)
            (if (skinned-p entity) 2 0))))
