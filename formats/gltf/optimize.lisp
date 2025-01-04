@@ -24,6 +24,8 @@
   (let ((decomposition-args (remf* args :output))
         (shape-table (make-hash-table :test 'eql))
         (work-done-p NIL))
+    (unless (getf decomposition-args :tolerance)
+      (setf (getf decomposition-args :tolerance) (expt 10 -2.5)))
     (trial:with-tempfile (tmp :type (pathname-type file))
       (gltf:with-gltf (gltf file)
         ;; Rewrite mesh shapes to multiple new shapes.
