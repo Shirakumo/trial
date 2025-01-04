@@ -276,7 +276,7 @@
         do (update-morph-data morph-group)))
 
 (defclass fk-controller ()
-  ((pose :accessor pose)
+  ((pose :initform NIL :accessor pose)
    (skeleton :initform NIL :accessor skeleton)))
 
 (defgeneric fk-update (fk-controller pose tt dt fc))
@@ -302,6 +302,8 @@
       (format stream "  None~%"))
   (format stream "~&~%Skeleton:~%")
   (describe-skeleton (skeleton entity) stream))
+
+(define-transfer animation-controller model)
 
 (defmethod observe-load-state :before ((entity animation-controller) (asset model) (state (eql :loaded)) (area staging-area))
   (setf (model entity) asset)
