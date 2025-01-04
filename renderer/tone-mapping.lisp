@@ -12,6 +12,7 @@
 (defmethod gamma ((pass tone-mapping-pass))
   (/ (inv-gamma pass)))
 
+;; Also known as Filmic ACES.
 (define-shader-pass hable (tone-mapping-pass)
   ((shoulder-strength :initarg :shoulder-strength :initform 0.15 :accessor shoulder-strength :uniform "a")
    (linear-strength :initarg :linear-strength :initform 0.5 :accessor linear-strength :uniform "b")
