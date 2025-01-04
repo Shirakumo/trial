@@ -82,9 +82,9 @@
         (when (funcall ,id ,node)
           ,@body)))))
 
-(define-prefab-translator enter (instance asset &optional node children-only)
+(define-prefab-translator enter (instance asset node &key children-only (scene T))
   (let ((nodevar (gensym "NODE")))
-    `(do-nodes% (,nodevar (find-scene T ,asset) ,node)
+    `(do-nodes% (,nodevar (find-scene ,scene ,asset) ,node)
        ,(if children-only
             `(sequences:dosequence (,nodevar ,nodevar)
                (enter (clone ,nodevar) ,instance))
