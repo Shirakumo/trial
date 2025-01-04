@@ -165,7 +165,7 @@
       (orthographic-projection 0 (width *context*)
                                0 (height *context*)
                                0 10)
-      (translate-by 2 (- (height *context*) 14) 0)
+      (translate-by 2 (- (height *context*) (font-size controller) 2) 0)
       (let ((fps-buffer (fps-buffer controller))
             (idx (fps-buffer-idx controller)))
         (when (= (length fps-buffer) idx)
