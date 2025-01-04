@@ -348,8 +348,12 @@
       (apply #'save-image region target image-type :width (width source) :height (height source) :pixel-type type :pixel-format format args))))
 
 (defmethod bind ((source texture) point)
-  (gl:active-texture point)
-  (gl:bind-texture (target source) (gl-name source)))
+  (let ((enum (if (typep point 'integer)
+                  (+ point #.(cffi:foreign-enum-value '%gl:enum :texture0))
+                  (cffi:foreign-enum-value '%gl:enum point))))
+    (%gl:active-texture enum)
+    (gl:bind-texture (target source) (gl-name source))
+    (- enum #.(cffi:foreign-enum-value '%gl:enum :texture0))))
 
 (defmethod activate ((source texture))
   (gl:bind-texture (target source) (gl-name source)))
