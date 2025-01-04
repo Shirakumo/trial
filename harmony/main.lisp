@@ -11,8 +11,9 @@
                      (v:error :trial.harmony "~a" e)
                      (continue e))))
     (let ((server (apply #'harmony:make-simple-server :name trial:+app-system+ :drain backend initargs)))
-      (setup-server main server)
-      (mixed:start server)))
+      (trial:with-cleanup-on-failure (mixed:free server)
+        (setup-server main server)
+        (mixed:start server))))
   (let ((drain (harmony:segment :drain (harmony:segment :output T))))
     (v:info :trial.harmony "Configured output for ~s~@[ on ~a~]: ~d ~a channels ~aHz.~%  Channel layout is ~a"
             (type-of drain) (when (typep drain 'mixed:device-drain) (mixed:device drain))
