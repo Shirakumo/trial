@@ -120,7 +120,7 @@
                    (make-instance 'animated-mesh
                                   :name name
                                   :vertex-form (gltf:mode primitive)
-                                  :skinned-p (not (null skin)))
+                                  :skeleton (when skin (load-skeleton skin)))
                    (make-instance 'static-mesh
                                   :name name
                                   :vertex-form (gltf:mode primitive)))))

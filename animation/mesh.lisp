@@ -12,7 +12,7 @@
    (morphs :initform (make-array 0) :accessor morphs)
    (model-name :initarg :model-name :initform NIL :accessor model-name)
    (initial-weights :initform #() :accessor initial-weights)
-   (skinned-p :initarg :skinned-p :initform T :accessor skinned-p)))
+   (skeleton :initarg :skeleton :initform NIL :accessor skeleton :reader skinned-p)))
 
 (defmethod (setf vertex-data) :after (data (mesh animated-mesh))
   (let ((vertices (vertex-count mesh)))

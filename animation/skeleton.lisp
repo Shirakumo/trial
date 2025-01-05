@@ -18,11 +18,13 @@
       (recurse -1 ()))))
 
 (defclass skeleton ()
-  ((rest-pose :initarg :rest-pose :accessor rest-pose)
+  ((name :initarg :name :initform NIL :accessor name)
+   (rest-pose :initarg :rest-pose :accessor rest-pose)
    (bind-pose :initarg :bind-pose :initform NIL :accessor bind-pose)
    (mat-inv-bind-pose :initform NIL :accessor mat-inv-bind-pose)
    (quat-inv-bind-pose :initform NIL :accessor quat-inv-bind-pose)
-   (joint-names :initarg :joint-names :initform #() :accessor joint-names)))
+   (joint-names :initarg :joint-names :initform #() :accessor joint-names)
+   (clips :initform (make-hash-table :test 'equal) :accessor clips)))
 
 (defmethod describe-object ((skeleton skeleton) stream)
   (call-next-method)
@@ -34,6 +36,8 @@
     (update-inv-bind-pose skeleton))
   (when rest-pose
     (setf (rest-pose skeleton) rest-pose)))
+
+(define-table-accessor skeleton clip clips)
 
 (defmethod (setf rest-pose) :after (pose (skeleton skeleton))
   (setf (joint-names skeleton) (%adjust-array (joint-names skeleton) (length pose))))
