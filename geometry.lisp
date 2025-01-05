@@ -112,6 +112,10 @@
 (defmethod shared-initialize :after ((data mesh-data) slots &key (material NIL material-p))
   (when material-p (setf (material data) material)))
 
+(defmethod print-object ((data mesh-data) stream)
+  (print-unreadable-object (data stream :type T :identity T)
+    (format stream "~@[~a~]" (name data))))
+
 (defmethod (setf material) ((name string) (data mesh-data))
   (setf (material data) (material name)))
 

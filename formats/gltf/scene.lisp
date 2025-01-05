@@ -118,20 +118,14 @@
                                                      (model (make-instance 'model)))
   (gltf:with-gltf (gltf input)
     (let ((meshes (meshes model))
-          (clips (clips model))
           (scenes (scenes model)))
+      (when (pathnamep input)
+        (setf (name model) (pathname-name input)))
       (load-materials gltf model generator)
+      (load-clips gltf NIL (clips model))
       (loop for mesh across (load-meshes gltf model)
             do (setf (gethash (name mesh) meshes) mesh)
                (trial::make-vertex-array mesh (resource generator (name mesh))))
-      ;; Patch up
-      (loop for mesh being the hash-values of meshes
-            do (when (skinned-p mesh)
-                 (let ((map (make-hash-table :test 'eql)))
-                   (trial::reorder (skeleton model) map)
-                   (loop for clip being the hash-values of (clips mesh)
-                         do (trial::reorder clip map)))))
-      ;; FIXME: global clips
       ;; Construct scene graphs
       (loop for node across (gltf:scenes gltf)
             for scene = (make-instance 'basic-node :name (gltf-name node))

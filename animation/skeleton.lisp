@@ -24,12 +24,21 @@
    (mat-inv-bind-pose :initform NIL :accessor mat-inv-bind-pose)
    (quat-inv-bind-pose :initform NIL :accessor quat-inv-bind-pose)
    (joint-names :initarg :joint-names :initform #() :accessor joint-names)
-   (clips :initform (make-hash-table :test 'equal) :accessor clips)))
+   (clips :initarg :clips :initform (make-hash-table :test 'equal) :accessor clips)))
+
+(defmethod print-object ((skeleton skeleton) stream)
+  (print-unreadable-object (skeleton stream :type T :identity T)
+    (format stream "~@[~a~]" (name skeleton))))
 
 (defmethod describe-object ((skeleton skeleton) stream)
   (call-next-method)
   (terpri stream)
-  (describe-skeleton skeleton stream))
+  (describe-skeleton skeleton stream)
+  (format stream "~&~%Clips:~%")
+  (if (list-clips skeleton)
+      (loop for clip in (list-clips skeleton)
+            do (format stream "  ~s~%" clip))
+      (format stream "  None~%")))
 
 (defmethod shared-initialize :after ((skeleton skeleton) slots &key rest-pose)
   (when (bind-pose skeleton)

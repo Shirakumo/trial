@@ -35,8 +35,7 @@
       (setf (vertex-data mesh) data))
     (case (vertex-attribute-category attribute)
       (joints
-       (let ((joint-count (length (joint-names skeleton))))
-         (declare (type simple-vector joints))
+       (let ((joint-count (length (trial::joint-names skeleton))))
          (flet ((map-joint (joint)
                   (declare (type (unsigned-byte 32) joint))
                   (float (max 0 (cond ((< joint joint-count)

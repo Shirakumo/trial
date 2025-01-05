@@ -120,7 +120,7 @@
   (remhash name *materials*)
   null)
 
-(defun list-materials ()
+(defmethod list-materials ((global (eql T)))
   (alexandria:hash-table-values *materials*))
 
 (defun update-material (name type &rest initargs)

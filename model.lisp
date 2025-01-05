@@ -1,14 +1,19 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass model ()
-  ((materials :initform (make-hash-table :test 'equal) :accessor materials)
+  ((name :initarg :name :initform NIL :accessor name)
+   (materials :initform (make-hash-table :test 'equal) :accessor materials)
    (meshes :initform (make-hash-table :test 'equal) :accessor meshes)
    (clips :initform (make-hash-table :test 'equal) :accessor clips)
    (scenes :initform (make-hash-table :test 'equal) :accessor scenes)))
 
+(defmethod print-object ((model model) stream)
+  (print-unreadable-object (model stream :type T :identity T)
+    (format stream "~@[~a~]" (name model))))
+
 (defmacro define-table-accessor (class type accessor)
   (let ((find (intern (format NIL "~a-~a" 'find type)))
-        (list (intern (format NIL "~a-~a" 'list type))))
+        (list (intern (format NIL "~a-~a" 'list accessor))))
     `(progn
        (defmethod ,find (name (,class ,class) &optional (errorp T))
          (or (gethash name (,accessor ,class))
@@ -23,7 +28,7 @@
          value)
 
        (defmethod ,list ((,class ,class))
-         (alexandria:hash-table-values (clips ,class))))))
+         (alexandria:hash-table-values (,accessor ,class))))))
 
 (define-table-accessor model material materials)
 (define-table-accessor model mesh meshes)
