@@ -81,7 +81,7 @@
   (if skin
       (loop for channel across (gltf:channels animation)
             for target = (gltf:node (gltf:target channel))
-            always (find target (gltf:joints skin)))
+            thereis (find target (gltf:joints skin)))
       (loop for skin across (gltf:skins gltf)
             never (applicable-animation-p gltf animation skin))))
 

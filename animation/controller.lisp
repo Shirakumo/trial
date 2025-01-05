@@ -288,8 +288,7 @@
   (fk-update controller (pose controller) tt dt fc))
 
 (defclass animation-controller (morph-group-controller fk-controller ik-controller layer-controller fade-controller listener)
-  ((model :initform NIL :accessor model)
-   (updated-on :initform -1 :accessor updated-on)
+  ((updated-on :initform -1 :accessor updated-on)
    (palette :initform #() :accessor palette)
    (palette-texture :initform (make-instance 'texture :target :texture-1d-array :width 3 :height 1 :internal-format :rgba32f :min-filter :nearest :mag-filter :nearest) :accessor palette-texture)
    (palette-data :initform (make-array 0 :element-type 'single-float) :accessor palette-data)))
@@ -306,7 +305,6 @@
 (define-transfer animation-controller model)
 
 (defmethod observe-load-state :before ((entity animation-controller) (asset model) (state (eql :loaded)) (area staging-area))
-  (setf (model entity) asset)
   (dolist (clip (list-clips asset))
     (stage clip area)))
 
@@ -316,13 +314,13 @@
   #++(play (or (clip entity) T) entity))
 
 (defmethod find-clip (name (entity animation-controller) &optional (errorp T))
-  (if (null (model entity))
+  (if (null (skeleton entity))
       (when errorp (error "No such clip ~s found on ~a" name entity))
-      (find-clip name (model entity) errorp)))
+      (find-clip name (skeleton entity) errorp)))
 
 (defmethod list-clips ((entity animation-controller))
-  (when (model entity)
-    (list-clips (model entity))))
+  (when (skeleton entity)
+    (list-clips (skeleton entity))))
 
 (defmethod add-animation-layer (clip-name (entity animation-controller) &rest args &key &allow-other-keys)
   (apply #'add-animation-layer (find-clip clip-name entity) entity args))
@@ -340,7 +338,7 @@
   (play (find-clip name entity) entity))
 
 (defmethod play ((anything (eql T)) (entity animation-controller))
-  (loop for clip being the hash-values of (clips (model entity))
+  (loop for clip being the hash-values of (clips (skeleton entity))
         do (return (play clip entity))))
 
 (defmethod update ((entity animation-controller) tt dt fc)
@@ -368,7 +366,7 @@
   (let* ((palette (matrix-palette (pose entity) (palette entity)))
          (texinput (%adjust-array (palette-data entity) (* 12 (length (pose entity))) (constantly 0f0)))
          (texture (palette-texture entity))
-         (inv (mat-inv-bind-pose (skeleton (model entity)))))
+         (inv (mat-inv-bind-pose (skeleton entity))))
     (mem:with-memory-region (texptr texinput)
       (dotimes (i (length palette) (setf (palette entity) palette))
         (let ((mat (nm* (svref palette i) (svref inv i)))
@@ -379,9 +377,6 @@
     (setf (height texture) (length palette))
     (when (allocated-p texture)
       (resize-buffer-data texture texinput :pixel-type :float :pixel-format :rgba))))
-
-(defmethod instantiate-prefab :before ((instance animation-controller) (asset model))
-  (setf (model instance) asset))
 
 (defmethod instantiate-prefab :after ((instance animation-controller) asset)
   (do-scene-graph (child instance)
@@ -394,7 +389,7 @@
 (defmethod update-palette ((entity quat2-animation-controller))
   ;; FIXME: Update for texture data
   (let ((palette (quat2-palette (pose entity) (palette entity)))
-        (inv (quat-inv-bind-pose (skeleton (model entity)))))
+        (inv (quat-inv-bind-pose (skeleton entity))))
     (dotimes (i (length palette) (setf (palette entity) palette))
       (nq* (svref palette i) (svref inv i)))))
 
