@@ -4,43 +4,37 @@
   ((materials :initform (make-hash-table :test 'equal) :accessor materials)
    (meshes :initform (make-hash-table :test 'equal) :accessor meshes)
    (clips :initform (make-hash-table :test 'equal) :accessor clips)
-   (scenes :initform (make-hash-table :test 'equal) :accessor scenes)
-   (skeleton :initform NIL :accessor skeleton)))
+   (scenes :initform (make-hash-table :test 'equal) :accessor scenes)))
 
-(defmacro %define-model-accessor (type accessor)
-  (let ((find (intern (format NIL "~a-~a" 'find type))))
+(defmacro define-table-accessor (class type accessor)
+  (let ((find (intern (format NIL "~a-~a" 'find type)))
+        (list (intern (format NIL "~a-~a" 'list type))))
     `(progn
-       (defmethod ,find (name (model model) &optional (errorp T))
-         (or (gethash name (,accessor model))
+       (defmethod ,find (name (,class ,class) &optional (errorp T))
+         (or (gethash name (,accessor ,class))
              (when errorp (error "No ~(~a~) with name~%  ~a~%on~%  ~a~%Known ~(~a~)s:~%  ~a"
-                                 ',type name model ',type (alexandria:hash-table-keys (,accessor model))))))
+                                 ',type name ,class ',type (alexandria:hash-table-keys (,accessor ,class))))))
 
-       (defmethod (setf ,find) (value name (model model))
-         (setf (gethash name (,accessor model)) value))
+       (defmethod (setf ,find) (value name (,class ,class))
+         (setf (gethash name (,accessor ,class)) value))
 
-       (defmethod (setf ,find) ((value null) name (model model))
-         (remhash name (,accessor model))
-         value))))
+       (defmethod (setf ,find) ((value null) name (,class ,class))
+         (remhash name (,accessor ,class))
+         value)
 
-(%define-model-accessor material materials)
-(%define-model-accessor mesh meshes)
-(%define-model-accessor clip clips)
-(%define-model-accessor scene scenes)
+       (defmethod ,list ((,class ,class))
+         (alexandria:hash-table-values (clips ,class))))))
+
+(define-table-accessor model material materials)
+(define-table-accessor model mesh meshes)
+(define-table-accessor model clip clips)
+(define-table-accessor model scene scenes)
 
 (defmethod find-scene ((first (eql T)) (model model) &optional (errorp T))
   (let ((keys (sort (alexandria:hash-table-keys (scenes model)) #'string<)))
     (if keys
         (find-scene (first keys) model)
         (when errorp (error "Model contains no scenes.")))))
-
-(defmethod list-clips ((model model))
-  (alexandria:hash-table-values (clips model)))
-
-(defmethod list-meshes ((model model))
-  (alexandria:hash-table-values (meshes model)))
-
-(defmethod list-scenes ((model model))
-  (alexandria:hash-table-values (scenes model)))
 
 (defmethod node (name (model model))
   (loop for scene being the hash-values of (scenes model)
@@ -50,7 +44,6 @@
   (clrhash (materials model))
   (clrhash (meshes model))
   (clrhash (clips model))
-  (clrhash (scenes model))
-  (setf (skeleton model) NIL))
+  (clrhash (scenes model)))
 
 ;; TODO: coerce-object multi-mesh-entity mesh-entity etc to model
