@@ -144,6 +144,7 @@
     (setf (uniform program "projection_matrix") *projection-matrix*)
     (setf (uniform program "view_matrix") *view-matrix*)
     (setf (uniform program "model_matrix") *model-matrix*)
+    (setf (uniform program "isometric") (if (isometric-p layer) 1 0))
     (setf (uniform program "tilemap") 0)
     (setf (uniform program "tileset") 1)
     (render (vertex-array layer) program)))
@@ -157,11 +158,17 @@ uniform mat4 projection_matrix;
 uniform vec2 map_size;
 uniform vec2 tile_size = vec2(16);
 uniform usampler2D tilemap;
+uniform int isometric = 0;
 out vec2 pix_uv;
 out vec2 world_pos;
 
 void main(){
   vec2 vert = (vertex.xy*map_size*tile_size*0.5);
+  if(0 < isometric){
+    vert.x *= 0.5;
+    vert = vec2(vert.x + vert.y, vert.y - vert.x);
+    vert.x *= 2;
+  }
   vec4 temp = model_matrix * vec4(vert, 0, 1);
   gl_Position = projection_matrix * view_matrix * temp;
   world_pos = temp.xy;
@@ -181,10 +188,18 @@ out vec4 color;
 
 void main(){
   // Calculate tilemap index and pixel offset within tile.
-  ivec2 pixel_xy = ivec2((pix_uv-floor(pix_uv)) * tile_size);
-  ivec2 map_xy = (isometric == 0)
-               ? ivec2(pix_uv)
-               : ivec2(pix_uv.x + pix_uv.y, pix_uv.y - pix_uv.x);
+  ivec2 pixel_xy;
+  ivec2 map_xy = ivec2(pix_uv);
+  if(0 < isometric){
+    vec2 uv = pix_uv;
+    uv = vec2(uv.x + uv.y, uv.y - uv.x);
+    uv.x += 0.5;
+    pixel_xy = ivec2((uv-floor(uv)) * tile_size);
+    color = vec4(vec2(map_xy)/24, 0, 1);
+    return;
+  }else{
+    pixel_xy = ivec2((pix_uv-floor(pix_uv)) * tile_size);
+  }
 
   // Look up tileset index from tilemap and pixel from tileset.
   uvec2 tile = texelFetch(tilemap, map_xy, 0).rg;
