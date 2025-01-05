@@ -162,11 +162,15 @@ uniform int isometric = 0;
 out vec2 pix_uv;
 out vec2 world_pos;
 
+vec2 rotate(vec2 uv){
+  return vec2(uv.x + uv.y, uv.y - uv.x);
+}
+
 void main(){
   vec2 vert = (vertex.xy*map_size*tile_size*0.5);
   if(0 < isometric){
     vert.x *= 0.5;
-    vert = vec2(vert.x + vert.y, vert.y - vert.x);
+    vert = rotate(vert);
     vert.x *= 2;
   }
   vec4 temp = model_matrix * vec4(vert, 0, 1);
@@ -186,20 +190,22 @@ in vec2 pix_uv;
 in vec2 world_pos;
 out vec4 color;
 
+vec2 rotate(vec2 uv){
+  return vec2(uv.x + uv.y, uv.y - uv.x);
+}
+
 void main(){
   // Calculate tilemap index and pixel offset within tile.
   ivec2 pixel_xy;
   ivec2 map_xy = ivec2(pix_uv);
+  vec2 uv = pix_uv;
   if(0 < isometric){
-    vec2 uv = pix_uv;
-    uv = vec2(uv.x + uv.y, uv.y - uv.x);
+    uv = rotate(uv*0.5);
+    int row = ((map_xy.y + map_xy.x) % 2 == 0)? 1 : 0;
     uv.x += 0.5;
-    pixel_xy = ivec2((uv-floor(uv)) * tile_size);
-    color = vec4(vec2(map_xy)/24, 0, 1);
-    return;
-  }else{
-    pixel_xy = ivec2((pix_uv-floor(pix_uv)) * tile_size);
+    uv += row*0.5;
   }
+  pixel_xy = ivec2((uv-floor(uv)) * tile_size);
 
   // Look up tileset index from tilemap and pixel from tileset.
   uvec2 tile = texelFetch(tilemap, map_xy, 0).rg;
