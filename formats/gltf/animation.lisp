@@ -37,12 +37,13 @@
       (check-consistent bind-pose)
       bind-pose)))
 
-(defun load-skeleton (skin)
+(defun load-skeleton (gltf skin)
   (make-instance 'skeleton 
                  :name (gltf:name skin)
                  :rest-pose (load-rest-pose skin)
                  :bind-pose (load-bind-pose skin)
-                 :joint-names (load-joint-names skin)))
+                 :joint-names (load-joint-names skin)
+                 :clips (load-clips gltf skin)))
 
 (defun load-animation-track (track sampler)
   (setf (interpolation track) (ecase (gltf:interpolation sampler)
@@ -76,64 +77,73 @@
 ;;        it's unlikely to be what's pointed to by the json pointer, since objects are transformed
 ;;        to more fitting native representations that should be manipulated instead.
 
-(defun load-clip (gltf animation)
-  (let ((clip (make-instance 'clip :name (gltf-name animation))))
-    (loop for channel across (gltf:channels animation)
-          for target = (gltf:target channel)
-          for sampler = (svref (gltf:samplers animation) (gltf:sampler channel))
-          for track = (find-animation-track clip (gltf:idx (gltf:node target)) :if-does-not-exist :create)
-          do (case (gltf:path target)
-               (:translation
-                (load-animation-track (location track) sampler))
-               (:scale
-                (load-animation-track (scaling track) sampler))
-               (:rotation
-                (load-animation-track (rotation track) sampler))
-               (:weights
-                (change-class track 'trial::weights-track :name (gltf-name (gltf:node target)))
-                (load-animation-track track sampler))
-               (:pointer
-                (translate-track-pointer (gltf:pointer channel) track gltf)
-                (load-animation-track track sampler))
-               (T (v:warn :trial.gltf "Unknown animation channel target path: ~s on ~s, ignoring."
-                          (gltf:path (gltf:target channel)) (gltf-name animation)))))
-    ;; Extra handling for custom properties
-    (let* ((extras (gltf:extensions animation))
-           (trial (when extras (gethash "SHIRAKUMO_trial" extras)))
-           (tracks (when trial (gethash "extraTracks" trial))))
-      (when tracks
-        (loop for field being the hash-keys of tracks using (hash-value data)
-              for track = (find-animation-track clip field :if-does-not-exist :create)
-              do (translate-track-pointer field track gltf)
-                 (setf (interpolation track) :constant)
-                 (setf (frames track) (cons (map 'vector (lambda (f) (float f 0f0)) (gethash "times" data))
-                                            (map 'vector (lambda (f) (float f 0f0)) (gethash "values" data)))))))
-    (trial::recompute-duration clip)
-    (if (gltf:next animation)
-        (setf (next-clip clip) (trial:lispify-name (gltf:next animation)))
-        (setf (loop-p clip) (gltf:loop-p animation)))
-    (case (gltf:kind animation)
-      (:blocking
-       (setf (trial:blocking-p clip) T))
-      (:physical
-       (setf (trial:blocking-p clip) T)
-       (change-class clip 'forward-kinematic-clip :velocity-scale (gltf:velocity-scale animation)))
-      (:additive
-       (setf (trial:loop-p clip) NIL)))
-    (setf (blend-duration clip) (gltf:blend-duration animation))
-    (setf (trial::effects clip)
-          (coerce (loop for effect across (gltf:effects animation)
-                        for object = (translate-effect (gltf:name effect) effect gltf)
-                        when object collect (trial::make-animation-effect
-                                             (float (gltf:start effect) 0f0)
-                                             (float (or (gltf:end effect) (gltf:start effect)) 0f0)
-                                             object))
-                  'simple-vector))
-    clip))
+(defun applicable-animation-p (gltf animation skin)
+  (if skin
+      (loop for channel across (gltf:channels animation)
+            for target = (gltf:target channel)
+            always (find target (gltf:joints skin)))
+      (loop for skin in (gltf:skins gltf)
+            never (applicable-animation-p gltf animation skin))))
 
-(defun load-clips (gltf &optional (table (make-hash-table :test 'equal)))
+(defun load-clip (gltf animation &optional skin)
+  (when (applicable-animation-p gltf animation skin)
+    (let ((clip (make-instance 'clip :name (gltf-name animation))))
+      (loop for channel across (gltf:channels animation)
+            for target = (gltf:target channel)
+            for sampler = (svref (gltf:samplers animation) (gltf:sampler channel))
+            for track = (find-animation-track clip (gltf:idx (gltf:node target)) :if-does-not-exist :create)
+            do (case (gltf:path target)
+                 (:translation
+                  (load-animation-track (location track) sampler))
+                 (:scale
+                  (load-animation-track (scaling track) sampler))
+                 (:rotation
+                  (load-animation-track (rotation track) sampler))
+                 (:weights
+                  (change-class track 'trial::weights-track :name (gltf-name (gltf:node target)))
+                  (load-animation-track track sampler))
+                 (:pointer
+                  (translate-track-pointer (gltf:pointer channel) track gltf)
+                  (load-animation-track track sampler))
+                 (T (v:warn :trial.gltf "Unknown animation channel target path: ~s on ~s, ignoring."
+                            (gltf:path (gltf:target channel)) (gltf-name animation)))))
+      ;; Extra handling for custom properties
+      (let* ((extras (gltf:extensions animation))
+             (trial (when extras (gethash "SHIRAKUMO_trial" extras)))
+             (tracks (when trial (gethash "extraTracks" trial))))
+        (when tracks
+          (loop for field being the hash-keys of tracks using (hash-value data)
+                for track = (find-animation-track clip field :if-does-not-exist :create)
+                do (translate-track-pointer field track gltf)
+                   (setf (interpolation track) :constant)
+                   (setf (frames track) (cons (map 'vector (lambda (f) (float f 0f0)) (gethash "times" data))
+                                              (map 'vector (lambda (f) (float f 0f0)) (gethash "values" data)))))))
+      (trial::recompute-duration clip)
+      (if (gltf:next animation)
+          (setf (next-clip clip) (trial:lispify-name (gltf:next animation)))
+          (setf (loop-p clip) (gltf:loop-p animation)))
+      (case (gltf:kind animation)
+        (:blocking
+         (setf (trial:blocking-p clip) T))
+        (:physical
+         (setf (trial:blocking-p clip) T)
+         (change-class clip 'forward-kinematic-clip :velocity-scale (gltf:velocity-scale animation)))
+        (:additive
+         (setf (trial:loop-p clip) NIL)))
+      (setf (blend-duration clip) (gltf:blend-duration animation))
+      (setf (trial::effects clip)
+            (coerce (loop for effect across (gltf:effects animation)
+                          for object = (translate-effect (gltf:name effect) effect gltf)
+                          when object collect (trial::make-animation-effect
+                                               (float (gltf:start effect) 0f0)
+                                               (float (or (gltf:end effect) (gltf:start effect)) 0f0)
+                                               object))
+                    'simple-vector))
+      clip)))
+
+(defun load-clips (gltf &optional skin (table (make-hash-table :test 'equal)))
   (loop for animation across (gltf:animations gltf)
-        for clip = (load-clip gltf animation)
-        do (setf (gethash (name clip) table) clip))
+        for clip = (load-clip gltf animation skin)
+        do (when clip (setf (gethash (name clip) table) clip)))
   table)
 

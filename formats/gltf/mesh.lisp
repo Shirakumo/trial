@@ -22,7 +22,7 @@
     (:color_2 'color-2)
     (:color_3 'color-3)))
 
-(defun load-vertex-attribute (mesh attribute accessor skin)
+(defun load-vertex-attribute (mesh attribute accessor skeleton)
   (declare (optimize speed))
   (let ((data (vertex-data mesh))
         (stride (vertex-attribute-stride mesh))
@@ -35,13 +35,12 @@
       (setf (vertex-data mesh) data))
     (case (vertex-attribute-category attribute)
       (joints
-       (let* ((joints (gltf:joints skin))
-              (joint-count (length joints)))
+       (let ((joint-count (length (joint-names skeleton))))
          (declare (type simple-vector joints))
          (flet ((map-joint (joint)
                   (declare (type (unsigned-byte 32) joint))
                   (float (max 0 (cond ((< joint joint-count)
-                                       (the (signed-byte 32) (gltf:idx (svref joints joint))))
+                                       joint)
                                       (T
                                        (v:warn :trial.gltf "Joint index ~d out of bounds [0,~d["
                                                joint joint-count)
@@ -102,7 +101,7 @@
                    (setf (aref data (+ (* i stride) offset 2)) (qz el))
                    (setf (aref data (+ (* i stride) offset 3)) (qw el)))))))))
 
-(defun load-mesh-attributes (mesh attribute-map &optional skin)
+(defun load-mesh-attributes (mesh attribute-map &optional skeleton)
   (let* ((attributes (loop for attribute being the hash-keys of attribute-map
                            for native = (gltf-attribute-to-native-attribute attribute)
                            if native
@@ -112,19 +111,19 @@
     (loop for attribute being the hash-keys of attribute-map using (hash-value accessor)
           for native = (gltf-attribute-to-native-attribute attribute)
           do (when (member native attributes)
-               (load-vertex-attribute mesh native accessor skin)))
+               (load-vertex-attribute mesh native accessor skeleton)))
     mesh))
 
-(defun load-primitive (primitive &key name skin model model-name weights)
-  (let* ((mesh (if (or skin (< 0 (length (gltf:targets primitive))))
+(defun load-primitive (primitive &key name skeleton model model-name weights)
+  (let* ((mesh (if (or skeleton (< 0 (length (gltf:targets primitive))))
                    (make-instance 'animated-mesh
                                   :name name
                                   :vertex-form (gltf:mode primitive)
-                                  :skeleton (when skin (load-skeleton skin)))
+                                  :skeleton skeleton)
                    (make-instance 'static-mesh
                                   :name name
                                   :vertex-form (gltf:mode primitive)))))
-    (load-mesh-attributes mesh (gltf:attributes primitive) skin)
+    (load-mesh-attributes mesh (gltf:attributes primitive) skeleton)
     (when (and model (gltf:material primitive))
       (setf (material mesh) (find-material (gltf-name (gltf:material primitive)) model)))
     (when (gltf:indices primitive)
@@ -142,11 +141,15 @@
       (setf (trial::initial-weights mesh) (or weights #())))
     mesh))
 
-(defun load-mesh (mesh model &key skin model-name)
+(defun load-mesh (mesh model &key skeleton model-name)
   (let ((base-name (gltf-name mesh))
         (primitives (gltf:primitives mesh)))
     (flet ((load-primitive (primitive name)
-             (load-primitive primitive :skin skin :name name :model model :weights (gltf:weights mesh) :model-name model-name)))
+             (load-primitive primitive :skeleton skeleton
+                                       :name name
+                                       :model model
+                                       :weights (gltf:weights mesh)
+                                       :model-name model-name)))
       (case (length primitives)
         (0 ())
         (1 (list (load-primitive (aref primitives 0) base-name)))
@@ -157,8 +160,18 @@
 (defun load-meshes (gltf model)
   (let ((meshes (make-array 0 :adjustable T :fill-pointer T)))
     (loop for node across (gltf:nodes gltf)
-          for skin = (gltf:skin node)
+          for skeleton = (when (gltf:skin node)
+                           (load-skeleton gltf (gltf:skin node)))
           do (when (gltf:mesh node)
-               (loop for mesh in (load-mesh (gltf:mesh node) model :skin skin :model-name (gltf-name node))
-                     do (vector-push-extend mesh meshes))))
+               (let ((map (make-hash-table :test 'eql)))
+                 (when skeleton
+                   (trial::reorder skeleton map)
+                   (loop for clip being the hash-values of (clips skeleton)
+                         do (trial::reorder clip map)))
+                 (loop for mesh in (load-mesh (gltf:mesh node) model
+                                              :model-name (gltf-name node)
+                                              :skeleton skeleton)
+                       do (when (skinned-p mesh)
+                            (trial::reorder mesh map))
+                          (vector-push-extend mesh meshes)))))
     meshes))
