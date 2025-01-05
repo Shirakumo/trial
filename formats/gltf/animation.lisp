@@ -80,9 +80,9 @@
 (defun applicable-animation-p (gltf animation skin)
   (if skin
       (loop for channel across (gltf:channels animation)
-            for target = (gltf:target channel)
+            for target = (gltf:node (gltf:target channel))
             always (find target (gltf:joints skin)))
-      (loop for skin in (gltf:skins gltf)
+      (loop for skin across (gltf:skins gltf)
             never (applicable-animation-p gltf animation skin))))
 
 (defun load-clip (gltf animation &optional skin)
