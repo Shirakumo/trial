@@ -11,8 +11,15 @@
 (define-accessor-wrapper-methods palette (base-animated-entity (animation-controller base-animated-entity)))
 (define-accessor-wrapper-methods palette-texture (base-animated-entity (animation-controller base-animated-entity)))
 
-(defmethod (setf mesh-asset) :after ((asset asset) (entity base-animated-entity))
-  (setf (model (animation-controller entity)) asset))
+(defmethod (setf mesh) :after ((meshes cons) (entity base-animated-entity))
+  (let ((skeleton (dolist (mesh meshes)
+                    (when (typep mesh 'animated-mesh)
+                      (return (skeleton mesh))))))
+    (cond ((null (skeleton (animation-controller entity)))
+           (setf (skeleton (animation-controller entity)) skeleton))
+          ((eq skeleton (skeleton (animation-controller entity))))
+          (T (error "Animation controller already bound to skeleton~%  ~a~%which is not the same as~%  ~a~%found on the meshes of~%  ~a"
+                    (skeleton (animation-controller entity)) skeleton entity)))))
 
 (defmethod stage :after ((entity base-animated-entity) (area staging-area))
   (register-load-observer area (animation-controller entity) (mesh-asset entity))
