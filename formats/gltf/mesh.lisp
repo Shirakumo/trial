@@ -164,14 +164,14 @@
                            (aref skeletons (gltf:idx (gltf:skin node))))
           do (when (gltf:mesh node)
                (let ((map (make-hash-table :test 'eql)))
-                 (when skeleton
-                   (trial::reorder skeleton map)
-                   (loop for clip being the hash-values of (clips skeleton)
-                         do (trial::reorder clip map)))
+                 ;; (when skeleton
+                 ;;   (trial::reorder skeleton map)
+                 ;;   (loop for clip being the hash-values of (clips skeleton)
+                 ;;         do (trial::reorder clip map)))
                  (loop for mesh in (load-mesh (gltf:mesh node) model
                                               :model-name (gltf-name node)
                                               :skeleton skeleton)
-                       do (when (skinned-p mesh)
-                            (trial::reorder mesh map))
+                       do ;; (when (skinned-p mesh)
+                          ;;   (trial::reorder mesh map))
                           (vector-push-extend mesh meshes)))))
     meshes))
