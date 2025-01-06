@@ -54,8 +54,7 @@
 
 (defun %construct-node (node gltf meshes generator)
   (cond ((loop for skin across (gltf:skins gltf)
-               thereis (loop for joint across (gltf:joints skin)
-                             thereis (eq joint node)))
+               thereis (find node (gltf:joints skin)))
          ;; Eliminate nodes that are parts of a skin
          NIL)
         ((gltf:virtual-p node)
