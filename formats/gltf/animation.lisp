@@ -91,7 +91,10 @@
       (loop for channel across (gltf:channels animation)
             for target = (gltf:target channel)
             for sampler = (svref (gltf:samplers animation) (gltf:sampler channel))
-            for track = (find-animation-track clip (gltf:idx (gltf:node target)) :if-does-not-exist :create)
+            for name = (if skin
+                           (position (gltf:node target) (gltf:joints skin))
+                           (gltf:idx (gltf:node target)))
+            for track = (find-animation-track clip name :if-does-not-exist :create)
             do (case (gltf:path target)
                  (:translation
                   (load-animation-track (location track) sampler))

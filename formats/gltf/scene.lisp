@@ -89,11 +89,6 @@
           (setf found T)
           (setf (animation-controller child) entity))))
     (when found
-      ;; KLUDGE: it seems blender exports the scale on the node but also
-      ;;         bakes it into the rig bone representation.
-      (when (v/= 1.0 (scaling entity))
-        (v:warn :trial.gltf "Resetting animation controller scale to 1.0")
-        (v<- (scaling entity) 1.0))
       (change-class entity 'basic-animation-controller)))
   entity)
 
