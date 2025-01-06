@@ -157,10 +157,11 @@
                  collect (load-primitive primitive (cons base-name i))))))))
 
 (defun load-meshes (gltf model)
-  (let ((meshes (make-array 0 :adjustable T :fill-pointer T)))
+  (let ((meshes (make-array 0 :adjustable T :fill-pointer T))
+        (skeletons (map 'vector (lambda (skin) (load-skeleton gltf skin)) (gltf:skins gltf))))
     (loop for node across (gltf:nodes gltf)
           for skeleton = (when (gltf:skin node)
-                           (load-skeleton gltf (gltf:skin node)))
+                           (aref skeletons (gltf:idx (gltf:skin node))))
           do (when (gltf:mesh node)
                (let ((map (make-hash-table :test 'eql)))
                  (when skeleton
