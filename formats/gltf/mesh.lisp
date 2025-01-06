@@ -157,21 +157,24 @@
                  collect (load-primitive primitive (cons base-name i))))))))
 
 (defun load-meshes (gltf model)
-  (let ((meshes (make-array 0 :adjustable T :fill-pointer T))
-        (skeletons (map 'vector (lambda (skin) (load-skeleton gltf skin)) (gltf:skins gltf))))
+  (let* ((meshes (make-array 0 :adjustable T :fill-pointer T))
+         (skeletons (map 'vector (lambda (skin) (load-skeleton gltf skin)) (gltf:skins gltf)))
+         (reorderings (map-into (make-array (length skeletons)) #'make-hash-table)))
+    (loop for skeleton across skeletons
+          for map across reorderings
+          do (trial::reorder skeleton map)
+             (loop for clip being the hash-values of (clips skeleton)
+                   do (trial::reorder clip map)))
     (loop for node across (gltf:nodes gltf)
           for skeleton = (when (gltf:skin node)
                            (aref skeletons (gltf:idx (gltf:skin node))))
+          for map = (when (gltf:skin node)
+                      (aref reorderings (gltf:idx (gltf:skin node))))
           do (when (gltf:mesh node)
-               (let ((map (make-hash-table :test 'eql)))
-                 ;; (when skeleton
-                 ;;   (trial::reorder skeleton map)
-                 ;;   (loop for clip being the hash-values of (clips skeleton)
-                 ;;         do (trial::reorder clip map)))
-                 (loop for mesh in (load-mesh (gltf:mesh node) model
-                                              :model-name (gltf-name node)
-                                              :skeleton skeleton)
-                       do ;; (when (skinned-p mesh)
-                          ;;   (trial::reorder mesh map))
-                          (vector-push-extend mesh meshes)))))
+               (loop for mesh in (load-mesh (gltf:mesh node) model
+                                            :model-name (gltf-name node)
+                                            :skeleton skeleton)
+                     do (when (skinned-p mesh)
+                          (trial::reorder mesh map))
+                        (vector-push-extend mesh meshes))))
     meshes))
