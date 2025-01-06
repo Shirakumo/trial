@@ -302,16 +302,13 @@
   (format stream "~&~%Skeleton:~%")
   (describe-skeleton (skeleton entity) stream))
 
-(define-transfer animation-controller model)
-
 (defmethod observe-load-state :before ((entity animation-controller) (asset model) (state (eql :loaded)) (area staging-area))
   (dolist (clip (list-clips asset))
     (stage clip area)))
 
 (defmethod (setf model) :after ((asset asset) (entity animation-controller))
   (when (loaded-p asset)
-    (setf (skeleton entity) (skeleton asset)))
-  #++(play (or (clip entity) T) entity))
+    (setf (skeleton entity) (skeleton asset))))
 
 (defmethod find-clip (name (entity animation-controller) &optional (errorp T))
   (if (null (skeleton entity))
