@@ -239,17 +239,13 @@
             do (format stream "  ~20a ~a~%" (name group) (weights group)))
       (format stream "  None~%")))
 
-(defmethod (setf model) :after ((asset asset) (entity morph-group-controller))
-  (when (and (loaded-p asset) (= 0 (hash-table-count (morph-groups entity))))
-    ;; FIXME: this will not reset the morph groups correctly if the
-    ;;        asset is actually changed.
-    (let ((groups (make-hash-table :test 'eql)))
-      (loop for mesh being the hash-values of (meshes asset)
-            do (when (morphed-p mesh)
-                 (push mesh (gethash (or (model-name mesh) mesh) groups))))
-      (loop for name being the hash-keys of groups using (hash-value meshes)
-            do (setf (gethash name groups) (make-instance 'morph-group :name name :meshes meshes)))
-      (setf (morph-groups entity) groups))))
+(defmethod (setf meshes) :after ((meshes cons) (entity morph-group-controller))
+  (let ((groups (morph-groups entity)))
+    (loop for mesh in meshes
+          do (when (morphed-p mesh)
+               (pushnew mesh (gethash (or (model-name mesh) mesh) groups))))
+    (loop for name being the hash-keys of groups using (hash-value meshes)
+          do (setf (gethash name groups) (make-instance 'morph-group :name name :meshes meshes)))))
 
 (defmethod find-morph ((mesh animated-mesh) (entity morph-group-controller) &optional (errorp T))
   (or (gethash (or (model-name mesh) mesh) (morph-groups entity))
@@ -305,10 +301,6 @@
 (defmethod observe-load-state :before ((entity animation-controller) (asset model) (state (eql :loaded)) (area staging-area))
   (dolist (clip (list-clips asset))
     (stage clip area)))
-
-(defmethod (setf model) :after ((asset asset) (entity animation-controller))
-  (when (loaded-p asset)
-    (setf (skeleton entity) (skeleton asset))))
 
 (defmethod find-clip (name (entity animation-controller) &optional (errorp T))
   (if (null (skeleton entity))
