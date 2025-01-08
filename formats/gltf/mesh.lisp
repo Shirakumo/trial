@@ -70,7 +70,13 @@
          (ecase (gltf:component-type accessor)
            (:uint8 (convert-from-array 8))
            (:uint16 (convert-from-array 16))
-           (:uint32 (convert-from-array 32)))))
+           (:uint32 (convert-from-array 32))
+           (:float (loop for i of-type (unsigned-byte 32) from 0 below (length accessor)
+                         for el of-type (or vec3 vec4) = (elt accessor i)
+                         do (setf (aref data (+ (* i stride) offset 0)) (vx el))
+                            (setf (aref data (+ (* i stride) offset 1)) (vy el))
+                            (setf (aref data (+ (* i stride) offset 2)) (vz el))
+                            (setf (aref data (+ (* i stride) offset 3)) (if (typep el 'vec4) (vw el) 1.0)))))))
       (T
        (ecase (vertex-attribute-size attribute)
          (1
