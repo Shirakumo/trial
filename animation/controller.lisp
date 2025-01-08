@@ -29,6 +29,8 @@
   ((pose :accessor pose)
    (skeleton :initform NIL :accessor skeleton)))
 
+(define-transfer skeleton-controller skeleton)
+
 (defmethod (setf mesh) (meshes (entity skeleton-controller)))
 
 (defmethod (setf mesh) :after ((meshes cons) (controller skeleton-controller))
@@ -244,6 +246,8 @@
 
 (defclass morph-group-controller ()
   ((morph-groups :initform (make-hash-table :test 'eql) :accessor morph-groups)))
+
+(define-transfer morph-group-controller morph-groups)
 
 (defmethod describe-object :after ((entity morph-group-controller) stream)
   (format stream "~&~%Morph Groups:~%")
