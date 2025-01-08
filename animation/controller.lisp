@@ -25,10 +25,23 @@
       (sample (animation-layer-pose layer) clip (+ (start-time clip) (* strength (duration clip))))
       (setf (animation-layer-strength layer) strength))))
 
-(defclass layer-controller ()
-  ((animation-layers :initform (make-hash-table :test 'equalp) :accessor animation-layers)
-   (pose :accessor pose)
+(defclass skeleton-controller ()
+  ((pose :accessor pose)
    (skeleton :initform NIL :accessor skeleton)))
+
+(defmethod (setf mesh) (meshes (entity skeleton-controller)))
+
+(defmethod (setf mesh) :after ((meshes cons) (controller skeleton-controller))
+  (dolist (mesh meshes)
+    (when (skeleton mesh)
+      (cond ((eq (skeleton controller) (skeleton mesh)))
+            ((null (skeleton controller))
+             (setf (skeleton controller) (skeleton mesh)))
+            (T (error "Animation controller already bound to skeleton~%  ~a~%which is not the same as~%  ~a~%found on~%  ~a"
+                      (skeleton controller) (skeleton mesh) mesh))))))
+
+(defclass layer-controller (skeleton-controller)
+  ((animation-layers :initform (make-hash-table :test 'equalp) :accessor animation-layers)))
 
 (defmethod shared-initialize :after ((controller layer-controller) slots &key animation-layers)
   (loop for layer in animation-layers
@@ -86,13 +99,11 @@
 (defmethod duration ((target fade-target)) (fade-target-duration target))
 (defmethod elapsed ((target fade-target)) (fade-target-elapsed target))
 
-(defclass fade-controller ()
+(defclass fade-controller (skeleton-controller)
   ((fade-targets :initform (make-array 0 :adjustable T :fill-pointer T) :accessor fade-targets)
    (clip :initarg :clip :initform NIL :accessor clip)
    (clock :initform 0.0 :accessor clock)
-   (playback-speed :initarg :playback-speed :initform 1.0 :accessor playback-speed)
-   (pose :accessor pose)
-   (skeleton :initform NIL :accessor skeleton)))
+   (playback-speed :initarg :playback-speed :initform 1.0 :accessor playback-speed)))
 
 (defmethod shared-initialize :after ((controller fade-controller) slots &key skeleton)
   (when skeleton
@@ -171,7 +182,7 @@
 (defclass morph-group ()
   ((name :initform NIL :initarg :name :accessor name)
    (weights :initform #() :initarg :weights :accessor weights)
-   (textures :initform #() :accessor textures)
+   (textures :initform (make-array 0 :adjustable T :fill-pointer T) :accessor textures)
    (morph-data :initform NIL :accessor morph-data)))
 
 (defmethod print-object ((morph morph-group) stream)
@@ -186,7 +197,9 @@
       (setf (name morph) (model-name (first meshes))))
     (when (= 0 (length (weights morph)))
       (setf (weights morph) (make-morph-weights (first meshes))))
-    (setf (textures morph) (map 'vector (lambda (m) (cons (name m) (make-morph-texture m))) meshes))))
+    (dolist (mesh meshes)
+      (unless (find (name mesh) (textures morph) :key #'car :test #'equal)
+        (vector-push-extend (cons (name mesh) (make-morph-texture mesh)) (textures morph))))))
 
 (defmethod stage :after ((morph morph-group) (area staging-area))
   (loop for (name . texture) across (textures morph)
@@ -239,13 +252,17 @@
             do (format stream "  ~20a ~a~%" (name group) (weights group)))
       (format stream "  None~%")))
 
-(defmethod (setf meshes) :after ((meshes cons) (entity morph-group-controller))
-  (let ((groups (morph-groups entity)))
+(defmethod (setf mesh) (meshes (entity morph-group-controller)))
+
+(defmethod (setf mesh) :after ((meshes cons) (controller morph-group-controller))
+  (let ((new-groups (make-hash-table :test 'eql)))
     (loop for mesh in meshes
           do (when (morphed-p mesh)
-               (pushnew mesh (gethash (or (model-name mesh) mesh) groups))))
-    (loop for name being the hash-keys of groups using (hash-value meshes)
-          do (setf (gethash name groups) (make-instance 'morph-group :name name :meshes meshes)))))
+               (pushnew mesh (gethash (or (model-name mesh) mesh) new-groups))))
+    (loop with groups = (morph-groups controller)
+          for name being the hash-keys of new-groups using (hash-value meshes)
+          do (setf (gethash name groups) (ensure-instance (gethash name groups) 'morph-group
+                                                          :name name :meshes meshes)))))
 
 (defmethod find-morph ((mesh animated-mesh) (entity morph-group-controller) &optional (errorp T))
   (or (gethash (or (model-name mesh) mesh) (morph-groups entity))
@@ -271,9 +288,8 @@
   (loop for morph-group being the hash-values of (morph-groups entity)
         do (update-morph-data morph-group)))
 
-(defclass fk-controller ()
-  ((pose :initform NIL :accessor pose)
-   (skeleton :initform NIL :accessor skeleton)))
+(defclass fk-controller (skeleton-controller)
+  ())
 
 (defgeneric fk-update (fk-controller pose tt dt fc))
 
