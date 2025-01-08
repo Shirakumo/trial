@@ -220,6 +220,16 @@
             (when (node 'fps-counter scene)
               (leave (node 'fps-counter scene) T)))))))
 
+(define-setting-observer system-stats :debugging :system-stats (value)
+  (when +main+
+    (let ((scene (scene +main+)))
+      (when (scene +main+)
+        (if value
+            (unless (node 'system-stats scene)
+              (enter-and-load (make-instance 'system-stats) scene +main+))
+            (when (node 'system-stats scene)
+              (leave (node 'system-stats scene) T)))))))
+
 (define-setting-observer remote-debug :debugging :remote-debug (value)
   (let ((pkg (or (find-package "SWANK") (find-package "SLYNK")))
         (active (getf value :active))
