@@ -105,7 +105,8 @@
                            for native = (gltf-attribute-to-native-attribute attribute)
                            if native
                            collect native
-                           else do (v:warn :trial.gltf "Ignoring mesh attribute ~s: don't know a native equivalent!" attribute))))
+                           else do (progn #-trial-release
+                                          (v:warn :trial.gltf "Ignoring mesh attribute ~s: don't know a native equivalent!" attribute)))))
     (setf (vertex-attributes mesh) attributes)
     (loop for attribute being the hash-keys of attribute-map using (hash-value accessor)
           for native = (gltf-attribute-to-native-attribute attribute)
