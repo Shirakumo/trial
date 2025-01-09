@@ -48,6 +48,10 @@
 
 (define-table-accessor skeleton clip clips)
 
+(defmethod stage :after ((skeleton skeleton) (area staging-area))
+  (loop for clip being the hash-values of (clips skeleton)
+        do (stage clip area)))
+
 (defmethod (setf rest-pose) :after (pose (skeleton skeleton))
   (setf (joint-names skeleton) (%adjust-array (joint-names skeleton) (length pose))))
 
