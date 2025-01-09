@@ -256,6 +256,10 @@
             do (format stream "  ~20a ~a~%" (name group) (weights group)))
       (format stream "  None~%")))
 
+(defun update-pose-weights (pose controller)
+  (loop for morph being the hash-values of (morph-groups controller)
+        do (setf (gethash (name morph) (weights pose)) (weights morph))))
+
 (defmethod (setf mesh) (meshes (entity morph-group-controller)))
 
 (defmethod (setf mesh) :after ((meshes cons) (controller morph-group-controller))
@@ -270,8 +274,9 @@
                                                           :name name :meshes meshes))
              (setf found T))
     (when (and found (slot-boundp controller 'pose))
-      (loop for morph being the hash-values of groups
-            do (setf (gethash (name morph) (weights (pose controller))) (weights morph))))))
+      (update-pose-weights (pose controller) controller))
+    (when (skeleton controller)
+      (update-pose-weights (rest-pose (skeleton controller)) controller))))
 
 (defmethod find-morph ((mesh animated-mesh) (entity morph-group-controller) &optional (errorp T))
   (or (gethash (or (model-name mesh) mesh) (morph-groups entity))
@@ -282,16 +287,14 @@
       (when errorp (error "No morph for ~s found on ~a" name entity))))
 
 (defmethod (setf skeleton) :before ((skeleton skeleton) (entity morph-group-controller))
-  (loop for morph being the hash-values of (morph-groups entity)
-        do (setf (gethash (name morph) (weights (rest-pose skeleton))) (weights morph))))
+  (update-pose-weights (rest-pose skeleton) entity))
 
 (defmethod stage :after ((entity morph-group-controller) (area staging-area))
   (loop for morph being the hash-values of (morph-groups entity)
         do (stage morph area)))
 
 (defmethod (setf pose) :after ((pose pose) (entity morph-group-controller))
-  (loop for morph being the hash-values of (morph-groups entity)
-        do (setf (gethash (name morph) (weights pose)) (weights morph))))
+  (update-pose-weights pose entity))
 
 (defmethod update-morph-data ((entity morph-group-controller))
   (loop for morph-group being the hash-values of (morph-groups entity)
