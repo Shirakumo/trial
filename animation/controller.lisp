@@ -31,6 +31,16 @@
 
 (define-transfer skeleton-controller skeleton)
 
+(defmethod shared-initialize :after ((controller skeleton-controller) slots &key skeleton)
+  (when skeleton
+    (setf (skeleton controller) skeleton)))
+
+(defmethod (setf skeleton) :after ((skeleton skeleton) (controller skeleton-controller))
+  (setf (pose controller) (rest-pose* skeleton :data controller)))
+
+(defmethod stage :after ((controller skeleton-controller) (area staging-area))
+  (stage (skeleton controller) area))
+
 (defmethod (setf mesh) (meshes (entity skeleton-controller)))
 
 (defmethod (setf mesh) :after ((meshes cons) (controller skeleton-controller))
@@ -106,13 +116,6 @@
    (clip :initarg :clip :initform NIL :accessor clip)
    (clock :initform 0.0 :accessor clock)
    (playback-speed :initarg :playback-speed :initform 1.0 :accessor playback-speed)))
-
-(defmethod shared-initialize :after ((controller fade-controller) slots &key skeleton)
-  (when skeleton
-    (setf (skeleton controller) skeleton)))
-
-(defmethod (setf skeleton) :after ((skeleton skeleton) (controller fade-controller))
-  (setf (pose controller) (rest-pose* skeleton :data controller)))
 
 (defmethod describe-object :after ((controller fade-controller) stream)
   (format stream "~&~%Current Clip:~%")
