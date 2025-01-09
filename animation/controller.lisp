@@ -259,14 +259,19 @@
 (defmethod (setf mesh) (meshes (entity morph-group-controller)))
 
 (defmethod (setf mesh) :after ((meshes cons) (controller morph-group-controller))
-  (let ((new-groups (make-hash-table :test 'eql)))
+  (let ((new-groups (make-hash-table :test 'eql))
+        (groups (morph-groups controller))
+        (found NIL))
     (loop for mesh in meshes
           do (when (morphed-p mesh)
                (pushnew mesh (gethash (or (model-name mesh) mesh) new-groups))))
-    (loop with groups = (morph-groups controller)
-          for name being the hash-keys of new-groups using (hash-value meshes)
+    (loop for name being the hash-keys of new-groups using (hash-value meshes)
           do (setf (gethash name groups) (ensure-instance (gethash name groups) 'morph-group
-                                                          :name name :meshes meshes)))))
+                                                          :name name :meshes meshes))
+             (setf found T))
+    (when (and found (slot-boundp controller 'pose))
+      (loop for morph being the hash-values of groups
+            do (setf (gethash (name morph) (weights (pose controller))) (weights morph))))))
 
 (defmethod find-morph ((mesh animated-mesh) (entity morph-group-controller) &optional (errorp T))
   (or (gethash (or (model-name mesh) mesh) (morph-groups entity))

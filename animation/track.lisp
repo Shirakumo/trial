@@ -154,6 +154,7 @@
       (ecase (interpolation track)
         (:constant
          (setf (interpolation result) :constant)
+         #-trial-release
          (v:warn :trial.animation "Can't differentiate constant interpolation movement of ~a" track)
          (let* ((type (value-type track))
                 (value (ecase type
