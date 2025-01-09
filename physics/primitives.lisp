@@ -1024,6 +1024,11 @@
 (defmethod replace-vertex-data (target (primitive primitive) &rest args &key &allow-other-keys)
   (apply #'replace-vertex-data target (coerce-object primitive 'mesh-data) args))
 
+(defun decompose-to-convex (vertices faces)
+  (let ((org.shirakumo.fraf.convex-covering::*debug-output* NIL))
+    (handler-bind ((warning #'muffle-warning))
+      (org.shirakumo.fraf.convex-covering:decompose vertices faces :tolerance (expt 10 -2.5)))))
+
 (defun convexify (primitives)
   (let ((new (make-array 0 :adjustable T :fill-pointer T)))
     (loop for primitive across primitives
@@ -1031,10 +1036,8 @@
                ((and general-mesh (not convex-mesh))
                 (v:warn :trial.physics "Decomposing general mesh into convex primitives.")
                 (with-timing-report (:info :trial.physics)
-                  (let ((hulls (org.shirakumo.fraf.convex-covering:decompose
-                                (general-mesh-vertices primitive)
-                                (general-mesh-faces primitive)
-                                :tolerance (expt 10 -2.5))))
+                  (let ((hulls (decompose-to-convex (general-mesh-vertices primitive)
+                                                    (general-mesh-faces primitive))))
                     (loop for hull across hulls
                           for mesh = (make-convex-mesh :vertices (org.shirakumo.fraf.convex-covering:vertices hull)
                                                        :faces (simplify (org.shirakumo.fraf.convex-covering:faces hull) '(unsigned-byte 16))
