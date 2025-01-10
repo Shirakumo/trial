@@ -27,13 +27,9 @@
               args))
       (gltf:mesh-shape
        (let ((mesh (ensure-mesh (gltf:mesh shape))))
-         (apply (cond ((not (gltf:convex-p shape))
-                       #'trial:make-general-mesh)
-                      ;; NOTE: If we have a mesh with few faces, skip the more elaborate hill climbing.
-                      ((< (length (trial:faces mesh)) 8)
-                       #'trial:make-convex-mesh)
-                      (T
-                       #'trial::make-optimized-convex-mesh))
+         (apply (if (gltf:convex-p shape)
+                    #'trial::make-maybe-optimized-convex-mesh
+                    #'trial:make-general-mesh)
                 :vertices (trial:reordered-vertex-data mesh '(trial:location))
                 :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 16))
                 args))))))

@@ -1032,6 +1032,11 @@
            (apply #'org.shirakumo.fraf.convex-covering:decompose vertices faces
                   :tolerance (expt 10 -2.5) args)))))
 
+(defun make-maybe-optimized-convex-mesh (&rest args &key faces &allow-other-keys)
+  (if (< (length faces) 8)
+      (apply #'make-convex-mesh args)
+      (apply #'make-optimized-convex-mesh args)))
+
 (defun convexify (primitives)
   (let ((new (make-array 0 :adjustable T :fill-pointer T)))
     (loop for primitive across primitives
@@ -1046,10 +1051,11 @@
                   (let ((hulls (decompose-to-convex (general-mesh-vertices primitive)
                                                     (general-mesh-faces primitive))))
                     (loop for (vertices . faces) across hulls
-                          for mesh = (make-convex-mesh :vertices vertices
-                                                       :faces faces
-                                                       :material (primitive-material primitive)
-                                                       :local-transform (mcopy (primitive-local-transform primitive)))
+                          for mesh = (make-maybe-optimized-convex-mesh
+                                      :vertices vertices
+                                      :faces faces
+                                      :material (primitive-material primitive)
+                                      :local-transform (mcopy (primitive-local-transform primitive)))
                           do (vector-push-extend mesh new)))))
                (primitive
                 (vector-push-extend primitive new))))
