@@ -700,7 +700,7 @@
         (error "Mesh is not convex:~%  ~s~%  ~s" vertices faces))
       (dotimes (i (length adjacent))
         (setf (aref adjacent i)
-              (map '(simple-array (unsigned-byte 16) (*))
+              (map '(simple-array (unsigned-byte 32) (*))
                    (lambda (x) (* 3 x)) (aref adjacent i))))
       (setf (optimized-convex-mesh-adjacency-list primitive) adjacent))))
 
@@ -717,7 +717,7 @@
     (declare (type (unsigned-byte 16) vertex iterations))
     (declare (optimize (safety 0)))
     (flet ((try-vertex (i)
-             (declare (type (unsigned-byte 16) i))
+             (declare (type (unsigned-byte 32) i))
              (setf (vx vert) (aref verts (+ i 0)))
              (setf (vy vert) (aref verts (+ i 1)))
              (setf (vz vert) (aref verts (+ i 2)))
@@ -738,7 +738,7 @@
            (call-next-method)
            (go done))
          (loop for i of-type (unsigned-byte 16) across
-               (the (simple-array (unsigned-byte 16) (*)) (aref adjacents (truncate vertex 3)))
+               (the (simple-array (unsigned-byte 32) (*)) (aref adjacents (truncate vertex 3)))
                do (when (try-vertex i)
                     (go next)))
        done
