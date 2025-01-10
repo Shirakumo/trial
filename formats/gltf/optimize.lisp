@@ -24,8 +24,6 @@
   (let ((decomposition-args (remf* args :output))
         (shape-table (make-hash-table :test 'eql))
         (work-done-p NIL))
-    (unless (getf decomposition-args :tolerance)
-      (setf (getf decomposition-args :tolerance) (expt 10 -2.5)))
     (trial:with-tempfile (tmp :type (pathname-type file))
       (gltf:with-gltf (gltf file)
         ;; Rewrite mesh shapes to multiple new shapes.
@@ -38,15 +36,10 @@
                    (let* ((primitives (gltf:primitives (gltf:mesh shape)))
                           (mesh (load-primitive (aref primitives 0)))
                           (verts (reordered-vertex-data mesh '(location)))
-                          (hulls (handler-bind ((warning #'muffle-warning))
-                                   (apply #'org.shirakumo.fraf.convex-covering:decompose
-                                          verts (faces mesh) decomposition-args))))
+                          (hulls (apply #'trial::decompose-to-convex verts (faces mesh) decomposition-args)))
                      (setf (gethash shape shape-table)
-                           (loop for hull across hulls
-                                 collect (add-convex-shape
-                                          gltf
-                                          (org.shirakumo.fraf.convex-covering:vertices hull)
-                                          (trial::simplify (org.shirakumo.fraf.convex-covering:faces hull) '(unsigned-byte 16))))))))
+                           (loop for (verts . faces) across hulls
+                                 collect (add-convex-shape gltf verts faces))))))
         ;; Rewrite nodes with refs to mesh colliders to have child nodes for
         ;; all decomposed hulls.
         (loop for node across (gltf:nodes gltf)

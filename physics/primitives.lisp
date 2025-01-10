@@ -1024,10 +1024,14 @@
 (defmethod replace-vertex-data (target (primitive primitive) &rest args &key &allow-other-keys)
   (apply #'replace-vertex-data target (coerce-object primitive 'mesh-data) args))
 
-(defun decompose-to-convex (vertices faces)
+(defun decompose-to-convex (vertices faces &rest args)
+  (print (list (length vertices) (length faces) args))
   (let ((org.shirakumo.fraf.convex-covering::*debug-output* NIL))
     (handler-bind ((warning #'muffle-warning))
-      (org.shirakumo.fraf.convex-covering:decompose vertices faces :tolerance (expt 10 -2.5)))))
+      (map 'vector (lambda (hull) (cons (org.shirakumo.fraf.convex-covering:vertices hull)
+                                        (simplify (org.shirakumo.fraf.convex-covering:faces hull) '(unsigned-byte 16))))
+           (apply #'org.shirakumo.fraf.convex-covering:decompose vertices faces
+                  :tolerance (expt 10 -2.5) args)))))
 
 (defun convexify (primitives)
   (let ((new (make-array 0 :adjustable T :fill-pointer T)))
@@ -1038,9 +1042,9 @@
                 (with-timing-report (:info :trial.physics)
                   (let ((hulls (decompose-to-convex (general-mesh-vertices primitive)
                                                     (general-mesh-faces primitive))))
-                    (loop for hull across hulls
-                          for mesh = (make-convex-mesh :vertices (org.shirakumo.fraf.convex-covering:vertices hull)
-                                                       :faces (simplify (org.shirakumo.fraf.convex-covering:faces hull) '(unsigned-byte 16))
+                    (loop for (vertices . faces) across hulls
+                          for mesh = (make-convex-mesh :vertices vertices
+                                                       :faces faces
                                                        :material (primitive-material primitive)
                                                        :local-transform (mcopy (primitive-local-transform primitive)))
                           do (vector-push-extend mesh new)))))
