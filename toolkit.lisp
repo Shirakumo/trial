@@ -1522,3 +1522,7 @@ Rotation: ~7,2@f, ~7,2@f, ~7,2@f, ~7,2@f"
 (declaim (inline random*))
 (defun random-normal (&optional (normal (vec3)) (direction +vy+) (theta F-PI))
   (sampling:surface-normal direction theta normal))
+
+(defun percentile-change (new old)
+  (let ((diff (- new old)))
+    (* 100.0 (/ diff old))))

@@ -1025,7 +1025,6 @@
   (apply #'replace-vertex-data target (coerce-object primitive 'mesh-data) args))
 
 (defun decompose-to-convex (vertices faces &rest args)
-  (print (list (length vertices) (length faces) args))
   (let ((org.shirakumo.fraf.convex-covering::*debug-output* NIL))
     (handler-bind ((warning #'muffle-warning))
       (map 'vector (lambda (hull) (cons (org.shirakumo.fraf.convex-covering:vertices hull)
@@ -1038,8 +1037,12 @@
     (loop for primitive across primitives
           do (etypecase primitive
                ((and general-mesh (not convex-mesh))
-                (v:warn :trial.physics "Decomposing general mesh into convex primitives.")
-                (with-timing-report (:info :trial.physics)
+                (v:warn :trial.physics "Decomposing general mesh into convex primitives...")
+                (with-timing-report (:info :trial.physics "Decomposed ~d tris into ~d primitives with ~d tris total (~,1@f%) in ~fs run-time ~fs real-time"
+                                           (length (general-mesh-faces primitive)) (length new)
+                                           (loop for primitive across new sum (length (convex-mesh-faces primitive)))
+                                           (percentile-change (loop for primitive across new sum (length (convex-mesh-faces primitive)))
+                                                              (length (general-mesh-faces primitive))))
                   (let ((hulls (decompose-to-convex (general-mesh-vertices primitive)
                                                     (general-mesh-faces primitive))))
                     (loop for (vertices . faces) across hulls
