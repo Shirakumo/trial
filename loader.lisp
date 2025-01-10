@@ -22,12 +22,14 @@
                             ((:allocated :was-allocated) :allocated)
                             ((NIL) NIL))))
     (setf (gethash object (load-state area)) new-state)
-    (loop for observer in (gethash object (observers area))
+    (loop for observer across (gethash object (observers area) #())
           do (observe-load-state observer object normalized-state area))))
 
 (defmethod register-load-observer ((area staging-area) observer changing)
-  (unless (member observer (gethash changing (observers area)))
-    (push observer (gethash changing (observers area)))
+  (unless (find observer (gethash changing (observers area)))
+    (vector-push-extend observer (or (gethash changing (observers area))
+                                     (setf (gethash changing (observers area))
+                                           (make-array 0 :adjustable T :fill-pointer T))))
     ;; Backfill for current state if registration occurs live.
     (let ((state (gethash changing (load-state area))))
       (case state

@@ -469,7 +469,7 @@
 
 ;;; This is pretty hacky.
 (defmethod stage :after ((renderable renderable) (area staging-area))
-  (loop for observer in (gethash 'renderable (observers area))
+  (loop for observer across (gethash 'renderable (observers area) #())
         do (observe-load-state observer renderable :staged area)))
 
 (defmethod stage :after ((pass per-object-pass) (area staging-area))
