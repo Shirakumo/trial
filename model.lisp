@@ -11,6 +11,12 @@
   (print-unreadable-object (model stream :type T :identity T)
     (format stream "~@[~a~]" (name model))))
 
+(defmethod describe-object :after ((model model) stream)
+  (format stream "~&~%Materials:~{~%  ~a~}" (or (list-materials model) (list "No materials")))
+  (format stream "~&~%Meshes:~{~%  ~a~}" (or (list-meshes model) (list "No meshes")))
+  (format stream "~&~%Clips:~{~%  ~a~}" (or (list-clips model) (list "No clips")))
+  (format stream "~&~%Scenes:~{~%  ~a~}" (or (list-scenes model) (list "No scenes"))))
+
 (defmacro define-table-accessor (class type accessor)
   (let ((find (intern (format NIL "~a-~a" 'find type)))
         (list (intern (format NIL "~a-~a" 'list accessor))))
