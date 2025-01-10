@@ -78,7 +78,8 @@
 (defmethod update ((controller layer-controller) tt dt fc)
   (when (next-method-p) (call-next-method))
   (loop for layer being the hash-values of (animation-layers controller)
-        do (layer-onto (pose controller) (pose controller) (animation-layer-pose layer) (animation-layer-base layer))))
+        do (when (< 0.0 (animation-layer-strength layer))
+             (layer-onto (pose controller) (pose controller) (animation-layer-pose layer) (animation-layer-base layer)))))
 
 (defmethod add-animation-layer ((layer animation-layer) (controller layer-controller) &key name)
   (setf (animation-layer name controller) layer))
@@ -98,6 +99,12 @@
 
 (defmethod (setf animation-layer) ((layer animation-layer) name (controller layer-controller))
   (setf (gethash name (animation-layers controller)) layer))
+
+(defmethod (setf animation-layer) ((strength real) name (controller layer-controller))
+  (let ((layer (or (gethash name (animation-layers controller))
+                   (error "No such layer ~s" name))))
+    (setf (animation-layer-strength layer) (float strength 0f0))
+    strength))
 
 (defmethod (setf animation-layer) ((null null) name (controller layer-controller))
   (remhash name (animation-layers controller))
