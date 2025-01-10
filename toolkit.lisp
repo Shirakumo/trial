@@ -436,6 +436,9 @@
                        (if (eql data #1#)
                            (loop-finish)
                            data))))
+      (pathname
+       (with-open-file (stream input)
+         (parse-sexps stream)))
       (stream
        (loop for value = (read input NIL #1#)
              until (eq value #1#)
