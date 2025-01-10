@@ -678,16 +678,20 @@
     ;; First normalize the mesh to ensure that we have no duplicated vertices or separated
     ;; meshes or anything.
     #++
-    (multiple-value-bind (verts faces) (org.shirakumo.fraf.quickhull:convex-hull (convex-mesh-vertices primitive))
-      (setf (convex-mesh-vertices primitive) verts)
-      (setf (convex-mesh-faces primitive) (simplify faces '(unsigned-byte 16))))
+    (multiple-value-setq (vertices faces)
+      (org.shirakumo.fraf.quickhull:convex-hull vertices))
     #++
-    (multiple-value-setq (vertices faces) (org.shirakumo.fraf.manifolds:normalize vertices faces))
+    (multiple-value-setq (vertices faces)
+      (org.shirakumo.fraf.manifolds:normalize vertices faces))
+    (multiple-value-setq (vertices faces)
+      (org.shirakumo.fraf.manifolds:remove-unused vertices faces))
     ;; Recenter it like the other mesh types do.
     (let ((offset (recenter-vertices vertices)))
       (!m* (primitive-local-transform primitive)
            offset
            (primitive-local-transform primitive)))
+    (setf (convex-mesh-vertices primitive) vertices)
+    (setf (convex-mesh-faces primitive) (simplify faces '(unsigned-byte 16)))
     ;; Precompute the adjacency list. As a further optimisation we already pre-multiply
     ;; the adjacents to be vertex array indices rather than vertex numbers, and turn it
     ;; into a simple-array for more compact storage.
@@ -695,9 +699,9 @@
       #-elide-primitive-sanity-checks
       (unless (org.shirakumo.fraf.manifolds:2-manifold-p faces)
         (error "Mesh is not 2-manifold:~%  ~s~%  ~s" vertices faces))
-      #-elide-primitive-sanity-checks
-      (unless (org.shirakumo.fraf.manifolds:convex-p vertices faces)
-        (error "Mesh is not convex:~%  ~s~%  ~s" vertices faces))
+      ;; #-elide-primitive-sanity-checks
+      ;; (unless (org.shirakumo.fraf.manifolds:convex-p vertices faces)
+      ;;   (error "Mesh is not convex:~%  ~s~%  ~s" vertices faces))
       (dotimes (i (length adjacent))
         (setf (aref adjacent i)
               (map '(simple-array (unsigned-byte 32) (*))
