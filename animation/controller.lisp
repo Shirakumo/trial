@@ -35,8 +35,14 @@
   (when skeleton
     (setf (skeleton controller) skeleton)))
 
-(defmethod (setf skeleton) :after ((skeleton skeleton) (controller skeleton-controller))
-  (setf (pose controller) (rest-pose* skeleton :data controller)))
+(defmethod (setf skeleton) :around ((skeleton skeleton) (controller skeleton-controller))
+  (unless (eq skeleton (skeleton controller))
+    (call-next-method)
+    (setf (pose controller) (rest-pose* skeleton :data controller)))
+  skeleton)
+
+(defmethod observe-load-state :after ((controller skeleton-controller) (asset model) (state (eql :loaded)) (area staging-area))
+  (stage controller area))
 
 (defmethod stage :after ((controller skeleton-controller) (area staging-area))
   (stage (skeleton controller) area))
