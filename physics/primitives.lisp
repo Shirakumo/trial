@@ -673,25 +673,36 @@
 (define-primitive-type (optimized-convex-mesh convex-mesh)
     ((adjacency-list (make-array 0) :type simple-vector)
      (last-vertex 0 :type (unsigned-byte 16)))
-  ;; First normalize the mesh to ensure that we have no duplicated vertices or separated
-  ;; meshes or anything.
-  (multiple-value-bind (verts faces) (org.shirakumo.fraf.quickhull:convex-hull (convex-mesh-vertices primitive))
-    (setf (convex-mesh-vertices primitive) verts)
-    (setf (convex-mesh-faces primitive) (simplify faces '(unsigned-byte 16))))
-  ;; Recenter it like the other mesh types do.
-  (let ((offset (recenter-vertices (general-mesh-vertices primitive))))
-    (!m* (primitive-local-transform primitive)
-         offset
-         (primitive-local-transform primitive)))
-  ;; Precompute the adjacency list. As a further optimisation we already pre-multiply
-  ;; the adjacents to be vertex array indices rather than vertex numbers, and turn it
-  ;; into a simple-array for more compact storage.
-  (let ((adjacent (org.shirakumo.fraf.manifolds:vertex-adjacency-list (convex-mesh-faces primitive))))
-    (dotimes (i (length adjacent))
-      (setf (aref adjacent i)
-            (map '(simple-array (unsigned-byte 16) (*))
-                 (lambda (x) (* 3 x)) (aref adjacent i))))
-    (setf (optimized-convex-mesh-adjacency-list primitive) adjacent)))
+  (let ((vertices (convex-mesh-vertices primitive))
+        (faces (convex-mesh-faces primitive)))
+    ;; First normalize the mesh to ensure that we have no duplicated vertices or separated
+    ;; meshes or anything.
+    #++
+    (multiple-value-bind (verts faces) (org.shirakumo.fraf.quickhull:convex-hull (convex-mesh-vertices primitive))
+      (setf (convex-mesh-vertices primitive) verts)
+      (setf (convex-mesh-faces primitive) (simplify faces '(unsigned-byte 16))))
+    #++
+    (multiple-value-setq (vertices faces) (org.shirakumo.fraf.manifolds:normalize vertices faces))
+    ;; Recenter it like the other mesh types do.
+    (let ((offset (recenter-vertices vertices)))
+      (!m* (primitive-local-transform primitive)
+           offset
+           (primitive-local-transform primitive)))
+    ;; Precompute the adjacency list. As a further optimisation we already pre-multiply
+    ;; the adjacents to be vertex array indices rather than vertex numbers, and turn it
+    ;; into a simple-array for more compact storage.
+    (let ((adjacent (org.shirakumo.fraf.manifolds:vertex-adjacency-list faces)))
+      #-elide-primitive-sanity-checks
+      (unless (org.shirakumo.fraf.manifolds:2-manifold-p faces)
+        (error "Mesh is not 2-manifold:~%  ~s~%  ~s" vertices faces))
+      #-elide-primitive-sanity-checks
+      (unless (org.shirakumo.fraf.manifolds:convex-p vertices faces)
+        (error "Mesh is not convex:~%  ~s~%  ~s" vertices faces))
+      (dotimes (i (length adjacent))
+        (setf (aref adjacent i)
+              (map '(simple-array (unsigned-byte 16) (*))
+                   (lambda (x) (* 3 x)) (aref adjacent i))))
+      (setf (optimized-convex-mesh-adjacency-list primitive) adjacent))))
 
 (define-transfer optimized-convex-mesh optimized-convex-mesh-adjacency-list)
 

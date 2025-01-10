@@ -7,7 +7,8 @@
                                       :elide-container-checks
                                       :elide-allocation-checks
                                       :elide-handler-restarts
-                                      :elide-context-current-checks))
+                                      :elide-context-current-checks
+                                      :elide-primitive-sanity-checks))
 
   #+trial-debug-all
   (setf *features* (union *features* *debug-features*))
