@@ -203,11 +203,9 @@ void main(){
 
 (define-shader-pass bloom-cutoff-pass (simple-post-effect-pass)
   ((threshold :initarg :threshold :initform 5.0 :uniform T :accessor threshold)
-   (color :port-type output :texspec (:internal-format :rgb
+   (color :port-type output :texspec (:internal-format :rgb16f
                                       :mag-filter :linear
-                                      :min-filter :linear
-                                      :width (ceiling width 2)
-                                      :height (ceiling height 2))))
+                                      :min-filter :linear)))
   (:shader-file (trial "post/bloom-cutoff.glsl")))
 
 (define-shader-pass bloom-merge-pass (simple-post-effect-pass)
