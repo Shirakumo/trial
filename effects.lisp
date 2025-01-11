@@ -167,8 +167,11 @@ void main(){
   ((a-pass :port-type input)
    (b-pass :port-type input)
    (color :port-type output :reader color)
-   (blend-type :initarg :blend-type :initform 0 :constant T :accessor blend-type))
+   (blend-type :initform 0 :constant T :accessor blend-type))
   (:shader-file (trial "post/blend.glsl")))
+
+(defmethod shared-initialize :after ((pass blend-pass) slots &key blend-type)
+  (when blend-type (setf (blend-type pass) blend-type)))
 
 (defmethod (setf blend-type) ((value symbol) (pass blend-pass))
   (setf (blend-type pass) (ecase value
