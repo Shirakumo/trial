@@ -2,8 +2,8 @@
 
 (defclass pose (sequences:sequence standard-object)
   ((joints :initform #() :accessor joints)
-   (weights :initform (make-hash-table :test 'eql) :accessor weights)
    (parents :initform (make-array 0 :element-type '(signed-byte 16)) :accessor parents)
+   (weights :initform (make-hash-table :test 'eql) :accessor weights)
    (data :initform (make-hash-table :test 'eql) :initarg :data :accessor data)))
 
 (defmethod shared-initialize :after ((pose pose) slots &key size source)
@@ -13,7 +13,24 @@
          (sequences:adjust-sequence pose size))))
 
 (defmethod print-object ((pose pose) stream)
-  (print-unreadable-object (pose stream :type T :identity T)))
+  (print-unreadable-object (pose stream :type T :identity T)
+    (format stream "~d joint~:p" (length (joints pose)))))
+
+(defmethod describe-object :after ((pose pose) stream)
+  (format stream "~&~%Weights:")
+  (if (< 0 (hash-table-count (weights pose)))
+      (loop for k being the hash-key of (weights pose) using (hash-value v)
+            do (format stream "~%  ~30a: ~,3f" k v))
+      (format stream "  No weights."))
+  (format stream "~&~%Joints:~%")
+  (let ((parents (parents pose))
+        (joints (joints pose)))
+    (flet ((bone-label (i)
+             (format NIL "~3d~@< ~@;~a~;~:>" i (when (<= 0 i) (write-transform (aref joints i) NIL))))
+           (bone-children (i)
+             (loop for j from 0 below (length parents)
+                   when (= (aref parents j) i) collect j)))
+      (org.shirakumo.text-draw:tree -1 #'bone-children :key #'bone-label :stream stream :max-depth NIL))))
 
 (defmethod clone ((pose pose) &key)
   (pose<- (make-instance 'pose) pose))

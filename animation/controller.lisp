@@ -25,6 +25,10 @@
       (sample (animation-layer-pose layer) clip (+ (start-time clip) (* strength (duration clip))))
       (setf (animation-layer-strength layer) strength))))
 
+(define-accessor-delegate-methods clip (animation-layer-clip animation-layer))
+(define-accessor-delegate-methods pose (animation-layer-pose animation-layer))
+(define-accessor-delegate-methods base (animation-layer-base animation-layer))
+
 (defclass skeleton-controller ()
   ((pose :accessor pose)
    (skeleton :initform NIL :accessor skeleton)))
