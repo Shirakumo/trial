@@ -1501,23 +1501,6 @@
           (uiop:launch-program (list* program args) :input input :error-output *error-output*)
           (uiop:run-program (list* program args) :input input :output :string :error-output *error-output*)))))
 
-(defun write-transform (transform stream)
-  (etypecase transform
-    (*transform
-     (format stream "~
-Location: ~7,2@f, ~7,2@f, ~7,2@f
-Scaling:  ~7,2@f, ~7,2@f, ~7,2@f
-Rotation: ~7,2@f, ~7,2@f, ~7,2@f, ~7,2@f"
-             (vx (tlocation transform)) (vy (tlocation transform)) (vz (tlocation transform))
-             (vx (tscaling transform)) (vy (tscaling transform)) (vz (tscaling transform))
-             (qx (trotation transform)) (qy (trotation transform)) (qz (trotation transform)) (qw (trotation transform))))
-    (*mat4
-     (handler-case
-         (let ((tf (tfrom-mat transform)))
-           (write-transform tf stream))
-       (error ()
-         (write-matrix transform stream))))))
-
 (declaim (inline random*))
 (defun random* (min max)
   (+ min (random (- max min))))
