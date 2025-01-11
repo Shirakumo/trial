@@ -21,7 +21,7 @@
   (if (< 0 (hash-table-count (weights pose)))
       (loop for k being the hash-key of (weights pose) using (hash-value v)
             do (format stream "~%  ~30a: ~,3f" k v))
-      (format stream "  No weights."))
+      (format stream "~%  No weights."))
   (format stream "~&~%Joints:~%")
   (let ((parents (parents pose))
         (joints (joints pose)))
