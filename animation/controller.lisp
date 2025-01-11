@@ -85,15 +85,21 @@
         do (when (< 0.0 (animation-layer-strength layer))
              (layer-onto (pose controller) (pose controller) (animation-layer-pose layer) (animation-layer-base layer)))))
 
-(defmethod add-animation-layer ((layer animation-layer) (controller layer-controller) &key name)
+(defmethod add-animation-layer ((layer animation-layer) (controller layer-controller) &key name strength (if-exists :error))
+  (when (animation-layer name controller)
+    (ecase if-exists
+      ((:overwrite :supersede :replace))
+      (:error
+       (cerror "Replace the layer" "An animation layer with the name ~s already exists:~%  ~a"
+               name (animation-layer name controller)))
+      ((NIL (return-from add-animation-layer NIL)))))
+  (when strength (setf (strength layer) strength))
   (setf (animation-layer name controller) layer))
 
-(defmethod add-animation-layer ((clip clip) (controller layer-controller) &key (strength 0.0) (name (name clip)))
-  (when (animation-layer name controller)
-    (cerror "Replace the layer" "An animation layer with the name ~s already exists:~%  ~a"
-            name (animation-layer name controller)))
-  (setf (animation-layer name controller) (make-animation-layer clip (skeleton controller)
-                                                                :data controller :strength strength)))
+(defmethod add-animation-layer ((clip clip) (controller layer-controller) &key (strength 0.0) (name (name clip)) (if-exists :error))
+  (add-animation-layer (make-animation-layer clip (skeleton controller)
+                                             :data controller :strength strength)
+                       controller :name name :if-exists if-exists))
 
 (defmethod remove-animation-layer (name (controller layer-controller))
   (setf (animation-layer name controller) NIL))
