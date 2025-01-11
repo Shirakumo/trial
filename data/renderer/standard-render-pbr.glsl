@@ -86,7 +86,7 @@ vec4 standard_shade(in StandardLight light){
 }
 
 void standard_finish(){
-  color.rgb += emission * 5.0;
+  color.rgb += emission * 20.0;
   color.w = albedo.w;
   if(color.w < material.alpha_cutoff)
     discard;
