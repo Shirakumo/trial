@@ -1,7 +1,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (define-shader-pass tone-mapping-pass (post-effect-pass)
-  ((previous-pass :port-type input :texspec (:internal-format :rgba16f) :accessor previous-pass)
+  ((previous-pass :port-type input :accessor previous-pass)
    (color :port-type output :attachment :color-attachment0 :accessor color)
    (inv-gamma :initarg :inv-gamma :initform (/ 2.2) :accessor inv-gamma :uniform T))
   (:shader-file (trial "tone-map/hdr-tone-mapping.glsl")))

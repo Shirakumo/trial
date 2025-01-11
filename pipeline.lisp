@@ -150,11 +150,16 @@
     texspec))
 
 (defmethod normalized-texspec ((port texture-port))
-  (normalized-texspec (texspec port)))
+  (let ((spec (copy-list (texspec port))))
+    (when (getf spec :include)
+      (let ((port (flow:port (flow:node port) (getf spec :include))))
+        (remf spec :include)
+        (setf spec (nconc spec (texspec (texture port))))))
+    (normalized-texspec spec)))
 
 (defmethod normalized-texspec ((port output))
   (normalized-texspec
-   (append (texspec port)
+   (append (call-next-method)
            ;; Default internal format for attachments
            (case (attachment port)
              (:depth-attachment

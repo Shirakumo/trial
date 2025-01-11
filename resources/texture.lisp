@@ -391,6 +391,24 @@
 (defmethod clear ((texture texture))
   (clear-texture texture))
 
+(defmethod texspec ((texture texture))
+  (list :width (width texture)
+        :height (height texture)
+        :depth (depth texture)
+        :target (target texture)
+        :levels (levels texture)
+        :samples (samples texture)
+        :internal-format (internal-format texture)
+        :mag-filter (mag-filter texture)
+        :min-filter (min-filter texture)
+        :mipmap-levels (mipmap-levels texture)
+        :mipmap-lod (mipmap-lod texture)
+        :anisotropy (anisotropy texture)
+        :wrapping (wrapping texture)
+        :border-color (border-color texture)
+        :swizzle (swizzle texture)
+        :storage (storage texture)))
+
 ;;;; Texture spec wrangling
 ;; The idea of this is that, in order to maximise sharing of texture resources
 ;; between independent parts, we need to join (in the lattice sense) two texture

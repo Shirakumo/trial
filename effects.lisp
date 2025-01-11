@@ -18,7 +18,7 @@ void main(){
 
 (define-shader-pass simple-post-effect-pass (post-effect-pass)
   ((previous-pass :port-type input :accessor previous-pass)
-   (color :port-type output :accessor color))
+   (color :port-type output :accessor color :texspec (:include previous-pass)))
   (:shader-file (trial "post/post-processing.glsl")))
 
 (defmethod (setf active-p) :before (value (pass simple-post-effect-pass))
@@ -50,7 +50,7 @@ void main(){
 
 (define-shader-pass temporal-post-effect-pass (post-effect-pass)
   ((previous :port-type static-input :accessor previous)
-   (color :port-type output :accessor color)))
+   (color :port-type output :accessor color :texspec (:include previous))))
 
 (defmethod render :after ((pass temporal-post-effect-pass) (program shader-program))
   (rotatef (previous pass) (color pass)))
@@ -166,7 +166,7 @@ void main(){
 (define-shader-pass blend-pass (post-effect-pass)
   ((a-pass :port-type input)
    (b-pass :port-type input)
-   (color :port-type output :reader color)
+   (color :port-type output :reader color :texspec (:include a-pass))
    (blend-type :initform 0 :constant T :accessor blend-type))
   (:shader-file (trial "post/blend.glsl")))
 
@@ -236,7 +236,7 @@ void main(){
 (define-shader-pass light-scatter-pass (post-effect-pass)
   ((color-map :port-type input :accessor color-map)
    (depth-map :port-type input :accessor depth-map)
-   (color :port-type output)
+   (color :port-type output :texspec (:include color-map))
    (density :initarg :density :initform 1.0 :uniform T :accessor density)
    (weight :initarg :weight :initform 0.01 :uniform T :accessor weight)
    (decay :initarg :decay :initform 1.0 :uniform T :accessor decay)
