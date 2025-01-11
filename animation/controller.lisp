@@ -1,34 +1,5 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(defstruct (animation-layer
-            (:constructor %make-animation-layer (clip pose base)))
-  (clip NIL :type clip)
-  (pose NIL :type pose)
-  (base NIL :type pose)
-  (strength 0.0 :type single-float))
-
-(defun make-animation-layer (clip skeleton &key (strength 0.0) (data skeleton))
-  (let ((layer (%make-animation-layer
-                clip
-                (rest-pose* skeleton :data data)
-                (instantiate-clip skeleton clip))))
-    (setf (strength layer) strength)
-    layer))
-
-(defmethod strength ((layer animation-layer))
-  (animation-layer-strength layer))
-
-(defmethod (setf strength) (strength (layer animation-layer))
-  (let ((clip (animation-layer-clip layer))
-        (strength (clamp 0.0 (float strength 0f0) 1.0)))
-    (when (/= strength (animation-layer-strength layer))
-      (sample (animation-layer-pose layer) clip (+ (start-time clip) (* strength (duration clip))))
-      (setf (animation-layer-strength layer) strength))))
-
-(define-accessor-delegate-methods clip (animation-layer-clip animation-layer))
-(define-accessor-delegate-methods pose (animation-layer-pose animation-layer))
-(define-accessor-delegate-methods base (animation-layer-base animation-layer))
-
 (defclass skeleton-controller ()
   ((pose :accessor pose)
    (skeleton :initform NIL :accessor skeleton)))
@@ -61,6 +32,35 @@
              (setf (skeleton controller) (skeleton mesh)))
             (T (error "Animation controller already bound to skeleton~%  ~a~%which is not the same as~%  ~a~%found on~%  ~a"
                       (skeleton controller) (skeleton mesh) mesh))))))
+
+(defstruct (animation-layer
+            (:constructor %make-animation-layer (clip pose base)))
+  (clip NIL :type clip)
+  (pose NIL :type pose)
+  (base NIL :type pose)
+  (strength 0.0 :type single-float))
+
+(defun make-animation-layer (clip skeleton &key (strength 0.0) (data skeleton))
+  (let ((layer (%make-animation-layer
+                clip
+                (rest-pose* skeleton :data data)
+                (instantiate-clip skeleton clip))))
+    (setf (strength layer) strength)
+    layer))
+
+(defmethod strength ((layer animation-layer))
+  (animation-layer-strength layer))
+
+(defmethod (setf strength) (strength (layer animation-layer))
+  (let ((clip (animation-layer-clip layer))
+        (strength (clamp 0.0 (float strength 0f0) 1.0)))
+    (when (/= strength (animation-layer-strength layer))
+      (sample (animation-layer-pose layer) clip (+ (start-time clip) (* strength (duration clip))))
+      (setf (animation-layer-strength layer) strength))))
+
+(define-accessor-delegate-methods clip (animation-layer-clip animation-layer))
+(define-accessor-delegate-methods pose (animation-layer-pose animation-layer))
+(define-accessor-delegate-methods base (animation-layer-base animation-layer))
 
 (defclass layer-controller (skeleton-controller)
   ((animation-layers :initform (make-hash-table :test 'equalp) :accessor animation-layers)))
