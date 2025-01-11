@@ -75,7 +75,7 @@
   (let ((layers (sort (alexandria:hash-table-keys (animation-layers controller)) #'string<)))
     (if layers
         (loop for name in layers
-              for layer = (animation-layer name controller)
+              for layer = (gethash name (animation-layers controller))
               do (format stream "  ~3d% ~s~%" (round (* 100 (animation-layer-strength layer))) name))
         (format stream "  None~%"))))
 
@@ -86,34 +86,45 @@
              (layer-onto (pose controller) (pose controller) (animation-layer-pose layer) (animation-layer-base layer)))))
 
 (defmethod add-animation-layer ((layer animation-layer) (controller layer-controller) &key name strength (if-exists :error))
-  (when (animation-layer name controller)
+  (when (gethash name (animation-layers controller))
     (ecase if-exists
       ((:overwrite :supersede :replace))
       (:error
        (cerror "Replace the layer" "An animation layer with the name ~s already exists:~%  ~a"
                name (animation-layer name controller)))
       ((NIL (return-from add-animation-layer NIL)))))
-  (when strength (setf (strength layer) strength))
+  (when strength (setf (strength layer) (float strength 0f0)))
   (setf (animation-layer name controller) layer))
 
 (defmethod add-animation-layer ((clip clip) (controller layer-controller) &key (strength 0.0) (name (name clip)) (if-exists :error))
   (add-animation-layer (make-animation-layer clip (skeleton controller)
-                                             :data controller :strength strength)
+                                             :data controller :strength (float strength 0f0))
                        controller :name name :if-exists if-exists))
 
 (defmethod remove-animation-layer (name (controller layer-controller))
-  (setf (animation-layer name controller) NIL))
+  (remhash name (animation-layers controller)))
 
-(defmethod animation-layer (name (controller layer-controller))
-  (gethash name (animation-layers controller)))
+(defmethod animation-layer (name (controller layer-controller) &key (if-does-not-exist :error))
+  (let ((existing (gethash name (animation-layers controller))))
+    (or existing
+        (ecase if-does-not-exist
+          (:error
+           (cerror "Add it based on the clip of the same name." "No such layer ~s" name)
+           (add-animation-layer name controller))
+          (:create
+           (add-animation-layer name controller))
+          ((NIL))))))
 
 (defmethod (setf animation-layer) ((layer animation-layer) name (controller layer-controller))
   (setf (gethash name (animation-layers controller)) layer))
 
 (defmethod (setf animation-layer) ((strength real) name (controller layer-controller))
-  (let ((layer (or (gethash name (animation-layers controller))
-                   (error "No such layer ~s" name))))
-    (setf (animation-layer-strength layer) (float strength 0f0))
+  (let ((layer (gethash name (animation-layers controller))))
+    (cond (layer
+           (setf (strength layer) (float strength 0f0)))
+          (T
+           (cerror "Add it based on the clip of the same name." "No such layer ~s" name)
+           (add-animation-layer name controller :strength strength)))
     strength))
 
 (defmethod (setf animation-layer) ((null null) name (controller layer-controller))
