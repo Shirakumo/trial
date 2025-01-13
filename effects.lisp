@@ -166,6 +166,8 @@ void main(){
 (define-shader-pass blend-pass (post-effect-pass)
   ((a-pass :port-type input)
    (b-pass :port-type input)
+   (a-multiplier :initform 1.0 :uniform T :accessor a-multiplier)
+   (b-multiplier :initform 1.0 :uniform T :accessor b-multiplier)
    (color :port-type output :reader color :texspec (:include a-pass))
    (blend-type :initform 0 :constant T :accessor blend-type))
   (:shader-file (trial "post/blend.glsl")))

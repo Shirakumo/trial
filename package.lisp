@@ -1187,6 +1187,8 @@
    #:blend-pass
    #:a-pass
    #:b-pass
+   #:a-multiplier
+   #:b-multiplier
    #:blend-type
    #:high-pass-filter
    #:threshold

@@ -3,12 +3,14 @@ out vec4 color;
 in vec2 uv;
 uniform sampler2D a_pass;
 uniform sampler2D b_pass;
+uniform float a_multiplier = 1.0;
+uniform float b_multiplier = 1.0;
 
 void main(){
   vec4 a_ = texture(a_pass, uv);
   vec4 b_ = texture(b_pass, uv);
-  vec3 a = a_.rgb;
-  vec3 b = b_.rgb;
+  vec3 a = a_.rgb * a_multiplier;
+  vec3 b = b_.rgb * b_multiplier;
   float a_a = a_.a;
   float b_a = b_.a;
   color.a = mix(a_a, b_a, b_a);
