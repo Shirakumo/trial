@@ -309,6 +309,30 @@
    (global-primitives :initform (make-array 128 :fill-pointer 0) :accessor global-primitives)
    (pending-inserts :initform (make-array 128 :fill-pointer 0) :accessor pending-inserts)))
 
+(defmethod 3ds:call-with-all (function (system accelerated-rigidbody-system))
+  (3ds:call-with-all function (dynamic-acceleration-structure system))
+  (3ds:call-with-all function (static-acceleration-structure system)))
+
+(defmethod 3ds:call-with-candidates (function (system accelerated-rigidbody-system) region)
+  (3ds:call-with-candidates function (dynamic-acceleration-structure system) region)
+  (3ds:call-with-candidates function (static-acceleration-structure system) region))
+
+(defmethod 3ds:call-with-contained (function (system accelerated-rigidbody-system) region)
+  (3ds:call-with-contained function (dynamic-acceleration-structure system) region)
+  (3ds:call-with-contained function (static-acceleration-structure system) region))
+
+(defmethod 3ds:call-with-intersecting (function (system accelerated-rigidbody-system) origin direction)
+  (3ds:call-with-intersecting function (dynamic-acceleration-structure system) origin direction)
+  (3ds:call-with-intersecting function (static-acceleration-structure system) origin direction))
+
+(defmethod 3ds:call-with-overlapping (function (system accelerated-rigidbody-system) region)
+  (3ds:call-with-overlapping function (dynamic-acceleration-structure system) region)
+  (3ds:call-with-overlapping function (static-acceleration-structure system) region))
+
+(defmethod 3ds:call-with-pairs (function (system accelerated-rigidbody-system))
+  (3ds:call-with-pairs function (dynamic-acceleration-structure system))
+  (3ds:call-with-pairs function (static-acceleration-structure system)))
+
 (defmethod dynamic-entity-p ((body rigid-shape))
   (< 0 (the single-float (inverse-mass body))))
 
