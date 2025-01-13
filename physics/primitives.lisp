@@ -698,10 +698,10 @@
     (let ((adjacent (org.shirakumo.fraf.manifolds:vertex-adjacency-list faces)))
       #-elide-primitive-sanity-checks
       (unless (org.shirakumo.fraf.manifolds:2-manifold-p faces)
-        (error "Mesh is not 2-manifold:~%  ~s~%  ~s" vertices faces))
+        (cerror "Ignore" "Mesh is not 2-manifold:~%  ~s~%  ~s" vertices faces))
       ;; #-elide-primitive-sanity-checks
       ;; (unless (org.shirakumo.fraf.manifolds:convex-p vertices faces)
-      ;;   (error "Mesh is not convex:~%  ~s~%  ~s" vertices faces))
+      ;;   (cerror "Ignore "Mesh is not convex:~%  ~s~%  ~s" vertices faces))
       (dotimes (i (length adjacent))
         (setf (aref adjacent i)
               (map '(simple-array (unsigned-byte 32) (*))
