@@ -465,7 +465,7 @@ void main(){
   ((shader-program :initarg :shader-program :accessor shader-program))
   (:metaclass shader-entity-class))
 
-(defmethod initialize-instance :around ((entity standalone-shader-entity) &key)
+(defmethod shared-initialize :around ((entity standalone-shader-entity) slots &key)
   (call-next-method)
   (unless (slot-boundp entity 'shader-program)
     (setf (shader-program entity) (make-shader-program entity))))
@@ -479,10 +479,11 @@ void main(){
 
 (defmethod render ((entity standalone-shader-entity) target)
   (let ((program (shader-program entity)))
-    (activate program)
-    (update-uniforms entity program)
-    (bind-textures entity)
-    (render entity program)))
+    (when (allocated-p program)
+      (activate program)
+      (update-uniforms entity program)
+      (bind-textures entity)
+      (render entity program))))
 
 (defclass dynamic-shader-entity (standalone-shader-entity)
   ((shaders :initarg :shaders :initform () :accessor shaders)

@@ -91,24 +91,30 @@
             (/ (* 1000 (length fps-buffer)) sum))))
 
 (defmethod observe ((func function) &key title)
-  (let ((observers (ignore-errors (observers (node :controller T)))))
-    (when observers
-      (let* ((title (or title (format NIL "~d" (length observers))))
-             (position (position title observers :key #'car :test #'equal)))
-        (if position
-            (setf (aref observers position) (cons title func))
-            (vector-push-extend (cons title func) observers))
-        func))))
+  (let ((node (node :controller T)))
+    (when node
+      (unless (typep node 'display-controller)
+        (change-class node 'display-controller)
+        (with-eval-in-render-loop ()
+          (let ((area (make-instance 'staging-area)))
+            (stage node area)
+            (commit area (loader +main+) :unload NIL))))
+      (let ((observers (observers node)))
+        (when observers
+          (let* ((title (or title (format NIL "~d" (length observers))))
+                 (position (position title observers :key #'car :test #'equal)))
+            (if position
+                (setf (aref observers position) (cons title func))
+                (vector-push-extend (cons title func) observers))
+            func))))))
 
 (defmethod observe (thing &rest args &key &allow-other-keys)
   (let ((func (compile NIL `(lambda (ev)
-                              (declare (ignorable ev))
                               ,thing))))
     (apply #'observe func args)))
 
 (defmacro observe! (form &rest args)
-  (let ((ev (gensym "EV")))
-    `(observe (lambda (,ev) (declare (ignore ,ev)) ,form) ,@args)))
+  `(observe (lambda () ,form) ,@args))
 
 (defmethod stop-observing (&optional title)
   (let ((observers (ignore-errors (observers (node :controller T)))))
@@ -126,7 +132,7 @@
                          10 table)
     table))
 
-(defun compose-controller-debug-text (controller ev)
+(defun compose-controller-debug-text (controller)
   (multiple-value-bind (gfree gtotal) (org.shirakumo.machine-state:gpu-room)
     (multiple-value-bind (cfree ctotal) (org.shirakumo.machine-state:gc-room)
       (setf (fill-pointer (%string controller)) 0)
@@ -145,21 +151,17 @@
                 for i from 0 below (length observers)
                 for (title . func) = (aref observers i)
                 when func
-                do (restart-case (format stream "~%~a:~12t~{~a~^, ~}" title (multiple-value-list (funcall func ev)))
+                do (restart-case (format stream "~%~a:~12t~{~a~^, ~}" title (multiple-value-list (funcall func)))
                      (remove-observer ()
                        :report "Remove the offending observer."
                        (setf (aref observers i) NIL))))))
       (%string controller))))
 
-(defmethod handle :after ((ev tick) (controller display-controller))
-  (when (and (show-overlay controller)
-             *context*)
-    (setf (text controller) (compose-controller-debug-text controller ev))
-    (setf (vy (location controller)) (- (vy (size controller)) (font-size controller)))
-    (setf (vx (location controller)) 5)))
-
 (defmethod render :around ((controller display-controller) (program shader-program))
   (when (show-overlay controller)
+    (setf (text controller) (compose-controller-debug-text controller))
+    (setf (vy (location controller)) (- (vy (size controller)) (font-size controller)))
+    (setf (vx (location controller)) 5)
     (with-pushed-matrix ((view-matrix :identity)
                          (projection-matrix :identity))
       (orthographic-projection 0 (width *context*)
