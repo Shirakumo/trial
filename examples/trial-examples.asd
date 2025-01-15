@@ -37,7 +37,8 @@
                (:file "3d-audio")
                (:file "wave")
                (:file "tone-mapping")
-               (:file "bouncer"))
+               (:file "bouncer")
+               (:file "debug"))
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
                :alloy-constraint
