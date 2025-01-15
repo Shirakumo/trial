@@ -637,19 +637,27 @@ void main(){
   "layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 i_color;
 out vec3 v_color;
+out vec3 view;
 
 uniform mat4 view_matrix;
 uniform mat4 projection_matrix;
 
 void main(){
-  gl_Position = projection_matrix * view_matrix * vec4(position, 1.0f);
+  view = (view_matrix * vec4(position, 1)).xyz;
+  gl_Position = projection_matrix * vec4(view, 1);
   v_color = i_color;
 }")
 
 (define-class-shader (debug-draw :fragment-shader)
   "in vec3 v_color;
+in vec3 view;
 out vec4 color;
 
 void main(){
-  color = vec4(v_color, 1);
+  vec3 normal = normalize(cross(dFdx(view), dFdy(view)));
+  vec3 refdir = reflect(vec3(0, 1, 0), normal);
+  float diffuse = dot(normal, vec3(0, -1, 0));
+  float specular = pow(max(dot(normalize(view), refdir), 0.0), 32);
+  float light = clamp(diffuse + specular, 0.2, 0.9);
+  color = vec4(v_color * light, 1);
 }")
