@@ -71,7 +71,7 @@ void main(){
    (flats :accessor flats)
    (text-render :accessor text-render)
    (dirty :initform 0 :accessor dirty)
-   (clear-after-render :initform T :accessor clear-after-render)))
+   (clear-after-render :initform T :initarg :clear-after-render :accessor clear-after-render)))
 
 (defmethod initialize-instance :after ((draw debug-draw) &key)
   (setf (instances draw) (make-array 64 :fill-pointer 0 :adjustable T :element-type '(unsigned-byte 32)))
@@ -87,7 +87,7 @@ void main(){
                                             (,vbo :offset 12 :stride 24)))))
   (setf (flats draw) (make-array 128 :fill-pointer 0 :adjustable T :element-type 'single-float))
   (let ((vbo (make-instance 'vertex-buffer :buffer-data (flats draw))))
-    (setf (flats-vao draw) (make-instance 'vertex-array :vertex-form :lines :bindings
+    (setf (flats-vao draw) (make-instance 'vertex-array :vertex-form :triangles :bindings
                                           `((,vbo :offset  0 :stride 24)
                                             (,vbo :offset 12 :stride 24)))))
   (setf (text-render draw) (make-instance 'debug-draw-text)))
@@ -116,10 +116,12 @@ void main(){
   (setf (dirty draw) 0)
   (setf (uniform program "view_matrix") (view-matrix))
   (setf (uniform program "projection_matrix") (projection-matrix))
+  (setf (uniform program "lighting") 0.0)
   (with-pushed-features
     (disable-feature :depth-test)
     (render-array (points-vao draw) :vertex-count (truncate (length (points draw)) 6))
     (render-array (lines-vao draw) :vertex-count (truncate (length (lines draw)) 6)))
+  (setf (uniform program "lighting") 1.0)
   (render-array (flats-vao draw) :vertex-count (truncate (length (flats draw)) 6))
   (render (text-render draw) T)
   (let ((scene (scene draw)))
@@ -638,12 +640,16 @@ void main(){
 layout (location = 1) in vec3 i_color;
 out vec3 v_color;
 out vec3 view;
+out vec3 light;
 
 uniform mat4 view_matrix;
 uniform mat4 projection_matrix;
+uniform vec3 light_dir = normalize(vec3(0.8, -1, 0.5));
 
 void main(){
   view = (view_matrix * vec4(position, 1)).xyz;
+//  light = normalize((view_matrix * vec4(light_dir, 0)).xyz);
+  light = vec3(0, 0, -1);
   gl_Position = projection_matrix * vec4(view, 1);
   v_color = i_color;
 }")
@@ -651,13 +657,14 @@ void main(){
 (define-class-shader (debug-draw :fragment-shader)
   "in vec3 v_color;
 in vec3 view;
+in vec3 light;
 out vec4 color;
+uniform float lighting = 0.0;
 
 void main(){
   vec3 normal = normalize(cross(dFdx(view), dFdy(view)));
-  vec3 refdir = reflect(vec3(0, 1, 0), normal);
-  float diffuse = dot(normal, vec3(0, -1, 0));
-  float specular = pow(max(dot(normalize(view), refdir), 0.0), 32);
-  float light = clamp(diffuse + specular, 0.2, 0.9);
-  color = vec4(v_color * light, 1);
+  float diffuse = dot(normal, -light);
+  float specular =  clamp(pow(max(dot(vec3(0,0,1), reflect(light, normal)), 0.0), 32), 0.0, 0.5);
+  float light = mix(1.0, clamp(diffuse + 0.2, 0.2, 0.9), lighting);
+  color = vec4(v_color * light + (specular * lighting), 1);
 }")
