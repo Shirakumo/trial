@@ -4,7 +4,7 @@
   :title "Debug Drawing"
   :description "Illustrates the on-the-fly debug drawing utilities in Trial"
   ;; Not necessary usually, any of the debug-* commands automatically do
-  ;; for you as needed.
+  ;; enter the debug-draw instance for you as needed.
   (enter (make-instance 'editor-camera :location (vec 0 0 30) :move-speed 0.1) scene)
   (enter (make-instance 'debug-draw :clear-after-render NIL) scene)
   (enter (make-instance 'render-pass :clear-color (vec4 0.2 0.23 0.3 1)) scene)

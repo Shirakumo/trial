@@ -644,11 +644,9 @@ out vec3 light;
 
 uniform mat4 view_matrix;
 uniform mat4 projection_matrix;
-uniform vec3 light_dir = normalize(vec3(0.8, -1, 0.5));
 
 void main(){
   view = (view_matrix * vec4(position, 1)).xyz;
-//  light = normalize((view_matrix * vec4(light_dir, 0)).xyz);
   light = vec3(0, 0, -1);
   gl_Position = projection_matrix * vec4(view, 1);
   v_color = i_color;
@@ -662,7 +660,9 @@ out vec4 color;
 uniform float lighting = 0.0;
 
 void main(){
+  // We derive the normal here in order to get per-face flat shading.
   vec3 normal = normalize(cross(dFdx(view), dFdy(view)));
+  // Basic phong lighting using view-space calculations.
   float diffuse = dot(normal, -light);
   float specular =  clamp(pow(max(dot(vec3(0,0,1), reflect(light, normal)), 0.0), 32), 0.0, 0.5);
   float light = mix(1.0, clamp(diffuse + 0.2, 0.2, 0.9), lighting);
