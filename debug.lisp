@@ -67,6 +67,8 @@ void main(){
    (points :accessor points)
    (lines-vao :accessor lines-vao)
    (lines :accessor lines)
+   (flats-vao :accessor flats-vao)
+   (flats :accessor flats)
    (text-render :accessor text-render)
    (dirty :initform 0 :accessor dirty)
    (clear-after-render :initform T :accessor clear-after-render)))
@@ -83,6 +85,11 @@ void main(){
     (setf (lines-vao draw) (make-instance 'vertex-array :vertex-form :lines :bindings
                                           `((,vbo :offset  0 :stride 24)
                                             (,vbo :offset 12 :stride 24)))))
+  (setf (flats draw) (make-array 128 :fill-pointer 0 :adjustable T :element-type 'single-float))
+  (let ((vbo (make-instance 'vertex-buffer :buffer-data (flats draw))))
+    (setf (flats-vao draw) (make-instance 'vertex-array :vertex-form :lines :bindings
+                                          `((,vbo :offset  0 :stride 24)
+                                            (,vbo :offset 12 :stride 24)))))
   (setf (text-render draw) (make-instance 'debug-draw-text)))
 
 (defmethod text-vao ((draw debug-draw))
@@ -94,6 +101,7 @@ void main(){
 (defmethod stage ((draw debug-draw) (area staging-area))
   (stage (points-vao draw) area)
   (stage (lines-vao draw) area)
+  (stage (flats-vao draw) area)
   (stage (text-render draw) area))
 
 (defmethod render ((draw debug-draw) (program shader-program))
@@ -103,6 +111,8 @@ void main(){
     (resize-buffer-data (caar (bindings (lines-vao draw))) T))
   (when (logbitp 3 (dirty draw))
     (resize-buffer-data (caar (bindings (text-vao draw))) T))
+  (when (logbitp 4 (dirty draw))
+    (resize-buffer-data (caar (bindings (flats-vao draw))) T))
   (setf (dirty draw) 0)
   (setf (uniform program "view_matrix") (view-matrix))
   (setf (uniform program "projection_matrix") (projection-matrix))
@@ -110,6 +120,7 @@ void main(){
     (disable-feature :depth-test)
     (render-array (points-vao draw) :vertex-count (truncate (length (points draw)) 6))
     (render-array (lines-vao draw) :vertex-count (truncate (length (lines draw)) 6)))
+  (render-array (flats-vao draw) :vertex-count (truncate (length (flats draw)) 6))
   (render (text-render draw) T)
   (let ((scene (scene draw)))
     (unless (eq draw (elt scene (1- (length scene))))
@@ -147,7 +158,7 @@ void main(){
       (enter-and-load (make-instance 'debug-draw) (scene +main+) +main+)))
 
 (defmacro define-debug-draw-function ((name type) args &body body)
-  (let ((type-id (ecase type (points 1) (lines 2) (text 3))))
+  (let ((type-id (ecase type (points 1) (lines 2) (text 3) (flats 4))))
     `(defun ,name (,@args (debug-draw (node 'debug-draw T)) (container (scene +main+)) instance)
        (flet ((,name ()
                 (unless debug-draw
@@ -430,7 +441,12 @@ void main(){
   (loop for vao across (vertex-arrays entity)
         do (apply #'debug-draw vao args)))
 
-(define-debug-draw-function (debug-triangles lines) (vertices faces &key (color #.(vec 1 0 0)) (transform (model-matrix)))
+(defun debug-triangles (vertices faces &rest args &key flats &allow-other-keys)
+  (remf args :flats)
+  (apply (if flats #'debug-triangle-flats #'debug-triangle-lines)
+         vertices faces args))
+
+(define-debug-draw-function (debug-triangle-lines lines) (vertices faces &key (color #.(vec 1 0 0)) (transform (model-matrix)))
   (allocate (* (length faces) 2 2))
   (flet ((lines (vec)
            (v vec)
@@ -450,6 +466,16 @@ void main(){
                  (T (lines vec)
                   (lines prev)
                   (lines vec)))))))
+
+(define-debug-draw-function (debug-triangle-flats flats) (vertices faces &key (color #.(vec 1 0 0)) (transform (model-matrix)))
+  (allocate (* (length faces) 2))
+  (loop for e across faces
+        for i = (* e 3)
+        do (let ((vec (vec (aref vertices (+ 0 i)) (aref vertices (+ 1 i)) (aref vertices (+ 2 i)) 1.0)))
+             (declare (dynamic-extent vec))
+             (n*m transform vec)
+             (v vec)
+             (v color))))
 
 (defmethod debug-draw ((camera camera) &rest args &key &allow-other-keys)
   (apply #'debug-matrix (m* *projection-matrix* *view-matrix*) args))
@@ -602,9 +628,10 @@ void main(){
           (T
            (setf (fill-pointer (points debug-draw)) 0)
            (setf (fill-pointer (lines debug-draw)) 0)
+           (setf (fill-pointer (flats debug-draw)) 0)
            (setf (fill-pointer (text debug-draw)) 0)
            (setf (fill-pointer (instances debug-draw)) 0)
-           (setf (dirty debug-draw) #b11111)))))
+           (setf (dirty debug-draw) (1- (ash 1 32)))))))
 
 (define-class-shader (debug-draw :vertex-shader)
   "layout (location = 0) in vec3 position;
