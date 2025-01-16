@@ -502,7 +502,12 @@ void main(){
         (line x y) (line y z) (line z w) (line w x)
         (line a x) (line b y) (line c z) (line d w)))))
 
-(define-debug-draw-function (debug-vertex-array lines) (vao &key (color #.(vec 1 0 0)) (transform (model-matrix)))
+(defun debug-vertex-array (vao &rest args &key flats &allow-other-keys)
+  (remf args :flats)
+  (apply (if flats #'debug-vertex-array-flats #'debug-vertex-array-lines)
+         vao args))
+
+(define-debug-draw-function (debug-vertex-array-lines lines) (vao &key (color #.(vec 1 0 0)) (transform (model-matrix)))
   (let ((count 0) prev pprev)
     (labels ((lines (vec)
                (v vec)
@@ -566,6 +571,82 @@ void main(){
                       (:lines #'lines)
                       (:line-strip #'line-strip)
                       (:line-loop #'line-loop)
+                      (:triangles #'triangles)
+                      (:triangle-strip #'triangle-strip)
+                      (:triangle-fan #'triangle-fan)))
+            ebo vbo)
+        (loop for binding in (bindings vao)
+              do (case (buffer-type (unlist binding))
+                   (:element-array-buffer
+                    (setf ebo (buffer-data (unlist binding))))
+                   (:array-buffer
+                    (when (= 0 (getf (rest binding) :index 0))
+                      (setf vbo binding)))))
+        (destructuring-bind (buffer &key (size 3) (stride 0) (offset 0) &allow-other-keys) vbo
+          (let ((data (buffer-data buffer)))
+            (cond (ebo
+                   (alloc (length ebo))
+                   (loop for e across ebo
+                         for i = (+ (floor offset 4) (* (floor stride 4) e))
+                         do (ecase size
+                              (3
+                               (let ((vec (vec (aref data (+ 0 i)) (aref data (+ 1 i)) (aref data (+ 2 i)) 1.0)))
+                                 (declare (dynamic-extent vec))
+                                 (n*m transform vec)
+                                 (funcall vertex vec)))
+                              (2
+                               (let ((vec (vec (aref data (+ 0 i)) (aref data (+ 1 i)) 0.0 1.0)))
+                                 (declare (dynamic-extent vec))
+                                 (n*m transform vec)
+                                 (funcall vertex vec))))))
+                  (T
+                   (alloc (truncate (- (length data) (floor offset 4)) (floor stride 4)))
+                   (loop for i from (floor offset 4) by (floor stride 4) below (length data)
+                         do (ecase size
+                              (3
+                               (let ((vec (vec (aref data (+ 0 i)) (aref data (+ 1 i)) (aref data (+ 2 i)) 1.0)))
+                                 (declare (dynamic-extent vec))
+                                 (n*m transform vec)
+                                 (funcall vertex vec)))
+                              (2
+                               (let ((vec (vec (aref data (+ 0 i)) (aref data (+ 1 i)) 0.0 1.0)))
+                                 (declare (dynamic-extent vec))
+                                 (n*m transform vec)
+                                 (funcall vertex vec)))))))))))))
+
+(define-debug-draw-function (debug-vertex-array-flats flats) (vao &key (color #.(vec 1 0 0)) (transform (model-matrix)))
+  (let ((count 0) prev pprev)
+    (labels ((triangles (vec)
+               (v vec) (v color))
+             (triangle-strip (vec)
+               (case count
+                 (0 (triangles vec)
+                  (setf count 1))
+                 (1 (triangles vec)
+                  (setf prev vec)
+                  (setf count 2))
+                 (T (triangles vec)
+                  (triangles prev)
+                  (triangles vec)
+                  (shiftf pprev prev vec))))
+             (triangle-fan (vec)
+               (case count
+                 (0 (triangles vec)
+                  (setf pprev vec)
+                  (setf count 1))
+                 (1 (triangles vec)
+                  (setf prev vec)
+                  (setf count 2))
+                 (T (triangles vec)
+                  (triangles pprev)
+                  (triangles vec)
+                  (setf prev vec))))
+             (alloc (verts)
+               (ecase (vertex-form vao)
+                 (:triangles (allocate (* 2 verts)))
+                 (:triangle-strip (allocate (* 2 (1+ (* 2 (- verts 2))))))
+                 (:triangle-fan (allocate (* 2 (1+ (* 2 (- verts 2)))))))))
+      (let ((vertex (ecase (vertex-form vao)
                       (:triangles #'triangles)
                       (:triangle-strip #'triangle-strip)
                       (:triangle-fan #'triangle-fan)))
