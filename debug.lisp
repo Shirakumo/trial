@@ -18,10 +18,13 @@
 (defmethod render ((draw debug-draw-text) (program shader-program))
   (setf (uniform program "view_matrix") (view-matrix))
   (setf (uniform program "projection_matrix") (projection-matrix))
-  (setf (uniform program "texture_image") 0)
-  (bind (// 'trial 'ascii) :texture0)
+  (setf (uniform program "texture_image") (bind (// 'trial 'ascii) :texture0))
   (render-array (text-vao draw) :vertex-count (truncate (length (text draw)) 5)))
 
+;; FIXME: this is not correct atm since we billboard globally, rather than
+;;        billboarding around the text's origin. To do this we'd somehow have
+;;        to access the origin of each text element in the vertex shader,
+;;        which isn't trivial.
 (define-class-shader (debug-draw-text :vertex-shader)
   "layout (location = 0) in vec3 position;
 layout (location = 2) in vec2 i_uv;
@@ -33,15 +36,9 @@ uniform mat4 projection_matrix;
 
 void main(){
   mat4 modelView = view_matrix;
-  modelView[0][0] = 1.0;
-  modelView[0][1] = 0.0;
-  modelView[0][2] = 0.0;
-  modelView[1][0] = 0.0;
-  modelView[1][1] = 1.0;
-  modelView[1][2] = 0.0;
-  modelView[2][0] = 0.0;
-  modelView[2][1] = 0.0;
-  modelView[2][2] = 1.0;
+  modelView[0][0] = 1.0; modelView[0][1] = 0.0; modelView[0][2] = 0.0;
+  modelView[1][0] = 0.0; modelView[1][1] = 1.0; modelView[1][2] = 0.0;
+  modelView[2][0] = 0.0; modelView[2][1] = 0.0; modelView[2][2] = 1.0;
 
   gl_Position = projection_matrix * modelView * vec4(position, 1.0f);
   gl_Position.z = -1.0;
