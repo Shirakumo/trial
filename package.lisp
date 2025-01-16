@@ -1104,6 +1104,7 @@
    #:debug-point
    #:debug-line
    #:debug-orientation
+   #:debug-vector
    #:debug-text
    #:debug-box
    #:debug-sphere

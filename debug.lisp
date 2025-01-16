@@ -224,6 +224,29 @@ void main(){
   (v (nv+ (q* orientation (v__z stretch)) location))
   (v #.(vec 0 0 1)))
 
+(define-debug-draw-function (debug-vector lines) (location direction &key (color #.(vec 1 0 0)) (length 2.0))
+  (allocate 20)
+  (let* ((end (vunit direction))
+         (quat (qtowards +vy3+ end))
+         (tmp (vec3)))
+    (declare (dynamic-extent end tmp quat))
+    (!v+* tmp location end (* -0.1 length))
+    (!v+* end location end length)
+    (v location) (v #.(vec3 0))
+    (v end) (v color)
+    (flet ((fin (axis phi)
+             (let ((other (qfrom-angle axis phi)))
+               (declare (dynamic-extent other))
+               (!q* other other quat)
+               (!q* tmp other +vy3+)
+               (!v+* tmp end tmp (* -0.3 length))
+               (v tmp) (v color)
+               (v end) (v color))))
+      (fin +vx3+ (* +0.5 F-PI/4))
+      (fin +vz3+ (* +0.5 F-PI/4))
+      (fin +vx3+ (* -0.5 F-PI/4))
+      (fin +vz3+ (* -0.5 F-PI/4)))))
+
 (defmethod debug-draw ((string string) &rest args &key &allow-other-keys)
   (let ((point (getf args :point)))
     (remf args :point)
@@ -689,10 +712,6 @@ void main(){
                                  (declare (dynamic-extent vec))
                                  (n*m transform vec)
                                  (funcall vertex vec)))))))))))))
-
-;; TODO: these
-#++(define-debug-draw-function (debug-vector lines) (location direction &key (color #.(vec 1 0 0)))
-  )
 
 (defun debug-clear (&key (debug-draw (node 'debug-draw T)) instance)
   (when debug-draw

@@ -5,13 +5,14 @@
   :description "Illustrates the on-the-fly debug drawing utilities in Trial"
   ;; Not necessary usually, any of the debug-* commands automatically do
   ;; enter the debug-draw instance for you as needed.
-  (enter (make-instance 'editor-camera :location (vec 0 0 30) :move-speed 0.1) scene)
   (enter (make-instance 'debug-draw :clear-after-render NIL) scene)
+  (enter (make-instance 'editor-camera :location (vec 0 0 30) :move-speed 0.1) scene)
   (enter (make-instance 'render-pass :clear-color (vec4 0.2 0.23 0.3 1)) scene)
   (debug-point (vec3 0))
   (debug-line (vec -1 1 0) (vec +1 1 0) :color (vec 0 0 1))
   (debug-text (vec 0 -30 0) "Hello!" :scale 0.1)
   (debug-draw (transform (vec 10 0 0) (vec3 3) (qfrom-angle +vx+ F-PI/4)))
+  (debug-vector (vec -10 0 0) (vec -0.5 1 +0.5) :color (vec 0 1 0))
   (debug-box (vec -30 -10 0) (vec3 2))
   (debug-sphere (vec -20 -10 0) 2)
   (debug-ellipsoid (vec -10 -10 0) (vec3 2 5 1))
