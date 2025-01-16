@@ -762,6 +762,6 @@ void main(){
   // Basic phong lighting using view-space calculations.
   float diffuse = dot(normal, -light);
   float specular =  clamp(pow(max(dot(vec3(0,0,1), reflect(light, normal)), 0.0), 32), 0.0, 0.5);
-  float light = mix(1.0, clamp(diffuse + 0.2, 0.2, 0.9), lighting);
+  float light = mix(1.0, clamp(diffuse*0.7 + 0.2, 0.2, 0.9), lighting);
   color = vec4(v_color * light + (specular * lighting), 1);
 }")
