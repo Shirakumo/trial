@@ -17,8 +17,6 @@
         (max-x 0.0)
         (gw (float glyph-width 0f0))
         (gh (float glyph-height 0f0)))
-    (declare (type single-float scale xi yi z max-x gw gh))
-    (declare (type (and (array single-float (*)) (not simple-array)) array))
     (declare (type (unsigned-byte 32) start i))
     (declare (type string text))
     (when adjust
