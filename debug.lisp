@@ -101,6 +101,10 @@ void main(){
   (stage (flats-vao draw) area)
   (stage (text-render draw) area))
 
+(defmethod render :before ((draw debug-draw) target)
+  (unless (allocated-p (shader-program draw))
+    (commit draw (loader +main+) :unload NIL)))
+
 (defmethod render ((draw debug-draw) (program shader-program))
   (when (logbitp 1 (dirty draw))
     (resize-buffer-data (caar (bindings (points-vao draw))) T))
