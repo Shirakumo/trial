@@ -59,7 +59,7 @@
       (button "Open File Manager" (open-in-file-manager #p "~/"))
       (button "Open Browser" (open-in-browser "https://shirakumo.org"))
       (button "Show Error" (emessage "This is an example error message. Nothing actually went wrong, don't worry.")))
-    (alloy:enter info layout :constraints `((:right-of ,ram 10) (:top 10) (:bottom 10) (:right 10)))
+    (alloy:enter info layout :constraints `((:height :rh) (:left 620) (:right 10)))
     (alloy:finish-structure panel layout focus)))
 
 (defmethod handle ((ev tick) (panel system-info-scene))
