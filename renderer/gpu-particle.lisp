@@ -137,32 +137,31 @@
      (local-threads :initarg :local-threads :initform 256 :reader local-threads))
     (:shader-file (trial "particle/gpu-render.glsl"))))
 
-(defmethod initialize-instance :after ((emitter gpu-particle-emitter) &key)
-  (with-all-slots-bound (emitter gpu-particle-emitter)
-    ;; Check that the counts are within ranges that the GPU can even compute.
-    ;; On dev we error, on prod we simply clamp.
-    (let ((max-threads (gl:get* :max-compute-work-group-invocations))
-          (max-groups (aref (gl:get* :max-compute-work-group-count) 0)))
-      #-trial-release (assert (< local-threads max-threads) (local-threads))
-      #+trial-release (setf local-threads (min max-threads local-threads))
-      #-trial-release (assert (< max-particles (* local-threads max-groups)) (max-particles))
-      #+trial-release (setf max-particles (min max-particles (* local-threads max-groups))))
-    ;; Allocate all the necessary SSBOs
-    (setf particle-emitter-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-draw :binding NIL :struct (make-instance 'particle-emitter-buffer)))
-    (setf particle-argument-buffer (make-instance 'shader-storage-buffer :buffer-type :draw-indirect-buffer :data-usage :dynamic-read :binding NIL :struct (make-instance 'particle-argument-buffer)))
-    (setf particle-counter-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-read :binding NIL :struct (make-instance 'particle-counter-buffer :max-particles max-particles)))
-    (setf alive-particle-buffer-0 (make-instance 'vertex-buffer :data-usage :dynamic-copy :binding-point T :gl-type "AliveParticles0" :element-type :unsigned-int :count max-particles))
-    (setf alive-particle-buffer-1 (make-instance 'vertex-buffer :data-usage :dynamic-copy :binding-point T :gl-type "AliveParticles1" :element-type :unsigned-int :count max-particles))
-    (setf dead-particle-buffer (make-instance 'vertex-buffer :data-usage :dynamic-copy :binding-point T :gl-type "DeadParticles" :element-type :unsigned-int :buffer-data
-                                              (let ((buffer (make-array max-particles :element-type '(unsigned-byte 32))))
-                                                (dotimes (i max-particles buffer) (setf (aref buffer i) i)))))
-    (setf particle-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-copy :binding NIL :struct (make-instance 'particle-buffer :size max-particles :storage T)))
-    ;; Allocate the compute passes
-    (setf kickoff-pass (construct-delegate-object-type 'particle-kickoff-pass emitter :emit-threads local-threads :simulate-threads local-threads :max-particles max-particles :particle-counter-buffer particle-counter-buffer :particle-argument-buffer particle-argument-buffer :particle-emitter-buffer particle-emitter-buffer))
-    (setf emit-pass (construct-delegate-object-type 'particle-emit-pass emitter :emit-threads local-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer :particle-emitter-buffer particle-emitter-buffer
-                                                       :work-groups 0))
-    (setf simulate-pass (construct-delegate-object-type 'particle-simulate-pass emitter :simulate-threads local-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer :particle-argument-buffer particle-argument-buffer
-                                                               :work-groups (slot-offset 'particle-argument-buffer 'simulate-args)))))
+(defmethod shared-initialize :after ((emitter gpu-particle-emitter) slots &key)
+  (unless (slot-boundp emitter 'simulate-pass)
+    (with-all-slots-bound (emitter gpu-particle-emitter)
+      ;; Check that the counts are within ranges that the GPU can even compute.
+      ;; On dev we error, on prod we simply clamp.
+      (let ((max-threads (gl:get* :max-compute-work-group-invocations))
+            (max-groups (aref (gl:get* :max-compute-work-group-count) 0)))
+        #-trial-release (assert (< local-threads max-threads) (local-threads))
+        #+trial-release (setf local-threads (min max-threads local-threads))
+        #-trial-release (assert (< max-particles (* local-threads max-groups)) (max-particles))
+        #+trial-release (setf max-particles (min max-particles (* local-threads max-groups))))
+      ;; Allocate all the necessary SSBOs
+      (setf particle-emitter-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-draw :binding NIL :struct (make-instance 'particle-emitter-buffer)))
+      (setf particle-argument-buffer (make-instance 'shader-storage-buffer :buffer-type :draw-indirect-buffer :data-usage :dynamic-read :binding NIL :struct (make-instance 'particle-argument-buffer)))
+      (setf particle-counter-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-read :binding NIL :struct (make-instance 'particle-counter-buffer :max-particles max-particles)))
+      (setf alive-particle-buffer-0 (make-instance 'vertex-buffer :data-usage :dynamic-copy :binding-point T :gl-type "AliveParticles0" :element-type :unsigned-int :count max-particles))
+      (setf alive-particle-buffer-1 (make-instance 'vertex-buffer :data-usage :dynamic-copy :binding-point T :gl-type "AliveParticles1" :element-type :unsigned-int :count max-particles))
+      (setf dead-particle-buffer (make-instance 'vertex-buffer :data-usage :dynamic-copy :binding-point T :gl-type "DeadParticles" :element-type :unsigned-int :buffer-data
+                                                (let ((buffer (make-array max-particles :element-type '(unsigned-byte 32))))
+                                                  (dotimes (i max-particles buffer) (setf (aref buffer i) i)))))
+      (setf particle-buffer (make-instance 'shader-storage-buffer :data-usage :dynamic-copy :binding NIL :struct (make-instance 'particle-buffer :size max-particles :storage T)))
+      ;; Allocate the compute passes
+      (setf kickoff-pass (construct-delegate-object-type 'particle-kickoff-pass emitter :emit-threads local-threads :simulate-threads local-threads :max-particles max-particles :particle-counter-buffer particle-counter-buffer :particle-argument-buffer particle-argument-buffer :particle-emitter-buffer particle-emitter-buffer))
+      (setf emit-pass (construct-delegate-object-type 'particle-emit-pass emitter :emit-threads local-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer :particle-emitter-buffer particle-emitter-buffer :work-groups 0))
+      (setf simulate-pass (construct-delegate-object-type 'particle-simulate-pass emitter :simulate-threads local-threads :particle-buffer particle-buffer :alive-particle-buffer-0 alive-particle-buffer-0 :alive-particle-buffer-1 alive-particle-buffer-1 :dead-particle-buffer dead-particle-buffer :particle-counter-buffer particle-counter-buffer :particle-argument-buffer particle-argument-buffer :work-groups (slot-offset 'particle-argument-buffer 'simulate-args))))))
 
 (defmethod stage :after ((emitter gpu-particle-emitter) (area staging-area))
   (with-all-slots-bound (emitter gpu-particle-emitter)
