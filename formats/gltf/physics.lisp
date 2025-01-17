@@ -1,38 +1,39 @@
 (in-package #:org.shirakumo.fraf.trial.gltf)
 
-(defun load-shape (shape model &rest args)
+(defun load-shape (geometry model &rest args)
   (flet ((ensure-mesh (mesh)
            (or (find-mesh (gltf-name mesh) model NIL)
                (first (load-mesh mesh model)))))
-    (etypecase shape
-      (gltf:sphere-shape
-       (apply #'trial:make-sphere :radius (float (gltf:radius shape) 0f0)
-              args))
-      (gltf:box-shape
-       (apply #'trial:make-box :bsize (nv* (to-vec (gltf:size shape)) 0.5)
-              args))
-      (gltf:capsule-shape
-       (apply #'trial:make-pill :height (float (* 0.5 (gltf:height shape)) 0f0)
-                                :radius (max (float (gltf:radius-top shape) 0f0)
-                                             (float (gltf:radius-bottom shape) 0f0))
-                                args))
-      (gltf:cylinder-shape
-       (apply (cond ((= 0 (gltf:radius-top shape))
-                     #'trial:make-cone)
-                    (T
-                     #'trial:make-cylinder))
-              :height (float (* 0.5 (gltf:height shape)) 0f0)
-              :radius (max (float (gltf:radius-top shape) 0f0)
-                           (float (gltf:radius-bottom shape) 0f0))
-              args))
-      (gltf:mesh-shape
-       (let ((mesh (ensure-mesh (gltf:mesh shape))))
-         (apply (if (gltf:convex-p shape)
-                    #'trial::make-maybe-optimized-convex-mesh
-                    #'trial:make-general-mesh)
-                :vertices (trial:reordered-vertex-data mesh '(trial:location))
-                :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 16))
-                args))))))
+    (let ((shape (gltf:shape geometry)))
+      (etypecase shape
+        (gltf:sphere-shape
+         (apply #'trial:make-sphere :radius (float (gltf:radius shape) 0f0)
+                args))
+        (gltf:box-shape
+         (apply #'trial:make-box :bsize (nv* (to-vec (gltf:size shape)) 0.5)
+                args))
+        (gltf:capsule-shape
+         (apply #'trial:make-pill :height (float (* 0.5 (gltf:height shape)) 0f0)
+                                  :radius (max (float (gltf:radius-top shape) 0f0)
+                                               (float (gltf:radius-bottom shape) 0f0))
+                                  args))
+        (gltf:cylinder-shape
+         (apply (cond ((= 0 (gltf:radius-top shape))
+                       #'trial:make-cone)
+                      (T
+                       #'trial:make-cylinder))
+                :height (float (* 0.5 (gltf:height shape)) 0f0)
+                :radius (max (float (gltf:radius-top shape) 0f0)
+                             (float (gltf:radius-bottom shape) 0f0))
+                args))
+        (null
+         (let ((mesh (ensure-mesh (gltf:mesh (gltf:node geometry)))))
+           (apply (if (gltf:convex-p geometry)
+                      #'trial::make-maybe-optimized-convex-mesh
+                      #'trial:make-general-mesh)
+                  :vertices (trial:reordered-vertex-data mesh '(trial:location))
+                  :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 16))
+                  args)))))))
 
 (defvar *physics-material-cache* (make-hash-table :test 'equal))
 (defun physics-material-instance (material)
@@ -72,8 +73,7 @@
                  (setf material (physics-material-instance (gltf:physics-material collider))))
                (when (gltf:collision-filter collider)
                  (setf mask (collision-filter-mask (gltf:collision-filter collider))))
-               (let ((primitive (load-shape (gltf:shape collider) model
-                                            :local-transform (tmat tf))))
+               (let ((primitive (load-shape (gltf:geometry collider) model :local-transform (tmat tf))))
                  (setf (trial:primitive-collision-mask primitive) mask)
                  (setf (trial:primitive-material primitive) material)
                  (vector-push-extend primitive primitives)))
@@ -127,7 +127,7 @@
                           (basic-entity 'basic-physics-entity)
                           (animated-entity 'animated-physics-entity)
                           (T 'trigger-volume))))
-  (let ((shape (load-shape (gltf:shape (gltf:trigger node)) model)))
+  (let ((shape (load-shape (gltf:geometry (gltf:trigger node)) model)))
     (setf (trial:primitive-collision-mask shape) (collision-filter-mask (gltf:collision-filter (gltf:trigger node))))
     (setf (trial:physics-primitives child) shape)
     (with-simple-restart (continue "Ignore the trigger translation")
