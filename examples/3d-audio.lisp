@@ -7,7 +7,7 @@
   ;;       trial-harmony:settings-main and a method on trial-harmony:server-initargs
   ;;       instead.
   (trial-harmony:initialize-audio-backend
-   NIL :mixers '((:effect mixed:space-mixer)))
+   NIL NIL :mixers '((:effect mixed:space-mixer)))
   (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)
   (enter (make-instance 'audio-source) scene)
   (enter (make-instance 'audio-camera) scene)

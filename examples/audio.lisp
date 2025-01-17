@@ -7,8 +7,9 @@
   ;;       trial-harmony:settings-main and a method on trial-harmony:server-initargs
   ;;       instead.
   (trial-harmony:initialize-audio-backend
-   NIL :mixers '((:music mixed:basic-mixer)
-                 (:effect mixed:plane-mixer))
+   NIL NIL
+   :mixers '((:music mixed:basic-mixer)
+             (:effect mixed:plane-mixer))
    :effects '((mixed:biquad-filter :filter :lowpass :name :lowpass)
               (mixed:speed-change :name :speed)))
   (setf (mixed:min-distance harmony:*server*) 10)
