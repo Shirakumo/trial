@@ -193,6 +193,10 @@ void main(){
              (with-eval-in-render-loop (T :block T)
                (,name)))))))
 
+(defmethod debug-draw ((sequence sequences:sequence) &rest args &key &allow-other-keys)
+  (sequences:dosequence (element sequence)
+    (apply #'debug-draw element args)))
+
 (defmethod debug-draw ((point vec2) &rest args &key &allow-other-keys)
   (apply #'debug-point (vxy_ point) args))
 
