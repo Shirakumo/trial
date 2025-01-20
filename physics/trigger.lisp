@@ -137,12 +137,11 @@
 ;; min and max euler angles
 (defun evaluate-orientation (min max &optional (q (quat)))
   (declare (type vec3 min max))
-  (let ((x (+ (vx min) (random (- (vx max) (vx min)))))
-        (y (+ (vy min) (random (- (vy max) (vy min)))))
-        (z (+ (vz min) (random (- (vz max) (vz min))))))
-    (nq* (!qfrom-angle q +vx+ x)
-         (qfrom-angle +vy+ y)
-         (qfrom-angle +vz+ z))))
+  (let ((x (qfrom-angle +vx+ (random* (vx min) (vx max))))
+        (y (qfrom-angle +vy+ (random* (vy min) (vy max))))
+        (z (qfrom-angle +vz+ (random* (vz min) (vz max)))))
+    (declare (dynamic-extent x y z))
+    (!q* q (!q* q x y) z)))
 
 (defun %prune-spawned-objects (spawned-objects)
   (loop for object being the hash-keys of spawned-objects
