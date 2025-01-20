@@ -10,6 +10,10 @@
 (defmethod optimize-model (file (type (eql :glb)) &rest args)
   (apply #'optimize-model file :gltf args))
 
+(defun optimized-p (mesh)
+  (and (gltf:name mesh)
+       (cl-ppcre:scan "/(decomposed|rehulled)$" (gltf:name mesh))))
+
 (defmethod optimize-model (file (type (eql :gltf)) &rest args &key (output file) &allow-other-keys)
   (let ((decomposition-args (remf* args :output))
         (mesh-table (make-hash-table :test 'eql))
@@ -23,7 +27,8 @@
               do (when collider 
                    (let* ((collider (gltf:collider node))
                           (geometry (gltf:geometry collider)))
-                     (when (gltf:node geometry)
+                     (when (and (gltf:node geometry)
+                                (not (optimized-p (gltf:mesh (gltf:node geometry)))))
                        (let ((new (gethash (gltf:mesh (gltf:node geometry)) mesh-table)))
                          (unless new
                            (let* ((node (gltf:node geometry))
