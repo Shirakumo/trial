@@ -68,6 +68,7 @@ void main(){
    (flats :accessor flats)
    (text-render :accessor text-render)
    (dirty :initform 0 :accessor dirty)
+   (tokens :initform (make-hash-table :test 'eql) :accessor tokens)
    (clear-after-render :initform T :initarg :clear-after-render :accessor clear-after-render)))
 
 (defmethod initialize-instance :after ((draw debug-draw) &key)
@@ -162,10 +163,13 @@ void main(){
 
 (defmacro define-debug-draw-function ((name type) args &body body)
   (let ((type-id (ecase type (points 1) (lines 2) (text 3) (flats 4))))
-    `(defun ,name (,@args (debug-draw (node 'debug-draw T)) (container (scene +main+)) instance)
+    `(defun ,name (,@args (debug-draw (node 'debug-draw T)) (container (scene +main+)) instance token)
        (flet ((,name ()
                 (unless debug-draw
                   (setf debug-draw (enter-and-load (make-instance 'debug-draw) container +main+)))
+                (let ((cache (when token (gethash token (tokens debug-draw)))))
+                  (when cache
+                    (return-from ,name cache)))
                 (let* ((data (,type debug-draw))
                        (instances (instances debug-draw))
                        (i 0))
@@ -183,7 +187,9 @@ void main(){
                     (declare (ignorable #'v))
                     ,@body))
                 (setf (ldb (byte 1 ,type-id) (dirty debug-draw)) 1)
-                instance))
+                (if token
+                    (setf (gethash token (tokens debug-draw)) instance)
+                    instance)))
          (if (current-p (context +main+))
              (,name)
              (with-eval-in-render-loop (T :block T)
@@ -729,6 +735,7 @@ void main(){
              (when (< (* 3 (1+ instance)) (length (instances debug-draw)))
                (array-utils:array-shift (instances debug-draw) :n -3 :from (* 3 (1+ instance))))))
           (T
+           (clrhash (tokens debug-draw))
            (setf (fill-pointer (points debug-draw)) 0)
            (setf (fill-pointer (lines debug-draw)) 0)
            (setf (fill-pointer (flats debug-draw)) 0)
