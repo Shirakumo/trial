@@ -198,7 +198,8 @@
     #+:check-global-bounds-cache-obb
     (assert (v/= 0.0 (global-bounds-cache-obb cache)))
     (!m*4/3 (global-bounds-cache-aabb cache) matrix (global-bounds-cache-obb cache)))
-  (setf (global-bounds-cache-dirty-p cache) NIL))
+  (setf (global-bounds-cache-dirty-p cache) NIL)
+  cache)
 
 (defmethod global-transform-matrix ((cache global-bounds-cache) &optional target)
   (global-transform-matrix (global-bounds-cache-generator cache) target))
