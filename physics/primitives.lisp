@@ -1052,26 +1052,36 @@
       (apply #'make-convex-mesh args)
       (apply #'make-optimized-convex-mesh args)))
 
-(defun convexify (primitives)
+(defun convexify (primitives &key rehull)
   (let ((new (make-array 0 :adjustable T :fill-pointer T)))
-    (loop for primitive across primitives
-          do (etypecase primitive
-               ((and general-mesh (not convex-mesh))
-                (v:warn :trial.physics "Decomposing general mesh into convex primitives...")
-                (with-timing-report (:info :trial.physics "Decomposed ~d tris into ~d primitives with ~d tris total (~,1@f%) in ~fs run-time ~fs real-time"
-                                           (length (general-mesh-faces primitive)) (length new)
-                                           (loop for primitive across new sum (length (convex-mesh-faces primitive)))
-                                           (percentile-change (loop for primitive across new sum (length (convex-mesh-faces primitive)))
-                                                              (length (general-mesh-faces primitive))))
-                  (let ((hulls (decompose-to-convex (general-mesh-vertices primitive)
-                                                    (general-mesh-faces primitive))))
-                    (loop for (vertices . faces) across hulls
-                          for mesh = (make-maybe-optimized-convex-mesh
-                                      :vertices vertices
-                                      :faces faces
-                                      :material (primitive-material primitive)
-                                      :local-transform (mcopy (primitive-local-transform primitive)))
-                          do (vector-push-extend mesh new)))))
-               (primitive
-                (vector-push-extend primitive new))))
+    (flet ((add (primitive vertices faces)
+             (vector-push-extend (make-maybe-optimized-convex-mesh
+                                  :vertices vertices
+                                  :faces faces
+                                  :entity (primitive-entity primitive)
+                                  :material (primitive-material primitive)
+                                  :collision-mask (primitive-collision-mask primitive)
+                                  :local-transform (mcopy (primitive-local-transform primitive)))
+                                 new)))
+      (loop for primitive across primitives
+            do (etypecase primitive
+                 (convex-mesh
+                  (cond (rehull
+                         (v:info :trial.physics "Re-hulling ~a..." primitive)
+                         (multiple-value-bind (vertices faces) (org.shirakumo.fraf.quickhull:convex-hull (convex-mesh-vertices primitive))
+                           (add primitive vertices (simplify faces '(unsigned-byte 16)))))
+                        (T
+                         (vector-push-extend primitive new))))
+                 (general-mesh
+                  (v:warn :trial.physics "Decomposing ~a into convex primitives..." primitive)
+                  (with-timing-report (:info :trial.physics "Decomposed ~d tris into ~d primitives with ~d tris total (~,1@f%) in ~fs run-time ~fs real-time"
+                                             (length (general-mesh-faces primitive)) (length new)
+                                             (loop for primitive across new sum (length (convex-mesh-faces primitive)))
+                                             (percentile-change (loop for primitive across new sum (length (convex-mesh-faces primitive)))
+                                                                (length (general-mesh-faces primitive))))
+                    (loop for (vertices . faces) across (decompose-to-convex (general-mesh-vertices primitive)
+                                                                             (general-mesh-faces primitive))
+                          do (add primitive vertices faces))))
+                 (primitive
+                  (vector-push-extend primitive new)))))
     (simplify new)))
