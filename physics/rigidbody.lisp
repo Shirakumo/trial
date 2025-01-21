@@ -16,7 +16,7 @@
   (write-transform (tf shape) stream)
   (format stream "~&~%Global Transform:~%")
   (write-transform (global-transform-matrix shape) stream)
-  (format stream "~&~%Physics Primitives:")
+  (format stream "~&~%Physics Primitives (~d):" (length (physics-primitives shape)))
   (loop for primitive across (physics-primitives shape)
         do (format stream "~%  ~a~{ ~a~}" primitive (collision-mask-systems (collision-mask primitive)))))
 

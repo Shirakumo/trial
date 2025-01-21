@@ -245,7 +245,7 @@
           for i from 0
           while (< i (length objects))
           do (let ((entity (aref objects i)))
-               (when (and (awake-p entity) (< 0 (collision-mask entity)))
+               (when (and (awake-p entity))
                  (integrate entity dt)
                  (let* ((bias (expt 0.5 dt))
                         (current (current-motion entity))
@@ -323,7 +323,7 @@
   (let ((system (physics-system physics-scene)))
     (start-frame system)
     (loop for entity across (%objects system)
-          when (awake-p entity)
+          when (and (awake-p entity) (< 0 (collision-mask entity)))
           do (loop for force across (forces system)
                    do (apply-force force entity dt)))))
 
