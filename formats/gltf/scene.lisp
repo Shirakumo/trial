@@ -117,7 +117,7 @@
         (setf (name model) (pathname-name input)))
       (load-materials gltf model generator)
       (load-clips gltf NIL (clips model))
-      (loop for mesh across (load-meshes gltf model)
+      (loop for mesh across (load-meshes gltf :model model)
             do (setf (gethash (name mesh) meshes) mesh)
                (trial::make-vertex-array mesh (resource generator (name mesh))))
       ;; Construct scene graphs

@@ -141,7 +141,7 @@
       (setf (trial::initial-weights mesh) (or weights #())))
     mesh))
 
-(defun load-mesh (mesh model &key skeleton model-name)
+(defun load-mesh (mesh &key model skeleton model-name)
   (let ((base-name (gltf-name mesh))
         (primitives (gltf:primitives mesh)))
     (flet ((load-primitive (primitive name)
@@ -157,7 +157,7 @@
                  for primitive = (aref primitives i)
                  collect (load-primitive primitive (cons base-name i))))))))
 
-(defun load-meshes (gltf model)
+(defun load-meshes (gltf &key model)
   (let* ((meshes (make-array 0 :adjustable T :fill-pointer T))
          (skeletons (map 'vector (lambda (skin) (load-skeleton gltf skin)) (gltf:skins gltf)))
          (reorderings (map-into (make-array (length skeletons)) #'make-hash-table)))
@@ -172,7 +172,8 @@
           for map = (when (gltf:skin node)
                       (aref reorderings (gltf:idx (gltf:skin node))))
           do (when (gltf:mesh node)
-               (loop for mesh in (load-mesh (gltf:mesh node) model
+               (loop for mesh in (load-mesh (gltf:mesh node)
+                                            :model model
                                             :model-name (gltf-name node)
                                             :skeleton skeleton)
                      do (when (skinned-p mesh)
