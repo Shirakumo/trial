@@ -13,7 +13,8 @@
 
 (defmethod print-object ((framebuffer framebuffer) stream)
   (print-unreadable-object (framebuffer stream :type T :identity T)
-    (format stream "~:{~a ~}~:[~; ALLOCATED~]" (attachments framebuffer) (allocated-p framebuffer))))
+    (format stream "~@[~d~]x~@[~d~]~:{ ~a~}~:[~; ALLOCATED~]"
+            (width framebuffer) (height framebuffer) (attachments framebuffer) (allocated-p framebuffer))))
 
 (defmethod describe-object :after ((framebuffer framebuffer) stream)
   (when (gl-name framebuffer)

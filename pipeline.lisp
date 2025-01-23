@@ -23,7 +23,11 @@
   (format stream "~&~%Textures:~%")
   (loop for i from 0
         for texture across (textures pipeline)
-        do (format stream "  ~2d ~a~%" i texture)))
+        do (format stream "  ~2d ~a~%" i texture))
+  (format stream "~&~%Framebuffers:~%")
+  (loop for i from 0
+        for pass across (passes pipeline)
+        do (format stream "  ~2d ~a~%" i (framebuffer pass))))
 
 (defmethod finalize ((pipeline pipeline))
   (clear pipeline))
