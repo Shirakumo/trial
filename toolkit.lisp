@@ -604,7 +604,7 @@
 (defgeneric descriptor (object))
 
 (defmethod descriptor (object)
-  (format NIL "~a@~4,'0x" (type-of object)
+  (format NIL "~a{~4,'0x}" (type-of object)
           #-sbcl (sxhash object)
           #+sbcl (sb-kernel:get-lisp-obj-address object)))
 

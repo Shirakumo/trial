@@ -6,6 +6,25 @@
    (textures :initform #() :accessor textures)
    (texspecs :initform #() :accessor texspecs)))
 
+(defmethod describe-object :after ((pipeline pipeline) stream)
+  (format stream "~&~%Shader Passes:~%")
+  (loop for pass across (passes pipeline)
+        do (org.shirakumo.text-draw:node
+            (loop for port in (flow:ports pass)
+                  when (typep port 'flow:in-port)
+                  collect (cons (flow:name port)
+                                (format NIL "~:[...~;~:*~3d~]" (position (flow:port-value port) (textures pipeline)))))
+            (loop for port in (flow:ports pass)
+                  when (typep port 'flow:out-port)
+                  collect (cons (flow:name port)
+                                (format NIL "~:[...~;~:*~3d~]" (position (flow:port-value port) (textures pipeline)))))
+            :label (or (name pass) (type-of pass)) :stream stream)
+           (fresh-line stream))
+  (format stream "~&~%Textures:~%")
+  (loop for i from 0
+        for texture across (textures pipeline)
+        do (format stream "  ~2d ~a~%" i texture)))
+
 (defmethod finalize ((pipeline pipeline))
   (clear pipeline))
 

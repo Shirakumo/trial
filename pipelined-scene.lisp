@@ -49,10 +49,5 @@
         do (when (object-renderable-p entity pass)
              (leave entity pass))))
 
-(defmethod describe-object :after ((scene pipelined-scene) stream)
-  (format stream "~&~%Shader Passes:~%")
-  (loop for pass across (passes scene)
-        do (format stream " ~a~%" pass)))
-
 (defmethod save-image ((scene pipelined-scene) target type &rest args)
   (apply #'save-image (aref (passes scene) (1- (length (passes scene)))) target type args))
