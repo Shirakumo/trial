@@ -3,8 +3,7 @@
 (defclass pipeline ()
   ((nodes :initform NIL :accessor nodes)
    (passes :initform #() :accessor passes)
-   (textures :initform #() :accessor textures)
-   (texspecs :initform #() :accessor texspecs)))
+   (textures :initform #() :accessor textures)))
 
 (defmethod describe-object :after ((pipeline pipeline) stream)
   (format stream "~&~%Shader Passes:~%")
@@ -54,8 +53,7 @@
            (remove-listener pass pipeline))
   (setf (nodes pipeline) ())
   (setf (passes pipeline) #())
-  (setf (textures pipeline) #())
-  (setf (texspecs pipeline) #()))
+  (setf (textures pipeline) #()))
 
 (defmethod connect ((source flow:port) (target flow:port) (pipeline pipeline))
   (flet ((enter-if-new (node)
@@ -147,16 +145,17 @@
 (defmethod resize ((pipeline pipeline) width height)
   (let ((width (max 1 width))
         (height (max 1 height)))
-    (loop for texture across (textures pipeline)
-          for texspec across (texspecs pipeline)
-          do (multiple-value-bind (width height) (texspec-real-size texspec width height)
-               (resize texture width height)))
+    (loop for pass across (passes pipeline)
+          do (dolist (port (flow:ports pass))
+               (when (typep port '(and (or static-input flow:out-port) texture-port))
+                 (make-port-texture port width height NIL (texture port)))))
     (loop for pass across (passes pipeline)
           for binding = (when (framebuffer pass) (first (attachments (framebuffer pass))))
           when binding ;; We have to do it like this to prevent updating FBOs with
                        ;; texspecs that are not window-size.
           do (setf (width (framebuffer pass)) (width (second binding)))
-             (setf (height (framebuffer pass)) (height (second binding))))))
+             (setf (height (framebuffer pass)) (height (second binding))))
+    pipeline))
 
 (defmethod normalized-texspec ((texspec list))
   (assert (= 0 (getf texspec :level 0)))
@@ -212,15 +211,18 @@
        (eq (mag-filter texture) (getf texspec :mag-filter))))
 
 (defmethod make-port-texture ((port port) width height &optional depth texture)
-  (let* ((texspec (normalized-texspec port))
-         (texture (if texture
-                      (apply #'reinitialize-instance texture texspec)
-                      (apply #'make-instance 'texture texspec))))
+  (let ((texspec (normalized-texspec port)))
     (multiple-value-bind (width height depth) (texspec-real-size texspec width height depth)
-      (setf (width texture) width)
-      (setf (height texture) height)
-      (setf (depth texture) depth))
-    texture))
+      (remf texspec :width) (remf texspec :height) (remf texspec :depth)
+      (cond (texture
+             (apply #'reinitialize-instance texture :depth depth texspec)
+             (resize texture width height))
+            (T
+             (let ((texture (apply #'make-instance 'texture texspec)))
+               (setf (width texture) width)
+               (setf (height texture) height)
+               (setf (depth texture) depth)
+               texture))))))
 
 (defun allocate-textures (passes textures texspec)
   (flet ((kind (port)
@@ -265,8 +267,7 @@
   (v:info :trial.pipeline "~a packing for ~ax~a" pipeline width height)
   (let* ((passes (flow:topological-sort (nodes pipeline)))
          (existing-textures (textures pipeline))
-         (textures (make-array 0 :initial-element NIL :fill-pointer 0 :adjustable T))
-         (texspecs (make-array 0 :initial-element NIL :fill-pointer 0 :adjustable T)))
+         (textures (make-array 0 :initial-element NIL :fill-pointer 0 :adjustable T)))
     ;; KLUDGE: We need to do the intersection here to ensure that we remove passes
     ;;         that are not part of this pipeline, but still connected to one of the
     ;;         passes that *is* part of the pipeline.
@@ -297,8 +298,7 @@
                      (not (allocated-p texture)))
             (allocate texture))
           (setf (slot-value port 'texture) texture)
-          (vector-push-extend texture textures)
-          (vector-push-extend texspec texspecs))))
+          (vector-push-extend texture textures))))
     ;; Compute frame buffers
     (dolist (pass passes)
       (when (typep pipeline 'event-loop)
@@ -336,7 +336,7 @@
     (setf (nodes pipeline) NIL)
     (setf (passes pipeline) (coerce passes 'vector))
     (setf (textures pipeline) textures)
-    (setf (texspecs pipeline) texspecs)))
+    pipeline))
 
 (defmethod render ((pipeline pipeline) target)
   (loop for pass across (passes pipeline)
