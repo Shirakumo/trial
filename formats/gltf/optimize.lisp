@@ -18,7 +18,7 @@
 
 (defun optimize-geometry (gltf geometry)
   (let* ((node (gltf:node geometry))
-         (shapes (load-physics-geometry geometry NIL))
+         (shapes (load-physics-geometry geometry NIL :local-transform (tmat (gltf-node-transform node))))
          (shapes (trial::convexify shapes :rehull T))
          (mesh (add-shapes-mesh gltf shapes (format NIL "~a/~:[decomposed~;rehulled~]"
                                                     (gltf:name (gltf:mesh node))
