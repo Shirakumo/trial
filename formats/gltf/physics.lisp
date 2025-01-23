@@ -75,10 +75,11 @@
                  (setf material (physics-material-instance (gltf:physics-material collider))))
                (when (gltf:collision-filter collider)
                  (setf mask (collision-filter-mask (gltf:collision-filter collider))))
-               (loop for primitive across (load-physics-geometry (gltf:geometry collider) model :local-transform (tmat tf))
-                     do (setf (trial:primitive-collision-mask primitive) mask)
-                        (setf (trial:primitive-material primitive) material)
-                        (vector-push-extend primitive primitives)))
+               (loop for primitive across (load-physics-geometry (gltf:geometry collider) model
+                                                                 :local-transform (tmat tf)
+                                                                 :collision-mask mask
+                                                                 :material material)
+                     do (vector-push-extend primitive primitives)))
              (recurse (node tf)
                (let ((tf (t+ tf (gltf-node-transform node))))
                  (when (gltf:collider node)

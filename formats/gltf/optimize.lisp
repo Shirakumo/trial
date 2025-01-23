@@ -27,11 +27,7 @@
     (gltf:make-indexed 'gltf:node node
                        :mesh mesh
                        :name (gltf:name mesh)
-                       :virtual-p T
-                       :matrix (gltf:matrix node)
-                       :rotation (gltf:rotation node)
-                       :scale (gltf:scale node)
-                       :translation (gltf:translation node))))
+                       :virtual-p T)))
 
 (defmethod optimize-model (file (type (eql :gltf)) &key (output #p""))
   (let ((mesh-table (make-hash-table :test 'eql))
