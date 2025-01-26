@@ -16,6 +16,7 @@
   :depends-on (:alexandria
                :cl-ppcre
                :pathname-utils
+               :filesystem-utils
                :zippy
                :deploy
                :cl-ftp

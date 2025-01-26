@@ -28,7 +28,7 @@
     (ensure-directories-exist release)
     (deploy:copy-directory-tree bindir release :copy-root NIL)
     (update-files release)
-    (uiop:delete-file-if-exists (merge-pathnames "trial.log" release))
+    (org.shirakumo.filesystem-utils:ensure-deleted (merge-pathnames "trial.log" release))
     (dolist (path (list-paths release "*.exe" "*.run" "*.o" "*.dylib"))
       (let ((attrs (attributes:decode-attributes (attributes:attributes path))))
         (setf (getf attrs :other-execute) T)

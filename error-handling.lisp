@@ -7,7 +7,7 @@
   (declare (ignore err))
   (org.shirakumo.messagebox:show
    (format NIL "An unhandled error occurred. Please send the application logfile to the developers. You can find it here:~%~%~a"
-           (uiop:native-namestring (trial:logfile)))
+           (pathname-utils:native-namestring (trial:logfile)))
    :title (format NIL "Failed to run ~a" +app-system+)
    :type :error
    :modal T)
@@ -68,11 +68,11 @@
   (when (and (deploy:deployed-p) (not *inhibit-standalone-error-handler*))
     (v:error category err)
     (v:fatal category "Encountered unhandled error in ~a" (bt:current-thread))
-    (cond ((string/= "" (or (uiop:getenv "DEPLOY_CONTINUE_ERROR") ""))
+    (cond ((getenvp "DEPLOY_CONTINUE_ERROR")
            (if (find-restart 'continue)
                (continue err)
                (abort err)))
-          ((string/= "" (or (uiop:getenv "DEPLOY_DEBUG_BOOT") ""))
+          ((getenvp "DEPLOY_DEBUG_BOOT")
            #+sbcl (sb-ext:enable-debugger)
            (invoke-debugger err))
           (T

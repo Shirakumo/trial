@@ -4,7 +4,8 @@
   (deploy:copy-directory-tree (pathname-utils:subdirectory (data-root) "lang") directory)
   (let ((default-keymap (pathname-utils:merge-pathnames* "keymap.lisp" (data-root))))
     (when (probe-file default-keymap)
-      (uiop:copy-file default-keymap (pathname-utils:merge-pathnames* "keymap.lisp" directory))))
+      (org.shirakumo.filesystem-utils:copy-file
+       default-keymap (pathname-utils:merge-pathnames* "keymap.lisp" directory) :replace T)))
   (dolist (pool (list-pools))
     (let* ((source (base pool))
            (unused (loop for path in (unused-file-patterns pool)

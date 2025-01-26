@@ -9,7 +9,7 @@
                                                          :password (or password (password user))
                                                          :passive-ftp-p T)
     (when path
-      (org.mapcar.ftp.client:send-cwd-command connection (uiop:native-namestring path)))
+      (org.mapcar.ftp.client:send-cwd-command connection (pathname-utils:native-namestring path)))
     (dolist (bundle bundles)
       (let ((bundle (bundle-path bundle :version (release-version release))))
         (org.mapcar.ftp.client:store-file connection bundle (file-namestring bundle) :type :binary)
@@ -99,7 +99,7 @@
        (try (directory (make-pathname :name :wild :type "exe" :defaults release)))))))
 
 (defun template (template output release &key branch preview platform secret)
-  (file-replace template output `(("\\$CONTENT" ,(uiop:native-namestring release))
+  (file-replace template output `(("\\$CONTENT" ,(pathname-utils:native-namestring release))
                                   ("\\$BRANCH" ,(or branch ""))
                                   ("\\$PREVIEW" ,(if preview "1" "0"))
                                   ("\\$VERSION" ,(release-version release))

@@ -4,6 +4,8 @@
 (defgeneric distance (a b))
 (defgeneric detect-hits (a b contacts start end))
 (defgeneric support-function (primitive local-direction next))
+(defgeneric collision-mask (thing))
+(declaim (ftype (function (T) (values (unsigned-byte 32) &optional)) collision-mask))
 
 (defmethod distance ((a vec3) (b vec3))
   (vdistance a b))
@@ -212,9 +214,6 @@
            (v<- (global-bounds-cache-location target) (global-bounds-cache-location source))
            (v<- (global-bounds-cache-obb target) (global-bounds-cache-obb source))
            (v<- (global-bounds-cache-aabb target) (global-bounds-cache-aabb source)))))
-
-(defgeneric collision-mask (thing))
-(declaim (ftype (function (T) (values (unsigned-byte 32) &optional)) collision-mask))
 
 (defmethod collision-mask ((primitive primitive))
   (primitive-collision-mask primitive))
@@ -747,6 +746,27 @@
                     (go next)))
        done
          (setf (optimized-convex-mesh-last-vertex primitive) vertex)))))
+
+(define-primitive-type planar-polytope
+    ((planes #() :type (simple-array T (*)))))
+
+(define-transfer planar-polytope planes)
+
+(defmethod print-object ((primitive planar-polytope) stream)
+  (print-unreadable-object (primitive stream :type T :identity T)
+    (format stream "~d planes" (length (planar-polytope-planes primitive)))))
+
+(define-support-function planar-polytope (dir next)
+  (implement!))
+
+(defmethod sample-volume ((primitive planar-polytope) &optional vec)
+  (implement!))
+
+(defmethod compute-bounding-box ((primitive planar-polytope))
+  (implement!))
+
+(defmethod compute-bounding-sphere ((primitive planar-polytope))
+  (implement!))
 
 (defmethod coerce-object ((primitive primitive) (type (eql 'general-mesh)) &rest args &key &allow-other-keys)
   (apply #'coerce-object primitive 'convex-mesh args))

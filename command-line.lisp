@@ -223,14 +223,14 @@
                                                  `(((&rest ,(unlist (lambda-fiddle:rest-lambda-var args))) NIL))))
                                     ,@body))))))
 
-(defun command-line-toplevel (&optional (args (uiop:command-line-arguments)))
+(defun command-line-toplevel (&optional (args (rest (command-line-arguments))))
   (when args
     (load-settings)
     (handler-case (apply #'invoke-command args)
       (error (e)
         (format *error-output* "~&Error: ~a~%" e)
-        (uiop:quit :code 1)))
-    (uiop:quit)))
+        (deploy:quit +app-system+ NIL 1)))
+    (deploy:quit +app-system+)))
 
 (define-command-line-command help (&optional (command NIL NIL "The command to describe"))
   :help "Display help about the program or a subcommand."

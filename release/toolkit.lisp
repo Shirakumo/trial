@@ -113,17 +113,15 @@
          (mapc #'prune file))
         ((wild-pathname-p file)
          (prune (directory file)))
-        ((pathname-utils:directory-p file)
-         (uiop:delete-directory-tree file :validate (constantly T) :if-does-not-exist :ignore))
         (T
-         (uiop:delete-file-if-exists file))))
+         (org.shirakumo.filesystem-utils:ensure-deleted file))))
 
 (defun copy (file target)
   (cond ((wild-pathname-p file)
          (loop for file in (directory file)
                do (copy file (merge-pathnames file target))))
         ((pathname-utils:directory-p file)
-         (deploy:copy-directory-tree file target :copy-root NIL))
+         (org.shirakumo.filesystem-utils:copy-file file target :replace T :skip-root T))
         (T
          (ensure-directories-exist target)
-         (uiop:copy-file file target))))
+         (org.shirakumo.filesystem-utils:copy-file file target :replace T))))

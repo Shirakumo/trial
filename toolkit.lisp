@@ -45,7 +45,7 @@
                             (return (subseq line 0 (position #\Space line))))))))))))
 
 (defun self ()
-  #-nx (first (uiop:raw-command-line-arguments))
+  #-nx (first (command-line-arguments))
   #+nx (make-pathname :device "rom" :name "sbcl" :directory '(:absolute)))
 
 (let ((asdf-cache (make-hash-table :test 'equal)))
@@ -85,7 +85,7 @@
 
 (defmethod version ((_ (eql :binary)))
   (let ((self (self)))
-    (if (and self (uiop:file-exists-p self) (not (uiop:featurep :nx)))
+    (if (and self (probe-file self) (not (member :nx *features*)))
         (checksum self)
         "?")))
 
@@ -444,8 +444,35 @@
              until (eq value #1#)
              collect value)))))
 
+(defun command-line-arguments ()
+  #+abcl ext:*command-line-argument-list*
+  #+allegro (sys:command-line-arguments)
+  #+(or clasp ecl) (loop :for i :from 0 :below (si:argc) :collect (si:argv i))
+  #+clisp (coerce (ext:argv) 'list)
+  #+clozure ccl:*command-line-argument-list*
+  #+cmucl  extensions:*command-line-strings*
+  #+mezzano nil
+  #+lispworks sys:*line-arguments-list*
+  #+sbcl sb-ext:*posix-argv*
+  ())
+
+(defun getenv (x)
+  #+(or abcl clasp clisp ecl xcl) (ext:getenv x)
+  #+allegro (sys:getenv x)
+  #+clozure (ccl:getenv x)
+  #+cmucl (unix:unix-getenv x)
+  #+lispworks (lispworks:environment-variable x)
+  #+sbcl (sb-ext:posix-getenv x)
+  #-(or abcl clasp clisp ecl xcl allegro clozure cmucl lispworks sbcl)
+  NIL)
+
+(defun getenvp (x)
+  (let ((x (getenv x)))
+    (when (and x (string/= x ""))
+      x)))
+
 (defun envvar-directory (var)
-  (let ((var (uiop:getenv var)))
+  (let ((var (getenv var)))
     (when (and var (string/= "" var))
       (pathname-utils:parse-native-namestring var :as :directory :junk-allowed T))))
 
@@ -488,12 +515,12 @@
           (< (file-write-date path) (file-write-date default))))))
 
 (defun logfile ()
-  (let ((log (or (uiop:getenv "TRIAL_LOGFILE") "")))
+  (let ((log (or (getenv "TRIAL_LOGFILE") "")))
     (pathname-utils:merge-pathnames*
      (if (string= "" log)
          "trial.log"
          (pathname-utils:parse-native-namestring log))
-     (or #+nx (tempdir) (uiop:argv0) (user-homedir-pathname)))))
+     (or #+nx (tempdir) (self) (user-homedir-pathname)))))
 
 (defun config-directory (&rest app-path)
   (apply #'pathname-utils:subdirectory
@@ -1478,7 +1505,7 @@
 
 (defun find-program (program)
   (let ((programs (enlist program)))
-    (loop for dir in (uiop:getenv-absolute-directories "PATH")
+    (loop for dir in (getenv-absolute-directories "PATH")
           thereis (when dir (loop for program in programs
                                   thereis (probe-file (pathname-utils:merge-pathnames* program dir)))))))
 
@@ -1497,9 +1524,17 @@
                        #+windows (find-program (format NIL "~a.exe" program))
                        (error "Can't find external program:~%  ~a"
                               program))))
+      #+sbcl
+      (if background
+          (sb-ext:run-program program args :input input :error-output *error-output* :wait NIL)
+          (with-output-to-string (out)
+            (sb-ext:run-program program args :input input :output out :error-output *error-output* :wait T)))
+      #+(and asdf3 (not sbcl))
       (if background
           (uiop:launch-program (list* program args) :input input :error-output *error-output*)
-          (uiop:run-program (list* program args) :input input :output :string :error-output *error-output*)))))
+          (uiop:run-program (list* program args) :input input :output :string :error-output *error-output*))
+      #-(or sbcl asdf3)
+      (implement!))))
 
 (declaim (inline random*))
 (defun random* (min max)
