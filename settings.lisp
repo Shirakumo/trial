@@ -243,7 +243,7 @@
                    (setf *inhibit-standalone-error-handler* T))
                   (T
                    (ignore-errors (f stop-server port))
-                   (setf *inhibit-standalone-handler* NIL)))
+                   (setf *inhibit-standalone-error-handler* NIL)))
           (error (e)
             (v:error :trial "Failed to start swank: ~a" e)
             (v:debug :trial e)))))))

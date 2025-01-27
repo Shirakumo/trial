@@ -127,7 +127,7 @@ void main(){
              (compute-time (dt)
                ;; Rationale: if we take 1/60th of a second of time, that should count as "max".
                (clamp 0 (round (the (double-float 0d0) (* dt 60 255))) 255)))
-      (declare (inline update-time update-frac))
+      (declare (inline compute-time compute-frac))
       ;; 1: CPU Time
       (let ((time (org.shirakumo.machine-state:process-time)))
         (update 1 (compute-time (- time +last-process-time+)))

@@ -99,7 +99,7 @@
   (let ((mat (mat4)))
     (declare (dynamic-extent mat))
     (global-transform-matrix entity mat)
-    (!m*4/3 target matrix (bsize object))))
+    (!m*4/3 target mat (bsize entity))))
 
 (defmethod global-bradius ((entity entity))
   (let ((mat (mat4)))

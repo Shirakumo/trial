@@ -78,7 +78,7 @@
 (define-transfer place-trigger-volume setter getter value action)
 
 (defmethod activate-trigger (a (trigger place-trigger-volume))
-  (ecase (mode trigger)
+  (ecase (action trigger)
     (setf (funcall (setter trigger) (value trigger)))
     (incf (funcall (setter trigger) (+ (funcall (getter trigger)) (value trigger))))
     (decf (funcall (setter trigger) (- (funcall (getter trigger)) (value trigger))))

@@ -179,8 +179,8 @@
   ((target :initform NIL :accessor target)))
 
 (defmethod opengl:make-framebuffer ((renderer renderer))
-  (let* ((w (width trial:*context*))
-         (h (height trial:*context*))
+  (let* ((w (trial:width trial:*context*))
+         (h (trial:height trial:*context*))
          (color (make-instance 'trial:texture :width w :height h :internal-format :rgba))
          (depth (make-instance 'trial:texture :width w :height h :internal-format :depth-stencil))
          (framebuffer (make-instance 'framebuffer :bindings `((:color-attachment0 ,color)

@@ -223,7 +223,7 @@
                                                  `(((&rest ,(unlist (lambda-fiddle:rest-lambda-var args))) NIL))))
                                     ,@body))))))
 
-(defun command-line-toplevel (&optional (args (rest (command-line-arguments))))
+(defun command-line-toplevel (&optional (args (rest (deploy:command-line-arguments))))
   (when args
     (load-settings)
     (handler-case (apply #'invoke-command args)

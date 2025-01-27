@@ -13,7 +13,7 @@
   (setf +main+ main))
 
 (defmethod start ((main main))
-  (cond ((getenvp "TRIAL_QUIT_AFTER_INIT")
+  (cond ((deploy:env-set-p "TRIAL_QUIT_AFTER_INIT")
          (quit (context main)))
         (T
          (call-next-method))))
@@ -139,7 +139,7 @@
   (v:output-here)
   (v:info :trial.main "GENESIS")
   (v:info :trail.main "Launching version ~a (~a)" (version :app) (version :binary))
-  (when (getenvp "TRIAL_QUIT_AFTER_INIT")
+  (when (deploy:env-set-p "TRIAL_QUIT_AFTER_INIT")
     (let ((context (getf initargs :context)))
       (setf (getf initargs :context) (list* :visible NIL context))))
   (handler-bind ((error #'standalone-error-handler)

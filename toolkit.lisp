@@ -45,7 +45,7 @@
                             (return (subseq line 0 (position #\Space line))))))))))))
 
 (defun self ()
-  #-nx (first (command-line-arguments))
+  #-nx (first (deploy:command-line-arguments))
   #+nx (make-pathname :device "rom" :name "sbcl" :directory '(:absolute)))
 
 (let ((asdf-cache (make-hash-table :test 'equal)))
@@ -444,42 +444,10 @@
              until (eq value #1#)
              collect value)))))
 
-(defun command-line-arguments ()
-  #+abcl ext:*command-line-argument-list*
-  #+allegro (sys:command-line-arguments)
-  #+(or clasp ecl) (loop :for i :from 0 :below (si:argc) :collect (si:argv i))
-  #+clisp (coerce (ext:argv) 'list)
-  #+clozure ccl:*command-line-argument-list*
-  #+cmucl  extensions:*command-line-strings*
-  #+mezzano nil
-  #+lispworks sys:*line-arguments-list*
-  #+sbcl sb-ext:*posix-argv*
-  ())
-
-(defun getenv (x)
-  #+(or abcl clasp clisp ecl xcl) (ext:getenv x)
-  #+allegro (sys:getenv x)
-  #+clozure (ccl:getenv x)
-  #+cmucl (unix:unix-getenv x)
-  #+lispworks (lispworks:environment-variable x)
-  #+sbcl (sb-ext:posix-getenv x)
-  #-(or abcl clasp clisp ecl xcl allegro clozure cmucl lispworks sbcl)
-  NIL)
-
-(defun getenvp (x)
-  (let ((x (getenv x)))
-    (when (and x (string/= x ""))
-      x)))
-
-(defun envvar-directory (var)
-  (let ((var (getenv var)))
-    (when (and var (string/= "" var))
-      (pathname-utils:parse-native-namestring var :as :directory :junk-allowed T))))
-
 (defun tempdir ()
-  (or #+windows (or (envvar-directory "TEMP") #p"~/AppData/Local/Temp/")
-      #+darwin (envvar-directory "TMPDIR")
-      #+linux (envvar-directory "XDG_RUNTIME_DIR")
+  (or #+windows (or (deploy:envvar-directory "TEMP") #p"~/AppData/Local/Temp/")
+      #+darwin (deploy:envvar-directory "TMPDIR")
+      #+linux (deploy:envvar-directory "XDG_RUNTIME_DIR")
       #+nx (make-pathname :device "tmp" :directory '(:absolute))
       #p"/tmp/"))
 
@@ -515,7 +483,7 @@
           (< (file-write-date path) (file-write-date default))))))
 
 (defun logfile ()
-  (let ((log (or (getenv "TRIAL_LOGFILE") "")))
+  (let ((log (or (deploy:envvar "TRIAL_LOGFILE") "")))
     (pathname-utils:merge-pathnames*
      (if (string= "" log)
          "trial.log"
@@ -524,13 +492,13 @@
 
 (defun config-directory (&rest app-path)
   (apply #'pathname-utils:subdirectory
-         (or (envvar-directory "TRIAL_CONFIG_HOME")
+         (or (deploy:envvar-directory "TRIAL_CONFIG_HOME")
              #+windows
-             (or (envvar-directory "AppData")
+             (or (deploy:envvar-directory "AppData")
                  (pathname-utils:subdirectory (user-homedir-pathname) "AppData" "Roaming"))
              #+nx
              (make-pathname :device "save" :directory '(:absolute))
-             (or (envvar-directory "XDG_CONFIG_HOME")
+             (or (deploy:envvar-directory "XDG_CONFIG_HOME")
                  (pathname-utils:subdirectory (user-homedir-pathname) ".config")))
          (or app-path (list +app-vendor+ +app-system+))))
 
@@ -1505,7 +1473,7 @@
 
 (defun find-program (program)
   (let ((programs (enlist program)))
-    (loop for dir in (getenv-absolute-directories "PATH")
+    (loop for dir in (deploy:envvar-directories "PATH")
           thereis (when dir (loop for program in programs
                                   thereis (probe-file (pathname-utils:merge-pathnames* program dir)))))))
 

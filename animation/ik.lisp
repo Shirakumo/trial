@@ -319,7 +319,7 @@
   (apply #'add-ik-system (skeleton controller) controller :name name args))
 
 (defmethod remove-ik-system (name (controller ik-controller))
-  (setf (ik-system name (layers controller)) NIL))
+  (setf (ik-system name controller) NIL))
 
 (defmethod ik-system (name (controller ik-controller))
   (gethash name (ik-systems controller)))

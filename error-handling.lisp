@@ -68,11 +68,11 @@
   (when (and (deploy:deployed-p) (not *inhibit-standalone-error-handler*))
     (v:error category err)
     (v:fatal category "Encountered unhandled error in ~a" (bt:current-thread))
-    (cond ((getenvp "DEPLOY_CONTINUE_ERROR")
+    (cond ((deploy:env-set-p "DEPLOY_CONTINUE_ERROR")
            (if (find-restart 'continue)
                (continue err)
                (abort err)))
-          ((getenvp "DEPLOY_DEBUG_BOOT")
+          ((deploy:env-set-p "DEPLOY_DEBUG_BOOT")
            #+sbcl (sb-ext:enable-debugger)
            (invoke-debugger err))
           (T
