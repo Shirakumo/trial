@@ -380,7 +380,7 @@
         values))))
 
 (defun repl-print (values &optional (stream *query-io*))
-  (format stream "~{~&~a~%~}" values))
+  (format stream "~{~&~s~%~}" values))
 
 (define-command-line-command repl (&key ((package :package :p) NIL NIL "The package to start with"))
   :help "Run a read-eval-print-loop"
