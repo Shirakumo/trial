@@ -136,7 +136,10 @@
   (mapc #'finalize (list-assets pool)))
 
 (defmethod pool-path ((pool pool) (null null))
-  (pathname-utils:merge-pathnames* (base pool) (deploy:data-directory)))
+  (let ((base (base pool)))
+    (if (pathname-utils:absolute-p base)
+        base
+        (pathname-utils:merge-pathnames* base (deploy:data-directory)))))
 
 (defmethod pool-path ((pool pool) pathname)
   (pathname-utils:merge-pathnames* pathname (pool-path pool NIL)))
