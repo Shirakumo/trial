@@ -25,11 +25,6 @@
 (defun enable-debug-features (&rest features)
   (setf *features* (union *features* (or features *debug-features*))))
 
-(defun reload-with-features (&rest features)
-  (setf *features* (union *features* features))
-  (asdf:compile-system :trial :force T :verbose NIL)
-  (asdf:load-system :trial :force T :verbose NIL))
-
 ;; FIXME: Put all the consistency checks and such during loading etc under features.
 
 (when (char= #\Return (char "

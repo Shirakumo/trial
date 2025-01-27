@@ -38,15 +38,6 @@
   (let ((version (version :app))) (defmethod version ((_ (eql :app))) version))
   (let ((version (version :trial))) (defmethod version ((_ (eql :trial))) version)))
 
-#+asdf
-(deploy:define-hook (:build neuter-asdf #.MOST-NEGATIVE-FIXNUM) ()
-  (asdf:clear-configuration)
-  (setf (fdefinition 'asdf:upgrade-asdf) (lambda ()))
-  #+quicklisp (setf ql:*local-project-directories* ())
-  (dolist (system (asdf:already-loaded-systems))
-    (asdf:register-immutable-system system)
-    (asdf:clear-system system)))
-
 (deploy:define-hook (:boot trial) ()
   (v:restart-global-controller)
   (setf *random-state* (make-random-state T))
@@ -60,7 +51,7 @@
  cl-opengl-bindings::opengl)
 #+linux
 (deploy:define-library org.shirakumo.fraf.gamepad.impl::evdev
-  :path (asdf:system-relative-pathname :cl-gamepad "static/libevdev-lin-amd64.so"))
+  :path (merge-pathnames "libevdev-lin-amd64.so" org.shirakumo.fraf.gamepad.impl::*static*))
 #+darwin
 (dont-deploy
  org.shirakumo.fraf.gamepad.impl::corefoundation
