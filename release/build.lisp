@@ -4,7 +4,10 @@
   '(:trial-optimize-all :cl-opengl-no-masked-traps :cl-opengl-no-check-error
     :cl-mixed-no-restarts :trial-release))
 
-(defmethod build :around (target)
+(defgeneric build (target &key))
+(defgeneric test (target &key))
+
+(defmethod build :around (target &key &allow-other-keys)
   (restart-case
       (call-next-method)
     (continue ()
@@ -13,37 +16,36 @@
       :report "Retry the build"
       (build target))))
 
-(defun build-args ()
-  (let ((features (append *default-build-features* (config :build :features))))
-    (append (list "--dynamic-space-size" (princ-to-string (config :build :dynamic-space-size))
-                  "--eval" "(setf asdf:*user-cache* (asdf::xdg-cache-home \"common-lisp\" \"trial-release\":implementation))"
-                  "--eval" "(asdf:initialize-output-translations)"
-                  "--eval" (format NIL "(setf *features* (append *features* '~s))" features))
-            (config :build :build-arguments)
-            (list "--eval" (format NIL "(asdf:make ~s :force T)" (config :system))
-                  "--disable-debugger" "--quit"))))
+(defun build-args (&key (features (append *default-build-features* (config :build :features)))
+                        (build-arguments (config :build :build-arguments))
+                        (dynamic-space-size (config :build :dynamic-space-size))
+                        (force T))
+  (append (list "--dynamic-space-size" (princ-to-string dynamic-space-size)
+                "--eval" "(setf asdf:*user-cache* (asdf::xdg-cache-home \"common-lisp\" \"trial-release\":implementation))"
+                "--eval" "(asdf:initialize-output-translations)"
+                "--eval" (format NIL "(setf *features* (append *features* '~s))" features))
+          build-arguments
+          (list "--eval" (format NIL "(asdf:make ~s :force ~s)" (config :system) force)
+                "--disable-debugger" "--quit")))
 
-(defmethod build ((target (eql :linux)))
-  #+linux (apply #'run (config :build :linux) (build-args))
+(defmethod build ((target (eql :linux)) &rest args &key &allow-other-keys)
+  #+linux (apply #'run (config :build :linux) (apply #'build-args args))
   #+windows (apply #'run "wsl.exe" (config :build :linux) (build-args)))
 
-(defmethod build ((target (eql :windows)))
-  (apply #'run (config :build :windows) (build-args)))
+(defmethod build ((target (eql :windows)) &rest args &key &allow-other-keys)
+  (apply #'run (config :build :windows) (apply #'build-args args)))
 
-(defmethod build ((target (eql :macos)))
-  (apply #'run (config :build :macos) (build-args)))
+(defmethod build ((target (eql :macos)) &rest args &key &allow-other-keys)
+  (apply #'run (config :build :macos) (apply #'build-args args)))
 
-(defmethod build ((target (eql T)))
-  (dolist (target (config :build :targets))
-    (build target)))
+(defmethod build ((target (eql T)) &rest args &key &allow-other-keys)
+  (apply #'build (config :build :targets) args))
 
-(defmethod build ((targets cons))
+(defmethod build ((targets list) &rest args &key &allow-other-keys)
   (dolist (target targets)
-    (build target)))
+    (apply #'build target args)))
 
-(defmethod build ((target null)))
-
-(defmethod test :around (target)
+(defmethod test :around (target &key &allow-other-keys)
   (setf (uiop:getenv "TRIAL_QUIT_AFTER_INIT") "true")
   (unwind-protect
        (restart-case (call-next-method)
@@ -58,22 +60,19 @@
            (test target)))
     (setf (uiop:getenv "TRIAL_QUIT_AFTER_INIT") "")))
 
-(defmethod test ((target (eql :linux)))
+(defmethod test ((target (eql :linux)) &key)
   (dolist (file (directory (merge-pathnames "bin/*.run" (asdf:system-source-directory (config :system)))))
     #+linux (run file)
     #+windows (run "wsl.exe" file)))
 
-(defmethod test ((target (eql :windows)))
+(defmethod test ((target (eql :windows)) &key)
   (dolist (file (directory (merge-pathnames "bin/*.exe" (asdf:system-source-directory (config :system)))))
     #+windows (run file)
     #-windows (run "wine" file)))
 
-(defmethod test ((target (eql T)))
-  (dolist (target (config :build :targets))
-    (test target)))
+(defmethod test ((target (eql T)) &rest args &key &allow-other-keys)
+  (apply #'test (config :build :targets) args))
 
-(defmethod test ((targets cons))
+(defmethod test ((targets list) &rest args &key &allow-other-keys)
   (dolist (target targets)
-    (test target)))
-
-(defmethod test ((target null)))
+    (apply #'test target args)))
