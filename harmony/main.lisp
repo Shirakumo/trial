@@ -25,7 +25,7 @@
 
 (defun initialize-audio-backend (main &optional preferred-backend &rest initargs)
   (or (when preferred-backend
-        (ignore-errors (trial:with-error-logging (:trial.harmony "Failed to set up requested backend, falling back to default output.")
+        (ignore-errors (trial:with-error-logging (:trial.harmony "Failed to set up ~a, falling back to default output." preferred-backend)
                          (apply #'try-audio-backend main preferred-backend initargs))))
       (ignore-errors (trial:with-error-logging (:trial.harmony "Failed to set up sound, falling back to dummy output.")
                        (apply #'try-audio-backend main :default initargs)))
