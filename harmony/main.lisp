@@ -5,6 +5,12 @@
 
 (defmethod setup-server progn (main server))
 
+(defun channel-order (drain)
+  (let ((order (mixed:channel-order drain)))
+    (if (< (mixed:channels drain) (length order))
+        (subseq order 0 (mixed:channels drain))
+        order)))
+
 (defun try-audio-backend (main backend &rest initargs)
   (handler-bind ((mixed:device-not-found
                    (lambda (e)
@@ -18,17 +24,17 @@
     (v:info :trial.harmony "Configured output for ~s~@[ on ~a~]: ~d ~a channels ~aHz.~%  Channel layout is ~a"
             (type-of drain) (when (typep drain 'mixed:device-drain) (mixed:device drain))
             (mixed:channels drain) (mixed:encoding drain) (mixed:samplerate drain)
-            (subseq (mixed:channel-order drain) 0 (mixed:channels drain)))
+            (channel-order drain))
     (when (typep drain 'mixed:device-drain)
       (v:info :trial.harmony "Device list:~{~%  ~a~}" (mixed:list-devices drain)))
     drain))
 
 (defun initialize-audio-backend (main &optional preferred-backend &rest initargs)
   (or (when preferred-backend
-        (ignore-errors (trial:with-error-logging (:trial.harmony "Failed to set up ~a, falling back to default output." preferred-backend)
-                         (apply #'try-audio-backend main preferred-backend initargs))))
-      (ignore-errors (trial:with-error-logging (:trial.harmony "Failed to set up sound, falling back to dummy output.")
-                       (apply #'try-audio-backend main :default initargs)))
+        (trial:with-ignored-errors-on-release (:trial.harmony "Failed to set up ~a, falling back to default output." preferred-backend)
+          (apply #'try-audio-backend main preferred-backend initargs)))
+      (trial:with-ignored-errors-on-release (:trial.harmony "Failed to set up sound, falling back to dummy output.")
+        (apply #'try-audio-backend main :default initargs))
       (apply #'try-audio-backend main :dummy initargs)))
 
 (defmethod trial:finalize ((server harmony:server))
@@ -40,7 +46,7 @@
     (v:info :trial.harmony "Configured output for ~s~@[ on ~a~]: ~d ~a channels ~aHz.~%  Channel layout is ~a"
             (type-of drain) (mixed:device drain)
             (mixed:channels drain) (mixed:encoding drain) (mixed:samplerate drain)
-            (subseq (mixed:channel-order drain) 0 (mixed:channels drain)))))
+            (channel-order drain))))
 
 (trial:define-setting-observer volumes :audio :volume (value)
   (when harmony:*server*
