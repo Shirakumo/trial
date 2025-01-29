@@ -11,7 +11,8 @@
 (trial::dont-deploy
  org.shirakumo.fraf.mixed.pulse.cffi::libpulse-simple
  org.shirakumo.fraf.mixed.pulse.cffi::libpulse
- org.shirakumo.fraf.mixed.alsa.cffi::libasound)
+ org.shirakumo.fraf.mixed.alsa.cffi::libasound
+ org.shirakumo.fraf.mixed.pipewire.cffi::libpipewire)
 #+darwin
 (trial::dont-deploy
  org.shirakumo.fraf.mixed.coreaudio.cffi::audio-toolbox
