@@ -197,16 +197,35 @@ void main(){
   (sequences:dosequence (element sequence)
     (apply #'debug-draw element args)))
 
-(defmethod debug-draw ((point vec2) &rest args &key &allow-other-keys)
-  (apply #'debug-point (vxy_ point) args))
+(defmethod debug-draw ((point vec2) &rest args &key (type :cross) &allow-other-keys)
+  (remf args :type)
+  (ecase type
+    (:point (apply #'debug-point (vxy_ point) args))
+    (:cross (apply #'debug-cross (vxy_ point) args))))
 
-(defmethod debug-draw ((point vec3) &rest args &key &allow-other-keys)
-  (apply #'debug-point point args))
+(defmethod debug-draw ((point vec3) &rest args &key (type :cross) &allow-other-keys)
+  (remf args :type)
+  (ecase type
+    (:point (apply #'debug-point point args))
+    (:cross (apply #'debug-cross point args))))
 
 (define-debug-draw-function (debug-point points) (point &key (color #.(vec 1 0 0)))
   (allocate 2)
   (v point)
   (v color))
+
+(define-debug-draw-function (debug-cross lines) (point &key (color #.(vec 1 0 0)) (size 1.0))
+  (allocate (* 4 3))
+  (let ((tmp (vec3)))
+    (declare (dynamic-extent tmp))
+    (flet ((line (x)
+             (v (!v+* tmp point x (* size -0.5)))
+             (v color)
+             (v (!v+* tmp point x (* size +0.5)))
+             (v color)))
+      (line +vx3+)
+      (line +vy3+)
+      (line +vz3+))))
 
 (define-debug-draw-function (debug-line lines) (a b &key (color #.(vec 1 0 0)) (color-a color) (color-b color))
   (allocate 4)
@@ -233,7 +252,9 @@ void main(){
   (v (nv+ (q* orientation (v__z stretch)) location))
   (v #.(vec 0 0 1)))
 
-(defmethod debug-draw ((ray ray) &rest args &key &allow-other-keys)
+(defmethod debug-draw ((ray ray) &rest args &key origin &allow-other-keys)
+  (remf args :origin)
+  (when origin (apply #'debug-cross (ray-location ray) args))
   (apply #'debug-vector (ray-location ray) (ray-direction ray) args))
 
 (define-debug-draw-function (debug-vector lines) (location direction &key (color #.(vec 1 0 0)) (length 2.0))
@@ -473,6 +494,12 @@ void main(){
     (setf (getf args :transform) (primitive-transform primitive)))
   (let ((primitive (coerce-object primitive 'convex-mesh)))
     (apply #'debug-triangles (general-mesh-vertices primitive) (general-mesh-faces primitive) args)))
+
+(defmethod debug-draw ((hit hit) &key (draw-a T) (draw-b T))
+  (debug-vector (hit-location hit) (hit-normal hit) :length (hit-restitution hit))
+  (debug-cross (hit-location hit))
+  (when draw-a (debug-draw (hit-a-detail hit) :color #.(vec 0 1 0)))
+  (when draw-b (debug-draw (hit-b-detail hit) :color #.(vec 0 0 1))))
 
 (defmethod debug-draw ((entity multi-mesh-entity) &rest args &key &allow-other-keys)
   (loop for vao across (vertex-arrays entity)

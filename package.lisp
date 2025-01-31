@@ -1102,6 +1102,7 @@
   (:export
    #:debug-draw
    #:debug-point
+   #:debug-cross
    #:debug-line
    #:debug-orientation
    #:debug-vector
