@@ -25,16 +25,13 @@
 (defmethod height ((camera camera))
   (* 2 (vy (bsize camera))))
 
-(defmethod handle ((ev tick) (camera camera))
-  (project-view camera))
-
 (defmethod handle ((ev resize) (camera camera))
-  (vsetf (bsize camera) (* 0.5 (width ev)) (* 0.5 (height ev)))
-  (setup-perspective camera (width ev) (height ev)))
+  (vsetf (bsize camera) (* 0.5 (width ev)) (* 0.5 (height ev))))
 
 (defmethod (setf near-plane) :around (val (camera camera))
   (when (/= val (near-plane camera))
     (call-next-method)
+    ;; FIXME: only do this if we're the active camera!
     (setup-perspective camera T T)))
 
 (defmethod (setf far-plane) :around (val (camera camera))
@@ -128,7 +125,6 @@
   (global-location (target camera)))
 
 (define-handler ((camera sidescroll-camera) tick) ()
-  (project-view camera)
   (let* ((loc (location camera))
          (int (vcopy loc)))
     (when (target camera)

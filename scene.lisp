@@ -24,9 +24,13 @@
   (call-next-method)
   (setup-perspective camera T T))
 
-(defmethod handle :after ((event event) (loop event-loop))
-  (when (camera loop)
-    (handle event (camera loop))))
+(defmethod handle :after ((tick post-tick) (scene scene))
+  (when (camera scene)
+    (project-view (camera scene))))
+
+(defmethod handle :after ((event resize) (scene scene))
+  (when (camera scene)
+    (setup-perspective (camera scene) T T)))
 
 (defmethod unit (name (scene scene))
   (gethash name (name-map scene)))
