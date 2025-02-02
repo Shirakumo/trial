@@ -1,69 +1,63 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-gl-struct parallax
-  (parallax :vec2 :accessor parallax)
-  (scaling :vec2 :accessor scaling)
-  (offset :vec2 :accessor offset)
-  (view-size :vec2 :accessor view-size))
-
-(define-asset (trial parallax) uniform-block
-    'parallax)
-
 (define-shader-entity parallax-background (renderable listener)
   ((name :initform 'parallax-background)
-   (texture :initform NIL :accessor texture)
-   (default-background :initarg :default-background :initform () :accessor default-background))
-  (:buffers (trial parallax)))
+   (texture :initform NIL :initarg :texture :accessor texture)
+   (parallax :initform (vec 2 2) :initarg :parallax :uniform T :accessor parallax)
+   (scaling :initform (vec 1 1) :initarg :scaling :uniform T :accessor scaling)
+   (offset :initform (vec 0 0) :initarg :offset :uniform T :accessor offset)
+   (view-size :initform (vec 1 1) :initarg :view-size :uniform T :accessor view-size)))
 
-(defmethod render ((parallax-background parallax-background) (program shader-program))
-  (unless (texture parallax-background)
-    ;; Set up default here, I guess.
-    (apply #'change-background
-           (append (default-background parallax-background)
-                   (list :unit parallax-background
-                         :scaling (vec 1 1)
-                         :offset (vec 0 0)
-                         :parallax (vec 2 2)))))
+(defmethod render ((entity parallax-background) (program shader-program))
+  (vsetf (view-size entity) (max 1 (width *context*)) (max 1 (height *context*)))
   (setf (uniform program "view_matrix") (minv *view-matrix*))
-  (bind (texture parallax-background) :texture0)
-  (render-array (// 'trial 'empty-vertex-array) :vertex-form :triangle-strip :vertex-count 4))
+  (bind (texture entity) :texture0)
+  (render-array (// 'trial 'fullscreen-square)))
 
-(defmethod handle ((ev resize) (parallax-background parallax-background))
-  (with-buffer-tx (bg (// 'trial 'parallax))
-    (setf (view-size bg) (vec2 (max 1 (width ev)) (max 1 (height ev))))))
+(defmethod in-view-p ((entity parallax-background) camera) T)
+
+(defmethod handle ((ev resize) (entity parallax-background))
+  (vsetf (view-size entity) (max 1 (width ev)) (max 1 (height ev))))
 
 (defmethod stage :after ((entity parallax-background) (area staging-area))
-  (stage (// 'trial:trial 'trial::empty-vertex-array) area)
+  (stage (// 'trial 'fullscreen-square) area)
   (when (texture entity)
-    (stage (texture entity) area)))
+    (stage (texture entity) area)
+    (setf (wrapping (texture entity)) '(:repeat :repeat :repeat))))
 
-(defun change-background (&key texture scaling parallax offset unit)
-  (when texture
-    (setf (texture (or unit (node 'parallax-background (scene +main+)))) texture))
-  (when (or parallax scaling offset)
-    (with-buffer-tx (bg (// 'trial 'parallax))
-      (when parallax
-        (setf (parallax bg) parallax))
-      (when scaling
-        (setf (scaling bg) scaling))
-      (when offset
-        (setf (offset bg) offset)))))
+(defmethod (setf texture) :before ((texture texture) (entity parallax-background))
+  (setf (wrapping texture) '(:repeat :repeat :repeat)))
+
+(defmethod (setf background) ((data cons) (entity parallax-background))
+  (destructuring-bind (&key texture scaling parallax offset) data
+    (when texture
+      (setf (texture entity) texture))
+    (when parallax
+      (setf (parallax entity) parallax))
+    (when scaling
+      (setf (scaling entity) scaling))
+    (when offset
+      (setf (offset entity) offset))))
 
 (define-class-shader (parallax-background :vertex-shader)
-  (gl-source (asset 'trial 'parallax))
-  "const vec2 quad_vertices[4] = vec2[4](vec2(-1.0, -1.0), vec2(1.0, -1.0), vec2(-1.0, 1.0), vec2(1.0, 1.0));
+  "
+layout (location = TRIAL_V_LOCATION) in vec3 position;
+layout (location = TRIAL_V_UV) in vec2 in_uv;
 
+uniform vec2 parallax = vec2(1,1);
+uniform vec2 scaling = vec2(1,1);
+uniform vec2 offset = vec2(0,0);
+uniform vec2 view_size = vec2(1,1);
 uniform sampler2D tex_image;
 uniform mat4 view_matrix;
 
 out vec2 map_coord;
 void main(){
-  gl_Position = vec4(quad_vertices[gl_VertexID], 0, 1);
-  vec2 vertex_uv = (quad_vertices[gl_VertexID]+1)*0.5;
+  gl_Position = vec4(position.xy, +1, 1);
   vec2 tex_size = textureSize(tex_image, 0).xy;
-  map_coord = (view_matrix * vec4(vertex_uv*parallax.view_size*parallax.parallax, 0, 1)).xy;
-  map_coord += tex_size/2 + parallax.offset;
-  map_coord /= parallax.parallax * parallax.scaling * tex_size;
+  map_coord = (view_matrix * vec4(in_uv*view_size*parallax, 0, 1)).xy;
+  map_coord += tex_size/2 + offset;
+  map_coord /= parallax * scaling * tex_size;
 }")
 
 (define-class-shader (parallax-background :fragment-shader)
