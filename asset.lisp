@@ -244,7 +244,7 @@
   (let* ((default-options (rest (find T attributes :key #'first)))
          (exclude (enlist exclude))
          (paths (process-asset-inputs
-                 (loop for path in (directory (pool-path pool pathname) :resolve-symlinks NIL)
+                 (loop for path in (uiop:directory* (pool-path pool pathname))
                        unless (loop for exclusion in exclude
                                     thereis (pathname-match-p path exclusion))
                        collect path)
