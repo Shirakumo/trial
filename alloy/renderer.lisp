@@ -115,11 +115,8 @@
       (alloy:size
        (%gl:uniform-2f loc (alloy:pxw value) (alloy:pxh value)))
       (vector
-       #+sbcl
-       (sb-sys:with-pinned-objects (value)
-         (%gl:uniform-matrix-3fv loc 1 T (sb-sys:vector-sap value)))
-       #-sbcl
-       (gl:uniform-matrix-3fv loc (marr3 value)))
+       (mem:with-pointer-to-array-data (ptr value)
+         (%gl:uniform-matrix-3fv loc 1 T ptr)))
       (single-float
        (%gl:uniform-1f loc value)))))
 

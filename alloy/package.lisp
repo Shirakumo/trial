@@ -2,6 +2,7 @@
   (:use #:cl)
   (:local-nicknames
    (#:trial #:org.shirakumo.fraf.trial)
+   (#:mem #:org.shirakumo.memory-regions)
    (#:alloy #:org.shirakumo.alloy)
    (#:simple #:org.shirakumo.alloy.renderers.simple)
    (#:presentations #:org.shirakumo.alloy.renderers.simple.presentations)
