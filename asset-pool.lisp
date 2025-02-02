@@ -79,7 +79,7 @@
 
 (defmacro define-pool (name &body initargs)
   (check-type name symbol)
-  (let ((path (or *compile-file-pathname* *load-pathname*
+  (let ((path (or *compile-file-truename* *load-truename*
                   (error "This needs to be compile-filed!"))))
     (setf path (pathname-utils:normalize-pathname
                 (pathname-utils:merge-pathnames*
@@ -119,6 +119,9 @@
               (or (gethash ,name (assets ,poolg))
                   (when ,errorp (error "No asset with name ~s on pool ~a." ,name ,pool)))))))
       whole))
+
+(defmethod (setf asset) (asset (pool null) name)
+  (error "Huh? No pool passed."))
 
 (defmethod (setf asset) (asset (pool symbol) name)
   (setf (asset (find-pool pool T) name) asset))

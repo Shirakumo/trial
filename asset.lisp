@@ -68,8 +68,8 @@
     (setf (pool asset) (etypecase pool
                          (symbol (find-pool pool T))
                          (pool pool))))
-  (when (name asset)
-    (setf (asset pool name) asset)))
+  (when (and (pool asset) (name asset))
+    (setf (asset (pool asset) name) asset)))
 
 (defmethod reinitialize-instance :after ((asset asset) &key)
   (when (loaded-p asset)
