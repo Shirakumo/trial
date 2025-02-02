@@ -38,7 +38,7 @@
 
 (defmethod (setf file) :after (file (scene scene-loader-scene))
   (unless (incremental-load scene)
-    (sequence:dosequence (entity scene)
+    (sequences:dosequence (entity scene)
       (when (typep entity '(and scene-node (not controller)))
         (leave entity T))))
   (setf (paused-p scene) T)

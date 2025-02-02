@@ -3,6 +3,7 @@
   (:use #:cl+trial)
   (:shadow #:launch #:physics-scene)
   (:local-nicknames
+   (#:sequences #:org.shirakumo.trivial-extensible-sequences)
    (#:alloy #:org.shirakumo.alloy)
    (#:trial-alloy #:org.shirakumo.fraf.trial.alloy)
    (#:assets #:org.shirakumo.fraf.trial.assets)
