@@ -8,9 +8,10 @@
 (defclass listener ()
   ())
 
-(defstruct (event-pool (:constructor %make-event-pool (instances)))
-  (instances NIL :type simple-vector)
-  (index 0 :type (unsigned-byte 32)))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defstruct (event-pool (:constructor %make-event-pool (instances)))
+    (instances NIL :type simple-vector)
+    (index 0 :type #-ccl (unsigned-byte 32) #+ccl T)))
 
 (defgeneric add-listener (listener event-loop))
 (defgeneric remove-listener (listener event-loop))
@@ -52,13 +53,15 @@
     `(let ((,pool ,(if (constantp class env)
                        `(load-time-value (gethash ,class +event-pools+))
                        `(gethash ,class +event-pools+))))
-       (if ,pool
-           (loop
+       (etypecase ,pool
+         (event-pool
+          (loop
             (let* ((,index (event-pool-index ,pool))
                    (,instances (event-pool-instances ,pool)))
               (when (atomics:cas (event-pool-index ,pool) ,index (mod (1+ ,index) (length ,instances)))
-                (return (initialize-instance (aref ,instances ,index) ,@initargs)))))
-           (make-instance ,class ,@initargs)))))
+                (return (initialize-instance (aref ,instances ,index) ,@initargs))))))
+         (null
+          (make-instance ,class ,@initargs))))))
 
 (defclass event-loop ()
   ((queue :initform (make-queue) :reader queue)
