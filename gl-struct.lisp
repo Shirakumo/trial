@@ -461,10 +461,10 @@
 
 ;;; Only for primitive types.
 ;;; FIXME: factor out into trivial-* library
-(defclass gl-vector (standard-object sequences:sequence)
+(defclass gl-vector (sequences:sequence standard-object)
   ((storage :initarg :storage :accessor storage)
    (base-offset :initform 0 :initarg :base-offset :accessor base-offset)
-   (element-count :initarg :element-count :reader sb-sequence:length)
+   (element-count :initarg :element-count :reader sequences:length)
    (element-type :initarg :element-type :reader element-type)
    (stride :initarg :stride :accessor stride)))
 

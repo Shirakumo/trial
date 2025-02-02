@@ -206,7 +206,7 @@
 (defmethod enter ((container container) (pass shader-pass))
   (prog1 (when (next-method-p)
            (call-next-method))
-    (sequence:dosequence (object container)
+    (sequences:dosequence (object container)
       (enter object pass))))
 
 (defmethod leave ((container container) (pass shader-pass))
