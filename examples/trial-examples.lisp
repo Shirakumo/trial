@@ -61,10 +61,15 @@
 (defgeneric make-scene (name))
 
 (defmethod title ((name symbol))
-  (if name (title (make-scene name)) ""))
+  (if name (title (make-scene name)) "Trial Examples"))
 
 (defmethod description ((name symbol))
-  (if name (description (make-scene name)) "Please select an example from the list on the left and press [Launch] below to start it. During all examples, the following key bindings can be used:
+  (if name (description (make-scene name))
+      #.(format NIL "Welcome to the Trial Examples!
+
+You are looking at Trial ~a on ~a ~d
+
+Please select an example from the list on the left and press [Launch] below to start it. During all examples, the following key bindings can be used:
 
 F1 - Return to this main menu
 F10 - Switch between 4:3 and 16:9
@@ -76,7 +81,7 @@ In scenes with a camera, the following controls are available:
 Ctrl - Hold and move the mouse to view
 WASD - Move around
 C - Ascend
-Space - Descend"))
+Space - Descend" (version :trial) (lisp-implementation-type) (lisp-implementation-version))))
 
 (defmethod available-p ((name symbol))
   (if name (available-p (make-scene name)) NIL))
