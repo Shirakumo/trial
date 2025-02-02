@@ -177,6 +177,14 @@
     (if (< l^2 (expt epsilon 2))
         (setf flat T)
         (!v* p0 n (/ (v. s0 n) l^2)))
+    (unless flat
+      ;; pick axis-aligned plane with largest projection
+      (loop for i below 3
+            for u of-type single-float = (projected-cross ab ac i)
+            when (> (abs u) (abs umax))
+              do (setf umax u
+                       j i))
+      (setf flat (< (abs umax) epsilon)))
 
     ;; if too flat, just pick best result from 1d test against all edges
     (when flat
@@ -215,15 +223,6 @@
         (p<- s1 b0)
         (when (> best-dim 1) (p<- s2 b1))
         (return-from sv2d best-dim)))
-
-    ;; otherwise pick axis-aligned plane with largest projection
-    (loop for i below 3
-          for u of-type single-float = (projected-cross ab ac i)
-          when (> (abs u) (abs umax))
-            do (setf umax u
-                     j i))
-    (setf flat (< (abs umax) epsilon))
-    (assert (not flat))
 
     ;; calculate barycentric coordinates on that plane (seems slightly
     ;; more accurate than calling BARYCENTRIC, and not sure that
