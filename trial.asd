@@ -32,7 +32,7 @@
                (:file "container" :depends-on ("package" "toolkit" "transforms"))
                (:file "context" :depends-on ("package" "event-loop"))
                (:file "controller" :depends-on ("package" "mapping" "input" "container" "asset" "text"))
-               (:file "debug" :depends-on ("package" "shader-entity" "text" ("physics" "primitives")))
+               (:file "debug-draw" :depends-on ("package" "shader-entity" "text" ("physics" "primitives")))
                (:file "deploy" :depends-on ("package" "gamepad" "os-resources"))
                (:file "display" :depends-on ("package" "context" "render-loop" "power" "transforms" "gl-features"))
                (:file "documentation" :depends-on ("package" "physics" "animation" "geometry-shapes" "renderer"))
