@@ -105,12 +105,8 @@
   #+sbcl (declare (sb-ext:muffle-conditions sb-ext:compiler-note))
   ;; FIXME: this kinda blows, man.
   (macrolet ((call-array (set marr &rest args)
-               #+sbcl
-               `(let ((data (,marr data)))
-                 (sb-sys:with-pinned-objects (data)
-                   (,(find-symbol (string set) '#:%GL) location 1 ,@args (sb-sys:vector-sap data))))
-               #-sbcl
-               `(,(find-symbol (string set) '#:GL) location (,marr data))))
+               `(mem:with-pointer-to-array-data (ptr (,marr data))
+                  (,(find-symbol (string set) '#:%GL) location 1 ,@args ptr))))
     (etypecase data
       (vec4 (call-array %gl:uniform-4fv varr4))
       (quat (%gl:uniform-4f location (qx data) (qy data) (qz data) (qw data)))
