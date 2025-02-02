@@ -218,7 +218,7 @@
   (defconstant SIMULTANEOUS-MORPHS 8))
 
 (define-gl-struct morph-data
-  (count :int :initform 0 :accessor morph-count :reader sequence:length)
+  (count :int :initform 0 :accessor morph-count :reader sequences:length)
   (weights (:array :float #.SIMULTANEOUS-MORPHS) :reader weights)
   (indices (:array :int #.SIMULTANEOUS-MORPHS) :reader indices))
 
