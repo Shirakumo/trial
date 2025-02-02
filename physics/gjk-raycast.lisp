@@ -23,7 +23,7 @@
 (defun pcopy (p)
   (p<- (point) p))
 
-(defun signed-volumes (dim s0 s1 s2 s3 dir)
+(defun signed-volumes (dim s0 s1 s2 s3 dir epsilon)
   ;; returns # of dimensions remaining, and any remaining points in
   ;; s1,s2,s3 (unless 3-simplex contains origin in which case 4 is
   ;; returned and s0-3 are unchanged). also returns point on simplex
@@ -33,18 +33,19 @@
      (p<- s1 s0)
      (v<- dir s1)
      1)
-    (2 (sv1d s0 s1 s2 s3 dir))
-    (3 (sv2d s0 s1 s2 s3 dir))
-    (4 (sv3d s0 s1 s2 s3 dir))))
+    (2 (sv1d s0 s1 s2 s3 dir epsilon))
+    (3 (sv2d s0 s1 s2 s3 dir epsilon))
+    (4 (sv3d s0 s1 s2 s3 dir epsilon))))
 
 (declaim (inline sv-compare-signs))
 (defun sv-compare-signs (a b)
   (or (and (< a 0) (< b 0))
       (and (< 0 a) (< 0 b))))
 
-(defun sv3d (s0 s1 s2 s3 dir)
+(defun sv3d (s0 s1 s2 s3 dir epsilon)
   (declare (type point s0 s1 s2 s3)
            (type vec3 dir)
+           (type single-float epsilon)
            (optimize speed))
   (let* ((m (mat4 (vx s0) (vx s1) (vx s2) (vx s3)
                   (vy s0) (vy s1) (vy s2) (vy s3)
@@ -53,7 +54,6 @@
          (c (vec4))
          (mdet 0f0)
          (flat NIL)
-         (epsilon 0.00001)
          (signs 0))
     (declare (dynamic-extent m c)
              (type (unsigned-byte 8) signs)
@@ -111,7 +111,7 @@
                  do (p<- c0 s0)
                     (p<- c1 (if (< j 2) s2 s1))
                     (p<- c2 (if (< j 3) s3 s2))
-                    (let ((r (sv2d c0 c1 c2 c3 cdir))
+                    (let ((r (sv2d c0 c1 c2 c3 cdir epsilon))
                           (d* (vsqrlength cdir)))
                       (declare (type (unsigned-byte 4) r))
                       (when (< d* d)
@@ -152,9 +152,10 @@
   (- (* (vx a) (vy b))
      (* (vy a) (vx b))))
 
-(defun sv2d (s0 s1 s2 s3 dir)
+(defun sv2d (s0 s1 s2 s3 dir epsilon)
   (declare (type point s0 s1 s2 s3)
            (type vec3 dir)
+           (type single-float epsilon)
            (optimize speed))
   (let* ((ab (v- s1 s0))
          (ac (v- s2 s0))
@@ -167,8 +168,7 @@
          (p0 (vec3))
          (umax 0.0)
          (j -1)
-         (flat NIL)
-         (epsilon 0.00001))
+         (flat NIL))
     (declare (dynamic-extent ab ac bc n p0)
              (type single-float umax))
     (!vc n ac ab)
@@ -198,7 +198,7 @@
         (loop for j from 0 to 2
               do (p<- c0 (if (= j 0) s1 s0))
                  (p<- c1 (if (< j 2) s2 s1))
-                 (let ((r (sv1d c0 c1 c2 c3 cdir))
+                 (let ((r (sv1d c0 c1 c2 c3 cdir epsilon))
                        (d* (vsqrlength cdir)))
                    (declare (type (unsigned-byte 4) r))
                    (when (< d* d)
@@ -287,14 +287,14 @@
             1)))
         (T (error "shouldn't get here?"))))))
 
-(defun sv1d (s0 s1 s2 s3 dir)
+(defun sv1d (s0 s1 s2 s3 dir epsilon)
   (declare (type point s0 s1 s2 s3)
            (type vec3 dir)
+           (type single-float epsilon)
            (optimize speed))
   (declare (ignore s3))
   (let* ((m (v- s1 s0))
-         (mm (v. m m))
-         (epsilon 0.00001))
+         (mm (v. m m)))
     (declare (dynamic-extent m))
     (cond
       ((< (abs mm) epsilon)
@@ -350,11 +350,12 @@
          ;; is ~4x, 2 is ~7x).
          ;; we mostly detect the loops though, so this just tunes tiny
          ;; performance difference vs tiny precision differences.
-         (epsilon (* 6 SINGLE-FLOAT-NEGATIVE-EPSILON)))
+         (epsilon (* 6 SINGLE-FLOAT-NEGATIVE-EPSILON))
+         (epsilon*maxdist (* epsilon maxdist)))
     (declare (dynamic-extent tt x v w p s0 s1 s2 s3))
     (declare (type (unsigned-byte 8) dim stuck)
              (type point s0 s1 s2 s3)
-             (type single-float maxdist))
+             (type single-float maxdist epsilon*maxdist))
     (vsetf ray-normal 0 0 0)
     (loop for i from 0 below GJK-ITERATIONS
           do ;; we test v after updating tt since a final adjustment to
@@ -365,6 +366,7 @@
                                 (if (> dim 1) (vsqrlength s1) 0.0)
                                 (if (> dim 2) (vsqrlength s2) 0.0)
                                 (if (> dim 3) (vsqrlength s3) 0.0)))
+             (setf epsilon*maxdist (* epsilon maxdist))
              (trial:support-function trial:primitive v p)
              (!v- w x p)
              (v<- (point-a s0) p)
@@ -424,10 +426,10 @@
                 (when (/= i last-updated)
                   (incf stuck))))
              ;; check if we are done
-          while (and (<= (* epsilon maxdist) (vsqrlength v))
+          while (and (<= epsilon*maxdist (vsqrlength v))
                      (<= stuck 3))
           do ;; update the simplex and find new direction
-             (setf dim (signed-volumes dim s0 s1 s2 s3 v))
+             (setf dim (signed-volumes dim s0 s1 s2 s3 v epsilon*maxdist))
           while (< dim 4) ;; current point is inside simplex (or on
                           ;; wrong side of simplex), so can't make any
                           ;; more progress.
