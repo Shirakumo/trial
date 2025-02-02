@@ -946,6 +946,7 @@
    #:sidescroll-camera
    #:zoom
    #:target
+   #:2d-editor-camera
    #:3d-camera
    #:fov
    #:target-camera

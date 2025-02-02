@@ -136,6 +136,36 @@
       (nv* dir (/ ease len))
       (nv+ loc dir))))
 
+(defclass 2d-editor-camera (sidescroll-camera)
+  ((move-speed :initarg :move-speed :initform 1.0 :accessor move-speed)))
+
+(define-transfer 2d-editor-camera move-speed)
+
+(define-handler ((camera 2d-editor-camera) tick :after) ()
+  (let* ((loc (target camera))
+         (speed (* (move-speed camera)
+                   (if (retained :left-shift) 5 1)
+                   (if (retained :left-alt) 1/5 1))))
+    (cond ((retained :a)
+           (decf (vx loc) speed))
+          ((retained :d)
+           (incf (vx loc) speed)))
+    (cond ((retained :w)
+           (incf (vy loc) speed))
+          ((retained :s)
+           (decf (vy loc) speed)))
+    (cond ((retained :space)
+           (setf (zoom camera) (expt 2 (- (log (zoom camera) 2) (/ speed 100)))))
+          ((retained :c)
+           (setf (zoom camera) (expt 2 (+ (log (zoom camera) 2) (/ speed 100))))))))
+
+(defmethod (setf camera) :around ((camera 2d-editor-camera) scene)
+  (let ((old (camera scene)))
+    (prog1 (call-next-method)
+      (when (typep old 'camera)
+        (<- camera old)
+        (global-location old (location camera))))))
+
 ;; TODO: implement in-view-p respective to zoom
 
 (defclass 3d-camera (camera)
