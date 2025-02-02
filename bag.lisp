@@ -1,7 +1,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass bag (container sequences:sequence)
-  ((%objects :initform #() :accessor %objects)
+  ((%objects :initform (make-array 0) :accessor %objects)
    (%object->index :initform (make-hash-table :test 'eq) :accessor %object->index)
    (%count :initform 0 :accessor size :reader sequences:length)))
 
