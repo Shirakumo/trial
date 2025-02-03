@@ -38,6 +38,7 @@
   (reset-features (feature-table))
   (gl:stencil-mask #xFF)
   (gl:clear-stencil #x00)
+  (gl:stencil-func :always 0 #xFF)
   (gl:stencil-op :keep :keep :keep)
   (gl:depth-mask T)
   (setf *depth-mask* T)
