@@ -51,3 +51,7 @@
 
 (defmethod save-image ((scene pipelined-scene) target type &rest args)
   (apply #'save-image (aref (passes scene) (1- (length (passes scene)))) target type args))
+
+(defmethod clear-pipeline ((scene pipelined-scene))
+  (loop for pass across (passes scene)
+        do (remove-listener pass scene)))

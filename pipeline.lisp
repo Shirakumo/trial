@@ -33,7 +33,7 @@
       (find name (passes pipeline) :key #'name)))
 
 (defmethod finalize ((pipeline pipeline))
-  (clear pipeline))
+  (clear-pipeline pipeline))
 
 (defmethod flow:sever ((pipeline pipeline))
   (loop for pass across (passes pipeline)
@@ -53,8 +53,7 @@
         do (when (framebuffer pass)
              (finalize (framebuffer pass))
              (setf (framebuffer pass) NIL))
-           (flow:sever pass)
-           (remove-listener pass pipeline))
+           (flow:sever pass))
   (setf (nodes pipeline) ())
   (setf (passes pipeline) #())
   (setf (textures pipeline) #()))
