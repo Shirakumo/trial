@@ -114,7 +114,8 @@
 (define-shader-entity shader-pass (flow:static-node)
   ((framebuffer :initform NIL :accessor framebuffer)
    (active-p :initform T :accessor active-p)
-   (clear-color :initform (vec4) :initarg :clear-color :accessor clear-color))
+   (clear-color :initform (vec4) :initarg :clear-color :accessor clear-color)
+   (clear-bits :initform 17664 :accessor clear-bits))
   (:metaclass shader-pass-class)
   (:inhibit-shaders (shader-entity :fragment-shader)))
 
@@ -122,7 +123,9 @@
   (declare (ignore args))
   (maybe-handle-main-event 'instance-class-changed :instance pass))
 
-(defmethod shared-initialize :after ((pass shader-pass) slots &key)
+(defmethod shared-initialize :after ((pass shader-pass) slots &key (clear-bits NIL clear-bits-p) clear-color)
+  (when clear-bits-p (setf (clear-bits pass) clear-bits))
+  (when clear-color (setf (clear-color pass) clear-color))
   (loop with texture-index = (max 16 (if *context* (gl:get-integer :max-texture-image-units) 0))
         for port in (flow:ports pass)
         do (typecase port
@@ -194,6 +197,7 @@
     (make-instance 'framebuffer
                    :width width
                    :height height
+                   :clear-bits (clear-bits pass)
                    :clear-color (clear-color pass)
                    :attachments (loop for port in (flow:ports pass)
                                       when (typep port 'output)
@@ -217,6 +221,27 @@
 
 (defmethod render (object (pass shader-pass))
   (render object (shader-program-for-pass pass object)))
+
+(defmethod clear-bits ((pass shader-pass))
+  (cffi:foreign-bitfield-symbols '%gl::ClearBufferMask (slot-value pass 'clear-bits)))
+
+(defmethod (setf clear-bits) :after ((bits integer) (pass shader-pass))
+  (when (framebuffer pass) (setf (clear-bits (framebuffer pass)) bits)))
+
+(defmethod (setf clear-bits) ((bits list) (pass shader-pass))
+  (setf (clear-bits pass) (cffi:foreign-bitfield-value '%gl::ClearBufferMask bits))
+  bits)
+
+(defmethod (setf clear-color) :after (value (pass shader-pass))
+  (when (framebuffer pass) (setf (clear-color (framebuffer pass)) value)))
+
+(defmethod (setf clear-color) ((vec vec3) (pass shader-pass))
+  (vsetf (clear-color pass) (vx vec) (vy vec) (vz vec) 0.0)
+  vec)
+
+(defmethod (setf clear-color) ((null null) (pass shader-pass))
+  (v<- (clear-color pass) 0)
+  null)
 
 (defmethod width ((pass shader-pass))
   (width (framebuffer pass)))
