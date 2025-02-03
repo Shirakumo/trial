@@ -186,6 +186,7 @@
                        ;; TODO: we can also use in-view-p to eliminate objects
                        ;;       outside the shadow map purview.
                        (with-pushed-matrix ()
+                         (setf (uniform program "animation") 0)
                          (apply-transforms object)
                          (render-with render object program)))))))
       (activate (framebuffer pass)))))
