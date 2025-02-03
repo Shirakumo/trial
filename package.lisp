@@ -1376,7 +1376,9 @@
    #:push-features
    #:pop-features
    #:with-pushed-features
-   #:set-blend-mode)
+   #:set-blend-mode
+   #:with-depth-mask
+   #:with-stencil-mask)
   ;; gl-struct.lisp
   (:export
    #:gl-struct
