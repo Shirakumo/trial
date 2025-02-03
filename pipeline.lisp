@@ -110,9 +110,12 @@
                                      for (a-pass a_ a-port) = (enlist a NIL 'color)
                                      for (b-pass b-port b_) = (enlist b 'previous-pass NIL)
                                      collect `(connect (port ,a-pass ',a-port) (port ,b-pass ',b-port) ,pipelineg))))
-                    (if (getf kargs :when)
-                        `(when ,(getf kargs :when) ,@body)
-                        `(progn ,@body))))))
+                    (cond ((getf kargs :when)
+                           `(when ,(getf kargs :when) ,@body))
+                          (body
+                           `(progn ,@body))
+                          (T
+                           `(enter ,@sequence ,pipelineg)))))))
              (process-connections (connections)
                (loop for connection in connections
                      collect (process-connection connection))))
