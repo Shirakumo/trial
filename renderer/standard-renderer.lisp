@@ -284,8 +284,7 @@
         do (when (object-renderable-p material pass)
              (cond (morph
                     (bind (morph-data morph) program)
-                    (bind morphtex :texture6)
-                    (setf (uniform program "morph_targets") 6)
+                    (setf (uniform program "morph_targets") (bind morphtex :texture6))
                     (setf (uniform program "animation") (+ skinning 1)))
                    (T
                     (setf (uniform program "morph_targets") 99)
