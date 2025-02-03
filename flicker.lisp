@@ -27,9 +27,11 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun flicker-char-to-intensity (c)
-    (assert (char<= #\a c #\z))
-    (let ((i (- (char-code c) (char-code #\a))))
-      (* 2.0 (/ i (- (char-code #\z) (char-code #\a)))))))
+    (if (upper-case-p c)
+        (let ((i (- (char-code c) (char-code #\A))))
+          (+ 2.0 (* 8.0 (/ i (- (char-code #\Z) (char-code #\A))))))
+        (let ((i (- (char-code c) (char-code #\a))))
+          (* 2.0 (/ i (- (char-code #\z) (char-code #\a))))))))
 
 (defun compile-flicker-pattern (pattern &key (dt 1/10))
   (values
