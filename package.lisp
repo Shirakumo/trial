@@ -673,6 +673,7 @@
    #:tt
    #:dt
    #:fdt
+   #:standard-environment-pass
    #:standard-render-pass
    #:color
    #:normal
@@ -1763,6 +1764,7 @@
    #:observe-setting
    #:remove-setting-observer
    #:define-setting-observer
+   #:frame-size
    #:video-mode
    #:fullscreen
    #:vsync
