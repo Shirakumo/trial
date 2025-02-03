@@ -28,6 +28,10 @@
         for pass across (passes pipeline)
         do (format stream "  ~2d ~a~%" i (framebuffer pass))))
 
+(defmethod node (name (pipeline pipeline))
+  (or (find name (nodes pipeline) :key #'name)
+      (find name (passes pipeline) :key #'name)))
+
 (defmethod finalize ((pipeline pipeline))
   (clear pipeline))
 
