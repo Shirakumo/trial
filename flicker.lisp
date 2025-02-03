@@ -31,17 +31,21 @@
     (let ((i (- (char-code c) (char-code #\a))))
       (* 2.0 (/ i (- (char-code #\z) (char-code #\a)))))))
 
+(defun compile-flicker-pattern (pattern &key (dt 1/10))
+  (values
+   `(lambda (tt)
+      (declare (type single-float tt))
+      (declare (optimize speed))
+      (multiple-value-bind (i rest) (truncate (mod tt ,(float (* dt (length pattern)) 0f0)) ,dt)
+        (declare (type (unsigned-byte 16) i))
+        (let* ((a ,(map '(simple-array (single-float) (*)) #'flicker-char-to-intensity pattern))
+               (l (aref a i))
+               (r (aref a (mod (1+ i) ,(length pattern)))))
+          (lerp l r (* rest ,(/ dt))))))
+   (* (length pattern) dt)))
+
 (defmacro define-flicker-pattern (name pattern &key (dt 1/10))
-  `(setf (flicker-pattern ',name)
-         (lambda (tt)
-           (declare (type single-float tt))
-           (declare (optimize speed))
-           (multiple-value-bind (i rest) (truncate (mod tt ,(float (* dt (length pattern)) 0f0)) ,dt)
-             (declare (type (unsigned-byte 16) i))
-             (let* ((a ,(map '(simple-array (single-float) (*)) #'flicker-char-to-intensity pattern))
-                    (l (aref a i))
-                    (r (aref a (mod (1+ i) ,(length pattern)))))
-               (lerp l r (* rest ,(/ dt))))))))
+  `(setf (flicker-pattern ',name) (compile-flicker-pattern ,pattern :dt ,dt)))
 
 ;; Original Quake flicker patterns
 (define-flicker-pattern normal "m")
