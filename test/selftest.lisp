@@ -11,8 +11,7 @@
 (defvar *tests* (make-array 0 :adjustable T :fill-pointer T))
 (defvar *failures*)
 (defvar *default-skip* #-nx '()
-        #+nx '("Lisp callback"
-               ;; Not available
+        #+nx '(;; Not available
                "File manager"
                ;; Working but annoying
                "Open browser"
