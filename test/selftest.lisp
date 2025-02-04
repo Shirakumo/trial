@@ -171,7 +171,10 @@
   (test "Lisp implementation version" (lisp-implementation-version)))
 
 (group "FFI"
+  (test "Heap alloc" (cffi:foreign-free (cffi:foreign-alloc :char :count 512)))
+  (test "Stack alloc" (cffi:with-foreign-object (data :char 512)))
   (test "Call sin()" (cffi:foreign-funcall "sin" :double 1.0d0 :double))
+  (test "Load libGL" (cffi:load-foreign-library 'cl-opengl-bindings::opengl))
   (test "Lisp callback" (cffi:foreign-funcall-pointer (cffi:callback selftest) () :int 10 :int)))
 
 (group "Internet"
