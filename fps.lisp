@@ -120,7 +120,9 @@ void main(){
     (labels ((update (i val)
                (setf (aref data (1- (* 100 i))) val))
              (compute-frac (free total)
-               (- 255 (the (unsigned-byte 8) (round (the (unsigned-byte 64) (* 255 free)) total))))
+               (if (= 0 total)
+                   0.0
+                   (- 255 (the (unsigned-byte 8) (round (the (unsigned-byte 64) (* 255 free)) total)))))
              (compute-bytes (db)
                ;; Rationale: one kilobyte should count as "max".
                (clamp 0 (round (the (unsigned-byte 64) (* 255 db)) 1024) 255))
