@@ -187,7 +187,15 @@
 
 (group "GC"
   (test "Run GC" (trivial-garbage:gc))
-  (test "Run full GC" (trivial-garbage:gc :full T)))
+  (test "Run full GC" (trivial-garbage:gc :full T))
+  (test "Alloc 1GB in 1KB chunks"
+    (dotimes (i (* 1024 1024))
+      (make-array 1024 :element-type '(unsigned-byte 8))))
+  (test "Alloc 1GB in 1MB chunks"
+    (dotimes (i 1024)
+      (make-array (* 1024 1024) :element-type '(unsigned-byte 8))))
+  (test "Alloc 1GB in 1 chunk"
+    (null (make-array (* 1024 1024 1024) :element-type '(unsigned-byte 8)))))
 
 (group "Query machine information"
   (test "CPU time" (cpu-time))
