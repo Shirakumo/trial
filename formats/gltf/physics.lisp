@@ -9,8 +9,8 @@
        (vector (apply #'trial:make-box :bsize (nv* (to-vec (gltf:size shape)) 0.5) args)))
       (gltf:capsule-shape
        (vector (apply #'trial:make-pill :height (float (* 0.5 (gltf:height shape)) 0f0)
-                                        :radius (max (float (gltf:radius-top shape) 0f0)
-                                                     (float (gltf:radius-bottom shape) 0f0))
+                                        :radius-bottom (float (gltf:radius-bottom shape) 0f0)
+                                        :radius-top (float (gltf:radius-top shape) 0f0)
                                         args)))
       (gltf:cylinder-shape
        (vector (apply (cond ((= 0 (gltf:radius-top shape))

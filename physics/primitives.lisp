@@ -536,34 +536,42 @@
       (v<- next b))))
 
 ;; NOTE: the pill is centred at 0,0,0, and points Y-up. the "height" is the half-height
-;;       and does not include the caps, meaning the total height of the pill is 2r+2h.
+;;       and does not include the caps, meaning the total height of the pill is rb+rt+2h.
 (define-primitive-type pill
-    ((radius 1.0 :type single-float)
+    ((radius-bottom 1.0 :type single-float)
+     (radius-top 1.0 :type single-float)
      (height 1.0 :type single-float)))
 
-(define-transfer pill pill-radius pill-height)
+(define-transfer pill pill-radius-top pill-radius-bottom pill-height)
 
 (defmethod print-object ((primitive pill) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
-    (format stream "~f ~f" (radius primitive) (height primitive))))
+    (format stream "~f ~f ~f" (pill-radius-bottom primitive) (pill-radius-top primitive) (height primitive))))
 
 (defmethod compute-bounding-box ((primitive pill))
-  (values (vec3 0) (vec3 (pill-radius primitive)
-                         (+ (pill-radius primitive) (pill-height primitive))
-                         (pill-radius primitive))))
+  (let ((radius (max (pill-radius-bottom primitive) (pill-radius-top primitive))))
+    (values (vec3 0) (vec3 radius
+                           (* 0.5 (+ (pill-radius-bottom primitive) (pill-radius-top primitive)
+                                     (* 2 (pill-height primitive))))
+                           radius))))
 
 (defmethod compute-bounding-sphere ((primitive pill))
-  (values (vec3 0) (+ (pill-height primitive) (pill-radius primitive))))
+  (values (vec3 0) (+ (pill-height primitive) (max (pill-radius-bottom primitive) (pill-radius-top primitive)))))
 
 (defmethod sample-volume ((primitive pill) &optional vec)
-  (sampling:pill (pill-radius primitive) (pill-height primitive) +vy+ vec))
+  ;; FIXME: this is not correct if the primitive has different radii for top/bottom.
+  (sampling:pill (max (pill-radius-bottom primitive) (pill-radius-top primitive))
+                 (pill-height primitive) +vy+ vec))
 
 (define-support-function pill (dir next)
-  (nv* (nvunit* (v<- next dir)) (pill-radius primitive))
   (let ((bias (pill-height primitive)))
-    (if (< 0 (vy dir))
-        (incf (vy next) bias)
-        (decf (vy next) bias))))
+    (nvunit* (v<- next dir))
+    (cond ((< 0 (vy dir))
+           (nv* next (pill-radius-top primitive))
+           (incf (vy next) bias))
+          (T
+           (nv* next (pill-radius-bottom primitive))
+           (decf (vy next) bias)))))
 
 (define-primitive-type triangle
     ((a (vec3 -1 0 -1) :type vec3)
