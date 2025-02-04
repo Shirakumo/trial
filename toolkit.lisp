@@ -488,7 +488,10 @@
      (if (string= "" log)
          "trial.log"
          (pathname-utils:parse-native-namestring log))
-     (or #+nx (tempdir) (self) (user-homedir-pathname)))))
+     (or #+nx (tempdir)
+         (if (deploy:deployed-p)
+             (self)
+             (user-homedir-pathname))))))
 
 (defun config-directory (&rest app-path)
   (apply #'pathname-utils:subdirectory
