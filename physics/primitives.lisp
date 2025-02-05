@@ -932,7 +932,8 @@
 
 (defmethod coerce-object ((primitive pill) (type (eql 'convex-mesh)) &key (segments 32))
   (with-mesh-construction (v)
-    (let ((s (pill-radius primitive))
+    (let ((sb (pill-radius-bottom primitive))
+          (st (pill-radius-top primitive))
           (h (pill-height primitive))
           (lat (float segments 0f0))
           (lng (float segments 0f0)))
@@ -940,13 +941,13 @@
             for i1 = (- step) then i2
             for i2 from 0 to F-2PI by step
             do ;; Wall
-            (v (* s (cos i2)) (- h) (* s (sin i2)))
-            (v (* s (cos i1)) (- h) (* s (sin i1)))
-            (v (* s (cos i2)) (+ h) (* s (sin i2)))
-            (v (* s (cos i1)) (+ h) (* s (sin i1)))
-            (v (* s (cos i2)) (+ h) (* s (sin i2)))
-            (v (* s (cos i1)) (- h) (* s (sin i1))))
-      (flet ((cap (h lng-start lng-end)
+            (v (* sb (cos i2)) (- h) (* sb (sin i2)))
+            (v (* sb (cos i1)) (- h) (* sb (sin i1)))
+            (v (* st (cos i2)) (+ h) (* st (sin i2)))
+            (v (* st (cos i1)) (+ h) (* st (sin i1)))
+            (v (* st (cos i2)) (+ h) (* st (sin i2)))
+            (v (* sb (cos i1)) (- h) (* sb (sin i1))))
+      (flet ((cap (h lng-start lng-end s)
                (loop for i from lat downto 1
                      for lat0 = (* F-PI (- (/ (1- i) lat) 0.5))
                      for lat1 = (* F-PI (- (/ i lat) 0.5))
@@ -965,8 +966,10 @@
                                  (v (* x2 zr0 s) (+ h (* y2 zr0 s)) (* z0 s))
                                  (v (* x1 zr1 s) (+ h (* y1 zr1 s)) (* z1 s))
                                  (v (* x2 zr1 s) (+ h (* y2 zr1 s)) (* z1 s))))))
-        (cap (+ h) (1+ (truncate lng 2)) 2)
-        (cap (- h) (1+ lng) (+ (truncate lng 2) 2))))
+        (when (< 0 st)
+          (cap (+ h) (1+ (truncate lng 2)) 2 st))
+        (when (< 0 sb)
+          (cap (- h) (1+ lng) (+ (truncate lng 2) 2) sb))))
     (multiple-value-bind (vertices faces) (finalize)
       (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces))))
 
