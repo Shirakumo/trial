@@ -537,7 +537,7 @@
 (defmacro with-thread ((name) &body body)
   `(make-thread ,name (lambda () ,@body)))
 
-(defun wait-for-thread-exit (thread &key (timeout 1) (interval 0.1))
+(defun wait-for-thread-exit (thread &key (timeout #-nx 1 #+nx 10) (interval 0.1))
   (loop with max-iterations = (ceiling timeout interval)
         for i from 0
         while (bt:thread-alive-p thread)
@@ -556,12 +556,12 @@
                  (bt:destroy-thread thread)
                  (return))))))
 
-(defmacro with-thread-exit ((thread &key (timeout 1) (interval 0.1)) &body body)
+(defmacro with-thread-exit ((thread &rest args) &body body)
   (let ((thread-g (gensym "THREAD")))
     `(let ((,thread-g ,thread))
        (when (and ,thread-g (bt:thread-alive-p ,thread-g))
          ,@body
-         (wait-for-thread-exit ,thread-g :timeout ,timeout :interval ,interval)))))
+         (wait-for-thread-exit ,thread-g ,@args)))))
 
 (defmacro with-error-logging ((&optional (category :trial) (message "") &rest args) &body body)
   (let ((category-g (gensym "CATEGORY")))
