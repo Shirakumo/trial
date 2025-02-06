@@ -258,10 +258,11 @@
           (gl-property :max-tess-evaluation-texture-image-units)
           (gl-property :max-geometry-texture-image-units)
           (gl-property :max-compute-texture-image-units)
-          (when-gl-extension :GL-ARB-COMPUTE-SHADER
-            (append (coerce (gl-property :max-compute-work-group-count) 'list)
-                    (coerce (gl-property :max-compute-work-group-size) 'list)
-                    (list (gl-property :max-compute-work-group-invocations))))
+          (ignore-errors
+           (when-gl-extension :GL-ARB-COMPUTE-SHADER
+             (append (coerce (gl-property :max-compute-work-group-count) 'list)
+                     (coerce (gl-property :max-compute-work-group-size) 'list)
+                     (list (gl-property :max-compute-work-group-invocations)))))
           (gl-property :vendor)
           (gl-property :renderer)
           (gl-property :version)
