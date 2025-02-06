@@ -333,15 +333,21 @@
 (defmacro define-primitive-type (name slots &body body)
   (destructuring-bind (name &optional (super 'primitive)) (enlist name)
     (let ((int-constructor (mksym *package* '%make- name))
-          (constructor (mksym *package* 'make- name)))
+          (constructor (mksym *package* 'make- name))
+          (slots (remove-if-not #'listp slots))
+          (constructor-args (remove-if #'listp slots)))
       `(progn
          (declaim (inline ,constructor))
          (defstruct (,name (:constructor ,int-constructor)
                            (:include ,super))
            ,@slots)
 
-         (defun ,constructor (&rest args &key location orientation collision-mask &allow-other-keys)
-           (let* ((primitive (apply #',int-constructor (remf* args :location :orientation :collision-mask)))
+         (defun ,constructor (&rest args &key location orientation collision-mask
+                                              ,@constructor-args
+                              &allow-other-keys)
+           (let* ((primitive (apply #',int-constructor (remf* args :location :orientation :collision-mask
+                                                              ,@(loop for arg in constructor-args
+                                                                      collect (intern (string arg) "KEYWORD")))))
                   (cache (primitive-global-bounds-cache primitive)))
              (when location (setf (location primitive) location))
              (when orientation (setf (orientation primitive) orientation))
@@ -630,11 +636,13 @@
      (vertices (make-array 0 :element-type 'single-float) :type (simple-array single-float (*)))
      ;; NOTE: Vertex indices pointing into the vertex array / 3
      ;; [ 0 1 2 2 3 0 ... ]
-     (faces (make-array 0 :element-type '(unsigned-byte 16)) :type (simple-array (unsigned-byte 16) (*))))
-  (let ((offset (recenter-vertices (general-mesh-vertices primitive))))
-    (!m* (primitive-local-transform primitive)
-         offset
-         (primitive-local-transform primitive))))
+     (faces (make-array 0 :element-type '(unsigned-byte 16)) :type (simple-array (unsigned-byte 16) (*)))
+     keep-original-vertices)
+  (unless keep-original-vertices
+    (let ((offset (recenter-vertices (general-mesh-vertices primitive))))
+      (!m* (primitive-local-transform primitive)
+           offset
+           (primitive-local-transform primitive)))))
 
 (define-transfer general-mesh general-mesh-vertices general-mesh-faces)
 
@@ -654,11 +662,12 @@
   (org.shirakumo.fraf.manifolds:bounding-sphere (general-mesh-vertices primitive)))
 
 (define-primitive-type (convex-mesh general-mesh)
-    ()
-  (let ((offset (recenter-vertices (general-mesh-vertices primitive))))
-    (!m* (primitive-local-transform primitive)
-         offset
-         (primitive-local-transform primitive))))
+    (keep-original-vertices)
+  (unless keep-original-vertices
+    (let ((offset (recenter-vertices (general-mesh-vertices primitive))))
+      (!m* (primitive-local-transform primitive)
+           offset
+           (primitive-local-transform primitive)))))
 
 (defmethod sample-volume ((primitive convex-mesh) &optional vec)
   (sampling:convex-mesh (convex-mesh-vertices primitive) (convex-mesh-faces primitive) vec))
@@ -811,7 +820,7 @@
                           (v (* x1 zr1 size) (* y1 zr1 size) (* z1 size))
                           (v (* x2 zr1 size) (* y2 zr1 size) (* z1 size)))))
     (multiple-value-bind (vertices faces) (finalize)
-      (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces))))
+      (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces :keep-original-vertices T))))
 
 (defmethod coerce-object ((primitive ellipsoid) (type (eql 'convex-mesh)) &key (segments 32))
   (with-mesh-construction (v)
@@ -843,7 +852,7 @@
                         (v (* x1 zr1 (vx size)) (* y1 zr1 (vy size)) (* z1 (vz size)))
                         (v (* x2 zr1 (vx size)) (* y2 zr1 (vy size)) (* z1 (vz size))))))
     (multiple-value-bind (vertices faces) (finalize)
-      (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces))))
+      (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces :keep-original-vertices T))))
 
 (defmethod coerce-object ((primitive plane) (type (eql 'convex-mesh)) &key)
   (with-mesh-construction (v)
@@ -864,7 +873,7 @@
       (v (vx a) (vy a) (vz a)) (v (vx c) (vy c) (vz c)) (v (vx b) (vy b) (vz b))
       (v (vx c) (vy c) (vz c)) (v (vx a) (vy a) (vz a)) (v (vx d) (vy d) (vz d)))
     (multiple-value-bind (vertices faces) (finalize)
-      (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces))))
+      (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces :keep-original-vertices T))))
 
 (defmethod coerce-object ((primitive box) (type (eql 'convex-mesh)) &key)
   (with-mesh-construction (v)
@@ -884,7 +893,7 @@
       (v (+ w) (+ h) (- d)) (v (+ w) (+ h) (+ d)) (v (+ w) (- h) (+ d))
       (v (+ w) (- h) (+ d)) (v (+ w) (- h) (- d)) (v (+ w) (+ h) (- d)))
     (multiple-value-bind (vertices faces) (finalize)
-      (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces))))
+      (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces :keep-original-vertices T))))
 
 (defmethod coerce-object ((primitive cylinder) (type (eql 'convex-mesh)) &key (segments 32))
   (with-mesh-construction (v)
@@ -909,7 +918,7 @@
             (v (* s (cos i2)) (+ h) (* s (sin i2)))
             (v (* s (cos i1)) (- h) (* s (sin i1)))))
     (multiple-value-bind (vertices faces) (finalize)
-      (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces))))
+      (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces :keep-original-vertices T))))
 
 (defmethod coerce-object ((primitive cone) (type (eql 'convex-mesh)) &key (segments 32))
   (with-mesh-construction (v)
@@ -930,12 +939,12 @@
             (v 0 (+ h) 0)
             (v (* s (cos i1)) (- h) (* s (sin i1)))))
     (multiple-value-bind (vertices faces) (finalize)
-      (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces))))
+      (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces :keep-original-vertices T))))
 
 (defmethod coerce-object ((primitive pill) (type (eql 'convex-mesh)) &key (segments 32))
   (with-mesh-construction (v)
-    (let ((sb (max (pill-radius-top primitive) (pill-radius-bottom primitive)))
-          (st (max (pill-radius-top primitive) (pill-radius-bottom primitive)))
+    (let ((sb (pill-radius-bottom primitive))
+          (st (pill-radius-top primitive))
           (h (pill-height primitive))
           (lat (float segments 0f0))
           (lng (float segments 0f0)))
@@ -973,7 +982,7 @@
         (when (< 0 sb)
           (cap (- h) (1+ lng) (+ (truncate lng 2) 2) sb))))
     (multiple-value-bind (vertices faces) (finalize)
-      (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces))))
+      (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces :keep-original-vertices T))))
 
 (defmethod coerce-object ((primitive triangle) (type (eql 'convex-mesh)) &key)
   (with-mesh-construction (v)
@@ -988,7 +997,7 @@
       (v (vx a) (vy a) (vz a))
       (v (vx c) (vy c) (vz c)))
     (multiple-value-bind (vertices faces) (finalize)
-      (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces))))
+      (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces :keep-original-vertices T))))
 
 (defmethod coerce-object ((primitive general-mesh) (type (eql 'sphere)) &key)
   (let ((vertices (general-mesh-vertices primitive))
