@@ -270,10 +270,12 @@
                                                          :pack (org.shirakumo.fraf.mixed:pack packer))))
                               (org.shirakumo.fraf.mixed:start drain)
                               (org.shirakumo.fraf.mixed:end drain)
-                              (org.shirakumo.fraf.mixed:free drain)))
+                              (org.shirakumo.fraf.mixed:free drain)
+                              drain))
   (test "Create simple server" (let ((server (org.shirakumo.fraf.harmony:make-simple-server)))
                                  (org.shirakumo.fraf.mixed:start server)
-                                 (org.shirakumo.fraf.mixed:free server))))
+                                 (org.shirakumo.fraf.mixed:free server)
+                                 server)))
 
 (group "Asset loading"
   (test "Trial pool path" (pool-path (find-pool 'trial) NIL))
