@@ -538,10 +538,12 @@
   `(make-thread ,name (lambda () ,@body)))
 
 (defun wait-for-thread-exit (thread &key (timeout 1) (interval 0.1))
-  (loop for i from 0
+  (loop with max-iterations = (ceiling timeout interval)
+        for i from 0
         while (bt:thread-alive-p thread)
         do (sleep interval)
-           (when (= i (/ timeout interval))
+           (when (and (< 0 i)
+                      (= 0 (mod i max-iterations)))
              (restart-case
                  (error 'thread-did-not-exit :thread thread :timeout (* i interval))
                (continue ()
