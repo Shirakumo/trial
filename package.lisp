@@ -431,7 +431,8 @@
    #:make-cone
    #:pill
    #:make-pill
-   #:pill-radius
+   #:pill-radius-top
+   #:pill-radius-bottom
    #:pill-height
    #:triangle
    #:triangle-a

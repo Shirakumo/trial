@@ -121,8 +121,11 @@
     (setf (m 1 1) (+ z x))
     (setf (m 2 2) (+ y z))))
 
-(define-tensor-fun pill-tensor (mass radius height)
-  (let* ((r (float radius 0f0))
+(define-tensor-fun pill-tensor (mass radius-bottom radius-top height)
+  ;; FIXME: Correct the tensor computation for varying radii
+  (let* ((rb (float radius-bottom 0f0))
+         (rt (float radius-top 0f0))
+         (r (max rb rt))
          (h (float height 0f0))
          (mc (* mass (/ h (* 4/3 r))))
          (md (- mass mc))

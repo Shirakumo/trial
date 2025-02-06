@@ -288,23 +288,28 @@
   (let ((bl (vcopy b)))
     (declare (dynamic-extent bl))
     (ntransform-inverse bl (primitive-transform a))
-    (let ((dist (+ (expt (vx bl) 2) (expt (vz bl) 2))))
-      (when (and (< dist (expt (pill-radius a) 2)))
-        (cond ((< (abs (vy bl)) (pill-height a)) ; cylinder hit
+    (let* ((dist (+ (expt (vx bl) 2) (expt (vz bl) 2)))
+           (h (pill-height a))
+           (rt (pill-radius-top a))
+           (rb (pill-radius-bottom a))
+           ;; Lerp the radius along the cylinder
+           (r (lerp rb rt (1+ (/ (vy bl) h)))))
+      (when (and (< dist (expt r 2)))
+        (cond ((< (abs (vy bl)) h) ; cylinder hit
                (v<- (hit-location hit) bl)
                (setf (hit-depth hit) (sqrt dist))
                (nvunit (vsetf (hit-normal hit) (vx bl) 0 (vy bl)))
                (finish-hit))
-              ((< 0 (vy bl) (+ (pill-height a) (pill-radius a))) ; top sphere hit
+              ((< 0 (vy bl) (+ h rt)) ; top sphere hit
                (v<- (hit-location hit) bl)
-               (let ((p (vec3 0 (pill-height a) 0)))
+               (let ((p (vec3 0 h 0)))
                  (declare (dynamic-extent p))
                  (setf (hit-depth hit) (vdistance bl p))
                  (nvunit (!v- (hit-normal hit) bl p)))
                (finish-hit))
-              ((< (- (+ (pill-height a) (pill-radius a))) (vy bl) 0) ; bottom sphere hit
+              ((< (- (+ h rb)) (vy bl) 0) ; bottom sphere hit
                (v<- (hit-location hit) bl)
-               (let ((p (vec3 0 (- (pill-height a)) 0)))
+               (let ((p (vec3 0 (- h) 0)))
                  (declare (dynamic-extent p))
                  (setf (hit-depth hit) (vdistance bl p))
                  (nvunit (!v- (hit-normal hit) bl p)))

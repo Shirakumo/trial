@@ -178,7 +178,7 @@
   (setf (inertia-tensor entity) (cone-tensor (mass entity) (cone-radius primitive) (cone-height primitive))))
 
 (defmethod (setf inertia-tensor) ((primitive pill) (entity rigidbody))
-  (setf (inertia-tensor entity) (pill-tensor (mass entity) (pill-radius primitive) (pill-height primitive))))
+  (setf (inertia-tensor entity) (pill-tensor (mass entity) (pill-radius-bottom primitive) (pill-radius-top primitive) (pill-height primitive))))
 
 (defmethod (setf inertia-tensor) ((primitive triangle) (entity rigidbody))
   (implement!))
