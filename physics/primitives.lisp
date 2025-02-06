@@ -548,15 +548,17 @@
   (print-unreadable-object (primitive stream :type T :identity T)
     (format stream "~f ~f ~f" (pill-radius-bottom primitive) (pill-radius-top primitive) (height primitive))))
 
+;; FIXME: these bounds can be tighter
 (defmethod compute-bounding-box ((primitive pill))
   (let ((radius (max (pill-radius-bottom primitive) (pill-radius-top primitive))))
-    (values (vec3 0) (vec3 radius
-                           (* 0.5 (+ (pill-radius-bottom primitive) (pill-radius-top primitive)
-                                     (* 2 (pill-height primitive))))
-                           radius))))
+    (values (vec3 0 0 0) 
+            (vec3 radius
+                  (+ (pill-height primitive) radius)
+                  radius))))
 
 (defmethod compute-bounding-sphere ((primitive pill))
-  (values (vec3 0) (+ (pill-height primitive) (max (pill-radius-bottom primitive) (pill-radius-top primitive)))))
+  (values (vec3 0 0 0)
+          (+ (pill-height primitive) (max (pill-radius-bottom primitive) (pill-radius-top primitive)))))
 
 (defmethod sample-volume ((primitive pill) &optional vec)
   ;; FIXME: this is not correct if the primitive has different radii for top/bottom.
@@ -932,8 +934,8 @@
 
 (defmethod coerce-object ((primitive pill) (type (eql 'convex-mesh)) &key (segments 32))
   (with-mesh-construction (v)
-    (let ((sb (pill-radius-bottom primitive))
-          (st (pill-radius-top primitive))
+    (let ((sb (max (pill-radius-top primitive) (pill-radius-bottom primitive)))
+          (st (max (pill-radius-top primitive) (pill-radius-bottom primitive)))
           (h (pill-height primitive))
           (lat (float segments 0f0))
           (lng (float segments 0f0)))

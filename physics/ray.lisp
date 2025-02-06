@@ -129,7 +129,7 @@
          (flet ((inner (ray-location ray-direction hit)
                   (,implicit-name ray-location ray-direction ,@(if props
                                                                    (loop for prop in props
-                                                                         collect `(,(first prop) b))
+                                                                         collect `(,(or (third prop) (first prop)) b))
                                                                    (list 'b))
                                   (hit-normal hit))))
            (declare (dynamic-extent #'inner))
@@ -235,6 +235,11 @@
           (when (or (< w 0.0) (< (+ v w) d)) (return))
           (/ tt d))))))
 
+;; FIXME: implement ray-cone test
+#++
+(define-ray-test cone ((cone-height single-float) (cone-radius single-float))
+  )
+
 (define-ray-test cylinder ((cylinder-height single-float) (cylinder-radius single-float))
   ;; Note: the cylinder is always centred around 0,0,0 and oriented along Y.
   ;;       As such we can simplify the logic here.
@@ -285,27 +290,24 @@
                  (setf (vy ray-normal) 0.0)
                  tt)))))))
 
-(define-ray-test pill ((pill-height single-float) (pill-radius-bottom single-float) (pill-radius-top single-float))
-  (let ((rb pill-radius-bottom)
-        (rt pill-radius-top)
-        (h pill-height))
+(define-ray-test pill ((h single-float pill-height) (rb single-float pill-radius-bottom) (rt single-float pill-radius-top))
+  (let ((r (max rb rt)))
     (cond ((= 0.0 h)
-           (ray-sphere-p ray-location ray-direction (max rb rt) ray-normal))
+           (ray-sphere-p ray-location ray-direction r ray-normal))
           (T
-           (or (let ((top-ray (vec3 (vx ray-location)
-                                    (- (vy ray-location) h)
-                                    (vz ray-location))))
-                 (declare (dynamic-extent top-ray))
-                 (ray-sphere-p top-ray ray-direction rt ray-normal))
-               (let ((bottom-ray (vec3 (vx ray-location)
-                                       (+ (vy ray-location) h)
-                                       (vz ray-location))))
-                 (declare (dynamic-extent bottom-ray))
-                 (ray-sphere-p bottom-ray ray-direction rb ray-normal))
-               ;; FIXME: This check is not correct
-               (let ((tt (ray-cylinder-p ray-location ray-direction h (max rb rt) ray-normal)))
+           (or (let ((tt (ray-cylinder-p ray-location ray-direction h r ray-normal)))
                  (when (and tt ;; Ignore cap hits
                             (or (/= 0.0 (vx ray-normal))
                                 (/= 1.0 (abs (vy ray-normal)))
                                 (/= 0.0 (vz ray-normal))))
-                   tt)))))))
+                   tt))
+               (let ((top-ray (vec3 (vx ray-location)
+                                    (- (vy ray-location) h)
+                                    (vz ray-location))))
+                 (declare (dynamic-extent top-ray))
+                 (ray-sphere-p top-ray ray-direction r ray-normal))
+               (let ((bottom-ray (vec3 (vx ray-location)
+                                       (+ (vy ray-location) h)
+                                       (vz ray-location))))
+                 (declare (dynamic-extent bottom-ray))
+                 (ray-sphere-p bottom-ray ray-direction r ray-normal)))))))
