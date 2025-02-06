@@ -23,13 +23,5 @@ Trial offers a number of functions to interact with the operating system facilit
   Returns the path to the directory to use to store configuration and save files. This can be configured through the environment variable ``TRIAL_CONFIG_HOME``, ``AppData`` on Windows, and ``XDG_CONFIG_HOME`` everywhere else. The path is dependent on the ``+app-vendor+`` and ``+app-system+``.  
 - ``username``
   Returns a descriptive name of the current user. This may be a human-readable display name of some sort, or their user account name. You may pass ``T`` to fetch the answer without the context of a ``main`` instance.
-- ``io-bytes``
-  A monotonically increasing count of bytes read or written by the process.
-- ``cpu-time``
-  A monotonically increasing floating point number of seconds of CPU time spent by the process.
-- ``gpu-room``
-  Returns two values: the number of kilobytes of free VRAM, and the total number of kilobytes of VRAM.
-- ``cpu-room``
-  Returns two values: the number of kilobytes of free RAM, and the total number of kilobytes of RAM.
 - ``prevent-powersave``
   Try to prevent the system from entering powersave mode or activating the screensaver. You must regularly call ``ping-powersave`` afterwards, and ``restore-powersave`` once you're done.

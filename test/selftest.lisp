@@ -198,10 +198,10 @@
     (null (make-array (* 1024 1024 1024) :element-type '(unsigned-byte 8)))))
 
 (group "Query machine information"
-  (test "CPU time" (cpu-time))
-  (test "CPU room" (cpu-room))
-  (test "GC time" (gc-time))
-  (test "IO bytes" (io-bytes)))
+  (test "CPU time" (org.shirakumo.machine-state:process-time))
+  (test "CPU room" (org.shirakumo.machine-state:gc-room))
+  (test "GC time" (org.shirakumo.machine-state:gc-time))
+  (test "IO bytes" (org.shirakumo.machine-state:process-io-bytes)))
 
 (group "Query user information"
   (test "Username" (system-username))

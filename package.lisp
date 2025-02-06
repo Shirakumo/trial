@@ -1613,13 +1613,7 @@
    #:system-username
    #:open-in-browser
    #:open-in-file-manager
-   #:rename-thread
-   #:cpu-time
-   #:io-bytes
-   #:gpu-room
-   #:cpu-room
-   #:gc-time
-   #:gpu-time)
+   #:rename-thread)
   ;; parallax.lisp
   (:export
    #:parallax

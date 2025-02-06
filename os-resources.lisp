@@ -52,25 +52,3 @@
                          :size (cffi:foreign-funcall "pthread_self" :size)
                          :string name
                          :int)))
-
-(macrolet ((define-wrap (name fun)
-             `(progn
-                (defun ,name ()
-                  (,fun))
-
-                (trivial-deprecate:declaim-deprecated (function ,name)
-                                                      :software "trial"
-                                                      :version "1.2.0"
-                                                      :alternatives (,fun)))))
-
-  (define-wrap io-bytes org.shirakumo.machine-state:process-io-bytes)
-
-  (define-wrap cpu-time org.shirakumo.machine-state:process-time)
-
-  (define-wrap cpu-room org.shirakumo.machine-state:gc-room)
-
-  (define-wrap gpu-room org.shirakumo.machine-state:gpu-room)
-
-  (define-wrap gpu-time org.shirakumo.machine-state:gpu-time)
-
-  (define-wrap gc-time org.shirakumo.machine-state:gc-time))
