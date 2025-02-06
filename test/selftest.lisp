@@ -23,23 +23,26 @@
           (position name *tests* :key #'car :test #'string-equal) (length *tests*) name)
   (finish-output *test-output*))
 
-(defun finish-test (name result)
+(defun finish-test (name result &rest args)
   (typecase result
     (condition
-     (push name *failures*)
+     (push (list* name result args) *failures*)
      (format *test-output* "FAILED (~a)~%" (type-of result)))
     (T
      (format *test-output* "~@<~@;~a~;~:>~%" result)))
   (finish-output *test-output*))
 
-(defun funcall-muffled (fn)
+(defun funcall-muffled (fn &key (catch-errors T))
   (let* ((*standard-output* (make-broadcast-stream))
          (*error-output* *standard-output*)
          (*query-io* *standard-output*))
-    (handler-case
+    (if catch-errors
+        (handler-case
+            (handler-bind ((warning #'muffle-warning))
+              (funcall fn))
+          (error (e) e))
         (handler-bind ((warning #'muffle-warning))
-          (funcall fn))
-      (error (e) e))))
+          (funcall fn)))))
 
 (defun run-test (name &key muffle)
   (let ((fn (second (or (find name *tests* :key #'first :test #'string-equal)
@@ -60,20 +63,23 @@
                       (start-test test)
                       (finish-test test :SKIPPED))
                      (T
-                      (start-test test)
-                      (finish-test test (funcall-muffled fn))))))
+                      (restart-case
+                          (handler-bind ((error (lambda (e)
+                                                  (invoke-restart 'abort-test e
+                                                                  (with-output-to-string (out)
+                                                                    (uiop:print-backtrace :stream out))))))
+                            (start-test test)
+                            (finish-test test (funcall-muffled fn :catch-errors NIL)))
+                        (abort-test (e &rest args)
+                          (apply #'finish-test test e args)))))))
     (cond ((null *failures*)
            (format *test-output* "~&~%All OK!~%"))
           (T
            (format *test-output* "~&~%Some failures occurred:~%")
-           (dolist (test (nreverse *failures*))
-             (handler-bind ((error (lambda (e)
-                                     (uiop:print-condition-backtrace
-                                      e :stream *test-output*)
-                                     (invoke-restart 'abort-test))))
-               (format *test-output* "~&~%")
-               (start-test test)
-               (run-test test)))))))
+           (loop for (test condition . args) in (nreverse *failures*)
+                 do (start-test test)
+                    (format *test-output* "~&~%~a~%[Condition of type ~s]~{~%~%~a~}~%"
+                            condition (type-of condition) args))))))
 
 (defmacro test (name &body body)
   (let ((fn (trial:lispify-name (format NIL "test/~a" name) *package*)))
