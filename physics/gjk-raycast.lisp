@@ -22,6 +22,12 @@
 (declaim (inline pcopy))
 (defun pcopy (p)
   (p<- (point) p))
+;; todo: put this in a slot in separate POINT type when it exists
+(declaim (inline plength update-plength))
+(defun plength (p)
+  (vx (point-b p)))
+(defun update-plength (p)
+  (setf (vx (point-b p)) (vsqrlength p)))
 
 (defun signed-volumes (dim s0 s1 s2 s3 dir epsilon)
   ;; returns # of dimensions remaining, and any remaining points in
@@ -339,8 +345,6 @@
          ;; stuff for alternative termination tests
          (stuck 0)
          (last-updated 0)
-         ;; used to scale tolerance for termination test relative to simplex
-         (maxdist 1.0)
          ;; paper says "order of magnitude larger than machine
          ;; epsilon" (* 6 single-float-negative-epsilon) seems like a
          ;; good balance between quality of results and chance of
@@ -350,26 +354,21 @@
          ;; we mostly detect the loops though, so this just tunes tiny
          ;; performance difference vs tiny precision differences.
          (epsilon (* 6 SINGLE-FLOAT-NEGATIVE-EPSILON))
-         (epsilon*maxdist (* epsilon maxdist)))
+         ;; epsilon scaled by size of simplex
+         (epsilon*maxdist 0.0))
     (declare (dynamic-extent tt x v w p s0 s1 s2 s3))
     (declare (type (unsigned-byte 8) dim stuck)
              (type point s0 s1 s2 s3)
              (type single-float maxdist epsilon*maxdist))
     (vsetf ray-normal 0 0 0)
     (loop for i from 0 below GJK-ITERATIONS
-          do ;; we test v after updating tt since a final adjustment to
-             ;; that improves results slightly. but we need to use the
-             ;; values corresponding to v to determine cutoff
-             ;; tolerance, so calculate that here
-             (setf maxdist (max (if (> dim 0) (vsqrlength s0) 0.0)
-                                (if (> dim 1) (vsqrlength s1) 0.0)
-                                (if (> dim 2) (vsqrlength s2) 0.0)
-                                (if (> dim 3) (vsqrlength s3) 0.0)))
-             (setf epsilon*maxdist (* epsilon maxdist))
+          do
              (trial:support-function trial:primitive v p)
              (!v- w x p)
              (v<- (point-a s0) p)
              (v<- s0 w)
+             ;; cache squared length for new point
+             (update-plength s0)
              (let ((vw (v. v w))
                    (vr (v. v r)))
                (cond ((<= vw 0))
@@ -393,14 +392,18 @@
                         (nv+* v r (- dt)))
                       (!v+* x s r tt)
                       (setf last-updated i)
-                      ;; update s[0-3] for new X
+                      ;; update s[0-3] for new X, and update cached lengths
                       (!v- s0 x (point-a s0))
+                      (update-plength s0)
                       (when (< 0 dim)
                         (!v- s1 x (point-a s1))
+                        (update-plength s1)
                         (when (< 1 dim)
                           (!v- s2 x (point-a s2))
+                          (update-plength s2)
                           (when (< 2 dim)
-                            (!v- s3 x (point-a s3))))))))
+                            (!v- s3 x (point-a s3))
+                            (update-plength s3)))))))
              (incf dim)
              ;; if point we just added is already in simplex, drop old
              ;; copy since we depend on ordering of vertices and
@@ -434,7 +437,18 @@
                           ;; more progress.
                           ;; TODO: make sure this returns useful
                           ;; result, and/or see if it can be improved?
-
+          do (setf epsilon*maxdist
+                   ;; we test v after updating tt since a final
+                   ;; adjustment to that improves results
+                   ;; slightly. but we need to use the values
+                   ;; corresponding to v to determine cutoff
+                   ;; tolerance, so calculate that here
+                   (* epsilon
+                      (case dim
+                        (0 0)
+                        (1 (plength s0))
+                        (2 (max (plength s0) (plength s1)))
+                        (3 (max (plength s0) (plength s1) (plength s2))))))
           finally (progn
                     (nvunit* ray-normal)
                     (return tt)))))
