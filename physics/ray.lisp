@@ -294,7 +294,7 @@
   (let ((r (max rb rt)))
     (cond ((= 0.0 h)
            (ray-sphere-p ray-location ray-direction r ray-normal))
-          (T
+          (T ;; FIXME: this is obviously incorrect for different radii
            (or (let ((tt (ray-cylinder-p ray-location ray-direction h r ray-normal)))
                  (when (and tt ;; Ignore cap hits
                             (or (/= 0.0 (vx ray-normal))
@@ -305,9 +305,9 @@
                                     (- (vy ray-location) h)
                                     (vz ray-location))))
                  (declare (dynamic-extent top-ray))
-                 (ray-sphere-p top-ray ray-direction r ray-normal))
+                 (ray-sphere-p top-ray ray-direction rt ray-normal))
                (let ((bottom-ray (vec3 (vx ray-location)
                                        (+ (vy ray-location) h)
                                        (vz ray-location))))
                  (declare (dynamic-extent bottom-ray))
-                 (ray-sphere-p bottom-ray ray-direction r ray-normal)))))))
+                 (ray-sphere-p bottom-ray ray-direction rb ray-normal)))))))

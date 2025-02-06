@@ -68,7 +68,7 @@
                    (make-cylinder)
                    (make-cone)
                    (make-pill)
-                   (make-pill :radius-bottom 1.0 :radius-top 0.0)
+                   (make-pill :radius-bottom 1.0 :radius-top 0.5)
                    (make-plane)
                    (make-half-space)
                    (make-triangle)
