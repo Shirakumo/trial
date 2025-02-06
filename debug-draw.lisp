@@ -252,10 +252,10 @@ void main(){
   (v (nv+ (q* orientation (v__z stretch)) location))
   (v #.(vec 0 0 1)))
 
-(defmethod debug-draw ((ray ray) &rest args &key origin &allow-other-keys)
-  (remf args :origin)
-  (when origin (apply #'debug-cross (ray-location ray) args))
-  (apply #'debug-vector (ray-location ray) (ray-direction ray) args))
+(defmethod debug-draw ((ray ray) &rest args &key origin (size 1.0) &allow-other-keys)
+  (let ((args (remf* args :origin :size)))
+    (when origin (apply #'debug-cross (ray-location ray) :size size args))
+    (apply #'debug-vector (ray-location ray) (ray-direction ray) :length size args)))
 
 (define-debug-draw-function (debug-vector lines) (location direction &key (color #.(vec 1 0 0)) (length 2.0))
   (allocate 20)
