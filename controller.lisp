@@ -143,8 +143,8 @@
                           VRAM [KB]: ~8d (~2d%)~%~
                           RESOURCES: ~8d"
                   fps dur
-                  (truncate (- ctotal cfree) 1024) (floor (/ (- ctotal cfree) ctotal 0.01))
-                  (truncate (- gtotal gfree) 1024) (floor (/ (- gtotal gfree) gtotal 0.01))
+                  (truncate (- ctotal cfree) 1024) (if (< 0 ctotal) (floor (/ (- ctotal cfree) ctotal 0.01)) 0)
+                  (truncate (- gtotal gfree) 1024) (if (< 0 gtotal) (floor (/ (- gtotal gfree) gtotal 0.01)) 0)
                   (hash-table-count (loaded (loader +main+)))))
         (let ((*print-pprint-dispatch* *controller-pprint*))
           (loop with observers = (observers controller)
