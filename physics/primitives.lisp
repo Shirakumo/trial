@@ -342,17 +342,20 @@
                            (:include ,super))
            ,@slots)
 
-         (defun ,constructor (&rest args &key location orientation collision-mask
+         (defun ,constructor (&rest args &key location orientation collision-mask local-transform transform
                                               ,@constructor-args
                               &allow-other-keys)
-           (let* ((primitive (apply #',int-constructor (remf* args :location :orientation :collision-mask
+           (let* ((primitive (apply #',int-constructor (remf* args :location :orientation :collision-mask :transform :local-transform
                                                               ,@(loop for arg in constructor-args
                                                                       collect (intern (string arg) "KEYWORD")))))
                   (cache (primitive-global-bounds-cache primitive)))
              (when location (setf (location primitive) location))
              (when orientation (setf (orientation primitive) orientation))
              (when collision-mask (setf (collision-mask primitive) collision-mask))
-             (m<- (primitive-transform primitive) (primitive-local-transform primitive))
+             (when local-transform (m<- (primitive-local-transform primitive) local-transform))
+             (if transform
+                 (m<- (primitive-transform primitive) transform)
+                 (m<- (primitive-transform primitive) (primitive-local-transform primitive)))
              (setf (global-bounds-cache-generator cache) primitive)
              (multiple-value-bind (center bsize) (compute-bounding-box primitive)
                (setf (global-bounds-cache-box-offset cache) center)
