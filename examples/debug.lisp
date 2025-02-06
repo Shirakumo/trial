@@ -25,7 +25,7 @@
       (debug-ellipsoid (vec -10 0 0) (vec3 2 3 1) :color (next-color))
       (debug-cylinder (vec 0 0 0) 2 2 :color (next-color))
       (debug-cone (vec +10 0 0) 2 2 :color (next-color))
-      (debug-pill (vec +20 0 0) 2 2 :color (next-color))
+      (debug-pill (vec +20 0 0) 2 2 :radius-top 1 :color (next-color))
       (debug-draw (make-tube-mesh 2 4 1 :x +30 :y -2 :segments 8) :color (next-color))
 
       (debug-draw (make-cube-mesh 4 :x -30 :y -10) :flats T :color (next-color))

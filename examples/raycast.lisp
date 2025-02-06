@@ -38,10 +38,10 @@
       (cond (hit
              (debug-line (ray-location ray) (hit-location hit) :color (vec 1 1 1 1))
              (debug-line (hit-location hit) (v+* (hit-location hit) (ray-direction ray) 100) :color (vec 1 0 0 1))
-             (debug-line (hit-location hit) (v+* (hit-location hit) (hit-normal hit) -2)
-                         :color-a #.(vec 0 0 0) :color-b #.(vec 0 1 0)))
+             (debug-vector (hit-location hit) (v- (hit-normal hit)) :color #.(vec 0 1 0) :length 1.0))
             (T
-             (debug-line (ray-location ray) (v+* (ray-location ray) (ray-direction ray) 100) :color (vec 0 1 0 1)))))))
+             (debug-line (ray-location ray) (v+* (ray-location ray) (ray-direction ray) 100) :color (vec 0 1 0 1))))
+      (debug-draw ray :origin T :color #.(vec 1 1 1) :size 1.0))))
 
 (defmethod reset ((player raycast-player))
   (vsetf (location player) 0 0 2.5)
@@ -68,6 +68,7 @@
                    (make-cylinder)
                    (make-cone)
                    (make-pill)
+                   (make-pill :radius-bottom 1.0 :radius-top 0.0)
                    (make-plane)
                    (make-half-space)
                    (make-triangle)

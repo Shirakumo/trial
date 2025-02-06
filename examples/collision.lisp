@@ -2,7 +2,7 @@
 
 (define-shader-entity collision-body (vertex-entity colored-entity rigidbody listener)
   ((vertex-array :initform NIL)
-   (color :initform (vec 0 0 1 0.5)))
+   (color :initform (vec 0 0 1 1)))
   (:inhibit-shaders (colored-entity :fragment-shader)))
 
 (defmethod shared-initialize :after ((body collision-body) slots &key primitive)
@@ -122,6 +122,7 @@ void main(){
                    (make-cylinder)
                    (make-cone)
                    (make-pill)
+                   (make-pill :radius-bottom 1.0 :radius-top 0.0)
                    (make-plane)
                    (make-half-space)
                    (make-triangle)
