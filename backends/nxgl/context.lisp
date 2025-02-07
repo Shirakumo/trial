@@ -152,7 +152,7 @@
   pos)
 
 (defmethod local-key-string ((context context) scan-code)
-  "")
+  " ")
 
 (defmethod (setf icon) (icon (context context))
   icon)
