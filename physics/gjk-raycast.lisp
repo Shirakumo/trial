@@ -359,7 +359,7 @@
     (declare (dynamic-extent tt x v w p s0 s1 s2 s3))
     (declare (type (unsigned-byte 8) dim stuck)
              (type point s0 s1 s2 s3)
-             (type single-float maxdist epsilon*maxdist))
+             (type single-float epsilon*maxdist))
     (vsetf ray-normal 0 0 0)
     (loop for i from 0 below GJK-ITERATIONS
           do
