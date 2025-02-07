@@ -1,7 +1,5 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(defvar *dynamic-context*)
-
 (defclass gl-struct ()
   ((storage :accessor storage :reader org.shirakumo.memory-regions:to-memory-region)
    (base-offset :initform 0 :initarg :base-offset :accessor base-offset)))

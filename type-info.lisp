@@ -224,6 +224,8 @@
     (:array (destructuring-bind (identifier type count) type
               (declare (ignore identifier))
               (when (symbolp count)
+                (unless (boundp '*dynamic-context*)
+                  (error "Can't determine field size of dynamically sized array without a context to resolve it with.~%  ~a" type))
                 (setf count (slot-value *dynamic-context* count)))
               (if (listp type)
                   (* count (buffer-field-size standard type base))
