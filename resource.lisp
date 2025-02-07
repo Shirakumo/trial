@@ -80,7 +80,8 @@
 
 (defmethod allocate :after ((resource gl-resource))
   (setf (context resource) *context*)
-  (setf (gethash resource (resources *context*)) T))
+  (setf (gethash resource (resources *context*)) T)
+  #+nx (memory-report))
 
 (defmethod deallocate :after ((resource gl-resource))
   (when (context resource)
