@@ -191,7 +191,8 @@
                :language-codes
                :lquery
                :lru-cache
-               :machine-state/opengl
+               :machine-state
+               (:feature (:not :nx) :machine-state/opengl)
                :manifolds
                :memory-regions
                :messagebox
