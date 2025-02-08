@@ -85,7 +85,7 @@
   (a :int)
   (b :int))
 
-(cffi:defcfun (init "nxgl_init") :void)
+(cffi:defcfun (init "nxgl_init") :bool)
 
 (cffi:defcfun (shutdown "nxgl_shutdown") :void)
 
