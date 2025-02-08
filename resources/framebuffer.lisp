@@ -77,8 +77,8 @@
               (%gl:framebuffer-texture :framebuffer attachment (gl-name texture) level))
           (let ((completeness (gl:check-framebuffer-status :framebuffer)))
             (unless (find completeness '(:framebuffer-complete :framebuffer-complete-oes))
-              (error "Failed to attach ~a as ~s to ~a: ~s"
-                     texture attachment framebuffer completeness)))))
+              (error "Failed to attach ~a as ~s to ~a~@[/~a~]: ~s"
+                     texture attachment framebuffer layer completeness)))))
       (cond (color-attachments
              (gl:draw-buffers color-attachments))
             (T
