@@ -25,4 +25,4 @@
   (observe! (loop-p (node :video T)) :title "Loop [l]")
   (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)
   (enter (make-instance 'editor-camera :location (VEC3 0.0 2 7) :fov 50 :move-speed 0.1) scene)
-  (enter (make-instance 'phong-render-pass) scene))
+  (enter (make-instance 'render-pass) scene))
