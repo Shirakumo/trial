@@ -371,7 +371,8 @@
                       (gamepad-move (degeneralise-axis-symbol (axis thing) (pos thing)))
                       (gamepad-event (button thing))
                       (keyboard-event (key thing))
-                      (mouse-button-event (button thing))))
+                      (mouse-button-event (button thing))
+                      (input-event)))
             (bank (or bank
                       (etypecase thing
                         (gamepad-event

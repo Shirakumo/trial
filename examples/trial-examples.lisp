@@ -12,6 +12,7 @@
    (#:colors #:org.shirakumo.alloy.colored.colors)
    (#:simple #:org.shirakumo.alloy.renderers.simple)
    (#:presentations #:org.shirakumo.alloy.renderers.simple.presentations)
+   (#:animation #:org.shirakumo.alloy.animation)
    (#:harmony #:org.shirakumo.fraf.harmony.user)
    (#:trial-harmony #:org.shirakumo.fraf.trial.harmony)
    (#:mixed #:org.shirakumo.fraf.mixed)
