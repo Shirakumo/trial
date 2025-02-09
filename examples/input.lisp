@@ -14,11 +14,9 @@
                            (mouse-double-click #.(vec 1 1 0))
                            (T #.(vec 1 1 1)))))
 
-(define-handler (input-scene key-press) (key)
-  (print key))
-
 (defmethod setup-ui ((scene input-scene) panel)
-  (let* ((layout (make-instance 'alloy:grid-layout :col-sizes '(200 200) :row-sizes '(30)))
+  (let* ((layout (make-instance 'alloy:vertical-linear-layout))
          (focus (make-instance 'alloy:vertical-focus-list)))
+    (make-instance 'alloy:virtual-keyboard :layout-parent layout :focus-parent focus)
     (alloy:finish-structure panel layout focus)))
 

@@ -97,7 +97,7 @@
     (setf (trial:cursor trial:*context*) value)))
 
 (defmethod alloy:key-text (key (ui ui))
-  (trial:local-key-string trial:*context* key))
+  (ignore-errors (trial:local-key-string trial:*context* key)))
 
 (defmethod trial:handle :after ((ev trial:key-release) (ui ui))
   (case (trial:key ev)
