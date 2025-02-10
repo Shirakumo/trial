@@ -370,6 +370,7 @@
      (prompt-string (type-of thing) :bank bank :default default))
     (input-event
      (let* ((prompt (etypecase thing
+                      ((or gamepad-added gamepad-removed) :gamepad)
                       (gamepad-move (degeneralise-axis-symbol (axis thing) (pos thing)))
                       (gamepad-event (button thing))
                       (text-entered)
@@ -379,6 +380,7 @@
                       (input-event)))
             (bank (or bank
                       (etypecase thing
+                        ((or gamepad-added gamepad-removed) :devices)
                         (gamepad-event
                          (if (typep +input-source+ 'gamepad:device)
                              (gamepad:icon-type +input-source+)
