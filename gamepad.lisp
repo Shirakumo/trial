@@ -21,8 +21,11 @@
 
 (defmethod start :before ((handler gamepad-input-handler))
   (with-gamepad-failure-handling (:ignore-error #-trial-release NIL #+trial-release T)
-    (v:info :trial.input "~:[No controllers detected.~;Detected the following controllers:~:*~{~%  ~a~}~]"
-            (mapcar #'describe-gamepad (gamepad:init)))))
+    (let ((devices (gamepad:init)))
+      (v:info :trial.input "~:[No controllers detected.~;Detected the following controllers:~:*~{~%  ~a~}~]"
+              (mapcar #'describe-gamepad devices))
+      (dolist (device devices)
+        (handle (make-event 'gamepad-added :device device) handler)))))
 
 (defmethod stop :before ((handler gamepad-input-handler))
   (with-gamepad-failure-handling ()
