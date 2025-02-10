@@ -2,13 +2,17 @@
 
 (defvar *prompt-string-table* (make-hash-table :test 'eq))
 
+;; TODO: Parse this info more automatically from the promptfont json
+;;       so that we don't risk going out of date and have a more
+;;       complete mapping, especially considering device variants etc.
+
 (defmacro define-glyph-table (name &body entries)
   (destructuring-bind (name &key inherit) (enlist name)
     `(setf (gethash ',name *prompt-string-table*)
            (let ((table (make-hash-table :test 'eq)))
              ,@(when inherit
                  `((loop for name being the hash-keys of (gethash ',inherit *prompt-string-table*) using (hash-value char)
-                          do (setf (gethash name table) char))))
+                         do (setf (gethash name table) char))))
              ,@(loop for (name char) in entries
                      collect `(setf (gethash ',name table)
                                     ,(string (etypecase char
