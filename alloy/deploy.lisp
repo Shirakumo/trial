@@ -13,15 +13,3 @@
 (deploy:define-hook (:boot alloy) (directory)
   (setf org.shirakumo.alloy.renderers.opengl::*shaders-directory*
         (pathname-utils:subdirectory directory "pool" "alloy")))
-
-#+linux
-(trial::dont-deploy
- org.shirakumo.font-discovery::fontconfig)
-#+darwin
-(trial::dont-deploy
- org.shirakumo.font-discovery::coretext
- org.shirakumo.font-discovery::foundation)
-#+windows
-(trial::dont-deploy
- org.shirakumo.font-discovery::directwrite
- org.shirakumo.com-on.cffi::ole32)

@@ -203,8 +203,3 @@ Space - Descend" (version :trial) (lisp-implementation-type) (lisp-implementatio
   (command-line-toplevel)
   (launch))
 
-#+darwin
-(trial::dont-deploy
- org.shirakumo.file-select.macos::foundation
- org.shirakumo.file-select.macos::appkit
- org.shirakumo.file-select.macos::cocoa)

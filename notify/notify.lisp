@@ -141,7 +141,3 @@
   (unwatch T)
   (notify:shutdown))
 
-#+darwin
-(trial::dont-deploy
- org.shirakumo.file-notify::corefoundation
- org.shirakumo.file-notify::coreservices)

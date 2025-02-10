@@ -47,31 +47,7 @@
   `(progn ,@(loop for lib in libraries
                   collect `(deploy:define-library ,lib :dont-deploy T))))
 
-(dont-deploy
- cl-opengl-bindings::opengl)
+(dont-deploy cl-opengl-bindings::opengl)
 #+linux
 (deploy:define-library org.shirakumo.fraf.gamepad.impl::evdev
   :path (merge-pathnames "libevdev-lin-amd64.so" org.shirakumo.fraf.gamepad.impl::*static*))
-#+darwin
-(dont-deploy
- org.shirakumo.fraf.gamepad.impl::corefoundation
- org.shirakumo.fraf.gamepad.impl::iokit
- org.shirakumo.fraf.gamepad.impl::forcefeedback
- org.shirakumo.messagebox.macos::foundation
- org.shirakumo.messagebox.macos::appkit
- org.shirakumo.messagebox.macos::cocoa)
-#+windows
-(dont-deploy
- secur32
- org.shirakumo.com-on.cffi::ole32
- org.shirakumo.fraf.gamepad.impl::user32
- org.shirakumo.fraf.gamepad.impl::xinput
- org.shirakumo.fraf.gamepad.impl::dinput
- org.shirakumo.messagebox.win32::user32
- org.shirakumo.machine-state::psapi
- org.shirakumo.machine-state::ntdll
- org.shirakumo.machine-state::pdh
- org.shirakumo.machine-state::iphlpapi
- org.shirakumo.machine-state::secur32
- org.shirakumo.machine-state::advapi32
- org.shirakumo.machine-state::oleauth32)

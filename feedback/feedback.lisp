@@ -105,7 +105,3 @@
 (trial::dont-deploy
  cl+ssl::libssl
  cl+ssl::libcrypto)
-#+darwin
-(trial::dont-deploy)
-#+windows
-(trial::dont-deploy)

@@ -31,4 +31,6 @@
 (define-native-image-transcoder :jpeg)
 (define-native-image-transcoder :jpg)
 
-(trial::dont-deploy org.shirakumo.fraf.jpeg.cffi:libjpeg)
+;; We don't need libjpeg
+(trial::dont-deploy
+ org.shirakumo.fraf.jpeg.cffi:libjpeg)
