@@ -372,7 +372,9 @@
      (let* ((prompt (etypecase thing
                       (gamepad-move (degeneralise-axis-symbol (axis thing) (pos thing)))
                       (gamepad-event (button thing))
+                      (text-entered)
                       (keyboard-event (key thing))
+                      (mouse-scroll (if (< (delta thing) 0.0) :scroll-d :scroll-u))
                       (mouse-button-event (button thing))
                       (input-event)))
             (bank (or bank
@@ -381,9 +383,10 @@
                          (if (typep +input-source+ 'gamepad:device)
                              (gamepad:icon-type +input-source+)
                              :gamepad))
-                        (key-event :keyboard)
-                        (mouse-event :mouse)))))
-       (let ((char (or (when (eql bank :keyboard)
+                        (keyboard-event :keyboard)
+                        (mouse-event :mouse)
+                        (input-event)))))
+       (let ((char (or (when (and prompt (eql bank :keyboard))
                          (local-key-string *context* prompt))
                        prompt)))
          (values (prompt-string char :bank bank :default default)

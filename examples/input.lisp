@@ -15,9 +15,11 @@
                            (mouse-double-click #.(vec 1 1 0))
                            (T #.(vec 1 1 1)))))
 
-(define-handler (input-scene digital-event :after) ()
-  (alloy:enter (make-instance 'input-label :value digital-event)
-               (events input-scene)))
+(define-handler (input-scene input-event :after) ()
+  (let ((label (prompt-string input-event)))
+    (when label
+      (alloy:enter (make-instance 'input-label :value label)
+                   (events input-scene)))))
 
 (defmethod setup-ui ((scene input-scene) panel)
   (let* ((layout (make-instance 'alloy:vertical-linear-layout))
@@ -30,10 +32,6 @@
 (defclass input-label (alloy:label*)
   ((timeout :initform 2.0 :accessor timeout)
    (alloy:sizing-strategy :initform (load-time-value (make-instance 'alloy:proportional)))))
-
-(defmethod alloy:text ((label input-label))
-  (multiple-value-bind (char name) (prompt-string (alloy:value label))
-    (or char (string name))))
 
 (defmethod animation:update :after ((label input-label) dt)
   (when (<= (decf (timeout label) dt) 0)
