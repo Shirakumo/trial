@@ -64,9 +64,9 @@
             for chunk from 0
             for octets-read = read then (+ octets-read read)
             while (< 0 read)
-            do (when (and (< 0 chunk) (= 0 (mod chunk 80)))
+            do (when (and (< 0 chunk) (= 0 (mod chunk 40)))
                  (terpri deploy:*status-output*))
-               (format deploy:*status-output* "~4,1f" (/ (* 100 octets-read) octets-total))
+               (format deploy:*status-output* "~4,1f% " (/ (* 100 octets-read) octets-total))
                (north:make-signed-data-request client endpoint
                                                `(("payload" . (,part :content-type "application/octet-stream" :filename "payload")))
                                                :params `(("file" . ,(princ-to-string file-id))

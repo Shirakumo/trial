@@ -32,8 +32,8 @@
    (alloy:sizing-strategy :initform (load-time-value (make-instance 'alloy:proportional)))))
 
 (defmethod alloy:text ((label input-label))
-  (or (prompt-string (alloy:value label))
-      (princ-to-string (alloy:value label))))
+  (multiple-value-bind (char name) (prompt-string (alloy:value label))
+    (or char (string name))))
 
 (defmethod animation:update :after ((label input-label) dt)
   (when (<= (decf (timeout label) dt) 0)
