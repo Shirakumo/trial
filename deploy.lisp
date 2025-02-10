@@ -71,4 +71,7 @@
  org.shirakumo.machine-state::psapi
  org.shirakumo.machine-state::ntdll
  org.shirakumo.machine-state::pdh
- org.shirakumo.machine-state::iphlpapi)
+ org.shirakumo.machine-state::iphlpapi
+ org.shirakumo.machine-state::secur32
+ org.shirakumo.machine-state::advapi32
+ org.shirakumo.machine-state::oleauth32)
