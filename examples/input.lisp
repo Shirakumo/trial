@@ -29,7 +29,7 @@
     (setf (events scene) events)
     (alloy:finish-structure panel layout focus)))
 
-(defclass input-label (alloy:label*)
+(defclass input-label (alloy:direct-value-component)
   ((timeout :initform 2.0 :accessor timeout)
    (alloy:sizing-strategy :initform (load-time-value (make-instance 'alloy:proportional)))))
 
@@ -43,12 +43,12 @@
    (alloy:margins)
    :pattern colors:white)
   ((:label simple:text)
-   (alloy:margins 2) alloy:text
+   (alloy:margins 5) alloy:text
    :halign :middle
    :valign :middle
    :font "PromptFont"
    :pattern colors:white
-   :size (alloy:un 24)))
+   :size (alloy:un 25)))
 
 (presentations:define-update (ui input-label)
   (:background
