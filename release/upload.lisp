@@ -44,9 +44,8 @@
                                      parameters)))
   (deploy:status 2 "Uploaded to ~a" url))
 
-(defmethod upload ((service (eql :keygen)) &key (release (release)) (bundles (config :keygen :bundles)) (key (config :keygen :key)) (secret (config :keygen :secret)) (token (config :keygen :token)) (token-secret (config :keygen :token-secret)) (api-base (config :keygen :api-base)))
-  (let* ((version (release-version release))
-         (secret-source (or (config :keygen :secrets) api-base))
+(defun upload-keygen-file (file file-id version &key (key (config :keygen :key)) (secret (config :keygen :secret)) (token (config :keygen :token)) (token-secret (config :keygen :token-secret)) (api-base (config :keygen :api-base)) (chunk-size (* 1024 1024 5)))
+  (let* ((secret-source (or (config :keygen :secrets) api-base))
          (client (make-instance 'north:client :key (or key (password secret-source "key"))
                                               :secret (or secret (password secret-source "secret"))
                                               :token (or token (password secret-source "token"))
@@ -54,27 +53,35 @@
                                               :request-token-uri NIL
                                               :authorize-uri NIL
                                               :access-token-uri NIL))
-         (buffer (make-array (* 1024 1024 5) :element-type '(unsigned-byte 8)))
+         (buffer (make-array chunk-size :element-type '(unsigned-byte 8)))
          (endpoint (format NIL "~a/keygen/file/upload" (string-right-trim "/" api-base))))
+    (with-open-file (in file :element-type '(unsigned-byte 8))
+      (loop with octets-total = (file-length in)
+            for read = (read-sequence buffer in)
+            for part = (if (= read (length buffer))
+                           buffer
+                           (make-array read :element-type '(unsigned-byte 8) :displaced-to buffer))
+            for chunk from 0
+            for octets-read = read then (+ octets-read read)
+            while (< 0 read)
+            do (when (and (< 0 chunk) (= 0 (mod chunk 80)))
+                 (terpri deploy:*status-output*))
+               (format deploy:*status-output* "~4,1f" (/ (* 100 octets-read) octets-total))
+               (north:make-signed-data-request client endpoint
+                                               `(("payload" . (,part :content-type "application/octet-stream" :filename "payload")))
+                                               :params `(("file" . ,(princ-to-string file-id))
+                                                         ("version" . ,version)
+                                                         ("chunk" . ,(princ-to-string chunk))))))
+    (north:make-signed-request client endpoint :post
+                               :params `(("file" . ,(princ-to-string file-id))
+                                         ("payload" . "end")
+                                         ("chunk" . "end")))))
+
+(defmethod upload ((service (eql :keygen)) &rest args &key (release (release)) (bundles (config :keygen :bundles)) &allow-other-keys)
+  (let* ((version (release-version release)))
     (loop for (bundle file) on bundles by #'cddr
           do (deploy:status 3 "Uploading ~a" bundle)
-             (with-open-file (in (bundle-path bundle :version version) :element-type '(unsigned-byte 8))
-               (loop for read = (read-sequence buffer in)
-                     for part = (if (= read (length buffer))
-                                    buffer
-                                    (make-array read :element-type '(unsigned-byte 8) :displaced-to buffer))
-                     for chunk from 0
-                     while (< 0 read)
-                     do (format deploy:*status-output* ".")
-                        (north:make-signed-data-request client endpoint
-                                                        `(("payload" . (,part :content-type "application/octet-stream" :filename "payload")))
-                                                        :params `(("file" . ,(princ-to-string file))
-                                                                  ("version" . ,version)
-                                                                  ("chunk" . ,(princ-to-string chunk))))))
-             (north:make-signed-request client endpoint :post
-                                        :params `(("file" . ,(princ-to-string file))
-                                                  ("payload" . "end")
-                                                  ("chunk" . "end"))))))
+             (apply #'upload-keygen-file (bundle-path bundle :version version) (princ-to-string file) version args))))
 
 (defun release-systems (release)
   (let ((systems ()))
