@@ -3,7 +3,8 @@
 (define-example input
   :title "Input Events"
   :description ""
-  :slots ((events :accessor events))
+  :slots ((events :accessor events)
+          (gamepads :accessor gamepads))
   (enter (make-instance '2d-camera) scene)
   (enter (make-instance 'render-pass) scene))
 
@@ -21,13 +22,48 @@
       (alloy:enter (make-instance 'input-label :value label)
                    (events input-scene)))))
 
+(define-handler (input-scene gamepad-removed :after) (device)
+  (alloy:do-elements (element (gamepads input-scene))
+    (when (eql device (alloy:value element))
+      (alloy:leave element T))))
+
+(define-handler (input-scene gamepad-added :after) (device)
+  (alloy:enter (make-instance 'gamepad-label :value device) (gamepads input-scene)))
+
 (defmethod setup-ui ((scene input-scene) panel)
   (let* ((layout (make-instance 'alloy:vertical-linear-layout))
          (focus (make-instance 'alloy:vertical-focus-list))
          (keyboard (make-instance 'alloy:virtual-keyboard :layout-parent layout :focus-parent focus))
+         (gamepads (make-instance 'alloy:vertical-linear-layout :layout-parent layout))
          (events (make-instance 'alloy:flow-layout :layout-parent layout :min-size (alloy:size 50 50))))
     (setf (events scene) events)
+    (setf (gamepads scene) gamepads)
+    (dolist (device (org.shirakumo.fraf.gamepad:list-devices))
+      (alloy:enter (make-instance 'gamepad-label :value device) gamepads))
     (alloy:finish-structure panel layout focus)))
+
+(defclass gamepad-label (alloy:direct-value-component)
+  ())
+
+(defmethod alloy:text ((label gamepad-label))
+  (let ((device (alloy:value label)))
+    (format NIL "~@[~a~]~@[:~a~]~@[:~a~]~@[ ~a~]~@[ ~a~]"
+            (org.shirakumo.fraf.gamepad:vendor device)
+            (org.shirakumo.fraf.gamepad:product device)
+            (org.shirakumo.fraf.gamepad:version device)
+            (org.shirakumo.fraf.gamepad:name device)
+            (org.shirakumo.fraf.gamepad:driver device))))
+
+(presentations:define-realization (ui gamepad-label)
+  ((:background simple:rectangle)
+   (alloy:margins)
+   :pattern (colored:color 0.2 0.2 0.2))
+  ((:label simple:text)
+   (alloy:margins 5) alloy:text
+   :halign :left
+   :valign :middle
+   :pattern colors:white
+   :size (alloy:un 18)))
 
 (defclass input-label (alloy:direct-value-component)
   ((timeout :initform 2.0 :accessor timeout)
