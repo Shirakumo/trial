@@ -174,15 +174,15 @@
                (v (+ x (* size (cos i2))) (+ y (* size (sin i2))) z 0 0 1 (+ 0.5 (* 0.5 (cos i2))) (+ 0.5 (* 0.5 (sin i2)))))
       (finalize-data)))
 
-  (defun make-cylinder-mesh (size height &key (segments 32) (x 0) (y 0) (z 0))
+  (defun make-cylinder-mesh (size height &key (segments 32) (x 0) (y 0) (z 0) (radius-top size) (radius-bottom size))
     (with-mesh-construction (v :attributes (location))
       (loop with step = (/ (* 2 PI) segments)
             for i1 = (- step) then i2
             for i2 from 0 to (* 2 PI) by step
-            for e1b = (vec (+ x (* size (cos i1))) y (+ z (* size (sin i1))))
-            for e2b = (vec (+ x (* size (cos i2))) y (+ z (* size (sin i2))))
-            for e1t = (nv+ (vec 0 height 0) e1b)
-            for e2t = (nv+ (vec 0 height 0) e2b)
+            for e1b = (vec (+ x (* radius-bottom (cos i1))) y (+ z (* radius-bottom (sin i1))))
+            for e2b = (vec (+ x (* radius-bottom (cos i2))) y (+ z (* radius-bottom (sin i2))))
+            for e1t = (vec (+ x (* radius-top (cos i1))) (+ y height) (+ z (* radius-top (sin i1))))
+            for e2t = (vec (+ x (* radius-top (cos i2))) (+ y height) (+ z (* radius-top (sin i2))))
             do ;; Bottom disc
             (v x y z)
             (v (vx e1b) (vy e1b) (vz e1b))
