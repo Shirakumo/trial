@@ -1557,6 +1557,8 @@
    #:retained
    #:clear-retained
    #:reset-retained
+   #:analog
+   #:clear-analog
    #:directional
    #:clear-directional
    #:action-mapping

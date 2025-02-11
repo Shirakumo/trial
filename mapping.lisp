@@ -2,6 +2,7 @@
 
 (define-global +map-key-events+ T)
 (define-global +retention-table+ (make-hash-table :test 'eql))
+(define-global +analog-table+ (make-hash-table :test 'eql))
 (define-global +direction-table+ (make-hash-table :test 'eql))
 (defvar *mapping-functions* (make-hash-table :test 'eql))
 (defvar *action-mappings* ())
@@ -59,6 +60,20 @@
               (when (<= 0.2 (abs axis))
                 (map-event (make-instance 'gamepad-move :axis label :pos axis :old-pos 0.0 :device +input-source+)
                            scene))))))
+
+(defun analog (id)
+  (the single-float
+       (or (gethash id +analog-table+)
+           (setf (gethash id +analog-table+) 0f0))))
+
+(defun (setf analog) (value id)
+  (setf (gethash id +analog-table+) (or value 0f0)))
+
+(defun clear-analog (&optional id)
+  (if id
+      (setf (analog id) 0f0)
+      (loop for analog being the hash-keys of +analog-table+
+            do (setf (analog id) 0f0))))
 
 (defun directional (id)
   (let ((value (gethash id +direction-table+)))
@@ -250,6 +265,130 @@
           (setf (threshold new) (threshold mapping))
           (setf (toggle-p new) (toggle-p mapping)))
         (call-next-method)))
+
+(defclass axis-analog-mapping (action-mapping)
+  ((event-type :initform 'gamepad-move)
+   (dead-zone :initarg :dead-zone :initform 0.1 :accessor dead-zone)
+   (multiplier :initarg :multiplier :initform 1.0 :accessor multiplier)))
+
+(defmethod perform-event-mapping (event (mapping axis-analog-mapping) loop)
+  (let* ((pos (pos event))
+         (value (if (< (dead-zone mapping) (abs pos)) (* (multiplier mapping) pos) 0.0))
+         (action (action-type mapping)))
+    (setf (analog action) value)
+    (issue loop action :value value)))
+
+(defmethod stratify-action-mapping ((mapping axis-analog-mapping))
+  (mapc (lambda (new)
+          (setf (dead-zone new) (dead-zone mapping))
+          (setf (multiplier new) (multiplier mapping)))
+        (call-next-method)))
+
+(defmethod event-from-action-mapping ((mapping axis-analog-mapping))
+  (let ((qualifier (first (qualifier mapping))))
+    (make-instance 'gamepad-move :device NIL :axis qualifier :old-pos 0.0 :pos (* (multiplier mapping) (dead-zone mapping)))))
+
+(defmethod event-to-action-mapping ((event gamepad-move) (action analog-action) &key (dead-zone 0.1) (multiplier +1.0))
+  (make-instance 'axis-analog-mapping
+                 :action-type (type-of action)
+                 :event-type (type-of event)
+                 :qualifier (list (axis event))
+                 :dead-zone dead-zone
+                 :multiplier multiplier))
+
+(defmethod to-mapping-description ((mapping axis-analog-mapping))
+  (list* 'analog (action-type mapping)
+         `(axis :one-of ,(qualifier mapping)
+                :dead-zone ,(dead-zone mapping)
+                :multiplier ,(multiplier mapping))))
+
+(defclass digital-analog-mapping (action-mapping)
+  ((high-value :initarg :high-value :initform 1.0 :accessor high-value)
+   (low-value :initarg :low-value :initform 0.0 :accessor low-value)
+   ;; KLUDGE: I kind of hate having to keep this state here.
+   (pressed-p :initform NIL :accessor pressed-p)))
+
+(defmethod clear ((mapping digital-analog-mapping))
+  (setf (pressed-p mapping) NIL))
+
+(defmethod perform-event-mapping (event (mapping digital-analog-mapping) loop)
+  (let ((action (action-type mapping))
+        (value 0.0))
+    (cond ((typep event 'press-event)
+           (setf (pressed-p mapping) T)
+           (setf value (high-value mapping)))
+          (T
+           (setf (pressed-p mapping) NIL)
+           (setf value (low-value mapping))))
+    (setf (analog action) value)
+    (issue loop action :value value)))
+
+(defmethod stratify-action-mapping ((mapping digital-analog-mapping))
+  (mapc (lambda (new)
+          (setf (high-value new) (high-value mapping))
+          (setf (low-value new) (low-value mapping)))
+        (call-next-method)))
+
+(defmethod event-from-action-mapping ((mapping digital-analog-mapping))
+  (let ((qualifier (first (qualifier mapping))))
+    (ecase (event-type mapping)
+      ((key-event key-press key-release) (make-instance 'key-press :key qualifier))
+      ((mouse-button-event mouse-press mouse-release) (make-instance 'mouse-press :button qualifier :pos #.(vec 0 0)))
+      ((gamepad-button-event gamepad-press gamepad-release) (make-instance 'gamepad-press :device NIL :button qualifier)))))
+
+(defmethod event-to-action-mapping ((event digital-event) (action analog-action) &key (high-value 1.0) (low-value 0.0))
+  (make-instance 'digital-analog-mapping
+                 :action-type (type-of action)
+                 :event-type (type-of event)
+                 :qualifier (list (button event))
+                 :high-value high-value
+                 :low-value low-value))
+
+(defmethod to-mapping-description ((mapping digital-analog-mapping))
+  (list* 'analog (action-type mapping)
+         `(,(case (event-type mapping)
+              ((key-event key-press) 'key)
+              ((mouse-button-event mouse-press) 'mouse)
+              ((gamepad-button-event gamepad-press) 'button)
+              (gamepad-move 'axis)
+              (T (event-type mapping)))
+           :one-of ,(qualifier mapping)
+           :high-value ,(high-value mapping)
+           :low-value ,(low-value mapping))))
+
+(defmethod from-mapping-description ((type (eql 'analog)) action bindings)
+  (when (check-action action)
+    (let ((mappings ()))
+      (flet ((add (type &rest initargs)
+               (push (apply #'make-instance type :action-type action initargs) mappings)))
+        (dolist (binding bindings mappings)
+          (destructuring-bind (type &key (multiplier +1.0) one-of (dead-zone 0.1) (low-value 0.0) (high-value 1.0)) binding
+            (ecase type
+              (axis
+               (add 'axis-analog-mapping
+                    :qualifier one-of
+                    :multiplier multiplier
+                    :dead-zone dead-zone
+                    :multiplier multiplier))
+              ((key button mouse)
+               (add 'digital-analog-mapping
+                    :event-type (normalize-mapping-event-type type)
+                    :qualifier one-of
+                    :high-value high-value
+                    :low-value low-value))
+              #++(point
+               (add 'mouse-directional-mapping
+                    :scaling (vec (first scaling) (second scaling))
+                    :dead-zone dead-zone
+                    :timeout timeout))
+              (buttons
+               (loop for (u d) in one-of
+                     do (add 'digital-analog-mapping :event-type 'gamepad-button-event :qualifier (list u) :high-value (+ high-value) :low-value (+ low-value))
+                        (add 'digital-analog-mapping :event-type 'gamepad-button-event :qualifier (list d) :high-value (- high-value) :low-value (- low-value))))
+              (keys
+               (loop for (u d) in one-of
+                     do (add 'digital-analog-mapping :event-type 'key-event :qualifier (list u) :high-value (+ high-value) :low-value (+ low-value))
+                        (add 'digital-analog-mapping :event-type 'key-event :qualifier (list d) :high-value (- high-value) :low-value (- low-value)))))))))))
 
 (defclass axis-directional-mapping (action-mapping)
   ((event-type :initform 'gamepad-move)
