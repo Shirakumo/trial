@@ -82,13 +82,6 @@
     (setf (m 1 1) x)
     (setf (m 2 2) x)))
 
-(define-tensor-fun cylinder-tensor (mass radius height)
-  (let* ((x (* 0.5 mass radius radius))
-         (y (* 0.5 (+ x (* 1/6 mass (* height height))))))
-    (setf (m 0 0) y)
-    (setf (m 1 1) y)
-    (setf (m 2 2) x)))
-
 (define-tensor-fun ellipsoid-tensor (mass radius)
   (let ((x (/ (* 3.0 mass) 5.0)))
     (setf (m 0 0) (* x (+ (vy radius) (vz radius))))
@@ -120,6 +113,17 @@
     (setf (m 0 0) (+ y x))
     (setf (m 1 1) (+ z x))
     (setf (m 2 2) (+ y z))))
+
+(define-tensor-fun cylinder-tensor (mass radius-bottom radius-top height)
+  ;; FIXME: Correct the tensor computation for varying radii
+  (let* ((rb (float radius-bottom 0f0))
+         (rt (float radius-top 0f0))
+         (r (max rb rt))
+         (x (* 0.5 mass r r))
+         (y (* 0.5 (+ x (* 1/6 mass (* height height))))))
+    (setf (m 0 0) y)
+    (setf (m 1 1) y)
+    (setf (m 2 2) x)))
 
 (define-tensor-fun pill-tensor (mass radius-bottom radius-top height)
   ;; FIXME: Correct the tensor computation for varying radii

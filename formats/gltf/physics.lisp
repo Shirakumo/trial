@@ -13,13 +13,10 @@
                                         :radius-top (float (gltf:radius-top shape) 0f0)
                                         args)))
       (gltf:cylinder-shape
-       (vector (apply (cond ((= 0 (gltf:radius-top shape))
-                             #'trial:make-cone)
-                            (T
-                             #'trial:make-cylinder))
+       (vector (apply #'trial:make-cylinder
                       :height (float (* 0.5 (gltf:height shape)) 0f0)
-                      :radius (max (float (gltf:radius-top shape) 0f0)
-                                   (float (gltf:radius-bottom shape) 0f0))
+                      :radius-top (float (gltf:radius-top shape) 0f0)
+                      :radius-bottom (float (gltf:radius-bottom shape) 0f0)
                       args)))
       (null
        (let ((mesh (gltf:mesh (gltf:node geometry)))

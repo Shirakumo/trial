@@ -499,33 +499,40 @@
 
 ;; NOTE: the cylinder is centred at 0,0,0 and points Y-up. the "height" is the half-height.
 (define-primitive-type cylinder
-    ((radius 1.0 :type single-float)
+    ((radius-bottom 1.0 :type single-float)
+     (radius-top 1.0 :type single-float)
      (height 1.0 :type single-float)))
 
-(define-transfer cylinder cylinder-radius cylinder-height)
+(define-transfer cylinder cylinder-radius-bottom cylinder-radius-top cylinder-height)
 
 (defmethod print-object ((primitive cylinder) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
-    (format stream "~f ~f" (radius primitive) (height primitive))))
+    (format stream "~f ~f" (radius-bottom primitive) (radius-top primitive) (height primitive))))
 
 (defmethod compute-bounding-box ((primitive cylinder))
-  (values (vec3 0) (vec3 (cylinder-radius primitive)
-                         (cylinder-height primitive)
-                         (cylinder-radius primitive))))
+  (let ((radius (max (cylinder-radius-bottom primitive)
+                     (cylinder-radius-top primitive))))
+    (values (vec3 0) (vec3 radius (cylinder-height primitive) radius))))
 
 (defmethod compute-bounding-sphere ((primitive cylinder))
-  (values (vec3 0) (sqrt (+ (expt (cylinder-radius primitive) 2)
+  (values (vec3 0) (sqrt (+ (expt (max (cylinder-radius-bottom primitive)
+                                       (cylinder-radius-top primitive))
+                                  2)
                             (expt (cylinder-height primitive) 2)))))
 
 (defmethod sample-volume ((primitive cylinder) &optional vec)
-  (sampling:cylinder (cylinder-radius primitive) (cylinder-height primitive) +vy+ vec))
+  ;; FIXME: this is not correct if the primitive has different radii for top/bottom.
+  (sampling:cylinder (max (cylinder-radius-bottom primitive) (cylinder-radius-top primitive))
+                     (cylinder-height primitive) +vy+ vec))
 
 (define-support-function cylinder (dir next)
-  (vsetf next (vx dir) 0 (vz dir))
-  (nv* (nvunit* next) (cylinder-radius primitive))
-  (if (< 0 (vy dir))
-      (incf (vy next) (cylinder-height primitive))
-      (decf (vy next) (cylinder-height primitive))))
+  (nvunit (vsetf next (vx dir) 0 (vz dir)))
+  (cond ((< 0 (vy dir))
+         (incf (vy next) (cylinder-height primitive))
+         (nv* next (cylinder-radius-top primitive)))
+        (T
+         (decf (vy next) (cylinder-height primitive))
+         (nv* next (cylinder-radius-bottom primitive)))))
 
 ;; NOTE: the cone is centred at 0,0,0 and points Y-up. the "height" is the half-height
 ;;       and the tip is in Y-up.
@@ -537,7 +544,7 @@
 
 (define-support-function cone (dir next)
   (vsetf next (vx dir) 0 (vz dir))
-  (nv* (nvunit* next) (cylinder-radius primitive))
+  (nv* (nvunit* next) (cylinder-radius-bottom primitive))
   (decf (vy next) (cylinder-height primitive))
   (let ((b (vec 0 (cylinder-height primitive) 0)))
     (declare (dynamic-extent b))
@@ -900,26 +907,28 @@
 
 (defmethod coerce-object ((primitive cylinder) (type (eql 'convex-mesh)) &key (segments 32))
   (with-mesh-construction (v)
-    (let ((s (cylinder-radius primitive))
+    (let ((sb (cylinder-radius-bottom primitive))
+          (st (cylinder-radius-top primitive))
           (h (cylinder-height primitive)))
       (loop with step = (/ F-2PI segments)
             for i1 = (- step) then i2
             for i2 from 0 to F-2PI by step
-            do ;; Bottom disc
-            (v (* s (cos i2)) (- h) (* s (sin i2)))
-            (v 0.0            (- h) 0.0)
-            (v (* s (cos i1)) (- h) (* s (sin i1)))
-            ;; Top Disc
-            (v 0.0            (+ h) 0.0)
-            (v (* s (cos i2)) (+ h) (* s (sin i2)))
-            (v (* s (cos i1)) (+ h) (* s (sin i1)))
+            do
+            (when (< 0 sb) ; Bottom disc
+              (v (* sb (cos i2)) (- h) (* sb (sin i2)))
+              (v 0.0             (- h) 0.0)
+              (v (* sb (cos i1)) (- h) (* sb (sin i1))))
+            (when (< 0 st) ; Top Disc
+              (v 0.0             (+ h) 0.0)
+              (v (* st (cos i2)) (+ h) (* st (sin i2)))
+              (v (* st (cos i1)) (+ h) (* st (sin i1))))
             ;; Wall
-            (v (* s (cos i2)) (- h) (* s (sin i2)))
-            (v (* s (cos i1)) (- h) (* s (sin i1)))
-            (v (* s (cos i2)) (+ h) (* s (sin i2)))
-            (v (* s (cos i1)) (+ h) (* s (sin i1)))
-            (v (* s (cos i2)) (+ h) (* s (sin i2)))
-            (v (* s (cos i1)) (- h) (* s (sin i1)))))
+            (v (* sb (cos i2)) (- h) (* sb (sin i2)))
+            (v (* sb (cos i1)) (- h) (* sb (sin i1)))
+            (v (* st (cos i2)) (+ h) (* st (sin i2)))
+            (v (* st (cos i1)) (+ h) (* st (sin i1)))
+            (v (* st (cos i2)) (+ h) (* st (sin i2)))
+            (v (* sb (cos i1)) (- h) (* sb (sin i1)))))
     (multiple-value-bind (vertices faces) (finalize)
       (make-primitive-like primitive #'make-convex-mesh :vertices vertices :faces faces :keep-original-vertices T))))
 
@@ -1041,11 +1050,12 @@
     ;;       ideally we'd first try to find the ideal orientation along which to fit the bounding
     ;;       cylinder, then determine the size along that orientation, and adjust the resulting
     ;;       primitive's transforms
+    ;; TODO: This also does not account for different radii which could lead to an even better fit.
     (loop for i from 0 below (length vertices) by 3
           do (setf height (max height (abs (aref vertices (+ i 1)))))
              (setf radius (max radius (abs (aref vertices (+ i 0)))))
              (setf radius (max radius (abs (aref vertices (+ i 2))))))
-    (make-primitive-like primitive #'make-cylinder :radius radius :height height)))
+    (make-primitive-like primitive #'make-cylinder :radius-bottom radius :radius-top radius :height height)))
 
 (defmethod coerce-object ((primitive general-mesh) (type (eql 'cone)) &key)
   (implement!))

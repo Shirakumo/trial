@@ -172,7 +172,7 @@
   (setf (inertia-tensor entity) (box-tensor (mass entity) (box-bsize primitive))))
 
 (defmethod (setf inertia-tensor) ((primitive cylinder) (entity rigidbody))
-  (setf (inertia-tensor entity) (cylinder-tensor (mass entity) (cylinder-radius primitive) (cylinder-height primitive))))
+  (setf (inertia-tensor entity) (cylinder-tensor (mass entity) (cylinder-radius-bottom primitive) (cylinder-radius-top primitive) (cylinder-height primitive))))
 
 (defmethod (setf inertia-tensor) ((primitive cone) (entity rigidbody))
   (setf (inertia-tensor entity) (cone-tensor (mass entity) (cone-radius primitive) (cone-height primitive))))
