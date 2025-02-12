@@ -41,8 +41,10 @@
 (defun (setf retained) (bool id)
   (setf (gethash id +retention-table+) (if bool 1 0)))
 
-(defun clear-retained ()
-  (clrhash +retention-table+))
+(defun clear-retained (&optional id)
+  (if id
+      (setf (retained id) NIL)
+      (clrhash +retention-table+)))
 
 (defun reset-retained (&optional (scene (scene +main+)))
   (clear-retained)
