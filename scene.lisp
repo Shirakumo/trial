@@ -70,4 +70,6 @@
 
 (defun ensure-entity (name container &optional (class name) &rest initargs)
   (or (node name container)
-      (enter (apply #'make-instance class :name name initargs) container)))
+      (let ((object (apply #'make-instance class :name name initargs)))
+        (enter object container)
+        object)))
