@@ -2,7 +2,7 @@
 
 (define-example input
   :title "Input Events"
-  :description ""
+  :description "Shows input events that Trial receives."
   :slots ((events :accessor events)
           (gamepads :accessor gamepads))
   (enter (make-instance '2d-camera) scene)
