@@ -43,7 +43,7 @@
   :min-filter :nearest :mag-filter :nearest)
 
 (define-asset (trial neutral-mro) static 'texture
-  :pixel-data (with-image (1 1 3) (case z ((0 1) 255) (2 0)))
+  :pixel-data (with-image (1 1 3) (case z (0 0) (1 255) (2 0)))
   :width 1 :height 1 :internal-format :rgb
   :min-filter :nearest :mag-filter :nearest)
 
