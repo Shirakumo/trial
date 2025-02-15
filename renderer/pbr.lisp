@@ -66,6 +66,10 @@
         ((and metalness-texture)
          (let ((tex (ensure-generated metalness-texture)))
            (setf (swizzle tex) '(:r 1 1 1))
+           (setf (aref (textures material) 1) tex)))
+        ((and occlusion-texture)
+         (let ((tex (ensure-generated occlusion-texture)))
+           (setf (swizzle tex) '(0 1 :r 1))
            (setf (aref (textures material) 1) tex)))))
 
 (defmethod texture-names ((material pbr-material))
