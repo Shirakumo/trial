@@ -413,10 +413,12 @@
                  (let ((array (make-array weights :element-type 'single-float)))
                    (multiple-value-bind (shift offset) (floor offset value-stride)
                      (dotimes (i weights array)
-                       (setf (aref array i) (elt values (+ j offset
-                                                           ;; Wrap to next index after all the weights
-                                                           (* shift weights value-stride)
-                                                           (* i value-stride)))))))))
+                       (let ((idx (+ j offset
+                                     ;; Wrap to next index after all the weights
+                                     (* shift weights value-stride)
+                                     (* i value-stride))))
+                         (when (< idx (length values))
+                           (setf (aref array i) (elt values idx)))))))))
           (dotimes (i (length times))
             (setf (aref frames i)
                   (make-frame (elt times i)
