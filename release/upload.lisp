@@ -64,7 +64,7 @@
             for chunk from 0
             for octets-read = read then (+ octets-read read)
             while (< 0 read)
-            do (when (and (< 0 chunk) (= 0 (mod chunk 40)))
+            do (when (and (< 0 chunk) (= 0 (mod chunk 15)))
                  (terpri deploy:*status-output*))
                (format deploy:*status-output* "~4,1f% " (/ (* 100 octets-read) octets-total))
                (north:make-signed-data-request client endpoint
@@ -79,6 +79,7 @@
 
 (defmethod upload ((service (eql :keygen)) &rest args &key (release (release)) (bundles (config :keygen :bundles)) &allow-other-keys)
   (let* ((version (release-version release)))
+    (remf args :release)
     (loop for (bundle file) on bundles by #'cddr
           do (deploy:status 3 "Uploading ~a" bundle)
              (apply #'upload-keygen-file (bundle-path bundle :version version) (princ-to-string file) version args))))
