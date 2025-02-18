@@ -359,6 +359,10 @@
                                 :vertex-form (vertex-form a)
                                 :vertex-attributes attributes))))
 
+(defmethod 3ds:geometry ((data mesh-data))
+  (3ds:mesh (reordered-vertex-data data '(:location))
+            (simplify (faces data) '(unsigned-byte 32))))
+
 (defmacro with-mesh-construction ((constructor &key (finalizer 'finalize) (attributes '(location)) (deduplicate T)) &body body)
   (let ((vertices (gensym "VERTICES"))
         (faces (gensym "FACES"))

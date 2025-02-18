@@ -629,6 +629,15 @@
 (defmethod sample-volume ((primitive triangle) &optional vec)
   (sampling:triangle (triangle-a primitive) (triangle-b primitive) (triangle-c primitive) vec))
 
+(defmethod 3ds:geometry ((primitive triangle))
+  (let ((a (triangle-a primitive))
+        (b (triangle-b primitive))
+        (c (triangle-c primitive)))
+    (3ds:mesh (f32-vec (vx a) (vy a) (vz a)
+                       (vx b) (vy b) (vz b)
+                       (vx c) (vy c) (vz c))
+              (u16-vec 0 1 2))))
+
 (define-support-function triangle (dir next)
   (let ((furthest most-negative-single-float))
     (flet ((test (vert)
@@ -670,6 +679,10 @@
 
 (defmethod compute-bounding-sphere ((primitive general-mesh))
   (org.shirakumo.fraf.manifolds:bounding-sphere (general-mesh-vertices primitive)))
+
+(defmethod 3ds:geometry ((primitive general-mesh))
+  (3ds:mesh (vertices primitive)
+            (simplify (faces primitive) '(unsigned-byte 32))))
 
 (define-primitive-type (convex-mesh general-mesh)
     (keep-original-vertices)

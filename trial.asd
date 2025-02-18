@@ -103,7 +103,7 @@
                 :components ((:file "raw")))
                (:module "physics"
                 :depends-on ("package" "conditions" "helpers" "bounds")
-                :components ((:file "toolkit")
+                :components ((:file "acceleration" :depends-on ("resolution"))
                              (:file "constants" :depends-on ("toolkit"))
                              (:file "contact" :depends-on ("core"))
                              (:file "core" :depends-on ("toolkit"))
@@ -117,6 +117,7 @@
                              (:file "primitives" :depends-on ("core"))
                              (:file "ray" :depends-on ("primitives"))
                              (:file "resolution" :depends-on ("rigidbody" "contact" "ray"))
+                             (:file "toolkit")
                              (:file "trigger" :depends-on ("resolution"))
                              (:file "v-clip" :depends-on ("hit-detection" "ray"))
                              (:file "wave" :depends-on ((:.. "shader-pass") (:.. "effects")))

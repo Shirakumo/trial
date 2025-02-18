@@ -342,21 +342,3 @@
 
 (defmethod detect-hits (other (scene physics-scene) hits start end)
   (detect-hits other (physics-system scene) hits start end))
-
-(defmethod 3ds:call-with-all (function (scene physics-scene))
-  (3ds:call-with-all function (physics-system scene)))
-
-(defmethod 3ds:call-with-candidates (function (scene physics-scene) region)
-  (3ds:call-with-candidates function (physics-system scene) region))
-
-(defmethod 3ds:call-with-contained (function (scene physics-scene) region)
-  (3ds:call-with-contained function (physics-system scene) region))
-
-(defmethod 3ds:call-with-intersecting (function (scene physics-scene) origin direction)
-  (3ds:call-with-intersecting function (physics-system scene) origin direction))
-
-(defmethod 3ds:call-with-overlapping (function (scene physics-scene) region)
-  (3ds:call-with-overlapping function (physics-system scene) region))
-
-(defmethod 3ds:call-with-pairs (function (scene physics-scene))
-  (3ds:call-with-pairs function (physics-system scene)))
