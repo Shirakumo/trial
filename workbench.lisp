@@ -60,6 +60,9 @@
       (setf (vy loc) (- (- 720 70)))
       (setf (vy vel) (- (vy vel))))))
 
+(define-handler (bouncer input-event) ()
+  (v:info :trial.workbench "~a" input-event))
+
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
     (disable-feature :cull-face)
