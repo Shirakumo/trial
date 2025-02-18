@@ -19,13 +19,13 @@
   (3ds:call-with-pairs function (physics-system scene)))
 
 (defmethod 3ds:serialize ((scene physics-scene) file object->id)
-  (3ds:serialize (physics-system system) file object->id))
+  (3ds:serialize (physics-system scene) file object->id))
 
 (defmethod 3ds:deserialize ((scene physics-scene) file id->object)
-  (3ds:deserialize (physics-system system) file id->object))
+  (3ds:deserialize (physics-system scene) file id->object))
 
-(defmethod 3ds:reoptimize ((scene physics-scene))
-  (3ds:reoptimize (physics-system system)))
+(defmethod 3ds:reoptimize ((scene physics-scene) &rest args &key &allow-other-keys)
+  (apply #'3ds:reoptimize (physics-system scene) args))
 
 (defclass accelerated-rigidbody-system (rigidbody-system)
   ((dynamic-acceleration-structure :initform (org.shirakumo.fraf.trial.space.kd-tree:make-kd-tree) :accessor dynamic-acceleration-structure)
@@ -57,10 +57,10 @@
   (3ds:call-with-pairs function (dynamic-acceleration-structure system))
   (3ds:call-with-pairs function (static-acceleration-structure system)))
 
-(defmethod 3ds:reoptimize ((system accelerated-rigidbody-system))
+(defmethod 3ds:reoptimize ((system accelerated-rigidbody-system) &rest args &key &allow-other-keys)
   (v:info :trial.physics "Reoptimizing ~a" system)
-  (3ds:reoptimize (static-acceleration-structure system))
-  (3ds:reoptimize (dynamic-acceleration-structure system)))
+  (apply #'3ds:reoptimize (static-acceleration-structure system) args)
+  (apply #'3ds:reoptimize (dynamic-acceleration-structure system) args))
 
 (defmethod 3ds:serialize ((system accelerated-rigidbody-system) file object->id)
   (3ds:serialize (static-acceleration-structure system) file object->id))
@@ -173,7 +173,7 @@
 (defmethod 3ds:deserialize :after ((system bsp-accelerated-rigidbody-system) file id->object)
   (setf (bsp-built-p system) T))
 
-(defmethod 3ds:reoptimize :after ((system bsp-accelerated-rigidbody-system))
+(defmethod 3ds:reoptimize :after ((system bsp-accelerated-rigidbody-system) &key)
   (setf (bsp-built-p system) T))
 
 (defmethod start-frame ((system bsp-accelerated-rigidbody-system))
