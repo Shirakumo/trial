@@ -188,13 +188,13 @@
        (defclass ,name ,superclasses
          ,(loop for (name default . args) in slots
                 collect `(,name :initarg ,(kw name) :initform ,(if (eql default 'arg!) `(error "~a required." ',name)) ,@args)))
-
-       (defmethod print-object ((event ,name) stream)
-         (print-unreadable-object (event stream :type T :identity T)
-           (format stream "~@{~a~^ ~}"
-                   ,@(loop for slot in slots
-                           for reader = (getf (cddr slot) :reader)
-                           collect `(,reader event))))))))
+       ,@(when slots
+           `((defmethod print-object ((event ,name) stream)
+                (print-unreadable-object (event stream :type T :identity T)
+                  (format stream "~@{~a~^ ~}"
+                          ,@(loop for slot in slots
+                                  for reader = (getf (cddr slot) :reader)
+                                  collect `(,reader event))))))))))
 
 (defmacro define-event-pool (class &optional (count 32))
   `(setf (gethash ',class +event-pools+) (make-event-pool ',class ,count)))

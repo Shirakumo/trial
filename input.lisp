@@ -68,6 +68,10 @@
 (define-event gamepad-event (input-event)
   device)
 
+(defmethod print-object ((event gamepad-event) stream)
+  (print-unreadable-object (event stream :type T)
+    (format stream "~a" (device event))))
+
 (define-event gamepad-button-event (gamepad-event digital-event)
   button)
 
