@@ -183,10 +183,7 @@
   (unless (nxgl:init)
     (error "Failed to initialize NXGL!"))
   (setf %gl:*gl-get-proc-address* #'nxgl:proc-address)
-  (%gl::reset-gl-pointers)
-  (setf sb-sys::*software-version* (nxgl:software-version))
-  (setf sb-sys::*machine-instance* (nxgl:machine-instance))
-  (setf sb-sys::*machine-version* "ARM Cortex-A57"))
+  (%gl::reset-gl-pointers))
 
 (deploy:define-hook (:quit nxgl) ()
   (nxgl:shutdown))
@@ -249,11 +246,13 @@
           (:mouse-wheel (delta)
            (fire 'mouse-scroll :pos (mouse-pos context) :delta delta))
 
-          (:key-press (code)
-           (fire 'key-press :key (scan-code->keyword code)))
+          (:key-press (code modifiers)
+           (fire 'key-press :key (scan-code->keyword code)
+                            :modifiers (cffi:foreign-bitfield-symbols 'nxgl:modifier modifiers)))
 
-          (:key-release (code)
-           (fire 'key-release :key (scan-code->keyword code))))))))
+          (:key-release (code modifiers)
+           (fire 'key-release :key (scan-code->keyword code)
+                              :modifiers (cffi:foreign-bitfield-symbols 'nxgl:modifier modifiers))))))))
 
 (defmethod org.shirakumo.depot:commit :after ((depot org.shirakumo.depot.zip::zip-file-archive) &key)
   (nxgl:commit-save))

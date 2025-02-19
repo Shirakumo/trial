@@ -7,6 +7,7 @@
   (:export
    #:nxgl
    #:error
+   #:modifier
    #:check-error
    #:event
    #:event-type
@@ -72,6 +73,18 @@
   :mouse-wheel
   :key-press
   :key-release)
+
+(cffi:defbitfield modifier
+  (:control     #b00000000000001)
+  (:shift       #b00000000000010)
+  (:left-alt    #b00000000000100)
+  (:right-alt   #b00000000001000)
+  (:gui         #b00000000010000)
+  (:caps-lock   #b00000100000000)
+  (:scroll-lock #b00001000000000)
+  (:num-lock    #b00010000000000)
+  (:katakana    #b00100000000000)
+  (:hiragana    #b01000000000000))
 
 (cffi:defcvar (error "nxgl_error") error)
 
