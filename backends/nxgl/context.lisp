@@ -152,7 +152,10 @@
   pos)
 
 (defmethod local-key-string ((context context) scan-code)
-  " ")
+  (etypecase scan-code
+    (null NIL)
+    (integer (local-key-string context (scan-code->keyword scan-code)))
+    (keyword (keyword->string scan-code))))
 
 (defmethod (setf icon) (icon (context context))
   icon)
@@ -183,7 +186,10 @@
   (unless (nxgl:init)
     (error "Failed to initialize NXGL!"))
   (setf %gl:*gl-get-proc-address* #'nxgl:proc-address)
-  (%gl::reset-gl-pointers))
+  (%gl::reset-gl-pointers)
+  (setf sb-sys::*software-version* (nxgl:software-version))
+  (setf sb-sys::*machine-instance* (nxgl:machine-instance))
+  (setf sb-sys::*machine-version* "ARM Cortex-A57"))
 
 (deploy:define-hook (:quit nxgl) ()
   (nxgl:shutdown))
@@ -251,8 +257,13 @@
                             :modifiers (cffi:foreign-bitfield-symbols 'nxgl:modifier modifiers)))
 
           (:key-release (code modifiers)
-           (fire 'key-release :key (scan-code->keyword code)
-                              :modifiers (cffi:foreign-bitfield-symbols 'nxgl:modifier modifiers))))))))
+           (let ((modifiers (cffi:foreign-bitfield-symbols 'nxgl:modifier modifiers)))
+             (fire 'key-release :key (scan-code->keyword code) :modifiers modifiers)
+             (let ((string (keyword->string (scan-code->keyword code))))
+               (when string
+                 (fire 'text-entered :text (if (member :shift modifiers)
+                                               (cdr string)
+                                               (car string))))))))))))
 
 (defmethod org.shirakumo.depot:commit :after ((depot org.shirakumo.depot.zip::zip-file-archive) &key)
   (nxgl:commit-save))
