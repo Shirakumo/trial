@@ -203,6 +203,32 @@
   (test "Alloc 1GB in 1 chunk"
     (null (make-array (* 1024 1024 1024) :element-type '(unsigned-byte 8)))))
 
+(group "Events"
+  (test "Create an event" (make-event 'tick :dt 0.01f0 :tt 0d0 :fc 0))
+  (test "Perform a dispatch" (handle (make-event 'tick :dt 0.01f0 :tt 0d0 :fc 0) (make-instance 'listener)))
+  (test "Time 1'000'000 dispatches"
+    (let ((ev (make-event 'tick :dt 0.01f0 :tt 0d0 :fc 0))
+          (obj (make-instance 'listener)))
+      (org.shirakumo.verbose:with-muffled-logging (NIL)
+        (with-timing-report ()
+          (dotimes (i 1000000) (handle ev obj))))))
+  (test "Time 1'000'000 randomized dispatches"
+    (let ((evs (vector
+                (make-event 'tick :dt 0.01f0 :tt 0d0 :fc 0)
+                (make-event 'pre-tick :dt 0.01f0 :tt 0d0 :fc 0)
+                (make-event 'key-press :key :a)
+                (make-event 'class-changed :changed-class 'a)))
+          (obj (vector
+                (make-instance 'listener)
+                (make-instance 'listener)
+                (make-instance 'listener)
+                (make-instance 'listener))))
+      (org.shirakumo.verbose:with-muffled-logging (NIL)
+        (with-timing-report ()
+          (dotimes (i 1000000)
+            (handle (aref evs (mod (random-state::squirrel-hash i 11) (length evs)))
+                    (aref obj (mod (random-state::squirrel-hash i 23) (length obj))))))))))
+
 (group "Query machine information"
   (test "CPU time" (org.shirakumo.machine-state:process-time))
   (test "CPU room" (org.shirakumo.machine-state:gc-room))
