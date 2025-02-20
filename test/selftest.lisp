@@ -133,7 +133,7 @@
   ((setup-thunk :initarg :setup-thunk :accessor setup-thunk)
    (duration :initarg :duration :initform 1.0 :accessor duration)))
 
-(defmethod update :after ((main main) tt dt fc)
+(defmethod update :after ((main thunk-main) tt dt fc)
   (when (<= (duration main) tt)
     (quit (context main))))
 
