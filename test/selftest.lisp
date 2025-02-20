@@ -53,6 +53,7 @@
           (funcall fn)))))
 
 (defun run (&key (skip *default-skip*))
+  (org.shirakumo.verbose:output-here)
   (let ((*failures* ()))
     (org.shirakumo.verbose:with-muffled-logging ()
       (loop for (test fn) across *tests*
@@ -183,10 +184,6 @@
   (test "Load libmixed" (cffi:load-foreign-library 'org.shirakumo.fraf.mixed.cffi:libmixed))
   (test "Lisp callback" (cffi:foreign-funcall-pointer (cffi:callback selftest) () :int 10 :int)))
 
-(group "Internet"
-  (test "TCP connect" (usocket:socket-close (usocket:socket-connect "example.com" 80)))
-  (test "DNS query" (org.shirakumo.dns-client:query-data "example.com" :type :A)))
-
 (group "Threading"
   (test "Create thread" (wait-for-thread-exit (with-thread ("Test"))))
   (test "Rename thread" (rename-thread "TEST")))
@@ -239,11 +236,6 @@
   (test "Username" (system-username))
   (test "Language" (system-locale:language)))
 
-(group "Launch external programs"
-  (test "Open browser" (open-in-browser "https://shirakumo.org"))
-  (test "File manager" (open-in-file-manager (self)))
-  (test "Error message" (emessage "Test")))
-
 (group "Timing"
   (test "Time units/sec" INTERNAL-TIME-UNITS-PER-SECOND)
   (test "Internal real time" (get-internal-real-time))
@@ -268,6 +260,15 @@
   (test "Create logfile" (alexandria:write-string-into-file "test" (logfile) :if-exists :supersede))
   (test "Config directory" (config-directory))
   (test "Save settings" (save-settings) T))
+
+(group "Launch external programs"
+  (test "Open browser" (open-in-browser "https://shirakumo.org"))
+  (test "File manager" (open-in-file-manager (self)))
+  (test "Error message" (emessage "Test")))
+
+(group "Internet"
+  (test "TCP connect" (usocket:socket-close (usocket:socket-connect "example.com" 80)))
+  (test "DNS query" (org.shirakumo.dns-client:query-data "example.com" :type :A)))
 
 (group "Powersaving"
   (test "Prevent powersaving" (prevent-powersave))
