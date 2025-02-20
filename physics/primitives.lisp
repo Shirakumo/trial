@@ -1142,7 +1142,7 @@
                          (vector-push-extend primitive new))))
                  (general-mesh
                   (v:warn :trial.physics "Decomposing ~a into convex primitives..." primitive)
-                  (with-timing-report (:info :trial.physics "Decomposed ~d tris into ~d primitives with ~d tris total (~,1@f%) in ~fs run-time ~fs real-time"
+                  (with-timing-report (:info :trial.physics "Decomposed ~d tris into ~d primitives with ~d tris total (~,1@f%) in ~fs"
                                              (length (general-mesh-faces primitive)) (length new)
                                              (loop for primitive across new sum (length (convex-mesh-faces primitive)))
                                              (percentile-change (loop for primitive across new sum (length (convex-mesh-faces primitive)))

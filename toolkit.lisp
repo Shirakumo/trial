@@ -581,16 +581,16 @@
   `(with-simple-restart (continue "Ignore the error and continue.")
      ,@body))
 
-(defmacro with-timing-report ((level category &optional (format "Operation took ~fs run-time ~fs real-time") &rest args) &body body)
-  (let ((run (gensym "RUNTIME"))
-        (real (gensym "REALTIME")))
-    `(let ((,run (get-internal-run-time))
-           (,real (get-internal-real-time)))
+(defmacro with-timing-report ((&optional (level :info) (category :trial.test) (format "Operation took ~fs") &rest args) &body body)
+  (let ((s1 (gensym "SECS")) (ss1 (gensym "SUBSECS"))
+        (s2 (gensym "SECS")) (ss2 (gensym "SUBSECS")))
+    `(multiple-value-bind (,s1 ,ss1) (org.shirakumo.precise-time:get-monotonic-time)
        (unwind-protect
             (progn ,@body)
-         (v:log ,(kw level) ,category ,format ,@args
-                (/ (- (get-internal-run-time) ,run) INTERNAL-TIME-UNITS-PER-SECOND)
-                (/ (- (get-internal-real-time) ,real) INTERNAL-TIME-UNITS-PER-SECOND))))))
+         (multiple-value-bind (,s2 ,ss2) (org.shirakumo.precise-time:get-monotonic-time)
+           (let* ((,s1 (- ,s2 ,s1)) (,ss1 (- ,ss2 ,ss1))
+                  (,s2 (+ ,s1 (/ (float ,ss1 0d0) org.shirakumo.precise-time:MONOTONIC-TIME-UNITS-PER-SECOND))))
+             (v:log ,(kw level) ,category ,format ,@args ,s2)))))))
 
 (defun format-timestring (&key (timestamp (get-universal-time)) (as :datetime))
   (multiple-value-bind (s m h dd mm yy) (decode-universal-time timestamp)

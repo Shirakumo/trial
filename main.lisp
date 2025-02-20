@@ -79,7 +79,7 @@
 
 (defmethod setup-scene :around ((main main) (scene scene))
   (v:info :trial.main "Setting up ~a" scene)
-  (with-timing-report (info :trial.main "Scene setup took ~fs run time, ~fs clock time.")
+  (with-timing-report (info :trial.main "Scene setup took ~fs")
     (call-next-method))
   ;; Cause camera to refresh
   (issue scene 'resize :width (width main) :height (height main))
@@ -99,7 +99,7 @@
     (setf (scene main) new)
     (with-cleanup-on-failure (setf (scene main) old)
       (setup-scene main new)
-      (with-timing-report (info :trial.main "Commit took ~fs run time, ~fs clock time.")
+      (with-timing-report (info :trial.main "Commit took ~fs")
         (commit new (loader main)))
       (handle (make-event 'scene-changed :scene new :old-scene old) new)))
   (values new old))
