@@ -38,18 +38,6 @@
   (let ((version (version :app))) (defmethod version ((_ (eql :app))) version))
   (let ((version (version :trial))) (defmethod version ((_ (eql :trial))) version)))
 
-#+nx
-(deploy:define-hook (:build finalize-clos -10000000) ()
-  (flet ((maybe-finalize (fun)
-           (when (typep fun 'generic-function)
-             (sb-pcl::set-funcallable-instance-function
-              fun (sb-pcl::make-final-caching-dfun fun nil nil)))))
-    (do-all-symbols (symbol)
-      (when (fboundp symbol)
-        (handler-case
-            (maybe-finalize (fdefinition symbol))
-          (error () (format T "~&Failed to finalize ~a~%" symbol)))))))
-
 (deploy:define-hook (:boot trial) ()
   (v:restart-global-controller)
   (setf *random-state* (make-random-state T))
