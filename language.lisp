@@ -69,30 +69,36 @@
 (defvar *recursive-load* NIL)
 
 (defun load-language (&key (language (setting :language)) replace (package *package*))
-  (let ((table (if (null +language-data+)
-                   (make-hash-table :test 'eq)
-                   +language-data+))
-        (corrected-language (try-find-language language)))
+  (let ((corrected-language (try-find-language language)))
     (if corrected-language
-        (setf language corrected-language)
+        (setf language (string-downcase corrected-language))
         (error "Could not find any suitable language for ~a" language))
     (when (and (or replace (null +loaded-language+) (not (equalp +loaded-language+ language)))
                (not (equalp language *recursive-load*)))
-      (setf language (string-downcase language))
-      (v:info :trial.language "Loading language ~s from ~a" language (language-dir language))
-      (let ((files (language-files language)))
-        (cond (files
-               (dolist (file files)
-                 (load-language-file file table package))
-               (setf (gethash language *languages*) table))
-              ((null (gethash language *languages*))
-               (error "No language named ~s found." language))))
+      (cond ((or replace (null (gethash language *languages*)))
+             (v:info :trial.language "Loading language ~s from ~a" language (language-dir language))
+             (let ((files (language-files language))
+                   (table (if +language-data+
+                              (alexandria:copy-hash-table +language-data+)
+                              (make-hash-table :test 'eq))))
+               (cond (files
+                      (dolist (file files)
+                        (load-language-file file table package))
+                      (setf (gethash language *languages*) table))
+                     ((null (gethash language *languages*))
+                      (error "No language named ~s found." language)))))
+            (T
+             (v:info :trial.language "Loading language ~s from cache" language)))
       (setf +language-data+ (gethash language *languages*))
       (setf +loaded-language+ language)
       (let ((*recursive-load* language))
-        (dolist (hook *language-change-hooks* table)
+        (dolist (hook *language-change-hooks*)
           (funcall hook language))))
     language))
+
+(defun load-all-languages (&rest args &key &allow-other-keys)
+  (dolist (language (languages))
+    (apply #'load-language :language language args)))
 
 (defun save-language (file &key (language (language)) (package *package*))
   (when +language-data+

@@ -1501,6 +1501,7 @@
    #:language-files
    #:define-language-change-hook
    #:load-language
+   #:load-all-languages
    #:save-language
    #:language-string
    #:ensure-language-string
