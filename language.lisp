@@ -16,7 +16,8 @@
 (defun try-find-language (language)
   (etypecase language
     ((member NIL :system)
-     (let ((languages (system-locale:languages)))
+     (let ((languages (when #+nx (deploy:deployed-p) #-nx T
+                        (system-locale:languages))))
        (if languages
            (try-find-language languages)
            (try-find-language "eng"))))
