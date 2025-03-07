@@ -29,11 +29,6 @@
   (v:remove-global-controller)
   ;; Finalize all subclasses of shader-entity to avoid shader recompilations
   (apply-class-changes (find-class 'shader-entity))
-  (labels ((recurse (class)
-             (c2mop:finalize-inheritance class)
-             (dolist (sub (c2mop:class-direct-subclasses class))
-               (recurse sub))))
-    (recurse (find-class 'shader-entity)))
   ;; Fix versions to eliminate source dependency
   (let ((version (version :app))) (defmethod version ((_ (eql :app))) version))
   (let ((version (version :trial))) (defmethod version ((_ (eql :trial))) version)))
