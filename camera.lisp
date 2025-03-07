@@ -91,6 +91,9 @@
 (defmethod screen-area ((entity sized-entity) (camera 2d-camera))
   (* (vx (bsize entity)) (vy (bsize entity))))
 
+(defmethod focal-point ((camera 2d-camera))
+  (global-location camera))
+
 (defmethod in-view-p ((entity sized-entity) (camera 2d-camera))
   (let ((eloc (global-location entity))
         (esiz (global-bsize entity))
