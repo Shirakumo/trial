@@ -17,8 +17,8 @@
   :title "Animated Model"
   :description "An example showing a rigged 3D model."
   (enter (make-instance 'directional-light) scene)
-  (enter (make-instance 'ambient-light :color (vec 0.5 0.5 0.5)) scene)
+  (enter (make-instance 'ambient-light :color (vec3 0.25)) scene)
   (enter (make-instance 'vertex-entity :vertex-array (// 'trial 'grid)) scene)
-  (enter (make-instance 'rigging-entity :asset (assets:asset :woman)) scene)
+  (enter (make-instance 'rigging-entity :asset (assets:asset :woman) :scaling (vec3 0.01)) scene)
   (enter (make-instance 'target-camera :target (vec 0 2 0) :location (vec 0 3 5)) scene)
   (enter (make-instance 'phong-render-pass) scene))
