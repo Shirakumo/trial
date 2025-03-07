@@ -114,7 +114,7 @@
 (define-shader-entity shader-pass (flow:static-node)
   ((framebuffer :initform NIL :accessor framebuffer)
    (active-p :initform T :accessor active-p)
-   (clear-color :initform (vec4) :initarg :clear-color :accessor clear-color)
+   (clear-color :initform (vec4) :accessor clear-color)
    (clear-bits :initform 17664 :accessor clear-bits))
   (:metaclass shader-pass-class)
   (:inhibit-shaders (shader-entity :fragment-shader)))
