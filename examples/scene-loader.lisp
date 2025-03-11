@@ -67,6 +67,7 @@
          (handle ev (camera scene))
          (handle ev (node :controller scene))
          (loop for pass across (passes scene)
-               do (handle ev pass)))
+               do (handle ev pass))
+         (project-view (camera scene)))
         (T
          (call-next-method))))
