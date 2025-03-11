@@ -23,20 +23,16 @@
 (define-transfer rigid-shape
   (physics-primitives physics-primitives (lambda (p) (map-into (make-array (length p)) #'clone p))))
 
-(define-hit-detector (rigid-shape primitive)
+(define-hit-detector (rigid-shape T)
   (loop for ai across (physics-primitives a)
         do (detect-hits ai b)))
-
-(define-hit-detector (rigid-shape ray)
-  (loop for ai across (physics-primitives a)
-        do (detect-hits b ai)))
 
 (define-hit-detector (rigid-shape rigid-shape)
   (loop for ai across (physics-primitives a)
         do (loop for bi across (physics-primitives b)
                  do (detect-hits ai b))))
 
-(define-distance (rigid-shape primitive)
+(define-distance (rigid-shape T)
   (loop for ai across (physics-primitives a)
         minimize (distance ai b)))
 
