@@ -39,6 +39,10 @@
 (defmethod instantiate-prefab ((prefab prefab) (asset (eql T)))
   (instantiate-prefab prefab (prefab-asset prefab)))
 
+#-trial-release
+(defmethod instantiate-prefab :before ((prefab prefab) (asset asset))
+  (check-loaded asset))
+
 (defmethod instantiate-prefab :around ((prefab prefab) (asset asset))
   (unless (slot-value prefab 'instantiated)
     ;; We do this rigamarole here to avoid REGISTER being called prematurely
