@@ -60,7 +60,8 @@
 (define-handler ((scene scene-loader-scene) text-entered :after) (text)
   (case (char text 0)
     (#\p (setf (paused-p scene) (not (paused-p scene))))
-    (#\r (setf (file scene) (file scene)))))
+    (#\r (setf (file scene) (file scene)))
+    (#\c (setf (camera scene) (make-instance 'editor-camera :move-speed 0.1)))))
 
 (define-handler ((scene scene-loader-scene) (ev trial::tick-event) :around) ()
   (cond ((paused-p scene)
