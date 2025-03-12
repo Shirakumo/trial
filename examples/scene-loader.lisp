@@ -10,7 +10,7 @@
   :superclasses (trial:physics-scene)
   :slots ((physics-system :initform (make-instance 'debug-rigidbody-system :units-per-metre 0.1))
           (incremental-load :initform NIL :accessor incremental-load)
-          (file :initform NIL :accessor file)
+          (file :initform NIL :initarg :file :accessor file)
           (paused-p :initform T :accessor paused-p))
   (enter (make-instance 'gravity :gravity (vec 0 -10 0)) scene)
   (let ((zpre (make-instance 'z-prepass))
@@ -20,7 +20,7 @@
     (connect (port zpre 'depth) (port render 'depth-map) scene)
     (connect (port render 'color) (port map 'previous-pass) scene)
     (connect (port map 'color) (port fxaa 'previous-pass) scene))
-  (setf (file scene) (input* (assets:asset :sponza))))
+  (setf (file scene) (or (file scene) (input* (assets:asset :sponza)))))
 
 (defmethod setup-ui ((scene scene-loader-scene) panel)
   (let ((layout (make-instance 'alloy:grid-layout :col-sizes '(T 140 140) :row-sizes '(30)))

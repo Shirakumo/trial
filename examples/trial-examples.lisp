@@ -29,11 +29,11 @@
   ((paused-p :initform NIL :accessor paused-p))
   (:default-initargs :context '(:vsync T :version (3 3))))
 
-(defmethod initialize-instance ((main example) &key example)
+(defmethod initialize-instance ((main example) &rest scene-args &key example &allow-other-keys)
   (when example
     (let ((scene (trial::mksym #.*package* example '-scene)))
       (if (and (find-class scene NIL) (subtypep scene 'scene))
-          (setf (scene main) (make-instance scene))
+          (setf (scene main) (apply #'make-instance scene (remf* scene-args :example :context)))
           (v:error :trial.examples "No such example ~s" example))))
   (call-next-method))
 
