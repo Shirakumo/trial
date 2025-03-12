@@ -86,10 +86,11 @@
     (do-scene-graph (child entity)
       (unless (eq child entity)
         (when (typep child 'animated-entity)
-          (setf found T)
+          (setf found child)
           (setf (animation-controller child) entity))))
     (when found
-      (change-class entity 'basic-animation-controller)))
+      (change-class entity 'basic-animation-controller)
+      (<- entity (animation-controller found))))
   entity)
 
 (defun construct-node (node gltf model generator)
