@@ -97,7 +97,7 @@
            (return-from detect-hits start))
          (let ((hit (aref hits start)))
            (block ,block
-             (flet ((finish-hit (&optional a-detail b-detail)
+             (flet ((finish-hit (&optional (a-detail ,av) (b-detail ,bv))
                       (finish-hit hit ,av ,bv a-detail b-detail)
                       (incf start)
                       (if (< start end)

@@ -182,6 +182,8 @@
 (defmethod <- progn ((target hit) (source hit))
   (setf (hit-a target) (hit-a source))
   (setf (hit-b target) (hit-b source))
+  (setf (hit-a-detail target) (hit-a-detail source))
+  (setf (hit-b-detail target) (hit-b-detail source))
   (v<- (hit-location target) (hit-location source))
   (v<- (hit-normal target) (hit-normal source))
   (setf (hit-restitution target) (hit-restitution source))
