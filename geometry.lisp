@@ -114,7 +114,7 @@
 
 (defmethod print-object ((data mesh-data) stream)
   (print-unreadable-object (data stream :type T :identity T)
-    (format stream "~@[~a~]" (name data))))
+    (format stream "~@[~s~]" (name data))))
 
 (defmethod (setf material) ((name string) (data mesh-data))
   (setf (material data) (material name)))
