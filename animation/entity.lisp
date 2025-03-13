@@ -12,7 +12,8 @@
 (define-accessor-wrapper-methods palette-texture (base-animated-entity (animation-controller base-animated-entity)))
 
 (defmethod (setf mesh) :after ((meshes cons) (entity base-animated-entity))
-  (setf (mesh (animation-controller entity)) meshes))
+  (unless (eq (animation-controller entity) entity)
+    (setf (mesh (animation-controller entity)) meshes)))
 
 (defmethod stage :after ((entity base-animated-entity) (area staging-area))
   (register-load-observer area (animation-controller entity) (mesh-asset entity))
@@ -49,9 +50,10 @@
 (defmethod (setf mesh) :after ((meshes cons) (entity morphed-entity))
   (let ((morphs ()))
     (dolist (mesh meshes)
-      (let ((morph (find-morph mesh (animation-controller entity) NIL)))
-        (push (when morph (cons morph (find-morph mesh morph)))
-              morphs)))
+      (when (skinned-p mesh)
+        (let ((morph (find-morph mesh (animation-controller entity) NIL)))
+          (push (when morph (cons morph (find-morph mesh morph)))
+                morphs))))
     (setf (morphs entity) (if morphs (coerce (nreverse morphs) 'vector) #()))))
 
 (defmethod (setf mesh) :after ((mesh animated-mesh) (entity morphed-entity))

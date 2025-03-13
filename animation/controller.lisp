@@ -26,12 +26,14 @@
 
 (defmethod (setf mesh) :after ((meshes cons) (controller skeleton-controller))
   (dolist (mesh meshes)
-    (when (skeleton mesh)
+    (when (and (skinned-p mesh) (skeleton mesh))
       (cond ((eq (skeleton controller) (skeleton mesh)))
             ((null (skeleton controller))
              (setf (skeleton controller) (skeleton mesh)))
-            (T (error "Animation controller already bound to skeleton~%  ~a~%which is not the same as~%  ~a~%found on~%  ~a"
-                      (skeleton controller) (skeleton mesh) mesh))))))
+            (T
+             (cerror "Update the controller" "Animation controller already bound to skeleton~%  ~a~%which is not the same as~%  ~a~%found on~%  ~a"
+                      (skeleton controller) (skeleton mesh) mesh)
+             (setf (skeleton controller) (skeleton mesh)))))))
 
 (defstruct (animation-layer
             (:constructor %make-animation-layer (clip pose base)))
