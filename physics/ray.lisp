@@ -156,7 +156,7 @@
         (when (<= 0.0 discriminant)
           (let ((tt (- (- eb) (sqrt discriminant))))
             (!v+* ray-normal ray-location ray-direction tt)
-            (nvunit ray-normal)
+            (nvunit* ray-normal)
             tt))))))
 
 (define-ray-test plane ((plane-normal vec3) (plane-offset single-float))
