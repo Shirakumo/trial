@@ -31,8 +31,10 @@
 (defmethod print-object ((track animation-track) stream)
   (print-unreadable-object (track stream :type T :identity T)
     (if (valid-p track)
-        (format stream "~a ~a ~d keyframes" (start-time track) (end-time track) (length (frames track)))
-        (format stream "INVALID"))))
+        (format stream "~@[~s ~]~a ~a ~d keyframes"
+                (name track) (start-time track) (end-time track) (length (frames track)))
+        (format stream "~@[~s ~]INVALID"
+                (name track)))))
 
 (defmethod describe-object :after ((track animation-track) stream)
   (format stream "~&~%Keyframes:~%")
@@ -149,43 +151,50 @@
 
 (defmethod differentiate ((track animation-track))
   (let ((result (make-instance 'animation-track :name (name track)))
-        (frames (frames track)))
+        (frames (frames track))
+        ;; KLUDGE: hard-code here for now.
+        (physics-tick-rate 0.01))
     (when (< 0 (length frames))
-      (ecase (interpolation track)
-        (:constant
-         (setf (interpolation result) :constant)
-         #-trial-release
-         (v:warn :trial.animation "Can't differentiate constant interpolation movement of ~a" track)
-         (let* ((type (value-type track))
-                (value (ecase type
-                         ((real single-float) 0.0)
-                         (vec2 (vec2))
-                         (vec3 (vec3))
-                         (vec4 (vec4))
-                         (quat (quat)))))
-           (setf (value-type result) type)
-           (setf (frames result) (vector (make-frame (start-time track) (constant value))
-                                         (make-frame (end-time track) (constant value))))))
-        (:linear
-         (setf (interpolation result) :constant)
-         (let ((new-frames (make-array (length frames)))
-               (type (value-type track)))
-           (setf (value-type result) type)
-           (loop for i from 0 below (length frames)
-                 for frame = (aref frames i)
-                 for diff = (ecase type
-                              ((real single-float) (- (sample NIL frame 1.0) (sample NIL frame 0.0)))
-                              (vec2 (v- (sample (vec2) frame 1.0) (sample (vec2) frame 0.0)))
-                              (vec3 (v- (sample (vec3) frame 1.0) (sample (vec3) frame 0.0)))
-                              (vec4 (v- (sample (vec4) frame 1.0) (sample (vec4) frame 0.0)))
-                              ;; FIXME: I think this should turn into a rotation vec3...
-                              (quat (q- (sample (quat) frame 1.0) (sample (quat) frame 0.0))))
-                 do (setf (aref new-frames i) (make-frame (clock frame) (constant diff))))
-           (setf (frames result) new-frames)))
-        (:hermite
-         (implement!))
-        (:bezier
-         (implement!))))
+      (flet ((diff (a at b bt &optional (mul 1.0))
+               (ecase (value-type track)
+                 ((real single-float) (* (- (sample NIL b bt) (sample NIL a at)) mul))
+                 (vec2 (nv* (nv- (sample (vec2) b bt) (sample (vec2) a at)) mul))
+                 (vec3 (nv* (nv- (sample (vec3) b bt) (sample (vec3) a at)) mul))
+                 (vec4 (nv* (nv- (sample (vec4) b bt) (sample (vec4) a at)) mul))
+                 ;; FIXME: I think this should turn into a rotation vec3...
+                 (quat (nq* (nq- (sample (quat) b bt) (sample (quat) a at)) mul)))))
+        (ecase (interpolation track)
+          ((:linear :constant)
+           (setf (interpolation result) :constant)
+           (let ((new-frames (make-array (max 1 (1- (length frames)))))
+                 (type (value-type track)))
+             (setf (value-type result) type)
+             (loop for i from 0 below (1- (length frames))
+                   for frame = (aref frames i)
+                   for next = (aref frames (1+ i))
+                   for diff = (diff frame 0.0 next 0.0 (* physics-tick-rate (/ (- (clock next) (clock frame)))))
+                   do (setf (aref new-frames i) (make-frame (clock frame) (constant diff))))
+             (unless (aref new-frames 0)
+               (ecase (interpolation track)
+                 (:constant
+                  ;; With only one constant set frame there's no way to differentiate other than to
+                  ;; just set to zero. RIP.
+                  (setf (aref new-frames 0) (make-frame (clock (aref frames 0))
+                                                        (constant (ecase (value-type track)
+                                                                    ((real single-float) 0.0)
+                                                                    (vec2 (vec2))
+                                                                    (vec3 (vec3))
+                                                                    (vec4 (vec4))
+                                                                    (quat (quat)))))))
+                 (:linear
+                  ;; This is BAD, but shouldn't happen anyway, phew!
+                  (let ((frame (aref frames 0)))
+                    (setf (aref new-frames 0) (make-frame (clock frame) (constant (diff frame 0.0 frame 1.0 physics-tick-rate))))))))
+             (setf (frames result) new-frames)))
+          (:hermite
+           (implement!))
+          (:bezier
+           (implement!)))))
     result))
 
 (defclass fast-animation-track (animation-track)
@@ -288,9 +297,9 @@
 
 (defclass transform-track ()
   ((name :initarg :name :initform NIL :accessor name)
-   (location :initarg :location :initform (make-instance 'fast-animation-track) :accessor location)
-   (scaling :initarg :scaling :initform (make-instance 'fast-animation-track) :accessor scaling)
-   (rotation :initarg :rotation :initform (make-instance 'fast-animation-track) :accessor rotation)))
+   (location :initarg :location :initform (make-instance 'fast-animation-track :name 'location) :accessor location)
+   (scaling :initarg :scaling :initform (make-instance 'fast-animation-track :name 'scaling) :accessor scaling)
+   (rotation :initarg :rotation :initform (make-instance 'fast-animation-track :name 'rotation) :accessor rotation)))
 
 (defmethod print-object ((track transform-track) stream)
   (print-unreadable-object (track stream :type T)
