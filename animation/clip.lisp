@@ -112,6 +112,10 @@
   (recompute-duration clip)
   track)
 
+(defmethod node (name (clip clip))
+  (or (find name (tracks clip) :key #'name :test #'equal)
+      (error "No track named ~s on ~a" name clip)))
+
 (defmethod find-animation-track ((clip clip) name &key (if-does-not-exist :error))
   (loop for track across (tracks clip)
         do (when (eql name (name track))
