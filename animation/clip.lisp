@@ -245,9 +245,10 @@
   (setf (rotation clip) (quat)))
 
 (defmethod update-instance-for-different-class :after ((prev forward-kinematic-clip) (clip clip) &key)
-  (loop for track across (tracks clip)
-        do (when (typep track 'dummy-track)
-             (change-class track 'transform-track))))
+  (unless (typep clip 'forward-kinematic-clip)
+    (loop for track across (tracks clip)
+          do (when (typep track 'dummy-track)
+               (change-class track 'transform-track)))))
 
 (defmethod describe-object ((clip forward-kinematic-clip) stream)
   (call-next-method)
@@ -279,8 +280,8 @@ Forward clip:
 
 (defmethod sample :after (target (clip forward-kinematic-clip) time &key loop-p)
   (let ((track (forward-track clip)))
-    (when (< 1 (length (location track)))
+    (when (< 0 (length (location track)))
       (sample (velocity clip) (location track) time :loop-p loop-p)
       (nv* (velocity clip) (velocity-scale clip)))
-    (when (< 1 (length (rotation track)))
+    (when (< 0 (length (rotation track)))
       (sample (rotation clip) (rotation track) time :loop-p loop-p))))

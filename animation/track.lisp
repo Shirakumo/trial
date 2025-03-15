@@ -154,7 +154,7 @@
         (frames (frames track))
         ;; KLUDGE: hard-code here for now.
         (physics-tick-rate 0.01))
-    (when (< 0 (length frames))
+    (when (valid-p track)
       (flet ((diff (a at b bt &optional (mul 1.0))
                (ecase (value-type track)
                  ((real single-float) (* (- (sample NIL b bt) (sample NIL a at)) mul))
@@ -166,30 +166,30 @@
         (ecase (interpolation track)
           ((:linear :constant)
            (setf (interpolation result) :constant)
-           (let ((new-frames (make-array (max 1 (1- (length frames)))))
-                 (type (value-type track)))
+           (let* ((new-frames (make-array (length frames)))
+                  (last (1- (length new-frames)))
+                  (type (value-type track)))
              (setf (value-type result) type)
              (loop for i from 0 below (1- (length frames))
                    for frame = (aref frames i)
                    for next = (aref frames (1+ i))
-                   for diff = (diff frame 0.0 next 0.0 (* physics-tick-rate (/ (- (clock next) (clock frame)))))
+                   for step = (* physics-tick-rate (/ (- (clock next) (clock frame))))
+                   for diff = (diff frame 0.0 next 0.0 step)
                    do (setf (aref new-frames i) (make-frame (clock frame) (constant diff))))
-             (unless (aref new-frames 0)
-               (ecase (interpolation track)
-                 (:constant
-                  ;; With only one constant set frame there's no way to differentiate other than to
-                  ;; just set to zero. RIP.
-                  (setf (aref new-frames 0) (make-frame (clock (aref frames 0))
-                                                        (constant (ecase (value-type track)
-                                                                    ((real single-float) 0.0)
-                                                                    (vec2 (vec2))
-                                                                    (vec3 (vec3))
-                                                                    (vec4 (vec4))
-                                                                    (quat (quat)))))))
-                 (:linear
-                  ;; This is BAD, but shouldn't happen anyway, phew!
-                  (let ((frame (aref frames 0)))
-                    (setf (aref new-frames 0) (make-frame (clock frame) (constant (diff frame 0.0 frame 1.0 physics-tick-rate))))))))
+             (ecase (interpolation track)
+               (:constant
+                (setf (aref new-frames last)
+                      (make-frame (clock (aref frames last))
+                                  (constant (ecase (value-type track)
+                                              ((real single-float) 0.0)
+                                              (vec2 (vec2))
+                                              (vec3 (vec3))
+                                              (vec4 (vec4))
+                                              (quat (quat)))))))
+               (:linear
+                (let ((frame (aref frames last)))
+                  (setf (aref new-frames last)
+                        (make-frame (clock frame) (constant (diff frame 0.0 frame 1.0 physics-tick-rate)))))))
              (setf (frames result) new-frames)))
           (:hermite
            (implement!))
