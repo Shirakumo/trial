@@ -22,6 +22,10 @@
   (destructuring-bind (name) args
     `(make-instance 'language-data :name ',name)))
 
+(defmethod alloy:expand-compound-place-data ((place (eql 'trial:language-string)) args)
+  (destructuring-bind (name) args
+    `(make-instance 'language-data :name ,name)))
+
 (defclass vec (alloy:grid-layout
                alloy:focus-list
                alloy:value-component)
