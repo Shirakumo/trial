@@ -1507,7 +1507,8 @@
    #:ensure-language-string
    #:@format
    #:@formats
-   #:@)
+   #:@
+   #:text<)
   ;; layered-container.lisp
   (:export
    #:layered-container

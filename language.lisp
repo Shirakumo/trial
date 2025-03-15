@@ -168,3 +168,7 @@
  #\# #\@ (lambda (s c a)
            (declare (ignore c a))
            (language-string (read s T NIL T))))
+
+(defun text< (a b)
+  #+sbcl (sb-unicode:unicode< (string a) (string b))
+  #-sbcl (string< (string a) (string b)))
