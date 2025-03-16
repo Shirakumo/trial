@@ -244,6 +244,10 @@
 (defmethod simple:icon ((renderer renderer) bounds (texture trial:texture) &rest initargs)
   (apply #'make-instance 'simple:icon :image texture :bounds bounds initargs))
 
+(defmethod simple:icon ((renderer renderer) bounds (texture trial:placeholder-resource) &rest initargs)
+  (setf (gethash texture (image-cache renderer)) texture)
+  (apply #'simple:icon renderer bounds (trial::ensure-allocated texture) initargs))
+
 (defmethod simple:icon ((renderer renderer) bounds (path pathname) &rest initargs)
   (apply #'simple:icon renderer bounds (simple:request-image renderer path) initargs))
 
