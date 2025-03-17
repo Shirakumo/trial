@@ -22,7 +22,8 @@
   (let ((old (camera scene)))
     (when old (v<- (bsize camera) (bsize old))))
   (call-next-method)
-  (setup-perspective camera T T))
+  (setup-perspective camera T T)
+  camera)
 
 (defmethod handle :after ((tick post-tick) (scene scene))
   (when (camera scene)
