@@ -127,6 +127,9 @@
   (org.shirakumo.text-draw:tree container #'identity :stream stream))
 
 (defmethod <- progn ((target container) (source container))
+  ;; KLUDGE: Not sure if it's correcter to clear the container here or not.
+  ;;         Strict assignment would mandate a clear, but an additive assignment
+  ;;         or partial assignment would not. SIGH.
   (sequences:dosequence (entity source target)
     (enter (clone entity) target)))
 
