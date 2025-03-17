@@ -316,6 +316,7 @@
    #:hit-depth
    #:hit-other
    #:hit-detail
+   #:hit-other-detail
    #:a
    #:b
    #:location
