@@ -59,7 +59,7 @@
                    (length (frames track)) (interpolation track))))
     (loop for i from 0
           for track across (tracks clip)
-          do (format stream "~&  ~3d: ~30a " i (name track))
+          do (format stream "~&  ~3d: ~30s " i (name track))
              (etypecase track
                (animation-track
                 (print-track track))
@@ -118,7 +118,7 @@
 
 (defmethod find-animation-track ((clip clip) name &key (if-does-not-exist :error))
   (loop for track across (tracks clip)
-        do (when (eql name (name track))
+        do (when (equal name (name track))
              (return track))
         finally (ecase if-does-not-exist
                   (:error (error "No track with name ~s found." name))
