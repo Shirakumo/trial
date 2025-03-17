@@ -419,8 +419,8 @@
   ;; the properties "transfer".
   (setf (slot-value system 'transform) (tf entity)))
 
-(define-handler ((entity animation-controller) (ev tick)) (dt fc)
-  (update entity (clock entity) dt fc))
+(define-handler ((entity animation-controller) (ev tick)) (tt dt fc)
+  (update entity tt dt fc))
 
 (defmethod update-palette ((entity animation-controller))
   (let* ((palette (matrix-palette (pose entity) (palette entity)))
