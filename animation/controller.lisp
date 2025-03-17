@@ -367,7 +367,9 @@
             do (format stream "  ~s~%" clip))
       (format stream "  None~%"))
   (format stream "~&~%Skeleton:~%")
-  (describe-skeleton (skeleton entity) stream))
+  (if (skeleton entity)
+      (describe-skeleton (skeleton entity) stream)
+      (format stream "  No skeleton.~%")))
 
 (defmethod observe-load-state :before ((entity animation-controller) (asset model) (state (eql :loaded)) (area staging-area))
   (dolist (clip (list-clips asset))
