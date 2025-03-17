@@ -90,7 +90,8 @@
           (setf (animation-controller child) entity))))
     (when found
       (change-class entity 'basic-animation-controller)
-      (<- entity (animation-controller found))))
+      (unless (eq entity (animation-controller found))
+        (<- entity (animation-controller found)))))
   entity)
 
 (defun construct-node (node gltf model generator)
