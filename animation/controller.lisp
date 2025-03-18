@@ -227,6 +227,7 @@
 (defclass morph-group ()
   ((name :initform NIL :initarg :name :accessor name)
    (weights :initform #() :initarg :weights :accessor weights)
+   (morph-names :initform #() :initarg :morph-names :accessor morph-names)
    (textures :initform (make-array 0 :adjustable T :fill-pointer T) :accessor textures)
    (morph-data :initform NIL :accessor morph-data)))
 
@@ -242,7 +243,10 @@
       (setf (name morph) (model-name (first meshes))))
     (when (= 0 (length (weights morph)))
       (setf (weights morph) (make-morph-weights (first meshes))))
+    (when (/= (length (morph-names morph)) (length (weights morph)))
+      (setf (morph-names morph) (adjust-array (morph-names morph) (length (weights morph)) :initial-element NIL)))
     (dolist (mesh meshes)
+      (replace (morph-names morph) (morph-names mesh))
       (unless (find (name mesh) (textures morph) :key #'car :test #'equal)
         (vector-push-extend (cons (name mesh) (make-morph-texture mesh)) (textures morph))))))
 
@@ -287,6 +291,18 @@
                    (setf smallest (find-smallest-index))))
         (setf (morph-count struct) (min SIMULTANEOUS-MORPHS count))))))
 
+(defmethod morph-weight (name (group morph-group))
+  (let ((pos (position name (morph-names group) :test #'equal)))
+    (if pos
+        (aref (weights group) pos)
+        (error "No such morph target ~s on ~a" name group))))
+
+(defmethod (setf morph-weight) ((weight real) name (group morph-group))
+  (let ((pos (position name (morph-names group) :test #'equal)))
+    (if pos
+        (setf (aref (weights group) pos) (float weight 0f0))
+        (error "No such morph target ~s on ~a" name group))))
+
 (defclass morph-group-controller ()
   ((morph-groups :initform (make-hash-table :test 'eql) :accessor morph-groups)))
 
@@ -296,7 +312,11 @@
   (format stream "~&~%Morph Groups:~%")
   (if (< 0 (hash-table-count (morph-groups entity)))
       (loop for group being the hash-values of (morph-groups entity)
-            do (format stream "  ~20a ~a~%" (name group) (weights group)))
+            do (format stream "  ~s~%" (name group))
+               (loop for weight across (weights group)
+                     for name across (morph-names group)
+                     for i from 0
+                     do (format stream "    ~20s ~5,3f~%" (or name i) weight)))
       (format stream "  None~%")))
 
 (defun update-pose-weights (pose controller)
@@ -321,13 +341,32 @@
     (when (skeleton controller)
       (update-pose-weights (rest-pose (skeleton controller)) controller))))
 
-(defmethod find-morph ((mesh animated-mesh) (entity morph-group-controller) &optional (errorp T))
-  (or (gethash (or (model-name mesh) mesh) (morph-groups entity))
-      (when errorp (error "No morph for ~a found on ~a" mesh entity))))
+(defmethod find-morph ((mesh animated-mesh) (controller morph-group-controller) &optional (errorp T))
+  (or (gethash (or (model-name mesh) mesh) (morph-groups controller))
+      (when errorp (error "No morph for ~a found on ~a" mesh controller))))
 
-(defmethod find-morph ((name symbol) (entity morph-group-controller) &optional (errorp T))
-  (or (gethash name (morph-groups entity))
-      (when errorp (error "No morph for ~s found on ~a" name entity))))
+(defmethod find-morph ((name symbol) (controller morph-group-controller) &optional (errorp T))
+  (or (gethash name (morph-groups controller))
+      (when errorp (error "No morph for ~s found on ~a" name controller))))
+
+(defmethod morph-weight (name (controller morph-group-controller))
+  (or (loop for group being the hash-values of (morph-groups controller)
+            for pos = (position name (morph-names group) :test #'equal)
+            do (when pos
+                 (return (aref (weights group) pos))))
+      (error "No such morph target ~s on ~a" name controller)))
+
+(defmethod (setf morph-weight) ((weight real) name (controller morph-group-controller))
+  (let ((found NIL)
+        (weight (float weight 0f0)))
+    (loop for group being the hash-values of (morph-groups controller)
+          for pos = (position name (morph-names group) :test #'equal)
+          do (when pos
+               (setf (aref (weights group) pos) weight)
+               (setf found T)))
+    (unless found
+      (error "No such morph target ~s on ~a" name controller))
+    weight))
 
 (defmethod (setf skeleton) :before ((skeleton skeleton) (entity morph-group-controller))
   (update-pose-weights (rest-pose skeleton) entity))

@@ -114,7 +114,7 @@
                (load-vertex-attribute mesh native accessor skeleton)))
     mesh))
 
-(defun load-primitive (primitive &key name skeleton model model-name weights)
+(defun load-primitive (primitive &key name skeleton model model-name weights morph-names)
   (let* ((mesh (if (or skeleton (< 0 (length (gltf:targets primitive))))
                    (make-instance 'animated-mesh
                                   :name name
@@ -138,7 +138,8 @@
       (setf (trial::morphs mesh) (map 'vector (lambda (spec) (load-mesh-attributes (make-instance 'mesh-data) spec))
                                       (gltf:targets primitive)))
       (setf (trial::model-name mesh) model-name)
-      (setf (trial::initial-weights mesh) (or weights #())))
+      (setf (trial::initial-weights mesh) (or weights #()))
+      (setf (trial::morph-names mesh) (or morph-names #())))
     mesh))
 
 (defun load-mesh (mesh &key model skeleton model-name)
@@ -149,6 +150,7 @@
                                        :name name
                                        :model model
                                        :weights (gltf:weights mesh)
+                                       :morph-names (map 'vector #'trial:lispify-name (gltf:target-names mesh))
                                        :model-name model-name)))
       (case (length primitives)
         (0 ())

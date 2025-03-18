@@ -70,6 +70,7 @@
    #:morph-group-controller
    #:morph-groups
    #:find-morph
+   #:morph-weight
    #:fk-controller
    #:fk-update
    #:animation-controller
