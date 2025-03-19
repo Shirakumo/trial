@@ -12,6 +12,7 @@
                (:file "actions")
                (:file "panels")
                (:file "components")
+               (:file "assets")
                (:file "deploy"))
   :depends-on (:trial
                :form-fiddle

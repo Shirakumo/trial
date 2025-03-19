@@ -11,7 +11,10 @@
    (#:animation #:org.shirakumo.alloy.animation)
    (#:math #:org.shirakumo.fraf.math))
   (:export
+   #:font)
+  (:export
    #:renderer
+   #:cache-font
    #:event-bridge
    #:ui
    #:ui-pass)
