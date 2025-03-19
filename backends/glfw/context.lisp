@@ -289,7 +289,7 @@
                                    (handle-event-queue (event-queue context) #'handler)))))
                  (v:debug :trial.backend.glfw "Cleaning up")
                  (unwind-protect (finalize main)
-                   (glfw:shutdown)))))
+                   (ignore-errors (glfw:shutdown))))))
            (body ()
              (if (or (find :darwin *features*) (deploy:deployed-p))
                  (float-features:with-float-traps-masked T
