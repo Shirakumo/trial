@@ -394,7 +394,7 @@
 
 (defclass axis-directional-mapping (action-mapping)
   ((event-type :initform 'gamepad-move)
-   (dead-zone :initarg :dead-zone :initform 0.1 :accessor dead-zone)
+   (dead-zone :initarg :dead-zone :initform 0.1 :accessor dead-zone :accessor threshold)
    (axis :initarg :axis :initform :x :accessor axis)))
 
 (defmethod perform-event-mapping (event (mapping axis-directional-mapping) loop)
