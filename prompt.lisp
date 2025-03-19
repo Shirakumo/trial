@@ -323,7 +323,6 @@
 (defun specific-prompts-for-event-trigger (thing &optional (type 'input-event))
   (let ((list ()))
     (loop for mapping in (find-action-mappings thing type)
-          for threshold = (threshold mapping)
           do (dolist (symbol (qualifier mapping))
                (if (and (eql 'gamepad-move (event-type mapping)) (/= 0.0 (threshold mapping)))
                    (push (degeneralise-axis-symbol symbol (threshold mapping)) list)
