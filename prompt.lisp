@@ -160,19 +160,22 @@
          (values (prompt-string char :bank bank :default default)
                  char))))))
 
+(defun action-prompts (thing &key bank)
+  (recombine-prompts
+   (case (normalize-prompt-bank bank)
+     (:keyboard
+      (append (specific-prompts-for-event-trigger thing 'key-event)
+              (specific-prompts-for-event-trigger thing 'mouse-event)))
+     (:mouse
+      (specific-prompts-for-event-trigger thing 'mouse-event))
+     (:gamepad
+      (specific-prompts-for-event-trigger thing 'gamepad-event))
+     (T (specific-prompts-for-event-trigger thing 'input-event)))))
+
 (defun action-strings (thing &key bank)
   (let ((bank (normalize-prompt-bank bank))
         (prompts ()))
-    (loop for prompt in (recombine-prompts
-                         (case bank
-                           (:keyboard
-                            (append (specific-prompts-for-event-trigger thing 'key-event)
-                                    (specific-prompts-for-event-trigger thing 'mouse-event)))
-                           (:mouse
-                            (specific-prompts-for-event-trigger thing 'mouse-event))
-                           (:gamepad
-                            (specific-prompts-for-event-trigger thing 'gamepad-event))
-                           (T (specific-prompts-for-event-trigger thing 'input-event))))
+    (loop for prompt in (action-prompts thing :bank bank)
           for string = (when prompt
                          (if (eql bank :keyboard)
                              (or (ignore-errors (local-key-string *context* prompt))

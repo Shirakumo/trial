@@ -63,6 +63,12 @@ exec sbcl \
     (:right-trigger :r2)
     (:analog-l-click :l3)
     (:analog-r-click :r3)
+    (:alt-l :left-alt)
+    (:alt-r :right-alt)
+    (:control-l :left-control)
+    (:control-r :right-control)
+    (:shift-l :left-shift)
+    (:shift-r :right-shift)
     (T name)))
 
 (defun table-def (table names &optional extras)
@@ -97,7 +103,7 @@ exec sbcl \
 
 (defun write-prompt-table (table &optional (stream T))
   (destructuring-bind (def name &rest body) table
-    (format stream "(~s ~s~{~%  (~{~30s #x~x~})~})~%" def name body)))
+    (format stream "(~a ~s~{~%  (~{~30s #x~x~})~})~%" def name body)))
 
 (defun write-prompt-tables (&optional (tables (all-table-defs)) (file #p"prompt-tables.lisp"))
   (let ((file (merge-pathnames file #.(or *compile-file-pathname* *load-pathname*)))
