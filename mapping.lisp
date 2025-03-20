@@ -270,7 +270,7 @@
 
 (defclass axis-analog-mapping (action-mapping)
   ((event-type :initform 'gamepad-move)
-   (dead-zone :initarg :dead-zone :initform 0.1 :accessor dead-zone)
+   (dead-zone :initarg :dead-zone :initform 0.1 :accessor dead-zone :accessor threshold)
    (multiplier :initarg :multiplier :initform 1.0 :accessor multiplier)))
 
 (defmethod perform-event-mapping (event (mapping axis-analog-mapping) loop)
