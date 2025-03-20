@@ -206,7 +206,8 @@
   (let ((buffer (caar (bindings vao))))
     (apply #'update-buffer-data buffer (vertex-data mesh) args)))
 
-(defmethod replace-vertex-data ((vao vertex-array) (mesh mesh-data) &key)
+(defmethod replace-vertex-data ((vao vertex-array) (mesh mesh-data) &key update)
+  (declare (ignore update))
   (resize-buffer-data (index-buffer vao) T :data (faces mesh))
   (let ((vertex-data (caar (bindings vao))))
     (resize-buffer-data vertex-data T :data (vertex-data mesh))

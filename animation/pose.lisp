@@ -183,7 +183,7 @@
         (!q* (trotation output) (trotation input) (q* (qinv (trotation additive-base)) (trotation additive)))
         (nqunit* (trotation output))))))
 
-(defmethod replace-vertex-data ((lines lines) (pose pose) &rest args)
+(defmethod replace-vertex-data ((lines lines) (pose pose) &rest args &key &allow-other-keys)
   (let ((points ()))
     (dotimes (i (length pose))
       (let ((parent (parent-joint pose i)))
