@@ -68,7 +68,8 @@
   (let ((context (context target)))
     (with-context (context :reentrant T)
       (call-next-method)
-      (swap-buffers context))))
+      (with-ignored-errors-on-release (:trial.display "Failed to swap buffers!")
+        (swap-buffers context)))))
 
 (defmethod render-loop :around ((display display))
   (let ((*context* (context display)))
