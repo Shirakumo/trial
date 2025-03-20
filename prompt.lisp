@@ -91,9 +91,15 @@
     (null
      (normalize-prompt-bank +input-source+))
     (gamepad:device
-     (gamepad:icon-type bank))
+     (normalize-prompt-bank (gamepad:icon-type bank)))
     (symbol
-     bank)))
+     (case bank
+       (:generic-nintendo :nintendo)
+       (:generic-xbox :xbox)
+       (:generic-playstation :sony)
+       (T (if (gethash bank *prompt-string-table*)
+              bank
+              :gamepad))))))
 
 (defun prompt-string (thing &key bank default)
   (etypecase thing
@@ -109,7 +115,7 @@
      (let ((table (gethash (normalize-prompt-bank bank) *prompt-string-table*)))
        (if table
            (gethash thing table default)
-           default)))
+           (prompt-string thing :bank :gamepad :default default))))
     (symbol
      (let* ((type (case bank
                     ((NIL) (etypecase +input-source+
@@ -168,9 +174,8 @@
               (specific-prompts-for-event-trigger thing 'mouse-event)))
      (:mouse
       (specific-prompts-for-event-trigger thing 'mouse-event))
-     (:gamepad
-      (specific-prompts-for-event-trigger thing 'gamepad-event))
-     (T (specific-prompts-for-event-trigger thing 'input-event)))))
+     (T
+      (specific-prompts-for-event-trigger thing 'gamepad-event)))))
 
 (defun action-strings (thing &key bank)
   (let ((bank (normalize-prompt-bank bank))
