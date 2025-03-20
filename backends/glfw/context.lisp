@@ -288,8 +288,9 @@
                                    (poll-input main)
                                    (handle-event-queue (event-queue context) #'handler)))))
                  (v:debug :trial.backend.glfw "Cleaning up")
-                 (unwind-protect (finalize main)
-                   (ignore-errors (glfw:shutdown))))))
+                 (trial:with-ignored-errors-on-release (:trial.backend.glfw "Failed to shut down cleanly.")
+                   (unwind-protect (finalize main)
+                     (glfw:shutdown))))))
            (body ()
              (if (or (find :darwin *features*) (deploy:deployed-p))
                  (float-features:with-float-traps-masked T
