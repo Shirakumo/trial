@@ -67,3 +67,13 @@
                                            (handle (make-instance 'gamepad-added :device device) handler))
                                           (:remove (v:info :trial.input "Lost controller:~%  ~a" (describe-gamepad device))
                                            (handle (make-instance 'gamepad-removed :device device) handler))))))))
+
+(defun maybe-load-gamepad-device-maps (&optional (file (pathname-utils:merge-pathnames*
+                                                        "default-device-mappings.lisp"
+                                                        (or #+nx (tempdir)
+                                                            (if (deploy:deployed-p)
+                                                                (self)
+                                                                (user-homedir-pathname))))))
+  (when (and (deploy:deployed-p) (probe-file file))
+    (v:info :trial.input "Loading default device mappings from ~a" file)
+    (load file)))

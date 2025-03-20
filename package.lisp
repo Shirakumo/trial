@@ -1549,7 +1549,8 @@
    #:setup-scene
    #:change-scene
    #:enter-and-load
-   #:launch)
+   #:launch
+   #:default-startup-load)
   ;; mapping.lisp
   (:export
    #:+map-key-events+
