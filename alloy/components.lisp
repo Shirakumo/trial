@@ -1,10 +1,13 @@
 (in-package #:org.shirakumo.fraf.trial.alloy)
 
 (defclass language-data (alloy:data)
-  ((name :initarg :name :accessor name)))
+  ((name :initarg :name :accessor name)
+   (args :initarg :args :initform () :accessor args)))
 
 (defmethod alloy:value ((data language-data))
-  (trial:language-string (name data)))
+  (if (args data)
+      (apply #'trial:@formats (name data) (args data))
+      (trial:language-string (name data))))
 
 (defmethod (setf alloy:value) (value (data language-data))
   value)
@@ -16,11 +19,15 @@
   value)
 
 (defmethod alloy:refresh ((data language-data))
-  (alloy:notify-observers 'alloy:value data (trial:language-string (name data)) data))
+  (alloy:notify-observers 'alloy:value data (alloy:value data) data))
 
 (defmethod alloy:expand-compound-place-data ((place (eql 'trial:@)) args)
   (destructuring-bind (name) args
     `(make-instance 'language-data :name ',name)))
+
+(defmethod alloy:expand-compound-place-data ((place (eql 'trial:@formats)) args)
+  (destructuring-bind (name . args) args
+    `(make-instance 'language-data :name ,name :args (list ,@args))))
 
 (defmethod alloy:expand-compound-place-data ((place (eql 'trial:language-string)) args)
   (destructuring-bind (name) args
