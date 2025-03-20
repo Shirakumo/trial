@@ -133,11 +133,12 @@
 
 (defmethod destroy-context :around ((context context))
   (when (valid-p context)
-    (with-context (context :force T)
-      (v:info :trial.context "Destroying context.")
-      (hide context)
-      (call-next-method)
-      (setf *context* NIL)))
+    (with-ignored-errors-on-release (:trial.context "Failed to destroy context.")
+      (with-context (context :force T)
+        (v:info :trial.context "Destroying context.")
+        (hide context)
+        (call-next-method)
+        (setf *context* NIL))))
   context)
 
 (defmethod create-context :around ((context context))
