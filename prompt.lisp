@@ -198,15 +198,18 @@
           do (when string (pushnew string prompts)))
     (nreverse prompts)))
 
-(defun action-string (thing &key bank (join " "))
+(defun action-string (thing &key bank (join " ") (default ""))
   (let ((strings (action-strings thing :bank bank)))
-    (if (rest strings)
-        (with-output-to-string (out)
-          (loop for (string . next) on strings
-                do (write-string string out)
-                   (when next
-                     (write-string join out))))
-        (first strings))))
+    (cond ((rest strings)
+           (with-output-to-string (out)
+             (loop for (string . next) on strings
+                   do (write-string string out)
+                      (when next
+                        (write-string join out)))))
+          (strings
+           (first strings))
+          (T
+           default))))
 
 (defun prompt-charset ()
   (sort (delete-duplicates
