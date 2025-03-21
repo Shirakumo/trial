@@ -50,7 +50,7 @@
 (defmethod (setf mesh) :after ((meshes cons) (entity morphed-entity))
   (let ((morphs ()))
     (dolist (mesh meshes)
-      (when (skinned-p mesh)
+      (when (morphed-p mesh)
         (let ((morph (find-morph mesh (animation-controller entity) NIL)))
           (push (when morph (cons morph (find-morph mesh morph)))
                 morphs))))
@@ -81,7 +81,7 @@
   (setf (uniform program "pose") (if (palette-texture entity) (bind-palette pass entity) 99)))
 
 (defmethod skinned-p ((entity skinned-entity))
-  (palette-texture entity))
+  (skeleton entity))
 
 (defmethod skinned-p ((entity entity)) NIL)
 
