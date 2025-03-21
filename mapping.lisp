@@ -310,6 +310,8 @@
    ;; KLUDGE: I kind of hate having to keep this state here.
    (pressed-p :initform NIL :accessor pressed-p)))
 
+(defmethod threshold ((mapping digital-analog-mapping)) 0.0)
+
 (defmethod clear ((mapping digital-analog-mapping))
   (setf (pressed-p mapping) NIL))
 
@@ -440,6 +442,8 @@
    ;; KLUDGE: I kind of hate having to keep this state here.
    (pressed-p :initform NIL :accessor pressed-p)))
 
+(defmethod threshold ((mapping digital-directional-mapping)) 0.0)
+
 (defmethod clear ((mapping digital-directional-mapping))
   (setf (pressed-p mapping) NIL))
 
@@ -514,7 +518,7 @@
   ((event-type :initform 'mouse-move)
    (qualifier :initform ())
    (scaling :initarg :scaling :initform (vec 1 1) :accessor scaling)
-   (dead-zone :initarg :dead-zone :initform 0.1 :accessor dead-zone)
+   (dead-zone :initarg :dead-zone :initform 0.1 :accessor dead-zone :accessor threshold)
    (timeout :initarg :timeout :initform 0.02 :accessor timeout)
    (clock :initarg :clock :initform 0.0 :accessor clock)))
 
