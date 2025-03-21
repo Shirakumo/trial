@@ -21,6 +21,18 @@
   (case axis
     (:l :analog-l-any)
     (:r :analog-r-any)
+    (:dpad-l :dpad-left)
+    (:dpad-r :dpad-right)
+    (:dpad-u :dpad-up)
+    (:dpad-d :dpad-down)
+    (:l-l :analog-l-left)
+    (:l-r :analog-l-right)
+    (:l-u :analog-l-up)
+    (:l-d :analog-l-down)
+    (:r-l :analog-r-left)
+    (:r-r :analog-r-right)
+    (:r-u :analog-r-up)
+    (:r-d :analog-r-down)
     (:l-h (cond ((< 0 threshold) :analog-l-right)
                 ((< threshold 0) :analog-l-left)
                 (T :analog-l-left-right)))
@@ -63,10 +75,8 @@
         (let ((symbol (first (qualifier mapping))))
           (cond ((typep mapping 'axis-directional-mapping)
                  (degeneralise-axis-symbol symbol))
-                ((eql 'gamepad-move (event-type mapping))
-                 (degeneralise-axis-symbol symbol (threshold mapping)))
                 (T
-                 symbol)))
+                 (degeneralise-axis-symbol symbol (threshold mapping)))))
         default)))
 
 (defun specific-prompts-for-event-trigger (thing &optional (type 'input-event))
@@ -81,9 +91,7 @@
                 (push :up-down list))
                (T 
                 (dolist (symbol (qualifier mapping))
-                  (if (eql 'gamepad-move (event-type mapping))
-                      (push (degeneralise-axis-symbol symbol (threshold mapping)) list)
-                      (push symbol list))))))
+                  (push (degeneralise-axis-symbol symbol (threshold mapping)) list)))))
     list))
 
 (defun normalize-prompt-bank (bank)
