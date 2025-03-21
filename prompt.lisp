@@ -199,11 +199,14 @@
     (nreverse prompts)))
 
 (defun action-string (thing &key bank (join " "))
-  (with-output-to-string (out)
-    (loop for (string . next) on (action-strings thing :bank bank)
-          do (write-string string out)
-             (when next
-               (write-string join out)))))
+  (let ((strings (action-strings thing :bank bank)))
+    (if (rest strings)
+        (with-output-to-string (out)
+          (loop for (string . next) on strings
+                do (write-string string out)
+                   (when next
+                     (write-string join out))))
+        (first strings))))
 
 (defun prompt-charset ()
   (sort (delete-duplicates
