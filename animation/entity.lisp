@@ -85,8 +85,9 @@
 
 (defmethod skinned-p ((entity entity)) NIL)
 
-(define-handler (skinned-entity tick :after) ()
-  (handle tick (animation-controller skinned-entity)))
+(define-handler (skinned-entity tick :after) (dt tt fc)
+  (unless (eq skinned-entity (animation-controller skinned-entity))
+    (update (animation-controller skinned-entity) tt dt fc)))
 
 (define-shader-entity quat2-skinned-entity (base-animated-entity)
   ()

@@ -219,6 +219,9 @@
                           do (write-string string out)))))
         #'string<))
 
+(defun prompt-banks ()
+  (loop for k being the hash-keys of *prompt-string-table* collect k))
+
 (define-shader-entity prompt ()
   ())
 

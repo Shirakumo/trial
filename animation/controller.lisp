@@ -193,30 +193,31 @@
 (defmethod update ((controller fade-controller) tt dt fc)
   (when (next-method-p) (call-next-method))
   (let ((clip (clip controller)))
-    (if clip
-        (let ((targets (fade-targets controller)))
-          (loop for target across targets
-                for i from 0
-                do (when (<= (fade-target-duration target) (fade-target-elapsed target))
-                     (setf clip (setf (clip controller) (fade-target-clip target)))
-                     (setf (clock controller) (fade-target-clock target))
-                     (pose<- (pose controller) (fade-target-pose target))
-                     (array-utils:vector-pop-position targets i)
-                     (return)))
-          (let ((time (sample (pose controller) clip (+ (clock controller) (* (playback-speed controller) dt)))))
-            (setf (clock controller) time)
-            (when (and (not (loop-p clip))
-                       (<= (end-time clip) time)
-                       (next-clip clip))
-              (fade-to (next-clip clip) controller))
-            (loop for target across targets
-                  do (setf (fade-target-clock target) (sample (fade-target-pose target) (fade-target-clip target) (+ (fade-target-clock target) dt)))
-                     (incf (fade-target-elapsed target) dt)
-                     (let ((time (min 1.0 (/ (fade-target-elapsed target) (fade-target-duration target)))))
-                       (blend-into (pose controller) (pose controller) (fade-target-pose target) time)))))
-        ;; With no active clip, make sure we restore to the rest pose on every update,
-        ;; since other controllers may want to modify the pose.
-        (pose<- (pose controller) (rest-pose (skeleton controller))))))
+    (cond (clip
+           (let ((targets (fade-targets controller)))
+             (loop for target across targets
+                   for i from 0
+                   do (when (<= (fade-target-duration target) (fade-target-elapsed target))
+                        (setf clip (setf (clip controller) (fade-target-clip target)))
+                        (setf (clock controller) (fade-target-clock target))
+                        (pose<- (pose controller) (fade-target-pose target))
+                        (array-utils:vector-pop-position targets i)
+                        (return)))
+             (let ((time (sample (pose controller) clip (+ (clock controller) (* (playback-speed controller) dt)))))
+               (setf (clock controller) time)
+               (when (and (not (loop-p clip))
+                          (<= (end-time clip) time)
+                          (next-clip clip))
+                 (fade-to (next-clip clip) controller))
+               (loop for target across targets
+                     do (setf (fade-target-clock target) (sample (fade-target-pose target) (fade-target-clip target) (+ (fade-target-clock target) dt)))
+                        (incf (fade-target-elapsed target) dt)
+                        (let ((time (min 1.0 (/ (fade-target-elapsed target) (fade-target-duration target)))))
+                          (blend-into (pose controller) (pose controller) (fade-target-pose target) time))))))
+          ((skeleton controller)
+           ;; With no active clip, make sure we restore to the rest pose on every update,
+           ;; since other controllers may want to modify the pose.
+           (pose<- (pose controller) (rest-pose (skeleton controller)))))))
 
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
