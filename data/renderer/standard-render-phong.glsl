@@ -19,12 +19,16 @@ void standard_init@after(){
 }
 
 vec4 standard_shade(in StandardLight light){
-  StandardLightData light_data = evaluate_light(light);
-  vec3 reflect_dir = reflect(-light_data.direction, normal);
-  return vec4(light_data.radiance
-              * (diffuse.xyz * max(dot(normal, light_data.direction), 0)
-                 + specular * pow(max(dot(view_dir, reflect_dir), 0.0), 32)),
-              1.0);
+  if(light.type == 1){
+    return vec4(diffuse.xyz * light.color, 1);
+  }else{
+    StandardLightData light_data = evaluate_light(light);
+    vec3 reflect_dir = reflect(-light_data.direction, normal);
+    return vec4(light_data.radiance
+                * (diffuse.xyz * max(dot(normal, light_data.direction), 0)
+                   + specular * pow(max(dot(view_dir, reflect_dir), 0.0), 32)),
+                1.0);
+  }
 }
 
 void standard_finish(){
