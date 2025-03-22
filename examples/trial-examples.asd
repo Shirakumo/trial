@@ -39,7 +39,8 @@
                (:file "tone-mapping")
                (:file "bouncer")
                (:file "debug")
-               (:file "input"))
+               (:file "input")
+               (:file "logo"))
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
                :alloy-constraint
