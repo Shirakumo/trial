@@ -32,7 +32,7 @@
   (find-clip thing (animation-controller entity) errorp))
 
 (defmethod list-clips ((entity base-animated-entity))
-  (list-clips entity))
+  (list-clips (animation-controller entity)))
 
 (defmethod bind-palette ((pass shader-pass) (entity base-animated-entity))
   (bind (palette-texture entity) :texture5))
