@@ -21,7 +21,8 @@
                                           (robustness NIL robustness-p)
                                           (forward-compat NIL forward-compat-p)
                                           (debug-context NIL debug-context-p)
-                                          double-buffering stereo-buffer title visible)
+                                          double-buffering stereo-buffer title visible
+                                     &allow-other-keys)
   (declare (ignore double-buffering stereo-buffer title visible))
   (flet (((setf g) (value name) (setf (getf (initargs context) name) value)))
     (macrolet ((maybe-set (var &optional (name (intern (string var) :keyword)))
@@ -45,6 +46,7 @@
 
 (defmethod create-context ((context context))
   (flet ((arg (arg) (getf (initargs context) arg)))
+    (v:info :trial.backend.nxgl "Creating context ~dx~d ~{~s~^ ~}" (arg :width) (arg :height) (initargs context))
     (let ((pointer (apply #'nxgl:create-context (arg :width) (arg :height) (initargs context))))
       (when (cffi:null-pointer-p pointer)
         (error "Failed to create context: ~a" nxgl:error))

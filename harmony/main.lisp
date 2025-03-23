@@ -74,7 +74,7 @@
 
 (defmethod initialize-instance ((main main) &key audio-backend)
   (call-next-method)
-  (when initialize-audio
+  (when (initialize-audio main)
     (apply #'initialize-audio-backend main audio-backend (server-initargs main))))
 
 (defmethod trial:finalize :after ((main main))

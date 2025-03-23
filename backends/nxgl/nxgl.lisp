@@ -230,4 +230,6 @@
             ;; EGL-CONTEXT-OPENGL-FORWARD-COMPATIBLE (if forward-compat EGL-TRUE EGL-FALSE)
             ;; EGL-CONTEXT-OPENGL-ROBUST-ACCESS (if robustness EGL-TRUE EGL-FALSE)
             EGL-NONE))
+    (when (eql width T) (setf width 0))
+    (when (eql height T) (setf height 0))
     (%create-context width height config-attributes context-attributes)))
