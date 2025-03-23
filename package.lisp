@@ -1152,7 +1152,8 @@
    #:context
    #:clear-color
    #:setup-rendering
-   #:render)
+   #:render
+   #:single-threaded-display)
   ;; effects.lisp
   (:export
    #:render-pass
