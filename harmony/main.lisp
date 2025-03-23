@@ -64,7 +64,7 @@
           (setf (trial:setting :audio :device) new))))))
 
 (defclass main (trial:main)
-  ())
+  ((initialize-audio :initarg :initialize-audio :initform T :accessor initialize-audio)))
 
 (defgeneric server-initargs (main)
   (:method-combination append :most-specific-first))
@@ -74,7 +74,8 @@
 
 (defmethod initialize-instance ((main main) &key audio-backend)
   (call-next-method)
-  (apply #'initialize-audio-backend main audio-backend (server-initargs main)))
+  (when initialize-audio
+    (apply #'initialize-audio-backend main audio-backend (server-initargs main))))
 
 (defmethod trial:finalize :after ((main main))
   (when harmony:*server*
@@ -87,11 +88,12 @@
    :audio-backend (trial:setting :audio :backend)))
 
 (defmethod initialize-instance :after ((main settings-main) &key)
-  (loop for (k v) on (trial:setting :audio :volume) by #'cddr
-        for segment = (harmony:segment k harmony:*server* NIL)
-        do (if segment
-               (setf (mixed:volume segment) v)
-               (v:warn :trial.harmony "Can't set volume for inexistent segment ~s" k))))
+  (when harmony:*server*
+    (loop for (k v) on (trial:setting :audio :volume) by #'cddr
+          for segment = (harmony:segment k harmony:*server* NIL)
+          do (if segment
+                 (setf (mixed:volume segment) v)
+                 (v:warn :trial.harmony "Can't set volume for inexistent segment ~s" k)))))
 
 (defmethod server-initargs append ((main settings-main))
   (list :latency (trial:setting :audio :latency)
