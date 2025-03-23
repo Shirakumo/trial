@@ -8,6 +8,7 @@
                (bt:thread-alive-p (thread runner)))
     (setf (thread runner)
           (with-thread ("task-thread")
+            #+nx (setf (org.shirakumo.machine-state:thread-core-mask T) #b1000)
             (simple-tasks:start-runner runner)))
     (loop until (eql :running (simple-tasks:status runner))
           do (sleep 0.0001))))
