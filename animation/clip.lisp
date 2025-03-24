@@ -168,6 +168,7 @@
 (%define-sampler-method hash-table (gethash name thing))
 (%define-sampler-method standard-object (slot-value thing name))
 (%define-sampler-method structure-object (slot-value thing name))
+(%define-sampler-method container (tf (node name thing)))
 
 (defmethod reorder ((clip clip) map)
   (dotimes (i (length clip) clip)

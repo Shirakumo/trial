@@ -1,13 +1,13 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass skeleton-controller ()
-  ((target :initform NIL :accessor target)
+  ((target :initform NIL :initarg :target :accessor target)
    (skeleton :initform NIL :accessor skeleton)))
 
 (define-transfer skeleton-controller skeleton)
 
 (defmethod initialize-instance :after ((controller skeleton-controller) &key)
-  (setf (target controller) (make-instance 'pose :data controller)))
+  (setf (target controller) controller))
 
 (defmethod shared-initialize :after ((controller skeleton-controller) slots &key skeleton)
   (when skeleton
@@ -510,3 +510,16 @@
 
 (defclass basic-animation-controller (basic-node animation-controller)
   ())
+
+(defclass scene-animation-controller (animation-controller)
+  ((clips :initform (make-hash-table :test 'eql) :initarg :clips :accessor clips)))
+
+(defmethod register :after ((controller scene-animation-controller) (scene scene))
+  (setf (target controller) scene))
+
+(defmethod find-clip (name (entity scene-animation-controller) &optional (errorp T))
+  (or (gethash name (clips entity))
+      (when errorp (error "No such clip ~s found on ~a" name entity))))
+
+(defmethod list-clips ((entity scene-animation-controller))
+  (loop for clip being the hash-values of (clips entity) collect clip))

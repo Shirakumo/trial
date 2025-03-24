@@ -138,6 +138,14 @@
                    (enter (make-instance 'skybox :color color :texture (resource envmap :environment-map) :name :skybox) scene)))
                (loop for child across (gltf:nodes node)
                      for entity = (construct-node child gltf model generator)
-                     do (when entity (enter entity scene))))
+                     do (when entity (enter entity scene)))
+               ;; Check whether the scene contains any animated nodes, enter a controller if so.
+               (let ((clip-targets (loop for clip being the hash-values of (clips model)
+                                         nconc (loop for track across (tracks clip)
+                                                     when (symbolp (name track))
+                                                     collect (name track)))))
+                 (do-scene-graph (node scene)
+                   (when (member (name node) clip-targets)
+                     (enter (make-instance 'scene-animation-controller :clips (clips model)) scene)))))
       model)))
 
