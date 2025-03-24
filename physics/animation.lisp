@@ -1,0 +1,15 @@
+(in-package #:org.shirakumo.fraf.trial)
+
+(defmethod animation-node ((idx integer) (container rigid-shape))
+  (aref (physics-primitives container) idx))
+
+(defmethod sample ((primitive primitive) (track transform-track) time &key loop-p)
+  (declare (type single-float time))
+  (declare (optimize speed))
+  (let ((transform (tfrom-mat (primitive-local-transform primitive))))
+    (declare (dynamic-extent transform))
+    (sample transform track time :loop-p loop-p)
+    (!tmat (primitive-local-transform primitive) transform)
+    (invalidate-global-bounds-cache primitive)
+    (setf (awake-p (entity primitive)) T))
+  primitive)

@@ -85,6 +85,18 @@
       (loop for skin across (gltf:skins gltf)
             never (applicable-animation-p gltf animation skin))))
 
+(defun translate-track-target (target)
+  (let ((node (gltf:node target)))
+    (if (gltf:virtual-p node)
+        ;; Special handling for colliders
+        (let ((parent (gltf:parent node)))
+          (cons (gltf-name parent)
+                (loop with i = 0
+                      for child across (gltf:children parent)
+                      do (cond ((eq child node) (return i))
+                               ((gltf:collider child) (incf i))))))
+        (gltf-name node))))
+
 (defun load-clip (gltf animation &optional skin)
   (when (applicable-animation-p gltf animation skin)
     (let ((clip (make-instance 'clip :name (gltf-name animation))))
@@ -93,7 +105,7 @@
             for sampler = (svref (gltf:samplers animation) (gltf:sampler channel))
             for name = (if skin
                            (position (gltf:node target) (gltf:joints skin))
-                           (gltf-name (gltf:node target)))
+                           (translate-track-target target))
             for track = (find-animation-track clip name :if-does-not-exist :create)
             do (case (gltf:path target)
                  (:translation

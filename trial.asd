@@ -122,7 +122,8 @@
                              (:file "trigger" :depends-on ("resolution"))
                              (:file "v-clip" :depends-on ("hit-detection" "ray"))
                              (:file "wave" :depends-on ((:.. "shader-pass") (:.. "effects")))
-                             (:file "xenocollide" :depends-on ("hit-detection"))))
+                             (:file "xenocollide" :depends-on ("hit-detection"))
+                             (:file "animation" :depends-on ((:.. "animation")))))
                (:module "renderer"
                 :depends-on ("package" "shader-pass" "helpers" "gl-struct" "transforms" "animation")
                 :components ((:file "cpu-particle" :depends-on ("particle-common"))

@@ -168,7 +168,19 @@
 (%define-sampler-method hash-table (gethash name thing))
 (%define-sampler-method standard-object (slot-value thing name))
 (%define-sampler-method structure-object (slot-value thing name))
-(%define-sampler-method container (tf (node name thing)))
+
+;; Customisation to allow more accurate extraction in physics
+(defmethod animation-node ((name cons) container)
+  (destructuring-bind (name . idx) name
+    (animation-node idx (node name container))))
+
+(defmethod animation-node (name container)
+  (node name container))
+
+(defun (setf animation-node) (value name container)
+  value)
+
+(%define-sampler-method container (animation-node name thing))
 
 (defmethod reorder ((clip clip) map)
   (dotimes (i (length clip) clip)

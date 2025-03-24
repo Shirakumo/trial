@@ -305,7 +305,7 @@
   (update physics-system tt dt fc))
 
 (defclass physics-scene (scene)
-  ((physics-system :initform (make-instance 'physics-system) :accessor physics-system)))
+  ((physics-system :initform (make-instance 'physics-system) :initarg :physics-system :accessor physics-system)))
 
 (defmethod register :after ((thing physics-entity) (scene physics-scene))
   (enter thing (physics-system scene)))

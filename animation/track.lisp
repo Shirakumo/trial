@@ -358,6 +358,12 @@
     (sample (trotation transform) (rotation track) time :loop-p loop-p))
   transform)
 
+(defmethod sample ((entity transformed-entity) (track transform-track) time &key loop-p)
+  (declare (type single-float time))
+  (declare (optimize speed))
+  (sample (tf entity) track time :loop-p loop-p)
+  entity)
+
 (defmethod valid-p ((track transform-track))
   (or (< 1 (length (location track)))
       (< 1 (length (scaling track)))
