@@ -54,6 +54,8 @@
   (issue scene 'register :changed-node entity)
   entity)
 
+(defmethod register ((listener listener) (scene scene)))
+
 (defmethod register :after ((listener listener) (scene scene))
   (add-listener listener scene))
 
@@ -61,6 +63,8 @@
   (remhash (name entity) (name-map scene))
   (issue scene 'deregister :changed-node entity)
   entity)
+
+(defmethod deregister ((listener listener) (scene scene)))
 
 (defmethod deregister :after ((listener listener) (scene scene))
   (remove-listener listener scene))
