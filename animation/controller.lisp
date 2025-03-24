@@ -511,8 +511,9 @@
 (defclass basic-animation-controller (basic-node animation-controller)
   ())
 
-(defclass scene-animation-controller (animation-controller)
-  ((clips :initform (make-hash-table :test 'eql) :initarg :clips :accessor clips)))
+(defclass scene-animation-controller (animation-controller entity)
+  ((clips :initform (make-hash-table :test 'eql) :initarg :clips :accessor clips)
+   (name :initform 'animation-controller)))
 
 (defmethod register :after ((controller scene-animation-controller) (scene scene))
   (setf (target controller) scene))
