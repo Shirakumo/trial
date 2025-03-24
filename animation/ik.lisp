@@ -273,7 +273,7 @@
 
 (defclass ik-controller ()
   ((ik-systems :initform (make-hash-table :test 'equalp) :accessor ik-systems)
-   (pose :accessor pose)))
+   (target :accessor target)))
 
 (defmethod shared-initialize :after ((controller ik-controller) slots &key skeleton ik-systems)
   (loop for (name . args) in ik-systems
@@ -295,9 +295,9 @@
   (when (next-method-p) (call-next-method))
   (loop for system being the hash-values of (ik-systems controller)
         when (active-p system)
-        do (pose<- (pose (solver system)) (pose controller))
+        do (pose<- (pose (solver system)) (target controller))
            (update system tt dt fc)
-           (blend-into (pose controller) (pose controller) (pose system) (strength system))))
+           (blend-into (target controller) (target controller) (pose system) (strength system))))
 
 (defmethod add-ik-system ((system ik-system) (controller ik-controller) &key (name (arg! :name)))
   (setf (ik-system name controller) system))

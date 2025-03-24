@@ -1,13 +1,13 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass skeleton-controller ()
-  ((pose :accessor pose)
+  ((target :initform NIL :accessor target)
    (skeleton :initform NIL :accessor skeleton)))
 
 (define-transfer skeleton-controller skeleton)
 
 (defmethod initialize-instance :after ((controller skeleton-controller) &key)
-  (setf (pose controller) (make-instance 'pose :data controller)))
+  (setf (target controller) (make-instance 'pose :data controller)))
 
 (defmethod shared-initialize :after ((controller skeleton-controller) slots &key skeleton)
   (when skeleton
@@ -16,7 +16,7 @@
 (defmethod (setf skeleton) :around ((skeleton skeleton) (controller skeleton-controller))
   (unless (eq skeleton (skeleton controller))
     (call-next-method)
-    (setf (pose controller) (rest-pose* skeleton :data controller)))
+    (setf (target controller) (rest-pose* skeleton :data controller)))
   skeleton)
 
 (defmethod observe-load-state :after ((controller skeleton-controller) (asset model) (state (eql :loaded)) (area staging-area))
@@ -39,10 +39,10 @@
              (setf (skeleton controller) (skeleton mesh)))))))
 
 (defstruct (animation-layer
-            (:constructor %make-animation-layer (clip pose base)))
+            (:constructor %make-animation-layer (clip target base)))
   (clip NIL :type clip)
-  (pose NIL :type pose)
-  (base NIL :type pose)
+  (target NIL :type T)
+  (base NIL :type T)
   (strength 0.0 :type single-float))
 
 (defun make-animation-layer (clip skeleton &key (strength 0.0) (data skeleton))
@@ -60,7 +60,7 @@
   (let ((clip (animation-layer-clip layer))
         (strength (clamp 0.0 (float strength 0f0) 1.0)))
     (when (/= strength (animation-layer-strength layer))
-      (sample (animation-layer-pose layer) clip (+ (start-time clip) (* strength (duration clip))))
+      (sample (animation-layer-target layer) clip (+ (start-time clip) (* strength (duration clip))))
       (setf (animation-layer-strength layer) strength))))
 
 (define-accessor-delegate-methods clip (animation-layer-clip animation-layer))
@@ -88,7 +88,7 @@
   (when (next-method-p) (call-next-method))
   (loop for layer being the hash-values of (animation-layers controller)
         do (when (< 0.0 (animation-layer-strength layer))
-             (layer-onto (pose controller) (pose controller) (animation-layer-pose layer) (animation-layer-base layer)))))
+             (layer-onto (target controller) (target controller) (animation-layer-target layer) (animation-layer-base layer)))))
 
 (defmethod add-animation-layer ((layer animation-layer) (controller layer-controller) &key name strength (if-exists :error))
   (when (gethash name (animation-layers controller))
@@ -137,14 +137,14 @@
   null)
 
 (defstruct (fade-target
-            (:constructor make-fade-target (clip pose duration)))
-  (pose NIL :type pose)
+            (:constructor make-fade-target (clip target duration)))
+  (target NIL :type T)
   (clip NIL :type clip)
   (clock 0.0 :type single-float)
   (duration 0.0 :type single-float)
   (elapsed 0.0 :type single-float))
 
-(defmethod pose ((target fade-target)) (fade-target-pose target))
+(defmethod pose ((target fade-target)) (fade-target-target target))
 (defmethod clip ((target fade-target)) (fade-target-clip target))
 (defmethod clock ((target fade-target)) (fade-target-clock target))
 (defmethod duration ((target fade-target)) (fade-target-duration target))
@@ -176,9 +176,9 @@
     (setf (fill-pointer (fade-targets controller)) 0)
     (setf (clip controller) target)
     (when (skeleton controller)
-      (pose<- (pose controller) (rest-pose (skeleton controller))))
+      (pose<- (target controller) (rest-pose (skeleton controller))))
     (setf (clock controller) (start-time target))
-    (sample (pose controller) (clip controller) (clock controller))))
+    (sample (target controller) (clip controller) (clock controller))))
 
 (defmethod fade-to ((target clip) (controller fade-controller) &key (duration (blend-duration target)))
   (let ((targets (fade-targets controller)))
@@ -200,24 +200,24 @@
                    do (when (<= (fade-target-duration target) (fade-target-elapsed target))
                         (setf clip (setf (clip controller) (fade-target-clip target)))
                         (setf (clock controller) (fade-target-clock target))
-                        (pose<- (pose controller) (fade-target-pose target))
+                        (<- (target controller) (fade-target-target target))
                         (array-utils:vector-pop-position targets i)
                         (return)))
-             (let ((time (sample (pose controller) clip (+ (clock controller) (* (playback-speed controller) dt)))))
+             (let ((time (sample (target controller) clip (+ (clock controller) (* (playback-speed controller) dt)))))
                (setf (clock controller) time)
                (when (and (not (loop-p clip))
                           (<= (end-time clip) time)
                           (next-clip clip))
                  (fade-to (next-clip clip) controller))
                (loop for target across targets
-                     do (setf (fade-target-clock target) (sample (fade-target-pose target) (fade-target-clip target) (+ (fade-target-clock target) dt)))
+                     do (setf (fade-target-clock target) (sample (fade-target-target target) (fade-target-clip target) (+ (fade-target-clock target) dt)))
                         (incf (fade-target-elapsed target) dt)
                         (let ((time (min 1.0 (/ (fade-target-elapsed target) (fade-target-duration target)))))
-                          (blend-into (pose controller) (pose controller) (fade-target-pose target) time))))))
+                          (blend-into (target controller) (target controller) (fade-target-target target) time))))))
           ((skeleton controller)
            ;; With no active clip, make sure we restore to the rest pose on every update,
            ;; since other controllers may want to modify the pose.
-           (pose<- (pose controller) (rest-pose (skeleton controller)))))))
+           (pose<- (target controller) (rest-pose (skeleton controller)))))))
 
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -342,8 +342,8 @@
           do (setf (gethash name groups) (ensure-instance (gethash name groups) 'morph-group
                                                           :name name :meshes meshes))
              (setf found T))
-    (when (and found (slot-boundp controller 'pose))
-      (update-pose-weights (pose controller) controller))
+    (when (and found (typep (target controller) 'pose))
+      (update-pose-weights (target controller) controller))
     (when (skeleton controller)
       (update-pose-weights (rest-pose (skeleton controller)) controller))))
 
@@ -391,14 +391,14 @@
 (defclass fk-controller (skeleton-controller)
   ())
 
-(defgeneric fk-update (fk-controller pose tt dt fc))
+(defgeneric fk-update (fk-controller target tt dt fc))
 
-(defmethod fk-update ((controller fk-controller) pose tt dt fc))
+(defmethod fk-update ((controller fk-controller) target tt dt fc))
 
 (defmethod update ((controller fk-controller) tt dt fc)
   (when (next-method-p) (call-next-method))
   (when (skeleton controller)
-    (fk-update controller (pose controller) tt dt fc)))
+    (fk-update controller (target controller) tt dt fc)))
 
 (defclass animation-controller (morph-group-controller fk-controller ik-controller layer-controller fade-controller listener)
   ((updated-on :initform -1 :accessor updated-on)
@@ -452,7 +452,7 @@
 (defmethod update ((entity animation-controller) tt dt fc)
   (when (/= (updated-on entity) fc)
     (call-next-method)
-    (update-palette entity)
+    (update-palette entity (target entity))
     (update-morph-data entity)
     (setf (updated-on entity) fc)))
 
@@ -460,7 +460,7 @@
   (stage (palette-texture entity) area))
 
 (defmethod (setf pose) :after ((pose pose) (entity animation-controller))
-  (update-palette entity))
+  (update-palette entity pose))
 
 (defmethod (setf ik-system) :after ((system ik-system) name (entity animation-controller))
   ;; Hook up our local transform to the IK system's. Since the identity never changes
@@ -470,10 +470,14 @@
 (define-handler ((entity animation-controller) (ev tick)) (tt dt fc)
   (update entity tt dt fc))
 
-(defmethod update-palette ((entity animation-controller))
+(defmethod update-palette ((entity animation-controller) thing)
+  ;; Ignore palette updates when updating other crap.
+  )
+
+(defmethod update-palette ((entity animation-controller) (pose pose))
   (when (skeleton entity)
-    (let* ((palette (matrix-palette (pose entity) (palette entity)))
-           (texinput (%adjust-array (palette-data entity) (* 12 (length (pose entity))) (constantly 0f0)))
+    (let* ((palette (matrix-palette pose (palette entity)))
+           (texinput (%adjust-array (palette-data entity) (* 12 (length pose)) (constantly 0f0)))
            (texture (palette-texture entity))
            (inv (mat-inv-bind-pose (skeleton entity))))
       (mem:with-memory-region (texptr texinput)
@@ -497,9 +501,9 @@
 (defclass quat2-animation-controller (animation-controller)
   ())
 
-(defmethod update-palette ((entity quat2-animation-controller))
+(defmethod update-palette ((entity quat2-animation-controller) (pose pose))
   ;; FIXME: Update for texture data
-  (let ((palette (quat2-palette (pose entity) (palette entity)))
+  (let ((palette (quat2-palette pose (palette entity)))
         (inv (quat-inv-bind-pose (skeleton entity))))
     (dotimes (i (length palette) (setf (palette entity) palette))
       (nq* (svref palette i) (svref inv i)))))
