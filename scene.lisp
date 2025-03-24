@@ -54,7 +54,8 @@
   (issue scene 'register :changed-node entity)
   entity)
 
-(defmethod register ((listener listener) (scene scene)))
+(defmethod register ((listener listener) (scene scene))
+  (when (next-method-p) (call-next-method)))
 
 (defmethod register :after ((listener listener) (scene scene))
   (add-listener listener scene))
@@ -64,7 +65,8 @@
   (issue scene 'deregister :changed-node entity)
   entity)
 
-(defmethod deregister ((listener listener) (scene scene)))
+(defmethod deregister ((listener listener) (scene scene))
+  (when (next-method-p) (call-next-method)))
 
 (defmethod deregister :after ((listener listener) (scene scene))
   (remove-listener listener scene))
