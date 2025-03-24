@@ -170,6 +170,9 @@
                    (descendant-joint-p i root target))
         (ninterpolate (elt target i) (elt a i) (elt b i) x)))))
 
+(defmethod blend-into (target a b x &key)
+  (blend-into target a b (float x 0f0)))
+
 (defmethod layer-onto ((target pose) (in pose) (add pose) (base pose) &key (root -1))
   (dotimes (i (length add) target)
     (unless (and (<= 0 root)
@@ -182,6 +185,18 @@
         (!v+ (tscaling output) (tscaling input) (v- (tscaling additive) (tscaling additive-base)))
         (!q* (trotation output) (trotation input) (q* (qinv (trotation additive-base)) (trotation additive)))
         (nqunit* (trotation output))))))
+
+(defmethod layer-onto ((target vec3) (in vec3) (add vec3) (base vec3) &key)
+  (!v+ target in (v- add base)))
+
+(defmethod layer-onto ((target quat) (in quat) (add quat) (base quat) &key)
+  (nqunit* (!q* target in (q* (qinv base) add))))
+
+(defmethod layer-onto ((target transform) (in transform) (add transform) (base transform) &key)
+  (!v+ (tlocation target) (tlocation in) (v- (tlocation add) (tlocation base)))
+  (!v+ (tscaling target) (tscaling in) (v- (tscaling add) (tscaling base)))
+  (nqunit* (!q* (trotation target) (trotation in) (q* (qinv (trotation base)) (trotation add))))
+  target)
 
 (defmethod replace-vertex-data ((lines lines) (pose pose) &rest args &key &allow-other-keys)
   (let ((points ()))
