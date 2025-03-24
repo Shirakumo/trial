@@ -93,7 +93,7 @@
             for sampler = (svref (gltf:samplers animation) (gltf:sampler channel))
             for name = (if skin
                            (position (gltf:node target) (gltf:joints skin))
-                           (gltf:idx (gltf:node target)))
+                           (gltf-name (gltf:node target)))
             for track = (find-animation-track clip name :if-does-not-exist :create)
             do (case (gltf:path target)
                  (:translation

@@ -121,7 +121,7 @@
       (load-clips gltf NIL (clips model))
       (loop for mesh across (load-meshes gltf :model model)
             do (setf (gethash (name mesh) meshes) mesh)
-               (trial::make-vertex-array mesh (resource generator (name mesh))))
+               (make-vertex-array mesh (resource generator (name mesh))))
       ;; Construct scene graphs
       (loop for node across (gltf:scenes gltf)
             for scene = (make-instance 'basic-node :name (gltf-name node))
