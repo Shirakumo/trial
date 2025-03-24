@@ -277,10 +277,12 @@
 
 (defmethod render-with ((pass shader-pass) (renderable standard-animated-renderable) (program shader-program))
   (declare (optimize speed))
-  (loop with skinning = (if (skinned-p renderable) 2 0)
+  (loop with morphs = (the simple-vector (morphs renderable))
+        with skinning = (if (skinned-p renderable) 2 0)
+        for i from 0
         for vao across (the simple-vector (vertex-arrays renderable))
         for material across (the simple-vector (materials renderable))
-        for (morph . morphtex) across (the simple-vector (morphs renderable))
+        for (morph . morphtex) = (if (< i (length morphs)) (aref morphs i) ())
         do (when (object-renderable-p material pass)
              (cond (morph
                     (bind (morph-data morph) program)
@@ -445,9 +447,11 @@
   ;; KLUDGE: In order to access the morphs we once again duplicate functionality encoded
   ;;         in the multi-mesh-entity method for render-with.
   (loop with skinning = (if (skinned-p renderable) 2 0)
+        with morphs = (the simple-vector (morphs renderable))
+        for i from 0
         for vao across (the simple-vector (vertex-arrays renderable))
         for material across (the simple-vector (materials renderable))
-        for (morph . morphtex) across (the simple-vector (morphs renderable))
+        for (morph . morphtex) = (if (< i (length morphs)) (aref morphs i) ())
         do (when (object-renderable-p material pass)
              (with-pushed-features
                (render-with pass material program)
