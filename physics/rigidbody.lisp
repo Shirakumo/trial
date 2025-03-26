@@ -18,7 +18,16 @@
   (write-transform (global-transform-matrix shape) stream)
   (format stream "~&~%Physics Primitives (~d):" (length (physics-primitives shape)))
   (loop for primitive across (physics-primitives shape)
-        do (format stream "~%  ~a~{ ~a~}" primitive (collision-mask-systems (collision-mask primitive)))))
+        do (format stream "~%  ~a~%" primitive)
+           (format stream "~4ton system~p:~{ ~a~}~%"
+                   (length (collision-mask-systems (collision-mask primitive)))
+                   (collision-mask-systems (collision-mask primitive)))
+           (when (<= 0 (primitive-joint-index primitive))
+             (format stream "~4tanimated by: joint ~d (~s)"
+                     (primitive-joint-index primitive)
+                     (if (or (skinned-p shape) (typep shape 'skeleton-controller))
+                         (elt (joint-names (skeleton shape)) (primitive-joint-index primitive))
+                         "ERROR: NOT SKINNED?")))))
 
 (define-transfer rigid-shape
   (physics-primitives physics-primitives (lambda (p) (map-into (make-array (length p)) #'clone p))))

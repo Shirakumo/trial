@@ -194,7 +194,9 @@
   (transform (meye 4) :type mat4)
   (global-bounds-cache (%make-global-bounds-cache) :type global-bounds-cache)
   ;; 32-bit mask to designate which systems to interact with.
-  (collision-mask 1 :type (unsigned-byte 32)))
+  (collision-mask 1 :type (unsigned-byte 32))
+  ;; KLUDGE: index of the joint to inherit animated transforms from
+  (joint-index -1 :type (signed-byte 32)))
 
 (defmethod print-object ((primitive primitive) stream)
   (print-unreadable-object (primitive stream :type T :identity T)))
@@ -207,7 +209,8 @@
   (format stream "~&~%Global Transform:~%")
   (write-transform (primitive-transform primitive) stream))
 
-(define-transfer primitive primitive-material primitive-local-transform primitive-collision-mask
+(define-transfer primitive
+  primitive-material primitive-local-transform primitive-collision-mask primitive-joint-index
   (:eval (let ((target (primitive-global-bounds-cache target))
                (source (primitive-global-bounds-cache source)))
            (setf (global-bounds-cache-radius target) (global-bounds-cache-radius source))
