@@ -22,7 +22,7 @@
     (:color_2 'color-2)
     (:color_3 'color-3)))
 
-(defun load-vertex-attribute (mesh attribute accessor skeleton)
+(defun load-vertex-attribute (mesh attribute accessor &optional skeleton)
   (declare (optimize speed))
   (let ((data (vertex-data mesh))
         (stride (vertex-attribute-stride mesh))
@@ -35,22 +35,24 @@
       (setf (vertex-data mesh) data))
     (case (vertex-attribute-category attribute)
       (joints
-       (let ((joint-count (length (trial::joint-names skeleton))))
-         (flet ((map-joint (joint)
-                  (declare (type (unsigned-byte 32) joint))
-                  (float (max 0 (cond ((< joint joint-count)
-                                       joint)
-                                      (T
-                                       (v:warn :trial.gltf "Joint index ~d out of bounds [0,~d["
-                                               joint joint-count)
-                                       -1)))
-                         0f0)))
-           (loop for i of-type (unsigned-byte 32) from 0 below (length accessor)
-                 for el of-type simple-array = (elt accessor i)
-                 do (setf (aref data (+ (* i stride) offset 0)) (map-joint (aref el 0)))
-                    (setf (aref data (+ (* i stride) offset 1)) (map-joint (aref el 1)))
-                    (setf (aref data (+ (* i stride) offset 2)) (map-joint (aref el 2)))
-                    (setf (aref data (+ (* i stride) offset 3)) (map-joint (aref el 3)))))))
+       (if skeleton
+           (let ((joint-count (length (trial::joint-names skeleton))))
+             (flet ((map-joint (joint)
+                      (declare (type (unsigned-byte 32) joint))
+                      (float (max 0 (cond ((< joint joint-count)
+                                           joint)
+                                          (T
+                                           (v:warn :trial.gltf "Joint index ~d out of bounds [0,~d["
+                                                   joint joint-count)
+                                           -1)))
+                             0f0)))
+               (loop for i of-type (unsigned-byte 32) from 0 below (length accessor)
+                     for el of-type simple-array = (elt accessor i)
+                     do (setf (aref data (+ (* i stride) offset 0)) (map-joint (aref el 0)))
+                        (setf (aref data (+ (* i stride) offset 1)) (map-joint (aref el 1)))
+                        (setf (aref data (+ (* i stride) offset 2)) (map-joint (aref el 2)))
+                        (setf (aref data (+ (* i stride) offset 3)) (map-joint (aref el 3))))))
+           (v:warn :trial.gltf "Joints attribute on non-rigged mesh.")))
       (uv
        (loop for i of-type (unsigned-byte 32) from 0 below (length accessor)
              for el of-type vec2 = (elt accessor i)
