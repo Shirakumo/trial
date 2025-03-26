@@ -55,19 +55,19 @@
   (format stream "~&  DURATION~32t = ~a" (duration clip))
   (format stream "~&~%Tracks:")
   (flet ((print-track (track)
-           (format stream "~3d frames ~a~%"
-                   (length (frames track)) (interpolation track))))
+           (format stream "~3d frames ~12a ~a~%"
+                   (length (frames track)) (value-type track) (interpolation track))))
     (loop for i from 0
           for track across (tracks clip)
-          do (format stream "~&  ~3d: ~30s " i (name track))
+          do (format stream "~&  ~3d: ~s~%" i (name track))
              (etypecase track
                (animation-track
+                (format stream "~16t")
                 (print-track track))
                (transform-track
-                (format stream "~%")
-                (format stream "      LOCATION: ") (print-track (location track))
-                (format stream "      ROTATION: ") (print-track (rotation track))
-                (format stream "      SCALING:  ") (print-track (scaling track)))))))
+                (format stream "~4t LOCATION:~16t") (print-track (location track))
+                (format stream "~4t ROTATION:~16t") (print-track (rotation track))
+                (format stream "~4t SCALING:~16t") (print-track (scaling track)))))))
 
 (defun fit-to-clip (clip time)
   (let ((start (start-time clip))
