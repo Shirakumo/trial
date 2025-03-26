@@ -221,9 +221,14 @@
           do (cond ((or #+sbcl (sb-unicode:whitespace-p char)
                         #-sbcl (find char '(#\Space #\Tab #\Linefeed #\Return))
                         (find char "-_,'`\"#;"))
-                    (unless dash
+                    (when (or (not dash) (eql dash :upcase))
                       (setf dash T)
                       (write-char #\- out)))
+                   ((upper-case-p char)
+                    (unless dash
+                      (write-char #\- out))
+                    (setf dash :upcase)
+                    (write-char char out))
                    (T
                     (write-char (char-upcase char) out)
                     (setf dash NIL))))))
