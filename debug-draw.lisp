@@ -501,6 +501,11 @@ void main(){
   (let ((primitive (coerce-object primitive 'convex-mesh)))
     (apply #'debug-triangles (general-mesh-vertices primitive) (general-mesh-faces primitive) args)))
 
+(defmethod debug-draw ((primitive all-space) &rest args &key color &allow-other-keys)
+  (unless (getf args :transform)
+    (setf (getf args :transform) (primitive-transform primitive)))
+  (debug-cross (n*m (getf args :transform) (vec3)) :color (or color (vec3 1 1 0))))
+
 (defmethod debug-draw ((hit hit) &key (draw-a T) (draw-b T))
   (debug-vector (hit-location hit) (hit-normal hit) :length (hit-restitution hit))
   (debug-cross (hit-location hit))
