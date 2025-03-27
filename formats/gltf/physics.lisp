@@ -95,7 +95,7 @@
         (when (gltf:skin root-node)
           (loop for joint across (gltf:joints (gltf:skin root-node))
                 do (loop for child across (gltf:children joint)
-                         do (process joint (gltf:collider child) tf T))))
+                         do (process joint (gltf:collider child) (gltf-node-transform child) T))))
         (loop for child across (gltf:children root-node)
               do (recurse child tf)))
       (trial::simplify primitives))))
