@@ -37,6 +37,18 @@
 (defmethod (setf sequences:elt) (thing (container array-container) index)
   (setf (aref (%objects container) index) thing))
 
+(defmethod sequences:make-sequence-like ((container array-container) length &rest args &key (initial-element NIL iep) (initial-contents NIL icp) &allow-other-keys)
+  (declare (ignore initial-element initial-contents))
+  (let ((sub (make-instance 'array-container)))
+    (setf (%objects sub) (apply #'make-array length :adjustable T :fill-pointer T args))
+    (unless (or iep icp)
+      (replace (%objects sub) (%objects container)))
+    sub))
+
+(defmethod sequences:adjust-sequence ((container array-container) length &rest args &key &allow-other-keys)
+  (setf (%objects container) (apply #'sequences:adjust-sequence (%objects container) length args))
+  container)
+
 (defstruct array-iterator
   (index 0 :type (unsigned-byte 32))
   (tindex 0 :type (unsigned-byte 32))

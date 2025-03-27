@@ -60,6 +60,29 @@
            (setf (gethash thing table) index)
            (remhash temp table)))))
 
+(defmethod sequences:make-sequence-like ((container bag) length &rest args &key (initial-element NIL iep) (initial-contents NIL icp) &allow-other-keys)
+  (declare (ignore initial-element initial-contents))
+  (let ((sub (make-instance 'bag)))
+    (setf (%objects sub) (apply #'sequences:make-sequence-like (%objects container) length args))
+    (unless (or iep icp)
+      (replace (%objects sub) (%objects container)))
+    (loop for object across (%objects sub)
+          for i from 0 below length
+          do (setf (gethash object (%object->index sub)) i))
+    (setf (size sub) length)
+    sub))
+
+(defmethod sequences:adjust-sequence ((container bag) length &rest args &key initial-element initial-contents &allow-other-keys)
+  (declare (ignore initial-element initial-contents))
+  (let ((sub (make-instance 'bag)))
+    (setf (%objects sub) (apply #'sequences:adjust-sequence (%objects container) length args))
+    (clrhash (%object->index sub))
+    (loop for object across (%objects sub)
+          for i from 0 below length
+          do (setf (gethash object (%object->index sub)) i))
+    (setf (size sub) length)
+    sub))
+
 (defmethod sequences:make-sequence-iterator ((bag bag) &key (start 0) end from-end)
   (let* ((vector (the simple-vector (%objects bag)))
          (end (or end (size bag)))

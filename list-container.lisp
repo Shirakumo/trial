@@ -28,6 +28,18 @@
 (defmethod (setf sequences:elt) (thing (container list-container) index)
   (setf (nth index (%objects container)) thing))
 
+(defmethod sequences:make-sequence-like ((container list-container) length &rest args &key (initial-element NIL iep) (initial-contents NIL icp) &allow-other-keys)
+  (declare (ignore initial-element initial-contents))
+  (let ((sub (make-instance 'list-container)))
+    (setf (%objects sub) (apply #'sequences:make-sequence-like (%objects container) length args))
+    (unless (or icp iep)
+      (replace (%objects sub) (%objects container)))
+    sub))
+
+(defmethod sequences:adjust-sequence ((container list-container) length &rest args &key &allow-other-keys)
+  (setf (%objects container) (apply #'sequences:adjust-sequence (%objects container) length args))
+  container)
+
 (defmethod sequences:make-sequence-iterator ((container list-container) &key (start 0) end from-end)
   (let ((list (%objects container)))
     (multiple-value-bind (iterator limit from-end)

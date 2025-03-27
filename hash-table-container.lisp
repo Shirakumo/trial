@@ -1,7 +1,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass hash-table-container (container)
-  ((%objects :initform () :accessor %objects)))
+  ((%objects :initform (make-hash-table :test 'eql) :accessor %objects)))
 
 (defmethod clear ((container hash-table-container))
   (let ((objects (%objects container)))
@@ -32,6 +32,30 @@
              (setf (gethash thing (%objects container)) thing)
              (return thing))
         finally (error "Index ~s is out of bounds." index)))
+
+(defmethod sequences:make-sequence-like ((container hash-table-container) length &key (initial-element NIL iep) (initial-contents NIL icp))
+  (let ((sub (make-instance 'hash-table-container)))
+    (cond (icp
+           (for:for ((el :over initial-contents)
+                     (i :from 0 :to length))
+             (setf (gethash el (%objects sub)) el)))
+          (iep
+           (setf (gethash initial-element (%objects sub)) initial-element)))
+    sub))
+
+(defmethod sequences:adjust-sequence ((container hash-table-container) length &key (initial-element NIL iep) (initial-contents NIL icp))
+  (let ((table (make-hash-table :test 'eql)))
+    (for:for ((el :table-keys (%objects container))
+              (i :from 0 :to length))
+      (setf (gethash el table) el))
+    (cond (icp
+           (for:for ((el :over initial-contents)
+                     (i :from 0 :to length))
+             (setf (gethash el table) el)))
+          (iep
+           (setf (gethash initial-element table) initial-element)))
+    (setf (%objects container) table))
+  container)
 
 (defstruct hash-table-iterator
   (index 0 :type (unsigned-byte 32))
