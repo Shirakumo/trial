@@ -13,15 +13,3 @@
     (invalidate-global-bounds-cache primitive)
     (setf (awake-p (entity primitive)) T))
   primitive)
-
-;; KLUDGE: I hate how we have to do the test like this.
-(define-handler ((entity rigid-shape) tick :after) ()
-  (when (or (skinned-p entity) (typep entity 'animation-controller))
-    (let ((palette (palette entity)))
-      (loop for primitive across (physics-primitives entity)
-            for joint = (primitive-joint-index primitive)
-            do (when (<= 0 joint)
-                 (m<- (primitive-local-transform primitive)
-                      (aref palette joint))
-                 (invalidate-global-bounds-cache primitive)
-                 (setf (awake-p entity) T))))))
