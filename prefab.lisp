@@ -130,7 +130,9 @@
 (define-prefab-translator change-class (instance asset node class)
   (let ((nodevar (gensym "NODE")))
     `(do-nodes% (,nodevar ,instance ,node)
-       (change-class ,nodevar ',class))))
+       (change-class ,nodevar ,(if (typep class 'symbol)
+                                   `',class
+                                   `(,class ,nodevar))))))
 
 (define-prefab-translator play (instance asset animation)
   `(play ,animation ,instance))
