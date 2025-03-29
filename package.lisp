@@ -945,6 +945,7 @@
    #:setup-perspective
    #:map-visible
    #:in-view-p
+   #:focal-point
    #:screen-area
    #:do-visible
    #:2d-camera
