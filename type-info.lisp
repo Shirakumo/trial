@@ -589,7 +589,8 @@
   value)
 
 (declaim (inline (setf gl-memref)))
-(defun (setf gl-memref) (value ptr type &key (layout 'std140))
+(defun (setf gl-memref) (value ptr type &key (layout 'std140) container)
+  (declare (ignore container))
   (etypecase layout
     ((or std430 (eql std430)) (setf (gl-memref-std430 ptr type) value))
     ((or std140 (eql std140)) (setf (gl-memref-std140 ptr type) value))))
