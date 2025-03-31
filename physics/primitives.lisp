@@ -146,6 +146,12 @@
                               name +collision-system-indices+)))
          (push name (aref +collision-system-indices+ pos)))
        (ash 1 pos)))
+    (cons
+     (if (eql 'not (first system-ish))
+         (lognot (%collision-system-mask (rest system-ish)))
+         (let ((mask 0))
+           (dolist (system system-ish mask)
+             (setf mask (logior mask (%collision-system-mask system)))))))
     (sequence
      (let ((mask 0))
        (sequences:dosequence (system system-ish mask)
