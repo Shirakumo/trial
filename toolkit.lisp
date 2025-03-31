@@ -1481,7 +1481,7 @@
 #-trial-release
 (defun dbg (&rest parts)
   (let ((*print-right-margin* 10000000000))
-    (format *debug-io* "~&~{~a~^ ~}~%" parts)))
+    (format *debug-io* "~&[TRIAL] ~{~a~^ ~}~%" parts)))
 
 #+trial-release
 (defun dbg (&rest parts)
