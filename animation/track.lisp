@@ -373,7 +373,7 @@
   (make-instance 'transform-track
                  :name (name track)
                  :location (differentiate (location track))
-                 :scaling (differentiate (scaling track))
+                 :scaling (scaling track)
                  :rotation (differentiate (rotation track))))
 
 (defclass dummy-track (transform-track)

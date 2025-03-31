@@ -296,5 +296,8 @@ Forward clip:
     (when (< 0 (length (location track)))
       (sample (velocity clip) (location track) time :loop-p loop-p)
       (nv* (velocity clip) (velocity-scale clip)))
+    (when (< 0 (length (scaling track)))
+      (let ((transform (aref (joints target) (name track))))
+        (sample (tscaling transform) (scaling track) time :loop-p loop-p)))
     (when (< 0 (length (rotation track)))
       (sample (rotation clip) (rotation track) time :loop-p loop-p))))
