@@ -415,6 +415,84 @@
 
 ;; TODO: generate optimised accessor functions
 
+(defun gl-struct-ref (struct slot &optional container)
+  (let* ((class (class-of struct))
+         (slot (find slot (c2mop:class-slots class) :key #'c2mop:slot-definition-name)))
+    (gl-memref (cffi:inc-pointer (memory-region-pointer (storage struct)) (+ (base-offset struct) (base-offset slot)))
+               (gl-type slot) :layout (layout-standard class) :container container)))
+
+(defun (setf gl-struct-ref) (value struct slot &optional container)
+  (let* ((class (class-of struct))
+         (slot (find slot (c2mop:class-slots class) :key #'c2mop:slot-definition-name)))
+    (setf (gl-memref (cffi:inc-pointer (memory-region-pointer (storage struct)) (+ (base-offset struct) (base-offset slot)))
+                     (gl-type slot) :layout (layout-standard class) :container container)
+          value)))
+
+(defun gl-struct-ref* (class struct slot &optional container)
+  (let* ((class (find-class class))
+         (slot (find slot (c2mop:class-slots class) :key #'c2mop:slot-definition-name)))
+    (gl-memref (cffi:inc-pointer (memory-region-pointer (storage struct)) (+ (base-offset struct) (base-offset slot)))
+               (gl-type slot) :layout (layout-standard class) :container container)))
+
+(defun (setf gl-struct-ref*) (value class struct slot &optional container)
+  (let* ((class (find-class class))
+         (slot (find slot (c2mop:class-slots class) :key #'c2mop:slot-definition-name)))
+    (setf (gl-memref (cffi:inc-pointer (memory-region-pointer (storage struct)) (+ (base-offset struct) (base-offset slot)))
+                     (gl-type slot) :layout (layout-standard class) :container container)
+          value)))
+
+(define-compiler-macro gl-struct-ref* (&whole whole &environment env class struct slot &optional container)
+  (if (and (constantp class env) (constantp slot env))
+      (let ((structg (gensym "STRUCT")))
+        `(let ((,structg ,struct))
+           (gl-memref (cffi:inc-pointer (memory-region-pointer (storage struct))
+                                        (+ (base-offset struct)
+                                           (load-time-value
+                                            (base-offset (find ,slot (c2mop:class-slots (find-class ,class)) :key #'c2mop:slot-definition-name)))))
+                      (load-time-value (gl-type (find ,slot (c2mop:class-slots (find-class ,class)) :key #'c2mop:slot-definition-name)))
+                      :layout (load-time-value (layout-standard (find-class ,class)))
+                      :container ,container)))
+      whole))
+
+(define-compiler-macro (setf gl-struct-ref*) (&whole whole &environment env value class struct slot &optional container)
+  (if (and (constantp class env) (constantp slot env))
+      (let ((structg (gensym "STRUCT")))
+        `(let ((,structg ,struct))
+           (setf (gl-memref (cffi:inc-pointer (memory-region-pointer (storage struct))
+                                              (+ (base-offset struct)
+                                                 (load-time-value
+                                                  (base-offset (find ,slot (c2mop:class-slots (find-class ,class)) :key #'c2mop:slot-definition-name)))))
+                            (load-time-value (gl-type (find ,slot (c2mop:class-slots (find-class ,class)) :key #'c2mop:slot-definition-name)))
+                            :layout (load-time-value (layout-standard (find-class ,class)))
+                            :container ,container)
+                 ,value)))
+      whole))
+
+(defmacro with-gl-slots ((class &rest slots) struct &body body)
+  (let* ((ptr (gensym "PTR"))
+         (structg (gensym "STRUCT"))
+         (class (find-class class))
+         (slots (loop for slot in slots
+                      collect (list (gensym (string slot)) slot (or (find slot (c2mop:class-slots class) :key #'c2mop:slot-definition-name)
+                                                                    (error "No such slot ~s on class ~s" slot class))))))
+    `(let ,(loop for (sym _ slot) in slots
+                 for type = (gl-type->cl-type (gl-type slot))
+                 collect `(,sym ,(case type
+                                   (single-float 0f0)
+                                   (double-float 0d0)
+                                   (T (if (subtypep type 'org.shirakumo.type-templates:type-object)
+                                          `(,type)
+                                          (type-prototype type))))))
+       (declare (dynamic-extent ,@(loop for slot in slots collect (first slot)))
+                ,@(loop for (sym _ slot) in slots
+                        collect `(type ,(gl-type->cl-type (gl-type slot)) ,sym)))
+       (let* ((,structg ,struct)
+              (,ptr (cffi:inc-pointer (memory-region-pointer (storage ,structg)) (base-offset ,structg))))
+         (symbol-macrolet ,(loop for (sym name slot) in slots
+                                 collect `(,name (gl-memref (cffi:inc-pointer ,ptr ,(base-offset slot))
+                                                            ,(gl-type slot) :layout ',(layout-standard class) :container ,sym)))
+           ,@body)))))
+
 (defmethod c2mop:slot-value-using-class ((class gl-struct-class) (struct gl-struct) (slot gl-struct-immediate-slot))
   (if (storage struct)
       (gl-memref (cffi:inc-pointer (memory-region-pointer (storage struct)) (+ (base-offset struct) (base-offset slot)))

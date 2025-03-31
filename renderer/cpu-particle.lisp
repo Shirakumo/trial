@@ -13,7 +13,7 @@
         (location (raw-particle-location particle))
         (velocity (raw-particle-velocity particle)))
     (declare (dynamic-extent force))
-    (with-slots (type position strength range inv-range normal) field
+    (with-gl-slots (particle-force-field type position strength range inv-range normal) field
       (ecase type
         (0)
         (1 ; Point
