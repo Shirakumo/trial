@@ -661,6 +661,10 @@
     (complex #c(0 0))
     (cons '(NIL . NIL))
     (float 0.0)
+    (double-float 0d0)
+    (single-float 0f0)
+    (short-float 0s0)
+    (long-float 0l0)
     (function #'identity)
     (hash-table (load-time-value (make-hash-table)))
     (integer 0)
@@ -673,10 +677,19 @@
     (string "string")
     (symbol 'symbol)
     (vector #(vector))
-    (T (let ((class (find-class type)))
-         (unless (c2mop:class-finalized-p class)
-           (c2mop:finalize-inheritance class))
-         (c2mop:class-prototype class)))))
+    (T (etypecase type
+         (symbol
+          (let ((class (find-class type)))
+            (unless (c2mop:class-finalized-p class)
+              (c2mop:finalize-inheritance class))
+            (c2mop:class-prototype class)))
+         (cons
+          (case (first type)
+            ((integer real) (second type))
+            ((signed-byte unsigned-byte) 0)
+            ((single-float double-float) (second type))
+            (T
+             (error "Unsupported type ~s" type))))))))
 
 (defun list-eql-specializers (function &rest args)
   (delete-duplicates
