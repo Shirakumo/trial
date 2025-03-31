@@ -471,7 +471,7 @@
 (defmacro with-gl-slots ((class &rest slots) struct &body body)
   (let* ((ptr (gensym "PTR"))
          (structg (gensym "STRUCT"))
-         (class (find-class class))
+         (class (c2mop:ensure-finalized (find-class class)))
          (slots (loop for slot in slots
                       collect (list (gensym (string slot)) slot (or (find slot (c2mop:class-slots class) :key #'c2mop:slot-definition-name)
                                                                     (error "No such slot ~s on class ~s" slot class))))))
