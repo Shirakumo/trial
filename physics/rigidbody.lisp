@@ -144,6 +144,46 @@
       (m<- target (transform-matrix entity))
       (transform-matrix entity)))
 
+(defmethod project-onto-surface ((primitive primitive) target &key (collision-mask 1) (direction -vy3+) (transform (transform)) (ignore primitive))
+  (let ((opposite (v- direction))
+        (location (vec3))
+        (hit (make-hit)))
+    (declare (dynamic-extent location opposite hit))
+    (global-location primitive location)
+    (global-support-function primitive opposite opposite)
+    ;; We raycast from the opposite extreme end of the primitive to get the maximum tolerance for snapping.
+    (when (raycast opposite direction :ignore ignore :target target :collision-mask collision-mask :hit hit)
+      ;; The hit location is in global coordinates, so we need to relativise to the position of the object before moving
+      ;; Get the support function to get our bottom, then extract the difference.
+      (global-support-function primitive direction opposite)
+      (!v+ (location transform) (!v- opposite location opposite) (hit-location hit))
+      ;; FIXME: this does not preserve rotation
+      (!qlookat (orientation transform) (hit-normal hit) +vy3+)
+      (values transform (hit-depth hit)))))
+
+(defmethod project-onto-surface ((object rigid-shape) target &key (collision-mask 1) (direction -vy3+) (transform (transform)))
+  (%update-rigidbody-cache object)
+  (let ((tf (transform))
+        (min-depth most-positive-single-float))
+    (declare (dynamic-extent tf))
+    (loop for primitive across (the simple-vector (physics-primitives object))
+          do (when (collision-mask-p collision-mask primitive)
+               (multiple-value-bind (tf depth) (project-onto-surface primitive target :collision-mask collision-mask :direction direction :transform tf :ignore object)
+                 (when (and tf (< depth min-depth))
+                   (setf min-depth depth)
+                   (t<- transform tf)))))
+    (when (< min-depth most-positive-single-float)
+      (values transform min-depth))))
+
+(defmethod snap-object-to-level ((object rigid-shape) &key (collision-mask 1) (direction -vy3+) (target (scene +main+)) (align-direction T))
+  (let ((transform (transform)))
+    (declare (dynamic-extent transform))
+    (when (project-onto-surface object target :collision-mask collision-mask :direction direction :transform transform)
+      (when align-direction
+        (q<- (orientation object) (orientation transform)))
+      (v<- (location object) (location transform))
+      object)))
+
 (defclass rigidbody (rigid-shape)
   ((rotation :initform (vec 0 0 0) :reader rotation)
    (inverse-inertia-tensor :initform (mat3) :reader inverse-inertia-tensor)

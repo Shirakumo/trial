@@ -128,6 +128,7 @@
    (spawn-count :initarg :spawn-count :initform 1 :accessor spawn-count)
    (spawn-volume :initarg :spawn-volume :initform NIL :accessor spawn-volume)
    (spawn-orientation :initarg :spawn-orientation :initform (load-time-value (cons (vec 0 0 0) (vec 0 F-2PI 0))) :accessor spawn-orientation)
+   (snap-to-level-p :initarg :snap-to-level :initform T :accessor snap-to-level-p)
    (auto-deactivate :initarg :auto-deactivate :initform T :accessor auto-deactivate)
    (respawn-cooldown :initarg :respawn-cooldown :initform NIL :accessor respawn-cooldown)
    (respawn-timer :initform 0 :accessor respawn-timer)))
@@ -150,7 +151,7 @@
   (hash-table-count spawned-objects))
 
 (defmethod draw-instance ((trigger spawner-trigger-volume) &rest args)
-  (let ((entity (apply #'draw-instance (spawn-class trigger) (spawn-arguments trigger))))
+  (let ((entity (apply #'draw-instance (spawn-class trigger) (append args (spawn-arguments trigger)))))
     (setf (gethash entity (spawned-objects trigger)) T)
     (setf (name entity) NIL)
     ;; TODO: make this less horrendously inefficient
@@ -161,6 +162,8 @@
         (v<- (location entity) (location trigger)))
     (destructuring-bind (min . max) (spawn-orientation trigger)
       (evaluate-orientation min max (orientation entity)))
+    (when (snap-to-level-p trigger)
+      (snap-object-to-level entity))
     entity))
 
 (defmethod activate-trigger ((entity entity) (trigger spawner-trigger-volume))

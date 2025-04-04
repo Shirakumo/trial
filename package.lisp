@@ -484,6 +484,8 @@
    #:physics-primitives
    #:collision-mask
    #:transform-matrix
+   #:project-onto-surface
+   #:snap-object-to-level
    #:rigidbody
    #:rotation
    #:inverse-inertia-tensor
