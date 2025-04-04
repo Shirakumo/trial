@@ -147,6 +147,11 @@
     (when (<= end start)
       (return-from detect-hits start))))
 
+(defmethod detect-hits ((a ray) (b entity) hits start end)
+  (if (next-method-p)
+      (call-next-method)
+      start))
+
 (define-ray-test sphere ((sphere-radius single-float))
   (let* ((em ray-location)
          (eb (v. em ray-direction))

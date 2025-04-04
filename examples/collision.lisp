@@ -13,7 +13,7 @@
 
 (defmethod (setf physics-primitive) ((primitive primitive) (body collision-body))
   (setf (physics-primitives body) (vector primitive))
-  (if (vertex-array body)
+  (if (and (vertex-array body) (gl-name (vertex-array body)))
       (replace-vertex-data (vertex-array body) primitive)
       (setf (vertex-array body) (make-vertex-array primitive NIL))))
 
