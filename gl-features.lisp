@@ -137,6 +137,7 @@
           (progn ,@body)
        (pop-features))))
 
+(declaim (inline set-blend-mode))
 (defun set-blend-mode (mode)
   (ecase mode
     ((:source-over :normal)
