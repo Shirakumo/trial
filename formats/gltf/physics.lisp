@@ -184,7 +184,7 @@
                     :spawn-count (or spawn-count 1)
                     :spawn-volume spawn-volume
                     :auto-deactivate (gltf:auto-deactivate-p trigger-data)
-                    :snap-to-level-p (gltf:snap-to-surface-p trigger-data)
+                    :snap-to-level (gltf:snap-to-surface-p trigger-data)
                     :respawn-cooldown (gltf:respawn-cooldown trigger-data)))))
 
 (define-trigger-translation gltf:shirakumo-killvolume (trigger trigger-data)

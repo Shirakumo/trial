@@ -220,7 +220,7 @@ void main(){
   (:shader-file (trial "post/aberration.glsl")))
 
 (define-shader-pass luminance-pass (simple-post-effect-pass)
-  ((color :texspec (:internal-format :r16f)))
+  ((color :port-type output :texspec (:internal-format :r16f)))
   (:shader-file (trial "post/luminance.glsl")))
 
 (define-shader-pass displacement-pass (simple-post-effect-pass)
