@@ -44,7 +44,7 @@ Event mappings are executed through ``map-event``, which is handled by the ``con
 
 Defining how events are mapped is, in the most generic way, done via ``define-mapping-function``. The function it defines is invoked for each event, and can then just issue other events back onto the loop. Typically though this is //too// generic and open-ended, and also doesn't allow players to customise how the mapping works.
 
-Instead, a ``keymap.lisp`` file should be defined, which describes the mappings. This file will contain all the default mappings present, and Trial will emit a new file of the same structure when the user changes the mappings. Trial will also take care of keeping track of the action's state. For digital actions this means whether it's "active" or not, and can be retrieved with ``retained``. For directional actions this means the current direction vector, which can be retrieved with ``directional``.
+Instead, a ``keymap.lisp`` file should be defined, which describes the mappings. This file will contain all the default mappings present, and Trial will emit a new file of the same structure when the user changes the mappings. Trial will also take care of keeping track of the action's state. For digital actions this means whether it's "active" or not, and can be retrieved with ``retained``. For directional actions this means the current direction vector, which can be retrieved with ``directional``. For analog actions this means the current value, which can be retrieved with ``analog``.
 
 The file describing action mappings is in s-expression format and contains definitions like this:
 
@@ -61,7 +61,7 @@ The file describing action mappings is in s-expression format and contains defin
 
 Meaning: when the ``:space`` key is pressed, or when the ``:b`` or ``:a`` button on a gamepad is pressed, fire a ``jump`` action. Map the left and right analog sticks, the dpad, and the wasd keys to the movement directional action.
 
-The possible mapping types are ``trigger`` for digital maps, and ``directional`` for directional maps.
+The possible mapping types are ``trigger`` for digital maps, ``directional`` for directional maps, and ``analog`` for analog value maps.
 
 Querying and interacting with the mappings can of course also be done programmatically outside of the ``keymap.lisp`` source file. On the most basic, one can ``load-mapping`` and ``save-mapping`` to interact with the file. Finding mappings that spawn an action can be done via ``find-action-mappings``. It can also be useful to capture an input event and turn that into on ``action-mapping`` or vice-versa. To do so, simply use ``event-to-action-mapping``, or the inverse, ``event-from-action-mapping``.
 
@@ -80,9 +80,17 @@ The possible binding sources are the same as for triggers, but with the addition
 - ``:one-of`` Same as for triggers, except for ``stick``, ``buttons``, and ``keys``, where each qualifier should be a list. For sticks, ``(X Y)``, for buttons and keys ``(Up Right Down Left)``
 - ``:dead-zone`` The dead-zone for ``point`` and ``axis`` below which no direction is recorded. Defaults to 0.1
 - ``:low-value`` For digital events, the value in the "low"/"up" state. Defaults to 0.0
-- ``:high-value`` For digital events, the value in the "low"/"up" state. Defaults to 1.0
+- ``:high-value`` For digital events, the value in the "high"/"down" state. Defaults to 1.0
 - ``:timeout`` For ``point`` the timeout after which the mouse is reset to no movement. Defaults to 0.02
 - ``:scaling`` For ``point``, the scaling applied to the mouse direction. Allows both mouse speed correction as well as flipping of the mouse axes. Should be ``(X Y)`` scalar list, and defaults to ``(1 1)``
+
+### Analog Values
+The possible binding sources are the same as for triggers, but with the additional ``buttons`` to combine two gamepad buttons, and ``keys`` to combine two keyboard keys. The following parameters are also available:
+
+- ``:one-of`` Same as for triggers, except for ``buttons``, and ``keys``, where each qualifier should be a list of ``(Up Down)``
+- ``:dead-zone`` The dead-zone for ``point`` and ``axis`` below which no direction is recorded. Defaults to 0.1
+- ``:low-value`` For digital events, the value in the "low"/"up" state. Defaults to 0.0
+- ``:high-value`` For digital events, the value in the "high"/"down" state. Defaults to 1.0
 
 ## Miscellaneous
 Sometimes, particularly when switching action sets, it can be useful to reset or clear retentions. ``clear-retained`` will reset all retention information. ``reset-retained`` will attempt to "back fill" retention information based on current device state.
