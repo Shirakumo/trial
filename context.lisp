@@ -42,7 +42,8 @@
    (handler :initarg :handler :accessor handler)
    (shared-with :initarg :share-with :reader shared-with)
    (glsl-target-version :initarg :glsl-version :initform NIL :accessor glsl-target-version)
-   (binding-point-allocator :initform (make-array 256 :element-type 'bit) :accessor binding-point-allocator))
+   (binding-point-allocator :initform (make-array 256 :element-type 'bit) :accessor binding-point-allocator)
+   (framebuffer :reader framebuffer))
   (:default-initargs
    :title "Trial"
    :width 1280
@@ -63,6 +64,9 @@
   (with-context (context)
     (destroy-context context)
     (create-context context)))
+
+(defmethod initialize-instance :before ((context context) &key)
+  (setf (slot-value context 'framebuffer) (make-instance 'backbuffer :context context)))
 
 (defmethod initialize-instance :after ((context context) &key)
   (release-context context))

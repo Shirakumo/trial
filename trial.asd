@@ -140,7 +140,8 @@
                              (:file "tone-mapping")))
                (:module "resources"
                 :depends-on ("package" "resource" "toolkit" "texture-source" "type-info")
-                :components ((:file "bindable-buffer" :depends-on ("buffer-object"))
+                :components ((:file "backbuffer" :depends-on ("framebuffer"))
+                             (:file "bindable-buffer" :depends-on ("buffer-object"))
                              (:file "buffer-object")
                              (:file "compute-shader" :depends-on ("shader-program"))
                              (:file "framebuffer")
