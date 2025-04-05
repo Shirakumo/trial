@@ -17,11 +17,12 @@ Trial is a modular game engine written in Common Lisp. It offers many tools and 
   - ''Workbench''(link workbench.mess)
   - ''Examples''(link examples.mess)
 - Graphics
+  - ''Cameras''(link camera.mess)
   - ''Context''(link context.mess)
     - GLFW
+    - NX
     - SDL2
     - GLOP
-    - Qt
   - ''Render Pipeline''(link render-pipeline.mess)
     - ''Shaders''(link shaders.mess)
     - ''Shader Passes''(link shader-passes.mess)
@@ -44,12 +45,10 @@ Trial is a modular game engine written in Common Lisp. It offers many tools and 
   - ''Particles''(link particles.mess)
   - ''Transformations''(link transforms.mess)
   - 2D
-    - Camera
     - ''Sprites''(link sprites.mess)
     - ''Tile Maps''(link tile-layer.mess)
     - ''Parallax Backgrounds''(link parallax.mess)
   - 3D
-    - ''Camera''(link 3d-camera.mess)
     - Models
     - ''Skyboxes''(link skyboxes.mess)
   - ''Video''(link video.mess)
@@ -61,6 +60,7 @@ Trial is a modular game engine written in Common Lisp. It offers many tools and 
     - ''Mass Aggregate Physics''(link mass-aggregate.mess)
     - ''Rigid Body Physics''(link rigid-body.mess)
     - Soft Body Physics
+  - Triggers
 - Input
   - ''Event Loop''(link event-loop.mess)
   - ''Input System''(link input.mess)

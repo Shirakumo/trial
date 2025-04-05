@@ -1,0 +1,28 @@
+# Cameras
+Trial offers a generic camera system as well as a couple of different default cameras. However, it is very likely that you'll want to heavily customise them to your particular use-case, as optimal camera movement in games is a very difficult and situation-specific topic.
+
+At the basis is the ``camera``, which sets up a ``projection-matrix`` via ``setup-perspective`` and the ``view-matrix`` via ``project-view``. the Each of the cameras also implements a ``focal-point``, which is used for certain rendering optimisations and can be used for special effects as well. It should be the world coordinate of the point the camera is focusing on. You can also test whether an object is visible via ``in-view-p`` and query (or override) the approximate size an object takes up on screen via ``screen-area``. The former is used for culling via ``map-visible``, and the latter is used for selecting different LODs. Every camera also holds a ``near-plane`` and ``far-plane`` used for depth-clipping, a ``location`` that describes the camera's eye position, and a ``bsize`` that defines the view size.
+
+When a camera is ``activate``d, it is simply set as the ``camera`` of the current ``scene`` object. A scene can have an arbitrary number of cameras registered, but only one active camera at a time. When the camera is switched, the projection matrix is updated anew and rendering will use the new camera. Inactive cameras will still receive events however. It is up to you to only handle events for cameras when they should as needed for your game.
+
+Trial attempts to do a best-effort at determining frustum culling automatically. However, it may be useful to override ``in-view-p`` for your own cameras and objects to customise their visibility behaviour.
+
+## 2D Cameras
+The ``2d-camera`` is the base class used for orthographic projection 2D cameras.
+
+The ``sidescroll-camera`` adds a ``zoom`` factor and will smoothly track towards a ``target`` location or object.
+
+the ``2d-editor-camera`` implements basic WASD movement, with C and Space for lateral movement. You can hold left shift for faster movement, and left alt for slower movement, and customise the base ``move-speed``. This camera will inherit the previous camera's location when activated, making it an easy way to switch into an "editor mode".
+
+## 3D Cameras
+The ``3d-camera`` is the base class used for perspective projection 3D cameras, based on the ``fov`` parameter. The fov is designated in degrees, and should be between 0 and 180.
+
+The ``target-camera`` simply ensures that the camera is always looking at the ``target`` position. The target should be some kind of object with a ``location`` that resolves to a world-space position.
+
+The ``following-camera`` instead uses the camera's ``location`` as a fixed offset from the ``target``.
+
+The ``fps-camera`` implements basic first-person look using mouse input. Using the ``x-acceleration`` and ``y-acceleration`` properties you can control the speed of the turning and invert it for each axis separately as well.
+
+The ``freeroam-camera`` additionally implements moving and strafing on top of the ``fps-camera`` using basic WASD movement, with C and Space for lateral movement. You can hold left shift for faster movement, and left alt for slower movement, and customise the base ``move-speed``. However, since neither the freeroam nor the basic fps camera use the ''action system''(link input.mess), it is recommended that you instead replicate their logic in your own system.
+
+The ``editor-camera`` builds further upon the ``freeroam-camera``, locking the looking behind holding left control or middle mouse, to ensure you can interact without changing the view. This camera will also inherit the previous camera's parameters when activated, making it an easy way to switch into an "editor mode".

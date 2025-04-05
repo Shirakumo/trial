@@ -15,7 +15,7 @@ When a node in the scene graph is added or removed, you can react to that change
 
 Note that all of those functions are called synchronously, so performing expensive operations in them will also make scene tree changes expensive as well. However, it also allows you to perform consistency checks and error out, should an insertion or removal be considered invalid.
 
-In order to react to changes elsewhere in the scene graph, you can add an event handler for the ``register`` and ``deregister`` events. Note that these will be asynchronous and will only be handled after the change has already been performed.
+In order to react to changes elsewhere in the scene graph, you can add an event handler for the ``register`` and ``deregister`` events. Note that these will be asynchronous and will only be handled after the change has already been performed. You can also react to a scene change itself via the ``scene-change`` event.
 
 ## Entity Mixins
 By themselves nodes don't actually do anything. Often you'd like the nodes to carry some properties such as a location, orientation, etc. To this end, Trial offers a number of mixin classes:
