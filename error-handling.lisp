@@ -60,6 +60,9 @@
 (defmethod report-on-error ((error org.shirakumo.depot:depot-condition))
   (emessage "A ~a resource file is corrupted and could not be read. Please verify your installation." +app-system+))
 
+(defmethod report-on-error ((error org.shirakumo.zippy:zippy-condition))
+  (emessage "A ~a resource file is corrupted and could not be read. Please verify your installation." +app-system+))
+
 (defmethod report-on-error ((error cffi:load-foreign-library-error))
   (emessage "Failed to load a shared library (~a). Your system is either not capable of running ~a, or the shared library is corrupted."
             #+windows "DLL" #+darwin "DYLIB" #-(or windows darwin) "SO" +app-system+))
