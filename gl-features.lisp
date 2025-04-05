@@ -175,6 +175,9 @@
     (:add
      (gl:blend-func-separate :src-alpha :one :one :one-minus-src-alpha)
      (gl:blend-equation :func-add))
+    (:one
+     (gl:blend-func-separate :one :one :one :one)
+     (gl:blend-equation :func-add))
     (:multiply
      (gl-extension-case
        (:GL-KHR-BLEND-EQUATION-ADVANCED
