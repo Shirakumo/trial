@@ -275,7 +275,7 @@
   (when location (setf (location emitter) location))
   (when scaling (setf (scaling emitter) scaling))
   (when orientation (setf (orientation emitter) orientation))
-  (when transform (setf (tf emitter) transform))
+  (when transform (setf (local-transform emitter) transform))
   (when vertex-array (setf (vertex-array emitter) vertex-array))
   (with-all-slots-bound (emitter cpu-particle-emitter)
     (let ((mat (mat4))

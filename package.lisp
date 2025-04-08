@@ -1424,6 +1424,7 @@
    #:transformed-entity
    #:orientation
    #:tf
+   #:local-transform
    #:fullscreen-entity
    #:vertex-entity
    #:colored-entity

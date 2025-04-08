@@ -234,8 +234,8 @@ void main(){
   (v b)
   (v color-b))
 
-(defmethod debug-draw ((tf transform) &key &allow-other-keys)
-  (debug-orientation (tlocation tf) (trotation tf) :stretch (tscaling tf)))
+(defmethod debug-draw ((transform transform) &key &allow-other-keys)
+  (debug-orientation (tlocation transform) (trotation transform) :stretch (tscaling transform)))
 
 (define-debug-draw-function (debug-orientation lines) (location orientation &key (stretch #.(vec3 1)))
   (allocate 12)
@@ -484,7 +484,7 @@ void main(){
 
 (defmethod debug-draw :around ((entity transformed-entity) &rest args &key &allow-other-keys)
   (unless (getf args :transform)
-    (setf (getf args :transform) (tmat (tf entity))))
+    (setf (getf args :transform) (tmat (local-transform entity))))
   (apply #'call-next-method entity args))
 
 (defmethod debug-draw ((data mesh-data) &rest args &key &allow-other-keys)

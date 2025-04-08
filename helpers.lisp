@@ -77,7 +77,7 @@
 (define-transfer scaled-entity scaling)
 
 (defclass transformed-entity (transformed entity)
-  ((transform :initarg :transform :initform (transform) :reader tf)))
+  ((local-transform :initarg :transform :initarg :local-transform :initform (transform) :reader tf :reader local-transform)))
 
 (defmethod shared-initialize :after ((entity transformed-entity) slots &key location scaling orientation)
   (when location (setf (location entity) location))
@@ -87,60 +87,56 @@
 (defmethod apply-transforms progn ((obj transformed-entity))
   (let ((mat (mat4)))
     (declare (dynamic-extent mat))
-    (nm* (model-matrix) (tmat (tf obj) mat))))
+    (nm* (model-matrix) (tmat (local-transform obj) mat))))
 
 (define-transfer transformed-entity tf)
 
+(trivial-deprecate:declaim-deprecated (function tf)
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives (local-transform))
+
 (defmethod (setf tf) ((tf transform) (obj transformed-entity))
-  (t<- (tf obj) tf))
+  (t<- (local-transform obj) tf))
 
 (defmethod (setf tf) ((mat mat4) (obj transformed-entity))
-  (!tfrom-mat (tf obj) mat))
-
-(defmethod location ((tf transform))
-  (tlocation tf))
+  (!tfrom-mat (local-transform obj) mat))
 
 (defmethod location ((obj transformed-entity))
-  (tlocation (tf obj)))
+  (tlocation (local-transform obj)))
 
 (defmethod 3ds:location ((obj transformed-entity))
-  (tlocation (tf obj)))
+  (tlocation (local-transform obj)))
 
 (defmethod (setf location) ((vec vec3) (obj transformed-entity))
-  (v<- (tlocation (tf obj)) vec))
-
-(defmethod scaling ((tf transform))
-  (tscaling tf))
+  (v<- (tlocation (local-transform obj)) vec))
 
 (defmethod scaling ((obj transformed-entity))
-  (tscaling (tf obj)))
+  (tscaling (local-transform obj)))
 
 (defmethod (setf scaling) ((vec vec3) (obj transformed-entity))
-  (v<- (tscaling (tf obj)) vec))
+  (v<- (tscaling (local-transform obj)) vec))
 
 (defmethod (setf scaling) ((value real) (obj transformed-entity))
-  (vsetf (tscaling (tf obj)) value value value))
-
-(defmethod orientation ((tf transform))
-  (trotation tf))
+  (vsetf (tscaling (local-transform obj)) value value value))
 
 (defmethod orientation ((obj transformed-entity))
-  (trotation (tf obj)))
+  (trotation (local-transform obj)))
 
 (defmethod (setf orientation) ((quat quat) (obj transformed-entity))
-  (q<- (trotation (tf obj)) quat))
+  (q<- (trotation (local-transform obj)) quat))
 
 (defmethod axis ((obj transformed-entity))
-  (qaxis (trotation (tf obj))))
+  (qaxis (trotation (local-transform obj))))
 
 (defmethod (setf axis) ((axis vec3) (obj transformed-entity))
-  (setf (trotation (tf obj)) (qfrom-angle axis (angle obj))))
+  (setf (trotation (local-transform obj)) (qfrom-angle axis (angle obj))))
 
 (defmethod angle ((obj transformed-entity))
-  (qangle (trotation (tf obj))))
+  (qangle (trotation (local-transform obj))))
 
 (defmethod (setf angle) (angle (obj transformed-entity))
-  (setf (trotation (tf obj)) (qfrom-angle (axis obj) angle)))
+  (setf (trotation (local-transform obj)) (qfrom-angle (axis obj) angle)))
 
 (define-shader-entity fullscreen-entity (renderable)
   ())

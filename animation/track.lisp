@@ -361,7 +361,7 @@
 (defmethod sample ((entity transformed-entity) (track transform-track) time &key loop-p)
   (declare (type single-float time))
   (declare (optimize speed))
-  (sample (tf entity) track time :loop-p loop-p)
+  (sample (local-transform entity) track time :loop-p loop-p)
   entity)
 
 (defmethod valid-p ((track transform-track))

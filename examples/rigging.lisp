@@ -10,7 +10,7 @@
     (if (v/= vel 0)
         (fade-to :Running entity)
         (fade-to :Idle entity))
-    (nv+ (tlocation (tf entity)) (nv* vel dt))
+    (nv+ (tlocation (local-transform entity)) (nv* vel dt))
     (handle tick (animation-controller entity))))
 
 (define-example rigging

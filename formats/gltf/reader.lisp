@@ -35,11 +35,11 @@
       transform)))
 
 (defun gltf-node-transform* (node &optional root-node)
-  (let ((tf (gltf-node-transform node)))
+  (let ((local-transform (gltf-node-transform node)))
     (loop for parent = (gltf:parent node) then (gltf:parent parent)
           until (or (null parent) (eq parent root-node))
-          do (!t+ tf (gltf-node-transform parent) tf))
-    tf))
+          do (!t+ local-transform (gltf-node-transform parent) local-transform))
+    local-transform))
 
 (defmethod gltf:construct-element-reader ((element-type (eql :vec2)) (component-type (eql :float)))
   (lambda (ptr)

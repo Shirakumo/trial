@@ -13,7 +13,7 @@
   (format stream "~&~%Collision Systems:~{~%  ~a~}"
           (collision-mask-systems (collision-mask shape)))
   (format stream "~&~%Local Transform:~%")
-  (write-transform (tf shape) stream)
+  (write-transform (local-transform shape) stream)
   (format stream "~&~%Global Transform:~%")
   (write-transform (global-transform-matrix shape) stream)
   (format stream "~&~%Physics Primitives (~d):" (length (physics-primitives shape)))
@@ -263,7 +263,7 @@
 
 (defmethod impact-local ((entity rigidbody) force point)
   ;; NOTE: The FORCE direction is in world coordinates, and the POINT is in local coordinates
-  (impact entity force (t*v (tf entity) point)))
+  (impact entity force (t*v (local-transform entity) point)))
 
 (defmethod impact ((entity rigidbody) force point)
   (let ((local (v- point (location entity))))
@@ -271,15 +271,15 @@
     (nv+ (torque entity) (vc local force))))
 
 (defmethod apply-force ((force spring-force) (entity rigidbody) dt)
-  (let* ((lws (t*v (tf entity) (local-offset force)))
-         (ows (t*v (tf (anchor force)) (anchor-offset force)))
+  (let* ((lws (t*v (local-transform entity) (local-offset force)))
+         (ows (t*v (local-transform (anchor force)) (anchor-offset force)))
          (force (v- lws ows))
          (coeff (* (spring-constant force) (abs (- (vlength force) (rest-length force))))))
     (impact entity (nv* (nvunit force) (- coeff)) lws)))
 
 (defmethod apply-force ((force bungee-force) (entity rigidbody) dt)
-  (let* ((lws (t*v (tf entity) (local-offset force)))
-         (ows (t*v (tf (anchor force)) (anchor-offset force)))
+  (let* ((lws (t*v (local-transform entity) (local-offset force)))
+         (ows (t*v (local-transform (anchor force)) (anchor-offset force)))
          (force (v- lws ows))
          (coeff (* (spring-constant force) (- (vlength force) (rest-length force)))))
     (when (<= 0.0 coeff)

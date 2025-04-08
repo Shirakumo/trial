@@ -253,7 +253,7 @@
   (with-all-slots-bound (emitter gpu-particle-emitter)
     (multiple-value-bind (to-emit emit-carry) (floor (incf to-emit (* dt particle-rate)))
       (with-buffer-tx (struct particle-emitter-buffer)
-        (setf (transform-matrix struct) (tmat (tf emitter)))
+        (setf (transform-matrix struct) (tmat (local-transform emitter)))
         (setf (emit-count struct) to-emit)
         (setf (randomness struct) (random 1.0)))
       ;; Simulate with compute shaders
@@ -280,7 +280,7 @@
   (bind (texture emitter) :texture0))
 
 (defmethod render :before ((emitter gpu-particle-emitter) (program shader-program))
-  (setf (uniform program "model_matrix") (tmat (tf emitter)))
+  (setf (uniform program "model_matrix") (tmat (local-transform emitter)))
   (%gl:bind-buffer :draw-indirect-buffer (gl-name (slot-value emitter 'particle-argument-buffer)))
   (activate (// 'trial 'empty-vertex-array)))
 
@@ -299,7 +299,7 @@
   ;; current emit. Otherwise, if we wanted to emit multiple configurations in a single tick,
   ;; we'd be overwriting it until the next simulation run.
   (setf (particle-options particle-emitter) (remf* particle-options :vertex-array :location :orientation :scaling :transform))
-  (when transform (setf (tf particle-emitter) transform))
+  (when transform (setf (local-transform particle-emitter) transform))
   (when location (setf (location particle-emitter) location))
   (when scaling (setf (scaling particle-emitter) scaling))
   (when orientation (setf (orientation particle-emitter) orientation))

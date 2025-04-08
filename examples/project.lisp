@@ -33,12 +33,12 @@
            (when (retained :space)
              (incf (vy (location project-player)) (+ spd)))))
     (debug-clear)
-    (t<- (tf target) (tf project-player))
+    (t<- (local-transform target) (local-transform project-player))
     (let* ((direction (q* (orientation project-player) +vx3+))
            (hit (trial::snap-object-to-level target :direction direction)))
       (cond (hit
              (debug-line (location project-player) (location target) :color (vec 1 1 1 1))
-             (debug-draw (tf target)))
+             (debug-draw (local-transform target)))
             (T
              (debug-line (location project-player) (v+* (location project-player) direction 100) :color (vec 0 1 0 1)))))))
 

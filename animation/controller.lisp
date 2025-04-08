@@ -465,7 +465,7 @@
 (defmethod (setf ik-system) :after ((system ik-system) name (entity animation-controller))
   ;; Hook up our local transform to the IK system's. Since the identity never changes
   ;; the properties "transfer".
-  (setf (slot-value system 'transform) (tf entity)))
+  (setf (slot-value system 'transform) (local-transform entity)))
 
 (define-handler ((entity animation-controller) (ev tick)) (tt dt fc)
   (update entity tt dt fc))

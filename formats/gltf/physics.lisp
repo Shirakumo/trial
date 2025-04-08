@@ -20,7 +20,7 @@
                       args)))
       (null
        (let ((mesh (gltf:mesh (gltf:node geometry)))
-             (tf (getf args :local-transform #.(meye 4))))
+             (local-transform (getf args :local-transform #.(meye 4))))
          (map 'vector (lambda (primitive)
                         (let ((mesh (load-primitive primitive)))
                           (apply (if (gltf:convex-p geometry)
@@ -29,8 +29,8 @@
                                  :vertices (trial:reordered-vertex-data mesh '(trial:location))
                                  :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 16))
                                  :local-transform (if (gltf:matrix primitive)
-                                                      (m* tf (mat4 (gltf:matrix primitive)))
-                                                      tf)
+                                                      (m* local-transform (mat4 (gltf:matrix primitive)))
+                                                      local-transform)
                                  args)))
               (gltf:primitives mesh)))))))
 
@@ -68,14 +68,14 @@
         (visited-p (make-hash-table :test 'eq))
         (material :wood)
         (mask 1))
-    (labels ((process (node collider tf &optional animated)
+    (labels ((process (node collider local-transform &optional animated)
                (when collider
                  (when (gltf:physics-material collider)
                    (setf material (physics-material-instance (gltf:physics-material collider))))
                  (when (gltf:collision-filter collider)
                    (setf mask (collision-filter-mask (gltf:collision-filter collider))))
                  (loop for primitive across (load-physics-geometry (gltf:geometry collider) model
-                                                                   :local-transform (tmat tf)
+                                                                   :local-transform (tmat local-transform)
                                                                    :collision-mask mask
                                                                    :material material)
                        do (vector-push-extend primitive primitives)
@@ -83,22 +83,22 @@
                             (let ((name (gltf-name node))
                                   (joints (trial::joint-names (skeleton (find-mesh (mesh child) model)))))
                               (setf (trial::primitive-joint-index primitive) (position name joints)))))))
-             (recurse (node tf &optional animated)
+             (recurse (node local-transform &optional animated)
                (unless (gethash node visited-p)
                  (setf (gethash node visited-p) T)
-                 (let ((tf (t+ tf (gltf-node-transform node))))
-                   (process node (gltf:collider node) tf animated)
+                 (let ((local-transform (t+ local-transform (gltf-node-transform node))))
+                   (process node (gltf:collider node) local-transform animated)
                    (loop for child across (gltf:children node)
-                         do (recurse child tf animated))))))
-      (let ((tf (transform)))
-        (process root-node (gltf:collider root-node) tf)
+                         do (recurse child local-transform animated))))))
+      (let ((local-transform (transform)))
+        (process root-node (gltf:collider root-node) local-transform)
         (when (gltf:skin root-node)
           (loop for joint across (gltf:joints (gltf:skin root-node))
                 do (loop for child across (gltf:children joint)
                          do (when (gltf:collider child)
                               (process joint (gltf:collider child) (gltf-node-transform* child root-node) T)))))
         (loop for child across (gltf:children root-node)
-              do (recurse child tf)))
+              do (recurse child local-transform)))
       (trial::simplify primitives))))
 
 (defun load-rigidbody (model child node)
@@ -168,7 +168,7 @@
       (cond (trig-volume
              ;; Copy physics primitive //and transform// over
              (setf (physics-primitives trigger) (physics-primitives trig-volume))
-             (!t+ (tf trigger) (tf trigger) (tf trig-volume)))
+             (!t+ (local-transform trigger) (local-transform trigger) (local-transform trig-volume)))
             (T
              (setf (physics-primitives trigger) (make-all-space))))
       (etypecase class-or-count

@@ -830,12 +830,29 @@
   (with-fast-matref (m mat)
     (vec (m 0 2) (m 1 2))))
 
+(defmethod scaling ((mat mat3))
+  (with-fast-matref (m mat)
+    (vec (m 0 0) (m 1 1))))
+
 (defmethod location ((mat mat4))
   (with-fast-matref (m mat)
     (vec (m 0 3) (m 1 3) (m 2 3))))
 
 (defmethod orientation ((mat mat4))
   (qfrom-mat mat))
+
+(defmethod scaling ((mat mat4))
+  (with-fast-matref (m mat)
+    (vec (m 0 0) (m 1 1) (m 2 2))))
+
+(defmethod location ((transform transform))
+  (tlocation transform))
+
+(defmethod scaling ((tf transform))
+  (tscaling tf))
+
+(defmethod orientation ((tf transform))
+  (trotation tf))
 
 (defmethod global-location ((vec vec2) &optional (target (vec3)))
   (let ((vec (vec (vx vec) (vy vec) 0 0)))
@@ -849,8 +866,8 @@
     (n*m (model-matrix) vec)
     (vsetf target (vx vec) (vy vec) (vz vec))))
 
-(defmethod global-location ((tf transform) &optional (target (vec3)))
-  (let ((vec (vec (location tf) 0)))
+(defmethod global-location ((transform transform) &optional (target (vec3)))
+  (let ((vec (vec (location transform) 0)))
     (declare (dynamic-extent vec))
     (n*m (model-matrix) vec)
     (vsetf target (vx vec) (vy vec) (vz vec))))
@@ -861,8 +878,8 @@
     (declare (dynamic-extent q))
     (!q* target q target)))
 
-(defmethod global-orientation ((tf transform) &optional (target (quat)))
-  (q<- target (orientation tf))
+(defmethod global-orientation ((transform transform) &optional (target (quat)))
+  (q<- target (orientation transform))
   (let ((q (qfrom-mat (model-matrix))))
     (declare (dynamic-extent q))
     (!q* target q target)))

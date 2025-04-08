@@ -8,7 +8,7 @@
    (first args)))
 
 (asdf:defsystem trial
-  :version "1.2.0"
+  :version "1.2.1"
   :author "Yukari Hafner <shinmera@tymoon.eu>"
   :maintainer "Yukari Hafner <shinmera@tymoon.eu>"
   :license "zlib"

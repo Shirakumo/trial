@@ -151,9 +151,9 @@
 (define-handler (basic-triangle tick) (dt)
   (vsetf (location basic-triangle) (* 0.5 (width *context*)) (* 0.5 (height *context*)) 0)
   (vsetf (scaling basic-triangle) (* 0.5 (width *context*)) (* 0.5 (height *context*)) 1)
-  (trotate (tf basic-triangle) (qfrom-angle +vx+ (* 0.8 dt)))
-  (trotate (tf basic-triangle) (qfrom-angle +vy+ (* 1 dt)))
-  (trotate (tf basic-triangle) (qfrom-angle +vz+ (* 1.3 dt))))
+  (trotate (local-transform basic-triangle) (qfrom-angle +vx+ (* 0.8 dt)))
+  (trotate (local-transform basic-triangle) (qfrom-angle +vy+ (* 1 dt)))
+  (trotate (local-transform basic-triangle) (qfrom-angle +vz+ (* 1.3 dt))))
 
 (define-shader-entity basic-quad (vertex-entity transformed-entity colored-entity)
   ((vertex-array :initform (// 'trial 'unit-square))))
