@@ -65,9 +65,9 @@
   (let ((local (vec3)))
     (declare (dynamic-extent local))
     (v<- local global-direction)
-    (n*m4/3inv (primitive-transform primitive) local)
+    (n*m4/3inv (primitive-global-transform primitive) local)
     (support-function primitive local next)
-    (n*m (primitive-transform primitive) next)))
+    (n*m (primitive-global-transform primitive) next)))
 
 (defun finish-hit (hit a b &optional (a-detail a) (b-detail b))
   (declare (type hit hit))
@@ -213,7 +213,7 @@
   (format stream "~&~%Local Transform:~%")
   (write-transform (primitive-local-transform primitive) stream)
   (format stream "~&~%Global Transform:~%")
-  (write-transform (primitive-transform primitive) stream))
+  (write-transform (primitive-global-transform primitive) stream))
 
 (define-transfer primitive
   primitive-material primitive-local-transform primitive-collision-mask primitive-joint-index
@@ -246,10 +246,26 @@
   (setf (collision-mask thing) 0)
   NIL)
 
+(defun primitive-transform (primitive)
+  (primitive-global-transform primitive))
+
+(defun (setf primitive-transform) (value primitive)
+  (setf (primitive-global-transform primitive) value))
+
+(trivial-deprecate:declaim-deprecated (function primitive-transform)
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives (primitive-global-transform))
+
+(trivial-deprecate:declaim-deprecated (function (setf primitive-transform))
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives ((setf primitive-global-transform)))
+
 (defmethod global-transform-matrix ((primitive primitive) &optional target)
   (etypecase target
-    (null (primitive-transform primitive))
-    (mat4 (m<- target (primitive-transform primitive)))))
+    (null (primitive-global-transform primitive))
+    (mat4 (m<- target (primitive-global-transform primitive)))))
 
 (defmethod global-bounds-cache ((primitive primitive))
   (primitive-global-bounds-cache primitive))
@@ -258,7 +274,7 @@
   (global-location (primitive-global-bounds-cache primitive) target))
 
 (defmethod global-orientation ((primitive primitive) &optional (quat (quat)))
-  (!qfrom-mat quat (primitive-transform primitive)))
+  (!qfrom-mat quat (primitive-global-transform primitive)))
 
 (defmethod global-bounding-box ((primitive primitive) &optional (location (vec3)) bsize)
   (global-bounding-box (primitive-global-bounds-cache primitive) location bsize))
@@ -316,12 +332,12 @@
 
 (define-accessor-delegate-methods entity (primitive-entity primitive))
 (define-accessor-delegate-methods material (primitive-material primitive))
-(define-accessor-delegate-methods transform-matrix (primitive-transform primitive))
+(define-accessor-delegate-methods transform-matrix (primitive-global-transform primitive))
 
 (defmethod sample-volume :around ((primitive primitive) &optional result)
   (declare (ignore result))
   (let ((result (call-next-method))
-        (transform (primitive-transform primitive)))
+        (transform (primitive-global-transform primitive)))
     (etypecase result
       (vec3 (n*m transform result))
       (simple-vector
@@ -335,7 +351,7 @@
   (apply constructor :entity (primitive-entity primitive)
                      :material (primitive-material primitive)
                      :local-transform (primitive-local-transform primitive)
-                     :transform (mcopy (primitive-transform primitive))
+                     :transform (mcopy (primitive-global-transform primitive))
                      :collision-mask (primitive-collision-mask primitive)
                      args))
 
@@ -363,8 +379,8 @@
              (when collision-mask (setf (collision-mask primitive) collision-mask))
              (when local-transform (m<- (primitive-local-transform primitive) local-transform))
              (if transform
-                 (m<- (primitive-transform primitive) transform)
-                 (m<- (primitive-transform primitive) (primitive-local-transform primitive)))
+                 (m<- (primitive-global-transform primitive) transform)
+                 (m<- (primitive-global-transform primitive) (primitive-local-transform primitive)))
              (setf (global-bounds-cache-generator cache) primitive)
              (multiple-value-bind (center bsize) (compute-bounding-box primitive)
                (setf (global-bounds-cache-box-offset cache) center)

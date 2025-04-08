@@ -395,6 +395,7 @@
    #:primitive-entity
    #:primitive-material
    #:primitive-local-transform
+   #:primitive-global-transform
    #:primitive-transform
    #:primitive-collision-mask
    #:define-primitive-type

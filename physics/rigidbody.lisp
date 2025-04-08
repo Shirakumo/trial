@@ -112,13 +112,13 @@
     (declare (type mat4 base-transform))
     (declare (type (signed-byte 16) joint))
     (if (< joint 0)
-        (!m* (primitive-transform primitive)
+        (!m* (primitive-global-transform primitive)
              base-transform
              (primitive-local-transform primitive))
         (let ((palette (palette entity)))
           (declare (type (simple-array mat4 (*)) palette))
           (when (< 0 (length palette))
-            (!m* (primitive-transform primitive)
+            (!m* (primitive-global-transform primitive)
                  base-transform
                  (primitive-local-transform primitive)
                  (aref palette joint))

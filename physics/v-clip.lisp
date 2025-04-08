@@ -738,7 +738,9 @@
     (%vclip state cf1 cf2 m12 m21 mesh1 mesh2 max-iterations)))
 
 (trial:define-hit-detector (mesh mesh)
-  (multiple-value-bind (state result) (vclip-mesh a b (trial:primitive-transform a) (trial:primitive-transform b))
+  (multiple-value-bind (state result) (vclip-mesh a b
+                                                  (trial:primitive-global-transform a)
+                                                  (trial:primitive-global-transform b))
     (when (eql result :penetration)
       (let ((feature (state-rf state)))
         (v<- (trial:hit-normal trial:hit)

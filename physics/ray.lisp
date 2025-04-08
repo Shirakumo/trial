@@ -57,7 +57,7 @@
     ;; Bring the ray into the local transform space of the primitive
     (let ((local (mat4)))
       (declare (dynamic-extent local))
-      (!minv local (primitive-transform b))
+      (!minv local (primitive-global-transform b))
       (n*m4/3 local ray-direction)
       (n*m local ray-location))
     ;; We have to renormalise in case the transform has scaling.
@@ -74,7 +74,7 @@
           (setf (hit-b-detail hit) b)
           (setf (hit-b hit) (primitive-entity b))
           ;; Bring the normal back into global space
-          (n*m4/3 (primitive-transform b) (hit-normal hit))
+          (n*m4/3 (primitive-global-transform b) (hit-normal hit))
           (incf start))))
     start))
 

@@ -212,7 +212,7 @@
   (let ((inv (minv *view-matrix*))
         (frustum (frustum camera)))
     (declare (dynamic-extent inv))
-    (!m* (primitive-transform frustum) inv (primitive-local-transform frustum))
+    (!m* (primitive-global-transform frustum) inv (primitive-local-transform frustum))
     (invalidate-global-bounds-cache frustum)))
 
 (defmethod screen-area ((null null) (camera 3d-camera))

@@ -313,7 +313,7 @@ void main(){
 
 (defmethod debug-draw ((primitive box) &rest args &key &allow-other-keys)
   (unless (getf args :transform)
-    (setf (getf args :transform) (primitive-transform primitive)))
+    (setf (getf args :transform) (primitive-global-transform primitive)))
   (apply #'debug-box #.(vec 0 0 0) (box-bsize primitive) args))
 
 (define-debug-draw-function (debug-box lines) (location bsize &key (color #.(vec 1 0 0)) (transform (model-matrix)))
@@ -339,7 +339,7 @@ void main(){
 
 (defmethod debug-draw ((primitive sphere) &rest args &key &allow-other-keys)
   (unless (getf args :transform)
-    (setf (getf args :transform) (primitive-transform primitive)))
+    (setf (getf args :transform) (primitive-global-transform primitive)))
   (apply #'debug-sphere #.(vec 0 0 0) (sphere-radius primitive) args))
 
 (define-debug-draw-function (debug-sphere lines) (location radius &key (color #.(vec 1 0 0)) (segments 16) (transform (model-matrix)))
@@ -359,7 +359,7 @@ void main(){
 
 (defmethod debug-draw ((primitive ellipsoid) &rest args &key &allow-other-keys)
   (unless (getf args :transform)
-    (setf (getf args :transform) (primitive-transform primitive)))
+    (setf (getf args :transform) (primitive-global-transform primitive)))
   (apply #'debug-ellipsoid #.(vec 0 0 0) (ellipsoid-radius primitive) args))
 
 (define-debug-draw-function (debug-ellipsoid lines) (location radius &key (color #.(vec 1 0 0)) (segments 16) (transform (model-matrix)))
@@ -379,7 +379,7 @@ void main(){
 
 (defmethod debug-draw ((primitive cylinder) &rest args &key &allow-other-keys)
   (unless (getf args :transform)
-    (setf (getf args :transform) (primitive-transform primitive)))
+    (setf (getf args :transform) (primitive-global-transform primitive)))
   (apply #'debug-cylinder #.(vec 0 0 0) 0.0 (cylinder-height primitive)
          :radius-top (cylinder-radius-top primitive)
          :radius-bottom (cylinder-radius-bottom primitive)
@@ -405,7 +405,7 @@ void main(){
 
 (defmethod debug-draw ((primitive cone) &rest args &key &allow-other-keys)
   (unless (getf args :transform)
-    (setf (getf args :transform) (primitive-transform primitive)))
+    (setf (getf args :transform) (primitive-global-transform primitive)))
   (apply #'debug-cone #.(vec 0 0 0) (cone-radius primitive) (cone-height primitive) args))
 
 (define-debug-draw-function (debug-cone lines) (location radius height &key (color #.(vec 1 0 0)) (segments 16) (transform (model-matrix)))
@@ -427,7 +427,7 @@ void main(){
 
 (defmethod debug-draw ((primitive pill) &rest args &key &allow-other-keys)
   (unless (getf args :transform)
-    (setf (getf args :transform) (primitive-transform primitive)))
+    (setf (getf args :transform) (primitive-global-transform primitive)))
   (apply #'debug-pill #.(vec 0 0 0) (pill-radius-top primitive) (pill-height primitive)
          :radius-top (pill-radius-top primitive) :radius-bottom (pill-radius-bottom primitive) args))
 
@@ -492,18 +492,18 @@ void main(){
 
 (defmethod debug-draw ((primitive general-mesh) &rest args &key &allow-other-keys)
   (unless (getf args :transform)
-    (setf (getf args :transform) (primitive-transform primitive)))
+    (setf (getf args :transform) (primitive-global-transform primitive)))
   (apply #'debug-triangles (general-mesh-vertices primitive) (general-mesh-faces primitive) args))
 
 (defmethod debug-draw ((primitive primitive) &rest args &key &allow-other-keys)
   (unless (getf args :transform)
-    (setf (getf args :transform) (primitive-transform primitive)))
+    (setf (getf args :transform) (primitive-global-transform primitive)))
   (let ((primitive (coerce-object primitive 'convex-mesh)))
     (apply #'debug-triangles (general-mesh-vertices primitive) (general-mesh-faces primitive) args)))
 
 (defmethod debug-draw ((primitive all-space) &rest args &key color &allow-other-keys)
   (unless (getf args :transform)
-    (setf (getf args :transform) (primitive-transform primitive)))
+    (setf (getf args :transform) (primitive-global-transform primitive)))
   (debug-cross (n*m (getf args :transform) (vec3)) :color (or color (vec3 1 1 0))))
 
 (defmethod debug-draw ((hit hit) &key (draw-a T) (draw-b T))

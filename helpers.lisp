@@ -96,6 +96,11 @@
                                       :version "1.2.1"
                                       :alternatives (local-transform))
 
+(trivial-deprecate:declaim-deprecated (function (setf tf))
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives ((setf local-transform)))
+
 (defmethod (setf tf) ((tf transform) (obj transformed-entity))
   (t<- (local-transform obj) tf))
 
