@@ -22,25 +22,24 @@
 (defmethod allocate ((state render-state)))
 (defmethod deallocate ((state render-state)))
 
-(defmethod activate ((state render-state))
-  (unless (eq state (render-state *context*))
-    ;; TODO: diff state and apply changes
-    ))
-
-(defmethod activate :after ((state render-state))
-  (setf (slot-value *context* 'render-state) state))
-
 (declaim (inline active-state-diff-p))
 (defun active-state-diff-p (state field value)
   (and (eq state (render-state *context*))
        (not (eql value (slot-value state field)))))
 
-(defmacro define-render-state-update (field &body body)
-  `(defmethod (setf ,field) :before (value (state render-state))
-     (when (active-state-diff-p state ',field value)
-       ,@body)))
+(defmacro define-render-state-update (field (value &optional (state 'state)) &body body)
+  (let ((fun (mksym *package* '%set- field)))
+    `(progn
+       (declaim (inline ,fun))
+       (defun ,fun (,value ,state)
+         (declare (ignorable ,state))
+         ,@body)
 
-(define-render-state-update blend-mode
+       (defmethod (setf ,field) :before (,value (,state render-state))
+         (when (active-state-diff-p state ',field ,value)
+           (,fun ,value ,state))))))
+
+(define-render-state-update blend-mode (value)
   (ecase value
     ((:source-over :normal)
      (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha)
@@ -157,16 +156,16 @@
      (gl:blend-func-separate :one :one :one :one-minus-src-alpha)
      (gl:blend-equation :func-reverse-subtract))))
 
-(define-render-state-update depth-bias
+(define-render-state-update depth-bias (value)
   (implement!))
 
-(define-render-state-update write-depth-p
+(define-render-state-update write-depth-p (value)
   (gl:depth-mask value))
 
-(define-render-state-update write-stencil-p
+(define-render-state-update write-stencil-p (value)
   (gl:stencil-mask (if value #xFF #x00)))
 
-(define-render-state-update clamp-depth-p
+(define-render-state-update clamp-depth-p (value)
   (when-gl-extension :gl-arb-depth-clamp
     (if value
         (enable-feature :depth-clamp)
@@ -183,15 +182,15 @@
     (>= :gequal)
     ((T) :always)))
 
-(define-render-state-update depth-test
+(define-render-state-update depth-test (value)
   (gl:depth-func (%to-test-op value)))
 
-(define-render-state-update stencil-test
+(define-render-state-update stencil-test (value state)
   (gl:stencil-func (%to-test-op value)
                    (stencil-value state)
                    #xFF))
 
-(define-render-state-update stencil-value
+(define-render-state-update stencil-value (value state)
   (gl:stencil-func (stencil-test state)
                    value
                    #xFF))
@@ -207,38 +206,38 @@
     (:incf-wrap :incr-wrap)
     (:decf-wrap :decr-wrap)))
 
-(define-render-state-update on-stencil-fail
+(define-render-state-update on-stencil-fail (value state)
   (gl:stencil-op (%to-stencil-op value)
                  (%to-stencil-op (on-stencil-depth-fail state))
                  (%to-stencil-op (on-stencil-pass state))))
 
-(define-render-state-update on-stencil-depth-fail
+(define-render-state-update on-stencil-depth-fail (value state)
   (gl:stencil-op (%to-stencil-op (on-stencil-pass state))
                  (%to-stencil-op value)
                  (%to-stencil-op (on-stencil-pass state))))
 
-(define-render-state-update on-stencil-pass
+(define-render-state-update on-stencil-pass (value state)
   (gl:stencil-op (%to-stencil-op (on-stencil-fail state))
                  (%to-stencil-op (on-stencil-depth-fail state))
                  (%to-stencil-op value)))
 
-(define-render-state-update front-face
+(define-render-state-update front-face (value)
   (gl:front-face value))
 
-(define-render-state-update cull-face
+(define-render-state-update cull-face (value)
   (cond (value
          (enable-feature :cull-face)
          (gl:cull-face value))
         (T
          (disable-feature :cull-face))))
 
-(define-render-state-update polygon-mode
+(define-render-state-update polygon-mode (value)
   (gl:polygon-mode :front-and-back value))
 
-(define-render-state-update framebuffer
+(define-render-state-update framebuffer (value)
   (activate value))
 
-(define-render-state-update shader-program
+(define-render-state-update shader-program (value)
   (activate value))
 
 (defmacro with-render-state ((&rest state &key &allow-other-keys) &body body)
@@ -256,3 +255,18 @@
               ,@body)
          ,@(loop for (g s) in state
                  collect `(setf (,s ,instance) ,g))))))
+
+(defmethod activate ((state render-state))
+  (let ((current (render-state *context*)))
+    (unless (eq state current)
+      (macrolet ((maybe-update (field)
+                   `(let ((new-value (slot-value state ',field)))
+                      (unless (eql new-value (slot-value state ',field))
+                        (,(mksym *package* '%set- field) new-value state))))
+                 (maybe-update-all ()
+                   `(progn ,@(loop for slot in (c2mop:class-direct-slots (find-class 'render-state))
+                                   collect `(maybe-update ,(c2mop:slot-definition-name slot))))))
+        (maybe-update-all)))))
+
+(defmethod activate :after ((state render-state))
+  (setf (slot-value *context* 'render-state) state))
