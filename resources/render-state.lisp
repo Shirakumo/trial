@@ -13,9 +13,11 @@
    (on-stencil-pass :initarg :on-stencil-pass :initform :replace :accessor on-stencil-pass)
    (front-face :initarg :front-face :initform :ccw :accessor front-face)
    (cull-face :initarg :cull-face :initform :back :accessor cull-face)
+   (polygon-mode :initarg :polygon-mode :initform :fill :accessor polygon-mode)
    (framebuffer :initarg :framebuffer :initform NIL :accessor framebuffer)
    (shader-program :initarg :shader-program :initform NIL :accessor shader-program)))
 
+(defmethod allocated-p ((state render-state)) T)
 (defmethod allocate ((state render-state)))
 (defmethod deallocate ((state render-state)))
 
@@ -205,4 +207,11 @@
   (gl:front-face value))
 
 (defmethod (setf cull-face) :before (value (state render-state))
-  (gl:cull-face value))
+  (cond (value
+         (enable-feature :cull-face)
+         (gl:cull-face value))
+        (T
+         (disable-feature :cull-face))))
+
+(defmethod (setf polygon-mode) :before (value (state render-state))
+  (gl:polygon-mode :front-and-back value))

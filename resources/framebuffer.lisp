@@ -114,6 +114,7 @@
     (setf (height framebuffer) height)))
 
 (defmethod activate ((framebuffer framebuffer))
+  (setf (framebuffer (render-state *context*)) framebuffer)
   (gl:bind-framebuffer :framebuffer (gl-name framebuffer))
   (gl:viewport 0 0 (width framebuffer) (height framebuffer))
   (let ((bits (slot-value framebuffer 'clear-bits)))
@@ -127,6 +128,7 @@
   (gl:viewport 0 0 (width framebuffer) (height framebuffer)))
 
 (defmethod deactivate ((framebuffer framebuffer))
+  (setf (framebuffer (render-state *context*)) (framebuffer *context*))
   (gl:bind-framebuffer :framebuffer 0))
 
 ;; FIXME: this should ideally be more generic, with blitting from one to another framebuffer

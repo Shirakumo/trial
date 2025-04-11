@@ -319,7 +319,7 @@
 (defmethod render ((emitter cpu-particle-emitter) (program shader-program))
   (setf (uniform program "particle_data") 1)
   (with-pushed-features
-    (disable-feature :cull-face)
+    (setf (cull-face (render-state *context*)) NIL)
     (with-depth-mask NIL
       (set-blend-mode (blend-mode emitter))
       (render-array (draw-vertex-array emitter) :vertex-count 6 :instances (live-particles emitter))

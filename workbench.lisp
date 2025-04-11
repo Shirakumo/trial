@@ -65,7 +65,7 @@
 
 (progn
   (defmethod setup-scene ((workbench workbench) scene)
-    (disable-feature :cull-face)
+    (setf (cull-face (render-state *context*)) NIL)
     (!meye (view-matrix))
     (nmortho (projection-matrix) -10 +1270 -700 20 0.1 1)
     (enter (make-instance 'basic-triangle) scene)

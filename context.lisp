@@ -43,7 +43,8 @@
    (shared-with :initarg :share-with :reader shared-with)
    (glsl-target-version :initarg :glsl-version :initform NIL :accessor glsl-target-version)
    (binding-point-allocator :initform (make-array 256 :element-type 'bit) :accessor binding-point-allocator)
-   (framebuffer :reader framebuffer))
+   (framebuffer :reader framebuffer)
+   (render-state :initform (make-instance 'render-state) :accessor render-state))
   (:default-initargs
    :title "Trial"
    :width 1280
@@ -227,6 +228,9 @@
 
 (defmethod size ((context context))
   (vec (width context) (height context)))
+
+(defmethod (setf render-state) :before (state (context context))
+  (activate state))
 
 (define-event resize () width height)
 (define-event gain-focus ())
