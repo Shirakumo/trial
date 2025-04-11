@@ -229,7 +229,7 @@
 (defmethod size ((context context))
   (vec (width context) (height context)))
 
-(defmethod (setf render-state) :before (state (context context))
+(defmethod (setf render-state) (state (context context))
   (activate state))
 
 (define-event resize () width height)

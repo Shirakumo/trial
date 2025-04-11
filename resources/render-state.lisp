@@ -23,11 +23,25 @@
 (defmethod deallocate ((state render-state)))
 
 (defmethod activate ((state render-state))
-  (activate (framebuffer state))
-  (activate (shader-program state)))
+  (unless (eq state (render-state *context*))
+    ;; TODO: diff state and apply changes
+    ))
 
-(defmethod (setf blend-mode) :before (mode (state render-state))
-  (ecase mode
+(defmethod activate :after ((state render-state))
+  (setf (slot-value *context* 'render-state) state))
+
+(declaim (inline active-state-diff-p))
+(defun active-state-diff-p (state field value)
+  (and (eq state (render-state *context*))
+       (not (eql value (slot-value state field)))))
+
+(defmacro define-render-state-update (field &body body)
+  `(defmethod (setf ,field) :before (value (state render-state))
+     (when (active-state-diff-p state ',field value)
+       ,@body)))
+
+(define-render-state-update blend-mode
+  (ecase value
     ((:source-over :normal)
      (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha)
      (gl:blend-equation :func-add))
@@ -143,16 +157,16 @@
      (gl:blend-func-separate :one :one :one :one-minus-src-alpha)
      (gl:blend-equation :func-reverse-subtract))))
 
-(defmethod (setf depth-bias) :before (value (state render-state))
+(define-render-state-update depth-bias
   (implement!))
 
-(defmethod (setf write-depth-p) :before (value (state render-state))
+(define-render-state-update write-depth-p
   (gl:depth-mask value))
 
-(defmethod (setf write-stencil-p) :before (value (state render-state))
+(define-render-state-update write-stencil-p
   (gl:stencil-mask (if value #xFF #x00)))
 
-(defmethod (setf clamp-depth-p) :before (value (state render-state))
+(define-render-state-update clamp-depth-p
   (when-gl-extension :gl-arb-depth-clamp
     (if value
         (enable-feature :depth-clamp)
@@ -169,15 +183,15 @@
     (>= :gequal)
     ((T) :always)))
 
-(defmethod (setf depth-test) :before (value (state render-state))
+(define-render-state-update depth-test
   (gl:depth-func (%to-test-op value)))
 
-(defmethod (setf stencil-test) :before (value (state render-state))
+(define-render-state-update stencil-test
   (gl:stencil-func (%to-test-op value)
                    (stencil-value state)
                    #xFF))
 
-(defmethod (setf stencil-value) :before (value (state render-state))
+(define-render-state-update stencil-value
   (gl:stencil-func (stencil-test state)
                    value
                    #xFF))
@@ -193,33 +207,39 @@
     (:incf-wrap :incr-wrap)
     (:decf-wrap :decr-wrap)))
 
-(defmethod (setf on-stencil-fail) :before (value (state render-state))
+(define-render-state-update on-stencil-fail
   (gl:stencil-op (%to-stencil-op value)
                  (%to-stencil-op (on-stencil-depth-fail state))
                  (%to-stencil-op (on-stencil-pass state))))
 
-(defmethod (setf on-stencil-depth-fail) :before (value (state render-state))
+(define-render-state-update on-stencil-depth-fail
   (gl:stencil-op (%to-stencil-op (on-stencil-pass state))
                  (%to-stencil-op value)
                  (%to-stencil-op (on-stencil-pass state))))
 
-(defmethod (setf on-stencil-pass) :before (value (state render-state))
+(define-render-state-update on-stencil-pass
   (gl:stencil-op (%to-stencil-op (on-stencil-fail state))
                  (%to-stencil-op (on-stencil-depth-fail state))
                  (%to-stencil-op value)))
 
-(defmethod (setf front-face) :before (value (state render-state))
+(define-render-state-update front-face
   (gl:front-face value))
 
-(defmethod (setf cull-face) :before (value (state render-state))
+(define-render-state-update cull-face
   (cond (value
          (enable-feature :cull-face)
          (gl:cull-face value))
         (T
          (disable-feature :cull-face))))
 
-(defmethod (setf polygon-mode) :before (value (state render-state))
+(define-render-state-update polygon-mode
   (gl:polygon-mode :front-and-back value))
+
+(define-render-state-update framebuffer
+  (activate value))
+
+(define-render-state-update shader-program
+  (activate value))
 
 (defmacro with-render-state ((&rest state &key &allow-other-keys) &body body)
   (let ((state (loop for (k v) on state by #'cddr
