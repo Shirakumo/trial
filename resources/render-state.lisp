@@ -4,6 +4,7 @@
   ((blend-mode :initarg :blend-mode :initform :source-over :accessor blend-mode)
    (depth-bias :initarg :depth-bias :initform NIL :accessor depth-bias)
    (write-depth-p :initarg :write-depth-p :initform T :accessor write-depth-p)
+   (write-stencil-p :initarg :write-stencil-p :initform T :accessor write-stencil-p)
    (clamp-depth-p :initarg :clamp-depth-p :initform T :accessor clamp-depth-p)
    (depth-test :initarg :depth-test :initform '<= :accessor depth-test)
    (stencil-test :initarg :stencil-test :initform 'T :accessor stencil-test)
@@ -148,6 +149,9 @@
 (defmethod (setf write-depth-p) :before (value (state render-state))
   (gl:depth-mask value))
 
+(defmethod (setf write-stencil-p) :before (value (state render-state))
+  (gl:stencil-mask (if value #xFF #x00)))
+
 (defmethod (setf clamp-depth-p) :before (value (state render-state))
   (if value
       (enable-feature :depth-clamp)
@@ -215,3 +219,19 @@
 
 (defmethod (setf polygon-mode) :before (value (state render-state))
   (gl:polygon-mode :front-and-back value))
+
+(defmacro with-render-state ((&rest state &key &allow-other-keys) &body body)
+  (let ((state (loop for (k v) on state by #'cddr
+                     for slot = (c2mop:slot-definition-name (initarg-slot 'render-state k T))
+                     collect (list (gensym (string slot)) slot v)))
+        (instance (gensym "INSTANCE")))
+    `(let* ((,instance (render-state *context*))
+            ,@(loop for (g s) in state
+                    collect `((,g (,s ,instance)))))
+       ,@(loop for (g s v) in state
+               collect `(setf (,s ,instance) ,v))
+       (unwind-protect
+            (progn
+              ,@body)
+         ,@(loop for (g s) in state
+                 collect `(setf (,s ,instance) ,g))))))

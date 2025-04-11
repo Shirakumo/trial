@@ -763,6 +763,7 @@
    #:blend-mode
    #:depth-bias
    #:write-depth-p
+   #:write-stencil-p
    #:clamp-depth-p
    #:depth-test
    #:stencil-test
