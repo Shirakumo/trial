@@ -148,3 +148,53 @@
 (defmacro with-stencil-mask (mode &body body)
   `(with-render-state (:write-stencil-p ,mode)
      ,@body))
+
+(trivial-deprecate:declaim-deprecated (function enable-feature)
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives (with-render-state))
+
+(trivial-deprecate:declaim-deprecated (function disable-feature)
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives (with-render-state))
+
+(trivial-deprecate:declaim-deprecated (function with-pushed-features)
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives (with-render-state))
+
+(trivial-deprecate:declaim-deprecated (function push-features)
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives (with-render-state))
+
+(trivial-deprecate:declaim-deprecated (function pop-features)
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives (with-render-state))
+
+(trivial-deprecate:declaim-deprecated (function feature-enabled-p)
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives (render-state))
+
+(trivial-deprecate:declaim-deprecated (function reset-features)
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives ())
+
+(trivial-deprecate:declaim-deprecated (function with-depth-mask)
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives (with-render-state (setf write-depth-p)))
+
+(trivial-deprecate:declaim-deprecated (function with-stencil-mask)
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives (with-render-state (setf write-stencil-p)))
+
+(trivial-deprecate:declaim-deprecated (function set-blend-mode)
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives (with-render-state (setf blend-mode)))

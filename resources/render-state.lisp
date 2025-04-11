@@ -153,9 +153,10 @@
   (gl:stencil-mask (if value #xFF #x00)))
 
 (defmethod (setf clamp-depth-p) :before (value (state render-state))
-  (if value
-      (enable-feature :depth-clamp)
-      (disable-feature :depth-clamp)))
+  (when-gl-extension :gl-arb-depth-clamp
+    (if value
+        (enable-feature :depth-clamp)
+        (disable-feature :depth-clamp))))
 
 (defun %to-test-op (value)
   (ecase value
