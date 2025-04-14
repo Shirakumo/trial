@@ -197,7 +197,7 @@
   (entity NIL :type T)
   (material NIL :type T)
   (local-transform (meye 4) :type mat4)
-  (transform (meye 4) :type mat4)
+  (global-transform (meye 4) :type mat4)
   (global-bounds-cache (%make-global-bounds-cache) :type global-bounds-cache)
   ;; 32-bit mask to designate which systems to interact with.
   (collision-mask 1 :type (unsigned-byte 32))
