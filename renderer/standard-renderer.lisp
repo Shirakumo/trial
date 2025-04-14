@@ -194,7 +194,7 @@
     (loop for texture across (textures material)
           do (enable texture pass))
     (when (double-sided-p material)
-      (disable-feature :cull-face))))
+      (setf (cull-face (render-state *context*)) NIL))))
 
 (defmethod disable ((material material) (pass standard-render-pass))
   (lru-cache-pop material (allocated-materials pass))
@@ -293,7 +293,7 @@
                     (setf (uniform program "animation") (+ skinning 0))))
              (with-pushed-features
                (when (double-sided-p material)
-                 (disable-feature :cull-face))
+                 (setf (cull-face (render-state *context*)) NIL))
                (render vao program)))))
 
 (define-shader-entity single-material-renderable (standard-renderable)
@@ -314,7 +314,7 @@
 (defmethod render :around ((renderable single-material-renderable) (program shader-program))
   (with-pushed-features
     (when (double-sided-p (material renderable))
-      (disable-feature :cull-face))
+      (setf (cull-face (render-state *context*)) NIL))
     (call-next-method)))
 
 (defmethod deregister :after ((renderable single-material-renderable) (pass standard-render-pass))

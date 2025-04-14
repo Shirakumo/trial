@@ -21,11 +21,8 @@
   ((color :initform (vec4 1))))
 
 (defmethod render ((ubox ubox*) (program shader-program))
-  (with-pushed-features
-    (disable-feature :cull-face)
-    (gl:polygon-mode :front-and-back :line)
-    (call-next-method)
-    (gl:polygon-mode :front-and-back :fill)))
+  (with-render-state (:cull-face NIL :polygon-mode :line)
+    (call-next-method)))
 
 (defclass spatial-structure (trial:array-container entity listener)
   ((spatial-index :initarg :spatial-index :accessor spatial-index)

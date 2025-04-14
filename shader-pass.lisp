@@ -282,7 +282,7 @@
                                           (internal-format (texture port)))))))))
 
 (defmethod prepare-pass-program :around ((pass shader-pass) (program shader-program))
-  (unless (eq +current-shader-program+ program)
+  (unless (eq program (shader-program (render-state *context*)))
     (activate program)
     (call-next-method))
   (update-uniforms pass program))

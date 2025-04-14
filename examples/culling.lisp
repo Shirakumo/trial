@@ -49,7 +49,7 @@ void main@after(){
         (focus (make-instance 'alloy:vertical-focus-list))
         (camera (camera scene))
         (clamp NIL))
-    (disable-feature :depth-clamp)
+    (setf (clamp-depth-p (render-state *context*)) NIL)
     (alloy:enter "Near Plane" layout :col 1 :row 0)
     (alloy:represent (near-plane camera) 'alloy:ranged-wheel :range '(0.1 . 100.0) :layout-parent layout :focus-parent focus)
     (alloy:enter "Far Plane" layout :col 1 :row 1)
@@ -59,7 +59,5 @@ void main@after(){
     (alloy:enter "Show Culled" layout :col 1 :row 3)
     (let ((a (alloy:represent clamp 'alloy:switch :layout-parent layout :focus-parent focus)))
       (alloy:on alloy:activate (a)
-        (if clamp
-            (enable-feature :depth-clamp)
-            (disable-feature :depth-clamp))))
+        (setf (clamp-depth-p (render-state *context*)) clamp)))
     (alloy:finish-structure panel layout focus)))
