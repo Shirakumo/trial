@@ -171,12 +171,14 @@
                (multiple-value-bind (tf depth) (project-onto-surface primitive target :collision-mask collision-mask :direction direction :transform tf :ignore object)
                  (when (and tf (< depth min-depth))
                    (setf min-depth depth)
-                   (t<- transform tf)))))
+                   (let ((local (tfrom-mat (primitive-local-transform primitive))))
+                     (!v- (tlocation transform) (tlocation tf) (tlocation local))
+                     (!q* (trotation transform) (trotation tf) (nqinv (trotation local))))))))
     (when (< min-depth most-positive-single-float)
       (values transform min-depth))))
 
 (defmethod snap-object-to-level ((object rigid-shape) &key (collision-mask 1) (direction -vy3+) (target (scene +main+)) (align-direction T))
-  (let ((transform (transform)))
+  (let ((transform (tcopy (local-transform object))))
     (declare (dynamic-extent transform))
     (when (project-onto-surface object target :collision-mask collision-mask :direction direction :transform transform)
       (when align-direction
