@@ -41,7 +41,7 @@
 (define-handler (audio-camera tick :after) ()
   (setf (harmony:location :effect) (location audio-camera))
   (let ((quat (qfrom-mat (view-matrix)))
-        (vec (vec3 0 0 -1)))
+        (vec (vec3 0 0 1)))
     (declare (dynamic-extent quat vec))
     (nvunit (!q* vec (nqinv quat) vec))
     (setf (harmony:direction :effect) vec))
