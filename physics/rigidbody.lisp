@@ -157,8 +157,7 @@
       ;; Get the support function to get our bottom, then extract the difference.
       (global-support-function primitive direction opposite)
       (!v+ (location transform) (!v- opposite location opposite) (hit-location hit))
-      ;; FIXME: this does not preserve rotation
-      (!qlookat (orientation transform) (hit-normal hit) +vy3+)
+      (nqalign (orientation transform) +vy3+ (hit-normal hit))
       (values transform (hit-depth hit)))))
 
 (defmethod project-onto-surface ((object rigid-shape) target &key (collision-mask 1) (direction -vy3+) (transform (transform)))
