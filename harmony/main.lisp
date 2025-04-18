@@ -39,7 +39,9 @@
 
 (defmethod trial:finalize ((server harmony:server))
   (trial:with-ignored-errors-on-release (:trial.harmony)
-    (mixed:free server)))
+    (mixed:free server))
+  (trial:with-ignored-errors-on-release (:trial.harmony)
+    (mixed:shutdown)))
 
 (defmethod (setf mixed:device) :after (device (server harmony:server))
   (let ((drain (harmony:segment :drain (harmony:segment :output server))))
