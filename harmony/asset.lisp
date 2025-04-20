@@ -83,11 +83,12 @@
    (volume :initarg :volume :initform 1.0 :accessor mixed:volume)))
 
 (defmethod trial:allocate ((voice voice))
-  (setf (voice voice) (harmony:create (source voice)
-                                      :class (voice-class voice)
-                                      :effects (effects voice) :on-end :disconnect
-                                      :repeat (harmony:repeat voice) :repeat-start (harmony:repeat-start voice)
-                                      :volume (mixed:volume voice) :mixer (mixer voice))))
+  (when harmony:*server*
+    (setf (voice voice) (harmony:create (source voice)
+                                        :class (voice-class voice)
+                                        :effects (effects voice) :on-end :disconnect
+                                        :repeat (harmony:repeat voice) :repeat-start (harmony:repeat-start voice)
+                                        :volume (mixed:volume voice) :mixer (mixer voice)))))
 
 (defmethod trial:deallocate ((voice voice))
   (if (harmony:chain (voice voice))
