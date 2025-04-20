@@ -5,6 +5,9 @@
 
 (defun standard-error-hook (err)
   (declare (ignore err))
+  #+nx
+  (cffi:foreign-funcall "nxgl_crash" :string (format NIL "An unhandled error occurred: ~a" err) :void)
+  #-nx
   (org.shirakumo.messagebox:show
    (format NIL "An unhandled error occurred. Please send the application logfile to the developers. You can find it here:~%~%~a"
            (pathname-utils:native-namestring (trial:logfile)))
