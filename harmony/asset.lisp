@@ -106,7 +106,8 @@
 
 (defmethod harmony:play ((voice voice) &key reset location velocity (volume (mixed:volume voice)) (min-distance (mixed:min-distance voice)) (max-distance (mixed:max-distance voice)))
   (let ((voice (or (voice voice)
-                   (error "Voice has not been allocated.")))
+                   #-elide-allocation-checks (error "Voice has not been allocated.")
+                   #+elide-allocation-checks (return-from harmony:play voice)))
         (sources (harmony:segment :sources harmony:*server*))
         (mixer (harmony:segment (mixer voice) harmony:*server*)))
     (setf (mixed:volume voice) volume)
