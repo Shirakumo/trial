@@ -242,3 +242,6 @@
                           (make-array (weights track) :element-type 'single-float))))
     (sample weights track time :loop-p loop-p))
   pose)
+
+(defmethod sample ((pose pose) thing time &rest args &key &allow-other-keys)
+  (apply #'sample (data pose) thing time args))
