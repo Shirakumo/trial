@@ -957,11 +957,13 @@
 (defun lerp-dt (from to dt rem)
   ;; REM: remaining time to get to TO.
   (declare (optimize speed))
-  (let* ((l (- (/ (float rem 0f0)
-                  (float (log 1/100 2) 0f0))))
-         (n (- 1 (expt 2 (- (/ (float dt 0f0) l))))))
-    (declare (type single-float n l))
-    (lerp from to n)))
+  (let ((rem (float rem 0f0)))
+    (if (< 0 rem)
+        (let* ((l (- (/ rem (float (log 1/100 2) 0f0))))
+               (n (- 1 (expt 2 (- (/ (float dt 0f0) l))))))
+          (declare (type single-float n l))
+          (lerp from to n))
+        to)))
 
 (declaim (inline deg->rad rad->deg))
 (defun deg->rad (deg)
