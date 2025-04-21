@@ -155,12 +155,12 @@
       (if (<= last time)
           (loop for effect across (effects clip)
                 do (when (in-range-p effect last time)
-                     (activate-trigger time (animation-effect-object effect))))
+                     (activate-trigger target (animation-effect-object effect))))
           ;; We wrapped around, so process all effects between [last, +inf] and [-inf, time]
           (loop for effect across (effects clip)
                 do (when (or (in-range-p effect last most-positive-single-float)
                              (in-range-p effect most-negative-single-float time))
-                     (activate-trigger time (animation-effect-object effect))))))
+                     (activate-trigger target (animation-effect-object effect))))))
     (setf (last-sample clip) time)))
 
 (%define-sampler-method sequences:sequence (elt thing name))
