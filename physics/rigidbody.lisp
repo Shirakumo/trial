@@ -157,6 +157,8 @@
       ;; Get the support function to get our bottom, then extract the difference.
       (global-support-function primitive direction opposite)
       (!v+ (location transform) (!v- opposite location opposite) (hit-location hit))
+      (when (v= (hit-normal hit) 0)
+        (vsetf (hit-normal hit) 0 1 0))
       (nqalign (orientation transform) +vy3+ (hit-normal hit))
       (values transform (hit-depth hit)))))
 
