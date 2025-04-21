@@ -269,3 +269,17 @@
 
 (defmethod org.shirakumo.depot:commit :after ((depot org.shirakumo.depot.zip::zip-file-archive) &key)
   (nxgl:commit-save))
+
+;; SIGH.
+(in-package :cl-opengl-bindings)
+(defun %check-error (&optional context)
+  (declare (optimize speed))
+  (let ((error-code (cffi:foreign-funcall-pointer (org.shirakumo.fraf.nxgl:proc-address "glGetError") () :unsigned-int)))
+    (unless (zerop error-code)
+      (restart-case
+          (error 'opengl-error
+                 :error-code (cons error-code
+                                   (cffi:foreign-enum-keyword '%gl:enum error-code
+                                                              :errorp nil))
+                 :error-context context)
+        (continue () :report "Continue")))))

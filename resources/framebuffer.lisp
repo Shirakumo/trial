@@ -60,6 +60,7 @@
           (check-framebuffer-attachment attachment)
           (check-type texture texture)
           (check-allocated texture)
+          #-nx
           (v:debug :trial.framebuffer "Attaching ~a~@[:~a~] as ~a to ~a."
                    texture layer attachment framebuffer)
           (cond ((null (width framebuffer))
@@ -92,7 +93,8 @@
           (%gl:framebuffer-parameter-i :framebuffer :framebuffer-default-height (height framebuffer)))))))
 
 (defmethod (setf attachments) :before (attachments (framebuffer framebuffer))
-  (when (allocated-p framebuffer)
+  (when (and (allocated-p framebuffer) (not (equal attachments (attachments framebuffer))))
+    ;; TODO: usually attachments are only switched out, making the default generic method way too expensive.
     (with-cleanup-on-failure (bind-framebuffer-attachments framebuffer (attachments framebuffer))
       (bind-framebuffer-attachments framebuffer attachments))))
 
