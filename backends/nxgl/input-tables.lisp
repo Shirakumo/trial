@@ -223,4 +223,4 @@
   (or (aref +scan-code-keyword-map+ code) code))
 
 (defun keyword->string (key)
-  (gethash key +keyword-string-map+))
+  (car (gethash key +keyword-string-map+)))
