@@ -259,13 +259,12 @@
                             :modifiers (cffi:foreign-bitfield-symbols 'nxgl:modifier modifiers)))
 
           (:key-release (code modifiers)
-           (let ((modifiers (cffi:foreign-bitfield-symbols 'nxgl:modifier modifiers)))
-             (fire 'key-release :key (scan-code->keyword code) :modifiers modifiers)
-             (let ((string (keyword->string (scan-code->keyword code))))
+           (let ((modifiers (cffi:foreign-bitfield-symbols 'nxgl:modifier modifiers))
+                 (key (scan-code->keyword code)))
+             (fire 'key-release :key key :modifiers modifiers)
+             (let ((string (keyword->string key :shift (member :shift modifiers))))
                (when string
-                 (fire 'text-entered :text (if (member :shift modifiers)
-                                               (cdr string)
-                                               (car string))))))))))))
+                 (fire 'text-entered :text string))))))))))
 
 (defmethod org.shirakumo.depot:commit :after ((depot org.shirakumo.depot.zip::zip-file-archive) &key)
   (nxgl:commit-save))

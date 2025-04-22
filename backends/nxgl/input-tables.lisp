@@ -222,5 +222,6 @@
 (defun scan-code->keyword (code)
   (or (aref +scan-code-keyword-map+ code) code))
 
-(defun keyword->string (key)
-  (car (gethash key +keyword-string-map+)))
+(defun keyword->string (key &key shift)
+  (let ((entry (gethash key +keyword-string-map+)))
+    (if shift (cdr entry) (car entry))))
