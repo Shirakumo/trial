@@ -15,6 +15,10 @@
   (resize (color pass) width height)
   (resize (framebuffer pass) width height))
 
+(defmethod clear ((pass wave-propagate-pass))
+  (clear (color pass))
+  (clear (previous pass)))
+
 (defmethod update ((pass wave-propagate-pass) dt tt fc)
   (render pass NIL))
 
