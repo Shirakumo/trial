@@ -616,7 +616,7 @@
   (multiple-value-bind (used total) (org.shirakumo.machine-state:machine-room)
     (multiple-value-bind (vfree vtotal) (org.shirakumo.machine-state:gpu-room)
       (let ((vused (- vtotal vfree)))
-        (v:info :trial.resource "Post allocation ~5,2f% (~5,,'':d/~5,,'':d MB) RAM ~5,2f% (~5,,'':d/~5,,'':d MB) VRAM"
+        (v:info :trial.resource "~5,2f% (~5,,'':d/~5,,'':d MB) RAM ~5,2f% (~5,,'':d/~5,,'':d MB) VRAM"
                 (* 100 (/ used total)) (round used (* 1024 1024)) (round total (* 1024 1024))
                 (* 100 (/ vused vtotal)) (round vused (* 1024 1024)) (round vtotal (* 1024 1024)))))))
 
