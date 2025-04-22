@@ -6,6 +6,7 @@
                                       :elide-coercion-size-checks
                                       :elide-container-checks
                                       :elide-allocation-checks
+                                      :elide-resource-generation-checks
                                       :elide-handler-restarts
                                       :elide-context-current-checks
                                       :elide-primitive-sanity-checks))

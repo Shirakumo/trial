@@ -18,10 +18,11 @@
 
 (defmethod ensure-generated ((resource placeholder-resource))
   (load (generator resource))
-  (if (typep resource 'placeholder-resource)
-      (error "Loading the asset~%  ~a~%did not generate the resource~%  ~a"
-             (generator resource) resource)
-      resource))
+  #-elide-resource-generation-checks
+  (when (typep resource 'placeholder-resource)
+    (error "Loading the asset~%  ~a~%did not generate the resource~%  ~a"
+           (generator resource) resource))
+  resource)
 
 (defmethod ensure-generated ((resource resource))
   resource)
