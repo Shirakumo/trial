@@ -212,7 +212,10 @@
     (setf (mixed:location server) list)))
 
 (defmethod harmony:transition ((voice voice) to &rest args &key &allow-other-keys)
-  (apply #'harmony:transition (voice voice) to args))
+  (apply #'harmony:transition (or (voice voice)
+                                  #-elide-allocation-checks (error "Voice has not been allocated.")
+                                  #+elide-allocation-checks (return-from harmony:transition voice))
+         to args))
 
 (defmethod trial:location ((voice voice))
   (math:vec3 (mixed:location (voice voice))))
