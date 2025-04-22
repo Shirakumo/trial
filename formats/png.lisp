@@ -52,15 +52,21 @@
   (let ((channels (ecase (pixel-format source) (:rgba 4) (:rgb 3) (:rg 2) (:r 1) ((NIL) 3))))
     (destructuring-bind (x y z w h d) (texture-source-src source)
       (declare (ignore x y z d))
-      (zpng:write-png (make-instance 'zpng:png 
-                                     :color-type (ecase channels
-                                                   (4 :truecolor-alpha)
-                                                   (3 :truecolor)
-                                                   (2 :grayscale-alpha)
-                                                   (1 :grayscale))
-                                     :width w :height h
-                                     :image-data (flip-image-vertically (pixel-data source) w h channels))
-                      path))))
+      ;; NOTE: we don't use zpng:write-file as it uses TRUENAME which can fail on some systems.
+      (with-open-file (stream path :direction :output
+                                   :if-exists :supersede
+                                   :if-does-not-exist :create
+                                   :element-type '(unsigned-byte 8))
+        (zpng:write-png-stream (make-instance 'zpng:png
+                                              :color-type (ecase channels
+                                                            (4 :truecolor-alpha)
+                                                            (3 :truecolor)
+                                                            (2 :grayscale-alpha)
+                                                            (1 :grayscale))
+                                              :width w :height h
+                                              :image-data (flip-image-vertically (pixel-data source) w h channels))
+                               stream))
+      path)))
 
 (defmethod transcode (source (source-type symbol) target (target-type (eql :png)) &rest args &key &allow-other-keys)
   (apply #'save-image (load-image source source-type) target target-type args)

@@ -37,10 +37,11 @@
         (apply #'trial:compile-resources generator target args)))))
 
 (defmethod trial:generate-resources ((generator environment) sets &key (resource (trial:resource generator T)))
-  (when harmony:*server*
-    (if (typep resource 'music)
-        resource
-        (trial::ensure-instance resource 'music :sets sets))))
+  (if harmony:*server*
+      (if (typep resource 'music)
+          resource
+          (trial::ensure-instance resource 'music :sets sets))
+      (trial::ensure-instance resource 'music :sets ())))
 
 (defmethod trial:reload ((asset environment)))
 
