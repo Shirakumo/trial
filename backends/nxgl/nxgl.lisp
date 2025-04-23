@@ -36,7 +36,9 @@
    #:quit
    #:machine-instance
    #:software-version
-   #:show-keyboard))
+   #:show-keyboard
+   #:get-performance-mode
+   #:set-performance-mode))
 
 (in-package #:org.shirakumo.fraf.nxgl)
 
@@ -78,11 +80,16 @@
   :key-press
   :key-release)
 
-(cffi:defcenum keyobard-type
+(cffi:defcenum keyboard-type
   :text
   :password
   :username
   :code)
+
+(cffi:defcenum performance-mode
+  :normal
+  :loading
+  :boost)
 
 (cffi:defbitfield modifier
   (:control     #b00000000000001)
@@ -187,6 +194,11 @@
   (text-size :size)
   (type keyboard-type)
   (prompt :string))
+
+(cffi:defcfun (get-performance-mode "nxgl_get_performance_mode") performance-mode)
+
+(cffi:defcfun (set-performance-mode "nxgl_set_performance_mode") :int
+  (mode performance-mode))
 
 (defun username ()
   (cffi:with-foreign-object (nick :char 33)

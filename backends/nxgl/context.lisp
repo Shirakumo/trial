@@ -282,3 +282,19 @@
            NIL)
           (T
            (nxgl:check-error)))))
+
+(defun performance-mode ()
+  (nxgl:get-performance-mode))
+
+(defun (setf performance-mode) (mode)
+  (when (= 0 (nxgl:set-performance-mode mode))
+    (error "Failed to set performance mode."))
+  mode)
+
+(defmacro with-performance-mode (mode &body body)
+  (let ((previous (gensym "PREVIOUS")))
+    `(let ((,previous (performance-mode)))
+       (setf (performance-mode) ,mode)
+       (unwind-protect
+            (progn ,@body)
+         (setf (performance-mode) ,previous)))))

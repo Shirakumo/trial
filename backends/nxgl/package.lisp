@@ -7,6 +7,8 @@
    (#:nxgl #:org.shirakumo.fraf.nxgl))
   (:export
    #:context
-   #:show-keyboard))
+   #:show-keyboard
+   #:performance-mode
+   #:with-performance-mode))
 
 (pushnew :trial-nxgl *features*)
