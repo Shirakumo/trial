@@ -134,26 +134,30 @@
 ;; FIXME: this should ideally be more generic, with blitting from one to another framebuffer
 ;;        and handling the screen as a special framebuffer instance that's always around.
 (defmethod blit-to-screen ((framebuffer framebuffer))
+  (declare (optimize speed))
   (gl:bind-framebuffer :read-framebuffer (gl-name framebuffer))
   (gl:bind-framebuffer :draw-framebuffer 0)
   ;; Compute offsets so that the blit always happens to the center of the screen.
-  (let* ((x- 0) (x+ (width *context*))
-         (y- 0) (y+ (height *context*))
-         (src-aspect (/ (width framebuffer) (height framebuffer)))
-         (dst-aspect (/ (width *context*) (height *context*))))
+  (let* ((cwidth (width *context*)) (cheight (height *context*))
+         (fwidth (width framebuffer)) (fheight (height framebuffer))
+         (x- 0) (x+ cwidth)
+         (y- 0) (y+ cheight)
+         (src-aspect (/ (float fwidth 0f0) fheight))
+         (dst-aspect (/ (float cwidth 0f0) cheight)))
+    (declare (type (unsigned-byte 32) cwidth cheight fwidth fheight x- y- x+ y+))
     (cond ((< src-aspect dst-aspect) ;; Capped by height
            (gl:clear :color-buffer)
-           (let ((width (* (width framebuffer) (/ (height *context*) (height framebuffer)))))
-             (setf x- (truncate (- (width *context*) width) 2))
-             (setf x+ (+ x- width))))
+           (let ((width (* fwidth (/ (float cheight 0f0) fheight))))
+             (setf x- (truncate (- cwidth width) 2))
+             (setf x+ (truncate (+ x- width)))))
           ((< dst-aspect src-aspect) ;; Capped by width
            (gl:clear :color-buffer)
-           (let ((height (* (height framebuffer) (/ (width *context*) (width framebuffer)))))
-             (setf y- (truncate (- (height *context*) height) 2))
-             (setf y+ (+ y- height)))))
+           (let ((height (* fheight (/ (float cwidth 0f0) fwidth))))
+             (setf y- (truncate (- cheight height) 2))
+             (setf y+ (truncate (+ y- height))))))
     ;; TODO: cache this somehow.
-    (let ((tex (second (find :color-attachment0 (attachments framebuffer) :key #'first))))
-      (%gl:blit-framebuffer 0 0 (width framebuffer) (height framebuffer) x- y- x+ y+
+    (let ((tex (second (find :color-attachment0 (the list (attachments framebuffer)) :key #'first))))
+      (%gl:blit-framebuffer 0 0 fwidth fheight x- y- x+ y+
                             (cffi:foreign-bitfield-value '%gl::ClearBufferMask :color-buffer)
                             (case (mag-filter tex)
                               (:nearest (cffi:foreign-enum-value '%gl:enum :nearest))
