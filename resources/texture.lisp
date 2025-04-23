@@ -19,9 +19,9 @@
    (swizzle :initarg :swizzle :writer (setf swizzle))
    (storage :initarg :storage)))
 
-(define-unbound-reader texture width (first (texture-sources->texture-size (sources texture))))
-(define-unbound-reader texture height (second (texture-sources->texture-size (sources texture))))
-(define-unbound-reader texture depth (third (texture-sources->texture-size (sources texture))))
+(define-unbound-reader texture width (first (texture-sources->width (sources texture))))
+(define-unbound-reader texture height (second (texture-sources->height (sources texture))))
+(define-unbound-reader texture depth (texture-sources->depth (sources texture)))
 (define-unbound-reader texture target :texture-2d)
 (define-unbound-reader texture levels 1)
 (define-unbound-reader texture samples 1)
