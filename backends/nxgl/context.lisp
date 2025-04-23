@@ -194,7 +194,10 @@
   (setf sb-sys::*machine-version* "ARM Cortex-A57"))
 
 (deploy:define-hook (:quit nxgl) ()
-  (nxgl:shutdown))
+  (ignore-errors (v:flush))
+  (ignore-errors (v:remove-global-controller))
+  (ignore-errors (nxgl:shutdown))
+  (ignore-errors (nxgl:quit)))
 
 (defun trial:launch-with-context (&optional main &rest initargs)
   (let ((main (apply #'make-instance main initargs)))

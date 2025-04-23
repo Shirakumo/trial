@@ -32,6 +32,8 @@
    #:set-save-size
    #:get-save-size
    #:commit-save
+   #:crash
+   #:quit
    #:machine-instance
    #:software-version))
 
@@ -162,6 +164,11 @@
   (max :uint64))
 
 (cffi:defcfun (commit-save "nxgl_commit_save") :int)
+
+(cffi:defcfun (crash "nxgl_crash") :void
+  (message :string))
+
+(cffi:defcfun (quit "nxgl_quit") :void)
 
 (cffi:defcfun (machine-instance "nxgl_machine_instance") :string)
 
