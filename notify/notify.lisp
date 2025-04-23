@@ -136,8 +136,9 @@
                        (process-changes :timeout 0.5)))))))
 
 (defmethod trial:finalize :after ((main main))
-  (trial:with-thread-exit ((file-watch-thread main))
-    (setf (file-watch-thread main) NIL))
-  (unwatch T)
-  (notify:shutdown))
+  (when (file-watch-thread main)
+   (trial:with-thread-exit ((file-watch-thread main))
+     (setf (file-watch-thread main) NIL))
+   (unwatch T)
+   (notify:shutdown)))
 
