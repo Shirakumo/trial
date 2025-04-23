@@ -271,3 +271,14 @@
 
 (defmethod org.shirakumo.depot:commit :after ((depot org.shirakumo.depot.zip::zip-file-archive) &key)
   (nxgl:commit-save))
+
+(defun show-keyboard (&key default (type :text) prompt (max-length 128))
+  (cffi:with-foreign-objects ((str :char max-length))
+    (when default
+      (cffi:lisp-string-to-foreign default str max-length :encoding :utf-8))
+    (cond ((< 0 (nxgl:show-keyboard str max-length type (if prompt prompt (cffi:null-pointer))))
+           (cffi:foreign-string-to-lisp str :max-chars max-length))
+          ((eql :input-cancelled nxgl:error)
+           NIL)
+          (T
+           (nxgl:check-error)))))

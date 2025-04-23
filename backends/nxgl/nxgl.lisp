@@ -35,7 +35,8 @@
    #:crash
    #:quit
    #:machine-instance
-   #:software-version))
+   #:software-version
+   #:show-keyboard))
 
 (in-package #:org.shirakumo.fraf.nxgl)
 
@@ -62,7 +63,8 @@
   :make-current-failed
   :bad-access
   :context-lost
-  :event-overflow)
+  :event-overflow
+  :input-cancelled)
 
 (cffi:defcenum event-type
   :focus-gain
@@ -75,6 +77,12 @@
   :mouse-wheel
   :key-press
   :key-release)
+
+(cffi:defcenum keyobard-type
+  :text
+  :password
+  :username
+  :code)
 
 (cffi:defbitfield modifier
   (:control     #b00000000000001)
@@ -173,6 +181,12 @@
 (cffi:defcfun (machine-instance "nxgl_machine_instance") :string)
 
 (cffi:defcfun (software-version "nxgl_software_version") :string)
+
+(cffi:defcfun (show-keyboard "nxgl_show_keyboard") :int
+  (text :pointer)
+  (text-size :size)
+  (type keyboard-type)
+  (prompt :string))
 
 (defun username ()
   (cffi:with-foreign-object (nick :char 33)

@@ -6,6 +6,7 @@
    (#:v #:org.shirakumo.verbose)
    (#:nxgl #:org.shirakumo.fraf.nxgl))
   (:export
-   #:context))
+   #:context
+   #:show-keyboard))
 
 (pushnew :trial-nxgl *features*)
