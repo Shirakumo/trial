@@ -1571,3 +1571,12 @@
 (defun percentile-change (new old)
   (let ((diff (- new old)))
     (* 100.0 (/ diff old))))
+
+#+sbcl
+(define-global +arena+ (sb-vm:new-arena 65536 0 0))
+
+(defmacro with-discarded-allocations (&body body)
+  #+sbcl `(progn
+            (unwind-protect (sb-vm:with-arena (+arena+) ,@body)
+              (sb-vm:rewind-arena +arena+)))
+  #-sbcl `(progn ,@body))
