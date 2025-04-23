@@ -179,38 +179,38 @@
 (defmacro define-event (name superclasses &body slots)
   (unless (find 'event superclasses)
     (setf superclasses (append superclasses '(event))))
-  (let ((slots (loop for slot in slots
-                     for (name default . args) = (enlist slot 'arg!)
-                     collect (if (getf args :reader)
-                                 (list* name default args)
-                                 (list* name default :reader name args)))))
-    `(progn
-       (defclass ,name ,superclasses
-         ,(loop for (name default . args) in slots
-                collect `(,name :initarg ,(kw name) :initform ,(if (eql default 'arg!) `(error "~a required." ',name)) ,@args)))
-       ,@(when slots
-           `((defmethod print-object ((event ,name) stream)
-                (print-unreadable-object (event stream :type T :identity T)
-                  (format stream "~@{~a~^ ~}"
-                          ,@(loop for slot in slots
-                                  for reader = (getf (cddr slot) :reader)
-                                  collect `(,reader event))))))))))
+  (form-fiddle:with-body-options (slots others pool) slots
+    (when others (error "Unknown options: ~s" others))
+    (let ((slots (loop for slot in slots
+                       for (name default . args) = (enlist slot 'arg!)
+                       collect (if (getf args :reader)
+                                   (list* name default args)
+                                   (list* name default :reader name args)))))
+      `(progn
+         (defclass ,name ,superclasses
+           ,(loop for (name default . args) in slots
+                  collect `(,name :initarg ,(kw name) :initform ,(if (eql default 'arg!) `(error "~a required." ',name)) ,@args)))
+         ,@(when slots
+             `((defmethod print-object ((event ,name) stream)
+                 (print-unreadable-object (event stream :type T :identity T)
+                   (format stream "~@{~a~^ ~}"
+                           ,@(loop for slot in slots
+                                   for reader = (getf (cddr slot) :reader)
+                                   collect `(,reader event)))))))
+         ,@(when pool
+             `((define-event-pool ,name ,@(unless (eql pool T) (list pool)))))))))
 
 (defmacro define-event-pool (class &optional (count 32))
   `(setf (gethash ',class +event-pools+) (make-event-pool ',class ,count)))
 
 (define-event tick-event () tt dt fc)
-(define-event pre-tick (tick-event))
-(define-event tick (tick-event))
-(define-event post-tick (tick-event))
+(define-event pre-tick (tick-event) :pool T)
+(define-event tick (tick-event) :pool T)
+(define-event post-tick (tick-event) :pool T)
 (define-event class-changed () changed-class)
 (define-event instance-class-changed () instance)
 (define-event asset-changed () changed-asset)
 (define-event material-changed () changed-material)
-
-(define-event-pool pre-tick)
-(define-event-pool tick)
-(define-event-pool post-tick)
 
 (defun maybe-handle-main-event (event-type &rest initargs)
   (let ((main +main+))

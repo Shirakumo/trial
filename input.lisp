@@ -20,10 +20,10 @@
   (print-unreadable-object (event stream :type T)
     (format stream "~s" (key event))))
 
-(define-event key-press (key-event press-event))
-(define-event key-release (key-event release-event))
+(define-event key-press (key-event press-event) :pool T)
+(define-event key-release (key-event release-event) :pool T)
 
-(define-event text-entered (keyboard-event)
+(define-event text-entered (keyboard-event) :pool T
   text (replace NIL :reader replace-p))
 
 (defmethod print-object ((event text-entered) stream)
@@ -40,24 +40,24 @@
   (print-unreadable-object (event stream :type T)
     (format stream "~s" (button event))))
 
-(define-event mouse-press (mouse-button-event press-event))
-(define-event mouse-release (mouse-button-event release-event))
-(define-event mouse-double-click (mouse-button-event))
-(define-event mouse-scroll (mouse-event)
+(define-event mouse-press (mouse-button-event press-event) :pool T)
+(define-event mouse-release (mouse-button-event release-event) :pool T)
+(define-event mouse-double-click (mouse-button-event) :pool T)
+(define-event mouse-scroll (mouse-event) :pool T
   delta)
 
 (defmethod print-object ((event mouse-scroll) stream)
   (print-unreadable-object (event stream :type T)
     (format stream "~a" (delta event))))
 
-(define-event mouse-move (mouse-event)
+(define-event mouse-move (mouse-event) :pool T
   old-pos)
 
 (defmethod print-object ((event mouse-move) stream)
   (print-unreadable-object (event stream :type T)
     (format stream "~a => ~a" (old-pos event) (pos event))))
 
-(define-event file-drop-event (mouse-event)
+(define-event file-drop-event (mouse-event) :pool T
   paths)
 
 (define-event gamepad-event (input-event)
@@ -74,15 +74,15 @@
   (print-unreadable-object (event stream :type T)
     (format stream "~a ~s" (device event) (button event))))
 
-(define-event gamepad-press (gamepad-button-event press-event))
-(define-event gamepad-release (gamepad-button-event release-event))
+(define-event gamepad-press (gamepad-button-event press-event) :pool T)
+(define-event gamepad-release (gamepad-button-event release-event) :pool T)
 
-(define-event gamepad-move (gamepad-event)
+(define-event gamepad-move (gamepad-event) :pool T
   axis old-pos pos)
 
 (defmethod print-object ((event gamepad-move) stream)
   (print-unreadable-object (event stream :type T)
     (format stream "~a ~s ~3f" (device event) (axis event) (pos event))))
 
-(define-event gamepad-added (gamepad-event))
-(define-event gamepad-removed (gamepad-event))
+(define-event gamepad-added (gamepad-event) :pool T)
+(define-event gamepad-removed (gamepad-event) :pool T)
