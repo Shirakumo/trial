@@ -57,16 +57,19 @@
                           handler))))
              (poll (device)
                (gamepad:poll-events device #'process)))
+      (declare (dynamic-extent #'process #'poll))
       (gamepad:call-with-devices #'poll))
     (when (< internal-time-units-per-second
              (- (get-internal-real-time) (last-device-probe handler)))
-      (setf (last-device-probe handler) (get-internal-real-time))
-      (gamepad:poll-devices :function (lambda (action device)
-                                        (ecase action
-                                          (:add (v:info :trial.input "New controller:~%  ~a" (describe-gamepad device))
-                                           (handle (make-instance 'gamepad-added :device device) handler))
-                                          (:remove (v:info :trial.input "Lost controller:~%  ~a" (describe-gamepad device))
-                                           (handle (make-instance 'gamepad-removed :device device) handler))))))))
+      (labels ((process (action device)
+                 (ecase action
+                   (:add (v:info :trial.input "New controller:~%  ~a" (describe-gamepad device))
+                    (handle (make-event 'gamepad-added :device device) handler))
+                   (:remove (v:info :trial.input "Lost controller:~%  ~a" (describe-gamepad device))
+                    (handle (make-event 'gamepad-removed :device device) handler)))))
+        (declare (dynamic-extent #'process))
+        (setf (last-device-probe handler) (get-internal-real-time))
+        (gamepad:poll-devices :function #'process)))))
 
 (defun maybe-load-gamepad-device-maps (&optional (file (pathname-utils:merge-pathnames*
                                                         "default-device-mappings.lisp"
