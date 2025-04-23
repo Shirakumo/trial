@@ -1,6 +1,9 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-global +input-source+ :keyboard)
+(define-global +default-input-source+
+  #-nx :keyboard #+nx org.shirakumo.fraf.gamepad.impl::*default-device*)
+(define-global +input-source+
+  +default-input-source+)
 
 (define-event input-event (event))
 (define-event keyboard-event (input-event))

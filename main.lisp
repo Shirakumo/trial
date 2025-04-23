@@ -27,7 +27,7 @@
 
 (defmethod finalize :after ((main main))
   (setf +main+ NIL)
-  (setf +input-source+ :keyboard)
+  (setf +input-source+ +default-input-source+)
   (setf +map-key-events+ T))
 
 (defmethod username ((main main))
@@ -48,7 +48,7 @@
 (defmethod handle :before (event (main main))
   (typecase event
     ((or mouse-event keyboard-event)
-     (setf +input-source+ :keyboard))
+     #-nx (setf +input-source+ :keyboard))
     (gamepad-move
      (when (< 0.1 (pos event))
        (setf +input-source+ (device event))))
