@@ -43,6 +43,6 @@
                   collect `(deploy:define-library ,lib :dont-deploy T))))
 
 (dont-deploy cl-opengl-bindings::opengl)
-#+linux
+#+(and linux x86-64)
 (deploy:define-library org.shirakumo.fraf.gamepad.impl::evdev
   :path (merge-pathnames "libevdev-lin-amd64.so" org.shirakumo.fraf.gamepad.impl::*static*))
