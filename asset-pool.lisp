@@ -19,6 +19,12 @@
   (defun list-pools ()
     (alexandria:hash-table-values *pools*))
 
+  (defun subpools (pool)
+    (loop for tentative being the hash-values of *pools*
+          when (and (not (eq tentative pool))
+                    (pathname-utils:subpath-p (base tentative) (base pool)))
+          collect tentative))
+
   (defclass pool ()
     ((name :initarg :name :accessor name)
      (base :initarg :base :accessor base)

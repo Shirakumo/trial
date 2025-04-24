@@ -1,29 +1,42 @@
 (in-package #:org.shirakumo.fraf.trial)
 
+(defun deployed-pool-path (pool)
+  (make-pathname :directory (list :relative "pool" (string-downcase (name pool)))))
+
+(defun deploy-pools (directory)
+  (let ((pools (loop for pool in (list-pools)
+                     collect (list pool
+                                   (subpools pool)))))
+    (loop for (pool subpools) in pools
+          do (let* ((source (truename (base pool)))
+                    (unused (loop for path in (unused-file-patterns pool)
+                                  collect (pathname-utils:merge-pathnames* path source))))
+               (flet ((unused-file-p (src dst)
+                        (declare (ignore dst))
+                        (or (loop for sub-pool in subpools
+                                  thereis (pathname-utils:subpath-p src (truename (base sub-pool))))
+                            (loop for pattern in unused
+                                  thereis (if (pathname-utils:directory-p pattern)
+                                              (pathname-utils:subpath-p src pattern)
+                                              (pathname-utils:pathname-matches-p src pattern))))))
+                 (deploy:status 1 "Copying pool ~a from ~a" pool source)
+                 (deploy:copy-directory-tree
+                  source
+                  (pathname-utils:merge-pathnames* (deployed-pool-path pool) directory)
+                  :copy-root NIL
+                  :exclude #'unused-file-p))))))
+
 (deploy:define-hook (:deploy trial) (directory)
   (deploy:copy-directory-tree (pathname-utils:subdirectory (data-root) "lang") directory)
   (let ((default-keymap (pathname-utils:merge-pathnames* "keymap.lisp" (data-root))))
     (when (probe-file default-keymap)
       (org.shirakumo.filesystem-utils:copy-file
        default-keymap (pathname-utils:merge-pathnames* "keymap.lisp" directory) :replace T)))
+  (deploy-pools directory)
+  ;; Fixup pool paths
   (dolist (pool (list-pools))
-    (let* ((source (base pool))
-           (unused (loop for path in (unused-file-patterns pool)
-                         collect (pathname-utils:merge-pathnames* path source))))
-      (flet ((unused-file-p (src dst)
-               (declare (ignore dst))
-               (loop for pattern in unused
-                     thereis (if (pathname-utils:directory-p pattern)
-                                 (pathname-utils:subpath-p src pattern)
-                                 (pathname-utils:pathname-matches-p src pattern)))))
-        ;; FIXME: We're potentially introducing conflicts here by eagerly coercing names.
-        (setf (base pool) (make-pathname :directory (list :relative "pool" (string-downcase (name pool)))))
-        (deploy:status 1 "Copying pool ~a from ~a" pool source)
-        (deploy:copy-directory-tree
-         source
-         (pathname-utils:merge-pathnames* (base pool) directory)
-         :copy-root NIL
-         :exclude #'unused-file-p)))))
+    ;; FIXME: We're potentially introducing conflicts here by eagerly coercing names.
+    (setf (base pool) (deployed-pool-path pool))))
 
 (deploy:define-hook (:build trial) ()
   (v:remove-global-controller)
