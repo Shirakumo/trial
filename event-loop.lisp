@@ -5,6 +5,8 @@
 (defclass event ()
   ())
 
+(defmethod clear ((event event)) event)
+
 (defclass listener ()
   ())
 
@@ -59,7 +61,7 @@
             (let* ((,index (event-pool-index ,pool))
                    (,instances (event-pool-instances ,pool)))
               (when (atomics:cas (event-pool-index ,pool) ,index (mod (1+ ,index) (length ,instances)))
-                (return (initialize-instance (aref ,instances ,index) ,@initargs))))))
+                (return (initialize-instance (clear (aref ,instances ,index)) ,@initargs))))))
          (null
           (make-instance ,class ,@initargs))))))
 
@@ -196,7 +198,10 @@
                    (format stream "~@{~a~^ ~}"
                            ,@(loop for slot in slots
                                    for reader = (getf (cddr slot) :reader)
-                                   collect `(,reader event)))))))
+                                   collect `(,reader event)))))
+               (defmethod clear :after ((event ,name))
+                 ,@(loop for (slot) in slots
+                         collect `(slot-makunbound event ',slot)))))
          ,@(when pool
              `((define-event-pool ,name ,@(unless (eql pool T) (list pool)))))))))
 
