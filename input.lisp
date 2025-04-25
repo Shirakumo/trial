@@ -50,7 +50,7 @@
   (print-unreadable-object (event stream :type T)
     (format stream "~a" (delta event))))
 
-(define-event mouse-move (mouse-event) :pool T
+(define-event mouse-move (mouse-event) :pool 128
   old-pos)
 
 (defmethod print-object ((event mouse-move) stream)
