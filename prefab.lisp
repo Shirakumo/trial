@@ -73,7 +73,7 @@
                  collect (expand-prefab-expression type class assetvar args))
          ,class))))
 
-(defmacro do-nodes% ((node instance id) &body body)
+(defmacro do-nodes% ((node instance &optional (id '(constantly T))) &body body)
   (etypecase id
     ((member NIL T)
      `(let ((,node ,instance))
@@ -146,8 +146,10 @@
   ;; KLUDGE: This will also change materials on other instances that might share it.
   ;;         However, allocating a new material entirely will wreck sharing between
   ;;         multiple instances of the same prefab.
-  `(loop for material across (materials ,instance)
-         do (ensure-instance material ',type ,@initargs)))
+  (let ((nodevar (gensym "NODE")))
+    `(do-nodes% (,nodevar ,instance (lambda (x) (typep x 'per-array-material-renderable)))
+       (loop for material across (materials ,nodevar)
+             do (ensure-instance material ',type ,@initargs)))))
 
 (define-prefab-translator eval (instance asset args &rest body)
   `((lambda ,args
