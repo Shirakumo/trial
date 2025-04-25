@@ -160,10 +160,10 @@
     (if (spawn-volume trigger)
         (sample-volume (spawn-volume trigger) (location entity))
         (v<- (location entity) (location trigger)))
-    (destructuring-bind (min . max) (spawn-orientation trigger)
-      (evaluate-orientation min max (orientation entity)))
     (when (snap-to-level-p trigger)
       (snap-object-to-level entity))
+    (destructuring-bind (min . max) (spawn-orientation trigger)
+      (nq* (orientation entity) (evaluate-orientation min max)))
     entity))
 
 (defmethod activate-trigger ((entity entity) (trigger spawner-trigger-volume))
