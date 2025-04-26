@@ -200,8 +200,9 @@
                                    for reader = (getf (cddr slot) :reader)
                                    collect `(,reader event)))))
                (defmethod clear :after ((event ,name))
-                 ,@(loop for (slot) in slots
-                         collect `(slot-makunbound event ',slot)))))
+                 ,@(loop for (slot default) in slots
+                         unless (eql default 'arg!)
+                         collect `(setf (slot-value event ',slot) ,default)))))
          ,@(when pool
              `((define-event-pool ,name ,@(unless (eql pool T) (list pool)))))))))
 
