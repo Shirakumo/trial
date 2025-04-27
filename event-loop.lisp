@@ -10,11 +10,6 @@
 (defclass listener ()
   ())
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defstruct (event-pool (:constructor %make-event-pool (instances)))
-    (instances NIL :type simple-vector)
-    (index 0 :type #-ccl (unsigned-byte 32) #+ccl T)))
-
 (defgeneric add-listener (listener event-loop))
 (defgeneric remove-listener (listener event-loop))
 (defgeneric handle (event listener))
@@ -33,35 +28,65 @@
 ;; Default to doing nothing.
 (defmethod handle ((event event) (listener listener)))
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defstruct (event-pool (:constructor %make-event-pool (instances)))
+    (instances NIL :type simple-vector)
+    (read 0 :type #-ccl (unsigned-byte 32) #+ccl T)
+    (write 0 :type #-ccl (unsigned-byte 32) #+ccl T)))
+
 (defun make-event-pool (class count)
   (let ((array (make-array count)))
     (dotimes (i count (%make-event-pool array))
       (setf (aref array i) (allocate-instance (ensure-class class))))))
 
 (defun make-event (class &rest initargs)
+  (declare (optimize speed (safety 1)))
+  (declare (type symbol class))
   (let ((pool (gethash class +event-pools+)))
-    (if pool
-        (loop
-         (let* ((index (event-pool-index pool))
-                (instances (event-pool-instances pool)))
-           (when (atomics:cas (event-pool-index pool) index (mod (1+ index) (length instances)))
-             (return (apply #'initialize-instance (aref instances index) initargs)))))
-        (apply #'make-instance class initargs))))
+    (etypecase pool
+      (event-pool
+       (loop with instances = (event-pool-instances pool)
+             for index of-type (unsigned-byte 32) = (event-pool-write pool)
+             for next = (mod (1+ index) (length instances))
+             do (if (/= next (event-pool-read pool))
+                    (when (atomics:cas (event-pool-write pool) index next)
+                      (return (apply #'initialize-instance (clear (aref instances index)) initargs)))
+                    (bt:thread-yield))))
+      (null
+       (apply #'make-instance class initargs)))))
+
+(defun release-event (event)
+  (declare (optimize speed (safety 1)))
+  (declare (type event event))
+  (let ((pool (gethash (type-of event) +event-pools+)))
+    (etypecase pool
+      (event-pool
+       (loop with instances = (event-pool-instances pool)
+             for index of-type (unsigned-byte 32) = (event-pool-read pool)
+             for next = (mod (1+ index) (length instances))
+             do (if (/= next (event-pool-read pool))
+                    (when (atomics:cas (event-pool-read pool) index next)
+                      (return))
+                    (bt:thread-yield))))
+      (null))))
 
 (define-compiler-macro make-event (&environment env class &rest initargs)
   (let ((pool (gensym "POOL"))
         (index (gensym "INDEX"))
+        (next (gensym "NEXT"))
         (instances (gensym "INSTANCES")))
     `(let ((,pool ,(if (constantp class env)
                        `(load-time-value (gethash ,class +event-pools+))
                        `(gethash ,class +event-pools+))))
        (etypecase ,pool
          (event-pool
-          (loop
-            (let* ((,index (event-pool-index ,pool))
-                   (,instances (event-pool-instances ,pool)))
-              (when (atomics:cas (event-pool-index ,pool) ,index (mod (1+ ,index) (length ,instances)))
-                (return (initialize-instance (clear (aref ,instances ,index)) ,@initargs))))))
+          (loop with ,instances = (event-pool-instances ,pool)
+                for ,index of-type (unsigned-byte 32) = (event-pool-write ,pool)
+                for ,next = (mod (1+ ,index) (length ,instances))
+                do (if (/= ,next (event-pool-read ,pool))
+                       (when (atomics:cas (event-pool-write ,pool) ,index ,next)
+                         (return (initialize-instance (clear (aref ,instances ,index)) ,@initargs)))
+                       (bt:thread-yield))))
          (null
           (make-instance ,class ,@initargs))))))
 
@@ -121,15 +146,18 @@
           (write (queue-write-index queue)))
       (loop for i from read below write
             do (when (typep (aref elements i) type)
+                 (release-event (aref elements i))
                  (setf (aref elements i) NIL)))
       queue)))
 
 (defmethod handle ((event event) (loop event-loop))
-  (with-simple-restart (skip-event "Skip handling the event entirely.")
-    (loop with queue = (listener-queue loop)
-          for listener = (pop queue)
-          while listener
-          do (handle event listener))))
+  (unwind-protect
+       (with-simple-restart (skip-event "Skip handling the event entirely.")
+         (loop with queue = (listener-queue loop)
+               for listener = (pop queue)
+               while listener
+               do (handle event listener)))
+    (release-event event)))
 
 (defmethod handle ((event event) (fun function))
   (funcall fun event))
