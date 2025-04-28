@@ -61,6 +61,7 @@
   (declare (type (simple-array single-float (*)) data))
   (declare (type (unsigned-byte 32) in out))
   (declare (type single-float dt))
+  (declare (optimize speed))
   (let* ((loc (vec (aref data (+ in 0))
                    (aref data (+ in 1))
                    (aref data (+ in 2))))
@@ -183,7 +184,6 @@
     (declare (dynamic-extent location normal velocity matrix))
     ;; Evaluate static particle properties first
     (random-point-on-mesh-surface vertex-data vertex-stride faces randoms location normal)
-    (n*m4/3 matrix normal)
     (nv* velocity (nv+ (v* (v- randoms 0.5) randomness) normal))
     (setf (aref properties (+ prop 0)) (+ lifespan (* lifespan lifespan-randomness (- (vx randoms) 0.5))))
     (setf (aref properties (+ prop 1)) (* rotation randomness (- (vz randoms) 0.5)))
