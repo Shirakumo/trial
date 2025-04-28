@@ -8,45 +8,52 @@
   (velocity (vec 0 0 0) :type vec3))
 
 (defmethod apply-force ((field particle-force-field) (particle raw-particle) dt)
-  ;; FIXME: this produces a ton of garbage due to std430-refs from the field struct.
+  ;; FIXME: this produces a ton of garbage due to std430-refs from the field struct
+  (declare (type single-float dt))
   (let ((force (vec 0 0 0))
         (location (raw-particle-location particle))
         (velocity (raw-particle-velocity particle)))
     (declare (dynamic-extent force))
     (with-gl-slots (particle-force-field type position strength range inv-range normal) field
-      (ecase type
+      (case type
         (0)
-        (1 ; Point
+        (1                              ; Point
          (let ((dir (v- position location)))
+           (declare (dynamic-extent dir))
            (nv+* force dir (* strength (- 1 (clamp 0.0 (* (vlength dir) inv-range) 1.0))))))
-        (2 ; Direction
+        (2                              ; Direction
          (nv+* force normal strength))
-        (3 ; Plane
+        (3                              ; Plane
          (let ((dist (v. normal (v- location position))))
            (nv+* force normal (* strength (- 1 (clamp 0.0 (* dist inv-range) 1.0))))))
-        (4 ; Vortex
+        (4                              ; Vortex
          (let* ((dir (v- location position))
                 (t0 (/ (v. normal dir) (v. normal normal)))
                 (dist (vdistance location (v* position t0)))
                 (perp (nvunit* (vc normal dir))))
+           (declare (dynamic-extent dir perp))
            (nv+* force perp (* strength (- 1 (clamp 0.0 (* dist inv-range) 1.0))))))
-        (5 ; Sphere
+        (5                              ; Sphere
          (let* ((dir (v- position location))
                 (dist (vlength dir)))
+           (declare (dynamic-extent dir))
            (when (< dist range)
              (let* ((push (nvunit (nv- dir)))
-                    (slide (vc (vc velocity push) (v- push))))
-               (nv+* force (v- slide velocity) (/ dt))))))
-        (6 ; Planet
+                    (slide (nvc (vc velocity push) (nv- push))))
+               (declare (dynamic-extent push slide))
+               (nv+* force (nv- slide velocity) (/ dt))))))
+        (6                              ; Planet
          (let* ((dir (v- position location))
                 (dist (vlength dir)))
+           (declare (dynamic-extent dir))
            (cond ((< dist range)
                   (let* ((push (nvunit (nv- dir)))
-                         (slide (vc (vc velocity push) (v- push))))
-                    (nv+* force (v- slide velocity) (/ dt))))
+                         (slide (nvc (vc velocity push) (nv- push))))
+                    (declare (dynamic-extent push slide))
+                    (nv+* force (nv- slide velocity) (/ dt))))
                  (T
                   (nv+* force dir (/ strength (* dist dist)))))))
-        (7 ; Brake
+        (7                              ; Brake
          (!v* force velocity (- strength)))))
     (nv+* (raw-particle-velocity particle) force dt)))
 
@@ -164,9 +171,11 @@
                        matrix velocity rotation lifespan size scaling color
                        vertex-data vertex-stride faces)
   (declare (type (simple-array single-float (*)) particles properties vertex-data))
-  (declare (type (unsigned-byte 32) pos prop))
+  (declare (type (unsigned-byte 32) pos prop color))
   (declare (type single-float lifespan lifespan-randomness randomness size scaling rotation velocity))
   (declare (type vec3 randoms))
+  (declare (type mat4 matrix))
+  (declare (optimize speed (safety 0)))
   (let* ((location (vec 0 0 0))
          (normal (vec 0 0 0))
          (velocity (vec velocity velocity velocity))
@@ -181,8 +190,8 @@
     (setf (aref properties (+ prop 2)) (+ size (* size randomness (- (vy randoms) 0.5))))
     (setf (aref properties (+ prop 3)) (* (aref properties (+ prop 2)) scaling))
     ;; Randomise flip if activated
-    (when (logbitp 30 color) (setf (ldb (byte 1 30) color) (round (vx randoms))))
-    (when (logbitp 31 color) (setf (ldb (byte 1 31) color) (round (vy randoms))))
+    (when (logbitp 30 color) (setf (ldb (byte 1 30) color) (round (the (single-float 0.0 1.0) (vx randoms)))))
+    (when (logbitp 31 color) (setf (ldb (byte 1 31) color) (round (the (single-float 0.0 1.0) (vy randoms)))))
     (setf (aref properties (+ prop 4)) (float-features:bits-single-float color))
     ;; We pad the matrix to offset 8 to get things vec4 aligned.
     (setf (aref properties (+ prop 5)) 0.0)
@@ -271,35 +280,36 @@
 
 (defmethod emit ((emitter cpu-particle-emitter) count &rest particle-options &key vertex-array location orientation scaling transform &allow-other-keys)
   (setf (particle-options emitter) (remf* particle-options :vertex-array :location :orientation :scaling :transform))
-  ;; FIXME: don't permanently change emitter transform or VAO.
-  (when location (setf (location emitter) location))
-  (when scaling (setf (scaling emitter) scaling))
-  (when orientation (setf (orientation emitter) orientation))
-  (when transform (setf (local-transform emitter) transform))
-  (when vertex-array (setf (vertex-array emitter) vertex-array))
-  (with-all-slots-bound (emitter cpu-particle-emitter)
-    (let ((mat (mat4))
-          (min-prop most-positive-fixnum)
-          (max-prop 0))
-      (declare (dynamic-extent mat))
-      (global-transform-matrix emitter mat)
-      (dotimes (i (min count (length free-list)))
-        (let ((pos (* 8 live-particles))
-              (prop (vector-pop free-list)))
-          (when (< prop min-prop) (setf min-prop prop))
-          (when (< max-prop prop) (setf max-prop prop))
-          (%emit-particle particles properties pos prop (vrand (vec 0.5 0.5 0.5) (vec3 1))
-                          particle-randomness particle-lifespan-randomness mat
-                          particle-velocity particle-rotation particle-lifespan
-                          particle-size particle-scaling particle-full-color
-                          vertex-data vertex-stride face-data)
-          (incf live-particles)))
-      (when (and (< 0 live-particles) (< min-prop most-positive-fixnum))
-        (let ((src (first (sources particle-property-buffer))))
-          (setf (nth 0 (texture-source-src src)) (truncate min-prop 4))
-          (setf (nth 3 (texture-source-dst src)) (truncate (- (+ 24 max-prop) min-prop) 4))
-          (activate particle-property-buffer)
-          (upload-texture-source src particle-property-buffer))))))
+  (let ((local (the transform (local-transform emitter))))
+    (when location (v<- (tlocation local) location))
+    (when scaling (v<- (tscaling local) scaling))
+    (when orientation (q<- (trotation local) orientation))
+    (when transform (t<- local transform))
+    ;; FIXME: don't permanently change emitter VAO or transform
+    (when vertex-array (setf (vertex-array emitter) vertex-array))
+    (with-all-slots-bound (emitter cpu-particle-emitter)
+      (let ((mat (mat4))
+            (min-prop most-positive-fixnum)
+            (max-prop 0))
+        (declare (dynamic-extent mat))
+        (global-transform-matrix emitter mat)
+        (dotimes (i (min count (length free-list)))
+          (let ((pos (* 8 live-particles))
+                (prop (vector-pop free-list)))
+            (when (< prop min-prop) (setf min-prop prop))
+            (when (< max-prop prop) (setf max-prop prop))
+            (%emit-particle particles properties pos prop (vrand (vec 0.5 0.5 0.5) (vec3 1))
+                            particle-randomness particle-lifespan-randomness mat
+                            particle-velocity particle-rotation particle-lifespan
+                            particle-size particle-scaling particle-full-color
+                            vertex-data vertex-stride face-data)
+            (incf live-particles)))
+        (when (and (< 0 live-particles) (< min-prop most-positive-fixnum))
+          (let ((src (first (sources particle-property-buffer))))
+            (setf (nth 0 (texture-source-src src)) (truncate min-prop 4))
+            (setf (nth 3 (texture-source-dst src)) (truncate (- (+ 24 max-prop) min-prop) 4))
+            (activate particle-property-buffer)
+            (upload-texture-source src particle-property-buffer)))))))
 
 (defmethod clear ((emitter cpu-particle-emitter))
   (setf (live-particles emitter) 0)
