@@ -137,7 +137,7 @@
   null)
 
 (defstruct (fade-target
-            (:constructor make-fade-target (clip target duration)))
+            (:constructor make-fade-target (clip target duration &optional (clock 0.0))))
   (target NIL :type T)
   (clip NIL :type clip)
   (clock 0.0 :type single-float)
@@ -180,15 +180,18 @@
     (setf (clock controller) (start-time target))
     (sample (target controller) (clip controller) (clock controller))))
 
-(defmethod fade-to ((target clip) (controller fade-controller) &key (duration (blend-duration target)))
+(defmethod fade-to ((target clip) (controller fade-controller) &key (duration (blend-duration target)) clock)
   (let ((targets (fade-targets controller)))
     (cond ((or (null (clip controller)) (<= duration 0))
-           (play target controller))
+           (play target controller)
+           (when clock
+             (setf (clock controller) clock)
+             (sample (target controller) target clock)))
           ((and (or (= 0 (length targets))
                     (not (eq target (fade-target-clip (aref targets (1- (length targets)))))))
                 (not (eq target (clip controller))))
            (setf (playback-speed controller) 1.0)
-           (vector-push-extend (make-fade-target target (rest-pose (skeleton controller)) (float duration 0f0)) targets)))))
+           (vector-push-extend (make-fade-target target (rest-pose (skeleton controller)) (float duration 0f0) (or clock (start-time target))) targets)))))
 
 (defmethod update ((controller fade-controller) tt dt fc)
   (when (next-method-p) (call-next-method))
