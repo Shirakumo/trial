@@ -31,29 +31,43 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defstruct (event-pool (:constructor %make-event-pool (instances)))
     (instances NIL :type simple-vector)
-    (read 0 :type #-ccl (unsigned-byte 32) #+ccl T)
-    (write 0 :type #-ccl (unsigned-byte 32) #+ccl T)))
+    (index 0 :type #-ccl (unsigned-byte 32) #+ccl T)))
+(print (alexandria:hash-table-values +event-pools+))
+(defmethod print-object ((pool event-pool) stream)
+  (print-unreadable-object (pool stream :type T)
+    (let ((instances (event-pool-instances pool)))
+      (format stream "~s ~d/~d" (type-of (aref instances 0))
+              (event-pool-index pool) (length instances)))))
+
+(defmethod clear ((event-pool event-pool))
+  (setf (event-pool-index event-pool) 0))
+
+(defun clear-event-pools ()
+  (loop for pool being the hash-values of +event-pools+
+        do (clear pool)))
 
 (defun make-event-pool (class count)
   (let ((array (make-array count)))
     (dotimes (i count (%make-event-pool array))
       (setf (aref array i) (allocate-instance (ensure-class class))))))
 
-(defun make-event (class &rest initargs)
+(defun acquire-event (pool)
   (declare (optimize speed (safety 1)))
-  (declare (type symbol class))
-  (let ((pool (gethash class +event-pools+)))
-    (etypecase pool
-      (event-pool
-       (loop with instances = (event-pool-instances pool)
-             for index of-type (unsigned-byte 32) = (event-pool-write pool)
-             for next = (mod (1+ index) (length instances))
-             do (if (/= next (event-pool-read pool))
-                    (when (atomics:cas (event-pool-write pool) index next)
-                      (return (apply #'initialize-instance (clear (aref instances index)) initargs)))
-                    (bt:thread-yield))))
-      (null
-       (apply #'make-instance class initargs)))))
+  (declare (type event-pool pool))
+  (loop with starvation-counter of-type (unsigned-byte 16) = 0
+        with instances of-type simple-vector = (event-pool-instances pool)
+        for index of-type (unsigned-byte 32) = (event-pool-index pool)
+        for next of-type (unsigned-byte 32) = (1+ index)
+        do (cond ((<= next (length instances))
+                  (when (atomics:cas (event-pool-index pool) index next)
+                    (return (clear (aref instances index)))))
+                 ((< starvation-counter 100)
+                  (incf starvation-counter)
+                  (sleep 0.0001))
+                 (T
+                  (let ((type (class-of (aref instances 0))))
+                    ;; If we are starved, simply override the last instance.
+                    (aref instances (1- (length instances))))))))
 
 (defun release-event (event)
   (declare (optimize speed (safety 1)))
@@ -62,31 +76,30 @@
     (etypecase pool
       (event-pool
        (loop with instances = (event-pool-instances pool)
-             for index of-type (unsigned-byte 32) = (event-pool-read pool)
-             for next = (mod (1+ index) (length instances))
-             do (if (/= next (event-pool-read pool))
-                    (when (atomics:cas (event-pool-read pool) index next)
-                      (return))
-                    (bt:thread-yield))))
+             for index of-type (unsigned-byte 32) = (event-pool-index pool)
+             for next = (1- index)
+             do (when (atomics:cas (event-pool-index pool) index next)
+                  (return))))
       (null))))
 
+(defun make-event (class &rest initargs)
+  (declare (optimize speed (safety 1)))
+  (declare (type symbol class))
+  (let ((pool (gethash class +event-pools+)))
+    (etypecase pool
+      (event-pool
+       (apply #'initialize-instance (acquire-event pool) initargs))
+      (null
+       (apply #'make-instance class initargs)))))
+
 (define-compiler-macro make-event (&environment env class &rest initargs)
-  (let ((pool (gensym "POOL"))
-        (index (gensym "INDEX"))
-        (next (gensym "NEXT"))
-        (instances (gensym "INSTANCES")))
+  (let ((pool (gensym "POOL")))
     `(let ((,pool ,(if (constantp class env)
                        `(load-time-value (gethash ,class +event-pools+))
                        `(gethash ,class +event-pools+))))
        (etypecase ,pool
          (event-pool
-          (loop with ,instances = (event-pool-instances ,pool)
-                for ,index of-type (unsigned-byte 32) = (event-pool-write ,pool)
-                for ,next = (mod (1+ ,index) (length ,instances))
-                do (if (/= ,next (event-pool-read ,pool))
-                       (when (atomics:cas (event-pool-write ,pool) ,index ,next)
-                         (return (initialize-instance (clear (aref ,instances ,index)) ,@initargs)))
-                       (bt:thread-yield))))
+          (initialize-instance (acquire-event ,pool) ,@initargs))
          (null
           (make-instance ,class ,@initargs))))))
 
@@ -131,13 +144,14 @@
 (defmethod process ((loop event-loop))
   (declare (optimize speed))
   (flet ((handler (event)
-           (handle event loop)))
+           (unwind-protect (handle event loop)
+             (release-event event))))
     (declare (dynamic-extent #'handler))
     (restart-case
         (map-queue #'handler (queue loop))
       (discard-events ()
         :report "Discard all remaining events and exit"
-        (queue-discard (queue loop))))))
+        (discard-events loop T)))))
 
 (defun discard-events (loop &optional (type T))
   (let ((queue (queue loop)))
@@ -151,13 +165,11 @@
       queue)))
 
 (defmethod handle ((event event) (loop event-loop))
-  (unwind-protect
-       (with-simple-restart (skip-event "Skip handling the event entirely.")
-         (loop with queue = (listener-queue loop)
-               for listener = (pop queue)
-               while listener
-               do (handle event listener)))
-    (release-event event)))
+  (with-simple-restart (skip-event "Skip handling the event entirely.")
+    (loop with queue = (listener-queue loop)
+          for listener = (pop queue)
+          while listener
+          do (handle event listener))))
 
 (defmethod handle ((event event) (fun function))
   (funcall fun event))
@@ -234,7 +246,7 @@
          ,@(when pool
              `((define-event-pool ,name ,@(unless (eql pool T) (list pool)))))))))
 
-(defmacro define-event-pool (class &optional (count 32))
+(defmacro define-event-pool (class &optional (count 64))
   `(setf (gethash ',class +event-pools+) (make-event-pool ',class ,count)))
 
 (define-event tick-event () tt dt fc)

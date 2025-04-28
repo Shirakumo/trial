@@ -136,6 +136,7 @@
 (defmethod launch ((main symbol) &rest initargs)
   #+nx (setf (v:repl-level) :trace)
   (standalone-logging-handler)
+  (clear-event-pools)
   (v:output-here)
   (v:info :trial.main "GENESIS")
   (v:info :trail.main "Launching version ~a (~a)" (version :app) (version :binary))
