@@ -32,7 +32,7 @@
   (defstruct (event-pool (:constructor %make-event-pool (instances)))
     (instances NIL :type simple-vector)
     (index 0 :type #-ccl (unsigned-byte 32) #+ccl T)))
-(print (alexandria:hash-table-values +event-pools+))
+
 (defmethod print-object ((pool event-pool) stream)
   (print-unreadable-object (pool stream :type T)
     (let ((instances (event-pool-instances pool)))
