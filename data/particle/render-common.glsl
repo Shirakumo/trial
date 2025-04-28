@@ -9,6 +9,7 @@ const vec3 BILLBOARD[6] = vec3[6](
 
 uniform float motion_blur = 0.0;
 uniform vec3 offset = vec3(0.0);
+uniform vec4 color_multiplier = vec4(1);
 out vec3 world_position;
 out vec3 view_position;
 out vec2 uv;
@@ -26,6 +27,7 @@ void derive_particle_properties(in Particle particle, in int vertex_id, in mat4 
   particle_color.g = ((float) ((particle.color >> 8)  & uint(0x000000FF))) / 255.0f;
   particle_color.b = ((float) ((particle.color >> 16) & uint(0x000000FF))) / 255.0f;
   particle_color.a = opacity;
+  particle_color *= color_multiplier;
 
   vec3 vertex = BILLBOARD[vertex_id];
   uv = vertex.xy * 0.5 + 0.5;

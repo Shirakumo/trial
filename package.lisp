@@ -611,6 +611,7 @@
    #:particle-flip
    #:particle-color
    #:particle-motion-blur
+   #:particle-color-multiplier
    #:particle-offset
    #:blend-mode
    #:emit)

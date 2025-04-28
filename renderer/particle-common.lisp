@@ -20,6 +20,7 @@
    (vertex-array :initform (// 'trial 'unit-square) :accessor vertex-array)
    (max-particles :initarg :max-particles :initform 1000 :reader max-particles)
    (motion-blur :initarg :motion-blur :initform 0.0 :uniform T :accessor particle-motion-blur)
+   (color-multiplier :initarg :color-multiplier :initform (vec4 1) :uniform T :accessor particle-color-multiplier)
    (offset :initarg :offset :initform (vec3 0) :uniform T :accessor particle-offset)
    (particle-force-fields :reader particle-force-fields)
    (blend-mode :initarg :blend-mode :initform :add :accessor blend-mode))
