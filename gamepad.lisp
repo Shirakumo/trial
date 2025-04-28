@@ -79,4 +79,4 @@
                                                                 (user-homedir-pathname))))))
   (when (and (deploy:deployed-p) (probe-file file))
     (v:info :trial.input "Loading default device mappings from ~a" file)
-    (load file)))
+    (cl:load file)))
