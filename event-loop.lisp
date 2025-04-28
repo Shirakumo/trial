@@ -258,6 +258,11 @@
 (define-event asset-changed () changed-asset)
 (define-event material-changed () changed-material)
 
+(declaim (ftype (function (T) single-float) dt))
+(declaim (ftype (function (single-float T) single-float) (setf dt)))
+(declaim (ftype (function (T) double-float) tt))
+(declaim (ftype (function (double-float T) double-float) (setf tt)))
+
 (defun maybe-handle-main-event (event-type &rest initargs)
   (let ((main +main+))
     (when (and (typep main 'main) (slot-boundp main 'scene) (scene main))
