@@ -21,7 +21,8 @@
                         (dynamic-space-size (config :build :dynamic-space-size))
                         (force T))
   (append (list "--dynamic-space-size" (princ-to-string dynamic-space-size)
-                "--eval" "(setf asdf:*user-cache* (asdf::xdg-cache-home \"common-lisp\" \"trial-release\":implementation))"
+                "--eval" (format NIL "(setf asdf:*user-cache* (asdf::xdg-cache-home \"common-lisp\" \"trial-release\" ~s :implementation))"
+                                 (config :system))
                 "--eval" "(asdf:initialize-output-translations)"
                 "--eval" (format NIL "(setf *features* (append *features* '~s))" features))
           build-arguments
