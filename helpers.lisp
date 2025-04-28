@@ -107,6 +107,12 @@
 (defmethod (setf tf) ((mat mat4) (obj transformed-entity))
   (!tfrom-mat (local-transform obj) mat))
 
+(defmethod (setf local-transform) ((tf transform) (obj transformed-entity))
+  (t<- (local-transform obj) tf))
+
+(defmethod (setf local-transform) ((mat mat4) (obj transformed-entity))
+  (!tfrom-mat (local-transform obj) mat))
+
 (defmethod location ((obj transformed-entity))
   (tlocation (local-transform obj)))
 
