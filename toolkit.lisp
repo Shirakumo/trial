@@ -854,6 +854,18 @@
 (defmethod orientation ((tf transform))
   (trotation tf))
 
+(defmethod (setf location) ((vector vec3) (transform transform))
+  (v<- (tlocation transform) vector))
+
+(defmethod (setf scaling) ((vector vec3) (tf transform))
+  (v<- (tscaling tf) vector))
+
+(defmethod (setf scaling) ((real real) (tf transform))
+  (v<- (tscaling tf) real))
+
+(defmethod (setf orientation) ((quat quat) (tf transform))
+  (q<- (trotation tf) quat))
+
 (defmethod global-location ((vec vec2) &optional (target (vec3)))
   (let ((vec (vec (vx vec) (vy vec) 0 0)))
     (declare (dynamic-extent vec))
