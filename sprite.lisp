@@ -132,7 +132,7 @@
   (setf (animation sprite) animation))
 
 (defmethod handle ((ev tick) (sprite animated-sprite))
-  (declare (optimize speed))
+  (declare (optimize speed (safety 1)))
   (let* ((idx (frame-idx sprite))
          (frame (svref (frames sprite) idx))
          (animation (animation sprite))
