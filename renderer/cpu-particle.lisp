@@ -175,21 +175,23 @@
            (values location (nvunit normal))))))))
 
 (defun %emit-particle (particles properties pos prop randoms randomness lifespan-randomness
-                       matrix velocity rotation lifespan size scaling color
+                       emission-matrix system-matrix velocity rotation lifespan size scaling color
                        vertex-data vertex-stride faces)
   (declare (type (simple-array single-float (*)) particles properties vertex-data))
   (declare (type (unsigned-byte 32) pos prop color))
   (declare (type single-float lifespan lifespan-randomness randomness size scaling rotation velocity))
   (declare (type vec3 randoms))
-  (declare (type mat4 matrix))
+  (declare (type mat4 emission-matrix system-matrix))
   (declare (optimize speed (safety 0)))
   (let* ((location (vec 0 0 0))
          (normal (vec 0 0 0))
          (velocity (vec velocity velocity velocity))
-         (matrix (mtranspose matrix)))
-    (declare (dynamic-extent location normal velocity matrix))
+         (system-matrix (mtranspose system-matrix)))
+    (declare (dynamic-extent location normal velocity system-matrix))
     ;; Evaluate static particle properties first
     (random-point-on-mesh-surface vertex-data vertex-stride faces randoms location normal)
+    (n*m4/3 emission-matrix normal)
+    (n*m emission-matrix location)
     (nv* velocity (nv+ (v* (v- randoms 0.5) randomness) normal))
     (setf (aref properties (+ prop 0)) (+ lifespan (* lifespan lifespan-randomness (- (vx randoms) 0.5))))
     (setf (aref properties (+ prop 1)) (* rotation randomness (- (vz randoms) 0.5)))
@@ -203,7 +205,7 @@
     (setf (aref properties (+ prop 5)) 0.0)
     (setf (aref properties (+ prop 6)) 0.0)
     (setf (aref properties (+ prop 7)) 0.0)
-    (replace properties (marr4 matrix) :start1 (+ prop 8))
+    (replace properties (marr4 system-matrix) :start1 (+ prop 8))
     ;; Now set dynamic particle properties
     (setf (aref particles (+ pos 0)) (vx location))
     (setf (aref particles (+ pos 1)) (vy location))
@@ -286,26 +288,30 @@
 
 (defmethod emit ((emitter cpu-particle-emitter) count &rest particle-options &key vertex-array location orientation scaling transform &allow-other-keys)
   (setf (particle-options emitter) (remf* particle-options :vertex-array :location :orientation :scaling :transform))
-  (let ((local (the transform (local-transform emitter))))
+  (let ((local (transform)))
+    (declare (dynamic-extent local))
+    (t<- local (the transform (local-transform emitter)))
     (when location (v<- (tlocation local) location))
     (when scaling (v<- (tscaling local) scaling))
     (when orientation (q<- (trotation local) orientation))
     (when transform (t<- local transform))
-    ;; FIXME: don't permanently change emitter VAO or transform
+    ;; FIXME: don't permanently change emitter VAO
     (when vertex-array (setf (vertex-array emitter) vertex-array))
     (with-all-slots-bound (emitter cpu-particle-emitter)
-      (let ((mat (mat4))
+      (let ((system-matrix (mat4))
+            (emission-matrix (mat4))
             (min-prop most-positive-fixnum)
             (max-prop 0))
-        (declare (dynamic-extent mat))
-        (global-transform-matrix emitter mat)
+        (declare (dynamic-extent system-matrix emission-matrix))
+        (global-transform-matrix emitter system-matrix)
+        (!tmat emission-matrix local)
         (dotimes (i (min count (length free-list)))
           (let ((pos (* 8 live-particles))
                 (prop (vector-pop free-list)))
             (when (< prop min-prop) (setf min-prop prop))
             (when (< max-prop prop) (setf max-prop prop))
             (%emit-particle particles properties pos prop (vrand (vec 0.5 0.5 0.5) (vec3 1))
-                            particle-randomness particle-lifespan-randomness mat
+                            particle-randomness particle-lifespan-randomness emission-matrix system-matrix
                             particle-velocity particle-rotation particle-lifespan
                             particle-size particle-scaling particle-full-color
                             vertex-data vertex-stride face-data)
