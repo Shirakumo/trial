@@ -286,6 +286,12 @@
       (v 0 0 0 0 1 0)
       (finalize-data :vertex-form :points)))
 
+(define-asset (trial unit-line) mesh
+    (with-mesh-construction (v :attributes (location normal))
+      (v 0 0 0 0 1 0)
+      (v 0 1 0 0 1 0)
+      (finalize-data :vertex-form :lines)))
+
 (define-asset (trial unit-cube) mesh
     (make-cube-mesh 1.0))
 

@@ -120,24 +120,30 @@
   (declare (type (unsigned-byte 32) vertex-stride))
   (declare (type vec3 location normal randoms))
   (declare (optimize speed))
-  (case (length vertex-data)
+  (case (truncate (length vertex-data) vertex-stride)
     (0
      (v<- location 0)
      (sampling:normal 1.0 normal))
-    (3
+    (1
      ;; Special handling for point meshes
      (setf (vx location) (aref vertex-data 0))
      (setf (vy location) (aref vertex-data 1))
      (setf (vz location) (aref vertex-data 2))
-     (sampling:normal 1.0 normal))
-    (6
-     ;; Special handling for point meshes
-     (setf (vx location) (aref vertex-data 0))
-     (setf (vy location) (aref vertex-data 1))
-     (setf (vz location) (aref vertex-data 2))
-     (setf (vx normal) (aref vertex-data 3))
-     (setf (vy normal) (aref vertex-data 4))
-     (setf (vz normal) (aref vertex-data 5)))
+     (cond ((< (length vertex-data) 6)
+            (sampling:normal 1.0 normal))
+           (T
+            (setf (vx normal) (aref vertex-data 3))
+            (setf (vy normal) (aref vertex-data 4))
+            (setf (vz normal) (aref vertex-data 5)))))
+    (2
+     ;; Special handling for line meshes
+     (let ((lerp (vx randoms)))
+       (setf (vx location) (lerp (aref vertex-data 0) (aref vertex-data (+ 0 vertex-stride)) lerp))
+       (setf (vy location) (lerp (aref vertex-data 1) (aref vertex-data (+ 1 vertex-stride)) lerp))
+       (setf (vz location) (lerp (aref vertex-data 2) (aref vertex-data (+ 2 vertex-stride)) lerp))
+       (setf (vx normal) (lerp (aref vertex-data 3) (aref vertex-data (+ 3 vertex-stride)) lerp))
+       (setf (vy normal) (lerp (aref vertex-data 4) (aref vertex-data (+ 4 vertex-stride)) lerp))
+       (setf (vz normal) (lerp (aref vertex-data 5) (aref vertex-data (+ 5 vertex-stride)) lerp))))
     (T
      ;; Pick a random triangle and read out the properties
      (multiple-value-bind (i0 i1 i2) (random-face faces (vz randoms))

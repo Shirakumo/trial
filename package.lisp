@@ -1322,6 +1322,8 @@
    #:make-lines
    #:fullscreen-square
    #:empty-vertex-array
+   #:point
+   #:unit-line
    #:unit-cube
    #:unit-sphere
    #:unit-square
@@ -1330,6 +1332,7 @@
    #:unit-cone
    #:unit-tube
    #:unit-point
+   #:triangle
    #:grid
    #:axes
    #:2d-axes)
