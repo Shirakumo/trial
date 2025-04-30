@@ -66,11 +66,21 @@
     (real (princ-to-string arg))))
 
 (defun run (program &rest args)
-  (assert (= 0 (sb-ext:process-exit-code (sb-ext:run-program program (mapcar #'coerce-program-arg args) :search T :output *standard-output*)))))
+  (let ((process (sb-ext:run-program program (mapcar #'coerce-program-arg args) :search T :output *standard-output* :wait NIL)))
+    (unwind-protect
+         (progn (sb-ext:process-wait process)
+                (assert (= 0 (sb-ext:process-exit-code process))))
+      (when (sb-ext:process-alive-p process)
+        (sb-ext:process-kill process 9)))))
 
 (defun run* (program &rest args)
   (with-output-to-string (out)
-    (assert (= 0 (sb-ext:process-exit-code (sb-ext:run-program program (mapcar #'coerce-program-arg args) :search T :output out))))))
+    (let ((process (sb-ext:run-program program (mapcar #'coerce-program-arg args) :search T :output out :wait NIL)))
+      (unwind-protect
+           (progn (sb-ext:process-wait process)
+                  (assert (= 0 (sb-ext:process-exit-code process))))
+        (when (sb-ext:process-alive-p process)
+          (sb-ext:process-kill process 9))))))
 
 (defun envvar-password (name &optional field)
   (uiop:getenv (format NIL "TRIAL_RELEASE_~:@(~a~@[_~a~]~)" name field)))
