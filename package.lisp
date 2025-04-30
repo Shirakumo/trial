@@ -545,7 +545,9 @@
    #:modulation
    #:new-value
    #:checkpoint-trigger
-   #:audio-trigger)
+   #:spawn-point
+   #:audio-trigger
+   #:audio)
   ;; physics/wave.lisp
   (:export
    #:wave-propagate-pass
@@ -799,7 +801,8 @@
    #:storage
    #:allocate-texture-storage
    #:resize
-   #:bind)
+   #:bind
+   #:clear-texture)
   ;; resources/uniform-buffer.lisp
   (:export
    #:uniform-buffer
@@ -1150,7 +1153,8 @@
    #:light
    #:light-block)
   ;; deploy.lisp
-  (:export)
+  (:export
+   #:dont-deploy)
   ;; display.lisp
   (:export
    #:display
@@ -1251,6 +1255,7 @@
    #:event-loop
    #:issue
    #:process
+   #:skip-event
    #:discard-events
    #:define-handler
    #:undefine-handler
@@ -1279,6 +1284,7 @@
   (:export
    #:flicker-pattern
    #:define-flicker-pattern
+   #:compile-flicker-pattern
    #:evaluate-flicker
    #:normal
    #:flicker
