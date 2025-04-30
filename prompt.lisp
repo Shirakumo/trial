@@ -102,9 +102,9 @@
      (normalize-prompt-bank (gamepad:icon-type bank)))
     (symbol
      (case bank
-       (:generic-nintendo :nintendo)
-       (:generic-xbox :xbox)
-       (:generic-playstation :sony)
+       ((:generic-nintendo :intendo-switch) :nintendo)
+       ((:generic-xbox :xbox-one) :xbox)
+       ((:generic-playstation :dualshock-4) :sony)
        (T (if (gethash bank *prompt-string-table*)
               bank
               :gamepad))))))

@@ -476,7 +476,11 @@
   (:xbox-right-shoulder           #x2199)
   (:xbox-left-shoulder            #x2198)
   (:xbox-right-trigger            #x2197)
-  (:xbox-left-trigger             #x2196))
+  (:xbox-left-trigger             #x2196)
+  (:r2                            #x21B3)
+  (:l2                            #x21B2)
+  (:r1                            #x21B1)
+  (:l1                            #x21B0))
 
 (define-glyph-table (:xbox :inherit :gamepad)
   (:home                          #xE001)
