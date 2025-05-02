@@ -229,8 +229,8 @@
     (handler-case (apply #'invoke-command args)
       (error (e)
         (format *error-output* "~&Error: ~a~%" e)
-        (deploy:quit +app-system+ NIL 1)))
-    (deploy:quit +app-system+)))
+        (deploy:quit 1)))
+    (deploy:quit 0)))
 
 (define-command-line-command help (&optional (command NIL NIL "The command to describe"))
   :help "Display help about the program or a subcommand."
