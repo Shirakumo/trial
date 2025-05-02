@@ -143,7 +143,7 @@
 (defmethod parse-command-line-type (value (type (eql 'symbol)))
   (intern (string-upcase value)))
 
-(defmethod invoke-command ((command command-line-command) &rest args)
+(defun parse-command-args (command args)
   (destructuring-bind (&key required optional key rest) (args command)
     (let ((origargs args)
           (reqargs ())
@@ -195,7 +195,10 @@
                          (T
                           (fail "Superfluous arguments")))
                 while args)))
-      (apply (func command) (append (nreverse reqargs) (nreverse optargs) keyargs (when resargs (list '&rest (nreverse rest))))))))
+      (append (nreverse reqargs) (nreverse optargs) keyargs (when resargs (list '&rest (nreverse resargs)))))))
+
+(defmethod invoke-command ((command command-line-command) &rest args)
+  (apply (func command) (parse-command-args command args)))
 
 (defmethod invoke-command (command &rest args)
   (apply #'invoke-command (command-line-command command) args))

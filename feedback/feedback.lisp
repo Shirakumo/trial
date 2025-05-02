@@ -101,7 +101,7 @@
 (defmethod trial:report-on-error ((error sb-sys:memory-fault-error))
   (funcall trial:*error-report-hook* error))
 
-(trial:define-command-line-command report (&rest report)
+(trial:define-command-line-command report (&rest (report NIL "Report description to send."))
   (submit-report :files NIL :description (format NIL "~{~a~^ ~}" report))
   (format *query-io* "~&Report sent. Thank you!~%"))
 
