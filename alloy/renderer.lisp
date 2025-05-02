@@ -91,6 +91,11 @@
     (setf (aref target 9) 0f0)
     (setf (aref target 10) 1f0)
     (setf (aref target 11) 0f0)
+
+    (setf (aref target 12) 0f0)
+    (setf (aref target 13) 0f0)
+    (setf (aref target 14) 0f0)
+    (setf (aref target 15) 1f0)
     (setf (simple:identity-matrix renderer) (copy-seq target))))
 
 (defmethod simple:z-index ((renderer renderer))
@@ -121,7 +126,7 @@
        (%gl:uniform-2f loc (alloy:pxw value) (alloy:pxh value)))
       (vector
        (mem:with-pointer-to-array-data (ptr value)
-         (%gl:uniform-matrix-4x3-fv loc 1 T ptr)))
+         (%gl:uniform-matrix-4fv loc 1 T ptr)))
       (single-float
        (%gl:uniform-1f loc value)))))
 
