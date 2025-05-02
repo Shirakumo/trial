@@ -79,15 +79,18 @@
   (let ((target (simple:transform-matrix renderer)))
     (setf (aref target 0) (/ 2f0 (max 1f0 (alloy:pxw ui))))
     (setf (aref target 1) 0f0)
-    (setf (aref target 2) -1f0)
-    
-    (setf (aref target 3) 0f0)
-    (setf (aref target 4) (/ 2f0 (max 1f0 (alloy:pxh ui))))
-    (setf (aref target 5) -1f0)
+    (setf (aref target 2) 0f0)
+    (setf (aref target 3) -1f0)
 
+    (setf (aref target 4) 0f0)
+    (setf (aref target 5) (/ 2f0 (max 1f0 (alloy:pxh ui))))
     (setf (aref target 6) 0f0)
-    (setf (aref target 7) 0f0)
-    (setf (aref target 8) 1f0)
+    (setf (aref target 7) -1f0)
+
+    (setf (aref target 8) 0f0)
+    (setf (aref target 9) 0f0)
+    (setf (aref target 10) 1f0)
+    (setf (aref target 11) 0f0)
     (setf (simple:identity-matrix renderer) (copy-seq target))))
 
 (defmethod simple:z-index ((renderer renderer))
@@ -118,7 +121,7 @@
        (%gl:uniform-2f loc (alloy:pxw value) (alloy:pxh value)))
       (vector
        (mem:with-pointer-to-array-data (ptr value)
-         (%gl:uniform-matrix-3fv loc 1 T ptr)))
+         (%gl:uniform-matrix-4x3-fv loc 1 T ptr)))
       (single-float
        (%gl:uniform-1f loc value)))))
 
