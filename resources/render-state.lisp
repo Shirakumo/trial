@@ -1,30 +1,47 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(defclass render-state (resource)
-  ((blend-mode :initarg :blend-mode :initform :source-over :accessor blend-mode)
-   (depth-bias :initarg :depth-bias :initform NIL :accessor depth-bias)
-   (write-depth-p :initarg :write-depth-p :initform T :accessor write-depth-p)
-   (clamp-depth-p :initarg :clamp-depth-p :initform T :accessor clamp-depth-p)
-   (depth-test :initarg :depth-test :initform '<= :accessor depth-test)
-   (stencil-test :initarg :stencil-test :initform 'T :accessor stencil-test)
-   (stencil-value :initarg :stencil-value :initform 0 :accessor stencil-value)
-   (on-stencil-fail :initarg :on-stencil-fail :initform :keep :accessor on-stencil-fail)
-   (on-stencil-depth-fail :initarg :on-stencil-depth-fail :initform :keep :accessor on-stencil-depth-fail)
-   (on-stencil-pass :initarg :on-stencil-pass :initform :replace :accessor on-stencil-pass)
-   (front-face :initarg :front-face :initform :ccw :accessor front-face)
-   (cull-face :initarg :cull-face :initform :back :accessor cull-face)
-   (framebuffer :initarg :framebuffer :initform NIL :accessor framebuffer)
-   (shader-program :initarg :shader-program :initform NIL :accessor shader-program)))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defclass render-state (resource)
+    ((blend-mode :initarg :blend-mode :initform :source-over :accessor blend-mode)
+     (depth-bias :initarg :depth-bias :initform NIL :accessor depth-bias)
+     (write-depth-p :initarg :write-depth-p :initform T :accessor write-depth-p)
+     (write-stencil-p :initarg :write-stencil-p :initform T :accessor write-stencil-p)
+     (clamp-depth-p :initarg :clamp-depth-p :initform T :accessor clamp-depth-p)
+     (depth-test :initarg :depth-test :initform '<= :accessor depth-test)
+     (stencil-test :initarg :stencil-test :initform 'T :accessor stencil-test)
+     (stencil-value :initarg :stencil-value :initform 0 :accessor stencil-value)
+     (on-stencil-fail :initarg :on-stencil-fail :initform :keep :accessor on-stencil-fail)
+     (on-stencil-depth-fail :initarg :on-stencil-depth-fail :initform :keep :accessor on-stencil-depth-fail)
+     (on-stencil-pass :initarg :on-stencil-pass :initform :replace :accessor on-stencil-pass)
+     (front-face :initarg :front-face :initform :ccw :accessor front-face)
+     (cull-face :initarg :cull-face :initform :back :accessor cull-face)
+     (polygon-mode :initarg :polygon-mode :initform :fill :accessor polygon-mode)
+     (framebuffer :initarg :framebuffer :initform NIL :accessor framebuffer)
+     (shader-program :initarg :shader-program :initform NIL :accessor shader-program))))
 
+(defmethod allocated-p ((state render-state)) T)
 (defmethod allocate ((state render-state)))
 (defmethod deallocate ((state render-state)))
 
-(defmethod activate ((state render-state))
-  (activate (framebuffer state))
-  (activate (shader-program state)))
+(declaim (inline active-state-diff-p))
+(defun active-state-diff-p (state field value)
+  (and (eq state (render-state *context*))
+       (not (eql value (slot-value state field)))))
 
-(defmethod (setf blend-mode) :before (mode (state render-state))
-  (ecase mode
+(defmacro define-render-state-update (field (value &optional (state 'state)) &body body)
+  (let ((fun (mksym *package* '%set- field)))
+    `(progn
+       (declaim (inline ,fun))
+       (defun ,fun (,value ,state)
+         (declare (ignorable ,state))
+         ,@body)
+
+       (defmethod (setf ,field) :before (,value (,state render-state))
+         (when (active-state-diff-p state ',field ,value)
+           (,fun ,value ,state))))))
+
+(define-render-state-update blend-mode (value)
+  (ecase value
     ((:source-over :normal)
      (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha)
      (gl:blend-equation :func-add))
@@ -140,16 +157,20 @@
      (gl:blend-func-separate :one :one :one :one-minus-src-alpha)
      (gl:blend-equation :func-reverse-subtract))))
 
-(defmethod (setf depth-bias) :before (value (state render-state))
+(define-render-state-update depth-bias (value)
   (implement!))
 
-(defmethod (setf write-depth-p) :before (value (state render-state))
+(define-render-state-update write-depth-p (value)
   (gl:depth-mask value))
 
-(defmethod (setf clamp-depth-p) :before (value (state render-state))
-  (if value
-      (enable-feature :depth-clamp)
-      (disable-feature :depth-clamp)))
+(define-render-state-update write-stencil-p (value)
+  (gl:stencil-mask (if value #xFF #x00)))
+
+(define-render-state-update clamp-depth-p (value)
+  (when-gl-extension :gl-arb-depth-clamp
+    (if value
+        (enable-feature :depth-clamp)
+        (disable-feature :depth-clamp))))
 
 (defun %to-test-op (value)
   (ecase value
@@ -162,15 +183,15 @@
     (>= :gequal)
     ((T) :always)))
 
-(defmethod (setf depth-test) :before (value (state render-state))
+(define-render-state-update depth-test (value)
   (gl:depth-func (%to-test-op value)))
 
-(defmethod (setf stencil-test) :before (value (state render-state))
+(define-render-state-update stencil-test (value state)
   (gl:stencil-func (%to-test-op value)
                    (stencil-value state)
                    #xFF))
 
-(defmethod (setf stencil-value) :before (value (state render-state))
+(define-render-state-update stencil-value (value state)
   (gl:stencil-func (stencil-test state)
                    value
                    #xFF))
@@ -186,23 +207,67 @@
     (:incf-wrap :incr-wrap)
     (:decf-wrap :decr-wrap)))
 
-(defmethod (setf on-stencil-fail) :before (value (state render-state))
+(define-render-state-update on-stencil-fail (value state)
   (gl:stencil-op (%to-stencil-op value)
                  (%to-stencil-op (on-stencil-depth-fail state))
                  (%to-stencil-op (on-stencil-pass state))))
 
-(defmethod (setf on-stencil-depth-fail) :before (value (state render-state))
+(define-render-state-update on-stencil-depth-fail (value state)
   (gl:stencil-op (%to-stencil-op (on-stencil-pass state))
                  (%to-stencil-op value)
                  (%to-stencil-op (on-stencil-pass state))))
 
-(defmethod (setf on-stencil-pass) :before (value (state render-state))
+(define-render-state-update on-stencil-pass (value state)
   (gl:stencil-op (%to-stencil-op (on-stencil-fail state))
                  (%to-stencil-op (on-stencil-depth-fail state))
                  (%to-stencil-op value)))
 
-(defmethod (setf front-face) :before (value (state render-state))
+(define-render-state-update front-face (value)
   (gl:front-face value))
 
-(defmethod (setf cull-face) :before (value (state render-state))
-  (gl:cull-face value))
+(define-render-state-update cull-face (value)
+  (cond (value
+         (enable-feature :cull-face)
+         (gl:cull-face value))
+        (T
+         (disable-feature :cull-face))))
+
+(define-render-state-update polygon-mode (value)
+  (gl:polygon-mode :front-and-back value))
+
+(define-render-state-update framebuffer (value)
+  (activate value))
+
+(define-render-state-update shader-program (value)
+  (activate value))
+
+(defmacro with-render-state ((&rest state &key &allow-other-keys) &body body)
+  (let ((state (loop for (k v) on state by #'cddr
+                     for slot = (c2mop:slot-definition-name (initarg-slot 'render-state k T))
+                     collect (list (gensym (string slot)) slot v)))
+        (instance (gensym "INSTANCE")))
+    `(let* ((,instance (render-state *context*))
+            ,@(loop for (g s) in state
+                    collect `((,g (,s ,instance)))))
+       ,@(loop for (g s v) in state
+               collect `(setf (,s ,instance) ,v))
+       (unwind-protect
+            (progn
+              ,@body)
+         ,@(loop for (g s) in state
+                 collect `(setf (,s ,instance) ,g))))))
+
+(defmethod activate ((state render-state))
+  (let ((current (render-state *context*)))
+    (unless (eq state current)
+      (macrolet ((maybe-update (field)
+                   `(let ((new-value (slot-value state ',field)))
+                      (unless (eql new-value (slot-value state ',field))
+                        (,(mksym *package* '%set- field) new-value state))))
+                 (maybe-update-all ()
+                   `(progn ,@(loop for slot in (c2mop:class-direct-slots (find-class 'render-state))
+                                   collect `(maybe-update ,(c2mop:slot-definition-name slot))))))
+        (maybe-update-all)))))
+
+(defmethod activate :after ((state render-state))
+  (setf (slot-value *context* 'render-state) state))

@@ -41,7 +41,6 @@
   (gl:stencil-func :always 0 #xFF)
   (gl:stencil-op :keep :keep :replace)
   (gl:depth-mask T)
-  (setf *depth-mask* T)
   (gl:depth-func :lequal)
   (set-blend-mode :normal)
   (gl:clear-depth 1.0)

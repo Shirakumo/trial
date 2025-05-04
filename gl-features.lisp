@@ -139,151 +139,62 @@
 
 (declaim (inline set-blend-mode))
 (defun set-blend-mode (mode)
-  (ecase mode
-    ((:source-over :normal)
-     (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha)
-     (gl:blend-equation :func-add))
-    (:destination-over
-     (gl:blend-func-separate :one-minus-dst-alpha :one :one :one-minus-src-alpha)
-     (gl:blend-equation :func-add))
-    (:clear
-     (gl:blend-func-separate :zero :zero :one :one-minus-src-alpha)
-     (gl:blend-equation :func-add))
-    (:source
-     (gl:blend-func-separate :one :zero :one :one-minus-src-alpha)
-     (gl:blend-equation :func-add))
-    (:destination
-     (gl:blend-func-separate :zero :one :one :one-minus-src-alpha)
-     (gl:blend-equation :func-add))
-    (:source-in
-     (gl:blend-func-separate :dst-alpha :zero :one :one-minus-src-alpha)
-     (gl:blend-equation :func-add))
-    (:destination-in
-     (gl:blend-func-separate :zero :src-alpha :one :one-minus-src-alpha)
-     (gl:blend-equation :func-add))
-    (:source-out
-     (gl:blend-func-separate :one-minus-dst-alpha :zero :one :one-minus-src-alpha)
-     (gl:blend-equation :func-add))
-    (:destination-out
-     (gl:blend-func-separate :zero :one-minus-src-alpha :one :one-minus-src-alpha)
-     (gl:blend-equation :func-add))
-    (:destination-atop
-     (gl:blend-func-separate :one-minus-dst-alpha :src-alpha :one :one-minus-src-alpha)
-     (gl:blend-equation :func-add))
-    (:xor
-     (gl:blend-func-separate :one-minus-dst-alpha :one-minus-src-alpha :one :one-minus-src-alpha)
-     (gl:blend-equation :func-add))
-    (:add
-     (gl:blend-func-separate :src-alpha :one :one :one-minus-src-alpha)
-     (gl:blend-equation :func-add))
-    (:one
-     (gl:blend-func-separate :one :one :one :one)
-     (gl:blend-equation :func-add))
-    (:multiply
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :multiply-khr))
-       (T
-        (gl:blend-func-separate :zero :src-color :one :one-minus-src-alpha)
-        (gl:blend-equation :func-add))))
-    (:screen
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :screen-khr))
-       (T
-        (gl:blend-func-separate :one :one-minus-src-color :one :one-minus-src-alpha)
-        (gl:blend-equation :func-add))))
-    (:overlay
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :overlay-khr))))
-    (:darken
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :darken-khr))
-       (T
-        (gl:blend-func-separate :one :one :one :one-minus-src-alpha)
-        (gl:blend-equation :max))))
-    (:lighten
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :lighten-khr))))
-    (:dodge
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :colordodge-khr))))
-    (:burn
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :colorburn-khr))))
-    (:hard-light
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :hardlight-khr))))
-    (:soft-light
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :softlight-khr))))
-    (:difference
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :difference-khr))
-       (T
-        (gl:blend-func-separate :one :one :one :one-minus-src-alpha)
-        (gl:blend-equation :func-subtract))))
-    (:exclusion
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :exclusion-khr))))
-    (:hue
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :hsl-hue-khr))))
-    (:saturation
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :hsl-saturation-khr))))
-    (:color
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :hsl-color-khr))))
-    (:luminosity
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :hsl-luminosity-khr))))
-    (:invert
-     (gl:blend-func-separate :one :one :one :one-minus-src-alpha)
-     (gl:blend-equation :func-reverse-subtract))))
+  (setf (blend-mode (render-state *context*)) mode))
 
-;; KLUDGE: this sucks.
-(defvar *depth-mask* T)
 (defmacro with-depth-mask (mode &body body)
-  (let ((old-mode (gensym "OLD-MODE"))
-        (new-mode (gensym "NEW-MODE"))
-        (thunk (gensym "THUNK")))
-    `(let ((,old-mode *depth-mask*)
-           (,new-mode ,mode))
-       (flet ((,thunk ()
-                ,@body))
-         (if (eq ,new-mode ,old-mode)
-             (,thunk)
-             (let ((*depth-mask* ,new-mode))
-               (gl:depth-mask ,new-mode)
-               (multiple-value-prog1 (,thunk)
-                 (gl:depth-mask ,old-mode))))))))
+  `(with-render-state (:write-depth-p ,mode)
+     ,@body))
 
-(defvar *stencil-mask* T)
 (defmacro with-stencil-mask (mode &body body)
-  (let ((old-mode (gensym "OLD-MODE"))
-        (new-mode (gensym "NEW-MODE"))
-        (thunk (gensym "THUNK")))
-    `(let ((,old-mode *stencil-mask*)
-           (,new-mode ,mode))
-       (flet ((,thunk ()
-                ,@body))
-         (if (eq ,new-mode ,old-mode)
-             (,thunk)
-             (let ((*stencil-mask* ,new-mode))
-               (gl:stencil-mask ,(if new-mode #xFF #x00))
-               (multiple-value-prog1 (,thunk)
-                 (gl:stencil-mask ,(if old-mode #xFF #x00)))))))))
+  `(with-render-state (:write-stencil-p ,mode)
+     ,@body))
+
+(trivial-deprecate:declaim-deprecated (function enable-feature)
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives (with-render-state))
+
+(trivial-deprecate:declaim-deprecated (function disable-feature)
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives (with-render-state))
+
+(trivial-deprecate:declaim-deprecated (function with-pushed-features)
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives (with-render-state))
+
+(trivial-deprecate:declaim-deprecated (function push-features)
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives (with-render-state))
+
+(trivial-deprecate:declaim-deprecated (function pop-features)
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives (with-render-state))
+
+(trivial-deprecate:declaim-deprecated (function feature-enabled-p)
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives (render-state))
+
+(trivial-deprecate:declaim-deprecated (function reset-features)
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives ())
+
+(trivial-deprecate:declaim-deprecated (function with-depth-mask)
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives (with-render-state (setf write-depth-p)))
+
+(trivial-deprecate:declaim-deprecated (function with-stencil-mask)
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives (with-render-state (setf write-stencil-p)))
+
+(trivial-deprecate:declaim-deprecated (function set-blend-mode)
+                                      :software "trial"
+                                      :version "1.2.1"
+                                      :alternatives (with-render-state (setf blend-mode)))

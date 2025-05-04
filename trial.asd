@@ -146,6 +146,7 @@
                              (:file "compute-shader" :depends-on ("shader-program"))
                              (:file "framebuffer")
                              (:file "memory")
+                             (:file "render-state")
                              (:file "shader-program")
                              (:file "shader")
                              (:file "shader-storage-buffer" :depends-on ("bindable-buffer" "struct-buffer"))

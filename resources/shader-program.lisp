@@ -1,7 +1,5 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(define-global +current-shader-program+ NIL)
-
 (defclass shader-program (gl-resource)
   ((uniform-map :initform (make-hash-table :test 'equal) :accessor uniform-map)
    (binding-point-allocation-pointer :initform 0 :accessor binding-point-allocation-pointer)
@@ -81,9 +79,7 @@
 
 (defmethod deallocate ((program shader-program))
   (clrhash (uniform-map program))
-  (gl:delete-program (gl-name program))
-  (when (eq +current-shader-program+ program)
-    (setf +current-shader-program+ NIL)))
+  (gl:delete-program (gl-name program)))
 
 (declaim (inline %set-dquat))
 (defun %set-quat2 (dquat dat i)
@@ -237,13 +233,13 @@
 (defmethod activate ((program shader-program))
   #-elide-context-current-checks
   (check-context-current)
-  (unless (eq +current-shader-program+ program)
-    (setf +current-shader-program+ program)
+  (unless (eq program (shader-program (render-state *context*)))
+    (setf (shader-program (render-state *context*)) program)
     (gl:use-program (gl-name program))))
 
 (defmethod deactivate ((program shader-program))
   #-elide-context-current-checks
   (check-context-current)
-  (when (eq program +current-shader-program+)
-    (setf +current-shader-program+ NIL)
+  (when (eq program (shader-program (render-state *context*)))
+    (setf (shader-program (render-state *context*)) NIL)
     (gl:use-program 0)))

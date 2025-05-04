@@ -3,7 +3,7 @@
 (define-example logo
   :title "Logo Animations"
   :description "Shows the engine and team logo animations"
-  (disable-feature :cull-face)
+  (setf (cull-face (render-state *context*)) NIL)
   (enter (make-instance 'ambient-light :color (vec3 2)) scene)
   (enter (make-instance 'basic-animated-entity :name :logo :asset (assets:asset :shirakumo)) scene)
   (enter (make-instance 'sidescroll-camera :zoom 400) scene)

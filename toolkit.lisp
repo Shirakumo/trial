@@ -896,13 +896,15 @@
     (declare (dynamic-extent q))
     (!q* target q target)))
 
-(defun initarg-slot (class initarg)
+(defun initarg-slot (class initarg &optional errorp)
   (let ((class (etypecase class
                  (class class)
                  (symbol (find-class class)))))
-    (find (list initarg) (c2mop:class-slots class)
-          :key #'c2mop:slot-definition-initargs
-          :test #'subsetp)))
+    (c2mop:ensure-finalized class)
+    (or (find (list initarg) (c2mop:class-slots class)
+              :key #'c2mop:slot-definition-initargs
+              :test #'subsetp)
+        (when errorp (error "~s is not an initarg for ~s" initarg class)))))
 
 (defun initarg-slot-value (instance initarg)
   (slot-value instance (c2mop:slot-definition-name (initarg-slot (class-of instance) initarg))))

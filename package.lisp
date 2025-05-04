@@ -760,6 +760,25 @@
    #:resize
    #:capture
    #:blit-to-screen)
+  ;; resources/render-state.lisp
+  (:export
+   #:render-state
+   #:blend-mode
+   #:depth-bias
+   #:write-depth-p
+   #:write-stencil-p
+   #:clamp-depth-p
+   #:depth-test
+   #:stencil-test
+   #:stencil-value
+   #:on-stencil-fail
+   #:on-stencil-depth-fail
+   #:on-stencil-pass
+   #:front-face
+   #:cull-face
+   #:polygon-mode
+   #:framebuffer
+   #:shader-program)
   ;; resources/memory.lisp
   (:export
    #:memory
@@ -1083,7 +1102,9 @@
    #:window-hidden
    #:window-shown
    #:window-close
-   #:context-info)
+   #:context-info
+   #:framebuffer
+   #:render-state)
   ;; controller.lisp
   (:export
    #:system-action
