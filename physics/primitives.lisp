@@ -359,6 +359,9 @@
 (defmethod embiggen ((primitive primitive) (delta real))
   (embiggen primitive (vec3 delta)))
 
+(defmethod embiggen :after ((primitive primitive) delta)
+  (invalidate-global-bounds-cache primitive))
+
 (defmethod embiggen ((primitive primitive) (delta vec3))
   (let* ((local (primitive-local-transform primitive))
          (bsize (bsize primitive))
