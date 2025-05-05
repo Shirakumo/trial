@@ -450,7 +450,7 @@
 (define-primitive-type ellipsoid
     ((radius (vec3 1 1 1) :type vec3)))
 
-(define-transfer ellipsoid ellipsoid-radius)
+(define-transfer ellipsoid (ellipsoid-radius :by v<-))
 
 (defmethod print-object ((primitive ellipsoid) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
@@ -477,7 +477,7 @@
     ((normal (vec3 0 1 0) :type vec3)
      (offset 0.0 :type single-float)))
 
-(define-transfer plane plane-normal plane-offset)
+(define-transfer plane (plane-normal :by v<-) plane-offset)
 
 (defmethod print-object ((primitive plane) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
@@ -538,7 +538,7 @@
 (define-primitive-type box
     ((bsize (vec3 1 1 1) :type vec3)))
 
-(define-transfer box box-bsize)
+(define-transfer box (box-bsize :by v<-))
 
 (defmethod print-object ((primitive box) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
@@ -679,7 +679,7 @@
      (b (vec3 +1 0 -1) :type vec3)
      (c (vec3 +0 0 +1) :type vec3)))
 
-(define-transfer triangle triangle-a triangle-b triangle-c)
+(define-transfer triangle (triangle-a :by v<-) (triangle-b :by v<-) (triangle-c :by v<-))
 
 (defmethod print-object ((primitive triangle) stream)
   (print-unreadable-object (primitive stream :type T :identity T)
