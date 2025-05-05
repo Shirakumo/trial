@@ -1,5 +1,6 @@
 (in-package #:org.shirakumo.fraf.trial)
 
+(defgeneric embiggen (primitive delta))
 (defgeneric intersects-p (a b))
 (defgeneric distance (a b))
 (defgeneric detect-hits (a b contacts start end))
@@ -355,6 +356,19 @@
                      :collision-mask (primitive-collision-mask primitive)
                      args))
 
+(defmethod embiggen ((primitive primitive) (delta real))
+  (embiggen primitive (vec3 delta)))
+
+(defmethod embiggen ((primitive primitive) (delta vec3))
+  (let* ((local (primitive-local-transform primitive))
+         (bsize (bsize primitive))
+         (multiplier (v/ (v+ delta bsize) bsize)))
+    (with-fast-matref (m local)
+      (setf (m 0 0) (* (m 0 0) (vx multiplier)))
+      (setf (m 1 1) (* (m 1 1) (vy multiplier)))
+      (setf (m 2 2) (* (m 2 2) (vz multiplier))))
+    primitive))
+
 (defmacro define-primitive-type (name slots &body body)
   (destructuring-bind (name &optional (super 'primitive)) (enlist name)
     (let ((int-constructor (mksym *package* '%make- name))
@@ -423,6 +437,10 @@
 (defmethod sample-volume ((primitive sphere) &optional vec)
   (sampling:sphere (sphere-radius primitive) vec))
 
+(defmethod embiggen ((primitive sphere) (delta real))
+  (incf (sphere-radius primitive) (* 0.5 delta))
+  primitive)
+
 (define-support-function sphere (dir next)
   (nv* (!vunit* next dir) (sphere-radius primitive)))
 
@@ -444,6 +462,10 @@
 
 (defmethod sample-volume ((primitive ellipsoid) &optional vec)
   (sampling:sphere (ellipsoid-radius primitive) vec))
+
+(defmethod embiggen ((primitive ellipsoid) (delta vec3))
+  (nv+* (ellipsoid-radius primitive) delta 0.5)
+  primitive)
 
 (define-support-function ellipsoid (dir next)
   (nv* (nvunit (!v* next dir (ellipsoid-radius primitive))) (ellipsoid-radius primitive)))
@@ -472,6 +494,9 @@
 (defmethod compute-bounding-sphere ((primitive plane))
   (values (vec3 0) most-positive-single-float))
 
+(defmethod embiggen ((primitive plane) (delta vec3))
+  primitive)
+
 (define-support-function plane (dir next)
   (let ((denom (v. (plane-normal primitive) dir)))
     (if (<= denom 0.000001)
@@ -483,6 +508,16 @@
 
 (defmethod compute-bounding-box ((primitive half-space))
   (values (vec3 0) (vec3 most-positive-single-float)))
+
+(defmethod embiggen ((primitive half-space) (delta real))
+  (incf (half-space-offset primitive) (* 0.5 delta))
+  primitive)
+
+(defmethod embiggen ((primitive half-space) (delta vec3))
+  (let ((delta (/ (v. delta (half-space-normal primitive))
+                  (vsqrlength (half-space-normal primitive)))))
+    (incf (half-space-offset primitive) delta))
+  primitive)
 
 (define-support-function half-space (dir next)
   ;; TODO: implement
@@ -514,6 +549,10 @@
 
 (defmethod sample-volume ((primitive box) &optional vec)
   (sampling:box (box-bsize primitive) vec))
+
+(defmethod embiggen ((primitive box) (delta vec3))
+  (nv+* (box-bsize primitive) delta 0.5)
+  primitive)
 
 (define-support-function box (dir next)
   (let ((bsize (box-bsize primitive)))
@@ -549,6 +588,14 @@
   ;; FIXME: this is not correct if the primitive has different radii for top/bottom.
   (sampling:cylinder (max (cylinder-radius-bottom primitive) (cylinder-radius-top primitive))
                      (cylinder-height primitive) +vy+ vec))
+
+(defmethod embiggen ((primitive cylinder) (delta vec3))
+  (incf (cylinder-height primitive) (* 0.5 (vy delta)))
+  (let ((r (sqrt (+ (* (vx delta) (vx delta))
+                    (* (vz delta) (vz delta))))))
+    (incf (cylinder-radius-bottom primitive) (* 0.5 r))
+    (incf (cylinder-radius-top primitive) (* 0.5 r)))
+  primitive)
 
 (define-support-function cylinder (dir next)
   (nvunit (vsetf next (vx dir) 0 (vz dir)))
@@ -605,6 +652,14 @@
   ;; FIXME: this is not correct if the primitive has different radii for top/bottom.
   (sampling:pill (max (pill-radius-bottom primitive) (pill-radius-top primitive))
                  (pill-height primitive) +vy+ vec))
+
+(defmethod embiggen ((primitive pill) (delta vec3))
+  (incf (pill-height primitive) (* 0.5 (vy delta)))
+  (let ((r (sqrt (+ (* (vx delta) (vx delta))
+                    (* (vz delta) (vz delta))))))
+    (incf (pill-radius-bottom primitive) (* 0.5 r))
+    (incf (pill-radius-top primitive) (* 0.5 r)))
+  primitive)
 
 (define-support-function pill (dir next)
   (let ((bias (pill-height primitive)))
@@ -663,6 +718,18 @@
                        (vx c) (vy c) (vz c))
               (u16-vec 0 1 2))))
 
+(defmethod embiggen ((primitive triangle) (delta vec3))
+  (let ((c (nv* (v+ (triangle-a primitive)
+                    (triangle-b primitive)
+                    (triangle-c primitive))
+                1/3)))
+    (flet ((update (x)
+             (nv+ x (vproject delta (v- x c)))))
+      (update (triangle-a primitive))
+      (update (triangle-b primitive))
+      (update (triangle-c primitive))
+      primitive)))
+
 (define-support-function triangle (dir next)
   (let ((furthest most-negative-single-float))
     (flet ((test (vert)
@@ -708,6 +775,16 @@
 (defmethod 3ds:geometry ((primitive general-mesh))
   (3ds:mesh (vertices primitive)
             (simplify (faces primitive) '(unsigned-byte 32))))
+
+(defmethod embiggen ((primitive general-mesh) (delta vec3))
+  (let ((c (org.shirakumo.fraf.manifolds:centroid
+            (general-mesh-vertices primitive) (general-mesh-faces primitive)))
+        (delta (v* delta 0.5))
+        (tmp (vec3)))
+    (declare (dynamic-extent tmp))
+    (org.shirakumo.fraf.manifolds:do-vertices (x (general-mesh-vertices primitive))
+      (nv+ x (!vproject tmp delta (!v- tmp x c))))
+    primitive))
 
 (define-primitive-type (convex-mesh general-mesh)
     (keep-original-vertices)

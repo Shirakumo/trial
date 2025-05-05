@@ -402,6 +402,7 @@
    #:entity
    #:material
    #:collision-mask
+   #:embiggen
    #:sphere
    #:sphere-radius
    #:make-sphere
