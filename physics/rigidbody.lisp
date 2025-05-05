@@ -69,7 +69,6 @@
 
 (defmethod (setf physics-primitives) :after ((primitives vector) (entity rigid-shape))
   (%update-rigidbody-cache entity)
-  (invalidate-global-bounds-cache entity)
   (multiple-value-bind (center radius) (compute-bounding-sphere primitives)
     (setf (global-bounds-cache-sphere-offset (global-bounds-cache entity)) center)
     (setf (global-bounds-cache-radius (global-bounds-cache entity)) radius))
@@ -89,6 +88,9 @@
 
 (defmethod (setf physics-primitives) ((primitives list) (entity rigid-shape))
   (setf (physics-primitives entity) (coerce primitives 'vector)))
+
+(defmethod enter :after ((entity rigid-shape) (container container))
+  (%update-rigidbody-cache entity))
 
 (defmethod sample-volume ((entity rigid-shape) &optional vec)
   (let ((primitives (physics-primitives entity)))
