@@ -110,23 +110,25 @@
 (defun reset-matrix (&optional (matrix (model-matrix)))
   (!meye matrix))
 
-(defun vec->screen (vec &optional (context *context*))
-  (let ((norm-pos (vec->clip vec)))
+(defun vec->screen (vec &optional (context *context*) (out (vec2)))
+  (let ((norm-pos (vec->clip vec out)))
     (vsetf norm-pos
            (* (width context) (vx norm-pos))
            (* (height context) (vy norm-pos)))))
 
-(defun vec->clip (vec)
-  (let* ((clip-pos (n*m (projection-matrix) (n*m (view-matrix) (vec (vx vec)
-                                                                    (vy vec)
-                                                                    (vz vec)
-                                                                    1))))
+(defun vec->clip (vec &optional (out (vec2)))
+  (let* ((tmp (vec (vx vec) (vy vec) (vz vec) 1))
+         (clip-pos (n*m (projection-matrix) (n*m (view-matrix) tmp)))
          (w (vw clip-pos)))
+    (declare (type vec2 out))
+    (declare (dynamic-extent tmp))
+    (setf (vx out) (vx clip-pos)
+          (vy out) (vy clip-pos))
     (if (= 0.0f0 w)
-        (vec -1 -1 0)
-        (nv+ (nv* (vxy clip-pos) (/ 0.5f0 w)) 0.5f0))))
+        (vsetf out -1 -1)
+        (nv+ (nv* out (/ 0.5f0 w)) 0.5f0))))
 
-(defun screen->vec (vec &optional (z 0))
+(defun screen->vec (vec &optional (z 0) (out (vec3)))
   ;; FIXME: this is completely useless lmao.
   ;;        we need to be able to pass a plane to project onto.
   (let* ((context *context*)
@@ -134,6 +136,7 @@
          (y (+ (* -2 (/ (vy vec) (height context))) 1))
          (inv (minv (m* (projection-matrix) (view-matrix))))
          (res (m* inv (vec4 x y z 1))))
-    (vec3 (/ (vx res) (vw res))
-          (/ (vy res) (vw res))
-          0)))
+    (vsetf out 
+           (/ (vx res) (vw res))
+           (/ (vy res) (vw res))
+           (/ (vz res) (vw res)))))
