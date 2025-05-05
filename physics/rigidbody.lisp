@@ -16,6 +16,12 @@
   (write-transform (local-transform shape) stream)
   (format stream "~&~%Global Transform:~%")
   (write-transform (global-transform-matrix shape) stream)
+  (multiple-value-bind (center bsize) (global-bounding-box shape)
+    (format stream "~&~%Global Bounding Box:~%")
+    (format stream "Location: ~7,2@f, ~7,2@f, ~7,2@f~%"
+            (vx center) (vy center) (vz center))
+    (format stream "Bsize:    ~7,2@f, ~7,2@f, ~7,2@f~%"
+            (vx bsize) (vy bsize) (vz bsize)))
   (format stream "~&~%Physics Primitives (~d):" (length (physics-primitives shape)))
   (loop for primitive across (physics-primitives shape)
         do (format stream "~%  ~a~%" primitive)
