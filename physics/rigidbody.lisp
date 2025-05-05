@@ -69,6 +69,7 @@
 
 (defmethod (setf physics-primitives) :after ((primitives vector) (entity rigid-shape))
   (%update-rigidbody-cache entity)
+  (invalidate-global-bounds-cache entity)
   (multiple-value-bind (center radius) (compute-bounding-sphere primitives)
     (setf (global-bounds-cache-sphere-offset (global-bounds-cache entity)) center)
     (setf (global-bounds-cache-radius (global-bounds-cache entity)) radius))
