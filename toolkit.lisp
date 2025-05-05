@@ -818,8 +818,8 @@
      ,@(loop for property in properties
              collect (if (and (listp property) (eql :eval (first property)))
                          `(progn ,@(rest property))
-                         (destructuring-bind (target-accessor &optional (source-accessor target-accessor) (key 'identity)) (enlist property)
-                           `(setf (,target-accessor target) (,key (,source-accessor source))))))
+                         (destructuring-bind (writer &key (reader writer) (key 'identity) (by 'setf)) (enlist property)
+                           `(,by (,writer target) (,key (,reader source))))))
      target))
 
 (defmethod location ((vec vec2)) vec)
