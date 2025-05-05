@@ -36,7 +36,7 @@
                          "ERROR: NOT SKINNED?")))))
 
 (define-transfer rigid-shape
-  (physics-primitives physics-primitives (lambda (p) (map-into (make-array (length p)) #'clone p))))
+  (physics-primitives :key (lambda (p) (map-into (make-array (length p)) #'clone p))))
 
 (define-hit-detector (rigid-shape T)
   (loop for ai across (physics-primitives a)
