@@ -201,6 +201,20 @@
   (setf (global-bounds-cache-dirty-p cache) NIL)
   cache)
 
+(defmethod reinitialize-global-bounds-cache ((cache global-bounds-cache) &key radius bsize (sphere-offset (vec3) sphere-offset-p) (box-offset (vec3) box-offset-p))
+  (let ((generator (global-bounds-cache-generator cache)))
+    (multiple-value-bind (center new-radius) (compute-bounding-sphere generator)
+      (unless sphere-offset-p (v<- sphere-offset center))
+      (setf radius new-radius))
+    (multiple-value-bind (center new-bsize) (compute-bounding-box generator)
+      (unless box-offset-p (v<- box-offset center))
+      (setf bsize new-bsize)))
+  (setf (global-bounds-cache-radius cache) radius)
+  (v<- (global-bounds-cache-obb cache) bsize)
+  (v<- (global-bounds-cache-sphere-offset cache) sphere-offset)
+  (v<- (global-bounds-cache-box-offset cache) box-offset)
+  (invalidate-global-bounds-cache cache))
+
 (defmethod global-transform-matrix ((cache global-bounds-cache) &optional target)
   (global-transform-matrix (global-bounds-cache-generator cache) target))
 
@@ -292,6 +306,9 @@
 
 (defmethod invalidate-global-bounds-cache ((cache global-bounds-cached-entity))
   (setf (global-bounds-cache-dirty-p (global-bounds-cache cache)) T))
+
+(defmethod reinitialize-global-bounds-cache ((cache global-bounds-cached-entity) &rest args &key &allow-other-keys)
+  (apply #'reinitialize-global-bounds-cache cache args))
 
 (defmethod 3ds:location ((entity global-bounds-cached-entity))
   (global-location (global-bounds-cache entity)))

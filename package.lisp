@@ -940,6 +940,7 @@
    #:global-bounding-box
    #:global-bounding-sphere
    #:invalidate-global-bounds-cache
+   #:reinitialize-global-bounds-cache
    #:global-bounds-cache
    #:make-global-bounds-cache
    #:update-global-bounds-cache

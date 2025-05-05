@@ -329,7 +329,12 @@
   (primitive-entity primitive))
 
 (defmethod invalidate-global-bounds-cache ((primitive primitive))
-  (setf (global-bounds-cache-dirty-p (primitive-global-bounds-cache primitive)) T))
+  (setf (global-bounds-cache-dirty-p (primitive-global-bounds-cache primitive)) T)
+  primitive)
+
+(defmethod reinitialize-global-bounds-cache ((primitive primitive) &key)
+  (reinitialize-global-bounds-cache (primitive-global-bounds-cache primitive))
+  primitive)
 
 (define-accessor-delegate-methods entity (primitive-entity primitive))
 (define-accessor-delegate-methods material (primitive-material primitive))
@@ -360,7 +365,7 @@
   (embiggen primitive (vec3 delta)))
 
 (defmethod embiggen :after ((primitive primitive) delta)
-  (invalidate-global-bounds-cache primitive))
+  (reinitialize-global-bounds-cache primitive))
 
 (defmethod embiggen ((primitive primitive) (delta vec3))
   (let* ((local (primitive-local-transform primitive))
