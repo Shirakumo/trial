@@ -67,7 +67,7 @@
                  (T
                   (let ((type (class-of (aref instances 0))))
                     ;; If we are starved, simply override the last instance.
-                    (aref instances (1- (length instances))))))))
+                    (return (aref instances (1- (length instances)))))))))
 
 (defun release-event (event)
   (declare (optimize speed (safety 1)))
@@ -77,7 +77,7 @@
       (event-pool
        (loop with instances = (event-pool-instances pool)
              for index of-type (unsigned-byte 32) = (event-pool-index pool)
-             for next = (1- index)
+             for next = (max 0 (1- index))
              do (when (atomics:cas (event-pool-index pool) index next)
                   (return))))
       (null))))
