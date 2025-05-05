@@ -8,9 +8,6 @@
 
 (defgeneric activate-trigger (target trigger))
 
-(defmethod awake-p ((entity trigger-volume))
-  NIL)
-
 (defmethod collides-p ((a ray) (b trigger-volume) hit)
   NIL)
 

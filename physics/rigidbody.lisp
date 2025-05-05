@@ -129,6 +129,9 @@
     (invalidate-global-bounds-cache primitive)))
 
 (defmethod %update-rigidbody-cache ((entity rigid-shape))
+  ;; TODO: ensure parent chain is updated first
+  ;; TODO: how do we ensure this is called for shapes that are static (awake-p = NIL)
+  ;;       but for which the parent changed?
   (let ((*model-matrix* (transform-matrix entity)))
     (!meye *model-matrix*)
     (apply-transforms entity))
@@ -189,6 +192,13 @@
         (q<- (orientation object) (orientation transform)))
       (v<- (location object) (location transform))
       object)))
+
+(defmethod start-frame ((entity rigid-shape))
+  (%update-rigidbody-cache entity))
+
+(defmethod integrate ((entity rigid-shape) dt)
+  (%update-rigidbody-cache entity)
+  (vsetf (force entity) 0 0 0))
 
 (defclass rigidbody (rigid-shape)
   ((rotation :initform (vec 0 0 0) :reader rotation)
@@ -307,6 +317,3 @@
     (%update-rigidbody-cache entity)
     (vsetf (torque entity) 0 0 0)
     (vsetf (force entity) 0 0 0)))
-
-(defmethod start-frame ((entity rigidbody))
-  (%update-rigidbody-cache entity))
