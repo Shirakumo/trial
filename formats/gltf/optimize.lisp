@@ -38,9 +38,8 @@
         ;; TODO: if original mesh has no other refs anywhere, remove it
         (loop for node across (gltf:nodes gltf)
               for collider = (gltf:collider node)
-              do (when collider 
-                   (let* ((collider (gltf:collider node))
-                          (geometry (gltf:geometry collider)))
+              do (when (and collider (gltf:geometry collider))
+                   (let ((geometry (gltf:geometry collider)))
                      (when (and (gltf:node geometry)
                                 (not (optimized-p (gltf:mesh (gltf:node geometry)))))
                        (let ((new (or (gethash (gltf:mesh (gltf:node geometry)) mesh-table)
