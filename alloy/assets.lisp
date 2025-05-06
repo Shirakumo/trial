@@ -4,7 +4,9 @@
   ())
 
 (defmethod trial:compile-resources ((font font) (input pathname) &rest args &key &allow-other-keys)
-  (apply #'trial:transcode (make-pathname :type "ttf" :defaults input) :ttf input :json args))
+  (let ((source (make-pathname :type "ttf" :defaults input)))
+    (when (trial::file-out-of-date-p input source)
+      (apply #'trial:transcode source :ttf input :json args))))
 
 (defmethod trial:transcode (source (source-type (eql :ttf)) target (target-type (eql :json)) &rest args &key &allow-other-keys)
   (let* ((json (apply #'org.shirakumo.alloy.renderers.opengl.msdf:cache-font
