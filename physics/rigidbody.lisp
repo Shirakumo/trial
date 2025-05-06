@@ -120,18 +120,18 @@
         (base-transform (transform-matrix entity)))
     (declare (type mat4 base-transform))
     (declare (type (signed-byte 16) joint))
-    (if (< joint 0)
+    (or (when (<= 0 joint)
+          (let ((palette (palette entity)))
+            (declare (type (simple-array mat4 (*)) palette))
+            (when (< joint (length palette))
+              (!m* (primitive-global-transform primitive)
+                   base-transform
+                   (primitive-local-transform primitive)
+                   (aref palette joint))
+              (setf (awake-p entity) T))))
         (!m* (primitive-global-transform primitive)
              base-transform
-             (primitive-local-transform primitive))
-        (let ((palette (palette entity)))
-          (declare (type (simple-array mat4 (*)) palette))
-          (when (< 0 (length palette))
-            (!m* (primitive-global-transform primitive)
-                 base-transform
-                 (primitive-local-transform primitive)
-                 (aref palette joint))
-            (setf (awake-p entity) T))))
+             (primitive-local-transform primitive)))
     (invalidate-global-bounds-cache primitive)))
 
 (defmethod %update-rigidbody-cache ((entity rigid-shape))
