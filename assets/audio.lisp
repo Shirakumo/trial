@@ -27,7 +27,10 @@
     (with-retry-restart (retry "Retry loading the audio source.")
       (apply #'load-audio input T :generator loader args))))
 
-(defmethod compile-resources ((generator audio-loader) target &rest args &key (source-file-type "wav"))
+(defmethod compile-resources ((generator audio-loader) (target sequence) &rest args &key &allow-other-keys)
+  (map NIL (lambda (x) (apply #'compile-resources generator x args)) target))
+
+(defmethod compile-resources ((generator audio-loader) (target pathname) &rest args &key (source-file-type "wav"))
   (let ((source (make-pathname :type source-file-type :defaults target)))
     (when (and (probe-file source)
                (trial:recompile-needed-p target source))
