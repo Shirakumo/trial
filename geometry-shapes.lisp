@@ -134,10 +134,10 @@
                  (v (+ x w) y (+ z _z))))
       (finalize-data :vertex-form :lines)))
 
-  (defun make-sphere-mesh (size &key (segments 24) (x 0) (y 0) (z 0))
+  (defun make-sphere-mesh (radius &key (segments 24) (x 0) (y 0) (z 0))
     (let ((lat segments) (lng segments)
           (off (vec x y z)))
-      (destructuring-bind (w h d) (enlist size size size)
+      (destructuring-bind (w h d) (enlist radius radius radius)
         (with-mesh-construction (v :attributes (location normal uv))
           (loop for i from lat downto 1
                 for lat0 = (* PI (- (/ (1- i) lat) 0.5))
@@ -164,17 +164,17 @@
                               (vertex (vec (* x2 zr1 w) (* y2 zr1 h) (* z1 d)) (vec x2 y2)))))
           (finalize-data)))))
 
-  (defun make-disc-mesh (size &key (segments 32) (x 0) (y 0) (z 0))
+  (defun make-disc-mesh (radius &key (segments 32) (x 0) (y 0) (z 0))
     (with-mesh-construction (v :attributes (location normal uv))
       (loop with step = (/ (* 2 PI) segments)
             for i1 = (- step) then i2
             for i2 from 0 to (* 2 PI) by step
             do (v x y z 0 0 1 0.5 0.5)
-               (v (+ x (* size (cos i1))) (+ y (* size (sin i1))) z 0 0 1 (+ 0.5 (* 0.5 (cos i1))) (+ 0.5 (* 0.5 (sin i1))))
-               (v (+ x (* size (cos i2))) (+ y (* size (sin i2))) z 0 0 1 (+ 0.5 (* 0.5 (cos i2))) (+ 0.5 (* 0.5 (sin i2)))))
+               (v (+ x (* radius (cos i1))) (+ y (* radius (sin i1))) z 0 0 1 (+ 0.5 (* 0.5 (cos i1))) (+ 0.5 (* 0.5 (sin i1))))
+               (v (+ x (* radius (cos i2))) (+ y (* radius (sin i2))) z 0 0 1 (+ 0.5 (* 0.5 (cos i2))) (+ 0.5 (* 0.5 (sin i2)))))
       (finalize-data)))
 
-  (defun make-cylinder-mesh (size height &key (segments 32) (x 0) (y 0) (z 0) (radius-top size) (radius-bottom size))
+  (defun make-cylinder-mesh (radius height &key (segments 32) (x 0) (y 0) (z 0) (radius-top radius) (radius-bottom radius))
     (with-mesh-construction (v :attributes (location))
       (loop with step = (/ (* 2 PI) segments)
             for i1 = (- step) then i2
@@ -200,33 +200,33 @@
             (v (vx e2b) (vy e2b) (vz e2b)))
       (finalize-data)))
 
-  (defun make-cone-mesh (size height &key (segments 32) (x 0) (y 0) (z 0))
+  (defun make-cone-mesh (radius height &key (segments 32) (x 0) (y 0) (z 0))
     (with-mesh-construction (v :attributes (location))
       (loop with step = (/ (* 2 PI) segments)
             for i1 = (- step) then i2
             for i2 from 0 to (* 2 PI) by step
             do ;; Cone top
             (v x (+ y height) z)
-            (v (+ x (* size (cos i2))) y (+ z (* size (sin i2))))
-            (v (+ x (* size (cos i1))) y (+ z (* size (sin i1))))
+            (v (+ x (* radius (cos i2))) y (+ z (* radius (sin i2))))
+            (v (+ x (* radius (cos i1))) y (+ z (* radius (sin i1))))
             ;; Bottom disc
             (v x y z)
-            (v (+ x (* size (cos i1))) y (+ z (* size (sin i1))))
-            (v (+ x (* size (cos i2))) y (+ z (* size (sin i2)))))
+            (v (+ x (* radius (cos i1))) y (+ z (* radius (sin i1))))
+            (v (+ x (* radius (cos i2))) y (+ z (* radius (sin i2)))))
       (finalize-data)))
 
-  (defun make-tube-mesh (size height inner-size &key (segments 32) (x 0) (y 0) (z 0))
+  (defun make-tube-mesh (radius height inner-radius &key (segments 32) (x 0) (y 0) (z 0))
     (with-mesh-construction (v :attributes (location))
       (loop with step = (/ (* 2 PI) segments)
             for i1 = (- step) then i2
             for i2 from 0 to (* 2 PI) by step
-            for e1b = (vec (+ x (* size (cos i1))) y (+ z (* size (sin i1))))
-            for e2b = (vec (+ x (* size (cos i2))) y (+ z (* size (sin i2))))
+            for e1b = (vec (+ x (* radius (cos i1))) y (+ z (* radius (sin i1))))
+            for e2b = (vec (+ x (* radius (cos i2))) y (+ z (* radius (sin i2))))
             for e1t = (nv+ (vec 0 height 0) e1b)
             for e2t = (nv+ (vec 0 height 0) e2b)
             
-            for f1b = (vec (+ x (* inner-size (cos i1))) y (+ z (* inner-size (sin i1))))
-            for f2b = (vec (+ x (* inner-size (cos i2))) y (+ z (* inner-size (sin i2))))
+            for f1b = (vec (+ x (* inner-radius (cos i1))) y (+ z (* inner-radius (sin i1))))
+            for f2b = (vec (+ x (* inner-radius (cos i2))) y (+ z (* inner-radius (sin i2))))
             for f1t = (nv+ (vec 0 height 0) f1b)
             for f2t = (nv+ (vec 0 height 0) f2b)
             do ;; Bottom ring
