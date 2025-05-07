@@ -24,8 +24,9 @@
   (instantiate-prefab prefab asset))
 
 (defmethod stage :before ((prefab prefab) (area staging-area))
-  (register-load-observer area prefab (prefab-asset prefab))
-  (stage (prefab-asset prefab) area))
+  (when (prefab-asset prefab)
+    (register-load-observer area prefab (prefab-asset prefab))
+    (stage (prefab-asset prefab) area)))
 
 (defun make-prefab (thing &rest initargs)
   (apply #'reinitialize-instance (instantiate-prefab thing T) initargs))
@@ -66,7 +67,9 @@
     `(progn
        ,@(when asset
            `((defmethod prefab-asset ((,class ,class))
-                (asset ,@(loop for part in asset collect `',part)))))
+                ,@(if (eql asset 'null)
+                      '(NIL)
+                      `(asset ,@(loop for part in asset collect `',part))))))
        
        (defmethod instantiate-prefab ((,class ,class) (,assetvar model-file))
          ,@(loop for (type . args) in (or changes '((reparent)))
