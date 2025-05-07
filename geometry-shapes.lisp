@@ -8,6 +8,10 @@
 ;;        - Torus
 ;;        - Arrow
 ;; FIXME: Normalise interface (vectors instead of x/y/z args?)
+;; FIXME: FIXME: FIXME: The interface here is different from the
+;;       one present in the physics primitives. Some shapes are not
+;;       centred (cone, cylinder, etc) and some use different
+;;       dimensions (cube, rectangle use w/h instead of bsize)
 ;; NOTE: UV convention is U is pointing RIGHT, V is pointing UP
 ;; NOTE: Should generate triangle vertices in CCW order
 (eval-when (:compile-toplevel :load-toplevel :execute)
