@@ -71,7 +71,7 @@
    (fps-buffer-idx :initform 0 :accessor fps-buffer-idx)
    (observers :initform (make-array 0 :adjustable T :fill-pointer T) :accessor observers)
    (background :initform (vec4 1 1 1 0.75))
-   (show-overlay :initform T :accessor show-overlay)
+   (show-overlay :initform T :initarg :show-overlay :accessor show-overlay)
    (%string :initform (make-array 4096 :element-type 'character :fill-pointer 0) :accessor %string)))
 
 (defmethod handle ((ev toggle-overlay) (controller display-controller))
