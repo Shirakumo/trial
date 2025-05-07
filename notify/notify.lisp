@@ -94,7 +94,8 @@
   (trial:enlist (trial:input* asset)))
 
 (defmethod files-to-watch append ((prefab trial:prefab))
-  (files-to-watch (trial:prefab-asset prefab)))
+  (when (trial:prefab-asset prefab)
+    (files-to-watch (trial:prefab-asset prefab))))
 
 
 (let ((queue (make-hash-table :test 'equal)))

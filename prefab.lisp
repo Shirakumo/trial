@@ -67,9 +67,9 @@
     `(progn
        ,@(when asset
            `((defmethod prefab-asset ((,class ,class))
-                ,@(if (eql asset 'null)
-                      '(NIL)
-                      `(asset ,@(loop for part in asset collect `',part))))))
+               ,(if (eql asset 'null)
+                    'NIL
+                    `(asset ,@(loop for part in asset collect `',part))))))
        
        (defmethod instantiate-prefab ((,class ,class) (,assetvar model-file))
          ,@(loop for (type . args) in (or changes '((reparent)))
