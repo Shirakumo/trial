@@ -616,7 +616,28 @@
 
 ;; NOTE: the cone is centred at 0,0,0 and points Y-up. the "height" is the half-height
 ;;       and the tip is in Y-up.
-(define-primitive-type (cone cylinder) ())
+(define-primitive-type cone
+    ((radius 1.0 :type single-float)
+     (height 1.0 :type single-float)))
+
+(define-transfer cone cone-radius cone-height)
+
+(defmethod print-object ((primitive cone) stream)
+  (print-unreadable-object (primitive stream :type T :identity T)
+    (format stream "~f ~f" (cone-radius primitive) (cone-height primitive))))
+
+(defmethod compute-bounding-box ((primitive cone))
+  (values (vec3 0) (vec3 (cone-radius primitive) (cone-height primitive) (cone-radius primitive))))
+
+(defmethod compute-bounding-sphere ((primitive cone))
+  (values (vec3 0) (sqrt (+ (expt (cone-radius primitive) 2)
+                            (expt (cone-height primitive) 2)))))
+
+(defmethod embiggen ((primitive cone) (delta vec3))
+  (incf (cone-height primitive) (* 0.5 (vy delta)))
+  (incf (cone-radius primitive) (* 0.5 (sqrt (+ (* (vx delta) (vx delta))
+                                                (* (vz delta) (vz delta))))))
+  primitive)
 
 ;; TODO: implement this
 (defmethod sample-volume ((primitive cone) &optional vec)
@@ -624,9 +645,9 @@
 
 (define-support-function cone (dir next)
   (vsetf next (vx dir) 0 (vz dir))
-  (nv* (nvunit* next) (cylinder-radius-bottom primitive))
-  (decf (vy next) (cylinder-height primitive))
-  (let ((b (vec 0 (cylinder-height primitive) 0)))
+  (nv* (nvunit* next) (cone-radius primitive))
+  (decf (vy next) (cone-height primitive))
+  (let ((b (vec 0 (cone-height primitive) 0)))
     (declare (dynamic-extent b))
     (when (< (v. next dir) (v. b dir))
       (v<- next b))))
