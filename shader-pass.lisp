@@ -135,6 +135,7 @@
 (defgeneric bind-textures (object))
 (defgeneric object-renderable-p (object pass))
 (defgeneric compute-shader (shader-type pass object))
+(defgeneric effective-shader-class-for-pass (pass object))
 
 (defmethod object-renderable-p (object (pass shader-pass)) NIL)
 (defmethod object-renderable-p ((renderable renderable) (pass shader-pass)) T)
@@ -163,6 +164,9 @@
 
 (defmethod compute-shader (type pass (object shader-entity-class))
   (append (call-next-method) (enlist (effective-shader type object))))
+
+(defmethod effective-shader-class-for-pass ((pass shader-pass) object)
+  (effective-shader-class object))
 
 (defmethod make-pass-shader-program ((pass shader-pass) object)
   ;; TODO: alias program against identical programs
@@ -309,7 +313,8 @@
   `(progn (defmethod compute-shader ((type (eql ,shader-type)) (pass ,pass-class) (class (eql (find-class ',class))))
             (load-time-value (list (glsl-toolkit:parse (progn ,@body)))))
 
-          (defmethod effective-shader-class ((class (eql (find-class ',class)))) class)
+          (defmethod effective-shader-class-for-pass ((pass ,pass-class) (instance ,class))
+            (find-class ',class))
           
           (maybe-handle-main-event 'class-changed :changed-class (find-class ',class))))
 
@@ -356,7 +361,7 @@
           (let* ((program-table (program-table pass))
                  (target (if (typep object '(or standalone-shader-entity dynamic-renderable))
                              object
-                             (effective-shader-class object)))
+                             (effective-shader-class-for-pass pass object)))
                  (program (gethash target renderable-table)))
             (unless program
               (setf program (make-pass-shader-program pass target))
@@ -387,7 +392,7 @@
 
 (defmethod stage ((object shader-entity) (pass per-object-pass))
   (unless (typep object 'dynamic-renderable)
-    (stage (effective-shader-class object) pass)))
+    (stage (effective-shader-class-for-pass pass object) pass)))
 
 (defmethod stage ((object shader-entity-class) (pass per-object-pass))
   (enter object pass))
@@ -417,7 +422,7 @@
              (loop for object being the hash-keys of renderable-table
                    do (when (typep object 'standard-class)
                         (refresh object))))
-            ((and (gethash class renderable-table) (eql class (effective-shader-class class)))
+            ((and (gethash class renderable-table) (eql class (effective-shader-class-for-pass pass class)))
              ;; Object changed, recompile it
              (refresh class))))))
 
