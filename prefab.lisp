@@ -154,6 +154,12 @@
        (loop for material across (materials ,nodevar)
              do (ensure-instance material ',type ,@initargs)))))
 
+(define-prefab-translator materials (instance asset node &rest materials)
+  (let ((nodevar (gensym "NODE")))
+    `(do-nodes% (,nodevar ,instance ,node)
+       (setf (materials ,nodevar) (vector ,@(loop for material in materials
+                                                  collect `(material ',material)))))))
+
 (define-prefab-translator eval (instance asset args &rest body)
   `((lambda ,args
       (declare (ignorable ,@args))
