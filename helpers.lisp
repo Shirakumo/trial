@@ -305,7 +305,11 @@ void main(){
   (setf (mesh-asset entity) asset)
   (restage entity area))
 
-(define-transfer mesh-entity mesh mesh-asset)
+(define-transfer mesh-entity (mesh-asset :by slot-value) mesh)
+
+(defmethod (setf mesh-asset) :around (thing (entity mesh-entity))
+  (unless (eq thing (mesh-asset entity))
+    (call-next-method)))
 
 (defmethod (setf mesh-asset) :after ((asset asset) (entity mesh-entity))
   (setf (mesh entity) (or (mesh entity) T)))
@@ -341,7 +345,11 @@ void main(){
   (setf (mesh-asset entity) asset)
   (restage entity area))
 
-(define-transfer multi-mesh-entity mesh mesh-asset)
+(define-transfer multi-mesh-entity (mesh-asset :by slot-value) mesh)
+
+(defmethod (setf mesh-asset) :around (thing (entity multi-mesh-entity))
+  (unless (eq thing (mesh-asset entity))
+    (call-next-method)))
 
 (defmethod (setf mesh-asset) :after ((asset asset) (entity multi-mesh-entity))
   (setf (mesh entity) (or (mesh entity) T)))

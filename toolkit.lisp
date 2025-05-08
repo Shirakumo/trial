@@ -819,7 +819,11 @@
              collect (if (and (listp property) (eql :eval (first property)))
                          `(progn ,@(rest property))
                          (destructuring-bind (writer &key (reader writer) (key 'identity) (by 'setf)) (enlist property)
-                           `(,by (,writer target) (,key (,reader source))))))
+                           (case by
+                             (slot-value
+                              `(setf (slot-value target ',writer) (,key (,reader source))))
+                             (T
+                              `(,by (,writer target) (,key (,reader source))))))))
      target))
 
 (defmethod location ((vec vec2)) vec)
