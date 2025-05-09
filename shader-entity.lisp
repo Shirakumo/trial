@@ -485,6 +485,13 @@ void main(){
       (bind-textures entity)
       (render entity program))))
 
+(define-handler ((entity standalone-shader-entity) class-changed) (changed-class)
+  (when (c2mop:subclassp (class-of entity) changed-class)
+    (let ((new (make-shader-program entity))
+          (prev (shader-program entity)))
+      (setf (buffers prev) (buffers new))
+      (setf (shaders prev) (shaders new)))))
+
 (defclass dynamic-shader-entity (standalone-shader-entity)
   ((shaders :initarg :shaders :initform () :accessor shaders)
    (buffers :initarg :buffers :initform () :accessor buffers))
