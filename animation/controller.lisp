@@ -477,6 +477,9 @@
   ;; Ignore palette updates when updating other crap.
   )
 
+(defmethod update-palette ((entity animation-controller) (default (eql T)))
+  (update-palette entity (target entity)))
+
 (defmethod update-palette ((entity animation-controller) (pose pose))
   (when (skeleton entity)
     (let* ((palette (matrix-palette pose (palette entity)))
