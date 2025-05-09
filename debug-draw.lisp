@@ -351,7 +351,7 @@ void main(){
                               :z (if (typep point 'vec2) 0.0 (vz point))
                               :scale scale))
 
-(defmethod debug-draw ((texture texture) &key (point (vec 0 0)) (scaling (vec 1)) remove &allow-other-keys)
+(defmethod debug-draw ((texture texture) &key (point (vec 0 0)) (scaling (vec 1)) remove)
   (let* ((draw (%debug-draw))
          (textures (textures draw))
          (idx (or (position texture textures :key #'texture) (fill-pointer textures)))
@@ -366,6 +366,14 @@ void main(){
            (decf (fill-pointer textures)))
           (T
            (setf (fill-pointer textures) (max (fill-pointer textures) (1+ idx)))))))
+
+(defmethod debug-draw ((framebuffer framebuffer) &rest args &key attachment &allow-other-keys)
+  (let ((texture (if attachment
+                     (second (assoc attachment (attachments framebuffer)))
+                     (second (first (attachments framebuffer))))))
+    (unless texture (error "No such attachment on ~a" framebuffer))
+    (remf args :attachment)
+    (apply #'debug-draw texture args)))
 
 (defmethod debug-draw ((cache global-bounds-cache) &key (color #.(vec 1 0 0)) draw-obb draw-sphere)
   (when (global-bounds-cache-dirty-p cache)
