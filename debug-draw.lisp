@@ -857,7 +857,13 @@ void main(){
              (setf (ldb (byte 1 type) (dirty debug-draw)) 1)
              (array-utils:array-shift data :n size :from start)
              (when (< (* 3 (1+ instance)) (length (instances debug-draw)))
-               (array-utils:array-shift (instances debug-draw) :n -3 :from (* 3 (1+ instance))))))
+               (array-utils:array-shift (instances debug-draw) :n -3 :from (* 3 (1+ instance)))))
+           (let ((draw (position instance (textures debug-draw) :key #'texture)))
+             (when draw
+               (when (< 0 (fill-pointer (textures debug-draw)))
+                 (rotatef (aref (textures debug-draw) draw)
+                          (aref (textures debug-draw) (1- (fill-pointer (textures debug-draw))))))
+               (decf (fill-pointer (textures debug-draw))))))
           (T
            (clrhash (tokens debug-draw))
            (setf (fill-pointer (points debug-draw)) 0)
@@ -865,6 +871,7 @@ void main(){
            (setf (fill-pointer (flats debug-draw)) 0)
            (setf (fill-pointer (text debug-draw)) 0)
            (setf (fill-pointer (instances debug-draw)) 0)
+           (setf (fill-pointer (textures debug-draw)) 0)
            (setf (dirty debug-draw) (1- (ash 1 32)))))))
 
 (define-class-shader (debug-draw :vertex-shader)
