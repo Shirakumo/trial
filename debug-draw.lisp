@@ -1,5 +1,48 @@
 (in-package #:org.shirakumo.fraf.trial)
 
+(define-shader-entity debug-draw-texture (standalone-shader-entity)
+  ((texture :initarg :texture :initform NIL :accessor texture)
+   (location :initform (vec3 0) :accessor location)
+   (scaling :initform (vec2 1) :accessor scaling)))
+
+(defmethod stage :after ((draw debug-draw-texture) (area staging-area))
+  (stage (// 'trial 'fullscreen-square) area)
+  (when (texture draw) (stage (texture draw) area)))
+
+(defmethod render ((draw debug-draw-texture) (program shader-program))
+  (setf (uniform program "location") (location draw))
+  (setf (uniform program "view_size") (vec (width *context*) (height *context*)))
+  (setf (uniform program "scaling") (scaling draw))
+  (setf (uniform program "texture_image") (bind (texture draw) :texture0))
+  (render-array (// 'trial 'fullscreen-square)))
+
+(define-class-shader (debug-draw-texture :vertex-shader)
+  "layout (location = 0) in vec3 position;
+layout (location = 2) in vec2 i_uv;
+out vec2 v_uv;
+
+uniform vec3 location;
+uniform sampler2D texture_image;
+uniform vec2 view_size;
+uniform vec2 scaling;
+
+void main(){
+  vec2 size = textureSize(texture_image, 0).xy;
+  vec3 quad = vec3(vec2(-1, -1) + ((vec2(1,1)+position.xy) * size * 0.5 * scaling + location.xy*2) / view_size, location.z);
+  gl_Position = vec4(quad, 1.0f);
+  gl_Position.z = -1.0;
+  v_uv = i_uv;
+}")
+
+(define-class-shader (debug-draw-texture :fragment-shader)
+  "in vec2 v_uv;
+out vec4 color;
+uniform sampler2D texture_image;
+
+void main(){
+  color = texture(texture_image, v_uv);
+}")
+
 (define-shader-entity debug-draw-text (standalone-shader-entity)
   ((text-vao :accessor text-vao)
    (text :accessor text)))
@@ -67,6 +110,7 @@ void main(){
    (flats-vao :accessor flats-vao)
    (flats :accessor flats)
    (text-render :accessor text-render)
+   (textures :accessor textures)
    (dirty :initform 0 :accessor dirty)
    (tokens :initform (make-hash-table :test 'eql) :accessor tokens)
    (clear-after-render :initform T :initarg :clear-after-render :accessor clear-after-render)))
@@ -88,7 +132,12 @@ void main(){
     (setf (flats-vao draw) (make-instance 'vertex-array :vertex-form :triangles :bindings
                                           `((,vbo :offset  0 :stride 24)
                                             (,vbo :offset 12 :stride 24)))))
-  (setf (text-render draw) (make-instance 'debug-draw-text)))
+  (setf (text-render draw) (make-instance 'debug-draw-text))
+  (let ((array (make-array 64 :fill-pointer 0 :adjustable T))
+        (program (shader-program (make-instance 'debug-draw-texture))))
+    (dotimes (i (array-total-size array))
+      (setf (aref array i) (make-instance 'debug-draw-texture :shader-program program)))
+    (setf (textures draw) array)))
 
 (defmethod text-vao ((draw debug-draw))
   (text-vao (text-render draw)))
@@ -100,7 +149,8 @@ void main(){
   (stage (points-vao draw) area)
   (stage (lines-vao draw) area)
   (stage (flats-vao draw) area)
-  (stage (text-render draw) area))
+  (stage (text-render draw) area)
+  (stage (aref (textures draw) 0) area))
 
 (defmethod render :before ((draw debug-draw) target)
   (unless (allocated-p (shader-program draw))
@@ -124,6 +174,12 @@ void main(){
   (render-array (lines-vao draw) :vertex-count (truncate (length (lines draw)) 6))
   (render-array (points-vao draw) :vertex-count (truncate (length (points draw)) 6))
   (render (text-render draw) T)
+  (loop for draw across (textures draw)
+        do (render draw T)
+           (let ((new (make-shader-program draw))
+                 (prev (shader-program draw)))
+             (setf (buffers prev) (buffers new))
+             (setf (shaders prev) (shaders new))))
   (let ((scene (scene draw)))
     (unless (eq draw (elt scene (1- (length scene))))
       #++(warn "~S is not the last entity in the scene" draw)
@@ -294,6 +350,22 @@ void main(){
                               :y (vy point)
                               :z (if (typep point 'vec2) 0.0 (vz point))
                               :scale scale))
+
+(defmethod debug-draw ((texture texture) &key (point (vec 0 0)) (scaling (vec 1)) remove &allow-other-keys)
+  (let* ((draw (%debug-draw))
+         (textures (textures draw))
+         (idx (or (position texture textures :key #'texture) (fill-pointer textures)))
+         (next (aref textures idx)))
+    (setf (texture next) texture)
+    (setf (vx (location next)) (vx point))
+    (setf (vy (location next)) (vy point))
+    (v<- (scaling next) scaling)
+    (cond (remove
+           (when (< 0 (fill-pointer textures))
+             (rotatef (aref textures idx) (aref textures (1- (fill-pointer textures)))))
+           (decf (fill-pointer textures)))
+          (T
+           (setf (fill-pointer textures) (max (fill-pointer textures) (1+ idx)))))))
 
 (defmethod debug-draw ((cache global-bounds-cache) &key (color #.(vec 1 0 0)) draw-obb draw-sphere)
   (when (global-bounds-cache-dirty-p cache)
