@@ -351,7 +351,7 @@ void main(){
                               :z (if (typep point 'vec2) 0.0 (vz point))
                               :scale scale))
 
-(defmethod debug-draw ((texture texture) &key (point (vec 0 0)) (scaling (vec 1)) remove)
+(defmethod debug-draw ((texture texture) &key (point (vec2 0 0)) (scaling (vec2 1)) remove)
   (let* ((draw (%debug-draw))
          (textures (textures draw))
          (idx (or (position texture textures :key #'texture) (fill-pointer textures)))
