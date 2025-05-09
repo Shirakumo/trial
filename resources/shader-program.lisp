@@ -101,6 +101,7 @@
 (declaim (inline %set-uniform))
 (defun %set-uniform (location data)
   (declare (optimize speed))
+  (declare (dynamic-extent data))
   (declare (type (signed-byte 32) location))
   #+sbcl (declare (sb-ext:muffle-conditions sb-ext:compiler-note))
   ;; FIXME: this kinda blows, man.
