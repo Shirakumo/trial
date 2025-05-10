@@ -8,9 +8,10 @@
                      collect (list pool
                                    (subpools pool)))))
     (loop for (pool subpools) in pools
-          do (let* ((source (truename (base pool)))
-                    (unused (loop for path in (unused-file-patterns pool)
-                                  collect (pathname-utils:merge-pathnames* path source))))
+          for source = (probe-file (base pool))
+          when source
+          do (let ((unused (loop for path in (unused-file-patterns pool)
+                                 collect (pathname-utils:merge-pathnames* path source))))
                (flet ((unused-file-p (src dst)
                         (declare (ignore dst))
                         (or (loop for sub-pool in subpools
