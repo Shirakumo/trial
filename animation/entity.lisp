@@ -89,12 +89,9 @@
   (unless (eq skinned-entity (animation-controller skinned-entity))
     (update (animation-controller skinned-entity) tt dt fc)))
 
-(define-shader-entity quat2-skinned-entity (base-animated-entity)
+(define-shader-entity quat2-skinned-entity (skinned-entity)
   ()
   (:shader-file (trial "renderer/skin-dquat.glsl")))
-
-(defmethod render-with :before ((pass shader-pass) (entity quat2-skinned-entity) (program shader-program))
-  (setf (uniform program "pose") (if (palette-texture entity) (bind-palette pass entity) 99)))
 
 (define-shader-entity animated-entity (skinned-entity morphed-entity)
   ())
