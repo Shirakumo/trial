@@ -10,6 +10,7 @@
 (define-accessor-wrapper-methods pose (base-animated-entity (animation-controller base-animated-entity)))
 (define-accessor-wrapper-methods palette (base-animated-entity (animation-controller base-animated-entity)))
 (define-accessor-wrapper-methods palette-texture (base-animated-entity (animation-controller base-animated-entity)))
+(define-accessor-wrapper-methods palette-type (base-animated-entity (animation-controller base-animated-entity)))
 
 (defmethod (setf mesh) :after ((meshes cons) (entity base-animated-entity))
   (unless (eq (animation-controller entity) entity)
@@ -75,7 +76,9 @@
 
 (defmethod (setf mesh-asset) :after ((asset asset) (entity skinned-entity))
   (unless (loaded-p asset)
-    (setf (palette entity) #(#.(meye 4)))))
+    (setf (palette entity) (ecase (palette-type entity)
+                             (mat4 #(#.(meye 4)))
+                             (quat2 #(#.(quat2) #.(quat2)))))))
 
 (defmethod render-with :before ((pass shader-pass) (entity skinned-entity) (program shader-program))
   ;; TODO: only compute the actual palette texture once it is needed in the render.
