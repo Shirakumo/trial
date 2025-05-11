@@ -153,7 +153,7 @@
                    while (<= 0 parent)
                    do (let ((temp (quat2)))
                         (declare (dynamic-extent temp))
-                        (nq* res (tquat2 (svref joints parent) temp)))))
+                        (nq2* res (tquat2 (svref joints parent) temp)))))
     result))
 
 (defmethod descendant-joint-p (joint root (pose pose))

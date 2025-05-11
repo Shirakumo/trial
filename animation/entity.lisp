@@ -74,12 +74,6 @@
   ((mesh :initform NIL :accessor mesh))
   (:shader-file (trial "renderer/skin-matrix.glsl")))
 
-(defmethod (setf mesh-asset) :after ((asset asset) (entity skinned-entity))
-  (unless (loaded-p asset)
-    (setf (palette entity) (ecase (palette-type entity)
-                             (mat4 #(#.(meye 4)))
-                             (quat2 #(#.(quat2) #.(quat2)))))))
-
 (defmethod render-with :before ((pass shader-pass) (entity skinned-entity) (program shader-program))
   ;; TODO: only compute the actual palette texture once it is needed in the render.
   ;;       otherwise it is computed every physics tick, which may be too often or too

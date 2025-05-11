@@ -59,7 +59,6 @@
     (let ((minv (make-array (length pose))))
       (dotimes (i (length minv) (setf (mat-inv-bind-pose skeleton) minv))
         (setf (svref minv i) (nminv (tmat (global-transform pose i))))))
-    #++
     (let ((qinv (make-array (length pose))))
       (dotimes (i (length qinv) (setf (quat-inv-bind-pose skeleton) qinv))
         (setf (svref qinv i) (q2conjugate (global-quat2 pose i)))))

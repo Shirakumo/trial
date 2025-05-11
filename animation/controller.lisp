@@ -426,8 +426,12 @@
 
 (defmethod (setf palette-type) :before (value (controller animation-controller))
   (ecase value
-    (mat4 (setf (width (palette-texture controller)) 3))
-    (quat2 (setf (width (palette-texture controller)) 2))))
+    (mat4
+     (setf (width (palette-texture controller)) 3)
+     (setf (palette controller) #(#.(meye 4))))
+    (quat2
+     (setf (width (palette-texture controller)) 2)
+     (setf (palette controller) #(#.(quat2))))))
 
 (defmethod observe-load-state :before ((entity animation-controller) (asset model) (state (eql :loaded)) (area staging-area))
   (dolist (clip (list-clips asset))
@@ -506,7 +510,7 @@
         (texinput (%adjust-array palette-data (* 8 (length pose)) (constantly 0f0)))
         (inv (quat-inv-bind-pose skeleton)))
     (dotimes (i (length palette))
-      (let* ((q2 (nq* (svref palette i) (svref inv i)))
+      (let* ((q2 (nq2* (svref palette i) (svref inv i)))
              (r (q2real q2))
              (d (q2dual q2))
              (idx (* i 8)))
