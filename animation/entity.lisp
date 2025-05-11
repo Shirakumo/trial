@@ -71,7 +71,7 @@
 (defmethod morphed-p ((entity entity)) NIL)
 
 (define-shader-entity skinned-entity (base-animated-entity)
-  ((mesh :initarg :mesh :initform NIL :accessor mesh))
+  ((mesh :initform NIL :accessor mesh))
   (:shader-file (trial "renderer/skin-matrix.glsl")))
 
 (defmethod (setf mesh-asset) :after ((asset asset) (entity skinned-entity))

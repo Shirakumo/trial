@@ -294,8 +294,12 @@ void main(){
   (3ds:bsize region))
 
 (defclass mesh-entity (entity)
-  ((mesh-asset :initform NIL :initarg :asset :accessor mesh-asset)
-   (mesh :initarg :mesh :initform NIL :accessor mesh)))
+  ((mesh-asset :initform NIL :accessor mesh-asset)
+   (mesh :initform NIL :accessor mesh)))
+
+(defmethod shared-initialize :after ((entity mesh-entity) slots &key (mesh NIL mesh-p) (asset NIL mesh-asset-p))
+  (when mesh-p (setf (mesh entity) mesh))
+  (when mesh-asset-p (setf (mesh-asset entity) asset)))
 
 (defmethod stage :after ((entity mesh-entity) (area staging-area))
   (register-load-observer area entity (mesh-asset entity))
@@ -334,15 +338,21 @@ void main(){
     (material (mesh entity))))
 
 (defclass multi-mesh-entity (entity)
-  ((mesh-asset :initform NIL :initarg :asset :accessor mesh-asset)
-   (mesh :initarg :mesh :initform NIL :accessor mesh)))
+  ((mesh-asset :initform NIL :accessor mesh-asset)
+   (mesh :initform NIL :accessor mesh)))
+
+(defmethod shared-initialize :after ((entity multi-mesh-entity) slots &key (mesh NIL mesh-p) (asset NIL mesh-asset-p))
+  (when mesh-p (setf (mesh entity) mesh))
+  (when mesh-asset-p (setf (mesh-asset entity) asset)))
 
 (defmethod stage :after ((entity multi-mesh-entity) (area staging-area))
   (register-load-observer area entity (mesh-asset entity))
   (stage (mesh-asset entity) area))
 
 (defmethod observe-load-state ((entity multi-mesh-entity) (asset asset) (state (eql :loaded)) (area staging-area))
-  (setf (mesh-asset entity) asset)
+  (if (eq (mesh-asset entity) asset)
+      (setf (mesh entity) (or (mesh entity) T))
+      (setf (mesh-asset entity) asset))
   (restage entity area))
 
 (define-transfer multi-mesh-entity (mesh-asset :by slot-value) mesh)
