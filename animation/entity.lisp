@@ -78,6 +78,10 @@
     (setf (palette entity) #(#.(meye 4)))))
 
 (defmethod render-with :before ((pass shader-pass) (entity skinned-entity) (program shader-program))
+  ;; TODO: only compute the actual palette texture once it is needed in the render.
+  ;;       otherwise it is computed every physics tick, which may be too often or too
+  ;;       infrequent. Regardless, to do this we need access to the frame counter during
+  ;;       rendering, for which there is no provision right now.
   (setf (uniform program "pose") (if (palette-texture entity) (bind-palette pass entity) 99)))
 
 (defmethod skinned-p ((entity skinned-entity))
