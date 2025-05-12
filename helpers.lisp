@@ -370,7 +370,7 @@ void main(){
     (setf (vertex-arrays entity) arrays)))
 
 (defmethod (setf mesh) (name (entity multi-mesh-entity))
-  (if (mesh-asset entity)
+  (if (and (mesh-asset entity) (loaded-p (mesh-asset entity)))
       (let ((mesh (gethash name (meshes (mesh-asset entity)))))
         (setf (mesh entity) (if mesh
                                 (list mesh)
