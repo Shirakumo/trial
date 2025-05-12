@@ -1,3 +1,4 @@
+#section VERTEX_SHADER
 uniform sampler1DArray pose;
 #include (trial::trial "quaternions.glsl")
 

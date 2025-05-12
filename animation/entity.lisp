@@ -91,8 +91,12 @@
     (update (animation-controller skinned-entity) tt dt fc)))
 
 (define-shader-entity quat2-skinned-entity (skinned-entity)
-  ()
-  (:shader-file (trial "renderer/skin-dquat.glsl")))
+  ((animation-controller :initform (make-instance 'animation-controller :palette-type 'quat2)))
+  (:shader-file (trial "renderer/skin-dquat.glsl"))
+  (:inhibit-shaders (skinned-entity :vertex-shader)))
+
+(defmethod (setf animation-controller) :after ((controller animation-controller) (entity quat2-skinned-entity))
+  (setf (palette-type controller) 'quat2))
 
 (define-shader-entity animated-entity (skinned-entity morphed-entity)
   ())

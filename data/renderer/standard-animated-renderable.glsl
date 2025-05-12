@@ -1,6 +1,5 @@
 #section VERTEX_SHADER
 #include "morph.glsl"
-#include "skin-matrix.glsl"
 layout (location = TRIAL_V_LOCATION) in vec3 in_position;
 layout (location = TRIAL_V_NORMAL) in vec3 in_normal;
 layout (location = TRIAL_V_UV) in vec2 in_uv;

@@ -13,6 +13,9 @@
     (nv+ (tlocation (local-transform entity)) (nv* vel dt))
     (handle tick (animation-controller entity))))
 
+(define-shader-entity quat2-rigging-entity (trial::quat2-skinned-entity rigging-entity)
+  ())
+
 (define-example rigging
   :title "Animated Model"
   :description "An example showing a rigged 3D model."
@@ -27,6 +30,10 @@
   (let ((layout (make-instance 'alloy:grid-layout :col-sizes '(120 140 T) :row-sizes '(30)))
         (focus (make-instance 'alloy:vertical-focus-list)))
     (alloy:enter "Palette Type" layout :row 0 :col 0)
-    (alloy:represent (trial::palette-type (animation-controller (node :rig SCENE)))
-                     'alloy:combo-set :value-set '(mat4 quat2) :layout-parent layout :focus-parent focus)
+    (let ((rep (alloy:represent (trial::palette-type (animation-controller (node :rig scene)))
+                                  'alloy:combo-set :value-set '(mat4 quat2) :layout-parent layout :focus-parent focus)))
+      (alloy:on alloy:value (value rep)
+        (ecase value
+          (mat4 (change-class (node :rig scene) 'rigging-entity))
+          (quat2 (change-class (node :rig scene) 'quat2-rigging-entity)))))
     (alloy:finish-structure panel layout focus)))

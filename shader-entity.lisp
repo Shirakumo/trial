@@ -413,6 +413,7 @@
 (defmethod make-shader-program ((entity shader-entity))
   (make-instance 'shader-program
                  :shaders (loop for (type source) in (shader-source entity)
+                                unless (eql type :global)
                                 collect (make-instance 'shader :type type :source source))
                  :buffers (buffers entity)))
 

@@ -1,3 +1,4 @@
+#section VERTEX_SHADER
 uniform sampler1DArray pose;
 
 mat4 pose_matrix(in int i){
