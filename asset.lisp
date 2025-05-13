@@ -86,7 +86,10 @@
 
 (defmethod print-object ((asset asset) stream)
   (print-unreadable-object (asset stream :type T)
-    (format stream "~a/~a" (when (pool asset) (name (pool asset))) (name asset))))
+    (format stream "~a/~a~@[ LOADED~]"
+            (when (pool asset) (name (pool asset)))
+            (name asset)
+            (loaded-p asset))))
 
 (defmethod describe-object ((asset asset) stream)
   (call-next-method)

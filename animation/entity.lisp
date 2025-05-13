@@ -48,6 +48,8 @@
   ((morphs :initform #() :accessor morphs))
   (:shader-file (trial "renderer/morph.glsl")))
 
+(define-transfer morphed-entity morphs)
+
 (defmethod (setf mesh) :after ((meshes cons) (entity morphed-entity))
   (let ((morphs ()))
     (dolist (mesh meshes)

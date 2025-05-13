@@ -89,7 +89,7 @@
     (declare (dynamic-extent mat))
     (nm* (model-matrix) (tmat (local-transform obj) mat))))
 
-(define-transfer transformed-entity tf)
+(define-transfer transformed-entity local-transform)
 
 (trivial-deprecate:declaim-deprecated (function tf)
                                       :software "trial"
@@ -322,7 +322,7 @@ void main(){
   (setf (vertex-array entity) (resource (mesh-asset entity) (name mesh))))
 
 (defmethod (setf mesh) (name (entity mesh-entity))
-  (let ((mesh (gethash name (meshes (mesh-asset entity)))))
+  (let ((mesh (find-mesh name (mesh-asset entity))))
     (if mesh
         (setf (mesh entity) mesh)
         #-trial-release
