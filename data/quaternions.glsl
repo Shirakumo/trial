@@ -5,6 +5,20 @@ vec4 quat_mul(vec4 q1, vec4 q2){
              -q2.x*q1.x - q2.y*q1.y - q2.z*q1.z + q2.w*q1.w);
 }
 
+mat2x4 quat2_normalized(mat2x4 dq){
+  float inv_mag = 1.0 / length(dq[0]);
+  dq[0] *= inv_mag;
+  dq[1] *= inv_mag;
+  return dq;
+}
+
+mat2x4 quat2_mul(mat2x4 l, mat2x4 r){
+  l = quat2_normalized(l);
+  r = quat2_normalized(r);
+  return mat2x4(quat_mul(l[0], r[0]),
+                quat_mul(l[0], r[1]) + quat_mul(l[1], r[0]));
+}
+
 vec4 quat2_vector(mat2x4 dq, vec3 v){
   vec4 real = dq[0];
   vec3 r_vector = real.xyz;
@@ -22,11 +36,4 @@ vec4 quat2_point(mat2x4 dq, vec3 v){
   vec4 conjugate = vec4(-real.xyz, real.w);
   vec3 t = quat_mul(conjugate, dual*2).xyz;
   return vec4(rotated+t, 1);
-}
-
-mat2x4 quat2_normalized(mat2x4 dq){
-  float inv_mag = 1.0 / length(dq[0]);
-  dq[0] *= inv_mag;
-  dq[1] *= inv_mag;
-  return dq;
 }
