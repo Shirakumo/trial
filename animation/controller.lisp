@@ -510,7 +510,7 @@
         (texinput (%adjust-array palette-data (* 8 (length pose)) (constantly 0f0)))
         (inv (quat-inv-bind-pose skeleton)))
     (dotimes (i (length palette))
-      (let* ((q2 (nq2* (svref palette i) (svref inv i)))
+      (let* ((q2 (!q2* (svref palette i) (svref inv i) (svref palette i)))
              (r (q2real q2))
              (d (q2dual q2))
              (idx (* i 8)))
