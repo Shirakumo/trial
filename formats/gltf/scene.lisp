@@ -65,9 +65,6 @@
            (make-instance (etypecase (or (gethash mesh-name meshes)
                                          (gethash (cons mesh-name 0) meshes))
                             (static-mesh 'basic-entity)
-                            ;; FIXME: instead of turning each skin into an animated entity
-                            ;;        we should share the pose between them and only make one
-                            ;;        animated entity the controller
                             (animated-mesh 'basic-animated-entity))
                           :lods (loop for i from -1
                                       for threshold across (gltf:lod-screen-coverage node)
@@ -76,13 +73,15 @@
                           :transform (gltf-node-transform node)
                           :name (gltf-name node)
                           :asset generator
-                          :mesh mesh-name)))
+                          :mesh (trial:find-meshes mesh-name meshes))))
         (T
          (make-instance 'basic-node :transform (gltf-node-transform node)
                                     :name (gltf-name node)))))
 
 (defmethod translate-node (node entity gltf)
   (let ((found NIL))
+    ;; KLUDGE: alias animation controllers shared between children
+    ;;         by turning the current node into a controller instead.
     (do-scene-graph (child entity)
       (unless (eq child entity)
         (when (typep child 'animated-entity)
