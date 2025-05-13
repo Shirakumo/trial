@@ -193,7 +193,7 @@
 (defmethod make-pass-framebuffer ((pass shader-pass))
   (let ((width 0) (height 0))
     (loop for port in (flow:ports pass)
-          do (when (typep port 'output)
+          do (when (and (typep port 'output) (texture port))
                (setf width (max width (width (texture port))))
                (setf height (max height (height (texture port))))))
     (when (= 0 width)
@@ -594,6 +594,17 @@ out vec4 color;
 void main(){
   color = texture(previous_pass, uv);
 }")
+
+(define-shader-pass standalone-shader-pass ()
+  ())
+
+(defmethod stage :before ((pass standalone-shader-pass) (area staging-area))
+  (dolist (port (flow:ports pass))
+    (when (and (typep port '(and (or static-input flow:out-port) texture-port))
+               (null (texture port)))
+      (setf (texture port) (make-port-texture port (width *context*) (height *context*)))))
+  (unless (framebuffer pass)
+    (setf (framebuffer pass) (make-pass-framebuffer pass))))
 
 (define-shader-pass compute-pass (single-shader-pass)
   ((work-groups :initform (vec 1 1 1) :initarg :work-groups :accessor work-groups)
