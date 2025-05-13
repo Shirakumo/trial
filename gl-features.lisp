@@ -174,8 +174,11 @@
      (gl:blend-func-separate :one-minus-dst-alpha :one-minus-src-alpha :one :one-minus-src-alpha)
      (gl:blend-equation :func-add))
     (:add
-     (gl:blend-func-separate :src-alpha :one :one :one-minus-src-alpha)
+     (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha)
      (gl:blend-equation :func-add))
+    (:subtract
+     (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha)
+     (gl:blend-equation :func-subtract))
     (:one
      (gl:blend-func-separate :one :one :one :one)
      (gl:blend-equation :func-add))
