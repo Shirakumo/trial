@@ -1873,7 +1873,11 @@
    #:single-shader-pass
    #:single-shader-scene-pass
    #:shader-program
-   #:post-effect-pass)
+   #:post-effect-pass
+   #:standalone-shader-pass
+   #:compute-pass
+   #:work-groups
+   #:barrier)
   ;; skybox.lisp
   (:export
    #:skybox
