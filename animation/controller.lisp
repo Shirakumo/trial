@@ -20,7 +20,7 @@
   skeleton)
 
 (defmethod observe-load-state :after ((controller skeleton-controller) (asset model) (state (eql :loaded)) (area staging-area))
-  (stage controller area))
+  (restage controller area))
 
 (defmethod stage :after ((controller skeleton-controller) (area staging-area))
   (stage (skeleton controller) area))
