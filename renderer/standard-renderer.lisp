@@ -324,6 +324,8 @@
 (define-shader-entity per-array-material-renderable (standard-renderable)
   ((materials :initarg :materials :initform #() :accessor materials)))
 
+(define-transfer per-array-material-renderable materials)
+
 (defmethod stage :after ((renderable per-array-material-renderable) (area staging-area))
   (loop for material across (materials renderable)
         do (stage material area)))
@@ -331,8 +333,6 @@
 (defmethod deregister :after ((renderable per-array-material-renderable) (pass standard-render-pass))
   (loop for material across (materials renderable)
         do (disable material pass)))
-
-(define-transfer per-array-material-renderable materials)
 
 (defmethod render-with ((pass standard-render-pass) (renderable per-array-material-renderable) program)
   ;; KLUDGE: we can't do this in RENDER as we don't have access to the PASS variable, which we

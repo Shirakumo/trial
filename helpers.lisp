@@ -309,14 +309,15 @@ void main(){
   (setf (mesh-asset entity) asset)
   (restage entity area))
 
-(define-transfer mesh-entity (mesh-asset :by slot-value) mesh)
+(define-transfer mesh-entity (mesh-asset :by slot-value) (mesh :by slot-value))
 
 (defmethod (setf mesh-asset) :around (thing (entity mesh-entity))
   (unless (eq thing (mesh-asset entity))
     (call-next-method)))
 
 (defmethod (setf mesh-asset) :after ((asset asset) (entity mesh-entity))
-  (setf (mesh entity) (or (mesh entity) T)))
+  (when (loaded-p asset)
+    (setf (mesh entity) (or (mesh entity) T))))
 
 (defmethod (setf mesh) ((mesh mesh-data) (entity mesh-entity))
   (setf (vertex-array entity) (resource (mesh-asset entity) (name mesh))))
@@ -350,24 +351,26 @@ void main(){
   (stage (mesh-asset entity) area))
 
 (defmethod observe-load-state ((entity multi-mesh-entity) (asset asset) (state (eql :loaded)) (area staging-area))
-  (if (eq (mesh-asset entity) asset)
-      (setf (mesh entity) (or (mesh entity) T))
-      (setf (mesh-asset entity) asset))
+  (setf (mesh-asset entity) asset)
+  (setf (mesh entity) (or (mesh entity) T))
   (restage entity area))
 
-(define-transfer multi-mesh-entity (mesh-asset :by slot-value) mesh)
+(define-transfer multi-mesh-entity (mesh-asset :by slot-value) (mesh :by slot-value))
 
 (defmethod (setf mesh-asset) :around (thing (entity multi-mesh-entity))
   (unless (eq thing (mesh-asset entity))
     (call-next-method)))
 
 (defmethod (setf mesh-asset) :after ((asset asset) (entity multi-mesh-entity))
-  (setf (mesh entity) (or (mesh entity) T)))
+  (when (loaded-p asset)
+    (setf (mesh entity) (or (mesh entity) T))))
 
 (defmethod (setf mesh) ((meshes cons) (entity multi-mesh-entity))
-  (let ((arrays (make-array (length meshes))))
-    (map-into arrays (lambda (mesh) (resource (mesh-asset entity) (name mesh))) meshes)
-    (setf (vertex-arrays entity) arrays)))
+  (if (and (mesh-asset entity) (loaded-p (mesh-asset entity)))
+      (let ((arrays (make-array (length meshes))))
+        (map-into arrays (lambda (mesh) (resource (mesh-asset entity) (name mesh))) meshes)
+        (setf (vertex-arrays entity) arrays))
+      (setf (slot-value entity 'mesh) meshes)))
 
 (defmethod (setf mesh) (name (entity multi-mesh-entity))
   (if (mesh-asset entity)
