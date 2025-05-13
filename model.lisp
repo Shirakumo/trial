@@ -51,6 +51,20 @@
   (loop for scene being the hash-values of (scenes model)
         thereis (node name scene)))
 
+(defmethod find-meshes (name (meshes hash-table) &optional (errorp T))
+  (let ((mesh (gethash name meshes)))
+    (if mesh
+        (list mesh)
+        (or (loop for i from 0
+                  for mesh = (gethash (cons name i) meshes)
+                  while mesh collect mesh)
+            (when errorp
+              (error "No mesh named ~s found~:[, as there are no meshes available at all.~;. The following are known:~:*~{~%  ~s~}~]"
+                     name (alexandria:hash-table-keys meshes)))))))
+
+(defmethod find-meshes (name (model model) &optional (errorp T))
+  (find-meshes name (meshes model) errorp))
+
 (defmethod clear ((model model))
   (clrhash (materials model))
   (clrhash (meshes model))

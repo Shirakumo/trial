@@ -1628,6 +1628,7 @@
    #:scenes
    #:find-material
    #:find-mesh
+   #:find-meshes
    #:find-clip
    #:find-scene
    #:list-clips

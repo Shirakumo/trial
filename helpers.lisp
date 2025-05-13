@@ -370,16 +370,8 @@ void main(){
     (setf (vertex-arrays entity) arrays)))
 
 (defmethod (setf mesh) (name (entity multi-mesh-entity))
-  (if (and (mesh-asset entity) (loaded-p (mesh-asset entity)))
-      (let ((mesh (gethash name (meshes (mesh-asset entity)))))
-        (setf (mesh entity) (if mesh
-                                (list mesh)
-                                (or (loop for i from 0
-                                          for mesh = (gethash (cons name i) (meshes (mesh-asset entity)))
-                                          while mesh collect mesh)
-                                    #-trial-release
-                                    (error "No mesh named ~s found. The following are known:~{~%  ~s~}"
-                                           name (alexandria:hash-table-keys (meshes (mesh-asset entity))))))))
+  (if (mesh-asset entity)
+      (setf (mesh entity) (find-meshes name (mesh-asset entity)))
       (setf (slot-value entity 'mesh) name)))
 
 (defmethod (setf mesh) ((all (eql T)) (entity multi-mesh-entity))
