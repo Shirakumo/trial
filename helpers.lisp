@@ -298,15 +298,15 @@ void main(){
    (mesh :initform NIL :accessor mesh)))
 
 (defmethod shared-initialize :after ((entity mesh-entity) slots &key (mesh NIL mesh-p) (asset NIL mesh-asset-p))
-  (when mesh-p (setf (mesh entity) mesh))
-  (when mesh-asset-p (setf (mesh-asset entity) asset)))
+  (when mesh-asset-p (setf (mesh-asset entity) asset))
+  (when mesh-p (setf (mesh entity) mesh)))
 
 (defmethod stage :after ((entity mesh-entity) (area staging-area))
   (register-load-observer area entity (mesh-asset entity))
   (stage (mesh-asset entity) area))
 
 (defmethod observe-load-state ((entity mesh-entity) (asset asset) (state (eql :loaded)) (area staging-area))
-  (setf (mesh-asset entity) asset)
+  (setf (mesh entity) (or (mesh entity) T))
   (restage entity area))
 
 (define-transfer mesh-entity (mesh-asset :by slot-value) (mesh :by slot-value))
@@ -323,12 +323,12 @@ void main(){
   (setf (vertex-array entity) (resource (mesh-asset entity) (name mesh))))
 
 (defmethod (setf mesh) (name (entity mesh-entity))
-  (let ((mesh (find-mesh name (mesh-asset entity))))
-    (if mesh
-        (setf (mesh entity) mesh)
-        #-trial-release
-        (error "No mesh named ~s found. The following are known:~{~%  ~s~}"
-               name (alexandria:hash-table-keys (meshes (mesh-asset entity)))))))
+  (if (mesh-asset entity)
+      (setf (mesh entity) (find-mesh name (mesh-asset entity) T))
+      (setf (slot-value entity 'mesh) name)))
+
+(defmethod (setf mesh) ((none null) (entity mesh-entity))
+  (setf (slot-value entity 'mesh) NIL))
 
 (defmethod (setf mesh) ((anything (eql T)) (entity mesh-entity))
   (loop for mesh being the hash-values of (meshes (mesh-asset entity))
@@ -343,15 +343,14 @@ void main(){
    (mesh :initform NIL :accessor mesh)))
 
 (defmethod shared-initialize :after ((entity multi-mesh-entity) slots &key (mesh NIL mesh-p) (asset NIL mesh-asset-p))
-  (when mesh-p (setf (mesh entity) mesh))
-  (when mesh-asset-p (setf (mesh-asset entity) asset)))
+  (when mesh-asset-p (setf (mesh-asset entity) asset))
+  (when mesh-p (setf (mesh entity) mesh)))
 
 (defmethod stage :after ((entity multi-mesh-entity) (area staging-area))
   (register-load-observer area entity (mesh-asset entity))
   (stage (mesh-asset entity) area))
 
 (defmethod observe-load-state ((entity multi-mesh-entity) (asset asset) (state (eql :loaded)) (area staging-area))
-  (setf (mesh-asset entity) asset)
   (setf (mesh entity) (or (mesh entity) T))
   (restage entity area))
 
@@ -367,18 +366,21 @@ void main(){
     (setf (mesh entity) (or (mesh entity) T))))
 
 (defmethod (setf mesh) ((meshes cons) (entity multi-mesh-entity))
-  (if (and (mesh-asset entity) (loaded-p (mesh-asset entity)))
-      (let ((arrays (make-array (length meshes))))
-        (map-into arrays (lambda (mesh) (resource (mesh-asset entity) (name mesh))) meshes)
-        (setf (vertex-arrays entity) arrays))
-      (setf (slot-value entity 'mesh) meshes))
+  (setf (slot-value entity 'mesh) meshes)
+  (when (mesh-asset entity)
+    (let ((arrays (make-array (length meshes))))
+      (map-into arrays (lambda (mesh) (resource (mesh-asset entity) (name mesh))) meshes)
+      (setf (vertex-arrays entity) arrays)))
   meshes)
 
 (defmethod (setf mesh) (name (entity multi-mesh-entity))
   (if (mesh-asset entity)
-      (setf (mesh entity) (find-meshes name (mesh-asset entity)))
+      (setf (mesh entity) (find-meshes name (mesh-asset entity) T))
       (setf (slot-value entity 'mesh) name))
   name)
+
+(defmethod (setf mesh) ((none null) (entity multi-mesh-entity))
+  (setf (slot-value entity 'mesh) NIL))
 
 (defmethod (setf mesh) ((all (eql T)) (entity multi-mesh-entity))
   (setf (mesh entity) (alexandria:hash-table-values (meshes (mesh-asset entity))))
