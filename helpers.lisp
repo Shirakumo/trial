@@ -359,7 +359,8 @@ void main(){
 
 (defmethod (setf mesh-asset) :around (thing (entity multi-mesh-entity))
   (unless (eq thing (mesh-asset entity))
-    (call-next-method)))
+    (call-next-method))
+  thing)
 
 (defmethod (setf mesh-asset) :after ((asset asset) (entity multi-mesh-entity))
   (when (loaded-p asset)
@@ -370,15 +371,18 @@ void main(){
       (let ((arrays (make-array (length meshes))))
         (map-into arrays (lambda (mesh) (resource (mesh-asset entity) (name mesh))) meshes)
         (setf (vertex-arrays entity) arrays))
-      (setf (slot-value entity 'mesh) meshes)))
+      (setf (slot-value entity 'mesh) meshes))
+  meshes)
 
 (defmethod (setf mesh) (name (entity multi-mesh-entity))
   (if (mesh-asset entity)
       (setf (mesh entity) (find-meshes name (mesh-asset entity)))
-      (setf (slot-value entity 'mesh) name)))
+      (setf (slot-value entity 'mesh) name))
+  name)
 
 (defmethod (setf mesh) ((all (eql T)) (entity multi-mesh-entity))
-  (setf (mesh entity) (alexandria:hash-table-values (meshes (mesh-asset entity)))))
+  (setf (mesh entity) (alexandria:hash-table-values (meshes (mesh-asset entity))))
+  all)
 
 (defclass lod-entity (entity)
   ((lods :initform #() :reader lods)))

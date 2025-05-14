@@ -235,6 +235,8 @@
   (:shader-file (trial "renderer/standard-renderable.glsl"))
   (:inhibit-shaders (shader-entity :fragment-shader)))
 
+(define-transfer standard-renderable vertex-arrays)
+
 (defmethod shared-initialize :after ((renderable standard-renderable) slots &key vertex-array)
   (cond (vertex-array
          (setf (vertex-array renderable) vertex-array))
@@ -244,8 +246,6 @@
 (defmethod stage :after ((renderable standard-renderable) (area staging-area))
   (loop for vao across (vertex-arrays renderable)
         do (stage vao area)))
-
-(define-transfer standard-renderable vertex-arrays)
 
 (defmethod render-with :before ((pass shader-pass) (renderable standard-renderable) program)
   (prepare-pass-program pass program)
@@ -299,11 +299,11 @@
 (define-shader-entity single-material-renderable (standard-renderable)
   ((material :initarg :material :accessor material)))
 
+(define-transfer single-material-renderable material)
+
 (defmethod stage :after ((renderable single-material-renderable) (area staging-area))
   (when (material renderable)
     (stage (material renderable) area)))
-
-(define-transfer single-material-renderable material)
 
 (defmethod render-with ((pass standard-render-pass) (object single-material-renderable) program)
   (when (and (material object) (object-renderable-p (material object) pass))
