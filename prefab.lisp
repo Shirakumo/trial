@@ -72,7 +72,7 @@
                     `(asset ,@(loop for part in asset collect `',part))))))
        
        (defmethod instantiate-prefab ((,class ,class) (,assetvar model-file))
-         ,@(loop for (type . args) in (or changes '((reparent)))
+         ,@(loop for (type . args) in (or changes '((<-)))
                  collect (expand-prefab-expression type class assetvar args))
          ,class))))
 
