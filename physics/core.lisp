@@ -77,12 +77,9 @@
    (k2 :initarg :k2 :initform 1.0 :accessor k2)))
 
 (defmethod apply-force ((force drag-force) (entity physics-entity) dt)
-  (let* ((force (vcopy (velocity entity)))
-         (coeff (vlength force))
+  (let* ((coeff (vlength (velocity force)))
          (coeff (+ (* (k1 force) coeff) (* (k2 force) coeff coeff))))
-    (nvunit force)
-    (nv* force (- coeff))
-    (nv+ (force entity) force)))
+    (nv+* (force entity) (vunit* (velocity entity)) (- coeff))))
 
 (defclass spring-force (force)
   ((anchor :initarg :anchor :accessor anchor)
@@ -92,10 +89,10 @@
    (rest-length :initarg :rest-length :initform 0.0 :accessor rest-length)))
 
 (defmethod apply-force ((force spring-force) (entity physics-entity) dt)
-  (let* ((force (v- (location entity) (location (anchor force))))
-         (coeff (* (abs (- (vlength force) (rest-length force)))
+  (let* ((pull (v- (location entity) (location (anchor force))))
+         (coeff (* (abs (- (vlength pull) (rest-length force)))
                    (spring-constant force))))
-    (nv+ (force entity) (nv* (nvunit force) (- coeff)))))
+    (nv+ (force entity) (nv* (nvunit* pull) (- coeff)))))
 
 (defclass stiff-spring-force (force)
   ((anchor :initarg :anchor :accessor anchor)
@@ -115,7 +112,7 @@
                       (exp (* -0.5 damping dt))))
          (accel (nv- (nv* (v- target relative) (/ (* dt dt)))
                      (v* (velocity entity) dt))))
-    (nv+ (force entity) (nv* accel (mass entity)))))
+    (nv+* (force entity) accel (mass entity))))
 
 (defclass bungee-force (spring-force)
   ())
@@ -125,7 +122,7 @@
          (coeff (* (- (vlength force) (rest-length force))
                    (spring-constant force))))
     (when (<= 0.0 coeff)
-      (nv+ (force entity) (nv* (nvunit force) (- coeff))))))
+      (nv+* (force entity) (nvunit* force) (- coeff)))))
 
 (defclass located-force (force)
   ((location :initform (vec 0 0 0) :initarg :location :reader location)))
