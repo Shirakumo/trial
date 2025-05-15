@@ -367,7 +367,11 @@ void main(){
 
 (defmethod (setf mesh) ((meshes cons) (entity multi-mesh-entity))
   (setf (slot-value entity 'mesh) meshes)
-  (when (mesh-asset entity)
+  ;; KLUDGE: the check for empty vertex arrays is to prevent clobbering the arrays the
+  ;;         user might have manually set during load state observation. However, this
+  ;;         introduces an issue: if the user manually sets the mesh, then the VAOs
+  ;;         won't be updated as expected.
+  (when (and (mesh-asset entity) (= 0 (length (vertex-arrays entity))))
     (let ((arrays (make-array (length meshes))))
       (map-into arrays (lambda (mesh) (resource (mesh-asset entity) (name mesh))) meshes)
       (setf (vertex-arrays entity) arrays)))

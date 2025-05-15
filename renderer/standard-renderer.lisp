@@ -346,9 +346,14 @@
                (render vao program)))))
 
 (defmethod (setf mesh) :after ((meshes cons) (renderable per-array-material-renderable))
-  (let ((arrays (make-array (length meshes))))
-    (map-into arrays (lambda (m) (or (material m) (material 'none))) meshes)
-    (setf (materials renderable) arrays)))
+  ;; KLUDGE: the check for empty material arrays is to prevent clobbering the arrays the
+  ;;         user might have manually set during load state observation. However, this
+  ;;         introduces an issue: if the user manually sets the mesh, then the materials
+  ;;         won't be updated as expected.
+  (when (= 0 (length (materials renderable)))
+    (let ((arrays (make-array (length meshes))))
+      (map-into arrays (lambda (m) (or (material m) (material 'none))) meshes)
+      (setf (materials renderable) arrays))))
 
 (define-shader-pass light-cache-render-pass (standard-render-pass)
   ((light-cache :initform (org.shirakumo.fraf.trial.space.kd-tree:make-kd-tree) :reader light-cache)
