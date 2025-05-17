@@ -249,6 +249,12 @@
   ;; This means something slightly different to mixed:done-p
   (not (harmony:active-p (voice voice))))
 
+(defmethod trial::volume ((voice voice))
+  (mixed:volume (voice voice)))
+
+(defmethod (setf trial::volume) (value (voice voice))
+  (setf (mixed:volume (voice voice)) value))
+
 (defmethod trial:seek ((voice voice) to)
   (mixed:seek (voice voice) to :by :second))
 
