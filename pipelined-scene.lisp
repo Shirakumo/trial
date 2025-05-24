@@ -9,6 +9,10 @@
 (defmethod preload ((name symbol) (scene scene))
   (preload (make-instance name) scene))
 
+(defmethod preload ((pool pool) (scene scene))
+  (dolist (asset (list-assets pool) pool)
+    (preload asset scene)))
+
 (defmethod setup-scene :around (main (scene pipelined-scene))
   (prog1 (call-next-method)
     ;; We only bother packing the pipeline if it's been set up in any way.
