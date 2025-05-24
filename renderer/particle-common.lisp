@@ -1,5 +1,17 @@
 (in-package #:org.shirakumo.fraf.trial)
 
+(defun map-particle-force-field-type (type)
+  (case type
+    ((0 NIL :none) 0)
+    ((1 :point) 1)
+    ((2 :direction) 2)
+    ((3 :plane) 3)
+    ((4 :vortex) 4)
+    ((5 :sphere) 5)
+    ((6 :planet) 6)
+    ((7 :brake) 7)
+    (T type)))
+
 (define-gl-struct (particle-force-field :layout-standard std430)
   (type :int :initform 0)
   (position :vec3 :initform (vec 0 0 0))
@@ -161,15 +173,7 @@
           for i from 0
           for target = (elt (slot-value struct 'particle-force-fields) i)
           do (destructuring-bind (&key (type :point) (position (vec 0 0 0)) (strength 0.0) (range 0.0) (normal +vy3+)) info
-               (setf (slot-value target 'type) (ecase type
-                                                 ((NIL :none) 0)
-                                                 (:point 1)
-                                                 (:direction 2)
-                                                 (:plane 3)
-                                                 (:vortex 4)
-                                                 (:sphere 5)
-                                                 (:planet 6)
-                                                 (:brake 7)))
+               (setf (slot-value target 'type) (map-particle-force-field-type type))
                (setf (slot-value target 'position) position)
                (setf (slot-value target 'strength) strength)
                (setf (slot-value target 'range) range)
