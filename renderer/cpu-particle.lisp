@@ -1,11 +1,12 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defstruct (raw-particle
-            (:constructor make-raw-particle (&optional location velocity))
+            (:constructor make-raw-particle (&optional location velocity age))
             (:copier NIL)
             (:predicate NIL))
   (location (vec 0 0 0) :type vec3)
-  (velocity (vec 0 0 0) :type vec3))
+  (velocity (vec 0 0 0) :type vec3)
+  (age 0.0 :type single-float))
 
 (defmethod apply-force ((field particle-force-field) (particle raw-particle) dt)
   ;; FIXME: this produces a ton of garbage due to std430-refs from the field struct
@@ -69,7 +70,7 @@
                    (aref data (+ in 4))
                    (aref data (+ in 5))))
          (tt (aref data (+ in 6)))
-         (particle (make-raw-particle loc vel)))
+         (particle (make-raw-particle loc vel tt)))
     (declare (dynamic-extent loc vel particle))
     ;; Perform simulation
     (loop with fields = (particle-force-fields force-fields)
