@@ -580,6 +580,8 @@
    #:outer-radius)
   ;; renderer/materials.lisp
   (:export
+   #:random
+   #:perlin
    #:missing
    #:black
    #:white

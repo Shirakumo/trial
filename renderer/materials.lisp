@@ -23,6 +23,13 @@
   :min-filter :linear :mag-filter :linear
   :wrapping '(:repeat :repeat :repeat))
 
+(define-asset (trial perlin) image
+    #p"perlin.raw"
+  :internal-format :red
+  :swizzle '(:r :r :r 1)
+  :min-filter :linear
+  :mag-filter :linear)
+
 (define-asset (trial missing) static 'texture
   :pixel-data (with-image (16 16 3)
                 (if (< (mod (+ x y) 16) 8)
