@@ -162,18 +162,21 @@ uniform int isometric = 0;
 out vec2 pix_uv;
 out vec2 world_pos;
 
-vec2 rotate(vec2 uv){
+vec2 rotate(vec2 uv) {
   return vec2(uv.x + uv.y, uv.y - uv.x);
 }
 
-void main(){
-  vec2 vert = (vertex.xy*map_size*tile_size*0.5);
-  if(0 < isometric){
+void main() {
+  vec2 vert = (vertex.xy * map_size * tile_size * 0.5);
+
+  if(0 < isometric) {
     vert.x *= 0.5;
-    vert = rotate(vert);
-    vert.x *= 2;
+    vert = rotate(vert) * 0.5; // TODO: Why does it double the size without this halving?
+    vert.x *= 2.0;
   }
+
   vec4 temp = model_matrix * vec4(vert, 0, 1);
+
   gl_Position = projection_matrix * view_matrix * temp;
   world_pos = temp.xy;
   pix_uv = vertex_uv * map_size;
@@ -184,32 +187,95 @@ void main(){
 uniform usampler2D tilemap;
 uniform sampler2D tileset;
 uniform float visibility = 1.0;
+uniform vec2 map_size;
 uniform vec2 tile_size = vec2(16);
 uniform int isometric = 0;
 in vec2 pix_uv;
 in vec2 world_pos;
 out vec4 color;
 
-vec2 rotate(vec2 uv){
-  return vec2(uv.x + uv.y, uv.y - uv.x);
-}
-
-void main(){
-  // Calculate tilemap index and pixel offset within tile.
-  ivec2 pixel_xy;
-  ivec2 map_xy = ivec2(pix_uv);
-  vec2 uv = pix_uv;
-  if(0 < isometric){
-    uv = rotate(uv*0.5);
-    int row = ((map_xy.y + map_xy.x) % 2 == 0)? 1 : 0;
-    uv.x += 0.5;
-    uv += row*0.5;
-  }
-  pixel_xy = ivec2((uv-floor(uv)) * tile_size);
-
+vec4 fetch_texel_for(vec2 uv, ivec2 map_xy) {
   // Look up tileset index from tilemap and pixel from tileset.
   uvec2 tile = texelFetch(tilemap, map_xy, 0).rg;
-  ivec2 tile_xy = ivec2(tile)*ivec2(tile_size)+pixel_xy;
-  color = texelFetch(tileset, tile_xy, 0);
+  ivec2 pixel_xy = ivec2((uv - floor(uv)) * tile_size);
+  ivec2 tile_xy = ivec2(tile) * ivec2(tile_size) + pixel_xy;
+
+  return texelFetch(tileset, tile_xy, 0);
+}
+
+bool is_inside_map(ivec2 map_xy) {
+  return 0 <= map_xy.x && 0 <= map_xy.y && map_xy.x < map_size.x && map_xy.y < map_size.y;
+}
+
+bool is_pixel_edge(vec2 uv) {
+  ivec2 tile_xy = ivec2(uv * tile_size);
+  return (
+    tile_xy.x <= 0 ||
+    tile_xy.y <= 0 ||
+    tile_size.x - 1 <= tile_xy.x ||
+    tile_size.y - 1 <= tile_xy.y
+  );
+}
+
+vec2 shift_to_diamond(vec2 uv, ivec2 map_xy) {
+  vec2 ruv = uv * 0.5;
+  ruv = vec2(ruv.x + ruv.y, ruv.y - ruv.x); // Rotate
+  ruv.x += 0.5;
+
+  if((map_xy.y + map_xy.x) % 2 == 0)
+    ruv += 0.5;
+
+  return ruv;
+}
+
+void main() {
+  // Calculate tilemap index and pixel offset within tile.
+  ivec2 map_xy = ivec2(pix_uv);
+
+  if(0 < isometric) { // Isometric view.
+
+    vec2 tile_uv = pix_uv - floor(pix_uv);
+    vec2 edge_uv = tile_uv;
+
+    // Distances to the nearest edge of the tile for each axis.
+    if(0.5 < edge_uv.x)
+      edge_uv.x = 1.0 - edge_uv.x;
+    if(0.5 < edge_uv.y)
+      edge_uv.y = 1.0 - edge_uv.y;
+
+    color = vec4(0);
+
+    if(is_inside_map(map_xy)) { // Get current tile pixel color.
+      vec2 uv = shift_to_diamond(pix_uv, map_xy);
+      color = fetch_texel_for(uv, map_xy);
+    }
+
+    if(color.a == 0 && is_pixel_edge(tile_uv)) {
+      // Get the edge pixel from the neighbour so that it doesn't cut.
+      // Note: The x-axis advances to bottom right and y-axis to top right.
+
+      if(tile_uv.x < tile_uv.y) { // Top half.
+        if(edge_uv.x < edge_uv.y)
+          map_xy.x -= 1;
+        else
+          map_xy.y += 1;
+      }
+      else if(edge_uv.x < edge_uv.y) { // Bottom half.
+        map_xy.x += 1;
+      }
+      else {
+        map_xy.y -= 1;
+      }
+
+      if(is_inside_map(map_xy)) {
+        vec2 uv = shift_to_diamond(pix_uv, map_xy);
+        color = fetch_texel_for(uv, map_xy);
+      }
+    }
+  }
+  else { // Square tilemap.
+    color = fetch_texel_for(pix_uv, map_xy);
+  }
+
   color.a *= visibility;
 }")
