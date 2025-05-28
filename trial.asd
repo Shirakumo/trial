@@ -208,6 +208,7 @@
                :quickhull
                :random-sampling
                :random-state
+               :random-noise
                :sha3
                :simple-tasks
                :system-locale

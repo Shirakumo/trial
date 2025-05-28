@@ -10,6 +10,7 @@
     ((5 :sphere) 5)
     ((6 :planet) 6)
     ((7 :brake) 7)
+    ((8 :turbulence) 8)
     (T type)))
 
 (define-gl-struct (particle-force-field :layout-standard std430)

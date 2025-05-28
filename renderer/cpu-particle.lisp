@@ -55,7 +55,15 @@
                  (T
                   (nv+* force dir (/ strength (* dist dist)))))))
         (7                              ; Brake
-         (!v* force velocity (- strength)))))
+         (!v* force velocity (- strength)))
+        (8                              ; Turbulence
+         (let* ((offset (mod (raw-particle-age particle) 256.0))
+                (f 4.0))
+           (noise:with-sample s (noise:curl/3d (varr location) f (noise:xxhash) #'noise:perlin/3d offset)
+             (declare (ignore s))
+             (incf (vx force) (* strength sdx))
+             (incf (vy force) (* strength sdy))
+             (incf (vz force) (* strength sdz)))))))
     (nv+* (raw-particle-velocity particle) force dt)))
 
 (defun %simulate-particle (data in out dt force-fields)

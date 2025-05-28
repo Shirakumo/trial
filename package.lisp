@@ -20,6 +20,7 @@
    (#:depot #:org.shirakumo.depot)
    (#:random #:org.shirakumo.random-state)
    (#:sampling #:org.shirakumo.random-sampling)
+   (#:noise #:org.shirakumo.random-noise)
    #+windows (#:com #:org.shirakumo.com-on))
   ;; animation/asset.lisp
   (:export
