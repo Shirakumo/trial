@@ -242,7 +242,11 @@
                (defmethod clear :after ((event ,name))
                  ,@(loop for (slot default) in slots
                          unless (eql default 'arg!)
-                         collect `(setf (slot-value event ',slot) ,default)))))
+                         collect `(setf (slot-value event ',slot) ,default)))
+               (defmethod <- progn ((target ,name) (source ,name))
+                 ,@(loop for (slot default) in slots
+                         collect `(setf (slot-value target ',slot) (slot-value source ',slot)))
+                 target)))
          ,@(when pool
              `((define-event-pool ,name ,@(unless (eql pool T) (list pool)))))))))
 
