@@ -7,6 +7,9 @@
 
 (defmethod clear ((event event)) event)
 
+(defmethod clone ((event event) &key)
+  (<- (allocate-instance (class-of event)) event))
+
 (defclass listener ()
   ())
 
