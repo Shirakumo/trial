@@ -302,9 +302,11 @@
           (update-buffer-data particle-buffer T :count (* live-particles 8 4)))))))
 
 (defmethod emit ((emitter cpu-particle-emitter) count &rest particle-options &key vertex-array location orientation scaling transform &allow-other-keys)
-  (setf (particle-options emitter) (remf* particle-options :vertex-array :location :orientation :scaling :transform))
-  (let ((local (transform)))
+  (let ((new-options (remf* particle-options :vertex-array :location :orientation :scaling :transform)) old-options
+        (local (transform)))
     (declare (dynamic-extent local))
+    (when new-options
+      (setf old-options (shiftf (particle-options emitter) new-options)))
     (t<- local (the transform (local-transform emitter)))
     (when location (v<- (tlocation local) location))
     (when scaling (v<- (tscaling local) scaling))
@@ -336,7 +338,10 @@
             (setf (nth 0 (texture-source-src src)) (truncate min-prop 4))
             (setf (nth 3 (texture-source-dst src)) (truncate (- (+ 24 max-prop) min-prop) 4))
             (activate particle-property-buffer)
-            (upload-texture-source src particle-property-buffer)))))))
+            (upload-texture-source src particle-property-buffer)))))
+    (when old-options
+      ;; FIXME: this is slow and dumb and bad
+      (setf (particle-options emitter) old-options))))
 
 (defmethod clear ((emitter cpu-particle-emitter))
   (setf (live-particles emitter) 0)
