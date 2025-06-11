@@ -50,6 +50,20 @@
   (stage (vertex-array emitter) area)
   (stage (// 'trial 'empty-vertex-array) area))
 
+(defmethod particle-options ((emitter particle-emitter))
+  (list :texture (texture emitter)
+        :size (particle-size emitter)
+        :scaling (particle-scaling emitter)
+        :rotation (particle-rotation emitter)
+        :color (particle-color emitter)
+        :randomness (particle-randomness emitter)
+        :velocity (particle-velocity emitter)
+        :lifespan (particle-lifespan emitter)
+        :lifespan-randomness (particle-lifespan-randomness emitter)
+        :sprite (particle-sprite emitter)
+        :flip (particle-flip emitter)
+        :mode (particle-mode emitter)))
+
 (defmethod (setf particle-options) (options (emitter particle-emitter))
   (destructuring-bind (&key texture size scaling rotation color randomness velocity lifespan lifespan-randomness sprite (flip NIL flip-t) mode &allow-other-keys) options
     (when texture
