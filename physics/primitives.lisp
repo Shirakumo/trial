@@ -693,14 +693,17 @@
   primitive)
 
 (define-support-function pill (dir next)
-  (let ((bias (pill-height primitive)))
-    (nvunit* (v<- next dir))
-    (cond ((< 0 (vy dir))
-           (nv* next (pill-radius-top primitive))
-           (incf (vy next) bias))
-          (T
-           (nv* next (pill-radius-bottom primitive))
-           (decf (vy next) bias)))))
+  (let ((bias (pill-height primitive))
+        (top (vec3)) (bot next))
+    (declare (dynamic-extent top))
+    (nv* (!vunit* top dir) (pill-radius-top primitive))
+    (incf (vy top) bias)
+    (nv* (!vunit* bot dir) (pill-radius-bottom primitive))
+    (decf (vy bot) bias)
+    ;; Next is already the same as bot, so we only need to
+    ;; transfer over if our "guess" was wrong.
+    (when (< (v. bot dir) (v. top dir))
+      (v<- next top))))
 
 (define-primitive-type triangle
     ((a (vec3 -1 0 -1) :type vec3)
