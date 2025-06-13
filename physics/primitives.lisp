@@ -1243,7 +1243,10 @@
     (handler-bind ((warning #'muffle-warning))
       (map 'vector (lambda (hull) (cons (org.shirakumo.fraf.convex-covering:vertices hull)
                                         (simplify (org.shirakumo.fraf.convex-covering:faces hull) '(unsigned-byte 16))))
-           (apply #'org.shirakumo.fraf.convex-covering:decompose vertices faces args)))))
+           (apply #'org.shirakumo.fraf.convex-covering:decompose vertices faces
+                  ;; KLUDGE: normalization fucks shit up a lot, so disable it for now.
+                  :normalization-threshold 0.0
+                  args)))))
 
 (defun make-maybe-optimized-convex-mesh (&rest args &key faces &allow-other-keys)
   (if (< (length faces) 8)
