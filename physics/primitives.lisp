@@ -212,9 +212,11 @@
   (format stream "~&~%Collision Systems:~{~%  ~a~}"
           (collision-mask-systems (primitive-collision-mask primitive)))
   (format stream "~&~%Local Transform:~%")
-  (write-transform (primitive-local-transform primitive) stream)
+  (pprint-logical-block (stream NIL :per-line-prefix "  ")
+    (write-transform (primitive-local-transform primitive) stream))
   (format stream "~&~%Global Transform:~%")
-  (write-transform (primitive-global-transform primitive) stream))
+  (pprint-logical-block (stream NIL :per-line-prefix "  ")
+    (write-transform (primitive-global-transform primitive) stream)))
 
 (define-transfer primitive
   primitive-material primitive-local-transform primitive-collision-mask primitive-joint-index
