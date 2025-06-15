@@ -1,6 +1,6 @@
 (in-package #:org.shirakumo.fraf.trial.harmony)
 
-(defmethod trial:load-audio (source (type symbol) &key generator (voice-class 'harmony:voice) (mixer :effect) effects repeat (repeat-start 0) (volume 1.0) (resource (trial:resource generator T)) max-distance min-distance)
+(defmethod trial:load-audio ((source pathname) (type symbol) &key generator (voice-class 'harmony:voice) (mixer :effect) effects repeat (repeat-start 0) (volume 1.0) (resource (trial:resource generator T)) max-distance min-distance)
   (trial::ensure-instance resource 'voice
                           :voice-class voice-class
                           :mixer mixer :source source :effects effects :volume volume

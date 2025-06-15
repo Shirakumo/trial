@@ -25,11 +25,11 @@
                            (:luminance-alpha :rg)
                            (T (cl-devil:image-format)))))))
 
-(defmethod load-image ((path pathname) (type symbol))
+(defmethod load-image ((path pathname) (type symbol) &key)
   (cl-devil:with-images ((image path))
     (%devil-image-to-source image)))
 
-(defmethod load-image (source (type symbol))
+(defmethod load-image (source (type symbol) &key)
   (mem:with-memory-region (region source)
     (cl-devil:with-images ((image type (memory-region-pointer region) (memory-region-size region)))
       (%devil-image-to-source image))))

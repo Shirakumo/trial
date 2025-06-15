@@ -29,23 +29,17 @@
 
 (defgeneric transcode (source source-type target target-type &key))
 
-(defun normalize-file-type (type)
-  (etypecase type
-    (pathname (normalize-file-type (pathname-type type)))
-    (string (or (cl-ppcre:register-groups-bind (type) ("^[^/]*/([^+/]+)" type) (kw type)) (kw type)))
-    (keyword type)))
-
 (defmethod transcode (source (source-type (eql T)) target target-type &rest args &key &allow-other-keys)
-  (apply #'transcode source (pathname-type source) target target-type args))
+  (apply #'transcode source (ensure-file-type source) target target-type args))
 
 (defmethod transcode (source source-type target (target-type (eql T)) &rest args &key &allow-other-keys)
-  (apply #'transcode source source-type target (pathname-type target) args))
+  (apply #'transcode source source-type target (ensure-file-type target) args))
 
 (defmethod transcode (source (source-type string) target target-type &rest args &key &allow-other-keys)
-  (apply #'transcode source (normalize-file-type source-type) target target-type args))
+  (apply #'transcode source (ensure-file-type source-type) target target-type args))
 
 (defmethod transcode (source source-type target (target-type string) &rest args &key &allow-other-keys)
-  (apply #'transcode source source-type target (normalize-file-type target-type) args))
+  (apply #'transcode source source-type target (ensure-file-type target-type) args))
 
 (defmethod transcode :before (source (source-type symbol) target (target-type symbol) &key &allow-other-keys)
   (v:info :trial.resource "Transcoding ~a to ~a" source target-type))

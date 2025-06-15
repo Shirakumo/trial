@@ -1,20 +1,6 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(defgeneric load-audio (source type &key generator &allow-other-keys))
-
-(defmethod load-audio (source (type string) &rest args &key &allow-other-keys)
-  (apply #'load-audio source (normalize-file-type type) args))
-
-(defmethod load-audio ((source pathname) (type (eql T)) &rest args &key &allow-other-keys)
-  (apply #'load-audio source (pathname-type source) args))
-
-(defmethod load-audio (source (type symbol) &key &allow-other-keys)
-  (let ((types (delete T (list-eql-specializers #'load-audio 1))))
-    (if (find type types)
-        (error "Don't know how to load~%  ~a~%from ~a"
-               source type)
-        (error "Don't know how to load from ~a~%known types are:~%  ~a~%Did you load the respective format system?"
-               type types))))
+(define-standard-load-function load-audio)
 
 ;;;; Protocol functions for audio:
 ;; location velocity play stop fade-to done-p duration seek

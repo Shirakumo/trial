@@ -18,18 +18,18 @@
                             (setf (aref pixels (+ idx 2)) b)
                             (setf (aref pixels (+ idx 3)) 255))))))))
 
-(defmethod load-image (path (type (eql :gif)))
-  (let* ((stream (skippy:load-data-stream path))
+(defmethod load-image ((stream stream) (type (eql :gif)) &key)
+  (let* ((stream (skippy:read-data-stream stream))
          (w (skippy:width stream))
          (h (skippy:height stream))
          (pixels (make-array (* w h 4) :element-type '(unsigned-byte 8) :initial-element 0)))
     (%composite-gif-image (skippy:last-image stream) pixels w)
     (make-image-source pixels w h :unsigned-byte :rgba)))
 
-(defmethod save-image ((source texture-source) (path pathname) (type (eql :gif)) &key)
+(defmethod save-image ((source texture-source) (stream stream) (type (eql :gif)) &key)
   (destructuring-bind (x y z w h d) (texture-source-src source)
     (declare (ignore x y z d))
     (let ((canvas (skippy:make-canvas :width w :height h :image-data (pixel-data source))))
-      (skippy:save-canvas canvas path))))
+      (skippy:write-canvas canvas stream))))
 
 (define-native-image-transcoder :gif)

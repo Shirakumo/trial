@@ -459,6 +459,22 @@
       #+nx (make-pathname :device "tmp" :directory '(:absolute))
       #p"/tmp/"))
 
+(defun ensure-file-type (thing)
+  (etypecase thing
+    (string
+     (or (cl-ppcre:register-groups-bind (thing) ("^[^/]*/([^+/]+)" thing)
+           (kw thing))
+         (let ((dot (position #\. thing :from-end T)))
+           (unless (and dot (< dot (1- (length thing))))
+             (error "No known file type for ~a" thing))
+           (kw (subseq thing (1+ dot))))))
+    (stream
+     (ensure-file-type (file-namestring thing)))
+    (pathname
+     (ensure-file-type (file-namestring thing)))
+    (depot:entry
+     (ensure-file-type (depot:name thing)))))
+
 (defun tempfile (&key (id (format NIL "trial-~a-~a" (get-universal-time) (random 1000)))
                       (type "tmp"))
   (make-pathname :name id
@@ -1599,3 +1615,71 @@
             (unwind-protect (sb-vm:with-arena (+arena+) ,@body)
               (sb-vm:rewind-arena +arena+)))
   #-sbcl `(progn ,@body))
+
+(defmacro define-standard-load-function (name)
+  `(progn
+     (defgeneric ,name (source type &key))
+
+     (defmethod ,name (source (type string) &rest args &key &allow-other-keys)
+       (apply #',name source (ensure-file-type type) args))
+
+     (defmethod ,name (source (type (eql T)) &rest args &key &allow-other-keys)
+       (apply #',name source (kw (ensure-file-type source)) args))
+
+     (defmethod ,name ((path pathname) (type symbol) &rest args &key &allow-other-keys)
+       (if (eql T type) (call-next-method)
+           (with-open-file (stream path :direction :input
+                                        :element-type '(unsigned-byte 8)
+                                        :if-exists :supersede)
+             (apply #',name stream type args))))
+
+     (defmethod ,name ((entry depot:entry) (type symbol) &rest args &key &allow-other-keys)
+       (if (eql T type) (call-next-method)
+           (depot:with-open (tx entry :input '(unsigned-byte 8))
+             (apply #',name tx type args))))
+
+     (defmethod ,name ((tx depot:transaction) (type symbol) &rest args &key &allow-other-keys)
+       (if (eql T type) (call-next-method)
+           (apply #',name (depot:to-stream tx) type args)))
+
+     (defmethod ,name (source (type symbol) &key &allow-other-keys)
+       (let ((types (delete T (list-eql-specializers #',name 1))))
+         (if (find type types)
+             (error "Don't know how to load~%  ~a~%from ~a"
+                    source type)
+             (error "Don't know how to load from ~a~%known types are:~%  ~a~%Did you load the respective format system?"
+                    type types))))))
+
+(defmacro define-standard-save-function (name)
+  `(progn
+     (defgeneric ,name (source target type &key))
+
+     (defmethod ,name (source target (type string) &rest args &key &allow-other-keys)
+       (apply #',name source target (ensure-file-type type) args))
+
+     (defmethod ,name (source target (type (eql T)) &rest args &key &allow-other-keys)
+       (apply #',name source target (kw (ensure-file-type target)) args))
+
+     (defmethod ,name (source (path pathname) (type symbol) &rest args &key &allow-other-keys)
+       (if (eql T type) (call-next-method)
+           (with-open-file (stream path :direction :input
+                                        :element-type '(unsigned-byte 8)
+                                        :if-exists :supersede)
+             (,name source stream type))))
+
+     (defmethod ,name (source (entry depot:entry) (type symbol) &rest args &key &allow-other-keys)
+       (if (eql T type) (call-next-method)
+           (depot:with-open (tx entry :input '(unsigned-byte 8))
+             (apply #',name source tx type args))))
+
+     (defmethod ,name (source (tx depot:transaction) (type symbol) &rest args &key &allow-other-keys)
+       (if (eql T type) (call-next-method)
+           (apply #',name source (depot:to-stream tx) type args)))
+
+     (defmethod ,name (source target (type symbol) &key &allow-other-keys)
+       (let ((types (delete T (list-eql-specializers #',name 1))))
+         (if (find type types)
+             (error "Don't know how to save~%  ~a~%to ~a~%  ~a~%"
+                    source type target)
+             (error "Don't know how to save to ~a~%known types are:~%  ~a~%Did you load the respective format system?"
+                    type types))))))

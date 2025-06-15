@@ -8,8 +8,8 @@
     (:color 'color)
     (:tangent 'tangent)))
 
-(defmethod load-model (input (type (eql :sf3)) &key (generator (make-instance 'resource-generator))
-                                                    (model (make-instance 'trial:model)))
+(defmethod load-model ((input stream) (type (eql :sf3)) &key (generator (make-instance 'resource-generator))
+                                                             (model (make-instance 'trial:model)))
   (let ((sf3 (org.shirakumo.sf3:read-sf3 input)))
     (check-type sf3 org.shirakumo.sf3:model)
     (when (org.shirakumo.sf3:texture-types sf3)
@@ -37,7 +37,7 @@
                          :faces (org.shirakumo.sf3:faces sf3)
                          :material (trial:find-material T model NIL)))))
 
-(defmethod save-model ((mesh mesh-data) target (type (eql :sf3)) &key (if-exists :error) (export-textures T) (texture-format "png"))
+(defmethod save-model ((mesh mesh-data) (target stream) (type (eql :sf3)) &key (if-exists :error) (export-textures T) (texture-format "png"))
   (let ((attributes (loop for attr in (vertex-attributes mesh)
                           for native = (case attr
                                          (location :position)

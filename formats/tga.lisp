@@ -1,6 +1,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(defmethod load-image (path (type (eql :tga)))
+(defmethod load-image ((path pathname) (type (eql :tga)) &key)
+  ;; This library blows and requires a file interface for no good reason.
   (let ((tga (tga:read-tga path)))
     (make-image-source (tga:image-data tga)
                        (tga:image-width tga)

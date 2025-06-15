@@ -1,7 +1,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(defmethod load-image (path (type (eql :tiff)))
-  (let* ((tiff (retrospectiff:read-tiff-file path)))
+(defmethod load-image ((stream stream) (type (eql :tiff)) &key)
+  (let* ((tiff (retrospectiff:read-tiff-stream stream)))
     ;; FIXME: higher bittage than 8 still returns an ub8 array, but GL doesn't like it.
     (make-image-source (retrospectiff:tiff-image-data tiff)
                        (retrospectiff:tiff-image-width tiff)
@@ -12,10 +12,10 @@
                          (3 :rgb)
                          (4 :rgba)))))
 
-(defmethod load-image (path (type (eql :tif)))
-  (load-image path :tiff))
+(defmethod load-image :around (source (type (eql :tif)) &rest args &key &allow-other-keys)
+  (apply #'load-image source :tiff args))
 
-(defmethod save-image ((source texture-source) (path pathname) (type (eql :tiff)) &key)
+(defmethod save-image ((source texture-source) (stream stream) (type (eql :tiff)) &key)
   (destructuring-bind (x y z w h d) (texture-source-src source)
     (declare (ignore x y z d))
     (let ((image (make-instance 'retrospectiff:tiff-image :width w :length h
@@ -29,6 +29,6 @@
                                                                                (:rgb 3)
                                                                                (:rgba 4))
                                                           :data (pixel-data source))))
-      (retrospectiff:write-tiff-file path image :if-exists :supersede))))
+      (retrospectiff:write-tiff-stream stream image))))
 
 (define-native-image-transcoder :tiff)

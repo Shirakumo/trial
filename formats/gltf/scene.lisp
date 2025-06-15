@@ -49,9 +49,6 @@
                                          :location (vec3 0)
                                          :target (vec 0 0 -1)))))
 
-(defmethod load-model (input (type (eql :glb)) &rest args)
-  (apply #'load-model input :gltf args))
-
 (defun %construct-node (node gltf meshes generator)
   (cond ((loop for skin across (gltf:skins gltf)
                thereis (find node (gltf:joints skin)))
@@ -113,8 +110,8 @@
         (load-trigger model entity node))
       (translate-node node entity gltf))))
 
-(defmethod load-model (input (type (eql :gltf)) &key (generator (make-instance 'resource-generator))
-                                                     (model (make-instance 'model)))
+(defun %load-model (input &key (generator (make-instance 'resource-generator))
+                               (model (make-instance 'model)))
   (gltf:with-gltf (gltf input)
     (let ((meshes (meshes model))
           (scenes (scenes model)))
@@ -154,3 +151,22 @@
                      (enter (make-instance 'scene-animation-controller :clips (clips model)) scene)))))
       model)))
 
+;; Special case override so we still get support for general converters
+;; such as for depot entries and transactions.
+(defmethod load-model ((input stream) (type (eql :gltf)) &rest args &key &allow-other-keys)
+  (apply #'%load-model input args))
+
+(defmethod load-model ((input pathname) (type (eql :gltf)) &rest args &key &allow-other-keys)
+  (apply #'%load-model input args))
+
+(defmethod load-model ((input vector) (type (eql :gltf)) &rest args &key &allow-other-keys)
+  (apply #'%load-model input args))
+
+(defmethod load-model (input (type (eql :gltf)) &rest args &key &allow-other-keys)
+  (typecase input
+    (cffi:foreign-pointer
+     (apply #'%load-model input args))
+    (T (call-next-method))))
+
+(defmethod load-model :around (input (type (eql :glb)) &rest args)
+  (apply #'load-model input :gltf args))

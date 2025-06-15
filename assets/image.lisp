@@ -34,17 +34,10 @@
          ;; TODO: implement convert-image-data
          (implement!))))
 
-(defgeneric load-image (source type))
+(define-standard-load-function load-image)
+(define-standard-save-function save-image)
 
-(defgeneric save-image (source target type &key &allow-other-keys))
-
-(defmethod save-image (source (path pathname) (type (eql T)) &rest args)
-  (apply #'save-image source path (kw (pathname-type path)) args))
-
-(defmethod save-image (source target (type string) &rest args)
-  (apply #'save-image source target (normalize-file-type type) args))
-
-(defmethod save-image ((region memory-region) target type &rest args)
+(defmethod save-image ((region memory-region) target type &rest args &key &allow-other-keys)
   (let ((vector (make-array (memory-region-size region) :element-type '(unsigned-byte 8))))
     (mem:replace vector region)
     (apply #'save-image vector target type args)))
@@ -53,40 +46,16 @@
   (let ((texture-source (make-image-source vector width height pixel-type pixel-format)))
     (apply #'save-image texture-source target type args)))
 
-(defmethod save-image (source target (type symbol) &key &allow-other-keys)
-  (let ((types (delete T (list-eql-specializers #'save-image 2))))
-    (if (find type types)
-        (error "Don't know how to save~%  ~a~%to ~a~%  ~a~%"
-               source type target)
-        (error "Don't know how to save to ~a~%known types are:~%  ~a~%Did you load the respective format system?"
-               type types))))
+(defmethod load-image ((source texture-source) type &rest args &key &allow-other-keys)
+  (merge-texture-sources (apply #'load-image (texture-source-pixel-data source) type args) source))
 
-(defmethod load-image (source (type string))
-  (or (cl-ppcre:register-groups-bind (type) ("^[^/]*/([^+/]+)" type)
-        (load-image source (kw type)))
-      (load-image source (kw type))))
+(defmethod load-image ((sources cons) (type (eql T)) &rest args &key &allow-other-keys)
+  (loop for source in sources collect (apply #'load-image source T args)))
 
-(defmethod load-image ((path pathname) (type (eql T)))
-  (load-image path (kw (pathname-type path))))
-
-(defmethod load-image ((source texture-source) type)
-  (merge-texture-sources (load-image (texture-source-pixel-data source) type) source))
-
-(defmethod load-image ((sources cons) (type (eql T)))
-  (loop for source in sources collect (load-image source T)))
-
-(defmethod load-image (source (type symbol))
-  (let ((types (delete T (list-eql-specializers #'load-image 1))))
-    (if (find type types)
-        (error "Don't know how to load~%  ~a~%from ~a"
-               source type)
-        (error "Don't know how to load from ~a~%known types are:~%  ~a~%Did you load the respective format system?"
-               type types))))
-
-(defun %load-image (source type)
+(defun %load-image (source type &rest args)
   (with-new-value-restart (source) (use-value "Specify a new image source.")
     (with-retry-restart (retry "Retry loading the image source.")
-      (load-image source type))))
+      (apply #'load-image source type args))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass image-loader (compiled-generator)

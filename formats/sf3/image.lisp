@@ -1,7 +1,7 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(defmethod load-image (path (type (eql :sf3)))
-  (let ((image (org.shirakumo.sf3:read-sf3 path)))
+(defmethod load-image ((stream stream) (type (eql :sf3)) &key)
+  (let ((image (org.shirakumo.sf3:read-sf3 stream)))
     (check-type image org.shirakumo.sf3:image)
     (flip-image-vertically
      (org.shirakumo.sf3:pixels image)
@@ -28,7 +28,7 @@
                          (#x13 :bgr)
                          (#x34 :bgra)))))
 
-(defmethod save-image ((source texture-source) (path pathname) (type (eql :sf3)) &key)
+(defmethod save-image ((source texture-source) (stream stream) (type (eql :sf3)) &key)
   (destructuring-bind (x y z w h d) (texture-source-src source)
     (declare (ignore x y z))
     (let ((image (org.shirakumo.sf3:make-image
@@ -38,6 +38,6 @@
                     (:rg :va)
                     (:rgb :rgb)
                     (:rgba :rgba)))))
-      (org.shirakumo.sf3:write-sf3 image path))))
+      (org.shirakumo.sf3:write-sf3 image stream))))
 
 (define-native-image-transcoder :sf3)

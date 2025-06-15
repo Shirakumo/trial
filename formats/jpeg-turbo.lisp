@@ -1,6 +1,6 @@
 (in-package #:org.shirakumo.fraf.trial)
 
-(defmethod load-image (source (type (eql :jpeg)))
+(defmethod load-image (source (type (eql :jpeg)) &key)
   (mem:with-memory-region (region source)
     (multiple-value-bind (buffer width height)
         (let ((jpeg (make-instance 'org.shirakumo.fraf.turbojpeg:decompressor :bottom-up T)))
@@ -11,8 +11,8 @@
             (org.shirakumo.fraf.turbojpeg:free jpeg)))
       (make-image-source buffer width height :unsigned-byte :rgb))))
 
-(defmethod load-image (path (type (eql :jpg)))
-  (load-image path :jpeg))
+(defmethod load-image (path (type (eql :jpg)) &rest args &key &allow-other-keys)
+  (apply #'load-image path :jpeg args))
 
 (defmethod save-image ((source texture-source) destination (type (eql :jpeg)) &key)
   (destructuring-bind (x y z w h d) (texture-source-src source)
@@ -25,7 +25,7 @@
                                                             (:unsigned-byte 8)
                                                             (:unsigned-short 16))))))
 
-(defmethod save-image (source target (type (eql :jpg)) &rest args)
+(defmethod save-image (source target (type (eql :jpg)) &rest args &key &allow-other-keys)
   (apply #'save-image source target :jpeg args))
 
 (define-native-image-transcoder :jpeg)

@@ -53,7 +53,7 @@
           (T
            (list (make-mesh (first meshes) name))))))
 
-(defmethod load-model (input (type (eql :obj)) &key (generator (make-instance 'resource-generator))
+(defmethod load-model ((input stream) (type (eql :obj)) &key (generator (make-instance 'resource-generator))
                                                     (model (make-instance 'trial:model)))
   (let ((context (obj:parse input)))
     (loop for material being the hash-values of (obj:materials context)
@@ -102,7 +102,7 @@
                    (add-mesh (obj:name object) (first meshes))))
       model)))
 
-(defmethod save-model ((model model) target (type (eql :obj)) &key (if-exists :error) (export-materials T) (material-library-file :create) (texture-format "png"))
+(defmethod save-model ((model model) (target stream) (type (eql :obj)) &key (if-exists :error) (export-materials T) (material-library-file :create) (texture-format "png"))
   (let ((context (make-instance 'obj:context)))
     (when export-materials
       (loop for name being the hash-keys of (materials model) using (hash-value material)
