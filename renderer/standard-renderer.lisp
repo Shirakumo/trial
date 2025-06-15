@@ -275,6 +275,9 @@
 (defmethod bind-palette ((pass standard-render-pass) (renderable standard-animated-renderable))
   (enable (palette-texture renderable) pass))
 
+(defmethod bind-palette ((pass standard-render-pass) (texture texture))
+  (enable texture pass))
+
 (defmethod render-with ((pass shader-pass) (renderable standard-animated-renderable) (program shader-program))
   (declare (optimize speed))
   (loop with morphs = (the simple-vector (morphs renderable))
@@ -289,7 +292,7 @@
                     (setf (uniform program "morph_targets") (bind morphtex :texture6))
                     (setf (uniform program "animation") (+ skinning 1)))
                    (T
-                    (setf (uniform program "morph_targets") 99)
+                    (setf (uniform program "morph_targets") (bind (// 'trial :texture-1d-array) :texture6))
                     (setf (uniform program "animation") (+ skinning 0))))
              (with-pushed-features
                (when (double-sided-p material)
@@ -465,7 +468,7 @@
                       (setf (uniform program "morph_targets") (enable morphtex pass))
                       (setf (uniform program "animation") (+ skinning 1)))
                      (T
-                      (setf (uniform program "morph_targets") 99)
+                      (setf (uniform program "morph_targets") (enable (// 'trial :texture-1d-array) pass))
                       (setf (uniform program "animation") (+ skinning 0))))
                (render vao program)))))
 

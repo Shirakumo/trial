@@ -449,3 +449,38 @@ void main(){
 
 (defclass basic-node (transformed-entity array-container)
   ())
+
+(define-asset (trial :texture-1d) static 'texture
+  :pixel-data (make-array 1 :element-type '(unsigned-byte 8))
+  :width 1 :internal-format :red
+  :target :texture-1d)
+
+(define-asset (trial :texture-1d-array) static 'texture
+  :pixel-data (make-array 1 :element-type '(unsigned-byte 8))
+  :width 1 :height 1 :internal-format :red
+  :target :texture-1d-array)
+
+(define-asset (trial :texture-2d) static 'texture
+  :pixel-data (make-array 1 :element-type '(unsigned-byte 8))
+  :width 1 :height 1 :internal-format :red
+  :target :texture-2d)
+
+(define-asset (trial :texture-2d-array) static 'texture
+  :pixel-data (make-array 1 :element-type '(unsigned-byte 8))
+  :width 1 :height 1 :depth 1 :internal-format :red
+  :target :texture-2d-array)
+
+(define-asset (trial :texture-3d) static 'texture
+  :pixel-data (make-array 1 :element-type '(unsigned-byte 8))
+  :width 1 :height 1 :depth 1 :internal-format :red
+  :target :texture-3d)
+
+(define-asset (trial :texture-cube-map) static 'texture
+  :pixel-data (make-array 1 :element-type '(unsigned-byte 8))
+  :width 1 :height 1 :depth 1 :internal-format :red
+  :target :texture-cube-map)
+
+(define-asset (trial :texture-cube-map-array) static 'texture
+  :pixel-data (make-array 1 :element-type '(unsigned-byte 8))
+  :width 1 :height 1 :depth 1 :internal-format :red
+  :target :texture-cube-map-array)

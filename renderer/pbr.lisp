@@ -96,6 +96,10 @@
   ((environment :initform NIL :accessor environment))
   (:shader-file (trial "renderer/standard-render-pbr.glsl")))
 
+(defmethod stage :after ((pass pbr-render-pass) (area staging-area))
+  (stage (// 'trial :texture-cube-map) area)
+  (stage (// 'trial 'brdf-lut) area))
+
 (defmethod render-with ((pass pbr-render-pass) (material pbr-material) program)
   (enable material pass)
   (let ((textures (textures material)))
@@ -117,11 +121,9 @@
 
 (defmethod prepare-pass-program :after ((pass pbr-render-pass) program)
   (unless (environment pass)
-    ;; KLUDGE: Just set them to bogus values to get the AMD driver to shut up.
-    (let ((max (1- (gl:get-integer :max-combined-texture-image-units))))
-      (setf (uniform program "irradiance_map") max)
-      (setf (uniform program "environment_map") max))
-    (setf (uniform program "brdf_lut") 0)))
+    (setf (uniform program "irradiance_map") (enable (// 'trial :texture-cube-map) pass))
+    (setf (uniform program "environment_map") (enable (// 'trial :texture-cube-map) pass))
+    (setf (uniform program "brdf_lut") (enable (// 'trial 'brdf-lut) pass))))
 
 (defmethod object-renderable-p ((material pbr-material) (pass pbr-render-pass)) T)
 

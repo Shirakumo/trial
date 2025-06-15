@@ -38,6 +38,9 @@
 (defmethod bind-palette ((pass shader-pass) (entity base-animated-entity))
   (bind (palette-texture entity) :texture5))
 
+(defmethod bind-palette ((pass shader-pass) (texture texture))
+  (bind texture :texture5))
+
 (define-shader-entity armature (base-animated-entity lines)
   ((color :initarg :color :initform (vec 0 0 0 1) :accessor color)))
 
@@ -64,6 +67,7 @@
     (setf (morphs entity) (if morph (vector (cons morph (find-morph mesh morph))) #()))))
 
 (defmethod stage :after ((entity morphed-entity) (area staging-area))
+  (stage (// 'trial :texture-1d-array) area)
   (loop for (morph) across (morphs entity)
         do (when morph (stage morph area))))
 
@@ -76,12 +80,17 @@
   ((mesh :initform NIL :accessor mesh))
   (:shader-file (trial "renderer/skin-matrix.glsl")))
 
+(defmethod stage :after ((entity skinned-entity) (area staging-area))
+  (stage (// 'trial :texture-1d-array) area))
+
 (defmethod render-with :before ((pass shader-pass) (entity skinned-entity) (program shader-program))
   ;; TODO: only compute the actual palette texture once it is needed in the render.
   ;;       otherwise it is computed every physics tick, which may be too often or too
   ;;       infrequent. Regardless, to do this we need access to the frame counter during
   ;;       rendering, for which there is no provision right now.
-  (setf (uniform program "pose") (if (palette-texture entity) (bind-palette pass entity) 99)))
+  (setf (uniform program "pose") (if (palette-texture entity)
+                                     (bind-palette pass entity)
+                                     (bind-palette pass (// 'trial :texture-1d-array)))))
 
 (defmethod skinned-p ((entity skinned-entity))
   (skeleton entity))
