@@ -444,6 +444,9 @@
       (pathname
        (with-open-file (stream input)
          (parse-sexps stream)))
+      (depot:entry
+       (depot:with-open (tx input :input 'character)
+         (parse-sexps (depot:to-stream tx))))
       (stream
        (loop for value = (read input NIL #1#)
              until (eq value #1#)
