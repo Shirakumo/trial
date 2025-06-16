@@ -22,12 +22,19 @@
        (let ((mesh (gltf:mesh (gltf:node geometry)))
              (local-transform (getf args :local-transform #.(meye 4))))
          (map 'vector (lambda (primitive)
-                        (let ((mesh (load-primitive primitive)))
+                        (let* ((mesh (load-primitive primitive))
+                               (verts (trial:reordered-vertex-data mesh '(trial:location)))
+                               (faces (trial:faces mesh)))
+                          (when (gltf:convex-p geometry)
+                            ;; Blender's exported geo is FUCKED, and we don't trust it
+                            ;; so we re-hull it here.
+                            (multiple-value-setq (verts faces)
+                              (org.shirakumo.fraf.quickhull:convex-hull verts)))
                           (apply (if (gltf:convex-p geometry)
                                      #'trial::make-maybe-optimized-convex-mesh
                                      #'trial:make-general-mesh)
-                                 :vertices (trial:reordered-vertex-data mesh '(trial:location))
-                                 :faces (trial::simplify (trial:faces mesh) '(unsigned-byte 16))
+                                 :vertices verts
+                                 :faces (trial::simplify faces '(unsigned-byte 16))
                                  :local-transform (if (gltf:matrix primitive)
                                                       (m* local-transform (mat4 (gltf:matrix primitive)))
                                                       local-transform)
