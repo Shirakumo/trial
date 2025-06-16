@@ -142,7 +142,18 @@ void main(){
   (stage (selection-buffer scene) area))
 
 (defmethod (setf file) :before (file (scene decomposition-scene))
-  (setf (model scene) (generate-resources 'model-loader file)))
+  ;; Model files may use features that are not supported in this
+  ;; context (animation, physics, custom classes, etc.). Try to
+  ;; recover from errors related to unsupported features and continue
+  ;; loading the model.
+  (setf (model scene)
+        (handler-bind
+            ((error (lambda (condition)
+                      (warn "~@<While loading ~S, encountered ~A Trying to ~
+                             continue.~@:>"
+                            file condition)
+                      (continue))))
+          (generate-resources 'model-loader file))))
 
 (defmethod (setf show-original) :after (value (scene decomposition-scene))
   (let ((orig (node :original scene)))
