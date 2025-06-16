@@ -1662,14 +1662,14 @@
 
      (defmethod ,name (source (path pathname) (type symbol) &rest args &key &allow-other-keys)
        (if (eql T type) (call-next-method)
-           (with-open-file (stream path :direction :input
+           (with-open-file (stream path :direction :output
                                         :element-type '(unsigned-byte 8)
                                         :if-exists :supersede)
              (,name source stream type))))
 
      (defmethod ,name (source (entry depot:entry) (type symbol) &rest args &key &allow-other-keys)
        (if (eql T type) (call-next-method)
-           (depot:with-open (tx entry :input '(unsigned-byte 8))
+           (depot:with-open (tx entry :output '(unsigned-byte 8))
              (apply #',name source tx type args))))
 
      (defmethod ,name (source (tx depot:transaction) (type symbol) &rest args &key &allow-other-keys)
