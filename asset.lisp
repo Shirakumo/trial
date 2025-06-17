@@ -132,9 +132,7 @@
     (with-context (*context*)
       (deallocate asset)
       (loop for resource in (enlist (apply #'generate-resources asset (input* asset) (generation-arguments asset)))
-            do (dolist (dependency (dependencies resource))
-                 (allocate dependency))
-               (allocate resource))
+            do (ensure-allocated resource))
       ;; KLUDGE: This kind of tight binding here really sucks.
       ;;         But I don't want to introduce a watch mechanism or something
       ;;         like that right now, so....
@@ -298,7 +296,7 @@
   (change-class (resource asset T) 'placeholder-resource :generator asset))
 
 (defclass multi-resource-asset (asset)
-  ((resources :initform (make-hash-table :test 'equal))))
+  ((resources :initform (make-hash-table :test 'equal) :accessor resources)))
 
 (defmethod resource ((asset multi-resource-asset) id)
   (let ((table (slot-value asset 'resources)))

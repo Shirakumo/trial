@@ -144,3 +144,6 @@
 
 (defmethod allocate ((material material))
   (map NIL #'ensure-allocated (textures material)))
+
+(defmethod allocated-p ((material material))
+  (every #'allocated-p (textures material)))

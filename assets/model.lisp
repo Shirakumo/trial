@@ -37,7 +37,12 @@
 
 (defmethod generate-resources ((asset model-file) input &rest args)
   (apply #'call-next-method asset input :model asset args)
-  (list-resources asset))
+  ;; When reloading, we might be retaining some placeholders that are no longer
+  ;; applicable. Remove those, and only return the actual resources we generated.
+  (loop for k being the hash-keys of (resources asset) using (hash-value r)
+        if (typep r 'placeholder-resource)
+        do (remhash k (resources asset))
+        else collect r))
 
 (defmethod unload :after ((asset model-file))
   (clear asset))
