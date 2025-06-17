@@ -57,6 +57,9 @@
           (register prefab container))
         (setf (slot-value prefab 'instantiated) T)))))
 
+(defmethod clear :after ((prefab prefab))
+  (setf (slot-value prefab 'instantiated) NIL))
+
 (defmethod reload ((prefab prefab))
   (deallocate (prefab-asset prefab))
   (clear prefab)
