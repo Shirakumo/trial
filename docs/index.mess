@@ -80,6 +80,7 @@ Trial is a modular game engine written in Common Lisp. It offers many tools and 
   - ''OpenGL''(link gl-misc.mess)
   - ''System Interaction''(link system.mess)
   - ''Tests''(link tests.mess)
+  - ''Platform Support & Porting''(link porting.mess)
   - Type Information & Reasoning
   - Utilities
 - Extensions

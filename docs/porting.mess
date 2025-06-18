@@ -1,0 +1,62 @@
+# Platform Support and Porting
+Trial is currently actively supported on the following platform combinations:
+
+- SBCL
+  - Linux (AMD64, x86, ARM64)
+  - Windows (AMD64)
+  - Nintendo Switch (ARM64)
+
+It has also been known to work (albeit perhaps suboptimally) on the following:
+
+- SBCL
+  - MacOS (AMD64, ARM64)
+- CCL
+  - Linux
+- ECL
+  - Linux
+
+Though these targets are not actively supported by the core development team. Please help out if you're interested though, patches are very much welcome! There's just currently nobody with the hardware and energy to actively support these or other systems.
+
+On all systems Trial requires an OpenGL Core 3.3 (or higher) capable driver.
+
+## Porting
+In order to port Trial to other Lisp implementations or operating system environments, you'll probably have quite a bit of work ahead of yourself. For instance, any platform without OpenGL support will require an OpenGL emulation layer, and while Trial can run some simple things on OpenGL ES APIs, it has not been tested.
+
+### Implementations
+When porting to a new implementation, the first order of business is to simply try loading Trial. Most likely the implementation will choke on ''3d-math''(https://shinmera.com/projects/3d-math), so you might need to figure out a way to make that library more amenable to being loaded on your implementation of choice. Other libraries may also need adjustments to work correctly.
+
+Once Trial loads, you will want to run the selftest suite via
+
+:: common lisp
+(asdf:test-system :trial-selftest)
+::
+
+The selftest suite is designed to touch as many of the operating system and implementation interoperability bits that Trial needs as possible. It will tell you about everything that might be broken. If all tests pass, that's a huge sign!
+
+Once that's working, you can also try loading the ''examples''(link examples.mess), which should work fine. And once those are confirmed working, the port is pretty much done, perhaps modulo performance issues.
+
+### Operating Systems
+Porting to another operating system is similar to porting to another implementation. You will want to run the selftest suite to see what's broken. You will likely need to make updates to the following libraries to ensure compliance:
+
+- ''cl-gamepad''(https://shirakumo.org/projects/cl-gamepad)
+- ''cl-mixed''(https://shirakumo.org/projects/cl-mixed)
+- ''file-attributes''(https://shinmera.com/projects/file-attributes)
+- ''filesystem-utils''(https://shinmera.com/projects/filesystem-utils)
+- ''harmony''(https://shirakumo.org/projects/harmony)
+- ''machine-state''(https://shinmera.com/projects/machine-state)
+- ''messagebox''(https://shinmera.com/projects/messagebox)
+- ''open-with''(https://shinmera.com/projects/open-with)
+- ''pathname-utils''(https://shinmera.com/projects/pathname-utils)
+- ''precise-time''(https://shinmera.com/projects/precise-time)
+- ''system-locale''(https://shinmera.com/projects/system-locale)
+
+### Graphics APIs
+As mentioned Trial is currently hard-wired for desktop OpenGL. In order to better support OpenGL ES, the primary work to be done would be in ''glsl-toolkit''(https://shirakumo.org/projects/glsl-toolkit), to automatically rewrite GLSL shader code to work with the slight differences between desktop GL and GLES. It is likely that some Trial bits would also need further conditionalising behind ``when-gl-extension`` or ``gl-extension-case``.
+
+Larger rewrites to target other graphics APIs entirely such as DirectX, Vulkan, or WebGPU are much bigger efforts and would need to happen in several stages:
+
+1. Silo all direct OpenGL calls in Trial calls such that games do not ever need to touch the ``gl`` or ``%gl`` packages.
+2. Separate out rendering state such that no ``enable-feature`` or ``disable-feature`` or similar calls need to be made, and instead a general "render state" object is used that is more amenable to how more modern APIs function.
+3. Rewrite all ``resources`` to be abstract classes that are implemented with subclasses by a specific API instead, and introduce a runtime switch for the used API.
+4. Rewrite the ``context`` and backend implementations to provide the API information and, if possible, allow selecting the API used.
+5. Start writing an actual backend other than OpenGL. This may also require pulling in something that can compile GLSL to a target shader language.
