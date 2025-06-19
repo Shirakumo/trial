@@ -127,6 +127,9 @@
     (setf (trial:inertia-tensor child) (trial:diagonal-tensor d r)))
   (map-into (varr (trial:velocity child)) (lambda (x) (float x 0f0)) (gltf:linear-velocity (gltf:rigidbody node)))
   (map-into (varr (trial:rotation child)) (lambda (x) (float x 0f0)) (gltf:angular-velocity (gltf:rigidbody node)))
+  (setf (trial:damping child) (- 1.0 (gltf:linear-damping (gltf:rigidbody node))))
+  (setf (trial:angular-damping child) (- 1.0 (gltf:angular-damping (gltf:rigidbody node))))
+  (setf (trial:awake-p child) (not (gltf:deactivated-p (gltf:rigidbody node))))
   ;; Extra support for damping factor
   (when (gltf:extras (gltf:rigidbody node))
     (setf (trial:damping child) (gethash "damping" (gltf:extras (gltf:rigidbody node)) 0.95)))
