@@ -25,9 +25,10 @@
                         (let* ((mesh (load-primitive primitive))
                                (verts (trial:reordered-vertex-data mesh '(trial:location)))
                                (faces (trial:faces mesh)))
-                          (when (gltf:convex-p geometry)
+                          (when (and (gltf:convex-p geometry) (not (gltf:virtual-p (gltf:node geometry))))
                             ;; Blender's exported geo is FUCKED, and we don't trust it
-                            ;; so we re-hull it here.
+                            ;; so we re-hull it here.... or we would, if that didn't also
+                            ;; break when re-hulling stuff. AUGH.
                             (multiple-value-setq (verts faces)
                               (org.shirakumo.fraf.quickhull:convex-hull verts)))
                           (apply (if (gltf:convex-p geometry)
