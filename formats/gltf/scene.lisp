@@ -90,8 +90,14 @@
         (<- entity (animation-controller found))))
     (when (and (gltf:instance-of node)
                (string/= "" (gltf:instance-of node)))
-      (destructuring-bind (class . args) (enlist (read-from-string (gltf:instance-of node)))
-        (apply #'change-class entity class args))))
+      (let ((instance-spec (gltf:instance-of node)))
+        (restart-case
+            (destructuring-bind (class . args) (enlist (read-from-string instance-spec))
+              (apply #'change-class entity class args))
+          (continue ()
+            :report (lambda (stream)
+                      (format stream "Do not change the class of ~A according to ~S"
+                              entity instance-spec)))))))
   entity)
 
 (defun construct-node (node gltf model generator)
