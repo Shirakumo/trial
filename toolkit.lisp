@@ -1573,7 +1573,7 @@
 (defun run (program &rest args)
   (run* program args))
 
-(defun run* (program args &key background input)
+(defun run* (program args &key background input (error-output T))
   (flet ((normalize (arg)
            (etypecase arg
              (pathname (pathname-utils:native-namestring arg))
@@ -1587,13 +1587,13 @@
                               program))))
       #+sbcl
       (if background
-          (sb-ext:run-program program args :input input :error-output *error-output* :wait NIL)
+          (sb-ext:run-program program args :input input :error (if error-output *error-output* NIL) :wait NIL)
           (with-output-to-string (out)
-            (sb-ext:run-program program args :input input :output out :error-output *error-output* :wait T)))
+            (sb-ext:run-program program args :input input :output out :error (if error-output *error-output* NIL) :wait T)))
       #+(and asdf3 (not sbcl))
       (if background
-          (uiop:launch-program (list* program args) :input input :error-output *error-output*)
-          (uiop:run-program (list* program args) :input input :output :string :error-output *error-output*))
+          (uiop:launch-program (list* program args) :input input :error-output (if error-output *error-output* NIL))
+          (uiop:run-program (list* program args) :input input :output :string :error-output (if error-output *error-output* NIL)))
       #-(or sbcl asdf3)
       (implement!))))
 
