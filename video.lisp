@@ -15,7 +15,8 @@
 (defmethod resource ((video video) name)
   (resource (generator video) name))
 
-;;; YUV video only for now.
+;; TODO: allow switching video formats. We should at least
+;;       properly support straight RGB and SRGB as well.
 (define-shader-entity video-display (vertex-entity)
   ((textures :initform NIL :accessor textures)
    (asset :initarg :asset :initform NIL)
