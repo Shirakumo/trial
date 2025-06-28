@@ -90,10 +90,6 @@
      (defmethod ,name ,args
        ,@expansion)))
 
-(declaim (inline lerp))
-(defun lerp (a b x)
-  (+ (* a (- 1.0 x)) (* b x)))
-
 (define-inlined-method ninterpolate ((dst T) (a real) (b real) (x real))
   (declare (ignore dst))
   (let ((a (float a 0f0)))
