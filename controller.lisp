@@ -136,26 +136,25 @@
   (multiple-value-bind (gfree gtotal) (org.shirakumo.machine-state:gpu-room)
     (multiple-value-bind (cfree ctotal) (org.shirakumo.machine-state:gc-room)
       (setf (fill-pointer (%string controller)) 0)
-      (with-discarded-allocations
-        (with-output-to-string (stream (%string controller))
-          (multiple-value-bind (fps dur) (compute-fps-buffer-fps (fps-buffer controller))
-            (format stream "FPS  [Hz]: ~8,2f (~6,2fms)~%~
+      (with-output-to-string (stream (%string controller))
+        (multiple-value-bind (fps dur) (compute-fps-buffer-fps (fps-buffer controller))
+          (format stream "FPS  [Hz]: ~8,2f (~6,2fms)~%~
                           RAM  [KB]: ~8d (~2d%)~%~
                           VRAM [KB]: ~8d (~2d%)~%~
                           RESOURCES: ~8d"
-                    fps dur
-                    (truncate (- ctotal cfree) 1024) (if (< 0 ctotal) (floor (/ (- ctotal cfree) ctotal 0.01)) 0)
-                    (truncate (- gtotal gfree) 1024) (if (< 0 gtotal) (floor (/ (- gtotal gfree) gtotal 0.01)) 0)
-                    (hash-table-count (loaded (loader +main+)))))
-          (let ((*print-pprint-dispatch* *controller-pprint*))
-            (loop with observers = (observers controller)
-                  for i from 0 below (length observers)
-                  for (title . func) = (aref observers i)
-                  when func
-                  do (restart-case (format stream "~%~a:~12t~{~a~^, ~}" title (multiple-value-list (funcall func)))
-                       (remove-observer ()
-                         :report "Remove the offending observer."
-                         (setf (aref observers i) NIL)))))))
+                  fps dur
+                  (truncate (- ctotal cfree) 1024) (if (< 0 ctotal) (floor (/ (- ctotal cfree) ctotal 0.01)) 0)
+                  (truncate (- gtotal gfree) 1024) (if (< 0 gtotal) (floor (/ (- gtotal gfree) gtotal 0.01)) 0)
+                  (hash-table-count (loaded (loader +main+)))))
+        (let ((*print-pprint-dispatch* *controller-pprint*))
+          (loop with observers = (observers controller)
+                for i from 0 below (length observers)
+                for (title . func) = (aref observers i)
+                when func
+                do (restart-case (format stream "~%~a:~12t~{~a~^, ~}" title (multiple-value-list (funcall func)))
+                     (remove-observer ()
+                       :report "Remove the offending observer."
+                       (setf (aref observers i) NIL))))))
       (%string controller))))
 
 (defmethod render :around ((controller display-controller) (program shader-program))
