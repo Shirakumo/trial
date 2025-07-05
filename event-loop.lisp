@@ -162,8 +162,9 @@
           (read (queue-read-index queue))
           (write (queue-write-index queue)))
       (loop for i from read below write
-            do (when (typep (aref elements i) type)
-                 (release-event (aref elements i))
+            for el = (aref elements i)
+            do (when (and el (typep el type))
+                 (release-event el)
                  (setf (aref elements i) NIL)))
       queue)))
 
