@@ -211,6 +211,8 @@
    (inverse-inertia-tensor :initform (mat3) :reader inverse-inertia-tensor)
    (torque :initform (vec 0 0 0) :reader torque)
    (angular-damping :initform 0.8 :accessor angular-damping)
+   ;; TODO: implement center of mass offset
+   (center-of-mass :initform (vec 0 0 0) :accessor center-of-mass)
    ;; Cache
    (world-inverse-inertia-tensor :initform (mat3) :reader world-inverse-inertia-tensor)
    (last-frame-acceleration :initform (vec 0 0 0) :reader last-frame-acceleration)))

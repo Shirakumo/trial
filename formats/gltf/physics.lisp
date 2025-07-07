@@ -119,7 +119,7 @@
     (basic-entity (change-class child 'basic-physics-entity))
     (basic-animated-entity (change-class child 'animated-physics-entity)))
   (setf (trial:mass child) (gltf:mass (gltf:rigidbody node)))
-  ;; FIXME: implement center-of-mass
+  (replace (varr (trial:center-of-mass child)) (gltf:center-of-mass (gltf:rigidbody node)))
   (when (/= 1.0 (gltf:gravity-factor (gltf:rigidbody node)))
     (v:warn :trial.gltf "Ignoring non-standard gravity factor on ~a" node))
   (let* ((r (gltf:inertia-orientation (gltf:rigidbody node)))

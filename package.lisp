@@ -494,6 +494,7 @@
    #:inverse-inertia-tensor
    #:torque
    #:angular-damping
+   #:center-of-mass
    #:world-inverse-inertia-tensor
    #:last-frame-acceleration
    #:inertia-tensor
