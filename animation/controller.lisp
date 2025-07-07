@@ -540,7 +540,7 @@
 (defmethod instantiate-prefab :after ((instance animation-controller) asset)
   (do-scene-graph (child instance)
     (when (typep child 'base-animated-entity)
-      (unless (skeleton instance)
+      (unless (or (skeleton instance) (null (skeleton child)))
         (setf (skeleton instance) (skeleton child)))
       (setf (animation-controller child) instance))))
 

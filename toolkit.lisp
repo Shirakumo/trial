@@ -986,9 +986,9 @@
 (defun lerp (from to n)
   (etypecase from
     (real (+ (* from (- 1.0 n)) (* (the real to) n)))
-    (quat (qslerp from (the quat to) n))
-    (vec (vlerp from (the vec to) n))
-    (transform (tmix from (the transform to) n))))
+    #++(quat (qslerp from (the quat to) n))
+    #++(vec (vlerp from (the vec to) n))
+    #++(transform (tmix from (the transform to) n))))
 
 (declaim (inline lerp-dt))
 (defun lerp-dt (from to dt rem)
