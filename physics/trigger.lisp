@@ -130,7 +130,7 @@
    (respawn-cooldown :initarg :respawn-cooldown :initform NIL :accessor respawn-cooldown)
    (respawn-timer :initform 0 :accessor respawn-timer)))
 
-(define-transfer spawner-trigger-volume spawn-class spawn-arguments spawn-count spawn-volume auto-deactivate respawn-cooldown)
+(define-transfer spawner-trigger-volume spawn-class spawn-arguments spawn-count spawn-volume auto-deactivate respawn-cooldown spawn-orientation)
 
 ;; min and max euler angles
 (defun evaluate-orientation (min max &optional (q (quat)))

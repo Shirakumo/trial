@@ -198,6 +198,8 @@
                     :spawn-arguments args
                     :spawn-count (or spawn-count 1)
                     :spawn-volume spawn-volume
+                    :spawn-orientation (cons (vec (aref (gltf:rotation trigger-data) 0))
+                                             (vec (aref (gltf:rotation trigger-data) 1)))
                     :auto-deactivate (gltf:auto-deactivate-p trigger-data)
                     :snap-to-level (gltf:snap-to-surface-p trigger-data)
                     :respawn-cooldown (gltf:respawn-cooldown trigger-data)))))
