@@ -7,7 +7,6 @@ layout (location = TRIAL_V_WEIGHTS) in vec4 in_weights;
 uniform mat4 model_matrix;
 uniform int shadow_map_id;
 uniform int animation = 0;
-uniform int morphed;
 
 void main(){
   vec3 position = in_position;
