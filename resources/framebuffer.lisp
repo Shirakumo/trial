@@ -48,6 +48,22 @@
   (append (call-next-method)
           (mapcar #'second (attachments framebuffer))))
 
+(defun %bind-framebuffer-attachments (framebuffer attachments)
+  (with-gl-binding (:framebuffer (gl-name framebuffer))
+    (dolist (attachment attachments)
+      (destructuring-bind (attachment texture &key (level 0) layer &allow-other-keys) attachment
+        (when (null (width framebuffer))
+          (setf (width framebuffer) (width texture)))
+        (when (null (height framebuffer))
+          (setf (height framebuffer) (height texture)))
+        (if layer
+            (%gl:framebuffer-texture-layer :framebuffer attachment (gl-name texture) level layer)
+            (%gl:framebuffer-texture :framebuffer attachment (gl-name texture) level))))
+    (unless attachments
+      (when-gl-extension :gl-arb-framebuffer-no-attachments
+        (%gl:framebuffer-parameter-i :framebuffer :framebuffer-default-width (width framebuffer))
+        (%gl:framebuffer-parameter-i :framebuffer :framebuffer-default-height (height framebuffer))))))
+
 (defun bind-framebuffer-attachments (framebuffer attachments)
   (let ((color-attachments (loop for attachment in attachments
                                  unless (find (first attachment) '(:depth-attachment :stencil-attachment :depth-stencil-attachment))
@@ -97,9 +113,8 @@
     (when attachments
       (setf (width framebuffer) NIL)
       (setf (height framebuffer) NIL))
-    ;; TODO: usually attachments are only switched out, making the default generic method way too expensive.
     (with-cleanup-on-failure (bind-framebuffer-attachments framebuffer (attachments framebuffer))
-      (bind-framebuffer-attachments framebuffer attachments))))
+      (%bind-framebuffer-attachments framebuffer attachments))))
 
 (defmethod allocate ((framebuffer framebuffer))
   (let ((fbo (gl:gen-framebuffer)))
