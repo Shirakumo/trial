@@ -6,6 +6,7 @@
 (define-global +direction-table+ (make-hash-table :test 'eql))
 (defvar *mapping-functions* (make-hash-table :test 'eql))
 (defvar *action-mappings* ())
+(defvar *mapping-version* NIL)
 
 (defun mapping-function (name)
   (gethash name *mapping-functions*))
@@ -643,22 +644,46 @@
           (push mapping mappings))))
     (setf *action-mappings* mappings)))
 
-(defun load-mapping (input &key (package *package*))
+(defun load-mapping (input &rest args &key (package *package*) (if-exists :upgrade) version)
   (etypecase input
     ((or pathname string)
-     (load-mapping (depot:from-pathname input) :package package))
+     (apply #'load-mapping (depot:from-pathname input) args))
     (depot:entry
      (depot:with-open (tx input :input 'character)
-       (load-mapping (depot:to-stream tx) :package package)))
+       (apply #'load-mapping (depot:to-stream tx) args)))
     (stream
-     (load-mapping (loop with *package* = package
-                         for form = (read input NIL '#1=#:END)
-                         until (eq form '#1#)
-                         collect form)))
+     (when (eql #\; (peek-char T input NIL))
+       (read-char input)
+       (let ((meta (parse-sexps (read-line input))))
+         (when (and (getf meta :version) (null version))
+           (setf (getf args :version) (getf meta :version)))))
+     (apply #'load-mapping
+      (loop with *package* = package
+            for form = (read input NIL '#1=#:END)
+            until (eq form '#1#)
+            collect form)
+      args))
     (list
-     (compile-mapping input))))
+     (when (or (null *mapping-version*)
+               (ecase if-exists
+                 ((:upgrade :if-newer)
+                  (cond ((or (null version) (<= version *mapping-version*))
+                         (v:warn :trial.mapping "Refusing to load input mapping! Version in mapping file is ~d, we already have ~d."
+                                 version *mapping-version*)
+                         NIL)
+                        (T
+                         T)))
+                 ((:replace :supersede)
+                  T)
+                 (:error
+                  (error "Key mapping already loaded (version ~a)!" *mapping-version*))
+                 ((NIL)
+                  (return-from load-mapping NIL))))
+       (compile-mapping input)
+       (setf *mapping-version* (or version *mapping-version* 0))
+       (v:info :trial.mapping "Loaded input mapping version ~d" *mapping-version*)))))
 
-(defun save-mapping (output &key (package *package*))
+(defun save-mapping (output &key (package *package*) (version *mapping-version*))
   (etypecase output
     (null
      (with-output-to-string (stream)
@@ -669,6 +694,7 @@
      (depot:with-open (tx output :output 'character)
        (save-mapping (depot:to-stream tx) :package package)))
     (stream
+     (format output "~&; :version ~a~%" version)
      (let ((descriptions (mapcar #'to-mapping-description *action-mappings*))
            (cache (make-hash-table :test 'equal))
            (*print-case* :downcase)

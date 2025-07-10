@@ -49,6 +49,7 @@ Instead, a ``keymap.lisp`` file should be defined, which describes the mappings.
 The file describing action mappings is in s-expression format and contains definitions like this:
 
 ::
+; :version 1
 (trigger jump
   (key :one-of (:space))
   (button :one-of (:b :a)))
@@ -64,6 +65,8 @@ Meaning: when the ``:space`` key is pressed, or when the ``:b`` or ``:a`` button
 The possible mapping types are ``trigger`` for digital maps, ``directional`` for directional maps, and ``analog`` for analog value maps.
 
 Querying and interacting with the mappings can of course also be done programmatically outside of the ``keymap.lisp`` source file. On the most basic, one can ``load-mapping`` and ``save-mapping`` to interact with the file. Finding mappings that spawn an action can be done via ``find-action-mappings``. It can also be useful to capture an input event and turn that into on ``action-mapping`` or vice-versa. To do so, simply use ``event-to-action-mapping``, or the inverse, ``event-from-action-mapping``.
+
+The first line in the keymap file is an optional comment line containing pairs of keys and values for metadata. Currently only one key is recognised: ``:version``. This key can be used to force an upgrade of the keymap on users if their existing version of the keymap should be lower. The upgrade behaviour can be controlled via the ``:if-exists`` argument to ``load-mapping``.
 
 ### Triggers
 The possible binding sources are ``key`` for keyboard keys, ``button`` for gamepad buttons, ``axis`` for gamepad axes, and ``mouse`` for mouse buttons. Each of the bindings also accepts the following parameters:

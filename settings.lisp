@@ -35,17 +35,16 @@
   (make-pathname :name "keymap" :type "lisp"
                  :defaults (data-root)))
 
-(defun load-keymap (&key (path (keymap-path)) reset (package *package*) (default (default-keymap-path)))
+(defun load-keymap (&key (path (keymap-path)) (if-exists :upgrade) reset (package *package*) (default (default-keymap-path)))
+  ;; old interface compat
+  (when reset (setf if-exists :replace))
   (ensure-directories-exist path)
-  (cond ((or reset (file-out-of-date-p path default))
+  (cond ((or (probe-file default) (probe-file path))
          (when (probe-file default)
-           (load-mapping default :package package))
-         (when (and (probe-file path) (null reset))
-           ;; FIXME: ideally we'd merge the mappings here, but it's not clear how.
-           (load-mapping path :package package))
+           (load-mapping default :if-exists NIL :package package))
+         (when (probe-file path)
+           (load-mapping path :if-exists if-exists :package package))
          (save-keymap :path path :package package))
-        ((probe-file path)
-         (load-mapping path :package package))
         (T
          (warn "Keymap and default keymap do not exist. Can't load!"))))
 
