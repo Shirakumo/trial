@@ -76,6 +76,7 @@
     (push :profile initargs))
   (apply #'call-next-method main initargs))
 
+#++
 (defmethod (setf trial:active-p) :after (value (set trial:action-set))
   (when (and value trial:*context* (use-steaminput (trial:handler trial:*context*)))
     (let* ((label (action-label set))
