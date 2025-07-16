@@ -52,10 +52,8 @@
   (with-gl-binding (:framebuffer (gl-name framebuffer))
     (dolist (attachment attachments)
       (destructuring-bind (attachment texture &key (level 0) layer &allow-other-keys) attachment
-        (when (null (width framebuffer))
-          (setf (width framebuffer) (width texture)))
-        (when (null (height framebuffer))
-          (setf (height framebuffer) (height texture)))
+        (setf (width framebuffer) (width texture))
+        (setf (height framebuffer) (height texture))
         (if layer
             (%gl:framebuffer-texture-layer :framebuffer attachment (gl-name texture) level layer)
             (%gl:framebuffer-texture :framebuffer attachment (gl-name texture) level))))
