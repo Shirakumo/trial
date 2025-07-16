@@ -117,6 +117,6 @@ exec sbcl \
 
 (defun main ()
   (format *query-io* "~&Please enter the path to the promptfont glyphs.json file:~%")
-  (parse (read-line *query-io*))
+  (parse (pathname (read-line *query-io*)))
   (write-prompt-tables)
   (format *query-io* "~&prompt-tables.lisp updated.~%"))
