@@ -15,13 +15,13 @@ We also encourage you to come talk to us at the shirakumo channel, reachable thr
 ## Projects Using Trial
 Here are a few games that are using Trial as their engine. Kandria and Eternia: Pet Whisperer are commercial games available on Steam.
 
-- [![logo](https://kandria.com/media/small%20capsule.png)](https://kandria.com)  
-  [Kandria](https://kandria.com) On [Steam](https://store.steampowered.com/app/1261430/Kandria/)!
-- [![logo](https://kandria.com/eternia/media/small%20capsule.png)](https://kandria.com/eternia)  
-  [Eternia Pet Whisperer](https://kandria.com/eternia) On [Steam](https://store.steampowered.com/app/1605720/Eternia_Pet_Whisperer/)!
-- [Vegetable Mash](https://shinmera.itch.io/vegetablemash)
-- [Rush](https://shinmera.itch.io/rush)
-- [Outsider](https://shinmera.itch.io/outsider)
+| Project | Logo or Screenshot | URL |
+|---|---|---|
+| Kandria | [![logo](https://kandria.com/media/small%20capsule.png)](https://kandria.com) | [Kandria](https://kandria.com) On [Steam](https://store.steampowered.com/app/1261430/Kandria/)! |
+| Eternia | [![logo](https://kandria.com/eternia/media/small%20capsule.png)](https://kandria.com/eternia) | [Eternia Pet Whisperer](https://kandria.com/eternia) On [Steam](https://store.steampowered.com/app/1605720/Eternia_Pet_Whisperer/)! |
+| Vegetable Mash | | [Vegetable Mash](https://shinmera.itch.io/vegetablemash) |
+| Rush | | [Rush](https://shinmera.itch.io/rush) |
+| Outsider | | [Outsider](https://shinmera.itch.io/outsider) |
 
 If you made use of Trial yourself, let us know! We'd be happy to include your game in this list.
 
