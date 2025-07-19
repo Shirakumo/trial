@@ -473,8 +473,11 @@
          (structg (gensym "STRUCT"))
          (class (c2mop:ensure-finalized (find-class class)))
          (slots (loop for slot in slots
-                      collect (list (gensym (string slot)) slot (or (find slot (c2mop:class-slots class) :key #'c2mop:slot-definition-name)
-                                                                    (error "No such slot ~s on class ~s" slot class))))))
+                      for (name binding) = (enlist slot)
+                      collect (list (gensym (string name))
+                                    (or binding name)
+                                    (or (find name (c2mop:class-slots class) :key #'c2mop:slot-definition-name)
+                                        (error "No such slot ~s on class ~s" name class))))))
     `(let ,(loop for (sym _ slot) in slots
                  for type = (gl-type->cl-type (gl-type slot))
                  collect `(,sym ,(case type
@@ -488,6 +491,7 @@
                         collect `(type ,(gl-type->cl-type (gl-type slot)) ,sym)))
        (let* ((,structg ,struct)
               (,ptr (cffi:inc-pointer (memory-region-pointer (storage ,structg)) (base-offset ,structg))))
+         (declare (ignorable ,ptr))
          (symbol-macrolet ,(loop for (sym name slot) in slots
                                  collect `(,name (gl-memref (cffi:inc-pointer ,ptr ,(base-offset slot))
                                                             ,(gl-type slot) :layout ',(layout-standard class) :container ,sym)))
