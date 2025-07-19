@@ -13,62 +13,12 @@
   (declare (type single-float dt))
   (let ((force (vec 0 0 0))
         (location (raw-particle-location particle))
-        (velocity (raw-particle-velocity particle)))
+        (velocity (raw-particle-velocity particle))
+        (age (raw-particle-age particle)))
     (declare (dynamic-extent force))
-    (with-gl-slots (particle-force-field type position strength range inv-range normal) field
-      (case type
-        (0)
-        (1                              ; Point
-         (let ((dir (v- position location)))
-           (declare (dynamic-extent dir))
-           (nv+* force dir (* strength (- 1 (clamp 0.0 (* (vlength dir) inv-range) 1.0))))))
-        (2                              ; Direction
-         (nv+* force normal strength))
-        (3                              ; Plane
-         (let ((dist (v. normal (v- location position))))
-           (nv+* force normal (* strength (- 1 (clamp 0.0 (* dist inv-range) 1.0))))))
-        (4                              ; Vortex
-         (let* ((dir (v- location position))
-                (t0 (/ (v. normal dir) (v. normal normal)))
-                (dist (vdistance location (v* position t0)))
-                (perp (nvunit* (vc normal dir))))
-           (declare (dynamic-extent dir perp))
-           (nv+* force perp (* strength (- 1 (clamp 0.0 (* dist inv-range) 1.0))))))
-        (5                              ; Sphere
-         (let* ((dir (v- position location))
-                (dist (vlength dir)))
-           (declare (dynamic-extent dir))
-           (when (< dist range)
-             (let* ((push (nvunit (nv- dir)))
-                    (slide (nvc (vc velocity push) (nv- push))))
-               (declare (dynamic-extent push slide))
-               (nv+* force (nv- slide velocity) (/ dt))))))
-        (6                              ; Planet
-         (let* ((dir (v- position location))
-                (dist (vlength dir)))
-           (declare (dynamic-extent dir))
-           (cond ((< dist range)
-                  (let* ((push (nvunit (nv- dir)))
-                         (slide (nvc (vc velocity push) (nv- push))))
-                    (declare (dynamic-extent push slide))
-                    (nv+* force (nv- slide velocity) (/ dt))))
-                 (T
-                  (nv+* force dir (/ strength (* dist dist)))))))
-        (7                              ; Brake
-         (!v* force velocity (- strength)))
-        (8                              ; Turbulence
-         (let* ((offset (mod (raw-particle-age particle) 256.0))
-                (varr (make-array 3 :element-type 'single-float))
-                (f 4.0))
-           (declare (dynamic-extent varr))
-           (setf (aref varr 0) (mod (* range (vx location)) 100.0))
-           (setf (aref varr 1) (mod (* range (vy location)) 100.0))
-           (setf (aref varr 2) (mod (* range (vz location)) 100.0))
-           (noise:with-sample s (noise:curl/3d varr f (noise:xxhash) #'noise:perlin/3d offset)
-             (declare (ignore s))
-             (incf (vx force) (* strength sdx))
-             (incf (vy force) (* strength sdy))
-             (incf (vz force) (* strength sdz)))))))
+    (funcall (particle-force-field-type-function
+              (%particle-force-field-type (slot-value field 'type)))
+             field force location velocity age dt)
     (nv+* (raw-particle-velocity particle) force dt)))
 
 (defun %simulate-particle (data in out dt force-fields)

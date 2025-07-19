@@ -338,6 +338,18 @@
                   collect `(defmethod (setf ,name) (,value (,type ,type))
                              (setf (,resolution ,type) ,value)))))
 
+(defmacro define-structure-delegate-methods (structure &body wrappers)
+  (flet ((default-structure-fun (genfun)
+           (mksym (symbol-package structure) structure "-" genfun)))
+    `(progn ,@(loop with value = (gensym "VALUE")
+                    for wrapper in wrappers
+                    for (genfun structure-fun) = (enlist wrapper)
+                    for accessor = (or structure-fun (default-structure-fun genfun))
+                    collect `(defmethod ,genfun ((,structure ,structure))
+                               (,accessor ,structure))
+                    collect `(defmethod (setf ,genfun) (,value (,structure ,structure))
+                               (setf (,accessor ,structure) ,value))))))
+
 (defmacro with-retry-restart ((name report &rest report-args) &body body)
   (let ((tag (gensym "RETRY-TAG"))
         (return (gensym "RETURN"))
