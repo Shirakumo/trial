@@ -23,11 +23,13 @@
 
 (defmethod resolve-shader-include ((source cons))
   (destructuring-bind (pool name) source
-    (etypecase name
-      (symbol
-       (gl-source (asset pool name T)))
-      ((or string pathname)
-       (resolve-shader-include (pool-path pool name))))))
+    (if (eql 'eval pool)
+        (eval name)
+        (etypecase name
+          (symbol
+           (gl-source (asset pool name T)))
+          ((or string pathname)
+           (resolve-shader-include (pool-path pool name)))))))
 
 (defclass buffer-slot-definition ()
   ((buffer-type :initarg :buffer :initform NIL :accessor buffer-type)
