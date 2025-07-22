@@ -1,7 +1,8 @@
 (in-package #:org.shirakumo.fraf.trial)
 
 (defclass struct-buffer (buffer-object)
-  ((data-usage :initform :dynamic-draw)))
+  ((data-usage :initform :dynamic-draw)
+   (map-bits :initform '() :initarg :map-bits :accessor map-bits)))
 
 (defmethod print-object ((buffer struct-buffer) stream)
   (print-unreadable-object (buffer stream :type T :identity T)
@@ -95,6 +96,26 @@
   (when (< (size buffer) (buffer-field-size T buffer 0))
     (error "Attempting to resize the struct buffer to ~d bytes, which is too small to hold the ~d bytes for its struct!"
            octets (buffer-field-size T buffer 0))))
+
+(defmethod allocate ((buffer struct-buffer))
+  (mem:with-memory-region (region (storage (buffer-data buffer)))
+    (let ((vbo (gl:gen-buffer)))
+      (with-cleanup-on-failure (progn (gl:delete-buffers (list vbo))
+                                      (setf (data-pointer buffer) NIL))
+        (setf (data-pointer buffer) vbo)
+        (v:debug :trial.resource "Allocating ~d KB buffer." (ceiling (size buffer) 1024))
+        (%gl:bind-buffer (buffer-type buffer) vbo)
+        (%gl:buffer-storage
+         (buffer-type buffer)
+         (memory-region-size region)
+         (memory-region-pointer region)
+         (ecase (data-usage buffer)
+           ((:dynamic-draw :stream-draw :static-draw)
+            (list* :dynamic-storage :map-write (map-bits buffer)))
+           ((:dynamic-read :stream-read :static-read)
+            (list* :dynamic-storage :map-read (map-bits buffer)))
+           ((:dynamic-copy :stream-copy :static-copy)
+            (list* :dynamic-storage :map-read :map-write (map-bits buffer)))))))))
 
 (defvar *buffers-in-tx* ())
 (defmacro with-buffer-tx ((struct buffer &key (update :write)) &body body)
