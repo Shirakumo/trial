@@ -623,6 +623,9 @@ void main(){
 (defmethod barrier ((pass compute-pass))
   (cffi:foreign-bitfield-symbols '%gl::MemoryBarrierMask (slot-value pass 'barrier)))
 
+(defmethod (setf barrier) ((bits fixnum) (pass compute-pass))
+  (setf (slot-value pass 'barrier) bits))
+
 (defmethod (setf barrier) ((bits list) (pass compute-pass))
   (setf (slot-value pass 'barrier) (cffi:foreign-bitfield-value '%gl::MemoryBarrierMask bits)))
 
