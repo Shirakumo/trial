@@ -245,7 +245,8 @@
    #:tile-data)
   ;; assets/uniform-block.lisp
   (:export
-   #:uniform-block)
+   #:uniform-block
+   #:shader-storage-block)
   ;; assets/video.lisp
   (:export
    #:load-video
