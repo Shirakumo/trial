@@ -2105,6 +2105,19 @@
    #:vec->clip
    #:vec->screen
    #:screen->vec)
+  ;; type-info.lisp
+  (:export
+   #:cl-type->gl-type
+   #:gl-coerce
+   #:gl-type-size
+   #:memory-layout-standard
+   #:std140
+   #:std430
+   #:vertex-buffer
+   #:buffer-field-base
+   #:buffer-field-size
+   #:buffer-field-stride
+   #:gl-memref)
   ;; video.lisp
   (:export
    #:video
