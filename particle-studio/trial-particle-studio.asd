@@ -10,6 +10,8 @@
   :serial T
   :components ((:file "package")
                (:file "ui")
+               (:file "force-field")
+               (:file "emitter")
                (:file "main"))
   :depends-on (:trial-glfw
                :alloy-constraint
