@@ -182,7 +182,7 @@
 (defmethod particle-force-field-list ((emitter particle-emitter))
   (loop with fields = (particle-force-fields emitter)
         for i from 0 below (particle-force-field-count fields)
-        collect (particle-force-field-list (aref fields i))))
+        collect (particle-force-field-list (aref (particle-force-fields fields) i))))
 
 (defmethod emit ((name symbol) count &rest particle-options &key &allow-other-keys)
   (apply #'emit (node name T) count particle-options))
