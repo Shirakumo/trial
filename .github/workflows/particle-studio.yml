@@ -1,0 +1,77 @@
+name: particle-studio
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'particle-studio-*'
+permissions:
+  contents: write
+jobs:
+  build:
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macOS-latest, windows-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.platform }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      LISP: sbcl-bin
+    steps:
+      - name: Restore cache
+        id: cache-ql
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.roswell
+            ~/.cache/common-lisp
+            ~/AppData/Local/cache
+          key: ${{ runner.os }}-ql
+      - name: Install Lisp
+        uses: 40ants/setup-lisp@v2
+      - name: Install env
+        if: steps.cache-ql.outputs.cache-hit != 'true'
+        shell: lispsh -eo pipefail {0}
+        run: |
+          ros run -- --noinform \
+               --eval '(ql-dist:install-dist "http://dist.shirakumo.org/shirakumo.txt" :prompt NIL)' \
+               --non-interactive
+      - uses: actions/checkout@v1
+      - name: Build the library
+        shell: lispsh -eo pipefail {0}
+        run: |
+          ros run -- --noinform --dynamic-space-size 4Gb \
+               --eval "(push \"$GITHUB_WORKSPACE\" ql:*local-project-directories*)" \
+               --eval '(ql:quickload :trial-particle-studio)' \
+               --non-interactive
+      - name: Build the binary
+        shell: lispsh -eo pipefail {0}
+        run: |
+          ros run -- --noinform --dynamic-space-size 4Gb \
+               --eval "(push \"$GITHUB_WORKSPACE\" ql:*local-project-directories*)" \
+               --eval '(asdf:make :trial-particle-studio)' \
+               --non-interactive
+      - name: Make release ZIP
+        if: runner.os != 'windows'
+        run: |
+          cd particle-studio/bin/ && zip -r ~/trial-particle-studio-${{ runner.os }}.zip *
+      - name: Make release ZIP
+        if: runner.os == 'windows'
+        shell: powershell
+        run: |
+          cd particle-studio/bin/
+          Compress-Archive -Path * -Destination $HOME/trial-particle-studio-${{ runner.os }}.zip
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trial-particle-studio-${{ runner.os }}
+          path: ~/trial-particle-studio-${{ runner.os }}.zip
+      - name: Create release
+        id: create_release
+        uses: ncipollo/release-action@v1
+        continue-on-error: true
+        with:
+          allowUpdates: true
+          name: Release ${{ github.ref_name }}
+          artifacts: ~/trial-particle-studio-${{ runner.os }}.zip
