@@ -108,9 +108,6 @@
 
 (defmethod (setf attachments) :before (attachments (framebuffer framebuffer))
   (when (and (allocated-p framebuffer) (not (equal attachments (attachments framebuffer))))
-    (when attachments
-      (setf (width framebuffer) NIL)
-      (setf (height framebuffer) NIL))
     (with-cleanup-on-failure (bind-framebuffer-attachments framebuffer (attachments framebuffer))
       (%bind-framebuffer-attachments framebuffer attachments))))
 
