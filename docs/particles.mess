@@ -114,3 +114,8 @@ The default emitter only allows using a single texture per particle. Sometimes i
 
 ## CPU Simulation
 On systems with restricted GPU capabilities (GL 3.3) or for particle systems with a very small number of particles it can be more useful to simulate on the CPU instead of the GPU. In this case you can use the ``cpu-particle-emitter``. The interface of the emitter is the same as for the ``gpu-particle-emitter``, though it has one crucial difference: particles in both quad render modes can be spawned at different places and still work fine. This means that you can spawn particles from different locations and directions with the same emitter without the simulation going awry.
+
+## Authoring
+Trial ships a separate, standalone application called ``trial-particle-studio`` which presents a convenient UI to create and play with particle systems that Trial can render. It also lets you save the parameters of the systems out so you can easily include the effects you've made in your ultimate game.
+
+In order to use it, simply load ``trial-particle-studio`` and call ``trial-particle-studio:launch``. With the UI you can create multiple systems at once, manage the various parameters of each, set up various force fields, and so on. It also automatically pulls in the ''trial-assets''(https://shirakumo.org/projects/trial-assets) package for a bunch of freely usable particle textures and environment maps.
