@@ -33,8 +33,18 @@
                   ("Add Emitter"
                    (make-instance 'emitter))))))
     (setf (sections panel) (make-instance 'alloy:section-list :focus-parent focus))
-    (let* ((scroll (make-instance 'alloy:clip-view :inner (sections panel)))
+    (let* ((toolbar (make-instance 'alloy:horizontal-linear-layout))
+           (scroll (make-instance 'alloy:clip-view :inner (sections panel)))
            (side (make-instance 'alloy:sidebar :focus-parent focus :layout scroll)))
+      (let* ((pause "Pause")
+             (button (alloy:represent pause 'alloy:button :focus-parent focus :layout-parent toolbar)))
+        (alloy:on alloy:activate (button)
+          (setf (alloy:value button)
+                (if (setf (paused-p panel) (not (paused-p panel)))
+                    "Play" "Pause"))))
+      (make-instance 'alloy:button* :value "Burst" :focus-parent focus :layout-parent toolbar :on-activate
+                     (lambda () (emit panel T)))
+      (alloy:enter toolbar side :place :north :size (alloy:un 30))
       (alloy:enter side layout :place :west :size (alloy:un 350)))
     (alloy:enter menu layout :place :north :size (alloy:un 30))
     (alloy:enter menu focus)
@@ -106,3 +116,18 @@
 
 (defmethod save-system ((default (eql T)) (panel base-panel))
   (save-system (or (file panel) :prompt) panel))
+
+(defmethod paused-p ((panel base-panel))
+  (do-scene-graph (thing (scene +main+))
+    (when (typep thing 'emitter)
+      (return (paused-p thing)))))
+
+(defmethod (setf paused-p) (value (panel base-panel))
+  (do-scene-graph (thing (scene +main+) value)
+    (when (typep thing 'emitter)
+      (setf (paused-p thing) value))))
+
+(defmethod emit ((panel base-panel) count &rest args)
+  (do-scene-graph (thing (scene +main+))
+    (when (typep thing 'emitter)
+      (apply #'emit thing count args))))

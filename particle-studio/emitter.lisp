@@ -3,7 +3,9 @@
 (defvar *emitter-counter* 1)
 
 (define-shader-entity emitter (alloy:structure cpu-particle-emitter)
-  ((sections :initform NIL :accessor sections))
+  ((sections :initform NIL :accessor sections)
+   (paused-p :initform NIL :reader paused-p)
+   (burst :initform 10 :accessor burst))
   (:default-initargs
    :particle-rate 20.0
    :texture (assets:// :circle-05)
@@ -23,11 +25,10 @@
                       (alloy:enter ,title layout :row (incf row) :col 0)
                       (alloy:represent (,place emitter) 'alloy:ranged-wheel
                                        :range '(,start . ,end) ,@args :layout-parent layout :focus-parent focus))))
-        (let* ((burst 10)
-               (button (make-instance 'alloy:button* :value "Burst" :focus-parent focus :on-activate
-                                      (lambda () (emit emitter burst)))))
+        (let* ((button (make-instance 'alloy:button* :value "Burst" :focus-parent focus :on-activate
+                                      (lambda () (emit emitter T)))))
           (alloy:enter button layout :row (incf row) :col 0)
-          (alloy:represent burst 'alloy:ranged-wheel :range '(1 . 200) :layout-parent layout :focus-parent focus))
+          (alloy:represent (burst emitter) 'alloy:ranged-wheel :range '(1 . 200) :layout-parent layout :focus-parent focus))
         (wheel particle-rate "Particle Rate" 0 10000)
         (wheel particle-lifespan "Lifespan" 0.0 100.0 :step 0.1)
         (wheel particle-lifespan-randomness "Lifespan Random" 0.0 1.0 :step 0.1)
@@ -37,14 +38,14 @@
         (wheel particle-scaling "Scaling" 0.0 10.0 :step 0.1)
         (wheel particle-rotation "Rotation" 0.0 10.0 :step 0.1)
         (wheel particle-motion-blur "Motion Blur" 0.0 1.0 :step 0.1)
-        (alloy:enter "Texture" layout :row (incf row) :col 0)
-        (alloy:represent (texture emitter) T :layout-parent layout :focus-parent focus)
         (alloy:enter "Display Mode" layout :row (incf row) :col 0)
         (alloy:represent (particle-mode emitter) 'alloy:combo-set
                          :value-set '(:quad :billboard) :layout-parent layout :focus-parent focus)
-        (alloy:enter "Blend Mode" layout :row (incf row) :col 0)
-        (alloy:represent (blend-mode emitter) 'alloy:combo-set
-                         :value-set '(:add :normal :invert :darken :multiply :screen) :layout-parent layout :focus-parent focus)
+        (alloy:enter "Texture" layout :row (incf row) :col 0)
+        (alloy:represent (texture emitter) T :layout-parent layout :focus-parent focus
+                         :filter (lambda (x) (and (typep (generator x) 'image)
+                                                  (member (getf (trial::generation-arguments (generator x)) :target)
+                                                          '(NIL :texture-2d)))))
         (alloy:enter "Texture Flip" layout :row (incf row) :col 0)
         (alloy:represent (particle-flip emitter) 'alloy:combo-set
                          :value-set '(NIL :x :y T) :layout-parent layout :focus-parent focus)
@@ -58,6 +59,9 @@
                (c (alloy:represent color T :layout-parent layout :focus-parent focus)))
           (alloy:on alloy:value (v c)
             (setf (particle-color-multiplier emitter) color)))
+        (alloy:enter "Blend Mode" layout :row (incf row) :col 0)
+        (alloy:represent (blend-mode emitter) 'alloy:combo-set
+                         :value-set '(:add :normal :invert :darken :multiply :screen) :layout-parent layout :focus-parent focus)
         (alloy:enter "Emitter Shape" layout :row (incf row) :col 0)
         (let* ((shape :point)
                (c (alloy:represent shape 'alloy:combo-set
@@ -99,3 +103,13 @@
          :particle-offset (particle-offset emitter)
          :particle-options (particle-options emitter)
          :particle-force-fields (particle-force-field-list emitter)))
+
+(defmethod (setf paused-p) (value (emitter emitter))
+  (when (or (and value (not (paused-p emitter)))
+            (and (not value) (paused-p emitter)))
+    (if value
+        (shiftf (slot-value emitter 'paused-p) (particle-rate emitter) 0)
+        (shiftf (particle-rate emitter) (slot-value emitter 'paused-p) NIL))))
+
+(defmethod emit ((emitter emitter) (count (eql T)) &rest args)
+  (apply #'emit emitter (burst emitter) args))
