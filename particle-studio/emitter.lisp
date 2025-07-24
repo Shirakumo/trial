@@ -1,9 +1,18 @@
 (in-package #:org.shirakumo.fraf.trial.particle-studio)
 
-(defclass emitter (alloy:structure cpu-particle-emitter)
-  ())
+(defvar *emitter-counter* 1)
 
-(defmethod initialize-instance :after ((emitter emitter) &key)
+(define-shader-entity emitter (alloy:structure cpu-particle-emitter)
+  ((sections :initform NIL :accessor sections))
+  (:default-initargs
+   :particle-rate 20.0
+   :texture (assets:// :circle-05)
+   :vertex-array (// 'trial 'point)
+   :particle-options '(:velocity 5.0 :randomness 0.2)))
+
+(defmethod initialize-instance :around ((emitter emitter) &key)
+  (call-next-method)
+  (setf (name emitter) (trial::mksym #.*package* 'emitter- (incf *emitter-counter*)))
   (let ((layout (make-instance 'alloy:vertical-linear-layout))
         (focus (make-instance 'alloy:vertical-focus-list)))
     (let ((layout (make-instance 'alloy:grid-layout :col-sizes '(160 T) :row-sizes '(20) :cell-margins (alloy:margins 2)
@@ -44,8 +53,13 @@
                (c (alloy:represent color T :layout-parent layout :focus-parent focus)))
           (alloy:on alloy:value (v c)
                     (setf (particle-color emitter) color)))
+        (alloy:enter "Color Multiplier" layout :row (incf row) :col 0)
+        (let* ((color (particle-color-multiplier emitter))
+               (c (alloy:represent color T :layout-parent layout :focus-parent focus)))
+          (alloy:on alloy:value (v c)
+            (setf (particle-color-multiplier emitter) color)))
         (alloy:enter "Emitter Shape" layout :row (incf row) :col 0)
-        (let* ((shape :square)
+        (let* ((shape :point)
                (c (alloy:represent shape 'alloy:combo-set
                                    :value-set '(:square :disc :sphere :cube :point) :layout-parent layout :focus-parent focus)))
           (alloy:on alloy:value (v c)
@@ -57,38 +71,31 @@
                             (:cube (// 'trial 'unit-cube))
                             (:point (// 'trial 'point))))))
         (alloy:enter "Force Fields" layout :row (incf row) :col 0)
-        (make-instance 'alloy:button* :value "Add" :focus-parent focus :on-activate
-                       (lambda () (add-force-field emitter)))))
+        (make-instance 'alloy:button* :value "Add" :focus-parent focus :layout-parent layout :on-activate
+                       (lambda () (make-instance 'force-field :emitter emitter)))))
     (let ((sections (make-instance 'alloy:section-list :layout-parent layout :focus-parent focus))
           (fields (particle-force-fields emitter)))
+      (setf (sections emitter) sections)
       (loop for i from 0 below (trial::particle-force-field-count fields)
-            for field = (aref (trial::particle-force-fields fields) i)
-            for widget = (make-instance 'force-field-widget :field field :i (1+ i) :emitter emitter)
-            do (alloy:enter widget sections :label (format NIL "Force Field ~d" i))))
-    (alloy:finish-structure emitter layout focus)))
-
-#++
-(defmethod add-force-field ((widget emitter-widget))
-  (let ((sections (make-instance 'alloy:section-list :layout-parent layout :focus-parent focus))
-        (fields (particle-force-fields emitter)))
-    (loop for i from 0 below (trial::particle-force-field-count fields)
-          for field = (aref (trial::particle-force-fields fields) i)
-          for widget = (make-instance 'force-field-widget :field field :i (1+ i) :emitter emitter)
-          do (alloy:enter widget sections :label (format NIL "Force Field ~d" i)))))
+            do (make-instance 'force-field :emitter emitter :i i)))
+    (alloy:finish-structure emitter layout focus)
+    ;; Register
+    (enter-and-load emitter (scene +main+) +main+)))
 
 (defmethod enter :after ((emitter emitter) (scene scene))
-  (alloy:enter emitter (sidebar (trial-alloy:find-panel 'base-panel))))
+  (alloy:enter emitter (sections (trial-alloy:find-panel 'base-panel))
+               :label (string-capitalize (name emitter))))
 
 (defmethod leave :after ((emitter emitter) (container container))
-  (alloy:leave emitter (sidebar (trial-alloy:find-panel 'base-panel))))
+  (alloy:leave emitter (sections (trial-alloy:find-panel 'base-panel))))
 
-(defmethod serialize ((emitter emitter))
+(defmethod serialize ((emitter cpu-particle-emitter))
   (list* :max-particles (max-particles emitter)
          :vertex-array ()
          :motion-blur (particle-motion-blur emitter)
          :color-multiplier (particle-color-multiplier emitter)
-         :blend-mode (particle-blend-mode emitter)
+         :blend-mode (blend-mode emitter)
          :particle-rate (particle-rate emitter)
          :particle-offset (particle-offset emitter)
          :particle-options (particle-options emitter)
-         :particle-force-fields (map #'serialize (particle-force-fields emitter))))
+         :particle-force-fields (particle-force-field-list emitter)))
