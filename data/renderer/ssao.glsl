@@ -120,5 +120,5 @@ float evaluate_ssao(in vec2 uv){
     occlusion += (depth_diff >= ssao_bias) ? range_check : 0.0;
   }
   occlusion = 1.0 - (occlusion / ssao_kernel_size);
-  return pow(occlusion, 2);
+  return occlusion;
 }
