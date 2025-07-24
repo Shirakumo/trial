@@ -599,6 +599,8 @@
   (:export
    #:particle-force-field
    #:particle-force-fields
+   #:particle-force-field-count
+   #:particle-force-field-list
    #:particle-emitter
    #:texture
    #:to-emit

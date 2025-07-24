@@ -229,9 +229,6 @@
   (stage (draw-vertex-array emitter) area)
   (stage (slot-value emitter 'particle-property-buffer) area))
 
-(defmethod (setf particle-force-fields) ((null null) (emitter cpu-particle-emitter))
-  (setf (particle-force-fields emitter) (make-instance 'particle-force-fields :size 0)))
-
 (defmethod (setf mesh-index-buffer) (buffer (emitter cpu-particle-emitter))
   (setf (slot-value emitter 'face-data) (buffer-data buffer)))
 

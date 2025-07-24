@@ -53,6 +53,22 @@
                  (make-particle-force-field-type :id id :name name :shader-source "" :function #'identity)))
           ((NIL) NIL)))))
 
+(defmethod particle-force-field-list ((field particle-force-field))
+  (let ((data ()))
+    (flet ((add (k s)
+             (push (slot-value field s) data)
+             (push k data)))
+      (unless (v= (slot-value field 'position) 0)
+        (add :position 'position))
+      (unless (= (slot-value field 'strength) 0)
+        (add :strength 'strength))
+      (unless (= (slot-value field 'range) 0)
+        (add :range 'range))
+      (unless (v= (slot-value field 'normal) +vy3+)
+        (add :normal 'normal)))
+    (list* :type (name (%particle-force-field-type (slot-value field 'type)))
+           data)))
+
 (defmacro define-particle-force-field-type (name args field-args &body body)
   (destructuring-bind (force &optional (location (gensym "LOCATION")) (velocity (gensym "VELOCITY"))
                                        (dt (gensym "DT")) (age (gensym "AGE"))) args

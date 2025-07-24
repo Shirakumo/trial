@@ -153,17 +153,21 @@
                (return)))
         finally (error "VAO must have a position binding at index 0.")))
 
-(defmethod (setf particle-force-fields) ((cons cons) (emitter particle-emitter))
-  (when (or (not (slot-boundp emitter 'particle-force-fields)))
+(defmethod (setf particle-force-fields) ((list list) (emitter particle-emitter))
+  (setf (particle-force-field-list emitter) list))
+
+(defmethod (setf particle-force-field-list) ((list list) (emitter particle-emitter))
+  (when (or (not (slot-boundp emitter 'particle-force-fields))
+            (= 0 (size (particle-force-fields emitter))))
     ;; We have a hard max of 32 anyway in the shader....
     (setf (particle-force-fields emitter) (make-instance 'particle-force-fields :size 32)))
-  (let ((size (length cons))
+  (let ((size (length list))
         (struct (particle-force-fields emitter)))
     (when (< 32 size)
       (error "Cannot support more than 32 particle force fields!"))
     ;; FIXME: copy over and resize instead of this nonsense.
     (setf (slot-value struct 'particle-force-field-count) size)
-    (loop for info in cons
+    (loop for info in list
           for i from 0
           for target = (elt (slot-value struct 'particle-force-fields) i)
           do (destructuring-bind (&key (type :point) (position (vec 0 0 0)) (strength 0.0) (range 0.0) (normal +vy3+)) info
@@ -172,7 +176,13 @@
                (setf (slot-value target 'strength) strength)
                (setf (slot-value target 'range) range)
                (setf (slot-value target 'inv-range) (if (= 0.0 range) 0.0 (/ range)))
-               (setf (slot-value target 'normal) normal)))))
+               (setf (slot-value target 'normal) normal))))
+  list)
+
+(defmethod particle-force-field-list ((emitter particle-emitter))
+  (loop with fields = (particle-force-fields emitter)
+        for i from 0 below (particle-force-field-count fields)
+        collect (particle-force-field-list (aref fields i))))
 
 (defmethod emit ((name symbol) count &rest particle-options &key &allow-other-keys)
   (apply #'emit (node name T) count particle-options))
