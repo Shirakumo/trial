@@ -160,7 +160,8 @@
 (define-particle-force-field-type :vortex (force location)
     (:position position :normal normal :strength strength :inv-range inv-range)
   (let* ((dir (v- location position))
-         (t0 (/ (v. normal dir) (v. normal normal)))
+         (dot (v. normal normal))
+         (t0 (if (= 0 dot) 0.0 (/ (v. normal dir) dot)))
          (dist (vdistance location (v* position t0)))
          (perp (nvunit* (vc normal dir))))
     (declare (dynamic-extent dir perp))
@@ -204,7 +205,7 @@
                   (slide (nvc (vc velocity push) (nv- push))))
              (declare (dynamic-extent push slide))
              (nv+* force (nv- slide velocity) (/ dt))))
-          (T
+          ((< 0 dist)
            (nv+* force dir (/ strength (* dist dist)))))))
 
 (define-particle-force-field-shader :planet (field particle)
