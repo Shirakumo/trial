@@ -128,7 +128,7 @@
              ,item-text))
 
          (defclass ,name (alloy:combo)
-           ())
+           ((filter :initarg :filter :initform (constantly T) :accessor filter)))
 
          (defmethod alloy:value-set ((,name ,name))
            ,@body)
@@ -147,7 +147,7 @@
 (define-set-representation language
   :item-text (let ((language (trial::try-find-language alloy:value)))
                (or (first (language-codes:names language)) language))
-  (trial:languages))
+  (remove-if-not (filter language) (trial:languages)))
 
 (define-set-representation asset
   :represents trial:asset
@@ -155,6 +155,7 @@
                      (trial:name (trial:pool alloy:value))
                      (trial:name alloy:value))
   (let ((type (if (alloy:value asset) (type-of (alloy:value asset)) 'trial:asset))
+        (filter (filter asset))
         (values ()))
     (flet ((asset< (a b)
              (if (eq (trial:pool a) (trial:pool b))
@@ -162,7 +163,8 @@
                  (string< (trial:name (trial:pool a)) (trial:name (trial:pool b))))))
       (dolist (pool (trial:list-pools) (sort values #'asset<))
         (dolist (asset (trial:list-assets pool))
-          (when (typep asset type)
+          (when (and (typep asset type)
+                     (funcall filter asset))
             (push asset values)))))))
 
 (defmethod (setf alloy:value) :before ((value trial:asset) (asset asset))
@@ -181,6 +183,7 @@
                    (T
                     (format NIL "<~a>" (type-of alloy:value))))
   (let ((type (if (alloy:value resource) (type-of (alloy:value resource)) 'trial:resource))
+        (filter (filter resource))
         (values ()))
     (when (eql type 'trial:placeholder-resource)
       (setf type 'trial:resource))
@@ -195,8 +198,9 @@
       (dolist (pool (trial:list-pools) (sort values #'resource<))
         (dolist (asset (trial:list-assets pool))
           (dolist (resource (trial:list-resources asset))
-            (when (or (typep resource type)
-                      (typep resource 'trial:placeholder-resource))
+            (when (and (or (typep resource type)
+                           (typep resource 'trial:placeholder-resource))
+                       (funcall filter resource))
               (push resource values))))))))
 
 (defmethod (setf alloy:value) :before ((value trial:resource) (resource resource))
