@@ -64,7 +64,7 @@
      (alloy:on alloy:value (v comp)
        (declare (ignore v))
        ,@body
-       (alloy:notify-observers 'alloy:value vec (alloy:value vec) vec))))
+       (alloy:notify-observers 'alloy:value vec object vec))))
 
 (defclass vec2 (vec)
   ())
