@@ -76,7 +76,9 @@
 (defmethod apply-transforms progn ((scene scene)))
 
 (defun ensure-entity (name container &optional (class name) &rest initargs)
-  (or (node name container)
-      (let ((object (apply #'make-instance class :name name initargs)))
-        (enter object container)
-        object)))
+  (let ((existing (node name container)))
+    (if existing
+        (apply #'reinitialize-instance existing initargs)
+        (let ((object (apply #'make-instance class :name name initargs)))
+          (enter object container)
+          object))))
