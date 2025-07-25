@@ -140,6 +140,10 @@
   (when (cast-shadows-p light)
     (allocate-shadow-maps light pass)))
 
+(defmethod leave :after ((light light) (pass standard-shadows-pass))
+  (when (cast-shadows-p light)
+    (deallocate-shadow-maps light pass)))
+
 (defmethod disable :after ((light light) (pass standard-shadows-pass))
   (when (cast-shadows-p light)
     (deallocate-shadow-maps light pass)))
