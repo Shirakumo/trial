@@ -131,7 +131,8 @@
   'pbr-material-block)
 
 (defclass environment-light (ambient-light)
-  ((irradiance-map :initarg :irradiance-map :accessor irradiance-map)
+  ((name :initform 'environment-light)
+   (irradiance-map :initarg :irradiance-map :accessor irradiance-map)
    (environment-map :initarg :environment-map :accessor environment-map)))
 
 (define-transfer environment-light irradiance-map environment-map)

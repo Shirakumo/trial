@@ -52,7 +52,7 @@
   intensity)
 
 (defclass ambient-light (light)
-  ())
+  ((name :initform 'ambient-light)))
 
 (defmethod <- progn ((target standard-light) (light ambient-light))
   (setf (light-type target) 1))

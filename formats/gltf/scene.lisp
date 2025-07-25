@@ -140,7 +140,7 @@
                         (color (to-vec (gltf:color envmap)))
                         (orientation (to-vec (gltf:orientation envmap)))
                         (envmap (make-instance 'environment-map :input (merge-pathnames (gltf:file envmap) input))))
-                   (enter (make-instance 'environment-light :color color :asset envmap :name :envlight) scene)
+                   (enter (make-instance 'environment-light :color color :asset envmap) scene)
                    (enter (make-instance 'skybox :color color :texture (resource envmap :environment-map) :name :skybox) scene)))
                (loop for child across (gltf:nodes node)
                      for entity = (construct-node child gltf model generator)
