@@ -27,8 +27,10 @@
 
 (defmethod print-object ((light light) stream)
   (print-unreadable-object (light stream :type T :identity T)
-    (format stream "~f,~f,~f ~:[INACTIVE~;ACTIVE~]"
-            (vx (color light)) (vy (color light)) (vz (color light)) (active-p light))))
+    (format stream "~@[~s ~]~f,~f,~f ~:[INACTIVE~;ACTIVE~]"
+            (name light)
+            (vx (color light)) (vy (color light)) (vz (color light))
+            (active-p light))))
 
 (define-transfer light color active-p)
 
@@ -68,8 +70,11 @@
 
 (defmethod print-object ((light located-light) stream)
   (print-unreadable-object (light stream :type T :identity T)
-    (format stream "~a ~f,~f,~f ~:[INACTIVE~;ACTIVE~]"
-            (global-location light) (vx (color light)) (vy (color light)) (vz (color light)) (active-p light))))
+    (format stream "~@[~s ~]~a ~f,~f,~f ~:[INACTIVE~;ACTIVE~]"
+            (name light)
+            (global-location light)
+            (vx (color light)) (vy (color light)) (vz (color light))
+            (active-p light))))
 
 (defmethod <- progn ((target standard-light) (light located-light))
   (setf (location target) (global-location light))
