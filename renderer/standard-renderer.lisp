@@ -426,6 +426,8 @@
   (let ((location (v<- (light-cache-location pass) (focal-point (camera pass))))
         (size (1- (lru-cache-size (allocated-lights pass)))))
     (with-buffer-tx (struct (light-block pass))
+      (setf (light-count struct) 0)
+      (lru-cache-clear (allocated-lights pass))
       (multiple-value-bind (nearest count) (org.shirakumo.fraf.trial.space.kd-tree:kd-tree-k-nearest
                                             size location (light-cache pass) :test #'active-p)
         (dotimes (i count)
