@@ -149,6 +149,7 @@
     (when (and id (allocated-p (light-block pass)))
       (with-buffer-tx (struct (light-block pass))
         (<- (aref (slot-value struct 'lights) id) light)
+        ;; FIXME: this can leave holes with old lights still active!
         (setf (light-count struct) (max (light-count struct) (1+ id)))))))
 
 (defmethod disable ((light light) (pass standard-render-pass))
