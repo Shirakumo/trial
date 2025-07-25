@@ -138,7 +138,7 @@
        (pop-features))))
 
 (declaim (inline set-blend-mode))
-(defun set-blend-mode (mode)
+(defun set-blend-mode (mode &key (advanced-blend-equations NIL))
   (ecase mode
     ((:source-over :normal)
      (gl:blend-func-separate :src-alpha :one-minus-src-alpha :one :one-minus-src-alpha)
@@ -182,81 +182,103 @@
     (:one
      (gl:blend-func-separate :one :one :one :one)
      (gl:blend-equation :func-add))
-    (:multiply
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :multiply-khr))
-       (T
-        (gl:blend-func-separate :zero :src-color :one :one-minus-src-alpha)
-        (gl:blend-equation :func-add))))
-    (:screen
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :screen-khr))
-       (T
-        (gl:blend-func-separate :one :one-minus-src-color :one :one-minus-src-alpha)
-        (gl:blend-equation :func-add))))
-    (:overlay
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :overlay-khr))))
-    (:darken
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :darken-khr))
-       (T
-        (gl:blend-func-separate :one :one :one :one-minus-src-alpha)
-        (gl:blend-equation :max))))
-    (:lighten
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :lighten-khr))))
-    (:dodge
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :colordodge-khr))))
-    (:burn
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :colorburn-khr))))
-    (:hard-light
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :hardlight-khr))))
-    (:soft-light
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :softlight-khr))))
-    (:difference
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :difference-khr))
-       (T
-        (gl:blend-func-separate :one :one :one :one-minus-src-alpha)
-        (gl:blend-equation :func-subtract))))
-    (:exclusion
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :exclusion-khr))))
-    (:hue
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :hsl-hue-khr))))
-    (:saturation
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :hsl-saturation-khr))))
-    (:color
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :hsl-color-khr))))
-    (:luminosity
-     (gl-extension-case
-       (:GL-KHR-BLEND-EQUATION-ADVANCED
-        (gl:blend-equation :hsl-luminosity-khr))))
     (:invert
      (gl:blend-func-separate :one :one :one :one-minus-src-alpha)
-     (gl:blend-equation :func-reverse-subtract))))
+     (gl:blend-equation :func-reverse-subtract))
+    (:multiply
+     (cond ((and advanced-blend-equations
+                 (gl-extension-p :GL-KHR-BLEND-EQUATION-ADVANCED))
+            (gl:blend-equation :multiply-khr))
+           (T
+            (gl:blend-func-separate :zero :src-color :one :one-minus-src-alpha)
+            (gl:blend-equation :func-add))))
+    (:screen
+     (cond ((and advanced-blend-equations
+                 (gl-extension-p :GL-KHR-BLEND-EQUATION-ADVANCED))
+            (gl:blend-equation :screen-khr))
+           (T
+            (gl:blend-func-separate :one :one-minus-src-color :one :one-minus-src-alpha)
+            (gl:blend-equation :func-add))))
+    (:darken
+     (cond ((and advanced-blend-equations
+                 (gl-extension-p :GL-KHR-BLEND-EQUATION-ADVANCED))
+            (gl:blend-equation :darken-khr))
+           (T
+            (gl:blend-func-separate :one :one :one :one-minus-src-alpha)
+            (gl:blend-equation :max))))
+    (:difference
+     (cond ((and advanced-blend-equations
+                 (gl-extension-p :GL-KHR-BLEND-EQUATION-ADVANCED))
+            (gl:blend-equation :difference-khr))
+           (T
+            (gl:blend-func-separate :one :one :one :one-minus-src-alpha)
+            (gl:blend-equation :func-subtract))))
+    (:overlay
+     (cond ((and advanced-blend-equations
+                 (gl-extension-p :GL-KHR-BLEND-EQUATION-ADVANCED))
+            (gl:blend-equation :overlay-khr))
+           (T
+            (error "Blend mode ~a is not supported!" mode))))
+    (:lighten
+     (cond ((and advanced-blend-equations
+                 (gl-extension-p :GL-KHR-BLEND-EQUATION-ADVANCED))
+            (gl:blend-equation :lighten-khr))
+           (T
+            (error "Blend mode ~a is not supported!" mode))))
+    (:dodge
+     (cond ((and advanced-blend-equations
+                 (gl-extension-p :GL-KHR-BLEND-EQUATION-ADVANCED))
+            (gl:blend-equation :colordodge-khr))
+           (T
+            (error "Blend mode ~a is not supported!" mode))))
+    (:burn
+     (cond ((and advanced-blend-equations
+                 (gl-extension-p :GL-KHR-BLEND-EQUATION-ADVANCED))
+            (gl:blend-equation :colorburn-khr))
+           (T
+            (error "Blend mode ~a is not supported!" mode))))
+    (:hard-light
+     (cond ((and advanced-blend-equations
+                 (gl-extension-p :GL-KHR-BLEND-EQUATION-ADVANCED))
+            (gl:blend-equation :hardlight-khr))
+           (T
+            (error "Blend mode ~a is not supported!" mode))))
+    (:soft-light
+     (cond ((and advanced-blend-equations
+                 (gl-extension-p :GL-KHR-BLEND-EQUATION-ADVANCED))
+            (gl:blend-equation :softlight-khr))
+           (T
+            (error "Blend mode ~a is not supported!" mode))))
+    (:exclusion
+     (cond ((and advanced-blend-equations
+                 (gl-extension-p :GL-KHR-BLEND-EQUATION-ADVANCED))
+            (gl:blend-equation :exclusion-khr))
+           (T
+            (error "Blend mode ~a is not supported!" mode))))
+    (:hue
+     (cond ((and advanced-blend-equations
+                 (gl-extension-p :GL-KHR-BLEND-EQUATION-ADVANCED))
+            (gl:blend-equation :hsl-hue-khr))
+           (T
+            (error "Blend mode ~a is not supported!" mode))))
+    (:saturation
+     (cond ((and advanced-blend-equations
+                 (gl-extension-p :GL-KHR-BLEND-EQUATION-ADVANCED))
+            (gl:blend-equation :hsl-saturation-khr))
+           (T
+            (error "Blend mode ~a is not supported!" mode))))
+    (:color
+     (cond ((and advanced-blend-equations
+                 (gl-extension-p :GL-KHR-BLEND-EQUATION-ADVANCED))
+            (gl:blend-equation :hsl-color-khr))
+           (T
+            (error "Blend mode ~a is not supported!" mode))))
+    (:luminosity
+     (cond ((and advanced-blend-equations
+                 (gl-extension-p :GL-KHR-BLEND-EQUATION-ADVANCED))
+            (gl:blend-equation :hsl-luminosity-khr))
+           (T
+            (error "Blend mode ~a is not supported!" mode))))))
 
 ;; KLUDGE: this sucks.
 (defvar *depth-mask* T)
