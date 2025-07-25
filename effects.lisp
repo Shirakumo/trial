@@ -269,3 +269,13 @@ void main(){
       (dotimes (y size array)
         (dotimes (x size)
           (setf (aref array y x) (gauss (- x s/2) (- y s/2))))))))
+
+(define-shader-pass lut-pass (simple-post-effect-pass)
+  ((texture :initarg :texture :accessor texture))
+  (:shader-file (trial "post/lut.glsl")))
+
+(defmethod bind-textures :after ((pass lut-pass))
+  (bind (texture pass) :texture0))
+
+(defmethod stage :after ((pass lut-pass) (area staging-area))
+  (stage (texture pass) area))

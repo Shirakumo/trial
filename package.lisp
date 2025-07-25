@@ -1239,7 +1239,9 @@
    #:t[1]
    #:t[2]
    #:t[3]
-   #:textures-per-line)
+   #:textures-per-line
+   #:lut-pass
+   #:texture)
   ;; entity.lisp
   (:export
    #:entity
