@@ -64,9 +64,16 @@
   (defclass image (single-resource-asset file-input-asset image-loader)
     ()))
 
-(defmethod generate-resources ((generator image-loader) sources &rest texture-args &key (type T) target swizzle internal-format (resource (resource generator T)) (texture-class 'texture) &allow-other-keys)
+(defmethod generate-resources ((generator image-loader) sources &rest texture-args &key (type T) target swizzle internal-format (resource (resource generator T)) (texture-class 'texture) ((:height suggested-height)) &allow-other-keys)
   (multiple-value-bind (sources source-swizzle) (normalize-texture-sources (enlist (%load-image sources type)) target)
     (destructuring-bind (width height depth) (texture-sources->texture-size sources)
+      ;; KLUDGE: special handling for uploading 3D textures in one image.
+      (when (eql target :texture-3d)
+        (if suggested-height
+            (psetf depth (/ height suggested-height)
+                   height suggested-height)
+            (psetf height (sqrt height)
+                   depth (sqrt height))))
       (apply #'ensure-instance resource texture-class
              :sources sources :width width :height height :depth depth :target (or target (texture-sources->target sources))
              :internal-format (or internal-format (infer-internal-format (pixel-type (first sources)) (pixel-format (first sources))))
