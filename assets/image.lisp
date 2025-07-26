@@ -95,13 +95,16 @@
       (ecase compression
         ((NIL))
         ((T)
-         (gl-extension-case
-           (:gl-khr-texture-compression-astc-ldr
-            (setf internal-format :compressed-rgba-astc-4x4))
-           (:gl-arb-texture-compression-bptc
-            (case (pixel-format (first sources))
-              ((:rgb :rgba)
-               (setf internal-format :compressed-rgba-bptc-unorm)))))))
+         (cond ((and (= 0 (mod width 4)) (= 0 (mod height 4)))
+                (gl-extension-case
+                  (:gl-khr-texture-compression-astc-ldr
+                   (setf internal-format :compressed-rgba-astc-4x4))
+                  (:gl-arb-texture-compression-bptc
+                   (case (pixel-format (first sources))
+                     ((:rgb :rgba)
+                      (setf internal-format :compressed-rgba-bptc-unorm))))))
+               (T
+                (v:warn :trial.asset "Compression requested on ~a, but image size is not 4x4 divisible.")))))
       (apply #'ensure-instance resource texture-class
              :sources sources :width width :height height :depth depth :target (or target (texture-sources->target sources))
              :internal-format internal-format :swizzle (or swizzle source-swizzle (infer-swizzle-format (pixel-format (first sources))))
