@@ -261,7 +261,7 @@
     (gl:tex-parameter target :texture-wrap-s (first wrapping))
     (unless (find target '(:texture-1d-array :texture-1d))
       (gl:tex-parameter target :texture-wrap-t (second wrapping)))
-    (when (eql target :texture-cube-map)
+    (when (member target '(:texture-cube-map :texture-3d))
       (gl:tex-parameter target :texture-wrap-r (third wrapping)))
     (when (find :clamp-to-border wrapping)
       (gl:tex-parameter target :texture-border-color
