@@ -22,7 +22,21 @@
                       do (rotatef (aref image x1) (aref image x2)))))
       image)))
 
-(defun convert-image-data (data-in width-in height-in &key (pixel-type-in :unsigned-byte) (pixel-format-in :rgba) (swizzle '(:r :g :b :a)) (pixel-type-out pixel-type-in) (pixel-format-out pixel-format-in)
+(defun row-convert-image-layers (image width height depth components)
+  (cond ((< width height)
+         image)
+        (T
+         (let ((output (make-array (length image) :element-type (array-element-type image)))
+               (width (truncate width depth)))
+           (dotimes (z depth output)
+             (dotimes (y height)
+               (replace output image
+                        :start1 (* components (+ (* y width) (* z width height)))
+                        :start2 (* components (+ (* y width depth) (* z width)))
+                        :end1 (* components (+ (* (1+ y) width) (* z width height))))))))))
+
+(defun convert-image-data (data-in width-in height-in &key (pixel-type-in :unsigned-byte) (pixel-format-in :rgba) (swizzle '(:r :g :b :a))
+                                                           (pixel-type-out pixel-type-in) (pixel-format-out pixel-format-in)
                                                            (width-out width-in) (height-out height-in))
   (cond ((and (eql pixel-type-in pixel-type-out)
               (eql pixel-format-in pixel-format-out)
@@ -68,12 +82,14 @@
   (multiple-value-bind (sources source-swizzle) (normalize-texture-sources (enlist (%load-image sources type)) target)
     (destructuring-bind (width height depth) (texture-sources->texture-size sources)
       ;; KLUDGE: special handling for uploading 3D textures in one image.
-      (when (eql target :texture-3d)
+      ;;         Ideally this would instead be done in upload-texture-source.
+      (when (and (eql target :texture-3d) (null (rest sources)))
         (if suggested-height
             (psetf depth (/ height suggested-height)
                    height suggested-height)
             (psetf height (sqrt height)
-                   depth (sqrt height))))
+                   depth (sqrt height)))
+        (setf (texture-source-src (first sources)) (list 0 0 0 width height depth)))
       (apply #'ensure-instance resource texture-class
              :sources sources :width width :height height :depth depth :target (or target (texture-sources->target sources))
              :internal-format (or internal-format (infer-internal-format (pixel-type (first sources)) (pixel-format (first sources))))
