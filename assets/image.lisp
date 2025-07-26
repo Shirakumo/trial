@@ -78,7 +78,7 @@
   (defclass image (single-resource-asset file-input-asset image-loader)
     ()))
 
-(defmethod generate-resources ((generator image-loader) sources &rest texture-args &key (type T) target swizzle internal-format (resource (resource generator T)) (texture-class 'texture) ((:height suggested-height)) &allow-other-keys)
+(defmethod generate-resources ((generator image-loader) sources &rest texture-args &key (type T) target swizzle internal-format (resource (resource generator T)) (texture-class 'texture) ((:height suggested-height)) compression &allow-other-keys)
   (multiple-value-bind (sources source-swizzle) (normalize-texture-sources (enlist (%load-image sources type)) target)
     (destructuring-bind (width height depth) (texture-sources->texture-size sources)
       ;; KLUDGE: special handling for uploading 3D textures in one image.
@@ -90,11 +90,22 @@
             (psetf height (sqrt height)
                    depth (sqrt height)))
         (setf (texture-source-src (first sources)) (list 0 0 0 width height depth)))
+      (unless internal-format
+        (setf internal-format (infer-internal-format (pixel-type (first sources)) (pixel-format (first sources)))))
+      (ecase compression
+        ((NIL))
+        ((T)
+         (gl-extension-case
+           (:gl-khr-texture-compression-astc-ldr
+            (setf internal-format :compressed-rgba-astc-4x4))
+           (:gl-arb-texture-compression-bptc
+            (case (pixel-format (first sources))
+              ((:rgb :rgba)
+               (setf internal-format :compressed-rgba-bptc-unorm)))))))
       (apply #'ensure-instance resource texture-class
              :sources sources :width width :height height :depth depth :target (or target (texture-sources->target sources))
-             :internal-format (or internal-format (infer-internal-format (pixel-type (first sources)) (pixel-format (first sources))))
-             :swizzle (or swizzle source-swizzle (infer-swizzle-format (pixel-format (first sources))))
-             (remf* texture-args :type :target :swizzle :internal-format :resource :texture-class)))))
+             :internal-format internal-format :swizzle (or swizzle source-swizzle (infer-swizzle-format (pixel-format (first sources))))
+             (remf* texture-args :compression :type :target :swizzle :internal-format :resource :texture-class)))))
 
 (defmethod compile-resources ((generator image-loader) sources &rest args &key (source-file-type "png") force)
   (loop for target in (enlist sources)

@@ -1152,7 +1152,7 @@
   :compressed-red :compressed-red-rgtc1 :compressed-signed-red-rgtc1
   :compressed-rg :compressed-rg-rgtc2 :compressed-signed-rg-rgtc2
   :compressed-rgb :compressed-rgb-bptc-signed-float :compressed-rgb-bptc-unsigned-float
-  :compressed-rgba :compressed-rgba-bptc-unorm
+  :compressed-rgba :compressed-rgba-bptc-unorm :compressed-rgba-astc-4x4
   :compressed-srgb :compressed-srgb-alpha :compressed-srgb-alpha-bptc-unorm)
 
 (define-enum-check texture-pixel-format
@@ -1293,7 +1293,8 @@
       :rgba16 :rgba16f :rgba16i :rgba16ui
       :rgba32f :rgba32i :rgba32ui :srgb8-alpha8
       :compressed-rgba :compressed-rgba-bptc-unorm
-      :compressed-srgb-alpha :compressed-srgb-alpha-bptc-unorm) 4)
+      :compressed-srgb-alpha :compressed-srgb-alpha-bptc-unorm
+      :compressed-rgba-bptc-signed-float :compressed-rgba-astc-4x4) 4)
     ((:depth-component :depth-component16 :depth-component24 :depth-component32 :depth-component32f
       :stencil-index :stencil-index1 :stencil-index4 :stencil-index8 :stencil-index16) 1)
     ((:depth-stencil :depth24-stencil8 :depth32f-stencil8) 2)))
@@ -1326,11 +1327,14 @@
      :rg)
     ((:gr :gr8 :gr16 :gr32 :gr16f :gr32f)
      :gr)
-    ((:rgb :rgb8 :rgb16 :rgb32 :rgb16f :rgb32f :rgb9-e5)
+    ((:rgb :rgb8 :rgb16 :rgb32 :rgb16f :rgb32f :rgb9-e5
+           :compressed-rgb-bptc-unsigned-float :compressed-rgb-bptc-signed-float)
      :rgb)
     ((:bgr :bgr8 :bgr16 :bgr32 :bgr16f :bgr32f)
      :bgr)
-    ((:rgba :rgba8 :rgba16 :rgba32 :rgba16f :rgba32f)
+    ((:rgba :rgba8 :rgba16 :rgba32 :rgba16f :rgba32f
+      :compressed-rgba-bptc-unorm :compressed-rgba-bptc-signed-float
+      :compressed-rgba-astc-4x4)
      :rgba)
     ((:bgra :bgra8 :bgra16 :bgra32 :bgra16f :bgra32f)
      :bgra)))
@@ -1339,7 +1343,9 @@
   (ecase format
     ((:red :r8 :r8-norm :rg :rg8 :rg8-snorm :rgb :rgb8 :rgb8-snorm :rgba :rgba8 :rgba8-snorm
       :r8ui :rg8ui :rgb8ui :rgba8ui :depth-component :stencil-index :stencil-index1 :stencil-index
-      :stencil-index8)
+      :stencil-index8 :compressed-rgb-bptc-unorm :compressed-rgba-bptc-unorm
+      :compressed-rgb-bptc-signed-float :compressed-rgba-bptc-signed-float
+      :compressed-rgba-astc-4x4)
      :unsigned-byte)
     ((:r16 :r16-snorm :rg16 :rg16-snorm :rgb16 :rgb16-snorm :rgba16 :rgba16-snorm
       :r16ui :rg16ui :rgb16ui :rgba16ui :depth-component16 :stencil-index16)
