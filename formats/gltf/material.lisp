@@ -1,6 +1,6 @@
 (in-package #:org.shirakumo.fraf.trial.gltf)
 
-(defun load-image (asset texinfo)
+(defun load-image (asset texinfo &key texture-compression)
   (when texinfo
     (let* ((texture (gltf:texture texinfo))
            (sampler (gltf:sampler texture))
@@ -15,6 +15,7 @@
                                             (gltf:path image)
                                             (memory-region (gltf:start (gltf:buffer-view image))
                                                            (gltf:byte-length (gltf:buffer-view image))))
+                          :compression texture-compression
                           :type (or (gltf:mime-type image) T)
                           :resource (resource asset name)
                           :mag-filter (if sampler (gltf:mag-filter sampler) :linear)
@@ -23,7 +24,7 @@
                                           (if sampler (gltf:wrap-t sampler) :clamp-to-edge)
                                           (if sampler (gltf:wrap-t sampler) :clamp-to-edge))))))
 
-(defun load-materials (gltf model asset)
+(defun load-materials (gltf model asset &key texture-compression)
   (flet ((to-vec (array)
            (ecase (length array)
              (2 (vec (aref array 0) (aref array 1)))
@@ -33,8 +34,8 @@
           for pbr = (gltf:pbr material)
           for name = (gltf-name material)
           for mr = (when pbr (load-image asset (gltf:metallic-roughness pbr)))
-          for omr = (load-image asset (gltf:occlusion-metalness-roughness-texture material))
-          for rmo = (load-image asset (gltf:roughness-metallic-occlusion-texture material))
+          for omr = (load-image asset (gltf:occlusion-metalness-roughness-texture material) :texture-compression texture-compression)
+          for rmo = (load-image asset (gltf:roughness-metallic-occlusion-texture material) :texture-compression texture-compression)
           do (when mr (setf (trial::swizzle mr) '(:b :g :r :a)))
              (when omr (setf (trial::swizzle omr) '(:g :b :r :a)))
              (when rmo (setf (trial::swizzle rmo) '(:g :r :b :a)))
@@ -42,11 +43,11 @@
                               (trial:find-material name model NIL) 'trial:pbr-material
                               :name name
                               :double-sided (gltf:double-sided-p material)
-                              :albedo-texture (when pbr (load-image asset (gltf:albedo pbr)))
+                              :albedo-texture (when pbr (load-image asset (gltf:albedo pbr) :texture-compression texture-compression))
                               :metal-rough-texture mr
                               :metal-rough-occlusion-texture (or omr rmo)
                               :occlusion-texture (load-image asset (gltf:occlusion-texture material))
-                              :emission-texture (load-image asset (gltf:emissive-texture material))
+                              :emission-texture (load-image asset (gltf:emissive-texture material) :texture-compression texture-compression)
                               :normal-texture (load-image asset (gltf:normal-texture material))
                               :albedo-factor (if pbr (to-vec (gltf:albedo-factor pbr)) (vec 1 1 1 1))
                               :metalness-factor (if pbr (float (gltf:metallic-factor pbr) 0f0) 0.0)
