@@ -25,6 +25,15 @@ vec4 standard_mix(in vec4 upper, in vec4 lower){
 
 void standard_finish(){}
 
+void standard_render(){
+  standard_init();
+  for(int light_idx = 0; light_idx<light_count; ++light_idx){
+    StandardLight light = lights[light_idx];
+    color = standard_mix(standard_shade(light), color);
+  }
+  standard_finish();
+}
+
 struct StandardLightData{
   vec3 direction;
   vec3 radiance;
@@ -74,12 +83,7 @@ StandardLightData evaluate_light(in StandardLight light){
 }
 
 void main(){
-  standard_init();
-  for(int light_idx = 0; light_idx<light_count; ++light_idx){
-    StandardLight light = lights[light_idx];
-    color = standard_mix(standard_shade(light), color);
-  }
-  standard_finish();
+  standard_render();
   f_color = color;
   f_normal = normal;
 }
