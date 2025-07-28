@@ -104,7 +104,8 @@
                      ((:rgb :rgba)
                       (setf internal-format :compressed-rgba-bptc-unorm))))))
                (T
-                (v:warn :trial.asset "Compression requested on ~a, but image size is not 4x4 divisible.")))))
+                (v:warn :trial.asset "Compression requested on ~a, but image size is not 4x4 divisible."
+                        generator)))))
       (apply #'ensure-instance resource texture-class
              :sources sources :width width :height height :depth depth :target (or target (texture-sources->target sources))
              :internal-format internal-format :swizzle (or swizzle source-swizzle (infer-swizzle-format (pixel-format (first sources))))
