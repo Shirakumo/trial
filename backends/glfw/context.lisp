@@ -20,6 +20,7 @@
    (mouse-pos :initform (vec 0 0) :accessor mouse-pos)
    (last-click :initform (make-last-click) :accessor last-click)
    (visible-p :initform T :accessor visible-p)
+   (last-cursor :initform :arrow :accessor last-cursor)
    ;; We track w/h separately here as Trial cares about the framebuffer size, not the window size.
    (fb-width :initform 0 :accessor width)
    (fb-height :initform 0 :accessor height)
@@ -116,7 +117,7 @@
   (glfw:make-current NIL))
 
 (defmethod hide ((context context))
-  (glfw:hide context)
+  (push-event-queue (event-queue context) :hide)
   (setf (visible-p context) NIL))
 
 (defun ensure-monitor (monitor context)
@@ -127,32 +128,11 @@
     (string (find-monitor monitor context))))
 
 (defmethod show ((context context) &key (fullscreen NIL f-p) mode)
-  (glfw:show context)
-  (setf (visible-p context) T)
-  (cond (f-p
-         (destructuring-bind (w h &optional r monitor)
-             (etypecase mode
-               (monitor (current-video-mode mode))
-               (string (current-video-mode (find-monitor mode context)))
-               (null (current-video-mode (current-monitor context)))
-               ((eql T) (current-video-mode (glfw:primary-monitor)))
-               (cons mode))
-           (let ((monitor (ensure-monitor monitor context)))
-             (when (eql T w)
-               (destructuring-bind (cw ch cr cm) (current-video-mode monitor)
-                 (setf w cw h ch r cr)))
-             (setf (glfw:monitor context) (list (when fullscreen monitor) :width w :height h :refresh-rate r))))
-         (unless fullscreen
-           ;; Can fail on Wayland
-           (ignore-errors (glfw:center context))))
-        (mode
-         (resize context (first mode) (second mode)))))
+  (push-event-queue (event-queue context) :show (list fullscreen f-p mode))
+  (setf (visible-p context) T))
 
 (defmethod resize ((context context) width height)
-  (v:info :trial.backend.glfw "Resizing window to ~ax~a" width height)
-  (setf (glfw:size context) (list width height))
-  ;; Can fail on Wayland
-  (ignore-errors (glfw:center context)))
+  (push-event-queue (event-queue context) :set-size (list width height)))
 
 (defmethod quit ((context context))
   (setf (glfw:should-close-p context) T))
@@ -161,15 +141,15 @@
   (glfw:swap-buffers context))
 
 (defmethod show-cursor ((context context))
-  (setf (glfw:input-mode :cursor context) :cursor-normal)
+  (push-event-queue (event-queue context) :set-cursor-mode :cursor-normal)
   (setf (cursor-visible context) T))
 
 (defmethod hide-cursor ((context context))
-  (setf (glfw:input-mode :cursor context) :cursor-hidden)
+  (push-event-queue (event-queue context) :set-cursor-mode :cursor-hidden)
   (setf (cursor-visible context) NIL))
 
 (defmethod lock-cursor ((context context))
-  (setf (glfw:input-mode :cursor context) :cursor-disabled))
+  (push-event-queue (event-queue context) :set-cursor-mode :cursor-disabled))
 
 (defmethod unlock-cursor ((context context))
   (if (cursor-visible context)
@@ -180,34 +160,39 @@
   (glfw:cursor context))
 
 (defmethod (setf cursor) (cursor (context context))
-  (ignore-errors
-   (setf (glfw:cursor context) (case cursor
-                                 ((:cursor :pointer NIL) :arrow)
-                                 (:text :ibeam)
-                                 (:hand :pointing-hand)
-                                 (:resize :resize-all)
-                                 (:disallowed :not-allowed)
-                                 (:ew-resize :resize-ew)
-                                 (:ns-resize :resize-ns)
-                                 (:nwse-resize :resize-nwse)
-                                 (:nesw-resize :resize-nesw)
-                                 (:all-resize :resize-all)
-                                 (T cursor)))
-   cursor))
+  (let ((cursor (case cursor
+                  ((:cursor :pointer NIL) :arrow)
+                  (:text :ibeam)
+                  (:hand :pointing-hand)
+                  (:resize :resize-all)
+                  (:disallowed :not-allowed)
+                  (:ew-resize :resize-ew)
+                  (:ns-resize :resize-ns)
+                  (:nwse-resize :resize-nwse)
+                  (:nesw-resize :resize-nesw)
+                  (:all-resize :resize-all)
+                  (T cursor))))
+    (unless (eq cursor (last-cursor context))
+      (push-event-queue (event-queue context) :set-cursor cursor)
+      (setf (last-cursor context) cursor)))
+  cursor)
 
 (defmethod (setf icon) ((icon rgba-icon) (context context))
-  (setf (glfw:icon context) (list (list (rgba-icon-data icon)
-                                        (rgba-icon-width icon)
-                                        (rgba-icon-height icon)))))
+  (push-event-queue (event-queue context) :set-icon (list (list (rgba-icon-data icon)
+                                                                (rgba-icon-width icon)
+                                                                (rgba-icon-height icon))))
+  icon)
 
-(defmethod (setf icon) ((none null) (context context))
-  (setf (glfw:icon context) none))
+(defmethod (setf icon) ((value null) (context context))
+  (push-event-queue (event-queue context) :set-icon value)
+  value)
 
 (defmethod title ((context context))
   (glfw:title context))
 
 (defmethod (setf title) (value (context context))
-  (setf (glfw:title context) value))
+  (push-event-queue (event-queue context) :set-title value)
+  value)
 
 (defmethod vsync ((context context))
   (ecase (glfw:swap-interval context)
@@ -226,7 +211,8 @@
   (request-event-queue (event-queue context) :get-clipboard))
 
 (defmethod (setf clipboard) ((text string) (context context))
-  (request-event-queue (event-queue context) :set-clipboard text))
+  (push-event-queue (event-queue context) :set-clipboard text)
+  text)
 
 (defmethod cursor-position ((context context))
   (destructuring-bind (x y) (glfw:cursor-location context)
@@ -240,14 +226,7 @@
            (* y-scale (- (glfw:height context) y))))))
 
 (defmethod (setf cursor-position) (pos (context context))
-  (let ((x-scale 1.0)
-        (y-scale 1.0))
-    (case (glfw:platform)
-      ((:cocoa :wayland)
-       (destructuring-bind (x y) (glfw:content-scale context)
-         (setf x-scale x y-scale y))))
-    (setf (glfw:cursor-location context) (list (* x-scale (vx pos))
-                                               (* y-scale (- (glfw:height context) (vy pos))))))
+  (push-event-queue (event-queue context) :set-cursor pos)
   pos)
 
 (defmethod poll-input ((context context))
@@ -259,6 +238,57 @@
   (handler-case (glfw:init)
     #+trial-release (error () (error 'trial:context-creation-error :message "Failed to initialize GLFW.")))
   (apply #'make-instance 'context :handler handler initargs))
+
+(defun handle-request (context request arg)
+  (trial:with-ignored-errors-on-release (:trial.backend.glfw "Failed to execute ~a ~a" request arg)
+    (ecase request
+      (:set-cursor-mode
+       (setf (glfw:input-mode :cursor context) arg))
+      (:set-cursor
+       (setf (glfw:cursor context) arg))
+      (:set-icon
+       (setf (glfw:icon context) arg))
+      (:set-title
+       (setf (glfw:title context) arg))
+      (:get-clipboard
+       (glfw:clipboard-string context))
+      (:set-clipboard
+       (setf (glfw:clipboard-string context) arg))
+      (:set-cursor
+       (let ((x-scale 1.0)
+             (y-scale 1.0))
+         (case (glfw:platform)
+           ((:cocoa :wayland)
+            (destructuring-bind (x y) (glfw:content-scale context)
+              (setf x-scale x y-scale y))))
+         (setf (glfw:cursor-location context) (list (* x-scale (vx arg))
+                                                    (* y-scale (- (glfw:height context) (vy arg)))))))
+      (:set-size
+       (v:info :trial.backend.glfw "Resizing window to ~ax~a" (first arg) (second arg))
+       (setf (glfw:size context) arg)
+       (ignore-errors (glfw:center context)))
+      (:hide
+       (glfw:hide context))
+      (:show
+       (glfw:show context)
+       (destructuring-bind (fullscreen f-p mode) arg
+         (cond (f-p
+                (destructuring-bind (w h &optional r monitor)
+                    (etypecase mode
+                      (monitor (current-video-mode mode))
+                      (string (current-video-mode (find-monitor mode context)))
+                      (null (current-video-mode (current-monitor context)))
+                      ((eql T) (current-video-mode (glfw:primary-monitor)))
+                      (cons mode))
+                  (let ((monitor (ensure-monitor monitor context)))
+                    (when (eql T w)
+                      (destructuring-bind (cw ch cr cm) (current-video-mode monitor)
+                        (setf w cw h ch r cr)))
+                    (setf (glfw:monitor context) (list (when fullscreen monitor) :width w :height h :refresh-rate r))))
+                (unless fullscreen
+                  (ignore-errors (glfw:center context))))
+               (mode
+                (resize context (first mode) (second mode)))))))))
 
 (defun launch-with-context (&optional main &rest initargs)
   (declare (optimize speed))
@@ -273,15 +303,7 @@
                         (trial:rename-thread "input-loop")
                         (v:debug :trial.backend.glfw "Entering input loop")
                         (flet ((handler (request arg)
-                                 (handler-case
-                                     (ecase request
-                                       (:get-clipboard (glfw:clipboard-string context))
-                                       (:set-clipboard (setf (glfw:clipboard-string context) arg)))
-                                   #+trial-release
-                                   (error (e)
-                                     (v:debug :trial.backend.glfw e)
-                                     (v:error :trial.backend.glfw "Failed to execute ~a: ~a" request e)
-                                     ""))))
+                                 (handle-request context request arg)))
                           (declare (dynamic-extent #'handler))
                           (loop until (glfw:should-close-p context)
                                 do (glfw:poll-events :timeout 0.005d0)
