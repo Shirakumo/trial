@@ -7,7 +7,6 @@
 
 (define-accessor-wrapper-methods clip (base-animated-entity (animation-controller base-animated-entity)))
 (define-accessor-wrapper-methods skeleton (base-animated-entity (animation-controller base-animated-entity)))
-(define-accessor-wrapper-methods pose (base-animated-entity (animation-controller base-animated-entity)))
 (define-accessor-wrapper-methods palette (base-animated-entity (animation-controller base-animated-entity)))
 (define-accessor-wrapper-methods palette-texture (base-animated-entity (animation-controller base-animated-entity)))
 (define-accessor-wrapper-methods palette-type (base-animated-entity (animation-controller base-animated-entity)))
@@ -45,7 +44,7 @@
   ((color :initarg :color :initform (vec 0 0 0 1) :accessor color)))
 
 (define-handler ((entity armature) (ev tick) :after) ()
-  (replace-vertex-data entity (pose entity) :default-color (color entity)))
+  (replace-vertex-data entity (target (animation-controller entity)) :default-color (color entity)))
 
 (define-shader-entity morphed-entity (base-animated-entity listener)
   ((morphs :initform #() :accessor morphs))

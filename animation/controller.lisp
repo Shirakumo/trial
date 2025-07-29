@@ -378,14 +378,11 @@
       (error "No such morph target ~s on ~a" name controller))
     weight))
 
-(defmethod (setf skeleton) :before ((skeleton skeleton) (entity morph-group-controller))
-  (update-pose-weights (rest-pose skeleton) entity))
-
 (defmethod stage :after ((entity morph-group-controller) (area staging-area))
   (loop for morph being the hash-values of (morph-groups entity)
         do (stage morph area)))
 
-(defmethod (setf pose) :after ((pose pose) (entity morph-group-controller))
+(defmethod (setf target) :after ((pose pose) (entity morph-group-controller))
   (update-pose-weights pose entity))
 
 (defmethod update-morph-data ((entity morph-group-controller))
@@ -501,7 +498,7 @@
 (defmethod stage :after ((entity animation-controller) (area staging-area))
   (stage (palette-texture entity) area))
 
-(defmethod (setf pose) :after ((pose pose) (entity animation-controller))
+(defmethod (setf target) :after ((pose pose) (entity animation-controller))
   (update-palette entity pose))
 
 (defmethod (setf ik-system) :after ((system ik-system) name (entity animation-controller))
