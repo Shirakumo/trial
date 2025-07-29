@@ -171,7 +171,18 @@
     (dotimes (i (length target) target)
       (unless (and (<= 0 root)
                    (descendant-joint-p i root target))
-        (ninterpolate (elt target i) (elt a i) (elt b i) x)))))
+        (ninterpolate (elt target i) (elt a i) (elt b i) x)))
+    ;; Blend pose weight
+    (loop with weights-a = (weights a)
+          with weights-b = (weights b)
+          with weights-t = (weights target)
+          for group being the hash-keys of weights-a using (hash-value vec-a)
+          for vec-b = (gethash group weights-b)
+          for vec-t = (gethash group weights-t)
+          do (dotimes (i (length vec-a))
+               (setf (aref vec-t i) (lerp (aref vec-a i) (aref vec-b i) x))))
+    ;; FIXME: how to blend arbitrary DATA in the pose?
+    ))
 
 (defmethod blend-into (target a b x &key)
   (blend-into target a b (float x 0f0)))
