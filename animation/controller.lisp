@@ -391,6 +391,31 @@
   (loop for morph-group being the hash-values of (morph-groups entity)
         do (update-morph-data morph-group)))
 
+;; KLUDGE: this is a special handling in place to handle what happens when
+;;         a controller has no skeleton and thus is its own target, instead of
+;;         having a target pose. It's kinda gross since we have to duplicate
+;;         the sampling on clips altogether rather than just being able to
+;;         specialise on weights tracks
+(defmethod sample ((controller morph-group-controller) (clip clip) time &rest args)
+  (declare (type single-float time))
+  (declare (optimize speed))
+  (declare (ignore args))
+  (if (< 0.0 (the single-float (end-time clip)))
+      (let ((time (fit-to-clip clip time))
+            (tracks (tracks clip))
+            (loop-p (loop-p clip)))
+        (declare (type single-float time))
+        (declare (type simple-array tracks))
+        (loop with groups = (morph-groups controller)
+              for i from 0 below (length tracks)
+              for track = (svref tracks i)
+              for name = (name track)
+              do (if (typep track 'weights-track)
+                     (sample (weights (gethash name groups)) track time :loop-p loop-p)
+                     (sample (slot-value controller name) track time :loop-p loop-p)))
+        time)
+      0.0))
+
 (defclass fk-controller (skeleton-controller)
   ())
 
