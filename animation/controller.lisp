@@ -255,6 +255,7 @@
     (dolist (mesh meshes)
       (replace (morph-names morph) (morph-names mesh))
       (unless (find (name mesh) (textures morph) :key #'car :test #'equal)
+        ;; TODO: these textures are not shared across multiple instances of the same mesh. We really ought to do that.
         (vector-push-extend (cons (name mesh) (make-morph-texture mesh)) (textures morph))))))
 
 (defmethod stage :after ((morph morph-group) (area staging-area))
