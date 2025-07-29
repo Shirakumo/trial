@@ -3,7 +3,7 @@
 (defclass pose (sequences:sequence standard-object)
   ((joints :initform #() :accessor joints)
    (parents :initform (make-array 0 :element-type '(signed-byte 16)) :accessor parents)
-   (weights :initform (make-hash-table :test 'eql) :accessor weights)
+   (weights :initform (make-hash-table :test 'eql) :initarg :weights :accessor weights)
    (data :initform (make-hash-table :test 'eql) :initarg :data :accessor data)))
 
 (defmethod shared-initialize :after ((pose pose) slots &key size source)
