@@ -191,7 +191,10 @@
                     (not (eq target (fade-target-clip (aref targets (1- (length targets)))))))
                 (not (eq target (clip controller))))
            (setf (playback-speed controller) 1.0)
-           (vector-push-extend (make-fade-target target (rest-pose (skeleton controller)) (float duration 0f0) (or clock (start-time target))) targets)))))
+           ;; TODO: pool poses and so on to avoid runtime consing.
+           (vector-push-extend (make-fade-target target (rest-pose* (skeleton controller) :weights (copy-pose-weights (target controller)))
+                                                 (float duration 0f0) (or clock (start-time target)))
+                               targets)))))
 
 (defmethod update ((controller fade-controller) tt dt fc)
   (when (next-method-p) (call-next-method))
@@ -332,6 +335,12 @@
 (defun update-pose-weights (pose controller)
   (loop for morph being the hash-values of (morph-groups controller)
         do (setf (gethash (name morph) (weights pose)) (weights morph))))
+
+(defun copy-pose-weights (pose)
+  (let ((target (make-hash-table :test 'eql)))
+    (loop for k being the hash-keys of (weights pose) using (hash-value v)
+          do (setf (gethash k target) (copy-seq v)))
+    target))
 
 (defmethod (setf mesh) (meshes (entity morph-group-controller)))
 
