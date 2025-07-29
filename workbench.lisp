@@ -15,6 +15,14 @@
 (defun launch (&rest args)
   (apply #'trial:launch 'workbench args))
 
+(defmacro ! (&body body)
+  `(when (and +main+ (scene +main+))
+     (with-eval-in-render-loop ()
+       ,@body)))
+
+(defun n (object &optional (container T))
+  (node object container))
+
 (define-pool workbench)
 
 (progn
