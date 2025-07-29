@@ -347,9 +347,7 @@
                                                           :name name :meshes meshes))
              (setf found T))
     (when (and found (typep (target controller) 'pose))
-      (update-pose-weights (target controller) controller))
-    (when (skeleton controller)
-      (update-pose-weights (rest-pose (skeleton controller)) controller))))
+      (update-pose-weights (target controller) controller))))
 
 (defmethod find-morph ((mesh animated-mesh) (controller morph-group-controller) &optional (errorp T))
   (or (gethash (or (model-name mesh) mesh) (morph-groups controller))
