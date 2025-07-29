@@ -552,6 +552,11 @@
   (print-unreadable-object (vector stream :type T :identity T)
     (format stream "~s ~s" (element-type vector) (length vector))))
 
+(defmethod describe-object :after ((vector gl-vector) stream)
+  (format stream "~&~%Elements:~%")
+  (dotimes (i (sequences::length vector))
+    (format stream "  ~3d: ~s~%" i (elt vector i))))
+
 (defmethod sequences:elt ((vector gl-vector) index)
   (gl-memref (cffi:inc-pointer (memory-region-pointer (storage vector)) (+ (base-offset vector) (* index (stride vector))))
              (element-type vector)))
