@@ -404,7 +404,7 @@
            (decf (vy loc) speed)))))
 
 (defclass editor-camera (freeroam-camera)
-  ())
+  ((location :initform (vec 0 2 8))))
 
 (define-handler (editor-camera mouse-move) (old-pos pos)
   (when (or (retained :middle)
