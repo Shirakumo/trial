@@ -96,13 +96,18 @@
         ((NIL))
         ((T)
          (cond ((and (= 0 (mod width 4)) (= 0 (mod height 4)))
-                (gl-extension-case
-                  (:gl-khr-texture-compression-astc-ldr
-                   (setf internal-format :compressed-rgba-astc-4x4))
-                  (:gl-arb-texture-compression-bptc
-                   (case (pixel-format (first sources))
-                     ((:rgb :rgba)
-                      (setf internal-format :compressed-rgba-bptc-unorm))))))
+                (setf internal-format
+                      (or (when (and (eql :es (profile *context*))
+                                     (gl-extension-p :gl-khr-texture-compression-astc-ldr))
+                            :compressed-rgba-astc-4x4)
+                          (when (gl-extension-p :gl-arb-texture-compression-bptc)
+                            (case (pixel-format (first sources))
+                              ((:rgb :rgba) :compressed-rgba-bptc-unorm)))
+                          (ecase (pixel-format (first sources))
+                            (:red :compressed-red)
+                            (:rg :compressed-rg)
+                            (:rgb :compressed-rgb)
+                            (:rgba :compressed-rgba)))))
                (T
                 (v:warn :trial.asset "Compression requested on ~a, but image size is not 4x4 divisible."
                         generator)))))
