@@ -86,39 +86,36 @@
          (morph-count (length (morphs mesh)))
          ;; The stride is 9, 3 for every color. This wastes space for the UV, since it only needs RG.
          (stride 9)
-         (data (make-array (* vertex-count morph-count stride 3) :element-type 'single-float))
-         (texture (make-instance 'texture :target :texture-1d-array
+         (data (make-array (* vertex-count morph-count stride) :element-type 'single-float))
+         (texture (make-instance 'texture :target :texture-2d
                                           :internal-format :rgb32f
                                           :min-filter :nearest
                                           :mag-filter :nearest
-                                          :width vertex-count
-                                          :height (* stride morph-count)
+                                          :width (* 3 morph-count)
+                                          :height vertex-count
                                           :pixel-data data
                                           :pixel-type :float
-                                          :pixel-format :rgb)))
-    ;; The layout is:
-    ;;   M1_LX1 M1_LY1 M1_LZ1 M1_LX2 M1_LY2 M1_LZ2 ...
-    ;;   M1_NX1 M1_NY1 M1_NZ1 ...
-    ;;   M1_U1  M1_V1  _      ...
-    ;;   M2_LX1 M2_LY1 M2_LZ1 ...
-    ;;   ...
-    ;; Compact the targets into a slice per target
-    (loop for target across (morphs mesh)
-          for src-data = (vertex-data target)
-          for src-stride = (vertex-attribute-stride target)
-          for slice from 0 by (* vertex-count stride)
-          do (unless (= (vertex-count target) vertex-count)
-               (error "Not all morph targets have the same number of vertices!"))
-             (loop for attribute in attributes
-                   for src-offset = (vertex-attribute-offset attribute target)
-                   for dst-offset from 0 by (* 3 vertex-count)
-                   do (when src-offset
-                        (loop for src from src-offset below (length src-data) by src-stride
-                              for dst from dst-offset by 3
-                              do (setf (aref data (+ slice dst 0)) (aref src-data (+ src 0)))
-                                 (setf (aref data (+ slice dst 1)) (aref src-data (+ src 1)))
-                                 (unless (eq attribute 'uv)
-                                   (setf (aref data (+ dst 2)) (aref src-data (+ src 2))))))))
+                                          :pixel-format :rgb
+                                          :wrapping :clamp-to-edge)))
+    ;; The layout is stored in a way where each vertex receives a row of all
+    ;; morph targets and attributes. This is presumably more efficient for access
+    ;; on the GPU side, since the pixel data will be adjacent per vertex, and we
+    ;; do the lookup in the vertex shader.
+    (loop for y from 0 below vertex-count
+          for row-start = (* y morph-count stride)
+          do (loop for x from 0 below morph-count
+                   for col-start = (* x stride)
+                   for target across (morphs mesh)
+                   for src-data = (vertex-data target)
+                   for src-stride = (vertex-attribute-stride target)
+                   do (loop for attribute in attributes
+                            for src-offset = (vertex-attribute-offset attribute target)
+                            for dst-offset from (+ row-start col-start) by 3
+                            do (when src-offset
+                                 (incf src-offset (* src-stride y))
+                                 (dotimes (i (vertex-attribute-size attribute))
+                                   (setf (aref data (+ dst-offset i)) 
+                                         (aref src-data (+ src-offset i))))))))
     texture))
 
 (defmethod make-morph-weights ((mesh animated-mesh))

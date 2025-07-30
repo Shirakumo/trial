@@ -293,7 +293,7 @@
                     (setf (uniform program "morph_targets") (bind morphtex :texture6))
                     (setf (uniform program "animation") (+ skinning 1)))
                    (T
-                    (setf (uniform program "morph_targets") (bind (// 'trial :texture-1d-array) :texture6))
+                    (setf (uniform program "morph_targets") (bind (// 'trial :texture-2d) :texture6))
                     (setf (uniform program "animation") (+ skinning 0))))
              (with-pushed-features
                (when (double-sided-p material)
@@ -471,7 +471,7 @@
                       (setf (uniform program "morph_targets") (enable morphtex pass))
                       (setf (uniform program "animation") (+ skinning 1)))
                      (T
-                      (setf (uniform program "morph_targets") (enable (// 'trial :texture-1d-array) pass))
+                      (setf (uniform program "morph_targets") (enable (// 'trial :texture-2d) pass))
                       (setf (uniform program "animation") (+ skinning 0))))
                (render vao program)))))
 
