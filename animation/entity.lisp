@@ -66,7 +66,7 @@
     (setf (morphs entity) (if morph (vector (cons morph (find-morph mesh morph))) #()))))
 
 (defmethod stage :after ((entity morphed-entity) (area staging-area))
-  (stage (// 'trial :texture-1d-array) area)
+  (stage (// 'trial :texture-2d) area)
   (loop for (morph) across (morphs entity)
         do (when morph (stage morph area))))
 
