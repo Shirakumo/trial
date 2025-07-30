@@ -374,7 +374,7 @@
   (location camera))
 
 (defclass freeroam-camera (fps-camera)
-  ((move-speed :initarg :move-speed :initform 1.0 :accessor move-speed)))
+  ((move-speed :initarg :move-speed :initform 0.1 :accessor move-speed)))
 
 (define-transfer freeroam-camera move-speed)
 
