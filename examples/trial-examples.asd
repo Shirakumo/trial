@@ -8,7 +8,8 @@
   #-(or linux bsd win32) "trial-examples"
   :entry-point "trial-examples::main"
   :serial T
-  :components ((:file "trial-examples")
+  :components ((:file "package")
+               (:file "trial-examples")
                (:file "triangle")
                (:file "collision")
                (:file "raycast")
