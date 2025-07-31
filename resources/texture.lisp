@@ -147,10 +147,11 @@
   (apply #'update-buffer-data buffer (pixel-data buffer) args))
 
 (defmethod update-buffer-data ((buffer texture) data &key (x 0) (y 0) (z 0) (level 0) (width (width buffer)) (height (height buffer)) (depth (depth buffer))
-                                                                   (pixel-format (pixel-format buffer)) (pixel-type (pixel-type buffer)))
+                                                          (pixel-format (pixel-format buffer)) (pixel-type (pixel-type buffer))
+                                                          (data-start 0))
   #-elide-context-current-checks
   (check-context-current)
-  (mem:with-memory-region (region data)
+  (mem:with-memory-region (region data :offset data-start)
     (gl:bind-texture (target buffer) (gl-name buffer))
     (ecase (target buffer)
       (:texture-1d
@@ -164,11 +165,12 @@
   (apply #'resize-buffer-data buffer (pixel-data buffer) args))
 
 (defmethod resize-buffer-data ((buffer texture) data &key (level 0) (width (width buffer)) (height (height buffer)) (depth (depth buffer))
-                                                                   (pixel-format (pixel-format buffer)) (pixel-type (pixel-type buffer)))
+                                                          (pixel-format (pixel-format buffer)) (pixel-type (pixel-type buffer))
+                                                          (data-start 0))
   #-elide-context-current-checks
   (check-context-current)
   (let ((internal-format (cffi:foreign-enum-value '%gl:enum (internal-format buffer))))
-    (mem:with-memory-region (region data)
+    (mem:with-memory-region (region data :offset data-start)
       (gl:bind-texture (target buffer) (gl-name buffer))
       (ecase (target buffer)
         (:texture-1d
