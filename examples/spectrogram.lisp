@@ -30,7 +30,8 @@
       (row "Volume" (magnitude-scale spectrogram) 'alloy:ranged-wheel :range '(0.0 . 1.0) :grid 0.01 :step 0.1)
       (row "Threshold" (magnitude-offset spectrogram) 'alloy:ranged-wheel :range '(0.0 . 1.0) :grid 0.01 :step 0.1)
       (row "Min Freq" (frequency-min spectrogram) 'alloy:ranged-wheel :range '(0.0 . 22049.0) :step 100.0)
-      (row "Max Freq" (frequency-max spectrogram) 'alloy:ranged-wheel :range '(0.0 . 22049.0) :step 100.0))
+      (row "Max Freq" (frequency-max spectrogram) 'alloy:ranged-wheel :range '(0.0 . 22049.0) :step 100.0)
+      (row "Time Scale" (time-scale spectrogram) 'alloy:ranged-wheel :range '(1.0 . 10.0)))
     (alloy:finish-structure panel layout focus)))
 
 (defclass spectrogram-segment (mixed:virtual)
@@ -62,6 +63,7 @@
    (vertex-array :initform (// 'trial 'fullscreen-square))
    (spectrogram :accessor spectrogram)
    (framesize :initarg :framesize :initform 8192 :accessor framesize)
+   (time-scale :uniform T :initarg :time-scale :initform 1.0 :accessor time-scale)
    (magnitude-scale :uniform T :initarg :magnitude-scale :initform 1.0 :accessor magnitude-scale)
    (magnitude-offset :uniform T :initarg :magnitude-offset :initform 0.0 :accessor magnitude-offset)
    (frequency-min :uniform T :initarg :frequency-min :initform 0.0 :accessor frequency-min)
@@ -108,12 +110,13 @@ uniform float magnitude_scale = 1.0;
 uniform float magnitude_offset = 0.0;
 uniform float frequency_min = 0.0;
 uniform float frequency_max = 22049.0;
+uniform float time_scale = 1.0;
 in vec2 uv;
 out vec4 color;
 
 void main(){
   float uvy = (pow(uv.y,2) * (frequency_max - frequency_min) + frequency_min) / 22049;
-  vec2 pos = vec2(uvy, uv.x)+offset;
+  vec2 pos = vec2(uvy, uv.x/time_scale-(1/time_scale))+offset;
   // Read out the values
   vec2 freqmag = texture(spectrogram, pos).rg;
   float mag = freqmag.y*magnitude_scale-magnitude_offset;
