@@ -11,7 +11,7 @@
         (subseq order 0 (mixed:channels drain))
         order)))
 
-(defun try-audio-backend (main backend &rest initargs &key (start T))
+(defun try-audio-backend (main backend &rest initargs &key (start T) &allow-other-keys)
   (handler-bind ((mixed:device-not-found
                    (lambda (e)
                      (v:error :trial.harmony "~a" e)
@@ -22,14 +22,19 @@
         (setup-server main server)
         (when start
           (mixed:start server)))))
-  (let ((drain (harmony:segment :drain (harmony:segment :output T))))
-    (v:info :trial.harmony "Configured output for ~s~@[ on ~a~]: ~d ~a channels ~aHz.~%  Channel layout is ~a"
-            (type-of drain) (when (typep drain 'mixed:device-drain) (mixed:device drain))
-            (mixed:channels drain) (mixed:encoding drain) (mixed:samplerate drain)
-            (channel-order drain))
-    (when (typep drain 'mixed:device-drain)
-      (v:info :trial.harmony "Device list:~{~%  ~a~}" (mixed:list-devices drain)))
-    drain))
+  (flet ((report (type segment)
+           (v:info :trial.harmony "Configured ~a for ~s~@[ on ~a~]: ~d ~a channels ~aHz.~%  Channel layout is ~a"
+                   type (type-of segment) (when (typep segment 'mixed:device-drain) (mixed:device segment))
+                   (mixed:channels segment) (mixed:encoding segment) (mixed:samplerate segment)
+                   (channel-order segment))
+           (when (typep segment 'mixed:device-drain)
+             (v:info :trial.harmony "Device list:~{~%  ~a~}" (mixed:list-devices segment)))
+           segment))
+    (let ((output (harmony:segment :output T NIL))
+          (input (harmony:segment :input T NIL)))
+      (values
+       (when output (report "output" (harmony:segment :drain output)))
+       (when input (report "input" (harmony:segment :source input)))))))
 
 (defun initialize-audio-backend (main &optional preferred-backend &rest initargs)
   (or (when preferred-backend
