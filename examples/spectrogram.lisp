@@ -16,6 +16,10 @@
     (enter (make-instance 'render-pass) scene)
     (harmony:start harmony:*server*)))
 
+(defmethod finalize :before ((scene spectrogram-scene))
+  (when harmony:*server*
+    (trial:finalize harmony:*server*)))
+
 (defclass spectrogram-segment (mixed:virtual)
   ((spectrogram :initarg :spectrogram :accessor spectrogram)))
 
@@ -45,6 +49,10 @@
    (spectrogram :accessor spectrogram)
    (framesize :initarg :framesize :initform 2048 :accessor framesize)
    (range :initarg :range :initform '(100 . 8000) :accessor range)
+   (magnitude-scale :uniform T :initarg :magnitude-scale :initform 1.0 :accessor magnitude-scale)
+   (magnitude-offset :uniform T :initarg :magnitude-offset :initform 0.0 :accessor magnitude-offset)
+   (frequency-min :uniform T :initarg :frequency-min :initform 0.0 :accessor frequency-min)
+   (frequency-max :uniform T :initarg :frequency-max :initform 22049.0 :accessor frequency-max)
    (i :initform 0 :accessor i)
    (last-i :initform 0 :accessor last-i))
   (:inhibit-shaders (textured-entity :fragment-shader)))
@@ -71,27 +79,40 @@
         (spectrogram (spectrogram visualizer)))
     (setf (uniform program "gradient") (bind (gradient visualizer) 1))
     (setf (uniform program "spectrogram") (bind (texture visualizer) 0))
+    (setf (uniform program "view_size") (size *context*))
     ;; FIXME: only update the actually changed partrs of the texture.
     (update-buffer-data (texture visualizer) T)
     (setf (last-i visualizer) i)
-    (let ((min-freq (aref spectrogram 0))
-          (max-freq (aref (spectrogram visualizer) (- (framesize visualizer) 2))))
-      ;; TODO: compute the correct scaling and offset to view the range
-      (setf (uniform program "offset") (vec2 0 (/ i (length spectrogram)))))))
+    (setf (frequency-max visualizer) 8000.0)
+    ;; TODO: compute the correct scaling and offset to view the range
+    (setf (uniform program "offset") (vec2 0 (/ i (length spectrogram))))))
 
 (define-class-shader (spectrogram-visualizer :fragment-shader)
   "uniform sampler2D spectrogram;
 uniform sampler2D gradient;
-uniform vec2 offset;
+uniform vec2 offset = vec2(0);
+uniform vec2 view_size = vec2(1);
+uniform float magnitude_scale = 1.0;
+uniform float magnitude_offset = 0.0;
+uniform float frequency_min = 0.0;
+uniform float frequency_max = 22049.0;
 in vec2 uv;
 out vec4 color;
 
 void main(){
-  vec2 pos = vec2(pow(uv.y,2), uv.x)+offset;
+  float uvy = (pow(uv.y,2) * (frequency_max - frequency_min) + frequency_min) / 22049;
+  vec2 pos = vec2(uvy, uv.x)+offset;
+  // Read out the values
   vec2 freqmag = texture(spectrogram, pos).rg;
-  float freqp  = textureOffset(spectrogram, pos, ivec2(2,0)).r;
-  vec3 intensity = texture(gradient, vec2(freqmag.y, 0.5)).rgb;
+  float freq = freqmag.x;
+  float mag = freqmag.y*magnitude_scale+magnitude_offset;
+  // Do a gradient mapping of the intensity
+  vec3 intensity = texture(gradient, vec2(mag, 0.5)).rgb;
   // Figure out lines
-  if(1000*ceil(freqmag.x / 1000) <= freqp) intensity = vec3(1);
+  freq = pos.x * 22049;
+  float nextfreq = freq + dFdy(freq);
+  if(floor(freq / 1000) != floor(nextfreq / 1000)) intensity = mix(intensity, vec3(1), 0.8);
+  else if(floor(freq / 500) != floor(nextfreq / 500)) intensity = mix(intensity, vec3(1), 0.25);
   color = vec4(intensity, 1);
 }")
+
