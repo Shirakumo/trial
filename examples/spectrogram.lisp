@@ -4,7 +4,7 @@
   :title "Spectrogram"
   :description "Live audio spectrogram using microphone input."
   (trial-harmony:initialize-audio-backend NIL NIL :source T :mixers '() :start NIL)
-  (let* ((visualizer (make-instance 'spectrogram-visualizer :framesize 2048 :frame-count 1024))
+  (let* ((visualizer (make-instance 'spectrogram-visualizer :framesize 8192 :frame-count 1024))
          (input (harmony:segment :input harmony:*server*))
          (fft (make-instance 'mixed:fwd-fft :samplerate (harmony:samplerate harmony:*server*)
                                             :framesize (framesize visualizer)))
@@ -44,6 +44,7 @@
    (vertex-array :initform (// 'trial 'fullscreen-square))
    (spectrogram :accessor spectrogram)
    (framesize :initarg :framesize :initform 2048 :accessor framesize)
+   (range :initarg :range :initform '(100 . 8000) :accessor range)
    (i :initform 0 :accessor i)
    (last-i :initform 0 :accessor last-i))
   (:inhibit-shaders (textured-entity :fragment-shader)))
@@ -66,13 +67,17 @@
   (stage (gradient visualizer) area))
 
 (defmethod render :before ((visualizer spectrogram-visualizer) (program shader-program))
-  (let ((i (i visualizer)))
+  (let ((i (i visualizer))
+        (spectrogram (spectrogram visualizer)))
     (setf (uniform program "gradient") (bind (gradient visualizer) 1))
     (setf (uniform program "spectrogram") (bind (texture visualizer) 0))
     ;; FIXME: only update the actually changed partrs of the texture.
     (update-buffer-data (texture visualizer) T)
     (setf (last-i visualizer) i)
-    (setf (uniform program "offset") (vec2 0 (/ i (length (spectrogram visualizer)))))))
+    (let ((min-freq (aref spectrogram 0))
+          (max-freq (aref (spectrogram visualizer) (- (framesize visualizer) 2))))
+      ;; TODO: compute the correct scaling and offset to view the range
+      (setf (uniform program "offset") (vec2 0 (/ i (length spectrogram)))))))
 
 (define-class-shader (spectrogram-visualizer :fragment-shader)
   "uniform sampler2D spectrogram;
@@ -82,8 +87,11 @@ in vec2 uv;
 out vec4 color;
 
 void main(){
-  vec2 pos = vec2(uv.y, uv.x)+offset;
+  vec2 pos = vec2(pow(uv.y,2), uv.x)+offset;
   vec2 freqmag = texture(spectrogram, pos).rg;
+  float freqp  = textureOffset(spectrogram, pos, ivec2(2,0)).r;
   vec3 intensity = texture(gradient, vec2(freqmag.y, 0.5)).rgb;
+  // Figure out lines
+  if(1000*ceil(freqmag.x / 1000) <= freqp) intensity = vec3(1);
   color = vec4(intensity, 1);
 }")
