@@ -41,7 +41,8 @@
                (:file "bouncer")
                (:file "debug")
                (:file "input")
-               (:file "logo"))
+               (:file "logo")
+               (:file "spectrogram"))
   :depends-on (#-nx :trial-glfw
                #+nx :trial-nxgl
                :alloy-constraint
