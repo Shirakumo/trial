@@ -136,6 +136,14 @@
 (define-compiler-macro setting* (default &rest path)
   `(or (setting ,@path) ,default))
 
+(defun (setf setting*) (value default &rest path)
+  (declare (ignore default))
+  (apply #'(setf setting) value path))
+
+(define-compiler-macro (setf setting*) (value default &rest path)
+  (declare (ignore default))
+  `(setf (setting ,@path) ,value))
+
 (defun %call-setting-observers (sub)
   (loop for (k v) on (gethash sub +settings-observers+) by #'cddr
         do (with-simple-restart (abort "Don't call the observer.")
