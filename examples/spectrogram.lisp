@@ -4,7 +4,7 @@
   :title "Spectrogram"
   :description "Live audio spectrogram using microphone input."
   (trial-harmony:initialize-audio-backend NIL NIL :source T :mixers '() :start NIL)
-  (let* ((visualizer (make-instance 'spectrogram-visualizer :framesize 8192 :frame-count 1024))
+  (let* ((visualizer (make-instance 'spectrogram-visualizer))
          (input (harmony:segment :input harmony:*server*))
          (fft (make-instance 'mixed:fwd-fft :samplerate (harmony:samplerate harmony:*server*)
                                             :framesize (framesize visualizer)))
@@ -19,6 +19,19 @@
 (defmethod finalize :before ((scene spectrogram-scene))
   (when harmony:*server*
     (trial:finalize harmony:*server*)))
+
+(defmethod setup-ui ((scene spectrogram-scene) panel)
+  (let* ((layout (make-instance 'alloy:flow-layout))
+         (focus (make-instance 'alloy:vertical-focus-list))
+         (spectrogram (node :spectrogram scene)))
+    (macrolet ((row (label repr input &rest args)
+                 `(progn (alloy:enter ,label layout)
+                         (alloy:represent ,repr ,input ,@args :focus-parent focus :layout-parent layout))))
+      (row "Volume" (magnitude-scale spectrogram) 'alloy:ranged-wheel :range '(0.0 . 1.0) :grid 0.01 :step 0.1)
+      (row "Threshold" (magnitude-offset spectrogram) 'alloy:ranged-wheel :range '(0.0 . 1.0) :grid 0.01 :step 0.1)
+      (row "Min Freq" (frequency-min spectrogram) 'alloy:ranged-wheel :range '(0.0 . 22049.0) :step 100.0)
+      (row "Max Freq" (frequency-max spectrogram) 'alloy:ranged-wheel :range '(0.0 . 22049.0) :step 100.0))
+    (alloy:finish-structure panel layout focus)))
 
 (defclass spectrogram-segment (mixed:virtual)
   ((spectrogram :initarg :spectrogram :accessor spectrogram)))
@@ -43,12 +56,12 @@
       (mixed:finish))))
 
 (define-shader-entity spectrogram-visualizer (vertex-entity textured-entity)
-  ((gradient :initform (assets:// :intensity-gradient) :accessor gradient)
+  ((name :initform :spectrogram)
+   (gradient :initform (assets:// :intensity-gradient) :accessor gradient)
    (texture :accessor texture)
    (vertex-array :initform (// 'trial 'fullscreen-square))
    (spectrogram :accessor spectrogram)
-   (framesize :initarg :framesize :initform 2048 :accessor framesize)
-   (range :initarg :range :initform '(100 . 8000) :accessor range)
+   (framesize :initarg :framesize :initform 8192 :accessor framesize)
    (magnitude-scale :uniform T :initarg :magnitude-scale :initform 1.0 :accessor magnitude-scale)
    (magnitude-offset :uniform T :initarg :magnitude-offset :initform 0.0 :accessor magnitude-offset)
    (frequency-min :uniform T :initarg :frequency-min :initform 0.0 :accessor frequency-min)
@@ -83,7 +96,6 @@
     ;; FIXME: only update the actually changed partrs of the texture.
     (update-buffer-data (texture visualizer) T)
     (setf (last-i visualizer) i)
-    (setf (frequency-max visualizer) 8000.0)
     ;; TODO: compute the correct scaling and offset to view the range
     (setf (uniform program "offset") (vec2 0 (/ i (length spectrogram))))))
 
@@ -104,12 +116,11 @@ void main(){
   vec2 pos = vec2(uvy, uv.x)+offset;
   // Read out the values
   vec2 freqmag = texture(spectrogram, pos).rg;
-  float freq = freqmag.x;
-  float mag = freqmag.y*magnitude_scale+magnitude_offset;
+  float mag = freqmag.y*magnitude_scale-magnitude_offset;
   // Do a gradient mapping of the intensity
   vec3 intensity = texture(gradient, vec2(mag, 0.5)).rgb;
-  // Figure out lines
-  freq = pos.x * 22049;
+  // Figure out lines. We can't use the actual frequency in the bin due to floating point precision issues.
+  float freq = pos.x * 22049;
   float nextfreq = freq + dFdy(freq);
   if(floor(freq / 1000) != floor(nextfreq / 1000)) intensity = mix(intensity, vec3(1), 0.8);
   else if(floor(freq / 500) != floor(nextfreq / 500)) intensity = mix(intensity, vec3(1), 0.25);
