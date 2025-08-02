@@ -176,6 +176,7 @@ Space - Descend" (version :trial) (lisp-implementation-type) (lisp-implementatio
   (trial-alloy:show-panel 'example-list))
 
 (defun launch (&optional example &rest args)
+  (load-settings)
   (apply #'trial:launch 'example :example example args))
 
 (defun main ()
