@@ -115,11 +115,11 @@ in vec2 uv;
 out vec4 color;
 
 void main(){
-  float uvy = (pow(uv.y,2) * (frequency_max - frequency_min) + frequency_min) / 22049;
+  float uvy = (pow(uv.y,4) * (frequency_max - frequency_min) + frequency_min) / 22049;
   vec2 pos = vec2(uvy, uv.x/time_scale-(1/time_scale))+offset;
   // Read out the values
   vec2 freqmag = texture(spectrogram, pos).rg;
-  float mag = freqmag.y*magnitude_scale-magnitude_offset;
+  float mag = pow(freqmag.y,0.1)*magnitude_scale-magnitude_offset;
   // Do a gradient mapping of the intensity
   vec3 intensity = texture(gradient, vec2(mag, 0.5)).rgb;
   // Figure out lines. We can't use the actual frequency in the bin due to floating point precision issues.
