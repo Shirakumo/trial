@@ -66,7 +66,7 @@
    (last-i :initform 0 :accessor last-i))
   (:inhibit-shaders (textured-entity :fragment-shader)))
 
-(defmethod initialize-instance :after ((visualizer spectrogram-visualizer) &key (frame-count 1024))
+(defmethod initialize-instance :after ((visualizer spectrogram-visualizer) &key (frame-count (/ (* 1024 4096) (framesize visualizer))))
   (let* ((framesize (framesize visualizer))
          (spectrogram (make-array (* framesize frame-count) :element-type 'single-float)))
     (setf (spectrogram visualizer) spectrogram)
