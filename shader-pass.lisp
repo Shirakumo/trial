@@ -35,6 +35,41 @@
 
 (flow:define-port-value-slot texture-port texture texture)
 
+(defclass framebuffer-port (texture-port)
+  ((attachment :initarg :attachment :accessor attachment))
+  (:default-initargs :attachment :color-attachment0))
+
+(defun update-output-fb (port new-texture)
+  (let ((fb (framebuffer (flow:node port))))
+    (when (and fb (not (eq new-texture (texture port))))
+      (setf (attachments fb)
+            (loop for (attachment texture . args) in (attachments fb)
+                  collect (list* attachment
+                                 (if (eql attachment (attachment port))
+                                     new-texture
+                                     texture)
+                                 args))))))
+
+(defmethod (setf texture) :before ((new-texture texture) (port framebuffer-port))
+  (update-output-fb port new-texture))
+
+(defclass overlay (flow:in-port flow:1-port framebuffer-port)
+  ())
+
+(defmethod check-consistent ((input overlay))
+  (unless (flow:connections input)
+    (error "Pipeline is not consistent.~%~
+            Pass ~s is missing a connection to its input ~s."
+           (flow:node input) input))
+  (let ((other (flow:left (first (flow:connections input)))))
+    (unless (or (not (texspec input))
+                (join-texspec (normalized-texspec (texspec input))
+                              (normalized-texspec (texspec other))))
+      (error "Pipeline is not consistent.~%~
+              Pass ~s' input ~s~%  ~s~%is not texture compatible with output ~s'~%  ~s."
+             (flow:node input) input (normalized-texspec (texspec input))
+             other (normalized-texspec (texspec other))))))
+
 ;; FIXME: What about binding multiple levels and layers of the same texture?
 (defclass image-port (texture-port)
   ((binding :initarg :binding :initform 0 :accessor binding)
@@ -73,26 +108,11 @@
              (flow:node input) input (normalized-texspec (texspec input))
              other (normalized-texspec (texspec other))))))
 
-(defclass output (flow:out-port flow:n-port texture-port)
-  ((attachment :initarg :attachment :accessor attachment))
-  (:default-initargs :attachment :color-attachment0))
+(defclass output (flow:out-port flow:n-port framebuffer-port)
+  ())
 
 (defmethod check-consistent ((output output))
   ())
-
-(defun update-output-fb (port new-texture)
-  (let ((fb (framebuffer (flow:node port))))
-    (when (and fb (not (eq new-texture (texture port))))
-      (setf (attachments fb)
-            (loop for (attachment texture . args) in (attachments fb)
-                  collect (list* attachment
-                                 (if (eql attachment (attachment port))
-                                     new-texture
-                                     texture)
-                                 args))))))
-
-(defmethod (setf texture) :before ((new-texture texture) (port output))
-  (update-output-fb port new-texture))
 
 (defclass fixed-input (input)
   ())
@@ -193,7 +213,7 @@
 (defmethod make-pass-framebuffer ((pass shader-pass))
   (let ((width 0) (height 0))
     (loop for port in (flow:ports pass)
-          do (when (and (typep port 'output) (texture port))
+          do (when (and (typep port '(or output overlay)) (texture port))
                (setf width (max width (width (texture port))))
                (setf height (max height (height (texture port))))))
     (when (= 0 width)
@@ -204,7 +224,7 @@
                    :clear-bits (clear-bits pass)
                    :clear-color (clear-color pass)
                    :attachments (loop for port in (flow:ports pass)
-                                      when (typep port 'output)
+                                      when (typep port '(or output overlay))
                                       collect (list (attachment port) (texture port))))))
 
 (defmethod finalize :after ((pass shader-pass))

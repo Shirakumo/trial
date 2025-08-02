@@ -1847,6 +1847,7 @@
    #:texspec
    #:uniform-port
    #:uniform-name
+   #:overlay
    #:input
    #:output
    #:attachment
