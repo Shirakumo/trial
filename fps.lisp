@@ -121,7 +121,7 @@ void main(){
                (setf (aref data (1- (* 100 i))) val))
              (compute-frac (free total)
                (if (= 0 total)
-                   0.0
+                   0
                    (- 255 (the (unsigned-byte 8) (round (the (unsigned-byte 64) (* 255 free)) total)))))
              (compute-bytes (db)
                ;; Rationale: one kilobyte should count as "max".
