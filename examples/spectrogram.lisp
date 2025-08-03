@@ -61,7 +61,7 @@
    (texture :accessor texture)
    (vertex-array :initform (// 'trial 'fullscreen-square))
    (spectrogram :accessor spectrogram)
-   (framesize :initarg :framesize :initform 8192 :accessor framesize)
+   (framesize :initarg :framesize :initform (setting* 8192 :spectrogram :framesize) :accessor framesize)
    (i :initform 0 :accessor i)
    (last-i :initform 0 :accessor last-i))
   (:inhibit-shaders (textured-entity :fragment-shader)))
