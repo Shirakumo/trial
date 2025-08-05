@@ -122,6 +122,9 @@
     (setf (particle-full-color emitter) int)
     color))
 
+(defmethod (setf particle-color) ((color integer) (emitter particle-emitter))
+  (setf (particle-full-color emitter) color))
+
 (defmethod particle-sprite ((emitter particle-emitter))
   (let* ((int (particle-full-color emitter))
          (sprite (ldb (byte 3 24) int)))
