@@ -45,11 +45,11 @@
   (base NIL :type T)
   (strength 0.0 :type single-float))
 
-(defun make-animation-layer (clip skeleton &key (strength 0.0) (data skeleton))
+(defun make-animation-layer (clip skeleton &key (strength 0.0) (data skeleton) weights)
   (let ((layer (%make-animation-layer
                 clip
-                (rest-pose* skeleton :data data)
-                (instantiate-clip skeleton clip))))
+                (rest-pose* skeleton :data data :weights weights)
+                (instantiate-clip skeleton clip :pose (rest-pose* skeleton :data data :weights weights)))))
     (setf (strength layer) strength)
     layer))
 
@@ -103,7 +103,8 @@
 
 (defmethod add-animation-layer ((clip clip) (controller layer-controller) &key (strength 0.0) (name (name clip)) (if-exists :error))
   (add-animation-layer (make-animation-layer clip (skeleton controller)
-                                             :data controller :strength (float strength 0f0))
+                                             :data controller :strength (float strength 0f0)
+                                             :weights (copy-pose-weights (target controller)))
                        controller :name name :if-exists if-exists))
 
 (defmethod remove-animation-layer (name (controller layer-controller))
