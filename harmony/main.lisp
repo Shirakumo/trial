@@ -106,7 +106,8 @@
 
 (defmethod server-initargs append ((main settings-main))
   (list :latency (trial:setting :audio :latency)
-        :device (trial:setting :audio :device)))
+        :device (trial:setting :audio :device)
+        :samplerate (trial:setting* mixed:*default-samplerate* :audio :samplerate)))
 
 #+nx
 (defmethod harmony:run :before ((server harmony:server))
