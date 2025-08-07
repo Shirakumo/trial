@@ -101,6 +101,7 @@ void main(){
 
 (define-shader-entity repl (debug-text listener)
   ((text :initform (make-array 4096 :adjustable T :fill-pointer T :element-type 'character))
+   (accept-input :initform T :initarg :accept-input :accessor accept-input)
    (stream)
    (history :initform (make-array 32 :adjustable T :fill-pointer 0) :accessor history)
    (history-index :initform 0 :accessor history-index)
@@ -124,40 +125,42 @@ with ~a ~a~%"
   (output-result :none repl))
 
 (define-handler (repl text-entered) (text)
-  (loop for char across text do (vector-push-extend char (text repl)))
-  (setf (text repl) (text repl)))
+  (when (accept-input repl)
+    (loop for char across text do (vector-push-extend char (text repl)))
+    (setf (text repl) (text repl))))
 
 (define-handler (repl key-press) (key)
-  (let ((text (text repl)))
-    (case key
-      (:up
-       (decf (history-index repl)))
-      (:down
-       (incf (history-index repl)))
-      (:backspace
-       (when (< (input-start repl) (length text))
-         (decf (fill-pointer text))
-         (setf (text repl) text)))
-      ((:enter :return)
-       (cond ((= (input-start repl) (length text))
-              (output-result :none repl))
-             (T
-              ;(format (text repl) "~%")
-              (handler-case
-                  (let ((start (shiftf (input-start repl) (length text))))
-                    (vector-push-extend (subseq text start) (history repl))
-                    (setf (history-index repl) (length (history repl)))
-                    (let* ((*standard-output* (slot-value repl 'stream))
-                           (*error-output* *standard-output*)
-                           (- (read-from-string text T NIL :start start))
-                           (values (multiple-value-list (eval -))))
-                      (shiftf *** ** * (first values))
-                      (shiftf /// cl:// / values)
-                      (shiftf +++ ++ + -)
-                      (setf (input-start repl) (length text))
-                      (output-result values repl)))
-                (error (e)
-                  (output-result e repl)))))))))
+  (when (accept-input repl)
+    (let ((text (text repl)))
+      (case key
+        (:up
+         (decf (history-index repl)))
+        (:down
+         (incf (history-index repl)))
+        (:backspace
+         (when (< (input-start repl) (length text))
+           (decf (fill-pointer text))
+           (setf (text repl) text)))
+        ((:enter :return)
+         (cond ((= (input-start repl) (length text))
+                (output-result :none repl))
+               (T
+                                        ;(format (text repl) "~%")
+                (handler-case
+                    (let ((start (shiftf (input-start repl) (length text))))
+                      (vector-push-extend (subseq text start) (history repl))
+                      (setf (history-index repl) (length (history repl)))
+                      (let* ((*standard-output* (slot-value repl 'stream))
+                             (*error-output* *standard-output*)
+                             (- (read-from-string text T NIL :start start))
+                             (values (multiple-value-list (eval -))))
+                        (shiftf *** ** * (first values))
+                        (shiftf /// cl:// / values)
+                        (shiftf +++ ++ + -)
+                        (setf (input-start repl) (length text))
+                        (output-result values repl)))
+                  (error (e)
+                    (output-result e repl))))))))))
 
 (defmethod (setf history-index) :around (index (repl repl))
   (call-next-method (clamp 0 index (length (history repl))) repl))
