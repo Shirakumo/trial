@@ -100,7 +100,8 @@ void main(){
 }")
 
 (define-shader-entity repl (debug-text listener)
-  ((text :initform (make-array 4096 :adjustable T :fill-pointer T :element-type 'character))
+  ((name :initform 'repl)
+   (text :initform (make-array 4096 :adjustable T :fill-pointer T :element-type 'character))
    (accept-input :initform T :initarg :accept-input :accessor accept-input)
    (stream)
    (history :initform (make-array 32 :adjustable T :fill-pointer 0) :accessor history)
