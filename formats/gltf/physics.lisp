@@ -162,9 +162,10 @@
 
 (defun %find-child (name node &optional errorp)
   (sequences:dosequence (child node (when errorp (error "No child named ~a found!" name)))
-    (when (and (<= (length name) (length (name child)))
-               (string= name (name child) :end2 (length name)))
-      (return child))))
+    (let ((child-name (string (name child))))
+      (when (and (<= (length name) (length child-name))
+                 (string-equal name child-name :end2 (length name)))
+        (return child)))))
 
 (define-trigger-translation T (trigger node)
   (declare (ignore node))
