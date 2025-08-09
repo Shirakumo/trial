@@ -88,7 +88,11 @@
     (etypecase fullscreen
       ((eql T) (setf initargs (list* :monitor (glfw:primary-monitor) initargs)))
       (string (setf initargs (list* :monitor (ensure-monitor fullscreen context) initargs)))
-      ((eql NIL)))
+      ((eql NIL) ;; Account initial size for content scaling.
+       (let ((monitor (or (getf initargs :monitor) (glfw:primary-monitor))))
+         (destructuring-bind (x-scale y-scale) (glfw:content-scale monitor)
+           (setf (getf initargs :width) (truncate (getf initargs :width) x-scale))
+           (setf (getf initargs :height) (truncate (getf initargs :height) y-scale))))))
     ;; Do the actual initialization
     (apply #'call-next-method context slots :allow-other-keys T initargs)
     (with-cleanup-on-failure (destroy-context context)
