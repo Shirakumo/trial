@@ -288,7 +288,7 @@
                 (unless fullscreen
                   (ignore-errors (glfw:center context))))
                (mode
-                (resize context (first mode) (second mode)))))))))
+                (handle-request context :set-size mode))))))))
 
 (defun launch-with-context (&optional main &rest initargs)
   (declare (optimize speed))
