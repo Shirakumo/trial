@@ -20,6 +20,7 @@
    (mouse-pos :initform (vec 0 0) :accessor mouse-pos)
    (last-click :initform (make-last-click) :accessor last-click)
    (visible-p :initform T :accessor visible-p)
+   (focused-p :initform NIL :accessor focused-p)
    (last-cursor :initform :arrow :accessor last-cursor)
    ;; We track w/h separately here as Trial cares about the framebuffer size, not the window size.
    (fb-width :initform 0 :accessor width)
@@ -359,6 +360,7 @@
 (defmethod glfw:window-focused ((context context) focusedp)
   (v:info :trial.backend.glfw "Window has ~:[lost~;gained~] focus" focusedp)
   (when focusedp (refresh-window-size context))
+  (setf (focused-p context) focusedp)
   (if focusedp
       (%handle context 'gain-focus)
       (%handle context 'lose-focus)))

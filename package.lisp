@@ -1065,6 +1065,7 @@
    #:hide
    #:show
    #:visible-p
+   #:focused-p
    #:resize
    #:quit
    #:swap-buffers

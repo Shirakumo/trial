@@ -82,6 +82,9 @@
 (defmethod visible-p ((context context))
   T)
 
+(defmethod focused-p ((context context))
+  T)
+
 (defmethod resize ((context context) width height)
   (unless (nxgl:resize (pointer context) width height)
     (error "Failed to resize"))

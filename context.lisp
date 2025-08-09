@@ -88,6 +88,7 @@
 (defgeneric hide (context))
 (defgeneric show (context &key &allow-other-keys))
 (defgeneric visible-p (context))
+(defgeneric focused-p (context))
 (defgeneric resize (context width height))
 (defgeneric quit (context))
 (defgeneric swap-buffers (context))

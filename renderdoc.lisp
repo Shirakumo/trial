@@ -1,4 +1,4 @@
-#+quicklisp (ql:quickload '(:swank :cffi))
+#+quicklisp (ql:quickload '(:swank :cffi) :silent T)
 #+(and asdf (not quicklisp)) (asdf:load-system '(:swank :cffi))
 
 #+(and unix sbcl)
