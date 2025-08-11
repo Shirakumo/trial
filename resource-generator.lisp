@@ -42,7 +42,8 @@
   (apply #'transcode source source-type target (ensure-file-type target-type) args))
 
 (defmethod transcode :before (source (source-type symbol) target (target-type symbol) &key &allow-other-keys)
-  (v:info :trial.resource "Transcoding ~a to ~a" source target-type))
+  (unless (eql T target-type)
+    (v:info :trial.resource "Transcoding ~a to ~a" source target-type)))
 
 (defmethod transcode (source (source-type symbol) target (target-type symbol) &key &allow-other-keys)
   (if (next-method-p)
