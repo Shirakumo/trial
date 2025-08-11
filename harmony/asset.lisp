@@ -60,6 +60,12 @@
                                 for file = (trial:coerce-asset-input asset input)
                                 collect (list* file :name (file-namestring file) params)))))
 
+(defmethod harmony:transition ((asset environment) to &rest args &key &allow-other-keys)
+  (apply #'harmony:transition (or (trial:resource asset T)
+                                  #-elide-allocation-checks (error "Voice has not been allocated.")
+                                  #+elide-allocation-checks (return-from harmony:transition voice))
+         to args))
+
 (defclass music (trial:resource harmony:environment)
   ())
 
