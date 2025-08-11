@@ -27,13 +27,16 @@
 (defclass sound (trial:audio-file)
   ())
 
-(defclass environment (trial:single-resource-asset trial:compiled-generator)
+(defclass environment (trial:single-resource-asset trial:audio-loader)
   ())
 
-(defmethod trial:compile-resources ((generator environment) sets &rest args)
+(defmethod trial:compile-resources ((generator environment) (sets (eql T)) &rest args &key &allow-other-keys)
+  (apply #'trial:compile-resources generator (trial:input* generator) args))
+
+(defmethod trial:compile-resources ((generator environment) (sets cons) &rest args &key &allow-other-keys)
   (dolist (set sets)
     (dolist (track (cdr set))
-      (let ((target (first track)))
+      (let ((target (trial:unlist track)))
         (apply #'trial:compile-resources generator target args)))))
 
 (defmethod trial:generate-resources ((generator environment) sets &key (resource (trial:resource generator T)))

@@ -16,26 +16,39 @@
 (defmethod compile-resources ((generator audio-loader) (target sequence) &rest args &key &allow-other-keys)
   (map NIL (lambda (x) (apply #'compile-resources generator x args)) target))
 
-(defmethod compile-resources ((generator audio-loader) (target pathname) &rest args &key (source-file-type "wav"))
+(defmethod compile-resources ((generator audio-loader) (target pathname) &rest args &key (source-file-type "wav") force &allow-other-keys)
   (let ((source (make-pathname :type source-file-type :defaults target)))
     (when (and (probe-file source)
-               (trial:recompile-needed-p target source))
+               (or force (trial:recompile-needed-p target source)))
       (apply #'transcode source T target T args))))
 
-(defmacro define-ffmpeg-transcoder (target codec)
+(defmacro define-ffmpeg-transcoder (target codec &rest args)
   `(defmethod transcode (source (source-type symbol) target (target-type (eql ,target)) &key (quality 3) (samplerate 48000))
      (run "ffmpeg" "-hide_banner" "-loglevel" "error"
           "-i" source
           "-c:a" ,codec
           "-ar" samplerate
-          "-q:a" quality
+          ,@args
           "-y" target)))
 
-(define-ffmpeg-transcoder :ogg "libvorbis")
-(define-ffmpeg-transcoder :oga "libvorbis")
-(define-ffmpeg-transcoder :mp3 "libmp3lame")
-(define-ffmpeg-transcoder :opus "libopus")
-(define-ffmpeg-transcoder :flac "flac")
+(defun opus-quality->bitrate (quality)
+  (ecase quality
+    (0 "160k")
+    (1 "140k")
+    (2 "120k")
+    (3 "96k")
+    (4 "80k")
+    (5 "64k")
+    (6 "48k")
+    (7 "32k")
+    (8 "24k")
+    (9 "16k")))
+
+(define-ffmpeg-transcoder :ogg "libvorbis" "-q:a" quality)
+(define-ffmpeg-transcoder :oga "libvorbis" "-q:a" quality)
+(define-ffmpeg-transcoder :mp3 "libmp3lame" "-q:a" quality)
+(define-ffmpeg-transcoder :opus "libopus" "-b:a" (opus-quality->bitrate quality))
+(define-ffmpeg-transcoder :flac "flac" "-q:a" quality)
 
 (defmethod transcode (source (source-type (eql :wav)) target (target-type (eql :wav)) &rest args &key (sample-type :int16) (samplerate 48000))
   (if (equalp source target)
