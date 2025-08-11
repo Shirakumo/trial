@@ -75,6 +75,9 @@
          (make-instance 'basic-node :transform (gltf-node-transform node)
                                     :name (gltf-name node)))))
 
+(defmethod translate-node ((node gltf:scene) entity gltf)
+  entity)
+
 (defmethod translate-node (node entity gltf)
   (let ((found NIL))
     ;; KLUDGE: alias animation controllers shared between children
@@ -155,7 +158,8 @@
                                                      collect (car (name track))))))
                  (do-scene-graph (node scene)
                    (when (member (name node) clip-targets)
-                     (enter (make-instance 'scene-animation-controller :clips (clips model)) scene)))))
+                     (enter (make-instance 'scene-animation-controller :clips (clips model)) scene))))
+               (setf (gethash (name scene) scenes) (translate-node node scene gltf)))
       model)))
 
 ;; Special case override so we still get support for general converters
