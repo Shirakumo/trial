@@ -21,7 +21,7 @@ This probably doesn't look like anything to you, so let me modify the image a li
 
 Each pixel in the image represents the X and Y offsets of the tile in the tileset that should be rendered at that point, counting from the bottom left. So for instance to select that red square tile, the tilemap would contain a pixel with the data ``1,0``.
 
-Authoring these maps by hand is very tricky as it's so hard to see them. There are two editors you might be able to re-use, at this point. First, the editor provided in "Kandria"(https://github.com/shirakumo/kandria) edits these tilemaps, and second the "Tiled"(https://www.mapeditor.org) editor's exported JSON format is partially supported through the ``tile-data`` asset.
+Authoring these maps by hand is very tricky as it's so hard to see them. There are two editors you might be able to re-use, at this point. First, the editor provided in "Kandria"(https://shirakumo.org/project/kandria) edits these tilemaps, and second the "Tiled"(https://www.mapeditor.org) editor's exported JSON format is partially supported through the ``tile-data`` asset.
 
 Regardless, once a map has been created, all you need to do is construct a ``tile-layer`` as appropriate:
 

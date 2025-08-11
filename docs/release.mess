@@ -1,5 +1,5 @@
 # Basic Deployment
-By using ''Deploy''(https://github.com/shinmera/deploy) you can create a deliverable of your game for your current architecture pretty easily. Simply adjust the system definition of your game to include the following fields:
+By using ''Deploy''(https://shinmera.com/project/deploy) you can create a deliverable of your game for your current architecture pretty easily. Simply adjust the system definition of your game to include the following fields:
 
 :: common lisp
 :build-operation "deploy-op"

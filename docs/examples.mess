@@ -1,7 +1,7 @@
 # Examples
 Trial includes a system with a variety of examples called ``trial-examples``. After loading it, you can fire it up via ``trial-examples:launch`` which will show a menu where you can pick an example to run. You can also run a specific example directly by passing an initarg.
 
-You can also download precompiled versions of Trial's examples as binaries ''from GitHub''(https://github.com/Shirakumo/trial/releases/latest/). Note also that the assets seen here can be found in ''trial-assets''(https://github.com/Shirakumo/trial-assets/) and are not otherwise available in the ``trial`` resource pool.
+You can also download precompiled versions of Trial's examples as binaries ''from GitHub''(https://shirakumo.org/project/trial/releases/latest/). Note also that the assets seen here can be found in ''trial-assets''(https://shirakumo.org/project/trial-assets/) and are not otherwise available in the ``trial`` resource pool.
 
 The following examples are currently available:
 

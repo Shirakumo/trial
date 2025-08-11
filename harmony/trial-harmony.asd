@@ -3,9 +3,9 @@
   :maintainer "Yukari Hafner <shinmera@tymoon.eu>"
   :license "zlib"
   :description "Integration with the Harmony sound engine"
-  :homepage "https://Shirakumo.github.io/trial/"
-  :bug-tracker "https://github.com/Shirakumo/trial/issues"
-  :source-control (:git "https://github.com/Shirakumo/trial.git")
+  :homepage "https://shirakumo.org/docs/trial/"
+  :bug-tracker "https://shirakumo.org/project/trial/issues"
+  :source-control (:git "https://shirakumo.org/project/trial.git")
   :components ((:file "package")
                (:file "asset")
                (:file "main")

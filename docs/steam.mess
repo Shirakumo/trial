@@ -1,5 +1,5 @@
 # VALV^(E) Steam Integration
-The ``trial-steam`` extension system provides a few features to more easily integrate with "cl-steamworks"(https://github.com/shinmera/cl-steamworks) for Steam-specific features like achievements and, in the very least, Steam compliance.
+The ``trial-steam`` extension system provides a few features to more easily integrate with "cl-steamworks"(https://shinmera.com/project/cl-steamworks) for Steam-specific features like achievements and, in the very least, Steam compliance.
 
 Setup from your end should be rather trivial for the basics: just inherit from the ``main`` subclass and set your Steam App-Id:
 

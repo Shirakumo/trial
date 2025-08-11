@@ -3,7 +3,7 @@ Trial includes the concept of a ``shader-pass``, which is responsible for handli
 
 The shader pass system lets you declare the inputs and outputs of a pass as slots on your class. Accessing those slots will give direct access to the underlying ``texture`` instance that is connected to the input uniform, or the output framebuffer.
 
-This mechanism is implemented using the "Flow"(https://github.com/shinmera/flow) static node system. By setting the ``:port`` initarg on your slots, you can declare an input or output. The following port types are declared by Trial:
+This mechanism is implemented using the "Flow"(https://shinmera.com/project/flow) static node system. By setting the ``:port`` initarg on your slots, you can declare an input or output. The following port types are declared by Trial:
 
 - ``input``
   A standard texture input port. This port //must// be connected to the output of one other pass' port.

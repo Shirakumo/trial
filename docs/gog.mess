@@ -1,5 +1,5 @@
 # GOG (Good Old Games) Galaxy Integration
-The ``trial-gog`` extension system provides a few features to more easily integrate with "cl-gog-galaxy"(https://github.com/shinmera/cl-gog-galaxy) for GOG Galaxy-specific features like achievements and, in the very least, GOG compliance.
+The ``trial-gog`` extension system provides a few features to more easily integrate with "cl-gog-galaxy"(https://shinmera.com/project/cl-gog-galaxy) for GOG Galaxy-specific features like achievements and, in the very least, GOG compliance.
 
 Setup from your end should be rather trivial for the basics: just inherit from the ``main`` subclass and set your GOG client ID and secret.
 
