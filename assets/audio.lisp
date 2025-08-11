@@ -23,7 +23,7 @@
       (apply #'transcode source T target T args))))
 
 (defmacro define-ffmpeg-transcoder (target codec)
-  `(defmethod transcode (source (source-type symbol) target (target-type (eql ,target)) &key (quality 3) (samplerate 44100))
+  `(defmethod transcode (source (source-type symbol) target (target-type (eql ,target)) &key (quality 3) (samplerate 48000))
      (run "ffmpeg" "-hide_banner" "-loglevel" "error"
           "-i" source
           "-c:a" ,codec
@@ -37,7 +37,7 @@
 (define-ffmpeg-transcoder :opus "libopus")
 (define-ffmpeg-transcoder :flac "flac")
 
-(defmethod transcode (source (source-type (eql :wav)) target (target-type (eql :wav)) &rest args &key (sample-type :int16) (samplerate 44100))
+(defmethod transcode (source (source-type (eql :wav)) target (target-type (eql :wav)) &rest args &key (sample-type :int16) (samplerate 48000))
   (if (equalp source target)
       (let ((tmp (make-pathname :name (format NIL "tmp_~a" (pathname-name target)) :defaults target)))
         (apply #'transcode source source-type tmp target-type args)
@@ -61,7 +61,7 @@
                   (not (equal sample-type source-sample-type)))
           (call-next-method)))))
 
-(defmethod transcode (source (source-type symbol) target (target-type (eql :wav)) &key (sample-type :int16) (samplerate 44100))
+(defmethod transcode (source (source-type symbol) target (target-type (eql :wav)) &key (sample-type :int16) (samplerate 48000))
   (run "ffmpeg" "-hide_banner" "-loglevel" "error"
        "-i" source
        "-c:a" (format NIL "pcm_~ale"
