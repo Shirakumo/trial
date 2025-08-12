@@ -75,6 +75,12 @@
 (defmethod harmony:state ((env environment))
   (harmony:state (trial:resource env T)))
 
+(defmethod trial:fade-to (to (env environment) &rest args &key &allow-other-keys)
+  (apply #'harmony:transition (trial:resource env T) to args))
+
+(defmethod trial:state ((env environment))
+  (harmony:state (trial:resource env T)))
+
 (defclass music (trial:resource harmony:environment)
   ())
 
