@@ -14,6 +14,12 @@
       (mixed:end (harmony:source (voice resource)))
       (mixed:start (harmony:source (voice resource))))))
 
+(defmethod reinitialize-instance :after ((file trial:sound-bank) &key)
+  (when (trial:loaded-p file)
+    (let ((resources (slot-value file 'trial::resources)))
+      (loop for resource being the hash-values of resources
+            do (apply #'reinitialize-instance resource (trial::generation-arguments file))))))
+
 (defmethod harmony:play ((file trial:sound-bank) &rest args)
   (let ((chance 8f0)
         (resources (slot-value file 'trial::resources)))
@@ -60,11 +66,14 @@
                                 for file = (trial:coerce-asset-input asset input)
                                 collect (list* file :name (file-namestring file) params)))))
 
-(defmethod harmony:transition ((asset environment) to &rest args &key &allow-other-keys)
-  (apply #'harmony:transition (or (trial:resource asset T)
-                                  #-elide-allocation-checks (error "Voice has not been allocated.")
-                                  #+elide-allocation-checks (return-from harmony:transition voice))
+(defmethod harmony:transition ((env environment) to &rest args &key &allow-other-keys)
+  (apply #'harmony:transition (or (trial:resource env T)
+                                  #-elide-allocation-checks (error "Environment has not been allocated.")
+                                  #+elide-allocation-checks (return-from harmony:transition env))
          to args))
+
+(defmethod harmony:state ((env environment))
+  (harmony:state (trial:resource env T)))
 
 (defclass music (trial:resource harmony:environment)
   ())
