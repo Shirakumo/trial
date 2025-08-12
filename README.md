@@ -6,7 +6,7 @@
 ## About Trial
 Trial is a game engine written in Common Lisp. Unlike many other engines, it is meant to be more of a loose connection of components that can be fit together as required by any particular game.
 
-Please note that the engine is still in flux. The project may change heavily as new constraints become clear. As such, there is no guarantee for API stability at this point. [Documentation](https://shirakumo.github.io/trial) is available however, and is actively being extended to cover more parts of the engine.
+Please note that the engine is still in flux. The project may change heavily as new constraints become clear. As such, there is no guarantee for API stability at this point. [Documentation](https://shirakumo.org/docs/trial) is available however, and is actively being extended to cover more parts of the engine.
 
 We also encourage you to come talk to us at the shirakumo channel, reachable through [lichat](https://chat.tymoon.eu/?channel=shirakumo) or IRC on Libera. We're always happy to chat, be it to ask for advice, report issues and suggestions, or just to hang out!
 
@@ -26,8 +26,4 @@ Here are a few games that are using Trial as their engine. Kandria and Eternia: 
 If you made use of Trial yourself, let us know! We'd be happy to include your game in this list.
 
 ## Support
-If you'd like to support the continued development of Trial, please consider becoming a backer on Patreon:
-
-<a href="https://patreon.com/shinmera">
-  <img alt="Patreon" src="https://filebox.tymoon.eu//file/TWpjeU9RPT0=" />
-</a>
+If you'd like to support the continued development of Trial, please consider becoming a backer on [Patreon](https://patreon.com/shinmera)
